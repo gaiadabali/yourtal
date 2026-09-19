@@ -125,3 +125,14 @@ So a decision that supersedes a model is not finished when it is written down:
 - **Name the artifacts it invalidates in the decision itself**, not only the rule it replaces. O-1 listed `docs/06` and YT-0124; it did not list the player, and the player was the part users would see.
 - **Grep for the vocabulary of the old model** — here, `earned`, `so far`, `accrued`. Superseded models leave their words behind in UI copy and comments long after the logic changes.
 - The worst instance is always in **user-facing copy**, because that is where a stale model becomes a promise. A user who watches twenty-eight minutes believing they have banked something, and receives nothing, has been misled by us rather than disappointed by a rule.
+
+## Prove a wiring by breaking it, not by counting greens
+
+`apps/api`'s six repositories were swapped from in-memory maps to Postgres and **96 tests went green**. That number is worthless on its own — it is exactly what the in-memory version produced the day before. So the database URL was pointed at a dead host and the suite re-run: **23 tests failed.** _That_ is the evidence the wiring works, and it took one command.
+
+The general form: **when you replace an implementation, the passing suite cannot distinguish the new one from the old one.** Only a deliberate break can. This is the same move as the planted `stripe` import, the re-introduced Cerbos schema bug, the sabotaged manifest URL and the deliberately-wrong payment driver — five times now, and every one found something a green run could not have.
+
+Two things fell out of the same ticket that are worth generalising:
+
+- **A guarded fallback is still the path every test takes.** The idempotency store's in-memory branch was blocked in production, so it looked handled — but while it existed, every test used it, and an `INSERT ... ON CONFLICT DO NOTHING` exercised only as a `Map` proves nothing about the statement that does the work. **Delete the fallback; do not guard it.**
+- **"No constraints fired" deserves the same scrutiny as a failure.** The conversion was expected to be unpleasant and was not, and the reason was checked rather than assumed: the Drizzle schema already matched the migration column for column. So the honest claim is narrower than the ticket hoped — _the queries execute at all now_ — and the value arrives on the **next** schema change.

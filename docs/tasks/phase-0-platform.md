@@ -267,6 +267,10 @@
 ### YT-0547 · Test isolation: one database per package, not one lock per file
 `todo` · P0 · platform · 2d · dep: YT-0516
 
+- **Second instance 2026-09-20: `apps/api` now carries `fileParallelism: false` too**, for the same reason — every file writes to one shared database and the cleanup helper empties it, so a parallel worker has its rows deleted mid-test. Two packages now carry the same workaround, and **removing the flag from both is what proves the isolation**
+- [ ] ⚠️ **Fold two setup rules into a shared convention rather than each suite’s memory.** Both recurred three times, in three packages, with the same person making the same omission twice:
+  - **Cleanup runs at the START of a group, not only at the end.** A test that fails part-way leaves rows behind, and the next run collides on a primary key and fails for a reason unrelated to what it tests — **a real failure buried under a fake one**
+  - **`hookTimeout` must be set, not `testTimeout`.** Vitest times hooks separately, and the expensive work — booting Nest, running a seed — is exactly what lives in a hook, so raising the test timeout protects every assertion and misses the only slow thing in the file
 - **Why this exists.** `packages/db/vitest.config.ts` sets `fileParallelism: false` with the comment _"a parallel worker writing the same ledger rows would make failures unreproducible"_. That serialises files **within** the package and nothing else — `turbo run test` runs `@yourtal/db` and `@yourtal/api` concurrently against the **same Postgres**, so the tests were never alone with the database whatever the comment claimed. The stopgap is `--concurrency=1` in `pnpm verify`, which is correct and slow; slow gates stop being run
 - [ ] Each package that touches Postgres gets its **own database**, created and dropped by its own setup
 - [ ] `fileParallelism: false` is then removable — and removing it is the proof the isolation is real
@@ -315,7 +319,19 @@
 - [ ] ⚠️ **This is defence in depth and must not be described as the control.** The server refuses regardless — checkpoint tokens at randomised timestamps cannot be scrubbed for, and per-segment delivery logs show the middle was never fetched. The reason to fix the client anyway is that **a UI which appears to reward scrubbing teaches people to try**, and `docs/22` is a catalogue of controls that were believed rather than exercised
 
 ### YT-0552 · Wire `apps/api` repositories to Postgres
-`todo` · P0 · platform · 4d · dep: YT-0527, YT-0518
+`review` · P0 · platform · 4d · dep: YT-0527, YT-0518
+
+**Done. 96 `apps/api` tests now execute real SQL; `pnpm verify` 11/11, 1959 tests, lint 11/11.**
+
+- [x] **Every in-memory repository deleted**, not kept behind a flag. `business.module.ts`'s `databaseUrl ? Drizzle : InMemory` branch is gone and `DATABASE_URL` is **required** by `env.schema.ts`, so a misconfigured deployment fails at boot instead of silently serving fakes — the same rule the driver seam applies to `live` without a credential
+- [x] **The idempotency store had the same shape**, and worse. Its in-memory branch was already guarded against production, but `DATABASE_URL` becoming required made it unreachable code that still advertised an option — and while it existed, every test took it. An `INSERT ... ON CONFLICT DO NOTHING` exercised only as a `Map` proves nothing. Removed
+- [x] **Proved the tests actually reach Postgres rather than trusting a green run.** Pointed `DATABASE_URL` at a dead host: **23 tests fail**. A suite that passes either way would have been the same green-but-empty shape one layer along
+- [x] Suite runs in `integration.yml` against real Postgres with the existing no-SKIP assertion
+- [x] **Role separation exercised, not assumed.** Tests connect as `yourtal_app`, so a missing grant fails here rather than in production
+- [x] `fileParallelism: false` and `hookTimeout: 30_000` on the package: every file now writes to one shared database, and `testTimeout` does not cover hooks — the hook is where a Nest app boots. YT-0547 is the real fix, at which point removing the serial flag is the proof the isolation is genuine
+- [x] **Repeatability wired before it bit.** Every converted suite clears the business tables in `beforeAll` — at the START, not only the end. Proved by three consecutive green runs
+- [ ] ⚠️ **No constraint fired, and that is worth stating plainly rather than claiming a win.** The Drizzle schema already matched the migration column-for-column, so the conversion surfaced no mismatch. The value delivered is that the queries now execute at all — the next schema change is the one this would have caught, and previously would not have
+- [ ] ⚠️ **Only the `business` module exists.** Campaign, watch and reward modules have no API surface yet, so "wire `apps/api` to Postgres" is complete for what exists rather than for the eventual backend
 
 - **The API boots and routes respond — against in-memory repositories.** So seven controllers, every Drizzle line and every schema constraint are **typechecked but never executed**, and the tests exercise fakes. This is the same green-but-empty shape catalogued in `docs/13c`, sitting under the whole backend rather than under one gate
 - [ ] Each in-memory repository is replaced by a Postgres-backed one; the in-memory versions are **deleted, not kept as a fallback** — a fallback is the thing tests quietly select
@@ -323,3 +339,13 @@
 - [ ] ⚠️ **Expect constraints to fire that unit tests never could.** Unique indexes, composite foreign keys, the ledger balance trigger and the append-only grants are all invisible to an in-memory map — finding them now is the point of the ticket, not a setback
 - [ ] ⚠️ **Role separation is exercised, not assumed:** the app role has no DELETE on frozen tables, and a test that needs cleanup uses the owner connection rather than widening a grant for convenience
 - [ ] This is what lets `apps/web` stop mocking, so it is the join between the two halves of the build rather than backend housekeeping
+
+### YT-0553 · API surface for campaign and watch
+`todo` · P0 · platform · 4d · dep: YT-0552, YT-0101, YT-0120
+
+- **The models exist and nothing can reach them.** YT-0101 built the campaign lifecycle and YT-0120 the watch session, both with real tables and real rules — but `apps/api/src/modules/` contains only `business`. **This is the join between the two halves of the build**: until these routes exist, `apps/web` keeps reading mocks and the backend keeps being proved only by its own tests
+- [ ] Campaign read routes serve what the public pages and the Earn board actually need, derived status included — never the authoring state
+- [ ] Watch session start / progress / completion, with completion decided **server-side by coverage** per O-4. The client reports; it does not conclude
+- [ ] Authorization through the same `PrincipalService.resolve()` and `pdp.requireAction(...)` seam every existing route uses, so YT-0500 still changes only the body of `resolve()`
+- [ ] ⚠️ **Prove the wiring by breaking it**, per YT-0552: point the database at a dead host and confirm these routes fail. A suite that passes either way is testing nothing, and that is the failure this project has found seven times
+- [ ] ⚠️ **Until this lands, every `apps/web` screen is unverified against real data.** The UI is substantially built; it has just never met the backend

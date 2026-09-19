@@ -168,3 +168,25 @@ A test asserted that a presented question carrying a smuggled `correctAnswer` wo
 The general rule: **at a boundary that protects a secret, prefer the control that degrades to safe over the one that degrades to an exception.** Strictness is the right instinct for input validation, where a throw means a request is refused. It is the wrong instinct on the way out, where a throw means somebody writes a fallback.
 
 The same ticket has the better version of the guard itself: the answer-key test walks **all five question types against an exported field list** rather than two hand-picked names, so a sixth type with a new kind of key **fails** rather than passing unnoticed. A guard enumerated by hand only protects what its author remembered.
+
+## A CHECK constraint that looks total is not, because NULL is not FALSE
+
+The PII screening gate was written as:
+
+```sql
+CHECK (status <> 'approved' OR pii_screen = 'clear')
+```
+
+When `pii_screen` is NULL — a question **nobody has screened at all** — `pii_screen = 'clear'` is NULL, so the whole expression is `FALSE OR NULL` = NULL. **A Postgres CHECK passes on NULL; only an explicit FALSE fails it.**
+
+So the constraint correctly refused `needs_review` and `rejected`, and cheerfully allowed the unscreened case — **the most common state, and the exact one the control exists for.** Rejecting two of three wrong values is why it read as correct in review.
+
+**The general form: any `CHECK (a <> x OR b = y)` where `b` is nullable has this hole.** Three-valued logic means a constraint can look exhaustive over a column's values and be silent on its absence. Either add `b IS NOT NULL AND ...`, or make the column `NOT NULL` so the question cannot arise.
+
+It was found by writing the **refusal** rather than the happy path — the sixth time that has turned something up. The happy-path test would have passed: a screened, approved question is allowed, which is true and proves nothing about the case that mattered.
+
+## Migration versions are a shared resource with no allocator
+
+Three version collisions in about fifteen minutes — on 14, 15 and 18 — because sequential small integers mean two sessions both reach for "the next number" and both are right. The file numbering carries no information about who is holding what.
+
+**Convention: a migration version is a wall-clock stamp, `YYYYMMDDHHMMSS`.** Two sessions can then only collide by starting within the same second, and the ordering still reflects when the work happened. Rename unapplied migrations to match; **leave applied ones alone**, because renaming a migration Atlas has already hashed is worse than an ugly number.

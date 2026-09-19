@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
+import { MOCK_MERCHANTS } from "@yourtal/contracts/merchant/roster";
 import {
   MERCHANT_ONLY_VOUCHER_CODE,
   MERCHANT_PROVISIONING_CODE,
@@ -46,53 +47,61 @@ import {
  * rendered Wallet page ever shows), which a real customer could not do.
  */
 test.describe("Redeem journey", () => {
-  test("a real wallet voucher's rotating QR renders, but the same voucher cannot be successfully redeemed at any provisionable counter device", async ({
+  test("a voucher taken from the wallet redeems at a provisionable counter device", async ({
     page,
   }) => {
+    // Nothing is pinned by id. Changing a mock generator shifts the seeded
+    // faker's draw order and every downstream id with it, which is exactly
+    // how the previous version of this spec broke. Discover the voucher the
+    // way a customer meets it: open the wallet, take the first one.
     await page.goto("/wallet");
-
-    const voucherLink = page.locator(`a[href="/wallet/voucher/${WALLET_VOUCHER_ID}"]`);
-    await expect(voucherLink, "the fixture voucher must be visible in the wallet").toBeVisible();
+    const voucherLink = page.locator('a[href^="/wallet/voucher/"]').first();
+    await expect(voucherLink, "the wallet should hold at least one voucher").toBeVisible();
     await voucherLink.click();
-    await expect(page).toHaveURL(`/wallet/voucher/${WALLET_VOUCHER_ID}`);
+    await expect(page).toHaveURL(/\/wallet\/voucher\/[0-9a-f-]{36}$/);
 
-    // The rotating QR (YT-0424's own acceptance surface) actually renders.
     const qrImage = page.getByRole("img", { name: /Kode QR redeem voucher/ });
     await expect(qrImage).toBeVisible();
     await expect(qrImage).toHaveAttribute("src", /^data:image\/png;base64,/);
 
-    // SEAM DEFECT: the plain code is never shown as text anywhere on this
-    // page — only encoded into the QR image above.
-    await expect(page.getByText(WALLET_VOUCHER_CODE)).toHaveCount(0);
+    // Read the code off the page, not out of a fixture. A fixture-sourced
+    // code would prove the merchant portal works while saying nothing about
+    // whether a customer can actually supply one — which was the real gap
+    // here until the code was rendered as text.
+    const code = (await page.locator("span.select-all").first().innerText()).trim();
+    expect(code, "the wallet must show a code a customer can read out").toMatch(/^\S{4,}$/);
 
-    // Fresh counter device, provisioned from scratch in this same browser
-    // context (real form submission, real cookie set by the real Server
-    // Action).
-    await provisionMerchantDevice(page);
+    // A customer takes their voucher to the shop that issued it, so the
+    // counter under test is that merchant's — not a fixed one. Read the
+    // merchant off the voucher and look its counter up in the shared roster,
+    // which is the same source the mock generators draw from.
+    const merchantName = (await page.getByRole("heading", { level: 1 }).innerText()).trim();
+    const merchant = MOCK_MERCHANTS.find((candidate) => merchantName.includes(candidate.name));
+    expect(
+      merchant,
+      `voucher merchant "${merchantName}" must be on the shared roster — if it is not, the mock generators and the roster have drifted apart again`,
+    ).toBeDefined();
 
-    await enterVoucherCodeManually(page, WALLET_VOUCHER_CODE);
+    await provisionMerchantDevice(page, merchant!.provisioningCode);
+    await enterVoucherCodeManually(page, code);
     await page.getByRole("button", { name: "Konfirmasi redeem" }).click();
 
-    // Never claims success before capture: SOME processing phase is
-    // observable before any outcome renders. (Each phase is only visible
-    // for `PROCESSING_PHASE_DELAY_MS` — 400ms — so under load this suite
-    // may catch either phase, not necessarily both in sequence; what
-    // matters for the acceptance criterion is that an outcome never
-    // appears without a processing phase having been shown first.)
+    // Never claims success before capture: a processing phase must be
+    // observable before any outcome renders.
     await expect(page.getByText(/Memverifikasi voucher…|Menyelesaikan redeem…/)).toBeVisible();
 
-    // The actual, honest outcome: a wrong-merchant refusal, never a
-    // success — this is the seam defect, reproduced end to end.
-    await expect(page.getByRole("alert")).toBeVisible();
-    await expect(page.getByText("Voucher untuk toko lain")).toBeVisible();
-    await expect(page.getByText(/Voucher ini untuk .+, bukan Toko Berkah\./)).toBeVisible();
-    await expect(page.getByText("Berhasil di-redeem")).toHaveCount(0);
+    // The loop closes. A voucher the user holds is redeemable at a counter.
+    // This asserted a `wrong_merchant` refusal until the shared merchant
+    // roster landed: wallet vouchers and provisionable devices drew from
+    // disjoint id sets, so earn -> spend -> redeem could never complete.
+    await expect(page.getByText("Berhasil di-redeem")).toBeVisible();
+    await expect(page.getByText("Voucher untuk toko lain")).toHaveCount(0);
   });
 
   test("a voucher whose merchant genuinely matches the counter device redeems successfully, and never claims success before both processing phases complete", async ({
     page,
   }) => {
-    await provisionMerchantDevice(page);
+    await provisionMerchantDevice(page, MERCHANT_PROVISIONING_CODE);
 
     // `attemptRedemption` deliberately simulates a transient network
     // failure for ~1/12 of idempotency keys (`merchant-redemption.ts`), so
@@ -143,11 +152,11 @@ test.describe("Redeem journey", () => {
   });
 });
 
-async function provisionMerchantDevice(page: Page): Promise<void> {
+async function provisionMerchantDevice(page: Page, provisioningCode: string): Promise<void> {
   await page.goto("/merchant");
   const codeInput = page.getByLabel(/Provisioning code/i);
   if (await codeInput.isVisible().catch(() => false)) {
-    await codeInput.fill(MERCHANT_PROVISIONING_CODE);
+    await codeInput.fill(provisioningCode);
     await page.getByLabel(/digit PIN/i).fill(MERCHANT_PROVISIONING_PIN);
     await page.getByLabel(/Confirm PIN/i).fill(MERCHANT_PROVISIONING_PIN);
     await page.getByRole("button", { name: /Pair this device/i }).click();

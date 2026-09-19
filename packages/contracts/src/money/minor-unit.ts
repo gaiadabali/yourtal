@@ -23,28 +23,23 @@ import type { Currency } from "./currency";
  * unit we store; a parity test compares them. None of that works if the
  * exponent is a constant welded to the amount.
  *
- * ## `status` is the YT-0506 question, made machine-readable
+ * ## `status` records whether a unit is evidenced, not whether it is guessed
  *
- * `docs/12` section 3, `docs/18` and YT-0041's acceptance criteria all say
- * IDR is stored in sen. `money.ts`, `money-format.ts`, every mock literal
- * and a passing test named "stores IDR as Rupiah, not sen, until YT-0506
- * settles" all say Rupiah. The evidence does not settle it either: ISO 4217
- * gives IDR a sen minor unit, Stripe (our AU processor) treats it as
- * two-decimal, Adyen explicitly flags IDR as diverging from ISO, and
- * **Xendit — the Indonesian processor, the one that matters — publishes
- * nothing.**
+ * IDR was `provisional` here while YT-0506 was open. The founder settled it
+ * on 2026-09-20 — **IDR has a sen minor unit and we store it, exponent 2** —
+ * so the entry is now `confirmed` and `assertUnitSettled` lets IDR through.
  *
- * So `IDR` is recorded below as exponent 0 with status `provisional`.
+ * The field stays because it earned its keep. While IDR was provisional,
+ * `assertUnitSettled` blocked settlement and left display working, which is
+ * what let the rest of the platform proceed without anyone guessing. The next
+ * currency will arrive unevidenced too.
  *
- * **Exponent 0 is a description of what the code does today, not a vote.**
- * It is what `money-format.ts` renders, what every mock literal is scaled
- * for, and what `schema-registry.ts` tells every generated Go client. Naming
- * it here changes no behaviour; it moves the caveat out of four prose
- * comments that a compiler cannot read and into one value that it can.
- *
- * Until YT-0506 closes, `assertUnitSettled` refuses IDR on the settlement
- * path while display carries on unchanged — which is YT-0513's "AUD proceeds
- * while IDR stays blocked", enforced rather than remembered.
+ * **What the decision did NOT settle is what Xendit accepts**, and that was
+ * always the second question. Adyen flags IDR as diverging from ISO precisely
+ * because processors differ, so the conversion belongs in each PSP adapter
+ * rather than in a constant here — which is what YT-0537 already encodes by
+ * making the money unit a declared property of the driver. This table says
+ * what we STORE. A driver says what it SPEAKS. A parity test compares them.
  */
 export interface MinorUnit {
   /** Decimal places in the stored integer: 2 means the integer is cents. */
@@ -69,16 +64,16 @@ export const MINOR_UNIT: Record<Currency, MinorUnit> = {
       "disputes this, so nothing here is waiting on anyone.",
   },
   IDR: {
-    exponent: 0,
-    status: "provisional",
+    exponent: 2,
+    status: "confirmed",
     evidence:
-      "UNSETTLED — YT-0506. Exponent 0 records what this codebase does today " +
-      "(money-format.ts does not divide IDR; every mock literal is scaled as whole " +
-      "Rupiah; schema-registry.ts tells Go clients the minor unit IS one Rupiah). " +
-      "It is not a decision: ISO 4217 says sen, Stripe treats IDR as two-decimal, " +
-      "Adyen flags IDR as diverging from its own table, and Xendit publishes no " +
-      "amount-unit spec at all. A wrong answer is uniformly 100x and silent, so " +
-      "this must be evidenced against the Xendit contract or sandbox, not reasoned out.",
+      "FOUNDER DECISION, 2026-09-20 (YT-0506): IDR has a sen minor unit and we store it. " +
+      "Sen is uncommon in daily use but banking uses it — amounts appear as Rp 1.000,26. " +
+      "This matches ISO 4217 and Stripe's treatment, and restores the original intent of " +
+      "docs/12, docs/18 and YT-0041. SETTLES THE CURRENCY, NOT THE PROCESSOR: what Xendit's " +
+      "API accepts is still unconfirmed, and Adyen flags IDR as diverging from ISO precisely " +
+      "because processors differ. That conversion belongs in each PSP adapter, which is what " +
+      "YT-0537 encodes by making the unit a declared property of the payment driver.",
   },
 };
 

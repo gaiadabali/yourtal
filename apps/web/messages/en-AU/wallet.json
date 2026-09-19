@@ -26,7 +26,8 @@
     "qrLabel": "Redemption QR code for {merchantName}",
     "codeAutoRefresh": "Code refreshes automatically",
     "secondsRemaining": "{seconds}s remaining",
-    "refreshCountdownLabel": "Time until the QR code refreshes"
+    "refreshCountdownLabel": "Time until the QR code refreshes",
+    "manualCodeLabel": "Or read this code to the cashier:"
   },
   "redemption": {
     "balanceCarrying": "If your purchase is less than the voucher's value, the remainder is kept for next time.",

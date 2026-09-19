@@ -26,7 +26,8 @@
     "qrLabel": "Kode QR redeem voucher {merchantName}",
     "codeAutoRefresh": "Kode diperbarui otomatis",
     "secondsRemaining": "{seconds} detik lagi",
-    "refreshCountdownLabel": "Waktu sebelum kode QR diperbarui"
+    "refreshCountdownLabel": "Waktu sebelum kode QR diperbarui",
+    "manualCodeLabel": "Atau sebutkan kode ini ke kasir:"
   },
   "redemption": {
     "balanceCarrying": "Kalau belanjamu kurang dari nilai voucher, sisanya tetap tersimpan untuk dipakai lain kali.",

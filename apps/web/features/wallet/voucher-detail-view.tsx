@@ -90,6 +90,21 @@ export function VoucherDetailView({ voucherId, initialDetail }: VoucherDetailVie
                 secondsUntilRotation={rotation.secondsUntilRotation}
                 rotationIntervalSeconds={QR_ROTATION_INTERVAL_MS / 1000}
               />
+              {/* The code as readable text, not only encoded in the QR above.
+                  The merchant portal treats manual entry as a first-class path
+                  precisely because cameras fail — bad light, a cracked screen,
+                  a browser without BarcodeDetector. Until this was shown, a
+                  customer in that situation had nothing to read out and the
+                  fallback was unreachable from their side. `select-all` and a
+                  monospaced face so it can be read aloud or copied without
+                  transcription errors between similar glyphs. */}
+              <p className="text-center font-sans text-sm text-fg-muted">
+                {t("voucher.manualCodeLabel")}
+                <br />
+                <span className="select-all font-mono text-lg tracking-widest text-fg">
+                  {detail.code}
+                </span>
+              </p>
             </>
           ) : (
             <VoucherArchivedPanel

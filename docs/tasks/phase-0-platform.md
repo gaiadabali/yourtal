@@ -254,3 +254,14 @@
 - [ ] `fileParallelism: false` is then removable — and removing it is the proof the isolation is real
 - [ ] `pnpm verify` drops `--concurrency=1` and the whole gate parallelises again
 - [ ] ⚠️ **The failure mode to design against is the diagnosis, not the flake.** This surfaced as `Hook timed out in 10000ms` in a `beforeAll`, which reads as a slow database rather than as two packages colliding. A test that fails for a reason its message does not name is one that gets rerun until it passes
+
+### YT-0548 · Storage for campaign chapters and video source
+`todo` · P0 · media · 3d · dep: YT-0503
+
+- **Found by the contracts↔migrations drift gate on its first run**, and confirmed against the live database: `campaign.campaigns` has 13 columns and **neither `chapters` nor `videoSource`**. Both are **required** in `campaignSchema`, so **every row in that table today is unparseable as a `Campaign`** — the database cannot produce a valid one. It is invisible only because Phase U reads mocks; it becomes a total outage of the watch flow the moment a real API serves a campaign
+- [ ] `campaign.chapter` stores `(campaign_id, ordinal, title, start_seconds, reward_weight)` — **no `end_seconds` column.** A chapter's end is the next chapter's start, or the campaign's duration for the last; storing it is the derived-value bug, and the contract already refuses to carry it
+- [ ] UNIQUE `(campaign_id, ordinal)`, and a constraint that `start_seconds` strictly ascends and the first is `0`. Out-of-order chapters are a reward-allocation bug, not a display bug
+- [ ] `reward_weight` is stored; **per-chapter point values are never stored** — they derive from the campaign's `reward_points`, which stays the single total
+- [ ] Video source stored as `kind` plus its fields with a CHECK, so the discriminated union stays additive — an `mp4` fallback later must not alter the `hls` shape already in use
+- [ ] A campaign with zero chapters cannot exist in the database if the contract requires at least one. **If that turns out to be wrong for Quick campaigns, the contract is wrong and should say so** — do not relax the constraint to match an accident
+- [ ] The `fieldsAwaitingStorage` entry for these two fields is **removed** in the same pass. The gate asserts its own gap set, so closing a gap without deleting its line fails — which is the point

@@ -18,12 +18,6 @@ import { DrizzleBusinessAccountRepository } from "./persistence/drizzle-business
 import { DrizzleBusinessMemberRepository } from "./persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "./persistence/drizzle-business-onboarding.unit-of-work";
 import { DrizzleKybDocumentRepository } from "./persistence/drizzle-kyb-document.repository";
-import { InMemoryBillingContactRepository } from "./persistence/in-memory-billing-contact.repository";
-import { InMemoryBusinessAccountRepository } from "./persistence/in-memory-business-account.repository";
-import { InMemoryBusinessMemberRepository } from "./persistence/in-memory-business-member.repository";
-import { InMemoryBusinessOnboardingUnitOfWork } from "./persistence/in-memory-business-onboarding.unit-of-work";
-import { InMemoryBusinessStore } from "./persistence/in-memory-business-store";
-import { InMemoryKybDocumentRepository } from "./persistence/in-memory-kyb-document.repository";
 import { KYB_DOCUMENT_REPOSITORY } from "./persistence/kyb-document.repository";
 import { TeamDirectoryController } from "./team-directory.controller";
 import { TeamInviteController } from "./team-invite.controller";
@@ -32,11 +26,19 @@ import { TeamMemberController } from "./team-member.controller";
 const BUSINESS_DB = Symbol("BUSINESS_DB");
 
 /**
- * THE swap point for YT-0022: every repository below picks the Drizzle
- * implementation when `AppConfig.databaseUrl` is set, and the in-memory one
- * otherwise. All in-memory implementations share one `InMemoryBusinessStore`
- * instance so a business created through one repository is visible through
- * the others — see that class's doc comment.
+ * Every repository is Postgres-backed. YT-0552.
+ *
+ * This used to branch: Drizzle when `AppConfig.databaseUrl` was set, and an
+ * in-memory store otherwise. The effect was that the whole backend could run
+ * — and its tests pass — without a single line of SQL ever executing. The
+ * in-memory implementations are deleted rather than kept behind a flag,
+ * because a fallback is the thing tests quietly select, and a fallback that
+ * only engages when configuration is missing engages precisely when nobody
+ * is looking.
+ *
+ * `databaseUrl` is required by `env.schema.ts`, so a misconfigured
+ * deployment fails at boot rather than serving fakes. Same rule as the
+ * driver seam: `live` without its credential does not fall back either.
  */
 @Module({
   imports: [AuthzModule, PdpClientModule],
@@ -52,44 +54,33 @@ const BUSINESS_DB = Symbol("BUSINESS_DB");
   providers: [
     {
       provide: BUSINESS_DB,
-      useFactory: (config: AppConfig): BusinessDb | null =>
-        config.databaseUrl ? createBusinessDb(config.databaseUrl) : null,
+      useFactory: (config: AppConfig): BusinessDb => createBusinessDb(config.databaseUrl),
       inject: [APP_CONFIG],
     },
-    { provide: InMemoryBusinessStore, useClass: InMemoryBusinessStore },
     {
       provide: BUSINESS_ACCOUNT_REPOSITORY,
-      useFactory: (db: BusinessDb | null, store: InMemoryBusinessStore) =>
-        db
-          ? new DrizzleBusinessAccountRepository(db)
-          : new InMemoryBusinessAccountRepository(store),
-      inject: [BUSINESS_DB, InMemoryBusinessStore],
+      useFactory: (db: BusinessDb) => new DrizzleBusinessAccountRepository(db),
+      inject: [BUSINESS_DB],
     },
     {
       provide: BUSINESS_MEMBER_REPOSITORY,
-      useFactory: (db: BusinessDb | null, store: InMemoryBusinessStore) =>
-        db ? new DrizzleBusinessMemberRepository(db) : new InMemoryBusinessMemberRepository(store),
-      inject: [BUSINESS_DB, InMemoryBusinessStore],
+      useFactory: (db: BusinessDb) => new DrizzleBusinessMemberRepository(db),
+      inject: [BUSINESS_DB],
     },
     {
       provide: BILLING_CONTACT_REPOSITORY,
-      useFactory: (db: BusinessDb | null, store: InMemoryBusinessStore) =>
-        db ? new DrizzleBillingContactRepository(db) : new InMemoryBillingContactRepository(store),
-      inject: [BUSINESS_DB, InMemoryBusinessStore],
+      useFactory: (db: BusinessDb) => new DrizzleBillingContactRepository(db),
+      inject: [BUSINESS_DB],
     },
     {
       provide: KYB_DOCUMENT_REPOSITORY,
-      useFactory: (db: BusinessDb | null, store: InMemoryBusinessStore) =>
-        db ? new DrizzleKybDocumentRepository(db) : new InMemoryKybDocumentRepository(store),
-      inject: [BUSINESS_DB, InMemoryBusinessStore],
+      useFactory: (db: BusinessDb) => new DrizzleKybDocumentRepository(db),
+      inject: [BUSINESS_DB],
     },
     {
       provide: BUSINESS_ONBOARDING_UNIT_OF_WORK,
-      useFactory: (db: BusinessDb | null, store: InMemoryBusinessStore) =>
-        db
-          ? new DrizzleBusinessOnboardingUnitOfWork(db)
-          : new InMemoryBusinessOnboardingUnitOfWork(store),
-      inject: [BUSINESS_DB, InMemoryBusinessStore],
+      useFactory: (db: BusinessDb) => new DrizzleBusinessOnboardingUnitOfWork(db),
+      inject: [BUSINESS_DB],
     },
   ],
 })

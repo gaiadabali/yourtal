@@ -138,6 +138,27 @@ async function seedCampaigns(pool: pg.Pool): Promise<number> {
  * that actually proves it.
  */
 async function seedCampaignCreative(pool: pg.Pool, campaign: Campaign): Promise<void> {
+  // Version 1 of the terms, derived from the campaign's own fields (YT-0101).
+  // Not optional scaffolding: `watch.session` carries a composite foreign key
+  // to (campaign_id, terms_version), so a campaign with no terms row cannot
+  // be watched at all. A seeded catalogue nobody can start a session against
+  // would look complete and be useless.
+  await pool.query(
+    `INSERT INTO campaign.terms_version
+       (campaign_id, version, reward_points, question_count, scoring_rule,
+        duration_seconds, effective_from)
+     VALUES ($1, 1, $2, $3, $4, $5, $6)
+     ON CONFLICT (campaign_id, version) DO NOTHING`,
+    [
+      campaign.id,
+      campaign.rewardPoints,
+      campaign.questionCount,
+      campaign.scoringRule,
+      campaign.durationSeconds,
+      campaign.publishedAt,
+    ],
+  );
+
   for (const [ordinal, chapter] of campaign.chapters.entries()) {
     await pool.query(
       `INSERT INTO campaign.chapter (campaign_id, ordinal, title, start_seconds, reward_weight)

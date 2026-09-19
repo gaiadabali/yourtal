@@ -7,7 +7,7 @@
     "migrate": "node scripts/atlas.mjs apply",
     "migrate:status": "node scripts/atlas.mjs status",
     "migrate:hash": "node scripts/atlas.mjs hash",
-    "seed": "node --import @swc-node/register/esm-register src/seed.ts",
+    "seed": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/seed.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint src"

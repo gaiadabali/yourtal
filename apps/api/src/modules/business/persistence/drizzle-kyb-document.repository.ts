@@ -4,7 +4,11 @@ import type { BusinessDb } from "./drizzle-client";
 import type { KybDocumentRepository, SubmitKybDocumentInput } from "./kyb-document.repository";
 import { kybDocuments } from "./schema/kyb-document.table";
 
-/** UNTESTED against a live Postgres — see `drizzle-client.ts`. */
+/**
+ * Verified against a live Postgres — YT-0552. `submit-kyb-document.use-case.test.ts`
+ * exercises `submit` and `listByBusiness` through `business-db.test-helper.ts`'s
+ * real connection, including the `kyb_documents_verified_has_reviewer` CHECK.
+ */
 export class DrizzleKybDocumentRepository implements KybDocumentRepository {
   constructor(private readonly db: BusinessDb) {}
 

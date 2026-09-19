@@ -6,10 +6,20 @@ import { z } from "zod";
  * malformed variable fails fast at boot rather than as a runtime `undefined`
  * three layers deep in a use-case.
  *
- * `DATABASE_URL` is optional on purpose: YT-0022 (Postgres provisioning) is
- * blocked on GCP, so there is no live database to point this at yet. When it
- * is absent, `business.module.ts` wires the in-memory repositories instead
- * of the Drizzle ones — see that file for the swap point.
+ * `DATABASE_URL` is REQUIRED as of YT-0552, and that change is the ticket.
+ *
+ * It was optional, and `business.module.ts` wired in-memory repositories
+ * when it was absent. The effect was that the API booted, seven controllers
+ * responded, every test passed — and **nothing ever executed a line of SQL**.
+ * Every Drizzle query and every schema constraint was typechecked and never
+ * run: the green-but-empty shape in `docs/13c`, sitting under the whole
+ * backend rather than under one gate.
+ *
+ * A fallback is the thing tests quietly select. Making the variable required
+ * means a misconfigured deployment fails at boot instead of silently serving
+ * an in-memory fake — the same rule the driver seam enforces for `live`
+ * without a credential (YT-0535), and for the same reason: a silent fallback
+ * is indistinguishable from working until it matters.
  */
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -26,8 +36,8 @@ export const envSchema = z.object({
   PDP_BASE_URL: z.url().default("http://127.0.0.1:26592"),
   PDP_TIMEOUT_MS: z.coerce.number().int().positive().default(500),
 
-  /** Absent until YT-0022 provisions Postgres. See the doc comment above. */
-  DATABASE_URL: z.url().optional(),
+  /** Required. See the doc comment above for why this is not optional. */
+  DATABASE_URL: z.url(),
 });
 
 export type Env = z.infer<typeof envSchema>;

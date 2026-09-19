@@ -8,14 +8,31 @@ import {
   kybDocumentTypeSchema,
 } from "../business/kyb-document";
 import { questionOptionSchema, questionSchema } from "../question/question";
+import { errorResponseSchema } from "../http/error-response";
 import type { ContractComponent } from "./schema-registry";
 
 /**
  * The business- and question-domain half of `CONTRACT_COMPONENTS`, split
  * out of `schema-registry.ts` purely to stay under the 300-line ceiling —
  * see that file for what this list means and how it is checked.
+ *
+ * `ErrorResponse` lives in this half for the same reason, not because it is
+ * a business-domain type: `schema-registry.ts` is already at its ceiling and
+ * this file has the room. See `../http/error-response.ts`.
  */
 export const BUSINESS_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
+  // --- http (cross-cutting; see the note above on why it is registered here) ---
+  {
+    id: "ErrorResponse",
+    schema: errorResponseSchema,
+    description:
+      "The error body every business-domain and authorization failure returns (YT-0552): " +
+      "to-http-exception.ts and authz-error.mapper.ts both build exactly this shape. NOT the " +
+      "shape of a request-body validation failure — nestjs-zod's ZodValidationPipe throws its own " +
+      "exception before either mapper runs; see route-registry.ts's VALIDATION_400.",
+    crossFieldRules: [],
+  },
+
   // --- business ---
   {
     id: "BusinessRole",

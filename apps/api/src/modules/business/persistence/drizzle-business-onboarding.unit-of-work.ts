@@ -9,7 +9,17 @@ import type { BusinessDb } from "./drizzle-client";
 import { businessAccounts } from "./schema/business-account.table";
 import { businessMembers } from "./schema/business-member.table";
 
-/** UNTESTED against a live Postgres — see `drizzle-client.ts`. */
+/**
+ * Verified against a live Postgres — YT-0552. The commit path is covered by
+ * every use-case test that calls `createBusiness`; the rollback path — that
+ * a failure partway through `db.transaction` actually undoes the first
+ * insert, not just that the use-case maps a rejected Promise to a `Result`
+ * — is covered directly in
+ * `drizzle-business-onboarding.unit-of-work.test.ts`, which fails the
+ * `business_members` insert for real (a NUL byte in `ownerUserId`, which
+ * Postgres text columns reject) and confirms the `business_accounts` row
+ * from the same call never persists.
+ */
 export class DrizzleBusinessOnboardingUnitOfWork implements BusinessOnboardingUnitOfWork {
   constructor(private readonly db: BusinessDb) {}
 

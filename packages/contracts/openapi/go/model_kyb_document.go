@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031). Do not edit by hand.  This document carries SCHEMAS ONLY. `paths` is empty because no API surface exists yet — endpoints arrive with apps/api (YT-0100 onward), and each will be added here as it is built.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -26,11 +27,10 @@ type KybDocument struct {
 	DocumentType KybDocumentType `json:"documentType"`
 	StorageRef string `json:"storageRef"`
 	Status KybDocumentStatus `json:"status"`
-	ExpiresAt BusinessMemberJoinedAt `json:"expiresAt"`
+	ExpiresAt NullableTime `json:"expiresAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z|([+-](?:[01]\\\\d|2[0-3]):[0-5]\\\\d)))$"`
 	SubmittedAt time.Time `json:"submittedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z|([+-](?:[01]\\\\d|2[0-3]):[0-5]\\\\d)))$"`
-	VerifiedAt BusinessMemberJoinedAt `json:"verifiedAt"`
-	VerifiedByUserId KybDocumentVerifiedByUserId `json:"verifiedByUserId"`
-	AdditionalProperties map[string]interface{}
+	VerifiedAt NullableTime `json:"verifiedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z|([+-](?:[01]\\\\d|2[0-3]):[0-5]\\\\d)))$"`
+	VerifiedByUserId NullableString `json:"verifiedByUserId"`
 }
 
 type _KybDocument KybDocument
@@ -39,7 +39,7 @@ type _KybDocument KybDocument
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewKybDocument(id string, businessId string, documentType KybDocumentType, storageRef string, status KybDocumentStatus, expiresAt BusinessMemberJoinedAt, submittedAt time.Time, verifiedAt BusinessMemberJoinedAt, verifiedByUserId KybDocumentVerifiedByUserId) *KybDocument {
+func NewKybDocument(id string, businessId string, documentType KybDocumentType, storageRef string, status KybDocumentStatus, expiresAt NullableTime, submittedAt time.Time, verifiedAt NullableTime, verifiedByUserId NullableString) *KybDocument {
 	this := KybDocument{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -182,27 +182,29 @@ func (o *KybDocument) SetStatus(v KybDocumentStatus) {
 }
 
 // GetExpiresAt returns the ExpiresAt field value
-func (o *KybDocument) GetExpiresAt() BusinessMemberJoinedAt {
-	if o == nil {
-		var ret BusinessMemberJoinedAt
+// If the value is explicit nil, the zero value for time.Time will be returned
+func (o *KybDocument) GetExpiresAt() time.Time {
+	if o == nil || o.ExpiresAt.Get() == nil {
+		var ret time.Time
 		return ret
 	}
 
-	return o.ExpiresAt
+	return *o.ExpiresAt.Get()
 }
 
 // GetExpiresAtOk returns a tuple with the ExpiresAt field value
 // and a boolean to check if the value has been set.
-func (o *KybDocument) GetExpiresAtOk() (*BusinessMemberJoinedAt, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *KybDocument) GetExpiresAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ExpiresAt, true
+	return o.ExpiresAt.Get(), o.ExpiresAt.IsSet()
 }
 
 // SetExpiresAt sets field value
-func (o *KybDocument) SetExpiresAt(v BusinessMemberJoinedAt) {
-	o.ExpiresAt = v
+func (o *KybDocument) SetExpiresAt(v time.Time) {
+	o.ExpiresAt.Set(&v)
 }
 
 // GetSubmittedAt returns the SubmittedAt field value
@@ -230,51 +232,55 @@ func (o *KybDocument) SetSubmittedAt(v time.Time) {
 }
 
 // GetVerifiedAt returns the VerifiedAt field value
-func (o *KybDocument) GetVerifiedAt() BusinessMemberJoinedAt {
-	if o == nil {
-		var ret BusinessMemberJoinedAt
+// If the value is explicit nil, the zero value for time.Time will be returned
+func (o *KybDocument) GetVerifiedAt() time.Time {
+	if o == nil || o.VerifiedAt.Get() == nil {
+		var ret time.Time
 		return ret
 	}
 
-	return o.VerifiedAt
+	return *o.VerifiedAt.Get()
 }
 
 // GetVerifiedAtOk returns a tuple with the VerifiedAt field value
 // and a boolean to check if the value has been set.
-func (o *KybDocument) GetVerifiedAtOk() (*BusinessMemberJoinedAt, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *KybDocument) GetVerifiedAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.VerifiedAt, true
+	return o.VerifiedAt.Get(), o.VerifiedAt.IsSet()
 }
 
 // SetVerifiedAt sets field value
-func (o *KybDocument) SetVerifiedAt(v BusinessMemberJoinedAt) {
-	o.VerifiedAt = v
+func (o *KybDocument) SetVerifiedAt(v time.Time) {
+	o.VerifiedAt.Set(&v)
 }
 
 // GetVerifiedByUserId returns the VerifiedByUserId field value
-func (o *KybDocument) GetVerifiedByUserId() KybDocumentVerifiedByUserId {
-	if o == nil {
-		var ret KybDocumentVerifiedByUserId
+// If the value is explicit nil, the zero value for string will be returned
+func (o *KybDocument) GetVerifiedByUserId() string {
+	if o == nil || o.VerifiedByUserId.Get() == nil {
+		var ret string
 		return ret
 	}
 
-	return o.VerifiedByUserId
+	return *o.VerifiedByUserId.Get()
 }
 
 // GetVerifiedByUserIdOk returns a tuple with the VerifiedByUserId field value
 // and a boolean to check if the value has been set.
-func (o *KybDocument) GetVerifiedByUserIdOk() (*KybDocumentVerifiedByUserId, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *KybDocument) GetVerifiedByUserIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.VerifiedByUserId, true
+	return o.VerifiedByUserId.Get(), o.VerifiedByUserId.IsSet()
 }
 
 // SetVerifiedByUserId sets field value
-func (o *KybDocument) SetVerifiedByUserId(v KybDocumentVerifiedByUserId) {
-	o.VerifiedByUserId = v
+func (o *KybDocument) SetVerifiedByUserId(v string) {
+	o.VerifiedByUserId.Set(&v)
 }
 
 func (o KybDocument) MarshalJSON() ([]byte, error) {
@@ -292,15 +298,10 @@ func (o KybDocument) ToMap() (map[string]interface{}, error) {
 	toSerialize["documentType"] = o.DocumentType
 	toSerialize["storageRef"] = o.StorageRef
 	toSerialize["status"] = o.Status
-	toSerialize["expiresAt"] = o.ExpiresAt
+	toSerialize["expiresAt"] = o.ExpiresAt.Get()
 	toSerialize["submittedAt"] = o.SubmittedAt
-	toSerialize["verifiedAt"] = o.VerifiedAt
-	toSerialize["verifiedByUserId"] = o.VerifiedByUserId
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
+	toSerialize["verifiedAt"] = o.VerifiedAt.Get()
+	toSerialize["verifiedByUserId"] = o.VerifiedByUserId.Get()
 	return toSerialize, nil
 }
 
@@ -336,28 +337,15 @@ func (o *KybDocument) UnmarshalJSON(data []byte) (err error) {
 
 	varKybDocument := _KybDocument{}
 
-	err = json.Unmarshal(data, &varKybDocument)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varKybDocument)
 
 	if err != nil {
 		return err
 	}
 
 	*o = KybDocument(varKybDocument)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "businessId")
-		delete(additionalProperties, "documentType")
-		delete(additionalProperties, "storageRef")
-		delete(additionalProperties, "status")
-		delete(additionalProperties, "expiresAt")
-		delete(additionalProperties, "submittedAt")
-		delete(additionalProperties, "verifiedAt")
-		delete(additionalProperties, "verifiedByUserId")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

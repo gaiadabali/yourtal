@@ -75,3 +75,14 @@ CREATE TABLE ledger.daily_proof (
   last_entry_id  bigint,
   computed_at    timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE ledger.backing_rate (
+  id                           text        PRIMARY KEY,
+  currency                     char(3)     NOT NULL,
+  micros_per_point             bigint      NOT NULL,
+  issue_price_micros_per_point bigint      NOT NULL,
+  effective_from               timestamptz NOT NULL,
+  reason                       text        NOT NULL,
+  set_by                       text        NOT NULL,
+  created_at                   timestamptz NOT NULL DEFAULT now()
+);

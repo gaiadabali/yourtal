@@ -2,14 +2,26 @@ import { Module } from "@nestjs/common";
 import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { AppConfigModule } from "./config/app-config.module";
 import { BusinessModule } from "./modules/business/business.module";
+import { CampaignModule } from "./modules/campaign/campaign.module";
+import { WatchModule } from "./modules/watch/watch.module";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
+import { HealthModule } from "./shared/health/health.module";
 import { IdempotencyInterceptor } from "./shared/idempotency/idempotency.interceptor";
 import { IdempotencyModule } from "./shared/idempotency/idempotency.module";
 import { PdpClientModule } from "./shared/pdp/pdp-client.module";
 
 @Module({
-  imports: [AppConfigModule, PdpClientModule, AuthzModule, IdempotencyModule, BusinessModule],
+  imports: [
+    AppConfigModule,
+    PdpClientModule,
+    AuthzModule,
+    IdempotencyModule,
+    HealthModule,
+    BusinessModule,
+    CampaignModule,
+    WatchModule,
+  ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying
   // @Idempotent, and mutating-routes.test.ts is what ensures none is missing.

@@ -7,7 +7,12 @@ import type {
 import type { BusinessDb } from "./drizzle-client";
 import { billingContacts } from "./schema/billing-contact.table";
 
-/** UNTESTED against a live Postgres — see `drizzle-client.ts`. */
+/**
+ * Verified against a live Postgres — YT-0552.
+ * `set-billing-contact.use-case.test.ts` / `get-billing-contact.use-case.test.ts`
+ * exercise `upsert` and `findByBusiness` through `business-db.test-helper.ts`'s
+ * real connection; not a fake.
+ */
 export class DrizzleBillingContactRepository implements BillingContactRepository {
   constructor(private readonly db: BusinessDb) {}
 

@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031). Do not edit by hand.  This document carries SCHEMAS ONLY. `paths` is empty because no API surface exists yet — endpoints arrive with apps/api (YT-0100 onward), and each will be added here as it is built.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -26,7 +27,6 @@ type BillingContact struct {
 	Email string `json:"email" validate:"regexp=^(?:[A-Za-z0-9_'+\\\\-]+\\\\.)*[A-Za-z0-9_'+\\\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\\\-]*\\\\.)+[A-Za-z]{2,}$"`
 	Phone string `json:"phone" validate:"regexp=^\\\\+[1-9]\\\\d{6,14}$"`
 	UpdatedAt time.Time `json:"updatedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z|([+-](?:[01]\\\\d|2[0-3]):[0-5]\\\\d)))$"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _BillingContact BillingContact
@@ -188,11 +188,6 @@ func (o BillingContact) ToMap() (map[string]interface{}, error) {
 	toSerialize["email"] = o.Email
 	toSerialize["phone"] = o.Phone
 	toSerialize["updatedAt"] = o.UpdatedAt
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -224,24 +219,15 @@ func (o *BillingContact) UnmarshalJSON(data []byte) (err error) {
 
 	varBillingContact := _BillingContact{}
 
-	err = json.Unmarshal(data, &varBillingContact)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varBillingContact)
 
 	if err != nil {
 		return err
 	}
 
 	*o = BillingContact(varBillingContact)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "businessId")
-		delete(additionalProperties, "name")
-		delete(additionalProperties, "email")
-		delete(additionalProperties, "phone")
-		delete(additionalProperties, "updatedAt")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

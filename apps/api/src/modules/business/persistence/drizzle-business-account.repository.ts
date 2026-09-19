@@ -5,7 +5,12 @@ import type { BusinessAccountRepository } from "./business-account.repository";
 import type { BusinessDb } from "./drizzle-client";
 import { businessAccounts } from "./schema/business-account.table";
 
-/** UNTESTED against a live Postgres — see `drizzle-client.ts`. */
+/**
+ * Verified against a live Postgres — YT-0552.
+ * `create-business.use-case.test.ts` reads a row back through `findById`
+ * after a real INSERT via `DrizzleBusinessOnboardingUnitOfWork` and asserts
+ * it round-trips, using `business-db.test-helper.ts`'s real connection.
+ */
 export class DrizzleBusinessAccountRepository implements BusinessAccountRepository {
   constructor(private readonly db: BusinessDb) {}
 

@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031). Do not edit by hand.  This document carries SCHEMAS ONLY. `paths` is empty because no API surface exists yet — endpoints arrive with apps/api (YT-0100 onward), and each will be added here as it is built.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -26,8 +27,7 @@ type BusinessMember struct {
 	Role BusinessTeamRole `json:"role"`
 	InvitedAt time.Time `json:"invitedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z|([+-](?:[01]\\\\d|2[0-3]):[0-5]\\\\d)))$"`
 	InvitedByUserId string `json:"invitedByUserId"`
-	JoinedAt BusinessMemberJoinedAt `json:"joinedAt"`
-	AdditionalProperties map[string]interface{}
+	JoinedAt NullableTime `json:"joinedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z|([+-](?:[01]\\\\d|2[0-3]):[0-5]\\\\d)))$"`
 }
 
 type _BusinessMember BusinessMember
@@ -36,7 +36,7 @@ type _BusinessMember BusinessMember
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBusinessMember(businessId string, userId string, role BusinessTeamRole, invitedAt time.Time, invitedByUserId string, joinedAt BusinessMemberJoinedAt) *BusinessMember {
+func NewBusinessMember(businessId string, userId string, role BusinessTeamRole, invitedAt time.Time, invitedByUserId string, joinedAt NullableTime) *BusinessMember {
 	this := BusinessMember{}
 	this.BusinessId = businessId
 	this.UserId = userId
@@ -176,27 +176,29 @@ func (o *BusinessMember) SetInvitedByUserId(v string) {
 }
 
 // GetJoinedAt returns the JoinedAt field value
-func (o *BusinessMember) GetJoinedAt() BusinessMemberJoinedAt {
-	if o == nil {
-		var ret BusinessMemberJoinedAt
+// If the value is explicit nil, the zero value for time.Time will be returned
+func (o *BusinessMember) GetJoinedAt() time.Time {
+	if o == nil || o.JoinedAt.Get() == nil {
+		var ret time.Time
 		return ret
 	}
 
-	return o.JoinedAt
+	return *o.JoinedAt.Get()
 }
 
 // GetJoinedAtOk returns a tuple with the JoinedAt field value
 // and a boolean to check if the value has been set.
-func (o *BusinessMember) GetJoinedAtOk() (*BusinessMemberJoinedAt, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *BusinessMember) GetJoinedAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.JoinedAt, true
+	return o.JoinedAt.Get(), o.JoinedAt.IsSet()
 }
 
 // SetJoinedAt sets field value
-func (o *BusinessMember) SetJoinedAt(v BusinessMemberJoinedAt) {
-	o.JoinedAt = v
+func (o *BusinessMember) SetJoinedAt(v time.Time) {
+	o.JoinedAt.Set(&v)
 }
 
 func (o BusinessMember) MarshalJSON() ([]byte, error) {
@@ -214,12 +216,7 @@ func (o BusinessMember) ToMap() (map[string]interface{}, error) {
 	toSerialize["role"] = o.Role
 	toSerialize["invitedAt"] = o.InvitedAt
 	toSerialize["invitedByUserId"] = o.InvitedByUserId
-	toSerialize["joinedAt"] = o.JoinedAt
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
+	toSerialize["joinedAt"] = o.JoinedAt.Get()
 	return toSerialize, nil
 }
 
@@ -252,25 +249,15 @@ func (o *BusinessMember) UnmarshalJSON(data []byte) (err error) {
 
 	varBusinessMember := _BusinessMember{}
 
-	err = json.Unmarshal(data, &varBusinessMember)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varBusinessMember)
 
 	if err != nil {
 		return err
 	}
 
 	*o = BusinessMember(varBusinessMember)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "businessId")
-		delete(additionalProperties, "userId")
-		delete(additionalProperties, "role")
-		delete(additionalProperties, "invitedAt")
-		delete(additionalProperties, "invitedByUserId")
-		delete(additionalProperties, "joinedAt")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

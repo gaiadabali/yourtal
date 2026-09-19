@@ -65,8 +65,16 @@ export type ReportVerdict =
 
 export type ReportRefusal =
   | { readonly kind: "not_forward"; readonly detail: string }
-  | { readonly kind: "faster_than_realtime"; readonly claimedSeconds: number; readonly elapsedSeconds: number }
-  | { readonly kind: "beyond_duration"; readonly toSeconds: number; readonly durationSeconds: number }
+  | {
+      readonly kind: "faster_than_realtime";
+      readonly claimedSeconds: number;
+      readonly elapsedSeconds: number;
+    }
+  | {
+      readonly kind: "beyond_duration";
+      readonly toSeconds: number;
+      readonly durationSeconds: number;
+    }
   | { readonly kind: "sub_second"; readonly detail: string };
 
 export interface ReportContext {

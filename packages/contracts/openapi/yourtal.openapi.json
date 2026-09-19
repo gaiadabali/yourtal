@@ -3,9 +3,926 @@
   "info": {
     "title": "YourTal contracts",
     "version": "0.0.0",
-    "description": "Generated from the Zod schemas in @yourtal/contracts (YT-0031). Do not edit by hand.\n\nThis document carries SCHEMAS ONLY. `paths` is empty because no API surface exists yet — endpoints arrive with apps/api (YT-0100 onward), and each will be added here as it is built.\n\nCross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule."
+    "description": "Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.\n\n`paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.\n\nCross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule."
   },
-  "paths": {},
+  "paths": {
+    "/api/businesses": {
+      "post": {
+        "summary": "Create a business and its founding owner",
+        "tags": [
+          "business"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The new business's onboarding details.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "legalName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "district": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "roles": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "advertiser",
+                        "supplier",
+                        "redeemer"
+                      ]
+                    }
+                  },
+                  "logoUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "legalName",
+                  "displayName",
+                  "district",
+                  "roles"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The business was created, with the caller as its Owner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "A business and its founding Owner membership, created together (docs/17 section 2.1).",
+                  "properties": {
+                    "business": {
+                      "$ref": "#/components/schemas/Business"
+                    },
+                    "owner": {
+                      "$ref": "#/components/schemas/BusinessMember"
+                    }
+                  },
+                  "required": [
+                    "business",
+                    "owner"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/business": {
+      "get": {
+        "summary": "Get a business's profile",
+        "tags": [
+          "business"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The business profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "The business plus onboarding counts. kybDocumentCount/memberCount are counts, not the lists themselves — those are separate endpoints (GET .../team, GET .../kyb-documents).",
+                  "properties": {
+                    "business": {
+                      "$ref": "#/components/schemas/Business"
+                    },
+                    "billingContact": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/BillingContact"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "kybDocumentCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "memberCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "business",
+                    "billingContact",
+                    "kybDocumentCount",
+                    "memberCount"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/business/team": {
+      "get": {
+        "summary": "List a business's team",
+        "tags": [
+          "business",
+          "team"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every member of this business's team.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusinessMember"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/business/team/invite": {
+      "post": {
+        "summary": "Invite a member to a business's team",
+        "tags": [
+          "business",
+          "team"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Who to invite and the role to grant.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "marketer",
+                      "merchandiser",
+                      "finance",
+                      "analyst"
+                    ]
+                  }
+                },
+                "required": [
+                  "userId",
+                  "role"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new membership.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessMember"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This userId is already a member of this business (to-http-exception.ts's member_already_exists).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/business/team/{userId}/role": {
+      "patch": {
+        "summary": "Change a team member's role",
+        "tags": [
+          "business",
+          "team"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "The member being changed, targeted by their platform user id.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The role to set. Never `owner` — see grantableRoleSchema.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "marketer",
+                      "merchandiser",
+                      "finance",
+                      "analyst"
+                    ]
+                  }
+                },
+                "required": [
+                  "role"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The member's updated record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessMember"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found). OR: No member with this userId on this business (to-http-exception.ts's member_not_found). Reuses the same 404 slot as BUSINESS_NOT_FOUND for routes where either can occur — the envelope is identical, only `code` differs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/business/team/{userId}": {
+      "delete": {
+        "summary": "Remove a team member",
+        "tags": [
+          "business",
+          "team"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "The member being changed, targeted by their platform user id.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The member was removed (or already was not present — this route is idempotent).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "removed"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The target is the business's owner; ownership moves only through transfer_ownership (to-http-exception.ts's cannot_remove_owner). Not a validation failure — there is no request body on this route — so this 400, unlike VALIDATION_400 below, carries the real ErrorResponse envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found). OR: No member with this userId on this business (to-http-exception.ts's member_not_found). Reuses the same 404 slot as BUSINESS_NOT_FOUND for routes where either can occur — the envelope is identical, only `code` differs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/business/billing-contact": {
+      "get": {
+        "summary": "Get a business's billing contact",
+        "tags": [
+          "business",
+          "billing"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The billing contact, or null if none has been set yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/BillingContact"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace a business's billing contact",
+        "tags": [
+          "business",
+          "billing"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "A full replacement of the billing contact (idempotent PUT — see @NotValueMoving).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^\\+[1-9]\\d{6,14}$"
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "phone"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The billing contact as stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingContact"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/business/kyb-documents": {
+      "get": {
+        "summary": "List a business's submitted KYB documents",
+        "tags": [
+          "business",
+          "kyb"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every KYB document this business has submitted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KybDocument"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Submit a KYB document",
+        "tags": [
+          "business",
+          "kyb"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The document type and a reference to its stored bytes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentType": {
+                    "type": "string",
+                    "enum": [
+                      "business_registration_certificate",
+                      "tax_registration_number",
+                      "director_identity",
+                      "proof_of_address"
+                    ]
+                  },
+                  "storageRef": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "expiresAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "documentType",
+                  "storageRef"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The submitted document, in `submitted` status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KybDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this tenantId (to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "components": {
     "schemas": {
       "Balance": {
@@ -508,6 +1425,25 @@
           "AUD",
           "IDR"
         ]
+      },
+      "ErrorResponse": {
+        "description": "The error body every business-domain and authorization failure returns (YT-0552): to-http-exception.ts and authz-error.mapper.ts both build exactly this shape. NOT the shape of a request-body validation failure — nestjs-zod's ZodValidationPipe throws its own exception before either mapper runs; see route-registry.ts's VALIDATION_400.",
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
       },
       "IdrMinorUnits": {
         "description": "Indonesian Rupiah as an integer number of SEN — one hundredth of a Rupiah. Rp 45.000 is 4500000. Settled by YT-0506 on 2026-09-20: ISO 4217 gives IDR a sen minor unit, Indonesian banking uses it (amounts appear as Rp 1.000,26), and Stripe treats IDR as two-decimal. This settles what we STORE, not what a processor accepts: Xendit publishes no amount-unit spec and Adyen flags IDR as diverging from ISO, so conversion belongs in each PSP adapter. Prefer Money, which carries its own currency.",
@@ -1253,6 +2189,110 @@
           "expiry",
           "reversal",
           "adjustment"
+        ]
+      },
+      "WatchProgressReport": {
+        "description": "One span of playback a client claims to have played. `reportedAt` is the client's clock and is recorded for audit only: the server judges a report against its OWN clock, because a claim of more playback than time has passed is arithmetically impossible rather than merely suspicious.",
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "fromSeconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "toSeconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "reportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "sessionId",
+          "fromSeconds",
+          "toSeconds",
+          "reportedAt"
+        ],
+        "additionalProperties": false
+      },
+      "WatchSession": {
+        "description": "A viewer's attempt at a campaign, held server-side so resuming is a property of the account rather than of a device (YT-0120). Carries the terms version it entered under, so an advertiser editing a live campaign cannot change what someone already watching is owed. Completion is decided by playback COVERAGE, never by the playhead — see decision O-4.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "campaignId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "termsVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "state": {
+            "$ref": "#/components/schemas/WatchSessionState"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "lastProgressAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "completedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "campaignId",
+          "termsVersion",
+          "state",
+          "startedAt",
+          "lastProgressAt",
+          "completedAt"
+        ],
+        "additionalProperties": false
+      },
+      "WatchSessionState": {
+        "description": "A watch attempt's state (YT-0120). `superseded` is kept rather than deleted because an abandoned attempt's coverage is evidence; `void` is terminal and never pays.",
+        "type": "string",
+        "enum": [
+          "active",
+          "completed",
+          "superseded",
+          "void"
         ]
       }
     }

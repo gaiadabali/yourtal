@@ -1,18 +1,32 @@
-import { describe, expect, it } from "vitest";
-import { InMemoryBusinessAccountRepository } from "../persistence/in-memory-business-account.repository";
-import { InMemoryBusinessMemberRepository } from "../persistence/in-memory-business-member.repository";
-import { InMemoryBusinessOnboardingUnitOfWork } from "../persistence/in-memory-business-onboarding.unit-of-work";
-import { InMemoryBusinessStore } from "../persistence/in-memory-business-store";
+import { describe, expect, it, beforeAll } from "vitest";
+import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
+import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business-member.repository";
+import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
+import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { createBusiness } from "./create-business.use-case";
 import { inviteMember } from "./invite-member.use-case";
 import { listTeam } from "./list-team.use-case";
 
+/**
+ * A clean start, not only a clean finish.
+ *
+ * These tests share one database (the package runs serially for that
+ * reason). A run that fails part-way leaves its rows behind, and the next
+ * one then trips a unique index and fails for a reason unrelated to what it
+ * tests — burying a real failure under a fake one. Clearing before is what
+ * makes the suite repeatable; clearing after only helps when the previous
+ * run got that far.
+ */
+beforeAll(async () => {
+  await clearBusinessTables(testBusinessDb());
+});
+
 describe("listTeam", () => {
   it("lists the owner plus any invited members", async () => {
-    const store = new InMemoryBusinessStore();
-    const businesses = new InMemoryBusinessAccountRepository(store);
-    const members = new InMemoryBusinessMemberRepository(store);
-    const unitOfWork = new InMemoryBusinessOnboardingUnitOfWork(store);
+    const db = testBusinessDb();
+    const businesses = new DrizzleBusinessAccountRepository(db);
+    const members = new DrizzleBusinessMemberRepository(db);
+    const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
     const created = await createBusiness(
       unitOfWork,
       {
@@ -43,9 +57,9 @@ describe("listTeam", () => {
   });
 
   it("rejects listing the team of a business that does not exist", async () => {
-    const store = new InMemoryBusinessStore();
-    const businesses = new InMemoryBusinessAccountRepository(store);
-    const members = new InMemoryBusinessMemberRepository(store);
+    const db = testBusinessDb();
+    const businesses = new DrizzleBusinessAccountRepository(db);
+    const members = new DrizzleBusinessMemberRepository(db);
 
     const result = await listTeam(businesses, members, "00000000-0000-4000-8000-000000000000");
 

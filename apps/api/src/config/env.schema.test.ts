@@ -18,7 +18,13 @@ import { envSchema } from "./env.schema";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 
 describe("PDP_BASE_URL's default agrees with docker-compose and .env.example", () => {
-  const schemaDefault = envSchema.parse({}).PDP_BASE_URL;
+  // `DATABASE_URL` is required since YT-0552, so the schema can no longer
+  // be parsed from nothing. Supplied here only so the PDP default can be
+  // read — this suite is about three copies of the Cerbos port, not about
+  // the database.
+  const schemaDefault = envSchema.parse({
+    DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+  }).PDP_BASE_URL;
 
   it("matches the host port docker-compose.yml maps Cerbos to", () => {
     const compose = readFileSync(path.join(repoRoot, "docker-compose.yml"), "utf8");

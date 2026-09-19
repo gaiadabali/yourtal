@@ -5,10 +5,11 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 export type BusinessDb = NodePgDatabase;
 
 /**
- * Only called when `AppConfig.databaseUrl` is set — see `business.module.ts`.
- * UNTESTED: YT-0022 has not provisioned Postgres, so nothing in this file
- * has run against a real database. It typechecks against the Drizzle/`pg`
- * APIs and nothing more; treat it as reviewed-but-unverified.
+ * `AppConfig.databaseUrl` for the running app (see `business.module.ts`);
+ * `TEST_DATABASE_URL` or the `yourtal_app` role for tests (see
+ * `business-db.test-helper.ts`). Postgres is provisioned as of YT-0552 and
+ * every repository built on this pool has been exercised against it — see
+ * the individual repository files and `drizzle-business-onboarding.unit-of-work.test.ts`.
  */
 export function createBusinessDb(databaseUrl: string): BusinessDb {
   const pool = new Pool({ connectionString: databaseUrl });

@@ -13,8 +13,8 @@ export interface AppConfig {
     readonly baseUrl: string;
     readonly timeoutMs: number;
   };
-  /** `undefined` until YT-0022 provisions Postgres — see `env.schema.ts`. */
-  readonly databaseUrl: string | undefined;
+  /** Required since YT-0552 — there is no in-memory fallback to select. */
+  readonly databaseUrl: string;
 }
 
 /**

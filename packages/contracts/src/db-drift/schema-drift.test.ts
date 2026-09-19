@@ -9,6 +9,7 @@ import { merchantLocationSchema } from "../listing/merchant-location";
 import { voucherSchema } from "../voucher/voucher";
 import { campaignTermsSchema } from "../campaign/campaign-terms";
 import { campaignRewardConfigSchema } from "../campaign/campaign-reward-config";
+import { watchSessionSchema } from "../watch/watch-session";
 
 /**
  * The contracts ↔ migrations drift gate.
@@ -224,6 +225,14 @@ const MAPPINGS: readonly Mapping[] = [
     name: "campaignRewardConfigSchema",
     schema: campaignRewardConfigSchema,
     table: "campaign.reward_config",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {},
+    columnsWithNoField: {},
+  },
+  {
+    name: "watchSessionSchema",
+    schema: watchSessionSchema,
+    table: "watch.session",
     fieldsAwaitingStorage: {},
     fieldsWithNoColumn: {},
     columnsWithNoField: {},

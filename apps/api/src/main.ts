@@ -12,9 +12,14 @@ import { loadAppConfig } from "./config/app-config";
  * registered exactly once, globally, so a new controller cannot forget it
  * (docs/13b section 3) — DTOs opt in by extending `createZodDto`.
  *
- * NOT exercised by this ticket's test suite: there is no live Cerbos sidecar
- * or Postgres to bind to in this environment, so this file is typechecked
- * but has not been run. See the ticket report.
+ * This DOES boot and bind to a live Cerbos sidecar and Postgres — the
+ * docker-compose stack in `docker-compose.yml` provides both on the 26xxx
+ * loopback ports `env.schema.ts` defaults to. The claim that neither existed
+ * in this environment was true only until they were provisioned; it is
+ * false now and was left uncorrected, which is its own small lesson about
+ * comments that record a snapshot instead of an invariant. `GET /api/health`
+ * (`shared/health/health.controller.ts`) is what proves both are reachable
+ * on any given boot, rather than a comment asserting it once.
  */
 async function bootstrap(): Promise<void> {
   const config = loadAppConfig();

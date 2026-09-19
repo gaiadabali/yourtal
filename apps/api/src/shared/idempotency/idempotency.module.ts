@@ -1,6 +1,5 @@
 import { Global, Inject, Module } from "@nestjs/common";
 import { Pool } from "pg";
-import { InMemoryIdempotencyStore } from "@yourtal/idempotency/in-memory-store";
 import { PostgresIdempotencyStore } from "@yourtal/idempotency/postgres-store";
 import type { IdempotencyStore } from "@yourtal/idempotency/store";
 import { AuthzModule } from "../authz/authz.module";
@@ -10,33 +9,27 @@ import type { AppConfig } from "../../config/app-config";
 export const IDEMPOTENCY_STORE = Symbol("IDEMPOTENCY_STORE");
 
 /**
- * Provides the idempotency store. YT-0039, durable since YT-0515.
+ * Provides the idempotency store. YT-0039, durable since YT-0515, and
+ * Postgres-only since YT-0552.
  *
- * With a `DATABASE_URL` this is the Postgres store, backed by
- * `platform.idempotency` from the YT-0518 migration. Without one it falls
- * back to the in-memory store so tests and a bare `pnpm dev` still run.
+ * Backed by `platform.idempotency` from the YT-0518 migration. There is no
+ * in-memory branch any more.
  *
- * **That fallback is a development convenience and nothing more.** The
- * in-memory store is per-process: two instances behind a load balancer each
- * keep their own map, so a retry landing on the other instance executes the
- * operation a second time. An idempotency store that is not shared is not an
- * idempotency store — which is why `selectStore` refuses to use it outside
- * development and test rather than logging a warning nobody reads.
+ * There used to be one, guarded so it could not be selected in production.
+ * The guard was correct and the branch was still wrong: `DATABASE_URL` is
+ * required as of YT-0552, so the fallback had become unreachable code that
+ * still advertised an option — and while it existed, every test in this app
+ * took it. An idempotency store exercised only as a `Map` proves nothing
+ * about the `INSERT ... ON CONFLICT DO NOTHING` that does the actual work.
+ *
+ * The reason it must not come back: the in-memory store is per-process. Two
+ * instances behind a load balancer each keep their own map, so a retry
+ * landing on the other one executes the operation a second time. An
+ * idempotency store that is not shared is not an idempotency store — the
+ * same reasoning YT-0540 records for throttling counters.
  */
 function selectStore(config: AppConfig): IdempotencyStore {
-  if (config.databaseUrl !== undefined) {
-    return new PostgresIdempotencyStore(new Pool({ connectionString: config.databaseUrl }));
-  }
-
-  if (config.nodeEnv === "production") {
-    throw new Error(
-      "No DATABASE_URL, so the idempotency store would be in-memory and per-process. " +
-        "Two instances would each keep their own map and a retry landing on the other " +
-        "would execute the operation twice. Set DATABASE_URL.",
-    );
-  }
-
-  return new InMemoryIdempotencyStore();
+  return new PostgresIdempotencyStore(new Pool({ connectionString: config.databaseUrl }));
 }
 
 @Global()

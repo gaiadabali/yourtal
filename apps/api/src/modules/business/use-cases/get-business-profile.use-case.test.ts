@@ -1,23 +1,37 @@
-import { describe, expect, it } from "vitest";
-import { InMemoryBillingContactRepository } from "../persistence/in-memory-billing-contact.repository";
-import { InMemoryBusinessAccountRepository } from "../persistence/in-memory-business-account.repository";
-import { InMemoryBusinessMemberRepository } from "../persistence/in-memory-business-member.repository";
-import { InMemoryBusinessOnboardingUnitOfWork } from "../persistence/in-memory-business-onboarding.unit-of-work";
-import { InMemoryBusinessStore } from "../persistence/in-memory-business-store";
-import { InMemoryKybDocumentRepository } from "../persistence/in-memory-kyb-document.repository";
+import { describe, expect, it, beforeAll } from "vitest";
+import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
+import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business-member.repository";
+import { DrizzleBillingContactRepository } from "../persistence/drizzle-billing-contact.repository";
+import { DrizzleKybDocumentRepository } from "../persistence/drizzle-kyb-document.repository";
+import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
+import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { createBusiness } from "./create-business.use-case";
 import { getBusinessProfile } from "./get-business-profile.use-case";
 import { setBillingContact } from "./set-billing-contact.use-case";
 import { submitKybDocument } from "./submit-kyb-document.use-case";
 
+/**
+ * A clean start, not only a clean finish.
+ *
+ * These tests share one database (the package runs serially for that
+ * reason). A run that fails part-way leaves its rows behind, and the next
+ * one then trips a unique index and fails for a reason unrelated to what it
+ * tests — burying a real failure under a fake one. Clearing before is what
+ * makes the suite repeatable; clearing after only helps when the previous
+ * run got that far.
+ */
+beforeAll(async () => {
+  await clearBusinessTables(testBusinessDb());
+});
+
 describe("getBusinessProfile", () => {
   it("aggregates the business, its billing contact, and its counts", async () => {
-    const store = new InMemoryBusinessStore();
-    const businesses = new InMemoryBusinessAccountRepository(store);
-    const members = new InMemoryBusinessMemberRepository(store);
-    const billingContacts = new InMemoryBillingContactRepository(store);
-    const kybDocuments = new InMemoryKybDocumentRepository(store);
-    const unitOfWork = new InMemoryBusinessOnboardingUnitOfWork(store);
+    const db = testBusinessDb();
+    const businesses = new DrizzleBusinessAccountRepository(db);
+    const members = new DrizzleBusinessMemberRepository(db);
+    const billingContacts = new DrizzleBillingContactRepository(db);
+    const kybDocuments = new DrizzleKybDocumentRepository(db);
+    const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
 
     const created = await createBusiness(
       unitOfWork,
@@ -65,11 +79,11 @@ describe("getBusinessProfile", () => {
   });
 
   it("rejects a profile lookup for a business that does not exist", async () => {
-    const store = new InMemoryBusinessStore();
-    const businesses = new InMemoryBusinessAccountRepository(store);
-    const members = new InMemoryBusinessMemberRepository(store);
-    const billingContacts = new InMemoryBillingContactRepository(store);
-    const kybDocuments = new InMemoryKybDocumentRepository(store);
+    const db = testBusinessDb();
+    const businesses = new DrizzleBusinessAccountRepository(db);
+    const members = new DrizzleBusinessMemberRepository(db);
+    const billingContacts = new DrizzleBillingContactRepository(db);
+    const kybDocuments = new DrizzleKybDocumentRepository(db);
 
     const result = await getBusinessProfile(
       businesses,

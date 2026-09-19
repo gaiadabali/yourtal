@@ -1,17 +1,31 @@
-import { describe, expect, it } from "vitest";
-import { InMemoryBillingContactRepository } from "../persistence/in-memory-billing-contact.repository";
-import { InMemoryBusinessAccountRepository } from "../persistence/in-memory-business-account.repository";
-import { InMemoryBusinessOnboardingUnitOfWork } from "../persistence/in-memory-business-onboarding.unit-of-work";
-import { InMemoryBusinessStore } from "../persistence/in-memory-business-store";
+import { describe, expect, it, beforeAll } from "vitest";
+import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
+import { DrizzleBillingContactRepository } from "../persistence/drizzle-billing-contact.repository";
+import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
+import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { createBusiness } from "./create-business.use-case";
 import { setBillingContact } from "./set-billing-contact.use-case";
 
+/**
+ * A clean start, not only a clean finish.
+ *
+ * These tests share one database (the package runs serially for that
+ * reason). A run that fails part-way leaves its rows behind, and the next
+ * one then trips a unique index and fails for a reason unrelated to what it
+ * tests — burying a real failure under a fake one. Clearing before is what
+ * makes the suite repeatable; clearing after only helps when the previous
+ * run got that far.
+ */
+beforeAll(async () => {
+  await clearBusinessTables(testBusinessDb());
+});
+
 describe("setBillingContact", () => {
   it("upserts the contact, replacing a previous one", async () => {
-    const store = new InMemoryBusinessStore();
-    const businesses = new InMemoryBusinessAccountRepository(store);
-    const billingContacts = new InMemoryBillingContactRepository(store);
-    const unitOfWork = new InMemoryBusinessOnboardingUnitOfWork(store);
+    const db = testBusinessDb();
+    const businesses = new DrizzleBusinessAccountRepository(db);
+    const billingContacts = new DrizzleBillingContactRepository(db);
+    const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
     const created = await createBusiness(
       unitOfWork,
       {
@@ -46,9 +60,9 @@ describe("setBillingContact", () => {
   });
 
   it("rejects setting a billing contact for a business that does not exist", async () => {
-    const store = new InMemoryBusinessStore();
-    const businesses = new InMemoryBusinessAccountRepository(store);
-    const billingContacts = new InMemoryBillingContactRepository(store);
+    const db = testBusinessDb();
+    const businesses = new DrizzleBusinessAccountRepository(db);
+    const billingContacts = new DrizzleBillingContactRepository(db);
 
     const result = await setBillingContact(businesses, billingContacts, {
       businessId: "00000000-0000-4000-8000-000000000000",

@@ -28,6 +28,17 @@ type LedgerAllocation struct {
 	CreatedAt       pgtype.Timestamptz
 }
 
+type LedgerBackingRate struct {
+	ID                       string
+	Currency                 string
+	MicrosPerPoint           int64
+	IssuePriceMicrosPerPoint int64
+	EffectiveFrom            pgtype.Timestamptz
+	Reason                   string
+	SetBy                    string
+	CreatedAt                pgtype.Timestamptz
+}
+
 type LedgerDailyProof struct {
 	ProofDate    pgtype.Date
 	MerkleRoot   string

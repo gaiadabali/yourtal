@@ -1,17 +1,17 @@
-import { describe, expect, it } from "vitest";
-import { InMemoryBusinessAccountRepository } from "../persistence/in-memory-business-account.repository";
-import { InMemoryBusinessOnboardingUnitOfWork } from "../persistence/in-memory-business-onboarding.unit-of-work";
-import { InMemoryBusinessStore } from "../persistence/in-memory-business-store";
-import { InMemoryKybDocumentRepository } from "../persistence/in-memory-kyb-document.repository";
+import { describe, expect, it, beforeAll } from "vitest";
+import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
+import { DrizzleKybDocumentRepository } from "../persistence/drizzle-kyb-document.repository";
+import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
+import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { createBusiness } from "./create-business.use-case";
 import { listKybDocuments } from "./list-kyb-documents.use-case";
 import { submitKybDocument } from "./submit-kyb-document.use-case";
 
 async function setup() {
-  const store = new InMemoryBusinessStore();
-  const businesses = new InMemoryBusinessAccountRepository(store);
-  const kybDocuments = new InMemoryKybDocumentRepository(store);
-  const unitOfWork = new InMemoryBusinessOnboardingUnitOfWork(store);
+  const db = testBusinessDb();
+  const businesses = new DrizzleBusinessAccountRepository(db);
+  const kybDocuments = new DrizzleKybDocumentRepository(db);
+  const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
   const created = await createBusiness(
     unitOfWork,
     {
@@ -26,6 +26,20 @@ async function setup() {
   const businessId = created._unsafeUnwrap().business.id;
   return { businesses, kybDocuments, businessId };
 }
+
+/**
+ * A clean start, not only a clean finish.
+ *
+ * These tests share one database (the package runs serially for that
+ * reason). A run that fails part-way leaves its rows behind, and the next
+ * one then trips a unique index and fails for a reason unrelated to what it
+ * tests — burying a real failure under a fake one. Clearing before is what
+ * makes the suite repeatable; clearing after only helps when the previous
+ * run got that far.
+ */
+beforeAll(async () => {
+  await clearBusinessTables(testBusinessDb());
+});
 
 describe("submitKybDocument", () => {
   it("records a submitted document with expiry tracked", async () => {
@@ -45,8 +59,8 @@ describe("submitKybDocument", () => {
 
   it("rejects submitting a document for a business that does not exist", async () => {
     const { kybDocuments } = await setup();
-    const store = new InMemoryBusinessStore();
-    const businesses = new InMemoryBusinessAccountRepository(store);
+    const db = testBusinessDb();
+    const businesses = new DrizzleBusinessAccountRepository(db);
 
     const result = await submitKybDocument(businesses, kybDocuments, {
       businessId: "00000000-0000-4000-8000-000000000000",

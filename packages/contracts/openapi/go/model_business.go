@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031). Do not edit by hand.  This document carries SCHEMAS ONLY. `paths` is empty because no API surface exists yet — endpoints arrive with apps/api (YT-0100 onward), and each will be added here as it is built.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -26,8 +27,7 @@ type Business struct {
 	District string `json:"district"`
 	Roles []BusinessRole `json:"roles"`
 	IsVerified bool `json:"isVerified"`
-	LogoUrl BusinessLogoUrl `json:"logoUrl"`
-	AdditionalProperties map[string]interface{}
+	LogoUrl NullableString `json:"logoUrl"`
 }
 
 type _Business Business
@@ -36,7 +36,7 @@ type _Business Business
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBusiness(id string, legalName string, displayName string, district string, roles []BusinessRole, isVerified bool, logoUrl BusinessLogoUrl) *Business {
+func NewBusiness(id string, legalName string, displayName string, district string, roles []BusinessRole, isVerified bool, logoUrl NullableString) *Business {
 	this := Business{}
 	this.Id = id
 	this.LegalName = legalName
@@ -201,27 +201,29 @@ func (o *Business) SetIsVerified(v bool) {
 }
 
 // GetLogoUrl returns the LogoUrl field value
-func (o *Business) GetLogoUrl() BusinessLogoUrl {
-	if o == nil {
-		var ret BusinessLogoUrl
+// If the value is explicit nil, the zero value for string will be returned
+func (o *Business) GetLogoUrl() string {
+	if o == nil || o.LogoUrl.Get() == nil {
+		var ret string
 		return ret
 	}
 
-	return o.LogoUrl
+	return *o.LogoUrl.Get()
 }
 
 // GetLogoUrlOk returns a tuple with the LogoUrl field value
 // and a boolean to check if the value has been set.
-func (o *Business) GetLogoUrlOk() (*BusinessLogoUrl, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Business) GetLogoUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.LogoUrl, true
+	return o.LogoUrl.Get(), o.LogoUrl.IsSet()
 }
 
 // SetLogoUrl sets field value
-func (o *Business) SetLogoUrl(v BusinessLogoUrl) {
-	o.LogoUrl = v
+func (o *Business) SetLogoUrl(v string) {
+	o.LogoUrl.Set(&v)
 }
 
 func (o Business) MarshalJSON() ([]byte, error) {
@@ -240,12 +242,7 @@ func (o Business) ToMap() (map[string]interface{}, error) {
 	toSerialize["district"] = o.District
 	toSerialize["roles"] = o.Roles
 	toSerialize["isVerified"] = o.IsVerified
-	toSerialize["logoUrl"] = o.LogoUrl
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
+	toSerialize["logoUrl"] = o.LogoUrl.Get()
 	return toSerialize, nil
 }
 
@@ -279,26 +276,15 @@ func (o *Business) UnmarshalJSON(data []byte) (err error) {
 
 	varBusiness := _Business{}
 
-	err = json.Unmarshal(data, &varBusiness)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varBusiness)
 
 	if err != nil {
 		return err
 	}
 
 	*o = Business(varBusiness)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "legalName")
-		delete(additionalProperties, "displayName")
-		delete(additionalProperties, "district")
-		delete(additionalProperties, "roles")
-		delete(additionalProperties, "isVerified")
-		delete(additionalProperties, "logoUrl")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

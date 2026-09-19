@@ -6,7 +6,9 @@ import { pgSchema } from "drizzle-orm/pg-core";
  * campaign, store and merchant modules get their own schemas when they
  * arrive, never a shared `public` table.
  *
- * Not yet applied anywhere: YT-0022 has not provisioned Postgres, so no
- * migration has been generated from this. See the ticket report.
+ * Applied by `packages/db/migrations/20260919000003_business.sql`
+ * (YT-0518), hand-written rather than generated from this file — see that
+ * migration's header for why the migration, not this schema, is the source
+ * of truth where the two could disagree.
  */
 export const businessPgSchema = pgSchema("business");

@@ -18,7 +18,6 @@
 // that name is not resolved automatically.
 
 import { spawnSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -32,9 +31,34 @@ const ATLAS_IMAGE =
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(packageRoot, "../..");
 
+// Shared env loading (YT-0552 follow-up, tracked in the .env-loader ticket).
+// This used to hand-roll a regex parse of the root `.env` here — the only
+// place in the repo that did, because nothing else loaded it either. Every
+// Node entrypoint now uses this same mechanism: `apps/api`'s dev/start
+// scripts pass `--env-file-if-exists=../../.env` to `node` itself, and this
+// script — which isn't spawned through a `node` CLI flag, since it's `node
+// scripts/atlas.mjs` invoked directly — calls the same underlying loader
+// programmatically. `process.loadEnvFile` is Node 22+, which `engines` in
+// the root `package.json` already requires.
+//
+// `-if-exists` semantics, done by hand: a missing `.env` (a deployed
+// environment, which passes real env vars instead) is not an error, so the
+// ENOENT from a fresh clone with no `.env` yet is swallowed. Any other
+// failure (a malformed file, a permissions error) is real and should not be
+// hidden behind a silent continue.
+//
+// Precedence is real process env wins over `.env` — this is Node's native
+// behaviour, not something this script implements: a variable already set
+// in `process.env` before this call is left untouched.
+try {
+  process.loadEnvFile(path.join(repoRoot, ".env"));
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
+
 const command = process.argv[2] ?? "status";
 
-const databaseUrl = resolveDatabaseUrl();
+const databaseUrl = process.env.DATABASE_URL;
 if (databaseUrl === undefined) {
   console.error(
     "No DATABASE_URL. Copy .env.example to .env and run `pnpm dev:up` from the repo root.",
@@ -104,20 +128,6 @@ if (result.error) {
   process.exit(1);
 }
 process.exit(result.status ?? 1);
-
-/** Reads DATABASE_URL from the environment, falling back to the repo .env. */
-function resolveDatabaseUrl() {
-  if (process.env.DATABASE_URL !== undefined) return process.env.DATABASE_URL;
-
-  const envFile = path.join(repoRoot, ".env");
-  if (!existsSync(envFile)) return undefined;
-
-  for (const line of readFileSync(envFile, "utf8").split("\n")) {
-    const match = /^\s*DATABASE_URL\s*=\s*(.+?)\s*$/.exec(line);
-    if (match?.[1] !== undefined) return match[1];
-  }
-  return undefined;
-}
 
 /**
  * 127.0.0.1 means the container itself; the host is host.docker.internal.

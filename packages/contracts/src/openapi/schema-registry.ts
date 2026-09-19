@@ -7,6 +7,8 @@ import {
   campaignFunderTypeSchema,
   campaignRewardConfigSchema,
 } from "../campaign/campaign-reward-config";
+import { watchSessionSchema, watchSessionStateSchema } from "../watch/watch-session";
+import { watchProgressReportSchema } from "../watch/watch-progress-report";
 import { regionSchema } from "../region/region";
 import {
   campaignKindSchema,
@@ -96,6 +98,28 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: moneySchema,
     description:
       "An integer amount that carries its own currency — Fowler's Money pattern per docs/12 section 3 (YT-0513). Deliberately carries NO minor-unit exponent: an amount can be stored, transported and added without one, and only rendering and settlement need it (see MINOR_UNIT). Prefer this over IdrMinorUnits, which names a currency it does not always hold.",
+    crossFieldRules: [],
+  },
+
+  {
+    id: "WatchSessionState",
+    schema: watchSessionStateSchema,
+    description:
+      "A watch attempt's state (YT-0120). `superseded` is kept rather than deleted because an abandoned attempt's coverage is evidence; `void` is terminal and never pays.",
+    crossFieldRules: [],
+  },
+  {
+    id: "WatchSession",
+    schema: watchSessionSchema,
+    description:
+      "A viewer's attempt at a campaign, held server-side so resuming is a property of the account rather than of a device (YT-0120). Carries the terms version it entered under, so an advertiser editing a live campaign cannot change what someone already watching is owed. Completion is decided by playback COVERAGE, never by the playhead — see decision O-4.",
+    crossFieldRules: [],
+  },
+  {
+    id: "WatchProgressReport",
+    schema: watchProgressReportSchema,
+    description:
+      "One span of playback a client claims to have played. `reportedAt` is the client's clock and is recorded for audit only: the server judges a report against its OWN clock, because a claim of more playback than time has passed is arithmetically impossible rather than merely suspicious.",
     crossFieldRules: [],
   },
 

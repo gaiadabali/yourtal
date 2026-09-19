@@ -8,7 +8,14 @@ import type {
 import type { BusinessDb } from "./drizzle-client";
 import { businessMembers } from "./schema/business-member.table";
 
-/** UNTESTED against a live Postgres — see `drizzle-client.ts`. */
+/**
+ * Verified against a live Postgres — YT-0552. `invite-member`,
+ * `change-member-role`, `remove-member` and `list-team` use-case tests each
+ * exercise a different method here (`addMember`, `updateRole`,
+ * `removeMember`, `listByBusiness`) through `business-db.test-helper.ts`'s
+ * real connection, including the unique-index and FK constraints a fake
+ * store could not enforce.
+ */
 export class DrizzleBusinessMemberRepository implements BusinessMemberRepository {
   constructor(private readonly db: BusinessDb) {}
 

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { CONTRACT_COMPONENTS } from "./schema-registry";
 import type { ContractComponent } from "./schema-registry";
+import { buildPaths } from "./route-registry";
+import { COMPONENT_REF_PREFIX, isRecord, widenSchemaObject } from "./json-schema-helpers";
 
 /**
  * Builds the OpenAPI 3.1 document from the Zod schemas. YT-0031.
@@ -13,15 +15,20 @@ import type { ContractComponent } from "./schema-registry";
  * would need lossy rewriting (nullable, exclusiveMinimum, const), and a lossy
  * step in a generator is how the document and the schemas drift while the
  * drift check still passes.
+ *
+ * `COMPONENT_REF_PREFIX`, `isRecord` and `widenSchemaObject` live in
+ * `json-schema-helpers.ts` and are re-exported here for this file's existing
+ * consumers (`openapi.test.ts`, `db-drift/schema-drift.test.ts`) — see that
+ * file's header for why they moved out: this module and `route-registry.ts`
+ * import each other, and a `const` shared across a circular import can hand
+ * the other side `undefined`.
  */
-
-/** OpenAPI keeps component schemas under this path; `$ref`s point at it. */
-const COMPONENT_REF_PREFIX = "#/components/schemas/";
+export { COMPONENT_REF_PREFIX, isRecord, widenSchemaObject } from "./json-schema-helpers";
 
 export interface OpenApiDocument {
   readonly openapi: "3.1.0";
   readonly info: { readonly title: string; readonly version: string; readonly description: string };
-  readonly paths: Readonly<Record<string, never>>;
+  readonly paths: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   readonly components: { readonly schemas: Readonly<Record<string, unknown>> };
 }
 
@@ -111,65 +118,22 @@ export function buildDocument(version: string): OpenApiDocument {
       title: "YourTal contracts",
       version,
       description:
-        "Generated from the Zod schemas in @yourtal/contracts (YT-0031). Do not edit by hand.\n\n" +
-        "This document carries SCHEMAS ONLY. `paths` is empty because no API surface exists yet — " +
-        "endpoints arrive with apps/api (YT-0100 onward), and each will be added here as it is built.\n\n" +
+        "Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory " +
+        "in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.\n\n" +
+        "`paths` covers every route the business module serves (apps/api/src/modules/business), " +
+        "hand-declared in route-registry.ts against the live controllers rather than generated from " +
+        "Nest decorators — apps/api has no decorator metadata rich enough to produce accurate " +
+        "request/response shapes on its own. NOT every route apps/api serves: the campaign and watch " +
+        "modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket " +
+        "did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE " +
+        "ledger for exactly which routes those are and why. That same test fails CI if a business-" +
+        "module controller route and a route-registry entry ever disagree, in either direction.\n\n" +
         "Cross-field rules are documented per component but NOT enforced by this document. Anything " +
         "that must enforce them has to run the Zod schema or re-implement and test the rule.",
     },
-    paths: {},
+    paths: buildPaths(),
     components: { schemas: components },
   };
-}
-
-/** Largest value a Go `int32` or a Java `int` can hold. */
-const INT32_MAX = 2_147_483_647;
-
-/**
- * Marks integers that do not fit in 32 bits as `format: "int64"`.
- *
- * This is not cosmetic. A JSON Schema `{"type": "integer"}` carries no width,
- * and every generator that has to pick one picks **int32** by default —
- * openapi-generator does, and so do most others. Our money types allow values
- * up to 10,000,000,000 (`docs/15`: every amount is an integer in its minor
- * unit, and for IDR the minor unit is 1 Rupiah). That is roughly five times
- * what an int32 holds.
- *
- * So without this, a generated Go struct declares `FaceValueIdr int32` for a
- * field whose own schema permits IDR 10 billion, and a legitimate value
- * silently overflows on the way in or out. A money field that truncates is
- * exactly the failure docs/13 section 4 puts in the must-have-tests list, and
- * it would have been introduced here, by a generator default, in a file nobody
- * reads because it says "DO NOT EDIT" at the top.
- *
- * Unbounded integers are widened too: no declared maximum means we cannot show
- * the value fits, and for a cross-language numeric type the safe assumption is
- * the wider one.
- */
-export function widenSchemaObject(schema: Record<string, unknown>): Record<string, unknown> {
-  const widened = widenLargeIntegers(schema);
-  // widenLargeIntegers preserves shape, so a record in is a record out. The
-  // guard is here because `as` is banned in this package (docs/13b section 2)
-  // and a fallback that cannot happen is cheaper than an assertion that lies.
-  return isRecord(widened) ? widened : schema;
-}
-
-function widenLargeIntegers(node: unknown): unknown {
-  if (Array.isArray(node)) return node.map(widenLargeIntegers);
-  if (!isRecord(node)) return node;
-
-  const widened: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(node)) {
-    widened[key] = widenLargeIntegers(value);
-  }
-
-  if (node.type === "integer" && node.format === undefined) {
-    const max = node.maximum;
-    if (typeof max !== "number" || max > INT32_MAX) {
-      widened.format = "int64";
-    }
-  }
-  return widened;
 }
 
 function stripJsonSchemaKeywords(schema: unknown): Record<string, unknown> {
@@ -178,17 +142,6 @@ function stripJsonSchemaKeywords(schema: unknown): Record<string, unknown> {
   }
   const { $schema: _schema, $id: _id, ...rest } = schema;
   return rest;
-}
-
-/**
- * Narrows to a plain object without a type assertion.
- *
- * `as` is banned outright in this package (docs/13b section 2) because it is
- * value-path code, so everything that walks the untyped JSON Schema output
- * goes through this instead.
- */
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /** Zod's internal definition node, or undefined if this is not a Zod schema. */

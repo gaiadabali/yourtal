@@ -49,15 +49,15 @@ const GenesisHash = "00000000000000000000000000000000000000000000000000000000000
 // Event types. A closed set, because an event type invented at a call site
 // is one no report groups and no dispute can be explained with.
 const (
-	TypeMinted     = "minted"
-	TypeAllocated  = "allocated"
-	TypeActivated  = "activated"
-	TypeAuthorized = "authorized"
-	TypeCaptured   = "captured"
-	TypeVoided     = "voided"
-	TypeRefunded   = "refunded"
-	TypeExpired    = "expired"
-	TypeRestored   = "restored"
+	TypeMinted      = "minted"
+	TypeAllocated   = "allocated"
+	TypeActivated   = "activated"
+	TypeAuthorized  = "authorized"
+	TypeCaptured    = "captured"
+	TypeVoided      = "voided"
+	TypeRefunded    = "refunded"
+	TypeExpired     = "expired"
+	TypeRestored    = "restored"
 	TypeTransferred = "transferred"
 )
 

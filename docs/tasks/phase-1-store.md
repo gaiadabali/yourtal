@@ -68,6 +68,7 @@ The spending half of the loop: points buy things, and those things work at the m
 ### YT-0142 · Voucher lifecycle state machine
 `todo` · P1 · value · 4d · dep: YT-0140
 
+- ✅ **RESOLVED by founder decision P-1 (2026-09-20): there are no refunds.** The conflict is removed rather than arbitrated — `redeemed` stays terminal, nothing is ever minted inside a refund, and the named refusal on full consumption is now **permanent behaviour rather than a placeholder**. An unwanted voucher exits by resale, charity, gift, or expiry
 - ⛔ **FOUNDER DECISION NEEDED: a refund after full redemption.** YT-0142 says `redeemed` is terminal; `docs/09` §8.1 says a refund _"restores value post-capture"_. **Both cannot hold for a voucher that was fully consumed and then refunded.** Either `redeemed` is not terminal, or the refund **mints a replacement voucher** linked to the original
 - Built with `redeemed` terminal and replacement as the intended answer, because **reviving a spent voucher means a state write can un-spend money**. A partially-captured balance-carrying voucher never reaches `redeemed`, so this only bites on full consumption
 - [ ] ⚠️ **The consequence needs confirming, because it is not an implementation detail.** A replacement carries a **new code and a new expiry**, which (a) **resets a liability clock** we account for, (b) gives the merchant a **second code to reconcile against one original sale**, and (c) opens a **redeem-then-refund path** that risk should look at before it exists rather than after
@@ -154,3 +155,22 @@ The spending half of the loop: points buy things, and those things work at the m
 
 - [ ] Xendit disbursement for Indonesia; idempotent, reconciled, retried safely
 - [ ] Float never funds operating expenses; segregation asserted daily
+
+### YT-0562 · DECIDE: what is a resale bid denominated in?
+`blocked` · P2 · legal · 2d · dep: —
+
+- **Blocks all resale work and must be answered before any of it is built.** Founder decision P-2 adds a bidding marketplace for unwanted vouchers. The mechanism is sound; the denomination decides which regulatory regime it lands in, and the two answers are not variations of one feature
+- [ ] ⚠️ **Bids in points reverse the one-way valve.** `docs/01` §5 states cash and points move one way and a voucher never becomes points again. Resale for points makes it do exactly that, and **creates a market price for points**, which is a published rate in all but name — attacking `docs/24` **ID-1**, whose four legs are: cannot buy, cannot transfer, expire, no published fixed rate. `docs/24` also records that the plan's entire legal exposure is **concentrated in ID-1 and ID-2**
+- [ ] ⚠️ **Bids in cash are very likely money transmission** in both markets, and end the argument that this is a loyalty scheme
+- [ ] ⚠️ **Either way it contradicts the control `docs/09` §7 was written to provide**: _"One hop only … killing the chain that would turn vouchers into a circulating currency"_ and _"Do not let 'users want to gift' quietly become 'users can trade.'"_ That sentence was written before this decision and describes it exactly
+- [ ] **Alternative that delivers the same user outcome:** the **platform buys the voucher back** at a formula price in points. No user-to-user trade, no bidding, no circulating currency, price stays platform-set. The unhappy user still gets an exit — from us rather than from each other — and every leg of ID-1 survives
+- [ ] Whichever is chosen, the **arbitrage against `points_price = (S / B) × multiplier` must be modelled** before launch: a secondary price below store price makes the store the worse deal and drains it
+
+### YT-0563 · Charity donation of a voucher
+`todo` · P2 · value · 4d · dep: YT-0142
+
+- **Founder decision P-2.** The exit with the least regulatory weight and real brand value, so worth building ahead of resale
+- [ ] Donation is a **void-and-remint to the charity's account**, reusing the one-hop transfer machinery rather than a second path
+- [ ] ⚠️ **A donated voucher is spent, not extinguished** — the charity redeems it at the merchant, so the merchant's obligation and the clearing accrual are unchanged. Treating it as a write-off would silently under-state what we owe partners
+- [ ] No tax receipt is issued and nothing implies one, unless someone qualified says otherwise — that is a regulated representation in both markets
+- [ ] Charity recipients are a **verified allow-list**, not free entry, or the donation path becomes an unverified-recipient transfer with a nicer name

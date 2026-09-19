@@ -19,6 +19,7 @@
     "./listing/merchant-location": "./src/listing/merchant-location.ts",
     "./voucher": "./src/voucher/voucher.ts",
     "./voucher/mock": "./src/voucher/voucher.mock.ts",
+    "./voucher/lifecycle": "./src/voucher/voucher-lifecycle.ts",
     "./balance": "./src/balance/balance.ts",
     "./balance/mock": "./src/balance/balance.mock.ts",
     "./wallet/history": "./src/wallet/wallet-history.ts",

@@ -32,6 +32,10 @@ import { campaignChapterSchema } from "../campaign/campaign-chapter";
 import { campaignVideoSourceSchema } from "../campaign/campaign-video-source";
 import { merchantLocationSchema } from "../listing/merchant-location";
 import { voucherSchema, voucherStatusSchema } from "../voucher/voucher";
+import {
+  voucherLifecycleStateSchema,
+  voucherVoidReasonSchema,
+} from "../voucher/voucher-lifecycle";
 import { balanceSchema } from "../balance/balance";
 import { walletHistoryEntryKindSchema, walletHistoryEntrySchema } from "../wallet/wallet-history";
 import { BUSINESS_CONTRACT_COMPONENTS } from "./schema-registry-business";
@@ -291,7 +295,22 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   {
     id: "VoucherStatus",
     schema: voucherStatusSchema,
-    description: "Voucher lifecycle state.",
+    description:
+      "What a WALLET shows about a voucher. Derived from VoucherLifecycleState through publicVoucherStatusOf (YT-0142), never stored: storing both would be two copies of one fact and the copy is what goes stale. It deliberately cannot name an internal-only state — a voucher that is minted, allocated or held has no public form, and one with no public form 404s identically to a nonexistent id rather than confirming that id exists.",
+    crossFieldRules: [],
+  },
+  {
+    id: "VoucherLifecycleState",
+    schema: voucherLifecycleStateSchema,
+    description:
+      "A voucher's INTERNAL lifecycle, owned by the voucher service (YT-0142). Distinct from VoucherStatus: 'minted' (issued, belongs to nobody) and 'held' (an authorization is outstanding against it) are facts no wallet should render. 'redeemed' and 'voided' are terminal — reviving a spent voucher would mean a state write can un-spend money, and a voided voucher that can come back makes the kill switch advisory. The one reversal is expired->active, inside a grace window, so an expiry job that ran against a wrong clock is recoverable.",
+    crossFieldRules: [],
+  },
+  {
+    id: "VoucherVoidReason",
+    schema: voucherVoidReasonSchema,
+    description:
+      "Why a voucher was voided. Load-bearing rather than descriptive: a voucher voided by 'transfer' became somebody else's and its value still exists (docs/09 section 7's void-and-remint), while one voided for fraud did not — so the reason is an input to the public-status derivation, and a wallet can tell its owner which happened.",
     crossFieldRules: [],
   },
   {

@@ -259,19 +259,19 @@ async function seedVouchers(pool: pg.Pool, listings: readonly Listing[]): Promis
 
     for (const voucher of generated) {
       const coherent = againstListing(voucher, listing);
+      const [state, voidReason] = internalStateOf(coherent.status);
       const result = await pool.query(
         `INSERT INTO voucher.vouchers
-           (id, listing_id, owner_id, code, merchant_id, merchant_name, title,
+           (id, listing_id, owner_id, merchant_id, merchant_name, title,
             face_value_idr, remaining_value_idr, partial_redemption_policy,
-            minimum_spend_idr, transferable, status, issued_at, expires_at,
-            location_id)
+            minimum_spend_idr, transferable, state, void_reason, issued_at,
+            expires_at, location_id)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          ON CONFLICT (id) DO NOTHING`,
         [
           coherent.id,
           coherent.listingId,
           coherent.ownerId,
-          coherent.code,
           coherent.merchantId,
           coherent.merchantName,
           coherent.title,
@@ -280,7 +280,8 @@ async function seedVouchers(pool: pg.Pool, listings: readonly Listing[]): Promis
           coherent.partialRedemptionPolicy,
           coherent.minimumSpendIdr,
           coherent.transferable,
-          coherent.status,
+          state,
+          voidReason,
           coherent.issuedAt,
           coherent.expiresAt,
           coherent.location.id,
@@ -290,6 +291,41 @@ async function seedVouchers(pool: pg.Pool, listings: readonly Listing[]): Promis
     }
   }
   return written;
+}
+
+/**
+ * The inverse of `publicVoucherStatusOf` (YT-0142), for seeding only.
+ *
+ * The mock generators produce the WALLET-facing status, because that is what
+ * the Phase U surfaces consume. The table stores the internal lifecycle, so
+ * the seed has to go backwards — and the mapping is not one-to-one, which is
+ * the whole reason the two enums exist: `transferred` is not a state, it is
+ * `voided` carrying the reason `transfer`.
+ *
+ * Deliberately exhaustive over the public statuses with no `default` branch,
+ * so adding a fifth one is a type error here rather than a row that quietly
+ * seeds as `voided`.
+ *
+ * ## What the seed cannot produce
+ *
+ * No `voucher.code_custody` row, so **a seeded voucher cannot be redeemed at
+ * a till**. The custody row needs envelope encryption from the voucher
+ * service's keyring, and `yourtal_app` has no grant on that table anyway —
+ * by design, since a store service that could write custody could mint
+ * itself a voucher. Seeded vouchers exist so the wallet has something to
+ * render; minting a redeemable one is `services/voucher`'s job.
+ */
+function internalStateOf(status: Voucher["status"]): [string, string | null] {
+  switch (status) {
+    case "active":
+      return ["active", null];
+    case "redeemed":
+      return ["redeemed", null];
+    case "expired":
+      return ["expired", null];
+    case "transferred":
+      return ["voided", "transfer"];
+  }
 }
 
 /**

@@ -10,6 +10,7 @@ import { HealthModule } from "./shared/health/health.module";
 import { IdempotencyInterceptor } from "./shared/idempotency/idempotency.interceptor";
 import { IdempotencyModule } from "./shared/idempotency/idempotency.module";
 import { PdpClientModule } from "./shared/pdp/pdp-client.module";
+import { PersistenceModule } from "./shared/persistence/persistence.module";
 
 @Module({
   imports: [
@@ -17,6 +18,9 @@ import { PdpClientModule } from "./shared/pdp/pdp-client.module";
     PdpClientModule,
     AuthzModule,
     IdempotencyModule,
+    // Refuses to boot as a Postgres superuser (YT-0554). Early in the list
+    // so the refusal happens before modules that open pools.
+    PersistenceModule,
     HealthModule,
     BusinessModule,
     CampaignModule,

@@ -188,9 +188,21 @@ const MAPPINGS: readonly Mapping[] = [
     fieldsWithNoColumn: {
       location:
         "Denormalised by id. The voucher carries the whole merchantLocation object so it stays honourable offline (docs/17 §3), but the table stores location_id and relies on the composite foreign key to store.listing_location.",
+      status:
+        "DERIVED, deliberately (YT-0142). The wallet-facing status comes from `state` plus `void_reason` through `publicVoucherStatusOf`. Storing both would be two copies of one fact — the same call YT-0101 made for campaigns — and the stored copy is the one that goes stale.",
+      code:
+        "NEVER stored in plaintext (docs/15 rule 7). voucher.code_custody holds a SHA-256 for lookup and an envelope-encrypted copy for display, in a table `yourtal_app` cannot read at all. A voucher is a bearer instrument, so a readable code column means one leaked credential is the whole float; encrypting the column in place would not work either, because `WHERE code = $1` against ciphertext needs deterministic encryption.",
     },
     columnsWithNoField: {
       location_id: "Holds the `location` field's id. See the note on that field.",
+      state:
+        "The INTERNAL lifecycle — minted, allocated and held have no public form, and `voucherSchema.status` is derived from this. See `voucher-lifecycle.ts`.",
+      void_reason:
+        "Why a voucher was voided, and an input to the derivation rather than a footnote on it: voided-by-transfer became somebody else's and its value still exists, voided-for-fraud did not, and a wallet must say which.",
+      batch_id:
+        "The issuance batch (YT-0141), which carries the funding record and the two-person approval. Not on the contract because a holder has no business knowing which batch minted their voucher.",
+      version:
+        "Optimistic concurrency on state transitions (YT-0142). A storage concern with no meaning to any consumer of the contract.",
     },
   },
   {

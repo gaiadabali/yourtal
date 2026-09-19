@@ -58,10 +58,23 @@ try {
 
 const command = process.argv[2] ?? "status";
 
-const databaseUrl = process.env.DATABASE_URL;
+// Migrations run as the OWNER, never as the runtime app role. DDL needs
+// rights the application must not have, which is exactly why they are two
+// credentials now (YT-0554, risk 45): `DATABASE_URL` is `yourtal_app` and
+// cannot CREATE TABLE, `DATABASE_OWNER_URL` is `yourtal` and is read by
+// nothing that serves a request.
+//
+// Deliberately NOT falling back to `DATABASE_URL` when the owner URL is
+// absent. A fallback here would silently re-create the bug this ticket
+// exists to fix — a migration quietly running as whatever role happened to
+// be configured — and this repo has been bitten enough times by a fallback
+// that a person cannot see (docs/13c). Refusing with an instruction is the
+// slower path exactly once; a silent fallback is wrong forever.
+const databaseUrl = process.env.DATABASE_OWNER_URL;
 if (databaseUrl === undefined) {
   console.error(
-    "No DATABASE_URL. Copy .env.example to .env and run `pnpm dev:up` from the repo root.",
+    "No DATABASE_OWNER_URL. Migrations need the owner credential, not the app role. " +
+      "Copy .env.example to .env (it now sets both) and run `pnpm dev:up` from the repo root.",
   );
   process.exit(1);
 }

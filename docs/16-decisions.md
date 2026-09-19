@@ -201,3 +201,37 @@ The player-side rule is **defence in depth, not the control**: the UI must not o
 **Why this is the right posture and not merely the cautious one.** Shipping as a web app already cost us Play Integrity and App Attest ([`18`](18-engines.md) §5), so the client is unattestable by construction — anything it computes is a suggestion from an unauthenticated party. Under **O-1** the reward is all-or-nothing on full playback plus questions, which concentrates the entire economic decision into one moment; a decision made once, for the full amount, must be made where it cannot be forged. And it makes the three existing server-side controls load-bearing rather than decorative: coverage-based completion (O-4), checkpoint tokens at randomised timestamps, and per-segment delivery logs.
 
 **The corollary that is easy to lose:** a client that no longer decides must still **report honestly**, because the server's evidence is assembled from what the client sends. A progress report is a claim to be judged, never a fact to be recorded — which is why `isFullyWatched` asks what is _missing_ rather than summing what was claimed.
+
+## Unwanted vouchers: no refunds, four exits (2026-09-20)
+
+| #       | Decision                                                                                                                                                                                                                                                   |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P-1** | **There are no refunds.** This resolves the YT-0142 conflict by removing the path: `redeemed` stays terminal, no replacement is ever minted inside a refund, and `docs/09` §8.1's "restores value post-capture" is superseded for the fully-consumed case. |
+| **P-2** | An unwanted voucher has four exits: **resell it in our marketplace by bidding**, **donate it to charity** through our mechanism, **give it to another user**, or **let it expire**.                                                                        |
+| **P-3** | **A listing lives only while the voucher is valid.** On expiry the listing is cancelled automatically — a bid cannot outlive the thing it is bidding on.                                                                                                   |
+
+**P-1 is unambiguously good and simplifies the ledger.** No refund path means no un-spending, no replacement mint, no second code against one original sale, and no redeem-then-refund laundering route. `redeemed` being terminal stops being a tension and becomes a clean invariant.
+
+**P-2's charity and gift exits are already designed for.** Gifting is the existing one-hop transfer (`docs/09` §7). Charity needs its own mechanism but raises no new category of risk.
+
+### ⚠️ The resale marketplace is the part that needs a decision before it is built
+
+**A bidding marketplace is the specific thing this plan's transfer design exists to prevent.** `docs/09` §7 says it in its own words:
+
+> **One hop only.** C cannot pass to D. This is the elegant control: it preserves gifting, which is what users actually want, while **killing the chain that would turn vouchers into a circulating currency.** … **Do not let "users want to gift" quietly become "users can trade."**
+
+And `docs/24` position **ID-1** — that YourTal Points are a loyalty currency and not e-money — rests on four legs: users cannot buy them, **cannot transfer them**, they expire, and **there is no published fixed cash rate**. `docs/24` also states that **the whole plan's legal exposure is concentrated in ID-1 and ID-2**. A resale market with public bidding attacks two of those four legs directly, at the single most concentrated point of exposure in the business.
+
+**The decisive question is what a bid is denominated in**, because the two answers are not variations of one feature:
+
+|                | **Bids in points**                                                               | **Bids in cash**                                     |
+| -------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Loop           | Stays closed                                                                     | **Opens it**                                         |
+| One-way valve  | **Reverses it** — a voucher converts back to points, which `docs/01` §5 forbids  | Cash for a voucher is a sale of a payment instrument |
+| ID-1           | **Creates a market price for points**, which is a published rate in all but name | Harder to argue it is a loyalty scheme at all        |
+| Pricing engine | Users arbitrage the market against `points_price = S/B`                          | Same, plus real money                                |
+| Likely regime  | Still arguable as loyalty, but weaker                                            | **Money transmission / e-money in both markets**     |
+
+**A third option that delivers what you actually want without the regulatory step:** the **platform buys the voucher back** at a formula price in points — not an open market, no user-to-user trade, no bidding, no circulating currency, and the price stays platform-set rather than discovered. An unhappy user still gets an exit, which is the real goal; they just get it from us rather than from each other. It also keeps every leg of ID-1 intact.
+
+**Recorded as a direction, not as buildable.** `yourtal-5a` continues to refuse the full-consumption refund with a named error, which remains correct under P-1. Nothing about resale is to be built until the denomination question is answered — see YT-0562.

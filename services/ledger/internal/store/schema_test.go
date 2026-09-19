@@ -48,7 +48,17 @@ func TestSqlcSchemaMatchesTheLiveDatabase(t *testing.T) {
 		t.Fatalf("reading db/schema.sql: %v", err)
 	}
 
-	for _, table := range []string{"account", "transfer", "entry"} {
+	// `backing_rate` joined the list with YT-0130's pricing engine. A table
+	// sqlc types against but this loop does not name is one the guard cannot
+	// see drift in, which is the same fail-open shape the guard exists to
+	// prevent — the list is the coverage.
+	//
+	// ⚠️ `columnPattern` above is `[a-z_]+` and therefore cannot match a
+	// column name containing a digit. No ledger column has one today, so it
+	// works here; the identical pattern in services/voucher silently dropped
+	// `manifest_sha256` and reported a drift that did not exist. Worth
+	// widening to `[a-z_0-9]+` before a digit-bearing column arrives.
+	for _, table := range []string{"account", "transfer", "entry", "backing_rate"} {
 		t.Run(table, func(t *testing.T) {
 			want := columnsDeclaredFor(string(declared), table)
 			got := columnsInDatabase(ctx, t, pool, table)

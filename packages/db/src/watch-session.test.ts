@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { APP_URL, OWNER_URL } from "./database-urls";
 import { seed } from "./seed";
 
 /**
@@ -12,7 +13,6 @@ import { seed } from "./seed";
  */
 
 const { Pool } = pg;
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
 /**
  * The owner, for cleanup only.
  *
@@ -22,7 +22,6 @@ const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
  * arrangement the daily-proof tests needed. Using the owner here keeps the
  * grant honest rather than widening it to make a test convenient.
  */
-const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal";
 
 let pool: pg.Pool;
 let owner: pg.Pool;
@@ -36,7 +35,7 @@ const userId = "00000000-0000-4000-8000-00000000a001";
 beforeAll(async () => {
   pool = new Pool({ connectionString: APP_URL, max: 4 });
   owner = new Pool({ connectionString: OWNER_URL, max: 2 });
-  await seed(pool);
+  await seed(owner);
   // Cleanup at the START, not only at the end. A test that fails part-way
   // leaves its rows behind, and the next run then collides on the primary
   // key and fails for a reason that has nothing to do with what it tests —

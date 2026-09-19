@@ -15,7 +15,7 @@ import (
 	"fmt"
 )
 
-// VoucherStatus Voucher lifecycle state.
+// VoucherStatus What a WALLET shows about a voucher. Derived from VoucherLifecycleState through publicVoucherStatusOf (YT-0142), never stored: storing both would be two copies of one fact and the copy is what goes stale. It deliberately cannot name an internal-only state — a voucher that is minted, allocated or held has no public form, and one with no public form 404s identically to a nonexistent id rather than confirming that id exists.
 type VoucherStatus string
 
 // List of VoucherStatus

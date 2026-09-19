@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { APP_URL, OWNER_URL } from "./database-urls";
 import { executeDeletion, unhandledDomains } from "@yourtal/consent/dsar-orchestrator";
 import { TOMBSTONE, postgresHandlers } from "./dsar-handlers";
 import { seed } from "./seed";
@@ -14,25 +15,39 @@ import { seed } from "./seed";
  */
 
 const { Pool } = pg;
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
 
 // The seed gives every voucher to this user, which makes it the subject.
 const SEEDED_OWNER = "11111111-1111-4111-8111-111111111111";
 
+/**
+ * Fixtures are written as the OWNER, assertions run as the app.
+ *
+ * Seeding is administration. Since YT-0142 the app role can read a voucher
+ * and not write one — the value path is split by role deliberately — so a
+ * seed running as the app now lacks a grant it used to have. Widening the
+ * app's grant to suit a fixture would undo the control; acquiring each
+ * value-path role's grant in turn would break again the next time a role is
+ * added. See `database-urls.ts`.
+ */
 let pool: pg.Pool;
+let owner: pg.Pool;
 
 beforeAll(async () => {
   pool = new Pool({ connectionString: APP_URL, max: 4 });
-  await seed(pool);
+  owner = new Pool({ connectionString: OWNER_URL, max: 2 });
+  await seed(owner);
 });
 
 afterAll(async () => {
   // Put the seeded vouchers back, so re-running this suite is not a one-shot.
-  await pool.query(`UPDATE voucher.vouchers SET owner_id = $1 WHERE owner_id = $2`, [
+  // Owner: the app can read a voucher and not write one (YT-0142), and
+  // restoring fixtures is administration.
+  await owner.query(`UPDATE voucher.vouchers SET owner_id = $1 WHERE owner_id = $2`, [
     SEEDED_OWNER,
     TOMBSTONE,
   ]);
   await pool.end();
+  await owner.end();
 });
 
 async function count(sql: string, params: unknown[] = []): Promise<number> {
@@ -44,13 +59,18 @@ describe("anonymising vouchers", () => {
   it("severs the subject but leaves the voucher honourable", async () => {
     // Snapshot what the merchant is owed BEFORE, so the assertion is about
     // the instrument surviving rather than about a row count.
+    // `code` is deliberately absent. YT-0140 deleted the plaintext column
+    // outright and moved the secret into `voucher.code_custody` as a hash
+    // plus KMS-wrapped ciphertext (docs/15 rule 7: voucher codes encrypted
+    // from the first code ever minted). This test used to read the column;
+    // asserting the custody row survives is the stronger version of the same
+    // claim, because the instrument is only honourable if its code still is.
     const { rows: before } = await pool.query<{
       id: string;
-      code: string;
       merchant_id: string;
       face_value_idr: string;
     }>(
-      `SELECT id, code, merchant_id, face_value_idr FROM voucher.vouchers
+      `SELECT id, merchant_id, face_value_idr FROM voucher.vouchers
         WHERE owner_id = $1 ORDER BY id LIMIT 1`,
       [SEEDED_OWNER],
     );
@@ -73,15 +93,13 @@ describe("anonymising vouchers", () => {
     // happened, and an "anonymisation" that damaged the instrument would be
     // a deletion wearing a different name.
     const { rows: after } = await pool.query<{
-      code: string;
       merchant_id: string;
       face_value_idr: string;
       owner_id: string;
-    }>(`SELECT code, merchant_id, face_value_idr, owner_id FROM voucher.vouchers WHERE id = $1`, [
+    }>(`SELECT merchant_id, face_value_idr, owner_id FROM voucher.vouchers WHERE id = $1`, [
       sample?.id,
     ]);
 
-    expect(after[0]?.code).toBe(sample?.code);
     expect(after[0]?.merchant_id).toBe(sample?.merchant_id);
     expect(after[0]?.face_value_idr).toBe(sample?.face_value_idr);
     expect(after[0]?.owner_id).toBe(TOMBSTONE);
@@ -95,6 +113,67 @@ describe("anonymising vouchers", () => {
       [TOMBSTONE],
     );
     expect(distinct).toBeLessThanOrEqual(1);
+  });
+});
+
+/**
+ * The grant boundary the anonymisation path rests on, driven rather than
+ * assumed.
+ *
+ * `anonymiseVouchers` works, which by itself proves nothing about what else
+ * the app could do — a column grant would also have made it work, while
+ * handing the application credential the power to re-own every voucher in
+ * the platform. These assertions are the difference between "erasure works"
+ * and "erasure works and nothing else does".
+ */
+describe("what the application role can and cannot do to a voucher", () => {
+  it("cannot re-own a voucher to anybody", async () => {
+    // The statement a column-level UPDATE grant would have permitted. It
+    // differs from a legitimate anonymisation only in the parameter, which
+    // is why the grant was refused and a SECURITY DEFINER function used.
+    await expect(
+      pool.query(`UPDATE voucher.vouchers SET owner_id = $1 WHERE owner_id <> $1`, [
+        "99999999-9999-4999-8999-999999999999",
+      ]),
+    ).rejects.toThrow(/permission denied/i);
+  });
+
+  it("cannot change what a voucher is worth", async () => {
+    await expect(
+      pool.query(`UPDATE voucher.vouchers SET remaining_value_idr = 999999999`),
+    ).rejects.toThrow(/permission denied/i);
+  });
+
+  it("cannot mint one", async () => {
+    await expect(
+      pool.query(
+        `INSERT INTO voucher.vouchers (id, listing_id, owner_id, merchant_id, merchant_name,
+           title, face_value_idr, remaining_value_idr, partial_redemption_policy,
+           minimum_spend_idr, transferable, state, issued_at, expires_at, location_id)
+         SELECT gen_random_uuid(), listing_id, gen_random_uuid(), gen_random_uuid(), 'M', 'T',
+                1000, 1000, 'single_use_forfeit', NULL, false, 'active', now(),
+                now() + interval '30 days', location_id
+           FROM store.listing_location LIMIT 1`,
+      ),
+    ).rejects.toThrow(/permission denied/i);
+  });
+
+  it("cannot read a voucher's code", async () => {
+    // docs/15 rule 7. The custody table is the reason the plaintext column
+    // was dropped rather than encrypted in place, and a store service that
+    // could read it could redeem every voucher it can see.
+    await expect(
+      pool.query(`SELECT code_hash, ciphertext FROM voucher.code_custody LIMIT 1`),
+    ).rejects.toThrow(/permission denied/i);
+  });
+
+  it("cannot anonymise the tombstone itself", async () => {
+    // A no-op today, and an oracle tomorrow: it would report how many rows
+    // had already been anonymised, which is a fact about how many people
+    // exercised erasure.
+    await expect(
+      pool.query(`SELECT voucher.anonymise_owner($1)`, [TOMBSTONE]),
+    ).rejects.toThrow(/not a subject/);
   });
 });
 

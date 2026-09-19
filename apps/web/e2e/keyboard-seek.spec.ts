@@ -158,6 +158,23 @@ test("seek bar responds to ArrowRight, moving playback forwards", async ({ page 
  * (`features/player/use-watch-session.ts`) is racing a still-in-flight
  * previous seek. That is player code, out of this ticket's scope
  * (apps/web/e2e/** only).
+ *
+ * 2026-09-20, YT-0550: the second hypothesis above now has a fix in
+ * `use-watch-session.ts`/`use-video-event-wiring.ts` — `handleSeekTo`
+ * coalesces a new seek target while `video.seeking` is still true instead
+ * of issuing a second overlapping one, so the 40 rapid `ArrowRight`
+ * presses above collapse into far fewer real seeks against the origin
+ * before `Home` is pressed. The coalescing mechanism itself is unit-tested
+ * (`features/player/use-watch-session.test.tsx`), but **not verified
+ * against this real MinIO origin in that pass** — a `next build` here
+ * would have shared `.next` with another session's live `next dev`
+ * (docs/13c, "Two agents, one working tree"). Left `test.fixme` rather than
+ * flipped to a real assertion: a green run against the real origin is what
+ * proves this, not a unit test of the coalescing logic in isolation. The
+ * next session with a free build slot: run this with `pnpm dev:up && pnpm
+ * media:publish`, and flip to `test(` once it is genuinely green (not
+ * "green once" — this failure was intermittent, so require a few
+ * consecutive passes, e.g. `--repeat-each=5`, before trusting it).
  */
 test.fixme("seek bar responds to Home, seeking to the start", async ({ page }) => {
   const seekBar = await openPausedPlayer(page);

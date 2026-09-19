@@ -5,7 +5,33 @@ import { asDisplayPoints } from "@yourtal/contracts/money/format";
 import type { QuestionAnswer } from "./checkpoint-types";
 
 /**
- * This module runs client-side (it backs the live result screen). It uses
+ * DISPLAY-ONLY. Not the reward engine, and not a preview of what it will
+ * compute — decision **O-5** is unconditional: "all reward computation is
+ * server-side. The front end reports status and displays; it never
+ * decides, scores or totals." This module scores answers and splits a
+ * reward figure entirely in the browser, which is exactly what O-5
+ * forbids being trusted. It survives as the best available *estimate* the
+ * checkpoint result screen can show before a real server verdict exists —
+ * never as a number the server is expected to honour, and never as an
+ * input to anything that pays out.
+ *
+ * `BASE_REWARD_FRACTION` below and everything derived from it
+ * (`computeRewardSplit`, `totalEarned`) are **advisory arithmetic**: they
+ * describe what this file guesses the split *might* be, not what a viewer
+ * is owed. This module used to be the only place that split existed at
+ * all, which made it authoritative by default, and it stayed that way in
+ * the UI's own head even after the rule changed underneath it — a module
+ * that used to be authoritative and quietly became advisory is exactly
+ * what someone later trusts again. Say so here so that doesn't happen a
+ * second time.
+ *
+ * The real fix is **YT-0561** — a server-side accuracy/reward verdict —
+ * and belongs to the backend, not to a change here. Do not delete this
+ * file to "resolve" the discrepancy: the checkpoint result screen has
+ * nothing else to show until YT-0561 ships, and an honest advisory number
+ * beats no number, provided nothing downstream mistakes it for a verdict.
+ *
+ * Runs client-side (it backs the live result screen). Uses
  * `asDisplayPoints` from `@yourtal/contracts/money/format`, which is the
  * dependency-free half of the money module: `money.ts` itself carries the
  * Zod schemas, and value-importing from it would pull the whole Zod runtime
@@ -17,9 +43,9 @@ import type { QuestionAnswer } from "./checkpoint-types";
  * The illustrative split from docs/06-longform-video-and-attention.md
  * section 4.2: "base 60% of advertised value for completing and answering
  * + up to 40% more for accuracy". The real ratio belongs to the Reward
- * Engine once it exists server-side; this constant is isolated here
- * precisely so it is a one-line swap for whoever wires that up, rather
- * than a number buried in JSX.
+ * Engine once it exists server-side (YT-0561); this constant is isolated
+ * here precisely so it is a one-line swap for whoever wires that up,
+ * rather than a number buried in JSX. Advisory, per this file's header.
  */
 const BASE_REWARD_FRACTION = 0.6;
 

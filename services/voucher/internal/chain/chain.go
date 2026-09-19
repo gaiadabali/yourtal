@@ -28,6 +28,20 @@
 // prefixes rather than a separator, because a separator is something a value
 // can contain: without prefixes, {"a": "b=c"} and {"a=b": "c"} hash the same,
 // and that is a forgery, not a curiosity.
+//
+// # And the same argument, for time
+//
+// The first version of this hashed `UnixNano()`, and every chain it wrote
+// failed to verify on the way back. Go's `time.Time` carries nanoseconds;
+// Postgres `timestamptz` keeps MICROSECONDS. So the value that went in and
+// the value that came out were different numbers, and the hash computed over
+// the second one could never match the hash stored from the first.
+//
+// It presented as "the event chain is broken at seq 1", which is exactly what
+// tampering looks like — and it was simply a unit mismatch across a boundary.
+// The fix is to hash the precision the storage actually has, and to truncate
+// at the point of creation so the in-memory value and the stored one are the
+// same instant rather than two instants that usually agree.
 package chain
 
 import (
@@ -91,9 +105,10 @@ type Event struct {
 // Hash computes an event's hash from its predecessor's.
 //
 // Every field is length-prefixed; see the package comment for why a
-// separator would not do. The time is nanoseconds since the epoch in UTC,
-// so a stored timestamp's textual rendering — which varies by session
-// timezone and by driver — never enters the hash.
+// separator would not do. The time is MICROseconds since the epoch in UTC —
+// microseconds because that is the precision `timestamptz` preserves, and an
+// epoch integer because a timestamp's textual rendering varies by session
+// timezone and by driver.
 func Hash(prevHash string, event Event) (string, error) {
 	if !known(event.Type) {
 		return "", fmt.Errorf("%w: %q is not one of %v", ErrUnknownType, event.Type, Types)
@@ -104,7 +119,7 @@ func Hash(prevHash string, event Event) (string, error) {
 	writeField(digest, event.VoucherID)
 	writeUint(digest, uint64(event.Seq))
 	writeField(digest, event.Type)
-	writeUint(digest, uint64(event.OccurredAt.UTC().UnixNano()))
+	writeUint(digest, uint64(Instant(event.OccurredAt).UnixMicro()))
 
 	// Sorted, so the hash does not depend on Go's map iteration order —
 	// which is deliberately randomised, and would otherwise make this
@@ -157,6 +172,13 @@ func Verify(events []Event, stored []string) error {
 	}
 	return nil
 }
+
+// Instant truncates a time to what the database will keep.
+//
+// Called at the point an event is created, so the value hashed, the value
+// stored and the value read back are one instant rather than three that
+// usually agree. Truncation rather than rounding, to match Postgres.
+func Instant(at time.Time) time.Time { return at.UTC().Truncate(time.Microsecond) }
 
 // Head is the hash a caller keeps to detect later tampering: the last hash
 // in a verified chain, or the genesis for a voucher with no history.

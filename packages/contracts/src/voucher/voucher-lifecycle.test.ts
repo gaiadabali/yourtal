@@ -88,7 +88,7 @@ describe("the public status derivation", () => {
     };
 
     for (const state of VOUCHER_LIFECYCLE_STATES) {
-      expect(publicVoucherStatusOf(state, null), `${state}`).toBe(expected[state]);
+      expect(publicVoucherStatusOf(state, null), state).toBe(expected[state]);
     }
   });
 

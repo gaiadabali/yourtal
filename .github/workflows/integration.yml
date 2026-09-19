@@ -89,7 +89,13 @@ jobs:
           --health-retries 20
 
     env:
-      DATABASE_URL: postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal
+      # The RUNTIME role, unprivileged on purpose (YT-0554, risk 45). CI used
+      # this variable for everything, including the app, so CI was exercising
+      # a superuser connection and every GRANT/REVOKE in the schema was
+      # decorative here too. The API now refuses to boot as a privileged role.
+      DATABASE_URL: postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal
+      # The OWNER role. Bootstrap and migrations only — never the app.
+      DATABASE_OWNER_URL: postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal
       # Matches docker-compose.yml's mapped host port and .env.example — see
       # the drift test in apps/api/src/config/env.schema.test.ts.
       PDP_BASE_URL: http://127.0.0.1:26592
@@ -121,7 +127,7 @@ jobs:
       # domain schemas and the two roles, which must exist before any
       # migration grants anything on them.
       - name: Bootstrap schemas and roles
-        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/postgres/init/01-schemas.sql
+        run: psql "$DATABASE_OWNER_URL" -v ON_ERROR_STOP=1 -f infra/postgres/init/01-schemas.sql
 
       - name: Apply migrations
         run: pnpm db:migrate

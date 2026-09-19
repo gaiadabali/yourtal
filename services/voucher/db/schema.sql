@@ -1,0 +1,163 @@
+-- The voucher service's schema, as sqlc reads it to type the generated code.
+--
+-- A COPY of what packages/db/migrations applies, not a second source of
+-- truth: Atlas owns the real schema, and `internal/store/schema_test.go`
+-- asserts this file still matches the live database — so a drift here fails
+-- loudly rather than producing confidently wrong Go types that surface weeks
+-- later as a scan error.
+CREATE SCHEMA IF NOT EXISTS voucher;
+CREATE SCHEMA IF NOT EXISTS store;
+
+CREATE TABLE voucher.batch (
+  id                        uuid        PRIMARY KEY,
+  listing_id                uuid        NOT NULL,
+  supplier_business_id      uuid        NOT NULL,
+  requested_by              uuid        NOT NULL,
+  approved_by               uuid,
+  quantity                  integer     NOT NULL,
+  face_value_minor          bigint      NOT NULL,
+  settlement_value_minor    bigint      NOT NULL,
+  currency                  char(3)     NOT NULL,
+  transferable              boolean     NOT NULL,
+  partial_redemption_policy text        NOT NULL,
+  minimum_spend_minor       bigint,
+  expires_at                timestamptz NOT NULL,
+  funding_reference         text        NOT NULL,
+  manifest_sha256           char(64),
+  state                     text        NOT NULL,
+  created_at                timestamptz NOT NULL DEFAULT now(),
+  approved_at               timestamptz
+);
+
+CREATE TABLE voucher.vouchers (
+  id                        uuid        PRIMARY KEY,
+  listing_id                uuid        NOT NULL,
+  owner_id                  uuid,
+  merchant_id               uuid        NOT NULL,
+  merchant_name             text        NOT NULL,
+  title                     text        NOT NULL,
+  face_value_idr            bigint      NOT NULL,
+  remaining_value_idr       bigint      NOT NULL,
+  partial_redemption_policy text        NOT NULL,
+  minimum_spend_idr         bigint,
+  transferable              boolean     NOT NULL,
+  issued_at                 timestamptz NOT NULL,
+  expires_at                timestamptz NOT NULL,
+  location_id               uuid        NOT NULL,
+  state                     text        NOT NULL,
+  void_reason               text,
+  batch_id                  uuid,
+  version                   integer     NOT NULL DEFAULT 1
+);
+
+CREATE TABLE voucher.code_custody (
+  voucher_id       uuid        PRIMARY KEY,
+  code_hash        char(64)    NOT NULL UNIQUE,
+  wrapped_data_key bytea       NOT NULL,
+  nonce            bytea       NOT NULL,
+  ciphertext       bytea       NOT NULL,
+  key_purpose      text        NOT NULL,
+  key_version      integer     NOT NULL,
+  created_at       timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE voucher.event (
+  voucher_id  uuid        NOT NULL,
+  seq         integer     NOT NULL,
+  event_type  text        NOT NULL,
+  detail      jsonb       NOT NULL,
+  prev_hash   char(64)    NOT NULL,
+  hash        char(64)    NOT NULL,
+  occurred_at timestamptz NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (voucher_id, seq)
+);
+
+CREATE TABLE voucher.authorization (
+  id                 uuid        PRIMARY KEY,
+  voucher_id         uuid        NOT NULL,
+  merchant_id        uuid        NOT NULL,
+  amount_minor       bigint      NOT NULL,
+  currency           char(3)     NOT NULL,
+  merchant_order_ref text        NOT NULL,
+  state              text        NOT NULL,
+  expires_at         timestamptz NOT NULL,
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  resolved_at        timestamptz
+);
+
+CREATE TABLE voucher.capture (
+  id                      uuid        PRIMARY KEY,
+  authorization_id        uuid        NOT NULL UNIQUE,
+  authorized_amount_minor bigint      NOT NULL,
+  amount_minor            bigint      NOT NULL,
+  receipt_id              text        NOT NULL UNIQUE,
+  settled_at              timestamptz,
+  created_at              timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE voucher.refund (
+  id           uuid        PRIMARY KEY,
+  capture_id   uuid        NOT NULL,
+  amount_minor bigint      NOT NULL,
+  reason       text        NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE voucher.merchant_credential (
+  key_id           text        PRIMARY KEY,
+  merchant_id      uuid        NOT NULL,
+  wrapped_data_key bytea       NOT NULL,
+  nonce            bytea       NOT NULL,
+  ciphertext       bytea       NOT NULL,
+  key_purpose      text        NOT NULL,
+  key_version      integer     NOT NULL,
+  state            text        NOT NULL,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  not_after        timestamptz,
+  revoked_at       timestamptz
+);
+
+CREATE TABLE voucher.kill_switch (
+  id         uuid        PRIMARY KEY,
+  scope      text        NOT NULL,
+  scope_id   uuid,
+  reason     text        NOT NULL,
+  enabled_by text        NOT NULL,
+  enabled_at timestamptz NOT NULL DEFAULT now(),
+  lifted_by  text,
+  lifted_at  timestamptz
+);
+
+CREATE TABLE voucher.redemption_attempt (
+  id           bigserial   PRIMARY KEY,
+  merchant_id  uuid        NOT NULL,
+  outcome      text        NOT NULL,
+  amount_minor bigint,
+  occurred_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE store.listings (
+  id                        uuid        PRIMARY KEY,
+  merchant_id               uuid        NOT NULL,
+  merchant_name             text        NOT NULL,
+  title                     text        NOT NULL,
+  description               text        NOT NULL,
+  category                  text        NOT NULL,
+  face_value_idr            bigint      NOT NULL,
+  settlement_value_idr      bigint      NOT NULL,
+  price_in_points           bigint      NOT NULL,
+  stock_remaining           integer     NOT NULL,
+  stock_total               integer     NOT NULL,
+  transferable              boolean     NOT NULL,
+  partial_redemption_policy text        NOT NULL,
+  minimum_spend_idr         bigint,
+  expires_at                timestamptz NOT NULL,
+  status                    text        NOT NULL
+);
+
+CREATE TABLE store.listing_location (
+  listing_id  uuid NOT NULL,
+  location_id uuid NOT NULL,
+  PRIMARY KEY (listing_id, location_id)
+);

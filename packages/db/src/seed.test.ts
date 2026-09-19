@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { APP_URL, OWNER_URL } from "./database-urls";
 import { seed } from "./seed";
 import { campaignSchema } from "@yourtal/contracts/campaign";
 import { publicStatusOf, type CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
@@ -14,17 +15,29 @@ import { publicStatusOf, type CampaignLifecycleState } from "@yourtal/contracts/
  */
 
 const { Pool } = pg;
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
 
+/**
+ * Fixtures are written as the OWNER, assertions run as the app.
+ *
+ * Seeding is administration. Since YT-0142 the app role can read a voucher
+ * and not write one — the value path is split by role deliberately — so a
+ * seed running as the app now lacks a grant it used to have. Widening the
+ * app's grant to suit a fixture would undo the control; acquiring each
+ * value-path role's grant in turn would break again the next time a role is
+ * added. See `database-urls.ts`.
+ */
 let pool: pg.Pool;
+let owner: pg.Pool;
 
 beforeAll(async () => {
   pool = new Pool({ connectionString: APP_URL, max: 4 });
-  await seed(pool);
+  owner = new Pool({ connectionString: OWNER_URL, max: 2 });
+  await seed(owner);
 });
 
 afterAll(async () => {
   await pool.end();
+  await owner.end();
 });
 
 async function count(sql: string): Promise<number> {
@@ -44,7 +57,10 @@ describe("the seed", () => {
     // writing rows would mean either the ids move between runs or the
     // catalogue doubles — both make a seeded stack useless to debug against.
     const before = await count("SELECT COUNT(*)::text AS n FROM store.listings");
-    const again = await seed(pool);
+    // The owner again: seeding is administration, and since YT-0142 the app
+    // role cannot write a voucher. Re-seeding as the app would fail on the
+    // grant rather than on idempotency, which is not what this asserts.
+    const again = await seed(owner);
     const after = await count("SELECT COUNT(*)::text AS n FROM store.listings");
 
     expect(again).toEqual({ campaigns: 0, listings: 0, vouchers: 0 });
@@ -188,13 +204,16 @@ describe("a voucher's branch must be one its listing offers (YT-0502)", () => {
     const mine = { listing_id: pair?.listing_id };
     const someoneElses = { location_id: pair?.location_id };
 
+    // As the OWNER: since YT-0142 the app role has no INSERT on vouchers, so
+    // as the app this would be refused by a grant before the constraint ever
+    // ran — and would pass while proving nothing about the constraint.
     await expect(
-      pool.query(
+      owner.query(
         `INSERT INTO voucher.vouchers
-           (id, listing_id, owner_id, code, merchant_id, merchant_name, title,
+           (id, listing_id, owner_id, merchant_id, merchant_name, title,
             face_value_idr, remaining_value_idr, partial_redemption_policy,
-            minimum_spend_idr, transferable, status, issued_at, expires_at, location_id)
-         VALUES (gen_random_uuid(), $1, gen_random_uuid(), 'WRONGBRANCH',
+            minimum_spend_idr, transferable, state, issued_at, expires_at, location_id)
+         VALUES (gen_random_uuid(), $1, gen_random_uuid(),
                  gen_random_uuid(), 'M', 'T', 1000, 1000, 'single_use_forfeit',
                  NULL, false, 'active', now(), now() + interval '30 days', $2)`,
         [mine?.listing_id, someoneElses?.location_id],
@@ -207,7 +226,10 @@ describe("a voucher's branch must be one its listing offers (YT-0502)", () => {
       `SELECT listing_id, location_id FROM store.listing_location LIMIT 1`,
     );
     const pair = rows[0];
-    const code = `OK${String(Date.now()).slice(-8)}`;
+    // A handle for the cleanup below. It used to be the voucher's code;
+    // there is no code column any more (YT-0142 — codes live envelope-
+    // encrypted in voucher.code_custody), so the id does the job.
+    const probeId = "00000000-0000-4000-8000-0000000502cc";
 
     // Removed again at the end: this row exists to prove the constraint
     // accepts it, and it is deliberately NOT coherent with its listing in
@@ -215,19 +237,20 @@ describe("a voucher's branch must be one its listing offers (YT-0502)", () => {
     // coherence assertion fail on the next run — which it did, once, and
     // the coherence test is right to object.
     await expect(
-      pool.query(
+      owner.query(
         `INSERT INTO voucher.vouchers
-           (id, listing_id, owner_id, code, merchant_id, merchant_name, title,
+           (id, listing_id, owner_id, merchant_id, merchant_name, title,
             face_value_idr, remaining_value_idr, partial_redemption_policy,
-            minimum_spend_idr, transferable, status, issued_at, expires_at, location_id)
-         VALUES (gen_random_uuid(), $1, gen_random_uuid(), $3,
+            minimum_spend_idr, transferable, state, issued_at, expires_at, location_id)
+         VALUES ($3, $1, gen_random_uuid(),
                  gen_random_uuid(), 'M', 'T', 1000, 1000, 'single_use_forfeit',
-                 NULL, false, 'active', now(), now() + interval '30 days', $2)`,
-        [pair?.listing_id, pair?.location_id, code],
+                 NULL, false, 'active', now(), now() + interval '30 days', $2)
+         ON CONFLICT (id) DO NOTHING`,
+        [pair?.listing_id, pair?.location_id, probeId],
       ),
     ).resolves.toBeDefined();
 
-    await pool.query(`DELETE FROM voucher.vouchers WHERE code = $1`, [code]);
+    await owner.query(`DELETE FROM voucher.vouchers WHERE id = $1`, [probeId]);
   });
 
   it("every seeded listing offers at least one branch", async () => {

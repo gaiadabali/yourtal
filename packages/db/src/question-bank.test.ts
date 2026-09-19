@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import pg from "pg";
+import { APP_URL, OWNER_URL } from "./database-urls";
 import { seed } from "./seed";
 
 /**
@@ -13,14 +14,25 @@ import { seed } from "./seed";
  */
 
 const { Pool } = pg;
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
 
+/**
+ * Fixtures are written as the OWNER, assertions run as the app.
+ *
+ * Seeding is administration. Since YT-0142 the app role can read a voucher
+ * and not write one — the value path is split by role deliberately — so a
+ * seed running as the app now lacks a grant it used to have. Widening the
+ * app's grant to suit a fixture would undo the control; acquiring each
+ * value-path role's grant in turn would break again the next time a role is
+ * added. See `database-urls.ts`.
+ */
 let pool: pg.Pool;
+let owner: pg.Pool;
 let campaignId: string;
 
 beforeAll(async () => {
   pool = new Pool({ connectionString: APP_URL, max: 4 });
-  await seed(pool);
+  owner = new Pool({ connectionString: OWNER_URL, max: 2 });
+  await seed(owner);
   const { rows } = await pool.query<{ id: string }>(
     `SELECT id FROM campaign.campaigns WHERE lifecycle_state = 'live' LIMIT 1`,
   );
@@ -37,6 +49,7 @@ beforeEach(async () => {
 afterAll(async () => {
   await pool.query(`DELETE FROM campaign.question WHERE campaign_id = $1`, [campaignId]);
   await pool.end();
+  await owner.end();
 });
 
 async function insertQuestion(

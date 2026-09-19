@@ -370,23 +370,29 @@ function againstListing(voucher: Voucher, listing: Listing): Voucher {
 
 /** CLI entry point. Kept separate so tests can seed a pool they control. */
 /**
- * DATABASE_URL from the environment, falling back to the repo's `.env`.
+ * DATABASE_OWNER_URL from the environment, falling back to the repo's `.env`.
  *
  * The same fallback `scripts/atlas.mjs` has, and for the same reason: `pnpm`
  * does not load `.env`, so without this `pnpm dev:fresh` fails halfway —
  * migrations apply (the migration runner reads the file) and then the seed
  * cannot find a database. A documented command that works for two of its
  * three steps is worse than one that does not exist.
+ *
+ * The OWNER credential, not the app's. Seeding is administration: since
+ * YT-0142 the app role can read a voucher and not write one, so a seed
+ * running as the app fails on the first voucher. Widening that grant to suit
+ * a fixture would undo a control that exists because voucher issuance is the
+ * value path — see `database-urls.ts`.
  */
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL !== undefined) return process.env.DATABASE_URL;
+  if (process.env.DATABASE_OWNER_URL !== undefined) return process.env.DATABASE_OWNER_URL;
 
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
   const envFile = path.join(repoRoot, ".env");
   if (!existsSync(envFile)) return undefined;
 
   for (const line of readFileSync(envFile, "utf8").split(/\r?\n/)) {
-    const match = /^\s*DATABASE_URL\s*=\s*(.+?)\s*$/.exec(line);
+    const match = /^\s*DATABASE_OWNER_URL\s*=\s*(.+?)\s*$/.exec(line);
     if (match?.[1] !== undefined) return match[1];
   }
   return undefined;
@@ -395,7 +401,10 @@ function resolveDatabaseUrl(): string | undefined {
 async function main(): Promise<void> {
   const connectionString = resolveDatabaseUrl();
   if (connectionString === undefined) {
-    console.error("No DATABASE_URL. Copy .env.example to .env and run `pnpm dev:up`.");
+    console.error(
+      "No DATABASE_OWNER_URL. The seed writes fixtures as the owner, not as the app role. " +
+        "Copy .env.example to .env and run `pnpm dev:up`.",
+    );
     process.exitCode = 1;
     return;
   }

@@ -301,22 +301,26 @@
 - [ ] Idempotent per the seeding rule in `docs/13` — idempotent **for a fixed contract**, so a contract change means `pnpm dev:fresh`, not a re-seed
 
 ### YT-0550 · Player: `Home` does not return the playhead to zero
-`todo` · PU · web · 1d · dep: YT-0526
+`review` · PU · web · 1d · dep: YT-0526
 
 - **Handed back rather than tuned green.** 3 of 4 keyboard-seek cases pass against the MinIO origin; `Home` lands the media at **0.35 s** instead of within a frame of zero. In a standalone probe `Home` works and returns exactly 0, so the cause is the **controlled-input / time-remap interaction in the component**, not latency
-- [ ] Fixed in the component, not by loosening the assertion. The backend session stopped at exactly this line and said so, which was right — relaxing a tolerance until it passes is how a real failure hides
+- **2026-09-20: a component fix attempted, NOT verified against the real origin — do not mark done from this entry alone.** `toRealSeconds(0, …)` is exactly `0` for any duration, so the arithmetic was ruled out. The remaining candidate named in the previous note — rapid repeat `handleSeekTo` calls issuing overlapping seeks against the network origin before the prior one settles — now has a fix: `handleSeekTo` (`use-watch-session.ts`) coalesces a new target into a queued ref while `video.seeking` is true, instead of layering a second seek on top of an in-flight one; the queued target is applied once `seeked` reports the current one settled (`use-video-event-wiring.ts`). The coalescing mechanism itself is unit-tested and sabotage-confirmed (`use-watch-session.test.tsx`: reverting the coalescing branch makes that test fail, as expected)
+- [ ] Fixed in the component, not by loosening the assertion. The backend session stopped at exactly this line and said so, which was right — relaxing a tolerance until it passes is how a real failure hides. **Not ticked**: this is the acceptance criterion itself, and it needs the real Playwright run below to confirm, not a unit test of the coalescing logic in isolation
 - [ ] ⚠️ **Seeks against an origin land later than against a same-process static file.** That is now a permanent property, not a flaw, since the `public/` fixture is gone; a `settle()` helper exists and fixed two of three cases
 - [ ] ⚠️ **The end-seek assertion has been rewritten and must not be reverted.** It previously asserted that seeking to the end completes the campaign — see decision **O-4** and risk 43. It now reads the media position directly, which is what YT-0412 actually asks for
 - [ ] Context worth keeping: the fixture is `attention-30s` at 30 fps because the seek tests are calibrated to a ~50 ms keyboard step at a 20:1 remap ratio. A 15 fps fixture makes one step land inside the same frame and the bar never moves. **A directory named for the wrong duration is a lie that costs somebody an hour**
+- ⚠️ **Not run in this pass**: `pnpm dev:up`/`pnpm media:publish` + the real Playwright suite. A live `next dev` was already running against this same `apps/web` checkout (docs/13c, "Two agents, one working tree" — a `next build` here would share `.next` with it), so `keyboard-seek.spec.ts`'s `Home` case stays `test.fixme`, now with a note on what to run and what to require (a few consecutive green repeats, not one) before flipping it
 
 ### YT-0551 · Gate the completion hand-off on coverage, not on the `ended` event
-`todo` · PU · web · 2d · dep: YT-0526
+`review` · PU · web · 2d · dep: YT-0526
 
 - **Implements decision O-4 in the player.** `use-watch-session.ts` sets `hasEnded` from the `ended` event alone, so **the only thing currently preventing scrub-to-complete is that Chrome declines to fire `ended` on a seek** — see risk 43. A fraud control resting on one browser's incidental behaviour is not a control
-- [ ] Completion requires **playback coverage of the whole timeline**, tracked as watched ranges, not a single terminal event
-- [ ] Seeking to the end leaves the campaign incomplete and does **not** mount the hand-off — asserted directly, since a test previously asserted the opposite
-- [ ] A synthetic `ended` event does not complete a campaign. `video.dispatchEvent(new Event("ended"))` from a console is the cheapest possible attack and must fail in the client as well as at the server
-- [ ] ⚠️ **This is defence in depth and must not be described as the control.** The server refuses regardless — checkpoint tokens at randomised timestamps cannot be scrubbed for, and per-segment delivery logs show the middle was never fetched. The reason to fix the client anyway is that **a UI which appears to reward scrubbing teaches people to try**, and `docs/22` is a catalogue of controls that were believed rather than exercised
+- **2026-09-20: done, verified at the unit/jsdom level; real-browser Playwright re-verification still recommended.** New pure module `watch-coverage-tracker.ts` tracks real-second watched ranges via a `seeking`-flagged tick (`applyCoverageTick`) and asks `hasFullRealCoverage` fresh on every `timeupdate`/`seeked`/`ended` — never trusting which event fired. `use-video-event-wiring.ts` (split out of `use-watch-session.ts` to hold the 300-line ceiling) wires this to the DOM
+- [x] Completion requires **playback coverage of the whole timeline**, tracked as watched ranges, not a single terminal event — `watch-coverage-tracker.ts`, mirroring `packages/contracts/src/watch/watch-coverage.ts`'s "ask what's missing" model
+- [x] Seeking to the end leaves the campaign incomplete and does **not** mount the hand-off — asserted directly in `use-watch-session.test.tsx` ("the attack: a single scrub to the end…"), **sabotage-confirmed**: reverting the fix in `use-video-event-wiring.ts` makes that test fail with the hand-off link found in the DOM
+- [x] A synthetic `ended` event does not complete a campaign — asserted directly ("the attack: a synthetic `ended` event with zero real playback…"), same sabotage confirmation
+- [x] ⚠️ **This is defence in depth and must not be described as the control.** Stated in `watch-coverage-tracker.ts`'s own header, citing the server's checkpoint-token/segment-log model, matching this ticket's wording
+- ⚠️ **What's NOT covered**: the real Playwright `keyboard-seek.spec.ts`/`earn-journey.spec.ts` suites were not re-run against a real browser + the MinIO origin in this pass (shared-dev-server risk, see YT-0550's note) — the jsdom-level hook test dispatches real DOM events on a real rendered `<video>` element and is sabotage-confirmed, but it is not a substitute for the real-browser run those specs exist to provide
 
 ### YT-0552 · Wire `apps/api` repositories to Postgres
 `review` · P0 · platform · 4d · dep: YT-0527, YT-0518
@@ -431,3 +435,12 @@
 - [ ] The split is a Reward Engine parameter, versioned with the action taxonomy, not a constant in any client
 - [ ] The client may **display** an expected reward; it must never compute the granted one. After YT-0102 moves scoring server-side, `checkpoint-scoring.ts` becomes display-only and its arithmetic advisory — say so in the file, because a module that used to be authoritative and quietly became advisory is the sort of thing someone later trusts again
 - [ ] ⚠️ **Two copies of one ratio is the derived-value bug with money attached.** Whatever the client shows must be derived from the server's value, not from a second constant that agrees with it today
+
+### YT-0564 · The result screen says "Total received" for a number nobody has granted
+`todo` · PU · web · 1d · dep: YT-0561
+
+- **`checkpoint-result.tsx` renders `result.totalReceived` — "Total received" / "Total diterima" — beside `totalEarned(split)`, which is computed by the now-advisory client scoring module.** Under **O-5** that number is not authoritative, and under **O-1** nothing is granted until full playback *and* answered questions. Today the server’s `complete` refuses every completion, so the figure is **certainly** unreceived at the moment it is shown
+- ⚠️ **This is risk 44 again in a different component.** That one was a live “Reward so far” tally implying accrual; this is a past-tense claim that money has arrived. **“Received” is a statement of fact about money**, and both the ACL and its Indonesian equivalent reach conduct that misleads about what a consumer will get
+- [ ] Copy states what is true at the moment it renders — an **expectation**, not a receipt — in both locales, and the test asserting the old string is updated to assert the new meaning rather than deleted
+- [ ] The figure is **derived from the server’s response** once YT-0561 lands, not from a client constant. Two numbers that agree today is the duplicate-source-of-truth bug with money attached
+- [ ] ⚠️ **Sweep for the vocabulary, do not fix only this string.** Risk 44 was found by grepping `earned` / `so far` / `accrued`; add **`received` / `diterima` / `total`** to that sweep. A superseded model leaves its words behind in copy long after the logic moves

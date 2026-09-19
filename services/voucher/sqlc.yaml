@@ -1,0 +1,16 @@
+# docs/13a §7: "Queries: sqlc-generated only. Hand-built SQL strings and
+# pgx.Exec with concatenation are banned outside one allowlisted, reviewed
+# file." Same arrangement as services/ledger: the SQL lives in db/query,
+# sqlc types it against db/schema.sql, and no Go file builds a query string.
+version: "2"
+sql:
+  - engine: postgresql
+    schema: db/schema.sql
+    queries: db/query
+    gen:
+      go:
+        package: sqlcgen
+        out: internal/store/sqlcgen
+        sql_package: pgx/v5
+        emit_json_tags: false
+        emit_pointers_for_null_types: true

@@ -39,14 +39,38 @@ import type { DomainHandler, HandlerRegistry } from "@yourtal/consent/dsar-orche
  */
 export const TOMBSTONE = "00000000-0000-0000-0000-000000000000";
 
-/** Severs the subject from their vouchers, leaving each voucher honourable. */
+/**
+ * Severs the subject from their vouchers, leaving each voucher honourable.
+ *
+ * ## It calls a function rather than running an UPDATE, and that is the control
+ *
+ * YT-0142 narrowed `yourtal_app` to SELECT on `voucher.vouchers`. The
+ * obvious repair was `GRANT UPDATE (owner_id)`, which reads as precise —
+ * the app could change who holds a voucher and not what it is worth.
+ *
+ * It does not express that property. A column grant permits any value in
+ * the column, and `SET owner_id = <tombstone>` and `SET owner_id =
+ * <attacker>` are the same statement with a different parameter. A voucher
+ * is a BEARER instrument: the holder is not an attribute of the value, the
+ * holder is who gets the money. So that grant would hand anyone with the
+ * application credential the entire voucher float, while every value column
+ * stayed reassuringly untouched.
+ *
+ * `voucher.anonymise_owner` is SECURITY DEFINER with the destination baked
+ * into its body. The app may call it and cannot choose where the voucher
+ * lands, which is exactly the authority anonymisation needs and nothing
+ * more. Running erasure as the database owner was rejected for the opposite
+ * reason: this is a user-triggered request handler, not an administrative
+ * batch, and giving that path the owner's credential is risk 45 in
+ * miniature.
+ */
 export function anonymiseVouchers(pool: pg.Pool): DomainHandler {
   return async (subjectId: string): Promise<number> => {
-    const result = await pool.query(
-      `UPDATE voucher.vouchers SET owner_id = $2 WHERE owner_id = $1`,
-      [subjectId, TOMBSTONE],
+    const { rows } = await pool.query<{ severed: number }>(
+      `SELECT voucher.anonymise_owner($1) AS severed`,
+      [subjectId],
     );
-    return result.rowCount ?? 0;
+    return rows[0]?.severed ?? 0;
   };
 }
 
@@ -75,6 +99,10 @@ export function eraseBusinessMemberships(pool: pg.Pool): DomainHandler {
  * produces an incomplete report, naming every domain that owes a handler —
  * which is the honest state and the thing that should stay visible until
  * each service ships its own.
+ *
+ * Every handler runs as the APPLICATION. The voucher domain reaches the
+ * value path through `voucher.anonymise_owner` rather than through a wider
+ * grant — see the note on `anonymiseVouchers`.
  */
 export function postgresHandlers(pool: pg.Pool): HandlerRegistry {
   return {

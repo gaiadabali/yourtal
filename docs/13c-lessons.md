@@ -190,3 +190,16 @@ It was found by writing the **refusal** rather than the happy path — the sixth
 Three version collisions in about fifteen minutes — on 14, 15 and 18 — because sequential small integers mean two sessions both reach for "the next number" and both are right. The file numbering carries no information about who is holding what.
 
 **Convention: a migration version is a wall-clock stamp, `YYYYMMDDHHMMSS`.** Two sessions can then only collide by starting within the same second, and the ordering still reflects when the work happened. Rename unapplied migrations to match; **leave applied ones alone**, because renaming a migration Atlas has already hashed is worse than an ugly number.
+
+## A correct narrowing is the cheapest way to find an unchecked operation
+
+Splitting voucher writes onto their own role was right — voucher issuance is value-path, same reasoning as the ledger. Within an hour it had broken two things, and **neither was the split**:
+
+- The shared seed inserted vouchers as the app role. Fixed by seeding as the **owner**, because seeding is administration and otherwise it breaks again the next time anyone adds a value-path role.
+- **`anonymiseVouchers` re-owners a voucher to a tombstone**, and the app could no longer update that table. **A right-to-erasure request failed.** Fixed with `GRANT UPDATE (owner_id)` — the app may sever a subject from an instrument, but may not alter what the instrument is worth.
+
+The second one is the point. **That operation had never been checked against the privilege it needed**, and nothing would have checked it: it ran as a role that could do everything, so it worked. Narrowing the role was the first thing that ever asked the question.
+
+**A permission boundary is a test that runs in production.** Every operation crossing it gets asked, once, whether it has the authority it claims — which is why risk 45 (the app connecting as a superuser) is worse than it looks: it does not merely grant too much, it **suppresses that question for every operation at once**.
+
+And the reason this surfaced as a red test rather than an unmet legal obligation is that the DSAR handlers were built to report `status: "failed"` and `complete: false` rather than claim success. **A handler that swallowed the permission error would have satisfied the suite and failed the user** — the same distinction as a checker that can only log.

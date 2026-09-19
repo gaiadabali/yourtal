@@ -56,7 +56,12 @@ test.describe("Earn journey", () => {
     // the default per-test budget, so this gets the standard 3x "slow"
     // allowance rather than a single long `expect` timeout eating the
     // whole test's clock.
-    test.slow();
+    // Explicit rather than `test.slow()`'s relative multiplier: this test
+    // waits for a real ~30 s HLS clip to play through to `ended`, which is
+    // the only way to reach the hand-off. Two Playwright projects doing that
+    // concurrently on one machine is what pushed it past the default budget
+    // in a full-suite run while it passed comfortably in isolation.
+    test.setTimeout(150_000);
     await page.goto("/?kind=long_form");
 
     const cardLink = page.locator(`a[href="/campaign/${BONUS_ACCURACY_CAMPAIGN_ID}"]`);

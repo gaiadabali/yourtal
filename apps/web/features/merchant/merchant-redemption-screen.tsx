@@ -146,6 +146,9 @@ export function MerchantRedemptionScreen({ device, vouchers }: MerchantRedemptio
     // (docs/09 §8.1); a fresh confirm from `reviewing` mints a new one.
     const idempotencyKey =
       step.step === "failed" ? step.idempotencyKey : generateIdempotencyKey(voucher.id, Date.now());
+    // The key stays the same across retries, so the attempt number is what
+    // tells a retry from a first call — see `isSimulatedNetworkFailure`.
+    const attempt = step.step === "failed" ? step.attempt + 1 : 1;
 
     if (!isOnline) {
       queueOffline(voucher, amountMinor);
@@ -184,6 +187,7 @@ export function MerchantRedemptionScreen({ device, vouchers }: MerchantRedemptio
       effectiveRemainingMinor,
       nowMs: Date.now(),
       idempotencyKey,
+      attempt,
     });
     const nowIso = new Date().toISOString();
     if (result.ok) {
@@ -201,6 +205,7 @@ export function MerchantRedemptionScreen({ device, vouchers }: MerchantRedemptio
         amountMinor,
         effectiveRemainingMinor,
         idempotencyKey,
+        attempt,
       });
     }
   }

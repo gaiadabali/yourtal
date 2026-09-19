@@ -35,6 +35,13 @@ export interface AttemptRedemptionInput {
   effectiveRemainingMinor: number;
   nowMs: number;
   idempotencyKey: string;
+  /**
+   * Which attempt this is for the same idempotency key. 1 is the first try.
+   * A retry keeps the SAME key on purpose (docs/09 §8.1) — that is what makes
+   * it idempotent — so the attempt number, not the key, is what distinguishes
+   * a retry from a first call.
+   */
+  attempt?: number;
 }
 
 /**
@@ -74,7 +81,7 @@ export function attemptRedemption(input: AttemptRedemptionInput): AttemptRedempt
     return { ok: false, error: eligibilityError };
   }
 
-  if (isSimulatedNetworkFailure(input.idempotencyKey)) {
+  if (isSimulatedNetworkFailure(input.idempotencyKey, input.attempt ?? 1)) {
     return { ok: false, error: { type: "network_error" } };
   }
 
@@ -94,13 +101,23 @@ export function attemptRedemption(input: AttemptRedemptionInput): AttemptRedempt
 }
 
 /**
- * Roughly one redemption attempt in twelve simulates a transient
- * merchant/network failure — reachable on demand (pick/retry an
- * idempotency key that hashes into the failing bucket) rather than
- * flaky.
+ * Roughly one FIRST attempt in twelve simulates a transient merchant/network
+ * failure — deterministic from the idempotency key, so it is reachable on
+ * demand rather than flaky.
+ *
+ * `attempt` is load-bearing. This used to key only off the idempotency key,
+ * and a retry correctly reuses that key (docs/09 §8.1), so the same hash
+ * bucket was recomputed and the retry failed again — forever. A cashier who
+ * hit the ~8% case could never complete that redemption, and "Coba lagi" was
+ * decoration. It also made the e2e journey look flaky: three "independent"
+ * retries failing together is 1-in-1728, which is the tell that they were
+ * never independent.
+ *
+ * Modelling it as first-attempt-only is the honest simulation: a transient
+ * network error is, by definition, one that a retry clears.
  */
-function isSimulatedNetworkFailure(idempotencyKey: string): boolean {
-  return hashStringToSeed(idempotencyKey) % 12 === 0;
+function isSimulatedNetworkFailure(idempotencyKey: string, attempt: number): boolean {
+  return attempt <= 1 && hashStringToSeed(idempotencyKey) % 12 === 0;
 }
 
 /** Builds a fresh idempotency key for one redemption attempt (docs/09 §8.1: mandatory on every call). */

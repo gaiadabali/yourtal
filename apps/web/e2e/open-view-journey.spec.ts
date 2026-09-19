@@ -36,7 +36,12 @@ test.describe("Open-view journey", () => {
     // start overlay clears; under full-suite parallel load that can take
     // longer than the default per-test budget (see earn-journey.spec.ts's
     // matching comment).
-    test.slow();
+    // Explicit rather than `test.slow()`'s relative multiplier: this test
+    // waits for a real ~30 s HLS clip to play through to `ended`, which is
+    // the only way to reach the hand-off. Two Playwright projects doing that
+    // concurrently on one machine is what pushed it past the default budget
+    // in a full-suite run while it passed comfortably in isolation.
+    test.setTimeout(150_000);
     await page.goto(`/id/c/${BONUS_ACCURACY_CAMPAIGN_ID}`);
 
     // The honest, signed-in-facing facts (reused from CampaignEntryCard's

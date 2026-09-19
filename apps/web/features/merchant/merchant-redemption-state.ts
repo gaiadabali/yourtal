@@ -63,4 +63,6 @@ export type MerchantRedemptionStep =
       amountMinor: number;
       effectiveRemainingMinor: number;
       idempotencyKey: string;
+      /** How many attempts this key has had. A retry must not look like a first call. */
+      attempt: number;
     };

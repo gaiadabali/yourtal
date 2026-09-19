@@ -400,3 +400,19 @@
 - [ ] The value under test is resolved from the environment first, with the config supplying only a fallback
 - [ ] A comment at each site naming why, since the next person will reach for the convenient form again
 - [ ] ⚠️ **After fixing, re-run the sabotage that previously passed** and confirm it now fails — a fix to a verification mechanism has to be verified by the mechanism it repairs
+
+### YT-0559 · Contract entries for the campaign, watch and health routes
+`todo` · P0 · platform · 2d · dep: YT-0553, YT-0556
+
+- **Seven live routes have no OpenAPI entry.** They are **not silently missing** — they sit in an explicit `KNOWN_OUT_OF_SCOPE` ledger in `route-drift.test.ts` which is **itself asserted**, so adding or removing one of those routes fails the suite until the ledger is updated. That is the right shape for a gap: visible, and it fails when it changes
+- [ ] Campaign, watch and health routes documented; each removed from the ledger in the same change
+- [ ] ⚠️ **The ledger must never become a parking spot.** It is the same distinction YT-0536 draws between a by-design exemption and a known gap — collapsing them is how the second quietly becomes the first
+
+### YT-0560 · The route gate checks method and path, not shape
+`todo` · P0 · platform · 2d · dep: YT-0559
+
+- **A route entry is transcribed from its DTO and nothing checks it stayed true.** Method and path drift are guarded; **a renamed DTO field in `apps/api` goes unnoticed**, so the published contract can describe a body the server no longer accepts — and every generated Go client inherits it
+- This is YT-0555 one level down: a gate covering the dimension that is easy to check rather than the one that carries the risk
+- [ ] The entry's schema is derived from or compared against the DTO, with neither inheriting the other — a comparison where one side is generated from the other compares a value to itself, which is what `openapi:go:check` was doing
+- [ ] The 400 validation response currently carries a description and **no schema**, because nobody verified `nestjs-zod`'s exception shape against the installed version. Domain 400s do carry the real `ErrorResponse`. Verify it, then state it — or leave it unstated rather than guessed
+- [ ] ⚠️ **Prove it by breaking it, and confirm the break lands:** rename a DTO field and require that the failure **names that field**. A generic red proves the suite noticed something, not that the gate discriminates

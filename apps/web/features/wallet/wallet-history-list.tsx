@@ -31,7 +31,11 @@ export function WalletHistoryList({ entries, locale = "id-ID" }: WalletHistoryLi
           key={entry.id}
           className="flex items-start justify-between gap-3 border-b border-border pb-3 last:border-none last:pb-0"
         >
-          <div>
+          {/* min-w-0: without it, this block's automatic minimum width
+              (its longest unbreakable word) plus the shrink-0 amount span
+              beside it can force the row wider than the viewport at
+              narrow widths / 200% zoom (YT-0401). */}
+          <div className="min-w-0">
             <p className="text-sm text-fg">{entry.description}</p>
             <p className="text-xs text-fg-subtle">{formatWalletDate(entry.occurredAt, locale)}</p>
           </div>

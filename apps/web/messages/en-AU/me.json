@@ -1,0 +1,70 @@
+{
+  "page": {
+    "heading": "Me",
+    "intro": "Your consent choices, interests, security and referrals."
+  },
+  "consent": {
+    "heading": "Consent controls",
+    "intro": "The same three choices from sign-up, still separate. Turning any of these off is exactly as easy as turning it on — nothing extra to confirm either way.",
+    "essentialTitle": "Account and phone verification",
+    "essentialBody": "Keeps your account working and confirms your phone hasn't registered before. Can't be turned off without deleting your account below.",
+    "essentialLockedBadge": "Always on",
+    "personalizeTitle": "Personalise which campaigns I see",
+    "personalizeBody": "Uses your declared interests to sort the Earn board. Off, and you still see every campaign — just not sorted for you.",
+    "marketingTitle": "Send me marketing messages",
+    "marketingBody": "SMS or WhatsApp about new campaigns, rewards or promotions.",
+    "previewHeading": "What this changes",
+    "personalizePreviewOnWithInterests": "Your Earn board would show {interests} first.",
+    "personalizePreviewOnNoInterests": "Personalised sort is on, but you haven't chosen any interests yet — pick some below and the board will use them.",
+    "personalizePreviewOff": "Your Earn board order: default, not personalised to you.",
+    "marketingPreviewOnHeading": "Sample message you might receive",
+    "marketingPreviewOnBody": "YourTal: a new campaign from Kopi Kenangan just opened — earn up to 800 points in 3 minutes.",
+    "marketingPreviewOff": "You won't receive marketing messages."
+  },
+  "interests": {
+    "heading": "Your interests",
+    "intro": "Used to sort the Earn board when personalisation above is on. Change these anytime — nothing is permanent.",
+    "selectedSuffix": "selected",
+    "savedHint": "Saved automatically on this device."
+  },
+  "language": {
+    "heading": "Language & region",
+    "intro": "Your region sets your language and currency together, chosen once at sign-up.",
+    "currentLabel": "Current",
+    "fixedNote": "Region can't be changed in this build, the same rule the sign-up screen states — it also determines which consumer protections and currency apply to your account."
+  },
+  "security": {
+    "heading": "Security",
+    "intro": "What each control actually does, plainly — not oversold.",
+    "otpTitle": "Phone one-time code",
+    "otpBody": "Confirms this phone number hasn't been used to register before. It does not verify who you are, and this prototype keeps no record of your verified number to display here.",
+    "passkeyTitle": "Passkey",
+    "passkeyBody": "Lets you skip typing a one-time code on this device. It's a convenience, not proof of identity, and by itself it doesn't make an account harder to take over.",
+    "passkeyEnrolledLabel": "Enrolled on this device (demo)",
+    "passkeyNotEnrolledLabel": "Not set up",
+    "enrollCta": "Set up passkey (demo)",
+    "removeCta": "Remove passkey (demo)",
+    "prototypeNote": "Prototype: this only stores a label on this device. No real passkey is created or checked."
+  },
+  "referrals": {
+    "heading": "Referrals",
+    "intro": "Share your code with friends. Referral rewards are not switched on in this build — sharing doesn't grant points to either of you yet.",
+    "codeLabel": "Your referral code",
+    "copyCta": "Copy",
+    "copiedConfirmation": "Copied",
+    "rewardsNotAvailable": "Referral points aren't available yet."
+  },
+  "deleteAccount": {
+    "heading": "Delete your account",
+    "intro": "This permanently removes your YourTal account on this device. Before you confirm, here is exactly what happens — there is no cash refund for any of it.",
+    "bulletPoints": "Unspent points are forfeited, including anything on hold or about to expire. None of it can be paid out as cash or transferred to anyone else.",
+    "bulletVouchers": "Vouchers already in your wallet keep their code and can still be redeemed by the merchant until they expire — but you won't be able to log back in to view them, so save or screenshot any you plan to use first.",
+    "bulletIrreversible": "This can't be undone.",
+    "confirmCheckboxLabel": "I understand my unspent points will be forfeited and this can't be undone.",
+    "startCta": "Delete my account",
+    "deleteCta": "Delete my account",
+    "cancelCta": "Cancel",
+    "completedHeading": "Local settings cleared",
+    "completedBody": "This prototype cleared your consent, interest and security choices on this device. YourTal has no live account-deletion endpoint yet — a real request would be queued for processing and would follow the forfeiture rules above."
+  }
+}

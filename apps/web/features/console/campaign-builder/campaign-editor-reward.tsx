@@ -1,17 +1,19 @@
 "use client";
 
+import type { ChangeEvent } from "react";
 import { useId } from "react";
+import type { UseFormReturn } from "react-hook-form";
 import { Badge } from "@yourtal/ui/badge";
 import { Input } from "@yourtal/ui/input";
 import type { CampaignScoringRule } from "@yourtal/contracts/campaign";
 import { useRegion } from "@/features/region/use-region";
 import { assessRewardToDataCost, describeRewardDataCostRatio } from "./campaign-reward-risk";
-import type { CampaignDraft, CampaignDraftFieldErrors } from "./campaign-draft";
+import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
 import { draftEstimatedDataMb } from "./campaign-draft";
 
 export interface CampaignEditorRewardProps {
   draft: CampaignDraft;
-  fieldErrors: CampaignDraftFieldErrors;
+  form: UseFormReturn<CampaignDraftFormValues>;
   onChange: (draft: CampaignDraft) => void;
   disabled?: boolean;
 }
@@ -21,6 +23,12 @@ const SCORING_RULE_LABELS: Record<CampaignScoringRule, string> = {
   base_plus_accuracy_bonus: "Base + accuracy bonus — scales up to 40% more for correct answers",
 };
 
+/** A whole number of points, positive or negative — the reward-negativity check lives in `campaign-draft.ts`'s validator, not a clamp here, so a negative entry now actually surfaces "Reward cannot be negative." instead of being silently rewritten to zero. */
+function toWholePoints(raw: string): number {
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? Math.round(parsed) : NaN;
+}
+
 /**
  * Reward and scoring, plus the authoring-time consequence this ticket asks
  * for explicitly: the reward-to-data-cost ratio banner (docs/06 §2.3 rule
@@ -28,17 +36,23 @@ const SCORING_RULE_LABELS: Record<CampaignScoringRule, string> = {
  * accept it"). Uses the region the console is already rendering in
  * (`useRegion()`, ambient from `app/(app)/layout.tsx` — never a hardcoded
  * "Rp"/`id-ID`), so an AU business sees its own currency's numbers.
+ *
+ * `rewardPoints` is registered on the shared `form` (YT-0525 — see
+ * `campaign-editor.tsx`'s doc comment); `scoringRule` stays a plain
+ * controlled field via `draft`/`onChange`, since it is not one of the four
+ * fields `campaign-draft.ts`'s validator (and so the RHF form) covers.
  */
 export function CampaignEditorReward({
   draft,
-  fieldErrors,
+  form,
   onChange,
   disabled,
 }: CampaignEditorRewardProps) {
   const scoringRuleId = useId();
   const { currency } = useRegion();
+  const rewardPoints = form.watch("rewardPoints");
   const estimatedDataMb = draftEstimatedDataMb(draft);
-  const assessment = assessRewardToDataCost(draft.rewardPoints, estimatedDataMb, currency);
+  const assessment = assessRewardToDataCost(rewardPoints, estimatedDataMb, currency);
 
   return (
     <div className="flex flex-col gap-4">
@@ -46,15 +60,19 @@ export function CampaignEditorReward({
         label="Reward (points)"
         type="number"
         min={0}
-        value={draft.rewardPoints}
         disabled={disabled}
-        onChange={(event) => {
-          const parsed = Number(event.target.value);
-          if (Number.isFinite(parsed)) {
-            onChange({ ...draft, rewardPoints: Math.max(0, Math.round(parsed)) });
-          }
-        }}
-        {...(fieldErrors.rewardPoints ? { errorMessage: fieldErrors.rewardPoints } : {})}
+        {...form.register("rewardPoints", {
+          setValueAs: toWholePoints,
+          onChange: (event: ChangeEvent<HTMLInputElement>) => {
+            const value = toWholePoints(event.target.value);
+            if (Number.isFinite(value)) {
+              onChange({ ...draft, rewardPoints: value });
+            }
+          },
+        })}
+        {...(form.formState.errors.rewardPoints?.message
+          ? { errorMessage: form.formState.errors.rewardPoints.message }
+          : {})}
       />
 
       <div className="flex flex-col gap-1.5">

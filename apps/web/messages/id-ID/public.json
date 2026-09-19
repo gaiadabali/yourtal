@@ -1,0 +1,54 @@
+{
+  "header": {
+    "signUp": "Daftar gratis",
+    "logIn": "Masuk"
+  },
+  "breadcrumb": {
+    "home": "Beranda",
+    "catalogue": "Katalog reward",
+    "merchants": "Merchant"
+  },
+  "campaign": {
+    "eyebrow": "Video bersponsor",
+    "durationLabel": "Durasi",
+    "dataCostLabel": "Estimasi data",
+    "rewardLabel": "Reward dasar",
+    "accuracyBonusLabel": "Bonus akurasi",
+    "questionsLabel": "Pertanyaan",
+    "scoringLabel": "Aturan penilaian",
+    "ctaHeading": "Yang akan kamu dapatkan",
+    "ctaBody": "Tonton video {duration} ini dan dapatkan {reward} setelah kamu mendaftar.",
+    "ctaBodyWithBonus": "Tonton video {duration} ini dan dapatkan {reward}, plus bonus akurasi hingga {bonus}, setelah kamu mendaftar.",
+    "ctaButton": "Daftar untuk mulai dapat poin",
+    "honestyNote": "Ketentuan yang ditampilkan di halaman ini adalah ketentuan yang akan dihormati — durasi, reward, dan aturan penilaian tidak berubah setelah kamu mulai menonton.",
+    "notLiveNotice": "Campaign ini sedang tidak aktif."
+  },
+  "offer": {
+    "eyebrow": "Voucher",
+    "priceLabel": "Harga dalam poin",
+    "worthLabel": "Senilai",
+    "categoryLabel": "Kategori",
+    "districtLabel": "Lokasi",
+    "stockLabel": "Stok",
+    "expiryLabel": "Berlaku hingga",
+    "ctaBody": "Tukarkan voucher senilai {worth} ini dengan {points} setelah kamu mendaftar dan poinmu cukup.",
+    "ctaButton": "Daftar untuk menukar"
+  },
+  "merchant": {
+    "eyebrow": "Merchant",
+    "campaignsHeading": "Campaign",
+    "offersHeading": "Voucher",
+    "noCampaigns": "Belum ada campaign aktif dari merchant ini.",
+    "noOffers": "Belum ada voucher dari merchant ini.",
+    "districtLabel": "Lokasi"
+  },
+  "catalogue": {
+    "title": "Katalog reward",
+    "description": "Jelajahi semua voucher yang bisa kamu tukar dengan poin di YourTal.",
+    "viewOffer": "Lihat voucher"
+  },
+  "notFound": {
+    "heading": "Tidak ditemukan",
+    "body": "Halaman ini tidak ada atau sudah tidak tersedia."
+  }
+}

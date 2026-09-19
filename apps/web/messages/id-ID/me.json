@@ -1,0 +1,70 @@
+{
+  "page": {
+    "heading": "Saya",
+    "intro": "Pilihan persetujuanmu, minat, keamanan, dan referral."
+  },
+  "consent": {
+    "heading": "Kontrol persetujuan",
+    "intro": "Tiga pilihan yang sama seperti saat mendaftar, tetap terpisah. Menonaktifkan salah satunya semudah mengaktifkannya — tidak ada langkah tambahan untuk keduanya.",
+    "essentialTitle": "Akun dan verifikasi nomor HP",
+    "essentialBody": "Menjaga akunmu tetap berfungsi dan memastikan nomor HP-mu belum pernah dipakai mendaftar. Tidak bisa dinonaktifkan tanpa menghapus akun di bawah.",
+    "essentialLockedBadge": "Selalu aktif",
+    "personalizeTitle": "Personalisasi kampanye yang saya lihat",
+    "personalizeBody": "Menggunakan minat yang kamu pilih untuk mengurutkan papan Earn. Jika nonaktif, kamu tetap melihat semua kampanye — hanya saja tidak diurutkan khusus untukmu.",
+    "marketingTitle": "Kirimi saya pesan promosi",
+    "marketingBody": "SMS atau WhatsApp tentang kampanye, hadiah, atau promosi baru.",
+    "previewHeading": "Apa yang berubah",
+    "personalizePreviewOnWithInterests": "Papan Earn-mu akan menampilkan {interests} lebih dulu.",
+    "personalizePreviewOnNoInterests": "Urutan personalisasi aktif, tapi kamu belum memilih minat — pilih di bawah dan urutan papan akan memakainya.",
+    "personalizePreviewOff": "Urutan papan Earn-mu: default, tidak dipersonalisasi.",
+    "marketingPreviewOnHeading": "Contoh pesan yang mungkin kamu terima",
+    "marketingPreviewOnBody": "YourTal: kampanye baru dari Kopi Kenangan baru saja dibuka — dapatkan hingga 800 poin dalam 3 menit.",
+    "marketingPreviewOff": "Kamu tidak akan menerima pesan promosi."
+  },
+  "interests": {
+    "heading": "Minatmu",
+    "intro": "Dipakai untuk mengurutkan papan Earn saat personalisasi di atas aktif. Bisa diubah kapan saja — tidak ada yang permanen.",
+    "selectedSuffix": "dipilih",
+    "savedHint": "Tersimpan otomatis di perangkat ini."
+  },
+  "language": {
+    "heading": "Bahasa & wilayah",
+    "intro": "Wilayahmu menentukan bahasa dan mata uang sekaligus, dipilih satu kali saat mendaftar.",
+    "currentLabel": "Saat ini",
+    "fixedNote": "Wilayah tidak bisa diubah di versi ini, sama seperti yang tertulis di layar pendaftaran — wilayah juga menentukan perlindungan konsumen dan mata uang yang berlaku untuk akunmu."
+  },
+  "security": {
+    "heading": "Keamanan",
+    "intro": "Apa yang sebenarnya dilakukan tiap kontrol — apa adanya, tidak dilebih-lebihkan.",
+    "otpTitle": "Kode sekali pakai lewat HP",
+    "otpBody": "Memastikan nomor HP ini belum pernah dipakai mendaftar. Ini tidak membuktikan identitasmu, dan prototipe ini tidak menyimpan catatan nomor terverifikasimu untuk ditampilkan di sini.",
+    "passkeyTitle": "Passkey",
+    "passkeyBody": "Membuatmu tidak perlu mengetik kode sekali pakai di perangkat ini. Ini kenyamanan, bukan bukti identitas, dan dengan sendirinya tidak membuat akun lebih sulit diambil alih.",
+    "passkeyEnrolledLabel": "Terdaftar di perangkat ini (demo)",
+    "passkeyNotEnrolledLabel": "Belum diatur",
+    "enrollCta": "Atur passkey (demo)",
+    "removeCta": "Hapus passkey (demo)",
+    "prototypeNote": "Prototipe: ini hanya menyimpan label di perangkat ini. Tidak ada passkey sungguhan yang dibuat atau diperiksa."
+  },
+  "referrals": {
+    "heading": "Referral",
+    "intro": "Bagikan kodemu ke teman. Hadiah referral belum diaktifkan di versi ini — berbagi belum memberi poin ke siapa pun.",
+    "codeLabel": "Kode referralmu",
+    "copyCta": "Salin",
+    "copiedConfirmation": "Tersalin",
+    "rewardsNotAvailable": "Poin referral belum tersedia."
+  },
+  "deleteAccount": {
+    "heading": "Hapus akunmu",
+    "intro": "Ini menghapus akun YourTal-mu secara permanen di perangkat ini. Sebelum kamu konfirmasi, ini yang akan terjadi persis — tidak ada pengembalian dana tunai untuk apa pun di bawah ini.",
+    "bulletPoints": "Poin yang belum dipakai hangus, termasuk yang masih ditahan atau akan kedaluwarsa. Tidak ada yang bisa dicairkan jadi uang tunai atau dipindahkan ke orang lain.",
+    "bulletVouchers": "Voucher yang sudah ada di walletmu tetap punya kode dan masih bisa ditukarkan merchant sampai kedaluwarsa — tapi kamu tidak bisa login lagi untuk melihatnya, jadi simpan atau screenshot dulu voucher yang ingin kamu pakai.",
+    "bulletIrreversible": "Tindakan ini tidak bisa dibatalkan.",
+    "confirmCheckboxLabel": "Saya paham poin yang belum dipakai akan hangus dan ini tidak bisa dibatalkan.",
+    "startCta": "Hapus akun saya",
+    "deleteCta": "Hapus akun saya",
+    "cancelCta": "Batal",
+    "completedHeading": "Pengaturan lokal dihapus",
+    "completedBody": "Prototipe ini telah menghapus pilihan persetujuan, minat, dan keamananmu di perangkat ini. YourTal belum punya endpoint penghapusan akun sungguhan — permintaan sungguhan akan diantre untuk diproses dan mengikuti aturan hangus di atas."
+  }
+}

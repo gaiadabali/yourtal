@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@yourtal/ui/button";
-import type { CampaignDraft } from "./campaign-draft";
-import { draftDurationSeconds, validateCampaignDraftForm } from "./campaign-draft";
+import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
+import { draftDurationSeconds, draftFormValues } from "./campaign-draft";
+import { campaignDraftFormResolver } from "./campaign-draft-form";
 import { isDraftContentEditable } from "./campaign-draft-status";
 import { CampaignEditorBudget } from "./campaign-editor-budget";
 import { CampaignEditorChapters } from "./campaign-editor-chapters";
@@ -32,11 +34,29 @@ export interface CampaignEditorProps {
  * extra click, since surfacing the authoring-time consequence (YT-0441's
  * brief) only works if the advertiser sees it while they are still
  * changing the numbers that drive it.
+ *
+ * Title, synopsis, reward and total budget are the one React Hook Form
+ * instance for this whole editor (YT-0525) — created here, once, because
+ * those four fields are split across three of the tabs below
+ * (`CampaignEditorDetails`, `CampaignEditorReward`, `CampaignEditorBudget`),
+ * which mount and unmount as `section` changes; a form created inside any
+ * one of them would lose its state every time the author switched away and
+ * back. `values` keeps it synced to `draft` (the actual source of truth,
+ * still owned by `campaign-builder-screen.tsx`'s `useState`) rather than
+ * the reverse, since autosave, the status panel and the live preview all
+ * read `draft`, not the form. `form` is passed down as a plain prop, not
+ * `FormProvider`/context — docs/13b-typescript-standards.md §8 reserves
+ * Context for "ambient, rarely-changing values"; form state changes on
+ * every keystroke, which is exactly what that rule is warning against.
  */
 export function CampaignEditor({ draft, onChange, onBack, canEdit }: CampaignEditorProps) {
   const [section, setSection] = useState<CampaignEditorSection>("details");
   const editable = canEdit && isDraftContentEditable(draft.status);
-  const fieldErrors = validateCampaignDraftForm(draft);
+  const form = useForm<CampaignDraftFormValues>({
+    values: draftFormValues(draft),
+    resolver: campaignDraftFormResolver,
+    mode: "onChange",
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -56,7 +76,7 @@ export function CampaignEditor({ draft, onChange, onBack, canEdit }: CampaignEdi
             {section === "details" ? (
               <CampaignEditorDetails
                 draft={draft}
-                fieldErrors={fieldErrors}
+                form={form}
                 onChange={onChange}
                 disabled={!editable}
               />
@@ -78,7 +98,7 @@ export function CampaignEditor({ draft, onChange, onBack, canEdit }: CampaignEdi
             {section === "reward" ? (
               <CampaignEditorReward
                 draft={draft}
-                fieldErrors={fieldErrors}
+                form={form}
                 onChange={onChange}
                 disabled={!editable}
               />
@@ -93,7 +113,7 @@ export function CampaignEditor({ draft, onChange, onBack, canEdit }: CampaignEdi
             {section === "budget" ? (
               <CampaignEditorBudget
                 budget={draft.budget}
-                fieldErrors={fieldErrors}
+                form={form}
                 onChange={(budget) => onChange({ ...draft, budget })}
                 disabled={!editable}
               />

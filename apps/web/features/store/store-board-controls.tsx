@@ -20,8 +20,14 @@ export interface StoreBoardControlsProps {
   merchantOptions: readonly StoreMerchantOption[];
 }
 
+// w-full + max-w-40 (not a fixed w-40): 160px is the normal design width,
+// but a fixed width can't shrink, and at 320px x 200% zoom the available
+// column width after page padding is narrower than 160px — the same "fixed
+// width refuses to shrink" pattern as the /business select fix. w-full lets
+// it fill whatever its (min-w-0) column actually has; max-w-40 caps it at
+// the normal design width everywhere else.
 const SELECT_CLASS =
-  "w-40 rounded-md border border-border bg-surface px-3 py-2 text-sm font-sans text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "w-full max-w-40 rounded-md border border-border bg-surface px-3 py-2 text-sm font-sans text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
  * The Store browse grid's four filters (YT-0420 acceptance: "category,
@@ -67,7 +73,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1">
           <label htmlFor={categoryId} className="text-xs text-fg-muted">
             Kategori
           </label>
@@ -90,7 +96,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1">
           <label htmlFor={priceBandId} className="text-xs text-fg-muted">
             Harga
           </label>
@@ -113,7 +119,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1">
           <label htmlFor={locationId} className="text-xs text-fg-muted">
             Lokasi
           </label>
@@ -132,7 +138,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1">
           <label htmlFor={merchantId} className="text-xs text-fg-muted">
             Merchant
           </label>

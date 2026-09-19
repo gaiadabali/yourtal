@@ -103,6 +103,11 @@ export type CampaignDraftFieldErrors = Partial<Record<keyof CampaignDraftFormVal
  * `campaign-reward-risk.ts`) — those are advisories with their own richer
  * messaging, not a pass/fail this function should flatten into one error.
  *
+ * Takes the flat `CampaignDraftFormValues` (not the full `CampaignDraft`) so
+ * it can be called directly as-is from both a unit test and
+ * `campaign-draft-form.ts`'s React Hook Form resolver, which only ever has
+ * the form's own field values in hand, never the whole draft.
+ *
  * Hand-rolled rather than a `zod/mini` schema: this runs in a client leaf
  * (`campaign-editor.tsx`) on every keystroke of a route that was, in an
  * earlier version of this file, ~13 KB gz over the 200 KB hard gate —
@@ -112,11 +117,14 @@ export type CampaignDraftFieldErrors = Partial<Record<keyof CampaignDraftFormVal
  * these four trivial checks, confirmed by inspecting the actual produced
  * chunk. Four `if` statements validate exactly the same four rules for
  * zero bytes, which is the better trade for a form this small — `zod/mini`
- * remains the right tool for a real discriminated-union shape (see
- * `question-bank`'s `QuestionDraft`), just not for this one.
+ * remains the right tool for a real discriminated-union shape, just not for
+ * this one. YT-0525 wired React Hook Form on top of this exact function
+ * (via `campaign-draft-form.ts`'s hand-written resolver) instead of
+ * replacing it with a schema, for the same measured reason.
  */
-export function validateCampaignDraftForm(draft: CampaignDraft): CampaignDraftFieldErrors {
-  const values = draftFormValues(draft);
+export function validateCampaignDraftForm(
+  values: CampaignDraftFormValues,
+): CampaignDraftFieldErrors {
   const errors: CampaignDraftFieldErrors = {};
 
   if (values.title.trim().length === 0) {
@@ -131,11 +139,11 @@ export function validateCampaignDraftForm(draft: CampaignDraft): CampaignDraftFi
     errors.synopsis = `Keep the synopsis to ${MAX_SYNOPSIS_LENGTH} characters or fewer.`;
   }
 
-  if (values.rewardPoints < 0) {
+  if (!Number.isFinite(values.rewardPoints) || values.rewardPoints < 0) {
     errors.rewardPoints = "Reward cannot be negative.";
   }
 
-  if (values.totalBudgetPoints <= 0) {
+  if (!Number.isFinite(values.totalBudgetPoints) || values.totalBudgetPoints <= 0) {
     errors.totalBudgetPoints = "Set a total budget greater than zero.";
   }
 

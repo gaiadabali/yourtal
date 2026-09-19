@@ -15,7 +15,7 @@ export function StoreGrid({ listings }: StoreGridProps) {
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {listings.map((listing) => (
-        <li key={listing.id}>
+        <li key={listing.id} className="min-w-0">
           <StoreListingCard listing={listing} />
         </li>
       ))}

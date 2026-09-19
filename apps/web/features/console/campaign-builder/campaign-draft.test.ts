@@ -4,6 +4,7 @@ import {
   draftCompleteQuestionCount,
   draftDurationSeconds,
   draftEstimatedDataMb,
+  draftFormValues,
   validateCampaignDraftForm,
 } from "./campaign-draft";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
@@ -36,7 +37,7 @@ describe("draftCompleteQuestionCount", () => {
 describe("validateCampaignDraftForm", () => {
   it("flags an empty title and synopsis with distinct messages", () => {
     const draft = createEmptyCampaignDraft(BUSINESS_ID, "Kopi Kenangan");
-    const errors = validateCampaignDraftForm(draft);
+    const errors = validateCampaignDraftForm(draftFormValues(draft));
     expect(errors.title).toBeDefined();
     expect(errors.synopsis).toBeDefined();
   });
@@ -45,8 +46,18 @@ describe("validateCampaignDraftForm", () => {
     const draft = createEmptyCampaignDraft(BUSINESS_ID, "Kopi Kenangan");
     draft.title = "Launch";
     draft.synopsis = "A short synopsis.";
-    const errors = validateCampaignDraftForm(draft);
+    const errors = validateCampaignDraftForm(draftFormValues(draft));
     expect(errors.totalBudgetPoints).toBeDefined();
+  });
+
+  it("flags a negative reward instead of silently accepting it", () => {
+    const draft = createEmptyCampaignDraft(BUSINESS_ID, "Kopi Kenangan");
+    draft.title = "Launch";
+    draft.synopsis = "A short synopsis.";
+    draft.rewardPoints = -50;
+    draft.budget = { totalBudgetPoints: 100_000, dailyCapPoints: null };
+    const errors = validateCampaignDraftForm(draftFormValues(draft));
+    expect(errors.rewardPoints).toBeDefined();
   });
 
   it("returns no errors for a fully valid draft", () => {
@@ -55,6 +66,6 @@ describe("validateCampaignDraftForm", () => {
     draft.synopsis = "A short synopsis.";
     draft.rewardPoints = 500;
     draft.budget = { totalBudgetPoints: 100_000, dailyCapPoints: null };
-    expect(validateCampaignDraftForm(draft)).toStrictEqual({});
+    expect(validateCampaignDraftForm(draftFormValues(draft))).toStrictEqual({});
   });
 });

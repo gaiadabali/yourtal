@@ -15,7 +15,7 @@ export function CampaignGrid({ campaigns }: CampaignGridProps) {
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {campaigns.map((campaign) => (
-        <li key={campaign.id}>
+        <li key={campaign.id} className="min-w-0">
           <CampaignCard campaign={campaign} />
         </li>
       ))}

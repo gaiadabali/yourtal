@@ -48,7 +48,10 @@ export function CampaignBoardControls() {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <nav
         aria-label="Filter jenis campaign"
-        className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised p-1"
+        // flex-wrap: three pill links (plus their padding) don't fit one
+        // row at 320px x 200% zoom; without it they force the row past the
+        // viewport instead of wrapping onto a second line (YT-0401).
+        className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-surface-raised p-1"
       >
         {CAMPAIGN_KIND_FILTER_OPTIONS.map((option) => {
           const isActive = option.key === current.kind;

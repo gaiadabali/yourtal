@@ -1,0 +1,54 @@
+{
+  "header": {
+    "signUp": "Sign up free",
+    "logIn": "Log in"
+  },
+  "breadcrumb": {
+    "home": "Home",
+    "catalogue": "Rewards catalogue",
+    "merchants": "Merchants"
+  },
+  "campaign": {
+    "eyebrow": "Sponsored video",
+    "durationLabel": "Duration",
+    "dataCostLabel": "Estimated data",
+    "rewardLabel": "Base reward",
+    "accuracyBonusLabel": "Accuracy bonus",
+    "questionsLabel": "Questions",
+    "scoringLabel": "Scoring rule",
+    "ctaHeading": "What you would earn",
+    "ctaBody": "Watch this {duration} video and earn {reward} once you sign up.",
+    "ctaBodyWithBonus": "Watch this {duration} video and earn {reward}, plus an accuracy bonus of up to {bonus}, once you sign up.",
+    "ctaButton": "Sign up to start earning",
+    "honestyNote": "The terms shown on this page are the terms honoured — duration, reward and the scoring rule never change once you start watching.",
+    "notLiveNotice": "This campaign is not currently live."
+  },
+  "offer": {
+    "eyebrow": "Voucher",
+    "priceLabel": "Price in points",
+    "worthLabel": "Worth",
+    "categoryLabel": "Category",
+    "districtLabel": "Location",
+    "stockLabel": "Stock",
+    "expiryLabel": "Valid until",
+    "ctaBody": "Redeem this {worth} voucher for {points} once you sign up and have enough points.",
+    "ctaButton": "Sign up to redeem"
+  },
+  "merchant": {
+    "eyebrow": "Merchant",
+    "campaignsHeading": "Campaigns",
+    "offersHeading": "Vouchers",
+    "noCampaigns": "No active campaigns from this merchant right now.",
+    "noOffers": "No vouchers from this merchant right now.",
+    "districtLabel": "Location"
+  },
+  "catalogue": {
+    "title": "Rewards catalogue",
+    "description": "Browse every voucher you can redeem points for on YourTal.",
+    "viewOffer": "View voucher"
+  },
+  "notFound": {
+    "heading": "Not found",
+    "body": "This page does not exist or is no longer available."
+  }
+}

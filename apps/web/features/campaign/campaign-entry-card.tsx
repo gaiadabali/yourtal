@@ -73,11 +73,20 @@ export function CampaignEntryCard({ campaign, locale = "id-ID" }: CampaignEntryC
           />
         </dl>
 
-        <div className="flex items-start gap-2 rounded-md bg-surface px-3 py-2">
+        {/* flex-wrap: at 320px x 200% zoom the card interior is narrower
+            than the badge + guarantee sentence can share on one row, even
+            once the sentence wraps at word boundaries — the badge drops to
+            its own line instead of forcing the row wider than the card. */}
+        <div className="flex flex-wrap items-start gap-2 rounded-md bg-surface px-3 py-2">
           <Badge variant="secondary" className="shrink-0">
             {t("entry.guaranteeBadge")}
           </Badge>
-          <p className="text-xs text-fg-muted">{t("entry.guaranteeText")}</p>
+          {/* min-w-0 lets this paragraph shrink/wrap instead of a flex
+              item's default content-based automatic minimum size (its
+              widest word) forcing the row wider than the card; break-words
+              additionally allows wrapping mid-word for the rare case where
+              even a single word doesn't fit the available width. */}
+          <p className="min-w-0 break-words text-xs text-fg-muted">{t("entry.guaranteeText")}</p>
         </div>
 
         <Button asChild size="lg">

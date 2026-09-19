@@ -12,7 +12,7 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - [x] Business entity, members with roles, billing contact — reuses `@yourtal/contracts/business` and `@yourtal/authz/roles` verbatim, so the data model feeds `P.attr.businessRoles` with no translation layer
 - [ ] KYB capture — **PARTIAL.** Metadata, type, status and expiry tracked; `storageRef` points at the bytes. **Nothing encrypts a document.** KMS envelope encryption and the signed-upload path are unbuilt and were not in this ticket's dependencies
 - [ ] Tenant isolation — **not independently verifiable yet**, because campaign and report modules do not exist (YT-0101+). Attestable now: every business-scoped query is keyed by `businessId`, and tenancy resolves through the PDP rather than a client-supplied scope
-- Verified 2026-09-19: 92 tests, 81 source files, largest 97 lines. **`apps/api` has never booted** — no Cerbos sidecar, no database; everything Drizzle/Postgres is typechecked only, and the in-memory repositories are what the tests exercise. No migration generated
+- **CORRECTION 2026-09-20: "`apps/api` has never booted" is no longer true and was being repeated downstream.** YT-0527 added `app.boot.test.ts`, which boots the real `AppModule` and drives it over HTTP via `app.inject()` against a live Cerbos. Seven controllers exist and respond. **What remains true, and is the sharper statement, is that nothing in `apps/api` has ever talked to Postgres** — every repository is in-memory, so the tests exercise fakes rather than the database. That is YT-0552. _Original note, 2026-09-19:_ 92 tests, 81 source files, largest 97 lines; `apps/api` had never booted — no Cerbos sidecar, no database; everything Drizzle/Postgres is typechecked only, and the in-memory repositories are what the tests exercise. No migration generated
 - Authz seam as specified: `PrincipalService.resolve()` is the single assembly point and `pdp.requireAction(...)` is called identically at every route, so **YT-0500 changes only the body of `resolve()`** and no call site moves
 
 ### YT-0101 · Campaign model and lifecycle
@@ -130,11 +130,21 @@ The earning half of the loop: a business uploads a video with questions, a user 
 ## Watch session
 
 ### YT-0120 · Watch session service
-`todo` · P1 · watch · 5d · dep: YT-0101, YT-0039
+`review` · P1 · watch · 5d · dep: YT-0101, YT-0039
 
-- [ ] Server-side watch position, resumable across devices and sessions
-- [ ] One reward-bearing session per user at a time
-- [ ] Campaign-level expiry, not session-level
+**Contract + storage landed. `pnpm verify` 11/11, 1959 tests, lint 11/11, `pnpm dev:fresh` green through 13 migrations.**
+
+- [x] **Server-side watch position, resumable across devices.** `watch.session` holds it, not `localStorage` — which is per-device by construction. Under O-1 that is not a convenience question: losing coverage loses the entire reward, because there is no partial credit to fall back on
+- [x] **One reward-bearing session per user, enforced by a partial unique index** on `user_id WHERE state = 'active'` — not by a service check. Two concurrent "start watching" requests both reading "no active session" and both inserting is the ordinary race, and only the database settles it. Partial, because superseded and completed sessions are history rather than contention. Proved against real Postgres
+- [x] **Campaign-level expiry, not session-level.** A session has no TTL of its own; it stays resumable while the campaign is live. Checked at claim time rather than by a sweep, so a viewer whose campaign ended mid-watch gets a reason instead of finding the session gone
+- [x] **Completion is COVERAGE, never position** (O-1, O-4). `isFullyWatched` asks what is still MISSING rather than summing what was claimed — a client reporting `[0, 999999)` satisfies a total-seconds comparison while never touching the middle of the video. **There is no terminal event anywhere in the decision**: `dispatchEvent(new Event("ended"))` produces no seconds, which is precisely what risk 43 needed
+- [x] **A seek is accepted and simply earns nothing.** Blocking seeks would be a worse product for no security gain — the skipped seconds are never covered, so scrubbing is already pointless as an attack. The test asserting a scrub-to-end leaves 1,790 seconds uncovered is the one that matters
+- [x] **The rate check needs no client cooperation.** A report claiming more playback than wall-clock time has passed is arithmetically impossible at 1×, so it is refused rather than scored. Tolerance is absolute seconds, not a percentage — a percentage grows with the size of the lie
+- [x] **Coverage is append-only evidence**, `GRANT SELECT, INSERT` with no UPDATE or DELETE, the same grant shape as `ledger.entry`. Derived rather than totalled: a stored total is a second copy a concurrent write can corrupt, and a fraud review needs the SHAPE of a claim — forty identical two-second spans at 3am looks nothing like a person
+- [x] **A session names the terms version it entered under, through a COMPOSITE foreign key** to `(campaign_id, version)`. Two independent ids that each exist but do not belong together is exactly what a single-column key would have let through, and "the terms you agreed to" would be a number nothing verifies
+- [x] Whole seconds throughout, rounded **inward**. Floating positions never sum to exactly the duration, so a rule stated over floats is one no honest viewer can satisfy; rounding outward would credit a partly-played second, and 900 nudges would earn 900 seconds nobody watched
+- [ ] ⚠️ **No API surface yet.** This is the model, the rules and the storage; the endpoints are the next slice. `apps/api` has still never booted (recorded on YT-0100), so wiring this into a live route is the step that would first prove that end of the stack
+- [ ] ⚠️ **The segment-log cross-check is YT-0123**, and it is what turns the rate check from "could not have been watched that fast" into "those bytes were never delivered". The logs exist and are live (YT-0521); this session model is what they get compared against
 
 ### YT-0121 · Checkpoint tokens
 `todo` · P1 · watch · 5d · dep: YT-0120

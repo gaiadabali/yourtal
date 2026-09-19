@@ -309,3 +309,13 @@
 - [ ] Seeking to the end leaves the campaign incomplete and does **not** mount the hand-off — asserted directly, since a test previously asserted the opposite
 - [ ] A synthetic `ended` event does not complete a campaign. `video.dispatchEvent(new Event("ended"))` from a console is the cheapest possible attack and must fail in the client as well as at the server
 - [ ] ⚠️ **This is defence in depth and must not be described as the control.** The server refuses regardless — checkpoint tokens at randomised timestamps cannot be scrubbed for, and per-segment delivery logs show the middle was never fetched. The reason to fix the client anyway is that **a UI which appears to reward scrubbing teaches people to try**, and `docs/22` is a catalogue of controls that were believed rather than exercised
+
+### YT-0552 · Wire `apps/api` repositories to Postgres
+`todo` · P0 · platform · 4d · dep: YT-0527, YT-0518
+
+- **The API boots and routes respond — against in-memory repositories.** So seven controllers, every Drizzle line and every schema constraint are **typechecked but never executed**, and the tests exercise fakes. This is the same green-but-empty shape catalogued in `docs/13c`, sitting under the whole backend rather than under one gate
+- [ ] Each in-memory repository is replaced by a Postgres-backed one; the in-memory versions are **deleted, not kept as a fallback** — a fallback is the thing tests quietly select
+- [ ] The existing suite runs against real Postgres in `integration.yml`, with **no SKIP tolerated**, per the rule YT-0527 already enforces for Cerbos
+- [ ] ⚠️ **Expect constraints to fire that unit tests never could.** Unique indexes, composite foreign keys, the ledger balance trigger and the append-only grants are all invisible to an in-memory map — finding them now is the point of the ticket, not a setback
+- [ ] ⚠️ **Role separation is exercised, not assumed:** the app role has no DELETE on frozen tables, and a test that needs cleanup uses the owner connection rather than widening a grant for convenience
+- [ ] This is what lets `apps/web` stop mocking, so it is the join between the two halves of the build rather than backend housekeeping

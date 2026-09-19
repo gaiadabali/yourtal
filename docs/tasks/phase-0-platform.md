@@ -416,3 +416,12 @@
 - [ ] The entry's schema is derived from or compared against the DTO, with neither inheriting the other — a comparison where one side is generated from the other compares a value to itself, which is what `openapi:go:check` was doing
 - [ ] The 400 validation response currently carries a description and **no schema**, because nobody verified `nestjs-zod`'s exception shape against the installed version. Domain 400s do carry the real `ErrorResponse`. Verify it, then state it — or leave it unstated rather than guessed
 - [ ] ⚠️ **Prove it by breaking it, and confirm the break lands:** rename a DTO field and require that the failure **names that field**. A generic red proves the suite noticed something, not that the gate discriminates
+
+### YT-0561 · The accuracy half of the reward has no server-side home
+`todo` · P0 · value · 3d · dep: YT-0102, YT-0045
+
+- **`docs/06` §4.2's 60/40 base-to-accuracy split lives as `BASE_REWARD_FRACTION = 0.6` in a client module**, multiplying `campaign.rewardPoints` in the browser. Its own comment says the real ratio belongs to the Reward Engine, which is exactly right and exactly not where it is
+- Under O-1 the reward is granted only on full playback **and** answered questions, so **both halves of that arithmetic must be server-side** — the base half now has a home in the watch session, the accuracy half has none
+- [ ] The split is a Reward Engine parameter, versioned with the action taxonomy, not a constant in any client
+- [ ] The client may **display** an expected reward; it must never compute the granted one. After YT-0102 moves scoring server-side, `checkpoint-scoring.ts` becomes display-only and its arithmetic advisory — say so in the file, because a module that used to be authoritative and quietly became advisory is the sort of thing someone later trusts again
+- [ ] ⚠️ **Two copies of one ratio is the derived-value bug with money attached.** Whatever the client shows must be derived from the server's value, not from a second constant that agrees with it today

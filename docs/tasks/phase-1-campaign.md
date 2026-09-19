@@ -150,10 +150,13 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - [ ] Works without any client cooperation
 
 ### YT-0124 · Chapter-level reward accrual
-`todo` · P1 · watch · 4d · dep: YT-0123, YT-0045
+`blocked` · P1 · watch · 4d · dep: YT-0123, YT-0045
 
-- [ ] Reward accrues per checkpoint, back-loaded toward completion
-- [ ] Abandoning mid-way keeps what was earned
+- ⛔ **CONTRADICTED BY FOUNDER DECISION O-1 (2026-09-20): the reward is given only after the full video AND the questions.** Two of the three criteria below described the opposite — reward accruing per checkpoint, and abandonment keeping what was earned
+- The chapter machinery does **not** become useless: chapters remain a **progress and navigation device**, which is what `docs/06` §3 wanted them for. What changes is that progress is *shown* and value is not *credited* until completion
+- [ ] ⚠️ **Open question this creates: does `rewardWeight` still have a consumer?** Back-loaded weights existed to allocate partial credit. With one grant at completion there is nothing to allocate, and a field with no consumer is the derived-value rule in reverse — either it drives a progress bar and should say so, or it should go
+- [ ] ~~Reward accrues per checkpoint, back-loaded toward completion~~ — **superseded by decision O-1 below**
+- [ ] ~~Abandoning mid-way keeps what was earned~~ — **superseded by decision O-1 below**
 - [ ] Accuracy bonus applied once at the end, idempotently
 
 ### YT-0125 · Answer-key leak detection

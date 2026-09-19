@@ -67,7 +67,7 @@ At 1080p (~3 Mbps) a single 30-minute view costs the user **675 MB — around ID
 
 This is the biggest product risk in the entire platform, and it is a design problem, not a marketing problem.
 
-**Chapters + checkpoint rewards.** Split every long video into chapters with a reward released at each checkpoint. The user sees progress fill and value accrue rather than facing an undifferentiated 30-minute wall. Abandon at minute 12 and they keep what they earned through minute 12.
+**Chapters + checkpoint rewards.** Split every long video into chapters with a reward released at each checkpoint. The user sees progress fill and value accrue rather than facing an undifferentiated 30-minute wall. **Superseded by decision O-1 (2026-09-20): the reward is given only on completing the full video and answering the questions. Abandoning at minute 12 earns nothing.** Chapters remain a progress and navigation device — the user still sees where they are and what is at stake — but progress is shown, not credited.
 
 ```
 [====|====|====|====|====|====]  30 min, 6 chapters

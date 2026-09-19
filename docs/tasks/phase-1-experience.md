@@ -210,8 +210,9 @@
 - [ ] Never autoplays into an item the user did not choose to reach
 
 ### YT-0205 · Logged-out surfaces
-`blocked` · P1 · seo · 4d · dep: YT-0180
+`todo` · P1 · seo · 4d · dep: YT-0180
 
+- ✅ **RESOLVED by decision O-1 (2026-09-20).** The 90-second preview criterion is **superseded**: anonymous visitors watch the **full** campaign and accrue nothing, which is exactly what YT-0432 shipped. The founder’s model makes this coherent — the gate on reward is *completion plus questions*, and an anonymous viewer is outside the reward path entirely, so there is no reason to truncate them. The business still gets the view, which is the stated benefit of Open Viewing
 - ⛔ **BLOCKED on a product decision, not on engineering (2026-09-20).** This task asks for a **≤90-second preview** that plays without an account. **YT-0432 already shipped the opposite, deliberately**: anonymous **full-length** playback with no cap, with a sign-up prompt at completion, and its doc comments argue the case at length
 - Both are defensible and they are mutually exclusive. A teaser converts on curiosity; full playback converts on reciprocity and is what makes a shared campaign link work for the recipient — which `docs/19` §5 calls the precondition for every sharing mechanic
 - The frontend stream **declined to add the cap**, correctly: silently regressing a shipped, deliberately designed feature to satisfy stale AC text is not a call an implementer should make

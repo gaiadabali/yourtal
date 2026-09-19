@@ -1,0 +1,7 @@
+/* PLACEHOLDER — owned by YT-0400 (design tokens and theme).
+   Replace wholesale: colour, type, spacing, radius, elevation scales
+   as CSS custom properties on :root. */
+:root {
+  --color-bg: #ffffff;
+  --color-fg: #0a0a0a;
+}

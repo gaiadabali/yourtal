@@ -1,0 +1,235 @@
+# YourTal — Security Engineering
+
+**Date:** 2026-09-18
+**Decision:** Build against **OWASP ASVS 5.0.0 Level 2** platform-wide, with **Level 3 scoped to the value zone** (ledger, voucher, redemption network, identity). Everything below is a launch requirement unless marked otherwise.
+
+The shape of this system is unusual and the threat model follows from four facts: we ship **web, so there is no Play Integrity / App Attest** ([`08`](08-web-app-and-performance.md) §2); rewards are **voucher-scale real money**, so attackers are funded; the **merchant redemption API** moves value onto infrastructure we do not control; and voucher codes are **bearer instruments**, which the gift-card industry has spent fifteen years learning are enumerable and drainable. Generic web-app hardening is table stakes and is not what this doc is for.
+
+---
+
+## 1. Framework — one standard, not three
+
+| Standard | What it actually gives us | Verdict |
+|---|---|---|
+| [**OWASP ASVS 5.0.0**](https://github.com/OWASP/ASVS) (May 2025) | 14 chapters of individually **testable** requirements for web apps and APIs, at L1/L2/L3. Doubles as the pen-test statement of work and the PR review checklist. | ✅ **PRIMARY** |
+| [NIST SSDF (SP 800-218)](https://csrc.nist.gov/pubs/sp/800/218/final) | Process practices for the SDLC/pipeline. No app-level testable controls. | Adopt **only** as the wrapper for §7 — SLSA + SBOM + Renovate satisfy most of PO/PS/PW |
+| [ISO 27001](https://www.iso.org/standard/27001) | A management system, certifiable, opens enterprise procurement doors. Says almost nothing about how to build software. | **Defer.** Trigger: first AU enterprise advertiser or bank partner that requires it. 12–18 months of work, not a launch gate |
+
+**Why L2, not L1 or L3.** ASVS L2 is the level for applications handling sensitive data and is the intended default for business applications; L1 is a baseline that does not cover our threat surface. Full-platform L3 would consume the roadmap for controls the marketing site does not need. So: **L2 everywhere, L3 for the four services where a defect is a cash loss** — Ledger, Voucher, Redemption Network, and the Zitadel-backed identity plane. Scoping L3 tightly is the decision that makes it survivable.
+
+**How it is enforced:** the ASVS checklist lives as a CSV in the repo; every PR touching a value-zone service names the requirement IDs it affects; quarterly self-verification; annual external verification (§10).
+
+---
+
+## 2. Threat model — STRIDE on the three assets that matter
+
+### 2.1 The ledger
+
+| STRIDE | Threat | Control |
+|---|---|---|
+| **S** | A compromised app service impersonates the Reward Engine and mints points | SPIFFE workload identity + mTLS inside the value zone; `points.grant` is a capability only the Reward Engine's identity holds; Cerbos checks the *calling workload*, not just the user |
+| **T** | Direct `UPDATE` on balances via a leaked DB credential | Service role has **no UPDATE/DELETE grant** on `transfer`; balances are derived, never stored authoritatively; daily Merkle root published ([`02`](02-architecture.md) §6) makes silent edits detectable next day |
+| **R** | Ops staff denies making a manual adjustment | Hash-chained audit log; **dual control** on any adjustment above threshold; adjustment reason codes are a closed enum |
+| **I** | Bulk export of balances + PII for resale | Column-level envelope encryption; no standing prod read for engineers; break-glass is time-boxed, recorded and paged |
+| **D** | Device farm drives millions of micro-grants, bloating the ledger | Per-account velocity caps; **solvency invariant refuses issuance beyond the funding business's paid allocation** ([`09`](09-points-economy-and-redemption.md) §5) — the economic cap is also the DoS cap |
+| **E** | A business admin grants points into an account they control | Cerbos denies cross-tenant grants outright; issuance only via Reward Engine campaign rules; finance adjustment is a separate role no business user can hold |
+
+### 2.2 Voucher codes (bearer instruments)
+
+| STRIDE | Threat | Control |
+|---|---|---|
+| **S** | Screenshot/replay of the in-store QR | Ed25519 signature over `{voucher_id, user_id, nonce, exp}`, 30–60 s validity, **server burns the nonce** on first use |
+| **T** | Client submits a modified face value | Value is never client-supplied; capture amount validated against the server-side hold |
+| **R** | Merchant disputes that a redemption occurred | Per-voucher hash-chained `voucher_event`; signed receipt returned on capture; the merchant's own signed request retained (§6) |
+| **I** | **Enumeration / harvesting — the top gift-card attack** | 128-bit CSPRNG codes, Crockford base32, **no sequential IDs**; a check segment lets us reject malformed codes before touching the DB; lookup by `HMAC-SHA256(code, pepper)` with the pepper in KMS, so a DB dump yields **no usable codes**; plaintext exists only as an envelope-encrypted blob decryptable for the owner |
+| **D** | Mass `authorize` calls park holds on live vouchers | Holds expire in 15 min; per-merchant concurrent-hold cap; the enumeration detector (§6) trips first |
+| **E** | Merchant staff issue vouchers to themselves | Bulk issuance is dual-control + audited; staff role can redeem, never mint |
+
+### 2.3 Merchant redemption API
+
+| STRIDE | Threat | Control |
+|---|---|---|
+| **S** | Stolen merchant API key used from an attacker host | HMAC request signing (§6); key bound to merchant + environment; optional IP allowlist; per-merchant kill switch |
+| **T** | Replay of a successful `authorize` | Timestamp ±300 s + single-use nonce cache + mandatory idempotency key scoped to `(merchant, key)` |
+| **R** | "We never called capture" | Signature covers the body digest → non-repudiation; request + signature retained 7 years |
+| **I** | Probing codes for validity — **there is no balance endpoint** (§6) | `authorize` returns approve/decline + amount applied only; declines are constant-shape and constant-time |
+| **D** | A compromised merchant integration floods us | Per-merchant token bucket at the Cloudflare edge *and* at origin; 429 with `Retry-After`; the value zone degrades to queue, never to "approve" |
+| **E** | Merchant A redeems a voucher from merchant B's batch | Batch scoped to merchant/coalition; authz evaluated on every call; **cross-batch attempts are an alert, not just a 403** — the expected rate is zero |
+
+---
+
+## 3. Secrets & key management
+
+| Concern | Decision |
+|---|---|
+| **Envelope encryption** | GCP **Cloud KMS**, one keyring **per country** (`asia-southeast2` Jakarta, `australia-southeast1` Sydney), HSM protection level for value-zone keys. DEK per voucher batch and per PII column-group; wrapped DEK stored beside the ciphertext. Resolves **[D3]** in [`02`](02-architecture.md): cloud KMS at HSM tier, not a dedicated HSM estate — the operational cost buys nothing we can point at |
+| **Key rotation** | KEK: automatic, 90 days; rotation re-wraps DEKs, never re-encrypts data. Merchant HMAC secrets: 90 days with a dual-secret overlap window. DB credentials: 30 days via IAM DB auth. OIDC signing keys: 90 days with JWKS overlap. Voucher-code pepper: **never rotated in place** — rotation means a batch-scoped pepper version column |
+| **Crypto-shredding** | A per-user DEK for PII means an erasure request under UU PDP / APP 11 is satisfied by destroying one key, not by chasing rows through backups |
+| **Never in env vars** | Long-lived cloud credentials, DB passwords, the voucher pepper, any signing private key, merchant HMAC secrets. The reason is concrete: npm worms **trawl `process.env` and the filesystem for high-entropy strings** (§7). Use workload identity federation, Secret Manager mounted at runtime with short leases, and KMS for anything that can stay inside the HSM boundary |
+| **QR signing key hierarchy** | **Root:** Cloud KMS `EC_SIGN_ED25519`, HSM, never exported ([algorithms](https://docs.cloud.google.com/kms/docs/algorithms)). **Epoch key:** generated daily in the Voucher service and certified by a root signature; the service signs QRs with the epoch key — one KMS call per day, not one per QR refresh. The QR carries `{epoch_key_id, sig}` |
+| **Distribution to merchant devices** | The merchant app bundles the **pinned root public key** and fetches epoch certificates from a JWKS-style endpoint, cached. Offline verification checks `root → epoch → QR`. **7-day offline grace**, then the device must sync. A compromised epoch key expires within 24 h by construction; root rotation is annual with a 90-day dual-root overlap |
+
+---
+
+## 4. Application security controls — OWASP Top 10 2025
+
+[OWASP Top 10:2025](https://top10.owasp.org/2025) is final. Two changes matter to us: **Software Supply Chain Failures is now A03**, and **SSRF has been folded into A01** — which is correct, because our SSRF exposure *is* an access-control failure at the egress boundary.
+
+| Risk | Concrete control in this stack |
+|---|---|
+| **A01 Broken Access Control** (incl. SSRF) | Cerbos PDP call on every value-bearing operation, deny-by-default; object-level authz tests are a required CI suite, not a review habit. **SSRF (we fetch merchant webhooks):** all outbound merchant HTTP goes through one egress proxy service — DNS resolved once and the **resolved IP** checked against a denylist (RFC1918, loopback, link-local, `169.254.169.254`), **redirects not followed**, HTTPS/443 only, 5 s timeout, 1 MB response cap, its own service account with no other network reach |
+| **A02 Security Misconfiguration** | Terraform only; `tfsec`/Checkov as merge gates; security headers set in one shared middleware, never per-route; Cloudflare WAF managed rules on; org policy blocks public buckets and SA key creation |
+| **A03 Software Supply Chain Failures** | §7 |
+| **A04 Cryptographic Failures** | §3; TLS 1.3; no application-authored crypto — Go stdlib + `golang.org/x/crypto` only |
+| **A05 Injection** | Go: `sqlc`-generated queries over `pgx`, prepared statements only. TS: Drizzle with parameterised builders. **The ORM is not the control — its escape hatch is the risk:** `$queryRaw` / `sql.Raw` / string-built SQL are banned by lint outside one allowlisted, reviewed file. `statement_timeout` on every role |
+| **A06 Insecure Design** | Abuse cases written alongside user stories for every value flow; holdback windows ([`08`](08-web-app-and-performance.md) §2.1); idempotency everywhere |
+| **A07 Authentication Failures** | §5 |
+| **A08 Software/Data Integrity Failures** | SLSA provenance verified at admission (§7); hash-chained audit; service-worker updates served only from our origin under a strict CSP |
+| **A09 Logging & Alerting Failures** | §9 |
+| **A10 Mishandling Exceptional Conditions** | **Value operations fail closed.** A KMS, Cerbos or ledger timeout must never fall through to "grant" or "approve". `errcheck` + `errorlint` gates in value-zone Go packages; no bare `_ =` on an error; every saga compensation has a test that actually runs it |
+
+**Input validation at the boundaries.** TypeScript: Zod `.strict()` at every route handler, server action and webhook body — parse into a domain type, never validate-and-forward the original object. Go: explicit request structs + `go-playground/validator`, plus constructors (`NewMoney`, `NewVoucherCode`) that make an invalid value unrepresentable. Validation happens at the edge **and again** at the value-zone boundary; internal callers are not trusted.
+
+**CSP for Next.js — the real tradeoff.** [Nonce-based CSP forces dynamic rendering](https://nextjs.org/docs/app/guides/content-security-policy): no static optimisation, no ISR, no CDN caching, PPR incompatible. That collides head-on with the LCP ≤ 2.0 s budget in [`08`](08-web-app-and-performance.md) §3.1. Decision:
+
+| Surface | Policy |
+|---|---|
+| Authenticated app, wallet, redemption, merchant portal | **Nonce + `strict-dynamic`** via proxy — already dynamic, so the cache loss is zero |
+| Public / marketing / campaign landing pages | **Hash-based CSP via Next.js experimental SRI**, keeping static rendering and CDN caching |
+| All surfaces | No `unsafe-inline` anywhere. `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`, `upgrade-insecure-requests`; CSP reports sampled into the SIEM |
+
+**Clickjacking:** `frame-ancestors 'none'` + `X-Frame-Options: DENY`. The one exception — an embeddable merchant "redeem" widget — ships from a **separate origin** with a per-merchant `frame-ancestors` allowlist. The main origin is never loosened.
+
+**CORS for the merchant API: none.** `/v1/vouchers/*` is server-to-server; requests carrying an `Origin` header are rejected and logged, and no `Access-Control-Allow-Origin` is ever emitted. This is deliberate — a browser-reachable redemption API means merchant signing secrets in front-end code. The merchant portal SPA talks to a same-origin BFF instead.
+
+---
+
+## 5. Authentication hardening
+
+| Flow | Controls |
+|---|---|
+| **Phone OTP** | 6 digits, 5 min TTL, single use, 5 verify attempts then the code is burned. Send limits: 3/hour, 10/day per number, plus per-IP/ASN and per-device caps. Turnstile before send. **Country allowlist ID + AU only** with premium/unallocated range blocking — SMS pumping is a direct cash loss, not a theoretical one. **Enumeration:** identical body, status and timing whether or not the number exists; never "account already registered" |
+| **SIM swap** | Phone is our identity anchor ([`08`](08-web-app-and-performance.md) §2.1), so a swap is total account takeover. On a phone-number change *or* an OTP-only login from a new device: **72 h freeze on redemption and transfer** plus notification to the old channel. A registered passkey demotes OTP to a secondary factor and skips the freeze |
+| **WebAuthn / passkeys** | Prompted at first reward (peak goodwill, points bonus); **required before the first redemption above a value threshold**. Multiple credentials per account; no attestation demanded (privacy), but AAGUID recorded for risk scoring |
+| **Sessions** | Opaque session ID in a `__Host-` prefixed, `HttpOnly`, `Secure`, `SameSite=Lax` cookie — **not a JWT in a cookie**, because we need sub-second server-side revocation. Access token 15 min, in memory. Absolute session lifetime 30 days; step-up re-auth for transfer, phone change and high-value redemption |
+| **Refresh rotation** | One-time-use refresh tokens per [RFC 9700](https://www.rfc-editor.org/info/rfc9700/). **Reuse of a consumed token revokes the entire token family, forces re-auth and raises a P2 alert** — reuse means theft, always |
+| **Account recovery** | The most-attacked flow, so it is deliberately the slowest. Never email-only. Recovery = phone OTP **plus one of** (passkey, recognised device ≥30 days, verifiable transaction history). Every recovery triggers a **72 h value freeze** and notifies all channels. Support staff **cannot** change a phone number — they can only open a dual-approved case with session recording. Social engineering of support is the realistic attack; removing the capability is the only real fix |
+| **As an OIDC provider** (Zitadel) | PKCE `S256` mandatory; implicit and password grants disabled; **exact redirect URI matching — no wildcards, no prefix matching, no `localhost` on prod clients**; per-client scope allowlist where `points.grant` is **never** issuable to a browser client (sister apps grant points only through the server-side `@yourtal/earn` SDK with a separate credential — [`02`](02-architecture.md) §8); DPoP-bound tokens for that SDK; `prompt=consent` on scope expansion; JWKS rotation every 90 days with overlap; client secrets rotated on schedule and held in Secret Manager |
+
+---
+
+## 6. Merchant redemption network
+
+**HMAC-SHA256 request signing is mandatory for every merchant. mTLS is an optional second layer for merchants above a settlement threshold.**
+
+| Criterion | HMAC signing | mTLS |
+|---|---|---|
+| Survives TLS termination at Cloudflare | ✅ application-layer, end-to-end | ❌ terminates at the edge; the origin sees only an asserted header |
+| Payload integrity + non-repudiation | ✅ signature covers the body digest | ❌ channel-level only |
+| Merchant implementation cost | ~20 lines in any language; trivial inside a Shopify/Woo plugin | Cert issuance, CSRs, renewals — an ops desk per merchant |
+| Failure mode at 3am | Clock skew — diagnosable in one log line | Expired cert — silent, total, and very common |
+| Theft blast radius | A secret, rotatable in seconds | A private key, equally stealable, slower to replace |
+
+This supersedes the "mTLS" line in [`02`](02-architecture.md) §5.
+
+| Control | Specification |
+|---|---|
+| **Canonical request** | `METHOD \n path \n sha256(body) \n x-yt-timestamp \n x-yt-key-id \n x-yt-nonce`; header `x-yt-signature: v1=<hex>`. The version prefix lets the scheme evolve without breaking merchants |
+| **Replay protection** | Timestamp within ±300 s **and** nonce single-use for 10 min in the in-country Redis. Both, not either |
+| **Idempotency as a security control** | Mandatory key on every call, scoped `(merchant, key)`, response replayed for 24 h. This makes double-capture **structurally impossible** rather than merely unlikely, and turns a replay attack into a no-op |
+| **No balance-lookup endpoint** | Any endpoint that answers "is this code valid / what is left on it" without moving value is a **free enumeration oracle** — the exact mechanism behind gift-card draining. The only way to learn anything about a code is to attempt an `authorize`, which consumes an idempotency key, is rate-limited, creates a hold and is logged. The merchant portal's manual lookup is staff-authenticated, per-user rate-limited and audited |
+| **Rate limiting** | Per-merchant token bucket (default 10 rps, burst 50) at edge and origin; per-API-key and per-terminal sub-limits; a global decline-ratio circuit breaker |
+| **Enumeration detection** | Invalid-code ratio >5% over a 100-request window → step-up challenge + review; >20% → **auto kill switch + page**. Also scored: distinct codes/minute, structural similarity between attempted codes (sequential or templated guessing), attempts against codes **not in that merchant's batches** (expected rate: zero), new-ASN bursts, and activity outside the merchant's known trading hours |
+| **Per-merchant kill switch** | Flag in Redis + DB, checked before authorization, propagating in <5 s. Two modes: *pause authorize* (captures of existing holds still settle) and *full block*. One click in the ops console, auditable, auto-trippable by the detector, and **tested in production before launch** |
+| **Outbound webhooks** | HMAC-signed in both directions, sent through the §4 egress proxy with exponential backoff; a merchant endpoint failure never blocks a redemption |
+
+---
+
+## 7. Supply chain
+
+| Control | Decision |
+|---|---|
+| **SLSA** | [**Build L2**](https://slsa.dev/spec/v1.2/build-track-basics) for every artifact at launch (hosted GitHub Actions, platform-signed provenance). **Build L3 for value-zone Go services before GA** — isolated ephemeral runners, signing material unreachable from user-defined build steps. Provenance is **verified at deploy**: an image without verifiable provenance does not start in the value zone |
+| **SBOM** | **CycloneDX**, not SPDX — better VEX support and first-class in Syft/Trivy/Dependency-Track. Generated per build, attached as an attestation, retained 7 years, continuously re-scanned so a new CVE finds us rather than the reverse |
+| **Lockfile policy** | Lockfiles committed and mandatory: `npm ci` only, never `npm install`, in CI or on a developer machine. Go: `go.sum` enforced, `-mod=readonly`, and the four value-zone services **vendor** their dependencies |
+| **Install-time execution** | `--ignore-scripts` is the CI default with a short, reviewed allowlist. Builds run sandboxed with **egress blocked by default** |
+| **Updates** | **Renovate** over Dependabot (grouping, scheduling, merge confidence) with a **7-day cooldown on new npm releases** — nothing published this week merges automatically. Security patches are exempt but require human review |
+| **Registry** | Internal Artifact Registry remote/proxy repos, so a compromised version is blocked org-wide in one action. Installing from git or tarball URLs is denied |
+| **Human gate** | Two approvals to add any new dependency to a value-zone service. A one-line utility is written, not installed |
+
+**The npm risk, specifically.** The [Shai-Hulud worm](https://unit42.paloaltonetworks.com/npm-supply-chain-attack/) compromised 500+ packages, executed via `postinstall` (and later `preinstall`), used TruffleHog to sweep environment variables and disks for npm tokens, GitHub PATs and cloud keys, then republished trojanised versions from the victim's own maintainer account. In a value-handling app that chain terminates at the ledger. Everything above — no long-lived secrets in env (§3), egress-blocked sandboxed builds, `--ignore-scripts`, the release cooldown, short-lived OIDC-federated CI credentials, and **no npm publish token on any developer machine** — exists because of this exact attack class.
+
+---
+
+## 8. Infrastructure & data
+
+| Area | Decision |
+|---|---|
+| **Network segmentation** | Three zones: **edge** (Cloudflare) → **app** → **value zone** (Ledger, Voucher, Redemption Network, KMS access). The value zone has **no public ingress** and no egress except KMS, Cloud SQL and the log sink over Private Service Connect. A VPC Service Controls perimeter means exfiltration to another GCP project fails even with valid credentials |
+| **IAM** | Workload identity federation only; `disableServiceAccountKeyCreation` at org level. Human prod access is time-boxed, approval-gated and auto-expiring; prod DB read is break-glass, recorded and paged |
+| **Database credentials** | Four roles per service — `migrate` (DDL only, used by the migration job and never by the app), `app_rw`, `app_ro`, `analytics` (no PII columns, no voucher tables). One credential per service; the ledger role holds **no UPDATE or DELETE on `transfer`**; IAM DB auth, 30-day rotation |
+| **Encryption** | TLS 1.3 externally, mTLS between services. CMEK on Cloud SQL, GCS and Pub/Sub. Column-level envelope encryption for PII and voucher codes. **Backups encrypted under a separate KEK**, so a leaked live key does not open the archive |
+| **Audit logging** | Append-only, hash-chained per entity (`prev_hash`), written by services with no delete grant. Daily Merkle root written to a **write-once (object-locked) bucket** in a separate project and published. A verification job walks the chain nightly |
+| **Backup & restore** | PITR 7 days + daily snapshots for 35 days, **in-country only — no cross-border copy, ever** ([`03`](03-regulatory-and-risk.md)). **Monthly restore rehearsal** of the ledger into an isolated project, asserting restored balances equal the published Merkle root for that day. A backup that has never been restored is not a backup. RTO 4 h / RPO 15 min |
+
+---
+
+## 9. Detection & response
+
+| Log — structured, in-country, 7-year retention for value events | Alert on |
+|---|---|
+| Auth: OTP send/verify, passkey enrol/use, session create, refresh rotation, recovery start/complete | Refresh-token **reuse** (P2, always theft); recovery volume >2× baseline; OTP send spike per ASN |
+| Value: every transfer with idempotency key + reason code, voucher state transitions, hold/capture/void/refund | Daily ledger balance proof fails (P1); Merkle chain verification fails (P1); issuance approaching a business's funded allocation |
+| Merchant API: full canonical request, signing key ID, decline reason, latency | Invalid-code ratio breach (§6); cross-batch attempts >0; a merchant's decline ratio 3σ off its own baseline |
+| Admin: every privileged action with actor and before/after, all break-glass sessions | Any manual ledger adjustment; any bulk voucher issuance; any prod DB read |
+| Fraud: device/behaviour signals, CDN segment delivery vs claimed playback ([`08`](08-web-app-and-performance.md) §2.1) | Claimed-watch vs segments-fetched divergence; cluster growth on device/ASN/phone-prefix graphs |
+
+**Never logged:** OTP codes, voucher plaintext, tokens, full phone numbers (masked + hashed), raw PII. Scrubbing is enforced by a shared logger, not by discipline.
+
+**Incident runbook (outline).** 1) Detect and declare; severity on a single sheet. 2) Assign incident commander, scribe and comms — three different people. 3) **Contain** — per-merchant kill switch, per-account freeze, global redemption pause, feature flag; containment precedes investigation. 4) Preserve evidence (snapshot + log export to the write-once bucket) before remediating. 5) Scope: whose data, which country plane, what value moved. 6) **Notification-clock decision within 24 h** (below). 7) Eradicate and restore, with a restore-verification assertion. 8) Blameless review within 5 business days; actions ticketed with owners and dates.
+
+### 9.1 Breach notification — get these right
+
+| Jurisdiction | Obligation | Deadline |
+|---|---|---|
+| **Indonesia** — [UU PDP 27/2022, Art. 46](https://www.lexology.com/library/detail.aspx?g=0bd6828f-f3f8-46af-8f5e-26e8cfd912d3) | Written notice to **affected data subjects and the PDP authority**; also notify the public where public services or the public interest are significantly affected. Must state what data, when and how, and the remediation | **3 × 24 hours (72 h)** from becoming aware |
+| **Indonesia** — [GR 33/2026](https://www.ahp.id/pdp-law-updates-the-pdp-implementing-regulation-is-out-and-it-clarifies-some-key-questions-under-indonesias-pdp-law/), promulgated 16 Jul 2026 | Clarifies that the 72 h clock starts only once the failure is **established with certainty and on reasonable grounds**, evidenced by logs and forensics — so preserve that evidence (runbook step 4). Administrative sanctions apply from **16 Jan 2027** | as above |
+| **Australia** — [Privacy Act s 26WH(2)](https://www.oaic.gov.au/privacy/notifiable-data-breaches/preventing-preparing-for-and-responding-to-data-breaches/data-breach-preparation-and-response/part-4-notifiable-data-breach-ndb-scheme) | **Assess** a suspected eligible data breach. The OAIC treats 30 days as a ceiling, not a target | **within 30 calendar days** of awareness |
+| **Australia** — s 26WK / s 26WL | Statement to the **OAIC as soon as practicable** after becoming aware of an eligible breach; notify **affected individuals as soon as practicable** after that statement. **The 30 days is an assessment deadline, not a notification deadline** | as soon as practicable |
+
+**Operational rule:** we run **one clock — Indonesia's 72 hours** — across both planes. A cross-plane incident handled on the Australian assessment timeline would already be late in Jakarta. Notification templates in Bahasa Indonesia and English, counsel-reviewed, live in the runbook repo before launch.
+
+---
+
+## 10. Assurance
+
+| Activity | Scope & cadence |
+|---|---|
+| **Penetration test** | **Pre-launch, grey box**, mandatory: web app and all APIs, auth and recovery flows, the OIDC provider configuration, the merchant redemption network, **plus two explicit exercises — voucher enumeration and device-farm reward extraction**. Then annually, and on any material change to the value zone or auth |
+| **Ledger logic review** | A separate engagement — a pen tester will not find a double-spend inside a saga. Model-checked invariants plus adversarial review of every compensating action |
+| **Bug bounty** | **Not at launch.** Sequence: (1) VDP + `security.txt` + safe-harbour policy at launch; (2) **private** bounty, ~15 invited researchers, 3 months after GA; (3) public bounty once MTTR <30 days and the duplicate rate is low. A public bounty on an unhardened value system funds your attackers' reconnaissance |
+| **Continuous** | SAST (CodeQL/Semgrep) + dependency + secret scanning on every PR; nightly DAST against staging; quarterly ASVS self-verification |
+
+**Launch gates — hard fail, no exceptions, no "ship and fix":**
+
+1. ASVS **L2 verified platform-wide**, **L3 items verified** for Ledger, Voucher, Redemption Network and identity.
+2. Zero critical/high findings open in SAST, DAST or dependency scan.
+3. SLSA **Build L2 provenance verified at deploy**; value-zone images refuse to start without it.
+4. Secret scan clean across full history; zero service-account keys in existence.
+5. Pen-test criticals and highs **closed**; mediums have a named owner and a date.
+6. Ledger **restore rehearsal passed** with a Merkle-root equality assertion.
+7. Per-merchant **kill switch exercised in production**.
+8. IR tabletop completed; breach templates (ID + EN) counsel-reviewed.
+9. Rate limits and the enumeration detector **load-tested**, including a simulated enumeration run.
+10. Audit-chain verification job green for 14 consecutive days.
+
+---
+
+## 11. What this changes elsewhere
+
+| Doc | Change |
+|---|---|
+| [`02-architecture.md`](02-architecture.md) | **[D3] resolved:** Cloud KMS at HSM protection level, not a dedicated HSM. §5's "mTLS for the merchant API" is superseded by HMAC-mandatory + optional mTLS (§6). Ed25519 QR signing gains a two-level epoch-key hierarchy |
+| [`09-points-economy-and-redemption.md`](09-points-economy-and-redemption.md) | §8 gains the explicit **no-balance-endpoint** rule and the enumeration-detector thresholds |
+| [`04-roadmap.md`](04-roadmap.md) | Phase 0 adds the §10 launch gates, SLSA L2, CycloneDX SBOM and the Renovate cooldown. Phase 1 adds SLSA L3 for value-zone services and the private bug bounty |
+| [`03-regulatory-and-risk.md`](03-regulatory-and-risk.md) | Breach clocks fixed at ID 72 h / AU 30-day assessment; **GR 33/2026 sanctions from 16 Jan 2027** becomes a dated compliance milestone |

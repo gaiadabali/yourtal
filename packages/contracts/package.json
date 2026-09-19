@@ -1,0 +1,34 @@
+{
+  "name": "@yourtal/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./campaign": "./src/campaign/campaign.ts",
+    "./campaign/mock": "./src/campaign/campaign.mock.ts",
+    "./listing": "./src/listing/listing.ts",
+    "./listing/mock": "./src/listing/listing.mock.ts",
+    "./voucher": "./src/voucher/voucher.ts",
+    "./voucher/mock": "./src/voucher/voucher.mock.ts",
+    "./balance": "./src/balance/balance.ts",
+    "./balance/mock": "./src/balance/balance.mock.ts",
+    "./business": "./src/business/business.ts",
+    "./business/mock": "./src/business/business.mock.ts",
+    "./question": "./src/question/question.ts",
+    "./question/mock": "./src/question/question.mock.ts",
+    "./money": "./src/money/money.ts",
+    "./mock-source": "./src/mock-source.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": { "zod": "4.6.5" },
+  "devDependencies": {
+    "@faker-js/faker": "10.6.0",
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

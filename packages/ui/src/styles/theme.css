@@ -1,0 +1,13 @@
+/* PLACEHOLDER — owned by YT-0400.
+   Dark mode via prefers-color-scheme + explicit [data-theme] override,
+   and the @theme bridge that maps tokens into Tailwind v4 utilities. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #0a0a0a;
+    --color-fg: #fafafa;
+  }
+}
+:root[data-theme="dark"] {
+  --color-bg: #0a0a0a;
+  --color-fg: #fafafa;
+}

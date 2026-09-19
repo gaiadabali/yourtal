@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Design tokens and theme are owned by packages/ui (YT-0400). Do not define
+   colour, type, spacing, radius or elevation values in this file. */
+@import "@yourtal/ui/styles/tokens.css";
+@import "@yourtal/ui/styles/theme.css";

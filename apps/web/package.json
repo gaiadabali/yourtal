@@ -1,0 +1,37 @@
+{
+  "name": "@yourtal/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint app",
+    "test": "vitest run",
+    "analyze": "ANALYZE=true next build"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.103.1",
+    "@yourtal/contracts": "workspace:*",
+    "@yourtal/ui": "workspace:*",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@lhci/cli": "0.15.1",
+    "@next/bundle-analyzer": "16.3.5",
+    "@next/eslint-plugin-next": "16.3.5",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@yourtal/tsconfig": "workspace:*",
+    "postcss": "8.5.28",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

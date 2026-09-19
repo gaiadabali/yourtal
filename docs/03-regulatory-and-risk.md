@@ -1,0 +1,196 @@
+# YourTal — Regulatory Map & Risk Register
+
+**Date:** 2026-09-18
+**Status:** Research-derived orientation, **not legal advice.** Every item marked 🔴 needs a licensed local lawyer to sign off before the feature ships.
+
+---
+
+## 1. The five things that can kill this platform
+
+| # | Risk | Why it is lethal | Mitigation baked into the plan |
+|---|---|---|---|
+| 1 | **Points/vouchers judged to be stored value / e-money** | Unlicensed payments business in two countries. Cease-and-desist, frozen funds, personal director liability. | Three-currency model with a one-way valve; no fixed cash rate; no point purchase; no P2P point transfer; cash-out deferred to a licensed subsidiary. |
+| 2 | **Mini-games judged to be gambling in Indonesia** | Gambling is flatly prohibited; even *free* prediction games are not permitted. Criminal exposure, app-store removal, PSE deregistration. | Skill-based mechanics only by default; permitted prize draws only as a rare, licensed tentpole. |
+| 3 | **Reward fraud at scale** | Device farms extract more value than the platform earns. Kills margin silently before anyone notices. **Worse on web:** no Play Integrity / App Attest, and the rewards are now voucher-scale. | Phone-OTP identity anchor, WebAuthn passkeys, per-checkpoint tokens, CDN segment-log cross-check, 72 h holdback, trust tiering, shared risk service across sister apps. |
+| 4 | **Voucher secondary-market fraud** | The mechanism that shut Cardpool and damaged Raise: the seller still knows the code. No chargeback defence exists for gift cards. | Void-and-remint on transfer; escrow; merchant-controlled transferability flag. |
+| 5 | **Privacy breach / non-compliant targeting** | ID PDP enforcement is live; AU reform explicitly targets ad tech and pixel sharing. Fines, and the receipt data is the moat we cannot afford to lose. | Purpose-scoped consent service; country-isolated data planes; aggregate-first targeting; no cross-border PII. |
+
+---
+
+## 2. Indonesia
+
+### 2.1 Payments — 🔴 gates the cash wallet
+
+**Bank Indonesia Regulation No. 10 of 2025**, issued 24 Dec 2025, **effective 31 Mar 2026**, restructures the whole payment-system industry across PJP (payment service providers), PIP (infrastructure operators) and supporting providers.
+
+Requirements relevant to us:
+- Non-bank applicants must be a **PT** (limited liability company), with **≥1 director domiciled in Indonesia**.
+- **≥15% Indonesian ownership** (foreign ownership capped at 85%).
+- **Minimum capital ~IDR 15 bn** for full-scope PJP (scope-dependent).
+- Existing licence-holders have up to **3 years** to adjust to the new requirements.
+
+**Implication:** a YourTal cash wallet with withdrawal in Indonesia is a licensed activity with a multi-year lead time and material capital. **Do not put it in the phase-1 scope.** Either (a) run closed-loop with no cash exit, or (b) partner with an existing licensed PJP/e-money issuer who holds the licence and the float while we hold the user relationship.
+
+### 2.2 Gambling & prize draws — 🔴 gates mini-games
+
+- Indonesia **prohibits gambling** — any form of gambling for money or prizes. There are no licensed lottery/betting products.
+- **Free prize draws are legal** under Ministry of Social Affairs (MOSA/Kemensos) Reg. No. 3 of 2024, **if properly permitted**:
+  - participation must be **free** — prizes cannot be tied to a purchase or entry fee,
+  - a **draw permit** *and* a **promotion permit** are required,
+  - a **compulsory 10% of total prize value** must be contributed to social welfare.
+- **Prediction games are prohibited outright** — explicitly including free participation via a mobile app (e.g. guessing football results).
+
+**Implication for design:**
+- A spin-the-wheel or mystery box where points were spent to play is arguably a *paid* entry → high risk. Even free ones need a permit per campaign.
+- **Skill-based games need no draw permit.** Build the game library around skill/deterministic outcomes.
+- If we do run a permitted draw: budget 10% of prize value as a social-welfare contribution and a permit lead time per campaign. This is workable for 2–4 tentpoles a year, not for a weekly mechanic.
+- 🔴 Open question for counsel: does burning YourTal Points to enter a draw constitute an entry fee, given points are not purchasable?
+
+### 2.3 Data protection & platform registration
+
+- **UU 27/2022 (PDP Law)** — transition ended 17 Oct 2024; **enforcement is live**. Implementing regulation **GR No. 33 of 2026** was enacted 16 Jul 2026 and **takes effect 16 Jan 2027**.
+- Consent must be **specific and unambiguous**, preceded by concise, accurate information covering legal basis, purpose, data types, retention period and data-subject rights.
+- **PSE registration (PP 71/2019)** with Komdigi via OSS is required for *any* platform serving Indonesian users — including foreign-operated apps, marketplaces, fintech and streaming. Private-scope operators **may** store data offshore provided protection, supervisory accessibility and cooperation are assured; public-scope operators must keep it onshore.
+
+**Breach notification:** UU PDP Art. 46 requires notice to data subjects and the authority within **3×24 hours**; GR 33/2026 starts that clock only once the failure is established with certainty on reasonable grounds, and **administrative sanctions bite from 16 Jan 2027**. Australia's Notifiable Data Breaches scheme gives **30 days to *assess*** — not to notify — then notice "as soon as practicable". **Plan to the Indonesian 72 hours for both data planes.**
+
+**Implication:** PSE registration is a launch blocker, not a nice-to-have. Onshore data is not strictly mandatory for a private ESO, but hosting in Jakarta removes an argument we do not want to have and improves latency anyway. GR 33/2026 taking effect **16 Jan 2027** is a hard date to design the consent service against.
+
+### 2.4 Charity / fundraising — 🔴 gates the charity feature
+
+- **PUB (Pengumpulan Uang atau Barang)** under Law No. 9/1961 + MoSA Regs 8/2021 & 2024.
+- **Online fundraising is explicitly covered** — social media, websites and crowdfunding apps are all subject to the same rules.
+- Permits are granted by the **Minister of Social Affairs** (national/multi-province), **Governor** (province) or **Regent/Mayor** (district/city).
+- Only **legal entities** that meet the requirements and hold a prior permit may collect.
+- Mandatory **reporting of collection and evidence of distribution** to beneficiaries.
+
+**Implication:** the cleanest design is that **YourTal never holds or collects charitable funds**. Partner with a registered foundation (yayasan) that holds the PUB permit; YourTal facilitates the voucher sale and settles the proceeds directly to the partner's account, with a clear disclosure that the partner is the collector. This avoids YourTal becoming a permitted fundraiser in every province it operates in.
+
+### 2.5 E-commerce — 🔴 gates the merchandise leg
+
+**Permendag No. 19 of 2026**, effective **8 June 2026**, replaced Permendag 31/2023 and covers eight PMSE business models including marketplaces and social commerce.
+
+- Platforms **must reject registration from any seller without a valid business licence** — typically an **NIB** in the trade sector — plus **proof products meet applicable standards**.
+- Existing sellers: **18 months** to complete licensing. New sellers: **6 months** from registration.
+- **Foreign sellers** must supply a legalised business licence, product-standard compliance proof, a bank account number, **Bahasa Indonesia product descriptions** and country of shipment — or the platform must reject them.
+
+**Implication:** merchant onboarding for physical goods is a **KYB pipeline with NIB verification, document capture and expiry tracking**, and it is a hard gate. Build it with the merchandise feature, not after. 🔴 Also confirm current **marketplace tax-collection/withholding obligations** on seller income with a local tax adviser before the first merchandise order settles.
+
+### 2.6 Partner float — 🔴 new, and easy to get wrong
+
+Businesses pre-purchase points; YourTal holds that cash until another partner is paid for honouring a redemption. **That is money economically belonging to others.** In Indonesia it is a prepayment liability with tax and potentially payment-regulation implications; in Australia it may engage client-money/trust obligations and it feeds the **$200 M APRA stored-value threshold** calculation.
+
+**Design response, from day one:** segregated account, never commingled with operating cash, daily float balance reporting, and operating expenses never funded from it. Cheap discipline now; existential later. See [`07`](07-coalition-clearing-and-commerce.md) §2.3.
+
+### 2.7 Loyalty points
+
+Indonesian loyalty is heavily cashback/digital-coin shaped (OVO Points redeemable like cash at partner merchants), and BI has tightened rules for **wallet-linked** loyalty programmes — transparency of benefits and redemption terms. Tax treatment of loyalty rewards was clarified in late 2023.
+
+**Implication:** the more our points look like OVO Points (fixed rate, cash-like, spendable at checkout), the closer we drift to the e-money perimeter. The floating-rate reward-store model is the deliberate distance from that line. 🔴 Confirm with counsel.
+
+---
+
+## 3. Australia
+
+### 3.1 Payments / stored value — 🔴 gates the cash wallet
+
+- **Dual regulation:** ASIC (conduct + licensing under the Corporations Act) and APRA (prudential, for larger providers).
+- Issuing or dealing in a **non-cash payment (NCP) facility** generally requires an **AFSL** under s911A unless an exclusion applies.
+- Exclusions worth testing: the **single-payee exclusion**, **low-value NCP relief (caps: $1,000 per user, $10 M aggregate)**, and the credit-facility exclusion.
+- **ASIC Instrument 2026/167 s11** provides specific relief for qualifying **non-reloadable gift facilities** — but the advice is explicit: *test the actual product against the instrument; do not assume anything called a "gift card" or "loyalty scheme" is exempt.*
+- **APRA registration is triggered above $200 M group-aggregated stored value** with banking-style prudential standards.
+- **AUSTRAC** obligations apply where facilities exceed thresholds or allow cash in/out.
+- **Treasury payments modernisation:** the full Tranche 1 draft legislation was released **March 2026**, moving from a fragmented product-based framework to an **activity-based regime** that pulls a much wider range of payment service providers into AFSL.
+
+**Implication:** Australia is a moving target through 2026–27. A closed-loop reward voucher may well fit the gift-facility relief; a **reloadable wallet with withdrawal almost certainly does not**. Design so that the AU product can launch closed-loop under relief, and so that adding cash-out is a licensing project with its own entity, capital and compliance function.
+
+### 3.2 Privacy — 🔴 gates ad targeting design
+
+- On **31 Aug 2026** the Attorney-General released exposure draft legislation proposing a **"fair and reasonable" test** for collection and use, stronger consent standards, restrictions on trading personal information, and enhanced breach obligations.
+- Proposed reforms would **replace direct-marketing rules with a framework capturing all advertising directed at individuals using their personal information** — explicitly reaching targeted and online behavioural advertising.
+- Businesses that **share or monetise customer data — including programmatic advertising involving cookies or pixels — would need consent** before doing so.
+
+**Implication:** build for the future rule, not today's. Specifically: consent must be **per-purpose and revocable**; targeting should default to **contextual + declared interests + aggregate cohorts**, with individual-level behavioural targeting as an explicitly opted-in tier; and "we share data with advertisers" should be architecturally false — advertisers get *audiences and aggregate reporting*, never user-level data.
+
+### 3.3 Trade promotions / games of chance
+
+- Regulated **per state**, not federally.
+- Permits required in **NSW, ACT, SA, NT**; **not required in QLD, TAS, VIC**.
+- Thresholds: **ACT >$3,000** prize pool, **SA >$5,000**, **NSW >$10,000** for a single game-of-chance promotion.
+- **Games of skill need no permit.** A game of chance gives every entrant an equal random chance and the operator cannot factor in skill.
+- A nationwide promotion must satisfy **every** state's rules.
+
+**Implication:** identical to Indonesia — **skill-based mechanics are the default because they need no permit anywhere.** For chance-based tentpoles, keep the national prize pool under the lowest threshold ($3,000, ACT) or budget for a multi-state permit cycle.
+
+### 3.3b Breakage claims to merchants are already-litigated ACL exposure
+
+In 2013 the Australian Federal Court fined **Scoopon A$1M**, in part for telling merchants that around 30% of vouchers would go unredeemed **with no reasonable basis**.
+
+The merchant pitch in [`07`](07-coalition-clearing-and-commerce.md) and [`09`](09-points-economy-and-redemption.md) leans on breakage. **Any forward statement to a merchant about redemption or breakage rates must be evidenced from our own data or not made at all** — and until the pilot produces that data, we have no basis for any such claim. This belongs in sales training, not only in the contract.
+
+Related precedent worth watching: the EU permanently banned TikTok Lite's watch-to-earn-for-vouchers programme under the DSA in August 2024. Not binding on us, but it establishes that regulators will treat this mechanic as a potential harm rather than a neutral loyalty scheme.
+
+### 3.4 Australian Consumer Law applies to merchandise — even when paid for in points
+
+Consumer guarantees (acceptable quality, fit for purpose, matching description) attach to **goods**, and are **not waived because the customer paid in points rather than dollars**. Indonesia's consumer protection law is similar in intent.
+
+**Implication:** returns, refunds and remedies must be real and operable. The merchant agreement must establish the **merchant as the supplier** bearing the guarantee obligation, with YourTal as facilitator — and then it must actually be enforced: SLA scoring, delisting on repeat failure, and a settlement hold long enough to cover the dispute window.
+
+### 3.5 Charity fundraising
+
+- **Harmonisation is landing:** ACNC-registered charities are deemed authorised in **VIC, SA, QLD, WA** (WA from 1 Aug 2026) on notifying the state regulator; **NSW from 1 Apr 2026** lets ACNC registration serve in place of a NSW fundraising authority.
+- Platform selection guidance for charities: funds should flow **directly to a dedicated charity bank account**, the provider should be Australian-based or meet Australian privacy standards, and fees must be fair.
+- DGR endorsement generally requires ACNC registration first.
+
+**Implication:** same design as Indonesia — **partner charities are the fundraisers; YourTal is a facilitator whose settlement flows funds directly to the charity's account.** Avoid pooling donations in a YourTal account.
+
+---
+
+## 4. Cross-cutting: advertising standards & measurement
+
+Advertisers will eventually audit us. Design for it from the start:
+
+- **MRC GIVT filtration is the floor**; SIVT is strongly encouraged and will be asked for by any brand spending real money.
+- **IAB Open Measurement SDK** for viewability, now including **device attestation** to counter spoofing — adopt it rather than inventing our own viewability metric.
+- **VAST 4.x** for creative delivery (VAST 4 reduces IVT risk and is required for full OM SDK transparency).
+- **OpenRTB 2.6** as the external interface shape if/when we open to programmatic demand.
+- Country ad content rules: alcohol, gambling, therapeutic goods, financial products and children's advertising all have specific restrictions in both markets. The **creative moderation queue is a compliance control, not a quality nicety.**
+
+## 5. Risk register (top 15)
+
+| # | Risk | L | I | Mitigation | Owner |
+|---|---|---|---|---|---|
+| 1 | Points/wallet classified as e-money (ID) or NCP facility (AU) | M | Critical | Closed loop at launch; counsel opinion in both markets before any cash-out | Legal + CTO |
+| 2 | Mini-game classified as gambling (ID) | M | Critical | Skill-only default; permitted draws only with MOSA permits | Product + Legal |
+| 3 | **Device-farm reward extraction** — now the **top** risk | **H** | **Critical** | Web means **no Play Integrity / App Attest**. Compensate: mandatory phone OTP (NIK-bound SIMs make this strong in ID), WebAuthn passkeys, per-checkpoint tokens, **CDN segment-log cross-check**, 72 h holdback for new accounts, trust tiering, graph detection. Capacitor wrap as escape hatch above 3% loss. See [`08`](08-web-app-and-performance.md) §2 | Risk |
+| 4 | Voucher code theft / enumeration | M | High | 16+ char CSPRNG codes, hashed storage, rate limits, alerting | Security |
+| 5 | Secondary-market double-spend (Cardpool failure mode) | M | High | Void-and-remint on transfer; escrow; guarantee window policy | Marketplace |
+| 6 | Ledger corruption / divergent balances | M | Critical | Single writer, append-only, double-entry, continuous invariant checks, daily proofs | Value team |
+| 7 | Advertiser overspend / underdelivery disputes | **H** | Medium | Pacing token buckets, verified-event billing reconciliation, published methodology | Ad platform |
+| 8 | Privacy breach of receipt/purchase data | L | Critical | Encryption, minimisation, country isolation, access audit, pen test | Security |
+| 9 | Indonesian unit economics never work | **H** | High | Voucher-funded rewards; treat ID as proof-of-concept, bank in AU | CEO |
+| 10 | Merchant refuses to honour a redeemed voucher | M | High | Merchant contract + settlement terms; escrowed funding for platform-purchased batches | Partnerships |
+| 11 | Breakage estimate wrong → liability restatement | M | Medium | Expiry policy from day one; monthly liability revaluation; auditor engagement early | Finance |
+| 12 | PSE registration / GR 33/2026 non-compliance | L | High | Register pre-launch; consent service built to GR 33 before 16 Jan 2027 | Legal |
+| 13 | AU privacy reform bans our targeting model | M | High | Consent-per-purpose, contextual-first targeting, no user-level data to advertisers | Product |
+| 14 | Survey data rejected by buyers on quality/ethics | M | Medium | ESOMAR 37 answers, trap questions, honest research disclosure, ISO path | Data |
+| 15 | Scope collapse — building 5 products at once | **H** | High | Phase gates in `04-roadmap.md`; nothing in phase N+1 starts until phase N's gate passes | CTO |
+| 16 | **Nobody watches a 30-minute ad** | **H** | **Critical** | The core product assumption. Chapters + checkpoint rewards + resume + honest entry framing. **Test with a manual pilot before writing decisioning code.** | Product |
+| 17 | **Question answer keys leak** (`jawaban YourTal` on Telegram) | **Certain** | Medium | Bank ≥3× asked, per-user random subset, shuffled options, timers, opinion questions, accuracy-anomaly auto-retire, answer-pattern clustering. Assume leakage; detect fast. See [`06`](06-longform-video-and-attention.md) §4.3 | Risk |
+| 18 | **Unfunded point liability** if a partner fails to pay or goes bust | M | High | **Pre-purchase funding only** at launch; post-paid with a credit limit for proven partners only | Finance |
+| 19 | **Partner float commingled with operating cash** | M | Critical | Segregated account from day one; daily float reporting; never fund opex from it | Finance |
+| 20 | **User data cost kills long-form in Indonesia** | M | High | Default 360–480p, show MB before playback, download-on-Wi-Fi, AV1/H.265, reward ≥ 20× data cost; pursue telco zero-rating | Product |
+| 21 | **Merchandise fulfilment failure** (non-delivery, stockout, damage) | **H** | Medium | Merchant-fulfilled only; start with digital goods; SLA scoring; settlement hold across the dispute window; real returns process | Commerce |
+| 22 | **Web performance fails on mid-tier Android** | M | High | CWV budgets enforced in CI; RUM segmented by country/device class; edge rendering in-region | Frontend |
+| 23 | **Economy insolvency via unfunded faucets** — points minted for promos/sister apps with no cash behind them | **H** | **Critical** | Every unfunded point must be a real cash transfer into the reserve at issuance. Continuous coverage ratio ≥ 1.0, alert at 1.2, block issuance below 1.0. See [`09`](09-points-economy-and-redemption.md) §5 | Finance |
+| 24 | **Supplier arbitrage** — a business underprices its listing and drains platform margin | **H** | High | Suppliers declare a settlement value; **YourTal computes the points price**. Suppliers never set point prices directly. [`09`](09-points-economy-and-redemption.md) §4 | Economy |
+| 25 | **Point inflation** — issuance outruns inventory, prices rise, users conclude they were devalued | **H** | High | Faucet/sink monitoring; add inventory before repricing; bounded demand multiplier; expiry; never devalue silently | Economy |
+| 26 | **Redemption fails at the merchant's checkout** | M | **Critical** | The worst possible moment for a failure. Auth/capture/void/refund with idempotency, hold expiry, manual portal fallback, per-merchant monitoring and kill switch | Engineering |
+| 27 | **Voucher transfer pushes us over the stored-value line** | M | Critical | 🔴 One hop only, verified recipient only, per-batch opt-in, holdback, velocity caps — and counsel review of the transfer design specifically before it ships | Legal |
+| 28 | **Merchant API key compromised** → mass fraudulent redemption | M | High | HMAC signing, no bare balance endpoint, failed-lookup alerting, velocity anomaly detection, settlement hold across the dispute window, per-merchant kill switch | Security |
+| 29 | **Open-view bot traffic billed to advertisers** | **H** | High | GIVT/SIVT filtration before billing; per-device and per-IP minute caps; Turnstile after the first view; published methodology. Billable anonymous views restore the bot incentive — for advertiser money rather than reward value | Ad platform |
+| 30 | **Unfunded delivery minutes** from open viewing | M | High | Open Viewing is opt-in per campaign with its own budget line, off by default; delivery hard-stops at budget | Finance |
+| 31 | **The web fraud model's four main controls do not work** | **Confirmed** | **Critical** | Verified in [`22`](22-assumption-audit.md). Defence moves to post-earn vesting, economic caps, trust-tiered reward fungibility and cross-account graph detection. Self-hosted HLS restores a real attention check | Risk |
+| 32 | **Coalition value asymmetry — the Plenti failure mode** | **H** | **Critical** | Funding merchants perceive they subsidised a competitor's footfall. Per-funder attribution reporting; bias campaign rewards toward the funder's own inventory; reconsider full fungibility (J4); defer the pooled store until merchants renew | CEO |
+| 33 | **Unevidenced breakage claims to merchants** | M | High | Scoopon precedent: A$1M ACL penalty. No forward redemption or breakage statement without our own data behind it | Legal |
+| 34 | **Seeded vouchers manufacture an unprofitable cohort** | **H** | High | GoTo spent Rp9tn shedding exactly these users (~9% GTV drop). Measure incremental vs subsidised redemption in the pilot (YT-0223); cap seeding per user | Economy |

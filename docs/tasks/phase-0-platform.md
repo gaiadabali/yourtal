@@ -294,3 +294,12 @@
 - [ ] ⚠️ **Seeks against an origin land later than against a same-process static file.** That is now a permanent property, not a flaw, since the `public/` fixture is gone; a `settle()` helper exists and fixed two of three cases
 - [ ] ⚠️ **The end-seek assertion has been rewritten and must not be reverted.** It previously asserted that seeking to the end completes the campaign — see decision **O-4** and risk 43. It now reads the media position directly, which is what YT-0412 actually asks for
 - [ ] Context worth keeping: the fixture is `attention-30s` at 30 fps because the seek tests are calibrated to a ~50 ms keyboard step at a 20:1 remap ratio. A 15 fps fixture makes one step land inside the same frame and the bar never moves. **A directory named for the wrong duration is a lie that costs somebody an hour**
+
+### YT-0551 · Gate the completion hand-off on coverage, not on the `ended` event
+`todo` · PU · web · 2d · dep: YT-0526
+
+- **Implements decision O-4 in the player.** `use-watch-session.ts` sets `hasEnded` from the `ended` event alone, so **the only thing currently preventing scrub-to-complete is that Chrome declines to fire `ended` on a seek** — see risk 43. A fraud control resting on one browser's incidental behaviour is not a control
+- [ ] Completion requires **playback coverage of the whole timeline**, tracked as watched ranges, not a single terminal event
+- [ ] Seeking to the end leaves the campaign incomplete and does **not** mount the hand-off — asserted directly, since a test previously asserted the opposite
+- [ ] A synthetic `ended` event does not complete a campaign. `video.dispatchEvent(new Event("ended"))` from a console is the cheapest possible attack and must fail in the client as well as at the server
+- [ ] ⚠️ **This is defence in depth and must not be described as the control.** The server refuses regardless — checkpoint tokens at randomised timestamps cannot be scrubbed for, and per-segment delivery logs show the middle was never fetched. The reason to fix the client anyway is that **a UI which appears to reward scrubbing teaches people to try**, and `docs/22` is a catalogue of controls that were believed rather than exercised

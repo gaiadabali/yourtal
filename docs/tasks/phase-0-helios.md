@@ -81,11 +81,20 @@ This supersedes the GCP/Cloudflare shape in [`phase-0-foundation.md`](phase-0-fo
 - [x] ⚠️ **Faults cannot be switched on by environment**, only passed in by a test. A fault configurable from the outside is one that can reach a running deployment
 
 ### YT-0537 · Payment and disbursement simulator
-`todo` · P0 · platform · 3d · dep: YT-0535, YT-0536
+`review` · P0 · platform · 3d · dep: YT-0535, YT-0536
 
-- [ ] Xendit-**shaped** but **unit-agnostic**: the money unit is a declared property of the driver, not a constant baked into the simulator
-- [ ] A wrong unit therefore **fails a parity test** rather than silently settling 100× wrong — this is what makes YT-0506 safe to defer instead of guess
-- [ ] Idempotency, webhook signature verification and replay are exercised against the simulator
+**88 tests in `packages/drivers` (was 60). Typecheck, lint and prettier clean.**
+
+- [x] Xendit-shaped and unit-agnostic. `declaredMinorUnitExponent` is on the driver; `provider-amount.ts` converts between what we store and what a processor speaks. Payload uses `external_id` / `amount` / `currency`
+- [x] **The parity property is value preservation, not exponent equality.** Asserting the driver's exponent equals `MINOR_UNIT`'s would have *forbidden* the case this design exists for — a processor legitimately wanting whole Rupiah. What must hold is that Rp 45.000 arrives as Rp 45.000 whether it travels as 4_500_000 sen or 45_000 Rupiah, and that catches a 100× error in either direction
+- [x] **Neither side derives from the other.** `MINOR_UNIT` says what we store, the driver says what it speaks. A driver reading its exponent from `MINOR_UNIT` would make the test compare a value to itself — exactly what `openapi:go:check` was doing when it compared the generator's output to the generator's output, which is why nobody noticed the Go module had never compiled
+- [x] **A mis-declared driver is constructed and caught.** `convertAmounts: false` builds a driver that *claims* Rupiah and *sends* sen — the 100× bug in its natural habitat, where nothing throws and every type checks. Without building the wrong case the suite could only prove the right one, which says nothing about whether it would catch anything
+- [x] **Conversion can refuse.** Rp 45.000,50 has no whole-Rupiah representation; rounding would discard 50 sen per transaction, invisible per item and material per million. The driver declines rather than deciding for the caller
+- [x] Disbursement converts identically. The direction is what makes it worse: a charge in the wrong unit overcharges a user who complains, a payout in the wrong unit overpays a merchant who has no reason to mention it
+- [x] **Webhook signature verification is real HMAC-SHA256** over `timestamp.body`, constant-time compared, with a two-sided freshness window. Every rejection path is exercised — tampered body, wrong secret, missing signature, missing timestamp, malformed timestamp, stale, future, wrong-length signature
+- [x] ⚠️ **Deliberately stronger than Xendit's own scheme.** Xendit sends a static `x-callback-token`: no expiry, no binding to the body, permanent on a single leak. The simulator implements the Stripe-style scheme so handlers are written against a real signature check rather than a string equality; a live driver implements whatever the vendor requires behind the same interface
+- [x] **Replay is a separate defence from the signature, and the test proves it.** Under the `duplicate_webhook` fault both copies verify — they are genuinely from the provider — and the inbox admits each event id once. A signature cannot help here, which is the whole point of having both
+- [x] Idempotency: a replayed key returns the original charge and the provider is charged once
 
 ### YT-0538 · Bot-check, OTP and messaging simulators
 `todo` · P0 · platform · 2d · dep: YT-0535

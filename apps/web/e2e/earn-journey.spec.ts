@@ -1,45 +1,61 @@
 import { expect, test } from "@playwright/test";
-import { BONUS_ACCURACY_CAMPAIGN_ID } from "./fixture-ids";
+import { findBonusAccuracyCampaign } from "./find-bonus-accuracy-campaign";
+
+/**
+ * A `long_form` campaign that actually scores `base_plus_accuracy_bonus`
+ * AND has a scorable checkpoint question — selected by property, not
+ * pinned by id (see find-bonus-accuracy-campaign.ts for why both
+ * properties are needed). `zeroRewardCampaignFixture` (a named, fixed-id
+ * fixture used elsewhere) is `scoringRule: "base_only"` and can never
+ * demonstrate the checkpoint result screen's base-vs-bonus distinction,
+ * which is YT-0450's first acceptance criterion for the Earn journey — so
+ * this walks the generated catalogue for one that does. Any change to the
+ * campaign generator's draw order can shuffle WHICH campaign this is
+ * without ever invalidating the test, because the property being selected
+ * for is the one the test actually depends on.
+ */
+const BONUS_ACCURACY_CAMPAIGN_ID = findBonusAccuracyCampaign().id;
 
 /**
  * YT-0450's first acceptance criterion, Earn leg: `/` -> a campaign's entry
- * card -> `/watch/[id]` -> the checkpoint -> a result distinguishing base
- * reward from accuracy bonus. Every step below is a real click through
- * rendered UI, never `page.goto` to skip a step, up to the point documented
- * as blocked.
+ * card -> `/watch/[id]` -> real playback to completion -> the checkpoint
+ * hand-off -> a result distinguishing base reward from accuracy bonus.
+ * Every step below is a real click through rendered UI — no `page.goto`
+ * skips any step of the journey.
  *
- * WAS a known blocker, resolved 2026-09-20. Every campaign used to point at
- * one shared public HLS placeholder whose ~59 MB segment aborted before the
- * `<video>` element ever reported a finite `duration`, so
- * `use-watch-session.ts`'s `hasEnded` could never fire and `CompletionHandoff`
- * — the component linking `/watch/[id]` into `/watch/[id]/checkpoint` — could
- * never mount. There was no real click from the player to the checkpoint.
+ * UNBLOCKED 2026-09-20. Every campaign used to point at one shared public
+ * HLS placeholder whose ~59 MB segment aborted before the `<video>` element
+ * ever reported a finite `duration`, so `use-watch-session.ts`'s `hasEnded`
+ * could never fire and `CompletionHandoff` — the component linking
+ * `/watch/[id]` into `/watch/[id]/checkpoint` — could never mount. There
+ * was no real click from the player to the checkpoint.
  *
  * The player now reads `campaign.videoSource` and plays a 20-second local
- * ladder with a finite duration, so that handoff is reachable in principle.
- * **This suite has not yet been rewritten to prove it end to end** — the
- * checkpoint is still reached directly below, which is now a weaker test than
- * the code supports rather than the only one possible. Closing that gap is
- * worth its own pass; leaving the comment claiming a blocker that no longer
- * exists would be worse, because the next person would not think to look.
+ * ladder with a finite duration, and — verified here — really does reach
+ * `ended` and mount `CompletionHandoff` when played through in real time.
+ * This closes the gap the previous version of this file's top comment
+ * flagged as still open: the hand-off is driven by a real click on
+ * "Continue to questions", not by navigating to the checkpoint directly.
+ *
+ * Note this is playback REACHING its end, not seeking to it —
+ * keyboard-seek.spec.ts found that Chrome's `ended` event fires only when
+ * playback naturally arrives at the end, not when a seek lands there, so
+ * this test cannot shortcut the ~20 real seconds of playback with a seek.
  *
  * PREREQUISITE: `pnpm dev:up` and `pnpm media:publish` (or `pnpm dev:fresh`).
  * The fixture is served by the local MinIO origin, not from `public/`.
- *
- * What this suite does prove: the entry card's terms genuinely reach the
- * player for the same campaign, the player's own UI renders correctly, and
- * — reached directly — the checkpoint quiz genuinely produces a result that
- * distinguishes base reward from accuracy bonus.
  */
 test.describe("Earn journey", () => {
-  test("home board's card reaches the entry card, whose terms and start action reach the same campaign's player", async ({
+  test("home board's card reaches the entry card, whose terms and start action reach the same campaign's player, through real playback, into the checkpoint, to a result distinguishing base reward from accuracy bonus", async ({
     page,
   }) => {
     // Clicking Play attempts a real, network-loaded HLS fetch (see this
-    // file's top comment) before the start overlay clears; under full-suite
-    // parallel load that can take longer than the default per-test budget,
-    // so this test gets the standard 3x "slow" allowance rather than a
-    // single long `expect` timeout eating the whole test's clock.
+    // file's top comment) before the start overlay clears, and this test
+    // then waits out ~20 real seconds of actual playback to reach `ended`
+    // for real — under full-suite parallel load that is comfortably over
+    // the default per-test budget, so this gets the standard 3x "slow"
+    // allowance rather than a single long `expect` timeout eating the
+    // whole test's clock.
     test.slow();
     await page.goto("/?kind=long_form");
 
@@ -91,24 +107,28 @@ test.describe("Earn journey", () => {
     await expect(playButton).toBeVisible();
     await playButton.click();
 
-    // BLOCKED HERE: clicking Play does start a real `<video>` load attempt
-    // (this assertion — the overlay disappearing — is genuine evidence a
-    // user gesture reached `handlePlay`), but the shared placeholder
-    // segment does not reliably reach `loadedmetadata`/`ended` in this
-    // environment, so neither real seeking nor the checkpoint hand-off via
-    // `CompletionHandoff` can be driven from here. See this file's top
-    // comment and the report for what that means for the acceptance
-    // criterion.
+    // Genuine evidence a user gesture reached `handlePlay`: the start
+    // overlay clears once a real play attempt begins.
     await expect(
       playButton,
       "the start overlay should clear once a play attempt begins",
     ).toBeHidden({ timeout: 20_000 });
-  });
 
-  test("the checkpoint quiz — reached directly since the real playback hand-off is blocked — produces a result distinguishing base reward from accuracy bonus", async ({
-    page,
-  }) => {
-    await page.goto(`/watch/${BONUS_ACCURACY_CAMPAIGN_ID}/checkpoint`);
+    // Real playback, not a shortcut: wait for the actual 20-second local
+    // ladder to play through to its own end. The hand-off only mounts once
+    // the `<video>` element fires a genuine `ended` event — seeking to the
+    // end does not fire it (see this file's top comment) — so this really
+    // is the video playing out, observed through its consequence.
+    const continueLink = page.getByRole("link", { name: /Continue to questions/i });
+    await expect(
+      continueLink,
+      "playback reaching its real end must hand off to the checkpoint",
+    ).toBeVisible({ timeout: 45_000 });
+
+    // Real click into the checkpoint — the seam this file's top comment
+    // says was previously unreachable by any real click.
+    await continueLink.click();
+    await expect(page).toHaveURL(`/watch/${BONUS_ACCURACY_CAMPAIGN_ID}/checkpoint`);
 
     // "Pertanyaan X dari N" tells us exactly how many questions to answer —
     // read once, up front, rather than guessing a loop bound.

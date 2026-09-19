@@ -1,11 +1,29 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { MOCK_MERCHANTS } from "@yourtal/contracts/merchant/roster";
-import {
-  MERCHANT_ONLY_VOUCHER_CODE,
-  MERCHANT_PROVISIONING_CODE,
-  MERCHANT_PROVISIONING_PIN,
-} from "./fixture-ids";
+import { healthyVoucherFixture } from "@/features/merchant/merchant-voucher-fixtures";
+
+// An arbitrary 4-digit PIN this suite sets during pairing — pairing CREATES
+// this PIN, it is never matched against a generated value, so there is
+// nothing to select at runtime here. Any 4 digits work.
+const MERCHANT_PROVISIONING_PIN = "1234";
+
+// The merchant-only voucher fixture the counter device's own catalogue is
+// seeded with (`healthyVoucherFixture` — plain, active, no edge case), and
+// the roster merchant it genuinely belongs to. Selected by property
+// (merchantId match), not by a hand-copied id/code pair: if either fixture
+// generator ever changes, this still points at a voucher and a
+// provisioning code for the SAME merchant.
+const MERCHANT_ONLY_VOUCHER_CODE = healthyVoucherFixture.code;
+const merchantForHealthyVoucher = MOCK_MERCHANTS.find(
+  (candidate) => candidate.id === healthyVoucherFixture.merchantId,
+);
+if (!merchantForHealthyVoucher) {
+  throw new Error(
+    "healthyVoucherFixture's merchantId must be on the shared roster — if it is not, the merchant fixtures and the roster have drifted apart",
+  );
+}
+const MERCHANT_PROVISIONING_CODE = merchantForHealthyVoucher.provisioningCode;
 
 /**
  * YT-0450's first acceptance criterion, Redeem leg: `/wallet` -> a voucher
@@ -71,19 +89,40 @@ test.describe("Redeem journey", () => {
     ).toBeDefined();
 
     await provisionMerchantDevice(page, merchant!.provisioningCode);
-    await enterVoucherCodeManually(page, code);
-    await page.getByRole("button", { name: "Konfirmasi redeem" }).click();
 
-    // Never claims success before capture: a processing phase must be
-    // observable before any outcome renders.
-    await expect(page.getByText(/Memverifikasi voucher…|Menyelesaikan redeem…/)).toBeVisible();
+    // `attemptRedemption` deliberately simulates a transient network
+    // failure for ~1/12 of idempotency keys (`merchant-redemption.ts`,
+    // minted fresh per confirm click from `Date.now()`) — see the sibling
+    // test below for the full explanation of why this loop starts a FRESH
+    // attempt on that outcome rather than tapping the doomed "Coba lagi"
+    // retry. Bounded at 3 attempts for the same reason.
+    let succeeded = false;
+    for (let attempt = 0; attempt < 3 && !succeeded; attempt += 1) {
+      if (attempt > 0) {
+        await page.goto("/merchant");
+      }
+      await enterVoucherCodeManually(page, code);
+      await page.getByRole("button", { name: "Konfirmasi redeem" }).click();
 
-    // The loop closes. A voucher the user holds is redeemable at a counter.
-    // This asserted a `wrong_merchant` refusal until the shared merchant
-    // roster landed: wallet vouchers and provisionable devices drew from
-    // disjoint id sets, so earn -> spend -> redeem could never complete.
-    await expect(page.getByText("Berhasil di-redeem")).toBeVisible();
-    await expect(page.getByText("Voucher untuk toko lain")).toHaveCount(0);
+      // Never claims success before capture: a processing phase must be
+      // observable before any outcome renders.
+      await expect(page.getByText(/Memverifikasi voucher…|Menyelesaikan redeem…/)).toBeVisible();
+
+      const networkErrorAlert = page.getByText("Redeem gagal diproses");
+      succeeded = !(await networkErrorAlert.isVisible().catch(() => false));
+      if (!succeeded) {
+        continue;
+      }
+
+      // The loop closes. A voucher the user holds is redeemable at a
+      // counter. This asserted a `wrong_merchant` refusal until the shared
+      // merchant roster landed: wallet vouchers and provisionable devices
+      // drew from disjoint id sets, so earn -> spend -> redeem could never
+      // complete.
+      await expect(page.getByText("Berhasil di-redeem")).toBeVisible();
+      await expect(page.getByText("Voucher untuk toko lain")).toHaveCount(0);
+    }
+    expect(succeeded, "expected a genuine capture success within 3 fresh attempts").toBe(true);
   });
 
   test("a voucher whose merchant genuinely matches the counter device redeems successfully, and never claims success before both processing phases complete", async ({

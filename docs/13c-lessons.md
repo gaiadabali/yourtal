@@ -111,3 +111,17 @@ So the review question has to be asked in two directions, not one:
 - **Is the thing it asserts the behaviour we want?** — this one.
 
 A green suite answers neither by itself. **Tests written from the implementation inherit its bugs as requirements**, and the further a spec is from the rule it protects — an e2e player test is a long way from the attention-verification model — the easier that inheritance is to miss. Where a test touches something the threat model cares about, cite the rule in the test, so the next reader can check the assertion against the intent rather than against the code.
+
+## A decision does not announce which code it just made wrong
+
+Decision **O-1** was taken in the morning: the reward is all or nothing at completion. By the afternoon it turned out the shipped player had been built for the model O-1 supersedes — a live-growing **"Reward so far: X / total"** tally, chapters labelled **"earned"** with individual point figures, and two error boundaries telling users outright that _"anything you already earned was not lost"_.
+
+All of it false under O-1, and **all of it at `review` with passing tests**, because the tests asserted the old model faithfully. Nothing went red. Nothing could have: the code was correct for the rules it was written against, and the rules changed underneath it.
+
+This is the sharpest form of the pattern in this file. The earlier entries were checks that did not cover what they named, and one that asserted the wrong answer. **This one is code that was right when written and became wrong without moving.** It was found only because a brief happened to mention the new decision to somebody reading that area.
+
+So a decision that supersedes a model is not finished when it is written down:
+
+- **Name the artifacts it invalidates in the decision itself**, not only the rule it replaces. O-1 listed `docs/06` and YT-0124; it did not list the player, and the player was the part users would see.
+- **Grep for the vocabulary of the old model** — here, `earned`, `so far`, `accrued`. Superseded models leave their words behind in UI copy and comments long after the logic changes.
+- The worst instance is always in **user-facing copy**, because that is where a stale model becomes a promise. A user who watches twenty-eight minutes believing they have banked something, and receives nothing, has been misled by us rather than disappointed by a rule.

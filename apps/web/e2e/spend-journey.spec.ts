@@ -1,5 +1,22 @@
 import { expect, test } from "@playwright/test";
-import { AFFORDABLE_LISTING_ID } from "./fixture-ids";
+import { mockListings } from "@yourtal/contracts/listing/mock";
+import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
+import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
+
+/**
+ * `burn-redemption.ts`'s `attemptBurn` deterministically simulates the
+ * merchant/network failing to honour roughly one listing in eight
+ * (`isSimulatedMerchantFailure`, hashed from the listing id, never
+ * random). This journey exists to prove the HAPPY path completes —
+ * `redeem-journey.spec.ts` already exercises a `network_error` retry loop
+ * for the sibling case in the merchant redemption flow — so a listing
+ * landing in that bucket is excluded here by reproducing the exact same
+ * hash rather than accepting an intermittent failure the suite has no way
+ * to explain when it lands.
+ */
+function isSimulatedMerchantFailure(listingId: string): boolean {
+  return hashStringToSeed(`${listingId}:redemption-outcome`) % 8 === 0;
+}
 
 /**
  * YT-0450's first acceptance criterion, Spend leg: `/store` -> browse ->
@@ -7,13 +24,29 @@ import { AFFORDABLE_LISTING_ID } from "./fixture-ids";
  * success. Unlike Earn, nothing here depends on real video playback, so
  * this journey is driven to genuine completion, real click by real click.
  *
- * `AFFORDABLE_LISTING_ID` (see fixture-ids.ts) was chosen by browsing
- * `/store` and finding a listing whose offer page actually renders an
- * enabled "Tukar Sekarang" button against the mock balance — most of the
- * catalogue is deliberately priced above or below afford-ability to
- * exercise those states elsewhere (`overflow-320.spec.ts` already covers
- * `LONG_MERCHANT_LISTING_ID`, which is deliberately unaffordable).
+ * The affordable listing is SELECTED, not pinned: `mixedStateBalanceFixture`
+ * (8,400 available points) is the one balance the app's mock data layer
+ * ever serves (`store-balance-data.ts`, `wallet-data.ts`), so any in-stock
+ * listing priced at or below it will genuinely render an enabled "Tukar
+ * Sekarang" button. Picking by that property means a change to the listing
+ * generator's draw order can shuffle which listing this is without ever
+ * breaking the test — most of the catalogue is deliberately priced above or
+ * below afford-ability to exercise those states elsewhere
+ * (`overflow-320.spec.ts` already covers the always-unaffordable
+ * `abovePlausibleBalanceListingFixture`).
  */
+const affordableListing = mockListings.find(
+  (candidate) =>
+    candidate.status !== "sold_out" &&
+    candidate.priceInPoints <= mixedStateBalanceFixture.availablePoints &&
+    !isSimulatedMerchantFailure(candidate.id),
+);
+if (!affordableListing) {
+  throw new Error(
+    "expected at least one in-stock, affordable listing outside the simulated-failure bucket in mockListings — the store's own happy path would have nothing to demonstrate either",
+  );
+}
+const AFFORDABLE_LISTING_ID = affordableListing.id;
 test.describe("Spend journey", () => {
   test("store browse -> offer -> burn flow -> price lock -> confirm -> success, with the offer page's affordability verdict honoured all the way through", async ({
     page,

@@ -44,7 +44,7 @@ import { pickMockMerchant } from "../merchant/merchant-roster";
  * campaigns will carry their own per-encode URL through this same field.
  */
 export const MOCK_HLS_MANIFEST_URL =
-  "http://127.0.0.1:26900/yourtal-media/hls/attention-20s/index.m3u8";
+  "http://127.0.0.1:26900/yourtal-media/hls/attention-30s/index.m3u8";
 
 const MOCK_VIDEO_SOURCE: CampaignVideoSource = { kind: "hls", manifestUrl: MOCK_HLS_MANIFEST_URL };
 

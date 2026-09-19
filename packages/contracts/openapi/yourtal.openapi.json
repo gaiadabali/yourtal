@@ -232,7 +232,7 @@
         ]
       },
       "Campaign": {
-        "description": "The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).\n  - An accuracy bonus requires at least one question to score accuracy against.\n  - A long_form campaign must have at least one chapter; a quick campaign has none.\n  - The first chapter must start at second 0.\n  - Chapter start times must be strictly increasing.\n  - Every chapter must start before the campaign's own durationSeconds.",
+        "description": "The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).\n  - A long-form campaign must have at least one chapter.\n  - A quick campaign must have no chapters.\n  - An accuracy bonus requires at least one question to score accuracy against.\n  - A long_form campaign must have at least one chapter; a quick campaign has none.\n  - The first chapter must start at second 0.\n  - Chapter start times must be strictly increasing.\n  - Every chapter must start before the campaign's own durationSeconds.",
         "type": "object",
         "properties": {
           "id": {
@@ -348,6 +348,14 @@
         ],
         "additionalProperties": false
       },
+      "CampaignFunderType": {
+        "description": "Who is paying for a campaign's points: a partner's pre-purchased block, or the platform funding its own grants. They post to different contra accounts, so collapsing them would hide marketing spend inside funded issuance.",
+        "type": "string",
+        "enum": [
+          "partner",
+          "marketing"
+        ]
+      },
       "CampaignKind": {
         "description": "Long-form earn campaign, or a short Quick-feed item (docs/17 section 1.1).",
         "type": "string",
@@ -355,6 +363,54 @@
           "long_form",
           "quick"
         ]
+      },
+      "CampaignLifecycleState": {
+        "description": "A campaign's AUTHORING state, owned by the advertiser console (YT-0101). Distinct from CampaignStatus, which is what a viewer sees: draft, in_review and rejected have no public form at all. The set is the union of two incomplete ones — 'rejected' (review said no, it never ran) and 'ended' (it ran and finished) are different facts and a model needs both. Transitions are enumerated, not ad hoc: there is deliberately no draft->live, because a campaign that can publish itself makes review advisory.",
+        "type": "string",
+        "enum": [
+          "draft",
+          "in_review",
+          "rejected",
+          "live",
+          "paused",
+          "ended"
+        ]
+      },
+      "CampaignRewardConfig": {
+        "description": "Which ledger allocation funds a campaign and how much of it this campaign may use (YT-0101). Deliberately carries NO remaining balance: that number is owned by ledger.allocation, whose CHECK (remaining_points >= 0) and conditional drawdown are the real hard stop. A copy here would be a second total that disagrees the first time a grant lands between reads.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - rewardPointsPerCompletion must be greater than zero.\n  - One completion (reward plus accuracy bonus) must fit within maxPointsForCampaign.",
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "allocationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "funderType": {
+            "$ref": "#/components/schemas/CampaignFunderType"
+          },
+          "maxPointsForCampaign": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "rewardPointsPerCompletion": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "accuracyBonusPoints": {
+            "$ref": "#/components/schemas/Points"
+          }
+        },
+        "required": [
+          "campaignId",
+          "allocationId",
+          "funderType",
+          "maxPointsForCampaign",
+          "rewardPointsPerCompletion",
+          "accuracyBonusPoints"
+        ],
+        "additionalProperties": false
       },
       "CampaignScoringRule": {
         "description": "Whether the reward is completion-only or completion plus an accuracy bonus.",
@@ -372,6 +428,55 @@
           "paused",
           "ended"
         ]
+      },
+      "CampaignTerms": {
+        "description": "An immutable version of what a campaign promised (YT-0101). A watch session references the version it entered under, so an advertiser editing a live campaign cannot change what someone already watching is owed. Versioned rather than copied per session: one row per distinct set of terms, and the history is the audit trail a dispute needs. Only reward-affecting fields mint a version — a title edit does not.",
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "rewardPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "questionCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "scoringRule": {
+            "$ref": "#/components/schemas/CampaignScoringRule"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "campaignId",
+          "version",
+          "rewardPoints",
+          "questionCount",
+          "scoringRule",
+          "durationSeconds",
+          "effectiveFrom"
+        ],
+        "additionalProperties": false
       },
       "CampaignVideoSource": {
         "description": "Where the player resolves a campaign's video from, without guessing (YT-0503).",

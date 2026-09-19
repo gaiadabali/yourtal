@@ -1,4 +1,4 @@
-h1:DIpVR6b/oaL8G1srPjyifyvlYqrq7GA/NVx04cHY/T8=
+h1:1zdZKZGnCsbapkpA9J3usogKUNeWf1sqBhEnle59mh4=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -10,3 +10,4 @@ h1:DIpVR6b/oaL8G1srPjyifyvlYqrq7GA/NVx04cHY/T8=
 20260919000009_merchant_locations.sql h1:4qBjPzpkWn/QsbxMT/elGD6u3IFJIyTD67sGLEJYvpg=
 20260919000010_daily_proof.sql h1:YSNkBFm9ZBhmoh/j6YONlkv88hiTvYehhVYLxhDZTUw=
 20260920000011_idr_sen.sql h1:4e5jrJ6GA5kLpQE2zh0sP0sZIhceX7OWxsgO2fohEac=
+20260920000012_campaign_lifecycle.sql h1:lQwEiyqgFMaAA4Lirraik04o8wT8BsTg0MxXjdKu/LU=

@@ -8,6 +8,7 @@ import { filterCampaignsByKind } from "@/features/campaign/campaign-filter";
 import { CampaignGrid } from "@/features/campaign/campaign-grid";
 import { CampaignGridSkeleton } from "@/features/campaign/campaign-grid-skeleton";
 import { sortCampaigns } from "@/features/campaign/campaign-sort";
+import { StreakCheckInCard } from "@/features/streak/streak-check-in-card";
 
 /**
  * The Earn board (YT-0410) — `/`, the app's home surface.
@@ -23,6 +24,7 @@ export default async function EarnBoardPage(props: PageProps<"/">) {
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-2xl font-semibold text-fg">Earn</h1>
+      <StreakCheckInCard />
       <CampaignBoardControls />
       {/* Board-specific fallback lives here, not in the group's loading.tsx,
           which is shared with every sibling tab. */}

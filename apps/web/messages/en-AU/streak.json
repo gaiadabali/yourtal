@@ -1,0 +1,13 @@
+{
+  "title": "Daily check-in",
+  "streakCount": "{count}-day streak",
+  "startPrompt": "Check in today to start a streak",
+  "checkInCta": "Check in",
+  "checkedInCta": "Checked in today",
+  "todaysRewardLabel": "Today's reward",
+  "ladderDayLabel": "Day {day}",
+  "ladderStatusDone": "done",
+  "ladderStatusToday": "today",
+  "ladderStatusUpcoming": "upcoming",
+  "fundingNote": "Credited by YourTal's daily reward pool, not by the platform minting points on its own."
+}

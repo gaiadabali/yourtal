@@ -1,6 +1,12 @@
 import type { ZodType } from "zod";
 import { idrMinorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema, moneySchema } from "../money/money-value";
+import { campaignLifecycleStateSchema } from "../campaign/campaign-lifecycle";
+import { campaignTermsSchema } from "../campaign/campaign-terms";
+import {
+  campaignFunderTypeSchema,
+  campaignRewardConfigSchema,
+} from "../campaign/campaign-reward-config";
 import { regionSchema } from "../region/region";
 import {
   campaignKindSchema,
@@ -102,6 +108,38 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [],
   },
 
+  {
+    id: "CampaignLifecycleState",
+    schema: campaignLifecycleStateSchema,
+    description:
+      "A campaign's AUTHORING state, owned by the advertiser console (YT-0101). Distinct from CampaignStatus, which is what a viewer sees: draft, in_review and rejected have no public form at all. The set is the union of two incomplete ones — 'rejected' (review said no, it never ran) and 'ended' (it ran and finished) are different facts and a model needs both. Transitions are enumerated, not ad hoc: there is deliberately no draft->live, because a campaign that can publish itself makes review advisory.",
+    crossFieldRules: [],
+  },
+  {
+    id: "CampaignTerms",
+    schema: campaignTermsSchema,
+    description:
+      "An immutable version of what a campaign promised (YT-0101). A watch session references the version it entered under, so an advertiser editing a live campaign cannot change what someone already watching is owed. Versioned rather than copied per session: one row per distinct set of terms, and the history is the audit trail a dispute needs. Only reward-affecting fields mint a version — a title edit does not.",
+    crossFieldRules: [],
+  },
+  {
+    id: "CampaignFunderType",
+    schema: campaignFunderTypeSchema,
+    description:
+      "Who is paying for a campaign's points: a partner's pre-purchased block, or the platform funding its own grants. They post to different contra accounts, so collapsing them would hide marketing spend inside funded issuance.",
+    crossFieldRules: [],
+  },
+  {
+    id: "CampaignRewardConfig",
+    schema: campaignRewardConfigSchema,
+    description:
+      "Which ledger allocation funds a campaign and how much of it this campaign may use (YT-0101). Deliberately carries NO remaining balance: that number is owned by ledger.allocation, whose CHECK (remaining_points >= 0) and conditional drawdown are the real hard stop. A copy here would be a second total that disagrees the first time a grant lands between reads.",
+    crossFieldRules: [
+      "rewardPointsPerCompletion must be greater than zero.",
+      "One completion (reward plus accuracy bonus) must fit within maxPointsForCampaign.",
+    ],
+  },
+
   // --- campaign ---
   {
     id: "CampaignKind",
@@ -141,6 +179,8 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       "The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).",
     crossFieldRules: [
       "A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).",
+      "A long-form campaign must have at least one chapter.",
+      "A quick campaign must have no chapters.",
       "An accuracy bonus requires at least one question to score accuracy against.",
       "A long_form campaign must have at least one chapter; a quick campaign has none.",
       "The first chapter must start at second 0.",

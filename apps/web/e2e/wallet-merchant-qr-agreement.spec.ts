@@ -2,7 +2,27 @@ import { expect, test } from "@playwright/test";
 import { mockVouchers } from "@yourtal/contracts/voucher/mock";
 import { computeQrPayload, currentRotationWindow } from "@/features/wallet/voucher-qr-rotation";
 import { validateScannedPayload } from "@/features/merchant/merchant-qr-validation";
-import { WALLET_VOUCHER_ID } from "./fixture-ids";
+
+/**
+ * Any genuinely active, unexpired voucher proves the seam this file exists
+ * to check — nothing here depends on WHICH one. Selecting by property
+ * (`status === "active"` and not expired relative to the real clock,
+ * exactly as the wallet itself would filter for display) means a change to
+ * the voucher generator's draw order can never invalidate this test the way
+ * a pinned id could.
+ */
+function findWalletVoucherFixture() {
+  const now = Date.now();
+  const voucher = mockVouchers.find(
+    (candidate) => candidate.status === "active" && new Date(candidate.expiresAt).getTime() > now,
+  );
+  if (!voucher) {
+    throw new Error(
+      "expected at least one active, unexpired voucher in mockVouchers — the wallet itself would have nothing to show either",
+    );
+  }
+  return voucher;
+}
 
 /**
  * `@/features/wallet/wallet-data`'s `getWalletVoucher` is the app's real
@@ -44,11 +64,10 @@ import { WALLET_VOUCHER_ID } from "./fixture-ids";
  */
 test.describe("Wallet QR payload <-> merchant validation agreement", () => {
   test("a real wallet voucher's rotating QR payload validates against the merchant's own validator", () => {
-    const voucher = mockVouchers.find((candidate) => candidate.id === WALLET_VOUCHER_ID);
-    expect(voucher).toBeDefined();
+    const voucher = findWalletVoucherFixture();
 
     const now = Date.now();
-    const source = { id: voucher!.id, code: voucher!.code, expiresAt: voucher!.expiresAt };
+    const source = { id: voucher.id, code: voucher.code, expiresAt: voucher.expiresAt };
     const payload = computeQrPayload(source, currentRotationWindow(now));
 
     // The exact candidate shape the merchant's real `listRedeemableVouchers()`
@@ -57,19 +76,18 @@ test.describe("Wallet QR payload <-> merchant validation agreement", () => {
 
     expect(result.ok, `expected the payload to validate, got ${JSON.stringify(result)}`).toBe(true);
     if (result.ok) {
-      expect(result.voucherId).toBe(voucher!.id);
+      expect(result.voucherId).toBe(voucher.id);
     }
   });
 
   test("a payload computed for a DIFFERENT voucher does not validate against this one — the hash is not order-of-argument-independent", () => {
-    const voucher = mockVouchers.find((candidate) => candidate.id === WALLET_VOUCHER_ID);
-    expect(voucher).toBeDefined();
+    const voucher = findWalletVoucherFixture();
 
     const now = Date.now();
-    const impostorSource = { id: voucher!.id, code: "WRONGCODE", expiresAt: voucher!.expiresAt };
+    const impostorSource = { id: voucher.id, code: "WRONGCODE", expiresAt: voucher.expiresAt };
     const payload = computeQrPayload(impostorSource, currentRotationWindow(now));
 
-    const realSource = { id: voucher!.id, code: voucher!.code, expiresAt: voucher!.expiresAt };
+    const realSource = { id: voucher.id, code: voucher.code, expiresAt: voucher.expiresAt };
     const result = validateScannedPayload(payload, [realSource], now);
 
     expect(result.ok).toBe(false);

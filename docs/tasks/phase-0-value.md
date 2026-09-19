@@ -210,8 +210,9 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] RTL-safe layout primitives — unverified. Neither shipped locale is RTL, so this has never been exercised
 
 ### YT-0056 · UI primitives package
-`todo` · P0 · web · 5d · dep: YT-0055
+`review` · P0 · web · 5d · dep: YT-0055
 
+- [x] **Audited: already built.** button/input/select/sheet/dialog/toast/skeleton, Radix where interaction demands it, largest non-test file 127 lines. Minor polish left: badge/card/skeleton have no dedicated a11y tests, which is defensible while they stay non-interactive — `skeleton` is correctly `aria-hidden`
 - [ ] Button, input, select, sheet, dialog, toast, skeleton built on Radix
 - [ ] Every primitive keyboard-accessible and screen-reader tested
 - [ ] No file in the package exceeds 300 lines
@@ -224,8 +225,11 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] RUM reports p75 segmented by country, connection and device class
 
 ### YT-0058 · Internationalisation scaffolding
-`todo` · P0 · web · 3d · dep: YT-0055
+`review` · P0 · web · 3d · dep: YT-0055
 
+- [x] **Two real gaps found and closed.** The five nav labels were hardcoded English rendered in both nav components — **the one screen every user sees, unlocalised**. Now resolved through a translator like every other surface
+- [x] **AC3 (a missing translation fails the build) did not exist anywhere.** Now `messages-parity.test.ts` walks every locale pair and asserts identical key sets recursively — and it was **sabotage-tested**: a key deleted, the failure named that exact key, key restored, green
+- [ ] ⚠️ **Same gap found elsewhere and left alone:** `checkpoint-progress.tsx` carries a hardcoded Indonesian string with no locale switch. Different feature, same class
 - [ ] `id-ID` and `en-AU` locales; no hard-coded user-facing string anywhere
 - [ ] Currency, date and number formatting per locale
 - [ ] Missing-translation check fails the build

@@ -51,6 +51,23 @@ export const campaignSchema = z
     message: "A quick campaign must be 60 seconds or shorter (docs/17 section 1.1)",
     path: ["durationSeconds"],
   })
+  .refine((campaign) => campaign.kind !== "long_form" || campaign.chapters.length > 0, {
+    // Stated rather than left permissive. `z.array()` allowed an empty list
+    // by omission, and a long-form campaign with no chapters has no progress
+    // markers at all — the seek bar and the chapter track both render
+    // nothing, which reads as a broken player rather than as bad data.
+    message: "A long-form campaign must have at least one chapter",
+    path: ["chapters"],
+  })
+  .refine((campaign) => campaign.kind !== "quick" || campaign.chapters.length === 0, {
+    // And the other direction, which is the half that would have been
+    // missed. A quick campaign is sixty seconds; chapters on one are
+    // navigation furniture for a video with nowhere to navigate. The seeded
+    // catalogue already splits exactly this way (long_form 5, quick 0), so
+    // this records an existing rule rather than imposing a new one.
+    message: "A quick campaign is too short to have chapters",
+    path: ["chapters"],
+  })
   .refine(
     (campaign) => campaign.scoringRule !== "base_plus_accuracy_bonus" || campaign.questionCount > 0,
     {

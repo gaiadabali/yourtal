@@ -89,15 +89,17 @@ describe("VideoPlayer", () => {
     expect(await screen.findByRole("button", { name: /480p/ })).toBeInTheDocument();
   });
 
-  it("shows all 5 chapter markers, each carrying its own reward and status", () => {
+  it("shows all 5 chapter markers, each carrying only progress status (O-1: never a banked reward)", () => {
     render(<VideoPlayer campaign={campaign} chapters={chapters} />);
     expect(screen.getByRole("list", { name: "Chapters" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /Chapter \d/ })).toHaveLength(5);
   });
 
-  it("shows the accrual progress bar and reward-so-far text before playback starts", () => {
+  it("shows a progress bar toward the total reward before playback starts, never a running figure", () => {
     render(<VideoPlayer campaign={campaign} chapters={chapters} />);
-    expect(screen.getByRole("progressbar", { name: "Reward earned so far" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("progressbar", { name: "Progress toward the reward" }),
+    ).toBeInTheDocument();
   });
 
   it("moves past the start state and announces a play/pause status once playback is requested", async () => {

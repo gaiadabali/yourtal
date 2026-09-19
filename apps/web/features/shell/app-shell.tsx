@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@yourtal/ui/cn";
+import { RumReporterLoader } from "@/features/rum/rum-reporter-loader";
 import { BottomNav } from "./bottom-nav";
 import { SideNav } from "./side-nav";
 
@@ -21,6 +22,7 @@ export interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   return (
     <div className="min-h-dvh bg-bg">
+      <RumReporterLoader />
       <SideNav />
       <main
         className={cn(

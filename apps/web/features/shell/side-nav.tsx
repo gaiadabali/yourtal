@@ -1,4 +1,6 @@
 import { cn } from "@yourtal/ui/cn";
+import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getNavTranslator } from "./nav-i18n";
 import { navItems } from "./nav-items";
 import { NavLink } from "./nav-link";
 
@@ -13,11 +15,18 @@ const LINK_ACTIVE = "bg-surface text-primary";
  * different product."). Fixed width (`w-20`, `lg:w-56`) so it never resizes
  * on route change. `pl-[env(safe-area-inset-left)]` clears a notch in
  * landscape orientation on the side the rail sits against.
+ *
+ * `async` (YT-0058): see bottom-nav.tsx's doc comment — same reason, same
+ * pattern, same `nav.json` catalogue, so the two chrome variants can never
+ * disagree on a label for a given region.
  */
-export function SideNav() {
+export async function SideNav() {
+  const { locale } = await getRegionDisplayConfig();
+  const t = getNavTranslator(locale);
+
   return (
     <nav
-      aria-label="Primary"
+      aria-label={t("primary")}
       className={cn(
         "fixed inset-y-0 left-0 z-40 hidden w-20 flex-col items-center gap-1 border-r border-border",
         "bg-surface-raised py-6 md:flex lg:w-56 lg:items-stretch lg:px-3",
@@ -35,7 +44,7 @@ export function SideNav() {
             activeClassName={LINK_ACTIVE}
           >
             <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
           </NavLink>
         );
       })}

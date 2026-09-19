@@ -52,7 +52,7 @@ export const MEDIA_BUCKET = "yourtal-media";
 export const HLS_PREFIX = "hls";
 
 /** The fixture this package ships. One asset, deliberately. */
-export const FIXTURE_ASSET_ID = "attention-20s";
+export const FIXTURE_ASSET_ID = "attention-30s";
 
 /**
  * The committed fixture's shape, asserted against the real files by
@@ -60,9 +60,9 @@ export const FIXTURE_ASSET_ID = "attention-20s";
  * `scripts/generate-fixture.mjs` produces exactly this.
  */
 export const FIXTURE_SHAPE = {
-  durationSeconds: 20,
+  durationSeconds: 30,
   segmentSeconds: 4,
-  segmentCount: 5,
+  segmentCount: 8,
   /**
    * Lowest rung first. Three renditions, not one: the placeholder this
    * replaces was chosen because it ships a real ABR ladder for the quality
@@ -78,8 +78,8 @@ export function fixtureDir(): string {
 }
 
 /**
- * Object key for one file of an asset, e.g. `hls/attention-20s/index.m3u8`
- * or `hls/attention-20s/v1/segment3.ts`. `file` may contain a rendition
+ * Object key for one file of an asset, e.g. `hls/attention-30s/index.m3u8`
+ * or `hls/attention-30s/v1/segment3.ts`. `file` may contain a rendition
  * directory; forward slashes are the separator S3 uses, on every platform.
  */
 export function objectKey(assetId: string, file: string): string {

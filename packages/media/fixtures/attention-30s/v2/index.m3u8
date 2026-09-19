@@ -13,4 +13,10 @@ segment2.ts
 segment3.ts
 #EXTINF:4.000000,
 segment4.ts
+#EXTINF:4.000000,
+segment5.ts
+#EXTINF:4.000000,
+segment6.ts
+#EXTINF:2.000000,
+segment7.ts
 #EXT-X-ENDLIST

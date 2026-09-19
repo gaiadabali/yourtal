@@ -5,6 +5,7 @@ import pg from "pg";
 import { mockCampaigns } from "@yourtal/contracts/campaign/mock";
 import { mockListings } from "@yourtal/contracts/listing/mock";
 import { generateVouchers } from "@yourtal/contracts/voucher/mock";
+import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Listing } from "@yourtal/contracts/listing";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { toIdrMinorUnits } from "@yourtal/contracts/money";
@@ -95,7 +96,8 @@ async function seedCampaigns(pool: pg.Pool): Promise<number> {
     const result = await pool.query(
       `INSERT INTO campaign.campaigns
          (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
-          estimated_data_mb, reward_points, question_count, scoring_rule, status, published_at)
+          estimated_data_mb, reward_points, question_count, scoring_rule,
+          lifecycle_state, published_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        ON CONFLICT (id) DO NOTHING`,
       [
@@ -110,13 +112,61 @@ async function seedCampaigns(pool: pg.Pool): Promise<number> {
         campaign.rewardPoints,
         campaign.questionCount,
         campaign.scoringRule,
-        campaign.status,
+        // The mock's public `status` mapped back onto the authoring state it
+        // must have come from (YT-0101). `campaign.campaigns.status` is gone:
+        // the viewer-facing value is DERIVED from `lifecycle_state`, and
+        // storing both would be two copies of one fact.
+        lifecycleStateFor(campaign.status),
         campaign.publishedAt,
       ],
     );
     written += result.rowCount ?? 0;
+    await seedCampaignCreative(pool, campaign);
   }
   return written;
+}
+
+/**
+ * A campaign's chapters and video source.
+ *
+ * Written alongside the campaign rather than in their own pass, and this is
+ * not tidiness: `campaignSchema` requires BOTH, so a campaign row without
+ * them cannot be parsed as a `Campaign` at all. YT-0548 found that every row
+ * in this table was unparseable because the columns did not exist; storing
+ * them and then not writing them would be the same bug with more scaffolding.
+ * `seed.test.ts` reads one back through the schema, which is the only check
+ * that actually proves it.
+ */
+async function seedCampaignCreative(pool: pg.Pool, campaign: Campaign): Promise<void> {
+  for (const [ordinal, chapter] of campaign.chapters.entries()) {
+    await pool.query(
+      `INSERT INTO campaign.chapter (campaign_id, ordinal, title, start_seconds, reward_weight)
+       VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+      [campaign.id, ordinal, chapter.title, chapter.startSeconds, chapter.rewardWeight],
+    );
+  }
+
+  await pool.query(
+    `INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
+     VALUES ($1,$2,$3) ON CONFLICT (campaign_id) DO NOTHING`,
+    [campaign.id, campaign.videoSource.kind, campaign.videoSource.manifestUrl],
+  );
+}
+
+/**
+ * The authoring state a published campaign must have been in. The inverse of
+ * `publicStatusOf`, and the only direction a mock can be read in: a fixture
+ * describes a campaign a viewer can see, so it was never a draft.
+ */
+function lifecycleStateFor(status: Campaign["status"]): string {
+  switch (status) {
+    case "active":
+      return "live";
+    case "paused":
+      return "paused";
+    case "ended":
+      return "ended";
+  }
 }
 
 async function seedListings(pool: pg.Pool): Promise<number> {

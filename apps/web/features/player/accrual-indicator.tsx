@@ -12,22 +12,26 @@ export interface AccrualIndicatorProps {
 }
 
 /**
- * Shows accrued reward as both a visual (decorative `@yourtal/ui/progress`)
- * and a `role="status" aria-live="polite"` text region.
+ * Progress toward the reward — deliberately NOT a running balance.
  *
- * The live region's text only changes on discrete events — a chapter
- * checkpoint being crossed, or a play-state/background transition — never
- * on every `video.timeupdate` tick (which fires several times a second).
- * That is what keeps announcements throttled: React only touches the DOM
- * text node when the rendered string actually differs, so an unmoved value
- * never re-announces.
+ * Decision O-1 (docs/16-decisions.md, 2026-09-20, superseding
+ * docs/06-longform-video-and-attention.md §3 and §5): the reward is granted
+ * only if the user watches the FULL video AND answers the checkpoint
+ * questions. All or nothing — quitting at minute 28 of 30 earns nothing.
+ * O-2's consequence: chapters and this indicator are a **progress and
+ * navigation device, not an accrual device**. Progress is shown, value is
+ * not credited until the end.
  *
- * Copy is deliberately "so far" / provisional, never a completed-reward
- * claim: per docs/06-longform-video-and-attention.md §5, the reward is
- * only confirmed once the (separately built, YT-0413) checkpoint exchanges
- * a signed token — this indicator is a progress display, not evidence of a
- * finalized reward. Likewise "paused" here is an honest UI state, not a
- * fraud signal — see use-tab-visibility.ts.
+ * This component previously read "Reward so far" over a live point tally
+ * (`accruedPoints`) that grew as chapters were reached and used the word
+ * "earned" — exactly the misleading pattern O-1 exists to prevent: a user
+ * who believes they are banking points and then gets nothing at minute 28
+ * is the worst experience this product can produce. The fix keeps the same
+ * props (`accruedPoints`/`totalPoints` still drive the bar's fill, computed
+ * upstream from the back-loaded chapter curve in derive-chapters.ts) but
+ * never renders `accruedPoints` as a number, and never uses "earned" or
+ * "so far" as if it were banked. Only the total — the one figure that is
+ * ever actually paid — is shown as text.
  */
 export function AccrualIndicator({
   accruedPoints,
@@ -37,19 +41,14 @@ export function AccrualIndicator({
   locale = "id-ID",
 }: AccrualIndicatorProps) {
   const isAccrualPaused = isPlaying && isBackgrounded;
-  const roundedAccrued = Math.round(accruedPoints);
   const percentComplete = totalPoints > 0 ? Math.min(100, (accruedPoints / totalPoints) * 100) : 0;
+  const totalLabel = formatPoints(asDisplayPoints(totalPoints), locale);
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-sans font-medium text-fg">Reward so far</span>
-        <span className="text-sm font-sans font-semibold text-reward">
-          {formatPoints(asDisplayPoints(roundedAccrued), locale)}{" "}
-          <span className="font-normal text-fg-subtle">
-            / {formatPoints(asDisplayPoints(totalPoints), locale)}
-          </span>
-        </span>
+        <span className="text-sm font-sans font-medium text-fg">Reward if you finish</span>
+        <span className="text-sm font-sans font-semibold text-reward">{totalLabel}</span>
       </div>
       {/* A plain element rather than @yourtal/ui/progress: this bar is
           non-interactive, and Radix Progress plus its Primitive dependency
@@ -59,7 +58,7 @@ export function AccrualIndicator({
           reader sees no difference. */}
       <div
         role="progressbar"
-        aria-label="Reward earned so far"
+        aria-label="Progress toward the reward"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(percentComplete)}
@@ -70,7 +69,7 @@ export function AccrualIndicator({
       <p role="status" aria-live="polite" className="text-xs font-sans text-fg-muted">
         {isAccrualPaused
           ? "Reward accrual paused — this tab is in the background."
-          : `Earned ${formatPoints(asDisplayPoints(roundedAccrued), locale)} so far, pending the checkpoint.`}
+          : `Nothing is paid until you finish the whole video and answer the checkpoint questions — then you receive ${totalLabel}.`}
       </p>
     </div>
   );

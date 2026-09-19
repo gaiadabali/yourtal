@@ -7,6 +7,8 @@ import { campaignSchema } from "../campaign/campaign";
 import { listingSchema } from "../listing/listing";
 import { merchantLocationSchema } from "../listing/merchant-location";
 import { voucherSchema } from "../voucher/voucher";
+import { campaignTermsSchema } from "../campaign/campaign-terms";
+import { campaignRewardConfigSchema } from "../campaign/campaign-reward-config";
 
 /**
  * The contracts ↔ migrations drift gate.
@@ -194,13 +196,36 @@ const MAPPINGS: readonly Mapping[] = [
     name: "campaignSchema",
     schema: campaignSchema,
     table: "campaign.campaigns",
-    fieldsWithNoColumn: {},
-    fieldsAwaitingStorage: {
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {
       chapters:
-        "NO STORAGE ANYWHERE. campaignSchema gained chapters and campaign.campaigns did not follow, so a chapter exists only in the mock generators and could not survive a round trip through Postgres. Found by this gate on its first run, which is what it is for.",
+        "A relation, not a column. campaign.chapter, keyed (campaign_id, ordinal), with no end_seconds because a chapter's end IS the next one's start (YT-0101/YT-0548).",
       videoSource:
-        "NO STORAGE ANYWHERE. Same landing as `chapters`. A campaign read back from the database has no video to play.",
+        "A relation, not a column. campaign.video_source stores `kind` plus per-kind fields behind a CHECK, so the discriminated union stays additive rather than becoming a jsonb convention.",
+      status:
+        "DERIVED, deliberately. The viewer-facing status comes from `lifecycle_state` through `publicStatusOf` (YT-0101). Storing both would be two copies of one fact, and the copy is what goes stale.",
     },
+    columnsWithNoField: {
+      lifecycle_state:
+        "The AUTHORING state, which no viewer-facing contract carries — draft, in_review and rejected have no public form. `campaignSchema.status` is derived from it.",
+      rejection_reason:
+        "Console-only, and null unless the campaign is rejected. A viewer is never shown why a campaign they cannot see was refused.",
+    },
+  },
+  {
+    name: "campaignTermsSchema",
+    schema: campaignTermsSchema,
+    table: "campaign.terms_version",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {},
+    columnsWithNoField: {},
+  },
+  {
+    name: "campaignRewardConfigSchema",
+    schema: campaignRewardConfigSchema,
+    table: "campaign.reward_config",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {},
     columnsWithNoField: {},
   },
   {
@@ -289,6 +314,10 @@ describe("known storage gaps", () => {
       Object.keys(mapping.fieldsAwaitingStorage).map((field) => `${mapping.name}.${field}`),
     ).sort();
 
-    expect(gaps).toStrictEqual(["campaignSchema.chapters", "campaignSchema.videoSource"]);
+    // Both former gaps are closed by YT-0101's migration: `chapters` and
+    // `videoSource` now have storage as relations. The list is empty, and
+    // that is the state it should stay in — a new entry here needs a
+    // deliberate edit and a ticket, not a quiet append.
+    expect(gaps).toStrictEqual([]);
   });
 });

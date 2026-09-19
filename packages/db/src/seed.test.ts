@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import { seed } from "./seed";
+import { campaignSchema } from "@yourtal/contracts/campaign";
+import { publicStatusOf, type CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
 
 /**
  * YT-0519, against the real Postgres from `pnpm dev:up`.
@@ -130,10 +132,10 @@ describe("the catalogue constraints hold in Postgres", () => {
       pool.query(
         `INSERT INTO campaign.campaigns
            (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
-            estimated_data_mb, reward_points, question_count, scoring_rule, status, published_at)
+            estimated_data_mb, reward_points, question_count, scoring_rule, lifecycle_state, published_at)
          VALUES ('00000000-0000-4000-8000-0000000000f3','quick','T',
                  '00000000-0000-4000-8000-0000000000f4','M','S',
-                 120, 5, 100, 0, 'base_only', 'active', now())`,
+                 120, 5, 100, 0, 'base_only', 'live', now())`,
       ),
     ).rejects.toThrow(/campaigns_quick_is_short/);
   });
@@ -143,10 +145,10 @@ describe("the catalogue constraints hold in Postgres", () => {
       pool.query(
         `INSERT INTO campaign.campaigns
            (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
-            estimated_data_mb, reward_points, question_count, scoring_rule, status, published_at)
+            estimated_data_mb, reward_points, question_count, scoring_rule, lifecycle_state, published_at)
          VALUES ('00000000-0000-4000-8000-0000000000f5','long_form','T',
                  '00000000-0000-4000-8000-0000000000f6','M','S',
-                 600, 50, 100, 0, 'base_plus_accuracy_bonus', 'active', now())`,
+                 600, 50, 100, 0, 'base_plus_accuracy_bonus', 'live', now())`,
       ),
     ).rejects.toThrow(/campaigns_bonus_needs_questions/);
   });
@@ -237,5 +239,86 @@ describe("a voucher's branch must be one its listing offers (YT-0502)", () => {
        WHERE NOT EXISTS (SELECT 1 FROM store.listing_location ll WHERE ll.listing_id = l.id)`);
 
     expect(orphaned).toBe(0);
+  });
+});
+
+describe("a seeded campaign can be read back as a Campaign (YT-0548)", () => {
+  /**
+   * The check that actually closes YT-0548.
+   *
+   * `campaignSchema` requires `chapters` and `videoSource`. Before YT-0101
+   * neither had a column anywhere, so **every row in this table was
+   * unparseable as a `Campaign`** — invisible only because Phase U reads
+   * mocks, and a total outage of the watch flow the first time a real API
+   * served one.
+   *
+   * Adding the tables was not enough: a seed that did not write them left
+   * the same bug with more scaffolding. So this reassembles a campaign from
+   * Postgres and runs it through the contract, which is the only assertion
+   * that distinguishes "the columns exist" from "the database can produce a
+   * valid campaign".
+   */
+  it("parses, with its chapters and video source", async () => {
+    const { rows } = await pool.query<Record<string, unknown>>(
+      `SELECT c.*,
+              (SELECT COALESCE(json_agg(json_build_object(
+                        'title', ch.title,
+                        'startSeconds', ch.start_seconds,
+                        'rewardWeight', ch.reward_weight::float)
+                      ORDER BY ch.ordinal), '[]'::json)
+                 FROM campaign.chapter ch WHERE ch.campaign_id = c.id) AS chapters,
+              (SELECT json_build_object('kind', vs.kind, 'manifestUrl', vs.manifest_url)
+                 FROM campaign.video_source vs WHERE vs.campaign_id = c.id) AS video_source
+         FROM campaign.campaigns c
+        WHERE c.lifecycle_state = 'live' AND c.kind = 'long_form'
+        LIMIT 1`,
+    );
+
+    const row = rows[0];
+    expect(row, "the seed should have produced a live campaign").toBeDefined();
+
+    const publicStatus = publicStatusOf(row?.["lifecycle_state"] as CampaignLifecycleState);
+    const parsed = campaignSchema.safeParse({
+      id: row?.["id"],
+      kind: row?.["kind"],
+      title: row?.["title"],
+      merchantId: row?.["merchant_id"],
+      merchantName: row?.["merchant_name"],
+      synopsis: row?.["synopsis"],
+      durationSeconds: row?.["duration_seconds"],
+      estimatedDataMb: Number(row?.["estimated_data_mb"]),
+      rewardPoints: Number(row?.["reward_points"]),
+      questionCount: row?.["question_count"],
+      scoringRule: row?.["scoring_rule"],
+      // Derived, never stored — see the migration's note on dropping `status`.
+      status: publicStatus,
+      publishedAt: (row?.["published_at"] as Date).toISOString(),
+      chapters: row?.["chapters"],
+      videoSource: row?.["video_source"],
+    });
+
+    expect(parsed.success, parsed.success ? "" : JSON.stringify(parsed.error.issues, null, 2)).toBe(
+      true,
+    );
+  });
+
+  it("gives every campaign a video source, and chapters only where they belong", async () => {
+    // One parsing campaign does not prove the catalogue is coherent. A
+    // campaign with no video is one nobody can watch, and the failure would
+    // surface as an empty player rather than as a seed error.
+    //
+    // Chapters are asserted BY KIND rather than universally. A quick
+    // campaign having none is not an accident to code around: sixty seconds
+    // has nowhere to navigate, and `campaignSchema` now states that in both
+    // directions rather than permitting an empty array by omission.
+    const wrong = await pool.query<{ n: string }>(
+      `SELECT count(*) AS n FROM campaign.campaigns c
+        WHERE NOT EXISTS (SELECT 1 FROM campaign.video_source v WHERE v.campaign_id = c.id)
+           OR (c.kind = 'long_form'
+               AND NOT EXISTS (SELECT 1 FROM campaign.chapter ch WHERE ch.campaign_id = c.id))
+           OR (c.kind = 'quick'
+               AND EXISTS (SELECT 1 FROM campaign.chapter ch WHERE ch.campaign_id = c.id))`,
+    );
+    expect(Number(wrong.rows[0]?.n ?? "1")).toBe(0);
   });
 });

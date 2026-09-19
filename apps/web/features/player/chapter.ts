@@ -1,6 +1,17 @@
 /**
- * A chapter is a segment of a long-form campaign's video with its own
- * reward checkpoint (docs/06-longform-video-and-attention.md §3, §5).
+ * A chapter is a segment of a long-form campaign's video, used for
+ * progress display and seek navigation only.
+ *
+ * Superseded by decision O-1 (docs/16-decisions.md, 2026-09-20): the
+ * reward is granted only if the user watches the FULL video AND answers
+ * the checkpoint questions, all or nothing. `docs/06-longform-video-and-
+ * attention.md` §3 and §5 described a per-chapter accrual checkpoint —
+ * "own reward checkpoint" — that model is superseded; there is exactly one
+ * checkpoint, at the end. `rewardPoints` below survives only as the input
+ * to the back-loaded pacing curve (derive-chapters.ts) that decides how
+ * much of the progress bar each chapter fills — it is never a discrete
+ * grant and is deliberately not rendered as a per-chapter figure anywhere
+ * (chapter-track.tsx).
  *
  * KNOWN GAP — flag for a follow-up ticket: `packages/contracts`'
  * `campaignSchema` (packages/contracts/src/campaign/campaign.ts) has no
@@ -19,7 +30,8 @@ export interface Chapter {
   readonly label: string;
   readonly startSeconds: number;
   readonly endSeconds: number;
-  /** Points released at this chapter's checkpoint. Plain number, not the
-   * branded `Points` type — see derive-chapters.ts for why. */
+  /** Pacing weight for the progress bar only — never a discrete grant.
+   * Plain number, not the branded `Points` type — see derive-chapters.ts
+   * for why. */
   readonly rewardPoints: number;
 }

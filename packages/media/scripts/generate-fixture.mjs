@@ -59,14 +59,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outputDir = path.join(packageRoot, "fixtures", "attention-20s");
+const outputDir = path.join(packageRoot, "fixtures", "attention-30s");
 
 /** Kept in step with `hls-fixture.test.ts`, which asserts the committed output. */
 export const FIXTURE_SHAPE = {
-  durationSeconds: 20,
+  durationSeconds: 30,
   segmentSeconds: 4,
   segmentCount: 5,
-  frameRate: 15,
+  frameRate: 30,
   /** Lowest rung first. `BANDWIDTH` must rise with resolution. */
   renditions: [
     { dir: "v0", width: 320, height: 180, videoBitrate: "150k" },

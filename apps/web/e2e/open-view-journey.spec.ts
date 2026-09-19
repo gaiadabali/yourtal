@@ -1,5 +1,17 @@
 import { expect, test } from "@playwright/test";
-import { BONUS_ACCURACY_CAMPAIGN_ID } from "./fixture-ids";
+import { findBonusAccuracyCampaign } from "./find-bonus-accuracy-campaign";
+
+/**
+ * Any campaign that shows a "Reward dasar" figure on its public entry page
+ * proves this journey's seam; the accuracy-bonus property this shares with
+ * earn-journey.spec.ts is not actually load-bearing here (open viewing shows
+ * no reward UI at all past the anonymous playback link), but reusing the
+ * same selection keeps this spec pointed at a real, checkpoint-bearing
+ * long_form campaign rather than an arbitrary one, and — like
+ * earn-journey.spec.ts — never breaks when the campaign generator's draw
+ * order shifts.
+ */
+const BONUS_ACCURACY_CAMPAIGN_ID = findBonusAccuracyCampaign().id;
 
 /**
  * YT-0450's first acceptance criterion, Open-view leg: a public page under
@@ -7,17 +19,14 @@ import { BONUS_ACCURACY_CAMPAIGN_ID } from "./fixture-ids";
  * reward UI and no claim affordance -> the sign-up prompt at the point a
  * rewarded viewer would have been paid.
  *
- * Shares Earn's video blocker: `OpenViewPlayer` reuses `useWatchSession`
+ * Shared Earn's video blocker: `OpenViewPlayer` reuses `useWatchSession`
  * (`features/player/use-watch-session.ts`) exactly like the rewarded
  * player, so `hasEnded` — the trigger for `OpenViewSignupPrompt`, YT-0432's
- * third criterion — needs the same real, network-loaded HLS segment to
- * reach its `ended` event, which reliably does not happen in this
- * environment (see earn-journey.spec.ts's top comment). The interstitial
- * at the "you'd have been paid here" moment is therefore UNVERIFIED below,
- * not faked. Everything reachable without that event IS driven for real:
- * the public landing page, the real click into anonymous playback, and a
- * DOM-wide sweep proving no reward or claim affordance exists anywhere on
- * the page — not merely hidden by CSS, actually absent from the markup.
+ * third criterion — needed the same real, network-loaded HLS segment to
+ * reach its `ended` event. UNBLOCKED 2026-09-20 alongside earn-journey.spec.ts:
+ * the player now plays a real 20-second local ladder to a genuine end, so
+ * this test waits out that real playback and asserts the sign-up prompt
+ * for real, rather than leaving it unverified.
  */
 test.describe("Open-view journey", () => {
   test("public campaign page links to anonymous playback with no reward UI and no claim affordance anywhere in the DOM", async ({
@@ -72,12 +81,31 @@ test.describe("Open-view journey", () => {
     expect(bodyTextAfterPlay.toLowerCase()).not.toContain("klaim");
     expect(bodyTextAfterPlay.toLowerCase()).not.toMatch(/\bclaim\b/);
 
-    // UNVERIFIED (video blocker, see top comment): the sign-up prompt that
-    // should appear at `session.hasEnded` (`OpenViewSignupPrompt`,
-    // "Kamu sudah menonton video ini sampai selesai") never mounts in this
-    // environment because the shared placeholder segment does not reach
-    // the video's real `ended` event. Not asserted here — asserting it
-    // would require dispatching a synthetic `ended` event, which is
-    // exactly the "fake playback" this suite is instructed not to do.
+    // Real playback, not a shortcut: wait out the actual ~20-second local
+    // ladder to its genuine end (see earn-journey.spec.ts's top comment on
+    // why this cannot be skipped with a seek), then assert the sign-up
+    // interstitial YT-0432's third criterion names — the point a rewarded
+    // viewer would have been paid, honestly named for an anonymous one
+    // instead.
+    // Scoped to the prompt's own `role="status"` container: the page also
+    // has other, unrelated "Daftar…" links (top-level nav CTAs, an inline
+    // "next video" nudge), so asserting a bare `getByRole("link", { name:
+    // /daftar/i })` against the whole page is a strict-mode violation, not
+    // proof of the interstitial's own CTA.
+    const signupPrompt = page
+      .getByRole("status")
+      .filter({ hasText: "Kamu sudah menonton video ini sampai selesai" });
+    await expect(
+      signupPrompt,
+      "playback reaching its real end must surface the open-view sign-up prompt",
+    ).toBeVisible({ timeout: 45_000 });
+    const signupLink = signupPrompt.getByRole("link", { name: /daftar|sign up/i });
+    await expect(signupLink, "the interstitial must offer one next action: sign up").toBeVisible();
+
+    // Still never a reward claim of its own — the interstitial's own body
+    // must not leak claim language either.
+    const bodyTextAfterEnded = await page.locator("body").innerText();
+    expect(bodyTextAfterEnded.toLowerCase()).not.toContain("klaim");
+    expect(bodyTextAfterEnded.toLowerCase()).not.toMatch(/\bclaim\b/);
   });
 });

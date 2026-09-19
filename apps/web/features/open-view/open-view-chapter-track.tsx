@@ -16,13 +16,18 @@ export interface OpenViewChapterTrackProps {
 
 /**
  * A reward-free sibling of `features/player/chapter-track.tsx` (YT-0432).
- * That component's own accessible name deliberately includes each
- * chapter's point value and an "earned" status — exactly the "reward UI"
- * this ticket's first acceptance criterion forbids for an anonymous
- * viewer — so it cannot be reused unmodified here. Everything else (real
- * per-chapter buttons, native tab order, one status word) is copied
- * deliberately, so an anonymous viewer gets the identical structural
- * experience minus the one thing that would be dishonest to show them.
+ * That component's labels are caller-supplied (own-i18n) rather than
+ * fixed English/`formatPoints` strings, and — as of decision O-1
+ * (docs/16-decisions.md) — shows no per-chapter point figure at all, since
+ * chapters are a progress device, not an accrual device, on either the
+ * signed-in or the open-view path. This component predates that fix and
+ * was already stricter for a different reason: this ticket's first
+ * acceptance criterion forbids reward UI for an anonymous viewer
+ * specifically, so it never showed a point value or an "earned" status to
+ * begin with. Everything else (real per-chapter buttons, native tab order,
+ * one status word) is copied deliberately, so an anonymous viewer gets the
+ * identical structural experience minus the one thing that would be
+ * dishonest to show them.
  */
 export function OpenViewChapterTrack({
   chapters,

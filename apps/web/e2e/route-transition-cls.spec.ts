@@ -1,5 +1,29 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
+
+/**
+ * `features/region/get-region.ts`'s `DEFAULT_REGION` is "ID" (id-ID), so the
+ * bottom nav (YT-0058's nav i18n) renders this catalogue's own labels and
+ * `aria-label`, not hardcoded English strings — reading both from the same
+ * catalogue the component itself renders from means this test tracks a copy
+ * change instead of silently asserting a locale that no longer applies.
+ * Read via `fs`, not a bare `import ... from "*.json"`: Playwright's own
+ * Node/ESM runtime rejects an un-attributed JSON import ("needs an import
+ * attribute of type: json") — a Next.js-loader feature, not a Node one, per
+ * wallet-merchant-qr-agreement.spec.ts's identical note.
+ */
+interface NavCatalogue {
+  primary: string;
+  store: string;
+  wallet: string;
+  quick: string;
+  me: string;
+}
+const idNav = JSON.parse(
+  readFileSync(fileURLToPath(new URL("../messages/id-ID/nav.json", import.meta.url)), "utf-8"),
+) as NavCatalogue;
 
 /**
  * YT-0402's route-transition layout-shift acceptance criterion.
@@ -9,7 +33,7 @@ import { expect, test } from "@playwright/test";
  * reset before each transition so the number reported is per-transition,
  * not cumulative session noise. The gate is CLS <= 0.1 per transition.
  *
- * Transitions are driven through the real bottom nav (`nav[aria-label="Primary"]`),
+ * Transitions are driven through the real bottom nav (`nav[aria-label=idNav.primary]`),
  * clicking each tab in turn — Earn -> Store -> Wallet -> Quick -> Me — so this
  * exercises actual client-side Next.js navigation between the app shell's
  * five tabs, not a fresh document load each time. Waiting is done on real
@@ -23,10 +47,10 @@ import { expect, test } from "@playwright/test";
 // Earn -> Store -> Wallet -> Quick -> Me, per the ticket's own wording
 // ("Earn -> Store -> Wallet -> Me") plus Quick, since it is a fifth real tab.
 const TRANSITIONS: readonly { label: string; to: string }[] = [
-  { label: "Store", to: "/store" },
-  { label: "Wallet", to: "/wallet" },
-  { label: "Quick", to: "/quick" },
-  { label: "Me", to: "/me" },
+  { label: idNav.store, to: "/store" },
+  { label: idNav.wallet, to: "/wallet" },
+  { label: idNav.quick, to: "/quick" },
+  { label: idNav.me, to: "/me" },
 ];
 
 async function installClsObserver(page: Page): Promise<void> {
@@ -77,7 +101,7 @@ test("route transitions across the five tabs each stay within the CLS <= 0.1 gat
   for (const target of TRANSITIONS) {
     await resetCls(page);
     const link = page
-      .locator('nav[aria-label="Primary"]')
+      .locator(`nav[aria-label="${idNav.primary}"]`)
       .getByRole("link", { name: target.label });
     await link.click();
     await expect(page).toHaveURL(new RegExp(`${target.to.replace("/", "\\/")}$`));

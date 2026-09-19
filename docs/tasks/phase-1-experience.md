@@ -53,8 +53,10 @@
 - [ ] Used and expired vouchers archived, never silently deleted
 
 ### YT-0177 · Streaks and daily check-in
-`todo` · P1 · web · 3d · dep: YT-0045
+`review` · P1 · web · 3d · dep: YT-0045
 
+- [ ] ⚠️ **The mechanic is built exactly as specified — a missed day resets the streak to 1, no grace — and that needs a product decision rather than an engineering default.** Built as asked rather than softened unasked, which was right, but a streak that punishes a missed day works against a rewards product: it converts a good week into a loss the first time someone is busy
+- [ ] ⛔ **"Funded from the reserve like any other faucet" is not built and cannot be built from the frontend.** No streak contract and no faucet endpoint exist. The card is honest about it — it tracks locally and shows the *schedule*, and never claims a point has landed in the wallet. Real issuance is backend work and needs both a contract and a faucet, which rule K6 says must be cash-backed at the moment of issue
 - [ ] Deterministic escalating rewards; no chance element anywhere
 - [ ] Funded from the reserve like any other faucet
 
@@ -196,8 +198,9 @@
 - [ ] Desktop-first, usable on tablet
 
 ### YT-0203 · User information architecture: five surfaces
-`todo` · P1 · web · 4d · dep: YT-0055
+`review` · P1 · web · 4d · dep: YT-0055
 
+- [x] **Audited 2026-09-20: already built and compliant, tracker was stale.** Five tabs in `features/shell/nav-items.ts`, cards carry duration · reward · estimated MB · merchant, and the shell widens rather than forking. No gaps found against the criteria
 - [ ] Earn, Quick, Store, Wallet, Me as the mobile tab structure
 - [ ] Every campaign card states duration, reward and estimated MB before entry
 - [ ] Tablet and desktop widen the same product; they do not fork it

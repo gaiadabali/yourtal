@@ -37,8 +37,9 @@
 - [ ] Required before the advertiser console (YT-0440+) can share the types
 
 ### YT-0512 · `apps/web` imports an undeclared package
-`todo` · P0 · web · 1h · dep: YT-0509
+`review` · P0 · web · 1h · dep: YT-0509
 
+- [x] Already fixed on disk; the tracker was stale. `apps/web` imports `BusinessTeamRole` from `@yourtal/contracts/business/team-role`, and the file this ticket blamed for a syntax error **does not exist**
 - [ ] Six files under `apps/web/features/console/` import `@yourtal/authz`, which **`apps/web/package.json` has never declared** — absent from every commit, and `.npmrc` hoists only eslint and prettier, so the specifier was never resolvable
 - [ ] **Not caused by YT-0509.** The files are untracked, so they never passed through CI; authz was never an `apps/web` dependency at any commit
 - [ ] **Fix: import `BusinessTeamRole` from `@yourtal/contracts/business/team-role`**, which `apps/web` already depends on — exactly what YT-0509 made possible. Adding an `authz` dependency to a web app would be the worse fix
@@ -188,8 +189,11 @@
 - [x] The last ad-hoc check removed: `create-business` threw from its own body, one endpoint answering its own question where no policy suite could see it. Now `business:create` in the policy repo, anonymous denied explicitly
 
 ### YT-0501 · Field RUM for real INP
-`todo` · P0 · web · 3d · dep: YT-0404
+`review` · P0 · web · 3d · dep: YT-0404
 
+- [x] Budget rating uses `docs/08` §3.1’s own numbers rather than Lighthouse’s looser CWV defaults, and device class is labelled a **heuristic** because Safari and Firefox expose neither `hardwareConcurrency` nor `deviceMemory`
+- [ ] ⚠️ **There is nowhere to send the samples.** No event-ingestion contract exists (YT-0059 is still `todo`), so the sink logs in development and is a **silent no-op in production rather than faking delivery**. Every sample already carries the segmentation a p75-and-alert pipeline needs; only the transport is missing, and only `rum-sink.ts` changes when YT-0059 lands
+- [x] **A self-inflicted regression caught and fixed in the same pass:** mounting the reporter in the shared shell pulled `web-vitals` into every `(app)` route and pushed `/business/campaigns` to 200.9 KB, over the hard gate. Now dynamically loaded — telemetry not needed before interactivity has no business in that budget
 - [ ] INP is a **field** metric and Lighthouse cannot measure it; TBT ≤ 200 ms is the lab proxy and must be labelled as a proxy wherever it appears
 - [ ] Real-user monitoring reports p75 INP, LCP and CLS segmented by country, connection and device class
 - [ ] Alert when p75 on mid-tier Android breaches the budget in the field, not only in CI

@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { LONG_MERCHANT_CAMPAIGN_ID } from "./fixture-ids";
+import { longMerchantNameCampaignFixture } from "@yourtal/contracts/campaign/mock";
+
+// A named, hand-authored fixture with a fixed literal id in its own
+// generator module — not an element of the generated `mockCampaigns` array,
+// so its id does not move when a generator's draw order shifts.
+const LONG_MERCHANT_CAMPAIGN_ID = longMerchantNameCampaignFixture.id;
 
 /**
  * YT-0401's 200% browser-zoom acceptance criterion.

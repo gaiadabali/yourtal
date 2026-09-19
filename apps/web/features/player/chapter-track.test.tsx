@@ -22,7 +22,12 @@ describe("ChapterTrack", () => {
     );
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(2);
-    expect(buttons[0]).toHaveAccessibleName(/earned/);
+    // Decision O-1 (docs/16-decisions.md): chapters are a progress device,
+    // not an accrual device — a reached chapter says "watched", never
+    // "earned", and never prints its own point figure as if it were banked.
+    expect(buttons[0]).toHaveAccessibleName(/watched/);
+    expect(buttons[0]).not.toHaveAccessibleName(/earned/);
+    expect(buttons[0]).not.toHaveAccessibleName(/200/);
     expect(buttons[1]).toHaveAccessibleName(/in progress/);
   });
 
@@ -60,17 +65,15 @@ describe("ChapterTrack", () => {
     expect(onSelectChapter).toHaveBeenCalledWith(180);
   });
 
-  it("renders the reward in English when locale='en-AU' (YT-0405) — no leftover 'poin'", () => {
+  it("never renders a per-chapter point figure, in any locale-adjacent copy (O-1)", () => {
     render(
       <ChapterTrack
         chapters={chapters}
         reachedChapterIndex={0}
         currentSeconds={200}
         onSelectChapter={vi.fn()}
-        locale="en-AU"
       />,
     );
-    expect(screen.getByText(/200 points/)).toBeInTheDocument();
-    expect(screen.queryByText(/\bpoin\b/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/point|poin/i)).not.toBeInTheDocument();
   });
 });

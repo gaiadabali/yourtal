@@ -1,7 +1,133 @@
-/* PLACEHOLDER — owned by YT-0400 (design tokens and theme).
-   Replace wholesale: colour, type, spacing, radius, elevation scales
-   as CSS custom properties on :root. */
+/*
+ * YT-0400 — Design tokens.
+ *
+ * The single source of truth for colour, type, spacing, radius and
+ * elevation. Every value here is a plain CSS custom property on :root —
+ * no Tailwind-specific syntax lives in this file. Dark-mode overrides and
+ * the Tailwind v4 `@theme` bridge live in `theme.css`, which is imported
+ * after this file (see apps/web/app/globals.css).
+ *
+ * Colour values below are the LIGHT theme (the default, unauthenticated
+ * baseline before `theme.css`'s media query or [data-theme] attribute
+ * apply). Every colour pair used as text-on-background or as a UI
+ * boundary is verified against WCAG 2.1 AA in
+ * packages/ui/src/styles/contrast.test.ts — see that file for the exact
+ * pairs and measured ratios, in both themes.
+ */
+
 :root {
+  /* ---- Colour: surfaces ---- */
   --color-bg: #ffffff;
-  --color-fg: #0a0a0a;
+  --color-surface: #f3f4f6;
+  --color-surface-raised: #ffffff;
+
+  /* ---- Colour: foreground (text/icon) ---- */
+  --color-fg: #101113;
+  --color-fg-muted: #494d57;
+  --color-fg-subtle: #5f636e;
+
+  /* ---- Colour: boundaries ---- */
+  --color-border: #888e94;
+  --color-border-strong: #6a7076;
+
+  /* ---- Colour: brand ---- */
+  --color-primary: #3548c4;
+  --color-primary-fg: #ffffff;
+
+  /* ---- Colour: domain-specific (reward points, IDR price) ----
+   * These double as text colour (e.g. "+50 pts" or "Rp 25.000" set
+   * directly in this colour on --color-bg / --color-surface) and as a
+   * filled-chip background with its paired *-fg foreground. Both usages
+   * are checked in contrast.test.ts.
+   */
+  --color-reward: #8a5b00;
+  --color-reward-fg: #ffffff;
+  --color-price: #0f6b4f;
+  --color-price-fg: #ffffff;
+
+  /* ---- Colour: semantic status ---- */
+  --color-success: #146c3d;
+  --color-success-fg: #ffffff;
+  --color-warning: #8a5000;
+  --color-warning-fg: #ffffff;
+  --color-danger: #b3261e;
+  --color-danger-fg: #ffffff;
+
+  /* ---- Colour: focus ---- */
+  --color-ring: #3548c4;
+
+  /* ---- Type ----
+   * --font-sans consumes the CSS variable next/font injects
+   * (--font-sans-app, wired in apps/web/app/layout.tsx) and falls back to
+   * the system sans stack so the token still resolves before the font
+   * loads, in tests, and in any consumer that isn't a Next.js page.
+   */
+  --font-sans: var(
+    --font-sans-app,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif
+  );
+
+  /* Size scale, paired with line-height per Tailwind v4's --text-*--line-height
+   * convention (bridged in theme.css). */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+
+  /* ---- Spacing ----
+   * A documented 4px-based scale for anything consuming raw tokens
+   * (inline styles, non-Tailwind contexts). Numerically aligned with
+   * Tailwind v4's own default --spacing (0.25rem) so p-4 and --space-4
+   * always agree.
+   */
+  --space-0: 0px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* ---- Radius ---- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* ---- Elevation ----
+   * Light-theme shadow values (dark ink at low opacity, visible on a
+   * white/near-white surface). theme.css overrides these three
+   * variables for dark mode, where a low-opacity black shadow is
+   * invisible against a near-black page.
+   */
+  --shadow-sm:
+    0 1px 2px 0 rgb(16 17 19 / 0.06), 0 1px 1px 0 rgb(16 17 19 / 0.04);
+  --shadow-md:
+    0 4px 8px -2px rgb(16 17 19 / 0.1), 0 2px 4px -2px rgb(16 17 19 / 0.06);
+  --shadow-lg:
+    0 12px 24px -4px rgb(16 17 19 / 0.14), 0 4px 8px -4px rgb(16 17 19 / 0.08);
 }

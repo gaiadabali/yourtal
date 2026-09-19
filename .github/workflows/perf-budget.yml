@@ -1,0 +1,126 @@
+# YT-0404 — Performance budget harness.
+#
+# Gates every PR on:
+#   - initial JS (first-load JS, gzipped) for every route, ≤ 170 KB
+#     (docs/13b-typescript-standards.md §8) — build-time check against
+#     Next's own output, see scripts/perf-check-bundle-size.mjs.
+#   - Lighthouse CI, throttled to mid-tier Android over 4G
+#     (docs/08-web-app-and-performance.md §3) — LCP ≤ 2.0s, CLS ≤ 0.1, and
+#     Total Blocking Time ≤ 200ms as the lab proxy for INP (Lighthouse
+#     cannot measure INP itself — see apps/web/lighthouserc.cjs for why).
+# and posts a bundle-size report as a single, updated PR comment.
+#
+# Runs on PRs only, not on every push to every branch.
+name: Performance budget
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "package.json"
+      - ".github/workflows/perf-budget.yml"
+
+# Superseded runs on the same PR are pointless — cancel them to free runners.
+concurrency:
+  group: perf-budget-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write # required to post/update the sticky bundle-size comment
+
+jobs:
+  perf-budget:
+    name: Lighthouse CI + bundle budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4.0.0
+        # No explicit version — reads the root package.json "packageManager"
+        # field (pnpm@11.3.0), so this action and the local dev toolchain
+        # can never drift apart.
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Chrome for Lighthouse
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1.7.2
+        with:
+          # "stable" rather than a pinned build number: Google periodically
+          # deprecates old chrome-for-testing binaries out from under a
+          # pinned version, which would silently break this workflow with
+          # no code change to blame. ubuntu-latest's own image Chrome would
+          # be an alternative, but pinning the setup-chrome *action* version
+          # above still gives us a reproducible install step; only the
+          # browser build itself intentionally floats on "stable".
+          chrome-version: stable
+
+      - name: Build web app
+        # Turborepo builds @yourtal/web and anything it depends on
+        # (packages/ui, packages/contracts) in the right order, with caching.
+        run: pnpm exec turbo run build --filter=@yourtal/web
+        env:
+          CI: "true"
+
+      - name: Generate bundle-size report
+        run: node scripts/perf-bundle-report.mjs apps/web bundle-report.md
+
+      - name: Post bundle-size report on PR
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            const fs = require("fs");
+            const body = fs.readFileSync("bundle-report.md", "utf8");
+            const marker = "<!-- yourtal-perf-budget-bundle-report -->";
+            const commentBody = `${marker}\n${body}`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number },
+            );
+            const existing = comments.find((c) => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body: commentBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: commentBody,
+              });
+            }
+
+      - name: Enforce initial-JS budget (170 KB gz)
+        run: node scripts/perf-check-bundle-size.mjs apps/web
+
+      - name: Run Lighthouse CI (mid-tier Android / 4G)
+        # @lhci/cli is a devDependency of @yourtal/web, not of the root, so
+        # its bin only exists in apps/web/node_modules/.bin. --filter runs the
+        # command with apps/web as cwd, hence the relative --config path.
+        run: pnpm --filter @yourtal/web exec lhci autorun --config=lighthouserc.cjs
+        env:
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}

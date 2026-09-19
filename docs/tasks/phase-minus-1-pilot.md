@@ -3,6 +3,15 @@
 Test the two assumptions the whole model rests on, before any engineering money is spent.
 **Gate:** ≥40% completion on a 15-minute video, and one merchant who paid and wants to repeat.
 
+> **The first merchant is snap-app — a sister company, not an arm's-length buyer.**
+> That is the right choice for shaking out the mechanics, and snap-app is also the first
+> YourtalID integration ([`02`](../02-architecture.md) § sister apps). But an invoice paid
+> between entities the founder controls is an internal transfer: it does **not** test
+> willingness to pay, so on its own it does **not** clear this gate. **A second, external
+> merchant must complete YT-0001 → YT-0007 before the YT-0008 gate decision carries
+> any weight.** Record snap-app's numbers and the external merchant's numbers separately;
+> do not pool them.
+
 ---
 
 ### YT-0001 · Pilot: recruit a launch merchant
@@ -26,12 +35,23 @@ Test the two assumptions the whole model rests on, before any engineering money 
 ### YT-0004 · Pilot: landing page + form
 `todo` · P-1 · pilot · 2d · dep: YT-0003
 - [ ] Entry card states duration, reward, and estimated MB before playback
-- [ ] Watch position and drop-off timestamp captured per respondent
+- [ ] Watch position and drop-off timestamp captured per respondent **via client-side
+      player telemetry**, and labelled as such wherever the number is reported. Cloudflare
+      Stream exposes no per-session or per-segment data and bills preload as delivery
+      ([`23`](../23-critique.md) §1.0), so this measures *honest drop-off* only — it is
+      **not** fraud-resistant and this pilot's completion figure must never later be quoted
+      as a verified-attention number.
 - [ ] Phone number collected for voucher delivery and de-duplication
 
-### YT-0005 · Pilot: run traffic to 200 completions
+### YT-0005 · Pilot: run traffic to a fixed 500 starts
 `todo` · P-1 · pilot · 5d · dep: YT-0004
-- [ ] ≥500 starts recorded, cheapest available channel
+- [ ] Exactly 500 starts bought, cheapest available channel, then **stop** — whatever the
+      completion count turns out to be. Do **not** keep buying traffic until some target
+      number of completions is reached: the completion *rate* is the thing under test, and
+      spending past 500 starts to manufacture a completion *count* destroys the experiment
+      and the "costs nothing" premise. A low rate at 500 starts is a **result**, not a
+      shortfall to be bought around.
+- [ ] Completion rate reported as completions ÷ starts, with the raw counts
 - [ ] Cost per completed view recorded
 - [ ] Drop-off curve captured per chapter
 

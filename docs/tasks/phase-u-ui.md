@@ -11,66 +11,66 @@
 ## Foundation
 
 ### YT-0400 · Design tokens and theme
-`todo` · PU · web · 3d · dep: —
-- [ ] Colour, type, spacing, radius and elevation scales defined once, as CSS custom properties on `:root`
-- [ ] Dark mode via `prefers-color-scheme` plus an explicit override attribute
-- [ ] Contrast checked to WCAG AA on both themes, including the reward and price colours
-- [ ] One variable font, subsetted to Latin + Indonesian
+`review` · PU · web · 3d · dep: —
+- [x] Colour, type, spacing, radius and elevation scales defined once, as CSS custom properties on `:root`
+- [x] Dark mode via `prefers-color-scheme` plus an explicit override attribute
+- [x] Contrast checked to WCAG AA on both themes, including the reward and price colours
+- [x] One variable font, subsetted to Latin + Indonesian
 
 ### YT-0401 · UI primitives
-`todo` · PU · web · 5d · dep: YT-0400
-- [ ] Button, Input, Select, Card, Sheet, Dialog, Toast, Skeleton, Tabs, Badge, Progress on Radix
-- [ ] Every primitive keyboard-operable and screen-reader labelled
-- [ ] Tested at 320 px width and at 200% browser zoom
-- [ ] No file over 300 lines; no barrel files
+`review` · PU · web · 5d · dep: YT-0400
+- [x] Button, Input, Select, Card, Sheet, Dialog, Toast, Skeleton, Tabs, Badge, Progress on Radix
+- [x] Every primitive keyboard-operable and screen-reader labelled
+- [ ] Tested at 320 px width and at 200% browser zoom — **not genuinely verified, left unchecked on purpose.** jsdom (Vitest) cannot render real layout, so only proxies were checked statically: no fixed-px widths that exceed 320px, all sizing in rem/%/vh, no `overflow-hidden` on accessible (non-scrollable) content. Needs a real-browser pass (Playwright or manual) at 320px and 200% zoom before this box is honestly tickable.
+- [x] No file over 300 lines; no barrel files
 
 ### YT-0402 · App shell and responsive navigation
-`todo` · PU · web · 4d · dep: YT-0401
-- [ ] Five-tab bottom navigation on mobile; side navigation from `md`
-- [ ] Safe-area insets handled for notched devices
-- [ ] Route transitions with no layout shift
-- [ ] Server-rendered shell; no client component above the fold
+`review` · PU · web · 4d · dep: YT-0401
+- [x] Five-tab bottom navigation on mobile; side navigation from `md` — verified against actual rendered HTML (dev server, not just source reading): both `<nav aria-label="Primary">` elements are present in the response for every owned route, gated by `md:hidden` / `hidden md:flex`, with `aria-current="page"` and active styling correctly following the current path
+- [x] Safe-area insets handled for notched devices — `env(safe-area-inset-bottom)` / `env(safe-area-inset-left)` with a `max(0px, …)` floor, confirmed present in the rendered HTML; no hardcoded device pixel values; root `viewport-fit=cover` left as-is
+- [ ] Route transitions with no layout shift — layout-stable **by construction**: fixed-size nav (`h-16` bottom / `w-20`–`w-56` side), `<main>` reserves matching padding, one shared layout wraps every route so chrome dimensions cannot change between them. **Not genuinely verified**: the enforced CLS ≤ 0.1 gate runs Lighthouse against a *production build*, and `pnpm build` does not yet complete — it fails type-checking on files outside this ticket's scope (see report). Needs a real Lighthouse pass once those land.
+- [x] Server-rendered shell; no client component above the fold — `layout.tsx`, `app-shell.tsx`, `bottom-nav.tsx`, `side-nav.tsx` carry no `"use client"`; the only client boundary is the leaf `nav-link.tsx` (`usePathname` for active-tab state). Verified by reading every file and by a dev-server render that surfaced and let me fix a real RSC violation (a Lucide icon **function** was being passed as a prop across the server→client boundary — invisible to `tsc`, thrown only at runtime). Exact KB contribution against the 170 KB budget is not yet measured — `scripts/perf-check-bundle-size.mjs` needs a successful `pnpm build`, which is currently blocked (see report).
 
 ### YT-0403 · Typed mock data layer
-`todo` · PU · web · 3d · dep: —
-- [ ] Zod schemas in `packages/contracts` for campaign, listing, voucher, balance, business, question
-- [ ] Deterministic seeded generators producing realistic Indonesian data (IDR amounts, Jakarta districts, real-sounding merchants)
-- [ ] One switch flips every screen between mock and live
-- [ ] Includes deliberately awkward fixtures: long merchant names, zero balance, expired voucher, sold-out listing
+`review` · PU · web · 3d · dep: —
+- [x] Zod schemas in `packages/contracts` for campaign, listing, voucher, balance, business, question
+- [x] Deterministic seeded generators producing realistic Indonesian data (IDR amounts, Jakarta districts, real-sounding merchants)
+- [x] One switch flips every screen between mock and live
+- [x] Includes deliberately awkward fixtures: long merchant names, zero balance, expired voucher, sold-out listing
 
 ### YT-0404 · Performance budget harness
-`todo` · PU · web · 2d · dep: YT-0402
-- [ ] Lighthouse CI on every PR, throttled to mid-tier Android over 4G
-- [ ] Fails the build on LCP > 2.0 s, INP > 200 ms, CLS > 0.1, initial JS > 170 KB
-- [ ] Bundle-size report posted on the PR
+`review` · PU · web · 2d · dep: YT-0402
+- [x] Lighthouse CI on every PR, throttled to mid-tier Android over 4G
+- [x] Fails the build on LCP > 2.0 s, CLS > 0.1, initial JS > 170 KB — INP itself is a field metric Lighthouse cannot produce in a lab run; Total Blocking Time (≤ 200 ms) is asserted as the documented lab proxy. See `apps/web/lighthouserc.cjs` for the full rationale.
+- [x] Bundle-size report posted on the PR
 
 ## The earn loop
 
 ### YT-0410 · Earn board
-`todo` · PU · web · 4d · dep: YT-0402, YT-0403
-- [ ] Dense card grid; every card shows **duration · reward · estimated MB · merchant**
-- [ ] Filter and sort controls; empty, loading and error states all designed
-- [ ] Skeletons match final dimensions exactly so nothing shifts
+`review` · PU · web · 4d · dep: YT-0402, YT-0403
+- [x] Dense card grid; every card shows **duration · reward · estimated MB · merchant**
+- [x] Filter and sort controls; empty, loading and error states all designed
+- [x] Skeletons match final dimensions exactly so nothing shifts
 
 ### YT-0411 · Campaign entry card — the contract screen
-`todo` · PU · web · 3d · dep: YT-0410
-- [ ] States plainly: how long, what you earn, how much data, how many questions, and the scoring rule
-- [ ] Terms shown here are the terms honoured — copy makes that explicit
-- [ ] Single primary action; no dark patterns, no hidden duration
+`review` · PU · web · 3d · dep: YT-0410
+- [x] States plainly: how long, what you earn, how much data, how many questions, and the scoring rule
+- [x] Terms shown here are the terms honoured — copy makes that explicit
+- [x] Single primary action; no dark patterns, no hidden duration
 
 ### YT-0412 · Long-form player UI
-`todo` · PU · web · 5d · dep: YT-0411
-- [ ] Chapter markers, progress, accrued reward visible throughout
-- [ ] Quality selector defaulting to 360–480p with the data cost shown per option
-- [ ] Resume prompt when a prior position exists
-- [ ] Accrual visibly pauses when the tab is backgrounded
+`review` · PU · web · 5d · dep: YT-0411
+- [x] Chapter markers, progress, accrued reward visible throughout
+- [x] Quality selector defaulting to 360–480p with the data cost shown per option
+- [x] Resume prompt when a prior position exists
+- [x] Accrual visibly pauses when the tab is backgrounded
 
 ### YT-0413 · Checkpoint question UI
-`todo` · PU · web · 4d · dep: YT-0412
-- [ ] One question at a time, conversational, visible timer, shuffled options
-- [ ] All five question types rendered: multiple choice, true/false, Likert, ranked, short text
-- [ ] Fully keyboard and screen-reader accessible; timer announced, not only shown
-- [ ] Result screen distinguishes base reward from accuracy bonus
+`review` · PU · web · 4d · dep: YT-0412
+- [x] One question at a time, conversational, visible timer, shuffled options
+- [x] All five question types rendered: multiple choice, true/false, Likert, ranked, short text
+- [x] Fully keyboard and screen-reader accessible; timer announced, not only shown
+- [x] Result screen distinguishes base reward from accuracy bonus
 
 ### YT-0414 · Quick feed
 `todo` · PU · web · 4d · dep: YT-0402, YT-0403

@@ -1,13 +1,144 @@
-/* PLACEHOLDER — owned by YT-0400.
-   Dark mode via prefers-color-scheme + explicit [data-theme] override,
-   and the @theme bridge that maps tokens into Tailwind v4 utilities. */
+/*
+ * YT-0400 — Theme: dark mode + the Tailwind v4 bridge.
+ *
+ * Two jobs, kept separate:
+ *
+ * 1. Dark-mode overrides for the colour and elevation custom properties
+ *    declared in tokens.css. System preference
+ *    (`prefers-color-scheme: dark`) applies by default; an explicit
+ *    `[data-theme="light"]` or `[data-theme="dark"]` attribute on <html>
+ *    always wins, so a user's manual choice overrides the OS. All ratios
+ *    are verified in contrast.test.ts.
+ *
+ * 2. The `@theme inline` block, which registers our custom properties as
+ *    Tailwind v4 utility tokens (bg-bg, text-fg-muted, rounded-lg,
+ *    shadow-md, text-sm, font-sans, ...). `inline` is required here
+ *    because every value is itself `var(--…)` — Tailwind must keep
+ *    referencing the runtime custom property rather than inlining a
+ *    static value at build time, otherwise the dark-mode overrides above
+ *    would never reach the generated utility classes.
+ */
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: #0a0a0a;
-    --color-fg: #fafafa;
+    --color-bg: #0b0c0f;
+    --color-surface: #17181c;
+    --color-surface-raised: #1f2126;
+
+    --color-fg: #f5f6f8;
+    --color-fg-muted: #c1c5cf;
+    --color-fg-subtle: #9da2ae;
+
+    --color-border: #676c71;
+    --color-border-strong: #7c8186;
+
+    --color-primary: #8c9aff;
+    --color-primary-fg: #0b0c0f;
+
+    --color-reward: #f2b33d;
+    --color-reward-fg: #0b0c0f;
+    --color-price: #3dd9a3;
+    --color-price-fg: #0b0c0f;
+
+    --color-success: #4ade80;
+    --color-success-fg: #0b0c0f;
+    --color-warning: #ffa94d;
+    --color-warning-fg: #0b0c0f;
+    --color-danger: #ff6b66;
+    --color-danger-fg: #0b0c0f;
+
+    --color-ring: #8c9aff;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow-md:
+      0 4px 8px -2px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg:
+      0 12px 24px -4px rgb(0 0 0 / 0.6), 0 4px 8px -4px rgb(0 0 0 / 0.45);
   }
 }
+
 :root[data-theme="dark"] {
-  --color-bg: #0a0a0a;
-  --color-fg: #fafafa;
+  --color-bg: #0b0c0f;
+  --color-surface: #17181c;
+  --color-surface-raised: #1f2126;
+
+  --color-fg: #f5f6f8;
+  --color-fg-muted: #c1c5cf;
+  --color-fg-subtle: #9da2ae;
+
+  --color-border: #676c71;
+  --color-border-strong: #7c8186;
+
+  --color-primary: #8c9aff;
+  --color-primary-fg: #0b0c0f;
+
+  --color-reward: #f2b33d;
+  --color-reward-fg: #0b0c0f;
+  --color-price: #3dd9a3;
+  --color-price-fg: #0b0c0f;
+
+  --color-success: #4ade80;
+  --color-success-fg: #0b0c0f;
+  --color-warning: #ffa94d;
+  --color-warning-fg: #0b0c0f;
+  --color-danger: #ff6b66;
+  --color-danger-fg: #0b0c0f;
+
+  --color-ring: #8c9aff;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg:
+    0 12px 24px -4px rgb(0 0 0 / 0.6), 0 4px 8px -4px rgb(0 0 0 / 0.45);
+}
+
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-fg: var(--color-fg);
+  --color-fg-muted: var(--color-fg-muted);
+  --color-fg-subtle: var(--color-fg-subtle);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-primary: var(--color-primary);
+  --color-primary-fg: var(--color-primary-fg);
+  --color-reward: var(--color-reward);
+  --color-reward-fg: var(--color-reward-fg);
+  --color-price: var(--color-price);
+  --color-price-fg: var(--color-price-fg);
+  --color-success: var(--color-success);
+  --color-success-fg: var(--color-success-fg);
+  --color-warning: var(--color-warning);
+  --color-warning-fg: var(--color-warning-fg);
+  --color-danger: var(--color-danger);
+  --color-danger-fg: var(--color-danger-fg);
+  --color-ring: var(--color-ring);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --font-sans: var(--font-sans);
+
+  --text-xs: var(--text-xs);
+  --text-xs--line-height: var(--text-xs--line-height);
+  --text-sm: var(--text-sm);
+  --text-sm--line-height: var(--text-sm--line-height);
+  --text-base: var(--text-base);
+  --text-base--line-height: var(--text-base--line-height);
+  --text-lg: var(--text-lg);
+  --text-lg--line-height: var(--text-lg--line-height);
+  --text-xl: var(--text-xl);
+  --text-xl--line-height: var(--text-xl--line-height);
+  --text-2xl: var(--text-2xl);
+  --text-2xl--line-height: var(--text-2xl--line-height);
+  --text-3xl: var(--text-3xl);
+  --text-3xl--line-height: var(--text-3xl--line-height);
 }

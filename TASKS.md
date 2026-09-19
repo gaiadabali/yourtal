@@ -68,8 +68,6 @@ _Nothing blocked._
 
 ### Ready to start (no open dependencies)
 
-- **YT-0400** `web` Design tokens and theme · 3d
-- **YT-0403** `web` Typed mock data layer · 3d
 - **YT-0001** `pilot` Pilot: recruit a launch merchant · 3d
 - **YT-0220** `media` Spike: self-hosted HLS on R2 · 5d
 - **YT-0221** `risk` Spike: does phone verification earn its friction? · 3d

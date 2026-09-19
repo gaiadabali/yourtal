@@ -17,6 +17,7 @@
     "./question": "./src/question/question.ts",
     "./question/mock": "./src/question/question.mock.ts",
     "./money": "./src/money/money.ts",
+    "./money/format": "./src/money/money-format.ts",
     "./mock-source": "./src/mock-source.ts"
   },
   "scripts": {
@@ -24,7 +25,9 @@
     "test": "vitest run",
     "lint": "eslint src"
   },
-  "dependencies": { "zod": "4.6.5" },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
   "devDependencies": {
     "@faker-js/faker": "10.6.0",
     "@yourtal/tsconfig": "workspace:*",

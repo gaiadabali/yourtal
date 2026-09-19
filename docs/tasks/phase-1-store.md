@@ -51,8 +51,9 @@ The spending half of the loop: points buy things, and those things work at the m
 ## Voucher
 
 ### YT-0140 · Voucher issuance and code custody
-`todo` · P1 · value · 5d · dep: YT-0026, YT-0041
+`todo` · P1 · value · 5d · dep: YT-0533, YT-0041
 
+- **Re-parented 2026-09-20: `YT-0026` → `YT-0533`.** This needed *a* key-management capability, not a *GCP* one — and YT-0026 was deferred by the Helios decision, so this chain was waiting on a task nobody intends to do. Through YT-0140 that stale edge was transitively blocking the whole voucher and merchant chain: **31 tasks queued behind a founder signup we had already decided against.** Same mistake as the original cloud gating, one layer deeper in the graph
 - [ ] ≥16-char CSPRNG codes, no prefix or counter, checksum for typo detection
 - [ ] Stored hashed for lookup plus KMS envelope-encrypted for display to the owner only
 - [ ] Per-voucher hash-chained event log
@@ -95,8 +96,9 @@ The spending half of the loop: points buy things, and those things work at the m
 - [ ] After settlement a transaction can only be refunded, never voided
 
 ### YT-0152 · Merchant credentials and request signing
-`todo` · P1 · merchant · 4d · dep: YT-0150, YT-0026
+`todo` · P1 · merchant · 4d · dep: YT-0150, YT-0533
 
+- **Re-parented 2026-09-20: `YT-0026` → `YT-0533`.** Per-merchant API keys need key custody and rotation, which YT-0533 provides on Helios; the GCP keyring is deferred
 - [ ] Per-merchant API key with HMAC-SHA256 request signing and timestamp replay window
 - [ ] Scheduled key rotation with overlap; revocation is immediate
 - [ ] Signed webhooks in both directions

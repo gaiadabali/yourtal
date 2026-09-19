@@ -33,6 +33,8 @@
     "./business/kyb-document": "./src/business/kyb-document.ts",
     "./business/kyb-document/mock": "./src/business/kyb-document.mock.ts",
     "./question": "./src/question/question.ts",
+    "./question/presented": "./src/question/presented-question.ts",
+    "./question/bank": "./src/question/question-bank.ts",
     "./question/mock": "./src/question/question.mock.ts",
     "./money": "./src/money/money.ts",
     "./money/currency": "./src/money/currency.ts",

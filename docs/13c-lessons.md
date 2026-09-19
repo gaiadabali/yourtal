@@ -150,3 +150,21 @@ Nothing in a green run would have revealed that. Two tests appeared to cover the
 **Coverage tells you an area is tested. It does not tell you which test is load-bearing** — and those are different facts. The only way to learn the second is to break the behaviour and watch _which_ assertions fail. Where a rule matters, note in the test that it is the sole guard, so the next person deleting duplication knows which one is not duplicate.
 
 This also refines the break-it rule: do not stop at _the suite went red_. Ask **how many** assertions fired, and whether the ones you expected to were among them.
+
+## Smart App Control blocks test binaries, per binary, unpredictably
+
+This machine has Smart App Control **enforced** (`VerifiedAndReputablePolicyState = 1`), with **105 CodeIntegrity events in 24 hours**. `go test` compiles fine and is then blocked from executing the test binary it just built — **per binary, and inconsistently**: `internal/code` ran and `internal/lifecycle` did not, from the same command.
+
+That inconsistency is what makes it expensive. A uniform block reads as an environment problem within a minute; an intermittent one reads as a flaky test, and gets debugged as a code problem. **A failure whose message does not name its cause will be attributed to whatever was most recently changed.**
+
+**Workaround:** run the Go suites in `golang:1.26`, matching how this repo already runs Atlas, sqlc and Cerbos. Smart App Control cannot be re-enabled once switched off without reinstalling Windows, so the container route is the reversible one and should stay the default even if the setting later changes.
+
+## Stripping cannot fail open; rejecting can
+
+A test asserted that a presented question carrying a smuggled `correctAnswer` would be **rejected**. It is not — Zod strips unknown keys by default. The assertion was changed rather than the schema, and the reasoning is the part worth keeping:
+
+**A rejection throws while serving a response.** The tempting fix for a throw in a response path is a `catch` that returns the unparsed object — with the smuggled field still in it. So the strict version has a failure mode that ends with the secret being served, reached by an error handler somebody adds months later for unrelated reasons. Stripping has no such path: the field is gone before anything can go wrong.
+
+The general rule: **at a boundary that protects a secret, prefer the control that degrades to safe over the one that degrades to an exception.** Strictness is the right instinct for input validation, where a throw means a request is refused. It is the wrong instinct on the way out, where a throw means somebody writes a fallback.
+
+The same ticket has the better version of the guard itself: the answer-key test walks **all five question types against an exported field list** rather than two hand-picked names, so a sixth type with a new kind of key **fails** rather than passing unnoticed. A guard enumerated by hand only protects what its author remembered.

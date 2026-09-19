@@ -984,6 +984,68 @@
         ],
         "additionalProperties": false
       },
+      "BankQuestion": {
+        "description": "A question's standing in a campaign's bank (YT-0102). Carries timesAsked and timesCorrect as COUNTERS rather than a stored accuracy rate: a rate loses the denominator, and 97% from four answers cannot be told from 97% from four thousand — a leak detector that cannot distinguish those fires on noise and gets muted.",
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "campaignId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/QuestionStatus"
+          },
+          "piiScreen": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PiiScreenVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timesAsked": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "timesCorrect": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "retiredReason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 280
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "questionId",
+          "campaignId",
+          "status",
+          "piiScreen",
+          "timesAsked",
+          "timesCorrect",
+          "retiredReason"
+        ],
+        "additionalProperties": false
+      },
       "BillingContact": {
         "description": "The person a business's invoices and settlement statements are sent to (docs/17 section 2, Billing zone).",
         "type": "object",
@@ -1739,12 +1801,261 @@
           "minimum_spend"
         ]
       },
+      "PiiScreenVerdict": {
+        "description": "Whether a question has been screened for smuggled personal-data collection (docs/18 section 6). A reward-gated question is a uniquely effective way to harvest data a business could not otherwise ask for, so a clear verdict is required to reach `approved`. `needs_review` is deliberately distinct from `rejected` — 'nobody has looked' is a different fact from 'a human said no'.",
+        "type": "string",
+        "enum": [
+          "clear",
+          "needs_review",
+          "rejected"
+        ]
+      },
       "Points": {
         "description": "Platform points. Always a whole number; there is no fractional point.",
         "type": "integer",
         "minimum": 0,
         "maximum": 10000000000,
         "format": "int64"
+      },
+      "PresentedQuestion": {
+        "description": "A question as a VIEWER sees it (YT-0102). Has no field capable of holding an answer — the key is unrepresentable here rather than stripped per route. `Question` is the authoring and scoring form and must never be served: it carries correctOptionId and correctAnswer, and a client that holds the key can score itself, which under decision O-1 means deciding its own reward.",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "multiple_choice"
+              },
+              "options": {
+                "minItems": 2,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/QuestionOption"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "options"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "true_false"
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "likert"
+              },
+              "scaleMin": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
+              "scaleMax": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
+              "scaleLowLabel": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "scaleHighLabel": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "scaleMin",
+              "scaleMax",
+              "scaleLowLabel",
+              "scaleHighLabel"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "ranked"
+              },
+              "items": {
+                "minItems": 2,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/QuestionOption"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "items"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "short_text"
+              },
+              "maxLength": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 500
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "maxLength"
+            ],
+            "additionalProperties": false
+          }
+        ]
       },
       "Question": {
         "description": "A checkpoint question, discriminated on type. Variants are inlined rather than named as components because they are never referenced independently.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - multiple_choice: correctOptionId must reference one of the provided options.\n  - likert: scaleMin must be less than scaleMax.",
@@ -2016,6 +2327,15 @@
           "label"
         ],
         "additionalProperties": false
+      },
+      "QuestionStatus": {
+        "description": "draft, approved or retired. Retired is not a delete: docs/18 section 11 expects the answer key to leak and wants an automatic response, and a deleted question takes with it the evidence of which cohort answered it.",
+        "type": "string",
+        "enum": [
+          "draft",
+          "approved",
+          "retired"
+        ]
       },
       "Region": {
         "description": "AU or ID — the region a user account belongs to, chosen once at registration. Determines locale, currency, and tax/regulatory setup; Australia is the real market, Indonesia is the proving ground.",

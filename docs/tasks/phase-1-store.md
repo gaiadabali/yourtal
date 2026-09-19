@@ -68,6 +68,10 @@ The spending half of the loop: points buy things, and those things work at the m
 ### YT-0142 · Voucher lifecycle state machine
 `todo` · P1 · value · 4d · dep: YT-0140
 
+- ⛔ **FOUNDER DECISION NEEDED: a refund after full redemption.** YT-0142 says `redeemed` is terminal; `docs/09` §8.1 says a refund _"restores value post-capture"_. **Both cannot hold for a voucher that was fully consumed and then refunded.** Either `redeemed` is not terminal, or the refund **mints a replacement voucher** linked to the original
+- Built with `redeemed` terminal and replacement as the intended answer, because **reviving a spent voucher means a state write can un-spend money**. A partially-captured balance-carrying voucher never reaches `redeemed`, so this only bites on full consumption
+- [ ] ⚠️ **The consequence needs confirming, because it is not an implementation detail.** A replacement carries a **new code and a new expiry**, which (a) **resets a liability clock** we account for, (b) gives the merchant a **second code to reconcile against one original sale**, and (c) opens a **redeem-then-refund path** that risk should look at before it exists rather than after
+- Until confirmed: the partial case is implemented and **the full case refuses with a named error** rather than quietly inventing a mint inside a refund. A refusal someone has to ask about beats a silent behaviour nobody chose
 - [ ] States: minted, allocated, active, held, redeemed, expired, voided
 - [ ] `redeemed` is terminal; transitions guarded by optimistic concurrency
 - [ ] Expiry job is idempotent and reversible within a grace window

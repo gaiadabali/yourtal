@@ -9,6 +9,12 @@ import {
 } from "../campaign/campaign-reward-config";
 import { watchSessionSchema, watchSessionStateSchema } from "../watch/watch-session";
 import { watchProgressReportSchema } from "../watch/watch-progress-report";
+import { presentedQuestionSchema } from "../question/presented-question";
+import {
+  bankQuestionSchema,
+  piiScreenVerdictSchema,
+  questionStatusSchema,
+} from "../question/question-bank";
 import { regionSchema } from "../region/region";
 import {
   campaignKindSchema,
@@ -120,6 +126,35 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: watchProgressReportSchema,
     description:
       "One span of playback a client claims to have played. `reportedAt` is the client's clock and is recorded for audit only: the server judges a report against its OWN clock, because a claim of more playback than time has passed is arithmetically impossible rather than merely suspicious.",
+    crossFieldRules: [],
+  },
+
+  {
+    id: "PresentedQuestion",
+    schema: presentedQuestionSchema,
+    description:
+      "A question as a VIEWER sees it (YT-0102). Has no field capable of holding an answer — the key is unrepresentable here rather than stripped per route. `Question` is the authoring and scoring form and must never be served: it carries correctOptionId and correctAnswer, and a client that holds the key can score itself, which under decision O-1 means deciding its own reward.",
+    crossFieldRules: [],
+  },
+  {
+    id: "QuestionStatus",
+    schema: questionStatusSchema,
+    description:
+      "draft, approved or retired. Retired is not a delete: docs/18 section 11 expects the answer key to leak and wants an automatic response, and a deleted question takes with it the evidence of which cohort answered it.",
+    crossFieldRules: [],
+  },
+  {
+    id: "PiiScreenVerdict",
+    schema: piiScreenVerdictSchema,
+    description:
+      "Whether a question has been screened for smuggled personal-data collection (docs/18 section 6). A reward-gated question is a uniquely effective way to harvest data a business could not otherwise ask for, so a clear verdict is required to reach `approved`. `needs_review` is deliberately distinct from `rejected` — 'nobody has looked' is a different fact from 'a human said no'.",
+    crossFieldRules: [],
+  },
+  {
+    id: "BankQuestion",
+    schema: bankQuestionSchema,
+    description:
+      "A question's standing in a campaign's bank (YT-0102). Carries timesAsked and timesCorrect as COUNTERS rather than a stored accuracy rate: a rate loses the denominator, and 97% from four answers cannot be told from 97% from four thousand — a leak detector that cannot distinguish those fires on noise and gets muted.",
     crossFieldRules: [],
   },
 

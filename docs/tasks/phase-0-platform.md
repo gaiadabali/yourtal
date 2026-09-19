@@ -341,7 +341,18 @@
 - [ ] This is what lets `apps/web` stop mocking, so it is the join between the two halves of the build rather than backend housekeeping
 
 ### YT-0553 · API surface for campaign and watch
-`todo` · P0 · platform · 4d · dep: YT-0552, YT-0101, YT-0120
+`review` · P0 · platform · 4d · dep: YT-0552, YT-0101, YT-0120
+
+**Done. `apps/api` 96 → 112 tests, all against real Postgres. `pnpm verify` 11/11, 1982 tests, lint 11/11.**
+
+- [x] **Campaign reads serve the derived status only.** The repository returns `Campaign`, whose `status` has no value capable of expressing `draft`, `in_review` or `rejected` — the leak is **unrepresentable rather than filtered**, which is stronger than remembering to exclude them per route. A campaign with no public form is a 404, identical to one that does not exist, because distinguishing them confirms a draft with that id exists
+- [x] Rows are **parsed** through `campaignSchema`, not cast. YT-0548 was a table whose every row failed that parse, unnoticed for weeks because nothing read a campaign back
+- [x] **Completion is decided server-side by coverage.** There is no endpoint that accepts "I finished": `complete` re-reads recorded coverage and judges. A client that scrubs to the end and asks gets a refusal naming the unwatched seconds, and a test asserts the controller has no method that could take a completion claim
+- [x] **The rate check uses the server's clocks, both of them.** `reportedAt` is recorded for audit and never used — a test passes a timestamp an hour in the future and the refusal is unchanged
+- [x] Same `PrincipalService.resolve(request)` / `@Authorize` seam as every existing route, on `campaign_view` rather than `campaign`: a viewer asking to watch must not be answered by a policy written about authoring
+- [x] Session ownership is checked in the controller, not the PDP — no role makes someone else's session yours, and a row-level fact does not belong in a policy file that cannot see rows. Someone else's session is a 404
+- [x] ⚠️ **`complete` currently refuses every completion**, because the question bank does not exist (YT-0102/YT-0122) and O-1 requires both halves. Hard-coded `questionsAnswered: false` rather than a permissive placeholder: a stub that let completion through would be a reward path nobody decided to open
+- [x] ⚠️ **The first dead-host proof was invalid and said so.** `vitest.config.ts` sets `env.DATABASE_URL`, which **overrides a command-line value** — so pointing `DATABASE_URL` at a dead host left the suite green and would have been reported as proof. The test now resolves `TEST_DATABASE_URL` first, which the config does not set, and the break is real: the suite fails to load and every test is skipped
 
 - **The models exist and nothing can reach them.** YT-0101 built the campaign lifecycle and YT-0120 the watch session, both with real tables and real rules — but `apps/api/src/modules/` contains only `business`. **This is the join between the two halves of the build**: until these routes exist, `apps/web` keeps reading mocks and the backend keeps being proved only by its own tests
 - [ ] Campaign read routes serve what the public pages and the Earn board actually need, derived status included — never the authoring state

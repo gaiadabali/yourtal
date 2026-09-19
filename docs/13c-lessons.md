@@ -132,6 +132,10 @@ So a decision that supersedes a model is not finished when it is written down:
 
 The general form: **when you replace an implementation, the passing suite cannot distinguish the new one from the old one.** Only a deliberate break can. This is the same move as the planted `stripe` import, the re-introduced Cerbos schema bug, the sabotaged manifest URL and the deliberately-wrong payment driver — five times now, and every one found something a green run could not have.
 
+**And the break itself needs checking, which was learned the hard way one ticket later.** A dead-host sabotage of the watch suite came back **14/14 green**, and was nearly written up as proof the routes were wired. The cause: `vitest.config.ts` sets `env.DATABASE_URL`, and **that overrides a value passed on the command line** — the config quietly restored the working URL. The earlier YT-0552 proof had worked only by accident, because that helper reads `TEST_DATABASE_URL`, which the config does not set.
+
+So the rule has a second half: **a deliberate break is evidence only if you confirm the break reached the code.** A green run after sabotage is indistinguishable from sabotage that missed — and the first reading of it is always the flattering one. The real proof here is that the suite now **fails to load and every test is skipped**, which is unambiguous in a way a pass never is.
+
 Two things fell out of the same ticket that are worth generalising:
 
 - **A guarded fallback is still the path every test takes.** The idempotency store's in-memory branch was blocked in production, so it looked handled — but while it existed, every test used it, and an `INSERT ... ON CONFLICT DO NOTHING` exercised only as a `Map` proves nothing about the statement that does the work. **Delete the fallback; do not guard it.**

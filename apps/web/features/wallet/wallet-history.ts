@@ -1,0 +1,63 @@
+import type { Campaign } from "@yourtal/contracts/campaign";
+import type { Voucher } from "@yourtal/contracts/voucher";
+import { pointsPriceFromSettlement } from "@yourtal/contracts/money";
+import { formatPoints } from "@yourtal/contracts/money/format";
+
+/**
+ * Wallet history in plain language (YT-0423: "never transaction codes").
+ * Every entry reads like something that happened — e.g. "Menyelesaikan
+ * video Kopi Kenangan — dapat 2.400 poin" — never a ledger row like
+ * `TXN_CREDIT_CAMPAIGN_4471`.
+ *
+ * Server-only (imports `@yourtal/contracts/money`, which pulls Zod — see
+ * docs/13b-typescript-standards.md §8 rule 1). Only `wallet-data.ts` calls
+ * this; no client leaf imports it.
+ *
+ * Every field used below is real: `merchantName`, `rewardPoints` and
+ * `publishedAt` come straight off `Campaign`; `merchantName`, `faceValueIdr`
+ * and `issuedAt` off `Voucher`. Nothing is invented except the *points
+ * cost* of a voucher redemption, which no contract carries yet (there is
+ * no ledger/history schema in packages/contracts today) — that number is
+ * derived from the documented pricing formula
+ * (docs/09-points-economy-and-redemption.md §4.1: `points_price = S / B`)
+ * at a fixed mock backing rate, not made up. When a real wallet-history
+ * endpoint exists, `wallet-data.ts` is the only place that needs to change
+ * to consume it instead of this module.
+ */
+const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
+
+export interface WalletHistoryEntry {
+  id: string;
+  occurredAt: string;
+  description: string;
+  /** Positive = points earned, negative = points spent. Never a bare code. */
+  pointsDelta: number;
+}
+
+function earnedEntry(campaign: Campaign): WalletHistoryEntry {
+  return {
+    id: `earn-${campaign.id}`,
+    occurredAt: campaign.publishedAt,
+    description: `Menyelesaikan video ${campaign.merchantName} — dapat ${formatPoints(campaign.rewardPoints)}`,
+    pointsDelta: campaign.rewardPoints,
+  };
+}
+
+function spentEntry(voucher: Voucher): WalletHistoryEntry {
+  const cost = pointsPriceFromSettlement(voucher.faceValueIdr, MOCK_BACKING_RATE_IDR_PER_POINT);
+  // `cost` is the branded `Points` type; negating it directly through a
+  // brand is what @typescript-eslint/no-unsafe-unary-minus objects to.
+  // `Number(cost)` reads it back out as a plain number first.
+  return {
+    id: `spend-${voucher.id}`,
+    occurredAt: voucher.issuedAt,
+    description: `Ditukar ${formatPoints(cost)} untuk voucher ${voucher.merchantName}`,
+    pointsDelta: -Number(cost),
+  };
+}
+
+/** Builds and time-sorts (newest first) the wallet's point history from its vouchers and a sample of completed campaigns. */
+export function buildWalletHistory(vouchers: Voucher[], earnedFromCampaigns: Campaign[]): WalletHistoryEntry[] {
+  const entries = [...earnedFromCampaigns.map(earnedEntry), ...vouchers.map(spentEntry)];
+  return entries.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+}

@@ -18,7 +18,8 @@
     "./question/mock": "./src/question/question.mock.ts",
     "./money": "./src/money/money.ts",
     "./money/format": "./src/money/money-format.ts",
-    "./mock-source": "./src/mock-source.ts"
+    "./mock-source": "./src/mock-source.ts",
+    "./mock-seed": "./src/mock-seed.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

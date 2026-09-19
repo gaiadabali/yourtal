@@ -1,4 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
+import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
 import { generateCampaign, longMerchantNameCampaignFixture, mockCampaigns, zeroRewardCampaignFixture } from "@yourtal/contracts/campaign/mock";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import type { Question } from "@yourtal/contracts/question";
@@ -27,13 +28,6 @@ const ALL_MOCK_CAMPAIGNS: Campaign[] = [...mockCampaigns, zeroRewardCampaignFixt
  * scope; worth promoting to a `packages/contracts` helper later, since two
  * independent features already needed the identical function.
  */
-function hashStringToSeed(value: string): number {
-  let hash = 5_381;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 33) ^ value.charCodeAt(index);
-  }
-  return hash >>> 0;
-}
 
 /**
  * A second, differently-mixed hash (FNV-1a) used only to seed *which*
@@ -65,8 +59,16 @@ function resolveCampaign(campaignId: string): Campaign {
  */
 function loadMockCheckpointData(campaignId: string): CheckpointData {
   const campaign = resolveCampaign(campaignId);
+  // `campaign.id`, NOT the raw `campaignId` from the URL. `questionSchema`
+  // requires a uuid, and an unrecognised id is synthesised into a campaign
+  // whose own id is a generated uuid — passing the URL string straight
+  // through threw a ZodError and crashed this route for any non-uuid id,
+  // i.e. after the user had already watched the whole video. For a
+  // catalogue campaign the two are identical, so this is a strict fix.
   const questions =
-    campaign.questionCount === 0 ? [] : generateQuestions(campaign.questionCount, hashCampaignIdForQuestions(campaignId), campaignId);
+    campaign.questionCount === 0
+      ? []
+      : generateQuestions(campaign.questionCount, hashCampaignIdForQuestions(campaignId), campaign.id);
   return { campaign, questions };
 }
 

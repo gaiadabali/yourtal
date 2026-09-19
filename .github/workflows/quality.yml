@@ -1,0 +1,55 @@
+# Correctness gates. The performance gates live in perf-budget.yml.
+#
+# Until this existed, CI ran neither lint, typecheck nor tests — and for a
+# while `pnpm lint` was a no-op besides, because no eslint config had been
+# written. docs/13b-typescript-standards.md §2 calls type-aware linting a
+# build gate; this is what makes that true.
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, typecheck, test, task dashboard
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4.0.0
+        # Version comes from the root package.json "packageManager" field.
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Cheapest gate first: this one needs no build and catches the most
+      # common class of drift (a task edited without regenerating TASKS.md).
+      - name: Task dashboard is current
+        run: node scripts/tasks.mjs --check
+
+      - name: Lint
+        run: pnpm exec eslint apps packages
+
+      - name: Typecheck
+        run: pnpm exec turbo run typecheck
+
+      - name: Test
+        run: pnpm exec turbo run test

@@ -41,7 +41,7 @@
 ### YT-0404 · Performance budget harness
 `review` · PU · web · 2d · dep: YT-0402
 - [x] Lighthouse CI on every PR, throttled to mid-tier Android over 4G
-- [x] Fails the build on LCP > 2.0 s, CLS > 0.1, initial JS > 170 KB — INP itself is a field metric Lighthouse cannot produce in a lab run; Total Blocking Time (≤ 200 ms) is asserted as the documented lab proxy. See `apps/web/lighthouserc.cjs` for the full rationale.
+- [x] Fails the build on LCP > 2.0 s, CLS > 0.1, **TBT > 200 ms (the lab proxy, not INP)**, and initial JS over the 200 KB hard gate (180–200 KB passes but is flagged as needing written justification). **INP is deliberately NOT asserted: it is a field metric that Lighthouse cannot produce in a lab run at all, so Total Blocking Time stands in for it.** Real p75 INP from users is YT-0501, not this task. Rationale in `apps/web/lighthouserc.cjs`; budget per `docs/13b-typescript-standards.md` §8.
 - [x] Bundle-size report posted on the PR
 
 ## The earn loop
@@ -64,6 +64,7 @@
 - [x] Quality selector defaulting to 360–480p with the data cost shown per option
 - [x] Resume prompt when a prior position exists
 - [x] Accrual visibly pauses when the tab is backgrounded
+- [ ] Keyboard seeking (arrow / Home / End) verified in **Playwright against a real browser** — the seek bar is a native `<input type="range">`, so this behaviour belongs to the browser and jsdom does not implement it. The earlier Radix Slider exercised its own keyboard JavaScript through a jsdom shim, which tested the library rather than this app. Fold into the Playwright pass that YT-0401's 320 px / 200 % zoom criterion also needs.
 
 ### YT-0413 · Checkpoint question UI
 `review` · PU · web · 4d · dep: YT-0412
@@ -73,44 +74,44 @@
 - [x] Result screen distinguishes base reward from accuracy bonus
 
 ### YT-0414 · Quick feed
-`todo` · PU · web · 4d · dep: YT-0402, YT-0403
-- [ ] Vertical swipeable feed of short campaigns with snap scrolling
-- [ ] Never autoplays into an item the user did not navigate to
-- [ ] Degrades to a list on desktop rather than faking a phone
+`review` · PU · web · 4d · dep: YT-0402, YT-0403
+- [x] Vertical swipeable feed of short campaigns with snap scrolling — CSS-only (`scroll-snap-type: y mandatory` on the container, `scroll-snap-align: start` + `snap-always` per item), no JS scroll hijack. Verified by source inspection, a passing production build, and component tests asserting the container/item structure. **Not genuinely verified**: jsdom implements no real layout or momentum scrolling, so the actual felt swipe/snap physics need a real mobile browser pass.
+- [x] Never autoplays into an item the user did not navigate to — interpreted strictly: the feed itself contains no `<video>`/`<audio>` element and nothing that could play at all (asserted directly in `quick-feed-card.test.tsx` and `quick-feed-viewport.test.tsx`). Reaching real video is a genuine navigation to the existing long-form player (`/watch/[campaignId]`, YT-0412), which itself still requires its own explicit tap-to-play overlay before anything plays or makes sound.
+- [x] Degrades to a list on desktop rather than faking a phone — one DOM tree, `md:grid` replaces the mobile snap column via Tailwind responsive classes only (no separate desktop component, no fixed-width phone frame). **Not genuinely verified**: jsdom cannot evaluate media queries against a real viewport; needs a real-browser or manual pass at `md`/`lg` widths to confirm the switch visually.
 
 ## The spend loop
 
 ### YT-0420 · Store browse
-`todo` · PU · web · 4d · dep: YT-0402, YT-0403
-- [ ] Category, merchant, price-band and location filters
-- [ ] Price in points shown with the live face value beside it
-- [ ] Sold-out, expiring and newly-added states designed
+`review` · PU · web · 4d · dep: YT-0402, YT-0403
+- [x] Category, merchant, price-band and location filters
+- [x] Price in points shown with the live face value beside it
+- [x] Sold-out, expiring and newly-added states designed
 
 ### YT-0421 · Offer detail
-`todo` · PU · web · 3d · dep: YT-0420
-- [ ] Terms, minimum spend, transferability and partial-redemption policy **above the fold, before any action**
-- [ ] Merchant, locations and how to redeem
-- [ ] Insufficient-balance state shows exactly how much more is needed and how to earn it
+`review` · PU · web · 3d · dep: YT-0420
+- [x] Terms, minimum spend, transferability and partial-redemption policy **above the fold, before any action**
+- [ ] Merchant, locations and how to redeem — **merchant and how-to-redeem are done; locations is not.** `listingSchema` carries a single `district: string`, not a list of outlets, so a merchant with several branches can only be shown one. The implementation renders every location the data has; closing this needs a contract change (a `locations` array on `listing.ts`), not more UI. Knowing *which* branch honours a voucher is load-bearing for redemption, so this should not be waved through.
+- [x] Insufficient-balance state shows exactly how much more is needed and how to earn it — links to Earn and Quick rather than estimating "worth ~N campaigns", deliberately keeping Store decoupled from the earn loop's data shape.
 
 ### YT-0422 · Burn flow with price lock
-`todo` · PU · web · 4d · dep: YT-0421
-- [ ] Visible price-lock countdown from the moment the price is shown
-- [ ] Confirmation step restates cost and terms
-- [ ] Success, failure and lock-expired states all designed
-- [ ] Holdback explained in plain language when it blocks a redemption
+`review` · PU · web · 4d · dep: YT-0421
+- [x] Visible price-lock countdown from the moment the price is shown
+- [x] Confirmation step restates cost and terms
+- [x] Success, failure and lock-expired states all designed
+- [x] Holdback explained in plain language when it blocks a redemption
 
 ### YT-0423 · Wallet
-`todo` · PU · web · 4d · dep: YT-0402, YT-0403
-- [ ] Balance, pending-in-holdback with unlock dates, and expiring-soon
-- [ ] History in plain language, never transaction codes
-- [ ] Empty state teaches the loop rather than showing a zero
+`review` · PU · web · 4d · dep: YT-0402, YT-0403
+- [x] Balance, pending-in-holdback with unlock dates, and expiring-soon
+- [x] History in plain language, never transaction codes
+- [x] Empty state teaches the loop rather than showing a zero
 
 ### YT-0424 · Voucher detail and offline QR
-`todo` · PU · web · 3d · dep: YT-0423
-- [ ] Rotating QR with a visible validity countdown
-- [ ] Renders from cache with the network disabled — verified by test
-- [ ] Per-merchant redemption instructions in the user's language
-- [ ] Used and expired vouchers archived and still viewable
+`review` · PU · web · 3d · dep: YT-0423
+- [x] Rotating QR with a visible validity countdown
+- [ ] Renders from cache with the network disabled — verified by test (see report: a stubbed-fetch test proves the render path has zero network dependency given a cache entry; full offline page-load still needs the Serwist service worker, not installed in this ticket — left unticked rather than overclaimed)
+- [x] Per-merchant redemption instructions in the user's language
+- [x] Used and expired vouchers archived and still viewable
 
 ## Entry, exit and logged-out
 

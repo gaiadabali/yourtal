@@ -1,4 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
+import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
 import {
   generateCampaign,
   longMerchantNameCampaignFixture,
@@ -53,11 +54,3 @@ function getWatchCampaignLive(campaignId: string): Campaign {
   );
 }
 
-/** A small, deterministic, non-cryptographic string hash (djb2 variant) — only used to seed mock generation. */
-function hashStringToSeed(value: string): number {
-  let hash = 5_381;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 33) ^ value.charCodeAt(index);
-  }
-  return hash >>> 0;
-}

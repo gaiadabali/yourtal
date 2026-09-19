@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // YT-0404 — Performance budget harness.
 //
-// Enforces docs/13b-typescript-standards.md §8 and
-// docs/08-web-app-and-performance.md §3.1: "Initial JS (shell route) ≤ 170 KB
-// gzipped, build-time check". This is deliberately NOT a Lighthouse audit —
+// Enforces docs/13b-typescript-standards.md §8: initial JS per route
+// <= 200 KB gzipped as a hard gate, with anything above 180 KB requiring a
+// written justification in the PR. This is deliberately NOT a Lighthouse audit —
 // Lighthouse's `total-byte-weight` measures everything the page loads
 // (images, fonts, third-party), which is adjacent to but not the same thing
 // as "first-load JS for the route". Next.js's own build already computes the
@@ -14,11 +14,24 @@
 // classic (non-Turbopack) build output, so we read it directly instead of
 // re-deriving it from webpack/turbopack stats or guessing from source.
 //
-// Budget: 170 KB, using the binary (1024-based) definition of "KB", i.e.
-// 170 * 1024 = 174,080 bytes. This is deliberately the stricter of the two
-// common conventions (decimal 170,000 bytes vs binary 174,080 bytes) — the
-// gap is under 2.5%, but given the whole point of this harness is to stop
-// budget creep, we round down in the app's favour rather than up.
+// Budget, revised 2026-09-19: 200 KB hard gate, 180 KB warning threshold.
+// The original 170 KB predated measuring the Next 16 + React 19 framework
+// floor of ~147 KB, which left ~23 KB for all application code — not a
+// budget, a wish. The warning band exists so the gate still has teeth: a
+// route between 180 and 200 KB passes CI but is flagged here and needs a
+// written justification, which is what stops silent creep toward the cap.
+//
+// The REAL gate is the outcome — LCP <= 2.0 s and TBT <= 200 ms on mid-tier
+// Android over 4G, asserted in apps/web/lighthouserc.cjs. KB is a guardrail,
+// not the goal; do not contort a route to shave bytes that buy no measured
+// improvement in those numbers.
+//
+// Both thresholds use the binary (1024-based) "KB", i.e. 200 * 1024 =
+// 204,800 bytes — the stricter of the two common conventions.
+//
+// NOTE: docs/08-web-app-and-performance.md §3.1 still states the superseded
+// 170 KB figure. docs/13b §8 is the current authority; that inconsistency
+// has been raised with the docs owner.
 //
 // Usage: node scripts/perf-check-bundle-size.mjs [path-to-app]
 // Defaults to apps/web. Must run after `next build` (or `turbo run build`)
@@ -30,7 +43,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const BUDGET_BYTES = 170 * 1024; // 170 KB gz, binary KB — see comment above.
+const BUDGET_BYTES = 200 * 1024; // Hard gate. Binary KB — see comment above.
+const JUSTIFY_BYTES = 180 * 1024; // Above this, a PR needs written justification.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -106,30 +120,49 @@ async function main() {
     const sizes = await Promise.all(absolutePaths.map((p) => gzipSize(p)));
     const gzipBytes = sizes.reduce((sum, size) => sum + size, 0);
     const overBudget = gzipBytes > BUDGET_BYTES;
+    const needsJustification = !overBudget && gzipBytes > JUSTIFY_BYTES;
     anyOverBudget = anyOverBudget || overBudget;
-    results.push({ route: entry.route, gzipBytes, overBudget });
+    results.push({ route: entry.route, gzipBytes, overBudget, needsJustification });
   }
 
   const budgetKb = (BUDGET_BYTES / 1024).toFixed(0);
-  console.log(`Initial JS budget: ${budgetKb} KB gz per route\n`);
-  console.log("Route".padEnd(30) + "First-load JS (gz)".padEnd(22) + "Status");
-  console.log("-".repeat(66));
-  for (const { route, gzipBytes, overBudget } of results) {
+  const justifyKb = (JUSTIFY_BYTES / 1024).toFixed(0);
+  console.log(`Initial JS: ${budgetKb} KB gz hard gate · above ${justifyKb} KB needs justification\n`);
+  console.log("Route".padEnd(34) + "First-load JS (gz)".padEnd(22) + "Status");
+  console.log("-".repeat(74));
+  for (const { route, gzipBytes, overBudget, needsJustification } of results) {
     const kb = (gzipBytes / 1024).toFixed(1) + " KB";
-    const status = overBudget ? "FAIL (over budget)" : "OK";
-    console.log(route.padEnd(30) + kb.padEnd(22) + status);
+    const status = overBudget
+      ? `FAIL (over ${budgetKb} KB)`
+      : needsJustification
+        ? `OK — justify (over ${justifyKb} KB)`
+        : "OK";
+    console.log(route.padEnd(34) + kb.padEnd(22) + status);
+  }
+
+  // A hard gate alone lets a route creep to 199 KB unnoticed. This band is
+  // what keeps the number honest between the floor and the cap.
+  const toJustify = results.filter((r) => r.needsJustification);
+  if (toJustify.length > 0) {
+    console.log(
+      `\n${toJustify.length} route(s) above ${justifyKb} KB — these pass the gate but need a ` +
+        "written justification in the PR (docs/13b-typescript-standards.md §8):",
+    );
+    for (const r of toJustify) {
+      console.log(`  - ${r.route} at ${(r.gzipBytes / 1024).toFixed(1)} KB`);
+    }
   }
 
   if (anyOverBudget) {
     console.error(
       `\nperf-check-bundle-size: one or more routes exceed the ${budgetKb} KB gz ` +
-        "initial-JS budget (docs/13b-typescript-standards.md §8). Failing the build.",
+        "initial-JS hard gate (docs/13b-typescript-standards.md §8). Failing the build.",
     );
     process.exitCode = 1;
     return;
   }
 
-  console.log("\nAll routes within budget.");
+  console.log("\nAll routes within the hard gate.");
 }
 
 await main();

@@ -1,15 +1,13 @@
-// Placeholder for the Wallet tab (docs/17-surfaces-and-roles.md §1.1:
-// "Banking app, simplified — balance, pending, expiring soon, vouchers with
-// their QR, history."). Real screen is a separate ticket; YT-0402 only owns
-// the route existing under the shell with the correct tab wired up.
-export default function WalletPage() {
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-sans font-semibold text-fg">Wallet</h1>
-      <p className="mt-2 text-sm font-sans text-fg-muted">
-        Balance, pending holdback and vouchers land here in a later ticket. This page only proves
-        the route and tab are wired up.
-      </p>
-    </div>
-  );
+import { getWalletBalance, listWalletHistory, listWalletVouchers } from "@/features/wallet/wallet-data";
+import { WalletScreen } from "@/features/wallet/wallet-screen";
+
+/**
+ * `/wallet` (YT-0423) — replaces the YT-0402 placeholder. Server Component
+ * per docs/13b-typescript-standards.md §8; all interactivity lives in the
+ * voucher detail leaf, not here.
+ */
+export default async function WalletPage() {
+  const [balance, vouchers, history] = await Promise.all([getWalletBalance(), listWalletVouchers(), listWalletHistory()]);
+
+  return <WalletScreen balance={balance} vouchers={vouchers} history={history} nowMs={Date.now()} />;
 }

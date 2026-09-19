@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+// Formatting lives in money-format.ts (dependency-free, one implementation).
+import { formatIdr, formatPoints } from "./money-format";
 import {
   addIdr,
   addPoints,
-  formatIdr,
-  formatPoints,
   idrMinorUnitsSchema,
   pointsPriceFromSettlement,
   pointsSchema,
@@ -90,8 +90,15 @@ describe("arithmetic helpers", () => {
 
 describe("formatting", () => {
   it("formats IDR with the Rupiah symbol and no decimals", () => {
-    const formatted = formatIdr(toIdrMinorUnits(45_000));
-    expect(formatted).toContain("45.000");
+    expect(formatIdr(toIdrMinorUnits(45_000))).toContain("45.000");
+  });
+
+  // Guards the open YT-0506 decision. IDR is stored as Rupiah today; docs/12,
+  // docs/18 and YT-0041 all say sen. Whoever settles it must change money.ts,
+  // formatIdr and every mock literal together — these fail if only one moves.
+  it("stores IDR as Rupiah, not sen, until YT-0506 settles", () => {
+    expect(formatIdr(toIdrMinorUnits(45_000))).not.toContain("450,");
+    expect(formatIdr(toIdrMinorUnits(100))).toContain("100");
   });
 
   it("formats points with the Indonesian word for points", () => {

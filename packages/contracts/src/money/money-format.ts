@@ -14,7 +14,15 @@
  */
 import type { IdrMinorUnits, Points } from "./money";
 
-/** Formats an IDR amount for display, e.g. `Rp45.000`. */
+/**
+ * Formats a stored IDR amount for display, e.g. `45_000` renders as
+ * "Rp45.000".
+ *
+ * There is no division here because `IdrMinorUnits` is currently a count of
+ * Rupiah, not sen (see money.ts, and YT-0506 which has not settled). If that
+ * decision lands on sen, THIS is the one place display must divide by 100 —
+ * which is why the duplicate copy of this function was deleted from money.ts.
+ */
 export function formatIdr(amount: IdrMinorUnits): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",

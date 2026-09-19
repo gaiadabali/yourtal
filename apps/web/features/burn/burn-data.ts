@@ -23,6 +23,7 @@ export interface RedeemData {
 const SHARED_STORE_CATALOGUE: readonly Listing[] = [...mockListings, soldOutListingFixture, abovePlausibleBalanceListingFixture, expiringSoonListingFixture];
 
 /** Mirrors the illustrative mock backing rate in `listing.mock.ts` (docs/09 section 4.1). Not the real pricing engine. */
+// Rupiah per point. See YT-0506 before changing this.
 const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
 
 /**

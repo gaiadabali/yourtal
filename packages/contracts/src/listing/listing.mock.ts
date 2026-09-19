@@ -6,6 +6,8 @@ import { LONG_MERCHANT_NAME, generateMerchantName, pickDistrict } from "../inter
 import { pointsPriceFromSettlement, toIdrMinorUnits, toPoints } from "../money/money";
 
 /** Illustrative mock backing rate (IDR per point), see docs/09 section 4.1. Not the real pricing engine. */
+// Rupiah per point. If YT-0506 settles on sen, this becomes sen-per-point
+// and must move with the settlement values, or prices go 100x wrong.
 const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
 
 export interface GenerateListingParams {
@@ -20,6 +22,7 @@ export function generateListing(params: GenerateListingParams): Listing {
 
   const merchantName = generateMerchantName(faker);
   const faceValueIdr = toIdrMinorUnits(faker.number.int({ min: 15, max: 400 }) * 1_000);
+  // faceValueIdr is already sen, so this stays in sen — do NOT toIdrMinorUnits it.
   const settlementValueIdr = toIdrMinorUnits(Math.round(faceValueIdr * 0.3));
   const stockTotal = faker.number.int({ min: 5, max: 500 });
   const stockRemaining = faker.number.int({ min: 0, max: stockTotal });

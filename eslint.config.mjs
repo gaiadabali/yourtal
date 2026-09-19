@@ -20,6 +20,10 @@ export default tseslint.config(
       "**/lighthouserc.cjs",
       "**/vitest.setup.ts",
       "scripts/**",
+      // Plain build/codegen tooling, not typechecked source. Type-aware
+      // linting needs a file in a tsconfig project; these are not, by
+      // design, so exclude them rather than force them into one.
+      "**/openapi/*.mjs",
     ],
   },
   js.configs.recommended,

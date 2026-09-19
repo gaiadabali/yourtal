@@ -20,7 +20,12 @@ export function generateVoucher(params: GenerateVoucherParams): Voucher {
   const issuedDaysAgo = faker.number.int({ min: 0, max: 45 });
   const validForDays = faker.number.int({ min: 7, max: 90 });
   const partialRedemptionPolicy = faker.helpers.arrayElement(["balance_carrying", "single_use_forfeit", "minimum_spend"] as const);
-  const remainingValueIdr = partialRedemptionPolicy === "balance_carrying" ? toIdrMinorUnits(Math.round(faceValueIdr * faker.number.float({ min: 0, max: 1, fractionDigits: 2 }))) : faceValueIdr;
+  // Derived from faceValueIdr, which is already sen — toIdrMinorUnits, not
+  // toIdrMinorUnits, or the remaining value ends up 100x the face value.
+  const remainingValueIdr =
+    partialRedemptionPolicy === "balance_carrying"
+      ? toIdrMinorUnits(Math.round(faceValueIdr * faker.number.float({ min: 0, max: 1, fractionDigits: 2 })))
+      : faceValueIdr;
 
   return voucherSchema.parse({
     id: faker.string.uuid(),

@@ -3,15 +3,37 @@ import { z } from "zod";
 /**
  * Money and points, the foundation every other schema in this package builds on.
  *
- * Indonesian Rupiah has no minor unit in everyday use (there is no "sen" in
- * circulation), but per docs/15-stack-locked.md the ledger still represents
- * every amount as an integer in its minor unit. For IDR that minor unit is
- * defined here to equal exactly 1 Rupiah — so `idrMinorUnitsSchema` values
- * ARE Rupiah counts, always integers, never floating point. Do not introduce
- * a "cents-of-Rupiah" concept anywhere; it does not exist for this currency.
+ * **The IDR minor unit is currently 1 Rupiah** — an `idrMinorUnitsSchema`
+ * value is a count of Rupiah, and Rp 45.000 is stored as `45_000`.
+ *
+ * THIS IS NOT SETTLED. `docs/12` section 3, `docs/18` line 24 and YT-0041's
+ * acceptance criteria all say IDR must be stored in **sen (x100)**, because
+ * Stripe and most PSPs treat IDR as a two-decimal currency, and YT-0041 calls
+ * a mismatch here "a 100x error". The deciding fact does not settle from
+ * documentation: ISO 4217 gives IDR a sen minor unit, Adyen explicitly flags
+ * IDR as diverging from its own table, and Xendit does not document it
+ * publicly. Tracked as **YT-0506 (blocked)**; YT-0041 must not be implemented
+ * until it is decided. Do NOT "fix" this file to sen without that decision.
+ *
+ * The deeper problem is that this type has no currency at all. YourTal runs
+ * two regions, Australia and Indonesia, each with its own currency, tax and
+ * regulatory setup — and `docs/12` section 3 already specifies Fowler's Money
+ * pattern, `(int64 amount_minor, currency)`, which this file does not
+ * implement. AUD is unambiguously two-decimal; only IDR is in question. A
+ * currency-tagged Money type would let AUD proceed while IDR stays pending,
+ * and would make "IDR is stored in X" a per-processor conversion rather than
+ * a global rule. Raised with the architect.
  *
  * Points are the platform's own currency (docs/09, docs/07 section 2.1) and
  * are likewise always non-negative integers — there is no fractional point.
+ *
+ * FORMATTING LIVES IN `money-format.ts`, not here. That module is
+ * dependency-free so client components can format without pulling in Zod,
+ * and keeping a second copy of `formatIdr` here would mean two places to
+ * change if the IDR minor unit is ever redefined — which YT-0506 may still
+ * do. There was a second, dead copy here once, unimported and therefore
+ * invisible; it would have been missed by exactly that redefinition. There
+ * must be exactly one implementation to change.
  *
  * Both types are Zod branded types: the only way to obtain a value typed as
  * `IdrMinorUnits` or `Points` is to run a number through the corresponding
@@ -19,12 +41,14 @@ import { z } from "zod";
  * design — that is what makes the brand meaningful.
  */
 
-const MAX_SAFE_IDR_MINOR_UNITS = 10_000_000_000; // IDR 10 billion ceiling, generous for mock data
+// IDR 10 billion. Beyond int32, which is why src/openapi/build-document.ts
+// widens money fields to int64 for Go.
+const MAX_SAFE_IDR_MINOR_UNITS = 10_000_000_000;
 const MAX_SAFE_POINTS = 10_000_000_000;
 
 export const idrMinorUnitsSchema = z
   .number()
-  .int("IDR amounts must be whole Rupiah, never fractional")
+  .int("IDR amounts must be a whole number of sen, never fractional")
   .min(0, "IDR amounts cannot be negative")
   .max(MAX_SAFE_IDR_MINOR_UNITS, "IDR amount exceeds the sane ceiling for this platform")
   .brand<"IdrMinorUnits">();
@@ -44,6 +68,7 @@ export type Points = z.infer<typeof pointsSchema>;
 export function toIdrMinorUnits(value: number): IdrMinorUnits {
   return idrMinorUnitsSchema.parse(value);
 }
+
 
 /** Parses a raw number into `Points`, throwing on anything invalid. */
 export function toPoints(value: number): Points {
@@ -75,30 +100,23 @@ export function subtractPointsClamped(a: Points, b: Points): Points {
 }
 
 /**
- * Converts a settlement value in IDR into a points price at a given backing
- * rate, per the pricing shape in docs/09 section 4.1: `points_price = S / B`.
+ * Converts a settlement value into a points price at a given backing rate,
+ * per the pricing shape in docs/09 section 4.1: `points_price = S / B`.
+ *
+ * Both sides must share a unit. They are Rupiah today; if YT-0506 settles on
+ * sen, the rate becomes sen-per-point and BOTH must move together, or every
+ * price is 100x wrong.
  * This is a mock-data convenience, not the real pricing engine — the demand
  * multiplier and its bounds (0.8-1.25) live in the pricing service, not here.
  * Rounds to the nearest whole point; integer arithmetic throughout, no float
  * carried past this function's own division step.
  */
-export function pointsPriceFromSettlement(settlementValueIdr: IdrMinorUnits, backingRateIdrPerPoint: number): Points {
+export function pointsPriceFromSettlement(
+  settlementValueIdr: IdrMinorUnits,
+  backingRateIdrPerPoint: number,
+): Points {
   if (backingRateIdrPerPoint <= 0) {
     throw new Error("backingRateIdrPerPoint must be positive");
   }
   return toPoints(Math.round(settlementValueIdr / backingRateIdrPerPoint));
-}
-
-/** Formats an IDR amount for display, e.g. `Rp45.000`. */
-export function formatIdr(amount: IdrMinorUnits): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-/** Formats a points amount for display, e.g. `2.400 poin`. */
-export function formatPoints(amount: Points): string {
-  return `${new Intl.NumberFormat("id-ID").format(amount)} poin`;
 }

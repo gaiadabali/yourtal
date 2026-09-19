@@ -282,7 +282,7 @@ Both came out of the ledger proof work and generalise:
 
 `.env.example` had drifted **seven keys ahead** of the working `.env` on this machine, including every `S3_*` value, and nothing said so — the media origin was simply unreachable until someone looked. The example file is a second copy of a contract with no drift test, which is the same shape as the schema copy, the OpenAPI description and the backing rate duplicated in four files.
 
-The asymmetry is what makes it bite: the example drifting *ahead* produces a missing key and a confusing runtime failure, while drifting *behind* produces nothing at all until a new machine is set up. **A startup check that names every key present in `.env.example` and absent from the environment costs almost nothing and converts both into one clear message.**
+The asymmetry is what makes it bite: the example drifting _ahead_ produces a missing key and a confusing runtime failure, while drifting _behind_ produces nothing at all until a new machine is set up. **A startup check that names every key present in `.env.example` and absent from the environment costs almost nothing and converts both into one clear message.**
 
 ## Check what a gate's command actually covers, not what its name implies
 
@@ -290,12 +290,12 @@ The asymmetry is what makes it bite: the example drifting *ahead* produces a mis
 
 This is the fifth instance this week of the same shape, and by now it is the house failure mode rather than a run of bad luck:
 
-| The gate | What it actually did |
-|---|---|
-| CI guarantees | Never ran a Postgres-backed test |
-| Two ledger proof tests | Skipped rather than failed |
-| `openapi:go:check` | Compared the generator's output to itself; nothing ever compiled the module |
-| YT-0521 at `review` | Carried the same criterion twice, ticked and unticked |
-| `turbo run lint` | Linted 68 files of 565 |
+| The gate               | What it actually did                                                        |
+| ---------------------- | --------------------------------------------------------------------------- |
+| CI guarantees          | Never ran a Postgres-backed test                                            |
+| Two ledger proof tests | Skipped rather than failed                                                  |
+| `openapi:go:check`     | Compared the generator's output to itself; nothing ever compiled the module |
+| YT-0521 at `review`    | Carried the same criterion twice, ticked and unticked                       |
+| `turbo run lint`       | Linted 68 files of 565                                                      |
 
 Every one passed. Every one was believed to cover something it did not touch. **The question to ask at review is not “is the gate green” but “what set of files did this command actually read”** — and the cheapest way to answer it is to break something on purpose and watch the gate fail.

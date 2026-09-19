@@ -77,8 +77,9 @@ Verified: `tsc --noEmit` clean for everything touched (three pre-existing, unrel
 ## Prototype gate
 
 ### YT-0450 · Clickable prototype walkthrough
-`todo` · PU · web · 3d · dep: YT-0413, YT-0424, YT-0432, YT-0445, YT-0532
+`blocked` · PU · web · 3d · dep: YT-0413, YT-0424, YT-0432, YT-0445, YT-0532
 
+- ⛔ **Deferred on inputs by founder decision 2026-09-20**, not on engineering. A shareable URL and a physical mid-tier Android arrive "when the app matures more". Criterion 1 (every journey completable against mocks) is effectively met by the earn/spend/redeem/open-view work already at `review`
 - **The deploy AC has a home now (2026-09-19):** "a shareable URL" was unowned while GCP was the target. It is **YT-0532** on Helios. The physical-device AC still needs a real mid-tier Android on 4G — an emulator throttled to "Slow 4G" measures the laptop, not the phone, and the two disagree most exactly where this task is trying to look.
 - [ ] Every core journey completable end to end against mocks: earn, spend, redeem, open-view — **Spend and Open-view complete. Earn and Redeem do NOT, so this stays unticked.** QA pass 2026-09-19 in real Chrome (`apps/web/e2e/{earn,spend,redeem,open-view}-journey.spec.ts` + `wallet-merchant-qr-agreement.spec.ts`); suite 60 passed / 4 skipped.
   - **Redeem is broken by a fixture seam, and it breaks the core loop.** No voucher reachable from `/wallet` can be redeemed at any counter device: `provisioning-data.ts` can only provision merchants `…601/602/603`, while `voucher.mock.ts` assigns generated vouchers a random `faker.string.uuid()` and its named fixtures `…301/302`. The sets are disjoint by construction, so a real run always ends in `wrong_merchant`. Both features' own suites pass; only the seam is wrong. Earn → spend → **redeem** is the product's whole loop, so this blocks the prototype being shown, not just this box.
@@ -88,8 +89,12 @@ Verified: `tsc --noEmit` clean for everything touched (three pre-existing, unrel
 - [ ] Runs acceptably on a real mid-tier Android over 4G, tested on a physical device — needs a physical device, not this session's to close.
 
 ### YT-0451 · Merchant and user reaction sessions
-`todo` · PU · pilot · 4d · dep: YT-0450
+`blocked` · PU · pilot · 4d · dep: YT-0450
 
+- ⛔ **Founder asked whether the 25 participants can be seeded or simulated. They cannot, and this is the one task in the plan where that is true by design.**
+- Seeded users exercise the **software**; they cannot answer the question this task exists to ask, which is _will a real person watch twenty minutes for this reward_. A simulated participant returns whatever we built into them, so the task would go green having measured our own assumptions. **That is the "guarantees green by never running" failure applied to the product instead of the code** — and unlike the five instances of it found in CI this week, this one would not be caught by a test, because there is nothing to catch: the checkbox would be honestly ticked and the information would simply not exist
+- The cost of getting it wrong is asymmetric. This is **~4 days of talking to people** standing in front of **Phase 1’s 337 engineer-days**. It is the cheapest falsification available and the only one that can still change the plan
+- **What seeded users are genuinely good for** is YT-0549 — exercising the journeys, load, and the console’s empty and crowded states. Worth doing, and worth not confusing with this
 **Session protocol and materials for whoever runs this: [`_yt-0451-session-protocol.md`](_yt-0451-session-protocol.md).** Covers the merchant and user scripts, the exact unprompted-rate wording and coding rubric for the §2.6 falsification test, the thin-campaign fixture for both markets, a live recording template, and pass/fail criteria written in advance. It does not close any box below — only running the sessions does.
 
 - [ ] Walk 10 merchants through the business console and the redemption portal

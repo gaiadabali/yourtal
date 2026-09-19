@@ -58,20 +58,27 @@ This supersedes the GCP/Cloudflare shape in [`phase-0-foundation.md`](phase-0-fo
 ## The simulation seam
 
 ### YT-0535 · One driver interface per external boundary
-`todo` · P0 · platform · 3d · dep: YT-0031
+`review` · P0 · platform · 3d · dep: YT-0031
 
-- [ ] Each boundary — payments, disbursement, bot check, OTP, messaging, digital-goods supply, receipt ingest, moderation LLM — has **one interface and two implementations**, `simulated` and `live`
-- [ ] The driver is selected by configuration and **`simulated` is the default everywhere**, including CI and a fresh clone
-- [ ] Choosing `live` without the matching credential **fails at boot**, loudly — never falls back to the simulator, because a silent fallback in production is indistinguishable from working
-- [ ] No domain code imports a vendor SDK; a lint rule enforces it
+**`packages/drivers`, 60 tests. `pnpm verify` 11/11, 1745 tests, lint 11/11.**
+
+- [x] All eight boundaries have one interface and two implementations. `BOUNDARIES` in `boundary.ts` is the registry, and `registry.test.ts` asserts it agrees with what `createDrivers` wires — a boundary in code but not in the catalogue is one the parity suite (YT-0539) would never run against a vendor
+- [x] `simulated` is the default with **no configuration at all**, asserted for every boundary. Opting *in* to simulation would mean a missing variable reaches for a vendor, and the first person to notice is whoever gets the bill
+- [x] **Choosing `live` without its credential fails at boot, and never falls back** — a loop asserts this for all eight, not just payments. A typo (`Live`, `production`, `true`) is also a boot failure rather than a silent default: a typo that quietly means "simulated" is indistinguishable from choosing it. Every misconfigured boundary is reported at once, because fixing a deployment one restart at a time is a slow way to learn four variables are missing
+- [x] **`live` refuses at construction, not per call.** A driver that returns "not implemented" from each call boots, serves traffic, and fails one request at a time — indistinguishable from a vendor outage, and found by a user rather than a deploy. The two failures stay separable: *"you did not set the key"* and *"there is no implementation yet"* have different fixes, and the error names the ticket that will build it
+- [x] `eslint-rules/no-vendor-sdk.mjs`, applied repo-wide. **Verified it fires** — a `stripe` import in `packages/contracts` errors, the same import inside an adapter does not. Adapters are allowlisted inside the rule (`packages/drivers`, `packages/media`), next to the reasoning
+- [x] The money unit is a **declared property of the payments driver**, not inherited from storage. YT-0506 settled what we store, not what a processor accepts, so `declaredMinorUnitExponent` is what YT-0537's parity test compares against
 
 ### YT-0536 · Simulators that can fail
-`todo` · P0 · platform · 3d · dep: YT-0535
+`review` · P0 · platform · 3d · dep: YT-0535
 
-- [ ] Each simulator can be driven into **decline, timeout, duplicate webhook, out-of-order webhook, and 5xx-then-success**
-- [ ] The fault set is a named catalogue, not per-test ad-hoc mocking
-- [ ] **At least one test per boundary asserts the unhappy path**, because a simulator that only succeeds ships code whose error handling has never executed
-- [ ] ⚠️ Directly answers `docs/03` risk 37 — _guarantees that stay green by never running_
+- [x] All five faults, driveable on every boundary through one shared `FaultEngine` — so "what a timeout looks like" has one answer across payments, OTP and messaging rather than eight
+- [x] `FAULT_CATALOGUE` names each one with **the caller bug it catches**, not just an error code. A fault nobody can state the purpose of is one that gets deleted the first time it is inconvenient
+- [x] **The per-boundary coverage is itself asserted.** The exercise table is checked against `BOUNDARY_NAMES` in both directions, so a new boundary fails the suite until somebody writes its failing case, and an orphaned exercise cannot keep passing while testing nothing. Satisfying the criterion with eight tests and a promise to remember is the shape risk 37 keeps taking
+- [x] **Deterministic throughout** — no randomness, no wall-clock sleeps, and deterministic idempotency keys even in the retry test. A simulator that fails at random makes a flaky test, a flaky test gets retried until it passes, and a real failure then hides inside the retry
+- [x] `mayHaveSucceeded` is on the failure type, and `true` for timeouts. That is the whole reason the field exists: a caller retrying an uncertain operation without an idempotency key double-charges, so the uncertainty has to be something a caller must look at
+- [x] Webhook faults act on **delivery, not the call** — the request succeeds and the events arrive twice, or reversed. A caller that only tests the request path never sees either, which is exactly how they reach production
+- [x] ⚠️ **Faults cannot be switched on by environment**, only passed in by a test. A fault configurable from the outside is one that can reach a running deployment
 
 ### YT-0537 · Payment and disbursement simulator
 `todo` · P0 · platform · 3d · dep: YT-0535, YT-0536

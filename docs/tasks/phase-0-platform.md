@@ -268,3 +268,13 @@
 - [ ] Video source stored as `kind` plus its fields with a CHECK, so the discriminated union stays additive — an `mp4` fallback later must not alter the `hls` shape already in use
 - [ ] A campaign with zero chapters cannot exist in the database if the contract requires at least one. **If that turns out to be wrong for Quick campaigns, the contract is wrong and should say so** — do not relax the constraint to match an accident
 - [ ] The `fieldsAwaitingStorage` entry for these two fields is **removed** in the same pass. The gate asserts its own gap set, so closing a gap without deleting its line fails — which is the point
+
+### YT-0549 · Seeded user personas for journey and load testing
+`todo` · P0 · data · 2d · dep: YT-0519
+
+- **Founder asked for 25 seeded users (2026-09-20).** Worth building — for exercising the software. Deliberately **not** a substitute for YT-0451's reaction sessions, which measure whether real people will watch; see that ticket for why the two cannot be traded
+- [ ] ~25 personas spanning the states the UI must survive: **zero points, mid-balance, expiring points, a spent-out wallet, a redeemed voucher, an abandoned campaign, a suspended account**
+- [ ] Generated from the existing mock generators into the **real database**, so they are indistinguishable from production rows rather than a parallel fixture set
+- [ ] Both regions represented, with AUD and IDR balances that are correct in their own currency — a persona with Rupiah amounts in an Australian wallet tests nothing except our patience
+- [ ] ⚠️ **At least one persona exists to make a screen look bad**: the empty wallet, the merchant with one listing, the campaign nobody finished. Seeds that only contain healthy data hide exactly the states users complain about
+- [ ] Idempotent per the seeding rule in `docs/13` — idempotent **for a fixed contract**, so a contract change means `pnpm dev:fresh`, not a re-seed

@@ -140,3 +140,13 @@ Two things fell out of the same ticket that are worth generalising:
 
 - **A guarded fallback is still the path every test takes.** The idempotency store's in-memory branch was blocked in production, so it looked handled — but while it existed, every test used it, and an `INSERT ... ON CONFLICT DO NOTHING` exercised only as a `Map` proves nothing about the statement that does the work. **Delete the fallback; do not guard it.**
 - **"No constraints fired" deserves the same scrutiny as a failure.** The conversion was expected to be unpleasant and was not, and the reason was checked rather than assumed: the Drizzle schema already matched the migration column for column. So the honest claim is narrower than the ticket hoped — _the queries execute at all now_ — and the value arrives on the **next** schema change.
+
+## Two tests over one area is often one test and a bystander
+
+Ceiling rounding in the pricing engine was sabotaged to check the suite would catch it. The specific rounding test failed, as intended. **The margin-property test did not** — an 8-versus-6 spread absorbs a single point of rounding, so the property stayed true while the arithmetic was wrong.
+
+Nothing in a green run would have revealed that. Two tests appeared to cover the pricing formula; in fact **one test was holding that decision and the other was a bystander**, and if the rounding test were ever deleted as redundant the property test would keep passing over broken arithmetic.
+
+**Coverage tells you an area is tested. It does not tell you which test is load-bearing** — and those are different facts. The only way to learn the second is to break the behaviour and watch _which_ assertions fail. Where a rule matters, note in the test that it is the sole guard, so the next person deleting duplication knows which one is not duplicate.
+
+This also refines the break-it rule: do not stop at _the suite went red_. Ask **how many** assertions fired, and whether the ones you expected to were among them.

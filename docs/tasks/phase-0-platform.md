@@ -360,3 +360,20 @@
 - [ ] Authorization through the same `PrincipalService.resolve()` and `pdp.requireAction(...)` seam every existing route uses, so YT-0500 still changes only the body of `resolve()`
 - [ ] ⚠️ **Prove the wiring by breaking it**, per YT-0552: point the database at a dead host and confirm these routes fail. A suite that passes either way is testing nothing, and that is the failure this project has found seven times
 - [ ] ⚠️ **Until this lands, every `apps/web` screen is unverified against real data.** The UI is substantially built; it has just never met the backend
+
+### YT-0554 · The API must not connect to Postgres as a superuser
+`todo` · P0 · platform · 2d · dep: YT-0552
+
+- **Verified 2026-09-20: `pg_roles` shows `yourtal` with `rolsuper = t` and `rolbypassrls = t`, and `.env` points `DATABASE_URL` at it.** Only `apps/api/vitest.config.ts` uses the least-privilege `yourtal_app`
+- ⚠️ **So role separation is enforced in tests and bypassed by the running application.** Every grant boundary built so far is decorative at runtime: `REVOKE ALL ON SCHEMA ledger FROM yourtal_app`, `ledger.daily_proof` being INSERT/SELECT only so a day can be proved once, the append-only entry grants, the frozen `campaign.terms_version`. A superuser connection ignores all of it, and **`BYPASSRLS` means row-level security will not apply either, the moment RLS exists**
+- This is the eighth instance of the `docs/13c` pattern and the most expensive shape of it: not a gate that fails to check, but **a control that was built, tested, and then not used**
+- [ ] Two URLs: **Atlas keeps owner DDL rights for migrations; the application gets `yourtal_app` and nothing more**
+- [ ] A boot-time assertion that the application's connection is **not** a superuser and does **not** hold `BYPASSRLS`, failing loudly — the same rule the driver seam applies to `live` without a credential
+- [ ] ⚠️ **Prove it by breaking it**, and confirm the break lands: with the app role in place, a write to `ledger.entry` from the app must be refused. A green suite here proves nothing, because it is green today
+
+### YT-0555 · The schema-drift gate does not cover the business module
+`todo` · P0 · platform · 1d · dep: YT-0552
+
+- **Verified: `MAPPINGS` in `schema-drift.test.ts` covers listing, voucher, campaign, campaignTerms, campaignRewardConfig, watchSession and merchantLocation — and none of `businessSchema`, `BusinessMember`, `BillingContact` or `KybDocument`.** The gate that exists to catch a contract landing ahead of its migration **silently does not run for the one module that has a live API surface**
+- [ ] Business schemas added to `MAPPINGS`, with any genuine gaps recorded in `fieldsAwaitingStorage` rather than left implicit
+- [ ] ⚠️ **The gate should fail when a mapped schema is missing**, not only when a mapped field is. A per-schema opt-in list silently excludes whatever nobody remembered to add, which is the same failure one level up — the coverage table needs asserting in both directions, exactly as YT-0536 does for the boundary faults

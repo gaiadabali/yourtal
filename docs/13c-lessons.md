@@ -213,3 +213,35 @@ Idempotency is the property that made it safe to re-run and the property that hi
 This is the same shape as risk 45 one level along: **green because the interesting path never ran.** It joins the guarded in-memory fallback that every test quietly selected, and the CI suite whose Postgres-backed tests all skipped.
 
 **The check that costs nothing: run it against a fresh database before believing it.** `pnpm dev:fresh` rather than `pnpm db:seed`, and treat "it passed locally" for any idempotent job as unproven until it has run from empty.
+
+## On a bearer instrument, the holder is not an attribute of the value
+
+Anonymising a voucher needs to re-owner it to a tombstone. The coordinating session decided on `GRANT UPDATE (owner_id)`, reasoning that **the app may sever a subject from an instrument but may not alter what the instrument is worth**. That reasoning was wrong, and the implementing session refused it.
+
+**A column grant permits any value in that column.** `SET owner_id = <tombstone>` and `SET owner_id = <attacker>` are the same statement with a different parameter. On a bearer instrument the holder **is** who receives the money, so the grant would have handed anyone holding the application credential the entire voucher float — while every value column stayed reassuringly untouched. It was a re-owning grant described as a severing grant, and it protected the number rather than the money.
+
+**What landed instead:** `voucher.anonymise_owner(uuid)`, `SECURITY DEFINER`, with the tombstone **baked into the body as a constant rather than taken as a parameter** — so the app may perform the operation and cannot choose where the voucher lands. The app keeps no `UPDATE` on the table at all. Verified: app `UPDATE = f`, `EXECUTE = t`.
+
+Three details in it that are the difference between this and a new hole:
+
+- **Owned by `yourtal_voucher`, not the database owner.** A `SECURITY DEFINER` function owned by a superuser reintroduces risk 45 one layer down, wearing a function signature.
+- **`search_path` pinned.** A definer function that resolves its own table names through the caller's path can be aimed at a different table by the caller.
+- **It refuses the tombstone as a subject.** A no-op today; tomorrow an oracle reporting how many people had exercised erasure.
+
+**The general rule: least privilege is about the set of reachable end states, not the set of touched columns.** Ask what an attacker holding this credential can cause to be true — not which fields they can write.
+
+## Not every instance of a dangerous pattern is a bug
+
+After the NULL-defeats-a-CHECK finding, a sweep pulled every CHECK containing `OR` and drove each at its NULL case rather than reasoning about it. All refused correctly — but one, `CHECK (approved_by IS NULL OR approved_by <> requested_by)`, **passes with a NULL approver deliberately**, because a requested-but-unapproved batch is a legitimate row.
+
+What actually refuses an unapproved batch in a minting state is a companion constraint using `IS NOT NULL`. So **that constraint is only safe as a pair**, its first half reads exactly like the bug, and a later reader deleting the companion as redundant would open the hole. There is now a test asserting the pair, with the reasoning beside it.
+
+Two things follow. **A pattern match is a reason to look, not a verdict** — the sweep was right and three of three were fine. And **where safety lives in a pair, say so in both halves**, because the danger is not the constraint being wrong but a future reader being correct that one of them is redundant.
+
+## A test helper can disarm its own test
+
+A `placeHold` helper generated a fresh `gen_random_uuid()` merchant per call. The duplicate-order index is on `(merchant_id, merchant_order_ref)`, so the two holds it compared **were never duplicates and the constraint was never asked.**
+
+It was caught only because it failed **for the wrong reason** — expecting a rejection and receiving a uuid. Written to reuse a merchant by luck, it would have passed and covered nothing, and would have read as protection for a uniqueness rule that had never once been tested.
+
+**The setup is part of the test.** A helper that makes each case independent is usually good practice and is precisely what defeats a test about collisions. When asserting that two things conflict, check that they were eligible to conflict.

@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { NextIntlClientProvider } from "next-intl";
 import type { Region } from "@yourtal/contracts/region";
-import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah } from "@yourtal/contracts/money";
 import { RegionProvider } from "@/features/region/region-context";
 import { regionDisplayConfig } from "@/features/region/region-config";
 import enAU from "@/messages/en-AU/burn.json";

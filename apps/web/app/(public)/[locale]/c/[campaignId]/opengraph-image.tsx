@@ -19,7 +19,7 @@ export const contentType = PUBLIC_OG_IMAGE_CONTENT_TYPE;
 
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
-    listPublicCampaigns().map((campaign) => ({ locale, campaignId: campaign.id })),
+    listPublicCampaigns(locale).map((campaign) => ({ locale, campaignId: campaign.id })),
   );
 }
 
@@ -39,7 +39,7 @@ interface CampaignOgImageProps {
 export default async function CampaignOgImage({ params }: CampaignOgImageProps) {
   const { locale: rawLocale, campaignId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const campaign = getPublicCampaign(campaignId);
+  const campaign = getPublicCampaign(campaignId, locale);
   if (!campaign) {
     notFound();
   }

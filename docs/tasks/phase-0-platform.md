@@ -88,8 +88,11 @@
 - [ ] Each gap closes a metric that `docs/01` sells; until then the panels stay honest
 
 ### YT-0525 · Migrate hand-built forms to React Hook Form
-`todo` · PU · web · 2d · dep: —
+`review` · PU · web · 2d · dep: —
 - [ ] `docs/15` locked RHF + Zod resolver, but neither was ever installed — **now installed (2026-09-19)**
+- [x] Migrated the three genuine multi-field forms; Server Components and single-field forms left alone, matching this ticket’s own carve-outs
+- [ ] ⚠️ **`/onboarding/[region]/consent` measured 181.1 KB gz — over the 180 KB justify line**, for React Hook Form on a three-checkbox form. Under the 200 KB hard gate, so not a failure, but it is exactly the trade `docs/13b` §8 says must be stated rather than absorbed: is RHF worth a few KB on a form this small, or should that one stay hand-built?
+- [ ] ⚠️ **`phone-verification-flow.tsx` is 301 lines — one over the ceiling**, pre-existing and untouched by this work. Needs `PhoneEntryStep` / `CodeEntryStep` extracted
 - [ ] The campaign builder hand-built its forms against an uninstalled lock. Migrate them
 - [ ] Hand-rolled validation, error and dirty-state handling across a multi-step builder is exactly where form bugs live
 

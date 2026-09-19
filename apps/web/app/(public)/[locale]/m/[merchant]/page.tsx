@@ -10,8 +10,12 @@ import {
 import { getPublicTranslator } from "@/features/public/public-i18n";
 import { PublicBreadcrumbs } from "@/features/public/public-breadcrumbs";
 import { PublicMerchantContent } from "@/features/public/public-merchant-content";
-import { buildMerchantOrganizationJsonLd } from "@/features/public/public-jsonld";
+import {
+  buildMerchantLocalBusinessJsonLd,
+  buildMerchantOrganizationJsonLd,
+} from "@/features/public/public-jsonld";
 import { PublicJsonLdScript } from "@/features/public/public-json-ld-script";
+import { publicTwitterCard } from "@/features/public/public-twitter-card";
 
 /**
  * `/[locale]/m/[merchant]` — the public merchant page (YT-0431,
@@ -22,7 +26,7 @@ import { PublicJsonLdScript } from "@/features/public/public-json-ld-script";
  */
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
-    listPublicMerchants().map((merchant) => ({ locale, merchant: merchant.slug })),
+    listPublicMerchants(locale).map((merchant) => ({ locale, merchant: merchant.slug })),
   );
 }
 
@@ -35,24 +39,27 @@ interface PublicMerchantPageProps {
 export async function generateMetadata({ params }: PublicMerchantPageProps): Promise<Metadata> {
   const { locale: rawLocale, merchant: merchantSlug } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const merchant = getPublicMerchant(merchantSlug);
+  const merchant = getPublicMerchant(merchantSlug, locale);
   if (!merchant) {
     notFound();
   }
   const url = publicUrl(locale, `/m/${merchant.slug}`);
+  const description = `${merchant.name}'s campaigns and vouchers on YourTal.`;
+  const imageUrl = publicUrl(locale, `/m/${merchant.slug}/opengraph-image`);
 
   return {
     title: `${merchant.name} | YourTal`,
-    description: `${merchant.name}'s campaigns and vouchers on YourTal.`,
+    description,
     alternates: { canonical: url },
     openGraph: { title: merchant.name, url, type: "website" },
+    twitter: publicTwitterCard({ title: merchant.name, description, imageUrl }),
   };
 }
 
 export default async function PublicMerchantPage({ params }: PublicMerchantPageProps) {
   const { locale: rawLocale, merchant: merchantSlug } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const merchant = getPublicMerchant(merchantSlug);
+  const merchant = getPublicMerchant(merchantSlug, locale);
   if (!merchant) {
     notFound();
   }
@@ -61,6 +68,11 @@ export default async function PublicMerchantPage({ params }: PublicMerchantPageP
   const t = getPublicTranslator(config.intlLocale);
   const url = publicUrl(locale, `/m/${merchant.slug}`);
   const imageUrl = publicUrl(locale, `/m/${merchant.slug}/opengraph-image`);
+  const localBusinessJsonLd = buildMerchantLocalBusinessJsonLd({
+    merchant,
+    organizationUrl: url,
+    locale,
+  });
 
   return (
     <>
@@ -72,6 +84,7 @@ export default async function PublicMerchantPage({ params }: PublicMerchantPageP
       />
       <PublicMerchantContent merchant={merchant} locale={locale} localeConfig={config} />
       <PublicJsonLdScript data={buildMerchantOrganizationJsonLd({ merchant, url, imageUrl })} />
+      {localBusinessJsonLd && <PublicJsonLdScript data={localBusinessJsonLd} />}
     </>
   );
 }

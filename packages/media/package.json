@@ -1,0 +1,27 @@
+{
+  "name": "@yourtal/media",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./hls-origin": "./src/hls-origin.ts",
+    "./publish-fixture": "./src/publish-fixture.ts"
+  },
+  "scripts": {
+    "publish:fixture": "node --import @swc-node/register/esm-register src/publish-fixture.ts",
+    "fixture:generate": "node scripts/generate-fixture.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1130.0"
+  },
+  "devDependencies": {
+    "@swc-node/register": "^1.11.1",
+    "@swc/core": "^1.15.2",
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

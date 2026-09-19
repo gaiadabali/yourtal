@@ -4,6 +4,8 @@ import {
   mockCampaigns,
   zeroRewardCampaignFixture,
 } from "@yourtal/contracts/campaign/mock";
+import { REGION_CAMPAIGN_FIXTURES } from "@yourtal/contracts/region/mock";
+import type { PublicLocale } from "./public-locale";
 
 /**
  * Data access for the public campaign landing page (YT-0431,
@@ -28,25 +30,41 @@ import {
  *
  * Only Server Components under `app/(public)/**` import this module — there
  * is no client leaf in this feature (see this ticket's report).
+ *
+ * **Locale-scoped (YT-0181).** `"id"` keeps the exact catalogue this ticket
+ * always used; `"au"` reads `REGION_CAMPAIGN_FIXTURES.AU` from
+ * `@yourtal/contracts/region/mock` — a real, independently-seeded Sydney
+ * catalogue (see `public-locale.ts`'s header for why that used to not
+ * exist). Every lookup takes the locale rather than searching both, so an
+ * `/au/c/{id}` URL for an ID-only campaign 404s instead of silently serving
+ * Jakarta content under an Australian URL.
  */
-const PUBLIC_CAMPAIGN_CATALOGUE: Campaign[] = [
+const PUBLIC_CAMPAIGN_CATALOGUE_ID: Campaign[] = [
   ...mockCampaigns,
   zeroRewardCampaignFixture,
   longMerchantNameCampaignFixture,
 ];
 
+function catalogueFor(locale: PublicLocale): readonly Campaign[] {
+  if (locale === "au") {
+    const au = REGION_CAMPAIGN_FIXTURES.AU;
+    return [...au.catalogue, au.longMerchantName];
+  }
+  return PUBLIC_CAMPAIGN_CATALOGUE_ID;
+}
+
 /**
- * Every campaign in the fixed public catalogue, any status. Used by
- * `generateStaticParams` so a campaign that stops being active after being
- * indexed keeps its URL — mirroring `docs/11-seo-aeo-geo.md` §2.3's "expired
- * offers 301 to the merchant page, never 404" principle: link rot is worse
- * than an honestly-labelled non-live page. The page itself
+ * Every campaign in the fixed public catalogue for this locale, any status.
+ * Used by `generateStaticParams` so a campaign that stops being active after
+ * being indexed keeps its URL — mirroring `docs/11-seo-aeo-geo.md` §2.3's
+ * "expired offers 301 to the merchant page, never 404" principle: link rot
+ * is worse than an honestly-labelled non-live page. The page itself
  * (`app/(public)/[locale]/c/[campaignId]/page.tsx`) shows a "not currently
  * live" notice instead of the sign-up call to action for a non-active
  * campaign — see `public-campaign-content.tsx`.
  */
-export function listPublicCampaigns(): Campaign[] {
-  return [...PUBLIC_CAMPAIGN_CATALOGUE];
+export function listPublicCampaigns(locale: PublicLocale): Campaign[] {
+  return [...catalogueFor(locale)];
 }
 
 /**
@@ -56,11 +74,11 @@ export function listPublicCampaigns(): Campaign[] {
  * call to action, so it is never the thing another public page points a
  * visitor at.
  */
-export function listLivePublicCampaigns(): Campaign[] {
-  return PUBLIC_CAMPAIGN_CATALOGUE.filter((campaign) => campaign.status === "active");
+export function listLivePublicCampaigns(locale: PublicLocale): Campaign[] {
+  return catalogueFor(locale).filter((campaign) => campaign.status === "active");
 }
 
-/** A single campaign for the public landing page, or `undefined` if no such campaign exists in the fixed catalogue. */
-export function getPublicCampaign(campaignId: string): Campaign | undefined {
-  return PUBLIC_CAMPAIGN_CATALOGUE.find((campaign) => campaign.id === campaignId);
+/** A single campaign for the public landing page, or `undefined` if no such campaign exists in this locale's fixed catalogue. */
+export function getPublicCampaign(campaignId: string, locale: PublicLocale): Campaign | undefined {
+  return catalogueFor(locale).find((campaign) => campaign.id === campaignId);
 }

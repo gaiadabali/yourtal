@@ -7,6 +7,7 @@ import tseslint from "typescript-eslint";
 import prettier from "eslint-config-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
 import mustUseResult from "./eslint-rules/must-use-result.mjs";
+import noVendorSdk from "./eslint-rules/no-vendor-sdk.mjs";
 
 export default tseslint.config(
   {
@@ -152,6 +153,18 @@ export default tseslint.config(
     files: ["apps/api/**/*.ts", "packages/authz/**/*.ts"],
     plugins: { yt: { rules: { "must-use-result": mustUseResult } } },
     rules: { "yt/must-use-result": "error" },
+  },
+
+  // YT-0535: every external boundary stays behind the driver seam. Applied
+  // repo-wide, unlike `must-use-result`, because the rule needs no type
+  // information and the thing it prevents — a vendor import in domain code —
+  // is exactly as wrong in apps/web as in apps/api. The adapters that are
+  // ALLOWED to import a vendor are named inside the rule rather than here,
+  // so the allowlist sits next to the reasoning for it.
+  {
+    files: ["apps/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}", "services/**/*.ts"],
+    plugins: { ytBoundary: { rules: { "no-vendor-sdk": noVendorSdk } } },
+    rules: { "ytBoundary/no-vendor-sdk": "error" },
   },
 
   prettier,

@@ -2,6 +2,7 @@ import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Listing } from "@yourtal/contracts/listing";
 import { listLivePublicCampaigns } from "./public-campaign-data";
 import { listPublicListings } from "./public-listing-data";
+import type { PublicLocale } from "./public-locale";
 import { slugify } from "./public-slug";
 
 /**
@@ -60,17 +61,24 @@ function mostCommonDistrict(listings: readonly Listing[]): string | null {
   return best?.district ?? null;
 }
 
-/** Every merchant with at least one live public campaign or listing, grouped by `slugify(merchantName)`. */
-export function listPublicMerchants(): PublicMerchant[] {
+/**
+ * Every merchant with at least one live public campaign or listing in this
+ * locale's catalogue, grouped by `slugify(merchantName)`. Locale-scoped
+ * (YT-0181) the same way `public-campaign-data.ts`/`public-listing-data.ts`
+ * are: AU and ID read from independently-seeded catalogues, so a merchant
+ * grouping computed across both would risk merging two unrelated
+ * merchants that happen to share a slug across regions.
+ */
+export function listPublicMerchants(locale: PublicLocale): PublicMerchant[] {
   const bySlug = new Map<string, { name: string; campaigns: Campaign[]; listings: Listing[] }>();
 
-  for (const campaign of listLivePublicCampaigns()) {
+  for (const campaign of listLivePublicCampaigns(locale)) {
     const slug = slugify(campaign.merchantName);
     const entry = bySlug.get(slug) ?? { name: campaign.merchantName, campaigns: [], listings: [] };
     entry.campaigns.push(campaign);
     bySlug.set(slug, entry);
   }
-  for (const listing of listPublicListings()) {
+  for (const listing of listPublicListings(locale)) {
     const slug = slugify(listing.merchantName);
     const entry = bySlug.get(slug) ?? { name: listing.merchantName, campaigns: [], listings: [] };
     entry.listings.push(listing);
@@ -86,7 +94,7 @@ export function listPublicMerchants(): PublicMerchant[] {
   }));
 }
 
-/** A single merchant view for the public merchant page, or `undefined` if no campaign or listing carries this slug's name. */
-export function getPublicMerchant(slug: string): PublicMerchant | undefined {
-  return listPublicMerchants().find((merchant) => merchant.slug === slug);
+/** A single merchant view for the public merchant page, or `undefined` if no campaign or listing carries this slug's name in this locale. */
+export function getPublicMerchant(slug: string, locale: PublicLocale): PublicMerchant | undefined {
+  return listPublicMerchants(locale).find((merchant) => merchant.slug === slug);
 }

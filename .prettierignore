@@ -16,3 +16,10 @@ packages/contracts/openapi/go/
 # churn for no readability gain, and it pushed files over the 300-line rule.
 docs/tasks/
 TASKS.md
+
+# HLS media fixture (YT-0521). An extension collision, not a preference:
+# MPEG-TS segments are named `.ts`, the same extension TypeScript uses, so
+# Prettier picks its TypeScript parser and fails on the binary. That breaks
+# `prettier --check .` and the format CI gate for files that are video.
+# ESLint is unaffected — it is scoped to `src`.
+packages/media/fixtures/

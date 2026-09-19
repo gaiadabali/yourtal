@@ -1,0 +1,36 @@
+{
+  "name": "@yourtal/drivers",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./boundary": "./src/boundary.ts",
+    "./driver-mode": "./src/driver-mode.ts",
+    "./faults": "./src/faults.ts",
+    "./fault-engine": "./src/fault-engine.ts",
+    "./live-driver": "./src/live-driver.ts",
+    "./registry": "./src/registry.ts",
+    "./payments": "./src/boundaries/payments.ts",
+    "./disbursement": "./src/boundaries/disbursement.ts",
+    "./bot-check": "./src/boundaries/bot-check.ts",
+    "./otp": "./src/boundaries/otp.ts",
+    "./messaging": "./src/boundaries/messaging.ts",
+    "./digital-goods": "./src/boundaries/digital-goods.ts",
+    "./receipt-ingest": "./src/boundaries/receipt-ingest.ts",
+    "./moderation": "./src/boundaries/moderation.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@yourtal/contracts": "workspace:*",
+    "neverthrow": "8.2.0"
+  },
+  "devDependencies": {
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

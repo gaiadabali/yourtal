@@ -24,7 +24,8 @@
     "dev:psql": "docker exec -it yourtal-postgres psql -U yourtal -d yourtal",
     "db:migrate": "pnpm --filter @yourtal/db migrate",
     "db:seed": "pnpm --filter @yourtal/db seed",
-    "dev:fresh": "pnpm dev:reset && pnpm db:migrate && pnpm db:seed"
+    "media:publish": "pnpm --filter @yourtal/media publish:fixture",
+    "dev:fresh": "pnpm dev:reset && pnpm db:migrate && pnpm db:seed && pnpm media:publish"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -2,7 +2,7 @@ import type { Listing } from "@yourtal/contracts/listing";
 import { listingSchema } from "@yourtal/contracts/listing";
 import type { Balance } from "@yourtal/contracts/balance";
 import { balanceSchema } from "@yourtal/contracts/balance";
-import { rupiah, toIdrMinorUnits, toPoints } from "@yourtal/contracts/money";
+import { rupiah, toPoints } from "@yourtal/contracts/money";
 
 /**
  * Shared listing/balance builders for this feature's tests only (mirrors

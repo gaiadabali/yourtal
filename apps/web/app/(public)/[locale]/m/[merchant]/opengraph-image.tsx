@@ -18,7 +18,7 @@ export const contentType = PUBLIC_OG_IMAGE_CONTENT_TYPE;
 
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
-    listPublicMerchants().map((merchant) => ({ locale, merchant: merchant.slug })),
+    listPublicMerchants(locale).map((merchant) => ({ locale, merchant: merchant.slug })),
   );
 }
 
@@ -37,7 +37,7 @@ interface MerchantOgImageProps {
 export default async function MerchantOgImage({ params }: MerchantOgImageProps) {
   const { locale: rawLocale, merchant: merchantSlug } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const merchant = getPublicMerchant(merchantSlug);
+  const merchant = getPublicMerchant(merchantSlug, locale);
   if (!merchant) {
     notFound();
   }

@@ -5,7 +5,7 @@ import type { Question } from "@yourtal/contracts/question";
 import { questionSchema } from "@yourtal/contracts/question";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { voucherSchema } from "@yourtal/contracts/voucher";
-import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah } from "@yourtal/contracts/money";
 import {
   aggregateQuestionTypeCounts,
   summarizeQuestionBank,

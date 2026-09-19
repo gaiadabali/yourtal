@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@yourtal/ui/button";
 import {
   Dialog,
@@ -31,6 +32,11 @@ export interface TeamTransferDialogProps {
 
 type Step = "reauth" | "select";
 
+interface TransferFormValues {
+  password: string;
+  successorUserId: string;
+}
+
 /**
  * Two steps in one dialog, matching `policies/resource_policies/team.yaml`'s
  * `ownership-transfer-needs-fresh-reauth` rule: a step-up re-authentication
@@ -40,6 +46,13 @@ type Step = "reauth" | "select";
  * the two steps in normal use. Re-opening this dialog always restarts at
  * "reauth" — a stale re-authentication from a previous open is never reused
  * silently.
+ *
+ * Migrated to React Hook Form (YT-0525): `password` and `successorUserId`
+ * are the two real named fields, one per step, both driven by one `useForm`
+ * instance so `successorUserId` — like the pre-migration `useState` it
+ * replaces — deliberately survives `reset()` across a reauth failure; only
+ * `password` and the transient reauth/step state reset. No Zod schema is
+ * added for a two-field, two-step dialog with no cross-field rule.
  */
 export function TeamTransferDialog({
   open,
@@ -49,27 +62,35 @@ export function TeamTransferDialog({
   onTransfer,
 }: TeamTransferDialogProps) {
   const [step, setStep] = useState<Step>("reauth");
-  const [password, setPassword] = useState("");
   const [reauthenticatedAtMs, setReauthenticatedAtMs] = useState<number | null>(null);
-  const [successorUserId, setSuccessorUserId] = useState<string>(candidates[0]?.userId ?? "");
-  const [error, setError] = useState<string | null>(null);
+  const [transferError, setTransferError] = useState<string | null>(null);
   const successorSelectId = useId();
+  const {
+    register,
+    handleSubmit,
+    resetField,
+    watch,
+    setError,
+    formState: { errors },
+  } = useForm<TransferFormValues>({
+    defaultValues: { password: "", successorUserId: candidates[0]?.userId ?? "" },
+  });
+  const successorUserId = watch("successorUserId");
 
   function reset() {
     setStep("reauth");
-    setPassword("");
+    resetField("password");
     setReauthenticatedAtMs(null);
-    setError(null);
+    setTransferError(null);
   }
 
-  function submitReauth() {
-    const timestamp = onReauthenticate(password);
+  function submitReauth(values: TransferFormValues) {
+    const timestamp = onReauthenticate(values.password);
     if (timestamp === null) {
-      setError("Incorrect password.");
+      setError("password", { type: "server", message: "Incorrect password." });
       return;
     }
     setReauthenticatedAtMs(timestamp);
-    setError(null);
     setStep("select");
   }
 
@@ -79,7 +100,7 @@ export function TeamTransferDialog({
     }
     const failure = onTransfer(successorUserId, reauthenticatedAtMs);
     if (failure) {
-      setError(teamActionErrorMessage(failure));
+      setTransferError(teamActionErrorMessage(failure));
       // A stale re-auth surfaces here, not before — push the person back to step one honestly.
       if (failure.type === "reauth_expired" || failure.type === "reauth_required") {
         setStep("reauth");
@@ -111,19 +132,15 @@ export function TeamTransferDialog({
         </DialogHeader>
         {step === "reauth" ? (
           <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              submitReauth();
-            }}
+            onSubmit={(event) => void handleSubmit(submitReauth)(event)}
             className="flex flex-col gap-4"
           >
             <Input
               label="Password"
               type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
               required
-              {...(error ? { errorMessage: error } : {})}
+              {...register("password", { required: true })}
+              {...(errors.password?.message ? { errorMessage: errors.password.message } : {})}
             />
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
@@ -140,8 +157,7 @@ export function TeamTransferDialog({
               </label>
               <select
                 id={successorSelectId}
-                value={successorUserId}
-                onChange={(event) => setSuccessorUserId(event.target.value)}
+                {...register("successorUserId")}
                 className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm font-sans text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {candidates.map((candidate) => (
@@ -150,9 +166,9 @@ export function TeamTransferDialog({
                   </option>
                 ))}
               </select>
-              {error ? (
+              {transferError ? (
                 <p role="alert" className="text-xs font-sans text-danger">
-                  {error}
+                  {transferError}
                 </p>
               ) : null}
             </div>

@@ -20,7 +20,7 @@ export const contentType = PUBLIC_OG_IMAGE_CONTENT_TYPE;
 
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
-    listPublicListings().map((listing) => ({
+    listPublicListings(locale).map((listing) => ({
       locale,
       merchant: slugify(listing.merchantName),
       offerId: listing.id,
@@ -43,7 +43,7 @@ interface OfferOgImageProps {
 export default async function OfferOgImage({ params }: OfferOgImageProps) {
   const { locale: rawLocale, offerId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const listing = getPublicListing(offerId);
+  const listing = getPublicListing(offerId, locale);
   if (!listing) {
     notFound();
   }

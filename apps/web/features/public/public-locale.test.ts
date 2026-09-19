@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   GENERATED_PUBLIC_LOCALES,
   isPublicLocale,
+  publicLanguageAlternates,
   publicLocaleConfig,
   publicUrl,
   requirePublicLocale,
@@ -53,7 +54,25 @@ describe("requirePublicLocale", () => {
 });
 
 describe("GENERATED_PUBLIC_LOCALES", () => {
-  it("only pre-renders id today, per this module's documented scope decision", () => {
-    expect(GENERATED_PUBLIC_LOCALES).toEqual(["id"]);
+  // YT-0181: this used to be `["id"]` only — AU had a typed `PublicLocale`
+  // value but no generated catalogue, so `/au` 404d despite AU being the
+  // primary market (docs/08 §... / TASKS.md's own audit of this gap).
+  // `@yourtal/contracts/region/mock` now carries a real AU catalogue, so
+  // both locales generate. Asserting the full array, not just its length,
+  // so a future locale added to `PUBLIC_LOCALES` without a matching
+  // catalogue is caught here rather than discovered as a 404.
+  it("pre-renders both id and au now that a real AU catalogue exists", () => {
+    expect(GENERATED_PUBLIC_LOCALES).toEqual(["id", "au"]);
+  });
+});
+
+describe("publicLanguageAlternates", () => {
+  // Round-trip on a non-default locale (docs/13 §4: testing only "id", the
+  // default, would not catch "au" silently falling back to it).
+  it("keys each generated locale's URL by its BCP-47 tag", () => {
+    expect(publicLanguageAlternates("/rewards")).toEqual({
+      "id-ID": "https://yourtal.com/id/rewards",
+      "en-AU": "https://yourtal.com/au/rewards",
+    });
   });
 });

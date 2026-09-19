@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { listPublicListings } from "@/features/public/public-listing-data";
 import {
   GENERATED_PUBLIC_LOCALES,
+  publicLanguageAlternates,
   publicLocaleConfig,
   publicUrl,
   requirePublicLocale,
@@ -11,6 +12,7 @@ import { PublicBreadcrumbs } from "@/features/public/public-breadcrumbs";
 import { PublicCatalogueContent } from "@/features/public/public-catalogue-content";
 import { buildCatalogueItemListJsonLd } from "@/features/public/public-jsonld";
 import { PublicJsonLdScript } from "@/features/public/public-json-ld-script";
+import { publicTwitterCard } from "@/features/public/public-twitter-card";
 import { slugify } from "@/features/public/public-slug";
 
 /**
@@ -36,17 +38,23 @@ export async function generateMetadata({ params }: PublicCataloguePageProps): Pr
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
   const url = publicUrl(locale, "/rewards");
+  const imageUrl = publicUrl(locale, "/rewards/opengraph-image");
 
   return {
     title: t("catalogue.title"),
     description: t("catalogue.description"),
-    alternates: { canonical: url },
+    alternates: { canonical: url, languages: publicLanguageAlternates("/rewards") },
     openGraph: {
       title: t("catalogue.title"),
       description: t("catalogue.description"),
       url,
       type: "website",
     },
+    twitter: publicTwitterCard({
+      title: t("catalogue.title"),
+      description: t("catalogue.description"),
+      imageUrl,
+    }),
   };
 }
 
@@ -54,7 +62,7 @@ export default async function PublicCataloguePage({ params }: PublicCataloguePag
   const locale = requirePublicLocale((await params).locale);
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
-  const listings = listPublicListings();
+  const listings = listPublicListings(locale);
 
   return (
     <>

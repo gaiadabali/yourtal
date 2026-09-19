@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah } from "@yourtal/contracts/money";
 import { audCents } from "@yourtal/contracts/money/value";
 import {
   partialRedemptionPolicyDescription,

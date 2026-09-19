@@ -4,6 +4,7 @@ import { publicLocaleConfig } from "./public-locale";
 import {
   buildBreadcrumbJsonLd,
   buildCatalogueItemListJsonLd,
+  buildMerchantLocalBusinessJsonLd,
   buildMerchantOrganizationJsonLd,
   buildOfferProductJsonLd,
 } from "./public-jsonld";
@@ -65,6 +66,63 @@ describe("buildMerchantOrganizationJsonLd", () => {
     }) as { "@type": string };
 
     expect(jsonLd["@type"]).toBe("Organization");
+  });
+});
+
+describe("buildMerchantLocalBusinessJsonLd", () => {
+  it("returns null for a merchant with no listing at all", () => {
+    const jsonLd = buildMerchantLocalBusinessJsonLd({
+      merchant: {
+        slug: "no-listings",
+        name: "No Listings Co",
+        district: null,
+        campaigns: [],
+        listings: [],
+      },
+      organizationUrl: "https://yourtal.com/id/m/no-listings",
+      locale: "id",
+    });
+    expect(jsonLd).toBeNull();
+  });
+
+  it("emits one LocalBusiness node per distinct outlet, never fewer than the listing really has", () => {
+    // soldOutListingFixture is Kopi Sentosa, a single-location fixture.
+    const jsonLd = buildMerchantLocalBusinessJsonLd({
+      merchant: {
+        slug: "kopi-sentosa",
+        name: "Kopi Sentosa",
+        district: "Kemang",
+        campaigns: [],
+        listings: [soldOutListingFixture],
+      },
+      organizationUrl: "https://yourtal.com/id/m/kopi-sentosa",
+      locale: "id",
+    }) as { "@graph": { "@type": string; address: { addressCountry: string } }[] };
+
+    expect(jsonLd["@graph"]).toHaveLength(soldOutListingFixture.locations.length);
+    expect(jsonLd["@graph"][0]?.["@type"]).toBe("LocalBusiness");
+    expect(jsonLd["@graph"][0]?.address.addressCountry).toBe("ID");
+  });
+
+  it("does not collapse a multi-branch merchant into one node, and dedupes a shared location", () => {
+    const secondListing = {
+      ...soldOutListingFixture,
+      id: "00000000-0000-4000-8000-00000000dead",
+    };
+    const jsonLd = buildMerchantLocalBusinessJsonLd({
+      merchant: {
+        slug: "kopi-sentosa",
+        name: "Kopi Sentosa",
+        district: "Kemang",
+        campaigns: [],
+        // Two listings sharing the exact same location must not double it.
+        listings: [soldOutListingFixture, secondListing],
+      },
+      organizationUrl: "https://yourtal.com/id/m/kopi-sentosa",
+      locale: "id",
+    }) as { "@graph": unknown[] };
+
+    expect(jsonLd["@graph"]).toHaveLength(soldOutListingFixture.locations.length);
   });
 });
 

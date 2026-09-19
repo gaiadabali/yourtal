@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import type { SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
+import { useForm } from "react-hook-form";
+import type { UseFormRegisterReturn } from "react-hook-form";
 import type { Region } from "@yourtal/contracts/region";
 import { Button } from "@yourtal/ui/button";
 import { regionDisplayConfig } from "@/features/region/region-config";
@@ -15,6 +15,18 @@ export interface ConsentFormProps {
   region: Region;
   returnTo: string | null;
 }
+
+interface ConsentFormValues {
+  essential: boolean;
+  personalize: boolean;
+  marketing: boolean;
+}
+
+const DEFAULT_VALUES: ConsentFormValues = {
+  essential: false,
+  personalize: false,
+  marketing: false,
+};
 
 /**
  * Per-purpose consent (docs/tasks/phase-u-ui.md YT-0430; docs/03-regulatory-and-risk.md
@@ -30,23 +42,32 @@ export interface ConsentFormProps {
  * the submit button (immediate feedback once JS has loaded) — belt and
  * suspenders, matching `features/checkpoint/checkpoint-question-step.tsx`'s
  * `canProceed` pattern.
+ *
+ * Migrated to React Hook Form (YT-0525): three real, named boolean fields.
+ * `watch("essential")` replaces the old `useState` mirror so the submit
+ * button's `disabled` state stays reactive without a controlled `checked`
+ * prop on each checkbox — RHF's `register` is uncontrolled (ref-based), and
+ * that is enough here since nothing else needs to read a purpose's value
+ * outside submit. No Zod schema is added: the only rule this form ever
+ * enforced is "essential is required," which `register`'s own `required`
+ * option states directly.
  */
 export function ConsentForm({ region, returnTo }: ConsentFormProps) {
   const router = useRouter();
   const copy = getOnboardingCopy(regionDisplayConfig(region).locale).consent;
-  const [essential, setEssential] = useState(false);
-  const [personalize, setPersonalize] = useState(false);
-  const [marketing, setMarketing] = useState(false);
+  const { register, handleSubmit, watch } = useForm<ConsentFormValues>({
+    defaultValues: DEFAULT_VALUES,
+  });
+  const essential = watch("essential");
 
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!essential) {
+  function onSubmit(values: ConsentFormValues) {
+    if (!values.essential) {
       return;
     }
     saveOnboardingConsentChoice({
       essential: true,
-      personalize,
-      marketing,
+      personalize: values.personalize,
+      marketing: values.marketing,
       decidedAt: new Date().toISOString(),
     });
     // typedRoutes cast — see commit-region-action.ts for why `withReturnTo`'s
@@ -55,7 +76,7 @@ export function ConsentForm({ region, returnTo }: ConsentFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h2 className="text-xl font-sans font-semibold text-fg">{copy.heading}</h2>
         <p className="text-sm font-sans text-fg-muted">{copy.intro}</p>
@@ -65,8 +86,7 @@ export function ConsentForm({ region, returnTo }: ConsentFormProps) {
           id="onboarding-consent-essential"
           title={copy.essential.title}
           body={copy.essential.body}
-          checked={essential}
-          onChange={setEssential}
+          registration={register("essential", { required: true })}
           required
           hint={copy.requiredHint}
         />
@@ -74,15 +94,13 @@ export function ConsentForm({ region, returnTo }: ConsentFormProps) {
           id="onboarding-consent-personalize"
           title={copy.personalize.title}
           body={copy.personalize.body}
-          checked={personalize}
-          onChange={setPersonalize}
+          registration={register("personalize")}
         />
         <ConsentPurpose
           id="onboarding-consent-marketing"
           title={copy.marketing.title}
           body={copy.marketing.body}
-          checked={marketing}
-          onChange={setMarketing}
+          registration={register("marketing")}
         />
       </div>
       <Button type="submit" disabled={!essential}>
@@ -96,31 +114,21 @@ interface ConsentPurposeProps {
   id: string;
   title: string;
   body: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
+  registration: UseFormRegisterReturn;
   required?: boolean;
   hint?: string;
 }
 
-/** One purpose, one control, one plain-language explanation — unticked by default (initial `checked` always comes from a `useState(false)` above). */
-function ConsentPurpose({
-  id,
-  title,
-  body,
-  checked,
-  onChange,
-  required,
-  hint,
-}: ConsentPurposeProps) {
+/** One purpose, one control, one plain-language explanation — unticked by default (`DEFAULT_VALUES` above). */
+function ConsentPurpose({ id, title, body, registration, required, hint }: ConsentPurposeProps) {
   return (
     <div className="flex gap-3 rounded-lg border border-border bg-surface p-4">
       <input
         type="checkbox"
         id={id}
-        checked={checked}
         required={required}
-        onChange={(event) => onChange(event.target.checked)}
         className="mt-1 h-5 w-5 shrink-0 rounded border-border-strong text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        {...registration}
       />
       <label htmlFor={id} className="flex flex-col gap-1">
         <span className="text-sm font-sans font-semibold text-fg">

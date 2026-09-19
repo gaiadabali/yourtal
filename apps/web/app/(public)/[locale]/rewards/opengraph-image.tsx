@@ -35,7 +35,7 @@ export default async function CatalogueOgImage({ params }: CatalogueOgImageProps
   const locale = requirePublicLocale((await params).locale);
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
-  const count = listPublicListings().length;
+  const count = listPublicListings(locale).length;
   const rewardLine = `${count} ${t("merchant.offersHeading").toLowerCase()}`;
 
   return new ImageResponse(

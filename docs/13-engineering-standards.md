@@ -277,3 +277,25 @@ Both came out of the ledger proof work and generalise:
 
 - **Make the bad state unrepresentable rather than validated.** A voucher names a branch; a composite foreign key `(listing_id, location_id)` → `listing_location` means it cannot name a branch its own listing does not serve. A jsonb column would have matched the Zod shape more directly and bought nothing. The failure being prevented is a customer sent to a shop that has never heard of the offer.
 - **Do not offer the degraded mode as a constructor option.** The invariant checker takes an `Alerter` as a required argument, so there is no way to build one that can only log — because the version that can only log is the version that ships. The placeholder is named `LoggingAlerter`, for what it is, and carries the warning: _a pager that cannot fail is a pager that cannot tell you it did not reach anyone._
+
+## A `.example` file is an unguarded duplicate
+
+`.env.example` had drifted **seven keys ahead** of the working `.env` on this machine, including every `S3_*` value, and nothing said so — the media origin was simply unreachable until someone looked. The example file is a second copy of a contract with no drift test, which is the same shape as the schema copy, the OpenAPI description and the backing rate duplicated in four files.
+
+The asymmetry is what makes it bite: the example drifting *ahead* produces a missing key and a confusing runtime failure, while drifting *behind* produces nothing at all until a new machine is set up. **A startup check that names every key present in `.env.example` and absent from the environment costs almost nothing and converts both into one clear message.**
+
+## Check what a gate's command actually covers, not what its name implies
+
+`apps/web`'s lint script was `eslint app`. Every other package in the workspace lints `src`, which is where all of its code lives — but the web app keeps **68 files in `app/` and 486 in `features/`**. So `turbo run lint` reported green across the workspace while **87% of the web codebase had never been linted at all**, and eight real errors sat in it invisibly.
+
+This is the fifth instance this week of the same shape, and by now it is the house failure mode rather than a run of bad luck:
+
+| The gate | What it actually did |
+|---|---|
+| CI guarantees | Never ran a Postgres-backed test |
+| Two ledger proof tests | Skipped rather than failed |
+| `openapi:go:check` | Compared the generator's output to itself; nothing ever compiled the module |
+| YT-0521 at `review` | Carried the same criterion twice, ticked and unticked |
+| `turbo run lint` | Linted 68 files of 565 |
+
+Every one passed. Every one was believed to cover something it did not touch. **The question to ask at review is not “is the gate green” but “what set of files did this command actually read”** — and the cheapest way to answer it is to break something on purpose and watch the gate fail.

@@ -8,7 +8,7 @@ import {
 } from "@yourtal/contracts/listing/mock";
 import type { Balance } from "@yourtal/contracts/balance";
 import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
-import { pointsPriceFromSettlement, rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { pointsPriceFromSettlement, rupiah } from "@yourtal/contracts/money";
 import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "@yourtal/contracts/money/mock-backing-rate";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 

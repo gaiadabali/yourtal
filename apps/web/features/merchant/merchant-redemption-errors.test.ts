@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Voucher } from "@yourtal/contracts/voucher";
-import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah } from "@yourtal/contracts/money";
 import {
   classifyRedemptionEligibility,
   recoveryForRedemptionError,

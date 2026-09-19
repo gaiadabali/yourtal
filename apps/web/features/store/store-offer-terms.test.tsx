@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah } from "@yourtal/contracts/money";
 import { StoreOfferTerms } from "./store-offer-terms";
 
 describe("StoreOfferTerms", () => {

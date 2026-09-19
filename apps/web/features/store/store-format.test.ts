@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rupiah, toIdrMinorUnits, toPoints } from "@yourtal/contracts/money";
+import { rupiah, toPoints } from "@yourtal/contracts/money";
 import { formatExpiryDate, formatListingPrice, formatStockRemaining } from "./store-format";
 import { audCents } from "@yourtal/contracts/money/value";
 

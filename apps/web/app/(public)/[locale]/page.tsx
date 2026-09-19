@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   GENERATED_PUBLIC_LOCALES,
+  publicLanguageAlternates,
   publicLocaleConfig,
   publicUrl,
   requirePublicLocale,
@@ -24,7 +25,10 @@ export async function generateMetadata({ params }: PublicHomePageProps): Promise
   return {
     title: `YourTal ${config.countryName}`,
     description: t("catalogue.description"),
-    alternates: { canonical: publicUrl(locale, "/") },
+    alternates: {
+      canonical: publicUrl(locale, "/"),
+      languages: publicLanguageAlternates("/"),
+    },
   };
 }
 

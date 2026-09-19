@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
+import { useForm } from "react-hook-form";
 import type { BusinessTeamRole } from "@yourtal/contracts/business/team-role";
 import { Button } from "@yourtal/ui/button";
 import {
@@ -24,30 +25,41 @@ export interface TeamInviteDialogProps {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Invite-by-email form. `owner` is never an option — see `console-roles.ts`'s `ASSIGNABLE_ROLES` doc comment. */
+interface InviteFormValues {
+  email: string;
+  role: Exclude<BusinessTeamRole, "owner">;
+}
+
+const DEFAULT_VALUES: InviteFormValues = { email: "", role: "marketer" };
+
+/**
+ * Invite-by-email form. `owner` is never an option — see `console-roles.ts`'s
+ * `ASSIGNABLE_ROLES` doc comment.
+ *
+ * Migrated to React Hook Form (YT-0525): two real, named fields (email,
+ * role) with an actual validation rule (email format), which is exactly the
+ * shape RHF is for. No Zod schema exists for this two-field dialog and none
+ * is added — `register`'s own `required`/`pattern` rules replace the old
+ * hand-rolled regex check, matching what this form already checked and
+ * nothing more.
+ */
 export function TeamInviteDialog({ open, onOpenChange, onInvite }: TeamInviteDialogProps) {
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<Exclude<BusinessTeamRole, "owner">>("marketer");
-  const [error, setError] = useState<string | null>(null);
   const roleSelectId = useId();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm<InviteFormValues>({ defaultValues: DEFAULT_VALUES });
 
-  function reset() {
-    setEmail("");
-    setRole("marketer");
-    setError(null);
-  }
-
-  function submitInvite() {
-    if (!EMAIL_PATTERN.test(email)) {
-      setError("Enter a valid email address.");
-      return;
-    }
-    const failure = onInvite(email, role);
+  function submitInvite(values: InviteFormValues) {
+    const failure = onInvite(values.email, values.role);
     if (failure) {
-      setError(teamActionErrorMessage(failure));
+      setError("email", { type: "server", message: teamActionErrorMessage(failure) });
       return;
     }
-    reset();
+    reset(DEFAULT_VALUES);
     onOpenChange(false);
   }
 
@@ -56,7 +68,7 @@ export function TeamInviteDialog({ open, onOpenChange, onInvite }: TeamInviteDia
       open={open}
       onOpenChange={(next) => {
         if (!next) {
-          reset();
+          reset(DEFAULT_VALUES);
         }
         onOpenChange(next);
       }}
@@ -70,19 +82,18 @@ export function TeamInviteDialog({ open, onOpenChange, onInvite }: TeamInviteDia
           </DialogDescription>
         </DialogHeader>
         <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            submitInvite();
-          }}
+          onSubmit={(event) => void handleSubmit(submitInvite)(event)}
           className="flex flex-col gap-4"
         >
           <Input
             label="Email"
             type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
             required
-            {...(error ? { errorMessage: error } : {})}
+            {...register("email", {
+              required: "Enter a valid email address.",
+              pattern: { value: EMAIL_PATTERN, message: "Enter a valid email address." },
+            })}
+            {...(errors.email?.message ? { errorMessage: errors.email.message } : {})}
           />
           <div className="flex flex-col gap-1.5">
             <label htmlFor={roleSelectId} className="text-sm font-sans font-medium text-fg">
@@ -90,10 +101,7 @@ export function TeamInviteDialog({ open, onOpenChange, onInvite }: TeamInviteDia
             </label>
             <select
               id={roleSelectId}
-              value={role}
-              onChange={(event) =>
-                setRole(event.target.value as Exclude<BusinessTeamRole, "owner">)
-              }
+              {...register("role")}
               className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm font-sans text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {ASSIGNABLE_ROLES.map((assignableRole) => (

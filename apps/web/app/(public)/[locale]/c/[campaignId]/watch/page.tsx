@@ -4,6 +4,7 @@ import { deriveChapters } from "@/features/player/derive-chapters";
 import { computeOpenViewCopy } from "@/features/open-view/open-view-copy";
 import { OpenViewPlayer } from "@/features/open-view/open-view-player";
 import { getPublicCampaign, listLivePublicCampaigns } from "@/features/public/public-campaign-data";
+import type { PublicLocale } from "@/features/public/public-locale";
 import {
   GENERATED_PUBLIC_LOCALES,
   publicLocaleConfig,
@@ -26,7 +27,7 @@ import { slugify } from "@/features/public/public-slug";
  */
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
-    listLivePublicCampaigns().map((campaign) => ({ locale, campaignId: campaign.id })),
+    listLivePublicCampaigns(locale).map((campaign) => ({ locale, campaignId: campaign.id })),
   );
 }
 
@@ -36,8 +37,8 @@ interface OpenViewWatchPageProps {
   params: Promise<{ locale: string; campaignId: string }>;
 }
 
-function requireLiveCampaign(campaignId: string) {
-  const campaign = getPublicCampaign(campaignId);
+function requireLiveCampaign(campaignId: string, locale: PublicLocale) {
+  const campaign = getPublicCampaign(campaignId, locale);
   if (!campaign || campaign.status !== "active") {
     notFound();
   }
@@ -47,7 +48,7 @@ function requireLiveCampaign(campaignId: string) {
 export async function generateMetadata({ params }: OpenViewWatchPageProps): Promise<Metadata> {
   const { locale: rawLocale, campaignId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const campaign = requireLiveCampaign(campaignId);
+  const campaign = requireLiveCampaign(campaignId, locale);
   const url = publicUrl(locale, `/c/${campaign.id}/watch`);
 
   return {
@@ -66,7 +67,7 @@ export async function generateMetadata({ params }: OpenViewWatchPageProps): Prom
 export default async function OpenViewWatchPage({ params }: OpenViewWatchPageProps) {
   const { locale: rawLocale, campaignId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const campaign = requireLiveCampaign(campaignId);
+  const campaign = requireLiveCampaign(campaignId, locale);
 
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);

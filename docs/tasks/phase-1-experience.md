@@ -75,15 +75,23 @@
 ## SEO
 
 ### YT-0180 · Public catalogue and merchant pages
-`todo` · P1 · seo · 5d · dep: YT-0132
+`review` · P1 · seo · 2d · dep: YT-0132
 
-- [ ] Offer and merchant pages server-rendered, indexable, with canonical URLs
-- [ ] JSON-LD for Offer, LocalBusiness and BreadcrumbList
-- [ ] Dynamic sitemap covering the whole catalogue
+- [x] **Both gaps closed and verified in built HTML, not asserted.** `LocalBusiness` is emitted **one node per distinct outlet**, each `branchOf` the existing `Organization` — a three-branch merchant gets three nodes, never one. It returns nothing for a merchant known only from a campaign, because inventing an address is worse than omitting the markup
+- [x] `sitemap.ts` and `robots.ts` exist. The sitemap is generated from the same locale-scoped catalogue calls the routes already use, so it cannot drift from what is actually published; `lastModified` comes only from campaigns’ real `publishedAt` and is omitted where no comparable field exists rather than fabricated
+- [x] **`robots.ts` is an allowlist** (`Allow: /id`, `Allow: /au`, `Disallow: /`) rather than a denylist of private routes — so a future private route stays unindexed with no robots change. A denylist fails open, which is the wrong direction to fail for a page nobody meant to publish
+- **Audited 2026-09-20: Phase U built most of this and the `seo` epic was reading 0/5 because of it.** Estimate cut 5d → 2d; only the two gaps below remain. Third time a Phase U deliverable was left unrecorded in another phase
+- [x] Offer and merchant pages server-rendered, indexable, with canonical URLs — `/[locale]/m/[merchant]` and `/[locale]/rewards/[merchant]/[offerId]` ship with `alternates.canonical`
+- [x] JSON-LD for Offer and BreadcrumbList — both emitted by `public-jsonld.ts`, alongside Product, Organization and ItemList
+- [ ] ⚠️ **LocalBusiness is missing.** The page emits `Organization` and `Brand`, which do not carry address or geo — and `LocalBusiness` is the type that earns a place in local search results, which is the whole point of a merchant page. It also needs the `locations[]` work from YT-0502 to say anything true about branches
+- [ ] ⚠️ **There is no sitemap and no robots.txt at all.** No `sitemap.ts`, no `robots.ts` anywhere in `apps/web/app`. Every public page is currently discoverable only by a link someone already followed
 
 ### YT-0181 · Internationalised routing and hreflang
-`todo` · P1 · seo · 3d · dep: YT-0058, YT-0180
+`review` · P1 · seo · 3d · dep: YT-0058, YT-0180
 
+- [x] ✅ **`/au` serves.** `GENERATED_PUBLIC_LOCALES` is now `["id", "au"]` and `next build` emits `● /au` with genuinely Australian data (Cedar Deli Bar, Sydney CBD Cafe — not Jakarta content under an Australian URL). This was the widest gap between plan and build: **Australia is the primary market and its entire public surface returned 404**
+- [x] Locale-scoped data readers never search both catalogues, so an `/au/...` URL for an ID-only entity 404s rather than leaking Jakarta content
+- [x] ⚠️ **hreflang is deliberately limited to the home and catalogue-hub pages**, and this refusal is the interesting part: AU and ID read disjoint, independently seeded catalogues, so a specific Jakarta campaign has **no Australian counterpart**. Declaring one would tell a crawler that two unrelated pages are the same content. When the catalogues genuinely mirror, this expands
 - [ ] Subdirectory locale routing with correct hreflang pairs for id-ID and en-AU
 - [ ] Country content genuinely separated — no cross-region offers leak into a sitemap
 
@@ -202,8 +210,12 @@
 - [ ] Never autoplays into an item the user did not choose to reach
 
 ### YT-0205 · Logged-out surfaces
-`todo` · P1 · seo · 4d · dep: YT-0180
+`blocked` · P1 · seo · 4d · dep: YT-0180
 
+- ⛔ **BLOCKED on a product decision, not on engineering (2026-09-20).** This task asks for a **≤90-second preview** that plays without an account. **YT-0432 already shipped the opposite, deliberately**: anonymous **full-length** playback with no cap, with a sign-up prompt at completion, and its doc comments argue the case at length
+- Both are defensible and they are mutually exclusive. A teaser converts on curiosity; full playback converts on reciprocity and is what makes a shared campaign link work for the recipient — which `docs/19` §5 calls the precondition for every sharing mechanic
+- The frontend stream **declined to add the cap**, correctly: silently regressing a shipped, deliberately designed feature to satisfy stale AC text is not a call an implementer should make
+- [ ] ⚠️ **Founder decides: update this AC to match YT-0432, or revisit YT-0432.** Until then the other criteria are met and this is the only open item
 - [ ] Anonymous visitors can browse the catalogue, offer, merchant and campaign pages
 - [ ] A ≤90 s campaign preview plays without an account and accrues nothing
 - [ ] No anonymous watch-then-claim path exists anywhere
@@ -225,8 +237,10 @@
 - [ ] Share events attributed so we can measure which moments actually spread
 
 ### YT-0212 · Open Graph and share cards on public pages
-`todo` · P1 · seo · 3d · dep: YT-0205, YT-0180
+`review` · P1 · seo · 3d · dep: YT-0205, YT-0180
 
+- [x] **The gap was not what the ticket assumed.** Phase U had already shipped real OG cards on all four public page types; what was missing everywhere was `twitter:card`. Next’s `opengraph-image.tsx` convention emits only `og:image`, so Twitter/X rendered no card at all despite the image existing
+- [x] The Twitter tags reuse the exact title, description and image URL the OG metadata already computes, so **the two cannot drift by construction** rather than by discipline
 - [ ] Campaign, offer and merchant pages carry OG and Twitter card metadata with a generated image
 - [ ] Image states reward value, duration and merchant; generated at build or on demand and cached
 - [ ] Renders correctly in WhatsApp, Instagram and Facebook previews

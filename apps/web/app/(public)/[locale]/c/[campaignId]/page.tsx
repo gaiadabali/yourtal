@@ -10,6 +10,7 @@ import {
 import { getPublicTranslator } from "@/features/public/public-i18n";
 import { PublicBreadcrumbs } from "@/features/public/public-breadcrumbs";
 import { PublicCampaignContent } from "@/features/public/public-campaign-content";
+import { publicTwitterCard } from "@/features/public/public-twitter-card";
 import { slugify } from "@/features/public/public-slug";
 
 /**
@@ -23,7 +24,7 @@ import { slugify } from "@/features/public/public-slug";
  */
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
-    listPublicCampaigns().map((campaign) => ({ locale, campaignId: campaign.id })),
+    listPublicCampaigns(locale).map((campaign) => ({ locale, campaignId: campaign.id })),
   );
 }
 
@@ -36,24 +37,26 @@ interface PublicCampaignPageProps {
 export async function generateMetadata({ params }: PublicCampaignPageProps): Promise<Metadata> {
   const { locale: rawLocale, campaignId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const campaign = getPublicCampaign(campaignId);
+  const campaign = getPublicCampaign(campaignId, locale);
   if (!campaign) {
     notFound();
   }
   const url = publicUrl(locale, `/c/${campaign.id}`);
+  const imageUrl = publicUrl(locale, `/c/${campaign.id}/opengraph-image`);
 
   return {
     title: `${campaign.title} — ${campaign.merchantName} | YourTal`,
     description: campaign.synopsis,
     alternates: { canonical: url },
     openGraph: { title: campaign.title, description: campaign.synopsis, url, type: "website" },
+    twitter: publicTwitterCard({ title: campaign.title, description: campaign.synopsis, imageUrl }),
   };
 }
 
 export default async function PublicCampaignPage({ params }: PublicCampaignPageProps) {
   const { locale: rawLocale, campaignId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const campaign = getPublicCampaign(campaignId);
+  const campaign = getPublicCampaign(campaignId, locale);
   if (!campaign) {
     notFound();
   }

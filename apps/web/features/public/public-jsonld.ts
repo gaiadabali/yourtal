@@ -1,6 +1,6 @@
 import type { Listing } from "@yourtal/contracts/listing";
 import type { PublicMerchant } from "./public-merchant";
-import type { PublicLocaleConfig } from "./public-locale";
+import type { PublicLocale, PublicLocaleConfig } from "./public-locale";
 import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
 
 /**
@@ -21,14 +21,20 @@ import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
  *   Revisit once the campaign contract carries a real media asset (this is
  *   also that campaign page's own honest reason for not embedding a player —
  *   Open Viewing, YT-0432, is not built yet either).
- * - **`LocalBusiness` (or a subtype like `CafeOrCoffeeShop`, docs/11 §5.2's
- *   own example) on the merchant page** — `LocalBusiness` implies a real
- *   physical presence, and this ticket's merchant view
- *   (`public-merchant.ts`) is assembled from `merchantName` alone, with no
- *   address, geo-coordinates or category-to-premises signal (a
- *   `digital_goods` listing does not imply a shop front). `Organization` is
- *   the schema.org type every merchant genuinely satisfies regardless of
- *   physical presence, so that is what is emitted instead.
+ * - **`LocalBusiness` when a merchant's view carries no listing at all** —
+ *   `public-merchant.ts`'s view is grouped from whatever campaigns and
+ *   listings share a merchant's name, and a merchant known only from a
+ *   campaign has no address anywhere in this data (campaigns carry no
+ *   location). `Organization` is what such a merchant genuinely satisfies;
+ *   `buildMerchantLocalBusinessJsonLd` below returns `null` for exactly
+ *   this case rather than fabricate a premises.
+ *
+ * **YT-0180: `LocalBusiness` now IS built** once a merchant has at least one
+ * listing, from that listing's real `locations[]` (`merchant-location.ts`) —
+ * a genuine street address and district, no geocoding, no invented category.
+ * `listingDistrictLabel`'s rule applies here too: a merchant with branches
+ * in more than one place is never described as if it had one. See
+ * `buildMerchantLocalBusinessJsonLd`'s own doc comment for the shape.
  */
 
 export interface JsonLdBreadcrumbItem {
@@ -124,6 +130,74 @@ export function buildMerchantOrganizationJsonLd(params: {
     url,
     image: [imageUrl],
   };
+}
+
+/** ISO 3166-1 alpha-2, for `PostalAddress.addressCountry` — schema.org accepts a country name but the two-letter code is the form Google's own examples use. */
+const PUBLIC_LOCALE_COUNTRY_CODE: Record<PublicLocale, string> = { id: "ID", au: "AU" };
+
+interface MerchantLocationLike {
+  id: string;
+  name: string;
+  address: string;
+  district: string;
+}
+
+/**
+ * `LocalBusiness` per outlet, for a merchant whose listings carry real
+ * `locations[]` (docs/11 §5.2 names `LocalBusiness`/`CafeOrCoffeeShop` as
+ * the type that earns local-search placement; this file's header explains
+ * why it used to be skipped entirely).
+ *
+ * Returns `null` for a merchant with no listing at all — see this file's
+ * header for why `Organization` alone is the honest type there.
+ *
+ * **One `LocalBusiness` node per outlet, every one `branchOf` the parent
+ * `Organization`** (`buildMerchantOrganizationJsonLd`'s `@id`) — never a
+ * single `LocalBusiness` standing in for however many branches a merchant
+ * actually has. A merchant with one outlet gets one node; a merchant with
+ * three gets three, each with its own real address. This is the same rule
+ * `listing-locations.ts`'s `listingDistrictLabel` enforces for display: a
+ * multi-branch merchant is never described as single-site, here in
+ * structured data rather than on-screen.
+ */
+export function buildMerchantLocalBusinessJsonLd(params: {
+  merchant: PublicMerchant;
+  organizationUrl: string;
+  locale: PublicLocale;
+}): object | null {
+  const { merchant, organizationUrl, locale } = params;
+  const locations = distinctMerchantLocations(merchant.listings);
+  if (locations.length === 0) {
+    return null;
+  }
+
+  const addressCountry = PUBLIC_LOCALE_COUNTRY_CODE[locale];
+  return {
+    "@context": "https://schema.org",
+    "@graph": locations.map((location) => ({
+      "@type": "LocalBusiness",
+      "@id": `${organizationUrl}#location-${location.id}`,
+      name: locations.length === 1 ? merchant.name : `${merchant.name} — ${location.name}`,
+      branchOf: { "@id": `${organizationUrl}#organization` },
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: location.address,
+        addressLocality: location.district,
+        addressCountry,
+      },
+    })),
+  };
+}
+
+/** Every location a merchant's listings reach, deduplicated by `id` — a location serving several listings must not become several `LocalBusiness` nodes. */
+function distinctMerchantLocations(listings: readonly Listing[]): MerchantLocationLike[] {
+  const byId = new Map<string, MerchantLocationLike>();
+  for (const listing of listings) {
+    for (const location of listing.locations) {
+      byId.set(location.id, location);
+    }
+  }
+  return [...byId.values()];
 }
 
 /** `ItemList` for the catalogue hub (docs/11 §5: "Helps carousel eligibility and list extraction"). */

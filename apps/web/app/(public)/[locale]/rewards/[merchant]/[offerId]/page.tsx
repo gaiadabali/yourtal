@@ -12,6 +12,7 @@ import { PublicBreadcrumbs } from "@/features/public/public-breadcrumbs";
 import { PublicOfferContent } from "@/features/public/public-offer-content";
 import { buildOfferProductJsonLd } from "@/features/public/public-jsonld";
 import { PublicJsonLdScript } from "@/features/public/public-json-ld-script";
+import { publicTwitterCard } from "@/features/public/public-twitter-card";
 import { slugify } from "@/features/public/public-slug";
 
 /**
@@ -24,7 +25,7 @@ import { slugify } from "@/features/public/public-slug";
  */
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
-    listPublicListings().map((listing) => ({
+    listPublicListings(locale).map((listing) => ({
       locale,
       merchant: slugify(listing.merchantName),
       offerId: listing.id,
@@ -41,25 +42,31 @@ interface PublicOfferPageProps {
 export async function generateMetadata({ params }: PublicOfferPageProps): Promise<Metadata> {
   const { locale: rawLocale, offerId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const listing = getPublicListing(offerId);
+  const listing = getPublicListing(offerId, locale);
   if (!listing) {
     notFound();
   }
   const merchantSlug = slugify(listing.merchantName);
   const url = publicUrl(locale, `/rewards/${merchantSlug}/${listing.id}`);
+  const imageUrl = publicUrl(locale, `/rewards/${merchantSlug}/${listing.id}/opengraph-image`);
 
   return {
     title: `${listing.title} — ${listing.merchantName} | YourTal`,
     description: listing.description,
     alternates: { canonical: url },
     openGraph: { title: listing.title, description: listing.description, url, type: "website" },
+    twitter: publicTwitterCard({
+      title: listing.title,
+      description: listing.description,
+      imageUrl,
+    }),
   };
 }
 
 export default async function PublicOfferPage({ params }: PublicOfferPageProps) {
   const { locale: rawLocale, offerId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const listing = getPublicListing(offerId);
+  const listing = getPublicListing(offerId, locale);
   if (!listing) {
     notFound();
   }

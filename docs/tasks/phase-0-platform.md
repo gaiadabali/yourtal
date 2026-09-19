@@ -446,7 +446,16 @@
 - [ ] ⚠️ **Sweep for the vocabulary, do not fix only this string.** Risk 44 was found by grepping `earned` / `so far` / `accrued`; add **`received` / `diterima` / `total`** to that sweep. A superseded model leaves its words behind in copy long after the logic moves
 
 ### YT-0565 · The ledger schema-drift regex fails open
-`todo` · P0 · value · 2h · dep: —
+`review` · P0 · value · 2h · dep: —
+
+**Done. 100 Go tests, 0 skips; `pnpm verify` 11/11.**
+
+- [x] **The fix is not a better pattern.** Widening `[a-z_]+` to `[a-z0-9_]+` would have fixed today's instance and left the shape intact. Every line inside a `CREATE TABLE` block is now classified — column, table-level clause, comment, or **error**. The guard fails on input it does not understand rather than covering less of it
+- [x] An empty column list is now a failure too. A renamed table previously yielded no expectation, and an empty expectation compares nothing and passes
+- [x] `backing_rate` is in the table list (landed by `yourtal-5a`); a table the loop does not name is one the guard cannot see drift in
+- [x] **Six parser unit tests that need no database.** The DB-backed guard skips without Postgres, so the parser — which is where the defect was — had no coverage in `go test ./...` at all. These run everywhere the module builds
+- [x] **Proved by breaking it.** Planted `sha256_digest` in `db/schema.sql` with no matching column in the database: the guard now reports the drift. Under the old pattern that column was unmatched and therefore never compared, so the test would have passed
+- The general form, now in `docs/13c`: **every parser-based check needs one question asked of it — what does it do with input it does not recognise?** If the answer is "skips it", its coverage is whatever the pattern happens to match, which is not a set anyone has reviewed
 
 - `services/ledger/internal/store/schema_test.go`'s `columnPattern` is `[a-z_]+`, so **it cannot match a column name containing a digit**. An unmatched column is **not compared** — the gate fails open rather than erroring, so coverage shrinks silently
 - It works today only by luck: **no `ledger` column has a digit**, verified. The identical pattern in the voucher service silently dropped `manifest_sha256` and then reported a drift that did not exist — the same defect, loud in one place and invisible in the other

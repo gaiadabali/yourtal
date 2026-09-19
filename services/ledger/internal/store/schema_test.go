@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"regexp"
 	"sort"
@@ -24,7 +25,21 @@ import (
 
 const ledgerURL = "postgres://yourtal_ledger:ledger_local_only@127.0.0.1:26432/yourtal"
 
-var columnPattern = regexp.MustCompile(`(?m)^\s{2}([a-z_]+)\s`)
+// A column name: lowercase, may contain digits. The digits matter — see
+// `columnsDeclaredFor` for what the old `[a-z_]+` did to names containing
+// one, which was nothing, silently.
+var identifierPattern = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
+
+// Table-level clauses that appear at the same indentation as a column and
+// are not one.
+var tableLevelClauses = map[string]bool{
+	"constraint": true,
+	"primary":    true,
+	"unique":     true,
+	"foreign":    true,
+	"check":      true,
+	"exclude":    true,
+}
 
 func TestSqlcSchemaMatchesTheLiveDatabase(t *testing.T) {
 	url := os.Getenv("LEDGER_DATABASE_URL")
@@ -52,15 +67,23 @@ func TestSqlcSchemaMatchesTheLiveDatabase(t *testing.T) {
 	// sqlc types against but this loop does not name is one the guard cannot
 	// see drift in, which is the same fail-open shape the guard exists to
 	// prevent — the list is the coverage.
-	//
-	// ⚠️ `columnPattern` above is `[a-z_]+` and therefore cannot match a
-	// column name containing a digit. No ledger column has one today, so it
-	// works here; the identical pattern in services/voucher silently dropped
-	// `manifest_sha256` and reported a drift that did not exist. Worth
-	// widening to `[a-z_0-9]+` before a digit-bearing column arrives.
 	for _, table := range []string{"account", "transfer", "entry", "backing_rate"} {
 		t.Run(table, func(t *testing.T) {
-			want := columnsDeclaredFor(string(declared), table)
+			want, err := columnsDeclaredFor(string(declared), table)
+			if err != nil {
+				// A parse failure is a FAILURE, never a skip. That is the
+				// whole of YT-0565: the previous version could not recognise
+				// a column name containing a digit and simply did not compare
+				// it, so the guard's coverage was whatever the pattern
+				// happened to match rather than a set anyone had reviewed.
+				t.Fatalf("cannot read ledger.%s from db/schema.sql: %v", table, err)
+			}
+			if len(want) == 0 {
+				// An empty expectation compares nothing and passes. A
+				// renamed table would otherwise make this guard green by
+				// having no opinion at all.
+				t.Fatalf("no columns found for ledger.%s in db/schema.sql", table)
+			}
 			got := columnsInDatabase(ctx, t, pool, table)
 
 			if strings.Join(want, ",") != strings.Join(got, ",") {
@@ -75,29 +98,67 @@ func TestSqlcSchemaMatchesTheLiveDatabase(t *testing.T) {
 }
 
 // Pulls the column names out of one CREATE TABLE block in the sqlc schema.
-// Crude on purpose: a parser would be a second thing to get wrong, and the
-// file it reads is one we control and keep simple.
-func columnsDeclaredFor(schema, table string) []string {
-	start := strings.Index(schema, "CREATE TABLE ledger."+table+" (")
+//
+// # Every line is classified, and anything unrecognised is an error
+//
+// This used to be a regex scan: `^\s{2}([a-z_]+)\s`, collecting whatever
+// matched. The defect (YT-0565) was not the character class — it was that an
+// unmatched line was **silently dropped**. A column named `sha256_hash`
+// simply was not compared, and the guard reported success over a table it
+// had only partly read. The identical pattern in services/voucher dropped
+// `manifest_sha256` and then reported a drift that did not exist.
+//
+// Widening the class to `[a-z0-9_]+` would have fixed that instance and left
+// the shape intact, so instead every line inside the block is accounted for:
+// a column, a table-level clause, a comment, or an error. **The guard now
+// fails on input it does not understand rather than covering less of it.**
+//
+// `docs/13c`: every parser-based check needs one question asked of it — what
+// does it do with input it does not recognise? "Skips it" means the coverage
+// is whatever the pattern happens to match.
+func columnsDeclaredFor(schema, table string) ([]string, error) {
+	header := "CREATE TABLE ledger." + table + " ("
+	start := strings.Index(schema, header)
 	if start < 0 {
-		return nil
-	}
-	body := schema[start:]
-	if end := strings.Index(body, "\n);"); end >= 0 {
-		body = body[:end]
+		return nil, fmt.Errorf("no %q block found", header)
 	}
 
+	body := schema[start+len(header):]
+	end := strings.Index(body, "\n);")
+	if end < 0 {
+		return nil, fmt.Errorf("%q block has no closing );", header)
+	}
+	body = body[:end]
+
 	var columns []string
-	for _, match := range columnPattern.FindAllStringSubmatch(body, -1) {
-		name := match[1]
-		// Skip table-level constraint clauses, which are not columns.
-		if name == "constraint" || name == "primary" || name == "unique" {
+	for number, line := range strings.Split(body, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "--") {
 			continue
 		}
-		columns = append(columns, name)
+
+		// The first token, stripped of the punctuation a column line ends or
+		// continues with.
+		first := strings.ToLower(strings.FieldsFunc(trimmed, func(r rune) bool {
+			return r == ' ' || r == '\t' || r == '(' || r == ','
+		})[0])
+
+		if tableLevelClauses[first] {
+			continue
+		}
+		if !identifierPattern.MatchString(first) {
+			return nil, fmt.Errorf(
+				"line %d of ledger.%s is neither a column nor a table-level clause: %q. "+
+					"Refusing to guess — an unreadable line used to be skipped, which is how "+
+					"a guard reports success over a table it only partly read",
+				number+1, table, trimmed,
+			)
+		}
+		columns = append(columns, first)
 	}
+
 	sort.Strings(columns)
-	return columns
+	return columns, nil
 }
 
 func columnsInDatabase(ctx context.Context, t *testing.T, pool *pgxpool.Pool, table string) []string {

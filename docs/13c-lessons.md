@@ -2,7 +2,30 @@
 
 Split out of [`13-engineering-standards.md`](13-engineering-standards.md) on 2026-09-20 when it crossed the 300-line ceiling. Those are the **standards** — what to do. These are the **incidents** — what went wrong, and the rule each one bought. Every entry here was paid for.
 
-**The theme, stated once so the individual entries read as a pattern rather than a run of bad luck:** almost every failure below was a _check that was believed to cover something it did not touch_ — and the last one is a check that covered the right thing and asserted the wrong answer.
+## The one thing all of these have in common
+
+Ten gates in a week reported success while covering less than their names claimed. The mechanisms were all different — a skip, a regex, a NULL, a scoped filter, a config override, an unused role, an idempotent no-op — and hunting for a mechanism is how you miss the next one.
+
+**What they share is that none could be caught by reading the assertion.** Every one was correct about the case it was shown. They differed only in what they were never shown:
+
+| The check              | What it was never shown                 |
+| ---------------------- | --------------------------------------- |
+| CI guarantees          | Any Postgres-backed test                |
+| Two ledger proof tests | The run where they did not skip         |
+| `openapi:go:check`     | Anything other than its own output      |
+| YT-0521 at `review`    | Its own second, contradicting criterion |
+| `turbo run lint`       | 486 of 565 files                        |
+| A player e2e spec      | That its assertion described an attack  |
+| A PII `CHECK`          | A NULL                                  |
+| A dead-host sabotage   | That the config overrode it             |
+| A seed coherence scan  | That its filter matched nothing         |
+| A schema-drift regex   | Any column containing a digit           |
+
+**So the review question is not “is this green”, or even “is this asserting the right thing”. It is: _what does this check do with the case it was not shown?_** If the answer is “nothing, quietly”, then its coverage is whatever the input happened to contain — and that is not a set anyone has reviewed.
+
+The only reliable way to find out is to **break the thing the check exists to catch, confirm the break landed, and watch which assertions fire.** That move found something every time it was used, and twice it found that the check itself was disarmed.
+
+The entries below are the individual cases, kept because the detail is where the argument lives.
 
 ## Generated code: two constraints that bind every service
 
@@ -267,3 +290,11 @@ The fix was to scope it to `batch_id IS NULL`. **The important half was also ass
 A schema-drift guard extracted column names with `[a-z_]+`. A column containing a digit **does not match, and an unmatched column is not compared** — so the gate quietly stops covering it rather than failing. In one service this silently dropped `manifest_sha256` and then reported a drift that did not exist; in another the same pattern is fine **only because no column there happens to contain a digit.**
 
 **Every parser-based check needs one question asked of it: what does it do with input it does not recognise?** If the answer is "skips it", the gate's coverage is whatever the pattern happens to match, and that is not a set anyone has reviewed. The fix is not a better pattern — it is **asserting the match count equals the input count**, so unrecognised input becomes a failure rather than an omission.
+
+## The gate's own logic is often the least-tested code in the module
+
+The schema-drift guard's parser had **no coverage in `go test ./...` at all.** The DB-backed guard calls `t.Skipf` without Postgres — correct for a unit run — so the parser, **which is where the defect actually lived**, was never exercised outside an integration environment.
+
+**A check tends to be written as glue and tested only end to end**, so its own logic runs only when everything else is available. Then the one piece nobody unit-tests is the piece deciding whether everything else is correct.
+
+Six parser tests that need no database now run wherever the module builds. And **an empty column list is now a failure**: a renamed table previously produced no expectation, and an empty expectation compares nothing and passes — the narrowed-query defect, one level up.

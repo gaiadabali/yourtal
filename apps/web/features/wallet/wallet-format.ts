@@ -7,34 +7,54 @@
  * `formatRelativeToNow` takes `nowMs` as an explicit argument rather than
  * reading `Date.now()` itself, so callers (and their tests) control the
  * clock instead of this module depending on the wall clock.
+ *
+ * YT-0405: both formatters take an optional `locale`, defaulting to
+ * `id-ID` so existing call sites keep rendering exactly what they render
+ * today. `Intl.RelativeTimeFormat`/`Intl.DateTimeFormat` translate the
+ * surrounding phrasing themselves ("3 hari lagi" vs "in 3 days") — there is
+ * no separate word list to keep in sync here.
  */
 
-const walletDateFormatter = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" });
+type SupportedLocale = "en-AU" | "id-ID";
+
+const WALLET_DATE_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
+  "en-AU": new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" }),
+  "id-ID": new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+};
+
 // `numeric: "always"`, not "auto" — "auto" substitutes idioms like "kemarin
-// dulu" (the day before yesterday) for small day counts, which reads as
-// vague next to a wallet's unlock/expiry countdown. Always spelling out the
-// number ("2 hari yang lalu") keeps it unambiguous.
-const relativeFormatter = new Intl.RelativeTimeFormat("id-ID", { numeric: "always" });
+// dulu" (the day before yesterday) / "yesterday" for small day counts, which
+// reads as vague next to a wallet's unlock/expiry countdown. Always spelling
+// out the number keeps it unambiguous in either language.
+const RELATIVE_FORMATTERS: Record<SupportedLocale, Intl.RelativeTimeFormat> = {
+  "en-AU": new Intl.RelativeTimeFormat("en-AU", { numeric: "always" }),
+  "id-ID": new Intl.RelativeTimeFormat("id-ID", { numeric: "always" }),
+};
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
 
-/** Formats an ISO instant as a short Indonesian date, e.g. "19 Sep 2026". */
-export function formatWalletDate(iso: string): string {
-  return walletDateFormatter.format(new Date(iso));
+/** Formats an ISO instant as a short date, e.g. "19 Sep 2026". */
+export function formatWalletDate(iso: string, locale: SupportedLocale = "id-ID"): string {
+  return WALLET_DATE_FORMATTERS[locale].format(new Date(iso));
 }
 
 /**
- * Formats an ISO instant relative to `nowMs`, e.g. "3 hari lagi" (in 3
- * days) or "2 jam yang lalu" (2 hours ago). Picks the coarsest unit that
- * still reads naturally, per docs/17-surfaces-and-roles.md §3's "surfaced
- * before it matters" — an unlock or expiry date should read as a
- * timeframe, not just a calendar date buried in an ISO string.
+ * Formats an ISO instant relative to `nowMs`, e.g. "3 hari lagi" (`id-ID`)
+ * or "in 3 days" (`en-AU`). Picks the coarsest unit that still reads
+ * naturally, per docs/17-surfaces-and-roles.md §3's "surfaced before it
+ * matters" — an unlock or expiry date should read as a timeframe, not just
+ * a calendar date buried in an ISO string.
  */
-export function formatRelativeToNow(iso: string, nowMs: number): string {
+export function formatRelativeToNow(
+  iso: string,
+  nowMs: number,
+  locale: SupportedLocale = "id-ID",
+): string {
   const diffMs = new Date(iso).getTime() - nowMs;
   const absMs = Math.abs(diffMs);
+  const relativeFormatter = RELATIVE_FORMATTERS[locale];
 
   if (absMs < MS_PER_HOUR) {
     return relativeFormatter.format(Math.round(diffMs / MS_PER_MINUTE), "minute");

@@ -29,3 +29,16 @@ describe("formatDataCost", () => {
     expect(formatDataCost(90)).toMatch(/^~/);
   });
 });
+
+describe("en-AU locale (YT-0405)", () => {
+  it("formats duration in English words with en-AU grouping", () => {
+    expect(formatDuration(45, "en-AU")).toBe("45 sec");
+    expect(formatDuration(1_080, "en-AU")).toBe("18 min");
+    expect(formatDuration(5_400, "en-AU")).toBe("1 hr 30 min");
+  });
+
+  it("formats data cost with en-AU decimal grouping, still tilde-prefixed", () => {
+    expect(formatDataCost(2.1, "en-AU")).toBe("~2.1 MB");
+    expect(formatDataCost(210, "en-AU")).toBe("~210 MB");
+  });
+});

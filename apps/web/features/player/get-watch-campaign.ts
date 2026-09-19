@@ -28,7 +28,10 @@ export function getWatchCampaign(campaignId: string): Campaign {
   })(campaignId);
 }
 
-const NAMED_FIXTURES: readonly Campaign[] = [zeroRewardCampaignFixture, longMerchantNameCampaignFixture];
+const NAMED_FIXTURES: readonly Campaign[] = [
+  zeroRewardCampaignFixture,
+  longMerchantNameCampaignFixture,
+];
 
 /**
  * Looks the id up against the fixed mock catalogue first (so links from the
@@ -40,7 +43,9 @@ const NAMED_FIXTURES: readonly Campaign[] = [zeroRewardCampaignFixture, longMerc
  * campaign.
  */
 function getWatchCampaignFromMocks(campaignId: string): Campaign {
-  const known = [...mockCampaigns, ...NAMED_FIXTURES].find((campaign) => campaign.id === campaignId);
+  const known = [...mockCampaigns, ...NAMED_FIXTURES].find(
+    (campaign) => campaign.id === campaignId,
+  );
   if (known) {
     return known;
   }
@@ -53,4 +58,3 @@ function getWatchCampaignLive(campaignId: string): Campaign {
       "Phase U is mock-only per docs/tasks/phase-u-ui.md.",
   );
 }
-

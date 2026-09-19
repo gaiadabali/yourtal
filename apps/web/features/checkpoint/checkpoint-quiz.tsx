@@ -23,7 +23,11 @@ export interface CheckpointQuizProps {
 }
 
 /** One question at a time, then the result screen. The client leaf of the checkpoint route (docs/13b-typescript-standards.md section 8). */
-export function CheckpointQuiz({ campaign, questions, respondentId = MOCK_RESPONDENT_ID }: CheckpointQuizProps) {
+export function CheckpointQuiz({
+  campaign,
+  questions,
+  respondentId = MOCK_RESPONDENT_ID,
+}: CheckpointQuizProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<ReadonlyMap<string, QuestionAnswer>>(new Map());
   const [isComplete, setIsComplete] = useState(questions.length === 0);

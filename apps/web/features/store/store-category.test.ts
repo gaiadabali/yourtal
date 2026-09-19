@@ -1,18 +1,36 @@
 import { describe, expect, it } from "vitest";
 import type { Listing } from "@yourtal/contracts/listing";
 import { soldOutListingFixture } from "@yourtal/contracts/listing/mock";
-import { STORE_CATEGORY_FILTER_VALUES, categoryLabel, filterListingsByCategory, isStoreCategoryFilter } from "./store-category";
+import {
+  STORE_CATEGORY_FILTER_VALUES,
+  categoryLabel,
+  filterListingsByCategory,
+  isStoreCategoryFilter,
+} from "./store-category";
 
-const foodListing: Listing = { ...soldOutListingFixture, id: "11111111-1111-4111-8111-111111111111", category: "food_beverage" };
-const retailListing: Listing = { ...soldOutListingFixture, id: "22222222-2222-4222-8222-222222222222", category: "retail" };
+const foodListing: Listing = {
+  ...soldOutListingFixture,
+  id: "11111111-1111-4111-8111-111111111111",
+  category: "food_beverage",
+};
+const retailListing: Listing = {
+  ...soldOutListingFixture,
+  id: "22222222-2222-4222-8222-222222222222",
+  category: "retail",
+};
 
 describe("filterListingsByCategory", () => {
   it("returns every listing, unmutated order, for 'all'", () => {
-    expect(filterListingsByCategory([foodListing, retailListing], "all")).toEqual([foodListing, retailListing]);
+    expect(filterListingsByCategory([foodListing, retailListing], "all")).toEqual([
+      foodListing,
+      retailListing,
+    ]);
   });
 
   it("keeps only listings matching the given category", () => {
-    expect(filterListingsByCategory([foodListing, retailListing], "retail")).toEqual([retailListing]);
+    expect(filterListingsByCategory([foodListing, retailListing], "retail")).toEqual([
+      retailListing,
+    ]);
   });
 
   it("does not mutate the input array", () => {

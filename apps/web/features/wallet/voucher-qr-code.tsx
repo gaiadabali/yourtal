@@ -3,10 +3,13 @@
 import dynamic from "next/dynamic";
 import { Skeleton } from "@yourtal/ui/skeleton";
 
-const VoucherQrCanvas = dynamic(() => import("./voucher-qr-canvas").then((qrModule) => qrModule.VoucherQrCanvas), {
-  ssr: false,
-  loading: () => <Skeleton className="h-60 w-60 rounded-lg" />,
-});
+const VoucherQrCanvas = dynamic(
+  () => import("./voucher-qr-canvas").then((qrModule) => qrModule.VoucherQrCanvas),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-60 w-60 rounded-lg" />,
+  },
+);
 
 export interface VoucherQrCodeProps {
   payload: string;

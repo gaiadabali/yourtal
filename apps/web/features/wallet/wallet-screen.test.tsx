@@ -16,14 +16,23 @@ describe("WalletScreen", () => {
   });
 
   it("shows the real balance card once there is anything to show, even with a zero balance", () => {
-    render(<WalletScreen balance={zeroBalanceFixture} vouchers={[expiredVoucherFixture]} history={[]} nowMs={nowMs} />);
+    render(
+      <WalletScreen
+        balance={zeroBalanceFixture}
+        vouchers={[expiredVoucherFixture]}
+        history={[]}
+        nowMs={nowMs}
+      />,
+    );
 
     expect(screen.getByText("Saldo tersedia")).toBeInTheDocument();
     expect(screen.queryByText("Belum ada poin di sini")).not.toBeInTheDocument();
   });
 
   it("shows the real balance card for a normal, non-empty wallet", () => {
-    render(<WalletScreen balance={mixedStateBalanceFixture} vouchers={[]} history={[]} nowMs={nowMs} />);
+    render(
+      <WalletScreen balance={mixedStateBalanceFixture} vouchers={[]} history={[]} nowMs={nowMs} />,
+    );
 
     expect(screen.getByText("Saldo tersedia")).toBeInTheDocument();
   });

@@ -11,7 +11,9 @@ const chapters: Chapter[] = [
 
 describe("SeekSlider", () => {
   it("is a real slider with an accessible name and a human-readable current-time value text", () => {
-    render(<SeekSlider currentSeconds={65} durationSeconds={360} chapters={chapters} onSeek={vi.fn()} />);
+    render(
+      <SeekSlider currentSeconds={65} durationSeconds={360} chapters={chapters} onSeek={vi.fn()} />,
+    );
     const slider = screen.getByRole("slider", { name: "Seek" });
     expect(slider).toHaveAttribute("aria-valuetext", expect.stringContaining("1:05"));
   });
@@ -33,7 +35,14 @@ describe("SeekSlider", () => {
    * a value change reaches `onSeek`.
    */
   it("exposes slider semantics with the bounds and announcement a screen reader needs", () => {
-    render(<SeekSlider currentSeconds={100} durationSeconds={360} chapters={chapters} onSeek={vi.fn()} />);
+    render(
+      <SeekSlider
+        currentSeconds={100}
+        durationSeconds={360}
+        chapters={chapters}
+        onSeek={vi.fn()}
+      />,
+    );
     const slider = screen.getByRole("slider", { name: "Seek" });
 
     expect(slider).toHaveAttribute("min", "0");
@@ -44,10 +53,11 @@ describe("SeekSlider", () => {
 
   it("reports the new position to onSeek when the value changes", () => {
     const onSeek = vi.fn();
-    render(<SeekSlider currentSeconds={100} durationSeconds={360} chapters={chapters} onSeek={onSeek} />);
+    render(
+      <SeekSlider currentSeconds={100} durationSeconds={360} chapters={chapters} onSeek={onSeek} />,
+    );
 
     fireEvent.change(screen.getByRole("slider", { name: "Seek" }), { target: { value: "240" } });
     expect(onSeek).toHaveBeenCalledWith(240);
   });
-
 });

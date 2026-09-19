@@ -4,7 +4,11 @@ import { useId } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import Link from "next/link";
-import { buildStoreBoardQuery, hasActiveStoreFilters, parseStoreBoardParams } from "./store-board-params";
+import {
+  buildStoreBoardQuery,
+  hasActiveStoreFilters,
+  parseStoreBoardParams,
+} from "./store-board-params";
 import { STORE_CATEGORY_FILTER_OPTIONS, isStoreCategoryFilter } from "./store-category";
 import { STORE_PRICE_BAND_FILTER_OPTIONS, isStorePriceBandFilter } from "./store-price-band";
 import { STORE_LOCATION_ALL, STORE_MERCHANT_ALL } from "./store-facets";
@@ -113,7 +117,12 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           <label htmlFor={locationId} className="text-xs text-fg-muted">
             Lokasi
           </label>
-          <select id={locationId} value={current.location} onChange={(event) => navigate({ location: event.target.value })} className={SELECT_CLASS}>
+          <select
+            id={locationId}
+            value={current.location}
+            onChange={(event) => navigate({ location: event.target.value })}
+            className={SELECT_CLASS}
+          >
             <option value={STORE_LOCATION_ALL}>Semua lokasi</option>
             {locationOptions.map((district) => (
               <option key={district} value={district}>
@@ -127,7 +136,12 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           <label htmlFor={merchantId} className="text-xs text-fg-muted">
             Merchant
           </label>
-          <select id={merchantId} value={current.merchant} onChange={(event) => navigate({ merchant: event.target.value })} className={SELECT_CLASS}>
+          <select
+            id={merchantId}
+            value={current.merchant}
+            onChange={(event) => navigate({ merchant: event.target.value })}
+            className={SELECT_CLASS}
+          >
             <option value={STORE_MERCHANT_ALL}>Semua merchant</option>
             {merchantOptions.map((merchant) => (
               <option key={merchant.id} value={merchant.id}>
@@ -139,7 +153,10 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
       </div>
 
       {hasActiveStoreFilters(current) ? (
-        <Link href="/store" className="self-start text-xs font-medium text-primary underline-offset-2 hover:underline">
+        <Link
+          href="/store"
+          className="self-start text-xs font-medium text-primary underline-offset-2 hover:underline"
+        >
           Hapus semua filter
         </Link>
       ) : null}

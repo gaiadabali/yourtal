@@ -19,11 +19,47 @@ export const voucherSchema = z
     listingId: z.uuid(),
     ownerId: z.uuid(),
     code: z.string().min(6).max(24),
+    /**
+     * **The identity a redemption is authorized against.** Same identifier as
+     * `listingSchema.merchantId`, `campaignSchema.merchantId` and the
+     * `businessId` the policy repo scopes on — one merchant, one id, no
+     * mapping layer.
+     *
+     * It exists because the merchant portal was otherwise forced to decide
+     * "is this voucher valid at this shop" by comparing `merchantName`, and a
+     * redemption decision made on a display label breaks in ordinary ways
+     * rather than exotic ones: two merchants sharing a name redeem each
+     * other's vouchers; renaming an outlet silently invalidates every voucher
+     * already sitting in customers' wallets, with no migration path because
+     * the name IS the key; and a trailing space or a unicode variant is a
+     * rejection at the counter with a customer standing there. The repo
+     * already knows these strings are messy — `longMerchantNameCampaignFixture`
+     * is a 78-character name kept specifically to break layouts.
+     *
+     * `merchantName` stays, for display. It is not an identifier and must
+     * never be compared to authorize anything.
+     */
+    merchantId: z.uuid(),
     merchantName: z.string().min(1).max(MAX_MERCHANT_NAME_LENGTH),
     title: z.string().min(1).max(140),
     faceValueIdr: idrMinorUnitsSchema,
     remainingValueIdr: idrMinorUnitsSchema,
     partialRedemptionPolicy: partialRedemptionPolicySchema,
+    /**
+     * The threshold a `minimum_spend` voucher must be spent against, carried
+     * on the voucher rather than looked up from the listing.
+     *
+     * `listingSchema` has the same field and the same invariant. Without it
+     * here, a counter holding a `minimum_spend` voucher knows the policy but
+     * not the number, so the portal can only fall back to treating it as
+     * full-value-only — safe, but not what the merchant agreed to sell.
+     *
+     * Denormalised on purpose: a voucher is a bearer instrument that must
+     * remain honourable offline (`docs/17` §3, the wallet's offline QR), so
+     * everything needed to honour it travels with it. A later edit to the
+     * listing must not change the terms of a voucher already issued.
+     */
+    minimumSpendIdr: idrMinorUnitsSchema.nullable(),
     transferable: z.boolean(),
     status: voucherStatusSchema,
     issuedAt: z.iso.datetime(),
@@ -33,9 +69,23 @@ export const voucherSchema = z
     message: "remainingValueIdr cannot exceed faceValueIdr",
     path: ["remainingValueIdr"],
   })
-  .refine((voucher) => new Date(voucher.expiresAt).getTime() > new Date(voucher.issuedAt).getTime(), {
-    message: "expiresAt must be after issuedAt",
-    path: ["expiresAt"],
-  });
+  .refine(
+    (voucher) => new Date(voucher.expiresAt).getTime() > new Date(voucher.issuedAt).getTime(),
+    {
+      message: "expiresAt must be after issuedAt",
+      path: ["expiresAt"],
+    },
+  )
+  .refine(
+    (voucher) =>
+      (voucher.partialRedemptionPolicy === "minimum_spend") === (voucher.minimumSpendIdr !== null),
+    {
+      // The same invariant listingSchema enforces. A minimum_spend voucher
+      // with no threshold cannot be honoured; a threshold on any other policy
+      // is a number the counter would have to decide whether to obey.
+      message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
+      path: ["minimumSpendIdr"],
+    },
+  );
 
 export type Voucher = z.infer<typeof voucherSchema>;

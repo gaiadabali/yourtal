@@ -28,7 +28,14 @@ export interface RadioQuestionGroupProps {
  * `packages/ui` yet (YT-0401's list did not include one), so this lives
  * locally per this ticket's brief rather than being added there.
  */
-export function RadioQuestionGroup({ options, value, onValueChange, ariaLabelledBy, name, disabled = false }: RadioQuestionGroupProps) {
+export function RadioQuestionGroup({
+  options,
+  value,
+  onValueChange,
+  ariaLabelledBy,
+  name,
+  disabled = false,
+}: RadioQuestionGroupProps) {
   return (
     <RadioGroupPrimitive.Root
       value={value ?? null}

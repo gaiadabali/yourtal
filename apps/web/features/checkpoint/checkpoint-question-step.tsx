@@ -50,7 +50,11 @@ export function CheckpointQuestionStep({
   return (
     <section aria-labelledby={promptId} className="flex flex-col gap-6">
       <CheckpointProgress current={questionNumber} total={totalQuestions} />
-      <CheckpointTimer key={question.id} totalSeconds={question.timerSeconds} onExpire={handleExpire} />
+      <CheckpointTimer
+        key={question.id}
+        totalSeconds={question.timerSeconds}
+        onExpire={handleExpire}
+      />
       <h2 id={promptId} className="text-lg font-sans font-semibold text-fg">
         {question.prompt}
       </h2>

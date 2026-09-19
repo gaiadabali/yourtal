@@ -124,10 +124,7 @@
    * variables for dark mode, where a low-opacity black shadow is
    * invisible against a near-black page.
    */
-  --shadow-sm:
-    0 1px 2px 0 rgb(16 17 19 / 0.06), 0 1px 1px 0 rgb(16 17 19 / 0.04);
-  --shadow-md:
-    0 4px 8px -2px rgb(16 17 19 / 0.1), 0 2px 4px -2px rgb(16 17 19 / 0.06);
-  --shadow-lg:
-    0 12px 24px -4px rgb(16 17 19 / 0.14), 0 4px 8px -4px rgb(16 17 19 / 0.08);
+  --shadow-sm: 0 1px 2px 0 rgb(16 17 19 / 0.06), 0 1px 1px 0 rgb(16 17 19 / 0.04);
+  --shadow-md: 0 4px 8px -2px rgb(16 17 19 / 0.1), 0 2px 4px -2px rgb(16 17 19 / 0.06);
+  --shadow-lg: 0 12px 24px -4px rgb(16 17 19 / 0.14), 0 4px 8px -4px rgb(16 17 19 / 0.08);
 }

@@ -32,7 +32,9 @@ export function MultipleChoiceQuestionView({
     <RadioQuestionGroup
       options={shuffledOptions}
       value={answer?.selectedOptionId}
-      onValueChange={(selectedOptionId) => onAnswerChange({ type: "multiple_choice", selectedOptionId })}
+      onValueChange={(selectedOptionId) =>
+        onAnswerChange({ type: "multiple_choice", selectedOptionId })
+      }
       ariaLabelledBy={promptId}
       name={`question-${question.id}`}
       disabled={disabled}

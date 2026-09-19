@@ -19,7 +19,11 @@ const FINAL_COUNTDOWN_THRESHOLDS = [10, 5, 3, 2, 1] as const;
 
 function announcedThresholds(totalSeconds: number): Set<number> {
   const halfway = Math.floor(totalSeconds / 2);
-  return new Set([halfway, ...FINAL_COUNTDOWN_THRESHOLDS].filter((threshold) => threshold > 0 && threshold < totalSeconds));
+  return new Set(
+    [halfway, ...FINAL_COUNTDOWN_THRESHOLDS].filter(
+      (threshold) => threshold > 0 && threshold < totalSeconds,
+    ),
+  );
 }
 
 function startAnnouncement(totalSeconds: number): string {

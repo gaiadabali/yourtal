@@ -46,7 +46,10 @@ export function CampaignBoardControls() {
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <nav aria-label="Filter jenis campaign" className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised p-1">
+      <nav
+        aria-label="Filter jenis campaign"
+        className="flex items-center gap-1 rounded-lg border border-border bg-surface-raised p-1"
+      >
         {CAMPAIGN_KIND_FILTER_OPTIONS.map((option) => {
           const isActive = option.key === current.kind;
           return (
@@ -90,7 +93,6 @@ export function CampaignBoardControls() {
           ))}
         </select>
       </div>
-
     </div>
   );
 }

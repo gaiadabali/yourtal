@@ -53,9 +53,7 @@ const lightVars = parseDeclarations(extractBlock(tokensCss, ":root {"));
 const mediaDarkVars = parseDeclarations(
   extractBlock(themeCss, ':root:not([data-theme="light"]) {'),
 );
-const attrDarkVars = parseDeclarations(
-  extractBlock(themeCss, ':root[data-theme="dark"] {'),
-);
+const attrDarkVars = parseDeclarations(extractBlock(themeCss, ':root[data-theme="dark"] {'));
 
 // Colour tokens that must exist in both dark overrides, per the hard
 // interface contract (YT-0400 task brief).

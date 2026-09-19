@@ -53,14 +53,20 @@ describe("CampaignBoardControls", () => {
   it("reads its initial kind selection from the URL rather than defaulting blind", () => {
     searchParams = new URLSearchParams("kind=long_form");
     render(<CampaignBoardControls />);
-    expect(screen.getByRole("link", { name: "Video panjang" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Video panjang" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     expect(screen.getByRole("link", { name: "Semua" })).not.toHaveAttribute("aria-current");
   });
 
   it("preserves the existing sort value when only the kind filter changes", () => {
     searchParams = new URLSearchParams("sort=reward");
     render(<CampaignBoardControls />);
-    expect(screen.getByRole("link", { name: "Cepat" })).toHaveAttribute("href", "/?sort=reward&kind=quick");
+    expect(screen.getByRole("link", { name: "Cepat" })).toHaveAttribute(
+      "href",
+      "/?sort=reward&kind=quick",
+    );
   });
 
   it("navigates via router.push when the sort select changes", async () => {

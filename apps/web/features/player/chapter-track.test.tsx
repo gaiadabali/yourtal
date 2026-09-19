@@ -13,7 +13,12 @@ const chapters: Chapter[] = [
 describe("ChapterTrack", () => {
   it("renders each chapter as an individually labelled, keyboard-reachable button (not just a visual tick)", () => {
     render(
-      <ChapterTrack chapters={chapters} reachedChapterIndex={0} currentSeconds={200} onSelectChapter={vi.fn()} />,
+      <ChapterTrack
+        chapters={chapters}
+        reachedChapterIndex={0}
+        currentSeconds={200}
+        onSelectChapter={vi.fn()}
+      />,
     );
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(2);
@@ -25,7 +30,12 @@ describe("ChapterTrack", () => {
     const user = userEvent.setup();
     const onSelectChapter = vi.fn();
     render(
-      <ChapterTrack chapters={chapters} reachedChapterIndex={-1} currentSeconds={0} onSelectChapter={onSelectChapter} />,
+      <ChapterTrack
+        chapters={chapters}
+        reachedChapterIndex={-1}
+        currentSeconds={0}
+        onSelectChapter={onSelectChapter}
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: /Chapter 2/ }));
@@ -36,12 +46,31 @@ describe("ChapterTrack", () => {
     const user = userEvent.setup();
     const onSelectChapter = vi.fn();
     render(
-      <ChapterTrack chapters={chapters} reachedChapterIndex={-1} currentSeconds={0} onSelectChapter={onSelectChapter} />,
+      <ChapterTrack
+        chapters={chapters}
+        reachedChapterIndex={-1}
+        currentSeconds={0}
+        onSelectChapter={onSelectChapter}
+      />,
     );
 
     await user.tab(); // focuses Chapter 1
     await user.tab(); // focuses Chapter 2
     await user.keyboard("{Enter}");
     expect(onSelectChapter).toHaveBeenCalledWith(180);
+  });
+
+  it("renders the reward in English when locale='en-AU' (YT-0405) — no leftover 'poin'", () => {
+    render(
+      <ChapterTrack
+        chapters={chapters}
+        reachedChapterIndex={0}
+        currentSeconds={200}
+        onSelectChapter={vi.fn()}
+        locale="en-AU"
+      />,
+    );
+    expect(screen.getByText(/200 points/)).toBeInTheDocument();
+    expect(screen.queryByText(/\bpoin\b/)).not.toBeInTheDocument();
   });
 });

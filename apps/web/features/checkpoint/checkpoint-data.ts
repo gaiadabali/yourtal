@@ -1,6 +1,11 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
-import { generateCampaign, longMerchantNameCampaignFixture, mockCampaigns, zeroRewardCampaignFixture } from "@yourtal/contracts/campaign/mock";
+import {
+  generateCampaign,
+  longMerchantNameCampaignFixture,
+  mockCampaigns,
+  zeroRewardCampaignFixture,
+} from "@yourtal/contracts/campaign/mock";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import type { Question } from "@yourtal/contracts/question";
 import { generateQuestions } from "@yourtal/contracts/question/mock";
@@ -10,7 +15,11 @@ export interface CheckpointData {
   questions: Question[];
 }
 
-const ALL_MOCK_CAMPAIGNS: Campaign[] = [...mockCampaigns, zeroRewardCampaignFixture, longMerchantNameCampaignFixture];
+const ALL_MOCK_CAMPAIGNS: Campaign[] = [
+  ...mockCampaigns,
+  zeroRewardCampaignFixture,
+  longMerchantNameCampaignFixture,
+];
 
 /**
  * A small, deterministic, non-cryptographic string hash (djb2 variant).
@@ -68,7 +77,11 @@ function loadMockCheckpointData(campaignId: string): CheckpointData {
   const questions =
     campaign.questionCount === 0
       ? []
-      : generateQuestions(campaign.questionCount, hashCampaignIdForQuestions(campaignId), campaign.id);
+      : generateQuestions(
+          campaign.questionCount,
+          hashCampaignIdForQuestions(campaignId),
+          campaign.id,
+        );
   return { campaign, questions };
 }
 

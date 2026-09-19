@@ -7,9 +7,12 @@ import { formatDataCost, formatDuration } from "./campaign-format";
 import { EntryCardFact } from "./campaign-entry-fact";
 import { splitCampaignReward } from "./campaign-reward-split";
 import { describeQuestionCount, describeScoringRule } from "./campaign-scoring-copy";
+import { getCampaignTranslator, type SupportedLocale } from "./campaign-i18n";
 
 export interface CampaignEntryCardProps {
   campaign: Campaign;
+  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
+  locale?: SupportedLocale;
 }
 
 /**
@@ -25,9 +28,10 @@ export interface CampaignEntryCardProps {
  * the watch begins" principle extends to never inflating them up front
  * either).
  */
-export function CampaignEntryCard({ campaign }: CampaignEntryCardProps) {
+export function CampaignEntryCard({ campaign, locale = "id-ID" }: CampaignEntryCardProps) {
   const { baseRewardPoints, maxAccuracyBonusPoints } = splitCampaignReward(campaign);
   const watchHref = `/watch/${campaign.id}`;
+  const t = getCampaignTranslator(locale);
 
   return (
     <Card>
@@ -39,32 +43,41 @@ export function CampaignEntryCard({ campaign }: CampaignEntryCardProps) {
         </header>
 
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <EntryCardFact label="Durasi" value={formatDuration(campaign.durationSeconds)} />
-          <EntryCardFact label="Estimasi data" value={formatDataCost(campaign.estimatedDataMb)} />
           <EntryCardFact
-            label="Reward dasar"
-            value={formatPoints(baseRewardPoints)}
+            label={t("entry.duration")}
+            value={formatDuration(campaign.durationSeconds, locale)}
+          />
+          <EntryCardFact
+            label={t("entry.dataCost")}
+            value={formatDataCost(campaign.estimatedDataMb, locale)}
+          />
+          <EntryCardFact
+            label={t("entry.baseReward")}
+            value={formatPoints(baseRewardPoints, locale)}
             valueClassName="text-reward"
           />
           {maxAccuracyBonusPoints > 0 ? (
             <EntryCardFact
-              label="Bonus akurasi"
-              value={`Hingga +${formatPoints(maxAccuracyBonusPoints)}`}
+              label={t("entry.accuracyBonus")}
+              value={t("entry.upToBonus", { amount: formatPoints(maxAccuracyBonusPoints, locale) })}
               valueClassName="text-reward"
             />
           ) : null}
-          <EntryCardFact label="Pertanyaan" value={describeQuestionCount(campaign.questionCount)} />
-          <EntryCardFact label="Aturan penilaian" value={describeScoringRule(campaign.scoringRule)} />
+          <EntryCardFact
+            label={t("entry.questionCount")}
+            value={describeQuestionCount(campaign.questionCount, locale)}
+          />
+          <EntryCardFact
+            label={t("entry.scoringRule")}
+            value={describeScoringRule(campaign.scoringRule, locale)}
+          />
         </dl>
 
         <div className="flex items-start gap-2 rounded-md bg-surface px-3 py-2">
           <Badge variant="secondary" className="shrink-0">
-            Jaminan
+            {t("entry.guaranteeBadge")}
           </Badge>
-          <p className="text-xs text-fg-muted">
-            Ketentuan yang ditampilkan di halaman ini adalah ketentuan yang akan dihormati — durasi, reward, dan aturan penilaian
-            tidak berubah setelah kamu mulai menonton.
-          </p>
+          <p className="text-xs text-fg-muted">{t("entry.guaranteeText")}</p>
         </div>
 
         <Button asChild size="lg">
@@ -72,7 +85,7 @@ export function CampaignEntryCard({ campaign }: CampaignEntryCardProps) {
               in-flight ticket and may not exist on disk yet, and this is a
               real full navigation into a heavy player route we should not
               prefetch speculatively from the entry card. */}
-          <a href={watchHref}>Mulai video</a>
+          <a href={watchHref}>{t("entry.startVideo")}</a>
         </Button>
       </CardContent>
     </Card>

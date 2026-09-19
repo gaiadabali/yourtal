@@ -1,5 +1,9 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
-import { longMerchantNameCampaignFixture, mockCampaigns, zeroRewardCampaignFixture } from "@yourtal/contracts/campaign/mock";
+import {
+  longMerchantNameCampaignFixture,
+  mockCampaigns,
+  zeroRewardCampaignFixture,
+} from "@yourtal/contracts/campaign/mock";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 
 /**
@@ -17,7 +21,11 @@ import { resolveDataSource } from "@yourtal/contracts/mock-source";
  * than kept test-only, so a manual pass at 320px sees them on the real
  * board too, per the brief: "use them."
  */
-const mockCampaignCatalogue: Campaign[] = [...mockCampaigns, zeroRewardCampaignFixture, longMerchantNameCampaignFixture];
+const mockCampaignCatalogue: Campaign[] = [
+  ...mockCampaigns,
+  zeroRewardCampaignFixture,
+  longMerchantNameCampaignFixture,
+];
 
 interface CampaignDataSource {
   listCampaigns: () => Promise<Campaign[]>;
@@ -26,7 +34,8 @@ interface CampaignDataSource {
 
 const mockDataSource: CampaignDataSource = {
   listCampaigns: () => Promise.resolve(mockCampaignCatalogue),
-  getCampaign: (campaignId: string) => Promise.resolve(mockCampaignCatalogue.find((campaign) => campaign.id === campaignId)),
+  getCampaign: (campaignId: string) =>
+    Promise.resolve(mockCampaignCatalogue.find((campaign) => campaign.id === campaignId)),
 };
 
 /**
@@ -37,8 +46,14 @@ const mockDataSource: CampaignDataSource = {
  * `error.tsx` honestly instead of faking a failure for a demo.
  */
 const liveDataSource: CampaignDataSource = {
-  listCampaigns: () => Promise.reject(new Error("Live campaign data source is not implemented yet (Phase U is mock-only).")),
-  getCampaign: () => Promise.reject(new Error("Live campaign data source is not implemented yet (Phase U is mock-only).")),
+  listCampaigns: () =>
+    Promise.reject(
+      new Error("Live campaign data source is not implemented yet (Phase U is mock-only)."),
+    ),
+  getCampaign: () =>
+    Promise.reject(
+      new Error("Live campaign data source is not implemented yet (Phase U is mock-only)."),
+    ),
 };
 
 const campaignDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });

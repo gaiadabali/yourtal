@@ -41,69 +41,87 @@ export const toastVariants = cva(
 );
 
 export interface ToastProps
-  extends React.ComponentPropsWithoutRef<typeof ToastPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof ToastPrimitive.Root>,
     VariantProps<typeof toastVariants> {}
 
 export const Toast = React.forwardRef<React.ComponentRef<typeof ToastPrimitive.Root>, ToastProps>(
   ({ className, variant, ...props }, ref) => (
-    <ToastPrimitive.Root ref={ref} className={cn(toastVariants({ variant }), className)} {...props} />
+    <ToastPrimitive.Root
+      ref={ref}
+      className={cn(toastVariants({ variant }), className)}
+      {...props}
+    />
   ),
 );
 Toast.displayName = "Toast";
 
 export type ToastTitleProps = React.ComponentPropsWithoutRef<typeof ToastPrimitive.Title>;
 
-export const ToastTitle = React.forwardRef<React.ComponentRef<typeof ToastPrimitive.Title>, ToastTitleProps>(
-  ({ className, ...props }, ref) => (
-    <ToastPrimitive.Title ref={ref} className={cn("text-sm font-sans font-semibold", className)} {...props} />
-  ),
-);
+export const ToastTitle = React.forwardRef<
+  React.ComponentRef<typeof ToastPrimitive.Title>,
+  ToastTitleProps
+>(({ className, ...props }, ref) => (
+  <ToastPrimitive.Title
+    ref={ref}
+    className={cn("text-sm font-sans font-semibold", className)}
+    {...props}
+  />
+));
 ToastTitle.displayName = "ToastTitle";
 
-export type ToastDescriptionProps = React.ComponentPropsWithoutRef<typeof ToastPrimitive.Description>;
+export type ToastDescriptionProps = React.ComponentPropsWithoutRef<
+  typeof ToastPrimitive.Description
+>;
 
 export const ToastDescription = React.forwardRef<
   React.ComponentRef<typeof ToastPrimitive.Description>,
   ToastDescriptionProps
 >(({ className, ...props }, ref) => (
-  <ToastPrimitive.Description ref={ref} className={cn("text-sm text-fg-muted", className)} {...props} />
+  <ToastPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-fg-muted", className)}
+    {...props}
+  />
 ));
 ToastDescription.displayName = "ToastDescription";
 
 export type ToastCloseProps = React.ComponentPropsWithoutRef<typeof ToastPrimitive.Close>;
 
-export const ToastClose = React.forwardRef<React.ComponentRef<typeof ToastPrimitive.Close>, ToastCloseProps>(
-  ({ className, ...props }, ref) => (
-    <ToastPrimitive.Close
-      ref={ref}
-      className={cn(
-        "rounded-md text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        className,
-      )}
-      {...props}
-    >
-      <X className="h-4 w-4" aria-hidden="true" />
-      <span className="sr-only">Dismiss</span>
-    </ToastPrimitive.Close>
-  ),
-);
+export const ToastClose = React.forwardRef<
+  React.ComponentRef<typeof ToastPrimitive.Close>,
+  ToastCloseProps
+>(({ className, ...props }, ref) => (
+  <ToastPrimitive.Close
+    ref={ref}
+    className={cn(
+      "rounded-md text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      className,
+    )}
+    {...props}
+  >
+    <X className="h-4 w-4" aria-hidden="true" />
+    <span className="sr-only">Dismiss</span>
+  </ToastPrimitive.Close>
+));
 ToastClose.displayName = "ToastClose";
 
 export type ToastActionProps = React.ComponentPropsWithoutRef<typeof ToastPrimitive.Action>;
 
-export const ToastAction = React.forwardRef<React.ComponentRef<typeof ToastPrimitive.Action>, ToastActionProps>(
-  ({ className, ...props }, ref) => (
-    <ToastPrimitive.Action
-      ref={ref}
-      className={cn(
-        "shrink-0 rounded-md border border-border-strong px-3 py-1.5 text-sm font-sans font-medium text-fg",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
+export const ToastAction = React.forwardRef<
+  React.ComponentRef<typeof ToastPrimitive.Action>,
+  ToastActionProps
+>(({ className, ...props }, ref) => (
+  <ToastPrimitive.Action
+    ref={ref}
+    className={cn(
+      "shrink-0 rounded-md border border-border-strong px-3 py-1.5 text-sm font-sans font-medium text-fg",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      className,
+    )}
+    {...props}
+  />
+));
 ToastAction.displayName = "ToastAction";
 
 export type ToastActionElement = React.ReactElement<typeof ToastAction>;

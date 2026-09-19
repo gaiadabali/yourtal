@@ -23,7 +23,10 @@ export interface StoreListingCardProps {
 export function StoreListingCard({ listing }: StoreListingCardProps) {
   const href = `/store/${listing.id}` as Route;
   const status = listingStatusPresentation(listing.status);
-  const { pointsLabel, faceValueLabel } = formatListingPrice(listing.priceInPoints, listing.faceValueIdr);
+  const { pointsLabel, faceValueLabel } = formatListingPrice(
+    listing.priceInPoints,
+    listing.faceValueIdr,
+  );
 
   return (
     <StoreListingCardLayout

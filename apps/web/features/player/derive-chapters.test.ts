@@ -22,7 +22,10 @@ describe("deriveChapters", () => {
   it("keeps the last chapter worth more than the first three combined, for any reward total", () => {
     for (const rewardPoints of [0, 1, 7, 2_000, 4_999]) {
       const chapters = deriveChapters({ durationSeconds: 600, rewardPoints });
-      const firstThree = (chapters[0]?.rewardPoints ?? 0) + (chapters[1]?.rewardPoints ?? 0) + (chapters[2]?.rewardPoints ?? 0);
+      const firstThree =
+        (chapters[0]?.rewardPoints ?? 0) +
+        (chapters[1]?.rewardPoints ?? 0) +
+        (chapters[2]?.rewardPoints ?? 0);
       const last = chapters.at(-1)?.rewardPoints ?? 0;
       expect(last).toBeGreaterThanOrEqual(firstThree);
     }

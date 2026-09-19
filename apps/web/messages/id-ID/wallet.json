@@ -1,0 +1,37 @@
+{
+  "balance": {
+    "available": "Saldo tersedia",
+    "pendingLabel": "Menunggu pencairan",
+    "pendingWithDate": "{amount} · cair {date} ({relative})",
+    "pendingNone": "Tidak ada poin tertahan",
+    "expiringLabel": "Akan kedaluwarsa",
+    "expiringWithDate": "{amount} · kedaluwarsa {date} ({relative})",
+    "expiringNone": "Tidak ada poin yang akan hangus"
+  },
+  "history": {
+    "empty": "Belum ada riwayat poin.",
+    "earned": "Menyelesaikan video {merchantName} — dapat {amount}",
+    "spent": "Ditukar {amount} untuk voucher {merchantName}"
+  },
+  "voucher": {
+    "statusActive": "Aktif",
+    "statusRedeemed": "Sudah dipakai",
+    "statusTransferred": "Sudah ditransfer",
+    "statusExpired": "Kedaluwarsa",
+    "expiresOn": "Berakhir {date}",
+    "validUntilCard": "Berlaku hingga {date}",
+    "remainingValue": "Sisa nilai",
+    "validUntilLabel": "Berlaku sampai",
+    "howToRedeem": "Cara redeem",
+    "qrLabel": "Kode QR redeem voucher {merchantName}",
+    "codeAutoRefresh": "Kode diperbarui otomatis",
+    "secondsRemaining": "{seconds} detik lagi",
+    "refreshCountdownLabel": "Waktu sebelum kode QR diperbarui"
+  },
+  "redemption": {
+    "balanceCarrying": "Kalau belanjamu kurang dari nilai voucher, sisanya tetap tersimpan untuk dipakai lain kali.",
+    "singleUseForfeit": "Voucher ini sekali pakai — kalau belanjamu kurang dari nilai voucher, sisanya hangus dan tidak bisa dipakai lagi.",
+    "minimumSpend": "Voucher ini hanya bisa dipakai kalau belanjamu mencapai jumlah minimum yang ditentukan merchant.",
+    "instructions": "Tunjukkan kode QR ini ke kasir {merchantName} saat membayar, atau sebutkan kode vouchernya kalau diminta secara manual. {policyLine}"
+  }
+}

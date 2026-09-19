@@ -44,7 +44,10 @@ function createSeededRandom(seed: number): () => number {
  * different question, or a different respondent) produce a different,
  * still-deterministic order. Never mutates `items`.
  */
-export function seededShuffle<T>(items: readonly T[], seedParts: ReadonlyArray<string | number>): T[] {
+export function seededShuffle<T>(
+  items: readonly T[],
+  seedParts: ReadonlyArray<string | number>,
+): T[] {
   const random = createSeededRandom(hashSeedParts(seedParts));
   const result = [...items];
   for (let i = result.length - 1; i > 0; i -= 1) {

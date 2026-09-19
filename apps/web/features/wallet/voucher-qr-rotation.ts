@@ -39,12 +39,18 @@ function hashToken(parts: ReadonlyArray<string | number>): string {
 }
 
 /** Which rotation window `nowMs` falls into — a pure function of time and the interval, the same for every voucher at the same instant. */
-export function currentRotationWindow(nowMs: number, intervalMs: number = QR_ROTATION_INTERVAL_MS): number {
+export function currentRotationWindow(
+  nowMs: number,
+  intervalMs: number = QR_ROTATION_INTERVAL_MS,
+): number {
   return Math.floor(nowMs / intervalMs);
 }
 
 /** Milliseconds remaining until the current rotation window ends. */
-export function msUntilNextRotation(nowMs: number, intervalMs: number = QR_ROTATION_INTERVAL_MS): number {
+export function msUntilNextRotation(
+  nowMs: number,
+  intervalMs: number = QR_ROTATION_INTERVAL_MS,
+): number {
   const windowStartMs = currentRotationWindow(nowMs, intervalMs) * intervalMs;
   return windowStartMs + intervalMs - nowMs;
 }

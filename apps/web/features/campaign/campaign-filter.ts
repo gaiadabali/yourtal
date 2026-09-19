@@ -25,7 +25,10 @@ export type CampaignKindFilter = (typeof CAMPAIGN_KIND_FILTER_VALUES)[number];
 
 export const DEFAULT_CAMPAIGN_KIND_FILTER: CampaignKindFilter = "all";
 
-export const CAMPAIGN_KIND_FILTER_OPTIONS: ReadonlyArray<{ key: CampaignKindFilter; label: string }> = [
+export const CAMPAIGN_KIND_FILTER_OPTIONS: ReadonlyArray<{
+  key: CampaignKindFilter;
+  label: string;
+}> = [
   { key: "all", label: "Semua" },
   { key: "long_form", label: "Video panjang" },
   { key: "quick", label: "Cepat" },
@@ -35,7 +38,10 @@ export function isCampaignKindFilter(value: string): value is CampaignKindFilter
   return (CAMPAIGN_KIND_FILTER_VALUES as readonly string[]).includes(value);
 }
 
-export function filterCampaignsByKind(campaigns: readonly Campaign[], kind: CampaignKindFilter): Campaign[] {
+export function filterCampaignsByKind(
+  campaigns: readonly Campaign[],
+  kind: CampaignKindFilter,
+): Campaign[] {
   if (kind === "all") {
     return [...campaigns];
   }

@@ -1,6 +1,11 @@
 import type { Listing } from "@yourtal/contracts/listing";
 import { listingSchema } from "@yourtal/contracts/listing";
-import { abovePlausibleBalanceListingFixture, expiringSoonListingFixture, mockListings, soldOutListingFixture } from "@yourtal/contracts/listing/mock";
+import {
+  abovePlausibleBalanceListingFixture,
+  expiringSoonListingFixture,
+  mockListings,
+  soldOutListingFixture,
+} from "@yourtal/contracts/listing/mock";
 import type { Balance } from "@yourtal/contracts/balance";
 import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
 import { pointsPriceFromSettlement, toIdrMinorUnits } from "@yourtal/contracts/money";
@@ -20,7 +25,12 @@ export interface RedeemData {
  * terms that page just showed, not a re-derived approximation. An id
  * outside this set 404s here exactly as it does there (see `page.tsx`).
  */
-const SHARED_STORE_CATALOGUE: readonly Listing[] = [...mockListings, soldOutListingFixture, abovePlausibleBalanceListingFixture, expiringSoonListingFixture];
+const SHARED_STORE_CATALOGUE: readonly Listing[] = [
+  ...mockListings,
+  soldOutListingFixture,
+  abovePlausibleBalanceListingFixture,
+  expiringSoonListingFixture,
+];
 
 /** Mirrors the illustrative mock backing rate in `listing.mock.ts` (docs/09 section 4.1). Not the real pricing engine. */
 // Rupiah per point. See YT-0506 before changing this.
@@ -47,7 +57,10 @@ export const holdbackDemoListing: Listing = listingSchema.parse({
   district: "Menteng",
   faceValueIdr: toIdrMinorUnits(180_000),
   settlementValueIdr: toIdrMinorUnits(54_000),
-  priceInPoints: pointsPriceFromSettlement(toIdrMinorUnits(54_000), MOCK_BACKING_RATE_IDR_PER_POINT),
+  priceInPoints: pointsPriceFromSettlement(
+    toIdrMinorUnits(54_000),
+    MOCK_BACKING_RATE_IDR_PER_POINT,
+  ),
   stockRemaining: 20,
   stockTotal: 20,
   transferable: false,
@@ -93,7 +106,11 @@ const mockDataSource: RedeemDataSource = {
  */
 const liveDataSource: RedeemDataSource = {
   getRedeemData: (listingId: string) =>
-    Promise.reject(new Error(`getRedeemData: no live data source implemented yet (listingId="${listingId}"). Phase U is mock-only.`)),
+    Promise.reject(
+      new Error(
+        `getRedeemData: no live data source implemented yet (listingId="${listingId}"). Phase U is mock-only.`,
+      ),
+    ),
 };
 
 const redeemDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });

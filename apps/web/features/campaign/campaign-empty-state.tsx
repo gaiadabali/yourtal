@@ -19,7 +19,9 @@ export function CampaignEmptyState({ kind }: CampaignEmptyStateProps) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-6 py-16 text-center">
       <p className="text-base font-semibold text-fg">
-        {filterLabel ? `Belum ada campaign ${filterLabel} saat ini` : "Belum ada campaign yang tersedia saat ini"}
+        {filterLabel
+          ? `Belum ada campaign ${filterLabel} saat ini`
+          : "Belum ada campaign yang tersedia saat ini"}
       </p>
       <p className="max-w-sm text-sm text-fg-muted">
         {filterLabel

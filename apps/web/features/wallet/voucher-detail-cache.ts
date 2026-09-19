@@ -23,7 +23,11 @@ import type { Voucher } from "@yourtal/contracts/voucher";
  */
 const STORAGE_PREFIX = "yourtal:wallet:voucher:";
 
-const partialRedemptionPolicyValues = ["balance_carrying", "single_use_forfeit", "minimum_spend"] as const;
+const partialRedemptionPolicyValues = [
+  "balance_carrying",
+  "single_use_forfeit",
+  "minimum_spend",
+] as const;
 const voucherStatusValues = ["active", "redeemed", "expired", "transferred"] as const;
 
 export const cachedVoucherDetailSchema = z.object({
@@ -54,7 +58,11 @@ function storageKey(voucherId: string): string {
  * server-parsed contract type), but running it through `.parse` here is a
  * free safety net against a mapping mistake in this function itself.
  */
-export function buildCachedVoucherDetail(voucher: Voucher, redemptionInstructions: string, cachedAt: string): CachedVoucherDetail {
+export function buildCachedVoucherDetail(
+  voucher: Voucher,
+  redemptionInstructions: string,
+  cachedAt: string,
+): CachedVoucherDetail {
   return cachedVoucherDetailSchema.parse({
     id: voucher.id,
     code: voucher.code,

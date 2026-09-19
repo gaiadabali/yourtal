@@ -17,7 +17,8 @@ import { cn } from "@yourtal/ui/cn";
 export const CAMPAIGN_CARD_MERCHANT_ROW_CLASS = "h-4 overflow-hidden";
 export const CAMPAIGN_CARD_TITLE_ROW_CLASS = "h-10 overflow-hidden";
 export const CAMPAIGN_CARD_META_ROW_CLASS = "h-4 overflow-hidden";
-export const CAMPAIGN_CARD_FOOTER_ROW_CLASS = "flex h-6 items-center justify-between gap-2 overflow-hidden";
+export const CAMPAIGN_CARD_FOOTER_ROW_CLASS =
+  "flex h-6 items-center justify-between gap-2 overflow-hidden";
 
 export interface CampaignCardLayoutProps {
   merchantSlot: ReactNode;
@@ -27,7 +28,13 @@ export interface CampaignCardLayoutProps {
   className?: string;
 }
 
-export function CampaignCardLayout({ merchantSlot, titleSlot, metaSlot, footerSlot, className }: CampaignCardLayoutProps) {
+export function CampaignCardLayout({
+  merchantSlot,
+  titleSlot,
+  metaSlot,
+  footerSlot,
+  className,
+}: CampaignCardLayoutProps) {
   return (
     <Card className={cn("flex h-full flex-col", className)}>
       <CardContent className="flex flex-1 flex-col gap-2 p-4">

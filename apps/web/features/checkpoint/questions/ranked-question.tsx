@@ -35,16 +35,29 @@ function focusKey(itemId: string, direction: -1 | 1): string {
  * question, so shuffling the starting presentation is exactly the kind of
  * option set the anti-sharing shuffle is for.
  */
-export function RankedQuestionView({ question, respondentId, answer, onAnswerChange, promptId, disabled }: RankedQuestionViewProps) {
+export function RankedQuestionView({
+  question,
+  respondentId,
+  answer,
+  onAnswerChange,
+  promptId,
+  disabled,
+}: RankedQuestionViewProps) {
   const initialOrder = useMemo(
-    () => seededShuffle(question.items, [question.campaignId, question.id, respondentId]).map((item) => item.id),
+    () =>
+      seededShuffle(question.items, [question.campaignId, question.id, respondentId]).map(
+        (item) => item.id,
+      ),
     [question.campaignId, question.id, question.items, respondentId],
   );
   const [order, setOrder] = useState<string[]>(() => answer?.orderedItemIds ?? initialOrder);
   const [announcement, setAnnouncement] = useState("");
   const pendingFocusKey = useRef<string | null>(null);
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>());
-  const itemsById = useMemo(() => new Map(question.items.map((item) => [item.id, item])), [question.items]);
+  const itemsById = useMemo(
+    () => new Map(question.items.map((item) => [item.id, item])),
+    [question.items],
+  );
 
   useEffect(() => {
     if (!answer) {
@@ -79,8 +92,12 @@ export function RankedQuestionView({ question, respondentId, answer, onAnswerCha
     setOrder(next);
     onAnswerChange({ type: "ranked", orderedItemIds: next });
 
-    const sameDirectionStillValid = targetIndex + direction >= 0 && targetIndex + direction < next.length;
-    pendingFocusKey.current = focusKey(itemId, sameDirectionStillValid ? direction : ((-direction) as -1 | 1));
+    const sameDirectionStillValid =
+      targetIndex + direction >= 0 && targetIndex + direction < next.length;
+    pendingFocusKey.current = focusKey(
+      itemId,
+      sameDirectionStillValid ? direction : (-direction as -1 | 1),
+    );
 
     const label = itemsById.get(itemId)?.label ?? "";
     setAnnouncement(`${label} dipindahkan ke posisi ${targetIndex + 1} dari ${next.length}.`);
@@ -95,7 +112,10 @@ export function RankedQuestionView({ question, respondentId, answer, onAnswerCha
             return null;
           }
           return (
-            <li key={itemId} className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface p-3">
+            <li
+              key={itemId}
+              className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface p-3"
+            >
               <span className="text-sm font-sans text-fg">
                 <span className="mr-2 font-semibold text-fg-muted">{index + 1}.</span>
                 {item.label}

@@ -18,7 +18,10 @@ export interface StoreErrorPanelProps {
  */
 export function StoreErrorPanel({ title, description, onRetry }: StoreErrorPanelProps) {
   return (
-    <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-danger/40 bg-surface px-6 py-16 text-center">
+    <div
+      role="alert"
+      className="flex flex-col items-center gap-3 rounded-lg border border-danger/40 bg-surface px-6 py-16 text-center"
+    >
       <p className="text-base font-semibold text-fg">{title}</p>
       <p className="max-w-sm text-sm text-fg-muted">{description}</p>
       <Button onClick={onRetry}>Coba lagi</Button>

@@ -57,14 +57,20 @@ function sanitiseFacetParam(value: string | undefined, fallback: string): string
   return trimmed;
 }
 
-export function parseStoreBoardParams(searchParams: Record<string, string | string[] | undefined>): StoreBoardParams {
+export function parseStoreBoardParams(
+  searchParams: Record<string, string | string[] | undefined>,
+): StoreBoardParams {
   const raw = storeBoardSearchParamsSchema.parse(searchParams);
 
   const categoryCandidate = firstValue(raw.category) ?? "";
-  const category = isStoreCategoryFilter(categoryCandidate) ? categoryCandidate : DEFAULT_STORE_CATEGORY_FILTER;
+  const category = isStoreCategoryFilter(categoryCandidate)
+    ? categoryCandidate
+    : DEFAULT_STORE_CATEGORY_FILTER;
 
   const priceBandCandidate = firstValue(raw.priceBand) ?? "";
-  const priceBand = isStorePriceBandFilter(priceBandCandidate) ? priceBandCandidate : DEFAULT_STORE_PRICE_BAND_FILTER;
+  const priceBand = isStorePriceBandFilter(priceBandCandidate)
+    ? priceBandCandidate
+    : DEFAULT_STORE_PRICE_BAND_FILTER;
 
   const location = sanitiseFacetParam(firstValue(raw.location), STORE_LOCATION_ALL);
   const merchant = sanitiseFacetParam(firstValue(raw.merchant), STORE_MERCHANT_ALL);
@@ -77,7 +83,10 @@ export function parseStoreBoardParams(searchParams: Record<string, string | stri
  * changed, preserving the rest — used by `StoreBoardControls` so changing
  * one filter never drops the others from the URL.
  */
-export function buildStoreBoardQuery(current: StoreBoardParams, update: Partial<StoreBoardParams>): string {
+export function buildStoreBoardQuery(
+  current: StoreBoardParams,
+  update: Partial<StoreBoardParams>,
+): string {
   const next: StoreBoardParams = { ...current, ...update };
   const params = new URLSearchParams();
   if (next.category !== DEFAULT_STORE_BOARD_PARAMS.category) {

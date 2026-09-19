@@ -65,39 +65,41 @@ SelectContent.displayName = "SelectContent";
 
 export type SelectLabelProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>;
 
-export const SelectLabel = React.forwardRef<React.ComponentRef<typeof SelectPrimitive.Label>, SelectLabelProps>(
-  ({ className, ...props }, ref) => (
-    <SelectPrimitive.Label
-      ref={ref}
-      className={cn("px-2 py-1.5 text-xs font-sans font-medium text-fg-muted", className)}
-      {...props}
-    />
-  ),
-);
+export const SelectLabel = React.forwardRef<
+  React.ComponentRef<typeof SelectPrimitive.Label>,
+  SelectLabelProps
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn("px-2 py-1.5 text-xs font-sans font-medium text-fg-muted", className)}
+    {...props}
+  />
+));
 SelectLabel.displayName = "SelectLabel";
 
 export type SelectItemProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>;
 
-export const SelectItem = React.forwardRef<React.ComponentRef<typeof SelectPrimitive.Item>, SelectItemProps>(
-  ({ className, children, ...props }, ref) => (
-    <SelectPrimitive.Item
-      ref={ref}
-      className={cn(
-        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm font-sans text-fg outline-none",
-        "focus:bg-surface-raised data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-        className,
-      )}
-      {...props}
-    >
-      <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <Check className="h-4 w-4" aria-hidden="true" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-    </SelectPrimitive.Item>
-  ),
-);
+export const SelectItem = React.forwardRef<
+  React.ComponentRef<typeof SelectPrimitive.Item>,
+  SelectItemProps
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm font-sans text-fg outline-none",
+      "focus:bg-surface-raised data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className,
+    )}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <Check className="h-4 w-4" aria-hidden="true" />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+));
 SelectItem.displayName = "SelectItem";
 
 export type SelectSeparatorProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>;
@@ -106,6 +108,10 @@ export const SelectSeparator = React.forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Separator>,
   SelectSeparatorProps
 >(({ className, ...props }, ref) => (
-  <SelectPrimitive.Separator ref={ref} className={cn("-mx-1 my-1 h-px bg-border", className)} {...props} />
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-border", className)}
+    {...props}
+  />
 ));
 SelectSeparator.displayName = "SelectSeparator";

@@ -8,14 +8,24 @@ import { idrMinorUnitsSchema, pointsSchema } from "../money/money";
  * (docs/09 section 4.1) and is carried here as the already-computed value a
  * screen shows, not re-derived client-side.
  */
-export const listingCategorySchema = z.enum(["food_beverage", "retail", "digital_goods", "merchandise", "services"]);
+export const listingCategorySchema = z.enum([
+  "food_beverage",
+  "retail",
+  "digital_goods",
+  "merchandise",
+  "services",
+]);
 export type ListingCategory = z.infer<typeof listingCategorySchema>;
 
 export const listingStatusSchema = z.enum(["available", "sold_out", "expiring_soon", "new"]);
 export type ListingStatus = z.infer<typeof listingStatusSchema>;
 
 /** Per-batch partial-redemption policy, shown to the user before spend (docs/09 section 8.2). */
-export const partialRedemptionPolicySchema = z.enum(["balance_carrying", "single_use_forfeit", "minimum_spend"]);
+export const partialRedemptionPolicySchema = z.enum([
+  "balance_carrying",
+  "single_use_forfeit",
+  "minimum_spend",
+]);
 export type PartialRedemptionPolicy = z.infer<typeof partialRedemptionPolicySchema>;
 
 const MAX_MERCHANT_NAME_LENGTH = 120;
@@ -45,16 +55,21 @@ export const listingSchema = z
     path: ["stockRemaining"],
   })
   .refine((listing) => listing.settlementValueIdr <= listing.faceValueIdr, {
-    message: "settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3)",
+    message:
+      "settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3)",
     path: ["settlementValueIdr"],
   })
   .refine((listing) => listing.status !== "sold_out" || listing.stockRemaining === 0, {
     message: "A sold_out listing must have zero stockRemaining",
     path: ["status"],
   })
-  .refine((listing) => (listing.partialRedemptionPolicy === "minimum_spend") === (listing.minimumSpendIdr !== null), {
-    message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
-    path: ["minimumSpendIdr"],
-  });
+  .refine(
+    (listing) =>
+      (listing.partialRedemptionPolicy === "minimum_spend") === (listing.minimumSpendIdr !== null),
+    {
+      message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
+      path: ["minimumSpendIdr"],
+    },
+  );
 
 export type Listing = z.infer<typeof listingSchema>;

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { longMerchantNameCampaignFixture, zeroRewardCampaignFixture } from "@yourtal/contracts/campaign/mock";
+import {
+  longMerchantNameCampaignFixture,
+  zeroRewardCampaignFixture,
+} from "@yourtal/contracts/campaign/mock";
 import { listQuickCampaigns } from "./quick-data";
 
 describe("listQuickCampaigns", () => {
@@ -20,7 +23,9 @@ describe("listQuickCampaigns", () => {
 
   it("includes the long-merchant-name quick fixture, per the ticket's 'render them' instruction", async () => {
     const campaigns = await listQuickCampaigns();
-    expect(campaigns.some((campaign) => campaign.id === longMerchantNameCampaignFixture.id)).toBe(true);
+    expect(campaigns.some((campaign) => campaign.id === longMerchantNameCampaignFixture.id)).toBe(
+      true,
+    );
   });
 
   it("excludes the zero-reward fixture, which is long_form and would violate the quick <=60s rule", async () => {

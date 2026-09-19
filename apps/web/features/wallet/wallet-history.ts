@@ -2,6 +2,7 @@ import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { pointsPriceFromSettlement } from "@yourtal/contracts/money";
 import { formatPoints } from "@yourtal/contracts/money/format";
+import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
 
 /**
  * Wallet history in plain language (YT-0423: "never transaction codes").
@@ -34,30 +35,52 @@ export interface WalletHistoryEntry {
   pointsDelta: number;
 }
 
-function earnedEntry(campaign: Campaign): WalletHistoryEntry {
+function earnedEntry(campaign: Campaign, locale: SupportedLocale): WalletHistoryEntry {
+  const t = getWalletTranslator(locale);
   return {
     id: `earn-${campaign.id}`,
     occurredAt: campaign.publishedAt,
-    description: `Menyelesaikan video ${campaign.merchantName} — dapat ${formatPoints(campaign.rewardPoints)}`,
+    description: t("history.earned", {
+      merchantName: campaign.merchantName,
+      amount: formatPoints(campaign.rewardPoints, locale),
+    }),
     pointsDelta: campaign.rewardPoints,
   };
 }
 
-function spentEntry(voucher: Voucher): WalletHistoryEntry {
+function spentEntry(voucher: Voucher, locale: SupportedLocale): WalletHistoryEntry {
   const cost = pointsPriceFromSettlement(voucher.faceValueIdr, MOCK_BACKING_RATE_IDR_PER_POINT);
+  const t = getWalletTranslator(locale);
   // `cost` is the branded `Points` type; negating it directly through a
   // brand is what @typescript-eslint/no-unsafe-unary-minus objects to.
   // `Number(cost)` reads it back out as a plain number first.
   return {
     id: `spend-${voucher.id}`,
     occurredAt: voucher.issuedAt,
-    description: `Ditukar ${formatPoints(cost)} untuk voucher ${voucher.merchantName}`,
+    description: t("history.spent", {
+      merchantName: voucher.merchantName,
+      amount: formatPoints(cost, locale),
+    }),
     pointsDelta: -Number(cost),
   };
 }
 
-/** Builds and time-sorts (newest first) the wallet's point history from its vouchers and a sample of completed campaigns. */
-export function buildWalletHistory(vouchers: Voucher[], earnedFromCampaigns: Campaign[]): WalletHistoryEntry[] {
-  const entries = [...earnedFromCampaigns.map(earnedEntry), ...vouchers.map(spentEntry)];
-  return entries.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+/**
+ * Builds and time-sorts (newest first) the wallet's point history from its
+ * vouchers and a sample of completed campaigns.
+ *
+ * YT-0405: `locale` defaults to `id-ID` so existing callers are unaffected.
+ */
+export function buildWalletHistory(
+  vouchers: Voucher[],
+  earnedFromCampaigns: Campaign[],
+  locale: SupportedLocale = "id-ID",
+): WalletHistoryEntry[] {
+  const entries = [
+    ...earnedFromCampaigns.map((campaign) => earnedEntry(campaign, locale)),
+    ...vouchers.map((voucher) => spentEntry(voucher, locale)),
+  ];
+  return entries.sort(
+    (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+  );
 }

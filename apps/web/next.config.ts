@@ -1,4 +1,5 @@
 import createBundleAnalyzer from "@next/bundle-analyzer";
+import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
@@ -17,4 +18,10 @@ const withBundleAnalyzer = createBundleAnalyzer({
   enabled: process.env["ANALYZE"] === "true",
 });
 
-export default withBundleAnalyzer(config);
+// docs/15-stack-locked.md line 28 locks next-intl for `id-ID`/`en-AU`
+// (YT-0405). `./i18n/request.ts` resolves the active locale from the same
+// region cookie `apps/web/features/region` already reads — see that file's
+// doc comment for why it does not use next-intl's own URL-based routing.
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+
+export default withNextIntl(withBundleAnalyzer(config));

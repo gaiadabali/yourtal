@@ -5,6 +5,8 @@ import { asDisplayPoints, formatPoints } from "@yourtal/contracts/money/format";
 export interface CompletionHandoffProps {
   campaignId: string;
   provisionalPoints: number;
+  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
+  locale?: "en-AU" | "id-ID";
 }
 
 /**
@@ -15,13 +17,18 @@ export interface CompletionHandoffProps {
  * workspace, so `next.config.ts`'s `typedRoutes: true` can verify the
  * literal template string below directly, with no cast.
  */
-export function CompletionHandoff({ campaignId, provisionalPoints }: CompletionHandoffProps) {
+export function CompletionHandoff({
+  campaignId,
+  provisionalPoints,
+  locale = "id-ID",
+}: CompletionHandoffProps) {
   const checkpointHref = `/watch/${campaignId}/checkpoint` as const;
 
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-surface-raised p-6 text-center">
       <p className="text-sm font-sans text-fg-muted">
-        You watched the whole video. {formatPoints(asDisplayPoints(Math.round(provisionalPoints)))} pending — answer the
+        You watched the whole video.{" "}
+        {formatPoints(asDisplayPoints(Math.round(provisionalPoints)), locale)} pending — answer the
         checkpoint questions to confirm your reward.
       </p>
       <Button asChild>

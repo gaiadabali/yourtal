@@ -22,7 +22,9 @@ import { SeekSlider } from "./seek-slider";
 // Loaded on intent only (mounted after the user taps play, see below), and
 // never server-rendered — see hls-attacher.tsx's own doc comment for why
 // this is what keeps hls.js out of this route's initial JS.
-const HlsAttacher = dynamic(() => import("./hls-attacher").then((mod) => mod.HlsAttacher), { ssr: false });
+const HlsAttacher = dynamic(() => import("./hls-attacher").then((mod) => mod.HlsAttacher), {
+  ssr: false,
+});
 
 export interface VideoPlayerProps {
   campaign: Campaign;
@@ -65,7 +67,10 @@ export function VideoPlayer({ campaign, chapters }: VideoPlayerProps) {
       </div>
 
       {session.resumeOffer ? (
-        <ResumePrompt positionSeconds={session.resumeOffer.positionSeconds} onChoose={session.dismissResumeOffer} />
+        <ResumePrompt
+          positionSeconds={session.resumeOffer.positionSeconds}
+          onChoose={session.dismissResumeOffer}
+        />
       ) : null}
 
       <AccrualIndicator

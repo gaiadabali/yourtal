@@ -28,7 +28,8 @@ function startAnnouncement(secondsRemaining: number): string {
     : `Harga ini terkunci selama ${secondsRemaining} detik.`;
 }
 
-const EXPIRED_ANNOUNCEMENT = "Harga ini sudah tidak berlaku. Muat ulang untuk mendapatkan harga baru.";
+const EXPIRED_ANNOUNCEMENT =
+  "Harga ini sudah tidak berlaku. Muat ulang untuk mendapatkan harga baru.";
 
 /**
  * Ticks a countdown to `lockExpiresAt`, an absolute instant computed
@@ -43,9 +44,16 @@ const EXPIRED_ANNOUNCEMENT = "Harga ini sudah tidak berlaku. Muat ulang untuk me
  * Calls `onExpire` exactly once, the render after the lock actually
  * expires — never early, and never suppressed by a stale closure.
  */
-export function usePriceLockCountdown(lockExpiresAt: string, onExpire: () => void): PriceLockCountdownState {
-  const [secondsRemaining, setSecondsRemaining] = useState(() => computeSecondsRemaining(lockExpiresAt, Date.now()));
-  const [announcement, setAnnouncement] = useState(() => startAnnouncement(computeSecondsRemaining(lockExpiresAt, Date.now())));
+export function usePriceLockCountdown(
+  lockExpiresAt: string,
+  onExpire: () => void,
+): PriceLockCountdownState {
+  const [secondsRemaining, setSecondsRemaining] = useState(() =>
+    computeSecondsRemaining(lockExpiresAt, Date.now()),
+  );
+  const [announcement, setAnnouncement] = useState(() =>
+    startAnnouncement(computeSecondsRemaining(lockExpiresAt, Date.now())),
+  );
   const onExpireRef = useRef(onExpire);
   onExpireRef.current = onExpire;
   const hasFiredExpireRef = useRef(false);

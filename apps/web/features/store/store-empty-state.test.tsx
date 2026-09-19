@@ -6,7 +6,10 @@ import { StoreEmptyState } from "./store-empty-state";
 describe("StoreEmptyState", () => {
   it("offers a reset action when filters narrowed the grid to nothing", () => {
     render(<StoreEmptyState hasActiveFilters />);
-    expect(screen.getByRole("link", { name: /hapus semua filter/i })).toHaveAttribute("href", "/store");
+    expect(screen.getByRole("link", { name: /hapus semua filter/i })).toHaveAttribute(
+      "href",
+      "/store",
+    );
   });
 
   it("does not offer a reset action when no filter is narrowing the grid", () => {

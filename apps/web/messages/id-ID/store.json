@@ -1,0 +1,20 @@
+{
+  "balance": {
+    "sufficient": "Saldo kamu cukup — {amount} tersedia untuk item ini.",
+    "insufficientHeading": "Poin kamu belum cukup — kurang {count} poin lagi.",
+    "insufficientDetail": "Saldo saat ini {available}, dibutuhkan {required}.",
+    "earnAtEarn": "Cari campaign di Earn",
+    "tryQuick": "Coba Quick"
+  },
+  "redemption": {
+    "balanceCarrying": "Sisa saldo tersimpan",
+    "singleUseForfeit": "Sekali pakai, sisa hangus",
+    "minimumSpend": "Ada minimum belanja",
+    "descBalanceCarrying": "Jika belanjamu kurang dari nilai voucher, sisa saldonya tetap tersimpan dan bisa dipakai lagi — seperti kartu hadiah.",
+    "descSingleUseForfeit": "Voucher ini sekali pakai. Jika belanjamu kurang dari nilai voucher, sisa nilainya hangus setelah dipakai.",
+    "descMinimumSpendWithAmount": "Voucher ini hanya berlaku untuk belanja minimal {amount}.",
+    "descMinimumSpendUnspecified": "Voucher ini hanya berlaku untuk belanja minimal tertentu.",
+    "transferable": "Voucher ini bisa dialihkan ke satu pengguna YourTal lain yang sudah terverifikasi.",
+    "notTransferable": "Voucher ini tidak bisa dialihkan ke pengguna lain."
+  }
+}

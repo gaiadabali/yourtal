@@ -12,6 +12,7 @@
 
 ### YT-0400 · Design tokens and theme
 `review` · PU · web · 3d · dep: —
+
 - [x] Colour, type, spacing, radius and elevation scales defined once, as CSS custom properties on `:root`
 - [x] Dark mode via `prefers-color-scheme` plus an explicit override attribute
 - [x] Contrast checked to WCAG AA on both themes, including the reward and price colours
@@ -19,20 +20,23 @@
 
 ### YT-0401 · UI primitives
 `review` · PU · web · 5d · dep: YT-0400
+
 - [x] Button, Input, Select, Card, Sheet, Dialog, Toast, Skeleton, Tabs, Badge, Progress on Radix
 - [x] Every primitive keyboard-operable and screen-reader labelled
-- [ ] Tested at 320 px width and at 200% browser zoom — **not genuinely verified, left unchecked on purpose.** jsdom (Vitest) cannot render real layout, so only proxies were checked statically: no fixed-px widths that exceed 320px, all sizing in rem/%/vh, no `overflow-hidden` on accessible (non-scrollable) content. Needs a real-browser pass (Playwright or manual) at 320px and 200% zoom before this box is honestly tickable.
+- [ ] Tested at 320 px width and at 200% browser zoom — **run for real in Playwright against Chrome (`apps/web/e2e/overflow-320.spec.ts`, `apps/web/e2e/zoom-200.spec.ts`), and it found genuine breakage, so this stays unticked.** At a plain 320px viewport, every owned screen passes (`/`, `/campaign/[id]`, `/watch/[id]`, `/watch/[id]/checkpoint`, `/store`, `/store/[id]`, `/wallet`, `/quick`, `/merchant`, `/onboarding`, plus the 78-char `longMerchantNameCampaignFixture` on the earn board/campaign entry card and the bottom nav's 5 touch targets, all ≥44×44px) — **except `/business`**, which overflows to 674px (354px over budget): `features/console/console-business-switcher.tsx` renders a native `<select>` with no `max-w`/`truncate`, and its selected `<option>` text is `{merchantName} — {role}`; with `longNameBusinessFixture`'s 78-char name the browser sizes the closed select to fit that text, and its parent flex row has no `min-w-0` to force it to shrink. Real, reproducible defect — not fixed here (out of this ticket's owned files; belongs to whoever owns `features/console`). At 200% zoom (mechanism: 320px viewport + `document.documentElement.style.zoom = "2"`, Chromium's native page-zoom primitive — proves real layout/hit-test rescaling at a viewport narrower than any real 200%-zoomed device would ever produce; does NOT prove pinch-zoom/visual-viewport panning behavior, and was not checked in a real windowed Chrome), `/`, `/campaign/[id]`, `/wallet` and `/store` all overflow (measured: `/` 487px, `/campaign/[id]` 352px, `/wallet` 373px, `/store` 352–1097px depending on run — `/store`'s overlap test also intermittently failed with two earn-board cards visually overlapping under the `mobile-320` project). This is a genuinely harder combined test than the ticket's plain 320px or 200%-zoom cases individually, but it is real: low-vision users on a narrow device zoomed to 200% will see clipped/overlapping content on these four screens today.
 - [x] No file over 300 lines; no barrel files
 
 ### YT-0402 · App shell and responsive navigation
 `review` · PU · web · 4d · dep: YT-0401
+
 - [x] Five-tab bottom navigation on mobile; side navigation from `md` — verified against actual rendered HTML (dev server, not just source reading): both `<nav aria-label="Primary">` elements are present in the response for every owned route, gated by `md:hidden` / `hidden md:flex`, with `aria-current="page"` and active styling correctly following the current path
 - [x] Safe-area insets handled for notched devices — `env(safe-area-inset-bottom)` / `env(safe-area-inset-left)` with a `max(0px, …)` floor, confirmed present in the rendered HTML; no hardcoded device pixel values; root `viewport-fit=cover` left as-is
-- [ ] Route transitions with no layout shift — layout-stable **by construction**: fixed-size nav (`h-16` bottom / `w-20`–`w-56` side), `<main>` reserves matching padding, one shared layout wraps every route so chrome dimensions cannot change between them. **Not genuinely verified**: the enforced CLS ≤ 0.1 gate runs Lighthouse against a *production build*, and `pnpm build` does not yet complete — it fails type-checking on files outside this ticket's scope (see report). Needs a real Lighthouse pass once those land.
+- [x] Route transitions with no layout shift — **genuinely measured**, not just claimed. `apps/web/e2e/route-transition-cls.spec.ts` drives a real Chrome against the production build (`pnpm build && pnpm start`), clicks through the bottom nav Earn → Store → Wallet → Quick → Me, and reads real `PerformanceObserver` `layout-shift` entries (excluding `hadRecentInput`) reset before each click. **Measured CLS: 0 for every transition** (Store 0, Wallet 0, Quick 0, Me 0), on both the desktop and 320px-viewport Playwright projects, gate is ≤0.1. Confirms the fixed-size nav / matching `<main>` padding construction actually holds in a real browser.
 - [x] Server-rendered shell; no client component above the fold — `layout.tsx`, `app-shell.tsx`, `bottom-nav.tsx`, `side-nav.tsx` carry no `"use client"`; the only client boundary is the leaf `nav-link.tsx` (`usePathname` for active-tab state). Verified by reading every file and by a dev-server render that surfaced and let me fix a real RSC violation (a Lucide icon **function** was being passed as a prop across the server→client boundary — invisible to `tsc`, thrown only at runtime). Exact KB contribution against the 170 KB budget is not yet measured — `scripts/perf-check-bundle-size.mjs` needs a successful `pnpm build`, which is currently blocked (see report).
 
 ### YT-0403 · Typed mock data layer
 `review` · PU · web · 3d · dep: —
+
 - [x] Zod schemas in `packages/contracts` for campaign, listing, voucher, balance, business, question
 - [x] Deterministic seeded generators producing realistic Indonesian data (IDR amounts, Jakarta districts, real-sounding merchants)
 - [x] One switch flips every screen between mock and live
@@ -40,34 +44,52 @@
 
 ### YT-0404 · Performance budget harness
 `review` · PU · web · 2d · dep: YT-0402
+
 - [x] Lighthouse CI on every PR, throttled to mid-tier Android over 4G
 - [x] Fails the build on LCP > 2.0 s, CLS > 0.1, **TBT > 200 ms (the lab proxy, not INP)**, and initial JS over the 200 KB hard gate (180–200 KB passes but is flagged as needing written justification). **INP is deliberately NOT asserted: it is a field metric that Lighthouse cannot produce in a lab run at all, so Total Blocking Time stands in for it.** Real p75 INP from users is YT-0501, not this task. Rationale in `apps/web/lighthouserc.cjs`; budget per `docs/13b-typescript-standards.md` §8.
 - [x] Bundle-size report posted on the PR
+
+### YT-0405 · Region and locale foundation (AU + ID)
+`review` · PU · web · 4d · dep: YT-0403
+
+- [x] `Region` is a first-class concept — `AU` and `ID`, each carrying its own locale (`en-AU` / `id-ID`) and currency (`AUD` / `IDR`), selected once and available to every screen without prop-drilling — `@yourtal/contracts/region` (`regionSchema`, `REGION_CONFIG`) plus `apps/web/features/region` (`RegionProvider`/`useRegion()` for Client Components, `getRegion()`/`getRegionDisplayConfig()` for Server Components), mounted once in `app/(app)/layout.tsx`
+- [x] One money formatter takes an amount **and a currency**, replacing the IDR-only `formatIdr`; AUD renders as `$12.50` and IDR as `Rp45.000` from the same call site — `formatMoney(amountMinor, currency)` in `money-format.ts`; `formatIdr` now delegates to it
+- [x] Mock fixtures exist for both regions — Sydney merchants and AUD prices alongside the Jakarta/IDR set — including the same awkward cases (long name, zero balance, expired voucher, sold-out) — `@yourtal/contracts/region/mock`
+- [ ] Every existing Phase U screen renders correctly in both regions, with no hardcoded `id-ID`, no hardcoded `Rp`, and no Indonesian copy leaking into `en-AU` — **next-intl is now genuinely wired (docs/15 line 28) and a large slice of copy is translated and tested in both locales, but this is still honestly not complete; do not tick.** Wired: `apps/web/i18n/request.ts` (`getRequestConfig`, locale resolved via `getRegionDisplayConfig()` — one source of truth, never a second cookie parse), `next.config.ts`'s `createNextIntlPlugin`, and `app/(app)/layout.tsx`'s `NextIntlClientProvider` alongside `RegionProvider`. Catalogues live at `apps/web/messages/<locale>/<feature>.json` (campaign, quick, store, wallet, burn, checkpoint). Translated with tests in both locales: `campaign-card.tsx`, `campaign-entry-card.tsx` (+ `campaign-scoring-copy.ts`), `quick-feed-card.tsx` (+ `quick-feed-label.ts`), `store-balance-notice.tsx`, `store-redemption-policy.ts` (also fixed: `formatIdr` → `formatMoney`, so minimum-spend renders in the region's real currency), `wallet-balance-summary.tsx`, `wallet-history-list.tsx` + `wallet-history.ts`, `wallet-voucher-status-copy.ts`, `wallet-voucher-card.tsx` (also fixed: `formatIdr` → `formatMoney`), `wallet-redemption-copy.ts`, `burn-error-message.tsx` (all five errors, jargon-free in both locales, plus its date formatter is now locale-aware), `burn-summary.tsx` (also fixed: `formatIdr` → `formatMoney`), `checkpoint-result.tsx`, `voucher-detail-view.tsx` + `voucher-archived-panel.tsx` + `voucher-validity-countdown.tsx` (also fixed: `formatIdr` → `formatMoney`). Client-rendered leaves (`burn-error-message`, `burn-summary`, `checkpoint-result`, `voucher-detail-view` and its sub-components) read the real region and translations ambiently via `useRegion()`/`useTranslations()` — genuinely wired end-to-end through the provider mounted once in the shared layout, no prop-drilling gap. **What is NOT closed:** (1) the Server-rendered leaves in that translated list (`campaign-card`, `campaign-entry-card`, `quick-feed-card`, `store-balance-notice`, `wallet-balance-summary`, `wallet-history-list`, `wallet-voucher-card`) take an optional `locale`/`currency` prop defaulting to `id-ID`/`IDR` — correct and tested when given the real value, but no page.tsx route in this app tree (out of this ticket's owned files) actually passes it yet, so today's live rendering is still Indonesian by default until that wiring is added; same gap for `wallet-redemption-copy.ts`'s one caller (`app/(app)/wallet/voucher/[voucherId]/page.tsx`). (2) Whole screens/components not reached this pass: `burn-flow.tsx`'s own copy (Lanjutkan/Kembali/Tukar sekarang/Berhasil/etc.), all `checkpoint/questions/*`, `checkpoint-quiz.tsx`/`checkpoint-progress.tsx`/`checkpoint-timer.tsx`/`question-answer-view.tsx`, `store-offer-terms.tsx`/`store-offer-card.tsx`/`store-offer-redeem-steps.tsx`/`store-listing-card.tsx`, `wallet-screen.tsx`/`wallet-empty-state.tsx` headings, `quick-feed-viewport.tsx`/`quick-feed-empty-state.tsx`. (3) `features/merchant/**` untouched per this ticket's explicit instruction (another agent owns it, with pre-existing type/lint errors that are not this ticket's). See YT-0405's report for the full file-by-file detail and the bundle-size cost next-intl added.
+- [x] Switching region changes currency, number formatting and copy together — a test asserts they cannot drift apart — `apps/web/features/region/region-context.test.tsx`, one component reading `useRegion()` once and driving `formatMoney`+`formatPoints` from that single value; the test flips the `RegionProvider` region and asserts all three outputs move together
+
+**Why this is a task and not a footnote:** the founder's position is that **Australia is the real market and Indonesia is the proving ground** (each region has its own tax, regulatory and currency setup, chosen at registration). Every Phase U surface built so far assumes Indonesia — Jakarta districts, IDR, `id-ID` number formatting, Indonesian UI copy. A prototype shown to Australian merchants and investors in Rupiah tests the wrong thing.
+
+Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, blocked on Xendit). AUD is unambiguously two-decimal; only IDR is uncertain, and formatting can be currency-aware without the stored unit being settled. The underlying `packages/contracts` money type still has no currency at all, against `docs/12` §3's Money pattern — that is the architect's call, tracked separately.
 
 ## The earn loop
 
 ### YT-0410 · Earn board
 `review` · PU · web · 4d · dep: YT-0402, YT-0403
+
 - [x] Dense card grid; every card shows **duration · reward · estimated MB · merchant**
 - [x] Filter and sort controls; empty, loading and error states all designed
 - [x] Skeletons match final dimensions exactly so nothing shifts
 
 ### YT-0411 · Campaign entry card — the contract screen
 `review` · PU · web · 3d · dep: YT-0410
+
 - [x] States plainly: how long, what you earn, how much data, how many questions, and the scoring rule
 - [x] Terms shown here are the terms honoured — copy makes that explicit
 - [x] Single primary action; no dark patterns, no hidden duration
 
 ### YT-0412 · Long-form player UI
 `review` · PU · web · 5d · dep: YT-0411
+
 - [x] Chapter markers, progress, accrued reward visible throughout
 - [x] Quality selector defaulting to 360–480p with the data cost shown per option
 - [x] Resume prompt when a prior position exists
 - [x] Accrual visibly pauses when the tab is backgrounded
-- [ ] Keyboard seeking (arrow / Home / End) verified in **Playwright against a real browser** — the seek bar is a native `<input type="range">`, so this behaviour belongs to the browser and jsdom does not implement it. The earlier Radix Slider exercised its own keyboard JavaScript through a jsdom shim, which tested the library rather than this app. Fold into the Playwright pass that YT-0401's 320 px / 200 % zoom criterion also needs.
+- [ ] Keyboard seeking (arrow / Home / End) verified in **Playwright against a real browser** — attempted in `apps/web/e2e/keyboard-seek.spec.ts`, left **UNTESTABLE, not passing or failing**. The seek bar's displayed value tracks real playback position (`session.virtualCurrentTime` in `use-watch-session.ts`); `handleSeekTo` writes straight to `video.currentTime` and no-ops into a pending ref until `video.duration` is finite, so a keyboard press only visibly sticks once the `<video>` has actually loaded real media. Every campaign in this mock-only phase points at the same public HLS reference stream (`features/player/video-source.ts`, Apple's `bipbop_16x9_variant.m3u8`) — reachable and CORS-open (verified via `curl`, and hls.js does fetch and parse its manifest and sub-playlist, both 206 responses), but the actual video segment fetch (`gear1/main.ts`, a 59 MB single segment) reliably aborts (`net::ERR_ABORTED`) in this Playwright/production-build sandbox before `loadedmetadata` fires, even waited out to 75s — `video.duration` never becomes finite, `readyState` stays `HAVE_NOTHING`. Code inspection shows the native `<input type="range">` itself is correctly wired (real `role="slider"`, `min`/`max`/`step`, `aria-valuetext`) and Home/End/Arrow-key seeking is guaranteed native browser behaviour for that element — but this ticket could not observe the app's own controlled-value plumbing actually reflect a keyboard seek end-to-end, because the shared placeholder video asset never reaches a seekable state in this environment. Needs either a real per-campaign encode (the already-flagged gap in `video-source.ts`) or a small local/mock media fixture reachable from this sandbox before this box can be honestly ticked either way.
 
 ### YT-0413 · Checkpoint question UI
 `review` · PU · web · 4d · dep: YT-0412
+
 - [x] One question at a time, conversational, visible timer, shuffled options
 - [x] All five question types rendered: multiple choice, true/false, Likert, ranked, short text
 - [x] Fully keyboard and screen-reader accessible; timer announced, not only shown
@@ -75,6 +97,7 @@
 
 ### YT-0414 · Quick feed
 `review` · PU · web · 4d · dep: YT-0402, YT-0403
+
 - [x] Vertical swipeable feed of short campaigns with snap scrolling — CSS-only (`scroll-snap-type: y mandatory` on the container, `scroll-snap-align: start` + `snap-always` per item), no JS scroll hijack. Verified by source inspection, a passing production build, and component tests asserting the container/item structure. **Not genuinely verified**: jsdom implements no real layout or momentum scrolling, so the actual felt swipe/snap physics need a real mobile browser pass.
 - [x] Never autoplays into an item the user did not navigate to — interpreted strictly: the feed itself contains no `<video>`/`<audio>` element and nothing that could play at all (asserted directly in `quick-feed-card.test.tsx` and `quick-feed-viewport.test.tsx`). Reaching real video is a genuine navigation to the existing long-form player (`/watch/[campaignId]`, YT-0412), which itself still requires its own explicit tap-to-play overlay before anything plays or makes sound.
 - [x] Degrades to a list on desktop rather than faking a phone — one DOM tree, `md:grid` replaces the mobile snap column via Tailwind responsive classes only (no separate desktop component, no fixed-width phone frame). **Not genuinely verified**: jsdom cannot evaluate media queries against a real viewport; needs a real-browser or manual pass at `md`/`lg` widths to confirm the switch visually.
@@ -83,18 +106,21 @@
 
 ### YT-0420 · Store browse
 `review` · PU · web · 4d · dep: YT-0402, YT-0403
+
 - [x] Category, merchant, price-band and location filters
 - [x] Price in points shown with the live face value beside it
 - [x] Sold-out, expiring and newly-added states designed
 
 ### YT-0421 · Offer detail
 `review` · PU · web · 3d · dep: YT-0420
+
 - [x] Terms, minimum spend, transferability and partial-redemption policy **above the fold, before any action**
-- [ ] Merchant, locations and how to redeem — **merchant and how-to-redeem are done; locations is not.** `listingSchema` carries a single `district: string`, not a list of outlets, so a merchant with several branches can only be shown one. The implementation renders every location the data has; closing this needs a contract change (a `locations` array on `listing.ts`), not more UI. Knowing *which* branch honours a voucher is load-bearing for redemption, so this should not be waved through.
+- [ ] Merchant, locations and how to redeem — **merchant and how-to-redeem are done; locations is not.** `listingSchema` carries a single `district: string`, not a list of outlets, so a merchant with several branches can only be shown one. The implementation renders every location the data has; closing this needs a contract change (a `locations` array on `listing.ts`), not more UI. Knowing _which_ branch honours a voucher is load-bearing for redemption, so this should not be waved through.
 - [x] Insufficient-balance state shows exactly how much more is needed and how to earn it — links to Earn and Quick rather than estimating "worth ~N campaigns", deliberately keeping Store decoupled from the earn loop's data shape.
 
 ### YT-0422 · Burn flow with price lock
 `review` · PU · web · 4d · dep: YT-0421
+
 - [x] Visible price-lock countdown from the moment the price is shown
 - [x] Confirmation step restates cost and terms
 - [x] Success, failure and lock-expired states all designed
@@ -102,12 +128,14 @@
 
 ### YT-0423 · Wallet
 `review` · PU · web · 4d · dep: YT-0402, YT-0403
+
 - [x] Balance, pending-in-holdback with unlock dates, and expiring-soon
 - [x] History in plain language, never transaction codes
 - [x] Empty state teaches the loop rather than showing a zero
 
 ### YT-0424 · Voucher detail and offline QR
 `review` · PU · web · 3d · dep: YT-0423
+
 - [x] Rotating QR with a visible validity countdown
 - [ ] Renders from cache with the network disabled — verified by test (see report: a stubbed-fetch test proves the render path has zero network dependency given a cache entry; full offline page-load still needs the Serwist service worker, not installed in this ticket — left unticked rather than overclaimed)
 - [x] Per-merchant redemption instructions in the user's language
@@ -116,20 +144,24 @@
 ## Entry, exit and logged-out
 
 ### YT-0430 · Onboarding and phone OTP
-`todo` · PU · web · 4d · dep: YT-0402
-- [ ] Signup under 60 seconds on a throttled connection, measured
-- [ ] Interest picker with images, 15 seconds to complete
-- [ ] Per-purpose consent screens, specific and unambiguous, in Bahasa and English
-- [ ] Resend, wrong-number and rate-limited states designed
+`review` · PU · web · 4d · dep: YT-0402, YT-0405
+
+- [ ] Signup under 60 seconds on a throttled connection, measured — **built to be short, instrumented, not measured.** The flow is region → consent → phone → OTP, four short screens, native controls throughout, and the region step ships zero client JS (a Server Action + a `<form>`, no hydration needed to submit it). `onboarding-timing.ts` records real Performance API marks (`signup-start` on mount, `signup-complete` once OTP verifies) and computes a `performance.measure` duration, visible in DevTools' Performance panel or via `performance.getEntriesByName`. jsdom (Vitest) cannot render real layout or throttle a network, so no test in this repo produces the actual wall-clock number — left unticked rather than overclaimed. Needs a real-browser pass (Playwright/Lighthouse, neither set up in this repo yet) on a throttled profile before this is honestly tickable.
+- [ ] Interest picker with images, 15 seconds to complete — same honesty split as above. Built genuinely fast (one tap per interest, "Skip for now" always available, never blocks), and images are honest CSS/SVG placeholders (fixed `aspect-square` tiles, a centred Lucide icon on a tinted token background — zero network requests, zero measured CLS contribution, not a grey box standing in for a photo that doesn't exist). `interests-start`/`interests-complete` marks exist via the same `onboarding-timing.ts`. The 15-second figure itself is not measured for the same jsdom reason as above.
+- [x] Per-purpose consent screens, specific and unambiguous, in Bahasa and English — three independent, un-ticked, plain-language controls (account & phone verification — required; personalised recommendations — optional; marketing messages — optional), each stating what is collected and why, in `onboarding-copy-en-au.ts` / `onboarding-copy-id-id.ts`. `consent-form.test.tsx` asserts all three start unchecked and stay independent. The required purpose's own copy is also where the OTP honesty lives: it says a one-time code confirms uniqueness, not identity — see docs/23 §1.0 note below.
+- [x] Resend, wrong-number and rate-limited states designed — `phone-verification-reducer.ts` models phone → sending → code → verifying → rate_limited → verified as one discriminated `phase`. Resend has its own 30 s cooldown (`use-resend-cooldown.ts`) independent of the 3-per-30-minute resend cap and the 3-per-15-minute verify-attempt cap (`otp-rate-limit.ts`); "Wrong number? Edit it" returns to phone entry with the typed digits preserved; rate-limited states state the exact retry time (`toLocaleTimeString` in the active locale), not just "try again later." All covered by `phone-verification-reducer.test.ts` and `phone-verification-flow.test.tsx`.
+- [x] **Region selected at registration, with AU routing to `en-AU`/AUD and ID to `id-ID`/IDR downstream** (added per the founder's explicit instruction; not in this ticket's original scope) — `/onboarding` is a region picker (Australia / Indonesia, real content, both languages shown since no locale is chosen yet); picking one runs a Server Action (`commit-region-action.ts`) that validates against the real `regionSchema` and writes the `yourtal-region` cookie YT-0405's `get-region.ts` already reads, then redirects to `/onboarding/{region}/consent`. Verified end-to-end, not just asserted: `app/(app)/layout.tsx` (YT-0405, shared) already calls `getRegion()` and wraps every tab route in `<RegionProvider>` — before this ticket nothing ever wrote that cookie, so every screen silently used `getRegion()`'s `"ID"` fallback. Every subsequent onboarding screen renders in the chosen locale via `apps/web/features/region/region-config.ts`'s `regionDisplayConfig`, and the completion screen runs an example amount through the real `formatMoney(amountMinor, currency)` so AU visibly renders `$12.50` and ID visibly renders `Rp45.000` from the same call site.
 
 ### YT-0431 · Logged-out public pages
 `todo` · PU · web · 4d · dep: YT-0410, YT-0420
+
 - [ ] Public campaign, merchant, offer and catalogue pages, server-rendered
 - [ ] One honest call to action naming the actual reward value
 - [ ] Open Graph and share card metadata with a generated image
 
 ### YT-0432 · Open Viewing playback and conversion
 `todo` · PU · web · 3d · dep: YT-0431, YT-0412
+
 - [ ] Anonymous full playback with no reward UI, and no claim affordance anywhere
 - [ ] Foregone reward shown honestly during playback
 - [ ] Sign-up prompt at the point a rewarded viewer would have been paid
@@ -137,6 +169,7 @@
 
 ### YT-0433 · Me, settings and consent controls
 `todo` · PU · web · 3d · dep: YT-0430
+
 - [ ] Per-purpose consent toggles that visibly take effect
 - [ ] Language, interests, security, referrals
 - [ ] Account deletion path present and honest about what happens to points
@@ -144,57 +177,91 @@
 ## Business and merchant
 
 ### YT-0440 · Business console shell
-`todo` · PU · web · 3d · dep: YT-0401
-- [ ] Desktop-first; three zones shown only when the business holds that relationship
-- [ ] Usable at tablet width; no horizontal scrolling
+`review` · PU · web · 3d · dep: YT-0401
+
+- [x] Desktop-first; three zones shown only when the business holds that relationship — `features/console/console-zone-access.ts` transcribes `policies/derived_roles/business.yaml` and docs/17 §2.1's table into one `ZONE_ACCESS` map; `getVisibleZones` hides Campaigns/Inventory/Redemption unless the business holds the matching advertiser/supplier/redeemer relationship, gates all six zones by the viewer's team role, and is unit-tested against fixtures that mirror `policies/tests/business_test.yaml`/`team_test.yaml` exactly (`console-zone-access.test.ts`). The demo business (`longNameBusinessFixture`) deliberately lacks `redeemer`, so the shell genuinely hides that zone rather than showing all three unconditionally — confirmed via `node scripts/perf-check-bundle-size.mjs apps/web` rendering `/business/redemption` at all (it degrades to an honest access/relationship-denied panel for a role or business that doesn't qualify, not a 404).
+- [ ] Usable at tablet width; no horizontal scrolling — **not genuinely verified.** Built with fluid Tailwind (`max-w-6xl mx-auto`, `flex-wrap` zone tabs, `min-w-0` throughout, no fixed-px widths past a tablet viewport) and a real production build succeeds (see report), but no dev-server/Playwright pass at tablet width was done this session — a shared build lock from other agents running in parallel blocked an interactive check in the time available. Same gap YT-0401 already left honestly open for its own 320px/200%-zoom criterion; needs the same real-browser pass.
+
+**Also in this ticket's report, not a checkbox here:** the console nests inside the consumer's five-tab `AppShell` (forced by the shared route contract — `app/(app)/business/**`, with `app/(app)/layout.tsx` off-limits) even though it is a different, desktop-first audience; see the report for why that wasn't fixable from this ticket and what it costs.
 
 ### YT-0441 · Campaign builder
-`todo` · PU · web · 5d · dep: YT-0440, YT-0403
-- [ ] Upload with progress, chapter editing, reward configuration, targeting, budget
-- [ ] Live preview of exactly what the user will see on the entry card
-- [ ] Draft, in-review, live, paused and rejected states designed, with rejection reasons
+`review` · PU · web · 5d · dep: YT-0440, YT-0403
+
+- [x] Upload with progress, chapter editing, reward configuration, targeting, budget — simulated upload (`campaign-editor-upload.tsx`, no real endpoint exists in Phase U), chapters derive total duration/data cost rather than accepting them separately (`campaign-chapter.ts`), reward + scoring rule (`campaign-editor-reward.tsx`), interest/district tag targeting (`campaign-editor-targeting.tsx`), total budget + optional daily cap in points (`campaign-editor-budget.tsx`)
+- [x] Live preview of exactly what the user will see on the entry card — `campaign-entry-preview.tsx` renders every fact the real entry card contract requires (duration, data cost, base reward, accuracy bonus, question count, scoring rule) live off the draft's current values, plus the reward-to-data-cost ratio banner (docs/06 §2.3 rule 5) so a thin reward against a long video is shown, not silently accepted. **Not the literal `CampaignEntryCard` component** — see this ticket's report for why (measured bundle cost) and what was verified equivalent instead.
+- [x] Draft, in-review, live, paused and rejected states designed, with rejection reasons — `campaign-draft-status.ts` models the five-state authoring workflow (a superset of the published `campaignStatusSchema`, flagged for the architect in this ticket's report), `campaign-draft-actions.ts` gates every transition (submit needs a ready video, a title, and a bank meeting the anti-sharing minimum), `campaign-editor-status-panel.tsx` shows the moderator's rejection reason in full and offers Revise, all five states are seeded as fixed demo fixtures (`campaign-draft-fixtures.ts`) so every state is genuinely reachable, not theoretical
 
 ### YT-0442 · Question bank authoring
-`todo` · PU · web · 4d · dep: YT-0441
-- [ ] All five question types, with correct-answer marking on scored types
-- [ ] Bank-size rule enforced in the UI with an explanation, not a silent block
-- [ ] PII-request rejection shown inline as the author types, with the reason
+`review` · PU · web · 4d · dep: YT-0441
+
+- [x] All five question types, with correct-answer marking on scored types — `question-editor.tsx` dispatches to one fields component per type via an exhaustive `switch`/`never` default; multiple_choice and true_false mark a correct answer, likert/ranked/short_text are opinion/unscored per docs/06 §4.1's table (`isScoredQuestionType`)
+- [x] Bank-size rule enforced in the UI with an explanation, not a silent block — `question-bank-rules.ts` computes the asked-count cap (1 per 5 min, max 5) and the 3x anti-sharing minimum bank size, `question-bank-screen.tsx` shows the worked numbers and exactly how many more questions are needed, and `submitForReview` refuses to advance a campaign whose bank doesn't meet it yet, naming the shortfall
+- [x] PII-request rejection shown inline as the author types, with the reason — `question-pii-guard.ts`'s `detectPiiRequest` runs on every keystroke of the prompt field (phone, email, address, government ID, income, health status, bank/card details, full name), shown as the field's own `errorMessage`; `question-bank-actions.ts` also refuses to save a flagged question even if a caller bypassed the inline warning
 
 ### YT-0443 · Business reports
-`todo` · PU · web · 4d · dep: YT-0440, YT-0403
-- [ ] Completion by chapter, question accuracy, recall score, redemption attribution
-- [ ] Open views and rewarded views reported separately and never combinable
-- [ ] Aggregates only; no interface path to a per-user answer exists
+`review` · PU · web · 4d · dep: YT-0440, YT-0403
+
+- [ ] Completion by chapter, question accuracy, recall score, redemption attribution — **none of the four are shown, deliberately.** `campaignSchema` carries no chapter data (chapters are UI-derived, display-only — `features/player/derive-chapters.ts` — with no attendance recorded against them anywhere); `questionSchema` defines prompts and correct answers but there is no response/attempt record anywhere in `packages/contracts`, so accuracy and recall cannot be computed, only guessed; `voucherSchema` has no `campaignId`, only `listingId`/`merchantId`, so a redemption cannot be attributed to the campaign that earned it. There is no history/analytics contract in `packages/contracts` at all to read any of this from. Each gap is rendered as a named `ReportsUnavailablePanel` (`features/console/reports/reports-unavailable-metrics.ts`) stating the exact missing field and file, never a chart with invented numbers — docs/23-critique.md §1.0's own instruction is "a plausible-looking fabricated chart is worse than an empty state." What IS real and shown instead: a redemption **ledger** (voucher status × count × total face value, attributable to the business but explicitly NOT to a campaign) and question-bank **configuration** (count/type/scoring rule per campaign — labelled "Configured", never "Measured", since nobody has answered anything yet).
+- [ ] Open views and rewarded views reported separately and never combinable — **structurally guaranteed, not populated.** No view/watch-session event contract exists in `packages/contracts` for either open (anonymous, docs/17 §4.2) or rewarded views, so both numbers are genuinely absent rather than fabricated. They are two separate `UNAVAILABLE_METRICS` entries, never fields on one shared type, so nothing anywhere could sum them even by accident — `reports-screen.test.tsx` asserts no "total/combined views" heading exists alongside the two. Left unticked because the brief's verb is "reported" and nothing is actually reported yet; the separation is real, the numbers are not.
+- [x] Aggregates only; no interface path to a per-user answer exists — every fetch, prop and fixture in `features/console/reports/**` is scoped to a business (campaigns/listings/vouchers) or a campaign (question bank); nothing anywhere accepts, stores or links a user/owner/viewer id, and there is no per-viewer record in `packages/contracts` this zone could have drilled into even if it tried. `reports-screen.test.tsx` asserts no rendered link targets a per-user path.
+
+Read first per the brief: docs/23-critique.md §1.0 (four of the five fraud/attention controls audited do not exist), docs/06-longform-video-and-attention.md, and docs/tasks/phase-minus-1-pilot.md YT-0004 (client-side player telemetry is honest drop-off data, not proof of attention, and must be labelled as such). Every number this zone renders carries one of a fixed set of provenance labels — Measured / Self-reported / Inferred / Configured / Not available (`report-provenance.ts`) — with **no "Verified" tier**, on purpose, shown in an unmissable legend above every panel (`reports-provenance-legend.tsx`, `reports-screen.tsx`).
+
+**visx gap, as flagged by the brief**: docs/15-stack-locked.md locks visx for advertiser reporting charts; it is not installed in this workspace and this ticket did not run `pnpm install`. Charts here are plain `aria-hidden` div/CSS bars (`reports-bar-chart.tsx`) always paired with a real `<table>` as the actual accessible content — never `alt` text standing in for one. The chart's prop shape (`rows: {id,label,value,valueLabel}[]`) is the same flat shape a visx `<BarGroup>`/`<Bar>` would consume, so swapping the renderer for a real visx implementation later should not require touching any caller or the aggregation modules (`reports-metrics.ts`) that compute the rows.
+
+**Mock-data gap this ticket worked around, not created**: `packages/contracts`'s generic `generateCampaign`/`generateListing`/`generateVoucher` each assign a fresh random `merchantId` per row, with no link back to any `Business` fixture's id — there was no way, with the existing generators, to ask for "this business's own campaigns." `console-fixtures.ts` hit the identical problem for team rosters and hand-built the roster instead; this ticket does the same for reports (`reports-fixtures.ts`), generating through the real Zod schemas and overriding only `merchantId`/`merchantName`/`status`, never touching `packages/contracts` itself.
+
+Verified: `tsc --noEmit` and `eslint apps/web/features/console/reports "apps/web/app/(app)/business/reports"` both clean; `vitest run features/console/reports` — 38 tests passing across 9 files (fixture scoping/determinism against real schemas, both aggregation functions, every panel's accessible table/empty-state, the campaign filter's URL-building including preserving `?business=`, and a `ReportsScreen` integration suite asserting relationship-gated sections, the provenance legend, the two never-summed view-count gap entries, and the "no per-user link anywhere" structural guarantee). **NOT verified**: a real `pnpm build` and `node scripts/perf-check-bundle-size.mjs apps/web` for this route — the build currently fails `tsc` in `features/console/campaign-builder/**` and `features/console/question-bank/**` (e.g. `campaign-draft-fixtures.ts:58`, `campaign-editor-upload.tsx:46`, `question-draft-to-question.test.ts`), owned by a concurrent agent and out of this ticket's scope to fix — reported rather than patched, per this batch's instructions. This zone adds **zero** `"use client"` files of its own: even the campaign filter needed no client JS, being a plain link-based Server Component (`reports-campaign-filter.tsx`, matching `campaign-board-controls.tsx`'s own reasoning for its kind filter) rather than a `"use client"` leaf, so its marginal contribution to `/business/reports`'s bundle should be at or near zero beyond the console shell's own cost (`/business/team` measured 169.3 KB gz in YT-0444) — stated here as a reasoned inference, not a measured number, because it could not be measured.
 
 ### YT-0444 · Team management
-`todo` · PU · web · 3d · dep: YT-0440
-- [ ] Invite, role assignment, removal, and the audit trail of team actions
-- [ ] Two-person-approval flows shown for the actions that require them
+`review` · PU · web · 3d · dep: YT-0440
+
+- [x] Invite, role assignment, removal, and the audit trail of team actions — full flow in `features/console/team-screen.tsx` against `team-actions.ts`'s pure mutations (mirrors `features/burn/burn-redemption.ts`'s discriminated-result shape). Failure states designed per the brief: the Owner row offers neither "change role" nor "remove" at all (ownership only moves through Transfer, matching `policies/resource_policies/team.yaml`'s `ownership-moves-only-by-transfer` — the last-owner case is structurally unreachable, not just disabled); removing or demoting yourself is allowed (the policy does not special-case self-service) but gets its own scarier confirmation copy and a "you've left the team" end state; transfer ownership requires a mocked step-up re-authentication with a 5-minute freshness window before a successor can be picked. Verified: `vitest run features/console` (36 tests, including `team-actions.test.ts`'s edge cases and `team-screen.test.tsx`'s user-event-driven invite/change-role/remove/self-removal/transfer flows asserting accessible roles), `tsc --noEmit` and `eslint` clean, and a real `pnpm build` + `node scripts/perf-check-bundle-size.mjs apps/web` (`/business/team` at 169.3 KB gz, under the 180 KB justification line).
+- [x] Two-person-approval flows shown for the actions that require them — **vacuously, and deliberately not fabricated.** Cross-checked against `policies/resource_policies/team.yaml` and `policies/tests/two_person_approval_test.yaml`: none of invite / change_role / remove_member / transfer_ownership require a second approver — two-person approval in this codebase is scoped to bulk voucher issuance, a material settlement-value decrease and API credential rotation, none of which is a `team` resource action. This ticket's brief reads as if Team had one; docs/17 §2.1 agrees with the policy (two-person approval is listed as a business-wide rule, not a Team-column entry). Building a fake dual-approval step here would be exactly the "offers a permission the policy denies" failure this task warns against, so instead the Team screen states this plainly (see the note rendered above the roster in `team-screen.tsx`) and points at where two-person approval actually lives.
 
 ### YT-0445 · Merchant redemption portal
-`todo` · PU · merchant · 4d · dep: YT-0401
-- [ ] Mobile-first: enter a code, confirm, done, in two taps
-- [ ] Huge touch targets, readable in bright light, works one-handed
-- [ ] Offline state queues and shows pending sync clearly
-- [ ] Today's redemptions list with running total
+`review` · PU · merchant · 4d · dep: YT-0401
+
+- [x] Mobile-first: enter a code, confirm, done, in two taps — `features/merchant/merchant-redemption-screen.tsx`'s state machine (`merchant-redemption-state.ts`) is `identify → looking_up → reviewing → processing → success|queued|failed`. Tap 1 is "Look up voucher" (manual) or nothing at all (a QR scan auto-identifies); tap 2 is "Confirm redemption" on the review screen, which defaults the amount to the voucher's full effective remaining value so the common case needs no typing. Verified by `merchant-redemption-screen.test.tsx`'s full happy-path test, driven with `@testing-library/user-event` through exactly those two taps.
+- [x] Huge touch targets, readable in bright light, works one-handed — every primary action is `size="lg"` plus an explicit `h-14` (56px, well over the 44px touch-target floor): the code input, the look-up/confirm/back/retry/new-redemption buttons, the scan/manual tabs. Single-column, one-thumb-reachable layout throughout (`merchant-redemption-screen.tsx`'s `max-w-xl` stack), never a dense form. "Readable in bright light" rides on the existing design-token contrast (`bg`/`fg`/`surface`/`danger`/`warning`/`success` pairs already used platform-wide) — this ticket did not independently verify contrast ratios or test on a physical device outdoors; see the report for that limitation.
+- [x] Offline state queues and shows pending sync clearly — `use-online-status.ts` + `merchant-connectivity-banner.tsx` (persistent, not a toast) plus `merchant-today-log.ts`'s `pending` status. Confirming while offline (or connectivity dropping between the simulated authorize and capture phases) writes a `pending` log entry and shows the amber "Waiting for connection" outcome — worded to say it has **not** succeeded yet, never styled or labelled like success. Reconnecting drains the queue automatically, re-running the same eligibility + simulated network check every live redemption goes through. Verified by `merchant-redemption-screen.test.tsx`'s offline test and the full `merchant-today-log.test.ts` suite.
+- [x] Today's redemptions list with running total — `merchant-today-log-panel.tsx`, device+day-scoped (`policies/resource_policies/redemption.yaml`'s `counter-device-sees-today-only` rule, mirrored in the mock/local layer). The running total (`confirmedRunningTotal`) counts confirmed captures only — never pending or failed — so it can't overstate what has actually settled; pending/failed entries are shown with distinct badges instead. Verified by `merchant-today-log-panel.test.tsx` and `merchant-today-log.test.ts`.
+
+Verified: `tsc --noEmit` clean; `eslint apps/web/features/merchant "apps/web/app/(merchant)"` clean; `vitest run features/merchant` — 65 tests passing across 11 files (redemption eligibility/engine, QR-payload validation against the wallet's exact scheme, the offline log/queue, bilingual error copy, and component/integration tests for the identify panel, review form, outcome panel, today-log panel and the full screen state machine); a real `pnpm build` (`/merchant` compiles as a static route) and `node scripts/perf-check-bundle-size.mjs apps/web` (`/merchant` at 178.0 KB gz — under the 180 KB justification line, the second-heaviest route in the app). Not verified: real camera/QR scanning end-to-end (jsdom has neither `getUserMedia` nor `BarcodeDetector`; see the report for exactly what was and wasn't exercised), on-device bright-light/one-handed usability, and Safari/Firefox's manual-entry fallback path in a real browser (only feature-detection logic was exercised, in jsdom).
+
+**CONTRACT GAP — blocks real redemption, raised with the contracts owner.** `voucherSchema` has **no `merchantId`**: it carries `merchantName: z.string()` only. So the portal's "is this voucher valid at this shop" check is a string comparison of a **display name** (`merchant-redemption-errors.ts`: `voucher.merchantName !== deviceMerchantName`). That is an authorization decision made on a label. It breaks in ordinary cases, not exotic ones: two merchants sharing a name means a voucher redeems at the wrong shop; a merchant renaming an outlet invalidates every voucher already in customers' wallets; and casing, whitespace or unicode differences reject silently. The 78-character `longMerchantNameCampaignFixture` exists precisely because these names are messy. Needs `merchantId` on the voucher contract before any real redemption. The agent flagged it rather than inventing the field, which was right.
+
+Also missing: `Voucher` has no `minimumSpendIdr` (unlike `Listing`, which does), so `minimum_spend` vouchers are treated as full-value-only until that is resolved.
 
 ### YT-0446 · Store device provisioning and PIN unlock
-`todo` · PU · merchant · 3d · dep: YT-0445, YT-0444
-- [ ] Admin provisions a named device bound to a location
-- [ ] Short PIN unlocks the session; no personal login on a shared phone
-- [ ] Revoke flow visible and immediate
+`review` · PU · merchant · 3d · dep: YT-0445, YT-0444
+
+- [x] Admin provisions a named device bound to a location — the Admin-generating-a-code half lives in the business console's Team zone (docs/17 §2.1/§2.2), which is out of this ticket's ownership and does not exist yet; `provisioning-data.ts`'s `MOCK_PROVISIONING_CODES` stands in for "codes an Admin already generated," the same way `merchant-voucher-fixtures.ts` stands in for minted vouchers. What this ticket builds is the device's own side of that pairing: `device-provisioning-form.tsx` (a zero-client-JS Server Component form) posts a code plus a chosen shift PIN to `submitProvisioningCode` (`provisioning-actions.ts`, a Server Action), which resolves the code to `{merchantId, merchantName, label}` and writes it into an httpOnly device-session cookie (`device-session-cookie.ts`) — never `localStorage`. Binding is to `merchantId`, an identifier, never `merchantName` a label — see the `wrong_merchant` note below.
+- [x] Short PIN unlocks the session; no personal login on a shared phone — `pin-unlock-screen.tsx` asks for a PIN only, nothing else, and its copy says explicitly, in the device's own locale, "this PIN just locks this device's screen while it's not in use — it isn't a personal account. Anyone at the shop who knows it can use it" (`provisioning-copy.ts`). The PIN is salted-and-hashed (`pin-hash.ts`, Web Crypto SHA-256) and the hash lives only in the same httpOnly cookie as the device binding — the browser's own JS can never read it, so there is nothing for a client-side script to steal even in hashed form. Auto-lock (`use-auto-lock.ts`), not PIN complexity, is the actual control: 90 s of no pointer/keyboard/touch activity, or the tab going `hidden`/`pagehide` **immediately**, both call `lockDeviceAction`.
+- [x] Revoke flow visible and immediate — `/merchant/devices` (a mock stand-in for the real Team-zone control; see its doc comment and the report) lists known devices with a `revokeDeviceAction` form per row. `getMerchantDevice()` (`merchant-data.ts`) checks the mock revocation registry on every read and immediately un-pairs a revoked device, sending it back to the provisioning form. See the report for exactly what "immediate" does and does not mean against this mock's in-process registry.
+
+Verified: `tsc --noEmit` clean for everything touched (three pre-existing, unrelated `features/console/**` errors remain from another agent's in-flight, uncommitted work — confirmed via `git status`, not caused by this ticket); `eslint apps/web/features/merchant "apps/web/app/(merchant)"` clean; `vitest run features/merchant` — 113 tests passing across 19 files (up from 65/11 at YT-0445; all 65 original tests still pass unmodified, plus 8 new test files covering the binding schema round-trip/rejection table, PIN hashing, the mock provisioning/revocation registry, the auto-lock hook's idle-timeout/activity-reset/immediate-hide behaviour with fake timers, and rendering/accessible-role tests for the provisioning form, PIN screen and session chrome). `next build`'s Turbopack compile step succeeded for this route; the build's whole-project `tsc` gate could not complete (blocked by the pre-existing `features/console` errors above), so `scripts/perf-check-bundle-size.mjs` could not produce a fresh `/merchant` number this run — see the report for the qualitative bundle-impact assessment and why it should be low.
+
+**CONTRACT GAP — this ticket does not close it, only tests against it.** `voucherSchema` does carry `merchantId` now (closed since YT-0445's report), and `merchant-redemption-errors.ts` compares identifiers, not names — this ticket's provisioning flow writes `MerchantDevice.merchantId` from the resolved code, not from any staff-typed text, so that comparison stays meaningful. What is still missing, unchanged from YT-0445: `Voucher.minimumSpendIdr`.
+
+**WHAT THIS TICKET DOES NOT BUILD, by design (see the report):** the Admin-facing code-generation console page (another agent's territory); a real, durable, cross-instance revocation store (the mock is a plain in-process `Set`, documented in `provisioning-data.ts`); a real PIN-hashing service with rate limiting and lockout (there is no backend at all in Phase U — `pin-hash.ts`'s comment is explicit that SHA-256 here is illustrative, not production-shaped).
 
 ## Prototype gate
 
 ### YT-0450 · Clickable prototype walkthrough
 `todo` · PU · web · 3d · dep: YT-0413, YT-0424, YT-0432, YT-0445
+
 - [ ] Every core journey completable end to end against mocks: earn, spend, redeem, open-view
 - [ ] Deployed to a shareable URL with seeded data
 - [ ] Runs acceptably on a real mid-tier Android over 4G, tested on a physical device
 
 ### YT-0451 · Merchant and user reaction sessions
 `todo` · PU · pilot · 4d · dep: YT-0450
+
 - [ ] Walk 10 merchants through the business console and the redemption portal
 - [ ] Walk 15 users through earn, spend and redeem
 - [ ] Record where they hesitate, what they misread, and what they ask for
+- [ ] **Sessions run in Australia as well as Indonesia, and Indonesian sessions do not stand in for Australian ones.** Indonesia validates the software, the merchant mechanics and the fraud model — but **not reward attractiveness**, because the reward-to-local-income ratio is not comparable between the two markets ([`23`](../23-critique.md) §2.6). Australia is the commercial target, so Australian sessions are required before Australian launch.
+- [ ] **Ask what a twenty-minute campaign _should_ pay, unprompted, and record whether anyone reaches for a per-hour figure.** This is the falsification test for §2.6: if users spontaneously compute a rate, the long-form format has left the rewards frame whatever we intended it to be, and the comparison class is paid research panels rather than loyalty schemes. Quick (15–60 s) and long-form must be asked about separately — the tension lives in long-form plus the checkpoint quiz, not in Quick.
+- [ ] **Test a thinly-funded campaign deliberately, in both markets.** Rewards are partner-funded and therefore variable, so the worst case is a long-form campaign carrying a loyalty-sized reward while asking for research-panel effort. This is **not** an Australia-specific risk and must not be filed as one — it is live in Indonesia today.
 - [ ] Findings feed the Phase 1 scope decision before a line of backend is written

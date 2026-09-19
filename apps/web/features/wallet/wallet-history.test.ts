@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { mockCampaigns } from "@yourtal/contracts/campaign/mock";
-import { expiredVoucherFixture, expiringWithinHourVoucherFixture } from "@yourtal/contracts/voucher/mock";
+import {
+  expiredVoucherFixture,
+  expiringWithinHourVoucherFixture,
+} from "@yourtal/contracts/voucher/mock";
 import { buildWalletHistory } from "./wallet-history";
 
 // mockCampaigns is a non-empty fixed-length (24) deterministic array — index 0 always exists.
@@ -38,5 +41,21 @@ describe("buildWalletHistory", () => {
     const timestamps = history.map((entry) => new Date(entry.occurredAt).getTime());
     const sorted = [...timestamps].sort((a, b) => b - a);
     expect(timestamps).toEqual(sorted);
+  });
+});
+
+describe("buildWalletHistory (en-AU, YT-0405)", () => {
+  it("describes earning and spending in English, with no Indonesian copy leaking through", () => {
+    const history = buildWalletHistory(sampleVouchers, sampleCampaigns, "en-AU");
+    const earned = history.find((item) => item.id === `earn-${sampleCampaigns[0]!.id}`);
+    const spent = history.find((item) => item.id === `spend-${expiredVoucherFixture.id}`);
+
+    expect(earned?.description).toMatch(/points$/);
+    expect(earned?.description).toContain(sampleCampaigns[0]!.merchantName);
+    expect(spent?.description).toMatch(/^Redeemed/);
+    expect(spent?.description).toContain(expiredVoucherFixture.merchantName);
+    for (const entry of history) {
+      expect(entry.description).not.toMatch(/\bpoin\b|Menyelesaikan|Ditukar/);
+    }
   });
 });

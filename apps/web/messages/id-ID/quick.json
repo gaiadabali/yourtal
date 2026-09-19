@@ -1,0 +1,6 @@
+{
+  "card": {
+    "upToReward": "Hingga {amount}"
+  },
+  "feedLabel": "Video {position} dari {total}: {merchantName} — {title}"
+}

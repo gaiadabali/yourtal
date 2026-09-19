@@ -8,7 +8,12 @@ function renderView() {
   render(
     <div>
       <h2 id="prompt">{likertFixture.prompt}</h2>
-      <LikertQuestionView question={likertFixture} answer={undefined} onAnswerChange={vi.fn()} promptId="prompt" />
+      <LikertQuestionView
+        question={likertFixture}
+        answer={undefined}
+        onAnswerChange={vi.fn()}
+        promptId="prompt"
+      />
     </div>,
   );
 }
@@ -23,10 +28,14 @@ describe("LikertQuestionView", () => {
   it("labels the scale endpoints with their text, not a bare number", () => {
     renderView();
     expect(
-      screen.getByRole("radio", { name: `${likertFixture.scaleMin} - ${likertFixture.scaleLowLabel}` }),
+      screen.getByRole("radio", {
+        name: `${likertFixture.scaleMin} - ${likertFixture.scaleLowLabel}`,
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("radio", { name: `${likertFixture.scaleMax} - ${likertFixture.scaleHighLabel}` }),
+      screen.getByRole("radio", {
+        name: `${likertFixture.scaleMax} - ${likertFixture.scaleHighLabel}`,
+      }),
     ).toBeInTheDocument();
   });
 

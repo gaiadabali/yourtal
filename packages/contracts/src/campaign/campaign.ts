@@ -43,9 +43,12 @@ export const campaignSchema = z
     message: "A quick campaign must be 60 seconds or shorter (docs/17 section 1.1)",
     path: ["durationSeconds"],
   })
-  .refine((campaign) => campaign.scoringRule !== "base_plus_accuracy_bonus" || campaign.questionCount > 0, {
-    message: "An accuracy bonus requires at least one question to score accuracy against",
-    path: ["scoringRule"],
-  });
+  .refine(
+    (campaign) => campaign.scoringRule !== "base_plus_accuracy_bonus" || campaign.questionCount > 0,
+    {
+      message: "An accuracy bonus requires at least one question to score accuracy against",
+      path: ["scoringRule"],
+    },
+  );
 
 export type Campaign = z.infer<typeof campaignSchema>;

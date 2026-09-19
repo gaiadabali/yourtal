@@ -54,7 +54,10 @@ export function classifyBurnEligibility(listing: Listing, balance: Balance): Bur
   if (totalIncludingPending >= listing.priceInPoints && balance.pendingUnlockAt !== null) {
     return { type: "holdback_blocks", unlocksAt: balance.pendingUnlockAt };
   }
-  return { type: "insufficient_points", short: Math.max(0, listing.priceInPoints - totalIncludingPending) };
+  return {
+    type: "insufficient_points",
+    short: Math.max(0, listing.priceInPoints - totalIncludingPending),
+  };
 }
 
 export type BurnErrorRecovery = { kind: "retry" } | { kind: "requote" } | { kind: "back_to_store" };

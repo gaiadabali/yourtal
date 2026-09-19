@@ -26,8 +26,15 @@ export function generateListing(params: GenerateListingParams): Listing {
   const settlementValueIdr = toIdrMinorUnits(Math.round(faceValueIdr * 0.3));
   const stockTotal = faker.number.int({ min: 5, max: 500 });
   const stockRemaining = faker.number.int({ min: 0, max: stockTotal });
-  const status = stockRemaining === 0 ? "sold_out" : faker.helpers.arrayElement(["available", "available", "expiring_soon", "new"] as const);
-  const partialRedemptionPolicy = faker.helpers.arrayElement(["balance_carrying", "single_use_forfeit", "minimum_spend"] as const);
+  const status =
+    stockRemaining === 0
+      ? "sold_out"
+      : faker.helpers.arrayElement(["available", "available", "expiring_soon", "new"] as const);
+  const partialRedemptionPolicy = faker.helpers.arrayElement([
+    "balance_carrying",
+    "single_use_forfeit",
+    "minimum_spend",
+  ] as const);
 
   return listingSchema.parse({
     id: faker.string.uuid(),
@@ -35,7 +42,13 @@ export function generateListing(params: GenerateListingParams): Listing {
     merchantName,
     title: `Voucher ${merchantName}`,
     description: `Nikmati penawaran spesial dari ${merchantName}, berlaku di lokasi terpilih.`,
-    category: faker.helpers.arrayElement(["food_beverage", "retail", "digital_goods", "merchandise", "services"] as const),
+    category: faker.helpers.arrayElement([
+      "food_beverage",
+      "retail",
+      "digital_goods",
+      "merchandise",
+      "services",
+    ] as const),
     district: pickDistrict(faker),
     faceValueIdr,
     settlementValueIdr,
@@ -44,7 +57,10 @@ export function generateListing(params: GenerateListingParams): Listing {
     stockTotal,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
     partialRedemptionPolicy,
-    minimumSpendIdr: partialRedemptionPolicy === "minimum_spend" ? toIdrMinorUnits(Math.round(faceValueIdr * 0.5)) : null,
+    minimumSpendIdr:
+      partialRedemptionPolicy === "minimum_spend"
+        ? toIdrMinorUnits(Math.round(faceValueIdr * 0.5))
+        : null,
     expiresAt: toIsoString(addDays(now, faker.number.int({ min: 7, max: 90 }))),
     status,
   });
@@ -52,7 +68,9 @@ export function generateListing(params: GenerateListingParams): Listing {
 
 /** Generates `count` deterministic listings from a base seed. */
 export function generateListings(count: number, baseSeed: number, now?: Date): Listing[] {
-  return Array.from({ length: count }, (_unused, index) => generateListing({ seed: baseSeed + index, now }));
+  return Array.from({ length: count }, (_unused, index) =>
+    generateListing({ seed: baseSeed + index, now }),
+  );
 }
 
 /** A listing with zero stock remaining, status sold_out — the store's empty-inventory state. */
@@ -113,7 +131,10 @@ export const expiringSoonListingFixture: Listing = listingSchema.parse({
   district: "Tebet",
   faceValueIdr: toIdrMinorUnits(50_000),
   settlementValueIdr: toIdrMinorUnits(15_000),
-  priceInPoints: pointsPriceFromSettlement(toIdrMinorUnits(15_000), MOCK_BACKING_RATE_IDR_PER_POINT),
+  priceInPoints: pointsPriceFromSettlement(
+    toIdrMinorUnits(15_000),
+    MOCK_BACKING_RATE_IDR_PER_POINT,
+  ),
   stockRemaining: 12,
   stockTotal: 50,
   transferable: true,

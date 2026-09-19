@@ -2,7 +2,12 @@ import type { Campaign } from "./campaign";
 import { campaignSchema } from "./campaign";
 import { DEFAULT_REFERENCE_INSTANT, addDays, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
-import { LONG_MERCHANT_NAME, generateCampaignSynopsis, generateCampaignTitle, generateMerchantName } from "../internal/jakarta";
+import {
+  LONG_MERCHANT_NAME,
+  generateCampaignSynopsis,
+  generateCampaignTitle,
+  generateMerchantName,
+} from "../internal/jakarta";
 import { toPoints } from "../money/money";
 
 export interface GenerateCampaignParams {
@@ -17,9 +22,16 @@ export function generateCampaign(params: GenerateCampaignParams): Campaign {
 
   const kind = faker.helpers.arrayElement(["long_form", "quick"] as const);
   const merchantName = generateMerchantName(faker);
-  const durationSeconds = kind === "quick" ? faker.number.int({ min: 15, max: 60 }) : faker.number.int({ min: 300, max: 1_800 });
-  const questionCount = kind === "quick" ? faker.number.int({ min: 0, max: 2 }) : faker.number.int({ min: 1, max: 6 });
-  const scoringRule = questionCount > 0 && faker.datatype.boolean({ probability: 0.7 }) ? "base_plus_accuracy_bonus" : "base_only";
+  const durationSeconds =
+    kind === "quick"
+      ? faker.number.int({ min: 15, max: 60 })
+      : faker.number.int({ min: 300, max: 1_800 });
+  const questionCount =
+    kind === "quick" ? faker.number.int({ min: 0, max: 2 }) : faker.number.int({ min: 1, max: 6 });
+  const scoringRule =
+    questionCount > 0 && faker.datatype.boolean({ probability: 0.7 })
+      ? "base_plus_accuracy_bonus"
+      : "base_only";
 
   return campaignSchema.parse({
     id: faker.string.uuid(),
@@ -30,7 +42,9 @@ export function generateCampaign(params: GenerateCampaignParams): Campaign {
     synopsis: generateCampaignSynopsis(faker, merchantName),
     durationSeconds,
     estimatedDataMb: Math.round(durationSeconds * 0.35 * 10) / 10,
-    rewardPoints: toPoints(faker.number.int({ min: kind === "quick" ? 50 : 500, max: kind === "quick" ? 400 : 4_000 })),
+    rewardPoints: toPoints(
+      faker.number.int({ min: kind === "quick" ? 50 : 500, max: kind === "quick" ? 400 : 4_000 }),
+    ),
     questionCount,
     scoringRule,
     status: "active",
@@ -40,7 +54,9 @@ export function generateCampaign(params: GenerateCampaignParams): Campaign {
 
 /** Generates `count` deterministic campaigns from a base seed. */
 export function generateCampaigns(count: number, baseSeed: number, now?: Date): Campaign[] {
-  return Array.from({ length: count }, (_unused, index) => generateCampaign({ seed: baseSeed + index, now }));
+  return Array.from({ length: count }, (_unused, index) =>
+    generateCampaign({ seed: baseSeed + index, now }),
+  );
 }
 
 /** A campaign that pays zero points — an awkward, legitimate edge case (a pure-reach opt-in). */

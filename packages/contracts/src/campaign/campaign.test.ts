@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { campaignSchema } from "./campaign";
-import { generateCampaign, generateCampaigns, longMerchantNameCampaignFixture, mockCampaigns, zeroRewardCampaignFixture } from "./campaign.mock";
+import {
+  generateCampaign,
+  generateCampaigns,
+  longMerchantNameCampaignFixture,
+  mockCampaigns,
+  zeroRewardCampaignFixture,
+} from "./campaign.mock";
 
 const validCampaign = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -38,8 +44,14 @@ describe("campaignSchema", () => {
     { name: "empty merchant name", overrides: { merchantName: "" } },
     { name: "non-datetime publishedAt", overrides: { publishedAt: "yesterday" } },
     { name: "missing title", overrides: { title: undefined } },
-    { name: "quick campaign longer than 60 seconds", overrides: { kind: "quick", durationSeconds: 300 } },
-    { name: "accuracy bonus with zero questions", overrides: { scoringRule: "base_plus_accuracy_bonus", questionCount: 0 } },
+    {
+      name: "quick campaign longer than 60 seconds",
+      overrides: { kind: "quick", durationSeconds: 300 },
+    },
+    {
+      name: "accuracy bonus with zero questions",
+      overrides: { scoringRule: "base_plus_accuracy_bonus", questionCount: 0 },
+    },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ overrides }) => {

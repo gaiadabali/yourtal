@@ -1,7 +1,11 @@
 import type { Balance } from "@yourtal/contracts/balance";
 import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
 import type { Voucher } from "@yourtal/contracts/voucher";
-import { expiredVoucherFixture, expiringWithinHourVoucherFixture, mockVouchers } from "@yourtal/contracts/voucher/mock";
+import {
+  expiredVoucherFixture,
+  expiringWithinHourVoucherFixture,
+  mockVouchers,
+} from "@yourtal/contracts/voucher/mock";
 import { mockCampaigns } from "@yourtal/contracts/campaign/mock";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import type { WalletHistoryEntry } from "./wallet-history";
@@ -27,7 +31,11 @@ import { buildWalletHistory } from "./wallet-history";
  */
 const HISTORY_CAMPAIGN_SAMPLE_SIZE = 6;
 
-const mockVoucherCatalogue: Voucher[] = [...mockVouchers, expiredVoucherFixture, expiringWithinHourVoucherFixture];
+const mockVoucherCatalogue: Voucher[] = [
+  ...mockVouchers,
+  expiredVoucherFixture,
+  expiringWithinHourVoucherFixture,
+];
 
 interface WalletDataSource {
   getBalance: () => Promise<Balance>;
@@ -39,12 +47,19 @@ interface WalletDataSource {
 const mockDataSource: WalletDataSource = {
   getBalance: () => Promise.resolve(mixedStateBalanceFixture),
   listVouchers: () => Promise.resolve(mockVoucherCatalogue),
-  getVoucher: (voucherId) => Promise.resolve(mockVoucherCatalogue.find((voucher) => voucher.id === voucherId)),
+  getVoucher: (voucherId) =>
+    Promise.resolve(mockVoucherCatalogue.find((voucher) => voucher.id === voucherId)),
   listHistory: () =>
-    Promise.resolve(buildWalletHistory(mockVoucherCatalogue, mockCampaigns.slice(0, HISTORY_CAMPAIGN_SAMPLE_SIZE))),
+    Promise.resolve(
+      buildWalletHistory(
+        mockVoucherCatalogue,
+        mockCampaigns.slice(0, HISTORY_CAMPAIGN_SAMPLE_SIZE),
+      ),
+    ),
 };
 
-const NOT_IMPLEMENTED_MESSAGE = "Live wallet data source is not implemented yet (Phase U is mock-only).";
+const NOT_IMPLEMENTED_MESSAGE =
+  "Live wallet data source is not implemented yet (Phase U is mock-only).";
 
 /**
  * Fails loudly and specifically rather than silently falling back to mock

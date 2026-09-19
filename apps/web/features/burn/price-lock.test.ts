@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { PRICE_LOCK_DURATION_MS, computeLockExpiresAt, isLockExpired, millisecondsUntilLock } from "./price-lock";
+import {
+  PRICE_LOCK_DURATION_MS,
+  computeLockExpiresAt,
+  isLockExpired,
+  millisecondsUntilLock,
+} from "./price-lock";
 
 const QUOTED_AT = new Date("2026-09-19T10:00:00.000Z");
 
@@ -19,7 +24,10 @@ describe("millisecondsUntilLock", () => {
 
   it("floors at 0 once the instant is past expiry, never negative", () => {
     const lockExpiresAt = computeLockExpiresAt(QUOTED_AT);
-    const remaining = millisecondsUntilLock(lockExpiresAt, QUOTED_AT.getTime() + PRICE_LOCK_DURATION_MS + 5_000);
+    const remaining = millisecondsUntilLock(
+      lockExpiresAt,
+      QUOTED_AT.getTime() + PRICE_LOCK_DURATION_MS + 5_000,
+    );
     expect(remaining).toBe(0);
   });
 });

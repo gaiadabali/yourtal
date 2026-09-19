@@ -56,16 +56,31 @@ export function BurnFlow({ listing, balance, lockExpiresAt }: BurnFlowProps) {
     // `burn-redemption.ts`'s doc comment for why this call, not the
     // countdown's last render, is the actual gate.
     const result = attemptBurn({ listing, balance, lockExpiresAt, nowMs: Date.now() });
-    setState(result.ok ? { step: "success", voucher: result.voucher } : { step: "failed", error: result.error });
+    setState(
+      result.ok
+        ? { step: "success", voucher: result.voucher }
+        : { step: "failed", error: result.error },
+    );
   }
 
   const storeHref = `/store/${listing.id}` as Route;
-  const showsCountdown = state.step === "reviewing" || state.step === "confirming" || state.step === "submitting";
+  const showsCountdown =
+    state.step === "reviewing" || state.step === "confirming" || state.step === "submitting";
 
   return (
     <div className="flex flex-col gap-4">
-      {showsCountdown ? <PriceLockCountdown lockExpiresAt={lockExpiresAt} onExpire={handleExpire} /> : null}
-      <BurnFlowStep state={state} listing={listing} storeHref={storeHref} onContinue={() => setState({ step: "confirming" })} onBack={() => setState({ step: "reviewing" })} onConfirm={handleConfirm} onRequote={() => router.refresh()} />
+      {showsCountdown ? (
+        <PriceLockCountdown lockExpiresAt={lockExpiresAt} onExpire={handleExpire} />
+      ) : null}
+      <BurnFlowStep
+        state={state}
+        listing={listing}
+        storeHref={storeHref}
+        onContinue={() => setState({ step: "confirming" })}
+        onBack={() => setState({ step: "reviewing" })}
+        onConfirm={handleConfirm}
+        onRequote={() => router.refresh()}
+      />
     </div>
   );
 }
@@ -81,7 +96,15 @@ interface BurnFlowStepProps {
 }
 
 /** Renders the one screen matching the current step. `switch` is exhaustive over `BurnFlowState["step"]` with a `never` default (docs/13b section 4). */
-function BurnFlowStep({ state, listing, storeHref, onContinue, onBack, onConfirm, onRequote }: BurnFlowStepProps) {
+function BurnFlowStep({
+  state,
+  listing,
+  storeHref,
+  onContinue,
+  onBack,
+  onConfirm,
+  onRequote,
+}: BurnFlowStepProps) {
   switch (state.step) {
     case "reviewing":
       return (
@@ -97,7 +120,8 @@ function BurnFlowStep({ state, listing, storeHref, onContinue, onBack, onConfirm
         <>
           <BurnSummary listing={listing} variant="confirmation" />
           <p className="text-xs font-sans text-fg-subtle">
-            Dengan menekan &quot;Tukar sekarang&quot;, poin Anda akan langsung dipotong dan tidak dapat dibatalkan.
+            Dengan menekan &quot;Tukar sekarang&quot;, poin Anda akan langsung dipotong dan tidak
+            dapat dibatalkan.
           </p>
           <div className="flex gap-2">
             <Button type="button" variant="secondary" onClick={onBack} className="flex-1">
@@ -111,7 +135,11 @@ function BurnFlowStep({ state, listing, storeHref, onContinue, onBack, onConfirm
       );
     case "submitting":
       return (
-        <div role="status" aria-live="polite" className="rounded-lg border border-border bg-surface p-6 text-center text-sm font-sans text-fg-muted">
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-lg border border-border bg-surface p-6 text-center text-sm font-sans text-fg-muted"
+        >
           Memproses penukaran…
         </div>
       );
@@ -122,7 +150,8 @@ function BurnFlowStep({ state, listing, storeHref, onContinue, onBack, onConfirm
             Berhasil
           </Badge>
           <p className="text-sm font-sans text-fg">
-            Voucher <span className="font-semibold">{state.voucher.title}</span> berhasil ditukar. Kode voucher Anda:{" "}
+            Voucher <span className="font-semibold">{state.voucher.title}</span> berhasil ditukar.
+            Kode voucher Anda:{" "}
             <span className="font-semibold tabular-nums">{state.voucher.code}</span>
           </p>
           <Button asChild>

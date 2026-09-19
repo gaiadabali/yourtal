@@ -6,6 +6,7 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import prettier from "eslint-config-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
+import mustUseResult from "./eslint-rules/must-use-result.mjs";
 
 export default tseslint.config(
   {
@@ -24,6 +25,7 @@ export default tseslint.config(
       // linting needs a file in a tsconfig project; these are not, by
       // design, so exclude them rather than force them into one.
       "**/openapi/*.mjs",
+      "packages/*/scripts/**/*.mjs",
     ],
   },
   js.configs.recommended,
@@ -84,10 +86,7 @@ export default tseslint.config(
 
       // Numbers in template literals are idiomatic and safe; 13b does not ask
       // for this. Kept strict for the types that actually stringify badly.
-      "@typescript-eslint/restrict-template-expressions": [
-        "error",
-        { allowNumber: true },
-      ],
+      "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },
   },
 
@@ -124,10 +123,7 @@ export default tseslint.config(
     files: ["packages/contracts/**/*.ts"],
     rules: {
       "@typescript-eslint/no-non-null-assertion": "error",
-      "@typescript-eslint/consistent-type-assertions": [
-        "error",
-        { assertionStyle: "never" },
-      ],
+      "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
     },
   },
 
@@ -142,6 +138,20 @@ export default tseslint.config(
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/no-unnecessary-condition": "off",
     },
+  },
+
+  // YT-0500: a discarded Result is a discarded decision. docs/13b §4 asks
+  // for `neverthrow/must-use-result`; that plugin is eslintrc-era and last
+  // published in 2022, so the rule is local — see eslint-rules/.
+  //
+  // Scoped to the two packages that use neverthrow rather than applied
+  // repo-wide: it needs type information, and turning a type-aware rule on
+  // across apps/web while another session is mid-change buys risk for no
+  // benefit, since nothing there returns a Result.
+  {
+    files: ["apps/api/**/*.ts", "packages/authz/**/*.ts"],
+    plugins: { yt: { rules: { "must-use-result": mustUseResult } } },
+    rules: { "yt/must-use-result": "error" },
   },
 
   prettier,

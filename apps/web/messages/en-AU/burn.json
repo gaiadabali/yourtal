@@ -1,0 +1,28 @@
+{
+  "error": {
+    "insufficientHeading": "You don't have enough points yet",
+    "insufficientBody": "You still need {amount} to redeem this item. Watch a video or finish another activity to earn more points, then try again.",
+    "holdbackHeading": "Some of your points are temporarily on hold",
+    "holdbackBody": "You actually have enough points to redeem this item, but some were only just earned and are still being checked to prevent fraud. Those points become usable from {unlockDate}.",
+    "lockExpiredHeading": "This price is no longer valid",
+    "lockExpiredBody": "Your price lock expired at {expiredDate}. Prices and availability can change, so we can't continue at the old price. Reload to see the current price.",
+    "listingUnavailableHeading": "This item is no longer available",
+    "listingUnavailableBody": "It just sold out. Try a similar offer in the Store instead.",
+    "redemptionFailedHeading": "Redemption failed",
+    "redemptionFailedBody": "Something went wrong while processing your redemption. Your points have not been deducted — please try again."
+  },
+  "summary": {
+    "reviewHeading": "Redemption summary",
+    "confirmHeading": "Confirm redemption",
+    "pointsCost": "Points cost",
+    "voucherValue": "Voucher value",
+    "youGet": "You get",
+    "voucherFor": "{merchantName} voucher",
+    "minimumSpend": "Minimum spend",
+    "transferableOnce": "This voucher can be transferred once to another YourTal user. ",
+    "notTransferable": "This voucher cannot be transferred. ",
+    "balanceCarrying": "Any remaining voucher value can still be used on your next transaction.",
+    "singleUseForfeit": "This voucher is for one transaction only; any unused value is forfeited.",
+    "minimumSpendPolicy": "This voucher only applies to purchases meeting a set minimum spend."
+  }
+}

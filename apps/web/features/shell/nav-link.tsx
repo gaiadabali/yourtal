@@ -43,7 +43,13 @@ export interface NavLinkProps {
   children: ReactNode;
 }
 
-export function NavLink({ href, matchPrefixes, className, activeClassName, children }: NavLinkProps) {
+export function NavLink({
+  href,
+  matchPrefixes,
+  className,
+  activeClassName,
+  children,
+}: NavLinkProps) {
   const pathname = usePathname();
   const isActive = isActiveTab(pathname, href, matchPrefixes);
 

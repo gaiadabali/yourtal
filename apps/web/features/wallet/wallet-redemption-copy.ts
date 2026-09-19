@@ -1,19 +1,29 @@
 import type { Voucher } from "@yourtal/contracts/voucher";
+import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
 
 /**
  * Plain-language explanation of a voucher's partial-redemption policy
- * (docs/09-points-economy-and-redemption.md §8.2), in Indonesian. Type-only
- * import from `@yourtal/contracts/voucher`, so this is safe from a client
- * leaf as well as a Server Component.
+ * (docs/09-points-economy-and-redemption.md §8.2). Type-only import from
+ * `@yourtal/contracts/voucher`, so this is safe from a client leaf as well
+ * as a Server Component.
+ *
+ * YT-0405: `locale` defaults to `id-ID` so existing callers are unaffected.
+ * The one call site today, `app/(app)/wallet/voucher/[voucherId]/page.tsx`,
+ * is outside this ticket's owned files and does not yet pass the real
+ * region's locale through — see YT-0405's report.
  */
-export function describePartialRedemptionPolicy(policy: Voucher["partialRedemptionPolicy"]): string {
+export function describePartialRedemptionPolicy(
+  policy: Voucher["partialRedemptionPolicy"],
+  locale: SupportedLocale = "id-ID",
+): string {
+  const t = getWalletTranslator(locale);
   switch (policy) {
     case "balance_carrying":
-      return "Kalau belanjamu kurang dari nilai voucher, sisanya tetap tersimpan untuk dipakai lain kali.";
+      return t("redemption.balanceCarrying");
     case "single_use_forfeit":
-      return "Voucher ini sekali pakai — kalau belanjamu kurang dari nilai voucher, sisanya hangus dan tidak bisa dipakai lagi.";
+      return t("redemption.singleUseForfeit");
     case "minimum_spend":
-      return "Voucher ini hanya bisa dipakai kalau belanjamu mencapai jumlah minimum yang ditentukan merchant.";
+      return t("redemption.minimumSpend");
     default: {
       const exhaustiveCheck: never = policy;
       return exhaustiveCheck;
@@ -27,7 +37,11 @@ export function describePartialRedemptionPolicy(policy: Voucher["partialRedempti
  * partial-redemption policy, rather than one generic paragraph for every
  * voucher regardless of who issued it.
  */
-export function buildRedemptionInstructions(merchantName: string, policy: Voucher["partialRedemptionPolicy"]): string {
-  const policyLine = describePartialRedemptionPolicy(policy);
-  return `Tunjukkan kode QR ini ke kasir ${merchantName} saat membayar, atau sebutkan kode vouchernya kalau diminta secara manual. ${policyLine}`;
+export function buildRedemptionInstructions(
+  merchantName: string,
+  policy: Voucher["partialRedemptionPolicy"],
+  locale: SupportedLocale = "id-ID",
+): string {
+  const policyLine = describePartialRedemptionPolicy(policy, locale);
+  return getWalletTranslator(locale)("redemption.instructions", { merchantName, policyLine });
 }

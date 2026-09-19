@@ -13,7 +13,9 @@ describe("seededShuffle", () => {
   it("returns a permutation: same elements, same length, nothing dropped or duplicated", () => {
     const shuffled = seededShuffle(items, ["campaign-1", "question-1", "respondent-1"]);
     expect(shuffled).toHaveLength(items.length);
-    expect(new Set(shuffled.map((item) => item.id))).toStrictEqual(new Set(items.map((item) => item.id)));
+    expect(new Set(shuffled.map((item) => item.id))).toStrictEqual(
+      new Set(items.map((item) => item.id)),
+    );
   });
 
   it("does not mutate the input array", () => {

@@ -1,0 +1,12 @@
+{
+  "result": {
+    "title": "Checkpoint complete",
+    "subtitle": "Here's the reward breakdown for this video.",
+    "baseReward": "Base reward",
+    "baseGuaranteed": "Guaranteed for watching and answering",
+    "accuracyBonus": "Accuracy bonus",
+    "accuracyDetail": "{correct} of {total} scored answers correct · {percent}% accuracy",
+    "noBonus": "This campaign has no accuracy bonus.",
+    "totalReceived": "Total received"
+  }
+}

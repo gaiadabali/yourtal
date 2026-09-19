@@ -17,7 +17,12 @@ export interface ShortTextQuestionViewProps {
  * this one needs no `promptId` wiring — `@yourtal/ui/input` renders its
  * own real `<label>`, which is its accessible name by design.
  */
-export function ShortTextQuestionView({ question, answer, onAnswerChange, disabled }: ShortTextQuestionViewProps) {
+export function ShortTextQuestionView({
+  question,
+  answer,
+  onAnswerChange,
+  disabled,
+}: ShortTextQuestionViewProps) {
   const text = answer?.text ?? "";
   const remaining = question.maxLength - text.length;
 

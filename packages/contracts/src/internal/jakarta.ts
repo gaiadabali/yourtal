@@ -67,7 +67,14 @@ const MERCHANT_BRAND_WORDS: readonly string[] = [
   "Sejahtera",
 ];
 
-const MERCHANT_FLOURISHES: readonly string[] = ["Jaya", "Abadi", "Express", ".id", "Group", "Nusantara Jaya"];
+const MERCHANT_FLOURISHES: readonly string[] = [
+  "Jaya",
+  "Abadi",
+  "Express",
+  ".id",
+  "Group",
+  "Nusantara Jaya",
+];
 
 /** Generates a plausible-sounding, entirely invented Jakarta merchant name. */
 export function generateMerchantName(faker: Faker): string {
@@ -93,7 +100,8 @@ export const LONG_MERCHANT_NAME =
 
 const CAMPAIGN_SYNOPSIS_TEMPLATES: readonly ((merchant: string) => string)[] = [
   (merchant) => `Kenali produk terbaru dari ${merchant} dan pelajari cara memanfaatkan promonya.`,
-  (merchant) => `${merchant} mengajak Anda mengenal lebih dekat proses di balik layar bisnis mereka.`,
+  (merchant) =>
+    `${merchant} mengajak Anda mengenal lebih dekat proses di balik layar bisnis mereka.`,
   (merchant) => `Simak cerita perjalanan ${merchant} membangun kepercayaan pelanggan di Jakarta.`,
   (merchant) => `Tonton video ini untuk memahami manfaat menjadi pelanggan setia ${merchant}.`,
 ];

@@ -15,8 +15,8 @@ export function WalletEmptyState() {
       <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
         <p className="text-base font-semibold text-fg">Belum ada poin di sini</p>
         <p className="max-w-sm text-sm text-fg-muted">
-          Poin didapat dengan menonton video singkat dari merchant favoritmu. Selesaikan satu video di papan Earn untuk mulai
-          mengumpulkan poin, lalu tukarkan dengan voucher di Store.
+          Poin didapat dengan menonton video singkat dari merchant favoritmu. Selesaikan satu video
+          di papan Earn untuk mulai mengumpulkan poin, lalu tukarkan dengan voucher di Store.
         </p>
         <Button asChild>
           <Link href="/">Cari video di Earn</Link>

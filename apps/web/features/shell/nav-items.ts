@@ -42,7 +42,11 @@ export const navItems: readonly NavItem[] = [
  * A prefix matches the pathname itself or any of its subroutes
  * (`/wallet` matches `/wallet` and `/wallet/history`, never `/walletx`).
  */
-export function isActiveTab(pathname: string, href: TabHref, matchPrefixes?: readonly string[]): boolean {
+export function isActiveTab(
+  pathname: string,
+  href: TabHref,
+  matchPrefixes?: readonly string[],
+): boolean {
   const prefixes: readonly string[] = [href, ...(matchPrefixes ?? [])];
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }

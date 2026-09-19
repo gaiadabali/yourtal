@@ -69,7 +69,6 @@ export function toIdrMinorUnits(value: number): IdrMinorUnits {
   return idrMinorUnitsSchema.parse(value);
 }
 
-
 /** Parses a raw number into `Points`, throwing on anything invalid. */
 export function toPoints(value: number): Points {
   return pointsSchema.parse(value);

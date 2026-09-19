@@ -24,7 +24,13 @@ export interface LikertQuestionViewProps {
  * bare number, per this ticket's acceptance detail; the interior values
  * are plain numbers since they have no distinct label to attach.
  */
-export function LikertQuestionView({ question, answer, onAnswerChange, promptId, disabled = false }: LikertQuestionViewProps) {
+export function LikertQuestionView({
+  question,
+  answer,
+  onAnswerChange,
+  promptId,
+  disabled = false,
+}: LikertQuestionViewProps) {
   const options = [];
   for (let value = question.scaleMin; value <= question.scaleMax; value += 1) {
     const label =

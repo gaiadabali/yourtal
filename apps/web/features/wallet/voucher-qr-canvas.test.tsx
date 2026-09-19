@@ -18,14 +18,20 @@ vi.mock("qrcode", () => ({
 describe("VoucherQrCanvas", () => {
   it("encodes the exact payload it was given", async () => {
     toDataURLMock.mockResolvedValue("data:image/png;base64,FAKE");
-    render(<VoucherQrCanvas payload="YT1.abc.1.TOKEN" label="Kode QR redeem voucher Kopi Sentosa" />);
+    render(
+      <VoucherQrCanvas payload="YT1.abc.1.TOKEN" label="Kode QR redeem voucher Kopi Sentosa" />,
+    );
 
-    await waitFor(() => expect(toDataURLMock).toHaveBeenCalledWith("YT1.abc.1.TOKEN", expect.anything()));
+    await waitFor(() =>
+      expect(toDataURLMock).toHaveBeenCalledWith("YT1.abc.1.TOKEN", expect.anything()),
+    );
   });
 
   it("renders the QR image with the given accessible label once generation resolves", async () => {
     toDataURLMock.mockResolvedValue("data:image/png;base64,FAKE");
-    render(<VoucherQrCanvas payload="YT1.abc.1.TOKEN" label="Kode QR redeem voucher Kopi Sentosa" />);
+    render(
+      <VoucherQrCanvas payload="YT1.abc.1.TOKEN" label="Kode QR redeem voucher Kopi Sentosa" />,
+    );
 
     const img = await screen.findByRole("img", { name: "Kode QR redeem voucher Kopi Sentosa" });
     expect(img).toHaveAttribute("src", "data:image/png;base64,FAKE");
@@ -39,7 +45,12 @@ describe("VoucherQrCanvas", () => {
     toDataURLMock.mockResolvedValue("data:image/png;base64,SECOND");
     rerender(<VoucherQrCanvas payload="YT1.abc.2.TOKEN" label="Kode QR" />);
 
-    await waitFor(() => expect(screen.getByRole("img", { name: "Kode QR" })).toHaveAttribute("src", "data:image/png;base64,SECOND"));
+    await waitFor(() =>
+      expect(screen.getByRole("img", { name: "Kode QR" })).toHaveAttribute(
+        "src",
+        "data:image/png;base64,SECOND",
+      ),
+    );
   });
 
   it("falls back to manual-code copy if QR generation fails, instead of crashing", async () => {

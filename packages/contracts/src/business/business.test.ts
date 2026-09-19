@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { businessSchema } from "./business";
-import { generateBusiness, generateBusinesses, longNameBusinessFixture, mockBusinesses } from "./business.mock";
+import {
+  generateBusiness,
+  generateBusinesses,
+  longNameBusinessFixture,
+  mockBusinesses,
+} from "./business.mock";
 
 const validBusiness = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -15,7 +20,10 @@ const validBusiness = {
 describe("businessSchema", () => {
   it("round-trips a valid business", () => {
     const parsed = businessSchema.parse(validBusiness);
-    expect(parsed).toMatchObject({ displayName: "Kopi Kenangan", roles: ["advertiser", "supplier"] });
+    expect(parsed).toMatchObject({
+      displayName: "Kopi Kenangan",
+      roles: ["advertiser", "supplier"],
+    });
   });
 
   it("round-trips a business with a null logo", () => {

@@ -38,7 +38,9 @@ export function isAnswerCorrect(question: Question, answer: QuestionAnswer | und
   }
   switch (question.type) {
     case "multiple_choice":
-      return answer.type === "multiple_choice" && answer.selectedOptionId === question.correctOptionId;
+      return (
+        answer.type === "multiple_choice" && answer.selectedOptionId === question.correctOptionId
+      );
     case "true_false":
       return answer.type === "true_false" && answer.value === question.correctAnswer;
     case "likert":
@@ -78,7 +80,9 @@ export function computeRewardSplit(
   answers: ReadonlyMap<string, QuestionAnswer>,
 ): RewardSplit {
   const scorable = questions.filter(isScorableQuestion);
-  const correctCount = scorable.filter((question) => isAnswerCorrect(question, answers.get(question.id))).length;
+  const correctCount = scorable.filter((question) =>
+    isAnswerCorrect(question, answers.get(question.id)),
+  ).length;
 
   if (campaign.scoringRule === "base_only") {
     return {
@@ -95,12 +99,26 @@ export function computeRewardSplit(
   const maxBonus = asDisplayPoints(campaign.rewardPoints - baseReward);
 
   if (scorable.length === 0) {
-    return { baseReward, maxBonus, earnedBonus: asDisplayPoints(0), accuracyFraction: null, correctCount, scorableCount: 0 };
+    return {
+      baseReward,
+      maxBonus,
+      earnedBonus: asDisplayPoints(0),
+      accuracyFraction: null,
+      correctCount,
+      scorableCount: 0,
+    };
   }
 
   const accuracyFraction = correctCount / scorable.length;
   const earnedBonus = asDisplayPoints(Math.round(maxBonus * accuracyFraction));
-  return { baseReward, maxBonus, earnedBonus, accuracyFraction, correctCount, scorableCount: scorable.length };
+  return {
+    baseReward,
+    maxBonus,
+    earnedBonus,
+    accuracyFraction,
+    correctCount,
+    scorableCount: scorable.length,
+  };
 }
 
 /** Convenience for display: the total actually paid out this attempt. */

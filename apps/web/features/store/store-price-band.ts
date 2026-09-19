@@ -35,7 +35,10 @@ const PRICE_BAND_BOUNDS: readonly PriceBandBounds[] = [
   { key: "over_10000", label: "Di atas 10.000 poin", minPoints: 10_000, maxPointsExclusive: null },
 ];
 
-export const STORE_PRICE_BAND_FILTER_OPTIONS: ReadonlyArray<{ key: StorePriceBandFilter; label: string }> = [
+export const STORE_PRICE_BAND_FILTER_OPTIONS: ReadonlyArray<{
+  key: StorePriceBandFilter;
+  label: string;
+}> = [
   { key: "all", label: "Semua harga" },
   ...PRICE_BAND_BOUNDS.map((band) => ({ key: band.key, label: band.label })),
 ];
@@ -44,7 +47,10 @@ export function isStorePriceBandFilter(value: string): value is StorePriceBandFi
   return (STORE_PRICE_BAND_FILTER_VALUES as readonly string[]).includes(value);
 }
 
-export function filterListingsByPriceBand(listings: readonly Listing[], priceBand: StorePriceBandFilter): Listing[] {
+export function filterListingsByPriceBand(
+  listings: readonly Listing[],
+  priceBand: StorePriceBandFilter,
+): Listing[] {
   if (priceBand === "all") {
     return [...listings];
   }
@@ -53,6 +59,8 @@ export function filterListingsByPriceBand(listings: readonly Listing[], priceBan
     return [...listings];
   }
   return listings.filter(
-    (listing) => listing.priceInPoints >= bounds.minPoints && (bounds.maxPointsExclusive === null || listing.priceInPoints < bounds.maxPointsExclusive),
+    (listing) =>
+      listing.priceInPoints >= bounds.minPoints &&
+      (bounds.maxPointsExclusive === null || listing.priceInPoints < bounds.maxPointsExclusive),
   );
 }

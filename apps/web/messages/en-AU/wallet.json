@@ -1,0 +1,37 @@
+{
+  "balance": {
+    "available": "Available balance",
+    "pendingLabel": "On hold",
+    "pendingWithDate": "{amount} · unlocks {date} ({relative})",
+    "pendingNone": "No points on hold",
+    "expiringLabel": "Expiring soon",
+    "expiringWithDate": "{amount} · expires {date} ({relative})",
+    "expiringNone": "No points expiring soon"
+  },
+  "history": {
+    "empty": "No point history yet.",
+    "earned": "Completed {merchantName}'s video — earned {amount}",
+    "spent": "Redeemed {amount} for a {merchantName} voucher"
+  },
+  "voucher": {
+    "statusActive": "Active",
+    "statusRedeemed": "Redeemed",
+    "statusTransferred": "Transferred",
+    "statusExpired": "Expired",
+    "expiresOn": "Ended {date}",
+    "validUntilCard": "Valid until {date}",
+    "remainingValue": "Remaining value",
+    "validUntilLabel": "Valid until",
+    "howToRedeem": "How to redeem",
+    "qrLabel": "Redemption QR code for {merchantName}",
+    "codeAutoRefresh": "Code refreshes automatically",
+    "secondsRemaining": "{seconds}s remaining",
+    "refreshCountdownLabel": "Time until the QR code refreshes"
+  },
+  "redemption": {
+    "balanceCarrying": "If your purchase is less than the voucher's value, the remainder is kept for next time.",
+    "singleUseForfeit": "This voucher is single-use — if your purchase is less than the voucher's value, the remainder is forfeited and cannot be used again.",
+    "minimumSpend": "This voucher can only be used once your purchase reaches the minimum amount the merchant set.",
+    "instructions": "Show this QR code to {merchantName}'s cashier when paying, or read out the voucher code if asked to enter it manually. {policyLine}"
+  }
+}

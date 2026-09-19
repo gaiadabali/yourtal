@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 export interface VoucherValidityCountdownProps {
   secondsUntilRotation: number;
   rotationIntervalSeconds: number;
@@ -12,19 +14,25 @@ export interface VoucherValidityCountdownProps {
  * docs/13b-typescript-standards.md §8 rule 4 prefers native controls for
  * exactly this case.
  */
-export function VoucherValidityCountdown({ secondsUntilRotation, rotationIntervalSeconds }: VoucherValidityCountdownProps) {
+export function VoucherValidityCountdown({
+  secondsUntilRotation,
+  rotationIntervalSeconds,
+}: VoucherValidityCountdownProps) {
+  const t = useTranslations("wallet");
   const clampedSeconds = Math.max(0, Math.min(secondsUntilRotation, rotationIntervalSeconds));
   const percentRemaining = Math.round((clampedSeconds / rotationIntervalSeconds) * 100);
 
   return (
     <div className="flex w-full flex-col gap-1.5">
       <div className="flex items-center justify-between text-xs text-fg-muted">
-        <span>Kode diperbarui otomatis</span>
-        <span className="tabular-nums">{clampedSeconds} detik lagi</span>
+        <span>{t("voucher.codeAutoRefresh")}</span>
+        <span className="tabular-nums">
+          {t("voucher.secondsRemaining", { seconds: clampedSeconds })}
+        </span>
       </div>
       <div
         role="progressbar"
-        aria-label="Waktu sebelum kode QR diperbarui"
+        aria-label={t("voucher.refreshCountdownLabel")}
         aria-valuemin={0}
         aria-valuemax={rotationIntervalSeconds}
         aria-valuenow={clampedSeconds}

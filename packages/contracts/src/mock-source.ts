@@ -38,10 +38,14 @@ const dataSourceEnvSchema = z.object({
  * (rather than only used internally) so tests can exercise the fail-fast
  * behaviour without mutating `process.env` for the whole test process.
  */
-export function parseDataSourceMode(env: Readonly<Record<string, string | undefined>>): DataSourceMode {
+export function parseDataSourceMode(
+  env: Readonly<Record<string, string | undefined>>,
+): DataSourceMode {
   const result = dataSourceEnvSchema.safeParse(env);
   if (!result.success) {
-    throw new Error(`Invalid YOURTAL_DATA_SOURCE environment configuration: ${z.prettifyError(result.error)}`);
+    throw new Error(
+      `Invalid YOURTAL_DATA_SOURCE environment configuration: ${z.prettifyError(result.error)}`,
+    );
   }
   return result.data.YOURTAL_DATA_SOURCE;
 }

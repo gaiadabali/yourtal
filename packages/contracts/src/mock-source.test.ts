@@ -14,12 +14,13 @@ describe("parseDataSourceMode", () => {
     expect(parseDataSourceMode({ YOURTAL_DATA_SOURCE: "live" })).toBe("live");
   });
 
-  const rejectionTable: Array<{ name: string; env: Readonly<Record<string, string | undefined>> }> = [
-    { name: "an unrecognised mode string", env: { YOURTAL_DATA_SOURCE: "staging" } },
-    { name: "an empty string", env: { YOURTAL_DATA_SOURCE: "" } },
-    { name: "mixed case", env: { YOURTAL_DATA_SOURCE: "Mock" } },
-    { name: "a numeric-looking value", env: { YOURTAL_DATA_SOURCE: "1" } },
-  ];
+  const rejectionTable: Array<{ name: string; env: Readonly<Record<string, string | undefined>> }> =
+    [
+      { name: "an unrecognised mode string", env: { YOURTAL_DATA_SOURCE: "staging" } },
+      { name: "an empty string", env: { YOURTAL_DATA_SOURCE: "" } },
+      { name: "mixed case", env: { YOURTAL_DATA_SOURCE: "Mock" } },
+      { name: "a numeric-looking value", env: { YOURTAL_DATA_SOURCE: "1" } },
+    ];
 
   it.each(rejectionTable)("fails fast on $name", ({ env }) => {
     expect(() => parseDataSourceMode(env)).toThrow();

@@ -30,7 +30,9 @@ function firstValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function parseCampaignBoardParams(searchParams: Record<string, string | string[] | undefined>): CampaignBoardParams {
+export function parseCampaignBoardParams(
+  searchParams: Record<string, string | string[] | undefined>,
+): CampaignBoardParams {
   const raw = campaignBoardSearchParamsSchema.parse(searchParams);
 
   const sortCandidate = firstValue(raw.sort);
@@ -51,7 +53,10 @@ export function parseCampaignBoardParams(searchParams: Record<string, string | s
  * the rest — used by the client-side filter/sort controls so a change to
  * one control never drops the other's selection from the URL.
  */
-export function buildCampaignBoardQuery(current: CampaignBoardParams, update: Partial<CampaignBoardParams>): string {
+export function buildCampaignBoardQuery(
+  current: CampaignBoardParams,
+  update: Partial<CampaignBoardParams>,
+): string {
   const next: CampaignBoardParams = { ...current, ...update };
   const params = new URLSearchParams();
   if (next.sort !== DEFAULT_CAMPAIGN_SORT) {

@@ -17,14 +17,22 @@
  * at that point `campaign.durationSeconds` equals the asset's own duration
  * and both functions become the identity function.
  */
-export function toVirtualSeconds(realSeconds: number, realDurationSeconds: number, campaignDurationSeconds: number): number {
+export function toVirtualSeconds(
+  realSeconds: number,
+  realDurationSeconds: number,
+  campaignDurationSeconds: number,
+): number {
   if (realDurationSeconds <= 0) {
     return 0;
   }
   return (realSeconds / realDurationSeconds) * campaignDurationSeconds;
 }
 
-export function toRealSeconds(virtualSeconds: number, realDurationSeconds: number, campaignDurationSeconds: number): number {
+export function toRealSeconds(
+  virtualSeconds: number,
+  realDurationSeconds: number,
+  campaignDurationSeconds: number,
+): number {
   if (campaignDurationSeconds <= 0) {
     return 0;
   }

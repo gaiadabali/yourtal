@@ -52,8 +52,18 @@ export function VoucherQrCanvas({ payload, label }: VoucherQrCanvasProps) {
   }
 
   if (!dataUrl) {
-    return <div aria-hidden="true" className="h-60 w-60 animate-pulse rounded-lg bg-surface-raised" />;
+    return (
+      <div aria-hidden="true" className="h-60 w-60 animate-pulse rounded-lg bg-surface-raised" />
+    );
   }
 
-  return <img src={dataUrl} alt={label} width={240} height={240} className="h-60 w-60 rounded-lg border border-border" />;
+  return (
+    <img
+      src={dataUrl}
+      alt={label}
+      width={240}
+      height={240}
+      className="h-60 w-60 rounded-lg border border-border"
+    />
+  );
 }

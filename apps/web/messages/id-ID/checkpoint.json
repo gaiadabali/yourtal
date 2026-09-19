@@ -1,0 +1,12 @@
+{
+  "result": {
+    "title": "Checkpoint selesai",
+    "subtitle": "Berikut rincian reward untuk video ini.",
+    "baseReward": "Reward dasar",
+    "baseGuaranteed": "Dijamin karena Anda menonton dan menjawab",
+    "accuracyBonus": "Bonus akurasi",
+    "accuracyDetail": "{correct} dari {total} jawaban bernilai benar · {percent}% akurasi",
+    "noBonus": "Campaign ini tidak memiliki bonus akurasi.",
+    "totalReceived": "Total diterima"
+  }
+}

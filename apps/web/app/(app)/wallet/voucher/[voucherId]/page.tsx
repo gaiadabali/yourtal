@@ -10,7 +10,9 @@ import { VoucherDetailView } from "@/features/wallet/voucher-detail-view";
  * cache-first hydration all live in `VoucherDetailView`, the one client
  * leaf in this route.
  */
-export default async function WalletVoucherDetailPage(props: PageProps<"/wallet/voucher/[voucherId]">) {
+export default async function WalletVoucherDetailPage(
+  props: PageProps<"/wallet/voucher/[voucherId]">,
+) {
   const { voucherId } = await props.params;
   const voucher = await getWalletVoucher(voucherId);
 
@@ -18,8 +20,15 @@ export default async function WalletVoucherDetailPage(props: PageProps<"/wallet/
     notFound();
   }
 
-  const redemptionInstructions = buildRedemptionInstructions(voucher.merchantName, voucher.partialRedemptionPolicy);
-  const initialDetail = buildCachedVoucherDetail(voucher, redemptionInstructions, new Date().toISOString());
+  const redemptionInstructions = buildRedemptionInstructions(
+    voucher.merchantName,
+    voucher.partialRedemptionPolicy,
+  );
+  const initialDetail = buildCachedVoucherDetail(
+    voucher,
+    redemptionInstructions,
+    new Date().toISOString(),
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4">

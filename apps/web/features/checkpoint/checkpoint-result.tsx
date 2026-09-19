@@ -1,9 +1,13 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@yourtal/ui/card";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Question } from "@yourtal/contracts/question";
 import { computeRewardSplit, totalEarned } from "./checkpoint-scoring";
 import { formatPoints } from "@yourtal/contracts/money/format";
+import { useRegion } from "@/features/region/use-region";
 import type { QuestionAnswer } from "./checkpoint-types";
 
 export interface CheckpointResultProps {
@@ -22,45 +26,55 @@ export interface CheckpointResultProps {
  * honoured. When a campaign has no accuracy bonus at all (`base_only`, or
  * a bank with no scorable questions), that is stated plainly rather than
  * silently omitted.
+ *
+ * YT-0405: a Client Component (its only consumer, `checkpoint-quiz.tsx`, is
+ * already `"use client"`), so it reads the active region and its
+ * translations ambiently via `useRegion()`/`useTranslations()`.
  */
 export function CheckpointResult({ campaign, questions, answers }: CheckpointResultProps) {
+  const { locale } = useRegion();
+  const t = useTranslations("checkpoint");
   const split = computeRewardSplit(campaign, questions, answers);
   const hasBonus = split.accuracyFraction !== null;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Checkpoint selesai</CardTitle>
-        <CardDescription>Berikut rincian reward untuk video ini.</CardDescription>
+        <CardTitle>{t("result.title")}</CardTitle>
+        <CardDescription>{t("result.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface-raised p-4">
           <div>
-            <p className="text-sm font-sans font-medium text-fg">Reward dasar</p>
-            <p className="text-xs font-sans text-fg-subtle">Dijamin karena Anda menonton dan menjawab</p>
+            <p className="text-sm font-sans font-medium text-fg">{t("result.baseReward")}</p>
+            <p className="text-xs font-sans text-fg-subtle">{t("result.baseGuaranteed")}</p>
           </div>
-          <Badge variant="reward">{formatPoints(split.baseReward)}</Badge>
+          <Badge variant="reward">{formatPoints(split.baseReward, locale)}</Badge>
         </div>
 
         {hasBonus ? (
           <div className="flex items-center justify-between gap-4 rounded-md border border-dashed border-border-strong p-4">
             <div>
-              <p className="text-sm font-sans font-medium text-fg">Bonus akurasi</p>
+              <p className="text-sm font-sans font-medium text-fg">{t("result.accuracyBonus")}</p>
               <p className="text-xs font-sans text-fg-subtle">
-                {split.correctCount} dari {split.scorableCount} jawaban bernilai benar
-                {" · "}
-                {Math.round((split.accuracyFraction ?? 0) * 100)}% akurasi
+                {t("result.accuracyDetail", {
+                  correct: split.correctCount,
+                  total: split.scorableCount,
+                  percent: Math.round((split.accuracyFraction ?? 0) * 100),
+                })}
               </p>
             </div>
-            <Badge variant="reward">{formatPoints(split.earnedBonus)}</Badge>
+            <Badge variant="reward">{formatPoints(split.earnedBonus, locale)}</Badge>
           </div>
         ) : (
-          <p className="text-xs font-sans text-fg-subtle">Campaign ini tidak memiliki bonus akurasi.</p>
+          <p className="text-xs font-sans text-fg-subtle">{t("result.noBonus")}</p>
         )}
 
         <div className="flex items-center justify-between gap-4 border-t border-border pt-4">
-          <p className="text-sm font-sans font-semibold text-fg">Total diterima</p>
-          <p className="text-lg font-sans font-semibold text-reward">{formatPoints(totalEarned(split))}</p>
+          <p className="text-sm font-sans font-semibold text-fg">{t("result.totalReceived")}</p>
+          <p className="text-lg font-sans font-semibold text-reward">
+            {formatPoints(totalEarned(split), locale)}
+          </p>
         </div>
       </CardContent>
     </Card>

@@ -35,8 +35,14 @@ describe("CampaignCard / CampaignCardSkeleton dimension parity", () => {
       CAMPAIGN_CARD_FOOTER_ROW_CLASS,
     ]) {
       const selector = `.${rowClass.split(" ").join(".")}`;
-      expect(cardContainer.querySelector(selector), `card row missing for "${rowClass}"`).not.toBeNull();
-      expect(skeletonContainer.querySelector(selector), `skeleton row missing for "${rowClass}"`).not.toBeNull();
+      expect(
+        cardContainer.querySelector(selector),
+        `card row missing for "${rowClass}"`,
+      ).not.toBeNull();
+      expect(
+        skeletonContainer.querySelector(selector),
+        `skeleton row missing for "${rowClass}"`,
+      ).not.toBeNull();
     }
   });
 });

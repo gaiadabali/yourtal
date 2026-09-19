@@ -40,12 +40,30 @@ describe("listingSchema", () => {
     { name: "negative price in points", overrides: { priceInPoints: -1 } },
     { name: "invalid category enum value", overrides: { category: "gambling" } },
     { name: "invalid status enum value", overrides: { status: "hidden" } },
-    { name: "invalid partial redemption policy enum value", overrides: { partialRedemptionPolicy: "full_refund" } },
-    { name: "stockRemaining greater than stockTotal", overrides: { stockRemaining: 25, stockTotal: 20 } },
-    { name: "settlementValue greater than faceValue", overrides: { settlementValueIdr: 60_000, faceValueIdr: 50_000 } },
-    { name: "sold_out status with remaining stock", overrides: { status: "sold_out", stockRemaining: 5 } },
-    { name: "minimum_spend policy without a minimum spend amount", overrides: { partialRedemptionPolicy: "minimum_spend", minimumSpendIdr: null } },
-    { name: "non-minimum_spend policy with a minimum spend amount set", overrides: { partialRedemptionPolicy: "balance_carrying", minimumSpendIdr: 10_000 } },
+    {
+      name: "invalid partial redemption policy enum value",
+      overrides: { partialRedemptionPolicy: "full_refund" },
+    },
+    {
+      name: "stockRemaining greater than stockTotal",
+      overrides: { stockRemaining: 25, stockTotal: 20 },
+    },
+    {
+      name: "settlementValue greater than faceValue",
+      overrides: { settlementValueIdr: 60_000, faceValueIdr: 50_000 },
+    },
+    {
+      name: "sold_out status with remaining stock",
+      overrides: { status: "sold_out", stockRemaining: 5 },
+    },
+    {
+      name: "minimum_spend policy without a minimum spend amount",
+      overrides: { partialRedemptionPolicy: "minimum_spend", minimumSpendIdr: null },
+    },
+    {
+      name: "non-minimum_spend policy with a minimum spend amount set",
+      overrides: { partialRedemptionPolicy: "balance_carrying", minimumSpendIdr: 10_000 },
+    },
     { name: "zero stockTotal", overrides: { stockTotal: 0 } },
     { name: "non-datetime expiresAt", overrides: { expiresAt: "next week" } },
     { name: "non-uuid id", overrides: { id: "abc" } },

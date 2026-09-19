@@ -99,7 +99,10 @@ describe("QuickFeedViewport", () => {
     const [firstItem, secondItem] = observer!.observed;
 
     act(() => {
-      observer!.callback([fakeEntry(secondItem!, 0.9), fakeEntry(firstItem!, 0.1)], observer as unknown as IntersectionObserver);
+      observer!.callback(
+        [fakeEntry(secondItem!, 0.9), fakeEntry(firstItem!, 0.1)],
+        observer as unknown as IntersectionObserver,
+      );
     });
 
     expect(screen.getByRole("status")).toHaveTextContent("Video 2 dari 2: Toko B — Judul B");

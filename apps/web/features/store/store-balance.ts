@@ -14,7 +14,10 @@ export interface BalanceShortfall {
   shortfallPoints: number;
 }
 
-export function computeBalanceShortfall(priceInPoints: Points, availablePoints: Points): BalanceShortfall {
+export function computeBalanceShortfall(
+  priceInPoints: Points,
+  availablePoints: Points,
+): BalanceShortfall {
   const shortfallPoints = Math.max(0, priceInPoints - availablePoints);
   return { isAffordable: shortfallPoints === 0, shortfallPoints };
 }

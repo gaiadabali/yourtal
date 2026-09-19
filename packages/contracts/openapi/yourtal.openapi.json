@@ -1,0 +1,969 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "YourTal contracts",
+    "version": "0.0.0",
+    "description": "Generated from the Zod schemas in @yourtal/contracts (YT-0031). Do not edit by hand.\n\nThis document carries SCHEMAS ONLY. `paths` is empty because no API surface exists yet — endpoints arrive with apps/api (YT-0100 onward), and each will be added here as it is built.\n\nCross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule."
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "Balance": {
+        "description": "What the Wallet surface answers: what do I have, what is coming, what am I about to lose (docs/17 section 3).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - pendingUnlockAt is set if and only if pendingPoints is positive.\n  - expiringAt is set if and only if expiringPoints is positive.\n  - expiringPoints cannot exceed availablePoints — points still in holdback cannot be about to expire.",
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "availablePoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "pendingPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "pendingUnlockAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiringPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "expiringAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "userId",
+          "availablePoints",
+          "pendingPoints",
+          "pendingUnlockAt",
+          "expiringPoints",
+          "expiringAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "BillingContact": {
+        "description": "The person a business's invoices and settlement statements are sent to (docs/17 section 2, Billing zone).",
+        "type": "object",
+        "properties": {
+          "businessId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+[1-9]\\d{6,14}$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "businessId",
+          "name",
+          "email",
+          "phone",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "Business": {
+        "description": "An advertiser, supplier and/or redeemer.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - roles must not contain duplicates.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "legalName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "district": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "roles": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessRole"
+            }
+          },
+          "isVerified": {
+            "type": "boolean"
+          },
+          "logoUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "legalName",
+          "displayName",
+          "district",
+          "roles",
+          "isVerified",
+          "logoUrl"
+        ],
+        "additionalProperties": false
+      },
+      "BusinessMember": {
+        "description": "A person's membership at one business (docs/17 section 2.1's six roles). NOT the Business-level `BusinessRole` above — this is the per-person team role, sourced from @yourtal/authz/roles so it cannot drift from the authorization model.",
+        "type": "object",
+        "properties": {
+          "businessId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "$ref": "#/components/schemas/BusinessTeamRole"
+          },
+          "invitedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "invitedByUserId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "joinedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "businessId",
+          "userId",
+          "role",
+          "invitedAt",
+          "invitedByUserId",
+          "joinedAt"
+        ],
+        "additionalProperties": false
+      },
+      "BusinessRole": {
+        "description": "A relationship a business holds with the platform, of which it may hold any subset (docs/17 section 2). NOT the per-person team role — that is BusinessTeamRole.",
+        "type": "string",
+        "enum": [
+          "advertiser",
+          "supplier",
+          "redeemer"
+        ]
+      },
+      "BusinessTeamRole": {
+        "description": "The job one person does inside one business (docs/17 section 2.1). Defined here rather than in @yourtal/authz because a member carries it in an API payload; authz imports it and keeps the drift test against the Cerbos principal schema (YT-0509). Store staff are absent by design — they are device sessions, not members.",
+        "type": "string",
+        "enum": [
+          "owner",
+          "admin",
+          "marketer",
+          "merchandiser",
+          "finance",
+          "analyst"
+        ]
+      },
+      "Campaign": {
+        "description": "The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).\n  - An accuracy bonus requires at least one question to score accuracy against.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CampaignKind"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "merchantId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "merchantName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "synopsis": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 10800
+          },
+          "estimatedDataMb": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 2000
+          },
+          "rewardPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "questionCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "scoringRule": {
+            "$ref": "#/components/schemas/CampaignScoringRule"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CampaignStatus"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "merchantId",
+          "merchantName",
+          "synopsis",
+          "durationSeconds",
+          "estimatedDataMb",
+          "rewardPoints",
+          "questionCount",
+          "scoringRule",
+          "status",
+          "publishedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CampaignKind": {
+        "description": "Long-form earn campaign, or a short Quick-feed item (docs/17 section 1.1).",
+        "type": "string",
+        "enum": [
+          "long_form",
+          "quick"
+        ]
+      },
+      "CampaignScoringRule": {
+        "description": "Whether the reward is completion-only or completion plus an accuracy bonus.",
+        "type": "string",
+        "enum": [
+          "base_only",
+          "base_plus_accuracy_bonus"
+        ]
+      },
+      "CampaignStatus": {
+        "description": "Lifecycle state as a viewer sees it.",
+        "type": "string",
+        "enum": [
+          "active",
+          "paused",
+          "ended"
+        ]
+      },
+      "IdrMinorUnits": {
+        "description": "Indonesian Rupiah as an integer. The minor unit for IDR is defined as exactly 1 Rupiah, so these values ARE Rupiah counts. There is no cents-of-Rupiah concept.",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 10000000000,
+        "format": "int64"
+      },
+      "KybDocument": {
+        "description": "A business's submitted KYB document and its review state (docs/17 section 5). `storageRef` is an opaque pointer to encrypted bytes; this schema does not cover the upload path itself.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "documentType": {
+            "$ref": "#/components/schemas/KybDocumentType"
+          },
+          "storageRef": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "$ref": "#/components/schemas/KybDocumentStatus"
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "verifiedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verifiedByUserId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "businessId",
+          "documentType",
+          "storageRef",
+          "status",
+          "expiresAt",
+          "submittedAt",
+          "verifiedAt",
+          "verifiedByUserId"
+        ],
+        "additionalProperties": false
+      },
+      "KybDocumentStatus": {
+        "description": "Review state of a submitted KYB document.",
+        "type": "string",
+        "enum": [
+          "submitted",
+          "verified",
+          "rejected",
+          "expired"
+        ]
+      },
+      "KybDocumentType": {
+        "description": "A category of Know-Your-Business document a business can submit during onboarding.",
+        "type": "string",
+        "enum": [
+          "business_registration_certificate",
+          "tax_registration_number",
+          "director_identity",
+          "proof_of_address"
+        ]
+      },
+      "Listing": {
+        "description": "A store listing: what it costs in points, what it settles at, and its stock.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3).\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "merchantId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "merchantName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "category": {
+            "$ref": "#/components/schemas/ListingCategory"
+          },
+          "district": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "faceValueIdr": {
+            "$ref": "#/components/schemas/IdrMinorUnits"
+          },
+          "settlementValueIdr": {
+            "$ref": "#/components/schemas/IdrMinorUnits"
+          },
+          "priceInPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "stockRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "stockTotal": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "transferable": {
+            "type": "boolean"
+          },
+          "partialRedemptionPolicy": {
+            "$ref": "#/components/schemas/PartialRedemptionPolicy"
+          },
+          "minimumSpendIdr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdrMinorUnits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ListingStatus"
+          }
+        },
+        "required": [
+          "id",
+          "merchantId",
+          "merchantName",
+          "title",
+          "description",
+          "category",
+          "district",
+          "faceValueIdr",
+          "settlementValueIdr",
+          "priceInPoints",
+          "stockRemaining",
+          "stockTotal",
+          "transferable",
+          "partialRedemptionPolicy",
+          "minimumSpendIdr",
+          "expiresAt",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "ListingCategory": {
+        "description": "Top-level store category.",
+        "type": "string",
+        "enum": [
+          "food_beverage",
+          "retail",
+          "digital_goods",
+          "merchandise",
+          "services"
+        ]
+      },
+      "ListingStatus": {
+        "description": "Availability as the store surface displays it.",
+        "type": "string",
+        "enum": [
+          "available",
+          "sold_out",
+          "expiring_soon",
+          "new"
+        ]
+      },
+      "PartialRedemptionPolicy": {
+        "description": "What happens when a voucher is spent below its face value (docs/09 section 8.2).",
+        "type": "string",
+        "enum": [
+          "balance_carrying",
+          "single_use_forfeit",
+          "minimum_spend"
+        ]
+      },
+      "Points": {
+        "description": "Platform points. Always a whole number; there is no fractional point.",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 10000000000,
+        "format": "int64"
+      },
+      "Question": {
+        "description": "A checkpoint question, discriminated on type. Variants are inlined rather than named as components because they are never referenced independently.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - multiple_choice: correctOptionId must reference one of the provided options.\n  - likert: scaleMin must be less than scaleMax.",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "multiple_choice"
+              },
+              "options": {
+                "minItems": 2,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/QuestionOption"
+                }
+              },
+              "correctOptionId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "options",
+              "correctOptionId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "true_false"
+              },
+              "correctAnswer": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "correctAnswer"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "likert"
+              },
+              "scaleMin": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
+              "scaleMax": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
+              "scaleLowLabel": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "scaleHighLabel": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "scaleMin",
+              "scaleMax",
+              "scaleLowLabel",
+              "scaleHighLabel"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "ranked"
+              },
+              "items": {
+                "minItems": 2,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/QuestionOption"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "items"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campaignId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "timerSeconds": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 120
+              },
+              "type": {
+                "type": "string",
+                "const": "short_text"
+              },
+              "maxLength": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 500
+              }
+            },
+            "required": [
+              "id",
+              "campaignId",
+              "prompt",
+              "timerSeconds",
+              "type",
+              "maxLength"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "QuestionOption": {
+        "description": "One selectable answer.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "Region": {
+        "description": "AU or ID — the region a user account belongs to, chosen once at registration. Determines locale, currency, and tax/regulatory setup; Australia is the real market, Indonesia is the proving ground.",
+        "type": "string",
+        "enum": [
+          "AU",
+          "ID"
+        ]
+      },
+      "Voucher": {
+        "description": "An issued voucher held by a user, with its remaining value and expiry.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - remainingValueIdr cannot exceed faceValueIdr.\n  - expiresAt must be after issuedAt.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "listingId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 24
+          },
+          "merchantId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "merchantName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "faceValueIdr": {
+            "$ref": "#/components/schemas/IdrMinorUnits"
+          },
+          "remainingValueIdr": {
+            "$ref": "#/components/schemas/IdrMinorUnits"
+          },
+          "partialRedemptionPolicy": {
+            "$ref": "#/components/schemas/PartialRedemptionPolicy"
+          },
+          "minimumSpendIdr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdrMinorUnits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "transferable": {
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VoucherStatus"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "listingId",
+          "ownerId",
+          "code",
+          "merchantId",
+          "merchantName",
+          "title",
+          "faceValueIdr",
+          "remainingValueIdr",
+          "partialRedemptionPolicy",
+          "minimumSpendIdr",
+          "transferable",
+          "status",
+          "issuedAt",
+          "expiresAt"
+        ],
+        "additionalProperties": false
+      },
+      "VoucherStatus": {
+        "description": "Voucher lifecycle state.",
+        "type": "string",
+        "enum": [
+          "active",
+          "redeemed",
+          "expired",
+          "transferred"
+        ]
+      }
+    }
+  }
+}

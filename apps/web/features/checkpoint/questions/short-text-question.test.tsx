@@ -28,12 +28,24 @@ function ControlledWrapper({ onAnswerChange }: ControlledWrapperProps) {
 
 describe("ShortTextQuestionView", () => {
   it("renders a real, labelled text field", () => {
-    render(<ShortTextQuestionView question={shortTextFixture} answer={undefined} onAnswerChange={vi.fn()} />);
+    render(
+      <ShortTextQuestionView
+        question={shortTextFixture}
+        answer={undefined}
+        onAnswerChange={vi.fn()}
+      />,
+    );
     expect(screen.getByLabelText("Jawaban Anda (opsional)")).toBeInTheDocument();
   });
 
   it("enforces the question's maxLength", () => {
-    render(<ShortTextQuestionView question={shortTextFixture} answer={undefined} onAnswerChange={vi.fn()} />);
+    render(
+      <ShortTextQuestionView
+        question={shortTextFixture}
+        answer={undefined}
+        onAnswerChange={vi.fn()}
+      />,
+    );
     expect(screen.getByLabelText("Jawaban Anda (opsional)")).toHaveAttribute(
       "maxlength",
       String(shortTextFixture.maxLength),
@@ -48,6 +60,9 @@ describe("ShortTextQuestionView", () => {
     await userEvent.type(field, "Kesan saya bagus");
 
     expect(field).toHaveValue("Kesan saya bagus");
-    expect(onAnswerChange).toHaveBeenLastCalledWith({ type: "short_text", text: "Kesan saya bagus" });
+    expect(onAnswerChange).toHaveBeenLastCalledWith({
+      type: "short_text",
+      text: "Kesan saya bagus",
+    });
   });
 });

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { balanceSchema } from "./balance";
-import { generateBalance, generateBalances, mixedStateBalanceFixture, mockBalances, zeroBalanceFixture } from "./balance.mock";
+import {
+  generateBalance,
+  generateBalances,
+  mixedStateBalanceFixture,
+  mockBalances,
+  zeroBalanceFixture,
+} from "./balance.mock";
 
 const validBalance = {
   userId: "11111111-1111-4111-8111-111111111111",
@@ -19,13 +25,22 @@ describe("balanceSchema", () => {
   });
 
   it("round-trips a balance with nothing pending or expiring", () => {
-    const clean = { ...validBalance, pendingPoints: 0, pendingUnlockAt: null, expiringPoints: 0, expiringAt: null };
+    const clean = {
+      ...validBalance,
+      pendingPoints: 0,
+      pendingUnlockAt: null,
+      expiringPoints: 0,
+      expiringAt: null,
+    };
     expect(balanceSchema.safeParse(clean).success).toBe(true);
   });
 
   const rejectionTable: Array<{ name: string; overrides: Record<string, unknown> }> = [
     { name: "negative available points", overrides: { availablePoints: -1 } },
-    { name: "pendingPoints positive with null pendingUnlockAt", overrides: { pendingUnlockAt: null } },
+    {
+      name: "pendingPoints positive with null pendingUnlockAt",
+      overrides: { pendingUnlockAt: null },
+    },
     { name: "pendingPoints zero with non-null pendingUnlockAt", overrides: { pendingPoints: 0 } },
     { name: "expiringPoints positive with null expiringAt", overrides: { expiringAt: null } },
     { name: "expiringPoints zero with non-null expiringAt", overrides: { expiringPoints: 0 } },

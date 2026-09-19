@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { questionSchema } from "./question";
-import { generateQuestion, generateQuestions, mockQuestions, singleShortTextQuestionFixture } from "./question.mock";
+import {
+  generateQuestion,
+  generateQuestions,
+  mockQuestions,
+  singleShortTextQuestionFixture,
+} from "./question.mock";
 
 const validMultipleChoice = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -55,14 +60,30 @@ describe("questionSchema", () => {
       name: "multiple_choice with correctOptionId not among options",
       input: { ...validMultipleChoice, correctOptionId: "99999999-9999-4999-8999-999999999999" },
     },
-    { name: "multiple_choice with only one option", input: { ...validMultipleChoice, options: [validMultipleChoice.options[0]] } },
-    { name: "likert with scaleMin >= scaleMax", input: { ...validLikert, scaleMin: 5, scaleMax: 5 } },
+    {
+      name: "multiple_choice with only one option",
+      input: { ...validMultipleChoice, options: [validMultipleChoice.options[0]] },
+    },
+    {
+      name: "likert with scaleMin >= scaleMax",
+      input: { ...validLikert, scaleMin: 5, scaleMax: 5 },
+    },
     { name: "negative timerSeconds", input: { ...validTrueFalse, timerSeconds: -5 } },
     { name: "timerSeconds over the 120s ceiling", input: { ...validTrueFalse, timerSeconds: 999 } },
     { name: "empty prompt", input: { ...validTrueFalse, prompt: "" } },
     { name: "non-boolean correctAnswer", input: { ...validTrueFalse, correctAnswer: "yes" } },
     { name: "missing type discriminant", input: { ...validTrueFalse, type: undefined } },
-    { name: "short_text with maxLength over ceiling", input: { id: validTrueFalse.id, campaignId: validTrueFalse.campaignId, prompt: "x", timerSeconds: 10, type: "short_text", maxLength: 9_999 } },
+    {
+      name: "short_text with maxLength over ceiling",
+      input: {
+        id: validTrueFalse.id,
+        campaignId: validTrueFalse.campaignId,
+        prompt: "x",
+        timerSeconds: 10,
+        type: "short_text",
+        maxLength: 9_999,
+      },
+    },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ input }) => {
@@ -73,7 +94,10 @@ describe("questionSchema", () => {
 describe("generateQuestion determinism", () => {
   it("produces byte-identical output for the same seed", () => {
     const first = generateQuestion({ seed: 5, campaignId: "22222222-2222-4222-8222-222222222222" });
-    const second = generateQuestion({ seed: 5, campaignId: "22222222-2222-4222-8222-222222222222" });
+    const second = generateQuestion({
+      seed: 5,
+      campaignId: "22222222-2222-4222-8222-222222222222",
+    });
     expect(first).toStrictEqual(second);
   });
 

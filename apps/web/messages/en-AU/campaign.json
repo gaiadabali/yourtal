@@ -1,0 +1,23 @@
+{
+  "card": {
+    "upToReward": "Up to {amount}",
+    "quickBadge": "Quick"
+  },
+  "entry": {
+    "duration": "Duration",
+    "dataCost": "Estimated data",
+    "baseReward": "Base reward",
+    "accuracyBonus": "Accuracy bonus",
+    "upToBonus": "Up to +{amount}",
+    "questionCount": "Questions",
+    "scoringRule": "Scoring rule",
+    "guaranteeBadge": "Guarantee",
+    "guaranteeText": "The terms shown on this page are the terms honoured — duration, reward and scoring rule do not change once you start watching.",
+    "startVideo": "Start video",
+    "zeroQuestions": "No questions",
+    "oneQuestion": "1 question",
+    "manyQuestions": "{count} questions",
+    "scoringBaseOnly": "Full reward is paid for watching and answering, with no requirement to answer correctly.",
+    "scoringBaseBonus": "A base reward is paid for watching and answering; an additional bonus follows the number of correct answers."
+  }
+}

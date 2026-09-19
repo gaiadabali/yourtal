@@ -5,12 +5,15 @@ import { cn } from "@yourtal/ui/cn";
 import { formatDataCost, formatDuration } from "@/features/campaign/campaign-format";
 import { buildQuickFeedItemLabel } from "./quick-feed-label";
 import { QUICK_FEED_ITEM_SHAPE_CLASS } from "./quick-feed-layout";
+import { getQuickTranslator, type SupportedLocale } from "./quick-i18n";
 
 export interface QuickFeedCardProps {
   campaign: Campaign;
   /** 1-based position in the feed, for the screen-reader "Video N dari M" status. */
   position: number;
   total: number;
+  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
+  locale?: SupportedLocale;
 }
 
 /**
@@ -43,17 +46,19 @@ export interface QuickFeedCardProps {
  * prevent. See `campaign-entry-card.tsx` for the identical reasoning
  * applied to its own "Mulai video" action.
  */
-export function QuickFeedCard({ campaign, position, total }: QuickFeedCardProps) {
+export function QuickFeedCard({ campaign, position, total, locale = "id-ID" }: QuickFeedCardProps) {
   const watchHref = `/watch/${campaign.id}`;
+  const t = getQuickTranslator(locale);
   const rewardLabel =
     campaign.scoringRule === "base_plus_accuracy_bonus"
-      ? `Hingga ${formatPoints(campaign.rewardPoints)}`
-      : formatPoints(campaign.rewardPoints);
+      ? t("card.upToReward", { amount: formatPoints(campaign.rewardPoints, locale) })
+      : formatPoints(campaign.rewardPoints, locale);
   const itemLabel = buildQuickFeedItemLabel({
     merchantName: campaign.merchantName,
     title: campaign.title,
     position,
     total,
+    locale,
   });
 
   return (
@@ -84,9 +89,9 @@ export function QuickFeedCard({ campaign, position, total }: QuickFeedCardProps)
 
       <footer className="flex flex-col gap-3">
         <div className="flex items-center gap-1.5 text-xs text-fg-subtle">
-          <span>{formatDuration(campaign.durationSeconds)}</span>
+          <span>{formatDuration(campaign.durationSeconds, locale)}</span>
           <span aria-hidden="true">·</span>
-          <span>{formatDataCost(campaign.estimatedDataMb)}</span>
+          <span>{formatDataCost(campaign.estimatedDataMb, locale)}</span>
         </div>
         <Badge variant="reward" className="w-fit text-sm">
           {rewardLabel}

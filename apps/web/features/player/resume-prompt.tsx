@@ -1,6 +1,13 @@
 "use client";
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@yourtal/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@yourtal/ui/dialog";
 import { Button } from "@yourtal/ui/button";
 import { formatClock } from "./format-clock";
 
@@ -25,7 +32,9 @@ export function ResumePrompt({ positionSeconds, onChoose }: ResumePromptProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Continue watching?</DialogTitle>
-          <DialogDescription>You watched up to {formatClock(positionSeconds)} last time.</DialogDescription>
+          <DialogDescription>
+            You watched up to {formatClock(positionSeconds)} last time.
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onChoose("restart")}>

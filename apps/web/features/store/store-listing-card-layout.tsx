@@ -12,7 +12,8 @@ import { cn } from "@yourtal/ui/cn";
 export const STORE_CARD_MERCHANT_ROW_CLASS = "h-4 overflow-hidden";
 export const STORE_CARD_TITLE_ROW_CLASS = "h-10 overflow-hidden";
 export const STORE_CARD_META_ROW_CLASS = "h-4 overflow-hidden";
-export const STORE_CARD_FOOTER_ROW_CLASS = "flex h-10 items-start justify-between gap-2 overflow-hidden";
+export const STORE_CARD_FOOTER_ROW_CLASS =
+  "flex h-10 items-start justify-between gap-2 overflow-hidden";
 
 export interface StoreListingCardLayoutProps {
   merchantSlot: ReactNode;
@@ -22,7 +23,13 @@ export interface StoreListingCardLayoutProps {
   className?: string;
 }
 
-export function StoreListingCardLayout({ merchantSlot, titleSlot, metaSlot, footerSlot, className }: StoreListingCardLayoutProps) {
+export function StoreListingCardLayout({
+  merchantSlot,
+  titleSlot,
+  metaSlot,
+  footerSlot,
+  className,
+}: StoreListingCardLayoutProps) {
   return (
     <Card className={cn("flex h-full flex-col", className)}>
       <CardContent className="flex flex-1 flex-col gap-2 p-4">

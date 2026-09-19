@@ -57,7 +57,12 @@ export default async function RedeemPage({ params }: RedeemPageProps) {
           "Muat ulang harga") mounts a brand-new BurnFlow instance with a
           fresh lock and a `reviewing` state, instead of a stale
           `failed`/`lock_expired` state surviving across the new quote. */}
-      <BurnFlow key={lockExpiresAt} listing={data.listing} balance={data.balance} lockExpiresAt={lockExpiresAt} />
+      <BurnFlow
+        key={lockExpiresAt}
+        listing={data.listing}
+        balance={data.balance}
+        lockExpiresAt={lockExpiresAt}
+      />
     </main>
   );
 }

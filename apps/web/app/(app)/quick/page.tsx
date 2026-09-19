@@ -44,7 +44,12 @@ async function QuickFeedList() {
   return (
     <QuickFeedViewport>
       {campaigns.map((campaign, index) => (
-        <QuickFeedCard key={campaign.id} campaign={campaign} position={index + 1} total={campaigns.length} />
+        <QuickFeedCard
+          key={campaign.id}
+          campaign={campaign}
+          position={index + 1}
+          total={campaigns.length}
+        />
       ))}
     </QuickFeedViewport>
   );

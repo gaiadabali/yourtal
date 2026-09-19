@@ -32,9 +32,15 @@ function formatClock(totalSeconds: number): string {
  * even more strongly here.
  */
 export function PriceLockCountdown({ lockExpiresAt, onExpire }: PriceLockCountdownProps) {
-  const { secondsRemaining, isExpired, announcement } = usePriceLockCountdown(lockExpiresAt, onExpire);
+  const { secondsRemaining, isExpired, announcement } = usePriceLockCountdown(
+    lockExpiresAt,
+    onExpire,
+  );
   const isRunningLow = !isExpired && secondsRemaining <= WARNING_THRESHOLD_SECONDS;
-  const percentRemaining = Math.min(100, Math.max(0, (secondsRemaining * 1000 * 100) / PRICE_LOCK_DURATION_MS));
+  const percentRemaining = Math.min(
+    100,
+    Math.max(0, (secondsRemaining * 1000 * 100) / PRICE_LOCK_DURATION_MS),
+  );
 
   const containerTone = isExpired
     ? "border-danger bg-danger/10 text-danger"
@@ -47,7 +53,11 @@ export function PriceLockCountdown({ lockExpiresAt, onExpire }: PriceLockCountdo
     <div className={`flex flex-col gap-1.5 rounded-lg border px-3 py-2 ${containerTone}`}>
       <span
         role="timer"
-        aria-label={isExpired ? "Harga sudah kedaluwarsa" : `Harga terkunci, sisa waktu ${formatClock(secondsRemaining)}`}
+        aria-label={
+          isExpired
+            ? "Harga sudah kedaluwarsa"
+            : `Harga terkunci, sisa waktu ${formatClock(secondsRemaining)}`
+        }
         className="text-sm font-sans font-medium tabular-nums"
       >
         {isExpired ? "Harga kedaluwarsa" : `Harga terkunci · ${formatClock(secondsRemaining)}`}
@@ -60,7 +70,10 @@ export function PriceLockCountdown({ lockExpiresAt, onExpire }: PriceLockCountdo
         aria-valuenow={Math.round(percentRemaining)}
         className="h-1.5 w-full overflow-hidden rounded-full bg-surface-raised"
       >
-        <div className={`h-full transition-all ${barTone}`} style={{ width: `${percentRemaining}%` }} />
+        <div
+          className={`h-full transition-all ${barTone}`}
+          style={{ width: `${percentRemaining}%` }}
+        />
       </div>
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}

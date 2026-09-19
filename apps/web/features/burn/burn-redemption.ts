@@ -22,7 +22,8 @@ export interface BurnVoucherSummary {
   redeemedAt: string;
 }
 
-export type BurnAttemptResult = { ok: true; voucher: BurnVoucherSummary } | { ok: false; error: BurnError };
+export type BurnAttemptResult =
+  { ok: true; voucher: BurnVoucherSummary } | { ok: false; error: BurnError };
 
 export interface BurnAttemptInput {
   listing: Listing;

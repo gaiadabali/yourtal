@@ -28,7 +28,9 @@ describe("Input", () => {
   });
 
   it("wires help text and marks the field invalid when there is an error", () => {
-    render(<Input label="Email" helpText="We never share this" errorMessage="Enter a valid email" />);
+    render(
+      <Input label="Email" helpText="We never share this" errorMessage="Enter a valid email" />,
+    );
     const input = screen.getByRole("textbox", { name: "Email" });
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid email");

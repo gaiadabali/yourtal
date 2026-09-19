@@ -7,6 +7,8 @@ export interface AccrualIndicatorProps {
   totalPoints: number;
   isPlaying: boolean;
   isBackgrounded: boolean;
+  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
+  locale?: "en-AU" | "id-ID";
 }
 
 /**
@@ -27,7 +29,13 @@ export interface AccrualIndicatorProps {
  * finalized reward. Likewise "paused" here is an honest UI state, not a
  * fraud signal — see use-tab-visibility.ts.
  */
-export function AccrualIndicator({ accruedPoints, totalPoints, isPlaying, isBackgrounded }: AccrualIndicatorProps) {
+export function AccrualIndicator({
+  accruedPoints,
+  totalPoints,
+  isPlaying,
+  isBackgrounded,
+  locale = "id-ID",
+}: AccrualIndicatorProps) {
   const isAccrualPaused = isPlaying && isBackgrounded;
   const roundedAccrued = Math.round(accruedPoints);
   const percentComplete = totalPoints > 0 ? Math.min(100, (accruedPoints / totalPoints) * 100) : 0;
@@ -37,8 +45,10 @@ export function AccrualIndicator({ accruedPoints, totalPoints, isPlaying, isBack
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-sans font-medium text-fg">Reward so far</span>
         <span className="text-sm font-sans font-semibold text-reward">
-          {formatPoints(asDisplayPoints(roundedAccrued))}{" "}
-          <span className="font-normal text-fg-subtle">/ {formatPoints(asDisplayPoints(totalPoints))}</span>
+          {formatPoints(asDisplayPoints(roundedAccrued), locale)}{" "}
+          <span className="font-normal text-fg-subtle">
+            / {formatPoints(asDisplayPoints(totalPoints), locale)}
+          </span>
         </span>
       </div>
       {/* A plain element rather than @yourtal/ui/progress: this bar is
@@ -60,7 +70,7 @@ export function AccrualIndicator({ accruedPoints, totalPoints, isPlaying, isBack
       <p role="status" aria-live="polite" className="text-xs font-sans text-fg-muted">
         {isAccrualPaused
           ? "Reward accrual paused — this tab is in the background."
-          : `Earned ${formatPoints(asDisplayPoints(roundedAccrued))} so far, pending the checkpoint.`}
+          : `Earned ${formatPoints(asDisplayPoints(roundedAccrued), locale)} so far, pending the checkpoint.`}
       </p>
     </div>
   );

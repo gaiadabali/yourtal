@@ -1,4 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
+import { getCampaignTranslator, type SupportedLocale } from "./campaign-i18n";
 
 /**
  * Plain-language scoring-rule copy for the entry card (YT-0411). Kept as a
@@ -6,13 +7,22 @@ import type { Campaign } from "@yourtal/contracts/campaign";
  * `CampaignScoringRule` and a new rule added to the contract fails this
  * file to compile, per docs/13b-typescript-standards.md §4's exhaustiveness
  * discipline.
+ *
+ * YT-0405: takes an optional `locale`, defaulting to `id-ID` so existing
+ * callers are unaffected, and reads its copy from the `campaign` message
+ * catalogue via `campaign-i18n.ts` rather than a second hand-rolled
+ * per-locale string map.
  */
-export function describeScoringRule(scoringRule: Campaign["scoringRule"]): string {
+export function describeScoringRule(
+  scoringRule: Campaign["scoringRule"],
+  locale: SupportedLocale = "id-ID",
+): string {
+  const t = getCampaignTranslator(locale);
   switch (scoringRule) {
     case "base_only":
-      return "Reward penuh diberikan untuk menonton dan menjawab, tanpa syarat jawaban benar.";
+      return t("entry.scoringBaseOnly");
     case "base_plus_accuracy_bonus":
-      return "Reward dasar diberikan untuk menonton dan menjawab; bonus tambahan mengikuti jumlah jawaban yang benar.";
+      return t("entry.scoringBaseBonus");
     default: {
       const exhaustive: never = scoringRule;
       throw new Error(`Unhandled scoring rule: ${String(exhaustive)}`);
@@ -21,9 +31,15 @@ export function describeScoringRule(scoringRule: Campaign["scoringRule"]): strin
 }
 
 /** Question-count copy that reads naturally at zero, one, or many questions. */
-export function describeQuestionCount(questionCount: number): string {
+export function describeQuestionCount(
+  questionCount: number,
+  locale: SupportedLocale = "id-ID",
+): string {
+  const t = getCampaignTranslator(locale);
   if (questionCount === 0) {
-    return "Tidak ada pertanyaan";
+    return t("entry.zeroQuestions");
   }
-  return questionCount === 1 ? "1 pertanyaan" : `${questionCount} pertanyaan`;
+  return questionCount === 1
+    ? t("entry.oneQuestion")
+    : t("entry.manyQuestions", { count: questionCount });
 }

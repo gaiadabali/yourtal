@@ -1,0 +1,23 @@
+{
+  "card": {
+    "upToReward": "Hingga {amount}",
+    "quickBadge": "Cepat"
+  },
+  "entry": {
+    "duration": "Durasi",
+    "dataCost": "Estimasi data",
+    "baseReward": "Reward dasar",
+    "accuracyBonus": "Bonus akurasi",
+    "upToBonus": "Hingga +{amount}",
+    "questionCount": "Pertanyaan",
+    "scoringRule": "Aturan penilaian",
+    "guaranteeBadge": "Jaminan",
+    "guaranteeText": "Ketentuan yang ditampilkan di halaman ini adalah ketentuan yang akan dihormati — durasi, reward, dan aturan penilaian tidak berubah setelah kamu mulai menonton.",
+    "startVideo": "Mulai video",
+    "zeroQuestions": "Tidak ada pertanyaan",
+    "oneQuestion": "1 pertanyaan",
+    "manyQuestions": "{count} pertanyaan",
+    "scoringBaseOnly": "Reward penuh diberikan untuk menonton dan menjawab, tanpa syarat jawaban benar.",
+    "scoringBaseBonus": "Reward dasar diberikan untuk menonton dan menjawab; bonus tambahan mengikuti jumlah jawaban yang benar."
+  }
+}

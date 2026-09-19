@@ -42,7 +42,10 @@ export function categoryLabel(category: ListingCategory): string {
   return CATEGORY_LABELS[category];
 }
 
-export const STORE_CATEGORY_FILTER_OPTIONS: ReadonlyArray<{ key: StoreCategoryFilter; label: string }> = [
+export const STORE_CATEGORY_FILTER_OPTIONS: ReadonlyArray<{
+  key: StoreCategoryFilter;
+  label: string;
+}> = [
   { key: "all", label: "Semua kategori" },
   ...LISTING_CATEGORIES.map((category) => ({ key: category, label: CATEGORY_LABELS[category] })),
 ];
@@ -51,7 +54,10 @@ export function isStoreCategoryFilter(value: string): value is StoreCategoryFilt
   return (STORE_CATEGORY_FILTER_VALUES as readonly string[]).includes(value);
 }
 
-export function filterListingsByCategory(listings: readonly Listing[], category: StoreCategoryFilter): Listing[] {
+export function filterListingsByCategory(
+  listings: readonly Listing[],
+  category: StoreCategoryFilter,
+): Listing[] {
   if (category === "all") {
     return [...listings];
   }

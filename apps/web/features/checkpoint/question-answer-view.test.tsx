@@ -40,7 +40,9 @@ describe("QuestionAnswerView — exhaustive dispatch over all five question type
 
   it("renders likert as a radiogroup spanning the scale", () => {
     renderQuestion(likertFixture);
-    expect(screen.getAllByRole("radio")).toHaveLength(likertFixture.scaleMax - likertFixture.scaleMin + 1);
+    expect(screen.getAllByRole("radio")).toHaveLength(
+      likertFixture.scaleMax - likertFixture.scaleMin + 1,
+    );
   });
 
   it("renders ranked as a keyboard-reorderable list, not a radiogroup", () => {

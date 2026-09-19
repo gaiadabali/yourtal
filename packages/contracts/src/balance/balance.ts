@@ -17,16 +17,17 @@ export const balanceSchema = z
     expiringAt: z.iso.datetime().nullable(),
     updatedAt: z.iso.datetime(),
   })
-  .refine((balance) => (balance.pendingPoints > 0) === (balance.pendingUnlockAt !== null), {
+  .refine((balance) => balance.pendingPoints > 0 === (balance.pendingUnlockAt !== null), {
     message: "pendingUnlockAt must be set if and only if pendingPoints is positive",
     path: ["pendingUnlockAt"],
   })
-  .refine((balance) => (balance.expiringPoints > 0) === (balance.expiringAt !== null), {
+  .refine((balance) => balance.expiringPoints > 0 === (balance.expiringAt !== null), {
     message: "expiringAt must be set if and only if expiringPoints is positive",
     path: ["expiringAt"],
   })
   .refine((balance) => balance.expiringPoints <= balance.availablePoints, {
-    message: "expiringPoints cannot exceed availablePoints (holdback funds cannot be about to expire yet)",
+    message:
+      "expiringPoints cannot exceed availablePoints (holdback funds cannot be about to expire yet)",
     path: ["expiringPoints"],
   });
 

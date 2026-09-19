@@ -22,7 +22,10 @@ const mockDataSource: StoreBalanceDataSource = {
 };
 
 const liveDataSource: StoreBalanceDataSource = {
-  getCurrentBalance: () => Promise.reject(new Error("Live balance data source is not implemented yet (Phase U is mock-only).")),
+  getCurrentBalance: () =>
+    Promise.reject(
+      new Error("Live balance data source is not implemented yet (Phase U is mock-only)."),
+    ),
 };
 
 const balanceDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });

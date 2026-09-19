@@ -1,9 +1,13 @@
 import "@testing-library/jest-dom/vitest";
+import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NextIntlClientProvider } from "next-intl";
 import { toPoints } from "@yourtal/contracts/money";
 import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
+import { RegionProvider } from "@/features/region/region-context";
+import idID from "@/messages/id-ID/burn.json";
 import { BurnFlow } from "./burn-flow";
 import { computeLockExpiresAt } from "./price-lock";
 import { makeBalanceFixture, makeListingFixture } from "./burn-test-fixtures";
@@ -11,6 +15,21 @@ import { makeBalanceFixture, makeListingFixture } from "./burn-test-fixtures";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
+
+/**
+ * `BurnFlow` renders `BurnSummary`/`BurnErrorMessage`, both Client
+ * Components that read the region and its translations ambiently (YT-0405)
+ * — the same `RegionProvider`/`NextIntlClientProvider` pair
+ * `app/(app)/layout.tsx` mounts once for the whole app. Defaults to "ID" so
+ * every existing assertion below (still Indonesian) is unaffected.
+ */
+function renderBurnFlow(ui: ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="id-ID" messages={{ burn: idID }}>
+      <RegionProvider region="ID">{ui}</RegionProvider>
+    </NextIntlClientProvider>,
+  );
+}
 
 function advanceSeconds(seconds: number): void {
   for (let tick = 0; tick < seconds; tick += 1) {
@@ -39,7 +58,7 @@ describe("BurnFlow", () => {
     const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
     const lockExpiresAt = computeLockExpiresAt(new Date());
 
-    render(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
+    renderBurnFlow(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
 
     expect(screen.getByRole("timer")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeInTheDocument();
@@ -54,9 +73,11 @@ describe("BurnFlow", () => {
     });
     const lockExpiresAt = computeLockExpiresAt(new Date());
 
-    render(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
+    renderBurnFlow(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Sebagian poin Anda masih ditahan sementara");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Sebagian poin Anda masih ditahan sementara",
+    );
     expect(screen.queryByRole("button", { name: "Lanjutkan" })).not.toBeInTheDocument();
   });
 
@@ -66,7 +87,7 @@ describe("BurnFlow", () => {
     const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
     const lockExpiresAt = computeLockExpiresAt(new Date());
 
-    render(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
+    renderBurnFlow(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
 
     expect(screen.getByText("1.000 poin")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
@@ -92,11 +113,16 @@ describe("BurnFlow", () => {
     });
 
     it("transitions to the unrecoverable lock_expired state when the countdown reaches zero, and offers only a re-quote", () => {
-      const listing = makeListingFixture({ id: successListingId(), priceInPoints: toPoints(1_000) });
+      const listing = makeListingFixture({
+        id: successListingId(),
+        priceInPoints: toPoints(1_000),
+      });
       const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
       const lockExpiresAt = new Date(NOW.getTime() + 3_000).toISOString();
 
-      render(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
+      renderBurnFlow(
+        <BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />,
+      );
       expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeInTheDocument();
 
       advanceSeconds(3);
@@ -112,11 +138,16 @@ describe("BurnFlow", () => {
       // scheduling does not mix reliably with `vi.useFakeTimers()` (it hangs
       // waiting on a real timer that will never fire). `fireEvent.click` is
       // synchronous and exercises the same `onClick` handler.
-      const listing = makeListingFixture({ id: successListingId(), priceInPoints: toPoints(1_000) });
+      const listing = makeListingFixture({
+        id: successListingId(),
+        priceInPoints: toPoints(1_000),
+      });
       const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
       const lockExpiresAt = new Date(NOW.getTime() + 3_000).toISOString();
 
-      render(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
+      renderBurnFlow(
+        <BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />,
+      );
       act(() => {
         fireEvent.click(screen.getByRole("button", { name: "Lanjutkan" }));
       });

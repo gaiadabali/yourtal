@@ -1,0 +1,105 @@
+import { formatMoney } from "@yourtal/contracts/money/format";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@yourtal/ui/card";
+import { ReportProvenanceBadge } from "./report-provenance-badge";
+import { ReportsBarChart } from "./reports-bar-chart";
+import type { RedemptionLedgerSummary } from "./reports-metrics";
+
+type SupportedCurrency = "AUD" | "IDR";
+
+export interface ReportsRedemptionLedgerPanelProps {
+  summary: RedemptionLedgerSummary;
+  /** From the viewer's own region (`getRegionDisplayConfig()`), never hardcoded — see this file's docstring for the one known gap this still has. */
+  currency: SupportedCurrency;
+}
+
+/**
+ * The one panel in this zone backed by a real (mock) ledger fact rather
+ * than configuration or an honest gap: a voucher's `status` and
+ * `faceValueIdr` on this business's own listings. Deliberately titled
+ * "ledger", not "campaign performance" — `voucherSchema` has no
+ * `campaignId`, so nothing here can be attributed to a specific campaign
+ * (see `reports-unavailable-metrics.ts`'s `campaign-redemption-attribution`
+ * entry, always rendered alongside this panel).
+ *
+ * KNOWN GAP this file does not solve: amounts are read from
+ * `Voucher.faceValueIdr`, a field typed `IdrMinorUnits` regardless of
+ * region (packages/contracts has no currency-tagged Money type yet —
+ * docs/tasks/phase-u-ui.md YT-0405's report flags the same gap for every
+ * other screen). Passing the viewer's own `currency` to `formatMoney`
+ * here is the mechanically correct call for an Australian viewer's number
+ * formatting and currency symbol, but the underlying fixture amounts are
+ * only ever generated in Rupiah scale — there is no real currency
+ * conversion, because none exists in the contracts yet. That is the
+ * architect's call (YT-0506/docs/12 §3), not this ticket's to invent.
+ */
+export function ReportsRedemptionLedgerPanel({
+  summary,
+  currency,
+}: ReportsRedemptionLedgerPanelProps) {
+  const nonZeroRows = summary.rows.filter((row) => row.count > 0);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between gap-2">
+        <div className="flex flex-col gap-1">
+          <CardTitle as="h3">Redemption ledger</CardTitle>
+          <CardDescription>
+            {summary.totalVoucherCount} voucher{summary.totalVoucherCount === 1 ? "" : "s"} issued
+            against this business&rsquo;s own listings. Not attributed to a source campaign — see
+            the gap noted below.
+          </CardDescription>
+        </div>
+        <ReportProvenanceBadge provenance="measured" />
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {nonZeroRows.length === 0 ? (
+          <p className="text-sm font-sans text-fg-muted">
+            No vouchers have been issued against this business yet.
+          </p>
+        ) : (
+          <>
+            <ReportsBarChart
+              rows={nonZeroRows.map((row) => ({
+                id: row.status,
+                label: row.label,
+                value: row.count,
+                valueLabel: `${row.count}`,
+              }))}
+            />
+            <table className="w-full border-collapse text-left text-sm font-sans">
+              <caption className="sr-only">
+                Vouchers by status, with total face value per status
+              </caption>
+              <thead>
+                <tr className="border-b border-border text-xs uppercase tracking-wide text-fg-muted">
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Status
+                  </th>
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Vouchers
+                  </th>
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Total face value
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {nonZeroRows.map((row) => (
+                  <tr key={row.status} className="border-b border-border last:border-0">
+                    <th scope="row" className="py-2 pr-3 font-normal text-fg">
+                      {row.label}
+                    </th>
+                    <td className="py-2 pr-3 text-fg">{row.count}</td>
+                    <td className="py-2 pr-3 text-fg">
+                      {formatMoney(row.totalFaceValueIdr, currency)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

@@ -17,11 +17,14 @@ export function StoreOfferRedeemSteps({ merchantName, district }: StoreOfferRede
     <div className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold text-fg">Cara menukar</h2>
       <ol className="flex flex-col gap-1.5 text-xs text-fg-muted">
-        <li>1. Tukar poin untuk mendapatkan voucher — harga dan ketentuan di atas berlaku persis seperti yang ditampilkan.</li>
+        <li>
+          1. Tukar poin untuk mendapatkan voucher — harga dan ketentuan di atas berlaku persis
+          seperti yang ditampilkan.
+        </li>
         <li>2. Voucher beserta kode dan QR-nya muncul langsung di Wallet kamu.</li>
         <li>
-          3. Tunjukkan kode voucher saat checkout di {merchantName} (lokasi {district}), atau ikuti instruksi redeem di
-          website merchant untuk voucher digital.
+          3. Tunjukkan kode voucher saat checkout di {merchantName} (lokasi {district}), atau ikuti
+          instruksi redeem di website merchant untuk voucher digital.
         </li>
       </ol>
     </div>

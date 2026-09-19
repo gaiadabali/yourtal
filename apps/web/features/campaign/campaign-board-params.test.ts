@@ -7,19 +7,31 @@ describe("parseCampaignBoardParams", () => {
   });
 
   it("parses valid explicit values", () => {
-    expect(parseCampaignBoardParams({ sort: "reward", kind: "quick" })).toEqual({ sort: "reward", kind: "quick" });
+    expect(parseCampaignBoardParams({ sort: "reward", kind: "quick" })).toEqual({
+      sort: "reward",
+      kind: "quick",
+    });
   });
 
   it("falls back to the default for an invalid sort value rather than throwing", () => {
-    expect(parseCampaignBoardParams({ sort: "popularity" })).toEqual({ sort: "value", kind: "all" });
+    expect(parseCampaignBoardParams({ sort: "popularity" })).toEqual({
+      sort: "value",
+      kind: "all",
+    });
   });
 
   it("falls back to the default for an invalid kind value rather than throwing", () => {
-    expect(parseCampaignBoardParams({ kind: "short_form" })).toEqual({ sort: "value", kind: "all" });
+    expect(parseCampaignBoardParams({ kind: "short_form" })).toEqual({
+      sort: "value",
+      kind: "all",
+    });
   });
 
   it("takes the first value when Next hands back a repeated query param as an array", () => {
-    expect(parseCampaignBoardParams({ sort: ["reward", "duration"] })).toEqual({ sort: "reward", kind: "all" });
+    expect(parseCampaignBoardParams({ sort: ["reward", "duration"] })).toEqual({
+      sort: "reward",
+      kind: "all",
+    });
   });
 });
 

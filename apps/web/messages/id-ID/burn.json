@@ -1,0 +1,28 @@
+{
+  "error": {
+    "insufficientHeading": "Poin Anda belum cukup",
+    "insufficientBody": "Anda masih kurang {amount} untuk menukar item ini. Tonton video atau selesaikan aktivitas lain untuk menambah poin, lalu coba lagi.",
+    "holdbackHeading": "Sebagian poin Anda masih ditahan sementara",
+    "holdbackBody": "Poin Anda sebenarnya cukup untuk menukar item ini, tapi sebagian baru saja Anda dapatkan dan masih diperiksa sistem untuk mencegah kecurangan. Poin tersebut akan bisa dipakai mulai {unlockDate}.",
+    "lockExpiredHeading": "Harga ini sudah tidak berlaku",
+    "lockExpiredBody": "Waktu kunci harga Anda sudah habis pada {expiredDate}. Harga dan ketersediaan bisa berubah, jadi kami tidak bisa melanjutkan penukaran dengan harga lama. Muat ulang untuk melihat harga terbaru.",
+    "listingUnavailableHeading": "Item ini sudah tidak tersedia",
+    "listingUnavailableBody": "Stoknya baru saja habis. Coba cari penawaran serupa lainnya di Toko.",
+    "redemptionFailedHeading": "Penukaran gagal",
+    "redemptionFailedBody": "Terjadi kendala saat memproses penukaran Anda. Poin Anda belum terpotong — silakan coba lagi."
+  },
+  "summary": {
+    "reviewHeading": "Ringkasan penukaran",
+    "confirmHeading": "Konfirmasi penukaran",
+    "pointsCost": "Biaya poin",
+    "voucherValue": "Nilai voucher",
+    "youGet": "Anda dapat",
+    "voucherFor": "Voucher {merchantName}",
+    "minimumSpend": "Minimum belanja",
+    "transferableOnce": "Voucher ini dapat dialihkan satu kali ke pengguna YourTal lain. ",
+    "notTransferable": "Voucher ini tidak dapat dialihkan. ",
+    "balanceCarrying": "Sisa nilai voucher tetap bisa dipakai di transaksi berikutnya.",
+    "singleUseForfeit": "Voucher hanya untuk satu transaksi; sisa nilai yang tidak terpakai akan hangus.",
+    "minimumSpendPolicy": "Voucher hanya berlaku untuk belanja dengan jumlah minimum tertentu."
+  }
+}

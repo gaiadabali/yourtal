@@ -90,9 +90,7 @@ async function main() {
   const routes = JSON.parse(raw);
 
   if (!Array.isArray(routes) || routes.length === 0) {
-    console.error(
-      "perf-check-bundle-size: route-bundle-stats.json was empty or malformed.",
-    );
+    console.error("perf-check-bundle-size: route-bundle-stats.json was empty or malformed.");
     process.exitCode = 1;
     return;
   }
@@ -127,7 +125,9 @@ async function main() {
 
   const budgetKb = (BUDGET_BYTES / 1024).toFixed(0);
   const justifyKb = (JUSTIFY_BYTES / 1024).toFixed(0);
-  console.log(`Initial JS: ${budgetKb} KB gz hard gate · above ${justifyKb} KB needs justification\n`);
+  console.log(
+    `Initial JS: ${budgetKb} KB gz hard gate · above ${justifyKb} KB needs justification\n`,
+  );
   console.log("Route".padEnd(34) + "First-load JS (gz)".padEnd(22) + "Status");
   console.log("-".repeat(74));
   for (const { route, gzipBytes, overBudget, needsJustification } of results) {

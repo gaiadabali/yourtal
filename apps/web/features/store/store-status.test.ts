@@ -7,11 +7,17 @@ describe("listingStatusPresentation", () => {
   });
 
   it("badges sold_out as a danger 'Habis' state", () => {
-    expect(listingStatusPresentation("sold_out")).toEqual({ label: "Habis", badgeVariant: "danger" });
+    expect(listingStatusPresentation("sold_out")).toEqual({
+      label: "Habis",
+      badgeVariant: "danger",
+    });
   });
 
   it("badges expiring_soon as a warning state", () => {
-    expect(listingStatusPresentation("expiring_soon")).toEqual({ label: "Segera berakhir", badgeVariant: "warning" });
+    expect(listingStatusPresentation("expiring_soon")).toEqual({
+      label: "Segera berakhir",
+      badgeVariant: "warning",
+    });
   });
 
   it("badges new as a success state", () => {

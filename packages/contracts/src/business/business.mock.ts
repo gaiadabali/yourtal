@@ -28,7 +28,9 @@ export function generateBusiness(params: GenerateBusinessParams): Business {
 
 /** Generates `count` deterministic businesses from a base seed. */
 export function generateBusinesses(count: number, baseSeed: number): Business[] {
-  return Array.from({ length: count }, (_unused, index) => generateBusiness({ seed: baseSeed + index }));
+  return Array.from({ length: count }, (_unused, index) =>
+    generateBusiness({ seed: baseSeed + index }),
+  );
 }
 
 /** A business with a deliberately long, real-sounding name — the merchant-name awkward fixture. */

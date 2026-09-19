@@ -29,7 +29,10 @@ export interface StoreOfferCardProps {
  */
 export function StoreOfferCard({ listing, balance }: StoreOfferCardProps) {
   const status = listingStatusPresentation(listing.status);
-  const { pointsLabel, faceValueLabel } = formatListingPrice(listing.priceInPoints, listing.faceValueIdr);
+  const { pointsLabel, faceValueLabel } = formatListingPrice(
+    listing.priceInPoints,
+    listing.faceValueIdr,
+  );
   const isSoldOut = listing.status === "sold_out" || listing.stockRemaining === 0;
   const shortfall = computeBalanceShortfall(listing.priceInPoints, balance.availablePoints);
   const canRedeem = !isSoldOut && shortfall.isAffordable;
@@ -71,7 +74,10 @@ export function StoreOfferCard({ listing, balance }: StoreOfferCardProps) {
 
         <StoreOfferRedeemSteps merchantName={listing.merchantName} district={listing.district} />
 
-        <StoreBalanceNotice priceInPoints={listing.priceInPoints} availablePoints={balance.availablePoints} />
+        <StoreBalanceNotice
+          priceInPoints={listing.priceInPoints}
+          availablePoints={balance.availablePoints}
+        />
 
         {canRedeem ? (
           <Button asChild size="lg">

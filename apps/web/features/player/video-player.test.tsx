@@ -59,13 +59,21 @@ describe("VideoPlayer", () => {
   // keep Radix Dialog/Sheet out of this route's initial chunk (170 KB gate).
   // That makes their first paint asynchronous, hence findBy* rather than getBy*.
   it("offers a resume prompt when a prior position exists in localStorage (Zod-validated on read)", async () => {
-    writeResumePosition({ campaignId: campaign.id, positionSeconds: 300, updatedAt: "2026-09-19T09:00:00.000Z" });
+    writeResumePosition({
+      campaignId: campaign.id,
+      positionSeconds: 300,
+      updatedAt: "2026-09-19T09:00:00.000Z",
+    });
     render(<VideoPlayer campaign={campaign} chapters={chapters} />);
     expect(await screen.findByRole("dialog", { name: "Continue watching?" })).toBeInTheDocument();
   });
 
   it("does not offer a resume prompt below the minimum resumable threshold", () => {
-    writeResumePosition({ campaignId: campaign.id, positionSeconds: 5, updatedAt: "2026-09-19T09:00:00.000Z" });
+    writeResumePosition({
+      campaignId: campaign.id,
+      positionSeconds: 5,
+      updatedAt: "2026-09-19T09:00:00.000Z",
+    });
     render(<VideoPlayer campaign={campaign} chapters={chapters} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });

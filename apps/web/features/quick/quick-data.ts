@@ -49,7 +49,9 @@ const mockDataSource: QuickCampaignDataSource = {
  */
 const liveDataSource: QuickCampaignDataSource = {
   listQuickCampaigns: () =>
-    Promise.reject(new Error("Live quick campaign data source is not implemented yet (Phase U is mock-only).")),
+    Promise.reject(
+      new Error("Live quick campaign data source is not implemented yet (Phase U is mock-only)."),
+    ),
 };
 
 const quickCampaignDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });

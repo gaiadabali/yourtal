@@ -26,3 +26,23 @@ describe("WalletBalanceSummary", () => {
     expect(screen.getByText("Tidak ada poin yang akan hangus")).toBeInTheDocument();
   });
 });
+
+describe("WalletBalanceSummary (en-AU, YT-0405)", () => {
+  it("shows available, pending and expiring balances in English with their unlock/expiry dates", () => {
+    render(
+      <WalletBalanceSummary balance={mixedStateBalanceFixture} nowMs={nowMs} locale="en-AU" />,
+    );
+
+    expect(screen.getByText(/8,400 points/)).toBeInTheDocument();
+    expect(screen.getAllByText(/unlocks|expires/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/days?/).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders the zero-balance fixture in English, with no Indonesian copy leaking through", () => {
+    render(<WalletBalanceSummary balance={zeroBalanceFixture} nowMs={nowMs} locale="en-AU" />);
+
+    expect(screen.getByText("0 points")).toBeInTheDocument();
+    expect(screen.getByText("No points on hold")).toBeInTheDocument();
+    expect(screen.getByText("No points expiring soon")).toBeInTheDocument();
+  });
+});

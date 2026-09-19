@@ -5,7 +5,12 @@ import type { RefObject } from "react";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Chapter } from "./chapter";
 import { DEFAULT_QUALITY_TIER_ID, type QualityTierId } from "./quality-tier";
-import { MIN_RESUMABLE_SECONDS, clearResumePosition, readResumePosition, writeResumePosition } from "./resume-position";
+import {
+  MIN_RESUMABLE_SECONDS,
+  clearResumePosition,
+  readResumePosition,
+  writeResumePosition,
+} from "./resume-position";
 import { toRealSeconds, toVirtualSeconds } from "./time-remap";
 import { MOCK_HLS_MANIFEST_URL } from "./video-source";
 
@@ -41,7 +46,11 @@ export interface WatchSession {
  * stays markup + composition (docs/13-engineering-standards.md §2: "3+
  * useState plus an effect -> extract hook").
  */
-export function useWatchSession(campaign: Campaign, chapters: readonly Chapter[], isBackgrounded: boolean): WatchSession {
+export function useWatchSession(
+  campaign: Campaign,
+  chapters: readonly Chapter[],
+  isBackgrounded: boolean,
+): WatchSession {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [useNativeHls, setUseNativeHls] = useState(false);
@@ -57,7 +66,11 @@ export function useWatchSession(campaign: Campaign, chapters: readonly Chapter[]
   // by resume-position.ts) yields null, so this never blocks playback.
   useEffect(() => {
     const prior = readResumePosition(campaign.id);
-    if (prior && prior.positionSeconds >= MIN_RESUMABLE_SECONDS && prior.positionSeconds < campaign.durationSeconds) {
+    if (
+      prior &&
+      prior.positionSeconds >= MIN_RESUMABLE_SECONDS &&
+      prior.positionSeconds < campaign.durationSeconds
+    ) {
       setResumeOffer({ positionSeconds: prior.positionSeconds });
     }
   }, [campaign.id, campaign.durationSeconds]);
@@ -80,10 +93,19 @@ export function useWatchSession(campaign: Campaign, chapters: readonly Chapter[]
 
   const applyPendingSeek = useCallback(() => {
     const video = videoRef.current;
-    if (!video || pendingSeekRef.current === null || !Number.isFinite(video.duration) || video.duration <= 0) {
+    if (
+      !video ||
+      pendingSeekRef.current === null ||
+      !Number.isFinite(video.duration) ||
+      video.duration <= 0
+    ) {
       return;
     }
-    video.currentTime = toRealSeconds(pendingSeekRef.current, video.duration, campaign.durationSeconds);
+    video.currentTime = toRealSeconds(
+      pendingSeekRef.current,
+      video.duration,
+      campaign.durationSeconds,
+    );
     pendingSeekRef.current = null;
   }, [campaign.durationSeconds]);
 
@@ -142,13 +164,21 @@ export function useWatchSession(campaign: Campaign, chapters: readonly Chapter[]
       if (!current || !Number.isFinite(current.duration) || current.duration <= 0) {
         return;
       }
-      const virtual = toVirtualSeconds(current.currentTime, current.duration, campaign.durationSeconds);
+      const virtual = toVirtualSeconds(
+        current.currentTime,
+        current.duration,
+        campaign.durationSeconds,
+      );
       setVirtualCurrentTime(virtual);
 
       const now = Date.now();
       if (now - lastResumeWriteAtRef.current > RESUME_WRITE_INTERVAL_MS) {
         lastResumeWriteAtRef.current = now;
-        writeResumePosition({ campaignId: campaign.id, positionSeconds: virtual, updatedAt: new Date().toISOString() });
+        writeResumePosition({
+          campaignId: campaign.id,
+          positionSeconds: virtual,
+          updatedAt: new Date().toISOString(),
+        });
       }
     }
     function onPlay() {

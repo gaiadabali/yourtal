@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { VoucherQrSource } from "./voucher-qr-rotation";
-import { computeQrPayload, currentRotationWindow, msUntilExpiry, msUntilNextRotation } from "./voucher-qr-rotation";
+import {
+  computeQrPayload,
+  currentRotationWindow,
+  msUntilExpiry,
+  msUntilNextRotation,
+} from "./voucher-qr-rotation";
 
 export interface VoucherQrRotationState {
   payload: string;

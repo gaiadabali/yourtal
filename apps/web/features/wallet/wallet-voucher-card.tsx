@@ -1,15 +1,21 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { Voucher } from "@yourtal/contracts/voucher";
-import { formatIdr } from "@yourtal/contracts/money/format";
+import { formatMoney } from "@yourtal/contracts/money/format";
 import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent } from "@yourtal/ui/card";
 import { describeVoucherStatus, isVoucherEffectivelyExpired } from "./wallet-voucher-status-copy";
 import { formatWalletDate } from "./wallet-format";
+import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
+
+type SupportedCurrency = "AUD" | "IDR";
 
 export interface WalletVoucherCardProps {
   voucher: Voucher;
   nowMs: number;
+  /** YT-0405: both default so existing callers render exactly as before. */
+  locale?: SupportedLocale;
+  currency?: SupportedCurrency;
 }
 
 /**
@@ -18,10 +24,16 @@ export interface WalletVoucherCardProps {
  * — reduced emphasis, a status badge — but never disappear
  * (YT-0424: "archived and still viewable").
  */
-export function WalletVoucherCard({ voucher, nowMs }: WalletVoucherCardProps) {
+export function WalletVoucherCard({
+  voucher,
+  nowMs,
+  locale = "id-ID",
+  currency = "IDR",
+}: WalletVoucherCardProps) {
   const expired = isVoucherEffectivelyExpired(voucher, nowMs);
-  const statusCopy = describeVoucherStatus(voucher.status, expired);
+  const statusCopy = describeVoucherStatus(voucher.status, expired, locale);
   const href = `/wallet/voucher/${voucher.id}` as Route;
+  const t = getWalletTranslator(locale);
 
   return (
     <Card className={statusCopy.isArchived ? "opacity-70" : undefined}>
@@ -38,9 +50,13 @@ export function WalletVoucherCard({ voucher, nowMs }: WalletVoucherCardProps) {
           <Badge variant={statusCopy.badgeVariant}>{statusCopy.label}</Badge>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="font-semibold text-price">{formatIdr(voucher.remainingValueIdr)}</span>
+          <span className="font-semibold text-price">
+            {formatMoney(voucher.remainingValueIdr, currency)}
+          </span>
           <span className="text-xs text-fg-subtle">
-            {statusCopy.isArchived ? `Berakhir ${formatWalletDate(voucher.expiresAt)}` : `Berlaku hingga ${formatWalletDate(voucher.expiresAt)}`}
+            {statusCopy.isArchived
+              ? t("voucher.expiresOn", { date: formatWalletDate(voucher.expiresAt, locale) })
+              : t("voucher.validUntilCard", { date: formatWalletDate(voucher.expiresAt, locale) })}
           </span>
         </div>
       </CardContent>

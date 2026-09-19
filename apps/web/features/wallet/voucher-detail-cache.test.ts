@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { expiredVoucherFixture } from "@yourtal/contracts/voucher/mock";
-import { buildCachedVoucherDetail, readVoucherDetailCache, writeVoucherDetailCache } from "./voucher-detail-cache";
+import {
+  buildCachedVoucherDetail,
+  readVoucherDetailCache,
+  writeVoucherDetailCache,
+} from "./voucher-detail-cache";
 
 const sampleVoucher: Voucher = expiredVoucherFixture;
 
@@ -11,7 +15,11 @@ describe("voucher-detail-cache", () => {
   });
 
   it("round-trips a written voucher detail", () => {
-    const detail = buildCachedVoucherDetail(sampleVoucher, "Tunjukkan kode ini ke kasir.", "2026-09-19T09:00:00.000Z");
+    const detail = buildCachedVoucherDetail(
+      sampleVoucher,
+      "Tunjukkan kode ini ke kasir.",
+      "2026-09-19T09:00:00.000Z",
+    );
     writeVoucherDetailCache(detail);
     expect(readVoucherDetailCache(sampleVoucher.id)).toEqual(detail);
   });
@@ -21,9 +29,17 @@ describe("voucher-detail-cache", () => {
   });
 
   it("keys separate vouchers under separate cache entries", () => {
-    const detailA = buildCachedVoucherDetail(sampleVoucher, "Instruksi A", "2026-09-19T09:00:00.000Z");
+    const detailA = buildCachedVoucherDetail(
+      sampleVoucher,
+      "Instruksi A",
+      "2026-09-19T09:00:00.000Z",
+    );
     const otherVoucher: Voucher = { ...sampleVoucher, id: "00000000-0000-4000-8000-000000000999" };
-    const detailB = buildCachedVoucherDetail(otherVoucher, "Instruksi B", "2026-09-19T09:00:00.000Z");
+    const detailB = buildCachedVoucherDetail(
+      otherVoucher,
+      "Instruksi B",
+      "2026-09-19T09:00:00.000Z",
+    );
 
     writeVoucherDetailCache(detailA);
     writeVoucherDetailCache(detailB);
@@ -39,7 +55,10 @@ describe("voucher-detail-cache", () => {
   });
 
   it("treats a value that fails schema validation (wrong shape) as no cached detail", () => {
-    window.localStorage.setItem(`yourtal:wallet:voucher:${sampleVoucher.id}`, JSON.stringify({ id: sampleVoucher.id }));
+    window.localStorage.setItem(
+      `yourtal:wallet:voucher:${sampleVoucher.id}`,
+      JSON.stringify({ id: sampleVoucher.id }),
+    );
     expect(readVoucherDetailCache(sampleVoucher.id)).toBeNull();
   });
 

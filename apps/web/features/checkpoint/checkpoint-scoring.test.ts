@@ -1,6 +1,11 @@
 import { toPoints } from "@yourtal/contracts/money";
 import { describe, expect, it } from "vitest";
-import { computeRewardSplit, isAnswerCorrect, isScorableQuestion, totalEarned } from "./checkpoint-scoring";
+import {
+  computeRewardSplit,
+  isAnswerCorrect,
+  isScorableQuestion,
+  totalEarned,
+} from "./checkpoint-scoring";
 import {
   likertFixture,
   makeCampaignFixture as makeCampaign,
@@ -75,7 +80,10 @@ describe("computeRewardSplit", () => {
   it("base_plus_accuracy_bonus with 100% accuracy: full base plus full bonus", () => {
     const campaign = makeCampaign({ rewardPoints: toPoints(1000) });
     const answers = new Map<string, QuestionAnswer>([
-      [multipleChoiceFixture.id, { type: "multiple_choice", selectedOptionId: multipleChoiceFixture.correctOptionId }],
+      [
+        multipleChoiceFixture.id,
+        { type: "multiple_choice", selectedOptionId: multipleChoiceFixture.correctOptionId },
+      ],
       [trueFalseFixture.id, { type: "true_false", value: trueFalseFixture.correctAnswer }],
     ]);
     const split = computeRewardSplit(campaign, questions, answers);
@@ -88,7 +96,10 @@ describe("computeRewardSplit", () => {
   it("base_plus_accuracy_bonus with partial accuracy scales the bonus proportionally", () => {
     const campaign = makeCampaign({ rewardPoints: toPoints(1000) });
     const answers = new Map<string, QuestionAnswer>([
-      [multipleChoiceFixture.id, { type: "multiple_choice", selectedOptionId: multipleChoiceFixture.correctOptionId }],
+      [
+        multipleChoiceFixture.id,
+        { type: "multiple_choice", selectedOptionId: multipleChoiceFixture.correctOptionId },
+      ],
       [trueFalseFixture.id, { type: "true_false", value: !trueFalseFixture.correctAnswer }],
     ]);
     const split = computeRewardSplit(campaign, questions, answers);
@@ -106,7 +117,11 @@ describe("computeRewardSplit", () => {
 
   it("a bank with no scorable questions has no meaningful accuracy bonus", () => {
     const campaign = makeCampaign({ rewardPoints: toPoints(1000) });
-    const split = computeRewardSplit(campaign, [likertFixture, rankedFixture, shortTextFixture], new Map());
+    const split = computeRewardSplit(
+      campaign,
+      [likertFixture, rankedFixture, shortTextFixture],
+      new Map(),
+    );
     expect(split.accuracyFraction).toBeNull();
     expect(split.scorableCount).toBe(0);
   });

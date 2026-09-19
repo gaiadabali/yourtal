@@ -27,7 +27,9 @@ export function WalletVoucherList({ vouchers, nowMs }: WalletVoucherListProps) {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-fg">Voucher aktif</h2>
         {active.length === 0 ? (
-          <p className="text-sm text-fg-muted">Belum ada voucher aktif. Tukar poin di Store untuk mendapatkan voucher.</p>
+          <p className="text-sm text-fg-muted">
+            Belum ada voucher aktif. Tukar poin di Store untuk mendapatkan voucher.
+          </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {active.map((voucher) => (

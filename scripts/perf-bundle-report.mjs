@@ -59,7 +59,9 @@ async function main() {
   const lines = [];
   lines.push("### Bundle size report (YT-0404)");
   lines.push("");
-  lines.push(`Initial-JS budget: **${budgetKb} KB gz** per route (first-load JS, as reported by Next's own \`route-bundle-stats.json\`).`);
+  lines.push(
+    `Initial-JS budget: **${budgetKb} KB gz** per route (first-load JS, as reported by Next's own \`route-bundle-stats.json\`).`,
+  );
   lines.push("");
   lines.push("| Route | First-load JS (gz) | vs budget | Status |");
   lines.push("|---|---|---|---|");

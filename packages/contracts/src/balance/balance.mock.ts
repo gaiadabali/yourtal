@@ -24,16 +24,22 @@ export function generateBalance(params: GenerateBalanceParams): Balance {
     userId: faker.string.uuid(),
     availablePoints: toPoints(availablePoints),
     pendingPoints: toPoints(pendingPoints),
-    pendingUnlockAt: hasPending ? toIsoString(addDays(now, faker.number.int({ min: 1, max: 14 }))) : null,
+    pendingUnlockAt: hasPending
+      ? toIsoString(addDays(now, faker.number.int({ min: 1, max: 14 })))
+      : null,
     expiringPoints: toPoints(expiringPoints),
-    expiringAt: hasExpiring ? toIsoString(addDays(now, faker.number.int({ min: 1, max: 30 }))) : null,
+    expiringAt: hasExpiring
+      ? toIsoString(addDays(now, faker.number.int({ min: 1, max: 30 })))
+      : null,
     updatedAt: toIsoString(now),
   });
 }
 
 /** Generates `count` deterministic balances from a base seed. */
 export function generateBalances(count: number, baseSeed: number, now?: Date): Balance[] {
-  return Array.from({ length: count }, (_unused, index) => generateBalance({ seed: baseSeed + index, now }));
+  return Array.from({ length: count }, (_unused, index) =>
+    generateBalance({ seed: baseSeed + index, now }),
+  );
 }
 
 /** A wallet with a zero balance — the "you have nothing yet, go earn" empty state. */

@@ -22,7 +22,10 @@ function findListingIdForOutcome(wantFailure: boolean): string {
 
 describe("attemptBurn", () => {
   it("refuses with lock_expired the instant nowMs reaches the lock's expiry, regardless of eligibility", () => {
-    const listing = makeListingFixture({ id: findListingIdForOutcome(false), priceInPoints: toPoints(100) });
+    const listing = makeListingFixture({
+      id: findListingIdForOutcome(false),
+      priceInPoints: toPoints(100),
+    });
     const balance = makeBalanceFixture({ availablePoints: toPoints(1_000_000) });
 
     const result = attemptBurn({
@@ -32,14 +35,25 @@ describe("attemptBurn", () => {
       nowMs: new Date(LOCK_EXPIRES_AT).getTime(),
     });
 
-    expect(result).toEqual({ ok: false, error: { type: "lock_expired", expiredAt: LOCK_EXPIRES_AT } });
+    expect(result).toEqual({
+      ok: false,
+      error: { type: "lock_expired", expiredAt: LOCK_EXPIRES_AT },
+    });
   });
 
   it("refuses with the eligibility error when the lock is still valid but the wallet is short", () => {
-    const listing = makeListingFixture({ id: findListingIdForOutcome(false), priceInPoints: toPoints(5_000) });
+    const listing = makeListingFixture({
+      id: findListingIdForOutcome(false),
+      priceInPoints: toPoints(5_000),
+    });
     const balance = makeBalanceFixture({ availablePoints: toPoints(100) });
 
-    const result = attemptBurn({ listing, balance, lockExpiresAt: LOCK_EXPIRES_AT, nowMs: QUOTED_AT.getTime() });
+    const result = attemptBurn({
+      listing,
+      balance,
+      lockExpiresAt: LOCK_EXPIRES_AT,
+      nowMs: QUOTED_AT.getTime(),
+    });
 
     expect(result).toEqual({ ok: false, error: { type: "insufficient_points", short: 4_900 } });
   });
@@ -49,7 +63,12 @@ describe("attemptBurn", () => {
     const listing = makeListingFixture({ id: listingId, priceInPoints: toPoints(1_000) });
     const balance = makeBalanceFixture({ availablePoints: toPoints(2_000) });
 
-    const result = attemptBurn({ listing, balance, lockExpiresAt: LOCK_EXPIRES_AT, nowMs: QUOTED_AT.getTime() });
+    const result = attemptBurn({
+      listing,
+      balance,
+      lockExpiresAt: LOCK_EXPIRES_AT,
+      nowMs: QUOTED_AT.getTime(),
+    });
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -65,13 +84,21 @@ describe("attemptBurn", () => {
     const listing = makeListingFixture({ id: listingId, priceInPoints: toPoints(1_000) });
     const balance = makeBalanceFixture({ availablePoints: toPoints(2_000) });
 
-    const result = attemptBurn({ listing, balance, lockExpiresAt: LOCK_EXPIRES_AT, nowMs: QUOTED_AT.getTime() });
+    const result = attemptBurn({
+      listing,
+      balance,
+      lockExpiresAt: LOCK_EXPIRES_AT,
+      nowMs: QUOTED_AT.getTime(),
+    });
 
     expect(result).toEqual({ ok: false, error: { type: "redemption_failed" } });
   });
 
   it("is deterministic: the same input always produces the same outcome", () => {
-    const listing = makeListingFixture({ id: findListingIdForOutcome(false), priceInPoints: toPoints(1_000) });
+    const listing = makeListingFixture({
+      id: findListingIdForOutcome(false),
+      priceInPoints: toPoints(1_000),
+    });
     const balance = makeBalanceFixture({ availablePoints: toPoints(2_000) });
     const input = { listing, balance, lockExpiresAt: LOCK_EXPIRES_AT, nowMs: QUOTED_AT.getTime() };
 

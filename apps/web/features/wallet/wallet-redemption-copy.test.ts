@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildRedemptionInstructions, describePartialRedemptionPolicy } from "./wallet-redemption-copy";
+import {
+  buildRedemptionInstructions,
+  describePartialRedemptionPolicy,
+} from "./wallet-redemption-copy";
 
 describe("describePartialRedemptionPolicy", () => {
   it("explains balance-carrying in plain Indonesian", () => {
@@ -30,5 +33,26 @@ describe("buildRedemptionInstructions", () => {
     const a = buildRedemptionInstructions("Kopi Sentosa", "balance_carrying");
     const b = buildRedemptionInstructions("Toko Berkah", "balance_carrying");
     expect(a).not.toBe(b);
+  });
+});
+
+describe("en-AU (YT-0405)", () => {
+  it("explains every policy in English", () => {
+    expect(describePartialRedemptionPolicy("balance_carrying", "en-AU")).toMatch(
+      /kept for next time/,
+    );
+    expect(describePartialRedemptionPolicy("single_use_forfeit", "en-AU")).toMatch(/forfeited/);
+    expect(describePartialRedemptionPolicy("minimum_spend", "en-AU")).toMatch(/minimum amount/);
+  });
+
+  it("names the merchant and folds in the policy in English, with no Indonesian copy leaking through", () => {
+    const instructions = buildRedemptionInstructions(
+      "Sydney Coffee Co",
+      "single_use_forfeit",
+      "en-AU",
+    );
+    expect(instructions).toContain("Sydney Coffee Co");
+    expect(instructions).toMatch(/forfeited/);
+    expect(instructions).not.toMatch(/kasir|hangus/);
   });
 });

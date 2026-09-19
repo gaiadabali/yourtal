@@ -10,6 +10,8 @@ export interface ChapterTrackProps {
   reachedChapterIndex: number;
   currentSeconds: number;
   onSelectChapter: (startSeconds: number) => void;
+  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
+  locale?: "en-AU" | "id-ID";
 }
 
 /**
@@ -22,12 +24,19 @@ export interface ChapterTrackProps {
  * two competing announcements for the same information would be worse than
  * one.
  */
-export function ChapterTrack({ chapters, reachedChapterIndex, currentSeconds, onSelectChapter }: ChapterTrackProps) {
+export function ChapterTrack({
+  chapters,
+  reachedChapterIndex,
+  currentSeconds,
+  onSelectChapter,
+  locale = "id-ID",
+}: ChapterTrackProps) {
   return (
     <ol className="flex w-full list-none gap-1.5 overflow-x-auto p-0" aria-label="Chapters">
       {chapters.map((chapter) => {
         const isReached = chapter.index <= reachedChapterIndex;
-        const isCurrent = currentSeconds >= chapter.startSeconds && currentSeconds < chapter.endSeconds;
+        const isCurrent =
+          currentSeconds >= chapter.startSeconds && currentSeconds < chapter.endSeconds;
         const status = isReached ? "earned" : isCurrent ? "in progress" : "upcoming";
 
         return (
@@ -43,7 +52,7 @@ export function ChapterTrack({ chapters, reachedChapterIndex, currentSeconds, on
               <span className="text-xs font-semibold">{chapter.label}</span>
               <span className="text-[10px] font-normal opacity-80">
                 {formatClock(chapter.startSeconds)}–{formatClock(chapter.endSeconds)} ·{" "}
-                {formatPoints(asDisplayPoints(chapter.rewardPoints))} · {status}
+                {formatPoints(asDisplayPoints(chapter.rewardPoints), locale)} · {status}
               </span>
             </Button>
           </li>

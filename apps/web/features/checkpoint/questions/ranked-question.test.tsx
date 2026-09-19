@@ -104,6 +104,8 @@ describe("RankedQuestionView", () => {
     expect(renderedLabels().at(-1)).toBe(middleItemLabel);
     expect(screen.getByRole("button", { name: `Turun: ${middleItemLabel}` })).toBeDisabled();
     expect(screen.getByRole("button", { name: `Naik: ${middleItemLabel}` })).toHaveFocus();
-    expect(screen.getByRole("button", { name: `Turun: ${originalLastItemLabel}` })).not.toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: `Turun: ${originalLastItemLabel}` }),
+    ).not.toBeDisabled();
   });
 });

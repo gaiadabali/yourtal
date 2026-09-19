@@ -1,14 +1,24 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
+  # Go services live here (docs/15). Declared now so they have a configured
+  # home before the first one lands — YT-0517.
+  - "services/*"
+# Both are native build steps pulled in by next-intl (docs/15 locks it for
+# id-ID / en-AU). pnpm 11 blocks postinstall scripts by default and treats an
+# unanswered prompt as a fatal dep-status failure, which breaks `next build`.
+# Both are legitimate compiler/watcher binaries, not arbitrary scripts.
+allowBuilds:
+  "@parcel/watcher": true
+  "@swc/core": true
 minimumReleaseAgeExclude:
-  - '@turbo/darwin-64@2.11.2'
-  - '@turbo/darwin-arm64@2.11.2'
-  - '@turbo/linux-64@2.11.2'
-  - '@turbo/linux-arm64@2.11.2'
-  - '@turbo/windows-64@2.11.2'
-  - '@turbo/windows-arm64@2.11.2'
-  - '@types/node@26.6.2'
+  - "@turbo/darwin-64@2.11.2"
+  - "@turbo/darwin-arm64@2.11.2"
+  - "@turbo/linux-64@2.11.2"
+  - "@turbo/linux-arm64@2.11.2"
+  - "@turbo/windows-64@2.11.2"
+  - "@turbo/windows-arm64@2.11.2"
+  - "@types/node@26.6.2"
   - eslint@10.11.0
   - knip@6.37.0
   - turbo@2.11.2

@@ -7,7 +7,11 @@ describe("resume-position", () => {
   });
 
   it("round-trips a written position", () => {
-    writeResumePosition({ campaignId: "abc", positionSeconds: 245, updatedAt: "2026-09-19T09:00:00.000Z" });
+    writeResumePosition({
+      campaignId: "abc",
+      positionSeconds: 245,
+      updatedAt: "2026-09-19T09:00:00.000Z",
+    });
     expect(readResumePosition("abc")).toEqual({
       campaignId: "abc",
       positionSeconds: 245,
@@ -26,7 +30,10 @@ describe("resume-position", () => {
   });
 
   it("treats a value that fails schema validation (wrong shape) as no prior position", () => {
-    window.localStorage.setItem("yourtal:watch:resume:bad-shape", JSON.stringify({ positionSeconds: "not a number" }));
+    window.localStorage.setItem(
+      "yourtal:watch:resume:bad-shape",
+      JSON.stringify({ positionSeconds: "not a number" }),
+    );
     expect(readResumePosition("bad-shape")).toBeNull();
   });
 
@@ -44,13 +51,21 @@ describe("resume-position", () => {
       throw new DOMException("QuotaExceededError");
     });
     expect(() =>
-      writeResumePosition({ campaignId: "quota", positionSeconds: 10, updatedAt: "2026-09-19T09:00:00.000Z" }),
+      writeResumePosition({
+        campaignId: "quota",
+        positionSeconds: 10,
+        updatedAt: "2026-09-19T09:00:00.000Z",
+      }),
     ).not.toThrow();
     spy.mockRestore();
   });
 
   it("clears a stored position", () => {
-    writeResumePosition({ campaignId: "clear-me", positionSeconds: 99, updatedAt: "2026-09-19T09:00:00.000Z" });
+    writeResumePosition({
+      campaignId: "clear-me",
+      positionSeconds: 99,
+      updatedAt: "2026-09-19T09:00:00.000Z",
+    });
     clearResumePosition("clear-me");
     expect(readResumePosition("clear-me")).toBeNull();
   });

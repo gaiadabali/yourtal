@@ -11,7 +11,10 @@ describe("CampaignEmptyState", () => {
 
   it("offers a next action that clears the filter", () => {
     render(<CampaignEmptyState kind="long_form" />);
-    expect(screen.getByRole("link", { name: /tampilkan semua campaign/i })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /tampilkan semua campaign/i })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("does not offer a 'show all' action when no filter is narrowing the board", () => {

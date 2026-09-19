@@ -1,9 +1,21 @@
 "use client";
 
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@yourtal/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@yourtal/ui/sheet";
 import { Button } from "@yourtal/ui/button";
-import { buildQualityOptions, estimateDataCostMb, getQualityTier, type QualityTierId } from "./quality-tier";
+import {
+  buildQualityOptions,
+  estimateDataCostMb,
+  getQualityTier,
+  type QualityTierId,
+} from "./quality-tier";
 
 export interface QualitySelectorProps {
   durationSeconds: number;
@@ -18,7 +30,11 @@ export interface QualitySelectorProps {
  * tier's own bitrate and THIS campaign's own duration
  * (`buildQualityOptions`) — never a flat, hardcoded number.
  */
-export function QualitySelector({ durationSeconds, selectedTierId, onSelect }: QualitySelectorProps) {
+export function QualitySelector({
+  durationSeconds,
+  selectedTierId,
+  onSelect,
+}: QualitySelectorProps) {
   const options = buildQualityOptions(durationSeconds);
   const selectedTier = getQualityTier(selectedTierId);
   const selectedMb = estimateDataCostMb(selectedTier.targetBitrateKbps, durationSeconds);
@@ -55,7 +71,9 @@ export function QualitySelector({ durationSeconds, selectedTierId, onSelect }: Q
             >
               <span className="flex flex-col">
                 <span className="text-sm font-sans font-medium text-fg">{option.label}</span>
-                <span className="text-xs font-sans text-fg-muted">≈ {Math.round(option.estimatedMb)} MB for this video</span>
+                <span className="text-xs font-sans text-fg-muted">
+                  ≈ {Math.round(option.estimatedMb)} MB for this video
+                </span>
               </span>
               <RadioGroupPrimitive.Item
                 id={`quality-tier-${option.id}`}

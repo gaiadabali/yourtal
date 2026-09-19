@@ -32,7 +32,10 @@ describe("CheckpointQuestionStep", () => {
         questionNumber={1}
         totalQuestions={1}
         respondentId="respondent-1"
-        answer={{ type: "multiple_choice", selectedOptionId: multipleChoiceFixture.correctOptionId }}
+        answer={{
+          type: "multiple_choice",
+          selectedOptionId: multipleChoiceFixture.correctOptionId,
+        }}
         onAnswerChange={vi.fn()}
         onNext={onNext}
       />,

@@ -33,11 +33,7 @@ export interface ShortTextAnswer {
 }
 
 export type QuestionAnswer =
-  | MultipleChoiceAnswer
-  | TrueFalseAnswer
-  | LikertAnswer
-  | RankedAnswer
-  | ShortTextAnswer;
+  MultipleChoiceAnswer | TrueFalseAnswer | LikertAnswer | RankedAnswer | ShortTextAnswer;
 
 /**
  * Whether a question has a usable answer to proceed on. `short_text` is

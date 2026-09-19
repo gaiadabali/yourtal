@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import { zeroRewardCampaignFixture } from "@yourtal/contracts/campaign/mock";
 import { toPoints } from "@yourtal/contracts/money";
-import { campaignSortKeys, expectedValuePerMinute, isCampaignSortKey, sortCampaigns } from "./campaign-sort";
+import {
+  campaignSortKeys,
+  expectedValuePerMinute,
+  isCampaignSortKey,
+  sortCampaigns,
+} from "./campaign-sort";
 
 const short: Campaign = {
   ...zeroRewardCampaignFixture,

@@ -1,0 +1,20 @@
+{
+  "balance": {
+    "sufficient": "You have enough — {amount} available for this item.",
+    "insufficientHeading": "You need {count} more points.",
+    "insufficientDetail": "Current balance {available}, needed {required}.",
+    "earnAtEarn": "Find a campaign in Earn",
+    "tryQuick": "Try Quick"
+  },
+  "redemption": {
+    "balanceCarrying": "Remaining balance carries over",
+    "singleUseForfeit": "Single use, remainder forfeited",
+    "minimumSpend": "Minimum spend applies",
+    "descBalanceCarrying": "If your purchase is less than the voucher's value, the remaining balance is kept and can be used again — like a gift card.",
+    "descSingleUseForfeit": "This voucher is single-use. If your purchase is less than the voucher's value, the remainder is forfeited once used.",
+    "descMinimumSpendWithAmount": "This voucher only applies to a minimum spend of {amount}.",
+    "descMinimumSpendUnspecified": "This voucher only applies above a set minimum spend.",
+    "transferable": "This voucher can be transferred once to another verified YourTal user.",
+    "notTransferable": "This voucher cannot be transferred to another user."
+  }
+}

@@ -36,7 +36,8 @@ interface StoreDataSource {
 
 const mockDataSource: StoreDataSource = {
   listListings: () => Promise.resolve(mockListingCatalogue),
-  getListing: (listingId: string) => Promise.resolve(mockListingCatalogue.find((listing) => listing.id === listingId)),
+  getListing: (listingId: string) =>
+    Promise.resolve(mockListingCatalogue.find((listing) => listing.id === listingId)),
 };
 
 /**
@@ -46,8 +47,14 @@ const mockDataSource: StoreDataSource = {
  * route's `error.tsx` honestly instead of faking a failure for a demo.
  */
 const liveDataSource: StoreDataSource = {
-  listListings: () => Promise.reject(new Error("Live store data source is not implemented yet (Phase U is mock-only).")),
-  getListing: () => Promise.reject(new Error("Live store data source is not implemented yet (Phase U is mock-only).")),
+  listListings: () =>
+    Promise.reject(
+      new Error("Live store data source is not implemented yet (Phase U is mock-only)."),
+    ),
+  getListing: () =>
+    Promise.reject(
+      new Error("Live store data source is not implemented yet (Phase U is mock-only)."),
+    ),
 };
 
 const storeDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });

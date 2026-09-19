@@ -85,9 +85,12 @@ describe("usePriceLockCountdown", () => {
   it("a new quote (different lockExpiresAt) restarts the countdown and the expiry guard", () => {
     const firstLock = new Date(NOW.getTime() + 2_000).toISOString();
     const onExpire = vi.fn();
-    const { result, rerender } = renderHook(({ lockExpiresAt }) => usePriceLockCountdown(lockExpiresAt, onExpire), {
-      initialProps: { lockExpiresAt: firstLock },
-    });
+    const { result, rerender } = renderHook(
+      ({ lockExpiresAt }) => usePriceLockCountdown(lockExpiresAt, onExpire),
+      {
+        initialProps: { lockExpiresAt: firstLock },
+      },
+    );
 
     advanceSeconds(2);
     expect(onExpire).toHaveBeenCalledTimes(1);

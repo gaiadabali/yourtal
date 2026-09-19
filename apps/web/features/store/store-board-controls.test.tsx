@@ -19,7 +19,9 @@ const merchantOptions = [
 ];
 
 function renderControls() {
-  return render(<StoreBoardControls locationOptions={locationOptions} merchantOptions={merchantOptions} />);
+  return render(
+    <StoreBoardControls locationOptions={locationOptions} merchantOptions={merchantOptions} />,
+  );
 }
 
 beforeEach(() => {
@@ -44,15 +46,21 @@ describe("StoreBoardControls", () => {
 
   it("navigates via router.push when a filter changes, preserving the pathname", async () => {
     renderControls();
-    fireEvent.change(screen.getByRole("combobox", { name: "Kategori" }), { target: { value: "retail" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Kategori" }), {
+      target: { value: "retail" },
+    });
     await waitFor(() => expect(push).toHaveBeenCalledWith("/store?category=retail"));
   });
 
   it("preserves an existing filter when only a different one changes", async () => {
     searchParams = new URLSearchParams("category=retail");
     renderControls();
-    fireEvent.change(screen.getByRole("combobox", { name: "Lokasi" }), { target: { value: "Kemang" } });
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/store?category=retail&location=Kemang"));
+    fireEvent.change(screen.getByRole("combobox", { name: "Lokasi" }), {
+      target: { value: "Kemang" },
+    });
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith("/store?category=retail&location=Kemang"),
+    );
   });
 
   it("does not show a reset link when no filter is active", () => {
@@ -63,6 +71,9 @@ describe("StoreBoardControls", () => {
   it("shows a reset link to the bare route when a filter is active", () => {
     searchParams = new URLSearchParams("category=retail");
     renderControls();
-    expect(screen.getByRole("link", { name: /hapus semua filter/i })).toHaveAttribute("href", "/store");
+    expect(screen.getByRole("link", { name: /hapus semua filter/i })).toHaveAttribute(
+      "href",
+      "/store",
+    );
   });
 });

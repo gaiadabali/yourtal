@@ -22,7 +22,9 @@ export function StoreOfferFact({ label, value, valueClassName }: StoreOfferFactP
   return (
     <div className="flex flex-col gap-0.5">
       <dt className={cn(LABEL_ROW_CLASS, "text-xs text-fg-subtle")}>{label}</dt>
-      <dd className={cn(VALUE_ROW_CLASS, "text-sm font-medium text-fg", valueClassName)}>{value}</dd>
+      <dd className={cn(VALUE_ROW_CLASS, "text-sm font-medium text-fg", valueClassName)}>
+        {value}
+      </dd>
     </div>
   );
 }

@@ -81,8 +81,14 @@ export function generateQuestion(params: GenerateQuestionParams): Question {
 }
 
 /** Generates `count` deterministic questions for one campaign, from a base seed. */
-export function generateQuestions(count: number, baseSeed: number, campaignId?: string): Question[] {
-  return Array.from({ length: count }, (_unused, index) => generateQuestion({ seed: baseSeed + index, campaignId }));
+export function generateQuestions(
+  count: number,
+  baseSeed: number,
+  campaignId?: string,
+): Question[] {
+  return Array.from({ length: count }, (_unused, index) =>
+    generateQuestion({ seed: baseSeed + index, campaignId }),
+  );
 }
 
 /** A campaign with a 0-reward-adjacent edge case: a question bank of exactly one short-text item. */

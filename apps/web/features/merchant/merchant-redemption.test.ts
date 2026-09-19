@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { attemptRedemption, generateIdempotencyKey } from "./merchant-redemption";
+import { rupiah } from "@yourtal/contracts/money";
 
 const NOW_MS = Date.parse("2026-09-19T09:00:00.000Z");
 
@@ -14,8 +15,8 @@ function makeVoucher(overrides: Partial<Voucher> = {}): Voucher {
     merchantName: "Toko Berkah",
     minimumSpendIdr: null,
     title: "Voucher Toko Berkah",
-    faceValueIdr: 50_000,
-    remainingValueIdr: 50_000,
+    faceValueIdr: rupiah(50_000),
+    remainingValueIdr: rupiah(50_000),
     partialRedemptionPolicy: "balance_carrying",
     transferable: false,
     status: "active",

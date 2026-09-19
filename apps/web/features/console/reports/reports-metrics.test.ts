@@ -5,7 +5,7 @@ import type { Question } from "@yourtal/contracts/question";
 import { questionSchema } from "@yourtal/contracts/question";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { voucherSchema } from "@yourtal/contracts/voucher";
-import { toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
 import {
   aggregateQuestionTypeCounts,
   summarizeQuestionBank,
@@ -70,7 +70,7 @@ function multipleChoiceQuestion(id: string, campaignId: string): Question {
 }
 
 function voucher(overrides: Partial<Voucher>): Voucher {
-  const faceValueIdr = overrides.faceValueIdr ?? toIdrMinorUnits(50_000);
+  const faceValueIdr = overrides.faceValueIdr ?? rupiah(50_000);
   return voucherSchema.parse({
     id: "00000000-0000-4000-8000-000000000301",
     listingId: "00000000-0000-4000-8000-000000000401",
@@ -158,9 +158,9 @@ describe("aggregateQuestionTypeCounts", () => {
 describe("summarizeRedemptionLedger", () => {
   it("counts and sums face value per status, and always labels rows 'measured'", () => {
     const vouchers = [
-      voucher({ status: "redeemed", faceValueIdr: toIdrMinorUnits(50_000) }),
-      voucher({ status: "redeemed", faceValueIdr: toIdrMinorUnits(30_000) }),
-      voucher({ status: "active", faceValueIdr: toIdrMinorUnits(20_000) }),
+      voucher({ status: "redeemed", faceValueIdr: rupiah(50_000) }),
+      voucher({ status: "redeemed", faceValueIdr: rupiah(30_000) }),
+      voucher({ status: "active", faceValueIdr: rupiah(20_000) }),
     ];
 
     const summary = summarizeRedemptionLedger(vouchers);
@@ -168,7 +168,7 @@ describe("summarizeRedemptionLedger", () => {
 
     const redeemedRow = summary.rows.find((row) => row.status === "redeemed");
     expect(redeemedRow?.count).toBe(2);
-    expect(redeemedRow?.totalFaceValueIdr).toBe(80_000);
+    expect(redeemedRow?.totalFaceValueIdr).toBe(rupiah(80_000));
     expect(redeemedRow?.provenance).toBe("measured");
 
     const expiredRow = summary.rows.find((row) => row.status === "expired");

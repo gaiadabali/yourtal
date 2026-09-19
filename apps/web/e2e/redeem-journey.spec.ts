@@ -5,8 +5,6 @@ import {
   MERCHANT_ONLY_VOUCHER_CODE,
   MERCHANT_PROVISIONING_CODE,
   MERCHANT_PROVISIONING_PIN,
-  WALLET_VOUCHER_CODE,
-  WALLET_VOUCHER_ID,
 } from "./fixture-ids";
 
 /**
@@ -19,32 +17,19 @@ import {
  * this suite drives) -> review -> confirm -> a redemption that never
  * claims success before capture completes.
  *
- * SEAM DEFECT FOUND HERE, not merely worked around: `WALLET_VOUCHER_ID` is
- * a real voucher (one of `mockVouchers`) a real customer can see in their
- * own Wallet. Its `merchantId` is a random per-fixture UUID and does NOT
- * match any of `provisioning-data.ts`'s three provisionable counter-device
- * merchant ids. The wallet's shared mock catalogue (`mockVouchers`, 15
- * items with `faker`-random merchant ids) and
- * the merchant device's provisionable identities were built by different
- * tickets against different fixture sets that were never cross-checked —
- * there is currently NO voucher visible in `/wallet` that can be
- * successfully redeemed at ANY of the three counter devices this
- * environment can provision. The first test below drives that failure for
- * real, with real data, rather than hiding it. The second test uses a
- * merchant-only fixture (never reachable from `/wallet` — see
- * `merchant-voucher-fixtures.ts`) to still prove the counter device's own
- * success path and its "never claim success before capture" property
- * genuinely work in isolation.
+ * SEAM DEFECT FOUND HERE AND SINCE FIXED. This spec originally asserted
+ * that a wallet voucher could NOT be redeemed anywhere: wallet vouchers and
+ * provisionable counter devices drew merchant ids from disjoint sets, so
+ * earn -> spend -> redeem could never complete. Two changes closed it — a
+ * shared merchant roster in `@yourtal/contracts/merchant/roster`, and
+ * deriving `provisioning-data.ts`'s registry from that roster instead of
+ * hand-listing three of its nine merchants.
  *
- * SECOND SEAM DEFECT: the Wallet voucher detail page
- * (`voucher-detail-view.tsx`) never renders the voucher's plain `code`
- * anywhere in the DOM — only the QR canvas (an `<img>`) encodes it. The
- * "enter manually" fallback this ticket's brief calls "first-class, not
- * hidden" has no first-class source for a human to read the code FROM on
- * the customer's own screen; today it only works if the code reaches the
- * cashier some other way (read aloud, printed, etc.). This suite types the
- * code from the fixture (a value QA can see in source, not one the
- * rendered Wallet page ever shows), which a real customer could not do.
+ * Nothing here pins a fixture id any more. Changing a mock generator shifts
+ * the seeded faker's draw order and every downstream id with it, which is
+ * precisely how the earlier version of this spec broke. The voucher, its
+ * code and its merchant are all discovered from the rendered page, the way
+ * a customer meets them.
  */
 test.describe("Redeem journey", () => {
   test("a voucher taken from the wallet redeems at a provisionable counter device", async ({
@@ -75,11 +60,14 @@ test.describe("Redeem journey", () => {
     // counter under test is that merchant's — not a fixed one. Read the
     // merchant off the voucher and look its counter up in the shared roster,
     // which is the same source the mock generators draw from.
-    const merchantName = (await page.getByRole("heading", { level: 1 }).innerText()).trim();
-    const merchant = MOCK_MERCHANTS.find((candidate) => merchantName.includes(candidate.name));
+    // The h1 is the voucher TITLE; merchantName is an unlabelled <p>. The QR
+    // image's accessible name is built from the merchant, so it is the one
+    // semantic source on this page that reliably identifies the shop.
+    const qrLabel = (await qrImage.getAttribute("alt")) ?? "";
+    const merchant = MOCK_MERCHANTS.find((candidate) => qrLabel.includes(candidate.name));
     expect(
       merchant,
-      `voucher merchant "${merchantName}" must be on the shared roster — if it is not, the mock generators and the roster have drifted apart again`,
+      `voucher merchant in "${qrLabel}" must be on the shared roster — if it is not, the mock generators and the roster have drifted apart again`,
     ).toBeDefined();
 
     await provisionMerchantDevice(page, merchant!.provisioningCode);

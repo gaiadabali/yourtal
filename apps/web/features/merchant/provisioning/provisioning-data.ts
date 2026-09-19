@@ -1,3 +1,4 @@
+import { MOCK_MERCHANTS } from "@yourtal/contracts/merchant/roster";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import { resolveMerchantRegionInfo } from "../merchant-region-source";
 
@@ -65,26 +66,29 @@ export interface KnownDeviceSummary {
  * bound to exactly one merchant" property is visible with more than one
  * example.
  */
-const MOCK_PROVISIONING_CODES: Record<string, ProvisioningTemplate> = {
-  "TOKO-BERKAH-1": {
-    merchantId: "00000000-0000-4000-8000-000000000601",
-    merchantName: "Toko Berkah",
-    label: "Toko Berkah — Kasir 1",
-    ...resolveMerchantRegionInfo("ID"),
-  },
-  "KEMANG-COUNTER-2": {
-    merchantId: "00000000-0000-4000-8000-000000000602",
-    merchantName: "Kopi Kenangan Kemang",
-    label: "Kemang counter 2",
-    ...resolveMerchantRegionInfo("ID"),
-  },
-  "SYDNEY-CBD-1": {
-    merchantId: "00000000-0000-4000-8000-000000000603",
-    merchantName: "Sydney CBD Cafe",
-    label: "Sydney CBD — Register 1",
-    ...resolveMerchantRegionInfo("AU"),
-  },
-};
+/**
+ * Derived from the shared merchant roster, never hand-listed.
+ *
+ * This used to hardcode three of the roster's merchants. That was the second
+ * half of a seam defect: wallet vouchers are issued by any roster merchant,
+ * but only those three had counters, so a customer holding a voucher from
+ * any of the others could not redeem it anywhere — a real browser run ended
+ * in `wrong_merchant` every time. `provisioningCode` is required on every
+ * roster entry precisely so that a merchant which cannot redeem its own
+ * vouchers is unrepresentable; deriving the registry is what makes that
+ * guarantee hold on this side too.
+ */
+const MOCK_PROVISIONING_CODES: Record<string, ProvisioningTemplate> = Object.fromEntries(
+  MOCK_MERCHANTS.map((merchant) => [
+    merchant.provisioningCode.toUpperCase(),
+    {
+      merchantId: merchant.id,
+      merchantName: merchant.name,
+      label: merchant.counterLabel,
+      ...resolveMerchantRegionInfo(merchant.region),
+    },
+  ]),
+);
 
 /** Module-scope mock revocation registry — see the file-level comment for exactly what this does and does not model. */
 const revokedDeviceIds = new Set<string>();

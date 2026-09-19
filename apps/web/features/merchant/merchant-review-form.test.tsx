@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { getMerchantCopy } from "./merchant-copy";
 import { MerchantReviewForm } from "./merchant-review-form";
+import { rupiah } from "@yourtal/contracts/money";
 
 const copy = getMerchantCopy("en-AU");
 
@@ -15,8 +16,8 @@ const voucher: Voucher = {
   code: "GOODCODE1",
   merchantName: "Toko Berkah",
   title: "Voucher Toko Berkah",
-  faceValueIdr: 80_000,
-  remainingValueIdr: 80_000,
+  faceValueIdr: rupiah(80_000),
+  remainingValueIdr: rupiah(80_000),
   partialRedemptionPolicy: "balance_carrying",
   transferable: true,
   status: "active",

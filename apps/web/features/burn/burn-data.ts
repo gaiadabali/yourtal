@@ -8,7 +8,8 @@ import {
 } from "@yourtal/contracts/listing/mock";
 import type { Balance } from "@yourtal/contracts/balance";
 import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
-import { pointsPriceFromSettlement, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { pointsPriceFromSettlement, rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "@yourtal/contracts/money/mock-backing-rate";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 
 export interface RedeemData {
@@ -34,7 +35,6 @@ const SHARED_STORE_CATALOGUE: readonly Listing[] = [
 
 /** Mirrors the illustrative mock backing rate in `listing.mock.ts` (docs/09 section 4.1). Not the real pricing engine. */
 // Rupiah per point. See YT-0506 before changing this.
-const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
 
 /**
  * A listing that exists ONLY on this route — not in the shared catalogue
@@ -62,12 +62,9 @@ export const holdbackDemoListing: Listing = listingSchema.parse({
       district: "Menteng",
     },
   ],
-  faceValueIdr: toIdrMinorUnits(180_000),
-  settlementValueIdr: toIdrMinorUnits(54_000),
-  priceInPoints: pointsPriceFromSettlement(
-    toIdrMinorUnits(54_000),
-    MOCK_BACKING_RATE_IDR_PER_POINT,
-  ),
+  faceValueIdr: rupiah(180_000),
+  settlementValueIdr: rupiah(54_000),
+  priceInPoints: pointsPriceFromSettlement(rupiah(54_000), MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
   stockRemaining: 20,
   stockTotal: 20,
   transferable: false,

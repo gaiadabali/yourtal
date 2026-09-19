@@ -3,6 +3,7 @@ import { CURRENCY_CODES, isCurrency } from "./currency";
 import {
   MINOR_UNIT,
   UnsettledMinorUnitError,
+  assertSettled,
   assertUnitSettled,
   isUnitSettled,
   minorUnitExponent,
@@ -91,7 +92,7 @@ describe("fromLegacyAmount", () => {
   it("renders the same legacy integer differently once it is tagged", () => {
     const legacy = toIdrMinorUnits(1_250);
     expect(formatMoneyValue(fromLegacyAmount(legacy, "AUD"))).toContain("12.50");
-    expect(formatMoneyValue(fromLegacyAmount(legacy, "IDR"))).toContain("1.250");
+    expect(formatMoneyValue(fromLegacyAmount(legacy, "IDR"))).toContain("12,5");
   });
 });
 
@@ -117,32 +118,50 @@ describe("the minor-unit registry", () => {
   });
 
   /**
-   * Pairs with money.test.ts's "stores IDR as Rupiah, not sen, until YT-0506
-   * settles". That test guards the behaviour; this one guards the admission
-   * that the behaviour is unconfirmed. Whoever settles YT-0506 must move
-   * both, which is the point — flipping the exponent to sen while leaving
-   * the status `provisional` would be a decision nobody recorded.
+   * Pairs with money.test.ts's "stores IDR as sen, settled by YT-0506". That
+   * test guards the stored VALUE; this one guards the recorded DECISION.
+   * Both had to turn over together in the migration — an exponent moved to 2
+   * while the status still read `provisional` would be a unit change nobody
+   * had authority for, which is precisely what the pair exists to prevent.
    */
-  it("still records IDR as provisional, pending YT-0506", () => {
-    expect(MINOR_UNIT.IDR).toMatchObject({ exponent: 0, status: "provisional" });
-    expect(isUnitSettled("IDR")).toBe(false);
+  it("records IDR as two-decimal sen, settled by YT-0506", () => {
+    expect(MINOR_UNIT.IDR).toMatchObject({ exponent: 2, status: "confirmed" });
+    expect(isUnitSettled("IDR")).toBe(true);
     expect(MINOR_UNIT.IDR.evidence).toContain("YT-0506");
-  });
-
-  it("refuses to settle in a currency whose unit is unsettled", () => {
     expect(() => {
       assertUnitSettled("IDR", "settle a merchant payout");
+    }).not.toThrow();
+  });
+
+  /**
+   * With IDR settled there is **no provisional currency left in the table**,
+   * so the refusal path has nothing live to refuse. Deleting the test would
+   * leave the mechanism unproved until the next unevidenced currency arrives
+   * — which is the worst moment to discover it stopped working. So it is
+   * handed a provisional record directly; `assertSettled` takes one for
+   * exactly this reason.
+   */
+  const PROVISIONAL = {
+    exponent: 0,
+    status: "provisional",
+    evidence: "a currency nobody has evidenced yet",
+  } as const;
+
+  it("refuses to settle against a unit that is not confirmed", () => {
+    expect(() => {
+      assertSettled(PROVISIONAL, "IDR", "settle a merchant payout");
     }).toThrow(UnsettledMinorUnitError);
   });
 
-  it("names the operation and the currency when it refuses", () => {
+  it("names the operation, the currency and the evidence when it refuses", () => {
     const refusal = captureRefusal(() => {
-      assertUnitSettled("IDR", "settle a merchant payout");
+      assertSettled(PROVISIONAL, "IDR", "settle a merchant payout");
     });
     expect(refusal).toBeInstanceOf(UnsettledMinorUnitError);
     expect(refusal?.currency).toBe("IDR");
     expect(refusal?.message).toContain("settle a merchant payout");
     expect(refusal?.message).toContain("YT-0506");
+    expect(refusal?.message).toContain("nobody has evidenced yet");
   });
 });
 
@@ -166,14 +185,15 @@ describe("formatting derives its scale from the registry", () => {
     expect(formatMoney(toIdrMinorUnits(1_250), "AUD")).toContain("12.50");
   });
 
-  it("renders IDR without decimals, undivided", () => {
-    const rendered = formatMoney(toIdrMinorUnits(45_000), "IDR");
-    expect(rendered).toContain("45.000");
+  it("divides IDR by its two-decimal minor unit", () => {
+    // 4_500_000 sen is Rp 45.000. Before YT-0506 this integer was undivided;
+    // the formatter needed no edit, because its scale comes from MINOR_UNIT.
+    expect(formatMoney(toIdrMinorUnits(4_500_000), "IDR")).toContain("45.000");
   });
 
   it("scales by ten to the power of the declared exponent", () => {
     expect(minorUnitExponent("AUD")).toBe(2);
-    expect(minorUnitExponent("IDR")).toBe(0);
+    expect(minorUnitExponent("IDR")).toBe(2);
   });
 });
 

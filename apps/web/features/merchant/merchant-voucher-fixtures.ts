@@ -1,6 +1,6 @@
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { voucherSchema } from "@yourtal/contracts/voucher";
-import { toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
 
 /**
  * SERVER-ONLY fixtures (value-imports `voucherSchema`/`toIdrMinorUnits`,
@@ -50,7 +50,7 @@ export const alreadyRedeemedVoucherFixture: Voucher = voucherSchema.parse({
     district: "Kemang",
   },
   title: "Voucher Toko Berkah",
-  faceValueIdr: toIdrMinorUnits(25_000),
+  faceValueIdr: rupiah(25_000),
   remainingValueIdr: toIdrMinorUnits(0),
   partialRedemptionPolicy: "single_use_forfeit",
   minimumSpendIdr: null,
@@ -75,8 +75,8 @@ export const wrongMerchantVoucherFixture: Voucher = voucherSchema.parse({
     district: "Kemang",
   },
   title: "Voucher Kopi Kenangan Kemang",
-  faceValueIdr: toIdrMinorUnits(60_000),
-  remainingValueIdr: toIdrMinorUnits(60_000),
+  faceValueIdr: rupiah(60_000),
+  remainingValueIdr: rupiah(60_000),
   partialRedemptionPolicy: "balance_carrying",
   minimumSpendIdr: null,
   transferable: false,
@@ -100,10 +100,10 @@ export const minimumSpendVoucherFixture: Voucher = voucherSchema.parse({
     district: "Kemang",
   },
   title: "Voucher Belanja Minimum",
-  faceValueIdr: toIdrMinorUnits(100_000),
-  remainingValueIdr: toIdrMinorUnits(100_000),
+  faceValueIdr: rupiah(100_000),
+  remainingValueIdr: rupiah(100_000),
   partialRedemptionPolicy: "minimum_spend",
-  minimumSpendIdr: toIdrMinorUnits(50_000),
+  minimumSpendIdr: rupiah(50_000),
   transferable: false,
   status: "active",
   issuedAt: daysFrom(REFERENCE_INSTANT, -1),
@@ -125,8 +125,8 @@ export const healthyVoucherFixture: Voucher = voucherSchema.parse({
     district: "Kemang",
   },
   title: "Voucher Belanja Toko Berkah",
-  faceValueIdr: toIdrMinorUnits(80_000),
-  remainingValueIdr: toIdrMinorUnits(80_000),
+  faceValueIdr: rupiah(80_000),
+  remainingValueIdr: rupiah(80_000),
   partialRedemptionPolicy: "balance_carrying",
   minimumSpendIdr: null,
   transferable: true,

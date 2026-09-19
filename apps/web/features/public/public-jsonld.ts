@@ -1,6 +1,7 @@
 import type { Listing } from "@yourtal/contracts/listing";
 import type { PublicMerchant } from "./public-merchant";
 import type { PublicLocaleConfig } from "./public-locale";
+import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
 
 /**
  * Structured-data builders for the public surface (YT-0431,
@@ -77,14 +78,22 @@ export function buildOfferProductJsonLd(params: {
       "@type": "Offer",
       url,
       priceCurrency: locale.currency,
-      // faceValueIdr is an integer count of the currency's minor unit for
-      // IDR (see packages/contracts/src/money/money.ts) and cents for AUD;
-      // schema.org's `price` wants a decimal amount, so AUD divides by 100
-      // the same way `formatMoney` does and IDR does not.
-      price:
-        locale.currency === "AUD"
-          ? (listing.faceValueIdr / 100).toFixed(2)
-          : String(listing.faceValueIdr),
+      // `faceValueIdr` is an integer count of the currency's minor unit;
+      // schema.org's `price` wants a decimal major-unit amount, so it is
+      // scaled by that currency's exponent.
+      //
+      // This used to branch on `currency === "AUD"` and divide by a literal
+      // 100, leaving IDR undivided — correct only while the IDR minor unit
+      // was one Rupiah. YT-0506 made IDR two-decimal and this line began
+      // publishing **100x the real price** in structured data on a public
+      // page, which is what Google Shopping and every rich result would
+      // have read. It is the same duplicated-divisor bug `formatMoney` had,
+      // in the one place a wrong number is machine-readable and indexed.
+      //
+      // `MINOR_UNIT` is now the only place that knowledge lives.
+      price: (listing.faceValueIdr / 10 ** minorUnitExponent(locale.currency)).toFixed(
+        minorUnitExponent(locale.currency),
+      ),
       priceValidUntil: listing.expiresAt.slice(0, 10),
       availability: isAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       eligibleRegion: { "@type": "Country", name: locale.countryName },

@@ -44,7 +44,11 @@ describe("ReportsRedemptionLedgerPanel", () => {
     render(<ReportsRedemptionLedgerPanel summary={SUMMARY} currency="IDR" />);
     expect(screen.getByRole("heading", { name: "Redemption ledger" })).toBeInTheDocument();
     expect(screen.getByText("Measured")).toBeInTheDocument();
-    expect(screen.getByText(/^Rp\s?80\.000$/)).toBeInTheDocument();
+    // 80_000 minor units: $800.00 under AUD and Rp 800 under IDR. The value is
+    // deliberately currency-free, because this panel's job is to render
+    // whatever the viewer's region says and never to assume Rp — so the same
+    // integer has to be legible in both, not scaled for one.
+    expect(screen.getByText(/^Rp\s?800$/)).toBeInTheDocument();
     expect(screen.queryByText("Expired")).not.toBeInTheDocument();
   });
 

@@ -3,13 +3,13 @@ import { listingSchema } from "./listing";
 import { DEFAULT_REFERENCE_INSTANT, addDays, addHours, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
 import { LONG_MERCHANT_NAME, generateMerchantLocations } from "../internal/jakarta";
-import { pointsPriceFromSettlement, toIdrMinorUnits, toPoints } from "../money/money";
+import { pointsPriceFromSettlement, rupiah, toIdrMinorUnits, toPoints } from "../money/money";
+import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "../money/mock-backing-rate";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 
 /** Illustrative mock backing rate (IDR per point), see docs/09 section 4.1. Not the real pricing engine. */
 // Rupiah per point. If YT-0506 settles on sen, this becomes sen-per-point
 // and must move with the settlement values, or prices go 100x wrong.
-const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
 
 export interface GenerateListingParams {
   seed: number;
@@ -27,7 +27,7 @@ export function generateListing(params: GenerateListingParams): Listing {
   // merchant, so a generated one could never match. See merchant-roster.ts.
   const merchant = pickMockMerchant(faker, "ID");
   const merchantName = merchant.name;
-  const faceValueIdr = toIdrMinorUnits(faker.number.int({ min: 15, max: 400 }) * 1_000);
+  const faceValueIdr = rupiah(faker.number.int({ min: 15, max: 400 }) * 1_000);
   // `faceValueIdr` is already in IDR minor units — currently whole Rupiah, see
   // money.ts and YT-0506 — so scaling it by 0.3 keeps it in the same unit and
   // `toIdrMinorUnits` here only re-brands the result, it does not convert.
@@ -67,7 +67,10 @@ export function generateListing(params: GenerateListingParams): Listing {
     locations: generateMerchantLocations(faker, merchantName, locationCount),
     faceValueIdr,
     settlementValueIdr,
-    priceInPoints: pointsPriceFromSettlement(settlementValueIdr, MOCK_BACKING_RATE_IDR_PER_POINT),
+    priceInPoints: pointsPriceFromSettlement(
+      settlementValueIdr,
+      MOCK_BACKING_RATE_IDR_SEN_PER_POINT,
+    ),
     stockRemaining,
     stockTotal,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
@@ -104,9 +107,9 @@ export const soldOutListingFixture: Listing = listingSchema.parse({
       district: "Kemang",
     },
   ],
-  faceValueIdr: toIdrMinorUnits(30_000),
-  settlementValueIdr: toIdrMinorUnits(9_000),
-  priceInPoints: pointsPriceFromSettlement(toIdrMinorUnits(9_000), MOCK_BACKING_RATE_IDR_PER_POINT),
+  faceValueIdr: rupiah(30_000),
+  settlementValueIdr: rupiah(9_000),
+  priceInPoints: pointsPriceFromSettlement(rupiah(9_000), MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
   stockRemaining: 0,
   stockTotal: 100,
   transferable: false,
@@ -137,8 +140,8 @@ export const abovePlausibleBalanceListingFixture: Listing = listingSchema.parse(
       district: "Senayan",
     },
   ],
-  faceValueIdr: toIdrMinorUnits(15_000_000),
-  settlementValueIdr: toIdrMinorUnits(9_000_000),
+  faceValueIdr: rupiah(15_000_000),
+  settlementValueIdr: rupiah(9_000_000),
   priceInPoints: toPoints(1_500_000),
   stockRemaining: 3,
   stockTotal: 10,
@@ -171,12 +174,9 @@ export const expiringSoonListingFixture: Listing = listingSchema.parse({
       district: "Setiabudi",
     },
   ],
-  faceValueIdr: toIdrMinorUnits(50_000),
-  settlementValueIdr: toIdrMinorUnits(15_000),
-  priceInPoints: pointsPriceFromSettlement(
-    toIdrMinorUnits(15_000),
-    MOCK_BACKING_RATE_IDR_PER_POINT,
-  ),
+  faceValueIdr: rupiah(50_000),
+  settlementValueIdr: rupiah(15_000),
+  priceInPoints: pointsPriceFromSettlement(rupiah(15_000), MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
   stockRemaining: 12,
   stockTotal: 50,
   transferable: true,

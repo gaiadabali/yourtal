@@ -3,37 +3,38 @@ import { z } from "zod";
 /**
  * Money and points, the foundation every other schema in this package builds on.
  *
- * **The IDR minor unit is currently 1 Rupiah** — an `idrMinorUnitsSchema`
- * value is a count of Rupiah, and Rp 45.000 is stored as `45_000`.
+ * **The IDR minor unit is one sen — one hundredth of a Rupiah.** An
+ * `idrMinorUnitsSchema` value is a count of sen, so Rp 45.000 is stored as
+ * `4_500_000`.
  *
- * THIS IS NOT SETTLED. `docs/12` section 3, `docs/18` line 24 and YT-0041's
- * acceptance criteria all say IDR must be stored in **sen (x100)**, because
- * Stripe and most PSPs treat IDR as a two-decimal currency, and YT-0041 calls
- * a mismatch here "a 100x error". The deciding fact does not settle from
- * documentation: ISO 4217 gives IDR a sen minor unit, Adyen explicitly flags
- * IDR as diverging from its own table, and Xendit does not document it
- * publicly. Tracked as **YT-0506 (blocked)**; YT-0041 must not be implemented
- * until it is decided. Do NOT "fix" this file to sen without that decision.
+ * Settled by the founder on 2026-09-20 (YT-0506), after this file had spent
+ * the project so far implementing Rupiah while `docs/12`, `docs/18` and
+ * YT-0041 all specified sen. The reasoning: sen is uncommon in daily use but
+ * **banking uses it**, and amounts appear as `Rp 1.000,26`. That matches ISO
+ * 4217 and Stripe's treatment.
  *
- * The deeper problem is that this type has no currency at all. YourTal runs
- * two regions, Australia and Indonesia, each with its own currency, tax and
- * regulatory setup — and `docs/12` section 3 already specifies Fowler's Money
- * pattern, `(int64 amount_minor, currency)`, which this file does not
- * implement. AUD is unambiguously two-decimal; only IDR is in question. A
- * currency-tagged Money type would let AUD proceed while IDR stays pending,
- * and would make "IDR is stored in X" a per-processor conversion rather than
- * a global rule. Raised with the architect.
+ * **It settles the currency, not the processor.** What Xendit accepts is
+ * still unconfirmed, and Adyen flags IDR as diverging from ISO precisely
+ * because processors genuinely differ. That conversion belongs in each PSP
+ * adapter, not in a constant here — see `minor-unit.ts`, which holds the
+ * exponent and its evidence, and YT-0537, which makes the unit a declared
+ * property of the payment driver so a mismatch fails a parity test instead
+ * of settling a merchant 100x wrong.
+ *
+ * **Prefer `Money` from `money-value.ts` for anything new.** This type names
+ * a currency it does not always hold: the AU fixtures store AUD cents in
+ * `IdrMinorUnits`-typed fields, which is the wart YT-0513 exists to retire.
+ * `Money` carries `{ amountMinor, currency }` and cannot be mistaken that
+ * way. `fromLegacyAmount(value, currency)` is the bridge, and it demands the
+ * currency precisely so this migration could not relabel AUD cents as sen.
  *
  * Points are the platform's own currency (docs/09, docs/07 section 2.1) and
  * are likewise always non-negative integers — there is no fractional point.
  *
  * FORMATTING LIVES IN `money-format.ts`, not here. That module is
  * dependency-free so client components can format without pulling in Zod,
- * and keeping a second copy of `formatIdr` here would mean two places to
- * change if the IDR minor unit is ever redefined — which YT-0506 may still
- * do. There was a second, dead copy here once, unimported and therefore
- * invisible; it would have been missed by exactly that redefinition. There
- * must be exactly one implementation to change.
+ * and it takes its scale from `minor-unit.ts` rather than a literal — which
+ * is why moving IDR to sen changed no code in the formatter at all.
  *
  * Both types are Zod branded types: the only way to obtain a value typed as
  * `IdrMinorUnits` or `Points` is to run a number through the corresponding
@@ -41,14 +42,17 @@ import { z } from "zod";
  * design — that is what makes the brand meaningful.
  */
 
-// IDR 10 billion. Beyond int32, which is why src/openapi/build-document.ts
-// widens money fields to int64 for Go.
-const MAX_SAFE_IDR_MINOR_UNITS = 10_000_000_000;
+// Rp 10 billion, expressed in sen. Raised by exactly 100x when YT-0506
+// settled on sen: leaving the old ceiling would have rejected every amount
+// over Rp 100 million, which is a plausible merchant settlement batch.
+// Far beyond int32, which is why src/openapi/build-document.ts widens money
+// fields to int64 for Go.
+const MAX_SAFE_IDR_MINOR_UNITS = 1_000_000_000_000;
 const MAX_SAFE_POINTS = 10_000_000_000;
 
 export const idrMinorUnitsSchema = z
   .number()
-  .int("IDR amounts must be a whole number of Rupiah, never fractional")
+  .int("IDR amounts must be a whole number of sen, never fractional")
   .min(0, "IDR amounts cannot be negative")
   .max(MAX_SAFE_IDR_MINOR_UNITS, "IDR amount exceeds the sane ceiling for this platform")
   .brand<"IdrMinorUnits">();
@@ -102,9 +106,13 @@ export function subtractPointsClamped(a: Points, b: Points): Points {
  * Converts a settlement value into a points price at a given backing rate,
  * per the pricing shape in docs/09 section 4.1: `points_price = S / B`.
  *
- * Both sides must share a unit. They are Rupiah today; if YT-0506 settles on
- * sen, the rate becomes sen-per-point and BOTH must move together, or every
- * price is 100x wrong.
+ * **Both sides must share a unit**, and YT-0506 proved how sharp that is:
+ * the settlement value moved from Rupiah to sen, so the rate had to move
+ * from Rupiah-per-point to sen-per-point in the same pass. Moving one and
+ * not the other leaves every price 100x wrong with no test failing, because
+ * the two sides are only ever compared to each other. The mock rate now
+ * lives in one place (`mock-backing-rate.ts`) rather than being copied into
+ * four files, for exactly that reason.
  * This is a mock-data convenience, not the real pricing engine — the demand
  * multiplier and its bounds (0.8-1.25) live in the pricing service, not here.
  * Rounds to the nearest whole point; integer arithmetic throughout, no float
@@ -118,4 +126,35 @@ export function pointsPriceFromSettlement(
     throw new Error("backingRateIdrPerPoint must be positive");
   }
   return toPoints(Math.round(settlementValueIdr / backingRateIdrPerPoint));
+}
+
+/** One Rupiah is one hundred sen (YT-0506, settled 2026-09-20). */
+export const SEN_PER_RUPIAH = 100;
+
+/**
+ * A whole-Rupiah amount, stored as sen.
+ *
+ * `rupiah(45_000)` is Rp 45.000 and evaluates to `4_500_000`.
+ *
+ * ## This is the migration seam, not a convenience
+ *
+ * When YT-0506 settled on sen, roughly ninety IDR literals across twenty-odd
+ * files had to move by 100x — and the fixtures for the AU region store **AUD
+ * cents** in the same `IdrMinorUnits`-typed fields (the wart named in
+ * `region-mock-au-listing.ts`). A blanket multiplication would have turned
+ * $12.50 into $1,250: silent, uniform, and wrong by exactly the factor this
+ * ticket exists to prevent.
+ *
+ * Excluding the AU files by hand would have worked once. It would not have
+ * been a property of the code — the next person doing a bulk edit would have
+ * had to know, from nowhere, which literals were which.
+ *
+ * So the currency and the unit are stated at the call site instead. A
+ * literal written `rupiah(45_000)` cannot be confused with one written
+ * `audCents(1_250)`, a bulk edit cannot reach the wrong set because they are
+ * different functions, and the 100x conversion exists in exactly one place
+ * rather than ninety.
+ */
+export function rupiah(wholeRupiah: number): IdrMinorUnits {
+  return toIdrMinorUnits(Math.round(wholeRupiah * SEN_PER_RUPIAH));
 }

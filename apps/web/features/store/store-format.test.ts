@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { toIdrMinorUnits, toPoints } from "@yourtal/contracts/money";
+import { rupiah, toIdrMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { formatExpiryDate, formatListingPrice, formatStockRemaining } from "./store-format";
+import { audCents } from "@yourtal/contracts/money/value";
 
 describe("formatListingPrice", () => {
   it("formats the points price and the face value beside it", () => {
-    const result = formatListingPrice(toPoints(2_500), toIdrMinorUnits(50_000));
+    const result = formatListingPrice(toPoints(2_500), rupiah(50_000));
     expect(result.pointsLabel).toContain("2.500");
     expect(result.faceValueLabel).toContain("Senilai");
     expect(result.faceValueLabel).toContain("Rp");
@@ -30,7 +31,7 @@ describe("formatStockRemaining", () => {
 
 describe("en-AU / AUD (YT-0405)", () => {
   it("formats the points price and AUD face value together", () => {
-    const result = formatListingPrice(toPoints(2_500), toIdrMinorUnits(5_000), "en-AU", "AUD");
+    const result = formatListingPrice(toPoints(2_500), audCents(5_000), "en-AU", "AUD");
     expect(result.pointsLabel).toBe("2,500 points");
     expect(result.faceValueLabel).toBe("Worth $50.00");
   });

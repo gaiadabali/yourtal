@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { formatIdr, formatPoints } from "./money-format";
 import {
   addIdr,
+  rupiah,
   addPoints,
   idrMinorUnitsSchema,
   pointsPriceFromSettlement,
@@ -15,13 +16,13 @@ import {
 
 describe("idrMinorUnitsSchema", () => {
   it("round-trips a valid amount", () => {
-    const parsed = idrMinorUnitsSchema.parse(45_000);
-    expect(parsed).toBe(45_000);
+    const parsed = idrMinorUnitsSchema.parse(4_500_000);
+    expect(parsed).toBe(4_500_000);
   });
 
   const rejectionTable: Array<{ name: string; input: unknown }> = [
     { name: "negative amount", input: -1 },
-    { name: "fractional amount", input: 45_000.5 },
+    { name: "fractional amount", input: 4_500_000.5 },
     { name: "NaN", input: Number.NaN },
     { name: "Infinity", input: Number.POSITIVE_INFINITY },
     { name: "string instead of number", input: "45000" },
@@ -29,7 +30,7 @@ describe("idrMinorUnitsSchema", () => {
     { name: "undefined", input: undefined },
     { name: "boolean", input: true },
     { name: "object", input: { amount: 45_000 } },
-    { name: "amount over the sane ceiling", input: 100_000_000_000 },
+    { name: "amount over the sane ceiling", input: 10_000_000_000_000 },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ input }) => {
@@ -78,27 +79,42 @@ describe("arithmetic helpers", () => {
   });
 
   it("computes a points price from a settlement value and backing rate", () => {
-    // docs/09 section 4.1 worked example: S = 12,000, B = 6 -> 2,000 points
-    const settlement = toIdrMinorUnits(12_000);
-    expect(pointsPriceFromSettlement(settlement, 6)).toBe(2_000);
+    // docs/09 4.1 worked example in sen: S = Rp 12.000, B = 600 sen/point ->
+    // 2,000 points. Both sides of the division moved together, which is the
+    // whole discipline YT-0506 is about.
+    const settlement = rupiah(12_000);
+    expect(pointsPriceFromSettlement(settlement, 600)).toBe(2_000);
   });
 
   it("rejects a non-positive backing rate", () => {
-    expect(() => pointsPriceFromSettlement(toIdrMinorUnits(12_000), 0)).toThrow();
+    expect(() => pointsPriceFromSettlement(rupiah(12_000), 0)).toThrow();
   });
 });
 
 describe("formatting", () => {
-  it("formats IDR with the Rupiah symbol and no decimals", () => {
-    expect(formatIdr(toIdrMinorUnits(45_000))).toContain("45.000");
+  it("formats a whole-Rupiah amount with no decimals", () => {
+    expect(formatIdr(rupiah(45_000))).toContain("45.000");
   });
 
-  // Guards the open YT-0506 decision. IDR is stored as Rupiah today; docs/12,
-  // docs/18 and YT-0041 all say sen. Whoever settles it must change money.ts,
-  // formatIdr and every mock literal together — these fail if only one moves.
-  it("stores IDR as Rupiah, not sen, until YT-0506 settles", () => {
-    expect(formatIdr(toIdrMinorUnits(45_000))).not.toContain("450,");
-    expect(formatIdr(toIdrMinorUnits(100))).toContain("100");
+  /**
+   * The inverse of the guard this replaces.
+   *
+   * That guard read "stores IDR as Rupiah, not sen, until YT-0506 settles",
+   * and it did its job: it held the unit still while nobody had the authority
+   * to set it, and it failed the moment this migration moved. The founder
+   * settled on sen on 2026-09-20, so the assertion turns over rather than
+   * being deleted — the risk it covers did not go away, it reversed.
+   *
+   * A bare `45_000` reaching a money field now means Rp 450, not Rp 45.000.
+   * That is the same 100x error pointing the other way.
+   */
+  it("stores IDR as sen, settled by YT-0506", () => {
+    expect(rupiah(45_000)).toBe(4_500_000);
+    // Rp 45.000 renders exactly as it always did, because the formatter takes
+    // its scale from MINOR_UNIT rather than from a literal.
+    expect(formatIdr(rupiah(45_000))).toContain("45.000");
+    // ...while the raw integer that USED to mean Rp 45.000 is now Rp 450.
+    expect(formatIdr(toIdrMinorUnits(45_000))).toContain("450");
   });
 
   it("formats points with the Indonesian word for points", () => {

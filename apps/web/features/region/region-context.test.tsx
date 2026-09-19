@@ -15,6 +15,11 @@ import { useRegion } from "./use-region";
 // one value — which is the property YT-0405 acceptance criterion 5 needs
 // proven: these three cannot drift apart because nothing here can set them
 // independently.
+// A raw minor-unit integer, deliberately NOT tied to a currency: the whole
+// point of this test is that the same stored value renders as $45.50 under
+// AU and Rp 45,5 under ID, decided only by what `useRegion()` returns. Since
+// YT-0506 made IDR two-decimal as well, both sides now scale by 100 — which
+// is why the digits agree and only the symbol and separators differ.
 const SAMPLE_PRICE = asDisplayIdr(4_550);
 const SAMPLE_POINTS = asDisplayPoints(2_400);
 
@@ -55,7 +60,7 @@ describe("region wiring: currency, number formatting and copy cannot drift apart
   it("ID renders IDR currency and the Indonesian points word together", () => {
     renderPriceCard("ID");
     expect(screen.getByTestId("price").textContent).toContain("Rp");
-    expect(screen.getByTestId("price").textContent).toContain("4.550");
+    expect(screen.getByTestId("price").textContent).toContain("45,5");
     expect(screen.getByTestId("points").textContent).toBe("2.400 poin");
   });
 

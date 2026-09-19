@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
+import { audCents } from "@yourtal/contracts/money/value";
 import {
   partialRedemptionPolicyDescription,
   partialRedemptionPolicyLabel,
@@ -24,9 +25,7 @@ describe("partialRedemptionPolicyDescription", () => {
   });
 
   it("states the minimum spend amount when the policy requires one", () => {
-    expect(partialRedemptionPolicyDescription("minimum_spend", toIdrMinorUnits(75_000))).toContain(
-      "75.000",
-    );
+    expect(partialRedemptionPolicyDescription("minimum_spend", rupiah(75_000))).toContain("75.000");
   });
 });
 
@@ -54,7 +53,7 @@ describe("en-AU (YT-0405)", () => {
   it("states the minimum spend amount in AUD, never a hardcoded Rp", () => {
     const description = partialRedemptionPolicyDescription(
       "minimum_spend",
-      toIdrMinorUnits(7_500),
+      audCents(7_500),
       "en-AU",
       "AUD",
     );

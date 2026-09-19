@@ -14,20 +14,28 @@
  * advertiser can still submit a 3x-ratio campaign; they cannot claim they
  * were not shown what it looks like.
  *
- * Both conversion rates below are the same kind of illustrative mock
- * constant every other mock data module in this app already carries
- * locally rather than importing (see `MOCK_BACKING_RATE_IDR_PER_POINT` in
- * `features/wallet/wallet-history.ts` and `features/burn/burn-data.ts`) —
- * not the real pricing engine, which does not exist yet.
+ * The backing rates now come from `@yourtal/contracts/money/mock-backing-rate`
+ * rather than being declared here. They used to be local copies, on the
+ * reasoning that every other mock module carried its own — which was true,
+ * and was the problem. YT-0506 moved IDR from Rupiah to sen, and a rate
+ * copied into four files is a rate that gets updated in three: the fourth
+ * would have priced every campaign 100x wrong with nothing failing, because
+ * each copy is only ever compared against values that agree with it.
+ *
+ * `MOCK_DATA_COST_IDR_PER_MB` moved with it, from 4 Rupiah to 400 sen. The
+ * RATIO is unaffected — both sides scale — but `dataCostMinorUnits` and
+ * `rewardValueMinorUnits` are named for the stored minor unit and are
+ * rendered as money by the builder, so leaving them in Rupiah would have
+ * made the banner understate both figures by 100x while still quoting a
+ * correct ratio. A wrong number beside a right one is the harder bug.
  */
+import {
+  MOCK_BACKING_RATE_AUD_CENTS_PER_POINT,
+  MOCK_BACKING_RATE_IDR_SEN_PER_POINT,
+} from "@yourtal/contracts/money/mock-backing-rate";
 
-/** Points -> IDR, matching the mock backing rate used elsewhere in the app for the same illustrative purpose. */
-const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
-/** Points -> AUD cents, matching `region-mock-au.ts`'s own mock rate. */
-const MOCK_BACKING_RATE_AUD_CENTS_PER_POINT = 3;
-
-/** IDR 720 for 180 MB in docs/06's own table (30 min at 480p) works out to almost exactly 4 IDR/MB. */
-const MOCK_DATA_COST_IDR_PER_MB = 4;
+/** IDR 720 for 180 MB in docs/06's own table (30 min at 480p) is almost exactly 4 Rupiah/MB, i.e. 400 sen/MB since YT-0506. */
+const MOCK_DATA_COST_IDR_PER_MB = 400;
 /**
  * Illustrative only: Australian mobile data is comparatively cheap and
  * plans are commonly near-unlimited, so this rule is written for the
@@ -62,7 +70,7 @@ export function assessRewardToDataCost(
       : estimatedDataMb * MOCK_DATA_COST_AUD_CENTS_PER_MB;
   const rewardValueMinorUnits =
     currency === "IDR"
-      ? rewardPoints * MOCK_BACKING_RATE_IDR_PER_POINT
+      ? rewardPoints * MOCK_BACKING_RATE_IDR_SEN_PER_POINT
       : rewardPoints * MOCK_BACKING_RATE_AUD_CENTS_PER_POINT;
 
   const ratio =

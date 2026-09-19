@@ -3,8 +3,9 @@ import { voucherSchema } from "../voucher/voucher";
 import { DEFAULT_REFERENCE_INSTANT, addDays, addMinutes, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
 import { generateMerchantLocationAu } from "../internal/sydney";
-import { toIdrMinorUnits } from "../money/money";
+
 import { pickMockMerchant } from "../merchant/merchant-roster";
+import { audCents } from "../money/money-value";
 
 /**
  * AU counterpart to `voucher.mock.ts` — see `region-mock-au-listing.ts`'s
@@ -18,7 +19,7 @@ function auVoucherFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
   // merchant, so a generated one could never match. See merchant-roster.ts.
   const merchant = pickMockMerchant(faker, "AU");
   const merchantName = merchant.name;
-  const faceValueCents = toIdrMinorUnits(faker.number.int({ min: 1_000, max: 40_000 }));
+  const faceValueCents = audCents(faker.number.int({ min: 1_000, max: 40_000 }));
   const issuedDaysAgo = faker.number.int({ min: 0, max: 45 });
   const validForDays = faker.number.int({ min: 7, max: 90 });
   const partialRedemptionPolicy = faker.helpers.arrayElement([
@@ -28,15 +29,13 @@ function auVoucherFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
   ] as const);
   const remainingValueCents =
     partialRedemptionPolicy === "balance_carrying"
-      ? toIdrMinorUnits(
+      ? audCents(
           Math.round(faceValueCents * faker.number.float({ min: 0, max: 1, fractionDigits: 2 })),
         )
       : faceValueCents;
 
   const minimumSpendIdr =
-    partialRedemptionPolicy === "minimum_spend"
-      ? toIdrMinorUnits(Math.round(faceValueCents / 2))
-      : null;
+    partialRedemptionPolicy === "minimum_spend" ? audCents(Math.round(faceValueCents / 2)) : null;
 
   return voucherSchema.parse({
     id: faker.string.uuid(),
@@ -81,8 +80,8 @@ export const auExpiredVoucherFixture: Voucher = voucherSchema.parse({
     district: "Manly",
   },
   title: "Voucher — Wharf Espresso Co",
-  faceValueIdr: toIdrMinorUnits(2_000),
-  remainingValueIdr: toIdrMinorUnits(2_000),
+  faceValueIdr: audCents(2_000),
+  remainingValueIdr: audCents(2_000),
   partialRedemptionPolicy: "single_use_forfeit",
   minimumSpendIdr: null,
   transferable: false,
@@ -106,8 +105,8 @@ export const auExpiringWithinHourVoucherFixture: Voucher = voucherSchema.parse({
     district: "Surry Hills",
   },
   title: "Voucher — Cedar Deli Bar",
-  faceValueIdr: toIdrMinorUnits(5_000),
-  remainingValueIdr: toIdrMinorUnits(5_000),
+  faceValueIdr: audCents(5_000),
+  remainingValueIdr: audCents(5_000),
   partialRedemptionPolicy: "balance_carrying",
   minimumSpendIdr: null,
   transferable: true,

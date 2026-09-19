@@ -189,8 +189,12 @@ describe("VoucherDetailView", () => {
     renderWithRegion(<VoucherDetailView voucherId={cachedVoucher.id} initialDetail={detail} />);
     await flushMicrotasks();
 
-    expect(screen.getByText(/kasir/)).toBeInTheDocument();
+    // Assert the instructions element itself, not a loose /kasir/ match:
+    // the page now also renders "Atau sebutkan kode ini ke kasir:" above the
+    // plain voucher code, so a substring query matches two elements and says
+    // nothing about which one carries the merchant's instructions.
     expect(screen.getByText(instructions)).toBeInTheDocument();
+    expect(instructions).toMatch(/kasir/);
   });
 });
 

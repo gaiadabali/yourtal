@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { NextIntlClientProvider } from "next-intl";
 import type { Region } from "@yourtal/contracts/region";
-import { toIdrMinorUnits } from "@yourtal/contracts/money";
+import { rupiah, toIdrMinorUnits } from "@yourtal/contracts/money";
 import { RegionProvider } from "@/features/region/region-context";
 import { regionDisplayConfig } from "@/features/region/region-config";
 import enAU from "@/messages/en-AU/burn.json";
@@ -47,7 +47,7 @@ describe("BurnSummary", () => {
   it("shows the minimum spend only when the policy requires one", () => {
     const withMinimum = makeListingFixture({
       partialRedemptionPolicy: "minimum_spend",
-      minimumSpendIdr: toIdrMinorUnits(50_000),
+      minimumSpendIdr: rupiah(50_000),
     });
     renderWithRegion(<BurnSummary listing={withMinimum} />);
     expect(screen.getByText("Minimum belanja")).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe("BurnSummary (en-AU, YT-0405)", () => {
   it("states minimum spend in AUD and transferability in English", () => {
     const withMinimum = makeListingFixture({
       partialRedemptionPolicy: "minimum_spend",
-      minimumSpendIdr: toIdrMinorUnits(5_000),
+      minimumSpendIdr: rupiah(5_000),
       transferable: false,
     });
     renderWithRegion(<BurnSummary listing={withMinimum} />, "AU");

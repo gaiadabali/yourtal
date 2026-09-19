@@ -4,6 +4,7 @@ import type { WalletHistoryEntry } from "./wallet-history";
 import { walletHistoryEntrySchema } from "./wallet-history";
 import { DEFAULT_REFERENCE_INSTANT, addDays, addHours, toIsoString } from "../internal/clock";
 import { pointsPriceFromSettlement, toPoints } from "../money/money";
+import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "../money/mock-backing-rate";
 
 /**
  * Illustrative mock backing rate (IDR per point), same role as the constant
@@ -11,7 +12,6 @@ import { pointsPriceFromSettlement, toPoints } from "../money/money";
  * NOT the number a real burn entry would carry: a real one is derived from
  * whatever the ledger actually recorded (see `wallet-history.ts`'s header).
  */
-const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
 
 /**
  * Derives history entries from mock campaigns and vouchers that already
@@ -42,7 +42,7 @@ export function generateWalletHistory(
       kind: "burn",
       occurredAt: voucher.issuedAt,
       description: `Menukar poin untuk voucher ${voucher.merchantName}`,
-      points: pointsPriceFromSettlement(voucher.faceValueIdr, MOCK_BACKING_RATE_IDR_PER_POINT),
+      points: pointsPriceFromSettlement(voucher.faceValueIdr, MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
       direction: "debit",
       relatedId: voucher.id,
     }),

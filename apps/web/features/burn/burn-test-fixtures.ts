@@ -2,7 +2,7 @@ import type { Listing } from "@yourtal/contracts/listing";
 import { listingSchema } from "@yourtal/contracts/listing";
 import type { Balance } from "@yourtal/contracts/balance";
 import { balanceSchema } from "@yourtal/contracts/balance";
-import { toIdrMinorUnits, toPoints } from "@yourtal/contracts/money";
+import { rupiah, toIdrMinorUnits, toPoints } from "@yourtal/contracts/money";
 
 /**
  * Shared listing/balance builders for this feature's tests only (mirrors
@@ -27,8 +27,8 @@ const BASE_LISTING = {
       district: "Menteng",
     },
   ],
-  faceValueIdr: toIdrMinorUnits(100_000),
-  settlementValueIdr: toIdrMinorUnits(30_000),
+  faceValueIdr: rupiah(100_000),
+  settlementValueIdr: rupiah(30_000),
   stockRemaining: 5,
   stockTotal: 10,
   transferable: false,

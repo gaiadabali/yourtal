@@ -249,19 +249,17 @@ Two consequences. **A developer meets this before an operator does**, and will r
 
 The rule, in order of preference: **derive it; if you cannot, guard the copy with a drift test; never leave an unguarded duplicate.** The tell is that the stored version is always the one that looks like a convenience.
 
-
 ## Two agents, one working tree
 
 Running two streams concurrently in a single checkout **cost a verification, not just time**. The frontend stream could not re-run the 320px and 200%-zoom suites because a partial `packages/contracts` change from the backend stream was live on disk: `tsc` failed on files the frontend had never touched, and a half-written `.next` from the failed build destroyed the good one from the successful build minutes earlier.
 
 Note what the damage actually was. No code was lost and no wrong code shipped — what was lost was **the ability to prove something**, and it was lost silently: the failure surfaced as a type error in someone else's feature, which reads like a regression rather than like contention.
 
-**The rule:** parallel streams may share a tree only while they share no build. The moment one owns a package the other compiles against — `packages/contracts` is exactly that package here — they need separate worktrees, or the second stream needs to be told to verify *before* the first starts rather than after.
+**The rule:** parallel streams may share a tree only while they share no build. The moment one owns a package the other compiles against — `packages/contracts` is exactly that package here — they need separate worktrees, or the second stream needs to be told to verify _before_ the first starts rather than after.
 
 **The tell:** a build that succeeded and then failed with no diff of your own in between. That is never flakiness. Check `git status` on the packages you consume before you conclude anything about your own change.
 
 **And the same rule applies to `git add -A`.** Committing a shared tree stages whatever another stream happens to have half-written, so the message describes one change and the commit contains several — including work that does not build yet. Stage your own paths. This was learned by doing it: a commit labelled as a one-file ticket carried a partial currency migration, and the honest repair is to amend the message to say so rather than to rewrite the history into something tidier than the truth.
-
 
 ## A seeded generator is idempotent only for a fixed contract
 
@@ -278,4 +276,4 @@ A corollary about partially-working commands: `pnpm dev:fresh` had never worked 
 Both came out of the ledger proof work and generalise:
 
 - **Make the bad state unrepresentable rather than validated.** A voucher names a branch; a composite foreign key `(listing_id, location_id)` → `listing_location` means it cannot name a branch its own listing does not serve. A jsonb column would have matched the Zod shape more directly and bought nothing. The failure being prevented is a customer sent to a shop that has never heard of the offer.
-- **Do not offer the degraded mode as a constructor option.** The invariant checker takes an `Alerter` as a required argument, so there is no way to build one that can only log — because the version that can only log is the version that ships. The placeholder is named `LoggingAlerter`, for what it is, and carries the warning: *a pager that cannot fail is a pager that cannot tell you it did not reach anyone.*
+- **Do not offer the degraded mode as a constructor option.** The invariant checker takes an `Alerter` as a required argument, so there is no way to build one that can only log — because the version that can only log is the version that ships. The placeholder is named `LoggingAlerter`, for what it is, and carries the warning: _a pager that cannot fail is a pager that cannot tell you it did not reach anyone._

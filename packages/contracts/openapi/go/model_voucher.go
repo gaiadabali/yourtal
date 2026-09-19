@@ -29,9 +29,9 @@ type Voucher struct {
 	MerchantName string `json:"merchantName"`
 	Location MerchantLocation `json:"location"`
 	Title string `json:"title"`
-	// Indonesian Rupiah as an integer number of minor units. PROVISIONAL: the IDR minor unit is not confirmed (YT-0506). These values are currently whole Rupiah, which is what every producer and consumer in this codebase assumes, but ISO 4217 says sen and Xendit publishes no amount-unit spec. Do not settle against this type without checking MINOR_UNIT; a wrong unit is uniformly 100x and silent. Prefer Money, which carries its own currency.
+	// Indonesian Rupiah as an integer number of SEN — one hundredth of a Rupiah. Rp 45.000 is 4500000. Settled by YT-0506 on 2026-09-20: ISO 4217 gives IDR a sen minor unit, Indonesian banking uses it (amounts appear as Rp 1.000,26), and Stripe treats IDR as two-decimal. This settles what we STORE, not what a processor accepts: Xendit publishes no amount-unit spec and Adyen flags IDR as diverging from ISO, so conversion belongs in each PSP adapter. Prefer Money, which carries its own currency.
 	FaceValueIdr int64 `json:"faceValueIdr"`
-	// Indonesian Rupiah as an integer number of minor units. PROVISIONAL: the IDR minor unit is not confirmed (YT-0506). These values are currently whole Rupiah, which is what every producer and consumer in this codebase assumes, but ISO 4217 says sen and Xendit publishes no amount-unit spec. Do not settle against this type without checking MINOR_UNIT; a wrong unit is uniformly 100x and silent. Prefer Money, which carries its own currency.
+	// Indonesian Rupiah as an integer number of SEN — one hundredth of a Rupiah. Rp 45.000 is 4500000. Settled by YT-0506 on 2026-09-20: ISO 4217 gives IDR a sen minor unit, Indonesian banking uses it (amounts appear as Rp 1.000,26), and Stripe treats IDR as two-decimal. This settles what we STORE, not what a processor accepts: Xendit publishes no amount-unit spec and Adyen flags IDR as diverging from ISO, so conversion belongs in each PSP adapter. Prefer Money, which carries its own currency.
 	RemainingValueIdr int64 `json:"remainingValueIdr"`
 	PartialRedemptionPolicy PartialRedemptionPolicy `json:"partialRedemptionPolicy"`
 	MinimumSpendIdr ListingMinimumSpendIdr `json:"minimumSpendIdr"`

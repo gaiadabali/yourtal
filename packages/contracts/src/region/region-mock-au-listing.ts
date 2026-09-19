@@ -3,8 +3,11 @@ import { listingSchema } from "../listing/listing";
 import { DEFAULT_REFERENCE_INSTANT, addDays, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
 import { LONG_MERCHANT_NAME_AU, generateMerchantLocationsAu } from "../internal/sydney";
-import { pointsPriceFromSettlement, toIdrMinorUnits, toPoints } from "../money/money";
+import { pointsPriceFromSettlement, toPoints } from "../money/money";
+
 import { pickMockMerchant } from "../merchant/merchant-roster";
+import { audCents } from "../money/money-value";
+import { MOCK_BACKING_RATE_AUD_CENTS_PER_POINT } from "../money/mock-backing-rate";
 
 /**
  * AU counterpart to `listing.mock.ts` — Sydney flavour, AUD-cents scale
@@ -20,7 +23,6 @@ import { pickMockMerchant } from "../merchant/merchant-roster";
 
 // AUD cents per point. Illustrative only, like the IDR mock rate in
 // listing.mock.ts — not the real pricing engine.
-const MOCK_BACKING_RATE_AUD_CENTS_PER_POINT = 3;
 
 function auListingFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): Listing {
   // Merchant identity comes from the shared roster, never from the faker.
@@ -29,8 +31,8 @@ function auListingFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
   // merchant, so a generated one could never match. See merchant-roster.ts.
   const merchant = pickMockMerchant(faker, "AU");
   const merchantName = merchant.name;
-  const faceValueCents = toIdrMinorUnits(faker.number.int({ min: 1_000, max: 40_000 })); // $10.00–$400.00
-  const settlementValueCents = toIdrMinorUnits(Math.round(faceValueCents * 0.3));
+  const faceValueCents = audCents(faker.number.int({ min: 1_000, max: 40_000 })); // $10.00–$400.00
+  const settlementValueCents = audCents(Math.round(faceValueCents * 0.3));
   const stockTotal = faker.number.int({ min: 5, max: 500 });
   const stockRemaining = faker.number.int({ min: 0, max: stockTotal });
   const status =
@@ -74,7 +76,7 @@ function auListingFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
     partialRedemptionPolicy,
     minimumSpendIdr:
       partialRedemptionPolicy === "minimum_spend"
-        ? toIdrMinorUnits(Math.round(faceValueCents * 0.5))
+        ? audCents(Math.round(faceValueCents * 0.5))
         : null,
     expiresAt: toIsoString(addDays(now, faker.number.int({ min: 7, max: 90 }))),
     status,
@@ -105,12 +107,9 @@ export const auSoldOutListingFixture: Listing = listingSchema.parse({
       district: "Manly",
     },
   ],
-  faceValueIdr: toIdrMinorUnits(2_000), // $20.00
-  settlementValueIdr: toIdrMinorUnits(600), // $6.00
-  priceInPoints: pointsPriceFromSettlement(
-    toIdrMinorUnits(600),
-    MOCK_BACKING_RATE_AUD_CENTS_PER_POINT,
-  ),
+  faceValueIdr: audCents(2_000), // $20.00
+  settlementValueIdr: audCents(600), // $6.00
+  priceInPoints: pointsPriceFromSettlement(audCents(600), MOCK_BACKING_RATE_AUD_CENTS_PER_POINT),
   stockRemaining: 0,
   stockTotal: 100,
   transferable: false,
@@ -136,8 +135,8 @@ export const auLongMerchantNameListingFixture: Listing = listingSchema.parse({
       district: "Chatswood",
     },
   ],
-  faceValueIdr: toIdrMinorUnits(1_000_000), // $10,000.00
-  settlementValueIdr: toIdrMinorUnits(600_000),
+  faceValueIdr: audCents(1_000_000), // $10,000.00
+  settlementValueIdr: audCents(600_000),
   priceInPoints: toPoints(1_500_000),
   stockRemaining: 3,
   stockTotal: 10,

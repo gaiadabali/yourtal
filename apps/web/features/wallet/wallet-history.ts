@@ -3,6 +3,7 @@ import type { Voucher } from "@yourtal/contracts/voucher";
 import { pointsPriceFromSettlement } from "@yourtal/contracts/money";
 import { formatPoints } from "@yourtal/contracts/money/format";
 import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
+import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "@yourtal/contracts/money/mock-backing-rate";
 
 /**
  * Wallet history in plain language (YT-0423: "never transaction codes").
@@ -25,7 +26,6 @@ import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
  * endpoint exists, `wallet-data.ts` is the only place that needs to change
  * to consume it instead of this module.
  */
-const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
 
 export interface WalletHistoryEntry {
   id: string;
@@ -49,7 +49,7 @@ function earnedEntry(campaign: Campaign, locale: SupportedLocale): WalletHistory
 }
 
 function spentEntry(voucher: Voucher, locale: SupportedLocale): WalletHistoryEntry {
-  const cost = pointsPriceFromSettlement(voucher.faceValueIdr, MOCK_BACKING_RATE_IDR_PER_POINT);
+  const cost = pointsPriceFromSettlement(voucher.faceValueIdr, MOCK_BACKING_RATE_IDR_SEN_PER_POINT);
   const t = getWalletTranslator(locale);
   // `cost` is the branded `Points` type; negating it directly through a
   // brand is what @typescript-eslint/no-unsafe-unary-minus objects to.

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CURRENCY_CODES, type Currency } from "./currency";
-import type { IdrMinorUnits } from "./money";
+import { toIdrMinorUnits, type IdrMinorUnits } from "./money";
 
 /**
  * `Money` — an integer amount that carries its own currency. YT-0513.
@@ -130,4 +130,23 @@ export function subtractMoneyClamped(left: Money, right: Money): Money {
 export function compareMoney(left: Money, right: Money): number {
   requireSameCurrency(left, right, "compare");
   return left.amountMinor - right.amountMinor;
+}
+
+/**
+ * An AUD amount in cents, in the legacy `IdrMinorUnits`-typed fields the
+ * schemas still use.
+ *
+ * Arithmetically the identity function. **The name is the entire point.**
+ * `listingSchema.faceValueIdr` holds AUD cents for every AU fixture, and
+ * until the wire migration retires that field name, the only thing standing
+ * between those literals and a 100x error during an IDR unit change is
+ * whether the person doing it happened to know. Writing `audCents(1_250)`
+ * says it in the source, where a bulk edit can see it.
+ *
+ * It routes through `money()` rather than `toIdrMinorUnits` directly, so the
+ * value really is validated as money in a named currency rather than merely
+ * annotated as one.
+ */
+export function audCents(cents: number): IdrMinorUnits {
+  return toIdrMinorUnits(money(cents, "AUD").amountMinor);
 }

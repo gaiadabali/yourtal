@@ -34,6 +34,7 @@
     "./money/value": "./src/money/money-value.ts",
     "./merchant/roster": "./src/merchant/merchant-roster.ts",
     "./money/format": "./src/money/money-format.ts",
+    "./money/mock-backing-rate": "./src/money/mock-backing-rate.ts",
     "./region": "./src/region/region.ts",
     "./region/mock": "./src/region/region.mock.ts",
     "./mock-source": "./src/mock-source.ts",

@@ -3,7 +3,7 @@ import { voucherSchema } from "./voucher";
 import { DEFAULT_REFERENCE_INSTANT, addDays, addMinutes, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
 import { generateMerchantLocation } from "../internal/jakarta";
-import { toIdrMinorUnits } from "../money/money";
+import { rupiah, toIdrMinorUnits } from "../money/money";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 
 export interface GenerateVoucherParams {
@@ -22,7 +22,7 @@ export function generateVoucher(params: GenerateVoucherParams): Voucher {
   // merchant, so a generated one could never match. See merchant-roster.ts.
   const merchant = pickMockMerchant(faker, "ID");
   const merchantName = merchant.name;
-  const faceValueIdr = toIdrMinorUnits(faker.number.int({ min: 15, max: 400 }) * 1_000);
+  const faceValueIdr = rupiah(faker.number.int({ min: 15, max: 400 }) * 1_000);
   const issuedDaysAgo = faker.number.int({ min: 0, max: 45 });
   const validForDays = faker.number.int({ min: 7, max: 90 });
   const partialRedemptionPolicy = faker.helpers.arrayElement([
@@ -88,8 +88,8 @@ export const expiredVoucherFixture: Voucher = voucherSchema.parse({
     district: "Kemang",
   },
   title: "Voucher Kopi Sentosa Rp30.000",
-  faceValueIdr: toIdrMinorUnits(30_000),
-  remainingValueIdr: toIdrMinorUnits(30_000),
+  faceValueIdr: rupiah(30_000),
+  remainingValueIdr: rupiah(30_000),
   partialRedemptionPolicy: "single_use_forfeit",
   minimumSpendIdr: null,
   transferable: false,
@@ -117,8 +117,8 @@ export const expiringWithinHourVoucherFixture: Voucher = voucherSchema.parse({
     district: "Tebet",
   },
   title: "Voucher Belanja Toko Berkah",
-  faceValueIdr: toIdrMinorUnits(50_000),
-  remainingValueIdr: toIdrMinorUnits(50_000),
+  faceValueIdr: rupiah(50_000),
+  remainingValueIdr: rupiah(50_000),
   partialRedemptionPolicy: "balance_carrying",
   minimumSpendIdr: null,
   transferable: true,

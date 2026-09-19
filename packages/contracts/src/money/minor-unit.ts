@@ -95,10 +95,10 @@ export function isUnitSettled(currency: Currency): boolean {
 export class UnsettledMinorUnitError extends Error {
   readonly currency: Currency;
 
-  constructor(currency: Currency, operation: string) {
+  constructor(currency: Currency, operation: string, evidence?: string) {
     super(
       `Refusing to ${operation} in ${currency}: its minor unit is not settled (YT-0506). ` +
-        MINOR_UNIT[currency].evidence,
+        (evidence ?? MINOR_UNIT[currency].evidence),
     );
     this.name = "UnsettledMinorUnitError";
     this.currency = currency;
@@ -119,7 +119,26 @@ export class UnsettledMinorUnitError extends Error {
  * the app, so somebody would eventually remove it.
  */
 export function assertUnitSettled(currency: Currency, operation: string): void {
-  if (!isUnitSettled(currency)) {
-    throw new UnsettledMinorUnitError(currency, operation);
+  assertSettled(MINOR_UNIT[currency], currency, operation);
+}
+
+/**
+ * The refusal itself, against a `MinorUnit` the caller supplies.
+ *
+ * Split out from `assertUnitSettled` when YT-0506 settled IDR, because that
+ * left **no provisional currency in the table** — and a guard with nothing
+ * to refuse is a guard whose refusal path never executes. The test for it
+ * would have had to be deleted or left asserting nothing, and the next
+ * currency to arrive unevidenced would be the first to find out whether this
+ * still worked.
+ *
+ * So the logic takes the record rather than reading the global, and the test
+ * hands it a provisional one. The mechanism stays proved while the table has
+ * nothing provisional in it, which is the only arrangement in which it will
+ * still be correct when something does.
+ */
+export function assertSettled(unit: MinorUnit, currency: Currency, operation: string): void {
+  if (unit.status !== "confirmed") {
+    throw new UnsettledMinorUnitError(currency, operation, unit.evidence);
   }
 }

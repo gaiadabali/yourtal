@@ -260,6 +260,8 @@ Note what the damage actually was. No code was lost and no wrong code shipped â€
 
 **The tell:** a build that succeeded and then failed with no diff of your own in between. That is never flakiness. Check `git status` on the packages you consume before you conclude anything about your own change.
 
+**And the same rule applies to `git add -A`.** Committing a shared tree stages whatever another stream happens to have half-written, so the message describes one change and the commit contains several â€” including work that does not build yet. Stage your own paths. This was learned by doing it: a commit labelled as a one-file ticket carried a partial currency migration, and the honest repair is to amend the message to say so rather than to rewrite the history into something tidier than the truth.
+
 
 ## A seeded generator is idempotent only for a fixed contract
 

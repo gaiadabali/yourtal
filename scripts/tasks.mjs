@@ -150,6 +150,20 @@ lines.push(
   "",
 );
 
+// Epics answer a different question from phases: "where can I put someone
+// today". A Done-only column could not answer it — with nothing yet through
+// the review gate it read 0% for every epic, which is true and useless.
+// `Ready` is the load-bearing column: todo tasks whose dependencies are all
+// settled. `Left` is the work still to do, so a small Ready over a large Left
+// reads as a bottleneck rather than as progress.
+const SETTLED = new Set(["done", "review", "doing"]);
+const estDays = (e) => {
+  const n = Number.parseFloat(e);
+  return Number.isNaN(n) ? 0 : /h$/.test(e) ? n / 8 : n;
+};
+const isReady = (t) =>
+  t.status === "todo" && (t.deps ?? []).every((d) => SETTLED.has(byId.get(d)?.status));
+
 lines.push("### By epic", "");
 const epics = [...new Set(tasks.map((t) => t.epic))].filter(Boolean).sort();
 lines.push(
@@ -157,9 +171,27 @@ lines.push(
     epics.map((e) => {
       const ts = tasks.filter((t) => t.epic === e && t.status !== "cut");
       const d = ts.filter((t) => t.status === "done").length;
-      return [`\`${e}\``, `${d}/${ts.length}`, `${pct(d, ts.length)}%`];
+      const r = ts.filter((t) => t.status === "review").length;
+      const g = ts.filter((t) => t.status === "doing").length;
+      const ready = ts.filter(isReady).length;
+      const left = ts
+        .filter((t) => t.status === "todo" || t.status === "doing" || t.status === "blocked")
+        .reduce((sum, t) => sum + estDays(t.est), 0);
+      const bar = "█"
+        .repeat(Math.round(pct(d, ts.length) / 10))
+        .padEnd(Math.round(pct(d + r, ts.length) / 10), "▓")
+        .padEnd(10, "░");
+      return [
+        `\`${e}\``,
+        `${d}/${ts.length}`,
+        String(r),
+        String(g),
+        ready ? `**${ready}**` : "—",
+        `${Math.round(left)}d`,
+        `\`${bar}\` ${pct(d + r, ts.length)}%`,
+      ];
     }),
-    ["Epic", "Done", "%"],
+    ["Epic", "Done", "Review", "Doing", "Ready", "Left", "Settled"],
   ),
   "",
 );

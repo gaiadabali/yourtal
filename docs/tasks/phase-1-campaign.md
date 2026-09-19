@@ -16,11 +16,19 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - Authz seam as specified: `PrincipalService.resolve()` is the single assembly point and `pdp.requireAction(...)` is called identically at every route, so **YT-0500 changes only the body of `resolve()`** and no call site moves
 
 ### YT-0101 · Campaign model and lifecycle
-`todo` · P1 · adplatform · 5d · dep: YT-0100, YT-0031
+`review` · P1 · adplatform · 5d · dep: YT-0100, YT-0031
 
-- [ ] Campaign → creative → reward config → question bank, with draft/review/live/paused/ended states
-- [ ] Reward config draws from a funded point allocation and hard-stops at zero
-- [ ] Terms shown to a user at entry are frozen for the duration of their watch
+**Contract + storage landed. `pnpm verify` 11/11, 1913 tests, lint clean, `pnpm dev:fresh` green through 12 migrations.**
+
+- [x] **Lifecycle states, with the transitions enumerated.** `draft → in_review → live/rejected`, `live ⇄ paused`, both to `ended`, `rejected → draft`. There is deliberately **no `draft → live`**: a campaign that can publish itself makes review advisory. Every ordered pair is asserted, including all 27 that must be refused — a transition table nobody has seen reject anything has not been shown to work
+- [x] **The state set is the union of two incomplete ones.** This ticket said *draft/review/live/paused/ended*; `apps/web`'s `campaign-draft-status.ts` said *draft/in_review/live/paused/rejected* and explicitly flagged the decision to the architect. **Neither carried both `rejected` and `ended`** — review said no and it never ran, versus it ran and finished. Different facts, different next actions
+- [x] **`campaigns.status` is dropped and derived.** The viewer-facing status comes from `lifecycle_state` via `publicStatusOf`; storing both would be two copies of one fact. `publicStatusOf` returns `undefined` for draft/in_review/rejected rather than defaulting — a default would let a draft appear on the board as a finished campaign
+- [x] **Reward config links a campaign to a `ledger.allocation`, and carries no balance.** The hard stop already existed — `CHECK (remaining_points >= 0)` plus a conditional drawdown that matches no row when exhausted. What was missing was the link: a campaign naming no allocation has nothing to hard-stop against. `allocation_id` is deliberately **not** a foreign key, because that would hand the app role a read dependency on value-zone state
+- [x] **Terms are frozen as immutable versions, not per-session copies.** Editing a live campaign mints a new version; a watch references the one it entered under. `GRANT SELECT, INSERT` only — a frozen promise the app can rewrite is not frozen. Under O-1 the stakes are higher than they look: the reward is all or nothing at completion, so a viewer gives the full thirty minutes before learning what they get, and there is no partial credit to soften a change made at minute twenty-nine
+- [x] **YT-0548 closed on the way.** `chapters` and `videoSource` were required fields with no storage, so every row was unparseable as a `Campaign`. Now `campaign.chapter` (no `end_seconds` — a chapter's end IS the next one's start) and `campaign.video_source` (`kind` plus per-kind fields behind a CHECK, so the union stays additive). **Adding the tables was not enough**: the seed did not write them, which would have been the same bug with more scaffolding. `seed.test.ts` now reassembles a campaign from Postgres and parses it through `campaignSchema`
+- [x] **Found by that round trip: quick campaigns legitimately have no chapters, and the contract only permitted it by omission.** `z.array()` with no bound. The seeded split is exact — long_form 5, quick 0 — so `campaignSchema` now states the rule in both directions. The reverse half is the one that would have been missed: chapters on a sixty-second clip are navigation furniture for a video with nowhere to navigate
+- [ ] ⚠️ **Question bank not modelled here** — that is YT-0102, which depends on this. The campaign carries `questionCount`; the bank itself is a separate aggregate with its own ≥3× rule
+- [ ] ⚠️ **`rewardWeight` still has no consumer, and YT-0124's open question stands.** Stored, because dropping a field mid-decision is worse than carrying one whose purpose is being settled — but under O-1 there is no partial credit to allocate, so `chapterRewardPoints` has no caller on the value path. Either it drives a progress curve and should be renamed to say so, or it goes. **Per-chapter points are never stored**, which is the half that matters
 
 ### YT-0102 · Question bank authoring
 `todo` · P1 · adplatform · 5d · dep: YT-0101

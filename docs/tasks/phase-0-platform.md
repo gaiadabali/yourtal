@@ -266,7 +266,9 @@
 - [ ] ⚠️ **The failure mode to design against is the diagnosis, not the flake.** This surfaced as `Hook timed out in 10000ms` in a `beforeAll`, which reads as a slow database rather than as two packages colliding. A test that fails for a reason its message does not name is one that gets rerun until it passes
 
 ### YT-0548 · Storage for campaign chapters and video source
-`todo` · P0 · media · 3d · dep: YT-0503
+`review` · P0 · media · 3d · dep: YT-0503
+
+**Closed by YT-0101's migration `20260920000012_campaign_lifecycle.sql`, 2026-09-20.** `campaign.chapter` and `campaign.video_source` exist, the seed writes them, and `seed.test.ts` reassembles a campaign from Postgres and parses it through `campaignSchema` — which is the only assertion that distinguishes *the columns exist* from *the database can produce a valid campaign*. Adding the tables without writing them would have been the same bug with more scaffolding.
 
 - **Found by the contracts↔migrations drift gate on its first run**, and confirmed against the live database: `campaign.campaigns` has 13 columns and **neither `chapters` nor `videoSource`**. Both are **required** in `campaignSchema`, so **every row in that table today is unparseable as a `Campaign`** — the database cannot produce a valid one. It is invisible only because Phase U reads mocks; it becomes a total outage of the watch flow the moment a real API serves a campaign
 - [ ] `campaign.chapter` stores `(campaign_id, ordinal, title, start_seconds, reward_weight)` — **no `end_seconds` column.** A chapter's end is the next chapter's start, or the campaign's duration for the last; storing it is the derived-value bug, and the contract already refuses to carry it

@@ -377,3 +377,26 @@
 - **Verified: `MAPPINGS` in `schema-drift.test.ts` covers listing, voucher, campaign, campaignTerms, campaignRewardConfig, watchSession and merchantLocation — and none of `businessSchema`, `BusinessMember`, `BillingContact` or `KybDocument`.** The gate that exists to catch a contract landing ahead of its migration **silently does not run for the one module that has a live API surface**
 - [ ] Business schemas added to `MAPPINGS`, with any genuine gaps recorded in `fieldsAwaitingStorage` rather than left implicit
 - [ ] ⚠️ **The gate should fail when a mapped schema is missing**, not only when a mapped field is. A per-schema opt-in list silently excludes whatever nobody remembered to add, which is the same failure one level up — the coverage table needs asserting in both directions, exactly as YT-0536 does for the boundary faults
+
+### YT-0556 · Health endpoint
+`review` · P0 · platform · 1d · dep: YT-0552
+
+- [x] `GET /api/health` at `apps/api/src/shared/health/` — a real `SELECT 1` against Postgres and a Cerbos `/_cerbos/health` fetch, **run in parallel**, returning 503 when either fails
+- [x] ✅ **Marked `@PublicRoute` deliberately, and the reason is the good part: a Cerbos outage must not hide the endpoint that reports the Cerbos outage.** A health check behind the dependency it checks reports nothing at the only moment it matters
+- [ ] Add to the deploy health-check path in YT-0532, which currently has nothing real to probe
+
+### YT-0557 · Load the root `.env` properly
+`review` · P0 · infra · 1h · dep: —
+
+- [x] `pnpm dev` died instantly on a missing `DATABASE_URL` because **nothing loaded the root `.env`**, and `atlas.mjs` carried a hand-rolled parser working around it — a local fix for a global problem, which is the shape `docs/13c` warns about
+- [x] Now Node's native `--env-file-if-exists` / `process.loadEnvFile`, with **real process environment taking precedence** over the file
+- [x] ⚠️ **This is what makes YT-0554 urgent rather than theoretical.** The `.env` is now reliably loaded, so the superuser `DATABASE_URL` in it is now reliably used
+
+### YT-0558 · Test configs hard-code `DATABASE_URL`, which defeats sabotage
+`todo` · P0 · platform · 1h · dep: —
+
+- **Two sessions independently hit this within hours.** `vitest.config.ts` sets `env.DATABASE_URL`, and that **overrides a value passed on the command line** — so pointing the database at a dead host to prove a suite really talks to it comes back **green**, and reads as proof of exactly the opposite
+- That it happened twice makes it a property of this repo rather than a mistake either person made. The house rule is to prove a check by breaking what it catches; this configuration **silently disarms that rule** for every database-backed suite
+- [ ] The value under test is resolved from the environment first, with the config supplying only a fallback
+- [ ] A comment at each site naming why, since the next person will reach for the convenient form again
+- [ ] ⚠️ **After fixing, re-run the sabotage that previously passed** and confirm it now fails — a fix to a verification mechanism has to be verified by the mechanism it repairs

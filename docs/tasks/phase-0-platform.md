@@ -362,8 +362,14 @@
 - [ ] ⚠️ **Until this lands, every `apps/web` screen is unverified against real data.** The UI is substantially built; it has just never met the backend
 
 ### YT-0554 · The API must not connect to Postgres as a superuser
-`todo` · P0 · platform · 2d · dep: YT-0552
+`review` · P0 · platform · 2d · dep: YT-0552
 
+- [x] ✅ **Done and verified independently 2026-09-20.** `DATABASE_URL` is now `yourtal_app`, `DATABASE_OWNER_URL` is the owner, and `has_table_privilege` reports **owner `t`, app `f`** on `ledger.entry`. That write would have succeeded from application code before this change
+- [x] The boot check **queries `pg_roles` rather than parsing the username out of the URL** — a username is what someone typed, the catalogue is what the server will actually permit
+- [x] It runs in `OnApplicationBootstrap`, **not a module factory**: `new Pool()` is lazy and does not connect, so a check written there would first fire on the first query — after the app is already serving and reporting healthy
+- [x] Atlas reads `DATABASE_OWNER_URL` with **no fallback to `DATABASE_URL`**, because a fallback would silently re-create the bug this ticket exists to fix
+- [x] **CI was running everything as the superuser too**, so the grants were decorative there as well. `integration.yml` now uses the app role, with the owner only for schema bootstrap
+- [x] Proved by breaking it **twice**, confirming the break landed each time — including sabotaging the new test's own assertion and watching 2 of 3 fail. **A test for a control that cannot fail is worth nothing**
 - **Verified 2026-09-20: `pg_roles` shows `yourtal` with `rolsuper = t` and `rolbypassrls = t`, and `.env` points `DATABASE_URL` at it.** Only `apps/api/vitest.config.ts` uses the least-privilege `yourtal_app`
 - ⚠️ **So role separation is enforced in tests and bypassed by the running application.** Every grant boundary built so far is decorative at runtime: `REVOKE ALL ON SCHEMA ledger FROM yourtal_app`, `ledger.daily_proof` being INSERT/SELECT only so a day can be proved once, the append-only entry grants, the frozen `campaign.terms_version`. A superuser connection ignores all of it, and **`BYPASSRLS` means row-level security will not apply either, the moment RLS exists**
 - This is the eighth instance of the `docs/13c` pattern and the most expensive shape of it: not a gate that fails to check, but **a control that was built, tested, and then not used**

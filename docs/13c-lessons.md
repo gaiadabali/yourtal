@@ -203,3 +203,13 @@ The second one is the point. **That operation had never been checked against the
 **A permission boundary is a test that runs in production.** Every operation crossing it gets asked, once, whether it has the authority it claims — which is why risk 45 (the app connecting as a superuser) is worse than it looks: it does not merely grant too much, it **suppresses that question for every operation at once**.
 
 And the reason this surfaced as a red test rather than an unmet legal obligation is that the DSAR handlers were built to report `status: "failed"` and `complete: false` rather than claim success. **A handler that swallowed the permission error would have satisfied the suite and failed the user** — the same distinction as a checker that can only log.
+
+## An idempotent operation that short-circuits never runs the path it is trusted for
+
+While fixing the superuser problem, `pnpm db:seed` passed locally against the narrowed app role — and would have **failed on CI's fresh database**. The seed inserts vouchers, the app role no longer may, and the local run never found out **because the database was already seeded and the insert was a no-op**.
+
+Idempotency is the property that made it safe to re-run and the property that hid the failure. **A second run of an idempotent job exercises the skip, not the work** — so a green local run says the guard worked, and says nothing about the operation behind it.
+
+This is the same shape as risk 45 one level along: **green because the interesting path never ran.** It joins the guarded in-memory fallback that every test quietly selected, and the CI suite whose Postgres-backed tests all skipped.
+
+**The check that costs nothing: run it against a fresh database before believing it.** `pnpm dev:fresh` rather than `pnpm db:seed`, and treat "it passed locally" for any idempotent job as unproven until it has run from empty.

@@ -97,8 +97,9 @@
 - [ ] Hand-rolled validation, error and dirty-state handling across a multi-step builder is exactly where form bugs live
 
 ### YT-0526 · Testable HLS fixture for the player
-`todo` · PU · web · 1d · dep: YT-0521
+`review` · PU · web · 1d · dep: YT-0521
 - [ ] YT-0412's keyboard-seeking AC is **untestable, not failing**: the shared placeholder stream's 59 MB segment aborts before the video reports a duration
+- [x] ✅ **Closed for real this time, verified on disk 2026-09-20.** `use-watch-session.ts` reads `campaign.videoSource.manifestUrl` at both call sites; `features/player/video-source.ts` and `apps/web/public/media` are **deleted**, taking 9 MB and the duplicate fixture with them. The origin is now the only HLS path, so per-segment delivery logging is exercised by the real player rather than by a test alone
 - ⚠️ **Correction 2026-09-20: this was reported closed and is not.** Both campaign mocks now carry a correct local manifest URL, guarded by a sabotage-tested drift test — but `use-watch-session.ts` **never reads `campaign.videoSource`**. It uses its own `MOCK_HLS_MANIFEST_URL`. The contract field carries a correct value the player ignores, which is worse than an obviously-missing one because it looks done from the contract side
 - ⚠️ **Two HLS fixtures exist.** `packages/media/fixtures` (2.7 MB, 19 files, served from MinIO) and `apps/web/public/media` (9.0 MB, 28 files, served from Next). Two sessions built them in parallel, unaware, and **their file headers give the same three reasons** — multi-segment, genuinely multi-bitrate, local. Independent convergence on the design; pure waste on the artifact
 - ✅ **DECIDED: the MinIO origin is canonical.** Production never serves video from `public/`, and the origin is the only one that produces **per-segment delivery logs** — the `docs/22` control that survived the web-fraud audit. A player wired to the fixture that cannot be logged means that control can never be exercised end to end, which would make YT-0521 decorative

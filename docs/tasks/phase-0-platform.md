@@ -150,13 +150,17 @@
 ### YT-0032 · Zitadel deployed, realm per country
 `todo` · P0 · platform · 5d · dep: YT-0516
 
+- **Deferred 2026-09-20 per decision N-3.** Auth is email and password behind an IdentityProvider seam (YT-0540/0541); Zitadel stays in the local stack and off the critical path. Kept because per-region realm isolation is still the right answer for a deployed multi-region identity provider — it no longer gates anything.
 - Re-parented onto the local stack (YT-0516): this needed _a_ service, not a _managed_ one. The cloud task now covers deployment only.
 - [ ] Self-hosted per region, backed by its own Postgres schema
 - [ ] Realms isolated; no cross-region user lookup is possible
 
 ### YT-0033 · Phone OTP login flow
-`todo` · P0 · platform · 5d · dep: YT-0032
+`todo` · P0 · platform · 5d · dep: YT-0540, YT-0538
 
+- **Re-parented 2026-09-20: `YT-0032` → `YT-0540`, `YT-0538`.** This needed **a login and an OTP channel**, not *Zitadel specifically*. Chained to a task N-3 deferred, it was transitively blocking **20 tasks** — the third time this session a deferral was written in prose while the `dep:` line kept the old gate, and the graph follows the `dep:` line.
+- The OTP channel is YT-0538’s simulator until a provider is engaged, which is exactly the point of the driver seam: the **verify step is real code** even while the token is simulated, so engaging a real provider is a driver swap rather than a rewrite.
+- ⚠️ Note YT-0542: the fraud model rests on a phone anchor, and email-and-password alone makes a fake account nearly free. This task is what closes that, so it is worth more than its position suggests.
 - [ ] OTP via an Indonesian-capable provider; rate-limited per number, per IP, per device
 - [ ] Enumeration-safe responses; SIM-swap risk documented
 - [ ] One number maps to one account per region

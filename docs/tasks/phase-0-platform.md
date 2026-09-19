@@ -99,6 +99,12 @@
 ### YT-0526 · Testable HLS fixture for the player
 `todo` · PU · web · 1d · dep: YT-0521
 - [ ] YT-0412's keyboard-seeking AC is **untestable, not failing**: the shared placeholder stream's 59 MB segment aborts before the video reports a duration
+- ⚠️ **Correction 2026-09-20: this was reported closed and is not.** Both campaign mocks now carry a correct local manifest URL, guarded by a sabotage-tested drift test — but `use-watch-session.ts` **never reads `campaign.videoSource`**. It uses its own `MOCK_HLS_MANIFEST_URL`. The contract field carries a correct value the player ignores, which is worse than an obviously-missing one because it looks done from the contract side
+- ⚠️ **Two HLS fixtures exist.** `packages/media/fixtures` (2.7 MB, 19 files, served from MinIO) and `apps/web/public/media` (9.0 MB, 28 files, served from Next). Two sessions built them in parallel, unaware, and **their file headers give the same three reasons** — multi-segment, genuinely multi-bitrate, local. Independent convergence on the design; pure waste on the artifact
+- ✅ **DECIDED: the MinIO origin is canonical.** Production never serves video from `public/`, and the origin is the only one that produces **per-segment delivery logs** — the `docs/22` control that survived the web-fraud audit. A player wired to the fixture that cannot be logged means that control can never be exercised end to end, which would make YT-0521 decorative
+- The `public/` copy is the duplicate that **looks like a convenience**, which `docs/13` names as the tell. It is 9 MB in git forever, and only one file references it. If a no-Docker path is genuinely wanted later it gets its own task, an owner and a drift test — not an unowned second copy
+- [ ] `use-watch-session.ts` reads `campaign.videoSource.manifestUrl`; `features/player/video-source.ts` and `apps/web/public/media` are deleted in the same pass
+- [ ] Player and e2e tests pass against the origin, with `pnpm dev:up` as the stated prerequisite
 - [ ] Serve a small, real, multi-segment HLS fixture from the local MinIO origin (YT-0521)
 - [ ] Then close YT-0412's Playwright criterion against it
 

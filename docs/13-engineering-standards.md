@@ -299,3 +299,11 @@ This is the fifth instance this week of the same shape, and by now it is the hou
 | `turbo run lint`       | Linted 68 files of 565                                                      |
 
 Every one passed. Every one was believed to cover something it did not touch. **The question to ask at review is not “is the gate green” but “what set of files did this command actually read”** — and the cheapest way to answer it is to break something on purpose and watch the gate fail.
+
+## `.ts` means two things, and three tools have now been bitten
+
+HLS segments are MPEG **transport streams**, named `.ts` — the same extension TypeScript uses. Prettier parsed binary video as TypeScript and failed the format gate. `tsc` reported `File appears to be binary` on the same files. Both were fixed locally by the person who hit them, in different packages, without either knowing the other had.
+
+**Any tool that globs `**/*.ts` will do this**, so the fix belongs at the fixture directory and applies to every such tool at once: exclude it in `.prettierignore`, in `tsconfig.json`, and in anything added later that walks the tree. The failure is loud but the diagnosis is not — "binary file" in a typecheck reads like a corrupt checkout, not like a naming collision.
+
+The wider point is the one that cost the time: **two sessions hit the same root cause and each fixed it locally.** A fix applied where it was felt rather than where it originates is a fix the next person gets to discover again.

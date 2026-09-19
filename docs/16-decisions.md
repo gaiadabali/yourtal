@@ -183,3 +183,21 @@ It never fired only because **Chrome declines to set `ended` on a seek** — `en
 - Playback-rate lock, foreground and wake-lock enforcement.
 
 The player-side rule is **defence in depth, not the control**: the UI must not offer completion on a seek even though the server would refuse it, because a UI that appears to reward scrubbing teaches people to try.
+
+## Every reward decision is server-side (2026-09-20)
+
+| #       | Decision                                                                                                                                                                                                                                 |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **O-5** | **All reward computation is server-side. The front end reports status and displays; it never decides, scores or totals.** Founder decision, generalising the answer-key finding (risk 46) into a rule that covers the whole reward path. |
+
+**What it forbids, concretely:**
+
+- The answer key reaching the browser in any form, and client-side scoring of any kind (risk 46).
+- The client computing a granted amount. `BASE_REWARD_FRACTION` multiplying `campaign.rewardPoints` in a client module is the live example, and YT-0561 moves it.
+- A completion endpoint that accepts _"I finished"_. YT-0553 already refuses this: `complete` re-reads coverage and judges, and a test asserts the controller has **no method capable of taking a completion claim**, so one cannot be added quietly later.
+
+**What the front end may still do**, because the distinction matters and a rule read too broadly produces a worse product: it may show an **expected** reward before and during a campaign, show progress, and show a result the server returned. What it must never do is arrive at a number the server then trusts, or display a figure derived from a second constant rather than from the server's value.
+
+**Why this is the right posture and not merely the cautious one.** Shipping as a web app already cost us Play Integrity and App Attest ([`18`](18-engines.md) §5), so the client is unattestable by construction — anything it computes is a suggestion from an unauthenticated party. Under **O-1** the reward is all-or-nothing on full playback plus questions, which concentrates the entire economic decision into one moment; a decision made once, for the full amount, must be made where it cannot be forged. And it makes the three existing server-side controls load-bearing rather than decorative: coverage-based completion (O-4), checkpoint tokens at randomised timestamps, and per-segment delivery logs.
+
+**The corollary that is easy to lose:** a client that no longer decides must still **report honestly**, because the server's evidence is assembled from what the client sends. A progress report is a claim to be judged, never a fact to be recorded — which is why `isFullyWatched` asks what is _missing_ rather than summing what was claimed.

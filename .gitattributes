@@ -1,0 +1,62 @@
+# Line endings and binary handling.
+#
+# This repo is authored on Windows and deployed to Linux (Helios). Without
+# this file, `core.autocrlf=true` writes CRLF into every checked-out text
+# file, and a shell script that reaches a Linux host with CRLF fails as
+# `bad interpreter: /usr/bin/env sh^M` — a documented failure in this
+# organisation's fleet notes, not a hypothetical.
+#
+# `text=auto eol=lf` normalises everything to LF in the repository AND in
+# the working tree, so what is committed is what runs on the server, and
+# every editor in use handles LF fine. It also ends the several-hundred-line
+# "LF will be replaced by CRLF" warning on every commit, which was training
+# everyone to ignore git's output.
+* text=auto eol=lf
+
+# Files where LF is not a preference but a correctness requirement: these
+# are executed by a POSIX shell or a Linux container.
+*.sh              text eol=lf
+*.mjs             text eol=lf
+*.sql             text eol=lf
+Dockerfile*       text eol=lf
+*.yml             text eol=lf
+*.yaml            text eol=lf
+.githooks/*       text eol=lf
+.env.example      text eol=lf
+
+# Windows-only scripts genuinely want CRLF.
+*.ps1             text eol=crlf
+*.bat             text eol=crlf
+*.cmd             text eol=crlf
+
+# HLS media fixtures. MPEG transport streams use the `.ts` extension, which
+# collides with TypeScript — Prettier has parsed these as source and `tsc`
+# has reported "File appears to be binary", each fixed locally by whoever
+# hit it first (see docs/13c). Declaring them binary here fixes it at the
+# origin for every tool that consults gitattributes, and stops git
+# attempting line-ending conversion on video, which would corrupt it.
+#
+# Deliberately scoped to the fixture directory: `*.ts` globally would mark
+# the entire TypeScript codebase binary and destroy every diff.
+packages/media/fixtures/**/*.ts   binary
+packages/media/fixtures/**/*.m3u8 text eol=lf
+
+# Binary assets — never convert, never diff as text.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+*.mp4  binary
+*.pdf  binary
+
+# Generated. Collapse in reviews so a real change is not buried in noise,
+# but still diffable on request with `git diff --text`.
+pnpm-lock.yaml                        linguist-generated=true -diff
+packages/contracts/openapi/go/**      linguist-generated=true
+packages/contracts/openapi/*.json     linguist-generated=true
+services/ledger/internal/store/sqlcgen/** linguist-generated=true
+TASKS.md                              linguist-generated=true

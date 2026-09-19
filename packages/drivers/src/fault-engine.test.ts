@@ -33,7 +33,10 @@ describe("FaultEngine", () => {
     // flaky test, a flaky test gets retried until it passes, and a real
     // failure hides inside the retry.
     const sequence = (): string[] => {
-      const engine = new FaultEngine({ kind: "transient_5xx_then_success", failuresBeforeSuccess: 2 });
+      const engine = new FaultEngine({
+        kind: "transient_5xx_then_success",
+        failuresBeforeSuccess: 2,
+      });
       return [engine.nextCall(), engine.nextCall(), engine.nextCall(), engine.nextCall()];
     };
     expect(sequence()).toStrictEqual(sequence());
@@ -119,8 +122,6 @@ describe("idempotency under the timeout fault", () => {
       reference: "top-up",
     });
 
-    expect(replay._unsafeUnwrap().providerReference).toBe(
-      first._unsafeUnwrap().providerReference,
-    );
+    expect(replay._unsafeUnwrap().providerReference).toBe(first._unsafeUnwrap().providerReference);
   });
 });

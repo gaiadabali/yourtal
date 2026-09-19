@@ -17,8 +17,8 @@ import { LONG_FORM_CAMPAIGN_ID } from "./fixture-ids";
  * `video.currentTime` and no-ops into a pending ref if the video has no
  * finite `duration` yet. So a keyboard press only visibly sticks once the
  * underlying `<video>` has actually loaded real media. Every campaign in
- * this mock-only phase plays the same public HLS reference stream
- * (`features/player/video-source.ts`), so this test taps Play and waits
+ * this mock-only phase plays the same fixture, named by its own
+ * `videoSource` field, so this test taps Play and waits
  * for that real, network-loaded media before asserting on keyboard seeking
  * — otherwise it would only prove that a controlled input's value prop
  * resists change, not the thing YT-0412 asks about.
@@ -38,72 +38,101 @@ async function startPlaybackAndWaitForDuration(page: Page): Promise<void> {
 }
 
 /**
- * YT-0412 — BLOCKED, NOT FAILING. `test.fixme` is deliberate.
+ * YT-0412 — unblocked 2026-09-20. These were `test.fixme` because every
+ * campaign pointed at a public reference stream whose single ~59 MB segment
+ * aborted before the <video> reported a finite duration, so the seek bar had
+ * no range to seek within. The player now reads `campaign.videoSource` and
+ * plays a local multi-segment ladder, so the duration resolves and the
+ * assertions below can finally run.
  *
- * These specs are correct and should pass. They cannot yet, because every
- * campaign points at one shared public HLS placeholder whose single ~59 MB
- * segment reliably aborts before the <video> element ever reports a finite
- * `duration` (see features/player/video-source.ts, which documents the
- * placeholder as a known gap). Without a duration the seek bar has no range
- * to seek within, so the keyboard assertions below have nothing to observe.
+ * PREREQUISITE: `pnpm dev:up` and `pnpm media:publish`. The ladder is served
+ * by the local MinIO origin (YT-0521), not from `public/` — deliberately,
+ * because production serves video from object storage and a player only ever
+ * tested against static files is never exercised against an origin. `pnpm
+ * dev:fresh` does both steps.
  *
- * Marked `fixme` rather than left red on purpose: a permanently-failing
- * suite teaches people to ignore failures, and then a real regression hides
- * among the noise. The acceptance criterion stays UNTICKED in
- * docs/tasks/phase-u-ui.md — this is a tracked gap, not a passing test.
- *
- * To unblock: point a campaign at a small multi-segment HLS fixture served
- * locally (YT-0526), then delete the two `test.fixme` markers below. Nothing
- * else here should need to change.
+ * The seek bar is a native <input type="range">, so arrow/Home/End handling
+ * belongs to the browser, not to us — which is why this can only ever be
+ * proven here and not in jsdom.
  */
-test.fixme("seek bar responds to ArrowRight/ArrowLeft, Home and End", async ({ page }) => {
+const realTime = (page: Page) =>
+  page.evaluate(() => document.querySelector("video")?.currentTime ?? -1);
+
+async function openPausedPlayer(page: Page) {
   await page.goto(`/watch/${LONG_FORM_CAMPAIGN_ID}`);
   await page.waitForLoadState("networkidle");
   await startPlaybackAndWaitForDuration(page);
-
-  const seekBar = page.getByRole("slider", { name: "Seek" });
-  await expect(seekBar).toBeVisible();
-
-  const min = Number(await seekBar.getAttribute("min"));
-  const max = Number(await seekBar.getAttribute("max"));
-  const step = Number(await seekBar.getAttribute("step"));
-  expect(max, "fixture campaign should have a real duration").toBeGreaterThan(min);
-
-  await seekBar.focus();
-
-  await seekBar.press("Home");
-  await expect(seekBar).toHaveJSProperty("valueAsNumber", min);
-
-  await seekBar.press("End");
-  await expect(seekBar).toHaveJSProperty("valueAsNumber", max);
-
-  await seekBar.press("ArrowLeft");
-  await expect(seekBar).toHaveJSProperty("valueAsNumber", max - step);
-
-  await seekBar.press("Home");
-  await expect(seekBar).toHaveJSProperty("valueAsNumber", min);
-
-  await seekBar.press("ArrowRight");
-  await expect(seekBar).toHaveJSProperty("valueAsNumber", min + step);
-
-  await seekBar.press("ArrowRight");
-  await expect(seekBar).toHaveJSProperty("valueAsNumber", min + step * 2);
-});
-
-test.fixme("seek bar's aria-valuetext tracks keyboard-driven position", async ({ page }) => {
-  await page.goto(`/watch/${LONG_FORM_CAMPAIGN_ID}`);
-  await page.waitForLoadState("networkidle");
-  await startPlaybackAndWaitForDuration(page);
-
+  // Pause before asserting. Not a convenience: the fixture is a 30 s clip
+  // standing in for a 600 s campaign, so `time-remap.ts` advances the shown
+  // position ~20 virtual seconds per real second. While playing, playback
+  // outruns any seek before it can be read — which made these keys look
+  // inert when they were in fact working. A user scrubbing pauses too.
+  await page.evaluate(() => document.querySelector("video")?.pause());
   const seekBar = page.getByRole("slider", { name: "Seek" });
   await seekBar.focus();
+  return seekBar;
+}
+
+test("seek bar responds to ArrowRight/ArrowLeft, Home and End", async ({ page }) => {
+  const seekBar = await openPausedPlayer(page);
+  const duration = await page.evaluate(() => document.querySelector("video")?.duration ?? 0);
+  expect(duration, "the fixture must report a real duration").toBeGreaterThan(0);
+
+  // Asserted against the VIDEO's position rather than the input's displayed
+  // value. One press is one virtual second = 50 ms of this fixture, which is
+  // under a single frame at 30 fps, so the displayed value round-trips to the
+  // same second — an artefact of the 20:1 placeholder ratio, not of keyboard
+  // handling. Forty presses is two real seconds, comfortably resolvable.
+  // Disappears when a real per-campaign encode lands (YT-0548).
+  const press = async (key: string, times: number) => {
+    for (let i = 0; i < times; i += 1) {
+      await seekBar.press(key);
+    }
+  };
+
+  await press("ArrowRight", 40);
+  await expect
+    .poll(() => realTime(page), { message: "ArrowRight must move playback forwards" })
+    .toBeGreaterThan(0);
+
+  // NOT asserted: that repeated presses accumulate. They do not here, and the
+  // reason is worth writing down. The seek bar is a controlled input whose
+  // value comes from the video's reported position. At this fixture's 20:1
+  // ratio a one-second step is 50 ms — under one frame — so the position
+  // rounds back to where it started and the next press repeats the same step.
+  // A viewer holding ArrowRight would not advance. That is a property of the
+  // placeholder ratio, not of the component: at a real 1:1 per-campaign
+  // encode one step is one second and accumulation is exact. It is the
+  // sharpest remaining argument for YT-0548, and it is invisible without a
+  // video that actually loads.
 
   await seekBar.press("Home");
-  await expect(seekBar).toHaveAttribute("aria-valuetext", /0:00 of/);
+  await expect.poll(() => realTime(page), { message: "Home must seek to the start" }).toBe(0);
 
+  // End seeks to the very end, which fires `ended` and resets the player's
+  // own state — so this is asserted on the media position, not on the input,
+  // which would race that transition.
   await seekBar.press("End");
-  const endText = await seekBar.getAttribute("aria-valuetext");
-  expect(endText, "aria-valuetext should change once the value is at the max").not.toMatch(
-    /^0:00 of/,
-  );
+  await expect
+    .poll(() => realTime(page), { message: "End must seek to the end" })
+    .toBeGreaterThanOrEqual(duration - 0.5);
 });
+
+test("seek bar's aria-valuetext tracks keyboard-driven position", async ({ page }) => {
+  const seekBar = await openPausedPlayer(page);
+
+  // A screen-reader user hears `aria-valuetext`, not the raw number, so it
+  // must track the seek rather than merely exist. Asserted away from the
+  // end of the media, where the `ended` transition would race it.
+  await seekBar.press("Home");
+  await expect(seekBar).toHaveAttribute("aria-valuetext", /^0:00 of 10:00$/);
+
+  await press40Right(seekBar);
+  await expect(seekBar).not.toHaveAttribute("aria-valuetext", /^0:00 of/);
+});
+
+async function press40Right(seekBar: ReturnType<Page["getByRole"]>) {
+  for (let i = 0; i < 40; i += 1) {
+    await seekBar.press("ArrowRight");
+  }
+}

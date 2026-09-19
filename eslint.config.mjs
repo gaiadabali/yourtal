@@ -150,7 +150,7 @@ export default tseslint.config(
   // across apps/web while another session is mid-change buys risk for no
   // benefit, since nothing there returns a Result.
   {
-    files: ["apps/api/**/*.ts", "packages/authz/**/*.ts"],
+    files: ["apps/api/**/*.ts", "packages/authz/**/*.ts", "packages/drivers/**/*.ts"],
     plugins: { yt: { rules: { "must-use-result": mustUseResult } } },
     rules: { "yt/must-use-result": "error" },
   },

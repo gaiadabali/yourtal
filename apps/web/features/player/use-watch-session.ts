@@ -12,7 +12,6 @@ import {
   writeResumePosition,
 } from "./resume-position";
 import { toRealSeconds, toVirtualSeconds } from "./time-remap";
-import { MOCK_HLS_MANIFEST_URL } from "./video-source";
 
 const RESUME_WRITE_INTERVAL_MS = 5_000;
 
@@ -133,7 +132,7 @@ export function useWatchSession(
       setUseNativeHls(native);
       setHasStarted(true);
       if (native) {
-        video.src = MOCK_HLS_MANIFEST_URL;
+        video.src = campaign.videoSource.manifestUrl;
       }
     }
     video.play().then(
@@ -196,12 +195,23 @@ export function useWatchSession(
 
     video.addEventListener("loadedmetadata", onLoadedMetadata);
     video.addEventListener("timeupdate", onTimeUpdate);
+    // `seeked` as well as `timeupdate`, and this is an accessibility fix
+    // rather than a tidy-up. `timeupdate` only fires while the media is
+    // advancing, so a PAUSED viewer who scrubs — with the arrow keys, Home
+    // or End on the seek bar — moved `video.currentTime` but saw nothing
+    // move on screen, because this state never updated and the controlled
+    // input reverted to its old value. That is precisely the viewer who
+    // depends on keyboard seeking. Found once the player had a video that
+    // actually loads; it was invisible while the placeholder stream never
+    // reported a duration.
+    video.addEventListener("seeked", onTimeUpdate);
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
     video.addEventListener("ended", onEnded);
     return () => {
       video.removeEventListener("loadedmetadata", onLoadedMetadata);
       video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("seeked", onTimeUpdate);
       video.removeEventListener("play", onPlay);
       video.removeEventListener("pause", onPause);
       video.removeEventListener("ended", onEnded);
@@ -233,6 +243,6 @@ export function useWatchSession(
     handlePlay,
     handlePause,
     handleSeekTo,
-    manifestUrl: MOCK_HLS_MANIFEST_URL,
+    manifestUrl: campaign.videoSource.manifestUrl,
   };
 }

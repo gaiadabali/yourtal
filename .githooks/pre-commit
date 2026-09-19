@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Keeps TASKS.md's generated dashboard in step with docs/tasks/*.md on EVERY commit.
+#
+# Why a hook and not a habit: the dashboard is generated, so a commit that
+# changes a task file and not TASKS.md records a figure that was already wrong
+# when it was written. This session had that drift repeatedly -- regeneration
+# was remembered most of the time, which is the same as a gate that is green
+# most of the time.
+#
+# Five gates were found this week that passed without covering what their name
+# implied, so: this hook FAILS the commit if the generator errors. It does not
+# silently continue.
+set -e
+
+# Only act when a task file or the dashboard is part of this commit.
+if git diff --cached --name-only | grep -qE '^(docs/tasks/.*\.md|TASKS\.md)$'; then
+  node scripts/tasks.mjs
+  git add TASKS.md
+fi

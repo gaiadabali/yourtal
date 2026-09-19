@@ -265,6 +265,9 @@ importers:
       '@faker-js/faker':
         specifier: 10.6.0
         version: 10.6.0
+      '@yourtal/media':
+        specifier: workspace:*
+        version: link:../media
       '@yourtal/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

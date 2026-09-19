@@ -147,12 +147,9 @@ describe.each(EXERCISES)("$boundary — $describe", (exercise) => {
       {},
       { [exercise.boundary]: { kind: "transient_5xx_then_success", failuresBeforeSuccess: 1 } },
     );
-    const exerciseOn = EXERCISES.find((entry) => entry.boundary === exercise.boundary);
-    expect(exerciseOn).toBeDefined();
-
-    // Rebuilding through the same driver instance is what makes this a
-    // retry rather than two independent attempts, so the call is made
-    // against a driver captured once.
+    // Bound to the driver captured above, so the two calls share the
+    // engine's attempt counter — that is what makes this a retry rather
+    // than two independent attempts.
     const call = boundCall(drivers, exercise.boundary);
     const first = await call();
     expect(first.isErr()).toBe(true);
@@ -163,16 +160,30 @@ describe.each(EXERCISES)("$boundary — $describe", (exercise) => {
   });
 });
 
-/** The same operation as the table above, bound to one driver instance. */
+/**
+ * The same operation as the table above, bound to one driver instance.
+ *
+ * Each call uses a FRESH but DETERMINISTIC idempotency key. Fresh, because a
+ * repeated key would be answered from the replay cache and the retry would
+ * prove nothing about recovery. Deterministic, because a `Math.random()` key
+ * in a test about retry behaviour is exactly the nondeterminism the fault
+ * catalogue exists to keep out — a flaky test gets retried until it passes.
+ */
 function boundCall(
   drivers: ReturnType<typeof createDrivers>,
   boundary: BoundaryName,
 ): () => Promise<Result<unknown, BoundaryFailure>> {
+  let attempt = 0;
+  const nextKey = (): string => {
+    attempt += 1;
+    return `${boundary}-retry-${String(attempt)}`;
+  };
+
   switch (boundary) {
     case "payments":
       return () =>
         drivers.payments.charge({
-          idempotencyKey: `retry-${String(Math.random())}`,
+          idempotencyKey: nextKey(),
           amountMinor: 4_500_000,
           currency: "IDR",
           reference: "points-top-up",
@@ -180,7 +191,7 @@ function boundCall(
     case "disbursement":
       return () =>
         drivers.disbursement.payout({
-          idempotencyKey: `retry-${String(Math.random())}`,
+          idempotencyKey: nextKey(),
           merchantId: "merchant-1",
           amountMinor: 1_200_000,
           currency: "IDR",
@@ -192,7 +203,7 @@ function boundCall(
     case "messaging":
       return () =>
         drivers.messaging.send({
-          idempotencyKey: `retry-${String(Math.random())}`,
+          idempotencyKey: nextKey(),
           to: "+6281234567890",
           template: "voucher_issued",
           variables: {},
@@ -200,7 +211,7 @@ function boundCall(
     case "digital_goods":
       return () =>
         drivers.digitalGoods.reserve({
-          idempotencyKey: `retry-${String(Math.random())}`,
+          idempotencyKey: nextKey(),
           sku: "pulsa-10k",
         });
     case "receipt_ingest":

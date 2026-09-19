@@ -13,14 +13,38 @@ import { toPoints } from "../money/money";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 
 /**
- * The same publicly hosted, real multi-bitrate HLS stream apps/web's
- * `video-source.ts` mock points every campaign at today — chosen there
- * deliberately over an arbitrary single-bitrate file because it ships a
- * genuine ABR ladder. Reused verbatim here so the eventual switch (deleting
- * that local fake in favour of this field) changes nothing about what plays.
+ * The local HLS origin (YT-0521), which every mock campaign now plays.
+ *
+ * ## What this replaced, and why the replacement had to be a ladder
+ *
+ * It was Apple's `bipbop_16x9_variant.m3u8`, a publicly hosted reference
+ * stream. `apps/web/features/player/video-source.ts` explains why that one
+ * was chosen over an arbitrary single-bitrate file: it ships a genuine ABR
+ * ladder, so the quality selector has real levels to switch between. Any
+ * replacement had to keep that property or it would have fixed one
+ * untestable feature by breaking another — so `packages/media`'s fixture is
+ * three renditions with a master playlist, not one stream.
+ *
+ * ## Why it closes YT-0412 as well as YT-0526
+ *
+ * YT-0412's keyboard-seeking criterion was **untestable, not failing**: the
+ * Apple stream's 59 MB segment aborted before the video element reported a
+ * duration, and a seek cannot be asserted against a video with no duration.
+ * The fixture is five 4-second segments totalling 20 seconds.
+ *
+ * ## Why this is a literal rather than an import
+ *
+ * `packages/contracts` sits upstream of everything and must not depend on
+ * `packages/media`. So the URL is spelled out here and
+ * `hls-fixture-url.test.ts` asserts it still matches what the media package
+ * actually serves — a guarded copy rather than an unguarded one, which is
+ * the same trade the OpenAPI document and the region mirror already make.
+ *
+ * It is a loopback URL because it is mock data for the local stack. Real
+ * campaigns will carry their own per-encode URL through this same field.
  */
-const MOCK_HLS_MANIFEST_URL =
-  "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8";
+export const MOCK_HLS_MANIFEST_URL =
+  "http://127.0.0.1:26900/yourtal-media/hls/attention-20s/index.m3u8";
 
 const MOCK_VIDEO_SOURCE: CampaignVideoSource = { kind: "hls", manifestUrl: MOCK_HLS_MANIFEST_URL };
 

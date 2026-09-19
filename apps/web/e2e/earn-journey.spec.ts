@@ -8,20 +8,28 @@ import { BONUS_ACCURACY_CAMPAIGN_ID } from "./fixture-ids";
  * rendered UI, never `page.goto` to skip a step, up to the point documented
  * as blocked.
  *
- * KNOWN BLOCKER (do not "fix" by faking playback): every campaign points at
- * one shared public HLS placeholder whose ~59 MB segment reliably aborts
- * before the `<video>` element ever reports a finite `duration`
- * (`features/player/video-source.ts`; the same reason `keyboard-seek.spec.ts`
- * is `test.fixme`). `use-watch-session.ts`'s `hasEnded` only ever becomes
- * true on the video's real `ended` event, so `CompletionHandoff` (the
- * component that links from `/watch/[id]` into `/watch/[id]/checkpoint`)
- * can never mount in this environment — there is no real click that gets
- * from the player to the checkpoint today. This suite proves everything
- * around that gap instead: the entry card's terms genuinely reach the
+ * WAS a known blocker, resolved 2026-09-20. Every campaign used to point at
+ * one shared public HLS placeholder whose ~59 MB segment aborted before the
+ * `<video>` element ever reported a finite `duration`, so
+ * `use-watch-session.ts`'s `hasEnded` could never fire and `CompletionHandoff`
+ * — the component linking `/watch/[id]` into `/watch/[id]/checkpoint` — could
+ * never mount. There was no real click from the player to the checkpoint.
+ *
+ * The player now reads `campaign.videoSource` and plays a 20-second local
+ * ladder with a finite duration, so that handoff is reachable in principle.
+ * **This suite has not yet been rewritten to prove it end to end** — the
+ * checkpoint is still reached directly below, which is now a weaker test than
+ * the code supports rather than the only one possible. Closing that gap is
+ * worth its own pass; leaving the comment claiming a blocker that no longer
+ * exists would be worse, because the next person would not think to look.
+ *
+ * PREREQUISITE: `pnpm dev:up` and `pnpm media:publish` (or `pnpm dev:fresh`).
+ * The fixture is served by the local MinIO origin, not from `public/`.
+ *
+ * What this suite does prove: the entry card's terms genuinely reach the
  * player for the same campaign, the player's own UI renders correctly, and
- * — reached directly, since the real handoff is unreachable — the
- * checkpoint quiz genuinely produces a result that distinguishes base
- * reward from accuracy bonus.
+ * — reached directly — the checkpoint quiz genuinely produces a result that
+ * distinguishes base reward from accuracy bonus.
  */
 test.describe("Earn journey", () => {
   test("home board's card reaches the entry card, whose terms and start action reach the same campaign's player", async ({

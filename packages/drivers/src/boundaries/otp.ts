@@ -48,7 +48,11 @@ export type OtpVerdict =
 export interface OtpDriver {
   readonly mode: DriverMode;
   issue(phone: string, nowMs: number): Promise<Result<OtpIssued, BoundaryFailure>>;
-  verify(challengeId: string, code: string, nowMs: number): Promise<Result<OtpVerdict, BoundaryFailure>>;
+  verify(
+    challengeId: string,
+    code: string,
+    nowMs: number,
+  ): Promise<Result<OtpVerdict, BoundaryFailure>>;
 }
 
 export interface SimulatedOtpDriver extends OtpDriver {

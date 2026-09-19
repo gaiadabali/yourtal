@@ -1,9 +1,10 @@
 /**
  * Placeholder-asset time remap.
  *
- * Phase U has no real per-campaign video encode — see video-source.ts's
- * "KNOWN GAP" note. Every campaign currently plays the same shared public
- * HLS test asset, whose real runtime has nothing to do with any given
+ * Phase U has no real per-campaign video encode. Every campaign names the
+ * same fixture through its own `videoSource` field (`packages/media`, served
+ * by the local origin), and that fixture's 20-second runtime has nothing to
+ * do with any given
  * campaign's advertised `durationSeconds`. Playing it back at its own real
  * length would show a seek bar, chapter markers and time display that
  * silently disagree with the duration the entry card (YT-0411) already

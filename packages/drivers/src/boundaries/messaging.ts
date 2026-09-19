@@ -101,7 +101,5 @@ export function createMessagingDriver(
   _env: Environment,
   faultPlan?: FaultPlan,
 ): MessagingDriver {
-  return mode === "simulated"
-    ? createSimulatedMessaging(faultPlan)
-    : refuseLiveDriver("messaging");
+  return mode === "simulated" ? createSimulatedMessaging(faultPlan) : refuseLiveDriver("messaging");
 }

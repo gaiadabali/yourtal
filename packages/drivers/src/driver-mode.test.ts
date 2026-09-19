@@ -34,7 +34,9 @@ describe("choosing a driver", () => {
   });
 
   it("treats blank and whitespace as unset rather than invalid", () => {
-    expect(resolveDriverMode("payments", { PAYMENTS_DRIVER: "" })._unsafeUnwrap()).toBe("simulated");
+    expect(resolveDriverMode("payments", { PAYMENTS_DRIVER: "" })._unsafeUnwrap()).toBe(
+      "simulated",
+    );
     expect(resolveDriverMode("payments", { PAYMENTS_DRIVER: "   " })._unsafeUnwrap()).toBe(
       "simulated",
     );

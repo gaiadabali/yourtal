@@ -7,7 +7,7 @@ import type {
   ShortTextQuestion,
   TrueFalseQuestion,
 } from "@yourtal/contracts/question";
-import { MOCK_HLS_MANIFEST_URL } from "@/features/player/video-source";
+import { MOCK_HLS_MANIFEST_URL } from "@yourtal/contracts/campaign/mock";
 
 /**
  * Hand-built fixtures, one per question type, shared across this feature's

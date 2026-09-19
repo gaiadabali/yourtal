@@ -11,6 +11,7 @@ import {
 } from "../internal/sydney";
 import { toPoints } from "../money/money";
 import { pickMockMerchant } from "../merchant/merchant-roster";
+import { MOCK_HLS_MANIFEST_URL } from "../campaign/campaign.mock";
 
 /**
  * AU counterpart to `campaign.mock.ts` — see `region-mock-au-listing.ts`'s
@@ -19,8 +20,10 @@ import { pickMockMerchant } from "../merchant/merchant-roster";
 
 const MOCK_VIDEO_SOURCE: CampaignVideoSource = {
   kind: "hls",
-  manifestUrl:
-    "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8",
+  // Imported rather than repeated: this file used to carry its own copy of
+  // the manifest URL, so repointing the player at the local origin meant
+  // finding both. One of them would eventually have been missed.
+  manifestUrl: MOCK_HLS_MANIFEST_URL,
 };
 
 // Same back-loaded shape as campaign.mock.ts's mockChapters — see docs/06

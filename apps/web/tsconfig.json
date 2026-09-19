@@ -2,5 +2,9 @@
   "extends": "@yourtal/tsconfig/next.json",
   "compilerOptions": { "paths": { "@/*": ["./*"] } },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // `public` holds static assets, never source. It is excluded because HLS
+  // segments use the `.ts` extension for MPEG transport streams, which
+  // collides with TypeScript's — without this, `tsc` tries to compile the
+  // video fixture and fails with "File appears to be binary".
+  "exclude": ["node_modules", "public"]
 }

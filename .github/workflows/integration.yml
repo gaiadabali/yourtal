@@ -117,7 +117,9 @@ jobs:
         uses: actions/setup-go@v5.2.0
         with:
           go-version: "1.26"
-          cache-dependency-path: services/ledger/go.sum
+          cache-dependency-path: |
+            services/ledger/go.sum
+            services/voucher/go.sum
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -168,7 +170,7 @@ jobs:
       # The point of the whole workflow. `go test` prints "no test files" for
       # packages without tests, which is fine — but a SKIP here means a suite
       # could not reach the database and reported success anyway.
-      - name: Assert nothing skipped
+      - name: Assert nothing skipped (ledger)
         run: |
           go test ./... -v 2>&1 | tee /tmp/go-test.log
           if grep -q -- "--- SKIP" /tmp/go-test.log; then
@@ -177,3 +179,32 @@ jobs:
             exit 1
           fi
         working-directory: services/ledger
+
+      # The voucher service (YT-0140..0155). Almost everything it asserts is
+      # a database constraint — one live hold per voucher, a capture that
+      # cannot exceed its authorization, refunds bounded at COMMIT, an audit
+      # chain that breaks when a row is edited — so without Postgres this
+      # suite tests nothing at all and says so by skipping.
+      #
+      # It needs BOTH credentials: `yourtal_voucher` for the service's own
+      # work, and the owner for the tamper tests, which have to damage an
+      # event log the service itself is deliberately unable to damage.
+      - name: Go voucher
+        run: go test ./...
+        working-directory: services/voucher
+        env:
+          VOUCHER_DATABASE_URL: postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal
+          OWNER_DATABASE_URL: ${{ env.DATABASE_OWNER_URL }}
+
+      - name: Assert nothing skipped (voucher)
+        run: |
+          go test ./... -v 2>&1 | tee /tmp/go-voucher.log
+          if grep -q -- "--- SKIP" /tmp/go-voucher.log; then
+            echo "::error::A Postgres-backed test skipped. It did not run, so its result means nothing."
+            grep -- "--- SKIP" /tmp/go-voucher.log
+            exit 1
+          fi
+        working-directory: services/voucher
+        env:
+          VOUCHER_DATABASE_URL: postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal
+          OWNER_DATABASE_URL: ${{ env.DATABASE_OWNER_URL }}

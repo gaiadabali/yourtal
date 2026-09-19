@@ -80,24 +80,9 @@ jobs:
       - name: Build
         run: go build ./...
 
+      # Build-and-unit-test only. The database-backed suites in these
+      # modules run in integration.yml, which stands up Postgres and fails
+      # if any of them SKIPs — a skip here would be expected and would teach
+      # that guard to be ignored.
       - name: Test
         run: go test ./...
-
-      # A database-backed suite that cannot reach Postgres SKIPS, and a skip
-      # reads exactly like a pass in the summary. The ledger's invariant
-      # tests and the voucher service's whole redemption suite are in that
-      # category — what they assert is constraints, and a run without a
-      # database asserts nothing.
-      #
-      # So the count of skipped tests is checked, rather than trusted. This
-      # is the same defect docs/13c records repeatedly: a gate that stays
-      # green by never running.
-      - name: No database-backed test silently skipped
-        if: matrix.module != 'packages/contracts/openapi/go'
-        run: |
-          skipped=$(go test -v ./... 2>&1 | grep -c '^--- SKIP' || true)
-          if [ "$skipped" -gt 0 ]; then
-            echo "::error::$skipped test(s) skipped — they need Postgres and did not have it."
-            go test -v ./... 2>&1 | grep -A2 '^--- SKIP'
-            exit 1
-          fi

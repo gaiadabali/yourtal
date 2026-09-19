@@ -245,3 +245,25 @@ A `placeHold` helper generated a fresh `gen_random_uuid()` merchant per call. Th
 It was caught only because it failed **for the wrong reason** — expecting a rejection and receiving a uuid. Written to reuse a merchant by luck, it would have passed and covered nothing, and would have read as protection for a uniqueness rule that had never once been tested.
 
 **The setup is part of the test.** A helper that makes each case independent is usually good practice and is precisely what defeats a test about collisions. When asserting that two things conflict, check that they were eligible to conflict.
+
+## A benign bug can wear the costume of an attack
+
+The voucher event chain hashed `UnixNano()`. Postgres `timestamptz` keeps **microseconds**. So the instant written and the instant read back were different numbers, and **every chain failed to verify on the way out** — presenting as _"the chain is broken at seq 1"_, which is precisely what tampering looks like.
+
+It was a unit mismatch across a storage boundary: the same class as rupiah-versus-sen, one field over. The author had written a careful paragraph about jsonb normalising numbers and missed the identical argument about time.
+
+Two things worth carrying. **No in-memory test could have found it** — the old test hashed values it kept in memory, so the round trip that broke it never happened. And **an integrity alarm firing does not mean integrity was attacked**; the first hypothesis for a hash mismatch should be that something normalised on the way through, because storage layers round, truncate and canonicalise constantly and attackers are rare.
+
+## Narrowing a check to remove false positives can leave it checking nothing
+
+A seed coherence check scanned every voucher in the table. That meant "every seeded voucher" right up until the voucher service began minting — and a minted voucher takes its terms from its approved batch rather than the listing's current columns, deliberately, because the terms of an issued voucher must not change when someone later edits the listing. So the check asserted a rule that did not apply to those rows and reported **107 violations that were not violations**.
+
+The fix was to scope it to `batch_id IS NULL`. **The important half was also asserting the scope is not empty**, because a narrowed query that matches nothing passes — for the wrong reason, and silently, which is the exact failure that file exists to catch.
+
+**Any time a filter is added to quieten a check, assert the filter still selects something.** The pressure to narrow arrives precisely when the check is inconvenient, which is when it is least examined.
+
+## A parser-based gate fails open
+
+A schema-drift guard extracted column names with `[a-z_]+`. A column containing a digit **does not match, and an unmatched column is not compared** — so the gate quietly stops covering it rather than failing. In one service this silently dropped `manifest_sha256` and then reported a drift that did not exist; in another the same pattern is fine **only because no column there happens to contain a digit.**
+
+**Every parser-based check needs one question asked of it: what does it do with input it does not recognise?** If the answer is "skips it", the gate's coverage is whatever the pattern happens to match, and that is not a set anyone has reviewed. The fix is not a better pattern — it is **asserting the match count equals the input count**, so unrecognised input becomes a failure rather than an omission.

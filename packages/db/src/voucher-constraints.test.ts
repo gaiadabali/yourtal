@@ -42,13 +42,12 @@ beforeAll(async () => {
   voucherId = rows[0]?.id ?? "";
   listingId = rows[0]?.listing_id ?? "";
   expect(voucherId, "run `pnpm db:seed` first — these need a real voucher").not.toBe("");
+
+  await clearProbeRows();
 });
 
 afterAll(async () => {
-  await owner.query(`DELETE FROM voucher.refund WHERE reason LIKE 'probe%'`);
-  await owner.query(`DELETE FROM voucher.capture WHERE receipt_id LIKE 'probe%'`);
-  await owner.query(`DELETE FROM voucher.authorization WHERE merchant_order_ref LIKE 'probe%'`);
-  await owner.query(`DELETE FROM voucher.kill_switch WHERE enabled_by = 'probe'`);
+  await clearProbeRows();
   await owner.end();
 });
 
@@ -64,6 +63,22 @@ afterAll(async () => {
  * it.
  */
 const MERCHANT = "77777777-7777-4777-8777-777777777777";
+
+/**
+ * A per-run prefix for every order reference this suite writes.
+ *
+ * Fixed strings like `probe-first` made the suite pass exactly once: the
+ * `(merchant_id, merchant_order_ref)` index is unique, and `afterAll` only
+ * runs if the file gets that far — so a run that failed part-way left rows
+ * that made the NEXT run fail on a duplicate key, for a reason with nothing
+ * to do with what it tests. That is how a real failure gets buried under a
+ * fake one.
+ */
+const RUN = `probe-${Date.now()}`;
+
+function ref(name: string): string {
+  return `${RUN}-${name}`;
+}
 
 /** A held authorization against the seeded voucher, returning its id. */
 async function placeHold(orderRef: string, amount: number): Promise<string> {
@@ -93,15 +108,38 @@ beforeEach(async () => {
   );
 });
 
+/**
+ * A clean start, not only a clean finish — the rule `watch-session.test.ts`
+ * already records. `afterAll` does not run when a file fails to load, so
+ * relying on it alone means one bad run poisons every later one.
+ */
+async function clearProbeRows(): Promise<void> {
+  await owner.query(
+    `DELETE FROM voucher.refund WHERE capture_id IN (
+       SELECT c.id FROM voucher.capture c
+         JOIN voucher.authorization a ON a.id = c.authorization_id
+        WHERE a.merchant_id = $1)`,
+    [MERCHANT],
+  );
+  await owner.query(
+    `DELETE FROM voucher.capture WHERE authorization_id IN (
+       SELECT id FROM voucher.authorization WHERE merchant_id = $1)`,
+    [MERCHANT],
+  );
+  await owner.query(`DELETE FROM voucher.authorization WHERE merchant_id = $1`, [MERCHANT]);
+  await owner.query(`DELETE FROM voucher.kill_switch WHERE enabled_by = 'probe'`);
+  await owner.query(`DELETE FROM voucher.batch WHERE funding_reference = 'probe'`);
+}
+
 describe("authorization", () => {
   it("refuses a second live hold on one voucher", async () => {
     // YT-0150: "concurrent authorize on one voucher is serialised". Two
     // tills scanning the same code at the same instant both read "no hold"
     // and both insert; only a unique index settles that, and a check in the
     // service cannot.
-    await placeHold("probe-first", 1000);
+    await placeHold(ref("first"), 1000);
 
-    await expect(placeHold("probe-second", 500)).rejects.toThrow(
+    await expect(placeHold(ref("second"), 500)).rejects.toThrow(
       /authorization_one_live_hold_per_voucher/,
     );
 
@@ -111,7 +149,7 @@ describe("authorization", () => {
     // Without this, a merchant retrying a failed call with a fresh
     // idempotency key places a second hold on the same cart, and the
     // customer's voucher is held twice for one purchase.
-    const first = await placeHold("probe-dup", 1000);
+    const first = await placeHold(ref("dup"), 1000);
     // Resolved first, so the second attempt collides on the ORDER REFERENCE
     // and not on the one-live-hold index — otherwise this test would pass
     // while exercising the other constraint entirely.
@@ -120,7 +158,7 @@ describe("authorization", () => {
       [first],
     );
 
-    await expect(placeHold("probe-dup", 1000)).rejects.toThrow(
+    await expect(placeHold(ref("dup"), 1000)).rejects.toThrow(
       /authorization_one_per_merchant_order/,
     );
   });
@@ -141,13 +179,13 @@ describe("authorization", () => {
 
 describe("capture", () => {
   it("refuses a capture larger than its authorization", async () => {
-    const authorization = await placeHold("probe-cap", 3000);
+    const authorization = await placeHold(ref("cap"), 3000);
 
     await expect(
       owner.query(
         `INSERT INTO voucher.capture
            (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-         VALUES (gen_random_uuid(), $1, 3000, 3001, 'probe-over')`,
+         VALUES (gen_random_uuid(), $1, 3000, 3001, '${ref('over')}')`,
         [authorization],
       ),
     ).rejects.toThrow(/capture_within_authorization/);
@@ -158,24 +196,24 @@ describe("capture", () => {
     // can disagree — so it is the second half of a COMPOSITE foreign key
     // back to the authorization. Claiming a larger authorization to justify
     // a larger capture therefore fails on the key, not on the amount.
-    const authorization = await placeHold("probe-lie", 3000);
+    const authorization = await placeHold(ref("lie"), 3000);
 
     await expect(
       owner.query(
         `INSERT INTO voucher.capture
            (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-         VALUES (gen_random_uuid(), $1, 999999, 500000, 'probe-lie')`,
+         VALUES (gen_random_uuid(), $1, 999999, 500000, '${ref('lie-receipt')}')`,
         [authorization],
       ),
     ).rejects.toThrow(/capture_authorization_id_authorized_amount_minor_fkey/);
   });
 
   it("refuses a second capture against one hold", async () => {
-    const authorization = await placeHold("probe-twice", 2000);
+    const authorization = await placeHold(ref("twice"), 2000);
     await owner.query(
       `INSERT INTO voucher.capture
          (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-       VALUES (gen_random_uuid(), $1, 2000, 1000, 'probe-twice-a')`,
+       VALUES (gen_random_uuid(), $1, 2000, 1000, '${ref('twice-a')}')`,
       [authorization],
     );
 
@@ -184,7 +222,7 @@ describe("capture", () => {
       owner.query(
         `INSERT INTO voucher.capture
            (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-         VALUES (gen_random_uuid(), $1, 2000, 1000, 'probe-twice-b')`,
+         VALUES (gen_random_uuid(), $1, 2000, 1000, '${ref('twice-b')}')`,
         [authorization],
       ),
     ).rejects.toThrow(/capture_authorization_id_key/);
@@ -196,11 +234,11 @@ describe("refund", () => {
     // A statement about a SET of rows, so it cannot be a CHECK — the same
     // reason the ledger's balance invariant is a deferred constraint
     // trigger, and it fires at COMMIT rather than per row.
-    const authorization = await placeHold("probe-refund", 2000);
+    const authorization = await placeHold(ref("refund"), 2000);
     const { rows } = await owner.query<{ id: string }>(
       `INSERT INTO voucher.capture
          (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-       VALUES (gen_random_uuid(), $1, 2000, 1200, 'probe-refund')
+       VALUES (gen_random_uuid(), $1, 2000, 1200, '${ref('refund-receipt')}')
        RETURNING id`,
       [authorization],
     );

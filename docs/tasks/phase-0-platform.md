@@ -444,3 +444,21 @@
 - [ ] Copy states what is true at the moment it renders — an **expectation**, not a receipt — in both locales, and the test asserting the old string is updated to assert the new meaning rather than deleted
 - [ ] The figure is **derived from the server’s response** once YT-0561 lands, not from a client constant. Two numbers that agree today is the duplicate-source-of-truth bug with money attached
 - [ ] ⚠️ **Sweep for the vocabulary, do not fix only this string.** Risk 44 was found by grepping `earned` / `so far` / `accrued`; add **`received` / `diterima` / `total`** to that sweep. A superseded model leaves its words behind in copy long after the logic moves
+
+### YT-0565 · The ledger schema-drift regex fails open
+`todo` · P0 · value · 2h · dep: —
+
+- `services/ledger/internal/store/schema_test.go`'s `columnPattern` is `[a-z_]+`, so **it cannot match a column name containing a digit**. An unmatched column is **not compared** — the gate fails open rather than erroring, so coverage shrinks silently
+- It works today only by luck: **no `ledger` column has a digit**, verified. The identical pattern in the voucher service silently dropped `manifest_sha256` and then reported a drift that did not exist — the same defect, loud in one place and invisible in the other
+- [ ] Widen to `[a-z_0-9]+`, and **assert the match count equals the column count** so an unmatched column becomes a failure rather than an omission
+- [ ] Add `backing_rate` to the table list — a table the loop does not name is one the guard cannot see drift in
+- [ ] ⚠️ **This is the ninth gate that did not cover what its name implied**, and the first to do it through a regex. Any parser-based check needs the same question asked of it: what does it do with input it does not recognise?
+
+### YT-0566 · The hold sweeper has no alarm and availability depends on it
+`todo` · P1 · merchant · 2d · dep: YT-0151
+
+- **Safety does not depend on the sweeper** — `ResolveAuthorization` filters on `expires_at`, so an expired hold cannot be captured. **Availability does**: the one-live-hold index is `WHERE state = 'held'`, and a partial index cannot reference `now()`, so a stale hold blocks a **new** authorize until the sweep clears it
+- ⚠️ So `docs/09`'s promise that _"an abandoned cart cannot lock a voucher forever"_ bottoms out at the sweep interval, and **if the sweeper dies the voucher stays locked** — a silent failure whose symptom is a customer at a till being told their voucher is in use
+- [ ] The sweeper reports liveness and **pages when it has not run**, not merely when it errors. A job that stops running produces no errors at all
+- [ ] Alert on the **age of the oldest unswept hold**, which measures the promise directly rather than measuring the job
+- [ ] Expose the count in the merchant portal, so a shop sees _why_ a voucher is unavailable rather than being told it is broken

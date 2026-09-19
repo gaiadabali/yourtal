@@ -72,15 +72,38 @@ describe("the seed", () => {
     // generator produced. A voucher whose merchant or face value disagrees
     // with its listing is a state no real flow can reach, and a day lost to
     // debugging one is a day lost to nothing.
+    //
+    // ## Scoped to `batch_id IS NULL`, which is exactly "seeded"
+    //
+    // This used to scan every voucher in the table, which was the same thing
+    // while the seed was the only thing that ever wrote one. Since YT-0141
+    // `services/voucher` mints from an approved BATCH, and a batch carries
+    // its own face value, policy and expiry — deliberately, because the
+    // terms of a voucher already issued must not change when somebody edits
+    // the listing afterwards.
+    //
+    // So a minted voucher is not required to agree with its listing's
+    // current columns, and scanning it here asserted a rule that does not
+    // apply to it. The right scope is the rows this test is about.
     const incoherent = await count(`
       SELECT COUNT(*)::text AS n
         FROM voucher.vouchers v
         JOIN store.listings l ON l.id = v.listing_id
-       WHERE v.merchant_id <> l.merchant_id
+       WHERE v.batch_id IS NULL
+         AND (v.merchant_id <> l.merchant_id
           OR v.face_value_idr <> l.face_value_idr
-          OR v.partial_redemption_policy <> l.partial_redemption_policy`);
+          OR v.partial_redemption_policy <> l.partial_redemption_policy)`);
 
     expect(incoherent).toBe(0);
+
+    // And the scope is not vacuous. If the seed ever stopped producing
+    // batch-less vouchers, the query above would pass by matching nothing —
+    // which is the failure this whole file exists to catch, reproduced in
+    // the fix for it.
+    const seeded = await count(
+      `SELECT COUNT(*)::text AS n FROM voucher.vouchers WHERE batch_id IS NULL`,
+    );
+    expect(seeded, "the coherence check scanned no rows").toBeGreaterThan(0);
   });
 });
 

@@ -165,3 +165,21 @@ Items marked **✋** genuinely cannot be decided without information only you ha
 3. **Ledger simplicity.** One grant at completion instead of N per chapter: fewer partial states, simpler solvency accounting, and no partially-funded campaign to reconcile.
 
 **The risk to watch, and it is real:** completion rate becomes the single point of failure for the whole economy. If long-form completion is low, the user-facing yield collapses to near zero while delivery cost is fully incurred — users conclude the reward is unobtainable and stop starting campaigns. **This makes YT-0451's reaction sessions more load-bearing, not less:** the question "would you finish a twenty-minute video knowing you get nothing if you stop" cannot be answered by seeded data.
+
+## Completion is earned by playback, never by position (2026-09-20)
+
+| #       | Decision                                                                                                                                                                                                                                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **O-4** | **A campaign is completed by playback coverage, never by where the playhead sits.** Dragging the seek bar to the end must not complete a campaign, must not mount the completion hand-off, and must not make the questions available. This follows directly from O-1: the founder's rule is that the user _watches the full length_, and scrubbing is not watching. |
+
+**How this was found, which is the uncomfortable part.** A player e2e spec asserted, as expected behaviour, that _"seeking to the end fires `ended`, and the player replaces the video with the completion hand-off."_ That assertion **encodes "scrubbing to the end completes the campaign"** — the precise attack [`08`](08-web-app-and-performance.md) and [`22`](22-assumption-audit.md) exist to prevent. It had been written, reviewed and committed.
+
+It never fired only because **Chrome declines to set `ended` on a seek** — `ended` is set when playback _reaches_ the end, not when a seek _lands_ there. **A browser's incidental behaviour was the only thing standing between the test and the hole.** Had Chrome behaved the other way, the spec would have gone green and the exploit would have been the documented, asserted design.
+
+**The defences that make O-4 real already exist in the plan** and none of them depend on the player behaving well:
+
+- **Per-checkpoint signed single-use tokens at server-randomised timestamps** (YT-0121) cannot be collected by scrubbing, because they are issued during playback.
+- **Per-segment delivery logs** (YT-0521, now live) show which bytes were actually fetched — a scrub does not pull the middle of the video.
+- Playback-rate lock, foreground and wake-lock enforcement.
+
+The player-side rule is **defence in depth, not the control**: the UI must not offer completion on a seek even though the server would refuse it, because a UI that appears to reward scrubbing teaches people to try.

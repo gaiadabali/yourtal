@@ -285,3 +285,12 @@
 - [ ] Both regions represented, with AUD and IDR balances that are correct in their own currency — a persona with Rupiah amounts in an Australian wallet tests nothing except our patience
 - [ ] ⚠️ **At least one persona exists to make a screen look bad**: the empty wallet, the merchant with one listing, the campaign nobody finished. Seeds that only contain healthy data hide exactly the states users complain about
 - [ ] Idempotent per the seeding rule in `docs/13` — idempotent **for a fixed contract**, so a contract change means `pnpm dev:fresh`, not a re-seed
+
+### YT-0550 · Player: `Home` does not return the playhead to zero
+`todo` · PU · web · 1d · dep: YT-0526
+
+- **Handed back rather than tuned green.** 3 of 4 keyboard-seek cases pass against the MinIO origin; `Home` lands the media at **0.35 s** instead of within a frame of zero. In a standalone probe `Home` works and returns exactly 0, so the cause is the **controlled-input / time-remap interaction in the component**, not latency
+- [ ] Fixed in the component, not by loosening the assertion. The backend session stopped at exactly this line and said so, which was right — relaxing a tolerance until it passes is how a real failure hides
+- [ ] ⚠️ **Seeks against an origin land later than against a same-process static file.** That is now a permanent property, not a flaw, since the `public/` fixture is gone; a `settle()` helper exists and fixed two of three cases
+- [ ] ⚠️ **The end-seek assertion has been rewritten and must not be reverted.** It previously asserted that seeking to the end completes the campaign — see decision **O-4** and risk 43. It now reads the media position directly, which is what YT-0412 actually asks for
+- [ ] Context worth keeping: the fixture is `attention-30s` at 30 fps because the seek tests are calibrated to a ~50 ms keyboard step at a 20:1 remap ratio. A 15 fps fixture makes one step land inside the same frame and the bar never moves. **A directory named for the wrong duration is a lie that costs somebody an hour**

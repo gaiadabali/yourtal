@@ -1,0 +1,75 @@
+---
+name: SeparationOfDutiesSuite
+description: |-
+  docs/17 section 5: whoever can suspend cannot adjust, and whoever can
+  adjust cannot approve their own adjustment. Plus the rule docs/14 section 5
+  calls the only real fix for social engineering -- support cannot change a
+  phone number by any route.
+tests:
+  - name: support issues goodwill under its ceiling and cannot suspend
+    input:
+      principals: [support_sari]
+      resources: [account_wina]
+      actions: [view, open_case, goodwill_credit, suspend, reinstate, change_phone]
+    expected:
+      - principal: support_sari
+        resource: account_wina
+        actions:
+          view: EFFECT_ALLOW
+          open_case: EFFECT_ALLOW
+          goodwill_credit: EFFECT_ALLOW
+          suspend: EFFECT_DENY
+          reinstate: EFFECT_DENY
+          change_phone: EFFECT_DENY
+
+  - name: goodwill above the ceiling is refused by the PDP, not by the form
+    input:
+      principals: [support_sari]
+      resources: [account_wina_large_goodwill]
+      actions: [goodwill_credit]
+    expected:
+      - principal: support_sari
+        resource: account_wina_large_goodwill
+        actions: { goodwill_credit: EFFECT_DENY }
+
+  - name: risk suspends and issues nothing
+    input:
+      principals: [risk_umi]
+      resources: [account_wina]
+      actions: [view, suspend, reinstate, goodwill_credit, change_phone]
+    expected:
+      - principal: risk_umi
+        resource: account_wina
+        actions:
+          view: EFFECT_ALLOW
+          suspend: EFFECT_ALLOW
+          reinstate: EFFECT_ALLOW
+          goodwill_credit: EFFECT_DENY
+          change_phone: EFFECT_DENY
+
+  - name: a user changes their own phone number
+    input:
+      principals: [wina]
+      resources: [account_wina]
+      actions: [view, change_phone, close, suspend]
+    expected:
+      - principal: wina
+        resource: account_wina
+        actions:
+          view: EFFECT_ALLOW
+          change_phone: EFFECT_ALLOW
+          close: EFFECT_ALLOW
+          suspend: EFFECT_DENY
+
+  - name: no business role sees a consumer account
+    input:
+      principals: [budi_owner, counter_kemang]
+      resources: [account_wina]
+      actions: [view, goodwill_credit, suspend]
+    expected:
+      - principal: budi_owner
+        resource: account_wina
+        actions: { view: EFFECT_DENY, goodwill_credit: EFFECT_DENY, suspend: EFFECT_DENY }
+      - principal: counter_kemang
+        resource: account_wina
+        actions: { view: EFFECT_DENY, goodwill_credit: EFFECT_DENY, suspend: EFFECT_DENY }

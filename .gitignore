@@ -11,3 +11,12 @@ coverage/
 .lighthouseci/
 playwright-report/
 test-results/
+
+# YT-0031: openapi-generator scratch dirs (see packages/contracts/openapi/README.md)
+packages/contracts/openapi/.gotmp/
+packages/contracts/openapi/.tstmp/
+
+# YT-0517: compiled Go service binaries (built by CI and by `go build`)
+services/*/*.exe
+services/*/ledger
+services/*/db/sqlc.log

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Route } from "next";
 import type { Region } from "@yourtal/contracts/region";
 import { Button } from "@yourtal/ui/button";
 import { regionDisplayConfig } from "@/features/region/region-config";
@@ -10,9 +11,11 @@ import { INTEREST_OPTIONS } from "./interest-option";
 import type { InterestOption } from "./interest-option";
 import { saveOnboardingInterestSelection } from "./onboarding-local-store";
 import { measureOnboardingDuration, recordOnboardingMark } from "./onboarding-timing";
+import { withReturnTo } from "./onboarding-return-to";
 
 export interface InterestPickerProps {
   region: Region;
+  returnTo: string | null;
 }
 
 /**
@@ -40,7 +43,7 @@ const TINT_CLASSES: Record<InterestOption["tint"], string> = {
  * is app state carried via `router.push`, not form data), so it is fully
  * keyboard operable via Tab/Enter/Space with no extra wiring.
  */
-export function InterestPicker({ region }: InterestPickerProps) {
+export function InterestPicker({ region, returnTo }: InterestPickerProps) {
   const router = useRouter();
   const { locale } = regionDisplayConfig(region);
   const copy = getOnboardingCopy(locale).interests;
@@ -66,7 +69,8 @@ export function InterestPicker({ region }: InterestPickerProps) {
     recordOnboardingMark("interests-complete");
     measureOnboardingDuration("yourtal:interests", "interests-start", "interests-complete");
     saveOnboardingInterestSelection([...selected]);
-    router.push(`/onboarding/${region}/done`);
+    // typedRoutes cast — see commit-region-action.ts.
+    router.push(withReturnTo(`/onboarding/${region}/done`, returnTo) as Route);
   }
 
   return (

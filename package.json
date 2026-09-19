@@ -11,9 +11,20 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "verify": "turbo run typecheck && turbo run test --concurrency=1",
+    "policy:test": "node scripts/policy-test.mjs",
+    "policy:compile": "node scripts/policy-test.mjs --compile",
     "format": "prettier --write .",
     "tasks": "node scripts/tasks.mjs",
-    "tasks:check": "node scripts/tasks.mjs --check"
+    "tasks:check": "node scripts/tasks.mjs --check",
+    "dev:up": "docker compose up -d --wait",
+    "dev:down": "docker compose down",
+    "dev:reset": "docker compose down -v && docker compose up -d --wait",
+    "dev:logs": "docker compose logs -f",
+    "dev:psql": "docker exec -it yourtal-postgres psql -U yourtal -d yourtal",
+    "db:migrate": "pnpm --filter @yourtal/db migrate",
+    "db:seed": "pnpm --filter @yourtal/db seed",
+    "dev:fresh": "pnpm dev:reset && pnpm db:migrate && pnpm db:seed"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

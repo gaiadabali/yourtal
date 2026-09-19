@@ -1,0 +1,38 @@
+{
+  "name": "@yourtal/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --import @swc-node/register/esm-register src/main.ts",
+    "start": "node --import @swc-node/register/esm-register src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nestjs/common": "12.0.3",
+    "@nestjs/core": "12.0.3",
+    "@nestjs/platform-fastify": "12.0.3",
+    "@yourtal/authz": "workspace:*",
+    "@yourtal/contracts": "workspace:*",
+    "@yourtal/idempotency": "workspace:*",
+    "drizzle-orm": "0.45.2",
+    "fastify": "5.12.5",
+    "nestjs-zod": "5.5.0",
+    "neverthrow": "8.2.0",
+    "pg": "8.23.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "12.0.3",
+    "@swc-node/register": "^1.12.1",
+    "@swc/core": "^1.16.2",
+    "@types/pg": "8.23.1",
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

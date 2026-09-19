@@ -3,14 +3,17 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
+import type { Route } from "next";
 import type { Region } from "@yourtal/contracts/region";
 import { Button } from "@yourtal/ui/button";
 import { regionDisplayConfig } from "@/features/region/region-config";
 import { getOnboardingCopy } from "./onboarding-copy";
 import { saveOnboardingConsentChoice } from "./onboarding-local-store";
+import { withReturnTo } from "./onboarding-return-to";
 
 export interface ConsentFormProps {
   region: Region;
+  returnTo: string | null;
 }
 
 /**
@@ -28,7 +31,7 @@ export interface ConsentFormProps {
  * suspenders, matching `features/checkpoint/checkpoint-question-step.tsx`'s
  * `canProceed` pattern.
  */
-export function ConsentForm({ region }: ConsentFormProps) {
+export function ConsentForm({ region, returnTo }: ConsentFormProps) {
   const router = useRouter();
   const copy = getOnboardingCopy(regionDisplayConfig(region).locale).consent;
   const [essential, setEssential] = useState(false);
@@ -46,7 +49,9 @@ export function ConsentForm({ region }: ConsentFormProps) {
       marketing,
       decidedAt: new Date().toISOString(),
     });
-    router.push(`/onboarding/${region}/verify`);
+    // typedRoutes cast — see commit-region-action.ts for why `withReturnTo`'s
+    // plain-`string` return needs one.
+    router.push(withReturnTo(`/onboarding/${region}/verify`, returnTo) as Route);
   }
 
   return (

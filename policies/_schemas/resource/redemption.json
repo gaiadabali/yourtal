@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "redemption",
+  "description": "The merchant redemption surface: authorize, capture, void, refund, the manual lookup, the log, and the API credentials that guard it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": {
+    "businessId": { "type": "string" },
+    "locationId": { "type": "string" },
+    "logScope": {
+      "description": "today is all a counter device may ever see (docs/17 section 2.2). all is office staff.",
+      "type": "string",
+      "enum": ["today", "all"]
+    },
+    "credentialRotationRequestedBy": {
+      "description": "Third of the three two-person-approval actions in docs/17 section 2.1.",
+      "type": "string"
+    },
+    "merchantSuspended": {
+      "description": "Per-merchant kill switch (docs/14 section 6). Trips authorize without touching captures of existing holds.",
+      "type": "boolean"
+    }
+  }
+}

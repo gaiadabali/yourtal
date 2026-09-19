@@ -20,8 +20,23 @@
     "ctaBody": "Tonton video {duration} ini dan dapatkan {reward} setelah kamu mendaftar.",
     "ctaBodyWithBonus": "Tonton video {duration} ini dan dapatkan {reward}, plus bonus akurasi hingga {bonus}, setelah kamu mendaftar.",
     "ctaButton": "Daftar untuk mulai dapat poin",
+    "watchAnonymouslyCta": "Tonton tanpa mendaftar",
     "honestyNote": "Ketentuan yang ditampilkan di halaman ini adalah ketentuan yang akan dihormati — durasi, reward, dan aturan penilaian tidak berubah setelah kamu mulai menonton.",
     "notLiveNotice": "Campaign ini sedang tidak aktif."
+  },
+  "openView": {
+    "breadcrumbLabel": "Tonton",
+    "eyebrow": "Menonton tanpa akun",
+    "foregoneRewardNotice": "Pengguna yang sudah mendaftar mendapatkan {reward} untuk video ini. Kamu menonton tanpa akun, jadi kali ini kamu tidak mendapatkan poin.",
+    "foregoneRewardNoticeWithBonus": "Pengguna yang sudah mendaftar mendapatkan {reward}, plus bonus akurasi hingga {bonus}, untuk video ini. Kamu menonton tanpa akun, jadi kali ini kamu tidak mendapatkan poin.",
+    "signupLinkLabel": "Daftar untuk mulai dapat poin di video berikutnya",
+    "finishedHeading": "Kamu sudah menonton video ini sampai selesai",
+    "finishedBody": "Kalau kamu sudah mendaftar, ini saat kamu akan dibayar — {reward}, menunggu pertanyaan checkpoint. Daftar sekarang dan kami akan membawamu kembali ke sini.",
+    "finishedBodyWithBonus": "Kalau kamu sudah mendaftar, ini saat kamu akan dibayar — {reward}, plus bonus akurasi hingga {bonus}, menunggu pertanyaan checkpoint. Daftar sekarang dan kami akan membawamu kembali ke sini.",
+    "signupCta": "Daftar dan lanjutkan dari sini",
+    "chapterWatchedStatus": "sudah ditonton",
+    "chapterWatchingStatus": "sedang ditonton",
+    "chapterUpcomingStatus": "belum"
   },
   "offer": {
     "eyebrow": "Voucher",

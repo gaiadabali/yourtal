@@ -11,19 +11,20 @@
 
 **A1 🚩 Cash-out: which option?**
 The brief lets users sell vouchers by bidding and donate proceeds to charity — both of which imply money leaving the system. Pick one:
+
 - **(A) Closed loop** — sale proceeds can only buy other vouchers. Ship in phase 3, minimal licensing.
 - **(B) Charity-only exit** — proceeds leave only to a registered partner charity.
 - **(C) Full cash-out to bank/e-wallet** — needs AFSL/relief + AUSTRAC in AU and PJP licensing (or a licensed partner) in ID; 12–18 month lead, material capital.
-*This single answer determines whether we are building a loyalty programme or a payments company.*
+  _This single answer determines whether we are building a loyalty programme or a payments company._
 
 **A2 🚩 What does the business pay YourTal, concretely?**
-The business funds the *reward*. Separately, what do they pay *us*? A cash fee per verified completed view (recommended — it prices against CAC), a percentage of voucher face value, a monthly subscription, a clearing spread on points, or a combination? What does a first merchant contract actually look like?
+The business funds the _reward_. Separately, what do they pay _us_? A cash fee per verified completed view (recommended — it prices against CAC), a percentage of voucher face value, a monthly subscription, a clearing spread on points, or a combination? What does a first merchant contract actually look like?
 
-**A3 ✅ RESOLVED — the business funds the reward, and the reward is always points.** Vouchers and merchandise are *inventory* the business supplies to the shared store, priced in points — a separate relationship from funding a campaign. **The funding mechanism (J1) and the pricing model (K1) are still open.**
+**A3 ✅ RESOLVED — the business funds the reward, and the reward is always points.** Vouchers and merchandise are _inventory_ the business supplies to the shared store, priced in points — a separate relationship from funding a campaign. **The funding mechanism (J1) and the pricing model (K1) are still open.**
 
 **A4** Is there a committed launch merchant list? How many, in which categories (F&B, retail, telco, e-commerce)? Warm or cold?
 
-**A5** Is YourTal a *closed* network (only sister companies + direct merchants) or does it eventually accept programmatic demand from external DSPs? That changes whether we implement OpenRTB.
+**A5** Is YourTal a _closed_ network (only sister companies + direct merchants) or does it eventually accept programmatic demand from external DSPs? That changes whether we implement OpenRTB.
 
 **A6** Revenue target and runway: what does year 1 have to produce, and what is the funding envelope? This decides build-vs-buy on almost every line.
 
@@ -34,7 +35,7 @@ The business funds the *reward*. Separately, what do they pay *us*? A cash fee p
 ## B. Currency & value model
 
 **B1 🚩 Is a fixed points-to-currency rate a requirement?**
-The plan recommends **no published fixed rate** on the consumer side — prices are computed from a platform-set backing rate `B` that is never shown to users — specifically to stay out of e-money regulation. Note this now sits in tension with the B2B side, where partners *must* have a per-point price to fund campaigns. The two prices must not be the same number, and the consumer surface must never display one. Does the business need "1,000 points = IDR X" for marketing reasons? If yes, get a legal opinion before writing code.
+The plan recommends **no published fixed rate** on the consumer side — prices are computed from a platform-set backing rate `B` that is never shown to users — specifically to stay out of e-money regulation. Note this now sits in tension with the B2B side, where partners _must_ have a per-point price to fund campaigns. The two prices must not be the same number, and the consumer surface must never display one. Does the business need "1,000 points = IDR X" for marketing reasons? If yes, get a legal opinion before writing code.
 
 **B2** Users cannot buy points — confirmed as a rule. Businesses must be able to. Is that distinction understood and accepted by the commercial team?
 
@@ -70,7 +71,7 @@ The plan recommends **no published fixed rate** on the consumer side — prices 
 
 ## D. Advertisers & demand
 
-**D1** Who sells? Is there a sales team, or must self-serve carry the load from day one? Research is clear that *self-serve grows advertiser count and managed service grows account value* — every network that scaled did both, but not simultaneously.
+**D1** Who sells? Is there a sales team, or must self-serve carry the load from day one? Research is clear that _self-serve grows advertiser count and managed service grows account value_ — every network that scaled did both, but not simultaneously.
 
 **D2** Minimum spend / minimum campaign size at launch?
 
@@ -95,7 +96,7 @@ In Indonesia, chance-based prize mechanics need MOSA draw + promotion permits an
 
 **E4** Campaign questions (the business's, gating the reward) and research questions (sold to a panel buyer) must stay distinct in the data model and in disclosure. Confirm the business understands that third-party research questions need their own consent and cannot hide inside a campaign quiz.
 
-**E5** Is user-generated or third-party *content* (not campaigns) part of the feed, or is the feed entirely campaigns, questions and quests? A content supply problem is a whole extra product.
+**E5** Is user-generated or third-party _content_ (not campaigns) part of the feed, or is the feed entirely campaigns, questions and quests? A content supply problem is a whole extra product.
 
 ---
 
@@ -105,11 +106,11 @@ In Indonesia, chance-based prize mechanics need MOSA draw + promotion permits an
 
 **F2** For each app, what actions should earn points, and what is each action worth to the group? (Is a snap-apps receipt scan worth more than a completed 20-minute watch? By how much?) The Reward Engine needs a value table.
 
-**F3** Who pays for points earned in sister apps — is there internal transfer pricing, or does YourTal absorb the liability as a group marketing cost? Note this is the *same mechanism* as partner funding (J1) pointed inward, and should use the same machinery.
+**F3** Who pays for points earned in sister apps — is there internal transfer pricing, or does YourTal absorb the liability as a group marketing cost? Note this is the _same mechanism_ as partner funding (J1) pointed inward, and should use the same machinery.
 
 **F4** Does snap-apps receipt data get shared with YourTal for targeting? If yes, under what consent, and can it be aggregated rather than user-level?
 
-**F5** Do sister apps need to *spend* points too (e.g. points pay for a freetaxreturns premium feature), or is YourTal the only place to redeem?
+**F5** Do sister apps need to _spend_ points too (e.g. points pay for a freetaxreturns premium feature), or is YourTal the only place to redeem?
 
 **F6** Is a single shared login mandatory, or must sister apps keep their own accounts with optional linking? Forced migration of existing accounts is a project in itself.
 
@@ -127,9 +128,9 @@ In Indonesia, chance-based prize mechanics need MOSA draw + promotion permits an
 
 **G5** Do sister apps already share any infrastructure (accounts, database, CI, cloud account) that YourTal should reuse or must avoid?
 
-**G6** Is there an appetite to buy an ad server (Kevel/Topsort) for phase 1? *Note: with long-form, business-funded rewards, checkpoint questions and points clearing, the vendor fit is now much worse than it was. Recommendation firms up to **build**.*
+**G6** Is there an appetite to buy an ad server (Kevel/Topsort) for phase 1? _Note: with long-form, business-funded rewards, checkpoint questions and points clearing, the vendor fit is now much worse than it was. Recommendation firms up to **build**._
 
-**G7** Blockchain: a genuine requirement from an investor/partner, or an option? *Note: the coalition clearing house is the one place where a shared multi-party record has a real argument — see [`07`](07-coalition-clearing-and-commerce.md) §2. Still recommend Postgres with signed statements for phase 1, and keeping voucher custody pluggable.*
+**G7** Blockchain: a genuine requirement from an investor/partner, or an option? _Note: the coalition clearing house is the one place where a shared multi-party record has a real argument — see [`07`](07-coalition-clearing-and-commerce.md) §2. Still recommend Postgres with signed statements for phase 1, and keeping voucher custody pluggable._
 
 ---
 
@@ -167,16 +168,17 @@ Indonesia's PJP path requires a PT with ≥15% Indonesian ownership, a locally d
 ### Reward funding & clearing
 
 **J1 🚩 How does a business fund the points it gives away?**
+
 - **(A) Pre-purchase** — buys a block of points upfront at a wholesale rate, drawn down as awarded. Liability transfers to them at purchase; cash is in the door; a partner going bust leaves us nothing unfunded to honour. **Recommended for launch.**
 - **(B) Post-paid** — invoiced monthly for points issued. Easier to sell, but we carry credit risk on every point awarded before payment clears.
 
-*This is the difference between running a clearing house and running an unsecured lending book.*
+_This is the difference between running a clearing house and running an unsecured lending book._
 
 **J2** What are the **two prices** — what a business pays per point issued, and what we pay a business per point redeemed against their inventory? The spread is a primary revenue line and needs a number, not a principle.
 
 **J3** Who keeps **breakage** on expired points — YourTal, or shared with the funding partner? Large partners will negotiate; decide the default now.
 
-**J4** Can a business restrict where its points are spent ("my points, my stores only"), or are all points fully fungible across the coalition? Fungibility *is* the value proposition; restrictions are what some partners will demand. Pick a default and price the exception.
+**J4** Can a business restrict where its points are spent ("my points, my stores only"), or are all points fully fungible across the coalition? Fungibility _is_ the value proposition; restrictions are what some partners will demand. Pick a default and price the exception.
 
 **J5** What happens when a business leaves the coalition with points outstanding — buy-back at redemption price, honour until expiry, or accelerated expiry? Must be in the partner contract from the first signature.
 
@@ -194,7 +196,7 @@ Recommendation: **the merchant ships; YourTal never holds inventory** — and **
 **J9** What is the realistic **length distribution**? The plan expects 1–5 minutes to carry most inventory, with 15–30 minute features as the differentiator. If most campaigns really are 30 minutes, completion rate becomes the single make-or-break metric and the pilot in phase −1 matters even more.
 
 **J10 🚩 Scoring policy: hard pass/fail, or completion reward + accuracy bonus?**
-Strong recommendation: **gate on *answering*, scale on *correctness*.** Failing someone out after 28 minutes is where you lose the user permanently and earn the reviews that kill web-app acquisition. Businesses who want a hard threshold can have one — disclosed on the campaign card before the watch begins, with at least one retry.
+Strong recommendation: **gate on _answering_, scale on _correctness_.** Failing someone out after 28 minutes is where you lose the user permanently and earn the reviews that kill web-app acquisition. Businesses who want a hard threshold can have one — disclosed on the campaign card before the watch begins, with at least one retry.
 
 **J11** How many questions may a business ask, and is the platform willing to **refuse** a campaign that asks too many or tries to harvest personal data through them? (It must be. Businesses will try to turn the quiz into a lead form.)
 
@@ -226,7 +228,7 @@ If suppliers set point prices directly, any business can underprice and drain th
 
 **K2 🚩 What are the two opening numbers — `P_issue` (what a business pays per point) and `B` (the value we commit to deliver per point)?** The gap is the platform's structural margin. A 25% spread (IDR 8 / IDR 6) is the worked example; the real numbers are a commercial decision.
 
-**K3** Is **dynamic pricing** acceptable at all — prices moving with demand within a bounded range? The hotel-industry precedent shows *more consistent* per-point value, not merely cheaper. If the answer is no, prices are static and the economy loses its main self-correcting lever.
+**K3** Is **dynamic pricing** acceptable at all — prices moving with demand within a bounded range? The hotel-industry precedent shows _more consistent_ per-point value, not merely cheaper. If the answer is no, prices are static and the economy loses its main self-correcting lever.
 
 **K4** What happens when the economy needs to be **devalued** (`B` reduced, all prices up)? Is the business willing to announce it rather than do it silently? Silent devaluation is the fastest way to lose a points community.
 
@@ -267,7 +269,7 @@ Strong recommendation: **optional.** A manual merchant-portal redemption path (s
 **Unchanged and still blocking:**
 
 1. **A1** — Cash-out: closed loop, charity-only exit, or full withdrawal?
-2. **A2** — What does the business pay *us*, on top of funding the reward?
+2. **A2** — What does the business pay _us_, on top of funding the reward?
 3. **B1** — Fixed points-to-currency rate on the consumer side, or floating?
 4. **E1** — Skill-based games only at launch?
 5. **G1** — What team do we actually have?

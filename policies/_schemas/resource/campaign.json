@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "campaign",
+  "description": "A business-side campaign and its question bank. Consumer playback is a different kind entirely -- see campaign_view.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": {
+    "businessId": { "type": "string" },
+    "state": { "type": "string", "enum": ["draft", "live", "paused", "archived"] },
+    "moderationState": {
+      "description": "A campaign may not be published until the automated screen and the human queue (YT-0113, YT-0114) have passed it.",
+      "type": "string",
+      "enum": ["not_submitted", "pending", "approved", "rejected"]
+    },
+    "questionsContainPii": {
+      "description": "Set by the guardrail check (YT-0103). Publishing is denied while true -- the guardrail is not advisory.",
+      "type": "boolean"
+    }
+  }
+}

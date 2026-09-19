@@ -16,7 +16,14 @@ const validListing = {
   title: "Voucher Toko Berkah Rp50.000",
   description: "Voucher belanja di seluruh cabang Toko Berkah.",
   category: "retail",
-  district: "Tebet",
+  locations: [
+    {
+      id: "55555555-5555-4555-8555-555555555555",
+      name: "Toko Berkah — Cabang Utama",
+      address: "Jl. Kartini No. 5, Tebet",
+      district: "Tebet",
+    },
+  ],
   faceValueIdr: 50_000,
   settlementValueIdr: 15_000,
   priceInPoints: 2_500,
@@ -67,6 +74,17 @@ describe("listingSchema", () => {
     { name: "zero stockTotal", overrides: { stockTotal: 0 } },
     { name: "non-datetime expiresAt", overrides: { expiresAt: "next week" } },
     { name: "non-uuid id", overrides: { id: "abc" } },
+    { name: "empty locations array", overrides: { locations: [] } },
+    {
+      name: "duplicate location ids",
+      overrides: {
+        locations: [validListing.locations[0], validListing.locations[0]],
+      },
+    },
+    {
+      name: "a location missing an address",
+      overrides: { locations: [{ ...validListing.locations[0], address: "" }] },
+    },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ overrides }) => {

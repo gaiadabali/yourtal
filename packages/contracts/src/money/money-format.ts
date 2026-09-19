@@ -7,58 +7,74 @@
  * bundle, which is exactly what blew the 170 KB initial-JS budget
  * (docs/13b-typescript-standards.md section 8) on `/` and `/watch/[campaignId]`.
  *
- * The imports below are `import type`, and `verbatimModuleSyntax` is on, so
- * they are erased at compile time and this module has NO runtime edge to
- * `money.ts`. Keep it that way: do not import a value from `money.ts` here,
- * and do not add a schema to this file. The same rule applies to
- * `@yourtal/contracts/region` — it exports `regionSchema` (Zod) alongside
- * `REGION_CONFIG`, so this file never imports it either, even type-only for
- * the locale/currency unions: they are spelled out as literal unions below.
+ * `./currency` and `./minor-unit` are value-imported and that is safe: both
+ * are Zod-free for this reason. `money.ts` and `money-value.ts` are imported
+ * `import type` only, and `verbatimModuleSyntax` is on, so those imports are
+ * erased at compile time and this module has NO runtime edge to either.
+ * Keep it that way: do not value-import a schema here, and do not add one.
+ *
+ * ## What YT-0513 changed here
+ *
+ * This file used to spell out `"AUD" | "IDR"` by hand and divide AUD by a
+ * literal 100, with a comment explaining that it could not import the region
+ * table without taking on Zod. That was true, and the answer was not to keep
+ * a well-commented copy — it was to make the thing importable. The union now
+ * comes from `./currency` and the divisor from `./minor-unit`, so the IDR
+ * question (YT-0506) has exactly one place to be answered instead of being
+ * restated in prose here.
  */
+import type { Currency } from "./currency";
+import { minorUnitExponent } from "./minor-unit";
 import type { IdrMinorUnits, Points } from "./money";
+import type { Money } from "./money-value";
 
 /** The two locales this platform renders in (docs/15: `id-ID`, `en-AU`, locked). */
 type SupportedLocale = "en-AU" | "id-ID";
-/** The two currencies a region can price in (docs/tasks/phase-u-ui.md YT-0405). */
-type SupportedCurrency = "AUD" | "IDR";
 
-const CURRENCY_LOCALE: Record<SupportedCurrency, SupportedLocale> = {
+const CURRENCY_LOCALE: Record<Currency, SupportedLocale> = {
   AUD: "en-AU",
   IDR: "id-ID",
 };
 
 /**
- * Formats a stored minor-unit amount as a currency string for display, e.g.
+ * Formats a stored minor-unit amount for display, e.g.
  * `formatMoney(toIdrMinorUnits(45_000), "IDR")` renders "Rp45.000" and
  * `formatMoney(toIdrMinorUnits(1_250), "AUD")` renders "$12.50".
  *
- * AUD is unambiguously two-decimal, so its minor unit (cents) is divided by
- * 100 here. IDR is NOT divided: `IdrMinorUnits` is currently a count of whole
- * Rupiah, not sen (see money.ts's header, and YT-0506 which has not settled
- * that question). If YT-0506 ever redefines the IDR minor unit, the IDR
- * branch below is the one place that division goes — there remains exactly
- * one formatting implementation to change, which is the whole reason this
- * function (and this module) exists.
+ * The scaling comes from `MINOR_UNIT`: AUD is exponent 2, so its integer is
+ * cents; IDR is exponent 0 today, so its integer renders as written. When
+ * YT-0506 settles, changing that one table changes this function, and
+ * nothing here needs editing.
  *
- * The parameter is still typed `IdrMinorUnits` rather than a currency-generic
- * brand: `packages/contracts` has no currency-tagged Money type yet (docs/12
- * section 3's Fowler Money pattern, raised with the architect against
- * money.ts) — this function's signature is deliberately no wider than that
- * gap requires. It works correctly for both currencies today because both
- * are, structurally, "an integer amount in the currency's minor unit."
+ * It formats a **provisional** unit rather than refusing to. Display is not
+ * settlement: a wrong exponent renders a wrong number, while a wrong
+ * exponent at a PSP settles a merchant 100x wrong. `assertUnitSettled` gates
+ * the second and deliberately does not gate this one — a guard that breaks
+ * every working screen is a guard somebody removes.
+ *
+ * The amount is still typed `IdrMinorUnits` because the schemas it is read
+ * from are: migrating those fields to `Money` is a wire change coordinated
+ * separately. `formatMoneyValue` is the version for amounts that already
+ * know their own currency, and is what new call sites should use.
  */
-export function formatMoney(amountMinor: IdrMinorUnits, currency: SupportedCurrency): string {
-  const locale = CURRENCY_LOCALE[currency];
-  if (currency === "AUD") {
-    return new Intl.NumberFormat(locale, { style: "currency", currency: "AUD" }).format(
-      amountMinor / 100,
-    );
-  }
-  return new Intl.NumberFormat(locale, {
+export function formatMoney(amountMinor: IdrMinorUnits, currency: Currency): string {
+  const exponent = minorUnitExponent(currency);
+  return new Intl.NumberFormat(CURRENCY_LOCALE[currency], {
     style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(amountMinor);
+    currency,
+    maximumFractionDigits: exponent,
+  }).format(amountMinor / 10 ** exponent);
+}
+
+/**
+ * Formats a `Money`, which carries its own currency (YT-0513).
+ *
+ * The one-argument form that `formatMoney` cannot be: there is no currency
+ * for the caller to get wrong, and no AU fixture that renders as Rupiah
+ * because somebody forgot the second argument.
+ */
+export function formatMoneyValue(value: Money): string {
+  return formatMoney(asDisplayIdr(value.amountMinor), value.currency);
 }
 
 /**

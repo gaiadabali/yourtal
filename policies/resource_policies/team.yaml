@@ -1,0 +1,57 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Business team management (docs/17 section 2.1 and 2.2).
+
+  Two invariants from that section are enforced here rather than in a service:
+
+    * EXACTLY ONE OWNER. `change_role` can never target the owner role in
+      either direction; `transfer_ownership` is the only door, only the
+      current owner may open it, and it requires a recent step-up re-auth.
+    * Store staff get DEVICE SESSIONS, not accounts. Provisioning and revoking
+      a device is a team action held by owner and admin, so a lost phone is
+      one tap and not an account-lifecycle problem.
+resourcePolicy:
+  version: default
+  resource: team
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/team.json
+  rules:
+    - name: ownership-moves-only-by-transfer
+      actions: ["change_role", "remove_member"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(R.attr.targetRole) && R.attr.targetRole == "owner"
+
+    - name: ownership-transfer-needs-fresh-reauth
+      # docs/17 section 2.1: "transferable only by the current Owner with
+      # re-authentication". A session that authenticated this morning is not
+      # re-authentication; the window is deliberately short.
+      actions: ["transfer_ownership"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: |-
+            !has(P.attr.reauthenticatedAt)
+              || now() - timestamp(P.attr.reauthenticatedAt) > duration("5m")
+
+    - name: owner-and-admin-run-the-team
+      actions:
+        ["view", "invite", "remove_member", "change_role", "provision_device", "revoke_device"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_team_editor_of
+
+    - name: only-the-owner-transfers-or-deletes
+      actions: ["transfer_ownership", "delete_business"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_owner_of

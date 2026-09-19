@@ -24,17 +24,17 @@ Before any of the below, test the two assumptions the whole model now rests on. 
 
 **Goal:** make it possible to build the rest safely. Nothing user-visible ships except a login.
 
-| Workstream | Deliverable |
-|---|---|
-| Legal | Counsel opinions in ID + AU on: points classification, cash-out path, prize draws, charity structure. Entity structure decided (PT PMA + Pty Ltd). |
-| Identity | **YourtalID** live: OIDC provider, phone/OTP + social login, one sister app integrated end-to-end. |
-| Value | **Ledger service**: double-entry, append-only, idempotent transfers, invariant checker, daily proofs. No UI. |
-| Platform | Event bus, jurisdiction policy service, consent service v1, audit log, authorization (Cerbos) |
-| Infra | Two data planes (Jakarta + Sydney), IaC, CI/CD, observability, secrets/KMS |
-| Risk | Phone-OTP mandatory, Turnstile, fingerprinting, WebAuthn passkey enrolment, risk-score service skeleton. **No native attestation available — see [`08`](08-web-app-and-performance.md) §2** |
-| Frontend | Next.js App Router shell, design system, **CWV budgets enforced in CI + RUM segmented by country/device class** |
-| Clearing | Partner funding (pre-purchase + drawdown), **segregated float account**, and the **solvency invariant + coverage dashboard** — all required before any business funds a point |
-| Economy | **Name the economy owner** (analyst/economist). Define `P_issue`, `B`, expiry, faucet rates and the monetary-policy playbook on paper before any point is minted |
+| Workstream | Deliverable                                                                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legal      | Counsel opinions in ID + AU on: points classification, cash-out path, prize draws, charity structure. Entity structure decided (PT PMA + Pty Ltd).                                          |
+| Identity   | **YourtalID** live: OIDC provider, phone/OTP + social login, one sister app integrated end-to-end.                                                                                          |
+| Value      | **Ledger service**: double-entry, append-only, idempotent transfers, invariant checker, daily proofs. No UI.                                                                                |
+| Platform   | Event bus, jurisdiction policy service, consent service v1, audit log, authorization (Cerbos)                                                                                               |
+| Infra      | Two data planes (Jakarta + Sydney), IaC, CI/CD, observability, secrets/KMS                                                                                                                  |
+| Risk       | Phone-OTP mandatory, Turnstile, fingerprinting, WebAuthn passkey enrolment, risk-score service skeleton. **No native attestation available — see [`08`](08-web-app-and-performance.md) §2** |
+| Frontend   | Next.js App Router shell, design system, **CWV budgets enforced in CI + RUM segmented by country/device class**                                                                             |
+| Clearing   | Partner funding (pre-purchase + drawdown), **segregated float account**, and the **solvency invariant + coverage dashboard** — all required before any business funds a point               |
+| Economy    | **Name the economy owner** (analyst/economist). Define `P_issue`, `B`, expiry, faucet rates and the monetary-policy playbook on paper before any point is minted                            |
 
 **Gate 0 →** A sister app can log a user in via YourtalID, call the Reward Engine for a test action, and have the resulting points appear as a balanced pair of ledger entries that survive a replay and a reconciliation run. Legal has signed off on the phase-1 currency model in writing.
 
@@ -45,6 +45,7 @@ Before any of the below, test the two assumptions the whole model now rests on. 
 **Goal:** prove the core loop with real users and real merchants, in a closed loop, with no regulated money movement.
 
 **In scope**
+
 - **Web app / PWA (ID)**: feed, long-form player (chapters, resume, wake lock, 360–480p default, data-cost shown), streaks/daily check-in, points balance, rewards store. Mobile-first; tablet/desktop responsive
 - **Ad platform v1**: advertiser + campaign + creative **ingest/moderation pipeline for 1–30 min video**, managed (human) campaign setup, **question bank authoring + scoring policy**, targeting on geo/age/declared interest only, simple ranking, pacing, delivery
 - **Watch Session + checkpoints**: per-checkpoint signed tokens, randomised timestamps, **CDN segment-log cross-check**, chapter-level reward accrual, accuracy bonus
@@ -109,37 +110,37 @@ Treated as a **separate programme with its own business case**, not a feature:
 - **Cash-out**: AU licensing (AFSL or relief mapping, AUSTRAC, APRA threshold monitoring) and/or ID PJP licensing or a licensed partner
 - Permitted **prize draws** as tentpoles (MOSA permits + 10% social contribution in ID; state permits in AU)
 - Programmatic demand integration (OpenRTB 2.6) to fill unsold inventory at better rates
-- Voucher custody swap-out (consortium chain) *only if* a partner requires it
+- Voucher custody swap-out (consortium chain) _only if_ a partner requires it
 - White-label loyalty for large merchants
 
 ---
 
 ## Team shape
 
-| Pod | Owns | Size |
-|---|---|---|
-| **Platform** | Identity, authz, event bus, consent, jurisdiction, infra | 2–3 |
-| **Value** | Ledger, points, vouchers, wallet, payments, reward engine | 3 |
-| **Ad platform** | Advertiser, campaign, creative, decisioning, delivery, pacing, billing | 3 |
-| **Experience** | Web app (user/advertiser/merchant), feed, player, games, surveys | 3–4 |
-| **Commerce** | Store catalogue, inventory, orders, shipping, returns, merchant KYB | 2 (from phase 2) |
-| **Economy** | Pricing engine, solvency monitoring, faucet/sink policy, economy dashboard | 1 engineer + **1 analyst/economist from phase 0** |
-| **Data & Risk** | Pipeline, CDP, models, fraud, reporting | 2–3 |
+| Pod             | Owns                                                                       | Size                                              |
+| --------------- | -------------------------------------------------------------------------- | ------------------------------------------------- |
+| **Platform**    | Identity, authz, event bus, consent, jurisdiction, infra                   | 2–3                                               |
+| **Value**       | Ledger, points, vouchers, wallet, payments, reward engine                  | 3                                                 |
+| **Ad platform** | Advertiser, campaign, creative, decisioning, delivery, pacing, billing     | 3                                                 |
+| **Experience**  | Web app (user/advertiser/merchant), feed, player, games, surveys           | 3–4                                               |
+| **Commerce**    | Store catalogue, inventory, orders, shipping, returns, merchant KYB        | 2 (from phase 2)                                  |
+| **Economy**     | Pricing engine, solvency monitoring, faucet/sink policy, economy dashboard | 1 engineer + **1 analyst/economist from phase 0** |
+| **Data & Risk** | Pipeline, CDP, models, fraud, reporting                                    | 2–3                                               |
 
-Phase 0–1 can run with Platform + Value + a thin Ad platform + 2 app engineers (~8 people). Data & Risk must exist by the *end* of phase 1, not the start of phase 2 — fraud arrives with the first real reward.
+Phase 0–1 can run with Platform + Value + a thin Ad platform + 2 app engineers (~8 people). Data & Risk must exist by the _end_ of phase 1, not the start of phase 2 — fraud arrives with the first real reward.
 
 ## What to buy rather than build
 
-| Thing | Buy | Reconsider building when |
-|---|---|---|
-| Video encode + delivery | Cloudflare Stream | Egress is a top-3 cost line |
-| Identity | Keycloak (self-hosted OSS) | Never — but budget patch discipline |
-| Survey supply | External panel API | We have >1 M engaged users with rich profiles |
-| Offerwall | Existing provider | Our offer inventory is direct-sold and large |
-| Fraud device signals | Fingerprinting vendor + platform attestation | Our own signals outperform, ~2 years in |
-| Payments | Xendit (ID payouts) + Midtrans/Xendit (ID collection), Stripe (AU) | Never |
-| Analytics / BI | ClickHouse + Grafana/Metabase | — |
-| Ad server | **Build** — the reward loop, voucher funding and points pricing have no vendor equivalent | — |
-| Courier logistics | Aggregator (Biteship / Shipper in ID, Shippit in AU) — never integrate couriers one by one | Never |
-| Digital goods supply (pulsa, e-vouchers) | Aggregator API | Never |
-| Bot / fingerprint signals | Turnstile + a commercial fingerprint vendor | Our signals outperform, ~2 years in |
+| Thing                                    | Buy                                                                                        | Reconsider building when                      |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Video encode + delivery                  | Cloudflare Stream                                                                          | Egress is a top-3 cost line                   |
+| Identity                                 | Keycloak (self-hosted OSS)                                                                 | Never — but budget patch discipline           |
+| Survey supply                            | External panel API                                                                         | We have >1 M engaged users with rich profiles |
+| Offerwall                                | Existing provider                                                                          | Our offer inventory is direct-sold and large  |
+| Fraud device signals                     | Fingerprinting vendor + platform attestation                                               | Our own signals outperform, ~2 years in       |
+| Payments                                 | Xendit (ID payouts) + Midtrans/Xendit (ID collection), Stripe (AU)                         | Never                                         |
+| Analytics / BI                           | ClickHouse + Grafana/Metabase                                                              | —                                             |
+| Ad server                                | **Build** — the reward loop, voucher funding and points pricing have no vendor equivalent  | —                                             |
+| Courier logistics                        | Aggregator (Biteship / Shipper in ID, Shippit in AU) — never integrate couriers one by one | Never                                         |
+| Digital goods supply (pulsa, e-vouchers) | Aggregator API                                                                             | Never                                         |
+| Bot / fingerprint signals                | Turnstile + a commercial fingerprint vendor                                                | Our signals outperform, ~2 years in           |

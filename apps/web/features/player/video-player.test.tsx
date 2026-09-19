@@ -35,6 +35,12 @@ const campaign = campaignSchema.parse({
   merchantName: "Toko Uji",
   synopsis: "A synopsis for testing.",
   durationSeconds: 900,
+  chapters: [
+    { title: "Pembuka", startSeconds: 0, rewardWeight: 1 },
+    { title: "Isi", startSeconds: 120, rewardWeight: 2 },
+    { title: "Penutup", startSeconds: 300, rewardWeight: 5 },
+  ],
+  videoSource: { kind: "hls", manifestUrl: "https://mock.yourtal.test/hls/sample.m3u8" },
   estimatedDataMb: 90,
   rewardPoints: 2_000,
   questionCount: 3,

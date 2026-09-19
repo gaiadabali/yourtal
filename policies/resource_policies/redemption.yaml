@@ -1,0 +1,93 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  The merchant redemption network (docs/17 section 2.2, docs/14 section 6).
+
+  This is the policy that earns the whole ticket. A cashier on a shared phone
+  in a busy shop is not an office user, and the standard mistake is giving
+  them a normal account. Here a counter device is its own principal role with
+  exactly three capabilities -- authorize, capture, lookup -- plus today's log
+  and nothing else. Void, refund, reports and every other surface are DENIED
+  to store_device explicitly, not merely left un-granted, so that a later
+  convenience grant to "all business roles" cannot widen a stolen phone.
+
+  Note what is absent: there is no balance-lookup action anywhere in this
+  file. docs/14 section 6 is emphatic that an endpoint answering "is this
+  code valid" without moving value is a free enumeration oracle -- the exact
+  mechanism behind gift-card draining. `lookup` here is the STAFF-
+  authenticated manual lookup in the merchant portal, which is rate-limited
+  and audited; it is not an anonymous code check, and there is no action in
+  this policy that could become one.
+resourcePolicy:
+  version: default
+  resource: redemption
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/redemption.json
+  rules:
+    - name: a-counter-device-never-moves-value-backwards
+      actions:
+        ["void", "refund", "rotate_credential", "approve_credential_rotation", "view_credential"]
+      effect: EFFECT_DENY
+      roles: ["store_device"]
+
+    - name: killed-merchants-cannot-authorize
+      # Per-merchant kill switch, docs/14 section 6. Two modes: this is
+      # "pause authorize" -- captures of existing holds still settle, because
+      # a hold already taken is the customer's, not the merchant's.
+      actions: ["authorize"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(R.attr.merchantSuspended) && R.attr.merchantSuspended
+
+    - name: nobody-approves-their-own-credential-rotation
+      # Third of the three two-person-approval actions, docs/17 section 2.1.
+      actions: ["approve_credential_rotation"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(R.attr.credentialRotationRequestedBy) && R.attr.credentialRotationRequestedBy == P.id
+
+    - name: counter-device-takes-redemptions
+      actions: ["authorize", "capture", "lookup"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - store_device_of
+
+    - name: counter-device-sees-today-only
+      actions: ["view_log"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - store_device_of
+      condition:
+        match:
+          expr: has(R.attr.logScope) && R.attr.logScope == "today"
+
+    - name: office-staff-take-redemptions
+      actions: ["authorize", "capture", "lookup", "view_log", "view_credential"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_redeemer_of
+
+    - name: owner-and-admin-rotate-credentials
+      actions: ["rotate_credential", "approve_credential_rotation"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_team_editor_of
+
+    - name: refunds-and-voids-are-internal
+      actions: ["void", "refund"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]
+
+    - name: support-reads-the-log
+      actions: ["view_log", "lookup"]
+      effect: EFFECT_ALLOW
+      roles: ["support"]

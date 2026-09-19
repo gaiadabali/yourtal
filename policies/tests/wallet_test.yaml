@@ -1,0 +1,99 @@
+---
+name: WalletSuite
+description: |-
+  Object-level authorization for consumer wallets. The role `user` on its own
+  gets you nothing anywhere in this repo -- OWASP A01 is a correct role check
+  over the wrong object, and this suite is what proves we do not do that.
+options:
+  now: "2026-09-19T10:00:00Z"
+tests:
+  - name: your own wallet, and nobody else's
+    input:
+      principals: [wina]
+      resources: [wallet_wina, wallet_someone_else]
+      actions: [view, view_history, redeem, transfer]
+    expected:
+      - principal: wina
+        resource: wallet_wina
+        actions:
+          view: EFFECT_ALLOW
+          view_history: EFFECT_ALLOW
+          redeem: EFFECT_ALLOW
+          transfer: EFFECT_ALLOW
+      - principal: wina
+        resource: wallet_someone_else
+        actions:
+          view: EFFECT_DENY
+          view_history: EFFECT_DENY
+          redeem: EFFECT_DENY
+          transfer: EFFECT_DENY
+
+  - name: an anonymous visitor holds nothing
+    input:
+      principals: [anon]
+      resources: [wallet_wina]
+      actions: [view, redeem, transfer, receive_voucher]
+    expected:
+      - principal: anon
+        resource: wallet_wina
+        actions:
+          view: EFFECT_DENY
+          redeem: EFFECT_DENY
+          transfer: EFFECT_DENY
+          receive_voucher: EFFECT_DENY
+
+  - name: a suspended account can still read, and cannot spend
+    input:
+      principals: [wina_suspended]
+      resources: [wallet_wina]
+      actions: [view, view_history, redeem, transfer]
+    expected:
+      - principal: wina_suspended
+        resource: wallet_wina
+        actions:
+          view: EFFECT_ALLOW
+          view_history: EFFECT_ALLOW
+          redeem: EFFECT_DENY
+          transfer: EFFECT_DENY
+
+  - name: the SIM-swap freeze stops value moving, not reading
+    input:
+      principals: [wina_frozen]
+      resources: [wallet_wina]
+      actions: [view, redeem, transfer]
+    expected:
+      - principal: wina_frozen
+        resource: wallet_wina
+        actions: { view: EFFECT_ALLOW, redeem: EFFECT_DENY, transfer: EFFECT_DENY }
+
+  - name: a high-value redemption asks for the passkey
+    input:
+      principals: [wina, wina_with_passkey]
+      resources: [wallet_wina_high_value]
+      actions: [view, redeem]
+    expected:
+      - principal: wina
+        resource: wallet_wina_high_value
+        actions: { view: EFFECT_ALLOW, redeem: EFFECT_DENY }
+      - principal: wina_with_passkey
+        resource: wallet_wina_high_value
+        actions: { view: EFFECT_ALLOW, redeem: EFFECT_ALLOW }
+
+  - name: no internal role reads a live wallet
+    input:
+      principals: [support_sari, risk_umi, finance_yani, admin_root]
+      resources: [wallet_wina]
+      actions: [view, redeem]
+    expected:
+      - principal: support_sari
+        resource: wallet_wina
+        actions: { view: EFFECT_DENY, redeem: EFFECT_DENY }
+      - principal: risk_umi
+        resource: wallet_wina
+        actions: { view: EFFECT_DENY, redeem: EFFECT_DENY }
+      - principal: finance_yani
+        resource: wallet_wina
+        actions: { view: EFFECT_DENY, redeem: EFFECT_DENY }
+      - principal: admin_root
+        resource: wallet_wina
+        actions: { view: EFFECT_DENY, redeem: EFFECT_DENY }

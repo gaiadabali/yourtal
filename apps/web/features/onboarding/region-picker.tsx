@@ -3,6 +3,11 @@ import { regionDisplayConfig } from "@/features/region/region-config";
 import { commitRegionAction } from "./commit-region-action";
 import { REGION_OPTIONS } from "./region-option";
 
+export interface RegionPickerProps {
+  /** Carried forward from `?returnTo=` (see `onboarding-return-to.ts`); `null` for an ordinary sign-up. */
+  returnTo: string | null;
+}
+
 /**
  * Region select (docs/tasks/phase-u-ui.md YT-0430's region criterion, added
  * at the founder's request — not in the ticket's original acceptance
@@ -25,7 +30,7 @@ import { REGION_OPTIONS } from "./region-option";
  * to go from `Region` to its display config, matching the client leaves
  * later in the flow (`onboarding-progress.tsx`, `phone-verification-flow.tsx`).
  */
-export function RegionPicker() {
+export function RegionPicker({ returnTo }: RegionPickerProps) {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
@@ -46,6 +51,7 @@ export function RegionPicker() {
           return (
             <form key={option.region} action={commitRegionAction}>
               <input type="hidden" name="region" value={option.region} />
+              {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
               <button
                 type="submit"
                 className="flex w-full flex-col gap-1 rounded-lg border border-border bg-surface p-4 text-left transition-colors hover:border-border-strong hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

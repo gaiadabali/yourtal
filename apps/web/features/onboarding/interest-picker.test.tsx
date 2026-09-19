@@ -18,7 +18,7 @@ describe("InterestPicker", () => {
   });
 
   it("renders every interest as an unselected, keyboard-operable toggle button", () => {
-    render(<InterestPicker region="AU" />);
+    render(<InterestPicker region="AU" returnTo={null} />);
     const buttons = screen.getAllByRole("button", { pressed: false });
     // +1 for the "Skip for now" action button, which is not a toggle and has no aria-pressed.
     expect(buttons).toHaveLength(INTEREST_OPTIONS.length);
@@ -26,7 +26,7 @@ describe("InterestPicker", () => {
 
   it("labels the continue action honestly: Skip for now with zero selections, Continue once one is picked", async () => {
     const user = userEvent.setup();
-    render(<InterestPicker region="AU" />);
+    render(<InterestPicker region="AU" returnTo={null} />);
 
     expect(screen.getByRole("button", { name: "Skip for now" })).toBeInTheDocument();
 
@@ -42,7 +42,7 @@ describe("InterestPicker", () => {
 
   it("toggles selection back off on a second click", async () => {
     const user = userEvent.setup();
-    render(<InterestPicker region="AU" />);
+    render(<InterestPicker region="AU" returnTo={null} />);
     const first = INTEREST_OPTIONS[0];
     if (first === undefined) {
       throw new Error("expected at least one interest option");
@@ -57,7 +57,7 @@ describe("InterestPicker", () => {
 
   it("saves the selection and advances to the done step for the chosen region", async () => {
     const user = userEvent.setup();
-    render(<InterestPicker region="ID" />);
+    render(<InterestPicker region="ID" returnTo={null} />);
     const first = INTEREST_OPTIONS[0];
     if (first === undefined) {
       throw new Error("expected at least one interest option");
@@ -74,7 +74,7 @@ describe("InterestPicker", () => {
   });
 
   it("never blocks continuing — zero selections is a valid, honest choice", () => {
-    render(<InterestPicker region="AU" />);
+    render(<InterestPicker region="AU" returnTo={null} />);
     expect(screen.getByRole("button", { name: "Skip for now" })).toBeEnabled();
   });
 });

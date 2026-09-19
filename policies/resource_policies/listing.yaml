@@ -1,0 +1,59 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Store inventory (docs/17 section 2, Inventory zone).
+
+  Lowering a settlement value S by more than the threshold is one of the three
+  two-person-approval actions in docs/17 section 2.1. It matters because S is
+  what the platform owes the merchant at redemption: a quiet downward revision
+  moves real money, so the approver must be a different human from the
+  requester. The PDP is where "a different human" is actually enforced -- a
+  service-side check is the kind of thing that survives until someone needs a
+  hotfix at 3am.
+resourcePolicy:
+  version: default
+  resource: listing
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/listing.json
+  rules:
+    - name: nobody-approves-their-own-settlement-cut
+      actions: ["approve_settlement_decrease"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(R.attr.requestedBy) && R.attr.requestedBy == P.id
+
+    - name: merchandisers-run-inventory
+      actions: ["create", "edit", "archive", "set_settlement_value"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_inventory_editor_of
+      condition:
+        match:
+          # A material decrease is not an edit; it is a request that must then
+          # be approved. Route it to approve_settlement_decrease instead.
+          expr: "!has(R.attr.isMaterialSettlementDecrease) || !R.attr.isMaterialSettlementDecrease"
+
+    - name: only-an-owner-or-admin-approves-the-cut
+      actions: ["approve_settlement_decrease"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_team_editor_of
+
+    - name: analysts-read-only
+      actions: ["view"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_inventory_viewer_of
+
+    - name: ops-approves-listings
+      # docs/17 section 5: Ops owns merchant onboarding, KYB and listing approval.
+      actions: ["view", "approve_listing", "reject_listing"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]

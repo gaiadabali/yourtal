@@ -47,7 +47,7 @@ describe("PhoneVerificationFlow", () => {
   });
 
   it("walks phone -> code -> verified, then auto-advances to the interest picker", () => {
-    render(<PhoneVerificationFlow region="AU" />);
+    render(<PhoneVerificationFlow region="AU" returnTo={null} />);
 
     expect(screen.getByRole("heading", { name: "What's your number?" })).toBeInTheDocument();
     sendCode();
@@ -63,7 +63,7 @@ describe("PhoneVerificationFlow", () => {
   });
 
   it("shows a plain-language error on a wrong code and lets the user retry, without losing the phone number", () => {
-    render(<PhoneVerificationFlow region="AU" />);
+    render(<PhoneVerificationFlow region="AU" returnTo={null} />);
     sendCode();
 
     enterAndVerify("000000");
@@ -75,7 +75,7 @@ describe("PhoneVerificationFlow", () => {
   });
 
   it("disables resend during the cooldown and re-enables it once the cooldown elapses", () => {
-    render(<PhoneVerificationFlow region="AU" />);
+    render(<PhoneVerificationFlow region="AU" returnTo={null} />);
     sendCode();
 
     expect(screen.getByRole("button", { name: /resend/i })).toBeDisabled();
@@ -85,7 +85,7 @@ describe("PhoneVerificationFlow", () => {
   });
 
   it("lets the user go back and edit a wrong number, discarding the in-flight code", () => {
-    render(<PhoneVerificationFlow region="AU" />);
+    render(<PhoneVerificationFlow region="AU" returnTo={null} />);
     sendCode();
 
     fireEvent.click(screen.getByRole("button", { name: "Wrong number? Edit it" }));
@@ -95,7 +95,7 @@ describe("PhoneVerificationFlow", () => {
   });
 
   it("rate-limits repeated resends and states when retry becomes possible, instead of refusing silently", () => {
-    render(<PhoneVerificationFlow region="AU" />);
+    render(<PhoneVerificationFlow region="AU" returnTo={null} />);
     sendCode();
 
     // RESEND_LIMIT allows 3 sends per 30 minutes; the initial send above is

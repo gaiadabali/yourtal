@@ -1,0 +1,66 @@
+---
+name: OpenViewingSuite
+description: |-
+  docs/17 section 4. The line is claimability, not anonymity: an anonymous
+  visitor may watch a whole campaign and may never earn from it, now or
+  retroactively.
+tests:
+  - name: an anonymous visitor watches, and earns nothing
+    input:
+      principals: [anon]
+      resources: [view_open_funded]
+      actions: [watch_open, watch_rewarded, earn, answer_scored, resume_session]
+    expected:
+      - principal: anon
+        resource: view_open_funded
+        actions:
+          watch_open: EFFECT_ALLOW
+          watch_rewarded: EFFECT_DENY
+          earn: EFFECT_DENY
+          answer_scored: EFFECT_DENY
+          resume_session: EFFECT_DENY
+
+  - name: open viewing is off by default, so nobody is surprised by a charge
+    input:
+      principals: [anon]
+      resources: [view_open_disabled]
+      actions: [watch_open]
+    expected:
+      - principal: anon
+        resource: view_open_disabled
+        actions: { watch_open: EFFECT_DENY }
+
+  - name: an exhausted budget is an unfunded delivery bill
+    input:
+      principals: [anon]
+      resources: [view_open_exhausted]
+      actions: [watch_open]
+    expected:
+      - principal: anon
+        resource: view_open_exhausted
+        actions: { watch_open: EFFECT_DENY }
+
+  - name: a signed-in viewer earns
+    input:
+      principals: [wina]
+      resources: [view_open_funded]
+      actions: [watch_open, watch_rewarded, earn, answer_scored, resume_session]
+    expected:
+      - principal: wina
+        resource: view_open_funded
+        actions:
+          watch_open: EFFECT_ALLOW
+          watch_rewarded: EFFECT_ALLOW
+          earn: EFFECT_ALLOW
+          answer_scored: EFFECT_ALLOW
+          resume_session: EFFECT_ALLOW
+
+  - name: a suspended user may watch but not accrue
+    input:
+      principals: [wina_suspended]
+      resources: [view_open_funded]
+      actions: [watch_open, earn, answer_scored]
+    expected:
+      - principal: wina_suspended
+        resource: view_open_funded
+        actions: { watch_open: EFFECT_DENY, earn: EFFECT_DENY, answer_scored: EFFECT_DENY }

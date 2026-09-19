@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "billing",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": { "businessId": { "type": "string" } }
+}

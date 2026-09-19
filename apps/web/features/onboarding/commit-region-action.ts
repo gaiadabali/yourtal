@@ -2,8 +2,10 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Route } from "next";
 import { regionSchema } from "@yourtal/contracts/region";
 import { ONBOARDING_REGION_COOKIE } from "./onboarding-region-cookie";
+import { parseReturnTo, withReturnTo } from "./onboarding-return-to";
 
 /**
  * The one piece of onboarding state that must survive past this flow: the
@@ -41,9 +43,17 @@ import { ONBOARDING_REGION_COOKIE } from "./onboarding-region-cookie";
  * again" instead of a 500.
  */
 export async function commitRegionAction(formData: FormData): Promise<void> {
+  const returnToEntry = formData.get("returnTo");
+  const returnTo = parseReturnTo(typeof returnToEntry === "string" ? returnToEntry : undefined);
+
   const parsed = regionSchema.safeParse(formData.get("region"));
   if (!parsed.success) {
-    redirect("/onboarding");
+    // typedRoutes only validates literal href strings (see campaign-card.tsx
+    // for the usual case); `withReturnTo`'s return type is a plain `string`
+    // once `returnTo` is folded in, so this needs the same cast. Safe here
+    // because `returnTo` is `parseReturnTo`'s validated output, and
+    // "/onboarding" itself is a real, literal, always-valid route.
+    redirect(withReturnTo("/onboarding", returnTo) as Route);
   }
 
   const region = parsed.data;
@@ -55,5 +65,5 @@ export async function commitRegionAction(formData: FormData): Promise<void> {
     maxAge: 60 * 60 * 24 * 365,
   });
 
-  redirect(`/onboarding/${region}/consent`);
+  redirect(withReturnTo(`/onboarding/${region}/consent`, returnTo) as Route);
 }

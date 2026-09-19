@@ -1,0 +1,28 @@
+{
+  "name": "@yourtal/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate": "node scripts/atlas.mjs apply",
+    "migrate:status": "node scripts/atlas.mjs status",
+    "migrate:hash": "node scripts/atlas.mjs hash",
+    "seed": "node --import @swc-node/register/esm-register src/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@yourtal/consent": "workspace:*",
+    "@yourtal/contracts": "workspace:*",
+    "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "@swc-node/register": "^1.11.1",
+    "@swc/core": "^1.15.2",
+    "@types/pg": "8.23.1",
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

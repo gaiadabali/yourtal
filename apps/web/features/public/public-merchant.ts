@@ -32,7 +32,7 @@ import { slugify } from "./public-slug";
 export interface PublicMerchant {
   slug: string;
   name: string;
-  /** The most common district among this merchant's listings, or `null` if it has none (campaigns carry no district). */
+  /** The district most of this merchant's listings reach, or `null` if it has none (campaigns carry no location). */
   district: string | null;
   campaigns: Campaign[];
   listings: Listing[];
@@ -44,7 +44,12 @@ function mostCommonDistrict(listings: readonly Listing[]): string | null {
   }
   const counts = new Map<string, number>();
   for (const listing of listings) {
-    counts.set(listing.district, (counts.get(listing.district) ?? 0) + 1);
+    // Count each listing once per DISTRICT it reaches, not once per outlet:
+    // a merchant with four branches in Kemang and one in Senayan is not four
+    // times more "in" Kemang for the purpose of a one-line page subtitle.
+    for (const district of new Set(listing.locations.map((location) => location.district))) {
+      counts.set(district, (counts.get(district) ?? 0) + 1);
+    }
   }
   let best: { district: string; count: number } | null = null;
   for (const [district, count] of counts) {

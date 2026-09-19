@@ -1,0 +1,101 @@
+---
+name: TeamSuite
+description: |-
+  docs/17 section 2.1: exactly one Owner, transferable only by the current
+  Owner with re-authentication. The suite pins both halves -- the role can
+  never be reached sideways through change_role, and the front door needs a
+  step-up that is minutes old, not a session that logged in this morning.
+options:
+  now: "2026-09-19T10:00:00Z"
+tests:
+  - name: owner and admin run the team
+    input:
+      principals: [budi_owner, citra_admin, dewi_marketer, gita_analyst]
+      resources: [team_kopi]
+      actions: [view, invite, change_role, remove_member, provision_device, revoke_device]
+    expected:
+      - principal: budi_owner
+        resource: team_kopi
+        actions:
+          view: EFFECT_ALLOW
+          invite: EFFECT_ALLOW
+          change_role: EFFECT_ALLOW
+          remove_member: EFFECT_ALLOW
+          provision_device: EFFECT_ALLOW
+          revoke_device: EFFECT_ALLOW
+      - principal: citra_admin
+        resource: team_kopi
+        actions:
+          view: EFFECT_ALLOW
+          invite: EFFECT_ALLOW
+          change_role: EFFECT_ALLOW
+          remove_member: EFFECT_ALLOW
+          provision_device: EFFECT_ALLOW
+          revoke_device: EFFECT_ALLOW
+      - principal: dewi_marketer
+        resource: team_kopi
+        actions:
+          view: EFFECT_DENY
+          invite: EFFECT_DENY
+          change_role: EFFECT_DENY
+          remove_member: EFFECT_DENY
+          provision_device: EFFECT_DENY
+          revoke_device: EFFECT_DENY
+      - principal: gita_analyst
+        resource: team_kopi
+        actions:
+          view: EFFECT_DENY
+          invite: EFFECT_DENY
+          change_role: EFFECT_DENY
+          remove_member: EFFECT_DENY
+          provision_device: EFFECT_DENY
+          revoke_device: EFFECT_DENY
+
+  - name: ownership cannot be reached sideways
+    input:
+      principals: [budi_owner, citra_admin]
+      resources: [team_kopi_targeting_owner]
+      actions: [change_role, remove_member]
+    expected:
+      # Even the owner cannot promote someone to owner through change_role,
+      # nor remove the owner. transfer_ownership is the only door.
+      - principal: budi_owner
+        resource: team_kopi_targeting_owner
+        actions: { change_role: EFFECT_DENY, remove_member: EFFECT_DENY }
+      - principal: citra_admin
+        resource: team_kopi_targeting_owner
+        actions: { change_role: EFFECT_DENY, remove_member: EFFECT_DENY }
+
+  - name: transfer needs a fresh step-up, and only from the owner
+    input:
+      principals: [budi_owner, budi_owner_reauthed, citra_admin]
+      resources: [team_kopi]
+      actions: [transfer_ownership, delete_business]
+    expected:
+      # Same person, same role -- the only difference is a re-auth two
+      # minutes ago. An ordinary session is not enough.
+      - principal: budi_owner
+        resource: team_kopi
+        actions: { transfer_ownership: EFFECT_DENY, delete_business: EFFECT_ALLOW }
+      - principal: budi_owner_reauthed
+        resource: team_kopi
+        actions: { transfer_ownership: EFFECT_ALLOW, delete_business: EFFECT_ALLOW }
+      # Admin runs the team but does not own it.
+      - principal: citra_admin
+        resource: team_kopi
+        actions: { transfer_ownership: EFFECT_DENY, delete_business: EFFECT_DENY }
+
+  - name: a rival owner is a stranger here
+    input:
+      principals: [rival_owner]
+      resources: [team_kopi]
+      actions: [view, invite, change_role, transfer_ownership, delete_business]
+    expected:
+      - principal: rival_owner
+        resource: team_kopi
+        actions:
+          view: EFFECT_DENY
+          invite: EFFECT_DENY
+          change_role: EFFECT_DENY
+          transfer_ownership: EFFECT_DENY
+          delete_business: EFFECT_DENY

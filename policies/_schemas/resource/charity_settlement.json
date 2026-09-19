@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "charity_settlement",
+  "description": "Phase 3 placeholder (docs/04 -- charity is out of scope until Phase 3). The role exists in the taxonomy now so the boundary is testable, not so the feature is buildable.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["charityId"],
+  "properties": { "charityId": { "type": "string" } }
+}

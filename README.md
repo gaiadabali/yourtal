@@ -10,40 +10,40 @@ Ships as a **web app (PWA)** — mobile-first, excellent on tablet and desktop, 
 
 ## Documents
 
-| Doc | What it answers |
-|---|---|
-| [docs/00-research-summary.md](docs/00-research-summary.md) | How Google, Meta, YouTube, TikTok, Shopee and the loyalty/voucher industry actually build this, with sources |
-| [docs/01-strategy-and-economics.md](docs/01-strategy-and-economics.md) | The currency model, unit economics, and what the numbers say the product must be |
-| [docs/02-architecture.md](docs/02-architecture.md) | Domain map, watch/reward hot path, ledger design, tech choices, deployment topology |
-| [docs/03-regulatory-and-risk.md](docs/03-regulatory-and-risk.md) | Indonesian and Australian regulatory map, and the 28-item risk register |
-| [docs/04-roadmap.md](docs/04-roadmap.md) | Phases with gates, team shape, buy-vs-build |
-| [docs/05-open-questions.md](docs/05-open-questions.md) | What we need from you to make this executable |
-| [docs/06-longform-video-and-attention.md](docs/06-longform-video-and-attention.md) | 1–30 min video: cost, completion design, the question mechanic, ingest & moderation |
-| [docs/07-coalition-clearing-and-commerce.md](docs/07-coalition-clearing-and-commerce.md) | Partner funding, inter-business clearing & settlement, the merchandise leg |
-| [docs/08-web-app-and-performance.md](docs/08-web-app-and-performance.md) | Web/PWA decision, the fraud consequence, performance budgets |
-| **[docs/09-points-economy-and-redemption.md](docs/09-points-economy-and-redemption.md)** | **The inner economy: pricing, solvency, faucets and sinks, voucher transfer, and the merchant redemption protocol** |
-| **[docs/10-tech-stack.md](docs/10-tech-stack.md)** | **The stack, right-sized — and why video delivery is ~90% of the infrastructure bill** |
-| [docs/11-seo-aeo-geo.md](docs/11-seo-aeo-geo.md) | SEO, answer-engine and generative-engine optimisation; AI crawler policy; i18n routing |
-| [docs/12-patterns-from-the-giants.md](docs/12-patterns-from-the-giants.md) | What to copy from Stripe, Square, YouTube, Shopify, Google, Cloudflare and Netflix — and what to improve |
-| [docs/13-engineering-standards.md](docs/13-engineering-standards.md) | The 300-line rule and its refactor vocabulary, component architecture, module boundaries, testing, API conventions, CI gates |
-| [docs/13a-go-standards.md](docs/13a-go-standards.md) | Go: layout, errors, context, interfaces, chi/pgx/sqlc conventions, `.golangci.yml` |
-| [docs/13b-typescript-standards.md](docs/13b-typescript-standards.md) | TypeScript: tsconfig, no-`any`, Zod boundaries, `neverthrow`, barrel ban, server/client boundary |
-| [docs/14-security-engineering.md](docs/14-security-engineering.md) | Threat model, key management, API security, supply chain, incident response |
-| **[docs/15-stack-locked.md](docs/15-stack-locked.md)** | **The stack we use. Decided, no options.** |
-| **[docs/16-decisions.md](docs/16-decisions.md)** | **Every open question answered, with the precedent it follows.** |
-| **[docs/17-surfaces-and-roles.md](docs/17-surfaces-and-roles.md)** | **What the product looks like, the business/user/staff dashboards, role model, and the logged-out experience** |
-| **[docs/18-engines.md](docs/18-engines.md)** | **All fourteen engines, what each covers, and how smart each one actually is** |
-| **[docs/19-cold-start-and-data-strategy.md](docs/19-cold-start-and-data-strategy.md)** | **Breaking the two-sided cold start, momentum mechanics, and the data thesis — with what it does and does not license legally** |
-| **[docs/20-interest-and-preference.md](docs/20-interest-and-preference.md)** | **How we learn what people want — signals, scoring, consent partitions, and when ML actually earns its place** |
-| **[docs/21-failed-analogues.md](docs/21-failed-analogues.md)** | **Who tried this before and what happened — Plenti, Groupon merchant data, and the survivor rule** |
-| [docs/21a-case-studies.md](docs/21a-case-studies.md) | Company-by-company evidence: Viggle, Perk, Swagbucks/Prodege, Mistplay, BAT, Indonesian precedents |
-| [docs/22-assumption-audit.md](docs/22-assumption-audit.md) | Technical claims in this plan, verified or debunked |
-| **[docs/23-critique.md](docs/23-critique.md)** | **What is wrong with this plan — read this before the investor conversation** |
-| **[docs/24-legal-positions.md](docs/24-legal-positions.md)** | **Every legal position, sourced and risk-rated — the artefact that replaces counsel, and the red lines that cannot be crossed** |
+| Doc                                                                                      | What it answers                                                                                                                 |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [docs/00-research-summary.md](docs/00-research-summary.md)                               | How Google, Meta, YouTube, TikTok, Shopee and the loyalty/voucher industry actually build this, with sources                    |
+| [docs/01-strategy-and-economics.md](docs/01-strategy-and-economics.md)                   | The currency model, unit economics, and what the numbers say the product must be                                                |
+| [docs/02-architecture.md](docs/02-architecture.md)                                       | Domain map, watch/reward hot path, ledger design, tech choices, deployment topology                                             |
+| [docs/03-regulatory-and-risk.md](docs/03-regulatory-and-risk.md)                         | Indonesian and Australian regulatory map, and the 28-item risk register                                                         |
+| [docs/04-roadmap.md](docs/04-roadmap.md)                                                 | Phases with gates, team shape, buy-vs-build                                                                                     |
+| [docs/05-open-questions.md](docs/05-open-questions.md)                                   | What we need from you to make this executable                                                                                   |
+| [docs/06-longform-video-and-attention.md](docs/06-longform-video-and-attention.md)       | 1–30 min video: cost, completion design, the question mechanic, ingest & moderation                                             |
+| [docs/07-coalition-clearing-and-commerce.md](docs/07-coalition-clearing-and-commerce.md) | Partner funding, inter-business clearing & settlement, the merchandise leg                                                      |
+| [docs/08-web-app-and-performance.md](docs/08-web-app-and-performance.md)                 | Web/PWA decision, the fraud consequence, performance budgets                                                                    |
+| **[docs/09-points-economy-and-redemption.md](docs/09-points-economy-and-redemption.md)** | **The inner economy: pricing, solvency, faucets and sinks, voucher transfer, and the merchant redemption protocol**             |
+| **[docs/10-tech-stack.md](docs/10-tech-stack.md)**                                       | **The stack, right-sized — and why video delivery is ~90% of the infrastructure bill**                                          |
+| [docs/11-seo-aeo-geo.md](docs/11-seo-aeo-geo.md)                                         | SEO, answer-engine and generative-engine optimisation; AI crawler policy; i18n routing                                          |
+| [docs/12-patterns-from-the-giants.md](docs/12-patterns-from-the-giants.md)               | What to copy from Stripe, Square, YouTube, Shopify, Google, Cloudflare and Netflix — and what to improve                        |
+| [docs/13-engineering-standards.md](docs/13-engineering-standards.md)                     | The 300-line rule and its refactor vocabulary, component architecture, module boundaries, testing, API conventions, CI gates    |
+| [docs/13a-go-standards.md](docs/13a-go-standards.md)                                     | Go: layout, errors, context, interfaces, chi/pgx/sqlc conventions, `.golangci.yml`                                              |
+| [docs/13b-typescript-standards.md](docs/13b-typescript-standards.md)                     | TypeScript: tsconfig, no-`any`, Zod boundaries, `neverthrow`, barrel ban, server/client boundary                                |
+| [docs/14-security-engineering.md](docs/14-security-engineering.md)                       | Threat model, key management, API security, supply chain, incident response                                                     |
+| **[docs/15-stack-locked.md](docs/15-stack-locked.md)**                                   | **The stack we use. Decided, no options.**                                                                                      |
+| **[docs/16-decisions.md](docs/16-decisions.md)**                                         | **Every open question answered, with the precedent it follows.**                                                                |
+| **[docs/17-surfaces-and-roles.md](docs/17-surfaces-and-roles.md)**                       | **What the product looks like, the business/user/staff dashboards, role model, and the logged-out experience**                  |
+| **[docs/18-engines.md](docs/18-engines.md)**                                             | **All fourteen engines, what each covers, and how smart each one actually is**                                                  |
+| **[docs/19-cold-start-and-data-strategy.md](docs/19-cold-start-and-data-strategy.md)**   | **Breaking the two-sided cold start, momentum mechanics, and the data thesis — with what it does and does not license legally** |
+| **[docs/20-interest-and-preference.md](docs/20-interest-and-preference.md)**             | **How we learn what people want — signals, scoring, consent partitions, and when ML actually earns its place**                  |
+| **[docs/21-failed-analogues.md](docs/21-failed-analogues.md)**                           | **Who tried this before and what happened — Plenti, Groupon merchant data, and the survivor rule**                              |
+| [docs/21a-case-studies.md](docs/21a-case-studies.md)                                     | Company-by-company evidence: Viggle, Perk, Swagbucks/Prodege, Mistplay, BAT, Indonesian precedents                              |
+| [docs/22-assumption-audit.md](docs/22-assumption-audit.md)                               | Technical claims in this plan, verified or debunked                                                                             |
+| **[docs/23-critique.md](docs/23-critique.md)**                                           | **What is wrong with this plan — read this before the investor conversation**                                                   |
+| **[docs/24-legal-positions.md](docs/24-legal-positions.md)**                             | **Every legal position, sourced and risk-rated — the artefact that replaces counsel, and the red lines that cannot be crossed** |
 
 ## Tracker
 
-**[TASKS.md](TASKS.md)** is the single source of truth for status. Every file in this repo is under 300 lines, enforced in CI. Its dashboard is *generated* from `docs/tasks/*.md` by `scripts/tasks.mjs`, and CI fails if the two disagree — so it cannot silently drift. 156 tasks across Phase −1 to Phase 3.
+**[TASKS.md](TASKS.md)** is the single source of truth for status. Every file in this repo is under 300 lines, enforced in CI. Its dashboard is _generated_ from `docs/tasks/*.md` by `scripts/tasks.mjs`, and CI fails if the two disagree — so it cannot silently drift. **208 tasks** across Phase U to Phase 3 — 22 at review, 1 blocked, as of 2026-09-19.
 
 ## The six things to know before reading anything else
 

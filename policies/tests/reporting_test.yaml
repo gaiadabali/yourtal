@@ -1,0 +1,93 @@
+---
+name: ReportingSuite
+description: |-
+  Reports and billing (docs/17 section 2, Reports and Billing zones), plus
+  the export boundary: cohort floors are the product, so a business never
+  exports a report that resolves to individuals.
+tests:
+  - name: all six office roles read reports
+    input:
+      principals:
+        [budi_owner, citra_admin, dewi_marketer, eka_merchandiser, fajar_finance, gita_analyst]
+      resources: [report_kopi]
+      actions: [view, export]
+    expected:
+      - principal: budi_owner
+        resource: report_kopi
+        actions: { view: EFFECT_ALLOW, export: EFFECT_ALLOW }
+      - principal: citra_admin
+        resource: report_kopi
+        actions: { view: EFFECT_ALLOW, export: EFFECT_ALLOW }
+      - principal: dewi_marketer
+        resource: report_kopi
+        actions: { view: EFFECT_ALLOW, export: EFFECT_ALLOW }
+      - principal: eka_merchandiser
+        resource: report_kopi
+        actions: { view: EFFECT_ALLOW, export: EFFECT_ALLOW }
+      - principal: fajar_finance
+        resource: report_kopi
+        actions: { view: EFFECT_ALLOW, export: EFFECT_ALLOW }
+      - principal: gita_analyst
+        resource: report_kopi
+        actions: { view: EFFECT_ALLOW, export: EFFECT_ALLOW }
+
+  - name: no business exports a report that resolves to individuals
+    input:
+      principals: [budi_owner, gita_analyst]
+      resources: [report_kopi_identifying]
+      actions: [view, export]
+    expected:
+      - principal: budi_owner
+        resource: report_kopi_identifying
+        actions: { view: EFFECT_ALLOW, export: EFFECT_DENY }
+      - principal: gita_analyst
+        resource: report_kopi_identifying
+        actions: { view: EFFECT_ALLOW, export: EFFECT_DENY }
+
+  - name: billing -- owner and finance spend, admin only looks
+    input:
+      principals: [budi_owner, citra_admin, fajar_finance, dewi_marketer]
+      resources: [billing_kopi]
+      actions: [view, view_statement, purchase_points, raise_dispute]
+    expected:
+      - principal: budi_owner
+        resource: billing_kopi
+        actions:
+          view: EFFECT_ALLOW
+          view_statement: EFFECT_ALLOW
+          purchase_points: EFFECT_ALLOW
+          raise_dispute: EFFECT_ALLOW
+      - principal: citra_admin
+        resource: billing_kopi
+        actions:
+          view: EFFECT_ALLOW
+          view_statement: EFFECT_ALLOW
+          purchase_points: EFFECT_DENY
+          raise_dispute: EFFECT_DENY
+      - principal: fajar_finance
+        resource: billing_kopi
+        actions:
+          view: EFFECT_ALLOW
+          view_statement: EFFECT_ALLOW
+          purchase_points: EFFECT_ALLOW
+          raise_dispute: EFFECT_ALLOW
+      - principal: dewi_marketer
+        resource: billing_kopi
+        actions:
+          view: EFFECT_DENY
+          view_statement: EFFECT_DENY
+          purchase_points: EFFECT_DENY
+          raise_dispute: EFFECT_DENY
+
+  - name: a rival reads neither
+    input:
+      principals: [rival_owner]
+      resources: [report_kopi, billing_kopi]
+      actions: [view]
+    expected:
+      - principal: rival_owner
+        resource: report_kopi
+        actions: { view: EFFECT_DENY }
+      - principal: rival_owner
+        resource: billing_kopi
+        actions: { view: EFFECT_DENY }

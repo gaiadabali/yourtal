@@ -1,0 +1,18 @@
+node_modules/
+.next/
+dist/
+.turbo/
+coverage/
+pnpm-lock.yaml
+
+# Generated artifacts — formatted by their generator, not by us (YT-0031).
+# Prettier reformatting them makes the drift checks fail against a diff that
+# is purely whitespace. See packages/contracts/openapi/README.md.
+packages/contracts/openapi/yourtal.openapi.json
+packages/contracts/openapi/go/
+
+# Machine-parsed by scripts/tasks.mjs. Prettier reflowing these adds blank
+# lines between a task heading and its meta line, which is parser-adjacent
+# churn for no readability gain, and it pushed files over the 300-line rule.
+docs/tasks/
+TASKS.md

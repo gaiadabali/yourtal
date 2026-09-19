@@ -232,7 +232,7 @@
         ]
       },
       "Campaign": {
-        "description": "The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).\n  - An accuracy bonus requires at least one question to score accuracy against.",
+        "description": "The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).\n  - An accuracy bonus requires at least one question to score accuracy against.\n  - A long_form campaign must have at least one chapter; a quick campaign has none.\n  - The first chapter must start at second 0.\n  - Chapter start times must be strictly increasing.\n  - Every chapter must start before the campaign's own durationSeconds.",
         "type": "object",
         "properties": {
           "id": {
@@ -291,6 +291,15 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampaignChapter"
+            }
+          },
+          "videoSource": {
+            "$ref": "#/components/schemas/CampaignVideoSource"
           }
         },
         "required": [
@@ -306,7 +315,36 @@
           "questionCount",
           "scoringRule",
           "status",
-          "publishedAt"
+          "publishedAt",
+          "chapters",
+          "videoSource"
+        ],
+        "additionalProperties": false
+      },
+      "CampaignChapter": {
+        "description": "One chapter marker: title, start second and a back-loading reward weight (docs/06 section 3). No stored end second or absolute reward — both are derived from the campaign's other chapters and its own rewardPoints/durationSeconds (YT-0503).",
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "startSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "rewardWeight": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "title",
+          "startSeconds",
+          "rewardWeight"
         ],
         "additionalProperties": false
       },
@@ -335,8 +373,39 @@
           "ended"
         ]
       },
+      "CampaignVideoSource": {
+        "description": "Where the player resolves a campaign's video from, without guessing (YT-0503).",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "hls"
+              },
+              "manifestUrl": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "required": [
+              "kind",
+              "manifestUrl"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Currency": {
+        "description": "ISO 4217 code for a currency this platform prices in. Closed at AUD and IDR: a third means a new PSP, new tax rules and a new data plane (docs/15), not a config edit.",
+        "type": "string",
+        "enum": [
+          "AUD",
+          "IDR"
+        ]
+      },
       "IdrMinorUnits": {
-        "description": "Indonesian Rupiah as an integer. The minor unit for IDR is defined as exactly 1 Rupiah, so these values ARE Rupiah counts. There is no cents-of-Rupiah concept.",
+        "description": "Indonesian Rupiah as an integer number of minor units. PROVISIONAL: the IDR minor unit is not confirmed (YT-0506). These values are currently whole Rupiah, which is what every producer and consumer in this codebase assumes, but ISO 4217 says sen and Xendit publishes no amount-unit spec. Do not settle against this type without checking MINOR_UNIT; a wrong unit is uniformly 100x and silent. Prefer Money, which carries its own currency.",
         "type": "integer",
         "minimum": 0,
         "maximum": 10000000000,
@@ -441,7 +510,7 @@
         ]
       },
       "Listing": {
-        "description": "A store listing: what it costs in points, what it settles at, and its stock.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3).\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.",
+        "description": "A store listing: what it costs in points, what it settles at, and its stock.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3).\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
         "type": "object",
         "properties": {
           "id": {
@@ -472,10 +541,12 @@
           "category": {
             "$ref": "#/components/schemas/ListingCategory"
           },
-          "district": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60
+          "locations": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MerchantLocation"
+            }
           },
           "faceValueIdr": {
             "$ref": "#/components/schemas/IdrMinorUnits"
@@ -530,7 +601,7 @@
           "title",
           "description",
           "category",
-          "district",
+          "locations",
           "faceValueIdr",
           "settlementValueIdr",
           "priceInPoints",
@@ -564,6 +635,59 @@
           "expiring_soon",
           "new"
         ]
+      },
+      "MerchantLocation": {
+        "description": "One physical outlet a merchant redeems vouchers at: id, name, address and district (YT-0502).",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "district": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "district"
+        ],
+        "additionalProperties": false
+      },
+      "Money": {
+        "description": "An integer amount that carries its own currency — Fowler's Money pattern per docs/12 section 3 (YT-0513). Deliberately carries NO minor-unit exponent: an amount can be stored, transported and added without one, and only rendering and settlement need it (see MINOR_UNIT). Prefer this over IdrMinorUnits, which names a currency it does not always hold.",
+        "type": "object",
+        "properties": {
+          "amountMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000000000,
+            "format": "int64"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          }
+        },
+        "required": [
+          "amountMinor",
+          "currency"
+        ],
+        "additionalProperties": false
       },
       "PartialRedemptionPolicy": {
         "description": "What happens when a voucher is spent below its face value (docs/09 section 8.2).",
@@ -894,6 +1018,9 @@
             "minLength": 1,
             "maxLength": 120
           },
+          "location": {
+            "$ref": "#/components/schemas/MerchantLocation"
+          },
           "title": {
             "type": "string",
             "minLength": 1,
@@ -942,6 +1069,7 @@
           "code",
           "merchantId",
           "merchantName",
+          "location",
           "title",
           "faceValueIdr",
           "remainingValueIdr",
@@ -962,6 +1090,64 @@
           "redeemed",
           "expired",
           "transferred"
+        ]
+      },
+      "WalletHistoryEntry": {
+        "description": "One entry in the wallet's points history, in plain language, never a transaction code (docs/17 section 3).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - an earn entry is always a credit.\n  - a burn entry is always a debit.\n  - an expiry entry is always a debit.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "kind": {
+            "$ref": "#/components/schemas/WalletHistoryEntryKind"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "points": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "credit",
+              "debit"
+            ]
+          },
+          "relatedId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "occurredAt",
+          "description",
+          "points",
+          "direction"
+        ],
+        "additionalProperties": false
+      },
+      "WalletHistoryEntryKind": {
+        "description": "What kind of ledger event this history entry reflects (YT-0504).",
+        "type": "string",
+        "enum": [
+          "earn",
+          "burn",
+          "expiry",
+          "reversal",
+          "adjustment"
         ]
       }
     }

@@ -1,0 +1,41 @@
+---
+name: CharitySuite
+description: |-
+  Phase 3 placeholder. charity_admin exists in the taxonomy today so the
+  boundary is testable today; charity itself is out of scope until Phase 3
+  (docs/04). The assertions that matter are the DENYs.
+tests:
+  - name: a charity partner reads its own settlements
+    input:
+      principals: [charity_nur, finance_yani]
+      resources: [charity_settlement_1]
+      actions: [view, view_statement]
+    expected:
+      - principal: charity_nur
+        resource: charity_settlement_1
+        actions: { view: EFFECT_ALLOW, view_statement: EFFECT_ALLOW }
+      - principal: finance_yani
+        resource: charity_settlement_1
+        actions: { view: EFFECT_ALLOW, view_statement: EFFECT_ALLOW }
+
+  - name: and reaches nothing else on the platform
+    input:
+      principals: [charity_nur]
+      resources: [wallet_wina, account_wina, adjustment_by_yani, campaign_kopi, report_kopi]
+      actions: [view]
+    expected:
+      - principal: charity_nur
+        resource: wallet_wina
+        actions: { view: EFFECT_DENY }
+      - principal: charity_nur
+        resource: account_wina
+        actions: { view: EFFECT_DENY }
+      - principal: charity_nur
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY }
+      - principal: charity_nur
+        resource: campaign_kopi
+        actions: { view: EFFECT_DENY }
+      - principal: charity_nur
+        resource: report_kopi
+        actions: { view: EFFECT_DENY }

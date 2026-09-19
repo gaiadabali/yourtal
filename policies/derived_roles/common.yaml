@@ -1,0 +1,37 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Ownership roles that are not business-scoped: a consumer acting on their own
+  wallet, account or voucher.
+
+  `account_owner` is deliberately the ONLY way a consumer reaches their own
+  data. There is no "user can read anything with role user" rule anywhere in
+  this repo -- object-level authorization is the point (OWASP A01, docs/14
+  section 4), and a policy that checks the role but not the object is the bug
+  class it exists to prevent.
+derivedRoles:
+  name: common
+  definitions:
+    - name: account_owner
+      parentRoles: ["user"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: has(R.attr.ownerId)
+              - expr: R.attr.ownerId == P.id
+
+    # In good standing: not suspended by risk, and not inside the 72h value
+    # freeze that a SIM swap or an account recovery starts (docs/14 section 5).
+    # Value-moving actions require this; reading does not.
+    - name: account_owner_in_good_standing
+      parentRoles: ["user"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: has(R.attr.ownerId)
+              - expr: R.attr.ownerId == P.id
+              - expr: P.attr.isSuspended == false
+              - expr: |-
+                  !has(P.attr.valueFrozenUntil) || now() > timestamp(P.attr.valueFrozenUntil)

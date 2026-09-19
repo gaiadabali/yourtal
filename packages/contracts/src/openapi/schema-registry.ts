@@ -1,5 +1,6 @@
 import type { ZodType } from "zod";
 import { idrMinorUnitsSchema, pointsSchema } from "../money/money";
+import { currencySchema, moneySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
 import {
   campaignKindSchema,
@@ -13,18 +14,13 @@ import {
   listingStatusSchema,
   partialRedemptionPolicySchema,
 } from "../listing/listing";
+import { campaignChapterSchema } from "../campaign/campaign-chapter";
+import { campaignVideoSourceSchema } from "../campaign/campaign-video-source";
+import { merchantLocationSchema } from "../listing/merchant-location";
 import { voucherSchema, voucherStatusSchema } from "../voucher/voucher";
 import { balanceSchema } from "../balance/balance";
-import { businessRoleSchema, businessSchema } from "../business/business";
-import { businessTeamRoleSchema } from "../business/business-team-role";
-import { businessMemberSchema } from "../business/business-member";
-import { billingContactSchema } from "../business/billing-contact";
-import {
-  kybDocumentSchema,
-  kybDocumentStatusSchema,
-  kybDocumentTypeSchema,
-} from "../business/kyb-document";
-import { questionOptionSchema, questionSchema } from "../question/question";
+import { walletHistoryEntryKindSchema, walletHistoryEntrySchema } from "../wallet/wallet-history";
+import { BUSINESS_CONTRACT_COMPONENTS } from "./schema-registry-business";
 
 /**
  * Which Zod schemas become OpenAPI components, and what each one loses on the
@@ -78,7 +74,22 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "IdrMinorUnits",
     schema: idrMinorUnitsSchema,
     description:
-      "Indonesian Rupiah as an integer. The minor unit for IDR is defined as exactly 1 Rupiah, so these values ARE Rupiah counts. There is no cents-of-Rupiah concept.",
+      "Indonesian Rupiah as an integer number of minor units. PROVISIONAL: the IDR minor unit is not confirmed (YT-0506). These values are currently whole Rupiah, which is what every producer and consumer in this codebase assumes, but ISO 4217 says sen and Xendit publishes no amount-unit spec. Do not settle against this type without checking MINOR_UNIT; a wrong unit is uniformly 100x and silent. Prefer Money, which carries its own currency.",
+    crossFieldRules: [],
+  },
+
+  {
+    id: "Currency",
+    schema: currencySchema,
+    description:
+      "ISO 4217 code for a currency this platform prices in. Closed at AUD and IDR: a third means a new PSP, new tax rules and a new data plane (docs/15), not a config edit.",
+    crossFieldRules: [],
+  },
+  {
+    id: "Money",
+    schema: moneySchema,
+    description:
+      "An integer amount that carries its own currency — Fowler's Money pattern per docs/12 section 3 (YT-0513). Deliberately carries NO minor-unit exponent: an amount can be stored, transported and added without one, and only rendering and settlement need it (see MINOR_UNIT). Prefer this over IdrMinorUnits, which names a currency it does not always hold.",
     crossFieldRules: [],
   },
 
@@ -111,6 +122,19 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [],
   },
   {
+    id: "CampaignChapter",
+    schema: campaignChapterSchema,
+    description:
+      "One chapter marker: title, start second and a back-loading reward weight (docs/06 section 3). No stored end second or absolute reward — both are derived from the campaign's other chapters and its own rewardPoints/durationSeconds (YT-0503).",
+    crossFieldRules: [],
+  },
+  {
+    id: "CampaignVideoSource",
+    schema: campaignVideoSourceSchema,
+    description: "Where the player resolves a campaign's video from, without guessing (YT-0503).",
+    crossFieldRules: [],
+  },
+  {
     id: "Campaign",
     schema: campaignSchema,
     description:
@@ -118,10 +142,21 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [
       "A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).",
       "An accuracy bonus requires at least one question to score accuracy against.",
+      "A long_form campaign must have at least one chapter; a quick campaign has none.",
+      "The first chapter must start at second 0.",
+      "Chapter start times must be strictly increasing.",
+      "Every chapter must start before the campaign's own durationSeconds.",
     ],
   },
 
   // --- store ---
+  {
+    id: "MerchantLocation",
+    schema: merchantLocationSchema,
+    description:
+      "One physical outlet a merchant redeems vouchers at: id, name, address and district (YT-0502).",
+    crossFieldRules: [],
+  },
   {
     id: "ListingCategory",
     schema: listingCategorySchema,
@@ -149,6 +184,7 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       "settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3).",
       "A sold_out listing must have zero stockRemaining.",
       "minimumSpendIdr is set if and only if the policy is minimum_spend.",
+      "location ids must be unique within a listing.",
     ],
   },
 
@@ -182,78 +218,26 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       "expiringPoints cannot exceed availablePoints — points still in holdback cannot be about to expire.",
     ],
   },
-
-  // --- business ---
   {
-    id: "BusinessRole",
-    schema: businessRoleSchema,
+    id: "WalletHistoryEntryKind",
+    schema: walletHistoryEntryKindSchema,
+    description: "What kind of ledger event this history entry reflects (YT-0504).",
+    crossFieldRules: [],
+  },
+  {
+    id: "WalletHistoryEntry",
+    schema: walletHistoryEntrySchema,
     description:
-      "A relationship a business holds with the platform, of which it may hold any subset (docs/17 section 2). NOT the per-person team role — that is BusinessTeamRole.",
-    crossFieldRules: [],
-  },
-  {
-    id: "BusinessTeamRole",
-    schema: businessTeamRoleSchema,
-    description:
-      "The job one person does inside one business (docs/17 section 2.1). Defined here rather than in @yourtal/authz because a member carries it in an API payload; authz imports it and keeps the drift test against the Cerbos principal schema (YT-0509). Store staff are absent by design — they are device sessions, not members.",
-    crossFieldRules: [],
-  },
-  {
-    id: "Business",
-    schema: businessSchema,
-    description: "An advertiser, supplier and/or redeemer.",
-    crossFieldRules: ["roles must not contain duplicates."],
-  },
-  {
-    id: "BusinessMember",
-    schema: businessMemberSchema,
-    description:
-      "A person's membership at one business (docs/17 section 2.1's six roles). NOT the Business-level `BusinessRole` above — this is the per-person team role, sourced from @yourtal/authz/roles so it cannot drift from the authorization model.",
-    crossFieldRules: [],
-  },
-  {
-    id: "BillingContact",
-    schema: billingContactSchema,
-    description:
-      "The person a business's invoices and settlement statements are sent to (docs/17 section 2, Billing zone).",
-    crossFieldRules: [],
-  },
-  {
-    id: "KybDocumentType",
-    schema: kybDocumentTypeSchema,
-    description:
-      "A category of Know-Your-Business document a business can submit during onboarding.",
-    crossFieldRules: [],
-  },
-  {
-    id: "KybDocumentStatus",
-    schema: kybDocumentStatusSchema,
-    description: "Review state of a submitted KYB document.",
-    crossFieldRules: [],
-  },
-  {
-    id: "KybDocument",
-    schema: kybDocumentSchema,
-    description:
-      "A business's submitted KYB document and its review state (docs/17 section 5). `storageRef` is an opaque pointer to encrypted bytes; this schema does not cover the upload path itself.",
-    crossFieldRules: [],
-  },
-
-  // --- questions ---
-  {
-    id: "QuestionOption",
-    schema: questionOptionSchema,
-    description: "One selectable answer.",
-    crossFieldRules: [],
-  },
-  {
-    id: "Question",
-    schema: questionSchema,
-    description:
-      "A checkpoint question, discriminated on type. Variants are inlined rather than named as components because they are never referenced independently.",
+      "One entry in the wallet's points history, in plain language, never a transaction code (docs/17 section 3).",
     crossFieldRules: [
-      "multiple_choice: correctOptionId must reference one of the provided options.",
-      "likert: scaleMin must be less than scaleMax.",
+      "an earn entry is always a credit.",
+      "a burn entry is always a debit.",
+      "an expiry entry is always a debit.",
     ],
   },
+
+  // --- business, questions: see schema-registry-business.ts. Split out to
+  // stay under the 300-line ceiling once YT-0502/0503/0504 added their
+  // components here.
+  ...BUSINESS_CONTRACT_COMPONENTS,
 ];

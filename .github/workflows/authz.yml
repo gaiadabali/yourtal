@@ -1,0 +1,84 @@
+# YT-0035 — authorization policy gate.
+#
+# Two things run here, and they are two things on purpose:
+#
+#   1. `cerbos compile` — the policy repo compiles, and its 300+ test
+#      assertions hold. This is the object-level authz suite docs/14 §4 calls
+#      a required CI suite rather than a review habit.
+#   2. `@yourtal/authz` — the TypeScript side, including the drift test that
+#      fails when the TS action registry and the policy YAML disagree.
+#
+# Splitting them matters because they fail for different reasons and a
+# reviewer should be able to tell which at a glance: (1) failing means a rule
+# changed meaning, (2) failing usually means someone added an action on one
+# side of the seam and not the other.
+name: Authorization policies
+
+on:
+  pull_request:
+    paths:
+      - "policies/**"
+      - "packages/authz/**"
+      - "scripts/policy-test.mjs"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/authz.yml"
+  push:
+    branches: [main]
+    paths:
+      - "policies/**"
+      - "packages/authz/**"
+
+concurrency:
+  group: authz-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  policies:
+    name: Cerbos policy suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      # The pinned image in scripts/policy-test.mjs is the same one the
+      # sidecar runs. A policy repo that compiles under one Cerbos version
+      # and not another is an incident waiting for an upgrade.
+      - name: Compile policies and run the test suites
+        run: node scripts/policy-test.mjs
+
+  authz-package:
+    name: "@yourtal/authz"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4.0.0
+        # No explicit version — reads "packageManager" from the root
+        # package.json, so CI and local toolchains cannot drift.
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @yourtal/authz typecheck
+
+      - name: Lint
+        run: pnpm --filter @yourtal/authz lint
+
+      # Includes policy-drift.test.ts, which reads the YAML in policies/ and
+      # asserts it matches the TypeScript registry in both directions.
+      - name: Test
+        run: pnpm --filter @yourtal/authz test

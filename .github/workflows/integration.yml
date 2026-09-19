@@ -1,0 +1,173 @@
+# Integration tests — the suites that need a real database.
+#
+# ## Why this exists separately
+#
+# Until now NO workflow ran a Postgres-backed test. `packages/db`,
+# `packages/idempotency`'s Postgres store and the Go ledger all skip or fail
+# without a database, so their most important assertions — the deferred
+# balance trigger, one-of-eight concurrent claims winning, an unbalanced
+# transfer refused at COMMIT — were green in CI by never running.
+#
+# A suite that silently skips is worse than one that fails: it reports
+# success for work it did not do. So this workflow stands the stack up, and
+# `assert nothing skipped` below fails the build if the suites quietly opt out.
+#
+# YT-0527 added the `cerbos` service alongside `postgres`. Before this,
+# `apps/api` had never booted against a real PDP in CI: every authz test —
+# `pdp.guard.test.ts`, `packages/authz/src/pdp-client.test.ts` — mocks
+# `fetch`, so none of them could see Cerbos's own schema enforcement reject
+# a real request. That exact bug shipped once (see
+# `policies/_schemas/resource/business.json`'s comment on `businessId`) and
+# was found only by a person booting the app by hand. `app.boot.test.ts` is
+# the suite that now runs here against the real container.
+name: Integration
+
+on:
+  pull_request:
+    paths:
+      - "packages/db/**"
+      - "packages/idempotency/**"
+      - "services/**"
+      - "infra/postgres/**"
+      - "infra/cerbos/**"
+      - "apps/api/**"
+      - "packages/authz/**"
+      - "policies/**"
+      - ".github/workflows/integration.yml"
+  push:
+    branches: [main]
+
+concurrency:
+  group: integration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: Postgres-backed suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: yourtal
+          POSTGRES_PASSWORD: yourtal_local_only
+          POSTGRES_DB: yourtal
+        ports:
+          - 26432:5432
+        options: >-
+          --health-cmd "pg_isready -U yourtal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      # Mounts `./policies` and `infra/cerbos/config.yaml` exactly as
+      # `docker-compose.yml` does. Service containers start before any step
+      # in this job runs — including `actions/checkout` — so at boot
+      # `./policies` is still empty and the healthcheck below only proves
+      # the server started, not that a policy is loaded. That is fine:
+      # `storage.disk.watchForChanges: true` in the mounted config means
+      # Cerbos picks the checked-out policies up as soon as `checkout` runs,
+      # and every step between checkout and the apps/api test step below
+      # (install, migrate, seed) is more than enough time for that watch to
+      # fire before anything asks Cerbos a question.
+      cerbos:
+        image: ghcr.io/cerbos/cerbos:0.55.0
+        ports:
+          - 26592:3592
+        volumes:
+          - ${{ github.workspace }}/policies:/policies:ro
+          - ${{ github.workspace }}/infra/cerbos/config.yaml:/config/config.yaml:ro
+        options: >-
+          --health-cmd "/cerbos healthcheck --config=/config/config.yaml"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal
+      # Matches docker-compose.yml's mapped host port and .env.example — see
+      # the drift test in apps/api/src/config/env.schema.test.ts.
+      PDP_BASE_URL: http://127.0.0.1:26592
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.2.0
+        with:
+          go-version: "1.26"
+          cache-dependency-path: services/ledger/go.sum
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The compose file runs this at container start; the Actions service
+      # container does not, so it is applied by hand. It creates the six
+      # domain schemas and the two roles, which must exist before any
+      # migration grants anything on them.
+      - name: Bootstrap schemas and roles
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f infra/postgres/init/01-schemas.sql
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Seed
+        run: pnpm db:seed
+
+      - name: packages/db
+        run: pnpm --filter @yourtal/db test
+
+      - name: packages/idempotency
+        run: pnpm --filter @yourtal/idempotency test
+
+      # YT-0527. app.boot.test.ts boots the real AppModule and calls it over
+      # a real HTTP round trip against the cerbos service above — the first
+      # apps/api suite that talks to a live PDP rather than a mocked fetch.
+      - name: apps/api (live PDP boot check)
+        run: |
+          set -o pipefail
+          pnpm --filter @yourtal/api test 2>&1 | tee /tmp/api-test.log
+
+      # Same guard as the Go suites below: vitest only mentions "skipped" in
+      # its summary when the count is nonzero, so this catches a test that
+      # opted out (`it.skip`, `describe.skip`) rather than actually reaching
+      # Cerbos — which would otherwise report success for work it never did.
+      - name: Assert apps/api reported nothing skipped
+        run: |
+          if grep -qi "skipped" /tmp/api-test.log; then
+            echo "::error::A live-PDP test skipped. It did not run, so its result means nothing."
+            grep -i "skipped" /tmp/api-test.log
+            exit 1
+          fi
+
+      - name: Go ledger
+        run: go test ./...
+        working-directory: services/ledger
+
+      # The point of the whole workflow. `go test` prints "no test files" for
+      # packages without tests, which is fine — but a SKIP here means a suite
+      # could not reach the database and reported success anyway.
+      - name: Assert nothing skipped
+        run: |
+          go test ./... -v 2>&1 | tee /tmp/go-test.log
+          if grep -q -- "--- SKIP" /tmp/go-test.log; then
+            echo "::error::A Postgres-backed test skipped. It did not run, so its result means nothing."
+            grep -- "--- SKIP" /tmp/go-test.log
+            exit 1
+          fi
+        working-directory: services/ledger

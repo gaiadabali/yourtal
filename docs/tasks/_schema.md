@@ -1,6 +1,6 @@
 # Task format
 
-The task files in this folder are **the single source of truth for project status**. `TASKS.md` at the repo root is *generated* from them and must never be edited by hand.
+The task files in this folder are **the single source of truth for project status**. `TASKS.md` at the repo root is _generated_ from them and must never be edited by hand.
 
 ```
 node scripts/tasks.mjs           # validate + regenerate the dashboard
@@ -12,21 +12,22 @@ node scripts/tasks.mjs --check   # validate + fail if stale  (CI gate)
 ```markdown
 ### YT-0042 · Ledger: double-entry transfer API
 `todo` · P0 · value · 5d · dep: YT-0031, YT-0033
+
 - [ ] `transfer()` writes ≥2 entries summing to zero, in one transaction
 - [ ] `idempotency_key` is UNIQUE; a replay returns the original transfer
 - [ ] invariant checker job fails loudly on any imbalance
 ```
 
-| Field | Rule |
-|---|---|
-| **ID** | `YT-####`, globally unique, **never reused or renumbered**. Take the next free number. |
-| **Title** | `Area: what it does`. One line. |
-| **Status** | `todo` · `doing` · `review` · `blocked` · `done` · `cut` |
-| **Phase** | `P-1` · `P0` · `P1` · `P2` · `P3` |
-| **Epic** | lowercase slug — see below |
-| **Estimate** | `3d` or `6h`. Ideal engineering time, one person. |
-| **dep:** | comma-separated task IDs, or `—`. Validated; cycles are rejected. |
-| **AC** | at least one `- [ ]` line. Testable, not aspirational. |
+| Field        | Rule                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------- |
+| **ID**       | `YT-####`, globally unique, **never reused or renumbered**. Take the next free number. |
+| **Title**    | `Area: what it does`. One line.                                                        |
+| **Status**   | `todo` · `doing` · `review` · `blocked` · `done` · `cut`                               |
+| **Phase**    | `P-1` · `P0` · `P1` · `P2` · `P3`                                                      |
+| **Epic**     | lowercase slug — see below                                                             |
+| **Estimate** | `3d` or `6h`. Ideal engineering time, one person.                                      |
+| **dep:**     | comma-separated task IDs, or `—`. Validated; cycles are rejected.                      |
+| **AC**       | at least one `- [ ]` line. Testable, not aspirational.                                 |
 
 ## Epics
 

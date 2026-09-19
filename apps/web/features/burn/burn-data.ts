@@ -54,7 +54,14 @@ export const holdbackDemoListing: Listing = listingSchema.parse({
   title: "Paket Perawatan Griya Kecantikan Melati",
   description: "Paket perawatan lengkap — cukup menunggu poin holdback Anda cair untuk menukarnya.",
   category: "services",
-  district: "Menteng",
+  locations: [
+    {
+      id: "00000001-0000-4000-8000-000000000901",
+      name: "Menteng Outlet",
+      address: "Jl. Contoh 1",
+      district: "Menteng",
+    },
+  ],
   faceValueIdr: toIdrMinorUnits(180_000),
   settlementValueIdr: toIdrMinorUnits(54_000),
   priceInPoints: pointsPriceFromSettlement(

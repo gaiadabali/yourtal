@@ -1,0 +1,29 @@
+{
+  "name": "@yourtal/authz",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./roles": "./src/roles.ts",
+    "./principal": "./src/principal.ts",
+    "./resources": "./src/resources.ts",
+    "./decision": "./src/decision.ts",
+    "./pdp-client": "./src/pdp-client.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@yourtal/contracts": "workspace:*",
+    "neverthrow": "8.2.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1",
+    "yaml": "2.9.1"
+  }
+}

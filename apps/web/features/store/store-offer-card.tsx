@@ -7,6 +7,7 @@ import { computeBalanceShortfall } from "./store-balance";
 import { StoreBalanceNotice } from "./store-balance-notice";
 import { categoryLabel } from "./store-category";
 import { formatExpiryDate, formatListingPrice, formatStockRemaining } from "./store-format";
+import { listingDistricts } from "./listing-locations";
 import { StoreOfferFact } from "./store-offer-fact";
 import { StoreOfferRedeemSteps } from "./store-offer-redeem-steps";
 import { StoreOfferTerms } from "./store-offer-terms";
@@ -67,12 +68,15 @@ export function StoreOfferCard({ listing, balance }: StoreOfferCardProps) {
 
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <StoreOfferFact label="Kategori" value={categoryLabel(listing.category)} />
-          <StoreOfferFact label="Lokasi" value={listing.district} />
+          <StoreOfferFact label="Lokasi" value={listingDistricts(listing).join(", ")} />
           <StoreOfferFact label="Stok" value={formatStockRemaining(listing.stockRemaining)} />
           <StoreOfferFact label="Berlaku hingga" value={formatExpiryDate(listing.expiresAt)} />
         </dl>
 
-        <StoreOfferRedeemSteps merchantName={listing.merchantName} district={listing.district} />
+        <StoreOfferRedeemSteps
+          merchantName={listing.merchantName}
+          districts={listingDistricts(listing)}
+        />
 
         <StoreBalanceNotice
           priceInPoints={listing.priceInPoints}

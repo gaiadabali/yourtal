@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "kyb_document",
+  "description": "A KYB (Know Your Business) onboarding document -- business registration, tax registration, director identity, proof of address. Submitted by the business, reviewed by ops (docs/17 section 5).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": { "businessId": { "type": "string" } }
+}

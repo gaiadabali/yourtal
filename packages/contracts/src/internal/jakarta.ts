@@ -29,6 +29,48 @@ export function pickDistrict(faker: Faker): string {
   return faker.helpers.arrayElement(JAKARTA_DISTRICTS);
 }
 
+const JAKARTA_STREET_NAMES: readonly string[] = [
+  "Sudirman",
+  "Gatot Subroto",
+  "Kemang Raya",
+  "Panglima Polim",
+  "Wolter Monginsidi",
+  "Kartini",
+  "Diponegoro",
+  "Ahmad Yani",
+];
+
+/**
+ * One merchant outlet, in the shape `merchantLocationSchema` expects
+ * (`listing/merchant-location.ts`). Returned as a plain object rather than
+ * importing that schema's type: `internal/` has no dependents back into a
+ * domain folder, and the caller (`listing.mock.ts`) validates the result
+ * through `listingSchema.parse` regardless.
+ */
+export function generateMerchantLocation(faker: Faker, merchantName: string, branchLabel: string) {
+  const street = faker.helpers.arrayElement(JAKARTA_STREET_NAMES);
+  const district = pickDistrict(faker);
+  return {
+    id: faker.string.uuid(),
+    name: `${merchantName} — ${branchLabel}`,
+    address: `Jl. ${street} No. ${String(faker.number.int({ min: 1, max: 200 }))}, ${district}`,
+    district,
+  };
+}
+
+const BRANCH_LABELS: readonly string[] = ["Cabang Utama", "Cabang 2", "Cabang 3", "Cabang 4"];
+
+/** `count` outlets for one merchant, each in a plausible (possibly repeated) Jakarta district. */
+export function generateMerchantLocations(faker: Faker, merchantName: string, count: number) {
+  return Array.from({ length: count }, (_unused, index) =>
+    generateMerchantLocation(
+      faker,
+      merchantName,
+      BRANCH_LABELS[index] ?? `Cabang ${String(index + 1)}`,
+    ),
+  );
+}
+
 // Combinatorial, invented merchant names in the shape of real Jakarta small
 // businesses ("Kopi Kenangan"-style: a category word + an invented brand
 // word, occasionally plus a flourish). None of these names are real

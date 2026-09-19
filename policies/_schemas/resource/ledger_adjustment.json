@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ledger_adjustment",
+  "description": "A finance adjustment to the ledger. Dual-approved, and no business role reaches it at all.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["createdBy"],
+  "properties": {
+    "createdBy": { "type": "string" },
+    "amountIdr": { "type": "integer" }
+  }
+}

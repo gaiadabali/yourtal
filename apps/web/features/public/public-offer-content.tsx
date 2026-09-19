@@ -4,6 +4,7 @@ import { Card, CardContent } from "@yourtal/ui/card";
 import { categoryLabel } from "@/features/store/store-category";
 import { formatExpiryDate, formatStockRemaining } from "@/features/store/store-format";
 import { listingStatusPresentation } from "@/features/store/store-status";
+import { listingDistricts } from "@/features/store/listing-locations";
 import { getPublicTranslator } from "./public-i18n";
 import { PublicFact } from "./public-fact";
 import { PublicCtaLink } from "./public-cta-link";
@@ -59,7 +60,10 @@ export function PublicOfferContent({ listing, locale, merchantHref }: PublicOffe
 
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <PublicFact label={t("offer.categoryLabel")} value={categoryLabel(listing.category)} />
-          <PublicFact label={t("offer.districtLabel")} value={listing.district} />
+          <PublicFact
+            label={t("offer.districtLabel")}
+            value={listingDistricts(listing).join(", ")}
+          />
           <PublicFact
             label={t("offer.stockLabel")}
             value={formatStockRemaining(listing.stockRemaining, locale.intlLocale)}

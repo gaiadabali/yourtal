@@ -1,0 +1,135 @@
+# YourTal local development stack — YT-0516.
+#
+# Needs no cloud account. YT-0022 provisions *managed* Postgres in GCP for
+# *deployed* environments; local development was never dependent on it, and
+# treating them as one dependency is why `apps/api` had never booted.
+#
+#   pnpm dev:up      start everything, wait for health
+#   pnpm dev:down    stop, keep data
+#   pnpm dev:reset   stop and destroy the volume
+#
+# Ports are deliberately in the 26xxx range: this machine already runs
+# Postgres for other projects on 5432, 15432, 55499 and 55510.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: yourtal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yourtal
+      POSTGRES_PASSWORD: yourtal_local_only
+      POSTGRES_DB: yourtal
+      # Deterministic collation so index ordering matches CI and production.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "127.0.0.1:26432:5432"
+    volumes:
+      - yourtal-pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yourtal -d yourtal"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    command:
+      # Surface slow queries locally so a missing index is noticed here and
+      # not in production.
+      - "postgres"
+      - "-c"
+      - "log_min_duration_statement=200"
+
+  cerbos:
+    image: ghcr.io/cerbos/cerbos:0.55.0
+    container_name: yourtal-cerbos
+    restart: unless-stopped
+    # Loopback only. docs/10 and docs/15 specify a sidecar, never a shared PDP.
+    ports:
+      - "127.0.0.1:26592:3592"
+    volumes:
+      - ./policies:/policies:ro
+      - ./infra/cerbos/config.yaml:/config/config.yaml:ro
+    command: ["server", "--config=/config/config.yaml"]
+    healthcheck:
+      test: ["CMD", "/cerbos", "healthcheck", "--config=/config/config.yaml"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: valkey/valkey:8-alpine
+    container_name: yourtal-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:26379:6379"
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # --- YT-0520 / YT-0521: local substitutes for cloud services, so nothing
+  # --- waits on an account signup. Same interfaces, real protocols.
+
+  zitadel:
+    image: ghcr.io/zitadel/zitadel:v2.66.0
+    container_name: yourtal-zitadel
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ZITADEL_DATABASE_POSTGRES_HOST: postgres
+      ZITADEL_DATABASE_POSTGRES_PORT: 5432
+      ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
+      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: yourtal
+      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: yourtal_local_only
+      ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
+      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: yourtal
+      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: yourtal_local_only
+      ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
+      ZITADEL_EXTERNALSECURE: "false"
+      ZITADEL_EXTERNALDOMAIN: localhost
+      ZITADEL_EXTERNALPORT: 26080
+      ZITADEL_TLS_ENABLED: "false"
+      # Local-only bootstrap credentials. Deployed realms come from YT-0032.
+      # Exactly 32 bytes, as Zitadel requires. Local development only —
+      # deployed instances take this from Secret Manager (YT-0026).
+      ZITADEL_MASTERKEY: "YourTalLocalDevMasterKey32Bytes!"
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: dev@yourtal.local
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: DevPassword1!
+    command: ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "disabled"]
+    ports:
+      - "127.0.0.1:26080:8080"
+
+  minio:
+    # Official registry is quay.io; Docker Hub's minio/minio is no longer
+    # public. TODO(YT-0523): pin by digest once a tag is confirmed, per the
+    # Atlas lesson in YT-0518 — :latest is a moving target.
+    image: quay.io/minio/minio:latest
+    container_name: yourtal-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: yourtal
+      MINIO_ROOT_PASSWORD: yourtal_local_only
+    # S3-compatible, so the R2 adapter is exercised rather than stubbed —
+    # and per-object access logs give us the per-segment delivery data that
+    # Cloudflare Stream does not expose (docs/22).
+    command: ["server", "/data", "--console-address", ":9001"]
+    ports:
+      - "127.0.0.1:26900:9000"
+      - "127.0.0.1:26901:9001"
+    volumes:
+      - yourtal-minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  yourtal-pgdata:
+    name: yourtal-pgdata
+  yourtal-minio:
+    name: yourtal-minio

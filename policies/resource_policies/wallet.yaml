@@ -1,0 +1,60 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  A consumer wallet: balance, pending points in holdback, vouchers and their
+  QR codes (docs/17 section 3).
+
+  Reaching your own wallet is object-level, through `account_owner` -- there
+  is no rule in this repo that grants a consumer anything on the strength of
+  holding the `user` role alone. OWASP A01 is the most common serious web
+  vulnerability and this is the shape of it: a correct role check over the
+  wrong object.
+
+  Internal staff do not appear here at all. Support answers questions from
+  `user_account`, which is the read-only view built for that purpose;
+  nobody reads a live wallet to do their job.
+resourcePolicy:
+  version: default
+  resource: wallet
+  importDerivedRoles:
+    - common
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/wallet.json
+  rules:
+    - name: anonymous-holds-nothing
+      # docs/17 section 4.6 -- an anonymous visitor cannot hold a balance,
+      # earn, redeem, transfer or receive a voucher. Ever.
+      actions: ["view", "redeem", "transfer", "receive_voucher"]
+      effect: EFFECT_DENY
+      roles: ["anonymous"]
+
+    - name: high-value-redemption-needs-a-passkey
+      # docs/14 section 5: a passkey is required before the first redemption
+      # above the value threshold. Phone-only identity is a SIM swap away
+      # from total takeover, so the largest redemptions ask for more.
+      actions: ["redeem"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: has(R.attr.requiresPasskey) && R.attr.requiresPasskey
+              - expr: "!has(P.attr.hasPasskey) || !P.attr.hasPasskey"
+
+    - name: read-your-own-wallet
+      actions: ["view", "view_history"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - account_owner
+
+    - name: spend-your-own-wallet
+      # Good standing, not merely ownership: suspension and the 72h SIM-swap
+      # freeze both bite here and nowhere else.
+      actions: ["redeem", "transfer", "receive_voucher"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - account_owner_in_good_standing

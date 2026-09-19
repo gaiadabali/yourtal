@@ -19,7 +19,7 @@ import (
 // checks if the Listing type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Listing{}
 
-// Listing A store listing: what it costs in points, what it settles at, and its stock.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - stockRemaining cannot exceed stockTotal.   - settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3).   - A sold_out listing must have zero stockRemaining.   - minimumSpendIdr is set if and only if the policy is minimum_spend.
+// Listing A store listing: what it costs in points, what it settles at, and its stock.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - stockRemaining cannot exceed stockTotal.   - settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3).   - A sold_out listing must have zero stockRemaining.   - minimumSpendIdr is set if and only if the policy is minimum_spend.   - location ids must be unique within a listing.
 type Listing struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	MerchantId string `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
@@ -27,10 +27,10 @@ type Listing struct {
 	Title string `json:"title"`
 	Description string `json:"description"`
 	Category ListingCategory `json:"category"`
-	District string `json:"district"`
-	// Indonesian Rupiah as an integer. The minor unit for IDR is defined as exactly 1 Rupiah, so these values ARE Rupiah counts. There is no cents-of-Rupiah concept.
+	Locations []MerchantLocation `json:"locations"`
+	// Indonesian Rupiah as an integer number of minor units. PROVISIONAL: the IDR minor unit is not confirmed (YT-0506). These values are currently whole Rupiah, which is what every producer and consumer in this codebase assumes, but ISO 4217 says sen and Xendit publishes no amount-unit spec. Do not settle against this type without checking MINOR_UNIT; a wrong unit is uniformly 100x and silent. Prefer Money, which carries its own currency.
 	FaceValueIdr int64 `json:"faceValueIdr"`
-	// Indonesian Rupiah as an integer. The minor unit for IDR is defined as exactly 1 Rupiah, so these values ARE Rupiah counts. There is no cents-of-Rupiah concept.
+	// Indonesian Rupiah as an integer number of minor units. PROVISIONAL: the IDR minor unit is not confirmed (YT-0506). These values are currently whole Rupiah, which is what every producer and consumer in this codebase assumes, but ISO 4217 says sen and Xendit publishes no amount-unit spec. Do not settle against this type without checking MINOR_UNIT; a wrong unit is uniformly 100x and silent. Prefer Money, which carries its own currency.
 	SettlementValueIdr int64 `json:"settlementValueIdr"`
 	// Platform points. Always a whole number; there is no fractional point.
 	PriceInPoints int64 `json:"priceInPoints"`
@@ -50,7 +50,7 @@ type _Listing Listing
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, district string, faceValueIdr int64, settlementValueIdr int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendIdr ListingMinimumSpendIdr, expiresAt time.Time, status ListingStatus) *Listing {
+func NewListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, faceValueIdr int64, settlementValueIdr int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendIdr ListingMinimumSpendIdr, expiresAt time.Time, status ListingStatus) *Listing {
 	this := Listing{}
 	this.Id = id
 	this.MerchantId = merchantId
@@ -58,7 +58,7 @@ func NewListing(id string, merchantId string, merchantName string, title string,
 	this.Title = title
 	this.Description = description
 	this.Category = category
-	this.District = district
+	this.Locations = locations
 	this.FaceValueIdr = faceValueIdr
 	this.SettlementValueIdr = settlementValueIdr
 	this.PriceInPoints = priceInPoints
@@ -224,28 +224,28 @@ func (o *Listing) SetCategory(v ListingCategory) {
 	o.Category = v
 }
 
-// GetDistrict returns the District field value
-func (o *Listing) GetDistrict() string {
+// GetLocations returns the Locations field value
+func (o *Listing) GetLocations() []MerchantLocation {
 	if o == nil {
-		var ret string
+		var ret []MerchantLocation
 		return ret
 	}
 
-	return o.District
+	return o.Locations
 }
 
-// GetDistrictOk returns a tuple with the District field value
+// GetLocationsOk returns a tuple with the Locations field value
 // and a boolean to check if the value has been set.
-func (o *Listing) GetDistrictOk() (*string, bool) {
+func (o *Listing) GetLocationsOk() ([]MerchantLocation, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.District, true
+	return o.Locations, true
 }
 
-// SetDistrict sets field value
-func (o *Listing) SetDistrict(v string) {
-	o.District = v
+// SetLocations sets field value
+func (o *Listing) SetLocations(v []MerchantLocation) {
+	o.Locations = v
 }
 
 // GetFaceValueIdr returns the FaceValueIdr field value
@@ -504,7 +504,7 @@ func (o Listing) ToMap() (map[string]interface{}, error) {
 	toSerialize["title"] = o.Title
 	toSerialize["description"] = o.Description
 	toSerialize["category"] = o.Category
-	toSerialize["district"] = o.District
+	toSerialize["locations"] = o.Locations
 	toSerialize["faceValueIdr"] = o.FaceValueIdr
 	toSerialize["settlementValueIdr"] = o.SettlementValueIdr
 	toSerialize["priceInPoints"] = o.PriceInPoints
@@ -534,7 +534,7 @@ func (o *Listing) UnmarshalJSON(data []byte) (err error) {
 		"title",
 		"description",
 		"category",
-		"district",
+		"locations",
 		"faceValueIdr",
 		"settlementValueIdr",
 		"priceInPoints",
@@ -580,7 +580,7 @@ func (o *Listing) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "title")
 		delete(additionalProperties, "description")
 		delete(additionalProperties, "category")
-		delete(additionalProperties, "district")
+		delete(additionalProperties, "locations")
 		delete(additionalProperties, "faceValueIdr")
 		delete(additionalProperties, "settlementValueIdr")
 		delete(additionalProperties, "priceInPoints")

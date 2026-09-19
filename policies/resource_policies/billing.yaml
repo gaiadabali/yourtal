@@ -1,0 +1,33 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Point pre-purchases, settlement statements, invoices and disputes
+  (docs/17 section 2, Billing zone). Owner and Finance edit; Admin may look
+  but not spend.
+resourcePolicy:
+  version: default
+  resource: billing
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/billing.json
+  rules:
+    - name: owner-and-finance-spend
+      actions: ["purchase_points", "raise_dispute", "update_payment_method"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_billing_editor_of
+
+    - name: admin-looks-but-does-not-spend
+      actions: ["view", "view_statement"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_billing_viewer_of
+
+    - name: internal-finance-reconciles
+      actions: ["view", "view_statement"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]

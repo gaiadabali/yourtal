@@ -17,24 +17,24 @@ retrieval (10s of thousands)  ->  pre-ranking (hundreds)  ->  ranking (final few
   ANN index, precomputed         eCPM = 1000 x bid x pCTR    calibrated pCTR/pCVR
 ```
 
-Meta's *Andromeda* retrieval narrows tens of millions of ads to a few thousand before the expensive models run. Ranking models are multi-task (separate heads for eCPM, pCTR, pBid); TikTok's fine-ranking uses **MMoE** to trade off competing objectives (watch time vs. like vs. share) — directly relevant to us, because we must trade off *advertiser value* vs. *user reward satisfaction* vs. *platform margin*.
+Meta's _Andromeda_ retrieval narrows tens of millions of ads to a few thousand before the expensive models run. Ranking models are multi-task (separate heads for eCPM, pCTR, pBid); TikTok's fine-ranking uses **MMoE** to trade off competing objectives (watch time vs. like vs. share) — directly relevant to us, because we must trade off _advertiser value_ vs. _user reward satisfaction_ vs. _platform margin_.
 
 **Budget pacing is a correctness problem, not an optimisation.** Overspend is irreversible. The standard technique is a **participation probability** per campaign, recomputed continuously against a delivery schedule derived from forecasted supply; lower the probability when ahead of pace. Note Google itself allows **2x daily budget** on a given day and only balances at the month level — a deliberate design choice we should copy or reject consciously.
 
-**Build vs. buy.** There is **no production-grade open-source ad server** for this shape of product. Retail-media operators in 2026 pick API-first infrastructure (Kevel, Topsort, Koddi) or closed ecosystems (Criteo, Amazon). Building from scratch costs "years and hundreds of thousands" in engineering. Also worth internalising: *self-serve grows advertiser count, managed service grows account value — every network that scaled did both.*
+**Build vs. buy.** There is **no production-grade open-source ad server** for this shape of product. Retail-media operators in 2026 pick API-first infrastructure (Kevel, Topsort, Koddi) or closed ecosystems (Criteo, Amazon). Building from scratch costs "years and hundreds of thousands" in engineering. Also worth internalising: _self-serve grows advertiser count, managed service grows account value — every network that scaled did both._
 
 ## 2. Rewarded video specifically
 
 - Flow: mediation SDK requests → winning bidder serves 15–30 s creative → user completes → **client-side callback** fires → app grants reward.
 - **The client callback is not trustworthy.** Every serious network offers **server-side verification (SSV)**: a signed server-to-server callback to a publisher endpoint before credit is granted. For anything with real economic value, credit only on SSV.
-- SSAI (server-side ad insertion) is explicitly called out as a *fraud vector* — the stitching layer makes verification harder. Relevant if we ever stitch ads into long-form content.
+- SSAI (server-side ad insertion) is explicitly called out as a _fraud vector_ — the stitching layer makes verification harder. Relevant if we ever stitch ads into long-form content.
 - Completion rates >95% for rewarded vs 60–70% non-rewarded; engagement ~3.5x. The format works; the only question is what it pays.
 
 ## 3. Video delivery (Netflix / YouTube)
 
 Netflix's pipeline: **ingest → chunked parallel encode across hundreds of workers (VMAF-scored) → Open Connect CDN**, with per-title/per-shot encoding ladders cutting bandwidth up to ~40%, and two-tier appliances (IXP storage + ISP-embedded edge).
 
-**Assessment for us:** the Netflix problem is a *petabyte catalogue of long-form* content. Ours is *thousands of 15–30 s creatives, heavily repeated, extremely cacheable*. We need Netflix's **outcomes** (instant start, no rebuffer, ABR) but almost none of its **machinery**. Per-title encoding, chunked distributed transcode and a custom CDN are phase-3+ optimisations at best. Prefetching the next 2–3 creatives onto the device while the current one plays buys most of "instant" for near-zero cost.
+**Assessment for us:** the Netflix problem is a _petabyte catalogue of long-form_ content. Ours is _thousands of 15–30 s creatives, heavily repeated, extremely cacheable_. We need Netflix's **outcomes** (instant start, no rebuffer, ABR) but almost none of its **machinery**. Per-title encoding, chunked distributed transcode and a custom CDN are phase-3+ optimisations at best. Prefetching the next 2–3 creatives onto the device while the current one plays buys most of "instant" for near-zero cost.
 
 **Managed video cost (2026):** Cloudflare Stream ≈ $5 / 1,000 min stored + $1 / 1,000 min delivered, encoding included. Mux ≈ $0.07/min encode + $0.025/min deliver (5–8x Cloudflare, better live + analytics). AWS MediaConvert + CloudFront is "rarely the right choice in 2026" due to egress.
 
@@ -42,12 +42,12 @@ Netflix's pipeline: **ingest → chunked parallel encode across hundreds of work
 
 TikTok's **Monolith**: TensorFlow worker–parameter-server architecture, **collisionless embedding tables** (Cuckoo hash) so new users/items get clean embeddings, and **online (real-time) training** so the feedback loop closes in minutes rather than a nightly batch. Designed explicitly around feature sparsity, concept drift, scalability and fault tolerance.
 
-Takeaway: the "glue users like TikTok" property comes from *fast feedback loops on implicit signals*, not from model size. A modest model retrained hourly beats a large model retrained weekly.
+Takeaway: the "glue users like TikTok" property comes from _fast feedback loops on implicit signals_, not from model size. A modest model retrained hourly beats a large model retrained weekly.
 
 ## 5. Points ledger & loyalty accounting
 
 - Under **ASC 606** (and equivalents), issued points are a **deferred-revenue liability**, not revenue. They become revenue on redemption or on provable **breakage**. Starbucks recognised **$200.4 M** of breakage revenue in FY2025 — breakage is a material line item and estimating it is a board-level policy decision.
-- Capillary (a large loyalty vendor) rebuilt on **double-entry**: an append-only, immutable event log of `OPENING BALANCE / CREDIT / DEBIT`. Their stated motivation is exactly our risk: *"corrupted, duplicate, or missing data entries"* caused by *"multiple access points in the code"* and divergent business logic across services.
+- Capillary (a large loyalty vendor) rebuilt on **double-entry**: an append-only, immutable event log of `OPENING BALANCE / CREDIT / DEBIT`. Their stated motivation is exactly our risk: _"corrupted, duplicate, or missing data entries"_ caused by _"multiple access points in the code"_ and divergent business logic across services.
 - The liability must be revalued monthly/quarterly as points are issued and redeemed.
 
 **Takeaway:** one service owns the ledger; no other service writes balances; the ledger is append-only and every mutation is balanced. This must exist before anything that issues points.
@@ -55,18 +55,19 @@ Takeaway: the "glue users like TikTok" property comes from *fast feedback loops 
 ## 6. Voucher / gift-card security
 
 Consensus best practice:
+
 - **High-entropy codes**: ≥16 random alphanumerics, CSPRNG, no counters, no merchant prefixes that aid enumeration, optional checksum (Luhn-style) for typo detection.
 - **Store encrypted / hashed**; per-card audit log of every state change.
 - **Rate-limit + CAPTCHA the balance-check and redemption endpoints** — repeated failed lookups are the canonical enumeration signal.
 - **2FA for staff** with issuance or adjustment rights; role-scoped permissions; alerts on high-value voids and duplicate issuance.
 - Offline/POS redemption: sign the payload (**Ed25519 + CBOR + compression** fits inside a QR), **30 s – 5 min validity**, scheduled key rotation — this defeats screenshot-sharing without needing a POS integration.
 
-**Secondary-market warning.** The gift-card resale sector is a graveyard: **Cardpool shut down (2021, fraud from stolen cards)**; Raise is widely reported for fraudulent cards, chargebacks and revoked balances. Root cause: **the seller still knows the code after selling it**, and the card schemes have **no gift-card dispute category**, so the merchant loses chargebacks without delivery evidence. Any YourTal voucher bidding market must be built so that a transfer *invalidates the old code and mints a new one* — not merely moves a database row.
+**Secondary-market warning.** The gift-card resale sector is a graveyard: **Cardpool shut down (2021, fraud from stolen cards)**; Raise is widely reported for fraudulent cards, chargebacks and revoked balances. Root cause: **the seller still knows the code after selling it**, and the card schemes have **no gift-card dispute category**, so the merchant loses chargebacks without delivery evidence. Any YourTal voucher bidding market must be built so that a transfer _invalidates the old code and mints a new one_ — not merely moves a database row.
 
 ## 7. Auctions / bidding marketplace
 
 - **Per-auction serialisation** is the core correctness requirement: either an atomic Lua script on Redis/Valkey (single-threaded → serialisation for free) or a per-auction Kafka partition. Optimistic concurrency with expected-price CAS works at lower scale.
-- **Anti-sniping**: a bid within the last *N* minutes extends the auction by *N*, capped at a max number of extensions (eBay Live, Catawiki).
+- **Anti-sniping**: a bid within the last _N_ minutes extends the auction by _N_, capped at a max number of extensions (eBay Live, Catawiki).
 - **Settlement must be effectively-once**: after retries, exactly one committed winner and exactly one captured charge. Plan for failed capture → second-chance offer.
 - Read and write paths are asymmetric — separate them; WebSocket fan-out for live bid broadcast.
 
@@ -83,7 +84,8 @@ All three speak OAuth2 / OIDC / SAML — so "Google-style login for sister apps"
 The 2026 threat model for reward apps is **mobile bots, emulators, device farms, fake installs and account takeover executing inside the app runtime**. Emulators are attractive precisely because synthetic devices can be created, driven and destroyed by bots at scale — used for account creation, **referral fraud**, **reward abuse** and payment testing.
 
 Defences that work:
-- **Device fingerprinting** (200+ signals) catches emulator/VM artefacts — hardware model strings, missing sensor data, virtualised GPU renderers — *before* registration.
+
+- **Device fingerprinting** (200+ signals) catches emulator/VM artefacts — hardware model strings, missing sensor data, virtualised GPU renderers — _before_ registration.
 - **Behavioural / post-event analysis**: impossible timing, identical flows across "users", repeated device reuse, D1-retention and session-duration distributions by acquisition source.
 - **Server-side validation before crediting anything of value** — repeatedly named as the place most abuse is actually caught.
 - IAB Tech Lab has added **device attestation to the Open Measurement SDK** specifically to combat device spoofing.
@@ -92,18 +94,18 @@ Defences that work:
 ## 10. Survey monetisation
 
 - Offerwalls are the native home of surveys, and **surveys carry the highest incentives** of any offer category. Android offerwall eCPMs for games average ~**$400**, up to ~$1,500 in the best genres — orders of magnitude above video.
-- Quality infrastructure is table stakes: unique user IDs, device–carrier validation, **trap questions**, and alignment with **ESOMAR 28/37** disclosure plus ISO certification. Buyers of sample literally *ask for your ESOMAR 37 answers*.
+- Quality infrastructure is table stakes: unique user IDs, device–carrier validation, **trap questions**, and alignment with **ESOMAR 28/37** disclosure plus ISO certification. Buyers of sample literally _ask for your ESOMAR 37 answers_.
 - Publisher-side control matters: enable/disable providers by performance, price floors, minimum conversion filters.
 
 ## 11. Ad economics — the numbers that decide the product
 
-| Format | eCPM (2026) |
-|---|---|
-| Rewarded video, tier-1 (US/UK/JP) | $15–$40 |
-| Rewarded video, **Australia (Android)** | **$18.87** — top globally |
-| Rewarded video, global average | high single to low double digits |
-| **Offerwall (Android, games)** | **~$400 avg, up to $1,500** |
-| Indonesia | no clean public rewarded figure; ID is a tier-3 CPM market, growing (App Open +30% in Dec) |
+| Format                                  | eCPM (2026)                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Rewarded video, tier-1 (US/UK/JP)       | $15–$40                                                                                    |
+| Rewarded video, **Australia (Android)** | **$18.87** — top globally                                                                  |
+| Rewarded video, global average          | high single to low double digits                                                           |
+| **Offerwall (Android, games)**          | **~$400 avg, up to $1,500**                                                                |
+| Indonesia                               | no clean public rewarded figure; ID is a tier-3 CPM market, growing (App Open +30% in Dec) |
 
 Rewarded video is ~40% of in-game ad revenue. **The spread between $18 video and $400 offerwall is the single most important fact in this document** — see `01-strategy-and-economics.md`.
 
@@ -115,13 +117,13 @@ Rewarded video is ~40% of in-game ad revenue. **The spread between $18 video and
 
 ## 13. Blockchain — honest assessment
 
-Real production exists (UniVoucher, GiftUp on TRON, Rehive/Stellar tokenised vouchers, CoinsBee cross-border) but the consensus is blunt: **centralised ledgers are faster, simpler and cheaper**; blockchain adds value narrowly — cross-border settlement, trustless secondary-market transfer, and multi-party consortium governance — and costs a great deal in development, ops and (for us) regulatory surface. Verdict: *a pragmatic niche, not a superior general solution*.
+Real production exists (UniVoucher, GiftUp on TRON, Rehive/Stellar tokenised vouchers, CoinsBee cross-border) but the consensus is blunt: **centralised ledgers are faster, simpler and cheaper**; blockchain adds value narrowly — cross-border settlement, trustless secondary-market transfer, and multi-party consortium governance — and costs a great deal in development, ops and (for us) regulatory surface. Verdict: _a pragmatic niche, not a superior general solution_.
 
 ## 14. Super-app engineering lessons (Gojek / Grab)
 
 - All of them **migrated off the monolith during growth** — but all of them also **started with one high-frequency service**, earned daily habitual use, and only then expanded.
 - Gojek: GCP, PostgreSQL, **Kafka** message bus, edge proxies; services partitioned **"by frequency of access rather than by function."**
-- The recurring advice: build the **Platform Foundation as an internal PaaS first** — Identity, Wallet, Event Bus — *before* the headline feature. For a platform like ours, that foundation **is** the product.
+- The recurring advice: build the **Platform Foundation as an internal PaaS first** — Identity, Wallet, Event Bus — _before_ the headline feature. For a platform like ours, that foundation **is** the product.
 
 ---
 

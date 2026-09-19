@@ -1,0 +1,12 @@
+{
+  "extends": "@yourtal/tsconfig/base.json",
+  "compilerOptions": {
+    // docs/13b section 1: decorator support is enabled ONLY in apps/api.
+    // NestJS DI resolves constructor parameter types through the metadata
+    // these two flags emit; every other package in the repo leaves them off.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false
+  },
+  "include": ["src/**/*.ts"]
+}

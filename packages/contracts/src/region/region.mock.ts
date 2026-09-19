@@ -15,16 +15,17 @@ import {
   generateVouchers,
 } from "../voucher/voucher.mock";
 import { zeroBalanceFixture } from "../balance/balance.mock";
+import { auLongMerchantNameCampaignFixture, generateAuCampaigns } from "./region-mock-au-campaign";
+import {
+  auLongMerchantNameListingFixture,
+  auSoldOutListingFixture,
+  generateAuListings,
+} from "./region-mock-au-listing";
 import {
   auExpiredVoucherFixture,
   auExpiringWithinHourVoucherFixture,
-  auLongMerchantNameCampaignFixture,
-  auLongMerchantNameListingFixture,
-  auSoldOutListingFixture,
-  generateAuCampaigns,
-  generateAuListings,
   generateAuVouchers,
-} from "./region-mock-au";
+} from "./region-mock-au-voucher";
 
 /**
  * Region-scoped mock fixtures for both AU and ID (YT-0405 acceptance:

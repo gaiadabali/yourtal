@@ -20,8 +20,23 @@
     "ctaBody": "Watch this {duration} video and earn {reward} once you sign up.",
     "ctaBodyWithBonus": "Watch this {duration} video and earn {reward}, plus an accuracy bonus of up to {bonus}, once you sign up.",
     "ctaButton": "Sign up to start earning",
+    "watchAnonymouslyCta": "Watch without signing up",
     "honestyNote": "The terms shown on this page are the terms honoured — duration, reward and the scoring rule never change once you start watching.",
     "notLiveNotice": "This campaign is not currently live."
+  },
+  "openView": {
+    "breadcrumbLabel": "Watch",
+    "eyebrow": "Watching without an account",
+    "foregoneRewardNotice": "Signed-in viewers earn {reward} for this video. You're watching without an account, so you won't earn anything this time.",
+    "foregoneRewardNoticeWithBonus": "Signed-in viewers earn {reward}, plus an accuracy bonus of up to {bonus}, for this video. You're watching without an account, so you won't earn anything this time.",
+    "signupLinkLabel": "Sign up to earn on your next video",
+    "finishedHeading": "You watched the whole video",
+    "finishedBody": "If you'd been signed in, this is the point you'd have been paid — {reward}, pending the checkpoint questions. Sign up now and we'll bring you right back here.",
+    "finishedBodyWithBonus": "If you'd been signed in, this is the point you'd have been paid — {reward}, plus an accuracy bonus of up to {bonus}, pending the checkpoint questions. Sign up now and we'll bring you right back here.",
+    "signupCta": "Sign up and pick up where you left off",
+    "chapterWatchedStatus": "watched",
+    "chapterWatchingStatus": "watching",
+    "chapterUpcomingStatus": "not yet"
   },
   "offer": {
     "eyebrow": "Voucher",

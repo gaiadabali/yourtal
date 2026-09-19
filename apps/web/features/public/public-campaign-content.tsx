@@ -14,6 +14,8 @@ export interface PublicCampaignContentProps {
   campaign: Campaign;
   locale: PublicLocaleConfig;
   merchantHref: string;
+  /** `/[locale]/c/[campaignId]/watch` — Open Viewing (YT-0432). Only ever rendered as a link when the campaign is live; see `PublicCampaignLiveFacts`. */
+  watchHref: string;
 }
 
 /**
@@ -25,11 +27,12 @@ export interface PublicCampaignContentProps {
  * via `public-reward-facts.ts`) rather than rebuilding them, per this
  * ticket's brief. What is different on purpose:
  *
- * - No "Start video" action. Open Viewing (YT-0432, anonymous full
- *   playback) is not built yet, so this page does not promise a playback
- *   experience that does not exist — the single action here is signing up,
- *   named honestly against the actual reward and duration
- *   (`public-reward-facts.ts`).
+ * - The primary action is still signing up, named honestly against the
+ *   actual reward and duration (`public-reward-facts.ts`). A second,
+ *   deliberately less prominent action — "watch without signing up" — now
+ *   also exists, into Open Viewing (YT-0432, anonymous full playback,
+ *   `/[locale]/c/[campaignId]/watch`): this page previously said that
+ *   route "is not built yet"; it is, as of that ticket.
  * - A campaign that is not `status === "active"` still gets a real page
  *   (`public-campaign-data.ts`'s `listPublicCampaigns` keeps every status in
  *   `generateStaticParams`, docs/11-seo-aeo-geo.md §2.3's "never 404 a
@@ -42,6 +45,7 @@ export function PublicCampaignContent({
   campaign,
   locale,
   merchantHref,
+  watchHref,
 }: PublicCampaignContentProps) {
   const t = getPublicTranslator(locale.intlLocale);
   const isLive = campaign.status === "active";
@@ -59,7 +63,7 @@ export function PublicCampaignContent({
         </header>
 
         {isLive ? (
-          <PublicCampaignLiveFacts campaign={campaign} locale={locale} />
+          <PublicCampaignLiveFacts campaign={campaign} locale={locale} watchHref={watchHref} />
         ) : (
           <p className="rounded-md bg-surface-raised px-3 py-2 text-sm text-fg-muted">
             {t("campaign.notLiveNotice")}
@@ -73,10 +77,11 @@ export function PublicCampaignContent({
 interface PublicCampaignLiveFactsProps {
   campaign: Campaign;
   locale: PublicLocaleConfig;
+  watchHref: string;
 }
 
-/** The reward facts and sign-up call to action — only ever rendered for a currently live campaign. */
-function PublicCampaignLiveFacts({ campaign, locale }: PublicCampaignLiveFactsProps) {
+/** The reward facts, sign-up call to action, and Open Viewing link — only ever rendered for a currently live campaign. */
+function PublicCampaignLiveFacts({ campaign, locale, watchHref }: PublicCampaignLiveFactsProps) {
   const t = getPublicTranslator(locale.intlLocale);
   const facts = computeCampaignRewardFacts(campaign, locale);
 
@@ -125,7 +130,20 @@ function PublicCampaignLiveFacts({ campaign, locale }: PublicCampaignLiveFactsPr
 
       <p className="text-xs text-fg-subtle">{t("campaign.honestyNote")}</p>
 
-      <PublicCtaLink href="/onboarding">{t("campaign.ctaButton")}</PublicCtaLink>
+      <div className="flex flex-col items-start gap-2">
+        <PublicCtaLink href="/onboarding">{t("campaign.ctaButton")}</PublicCtaLink>
+        {/* Deliberately a plain, less prominent link, not a second
+            PublicCtaLink — signing up stays the one primary action per
+            YT-0411's "single primary action" rule; this is the honest
+            secondary path into Open Viewing (YT-0432), not an equally
+            weighted choice. */}
+        <a
+          href={watchHref}
+          className="text-sm text-fg-muted underline decoration-dotted underline-offset-2 hover:text-fg"
+        >
+          {t("campaign.watchAnonymouslyCta")}
+        </a>
+      </div>
     </>
   );
 }

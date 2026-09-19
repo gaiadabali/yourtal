@@ -1,6 +1,7 @@
 export interface StoreOfferRedeemStepsProps {
   merchantName: string;
-  district: string;
+  /** Every district this offer can be redeemed in (YT-0502). */
+  districts: readonly string[];
 }
 
 /**
@@ -12,7 +13,12 @@ export interface StoreOfferRedeemStepsProps {
  * YT-0422, owned by a different ticket, and this page only needs to set
  * the user's expectation for what happens after they tap the button here.
  */
-export function StoreOfferRedeemSteps({ merchantName, district }: StoreOfferRedeemStepsProps) {
+export function StoreOfferRedeemSteps({ merchantName, districts }: StoreOfferRedeemStepsProps) {
+  // Step 3 tells the user where to physically go, so it names every district
+  // rather than a representative one. This is the step where showing a single
+  // branch of a multi-branch merchant would send someone across a city for no
+  // reason.
+  const whereLabel = districts.join(", ");
   return (
     <div className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold text-fg">Cara menukar</h2>
@@ -23,8 +29,8 @@ export function StoreOfferRedeemSteps({ merchantName, district }: StoreOfferRede
         </li>
         <li>2. Voucher beserta kode dan QR-nya muncul langsung di Wallet kamu.</li>
         <li>
-          3. Tunjukkan kode voucher saat checkout di {merchantName} (lokasi {district}), atau ikuti
-          instruksi redeem di website merchant untuk voucher digital.
+          3. Tunjukkan kode voucher saat checkout di {merchantName} (lokasi {whereLabel}), atau
+          ikuti instruksi redeem di website merchant untuk voucher digital.
         </li>
       </ol>
     </div>

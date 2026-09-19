@@ -1,0 +1,31 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Role grants, feature flags and kill switches -- the admin role's entire
+  surface, and deliberately its only one.
+
+  docs/17 section 5 gives admin "role grants, feature flags, kill switches --
+  NO DIRECT DATA ACCESS". The way that is enforced is structural: `admin`
+  appears in this file and in no other resource policy in the repo, so
+  deny-by-default does the rest. policies/tests/admin_has_no_data_access_test.yaml
+  asserts it, and packages/authz has a drift test that fails if `admin` is
+  ever added to another policy without that test being updated.
+resourcePolicy:
+  version: default
+  resource: platform_setting
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/platform_setting.json
+  rules:
+    - name: admin-operates-the-platform
+      actions: ["view", "grant_role", "set_feature_flag", "trip_kill_switch"]
+      effect: EFFECT_ALLOW
+      roles: ["admin"]
+
+    - name: ops-trips-the-merchant-kill-switch
+      # docs/14 section 6: "One click in the ops console, auditable."
+      actions: ["view", "trip_kill_switch"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "moderation_item",
+  "description": "A flagged creative or question bank in the human queue (YT-0114).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": {
+    "businessId": { "type": "string" },
+    "hasReason": {
+      "description": "An approve or reject with no reason is not a decision anyone can audit, so the PDP refuses it.",
+      "type": "boolean"
+    }
+  }
+}

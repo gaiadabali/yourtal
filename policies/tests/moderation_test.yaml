@@ -1,0 +1,36 @@
+---
+name: ModerationSuite
+description: |-
+  The human moderation queue (YT-0114). A decision with no reason is not
+  auditable, so the PDP refuses it -- and a business never sees the queue
+  entry for its own creative, because knowing which signal tripped is what
+  makes a screen evadable.
+tests:
+  - name: moderators decide, with a reason
+    input:
+      principals: [moderator_tono]
+      resources: [moderation_with_reason, moderation_without_reason]
+      actions: [view, approve, reject]
+    expected:
+      - principal: moderator_tono
+        resource: moderation_with_reason
+        actions: { view: EFFECT_ALLOW, approve: EFFECT_ALLOW, reject: EFFECT_ALLOW }
+      - principal: moderator_tono
+        resource: moderation_without_reason
+        actions: { view: EFFECT_ALLOW, approve: EFFECT_DENY, reject: EFFECT_DENY }
+
+  - name: the business whose creative it is cannot see the queue entry
+    input:
+      principals: [budi_owner, citra_admin, counter_kemang]
+      resources: [moderation_with_reason]
+      actions: [view, approve, reject]
+    expected:
+      - principal: budi_owner
+        resource: moderation_with_reason
+        actions: { view: EFFECT_DENY, approve: EFFECT_DENY, reject: EFFECT_DENY }
+      - principal: citra_admin
+        resource: moderation_with_reason
+        actions: { view: EFFECT_DENY, approve: EFFECT_DENY, reject: EFFECT_DENY }
+      - principal: counter_kemang
+        resource: moderation_with_reason
+        actions: { view: EFFECT_DENY, approve: EFFECT_DENY, reject: EFFECT_DENY }

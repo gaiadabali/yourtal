@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "YourTal principal attributes",
+  "description": "Every attribute the PDP is allowed to reason about. additionalProperties is false on purpose: a typo in a caller's attribute name must fail loudly in CI, not silently produce a DENY that looks like a policy bug. See policies/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["jurisdiction", "businessRoles", "isSuspended"],
+  "properties": {
+    "jurisdiction": {
+      "description": "Where this principal is governed. Drives nothing in these policies yet; the jurisdiction policy service (YT-0037) owns feature switches.",
+      "type": "string",
+      "enum": ["ID", "AU"]
+    },
+    "businessRoles": {
+      "description": "businessId -> role held at THAT business. A person can be owner of one business and analyst of another, which a flat role list cannot express. This map is the whole multi-tenancy model; derived_roles/business.yaml reads it and nothing else does.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["owner", "admin", "marketer", "merchandiser", "finance", "analyst"]
+      }
+    },
+    "isSuspended": {
+      "description": "Risk has suspended this principal. Every value-moving action is denied while true.",
+      "type": "boolean"
+    },
+    "isPhoneVerified": { "type": "boolean" },
+    "hasPasskey": {
+      "description": "docs/14 section 5: a registered passkey is required before the first redemption above a value threshold.",
+      "type": "boolean"
+    },
+    "reauthenticatedAt": {
+      "description": "RFC3339. Step-up re-auth timestamp. Ownership transfer requires this to be recent; see STEP_UP_WINDOW in derived_roles/business.yaml.",
+      "type": "string"
+    },
+    "valueFrozenUntil": {
+      "description": "RFC3339. SIM-swap / account-recovery freeze (docs/14 section 5). Redemption and transfer are denied until it passes.",
+      "type": "string"
+    },
+    "deviceBusinessId": {
+      "description": "store_device only: the business this device was provisioned for. Never inferred from the request.",
+      "type": "string"
+    },
+    "deviceLocationId": {
+      "description": "store_device only: the location it was bound to (docs/17 section 2.2, \"Kemang counter 2\").",
+      "type": "string"
+    },
+    "goodwillCreditCeilingIdr": {
+      "description": "support only: the per-case ceiling below which a goodwill credit needs no second approver.",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

@@ -1,0 +1,46 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  KYB (Know Your Business) onboarding documents -- business registration
+  certificate, tax registration number, director identity, proof of address
+  (docs/03 section 2.3 PSE registration; KYB itself required under
+  Permendag 19/2026 per docs/02). `apps/api` previously borrowed `team:view`
+  for submit and list, which happened to land on owner/admin -- the two
+  roles docs/17 section 2.1 would plausibly trust with onboarding paperwork
+  -- but it granted no route to review at all, and any future convenience
+  grant risks handing a business the power to approve its own documents.
+
+  Review sits with the internal `ops` role, which docs/17 section 5 names
+  explicitly: "Merchant onboarding, KYB, listing approval." Never with the
+  business itself -- a business does not get to certify its own KYB, the
+  same separation-of-duties principle as `ledger_adjustment` and
+  `redemption`. The DENY below is not covering a gap in the ALLOW rules
+  (no ALLOW here reaches a business role for approve/reject); it is the
+  explicit tripwire so a later "let business_team_editor_of do everything on
+  its own documents" change cannot quietly open that hole.
+resourcePolicy:
+  version: default
+  resource: kyb_document
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/kyb_document.json
+  rules:
+    - name: a-business-never-approves-its-own-kyb
+      actions: ["approve", "reject"]
+      effect: EFFECT_DENY
+      roles: ["business_user"]
+
+    - name: owner-and-admin-submit-and-view-their-own-documents
+      actions: ["view", "submit"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_team_editor_of
+
+    - name: ops-reviews-kyb-submissions
+      actions: ["view", "approve", "reject"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]

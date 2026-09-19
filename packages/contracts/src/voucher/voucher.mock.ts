@@ -2,8 +2,9 @@ import type { Voucher } from "./voucher";
 import { voucherSchema } from "./voucher";
 import { DEFAULT_REFERENCE_INSTANT, addDays, addMinutes, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
-import { generateMerchantName } from "../internal/jakarta";
+import { generateMerchantLocation } from "../internal/jakarta";
 import { toIdrMinorUnits } from "../money/money";
+import { pickMockMerchant } from "../merchant/merchant-roster";
 
 export interface GenerateVoucherParams {
   seed: number;
@@ -15,7 +16,12 @@ export function generateVoucher(params: GenerateVoucherParams): Voucher {
   const now = params.now ?? DEFAULT_REFERENCE_INSTANT;
   const faker = createSeededFaker(params.seed);
 
-  const merchantName = generateMerchantName(faker);
+  // Merchant identity comes from the shared roster, never from the faker.
+  // A random per-fixture uuid here is what made every prototype redemption
+  // return `wrong_merchant`: the counter can only be provisioned as a roster
+  // merchant, so a generated one could never match. See merchant-roster.ts.
+  const merchant = pickMockMerchant(faker, "ID");
+  const merchantName = merchant.name;
   const faceValueIdr = toIdrMinorUnits(faker.number.int({ min: 15, max: 400 }) * 1_000);
   const issuedDaysAgo = faker.number.int({ min: 0, max: 45 });
   const validForDays = faker.number.int({ min: 7, max: 90 });
@@ -45,8 +51,9 @@ export function generateVoucher(params: GenerateVoucherParams): Voucher {
     listingId: faker.string.uuid(),
     ownerId: faker.string.uuid(),
     code: faker.string.alphanumeric({ length: 10, casing: "upper" }),
-    merchantId: faker.string.uuid(),
+    merchantId: merchant.id,
     merchantName,
+    location: generateMerchantLocation(faker, merchantName, "Cabang Utama"),
     title: `Voucher ${merchantName}`,
     faceValueIdr,
     remainingValueIdr,
@@ -72,8 +79,14 @@ export const expiredVoucherFixture: Voucher = voucherSchema.parse({
   listingId: "00000000-0000-4000-8000-000000000201",
   ownerId: "00000000-0000-4000-8000-000000000501",
   code: "EXPIREDX1",
-  merchantId: "00000000-0000-4000-8000-000000000301",
+  merchantId: "00000000-0000-4000-8000-000000000604",
   merchantName: "Kopi Sentosa",
+  location: {
+    id: "00000000-0000-4000-8000-000000000211",
+    name: "Kopi Sentosa — Cabang Utama",
+    address: "Jl. Kemang Raya No. 12, Kemang",
+    district: "Kemang",
+  },
   title: "Voucher Kopi Sentosa Rp30.000",
   faceValueIdr: toIdrMinorUnits(30_000),
   remainingValueIdr: toIdrMinorUnits(30_000),
@@ -95,8 +108,14 @@ export const expiringWithinHourVoucherFixture: Voucher = voucherSchema.parse({
   listingId: "00000000-0000-4000-8000-000000000203",
   ownerId: "00000000-0000-4000-8000-000000000502",
   code: "LASTCALL01",
-  merchantId: "00000000-0000-4000-8000-000000000302",
+  merchantId: "00000000-0000-4000-8000-000000000601",
   merchantName: "Toko Berkah",
+  location: {
+    id: "00000000-0000-4000-8000-000000000213",
+    name: "Toko Berkah — Cabang Utama",
+    address: "Jl. Kartini No. 5, Tebet",
+    district: "Tebet",
+  },
   title: "Voucher Belanja Toko Berkah",
   faceValueIdr: toIdrMinorUnits(50_000),
   remainingValueIdr: toIdrMinorUnits(50_000),

@@ -48,7 +48,7 @@ const MAX_SAFE_POINTS = 10_000_000_000;
 
 export const idrMinorUnitsSchema = z
   .number()
-  .int("IDR amounts must be a whole number of sen, never fractional")
+  .int("IDR amounts must be a whole number of Rupiah, never fractional")
   .min(0, "IDR amounts cannot be negative")
   .max(MAX_SAFE_IDR_MINOR_UNITS, "IDR amount exceeds the sane ceiling for this platform")
   .brand<"IdrMinorUnits">();

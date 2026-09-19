@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { idrMinorUnitsSchema } from "../money/money";
 import { partialRedemptionPolicySchema } from "../listing/listing";
+import { merchantLocationSchema } from "../listing/merchant-location";
 
 /**
  * A voucher is a bearer instrument minted when a user redeems points against
@@ -41,6 +42,15 @@ export const voucherSchema = z
      */
     merchantId: z.uuid(),
     merchantName: z.string().min(1).max(MAX_MERCHANT_NAME_LENGTH),
+    /**
+     * YT-0502: which of the merchant's branches honours THIS voucher —
+     * chosen from `listingSchema.locations` at issuance and denormalised
+     * here for the same reason `merchantName` is: the voucher must stay
+     * honourable offline (docs/17 section 3's wallet QR), so everything a
+     * counter needs travels with it rather than being looked up from a
+     * listing that may have changed since.
+     */
+    location: merchantLocationSchema,
     title: z.string().min(1).max(140),
     faceValueIdr: idrMinorUnitsSchema,
     remainingValueIdr: idrMinorUnitsSchema,

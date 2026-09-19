@@ -75,6 +75,7 @@ export default async function PublicCampaignPage({ params }: PublicCampaignPageP
         campaign={campaign}
         locale={config}
         merchantHref={`/${locale}/m/${merchantSlug}`}
+        watchHref={`/${locale}/c/${campaign.id}/watch`}
       />
     </>
   );

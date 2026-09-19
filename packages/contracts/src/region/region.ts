@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Currency } from "../money/currency";
 
 /**
  * YourTal runs two regions, Australia and Indonesia, picked once by the user
@@ -19,11 +20,20 @@ export type Region = z.infer<typeof regionSchema>;
 export interface RegionConfig {
   /** BCP-47 locale, used for every `Intl.*` call this region's screens make. */
   readonly locale: "en-AU" | "id-ID";
-  /** ISO 4217 currency code. AUD is unambiguously two-decimal; IDR's minor
-   * unit is still unresolved (YT-0506, see `../money/money.ts`) — this
-   * table records which currency a region uses, not how many decimals its
-   * stored amount has. */
-  readonly currency: "AUD" | "IDR";
+  /**
+   * ISO 4217 currency code. This table records which currency a region uses,
+   * not how many decimals its stored amount has — that is `MINOR_UNIT` in
+   * `../money/minor-unit.ts`, where AUD is confirmed two-decimal and IDR is
+   * still provisional (YT-0506).
+   *
+   * Typed from `../money/currency` rather than re-spelled here. The union
+   * used to be written out in this interface, in `money-format.ts`, and in
+   * that file's locale table — three hand-kept copies of a closed enum, each
+   * with a comment explaining why it could not import the others. YT-0513
+   * made it importable; the import is type-only, so this file gains no
+   * runtime edge.
+   */
+  readonly currency: Currency;
   readonly countryName: string;
 }
 

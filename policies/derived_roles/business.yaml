@@ -1,0 +1,115 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Per-business (tenant-scoped) roles, derived from P.attr.businessRoles.
+
+  WHY A MAP AND NOT FLAT ROLES
+  A flat principal role like "business_admin" cannot answer "admin of WHICH
+  business", so every resource policy would have to re-check the tenant by
+  hand -- which is exactly the ad-hoc authorization YT-0035 exists to remove.
+  Instead every business person carries the single flat role `business_user`,
+  and the role they hold AT THE RESOURCE'S BUSINESS is looked up here, once.
+
+  Cross-tenant access therefore needs no explicit DENY: a principal with no
+  entry for R.attr.businessId matches no derived role, and Cerbos is
+  deny-by-default. docs/14 section 3 ("Cerbos denies cross-tenant grants
+  outright") is satisfied structurally, not by a rule someone can forget.
+
+  The role -> capability mapping below is docs/17 section 2.1, transcribed:
+
+    Role          Campaigns  Inventory  Redeem  Reports  Billing  Team
+    Owner             edit       edit      yes     yes     edit    edit + delete
+    Admin             edit       edit      yes     yes     view    edit
+    Marketer          edit        --        --     yes      --      --
+    Merchandiser       --        edit       --     yes      --      --
+    Finance            --         --        --     yes     edit     --
+    Analyst           view       view       --     yes      --      --
+    Store staff        --         --       yes      --      --      --
+
+  Store staff are NOT in the map: they are device sessions, not people
+  (docs/17 section 2.2), and are derived separately as `store_device_of`.
+derivedRoles:
+  name: business
+  variables:
+    local:
+      # "" when the principal holds no role at this resource's business --
+      # including when the resource carries no businessId at all. Every
+      # definition below compares against it, so the tenant check happens
+      # exactly once in the whole policy repo.
+      roleHere: |-
+        has(R.attr.businessId) && R.attr.businessId in P.attr.businessRoles
+          ? P.attr.businessRoles[R.attr.businessId]
+          : ""
+  definitions:
+    - name: business_owner_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere == "owner"
+
+    - name: business_team_editor_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "admin"]
+
+    - name: business_campaign_editor_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "admin", "marketer"]
+
+    - name: business_campaign_viewer_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "admin", "marketer", "analyst"]
+
+    - name: business_inventory_editor_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "admin", "merchandiser"]
+
+    - name: business_inventory_viewer_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "admin", "merchandiser", "analyst"]
+
+    - name: business_redeemer_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "admin"]
+
+    - name: business_report_viewer_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "admin", "marketer", "merchandiser", "finance", "analyst"]
+
+    - name: business_billing_editor_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "finance"]
+
+    - name: business_billing_viewer_of
+      parentRoles: ["business_user"]
+      condition:
+        match:
+          expr: V.roleHere in ["owner", "admin", "finance"]
+
+    # A provisioned counter device, bound to one business and one location.
+    # deviceBusinessId is set when the device is provisioned and never comes
+    # from the request, so a stolen device cannot redeem for another merchant.
+    - name: store_device_of
+      parentRoles: ["store_device"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: has(R.attr.businessId)
+              - expr: has(P.attr.deviceBusinessId)
+              - expr: P.attr.deviceBusinessId == R.attr.businessId

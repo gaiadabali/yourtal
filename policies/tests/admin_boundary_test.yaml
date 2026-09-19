@@ -1,0 +1,75 @@
+---
+name: AdminBoundarySuite
+description: |-
+  docs/17 section 5 gives the admin role "role grants, feature flags, kill
+  switches -- NO DIRECT DATA ACCESS". That is enforced structurally: `admin`
+  appears in exactly one resource policy (platform_setting) and Cerbos is
+  deny-by-default everywhere else.
+
+  This suite is the tripwire. If someone adds `admin` to another policy as a
+  convenience -- which is exactly how a break-glass role quietly becomes a
+  god role -- these assertions fail and say why.
+tests:
+  - name: admin operates the platform
+    input:
+      principals: [admin_root, ops_zul]
+      resources: [kill_switch]
+      actions: [view, grant_role, set_feature_flag, trip_kill_switch]
+    expected:
+      - principal: admin_root
+        resource: kill_switch
+        actions:
+          view: EFFECT_ALLOW
+          grant_role: EFFECT_ALLOW
+          set_feature_flag: EFFECT_ALLOW
+          trip_kill_switch: EFFECT_ALLOW
+      # Ops trips the merchant kill switch from the ops console (docs/14
+      # section 6) and grants no roles.
+      - principal: ops_zul
+        resource: kill_switch
+        actions:
+          view: EFFECT_ALLOW
+          grant_role: EFFECT_DENY
+          set_feature_flag: EFFECT_DENY
+          trip_kill_switch: EFFECT_ALLOW
+
+  - name: admin reaches no business data
+    input:
+      principals: [admin_root]
+      resources: [campaign_kopi, listing_kopi, report_kopi, billing_kopi, team_kopi]
+      actions: [view]
+    expected:
+      - principal: admin_root
+        resource: campaign_kopi
+        actions: { view: EFFECT_DENY }
+      - principal: admin_root
+        resource: listing_kopi
+        actions: { view: EFFECT_DENY }
+      - principal: admin_root
+        resource: report_kopi
+        actions: { view: EFFECT_DENY }
+      - principal: admin_root
+        resource: billing_kopi
+        actions: { view: EFFECT_DENY }
+      - principal: admin_root
+        resource: team_kopi
+        actions: { view: EFFECT_DENY }
+
+  - name: admin reaches no consumer data and no value
+    input:
+      principals: [admin_root]
+      resources: [wallet_wina, account_wina, adjustment_by_yani, redemption_today]
+      actions: [view, view_log]
+    expected:
+      - principal: admin_root
+        resource: wallet_wina
+        actions: { view: EFFECT_DENY, view_log: EFFECT_DENY }
+      - principal: admin_root
+        resource: account_wina
+        actions: { view: EFFECT_DENY, view_log: EFFECT_DENY }
+      - principal: admin_root
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, view_log: EFFECT_DENY }
+      - principal: admin_root
+        resource: redemption_today
+        actions: { view: EFFECT_DENY, view_log: EFFECT_DENY }

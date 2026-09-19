@@ -1,0 +1,32 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  PHASE 3 PLACEHOLDER. Charity is explicitly out of scope until Phase 3
+  (docs/04). The `charity_admin` role is carried in the taxonomy now only so
+  that the boundary is testable today -- a charity partner can read their own
+  settlements and can do nothing else, and the tests assert the "nothing
+  else" half.
+
+  When YT-03xx builds this for real, note the shape docs/03 sections 2.4 and
+  4 settled on: the PARTNER CHARITY is the fundraiser and YourTal is a
+  facilitator whose settlement flows funds directly to the charity's own
+  account. Donations are never pooled in a YourTal account, so there is no
+  "charity balance" resource here and there should never be one.
+resourcePolicy:
+  version: default
+  resource: charity_settlement
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/charity_settlement.json
+  rules:
+    - name: a-charity-reads-its-own-settlements
+      actions: ["view", "view_statement"]
+      effect: EFFECT_ALLOW
+      roles: ["charity_admin"]
+
+    - name: internal-finance-reconciles
+      actions: ["view", "view_statement"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]

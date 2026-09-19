@@ -1,0 +1,97 @@
+---
+name: TwoPersonApprovalSuite
+description: |-
+  All three of the two-person-approval actions in docs/17 section 2.1, in one
+  place: bulk voucher issuance, a material settlement-value decrease, and API
+  credential rotation.
+
+  The shared shape is "the approver is not the requester", and the reason it
+  lives in the PDP rather than in each service is that three separate
+  hand-written checks are three chances to forget one.
+tests:
+  - name: bulk issuance -- request and approval are different people
+    input:
+      principals: [eka_merchandiser, citra_admin, budi_owner]
+      resources: [batch_kopi]
+      actions: [request_issuance, approve_issuance]
+    expected:
+      # eka raised this batch, so eka cannot approve it
+      - principal: eka_merchandiser
+        resource: batch_kopi
+        actions: { request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_DENY }
+      - principal: citra_admin
+        resource: batch_kopi
+        actions: { request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW }
+      - principal: budi_owner
+        resource: batch_kopi
+        actions: { request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW }
+
+  - name: an admin cannot approve the batch they raised themselves
+    input:
+      principals: [citra_admin, budi_owner]
+      resources: [batch_kopi_by_citra]
+      actions: [approve_issuance]
+    expected:
+      - principal: citra_admin
+        resource: batch_kopi_by_citra
+        actions: { approve_issuance: EFFECT_DENY }
+      - principal: budi_owner
+        resource: batch_kopi_by_citra
+        actions: { approve_issuance: EFFECT_ALLOW }
+
+  - name: an ordinary listing edit needs no ceremony
+    input:
+      principals: [eka_merchandiser, gita_analyst]
+      resources: [listing_kopi]
+      actions: [view, edit, set_settlement_value]
+    expected:
+      - principal: eka_merchandiser
+        resource: listing_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_ALLOW, set_settlement_value: EFFECT_ALLOW }
+      - principal: gita_analyst
+        resource: listing_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY, set_settlement_value: EFFECT_DENY }
+
+  - name: a material settlement cut is a request, not an edit
+    input:
+      principals: [eka_merchandiser, budi_owner]
+      resources: [listing_kopi_cut]
+      actions: [set_settlement_value, approve_settlement_decrease]
+    expected:
+      # The merchandiser who asked for the cut can neither apply it directly
+      # nor approve it -- S is what we owe the merchant at redemption.
+      - principal: eka_merchandiser
+        resource: listing_kopi_cut
+        actions: { set_settlement_value: EFFECT_DENY, approve_settlement_decrease: EFFECT_DENY }
+      - principal: budi_owner
+        resource: listing_kopi_cut
+        actions: { set_settlement_value: EFFECT_DENY, approve_settlement_decrease: EFFECT_ALLOW }
+
+  - name: credential rotation needs a second pair of hands
+    input:
+      principals: [citra_admin, budi_owner, eka_merchandiser]
+      resources: [redemption_rotation_by_citra]
+      actions: [rotate_credential, approve_credential_rotation]
+    expected:
+      - principal: citra_admin
+        resource: redemption_rotation_by_citra
+        actions: { rotate_credential: EFFECT_ALLOW, approve_credential_rotation: EFFECT_DENY }
+      - principal: budi_owner
+        resource: redemption_rotation_by_citra
+        actions: { rotate_credential: EFFECT_ALLOW, approve_credential_rotation: EFFECT_ALLOW }
+      - principal: eka_merchandiser
+        resource: redemption_rotation_by_citra
+        actions: { rotate_credential: EFFECT_DENY, approve_credential_rotation: EFFECT_DENY }
+
+  - name: ops approves listings, the business does not approve its own
+    input:
+      principals: [ops_zul, budi_owner]
+      resources: [listing_kopi]
+      actions: [approve_listing, reject_listing]
+    expected:
+      - principal: ops_zul
+        resource: listing_kopi
+        actions: { approve_listing: EFFECT_ALLOW, reject_listing: EFFECT_ALLOW }
+      - principal: budi_owner
+        resource: listing_kopi
+        actions: { approve_listing: EFFECT_DENY, reject_listing: EFFECT_DENY }

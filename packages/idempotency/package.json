@@ -1,0 +1,31 @@
+{
+  "name": "@yourtal/idempotency",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./key": "./src/key.ts",
+    "./fingerprint": "./src/fingerprint.ts",
+    "./record": "./src/record.ts",
+    "./outcome": "./src/outcome.ts",
+    "./store": "./src/store.ts",
+    "./in-memory-store": "./src/in-memory-store.ts",
+    "./idempotency": "./src/idempotency.ts",
+    "./postgres-store": "./src/postgres-store.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "pg": "8.23.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

@@ -1,0 +1,61 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  A business's own profile (docs/17 section 2 -- the dashboard chrome above
+  the six zones): legal name, display name, district, logo. This is distinct
+  from `team` (the roster) and `billing` (the spend), which already had
+  policies; profile had none, so `apps/api` borrowed `team:view` as a proxy
+  (see YT-0507's ticket report). That proxy was owner/admin-only, which is
+  too narrow: every one of the six office roles in the docs/17 section 2.1
+  table needs to know which business they are working in just to render the
+  dashboard at all, the same reasoning that already gives all six of them
+  the Reports column. `view` therefore reuses `business_report_viewer_of`
+  rather than inventing a seventh derived role for the same six people.
+
+  `edit` (legal name, display name, district, logo) is account-level, not
+  zone-level, so it mirrors the Team zone's edit column -- owner and admin
+  only.
+
+  `create` is the odd one, and it is here so that NO route is left deciding
+  authorization for itself (YT-0500). Creating a business has no tenant to
+  scope against -- the business does not exist yet -- so the question is
+  only "is this somebody rather than nobody". Before this rule, that check
+  lived inline in a controller as an identity test, which is exactly the
+  ad-hoc authorization the decision point exists to remove: one endpoint
+  answering its own question, in its own way, where no policy test covers
+  it. An anonymous visitor is denied explicitly rather than by omission.
+resourcePolicy:
+  version: default
+  resource: business
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/business.json
+  rules:
+    - name: anonymous-visitors-create-nothing
+      actions: ["create"]
+      effect: EFFECT_DENY
+      roles: ["anonymous"]
+
+    - name: any-signed-in-person-may-start-a-business
+      # No tenant exists yet, so there is nothing narrower to require.
+      # The caller becomes its owner, and every later action on it is
+      # scoped by the derived roles above.
+      actions: ["create"]
+      effect: EFFECT_ALLOW
+      roles: ["user", "business_user"]
+
+    - name: every-office-role-sees-the-business-it-works-for
+      actions: ["view"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_report_viewer_of
+
+    - name: owner-and-admin-edit-the-profile
+      actions: ["edit"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_team_editor_of

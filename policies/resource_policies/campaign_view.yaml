@@ -1,0 +1,58 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Consumer and anonymous playback -- docs/17 section 4, Open Viewing.
+
+  The line this policy draws is CLAIMABILITY, not anonymity (section 4.1).
+  An anonymous visitor may watch a full campaign video; they may never earn,
+  and there is no path by which the watch becomes claimable later. That is
+  what makes Open Viewing safe rather than a free farming surface, so `earn`
+  is denied to the anonymous role outright and not merely left un-granted.
+
+  Open viewing is also BILLED (section 4.2). An open view against a campaign
+  whose open-viewing budget is exhausted is an unfunded delivery bill, so the
+  PDP refuses it -- "every delivered minute must belong to a funded campaign".
+resourcePolicy:
+  version: default
+  resource: campaign_view
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/campaign_view.json
+  rules:
+    - name: anonymous-can-never-earn
+      actions: ["earn", "answer_scored", "resume_session"]
+      effect: EFFECT_DENY
+      roles: ["anonymous"]
+
+    - name: open-viewing-is-opt-in-and-funded
+      actions: ["watch_open"]
+      effect: EFFECT_ALLOW
+      roles: ["anonymous"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: has(R.attr.state) && R.attr.state == "live"
+              - expr: has(R.attr.openViewingEnabled) && R.attr.openViewingEnabled
+              - expr: has(R.attr.openViewingBudgetRemaining) && R.attr.openViewingBudgetRemaining > 0
+
+    - name: signed-in-viewers-watch-and-earn
+      actions: ["watch_open", "watch_rewarded", "earn", "answer_scored", "resume_session"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: has(R.attr.state) && R.attr.state == "live"
+              - expr: P.attr.isSuspended == false
+
+    - name: suspended-users-do-not-earn
+      actions: ["earn", "answer_scored"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: P.attr.isSuspended

@@ -1,0 +1,62 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Campaigns and their question banks (docs/17 section 2, Campaigns zone).
+
+  Two rules here are not access control in the usual sense -- they are product
+  invariants that would otherwise live in a service and be forgotten:
+
+    * a campaign cannot be published until moderation has passed it
+      (YT-0113/YT-0114), and
+    * a campaign cannot be published while its question bank still contains
+      PII-harvesting questions (YT-0103).
+
+  Both are EFFECT_DENY rules rather than missing ALLOWs, because in Cerbos a
+  DENY always wins. A future policy that grants publish to some new role
+  cannot accidentally route around either of them.
+resourcePolicy:
+  version: default
+  resource: campaign
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/campaign.json
+  rules:
+    - name: pii-guardrail-is-absolute
+      actions: ["publish"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(R.attr.questionsContainPii) && R.attr.questionsContainPii
+
+    - name: unmoderated-creative-never-goes-live
+      actions: ["publish"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: '!has(R.attr.moderationState) || R.attr.moderationState != "approved"'
+
+    - name: editors-run-the-campaign
+      actions:
+        ["create", "edit", "edit_questions", "submit_for_review", "publish", "pause", "archive"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_campaign_editor_of
+
+    - name: analysts-read-only
+      actions: ["view", "view_performance"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_campaign_viewer_of
+
+    - name: internal-read-only
+      # Moderators need the creative in context; support needs to answer
+      # "why did this campaign stop". Neither may change anything.
+      actions: ["view"]
+      effect: EFFECT_ALLOW
+      roles: ["moderator", "support"]

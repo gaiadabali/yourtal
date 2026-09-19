@@ -1,0 +1,101 @@
+---
+name: BusinessSuite
+description: |-
+  A business's own profile (docs/17 section 2.1) -- legal name, display
+  name, district, logo. `view` reaches all six office roles, the same six
+  the Reports column already reaches; `edit` stays owner and admin, the same
+  pair that runs the Team zone. A rival business and a counter device are
+  strangers here, and a person with two hats sees exactly the role they hold
+  at each business.
+tests:
+  - name: all six office roles view the profile, only owner and admin edit it
+    input:
+      principals:
+        [budi_owner, citra_admin, dewi_marketer, eka_merchandiser, fajar_finance, gita_analyst]
+      resources: [business_kopi]
+      actions: [view, edit]
+    expected:
+      - principal: budi_owner
+        resource: business_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_ALLOW }
+      - principal: citra_admin
+        resource: business_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_ALLOW }
+      - principal: dewi_marketer
+        resource: business_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY }
+      - principal: eka_merchandiser
+        resource: business_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY }
+      - principal: fajar_finance
+        resource: business_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY }
+      - principal: gita_analyst
+        resource: business_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY }
+
+  - name: a rival owner and a counter device are strangers here
+    input:
+      principals: [rival_owner, counter_kemang]
+      resources: [business_kopi]
+      actions: [view, edit]
+    expected:
+      - principal: rival_owner
+        resource: business_kopi
+        actions: { view: EFFECT_DENY, edit: EFFECT_DENY }
+      - principal: counter_kemang
+        resource: business_kopi
+        actions: { view: EFFECT_DENY, edit: EFFECT_DENY }
+
+  - name: two hats, two answers -- the role is looked up per business, not per person
+    input:
+      principals: [hasan_two_hats]
+      resources: [business_kopi, business_rival]
+      actions: [view, edit]
+    expected:
+      # analyst at biz-kopi
+      - principal: hasan_two_hats
+        resource: business_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY }
+      # owner at biz-rival
+      - principal: hasan_two_hats
+        resource: business_rival
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_ALLOW }
+
+  - name: creating a business asks the PDP like everything else
+    # YT-0500: no route decides authorization for itself. Creating a business
+    # has no tenant to scope against, so the only question is whether the
+    # caller is somebody rather than nobody -- but it is still the PDP that
+    # answers it, and a test that covers it.
+    input:
+      principals: [anon, wina, budi_owner]
+      resources: [business_kopi]
+      actions: [create]
+    expected:
+      - principal: anon
+        resource: business_kopi
+        actions: { create: EFFECT_DENY }
+      - principal: wina
+        resource: business_kopi
+        actions: { create: EFFECT_ALLOW }
+      # Already runs one business; starting a second is ordinary.
+      - principal: budi_owner
+        resource: business_kopi
+        actions: { create: EFFECT_ALLOW }
+
+  - name: create works on a resource that carries no businessId
+    # The live regression: requiring businessId in the resource schema made
+    # every create fail validation before any rule ran, because Cerbos runs
+    # with enforcement: reject. Absence is safe — every tenant-scoped derived
+    # role begins with has(R.attr.businessId), so none can match this.
+    input:
+      principals: [anon, wina]
+      resources: [business_unborn]
+      actions: [create, view, edit]
+    expected:
+      - principal: anon
+        resource: business_unborn
+        actions: { create: EFFECT_DENY, view: EFFECT_DENY, edit: EFFECT_DENY }
+      - principal: wina
+        resource: business_unborn
+        actions: { create: EFFECT_ALLOW, view: EFFECT_DENY, edit: EFFECT_DENY }

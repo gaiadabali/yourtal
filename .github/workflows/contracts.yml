@@ -1,0 +1,104 @@
+# YT-0031 — contracts codegen gate.
+#
+# The Zod schemas in packages/contracts are the single source of truth. The
+# OpenAPI document and the Go types are derived and checked in, so the only
+# thing CI has to prove is that they are still what the schemas produce — and
+# that the Go actually compiles.
+#
+# Three jobs, because they fail for different reasons:
+#   1. document  — a schema changed and nobody regenerated, OR a .refine() was
+#                  added without its rule being written down (that rule is
+#                  invisible in the document, so nothing else would catch it).
+#   2. go-types  — the document changed and the Go was not regenerated.
+#   3. go-build  — the generated Go does not compile. Not hypothetical: two
+#                  defects (colliding enum constants, a missing utils.go) were
+#                  caught by exactly this and by nothing else.
+name: Contracts
+
+on:
+  pull_request:
+    paths:
+      - "packages/contracts/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/contracts.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/contracts/**"
+
+concurrency:
+  group: contracts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  document:
+    name: Schemas, document and drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @yourtal/contracts typecheck
+
+      - name: Lint
+        run: pnpm --filter @yourtal/contracts lint
+
+      # Includes the drift gate, the registry completeness check, the
+      # cross-field-rule declaration check and the int32 overflow check.
+      - name: Test
+        run: pnpm --filter @yourtal/contracts test
+
+  go-types:
+    name: Go types are current
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+
+      # Regenerates into a scratch directory and diffs against what is
+      # committed. Needs Docker for openapi-generator, which ubuntu-latest has.
+      - name: Check generated Go is up to date
+        run: node openapi/generate-go.mjs --check
+        working-directory: packages/contracts
+
+  go-build:
+    name: Go types compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+
+      # go build + go vet, in a container, so this needs no Go toolchain on
+      # the runner and uses the same version as a developer running it locally.
+      - name: Build and vet the generated Go
+        run: node openapi/generate-go.mjs --verify
+        working-directory: packages/contracts

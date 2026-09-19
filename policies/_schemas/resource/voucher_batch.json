@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "voucher_batch",
+  "description": "A bulk voucher issuance request (YT-0141). Two-person approval, always.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": {
+    "businessId": { "type": "string" },
+    "requestedBy": { "type": "string" },
+    "approvalState": { "type": "string", "enum": ["none", "pending", "approved"] }
+  }
+}

@@ -17,7 +17,7 @@ describe("ConsentForm", () => {
   });
 
   it("renders three independent, un-ticked purpose controls — never one blanket agreement", () => {
-    render(<ConsentForm region="AU" />);
+    render(<ConsentForm region="AU" returnTo={null} />);
     const checkboxes = screen.getAllByRole("checkbox");
     expect(checkboxes).toHaveLength(3);
     for (const checkbox of checkboxes) {
@@ -27,7 +27,7 @@ describe("ConsentForm", () => {
 
   it("blocks continuing until the essential (account & phone verification) purpose is accepted", async () => {
     const user = userEvent.setup();
-    render(<ConsentForm region="AU" />);
+    render(<ConsentForm region="AU" returnTo={null} />);
 
     expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
 
@@ -39,7 +39,7 @@ describe("ConsentForm", () => {
 
   it("keeps the optional purposes independent of each other and of the required one", async () => {
     const user = userEvent.setup();
-    render(<ConsentForm region="AU" />);
+    render(<ConsentForm region="AU" returnTo={null} />);
 
     await user.click(screen.getByRole("checkbox", { name: /Personalise which campaigns I see/ }));
     expect(
@@ -53,7 +53,7 @@ describe("ConsentForm", () => {
 
   it("saves the exact choice made and advances to the phone/OTP step for the chosen region", async () => {
     const user = userEvent.setup();
-    render(<ConsentForm region="ID" />);
+    render(<ConsentForm region="ID" returnTo={null} />);
 
     await user.click(
       screen.getByRole("checkbox", { name: /Buat akun saya dan verifikasi nomor HP/ }),
@@ -66,5 +66,17 @@ describe("ConsentForm", () => {
       window.localStorage.getItem("yourtal:onboarding-consent") ?? "{}",
     );
     expect(saved).toMatchObject({ essential: true, personalize: false, marketing: true });
+  });
+
+  it("carries a validated returnTo forward (YT-0432: Open Viewing's post-signup return)", async () => {
+    const user = userEvent.setup();
+    render(<ConsentForm region="ID" returnTo="/watch/campaign-1" />);
+
+    await user.click(
+      screen.getByRole("checkbox", { name: /Buat akun saya dan verifikasi nomor HP/ }),
+    );
+    await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
+
+    expect(push).toHaveBeenCalledWith("/onboarding/ID/verify?returnTo=%2Fwatch%2Fcampaign-1");
   });
 });

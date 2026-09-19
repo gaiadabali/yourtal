@@ -1,0 +1,263 @@
+---
+# Shared resource fixtures. Everything belongs to biz-kopi unless its name
+# says otherwise; the *_rival fixtures exist to assert the tenant boundary.
+resources:
+  campaign_kopi:
+    kind: campaign
+    id: camp-1
+    attr:
+      businessId: "biz-kopi"
+      state: "draft"
+      moderationState: "approved"
+      questionsContainPii: false
+
+  campaign_kopi_unmoderated:
+    kind: campaign
+    id: camp-2
+    attr:
+      businessId: "biz-kopi"
+      state: "draft"
+      moderationState: "pending"
+      questionsContainPii: false
+
+  campaign_kopi_pii:
+    kind: campaign
+    id: camp-3
+    attr:
+      businessId: "biz-kopi"
+      state: "draft"
+      moderationState: "approved"
+      questionsContainPii: true
+
+  campaign_rival:
+    kind: campaign
+    id: camp-r
+    attr:
+      businessId: "biz-rival"
+      state: "live"
+      moderationState: "approved"
+      questionsContainPii: false
+
+  view_open_funded:
+    kind: campaign_view
+    id: camp-1
+    attr:
+      campaignId: "camp-1"
+      state: "live"
+      openViewingEnabled: true
+      openViewingBudgetRemaining: 500
+
+  view_open_exhausted:
+    kind: campaign_view
+    id: camp-4
+    attr:
+      campaignId: "camp-4"
+      state: "live"
+      openViewingEnabled: true
+      openViewingBudgetRemaining: 0
+
+  view_open_disabled:
+    kind: campaign_view
+    id: camp-5
+    attr:
+      campaignId: "camp-5"
+      state: "live"
+      openViewingEnabled: false
+      openViewingBudgetRemaining: 500
+
+  listing_kopi:
+    kind: listing
+    id: list-1
+    attr:
+      businessId: "biz-kopi"
+      isMaterialSettlementDecrease: false
+      approvalState: "none"
+
+  listing_kopi_cut:
+    kind: listing
+    id: list-2
+    attr:
+      businessId: "biz-kopi"
+      isMaterialSettlementDecrease: true
+      requestedBy: "eka"
+      approvalState: "pending"
+
+  batch_kopi:
+    kind: voucher_batch
+    id: batch-1
+    attr:
+      businessId: "biz-kopi"
+      requestedBy: "eka"
+      approvalState: "pending"
+
+  batch_kopi_by_citra:
+    kind: voucher_batch
+    id: batch-2
+    attr:
+      businessId: "biz-kopi"
+      requestedBy: "citra"
+      approvalState: "pending"
+
+  wallet_wina:
+    kind: wallet
+    id: wal-1
+    attr:
+      ownerId: "wina"
+      requiresPasskey: false
+
+  wallet_wina_high_value:
+    kind: wallet
+    id: wal-1
+    attr:
+      ownerId: "wina"
+      requiresPasskey: true
+
+  wallet_someone_else:
+    kind: wallet
+    id: wal-2
+    attr:
+      ownerId: "other-person"
+      requiresPasskey: false
+
+  redemption_today:
+    kind: redemption
+    id: red-1
+    attr:
+      businessId: "biz-kopi"
+      locationId: "loc-kemang"
+      logScope: "today"
+      merchantSuspended: false
+
+  redemption_all_time:
+    kind: redemption
+    id: red-2
+    attr:
+      businessId: "biz-kopi"
+      locationId: "loc-kemang"
+      logScope: "all"
+      merchantSuspended: false
+
+  redemption_killed:
+    kind: redemption
+    id: red-3
+    attr:
+      businessId: "biz-kopi"
+      logScope: "today"
+      merchantSuspended: true
+
+  redemption_rotation_by_citra:
+    kind: redemption
+    id: red-4
+    attr:
+      businessId: "biz-kopi"
+      logScope: "all"
+      credentialRotationRequestedBy: "citra"
+      merchantSuspended: false
+
+  business_kopi:
+    kind: business
+    id: biz-kopi
+    attr:
+      businessId: "biz-kopi"
+
+  business_rival:
+    kind: business
+    id: biz-rival
+    attr:
+      businessId: "biz-rival"
+
+  kyb_document_kopi:
+    kind: kyb_document
+    id: kyb-1
+    attr:
+      businessId: "biz-kopi"
+
+  report_kopi:
+    kind: report
+    id: rep-1
+    attr:
+      businessId: "biz-kopi"
+      containsPii: false
+
+  report_kopi_identifying:
+    kind: report
+    id: rep-2
+    attr:
+      businessId: "biz-kopi"
+      containsPii: true
+
+  billing_kopi:
+    kind: billing
+    id: bill-1
+    attr:
+      businessId: "biz-kopi"
+
+  team_kopi:
+    kind: team
+    id: team-1
+    attr:
+      businessId: "biz-kopi"
+      targetRole: "analyst"
+      targetPrincipalId: "gita"
+
+  team_kopi_targeting_owner:
+    kind: team
+    id: team-2
+    attr:
+      businessId: "biz-kopi"
+      targetRole: "owner"
+      targetPrincipalId: "budi"
+
+  account_wina:
+    kind: user_account
+    id: acct-1
+    attr:
+      ownerId: "wina"
+      goodwillAmountIdr: 25000
+
+  account_wina_large_goodwill:
+    kind: user_account
+    id: acct-1
+    attr:
+      ownerId: "wina"
+      goodwillAmountIdr: 500000
+
+  adjustment_by_yani:
+    kind: ledger_adjustment
+    id: adj-1
+    attr:
+      createdBy: "yani"
+      amountIdr: 1000000
+
+  moderation_with_reason:
+    kind: moderation_item
+    id: mod-1
+    attr:
+      businessId: "biz-kopi"
+      hasReason: true
+
+  moderation_without_reason:
+    kind: moderation_item
+    id: mod-2
+    attr:
+      businessId: "biz-kopi"
+      hasReason: false
+
+  kill_switch:
+    kind: platform_setting
+    id: set-1
+    attr:
+      key: "merchant.kill_switch"
+
+  charity_settlement_1:
+    kind: charity_settlement
+    id: chs-1
+    attr:
+      charityId: "ch-1"
+
+  # A business that does not exist yet: what `create` is asked about. Carries
+  # no businessId, because there is none — see _schemas/resource/business.json.
+  business_unborn:
+    kind: business
+    id: new
+    attr: {}

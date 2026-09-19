@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "user_account",
+  "description": "A consumer account as seen by internal staff. docs/17 section 5.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ownerId"],
+  "properties": {
+    "ownerId": { "type": "string" },
+    "goodwillAmountIdr": {
+      "description": "Size of the goodwill credit being issued. Support may issue below their own ceiling and no further.",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

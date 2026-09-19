@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { idrMinorUnitsSchema, pointsSchema } from "../money/money";
+import { merchantLocationSchema } from "./merchant-location";
 
 /**
  * A listing is a store catalogue entry — a voucher or digital-goods SKU a
@@ -7,6 +8,11 @@ import { idrMinorUnitsSchema, pointsSchema } from "../money/money";
  * declares a settlement value; the points price is platform-computed
  * (docs/09 section 4.1) and is carried here as the already-computed value a
  * screen shows, not re-derived client-side.
+ *
+ * `locations` replaced a single `district: string` field (YT-0502): a
+ * multi-branch merchant can hold several outlets, and which one honours a
+ * given voucher is load-bearing for redemption and for disputes, not
+ * cosmetic. See `merchant-location.ts`.
  */
 export const listingCategorySchema = z.enum([
   "food_beverage",
@@ -38,7 +44,7 @@ export const listingSchema = z
     title: z.string().min(1).max(140),
     description: z.string().min(1).max(500),
     category: listingCategorySchema,
-    district: z.string().min(1).max(60),
+    locations: z.array(merchantLocationSchema).min(1),
     faceValueIdr: idrMinorUnitsSchema,
     settlementValueIdr: idrMinorUnitsSchema,
     priceInPoints: pointsSchema,
@@ -69,6 +75,14 @@ export const listingSchema = z
     {
       message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
       path: ["minimumSpendIdr"],
+    },
+  )
+  .refine(
+    (listing) =>
+      new Set(listing.locations.map((location) => location.id)).size === listing.locations.length,
+    {
+      message: "location ids must be unique within a listing",
+      path: ["locations"],
     },
   );
 

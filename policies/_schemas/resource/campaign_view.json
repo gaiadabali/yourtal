@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "campaign_view",
+  "description": "A playback session against a campaign. Split from campaign because the audience is entirely different: consumers and anonymous visitors, never business staff. docs/17 section 4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["campaignId"],
+  "properties": {
+    "campaignId": { "type": "string" },
+    "state": { "type": "string", "enum": ["draft", "live", "paused", "archived"] },
+    "openViewingEnabled": {
+      "description": "Per-campaign opt-in, off by default (docs/17 section 4.2). An anonymous visitor may watch only when this is true.",
+      "type": "boolean"
+    },
+    "openViewingBudgetRemaining": {
+      "description": "Qualified open views still funded. Zero means the bill is unfunded, and every delivered minute must belong to a funded campaign (docs/10).",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

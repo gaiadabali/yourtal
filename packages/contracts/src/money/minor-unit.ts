@@ -1,0 +1,130 @@
+import type { Currency } from "./currency";
+
+/**
+ * How many decimal places a currency's stored integer represents — and, just
+ * as importantly, **whether we actually know**. Dependency-free for the same
+ * reason `currency.ts` is: `money-format.ts` value-imports it.
+ *
+ * ## The exponent is not part of the Money type, on purpose
+ *
+ * A `Money` can be stored, transported, added, subtracted and compared
+ * without anyone knowing its exponent. The ledger already works this way —
+ * `services/ledger` moves `amount_minor` integers and never interprets them,
+ * which is why YT-0039 could ship while YT-0506 was still open.
+ *
+ * Only two operations genuinely need the exponent: **rendering** an amount
+ * for a human, and **settling** one through a payment processor. Keeping it
+ * out of the core means the open question blocks those two things and
+ * nothing else, rather than blocking everything that touches money.
+ *
+ * This is the same split YT-0537 asks for when it says the money unit is "a
+ * declared property of the payment driver, not a constant baked into the
+ * simulator". A driver declares the unit it speaks; this table declares the
+ * unit we store; a parity test compares them. None of that works if the
+ * exponent is a constant welded to the amount.
+ *
+ * ## `status` is the YT-0506 question, made machine-readable
+ *
+ * `docs/12` section 3, `docs/18` and YT-0041's acceptance criteria all say
+ * IDR is stored in sen. `money.ts`, `money-format.ts`, every mock literal
+ * and a passing test named "stores IDR as Rupiah, not sen, until YT-0506
+ * settles" all say Rupiah. The evidence does not settle it either: ISO 4217
+ * gives IDR a sen minor unit, Stripe (our AU processor) treats it as
+ * two-decimal, Adyen explicitly flags IDR as diverging from ISO, and
+ * **Xendit — the Indonesian processor, the one that matters — publishes
+ * nothing.**
+ *
+ * So `IDR` is recorded below as exponent 0 with status `provisional`.
+ *
+ * **Exponent 0 is a description of what the code does today, not a vote.**
+ * It is what `money-format.ts` renders, what every mock literal is scaled
+ * for, and what `schema-registry.ts` tells every generated Go client. Naming
+ * it here changes no behaviour; it moves the caveat out of four prose
+ * comments that a compiler cannot read and into one value that it can.
+ *
+ * Until YT-0506 closes, `assertUnitSettled` refuses IDR on the settlement
+ * path while display carries on unchanged — which is YT-0513's "AUD proceeds
+ * while IDR stays blocked", enforced rather than remembered.
+ */
+export interface MinorUnit {
+  /** Decimal places in the stored integer: 2 means the integer is cents. */
+  readonly exponent: number;
+  /**
+   * `confirmed` — evidenced against the processor we will actually settle
+   * through. `provisional` — what the code currently does, pending that
+   * evidence. Only `confirmed` may move money.
+   */
+  readonly status: "confirmed" | "provisional";
+  /** Why the exponent is what it is, so the next reader need not re-research. */
+  readonly evidence: string;
+}
+
+export const MINOR_UNIT: Record<Currency, MinorUnit> = {
+  AUD: {
+    exponent: 2,
+    status: "confirmed",
+    evidence:
+      "AUD is unambiguously two-decimal: cents are legal tender, ISO 4217 agrees, " +
+      "and Stripe — our Australian processor — takes AUD in cents. No processor " +
+      "disputes this, so nothing here is waiting on anyone.",
+  },
+  IDR: {
+    exponent: 0,
+    status: "provisional",
+    evidence:
+      "UNSETTLED — YT-0506. Exponent 0 records what this codebase does today " +
+      "(money-format.ts does not divide IDR; every mock literal is scaled as whole " +
+      "Rupiah; schema-registry.ts tells Go clients the minor unit IS one Rupiah). " +
+      "It is not a decision: ISO 4217 says sen, Stripe treats IDR as two-decimal, " +
+      "Adyen flags IDR as diverging from its own table, and Xendit publishes no " +
+      "amount-unit spec at all. A wrong answer is uniformly 100x and silent, so " +
+      "this must be evidenced against the Xendit contract or sandbox, not reasoned out.",
+  },
+};
+
+/**
+ * The exponent, whatever its status. Formatting calls this: a provisional
+ * exponent still renders the numbers a user sees today, and refusing to
+ * render would take down every working IDR screen to make a point that
+ * belongs on the settlement path instead.
+ */
+export function minorUnitExponent(currency: Currency): number {
+  return MINOR_UNIT[currency].exponent;
+}
+
+export function isUnitSettled(currency: Currency): boolean {
+  return MINOR_UNIT[currency].status === "confirmed";
+}
+
+/** Thrown when money would move in a currency whose unit is still open. */
+export class UnsettledMinorUnitError extends Error {
+  readonly currency: Currency;
+
+  constructor(currency: Currency, operation: string) {
+    super(
+      `Refusing to ${operation} in ${currency}: its minor unit is not settled (YT-0506). ` +
+        MINOR_UNIT[currency].evidence,
+    );
+    this.name = "UnsettledMinorUnitError";
+    this.currency = currency;
+  }
+}
+
+/**
+ * The gate every settlement, payout, pricing and PSP path must pass.
+ *
+ * Throws rather than returning a flag, and takes the operation name so the
+ * message says what was about to happen. A caller that wants to branch has
+ * `isUnitSettled`; a caller that forgets entirely gets stopped, which is the
+ * whole point — the 100x error this guards is invisible in every test
+ * because both sides of it agree internally.
+ *
+ * Deliberately NOT called by `formatMoney`. Display is not settlement, and
+ * conflating them would mean the safe thing is also the thing that breaks
+ * the app, so somebody would eventually remove it.
+ */
+export function assertUnitSettled(currency: Currency, operation: string): void {
+  if (!isUnitSettled(currency)) {
+    throw new UnsettledMinorUnitError(currency, operation);
+  }
+}

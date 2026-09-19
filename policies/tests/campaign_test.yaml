@@ -1,0 +1,132 @@
+---
+name: CampaignSuite
+description: Campaign management and the two publish guardrails.
+tests:
+  - name: the docs/17 role table, transcribed
+    input:
+      principals:
+        [budi_owner, citra_admin, dewi_marketer, eka_merchandiser, fajar_finance, gita_analyst]
+      resources: [campaign_kopi]
+      actions: [view, edit, publish, view_performance]
+    expected:
+      - principal: budi_owner
+        resource: campaign_kopi
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            edit: EFFECT_ALLOW,
+            publish: EFFECT_ALLOW,
+            view_performance: EFFECT_ALLOW,
+          }
+      - principal: citra_admin
+        resource: campaign_kopi
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            edit: EFFECT_ALLOW,
+            publish: EFFECT_ALLOW,
+            view_performance: EFFECT_ALLOW,
+          }
+      - principal: dewi_marketer
+        resource: campaign_kopi
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            edit: EFFECT_ALLOW,
+            publish: EFFECT_ALLOW,
+            view_performance: EFFECT_ALLOW,
+          }
+      # Merchandiser runs inventory, not campaigns: the row is empty, so the
+      # answer is DENY for everything including view.
+      - principal: eka_merchandiser
+        resource: campaign_kopi
+        actions:
+          {
+            view: EFFECT_DENY,
+            edit: EFFECT_DENY,
+            publish: EFFECT_DENY,
+            view_performance: EFFECT_DENY,
+          }
+      - principal: fajar_finance
+        resource: campaign_kopi
+        actions:
+          {
+            view: EFFECT_DENY,
+            edit: EFFECT_DENY,
+            publish: EFFECT_DENY,
+            view_performance: EFFECT_DENY,
+          }
+      - principal: gita_analyst
+        resource: campaign_kopi
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            edit: EFFECT_DENY,
+            publish: EFFECT_DENY,
+            view_performance: EFFECT_ALLOW,
+          }
+
+  - name: an unmoderated creative cannot go live
+    input:
+      principals: [budi_owner]
+      resources: [campaign_kopi_unmoderated]
+      actions: [edit, publish]
+    expected:
+      - principal: budi_owner
+        resource: campaign_kopi_unmoderated
+        actions: { edit: EFFECT_ALLOW, publish: EFFECT_DENY }
+
+  - name: the PII guardrail outranks the owner
+    input:
+      principals: [budi_owner]
+      resources: [campaign_kopi_pii]
+      actions: [edit, publish]
+    expected:
+      - principal: budi_owner
+        resource: campaign_kopi_pii
+        actions: { edit: EFFECT_ALLOW, publish: EFFECT_DENY }
+
+  - name: cross-tenant is denied without any rule saying so
+    input:
+      principals: [budi_owner, counter_kemang]
+      resources: [campaign_rival]
+      actions: [view, edit, publish]
+    expected:
+      - principal: budi_owner
+        resource: campaign_rival
+        actions: { view: EFFECT_DENY, edit: EFFECT_DENY, publish: EFFECT_DENY }
+      - principal: counter_kemang
+        resource: campaign_rival
+        actions: { view: EFFECT_DENY, edit: EFFECT_DENY, publish: EFFECT_DENY }
+
+  - name: one person, two businesses, two different answers
+    input:
+      principals: [hasan_two_hats]
+      resources: [campaign_kopi, campaign_rival]
+      actions: [view, edit]
+    expected:
+      # analyst at biz-kopi: read only
+      - principal: hasan_two_hats
+        resource: campaign_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY }
+      # owner of biz-rival: full control
+      - principal: hasan_two_hats
+        resource: campaign_rival
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_ALLOW }
+
+  - name: internal staff read but never write
+    input:
+      principals: [moderator_tono, support_sari, admin_root]
+      resources: [campaign_kopi]
+      actions: [view, edit, publish]
+    expected:
+      - principal: moderator_tono
+        resource: campaign_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY, publish: EFFECT_DENY }
+      - principal: support_sari
+        resource: campaign_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_DENY, publish: EFFECT_DENY }
+      # admin has no direct data access, by design
+      - principal: admin_root
+        resource: campaign_kopi
+        actions: { view: EFFECT_DENY, edit: EFFECT_DENY, publish: EFFECT_DENY }

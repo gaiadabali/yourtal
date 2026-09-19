@@ -1,0 +1,88 @@
+---
+name: PointsIssuanceSuite
+description: |-
+  The rule this whole repo exists to make unbreakable, from docs/17 section
+  2.1: NO BUSINESS ROLE CAN EVER GRANT POINTS. docs/14 section 3 lists the
+  same thing as the elevation-of-privilege threat -- a business admin
+  crediting an account they control.
+
+  If a future change breaks exactly one test in this repo, let it be one of
+  these.
+tests:
+  - name: not one business role reaches the ledger
+    input:
+      principals:
+        [
+          budi_owner,
+          citra_admin,
+          dewi_marketer,
+          eka_merchandiser,
+          fajar_finance,
+          gita_analyst,
+          counter_kemang,
+        ]
+      resources: [adjustment_by_yani]
+      actions: [view, create, approve]
+    expected:
+      - principal: budi_owner
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+      - principal: citra_admin
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+      - principal: dewi_marketer
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+      - principal: eka_merchandiser
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+      # A business's own finance person is still a business person.
+      - principal: fajar_finance
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+      - principal: gita_analyst
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+      - principal: counter_kemang
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+
+  - name: nor does a consumer, nor an anonymous visitor
+    input:
+      principals: [wina, anon]
+      resources: [adjustment_by_yani]
+      actions: [view, create, approve]
+    expected:
+      - principal: wina
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+      - principal: anon
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_DENY, create: EFFECT_DENY, approve: EFFECT_DENY }
+
+  - name: finance adjusts, and does not approve its own work
+    input:
+      principals: [finance_yani, finance_zaki]
+      resources: [adjustment_by_yani]
+      actions: [view, create, approve]
+    expected:
+      # yani raised this one, so yani cannot approve it
+      - principal: finance_yani
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_ALLOW, create: EFFECT_ALLOW, approve: EFFECT_DENY }
+      - principal: finance_zaki
+        resource: adjustment_by_yani
+        actions: { view: EFFECT_ALLOW, create: EFFECT_ALLOW, approve: EFFECT_ALLOW }
+
+  - name: risk suspends, and never touches a balance
+    input:
+      principals: [risk_umi, support_sari]
+      resources: [adjustment_by_yani]
+      actions: [create, approve]
+    expected:
+      - principal: risk_umi
+        resource: adjustment_by_yani
+        actions: { create: EFFECT_DENY, approve: EFFECT_DENY }
+      - principal: support_sari
+        resource: adjustment_by_yani
+        actions: { create: EFFECT_DENY, approve: EFFECT_DENY }

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "wallet",
+  "description": "A consumer balance, pending points and held vouchers. docs/17 section 3.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ownerId"],
+  "properties": {
+    "ownerId": { "type": "string" },
+    "requiresPasskey": {
+      "description": "Set when the redemption is above the value threshold that docs/14 section 5 gates behind a registered passkey.",
+      "type": "boolean"
+    }
+  }
+}

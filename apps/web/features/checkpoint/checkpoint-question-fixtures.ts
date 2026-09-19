@@ -7,6 +7,7 @@ import type {
   ShortTextQuestion,
   TrueFalseQuestion,
 } from "@yourtal/contracts/question";
+import { MOCK_HLS_MANIFEST_URL } from "@/features/player/video-source";
 
 /**
  * Hand-built fixtures, one per question type, shared across this feature's
@@ -93,6 +94,17 @@ export function makeCampaignFixture(overrides: Partial<Campaign> = {}): Campaign
     scoringRule: "base_plus_accuracy_bonus",
     status: "active",
     publishedAt: "2026-09-19T09:00:00.000Z",
+    // Back-loaded weights, per docs/06 section 3: the last chapter is worth
+    // more than the first three together, so abandoning at minute 3 forfeits
+    // most of the reward. Weights, not point values — `chapterRewardPoints`
+    // derives those from `rewardPoints` above, and a second stored total is
+    // the duplicate-source-of-truth bug docs/13 forbids.
+    chapters: [
+      { title: "Pembuka", startSeconds: 0, rewardWeight: 1 },
+      { title: "Isi", startSeconds: 200, rewardWeight: 2 },
+      { title: "Penutup", startSeconds: 420, rewardWeight: 5 },
+    ],
+    videoSource: { kind: "hls", manifestUrl: MOCK_HLS_MANIFEST_URL },
     ...overrides,
   };
 }

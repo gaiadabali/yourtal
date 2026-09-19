@@ -1,0 +1,30 @@
+{
+  "name": "@yourtal/consent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./purpose": "./src/purpose.ts",
+    "./purpose-catalogue": "./src/purpose-catalogue.ts",
+    "./consent-record": "./src/consent-record.ts",
+    "./policy-version": "./src/policy-version.ts",
+    "./decision": "./src/decision.ts",
+    "./consent-query": "./src/consent-query.ts",
+    "./dsar": "./src/dsar.ts",
+    "./dsar-orchestrator": "./src/dsar-orchestrator.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@yourtal/jurisdiction": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

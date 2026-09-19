@@ -1,0 +1,73 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  A consumer account as internal staff see it (docs/17 section 5).
+
+  SEPARATION OF DUTIES is the whole point of this file, stated there as:
+  whoever can suspend cannot adjust, and whoever can adjust cannot approve
+  their own adjustment. So:
+
+    * risk_analyst  suspends and reinstates, and can touch no value at all
+    * support       opens cases and issues goodwill BELOW ITS OWN CEILING,
+                    and cannot suspend
+    * finance       adjusts the ledger -- in ledger_adjustment.yaml, not here
+    * admin         appears nowhere: "role grants, feature flags, kill
+                    switches -- no direct data access"
+
+  Support cannot change a phone number, at all, by any route. docs/14
+  section 5 is explicit that social engineering of support is the realistic
+  attack on a phone-anchored identity, and that removing the capability is
+  the only real fix. A dual-approved case with session recording is the
+  substitute, which is what `open_case` is for.
+resourcePolicy:
+  version: default
+  resource: user_account
+  importDerivedRoles:
+    - common
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/user_account.json
+  rules:
+    - name: support-cannot-change-a-phone-number
+      actions: ["change_phone"]
+      effect: EFFECT_DENY
+      roles: ["support"]
+
+    - name: whoever-can-suspend-cannot-adjust
+      actions: ["goodwill_credit"]
+      effect: EFFECT_DENY
+      roles: ["risk_analyst"]
+
+    - name: whoever-can-adjust-cannot-suspend
+      actions: ["suspend", "reinstate"]
+      effect: EFFECT_DENY
+      roles: ["support", "finance"]
+
+    - name: goodwill-stays-under-the-ceiling
+      actions: ["goodwill_credit"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: |-
+            !has(P.attr.goodwillCreditCeilingIdr)
+              || !has(R.attr.goodwillAmountIdr)
+              || R.attr.goodwillAmountIdr > P.attr.goodwillCreditCeilingIdr
+
+    - name: your-own-account
+      actions: ["view", "change_phone", "close"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - account_owner
+
+    - name: support-handles-cases
+      actions: ["view", "open_case", "goodwill_credit"]
+      effect: EFFECT_ALLOW
+      roles: ["support"]
+
+    - name: risk-suspends
+      actions: ["view", "suspend", "reinstate"]
+      effect: EFFECT_ALLOW
+      roles: ["risk_analyst"]

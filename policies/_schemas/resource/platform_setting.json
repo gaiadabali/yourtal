@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "platform_setting",
+  "description": "Role grants, feature flags and kill switches. docs/17 section 5: admin operates these and has NO direct data access -- enforced by admin appearing in no other resource policy in this repo.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": { "key": { "type": "string" } }
+}

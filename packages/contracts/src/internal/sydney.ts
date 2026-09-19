@@ -28,6 +28,45 @@ export function pickSuburb(faker: Faker): string {
   return faker.helpers.arrayElement(SYDNEY_SUBURBS);
 }
 
+const SYDNEY_STREET_NAMES: readonly string[] = [
+  "George Street",
+  "Oxford Street",
+  "King Street",
+  "Crown Street",
+  "Military Road",
+  "Victoria Road",
+  "Church Street",
+  "Marine Parade",
+];
+
+/** The AU counterpart to `jakarta.ts`'s `generateMerchantLocation` — see its doc comment. */
+export function generateMerchantLocationAu(
+  faker: Faker,
+  merchantName: string,
+  branchLabel: string,
+) {
+  const street = faker.helpers.arrayElement(SYDNEY_STREET_NAMES);
+  const district = pickSuburb(faker);
+  return {
+    id: faker.string.uuid(),
+    name: `${merchantName} — ${branchLabel}`,
+    address: `${String(faker.number.int({ min: 1, max: 200 }))} ${street}, ${district}`,
+    district,
+  };
+}
+
+const BRANCH_LABELS_AU: readonly string[] = ["Main Branch", "Branch 2", "Branch 3", "Branch 4"];
+
+export function generateMerchantLocationsAu(faker: Faker, merchantName: string, count: number) {
+  return Array.from({ length: count }, (_unused, index) =>
+    generateMerchantLocationAu(
+      faker,
+      merchantName,
+      BRANCH_LABELS_AU[index] ?? `Branch ${String(index + 1)}`,
+    ),
+  );
+}
+
 // Combinatorial, invented merchant names in the shape of real Sydney small
 // businesses (a category word + an invented brand word, occasionally plus a
 // flourish). None of these names are real trademarks.

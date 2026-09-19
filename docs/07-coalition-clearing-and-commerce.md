@@ -40,13 +40,13 @@ The industry pattern, confirmed by the research, is:
 
 ### 2.1 Two prices, and the spread is the business model
 
-| Price | Who pays | What it is |
-|---|---|---|
-| **Issuance price `P_issue`** | Business → YourTal | What a business pays per point it gives away. E.g. **IDR 8 per point**. |
-| **Backing rate `B`** | — | The currency value YourTal commits to deliver per point. **Platform-set, never published to users, always < `P_issue`.** E.g. **IDR 6 per point**. |
-| **Settlement value `S`** | YourTal → Business | Declared per listing by the supplier — what we pay them when their item is redeemed. Points price is then computed as `S / B`. |
-| **Spread** | — | `P_issue − B` = **IDR 2 per point of clearing margin**, on top of the cash campaign fee. |
-| **Breakage** | — | Points that expire unredeemed. The operator keeps these by default; large partners will negotiate a share. |
+| Price                        | Who pays           | What it is                                                                                                                                         |
+| ---------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Issuance price `P_issue`** | Business → YourTal | What a business pays per point it gives away. E.g. **IDR 8 per point**.                                                                            |
+| **Backing rate `B`**         | —                  | The currency value YourTal commits to deliver per point. **Platform-set, never published to users, always < `P_issue`.** E.g. **IDR 6 per point**. |
+| **Settlement value `S`**     | YourTal → Business | Declared per listing by the supplier — what we pay them when their item is redeemed. Points price is then computed as `S / B`.                     |
+| **Spread**                   | —                  | `P_issue − B` = **IDR 2 per point of clearing margin**, on top of the cash campaign fee.                                                           |
+| **Breakage**                 | —                  | Points that expire unredeemed. The operator keeps these by default; large partners will negotiate a share.                                         |
 
 > **Suppliers declare `S`, they do not set the points price.** If they could, any business could underprice and drain the platform. Full derivation, worked example and the demand multiplier in [`09`](09-points-economy-and-redemption.md) §4.
 
@@ -90,23 +90,23 @@ An Indonesian business's points cannot be redeemed against an Australian busines
 
 ## 3. Rewards are always points — inventory is a separate relationship
 
-> **Corrected.** An earlier draft had businesses funding a campaign with points *or* vouchers *or* merchandise. The model is cleaner than that: **the campaign reward is always points.** Vouchers and merchandise are *inventory* the business supplies to the shared store, priced in points. Two independent relationships — see [`09`](09-points-economy-and-redemption.md) §2.
+> **Corrected.** An earlier draft had businesses funding a campaign with points _or_ vouchers _or_ merchandise. The model is cleaner than that: **the campaign reward is always points.** Vouchers and merchandise are _inventory_ the business supplies to the shared store, priced in points. Two independent relationships — see [`09`](09-points-economy-and-redemption.md) §2.
 
-| Relationship | What the business does | Money direction |
-|---|---|---|
-| **Advertiser** | Uploads video, authors questions, **pre-purchases points** | Business → YourTal |
-| **Supplier** | Lists vouchers/merchandise at a declared **settlement value** | YourTal → Business on redemption |
-| **Redeemer** | Honours the voucher at their own checkout via the redemption API | (settled as above) |
+| Relationship   | What the business does                                           | Money direction                  |
+| -------------- | ---------------------------------------------------------------- | -------------------------------- |
+| **Advertiser** | Uploads video, authors questions, **pre-purchases points**       | Business → YourTal               |
+| **Supplier**   | Lists vouchers/merchandise at a declared **settlement value**    | YourTal → Business on redemption |
+| **Redeemer**   | Honours the voucher at their own checkout via the redemption API | (settled as above)               |
 
-**A business doing both #1 and #2 nets off.** They pay for points issued; they get paid for redemptions honoured. If those balance, almost no cash moves — which is the easiest thing to sell in the platform: *"fund your campaign with your own inventory."*
+**A business doing both #1 and #2 nets off.** They pay for points issued; they get paid for redemptions honoured. If those balance, almost no cash moves — which is the easiest thing to sell in the platform: _"fund your campaign with your own inventory."_
 
 What YourTal carries by inventory type:
 
-| Type | Fulfilment | Risk YourTal carries |
-|---|---|---|
-| **Voucher (digital)** | Instant issue; merchant honours later via API | Merchant refuses or fails to honour |
-| **Digital goods** (pulsa, top-ups, subscriptions) | Instant, via supplier API | Supplier outage |
-| **Merchandise** | **Physical shipment** by the merchant | Non-delivery, damage, stockout |
+| Type                                              | Fulfilment                                    | Risk YourTal carries                |
+| ------------------------------------------------- | --------------------------------------------- | ----------------------------------- |
+| **Voucher (digital)**                             | Instant issue; merchant honours later via API | Merchant refuses or fails to honour |
+| **Digital goods** (pulsa, top-ups, subscriptions) | Instant, via supplier API                     | Supplier outage                     |
+| **Merchandise**                                   | **Physical shipment** by the merchant         | Non-delivery, damage, stockout      |
 
 **Merchandise is the expensive one** — it drags in a full commerce stack. Phase it; start with digital.
 
@@ -116,11 +116,11 @@ What YourTal carries by inventory type:
 
 **YourTal should never hold inventory.** The merchant ships. YourTal orchestrates, tracks and settles.
 
-| Model | YourTal's role | Recommendation |
-|---|---|---|
-| **Merchant-fulfilled (dropship)** | Order routing, label generation, tracking, SLA enforcement, settlement | **Launch model** |
-| **Platform-fulfilled (3PL warehouse)** | Inbound, storage, pick/pack, ship, returns | Only for a proven, high-volume merchandise category |
-| **Digital goods** (e-vouchers, top-ups, subscriptions) | Instant delivery via API | **Launch alongside — no logistics at all** |
+| Model                                                  | YourTal's role                                                         | Recommendation                                      |
+| ------------------------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------- |
+| **Merchant-fulfilled (dropship)**                      | Order routing, label generation, tracking, SLA enforcement, settlement | **Launch model**                                    |
+| **Platform-fulfilled (3PL warehouse)**                 | Inbound, storage, pick/pack, ship, returns                             | Only for a proven, high-volume merchandise category |
+| **Digital goods** (e-vouchers, top-ups, subscriptions) | Instant delivery via API                                               | **Launch alongside — no logistics at all**          |
 
 **Start with digital merchandise.** Pulsa/data top-ups, e-vouchers, game credits, streaming subscriptions are enormously popular in Indonesia, need zero logistics, have instant fulfilment and near-zero dispute rates. They make the rewards store feel full from day one while the physical-goods pipeline is still being built.
 
@@ -186,13 +186,13 @@ The cross-redemption ("earn at A, spend at B") is the **whole reason the coaliti
 
 ## 6. What this adds to the build
 
-| New capability | Phase | Notes |
-|---|---|---|
-| **Partner points funding** (pre-purchase, drawdown, allocation) | 1 | Required the moment a business funds points |
-| **Clearing & settlement** (accrual, netting, statements, payout) | 1–2 | Weekly netting can start manual with ≤10 partners; automate by phase 2 |
-| **Merchant KYB** (NIB verification, documents, expiry) | 2 | Hard gate for merchandise under Permendag 19/2026 |
-| **Digital merchandise** (top-ups, e-vouchers, subscriptions) | 2 | No logistics — ship this first |
-| **Physical merchandise** (catalogue, inventory, orders, shipping, returns) | 3 | Full commerce domain |
-| **Float segregation & reporting** | 1 | Cheap now, existential later |
+| New capability                                                             | Phase | Notes                                                                  |
+| -------------------------------------------------------------------------- | ----- | ---------------------------------------------------------------------- |
+| **Partner points funding** (pre-purchase, drawdown, allocation)            | 1     | Required the moment a business funds points                            |
+| **Clearing & settlement** (accrual, netting, statements, payout)           | 1–2   | Weekly netting can start manual with ≤10 partners; automate by phase 2 |
+| **Merchant KYB** (NIB verification, documents, expiry)                     | 2     | Hard gate for merchandise under Permendag 19/2026                      |
+| **Digital merchandise** (top-ups, e-vouchers, subscriptions)               | 2     | No logistics — ship this first                                         |
+| **Physical merchandise** (catalogue, inventory, orders, shipping, returns) | 3     | Full commerce domain                                                   |
+| **Float segregation & reporting**                                          | 1     | Cheap now, existential later                                           |
 
 **The honest cost of the merchandise leg is roughly one additional pod for two phases.** It is the right feature — it is what makes cross-redemption real — but it should be sequenced behind the watch-and-earn loop, and it should start with digital goods.

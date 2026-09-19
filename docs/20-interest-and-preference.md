@@ -7,7 +7,7 @@
 For the first year we learn preference by **counting weighted evidence**. ML arrives in Phase 2, on top of a profile that already works. Three reasons, in order of importance:
 
 1. **Volume.** With tens of thousands of users, a model is worse than counting. ML needs data density we will not have until Phase 2.
-2. **Explainability.** A counting model can tell a user *"we think you like coffee because you redeemed three coffee vouchers."* A neural model cannot. That is a trust feature, a regulatory defence, and an advertiser-confidence feature all at once.
+2. **Explainability.** A counting model can tell a user _"we think you like coffee because you redeemed three coffee vouchers."_ A neural model cannot. That is a trust feature, a regulatory defence, and an advertiser-confidence feature all at once.
 3. **Debuggability.** When targeting goes wrong in month three — and it will — you want to read the reason off a row, not interrogate a model.
 
 ---
@@ -18,17 +18,17 @@ Meta and TikTok infer interest from **passive** behaviour: dwell time, scroll ve
 
 Our strongest signals are **costly**. The user gave up something to send them. In signalling theory a costly signal is a reliable one, and almost all of ours cost the user something real:
 
-| Signal | What it costs the user | Reliability |
-|---|---|---|
-| **Redeemed a voucher at the merchant** | A trip to a shop | Highest — a verified real-world act |
-| **Spent points on a listing** | Scarce currency they earned | Very high — a genuine purchase decision |
-| **Bought it** (snap-apps receipt) | Actual money | Very high — observed, not inferred |
-| **Answered a preference question** | Attention, during a campaign | High — explicitly declared |
-| **Completed a 20-minute campaign** | Twenty minutes and ~150 MB | High |
-| **Chose this campaign over others** | An opportunity cost on the Earn board | Medium — a deliberate pick, not a scroll |
-| **Abandoned at minute 3** | — | Medium, negative |
-| Browsed or searched the store | Nothing | Low |
-| Declared an interest at onboarding | Nothing, but it is explicit | Medium, decays slowly |
+| Signal                                 | What it costs the user                | Reliability                              |
+| -------------------------------------- | ------------------------------------- | ---------------------------------------- |
+| **Redeemed a voucher at the merchant** | A trip to a shop                      | Highest — a verified real-world act      |
+| **Spent points on a listing**          | Scarce currency they earned           | Very high — a genuine purchase decision  |
+| **Bought it** (snap-apps receipt)      | Actual money                          | Very high — observed, not inferred       |
+| **Answered a preference question**     | Attention, during a campaign          | High — explicitly declared               |
+| **Completed a 20-minute campaign**     | Twenty minutes and ~150 MB            | High                                     |
+| **Chose this campaign over others**    | An opportunity cost on the Earn board | Medium — a deliberate pick, not a scroll |
+| **Abandoned at minute 3**              | —                                     | Medium, negative                         |
+| Browsed or searched the store          | Nothing                               | Low                                      |
+| Declared an interest at onboarding     | Nothing, but it is explicit           | Medium, decays slowly                    |
 
 The Earn board matters more than it looks: users **choose** from a visible set with stated rewards. That is a revealed preference under a known price — much closer to an economic choice than a scroll past something in a feed.
 
@@ -60,17 +60,17 @@ score(user, interest) = Σ  weight(signal) × decay(age) × confidence(source)
 
 **Weights** — illustrative opening values, to be tuned against actual conversion:
 
-| Signal | Weight |
-|---|---|
-| Voucher redeemed at merchant | 10 |
-| Points spent on a listing | 8 |
-| Receipt purchase in category | 8 |
-| Campaign completed | 5 |
-| Preference question answered | 5 |
-| Declared interest at onboarding | 4 |
-| Campaign started | 3 |
-| Store search | 1 |
-| Campaign abandoned before 25% | −2 |
+| Signal                          | Weight |
+| ------------------------------- | ------ |
+| Voucher redeemed at merchant    | 10     |
+| Points spent on a listing       | 8      |
+| Receipt purchase in category    | 8      |
+| Campaign completed              | 5      |
+| Preference question answered    | 5      |
+| Declared interest at onboarding | 4      |
+| Campaign started                | 3      |
+| Store search                    | 1      |
+| Campaign abandoned before 25%   | −2     |
 
 **Decay** — a 90-day half-life on behavioural signals, 365 days on declared ones. People's tastes move; a coffee habit from eighteen months ago should not still be driving targeting.
 
@@ -82,14 +82,14 @@ Scores are recomputed on a schedule, not in the request path. The serving path r
 
 This is the part that is architectural rather than a filter bolted on at the end.
 
-Each signal source is bound to a **purpose**. The profile is computed only from signals the user has consented to *for that purpose*. So a user might have:
+Each signal source is bound to a **purpose**. The profile is computed only from signals the user has consented to _for that purpose_. So a user might have:
 
-| Purpose | Signals permitted | What it can drive |
-|---|---|---|
-| **Service** (always) | Own campaign history, own store activity | Ordering their own Earn board, avoiding repeats |
-| **Ad targeting** (opt-in) | The above, plus questions and declared interests | Campaign targeting |
-| **Purchase-based targeting** (separate opt-in) | The above, plus receipt data | Category targeting on observed purchases |
-| **Research** (separate opt-in) | Question answers | Aggregate panel data sold to buyers |
+| Purpose                                        | Signals permitted                                | What it can drive                               |
+| ---------------------------------------------- | ------------------------------------------------ | ----------------------------------------------- |
+| **Service** (always)                           | Own campaign history, own store activity         | Ordering their own Earn board, avoiding repeats |
+| **Ad targeting** (opt-in)                      | The above, plus questions and declared interests | Campaign targeting                              |
+| **Purchase-based targeting** (separate opt-in) | The above, plus receipt data                     | Category targeting on observed purchases        |
+| **Research** (separate opt-in)                 | Question answers                                 | Aggregate panel data sold to buyers             |
 
 Withdraw a consent and the corresponding signals stop contributing on the next recompute — not "eventually", not "on request". The consent service's answer is load-bearing in code, which is YT-0214.
 
@@ -106,13 +106,13 @@ The first session has no history, and pretending otherwise produces bad recommen
 
 Only once there is volume, and only for specific jobs:
 
-| Model | Job | Why it beats counting |
-|---|---|---|
-| **Collaborative filtering** (matrix factorisation) | "Users who redeemed this also redeemed that" | Finds affinities no taxonomy anticipated |
-| **Two-tower embeddings** | User ↔ campaign retrieval | Handles a catalogue too large to score exhaustively |
-| **`p(completion)`** | Will this user finish this 22-minute video? | The single most valuable prediction we can make — it protects delivery cost and advertiser outcomes |
-| **Category inference from receipts** | Map messy merchant strings to taxonomy nodes | Text classification, genuinely better than rules |
-| **Look-alike audiences** | Find users resembling a merchant's converters | What advertisers ask for by name |
+| Model                                              | Job                                           | Why it beats counting                                                                               |
+| -------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Collaborative filtering** (matrix factorisation) | "Users who redeemed this also redeemed that"  | Finds affinities no taxonomy anticipated                                                            |
+| **Two-tower embeddings**                           | User ↔ campaign retrieval                     | Handles a catalogue too large to score exhaustively                                                 |
+| **`p(completion)`**                                | Will this user finish this 22-minute video?   | The single most valuable prediction we can make — it protects delivery cost and advertiser outcomes |
+| **Category inference from receipts**               | Map messy merchant strings to taxonomy nodes  | Text classification, genuinely better than rules                                                    |
+| **Look-alike audiences**                           | Find users resembling a merchant's converters | What advertisers ask for by name                                                                    |
 
 **The counting profile stays.** It becomes a feature input and the fallback, and it remains the thing we show the user when they ask why. We never replace an explainable system with an opaque one — we layer.
 
@@ -121,7 +121,7 @@ Only once there is volume, and only for specific jobs:
 Never a profile. Never a row. **Cohorts with a floor.**
 
 - A targetable or reportable segment must contain **≥1,000 users** in that country. Below the floor it does not exist in the interface.
-- Advertisers select from the taxonomy, not from raw signals: *"interested in coffee, in South Jakarta, price-sensitive"* — never *"bought at Kopi Kenangan on 14 March"*.
+- Advertisers select from the taxonomy, not from raw signals: _"interested in coffee, in South Jakarta, price-sensitive"_ — never _"bought at Kopi Kenangan on 14 March"_.
 - Reporting is aggregate: reach, completion, recall, redemption rate by cohort.
 - No export of user-level data exists in any interface, for any account tier. "We share data with advertisers" should be **architecturally false**, not contractually discouraged.
 
@@ -138,7 +138,7 @@ Receipt-based targeting requires its **own opt-in consent**, separate from signu
 
 ## 9. What we refuse to infer
 
-Receipt and behavioural data *will* imply sensitive things. A pharmacy basket implies health. A purchase pattern implies pregnancy, religious observance, or financial distress. Both PDP and the Australian regime treat some of these as sensitive categories with stricter rules — and inferring them is the fastest way to turn a data asset into a scandal.
+Receipt and behavioural data _will_ imply sensitive things. A pharmacy basket implies health. A purchase pattern implies pregnancy, religious observance, or financial distress. Both PDP and the Australian regime treat some of these as sensitive categories with stricter rules — and inferring them is the fastest way to turn a data asset into a scandal.
 
 **Blocklist, enforced in the taxonomy itself — these nodes cannot be created, scored or targeted:**
 
@@ -152,7 +152,7 @@ Because the Phase 1 profile is counting-based, every user can be shown exactly w
 
 > **Why this campaign?**
 > You redeemed 3 coffee vouchers · You said you're interested in Food & Drink · Popular in South Jakarta
-> *[Not interested in coffee]* → adjusts immediately
+> _[Not interested in coffee]_ → adjusts immediately
 
 Meta cannot offer this honestly. We can, and it does three jobs at once: it builds trust, it gives us a **correction signal** that is more valuable than the inference it fixes, and it is the strongest possible evidence of compliance in both regimes — a regulator asking "how do you use this data" gets shown the screen the user already sees.
 

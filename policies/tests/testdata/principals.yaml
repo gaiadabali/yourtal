@@ -1,0 +1,203 @@
+---
+# Shared principal fixtures for every suite in this directory.
+#
+# One cast of characters, reused everywhere, so that a test reads as a
+# sentence about people rather than a wall of inline attributes -- and so
+# that adding a principal attribute means touching one file.
+#
+# biz-kopi is the business under test; biz-rival exists solely so that every
+# suite can assert the cross-tenant boundary with a real second tenant rather
+# than a made-up id.
+principals:
+  anon:
+    id: anon
+    roles: ["anonymous"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+
+  wina:
+    id: wina
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      isPhoneVerified: true
+      hasPasskey: false
+
+  wina_with_passkey:
+    id: wina
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      isPhoneVerified: true
+      hasPasskey: true
+
+  wina_suspended:
+    id: wina
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: true
+      isPhoneVerified: true
+      hasPasskey: true
+
+  wina_frozen:
+    # Inside the 72h freeze a SIM swap or account recovery starts.
+    id: wina
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      isPhoneVerified: true
+      hasPasskey: true
+      valueFrozenUntil: "2026-09-22T00:00:00Z"
+
+  # --- biz-kopi, one principal per role in docs/17 section 2.1 ---
+  budi_owner:
+    id: budi
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-kopi": "owner" }
+      isSuspended: false
+
+  budi_owner_reauthed:
+    # Same person, two minutes after a step-up re-auth.
+    id: budi
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-kopi": "owner" }
+      isSuspended: false
+      reauthenticatedAt: "2026-09-19T09:58:00Z"
+
+  citra_admin:
+    id: citra
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-kopi": "admin" }
+      isSuspended: false
+
+  dewi_marketer:
+    id: dewi
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-kopi": "marketer" }
+      isSuspended: false
+
+  eka_merchandiser:
+    id: eka
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-kopi": "merchandiser" }
+      isSuspended: false
+
+  fajar_finance:
+    id: fajar
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-kopi": "finance" }
+      isSuspended: false
+
+  gita_analyst:
+    id: gita
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-kopi": "analyst" }
+      isSuspended: false
+
+  hasan_two_hats:
+    # Owner of the rival, analyst at biz-kopi. The reason businessRoles is a
+    # map and not a flat role: no single role name describes this person.
+    id: hasan
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-rival": "owner", "biz-kopi": "analyst" }
+      isSuspended: false
+
+  rival_owner:
+    id: rival
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: { "biz-rival": "owner" }
+      isSuspended: false
+
+  # --- counter devices, not people (docs/17 section 2.2) ---
+  counter_kemang:
+    id: device-kemang-2
+    roles: ["store_device"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      deviceBusinessId: "biz-kopi"
+      deviceLocationId: "loc-kemang"
+
+  counter_rival:
+    id: device-rival-1
+    roles: ["store_device"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      deviceBusinessId: "biz-rival"
+      deviceLocationId: "loc-rival"
+
+  # --- internal staff (docs/17 section 5) ---
+  support_sari:
+    id: sari
+    roles: ["support"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      goodwillCreditCeilingIdr: 50000
+
+  moderator_tono:
+    id: tono
+    roles: ["moderator"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false }
+
+  risk_umi:
+    id: umi
+    roles: ["risk_analyst"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false }
+
+  finance_yani:
+    id: yani
+    roles: ["finance"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false }
+
+  finance_zaki:
+    id: zaki
+    roles: ["finance"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false }
+
+  ops_zul:
+    id: zul
+    roles: ["ops"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false }
+
+  admin_root:
+    id: root
+    roles: ["admin"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false }
+
+  charity_nur:
+    id: nur
+    roles: ["charity_admin"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false }

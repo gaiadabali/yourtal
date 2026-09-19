@@ -5,6 +5,7 @@ import { Badge } from "@yourtal/ui/badge";
 import { StoreListingCardLayout } from "./store-listing-card-layout";
 import { categoryLabel } from "./store-category";
 import { formatListingPrice } from "./store-format";
+import { listingDistrictLabel } from "./listing-locations";
 import { listingStatusPresentation } from "./store-status";
 
 export interface StoreListingCardProps {
@@ -47,7 +48,7 @@ export function StoreListingCard({ listing }: StoreListingCardProps) {
         <div className="flex items-center gap-1.5 truncate text-xs text-fg-muted">
           <span>{categoryLabel(listing.category)}</span>
           <span aria-hidden="true">·</span>
-          <span className="truncate">{listing.district}</span>
+          <span className="truncate">{listingDistrictLabel(listing)}</span>
         </div>
       }
       footerSlot={

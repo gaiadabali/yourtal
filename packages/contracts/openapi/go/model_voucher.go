@@ -27,10 +27,11 @@ type Voucher struct {
 	Code string `json:"code"`
 	MerchantId string `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	MerchantName string `json:"merchantName"`
+	Location MerchantLocation `json:"location"`
 	Title string `json:"title"`
-	// Indonesian Rupiah as an integer. The minor unit for IDR is defined as exactly 1 Rupiah, so these values ARE Rupiah counts. There is no cents-of-Rupiah concept.
+	// Indonesian Rupiah as an integer number of minor units. PROVISIONAL: the IDR minor unit is not confirmed (YT-0506). These values are currently whole Rupiah, which is what every producer and consumer in this codebase assumes, but ISO 4217 says sen and Xendit publishes no amount-unit spec. Do not settle against this type without checking MINOR_UNIT; a wrong unit is uniformly 100x and silent. Prefer Money, which carries its own currency.
 	FaceValueIdr int64 `json:"faceValueIdr"`
-	// Indonesian Rupiah as an integer. The minor unit for IDR is defined as exactly 1 Rupiah, so these values ARE Rupiah counts. There is no cents-of-Rupiah concept.
+	// Indonesian Rupiah as an integer number of minor units. PROVISIONAL: the IDR minor unit is not confirmed (YT-0506). These values are currently whole Rupiah, which is what every producer and consumer in this codebase assumes, but ISO 4217 says sen and Xendit publishes no amount-unit spec. Do not settle against this type without checking MINOR_UNIT; a wrong unit is uniformly 100x and silent. Prefer Money, which carries its own currency.
 	RemainingValueIdr int64 `json:"remainingValueIdr"`
 	PartialRedemptionPolicy PartialRedemptionPolicy `json:"partialRedemptionPolicy"`
 	MinimumSpendIdr ListingMinimumSpendIdr `json:"minimumSpendIdr"`
@@ -47,7 +48,7 @@ type _Voucher Voucher
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName string, title string, faceValueIdr int64, remainingValueIdr int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendIdr ListingMinimumSpendIdr, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
+func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName string, location MerchantLocation, title string, faceValueIdr int64, remainingValueIdr int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendIdr ListingMinimumSpendIdr, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
 	this := Voucher{}
 	this.Id = id
 	this.ListingId = listingId
@@ -55,6 +56,7 @@ func NewVoucher(id string, listingId string, ownerId string, code string, mercha
 	this.Code = code
 	this.MerchantId = merchantId
 	this.MerchantName = merchantName
+	this.Location = location
 	this.Title = title
 	this.FaceValueIdr = faceValueIdr
 	this.RemainingValueIdr = remainingValueIdr
@@ -217,6 +219,30 @@ func (o *Voucher) GetMerchantNameOk() (*string, bool) {
 // SetMerchantName sets field value
 func (o *Voucher) SetMerchantName(v string) {
 	o.MerchantName = v
+}
+
+// GetLocation returns the Location field value
+func (o *Voucher) GetLocation() MerchantLocation {
+	if o == nil {
+		var ret MerchantLocation
+		return ret
+	}
+
+	return o.Location
+}
+
+// GetLocationOk returns a tuple with the Location field value
+// and a boolean to check if the value has been set.
+func (o *Voucher) GetLocationOk() (*MerchantLocation, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Location, true
+}
+
+// SetLocation sets field value
+func (o *Voucher) SetLocation(v MerchantLocation) {
+	o.Location = v
 }
 
 // GetTitle returns the Title field value
@@ -451,6 +477,7 @@ func (o Voucher) ToMap() (map[string]interface{}, error) {
 	toSerialize["code"] = o.Code
 	toSerialize["merchantId"] = o.MerchantId
 	toSerialize["merchantName"] = o.MerchantName
+	toSerialize["location"] = o.Location
 	toSerialize["title"] = o.Title
 	toSerialize["faceValueIdr"] = o.FaceValueIdr
 	toSerialize["remainingValueIdr"] = o.RemainingValueIdr
@@ -479,6 +506,7 @@ func (o *Voucher) UnmarshalJSON(data []byte) (err error) {
 		"code",
 		"merchantId",
 		"merchantName",
+		"location",
 		"title",
 		"faceValueIdr",
 		"remainingValueIdr",
@@ -523,6 +551,7 @@ func (o *Voucher) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "code")
 		delete(additionalProperties, "merchantId")
 		delete(additionalProperties, "merchantName")
+		delete(additionalProperties, "location")
 		delete(additionalProperties, "title")
 		delete(additionalProperties, "faceValueIdr")
 		delete(additionalProperties, "remainingValueIdr")

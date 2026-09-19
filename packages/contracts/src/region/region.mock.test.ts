@@ -45,15 +45,21 @@ describe("region mock fixtures", () => {
 
   it("AU fixtures read as Sydney, not Jakarta", () => {
     const auDistricts = new Set(
-      REGION_LISTING_FIXTURES.AU.catalogue.map((listing) => listing.district),
+      REGION_LISTING_FIXTURES.AU.catalogue.flatMap((listing) =>
+        listing.locations.map((location) => location.district),
+      ),
     );
     expect(auDistricts.has("Kemang")).toBe(false);
-    expect(REGION_LISTING_FIXTURES.AU.soldOut.district).not.toBe("Kemang");
+    expect(REGION_LISTING_FIXTURES.AU.soldOut.locations.some((l) => l.district === "Kemang")).toBe(
+      false,
+    );
   });
 
   it("ID fixtures read as Jakarta, not Sydney", () => {
     const idDistricts = new Set(
-      REGION_LISTING_FIXTURES.ID.catalogue.map((listing) => listing.district),
+      REGION_LISTING_FIXTURES.ID.catalogue.flatMap((listing) =>
+        listing.locations.map((location) => location.district),
+      ),
     );
     expect(idDistricts.has("Manly")).toBe(false);
   });

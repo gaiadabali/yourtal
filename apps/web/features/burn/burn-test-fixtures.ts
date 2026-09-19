@@ -19,7 +19,14 @@ const BASE_LISTING = {
   title: "Voucher Uji",
   description: "Voucher untuk pengujian.",
   category: "food_beverage",
-  district: "Menteng",
+  locations: [
+    {
+      id: "00000002-0000-4000-8000-000000000902",
+      name: "Menteng Outlet",
+      address: "Jl. Contoh 1",
+      district: "Menteng",
+    },
+  ],
   faceValueIdr: toIdrMinorUnits(100_000),
   settlementValueIdr: toIdrMinorUnits(30_000),
   stockRemaining: 5,

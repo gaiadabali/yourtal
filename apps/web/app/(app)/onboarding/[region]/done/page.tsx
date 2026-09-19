@@ -1,13 +1,16 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { asDisplayIdr, formatMoney } from "@yourtal/contracts/money/format";
 import { Button } from "@yourtal/ui/button";
 import { regionDisplayConfig } from "@/features/region/region-config";
 import { getOnboardingCopy } from "@/features/onboarding/onboarding-copy";
 import { OnboardingProgress } from "@/features/onboarding/onboarding-progress";
 import { requireRegionParam } from "@/features/onboarding/onboarding-region-param";
+import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
 
 export interface OnboardingDonePageProps {
   params: Promise<{ region: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 /**
@@ -25,16 +28,33 @@ const EXAMPLE_REWARD_MINOR: Record<"AUD" | "IDR", number> = { AUD: 1250, IDR: 45
  * reader can see AU renders AUD and ID renders IDR from the same call site,
  * not just read a claim that it does. Server Component throughout; the one
  * action is a plain `<Link>` into the app.
+ *
+ * `?returnTo=` (YT-0432): when this flow was entered from Open Viewing's
+ * sign-up prompt, the CTA below goes there instead of the app root — this
+ * is the one screen where "exactly where they were" actually lands, since
+ * every earlier step only carried the value forward without acting on it.
  */
-export default async function OnboardingDonePage({ params }: OnboardingDonePageProps) {
+export default async function OnboardingDonePage({
+  params,
+  searchParams,
+}: OnboardingDonePageProps) {
   const { region: rawRegion } = await params;
   const region = requireRegionParam(rawRegion);
+  const returnTo = parseReturnTo((await searchParams).returnTo);
   const config = regionDisplayConfig(region);
   const copy = getOnboardingCopy(config.locale).done;
   const exampleReward = formatMoney(
     asDisplayIdr(EXAMPLE_REWARD_MINOR[config.currency]),
     config.currency,
   );
+  // typedRoutes only validates literal href strings (see `campaign-card.tsx`
+  // for the usual case). This one differs from every other cast in this
+  // codebase in one important way: `returnTo` is not a schema-validated id,
+  // it came off a URL a browser sent us — `parseReturnTo` (called in this
+  // route's own `page.tsx` chain, ultimately in `onboarding/page.tsx`) is
+  // what makes trusting it here safe, by rejecting anything that is not a
+  // same-origin absolute path before it ever reaches this variable.
+  const ctaHref = (returnTo ?? "/") as Route;
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,7 +72,7 @@ export default async function OnboardingDonePage({ params }: OnboardingDonePageP
         </p>
       </div>
       <Button asChild>
-        <Link href="/">{copy.cta}</Link>
+        <Link href={ctaHref}>{copy.cta}</Link>
       </Button>
     </div>
   );

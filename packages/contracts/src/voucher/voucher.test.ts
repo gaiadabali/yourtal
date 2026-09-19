@@ -15,6 +15,12 @@ const validVoucher = {
   code: "ABC12345",
   merchantId: "44444444-4444-4444-8444-444444444444",
   merchantName: "Kopi Kenangan",
+  location: {
+    id: "66666666-6666-4666-8666-666666666666",
+    name: "Kopi Kenangan — Cabang Utama",
+    address: "Jl. Sudirman No. 1, Setiabudi",
+    district: "Setiabudi",
+  },
   title: "Voucher Kopi Kenangan",
   faceValueIdr: 30_000,
   remainingValueIdr: 30_000,
@@ -52,6 +58,10 @@ describe("voucherSchema", () => {
     { name: "non-uuid ownerId", overrides: { ownerId: "not-a-uuid" } },
     { name: "non-datetime issuedAt", overrides: { issuedAt: "a while ago" } },
     { name: "missing merchantName", overrides: { merchantName: "" } },
+    {
+      name: "location missing an address",
+      overrides: { location: { ...validVoucher.location, address: "" } },
+    },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ overrides }) => {

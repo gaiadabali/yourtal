@@ -1,0 +1,51 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Finance adjustments to the ledger.
+
+  The single most important rule in this repo is the first one, and it is
+  docs/17 section 2.1 verbatim: NO BUSINESS ROLE CAN EVER GRANT POINTS.
+  Issuance happens only through Reward Engine campaign rules, so a business
+  admin cannot credit an account they control. docs/14 section 3 tracks the
+  same threat under STRIDE-E: "a business admin grants points into an account
+  they control -- Cerbos denies cross-tenant grants outright; finance
+  adjustment is a separate role no business user can hold."
+
+  That is written as a DENY over `business_user` and `store_device` rather
+  than left as a missing ALLOW, because the cost of being wrong is real money
+  and the cost of the extra four lines is nothing.
+
+  Dual approval is the second rule: whoever creates an adjustment may not
+  approve it (docs/17 section 5, separation of duties).
+resourcePolicy:
+  version: default
+  resource: ledger_adjustment
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/ledger_adjustment.json
+  rules:
+    - name: no-business-role-ever-grants-points
+      actions: ["create", "approve", "view"]
+      effect: EFFECT_DENY
+      roles: ["business_user", "store_device", "user", "anonymous"]
+
+    - name: nobody-approves-their-own-adjustment
+      actions: ["approve"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: R.attr.createdBy == P.id
+
+    - name: finance-adjusts
+      actions: ["create", "approve", "view"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]
+
+    - name: risk-never-touches-a-balance
+      # docs/17 section 5: "Risk analyst ... never adjust balances."
+      actions: ["create", "approve"]
+      effect: EFFECT_DENY
+      roles: ["risk_analyst"]

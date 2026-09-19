@@ -1,0 +1,47 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Bulk voucher issuance (YT-0141), the second of the three two-person-approval
+  actions in docs/17 section 2.1.
+
+  A batch is vouchers that have not been earned -- the single largest way to
+  put unfunded value into circulation by accident. So: a merchandiser or admin
+  may REQUEST a batch, an owner or admin may APPROVE one, and the two may
+  never be the same principal.
+resourcePolicy:
+  version: default
+  resource: voucher_batch
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/voucher_batch.json
+  rules:
+    - name: nobody-approves-their-own-batch
+      actions: ["approve_issuance"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(R.attr.requestedBy) && R.attr.requestedBy == P.id
+
+    - name: request-a-batch
+      actions: ["view", "request_issuance"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_inventory_editor_of
+
+    - name: approve-a-batch
+      actions: ["approve_issuance"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_team_editor_of
+
+    - name: finance-voids
+      # Voiding an issued batch is a value operation, so it belongs to internal
+      # finance, not to the business that asked for it.
+      actions: ["void"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]

@@ -19,7 +19,7 @@ import (
 // checks if the Campaign type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Campaign{}
 
-// Campaign The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).   - An accuracy bonus requires at least one question to score accuracy against.
+// Campaign The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).   - An accuracy bonus requires at least one question to score accuracy against.   - A long_form campaign must have at least one chapter; a quick campaign has none.   - The first chapter must start at second 0.   - Chapter start times must be strictly increasing.   - Every chapter must start before the campaign's own durationSeconds.
 type Campaign struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Kind CampaignKind `json:"kind"`
@@ -35,6 +35,8 @@ type Campaign struct {
 	ScoringRule CampaignScoringRule `json:"scoringRule"`
 	Status CampaignStatus `json:"status"`
 	PublishedAt time.Time `json:"publishedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
+	Chapters []CampaignChapter `json:"chapters"`
+	VideoSource CampaignVideoSource `json:"videoSource"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -44,7 +46,7 @@ type _Campaign Campaign
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaign(id string, kind CampaignKind, title string, merchantId string, merchantName string, synopsis string, durationSeconds int32, estimatedDataMb float32, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, status CampaignStatus, publishedAt time.Time) *Campaign {
+func NewCampaign(id string, kind CampaignKind, title string, merchantId string, merchantName string, synopsis string, durationSeconds int32, estimatedDataMb float32, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, status CampaignStatus, publishedAt time.Time, chapters []CampaignChapter, videoSource CampaignVideoSource) *Campaign {
 	this := Campaign{}
 	this.Id = id
 	this.Kind = kind
@@ -59,6 +61,8 @@ func NewCampaign(id string, kind CampaignKind, title string, merchantId string, 
 	this.ScoringRule = scoringRule
 	this.Status = status
 	this.PublishedAt = publishedAt
+	this.Chapters = chapters
+	this.VideoSource = videoSource
 	return &this
 }
 
@@ -382,6 +386,54 @@ func (o *Campaign) SetPublishedAt(v time.Time) {
 	o.PublishedAt = v
 }
 
+// GetChapters returns the Chapters field value
+func (o *Campaign) GetChapters() []CampaignChapter {
+	if o == nil {
+		var ret []CampaignChapter
+		return ret
+	}
+
+	return o.Chapters
+}
+
+// GetChaptersOk returns a tuple with the Chapters field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetChaptersOk() ([]CampaignChapter, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Chapters, true
+}
+
+// SetChapters sets field value
+func (o *Campaign) SetChapters(v []CampaignChapter) {
+	o.Chapters = v
+}
+
+// GetVideoSource returns the VideoSource field value
+func (o *Campaign) GetVideoSource() CampaignVideoSource {
+	if o == nil {
+		var ret CampaignVideoSource
+		return ret
+	}
+
+	return o.VideoSource
+}
+
+// GetVideoSourceOk returns a tuple with the VideoSource field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetVideoSourceOk() (*CampaignVideoSource, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.VideoSource, true
+}
+
+// SetVideoSource sets field value
+func (o *Campaign) SetVideoSource(v CampaignVideoSource) {
+	o.VideoSource = v
+}
+
 func (o Campaign) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -405,6 +457,8 @@ func (o Campaign) ToMap() (map[string]interface{}, error) {
 	toSerialize["scoringRule"] = o.ScoringRule
 	toSerialize["status"] = o.Status
 	toSerialize["publishedAt"] = o.PublishedAt
+	toSerialize["chapters"] = o.Chapters
+	toSerialize["videoSource"] = o.VideoSource
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -431,6 +485,8 @@ func (o *Campaign) UnmarshalJSON(data []byte) (err error) {
 		"scoringRule",
 		"status",
 		"publishedAt",
+		"chapters",
+		"videoSource",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -473,6 +529,8 @@ func (o *Campaign) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "scoringRule")
 		delete(additionalProperties, "status")
 		delete(additionalProperties, "publishedAt")
+		delete(additionalProperties, "chapters")
+		delete(additionalProperties, "videoSource")
 		o.AdditionalProperties = additionalProperties
 	}
 

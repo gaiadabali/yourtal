@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "listing",
+  "description": "A store listing: settlement value S, stock, redemption policy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": {
+    "businessId": { "type": "string" },
+    "isMaterialSettlementDecrease": {
+      "description": "True when the proposed change lowers S by more than the threshold. docs/17 section 2.1 makes this one of the three two-person-approval actions.",
+      "type": "boolean"
+    },
+    "requestedBy": {
+      "description": "Principal who raised the change. The approver must not be this person.",
+      "type": "string"
+    },
+    "approvalState": { "type": "string", "enum": ["none", "pending", "approved"] }
+  }
+}

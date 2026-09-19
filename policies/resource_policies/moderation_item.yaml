@@ -1,0 +1,37 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  The human moderation queue (YT-0114). Moderators approve or reject flagged
+  creatives and question banks WITH A REASON -- docs/17 section 5 -- and a
+  decision with no reason is not auditable, so the PDP refuses it rather than
+  trusting the form to have required it.
+
+  A business never reaches its own moderation item. Seeing the queue entry
+  would tell them which signal tripped, which is precisely the information
+  that makes the screen evadable.
+resourcePolicy:
+  version: default
+  resource: moderation_item
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/moderation_item.json
+  rules:
+    - name: businesses-do-not-see-the-queue
+      actions: ["view", "approve", "reject"]
+      effect: EFFECT_DENY
+      roles: ["business_user", "store_device"]
+
+    - name: a-decision-needs-a-reason
+      actions: ["approve", "reject"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: "!has(R.attr.hasReason) || !R.attr.hasReason"
+
+    - name: moderators-moderate
+      actions: ["view", "approve", "reject"]
+      effect: EFFECT_ALLOW
+      roles: ["moderator"]

@@ -22,6 +22,12 @@ const validCampaign = {
   scoringRule: "base_plus_accuracy_bonus",
   status: "active",
   publishedAt: "2026-09-01T00:00:00.000Z",
+  chapters: [
+    { title: "Chapter 1", startSeconds: 0, rewardWeight: 1 },
+    { title: "Chapter 2", startSeconds: 200, rewardWeight: 1 },
+    { title: "Chapter 3", startSeconds: 400, rewardWeight: 2 },
+  ],
+  videoSource: { kind: "hls", manifestUrl: "https://cdn.example.com/campaign.m3u8" },
 };
 
 describe("campaignSchema", () => {
@@ -51,6 +57,40 @@ describe("campaignSchema", () => {
     {
       name: "accuracy bonus with zero questions",
       overrides: { scoringRule: "base_plus_accuracy_bonus", questionCount: 0 },
+    },
+    { name: "long_form campaign with no chapters", overrides: { chapters: [] } },
+    {
+      name: "quick campaign carrying chapters",
+      overrides: {
+        kind: "quick",
+        durationSeconds: 30,
+        chapters: [{ title: "Chapter 1", startSeconds: 0, rewardWeight: 1 }],
+      },
+    },
+    {
+      name: "first chapter not starting at 0",
+      overrides: {
+        chapters: [{ title: "Chapter 1", startSeconds: 5, rewardWeight: 1 }],
+      },
+    },
+    {
+      name: "chapter start times not strictly increasing",
+      overrides: {
+        chapters: [
+          { title: "Chapter 1", startSeconds: 0, rewardWeight: 1 },
+          { title: "Chapter 2", startSeconds: 0, rewardWeight: 1 },
+        ],
+      },
+    },
+    {
+      name: "a chapter starting at or after durationSeconds",
+      overrides: {
+        chapters: [{ title: "Chapter 1", startSeconds: 600, rewardWeight: 1 }],
+      },
+    },
+    {
+      name: "invalid video source kind",
+      overrides: { videoSource: { kind: "mp4", url: "https://cdn.example.com/campaign.mp4" } },
     },
   ];
 

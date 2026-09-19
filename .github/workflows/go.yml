@@ -1,0 +1,82 @@
+# YT-0517 — the Go modules gate.
+#
+# docs/15 puts ledger, voucher and watch in Go. Each is its OWN module rather
+# than one at the repo root, so that `internal/` means what it says and one
+# service cannot import another's internals by accident (docs/13, module
+# boundaries enforced twice). That means the matrix grows a row per module
+# rather than a single build covering them all — deliberate friction, in the
+# direction of keeping the boundary real.
+#
+# `packages/contracts/openapi/go` is in the matrix even though it is generated
+# and not a service. It was found unbuildable: `model_campaign_video_source.go`
+# imports `gopkg.in/validator.v2` for its oneOf, `go.mod` required it, and
+# `go.sum` had never been committed — so the module could not compile at all,
+# and nothing noticed because the only check on it was `openapi:go:check`,
+# which compares the generator's output to itself. Generated code that is
+# never compiled is a contract nobody has read: the Go types ARE YT-0031's
+# deliverable, and "it regenerates identically" is not the same claim as "it
+# builds".
+name: Go modules
+
+on:
+  pull_request:
+    paths:
+      - "services/**"
+      - "packages/contracts/openapi/go/**"
+      - ".github/workflows/go.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/**"
+      - "packages/contracts/openapi/go/**"
+
+concurrency:
+  group: go-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ledger
+            module: services/ledger
+          - name: contracts (generated)
+            module: packages/contracts/openapi/go
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.2.0
+        with:
+          # Matches the toolchain in each module's go.mod.
+          go-version: "1.26"
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+
+      - name: Verify go.mod is tidy
+        # A go.mod that drifts from its imports makes a build reproducible
+        # only by accident. For the generated module this also catches a
+        # regenerate that introduced a new import without its checksum.
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./...

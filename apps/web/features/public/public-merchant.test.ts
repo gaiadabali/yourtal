@@ -22,15 +22,40 @@ describe("listPublicMerchants", () => {
     const merchants = listPublicMerchants();
     const kopiSentosa = merchants.find((merchant) => merchant.name === "Kopi Sentosa");
 
-    expect(kopiSentosa?.district).toBe("Kemang");
+    expect(kopiSentosa).toBeDefined();
+    // Asserted against this merchant's OWN listings rather than a hardcoded
+    // district. The district comes from seeded generation, so pinning the
+    // literal made this test a tripwire for any change to faker draw order —
+    // it failed on the merchant-roster fix having found nothing wrong. The
+    // property that actually matters is that the district is one the
+    // merchant's listings really reach.
+    const reachable = new Set(
+      (kopiSentosa?.listings ?? []).flatMap((listing) =>
+        listing.locations.map((location) => location.district),
+      ),
+    );
+    expect(reachable.size).toBeGreaterThan(0);
+    expect(reachable).toContain(kopiSentosa?.district);
   });
 
-  it("returns null district for a merchant with campaigns but no listings", () => {
+  it("has a district if and only if it has listings", () => {
+    // Was "returns null district for a merchant with campaigns but no
+    // listings", which searched the generated data for such a merchant. That
+    // example existed only because campaigns and listings drew INDEPENDENT
+    // random merchantIds, so their merchant sets were disjoint by accident —
+    // the same defect that made every prototype redemption fail
+    // `wrong_merchant`. Now both draw from the shared roster, so no such
+    // merchant remains and the search found nothing.
+    //
+    // The biconditional is the property that was meant: it covers the null
+    // branch without needing an example to survive, and it checks the
+    // non-null branch for every merchant, so it cannot pass vacuously.
     const merchants = listPublicMerchants();
-    const merchantWithNoListings = merchants.find((merchant) => merchant.listings.length === 0);
+    expect(merchants.length).toBeGreaterThan(0);
 
-    expect(merchantWithNoListings).toBeDefined();
-    expect(merchantWithNoListings?.district).toBeNull();
+    for (const merchant of merchants) {
+      expect(merchant.district === null).toBe(merchant.listings.length === 0);
+    }
   });
 
   it("every merchant's slug is the slugified form of its name", () => {

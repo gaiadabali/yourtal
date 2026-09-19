@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": {
+    "businessId": { "type": "string" },
+    "containsPii": {
+      "description": "A report that resolves to individuals is not exportable by a business at all -- cohort floors are the product (YT-0217).",
+      "type": "boolean"
+    }
+  }
+}

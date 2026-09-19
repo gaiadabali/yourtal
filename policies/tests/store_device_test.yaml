@@ -1,0 +1,88 @@
+---
+name: StoreDeviceSuite
+description: |-
+  docs/17 section 2.2. A counter device can redeem a voucher, look up a code
+  and see today's redemptions. Nothing else -- never mint, never adjust,
+  never see reports.
+tests:
+  - name: a counter device has exactly three capabilities
+    input:
+      principals: [counter_kemang]
+      resources: [redemption_today]
+      actions:
+        [authorize, capture, lookup, view_log, void, refund, rotate_credential, view_credential]
+    expected:
+      - principal: counter_kemang
+        resource: redemption_today
+        actions:
+          authorize: EFFECT_ALLOW
+          capture: EFFECT_ALLOW
+          lookup: EFFECT_ALLOW
+          view_log: EFFECT_ALLOW
+          void: EFFECT_DENY
+          refund: EFFECT_DENY
+          rotate_credential: EFFECT_DENY
+          view_credential: EFFECT_DENY
+
+  - name: a counter device sees today and no further back
+    input:
+      principals: [counter_kemang, citra_admin]
+      resources: [redemption_all_time]
+      actions: [view_log]
+    expected:
+      - principal: counter_kemang
+        resource: redemption_all_time
+        actions: { view_log: EFFECT_DENY }
+      - principal: citra_admin
+        resource: redemption_all_time
+        actions: { view_log: EFFECT_ALLOW }
+
+  - name: a counter device never sees reports
+    input:
+      principals: [counter_kemang]
+      resources: [report_kopi]
+      actions: [view, export]
+    expected:
+      - principal: counter_kemang
+        resource: report_kopi
+        actions: { view: EFFECT_DENY, export: EFFECT_DENY }
+
+  - name: a stolen device cannot redeem for another merchant
+    input:
+      principals: [counter_rival]
+      resources: [redemption_today]
+      actions: [authorize, capture, lookup, view_log]
+    expected:
+      - principal: counter_rival
+        resource: redemption_today
+        actions:
+          authorize: EFFECT_DENY
+          capture: EFFECT_DENY
+          lookup: EFFECT_DENY
+          view_log: EFFECT_DENY
+
+  - name: the kill switch pauses authorize and lets existing holds settle
+    input:
+      principals: [counter_kemang, citra_admin]
+      resources: [redemption_killed]
+      actions: [authorize, capture]
+    expected:
+      - principal: counter_kemang
+        resource: redemption_killed
+        actions: { authorize: EFFECT_DENY, capture: EFFECT_ALLOW }
+      - principal: citra_admin
+        resource: redemption_killed
+        actions: { authorize: EFFECT_DENY, capture: EFFECT_ALLOW }
+
+  - name: refunds and voids are internal, not the merchant's
+    input:
+      principals: [budi_owner, finance_yani]
+      resources: [redemption_today]
+      actions: [void, refund]
+    expected:
+      - principal: budi_owner
+        resource: redemption_today
+        actions: { void: EFFECT_DENY, refund: EFFECT_DENY }
+      - principal: finance_yani
+        resource: redemption_today
+        actions: { void: EFFECT_ALLOW, refund: EFFECT_ALLOW }

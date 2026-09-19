@@ -1,0 +1,37 @@
+# Cerbos PDP configuration for local development — YT-0516.
+#
+# Deliberately lives in infra/ rather than policies/: policies/ is the policy
+# repository (owned by the authz workstream) and CI mounts it read-only for
+# `cerbos compile`. Runtime configuration is an infrastructure concern and
+# keeping it separate means the policy repo stays exactly what CI compiles,
+# with no server config mixed into it.
+#
+# docs/10 and docs/15 both specify a *sidecar* PDP, never a shared one — the
+# compose file binds this to 127.0.0.1 only.
+
+server:
+  httpListenAddr: ":3592"
+  grpcListenAddr: ":3593"
+  # No TLS locally: the listener is loopback-bound by compose and never
+  # leaves the host. Deployed environments terminate TLS at the sidecar.
+
+storage:
+  driver: "disk"
+  disk:
+    directory: /policies
+    # Policy edits are picked up without restarting the container, so an
+    # authz change can be tested against a running API immediately.
+    watchForChanges: true
+
+schema:
+  # Reject a request whose attributes do not match the JSON Schemas in
+  # policies/_schemas. Warn would let a typo in a principal attribute pass
+  # silently and then deny in production for a reason nobody can see.
+  enforcement: reject
+
+audit:
+  enabled: true
+  backend: local
+  local:
+    storagePath: /tmp/cerbos/audit
+    retentionPeriod: 168h

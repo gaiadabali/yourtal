@@ -1,0 +1,11 @@
+h1:kHf69YTDTrD47DhSqU1VtRXHx6ukJAF7fVLl7uCqQCc=
+20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
+20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
+20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
+20260919000004_catalogue.sql h1:ENKlVUEBnTtONSfSIycXeHFEYa5jfzUmU/s2OYJIRdA=
+20260919000005_chart_of_accounts.sql h1:x6DdBIIUoE0f3LZ8Rc7jw1B+V+/wgjP8RHfN+5fK71I=
+20260919000006_account_uniqueness.sql h1:Af+Qq2oOayB0rDY9YH4jVc13650Teba+IbHhL6ifxWw=
+20260919000007_reward_engine.sql h1:gDupvk3p318L4BkyAPl21kdBako1w0CteXEZdqjsgFg=
+20260919000008_point_purchase.sql h1:reczVteTX0ThUw2aigc9Q3pLe91jsrGkJj8+azFNlaA=
+20260919000009_merchant_locations.sql h1:4qBjPzpkWn/QsbxMT/elGD6u3IFJIyTD67sGLEJYvpg=
+20260919000010_daily_proof.sql h1:YSNkBFm9ZBhmoh/j6YONlkv88hiTvYehhVYLxhDZTUw=

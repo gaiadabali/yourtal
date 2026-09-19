@@ -19,8 +19,20 @@ function campaign(overrides: Partial<Campaign>): Campaign {
     title: "Test campaign",
     merchantId: "00000000-0000-4000-8000-000000009901",
     merchantName: "Test Business",
+    location: {
+      id: "00000003-0000-4000-8000-000000000903",
+      name: "Test Business Kemang",
+      address: "Jl. Kemang Raya 1",
+      district: "Kemang",
+    },
     synopsis: "A synopsis long enough to pass validation.",
     durationSeconds: 600,
+    chapters: [
+      { title: "Pembuka", startSeconds: 0, rewardWeight: 1 },
+      { title: "Isi", startSeconds: 120, rewardWeight: 2 },
+      { title: "Penutup", startSeconds: 300, rewardWeight: 5 },
+    ],
+    videoSource: { kind: "hls", manifestUrl: "https://mock.yourtal.test/hls/sample.m3u8" },
     estimatedDataMb: 200,
     rewardPoints: 1000,
     questionCount: 2,
@@ -66,6 +78,12 @@ function voucher(overrides: Partial<Voucher>): Voucher {
     code: "ABCDEF1234",
     merchantId: "00000000-0000-4000-8000-000000009901",
     merchantName: "Test Business",
+    location: {
+      id: "00000004-0000-4000-8000-000000000904",
+      name: "Test Business Kemang",
+      address: "Jl. Kemang Raya 1",
+      district: "Kemang",
+    },
     title: "Test voucher",
     faceValueIdr,
     // Defaults to the (possibly overridden) faceValueIdr, never a fixed

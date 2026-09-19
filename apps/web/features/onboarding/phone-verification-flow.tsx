@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer } from "react";
 import { useRouter } from "next/navigation";
+import type { Route } from "next";
 import type { Region } from "@yourtal/contracts/region";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
@@ -12,11 +13,13 @@ import { getOnboardingCopy } from "./onboarding-copy";
 import { measureOnboardingDuration, recordOnboardingMark } from "./onboarding-timing";
 import { isOtpCodeCorrect, MOCK_NETWORK_DELAY_MS } from "./otp-mock-service";
 import { initialPhoneFlowState, phoneFlowReducer } from "./phone-verification-reducer";
+import { withReturnTo } from "./onboarding-return-to";
 import type { ResendCooldownState } from "./use-resend-cooldown";
 import { useResendCooldown } from "./use-resend-cooldown";
 
 export interface PhoneVerificationFlowProps {
   region: Region;
+  returnTo: string | null;
 }
 
 /** How long the "Number confirmed" state stays visible before advancing — long enough to read, short enough not to cost the 60s signup budget. */
@@ -30,7 +33,7 @@ const VERIFIED_PAUSE_MS = 600;
  * "network" timers and rendering. Matches `features/burn/burn-flow.tsx`'s
  * shape: one `switch` over a single discriminant, exhaustive with `never`.
  */
-export function PhoneVerificationFlow({ region }: PhoneVerificationFlowProps) {
+export function PhoneVerificationFlow({ region, returnTo }: PhoneVerificationFlowProps) {
   const router = useRouter();
   const { locale } = regionDisplayConfig(region);
   const copy = getOnboardingCopy(locale).verify;
@@ -63,11 +66,12 @@ export function PhoneVerificationFlow({ region }: PhoneVerificationFlowProps) {
     recordOnboardingMark("signup-complete");
     measureOnboardingDuration("yourtal:signup", "signup-start", "signup-complete");
     const timeoutId = window.setTimeout(
-      () => router.push(`/onboarding/${region}/interests`),
+      // typedRoutes cast — see commit-region-action.ts.
+      () => router.push(withReturnTo(`/onboarding/${region}/interests`, returnTo) as Route),
       VERIFIED_PAUSE_MS,
     );
     return () => window.clearTimeout(timeoutId);
-  }, [state.phase, region, router]);
+  }, [state.phase, region, returnTo, router]);
 
   switch (state.phase) {
     case "phone":

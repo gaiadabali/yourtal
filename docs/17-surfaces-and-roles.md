@@ -9,12 +9,12 @@
 
 Both analogues are wrong, and taking either would produce the wrong product.
 
-| | Netflix | YouTube | **YourTal** |
-|---|---|---|---|
-| Why the user is here | To be entertained | To find something specific, or be entertained | **To earn** |
-| The video is… | The product | The product | **The price of the reward** |
-| Success looks like | Hours watched | Hours watched | **Rewards earned and redeemed** |
-| Browse question | "What do I want to watch?" | "What am I looking for?" | **"What's the best use of my next 20 minutes?"** |
+|                      | Netflix                    | YouTube                                       | **YourTal**                                      |
+| -------------------- | -------------------------- | --------------------------------------------- | ------------------------------------------------ |
+| Why the user is here | To be entertained          | To find something specific, or be entertained | **To earn**                                      |
+| The video is…        | The product                | The product                                   | **The price of the reward**                      |
+| Success looks like   | Hours watched              | Hours watched                                 | **Rewards earned and redeemed**                  |
+| Browse question      | "What do I want to watch?" | "What am I looking for?"                      | **"What's the best use of my next 20 minutes?"** |
 
 Users do not come for the content. They come for the voucher, and the video is what they pay. That inverts every design decision a video platform makes: we never hide the duration, never autoplay into the next item to inflate watch time, and never bury the reward.
 
@@ -30,53 +30,56 @@ Users do not come for the content. They come for the voucher, and the video is w
 └──────────┴──────────┴──────────┴──────────┴──────────┘
 ```
 
-| Surface | Shaped like | Purpose |
-|---|---|---|
-| **Earn** (home) | Shopee home — dense grid of cards | The board. Every card shows **duration · reward · ~MB · merchant**. Sorted by expected value to *this* user. |
-| **Quick** | TikTok — vertical, swipeable | 15–60 s campaigns, points only. **This is the habit loop** — the thing that fills dead time and brings people back daily. Long-form is the "sit down and earn properly" mode. |
-| **Store** | Tokopedia product grid | Vouchers, digital goods, merchandise. Price in points, terms visible before committing. |
-| **Wallet** | Banking app, simplified | Balance, pending (in holdback), expiring soon, vouchers with their QR, history. |
-| **Me** | Settings | Profile, interests, consent controls, security (passkey), language, referrals. |
+| Surface         | Shaped like                       | Purpose                                                                                                                                                                       |
+| --------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Earn** (home) | Shopee home — dense grid of cards | The board. Every card shows **duration · reward · ~MB · merchant**. Sorted by expected value to _this_ user.                                                                  |
+| **Quick**       | TikTok — vertical, swipeable      | 15–60 s campaigns, points only. **This is the habit loop** — the thing that fills dead time and brings people back daily. Long-form is the "sit down and earn properly" mode. |
+| **Store**       | Tokopedia product grid            | Vouchers, digital goods, merchandise. Price in points, terms visible before committing.                                                                                       |
+| **Wallet**      | Banking app, simplified           | Balance, pending (in holdback), expiring soon, vouchers with their QR, history.                                                                                               |
+| **Me**          | Settings                          | Profile, interests, consent controls, security (passkey), language, referrals.                                                                                                |
 
 Tablet and desktop widen the layout — more columns, persistent side navigation. **Not a different product.**
 
-### 1.2 What we deliberately do *not* copy
+### 1.2 What we deliberately do _not_ copy
 
-| Pattern | Why not |
-|---|---|
-| Autoplay-next | Inflates watch time we pay for and the user did not choose |
-| Infinite entertainment feed | We have no content supply problem to solve, and it costs delivery minutes nobody funded |
-| Hidden duration | The entry card is a contract. Hiding the price is how you get one-star reviews |
+| Pattern                            | Why not                                                                                   |
+| ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| Autoplay-next                      | Inflates watch time we pay for and the user did not choose                                |
+| Infinite entertainment feed        | We have no content supply problem to solve, and it costs delivery minutes nobody funded   |
+| Hidden duration                    | The entry card is a contract. Hiding the price is how you get one-star reviews            |
 | Recommendations that ignore reward | Users optimise for reward-per-minute. Pretending otherwise just makes ranking look broken |
 
 ## 2. Business dashboard
 
 A business may hold any subset of three relationships (advertiser, supplier, redeemer), so the dashboard has three zones and shows only the ones they use.
 
-| Zone | Contains |
-|---|---|
-| **Campaigns** | Create/edit, video upload, chapters, question bank, targeting, budget, point allocation, live performance |
-| **Inventory** | Listings, settlement value `S`, stock, transferability and partial-redemption policy, per-listing performance |
-| **Redemption** | Manual code lookup, redemption log, API credentials and webhooks, integration status |
-| **Reports** | Completion by chapter, question accuracy, recall score, redemption attribution, footfall |
-| **Billing** | Point pre-purchases, settlement statements, invoices, disputes |
-| **Team** | Members, roles, invitations, audit of who did what |
+| Zone           | Contains                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Campaigns**  | Create/edit, video upload, chapters, question bank, targeting, budget, point allocation, live performance     |
+| **Inventory**  | Listings, settlement value `S`, stock, transferability and partial-redemption policy, per-listing performance |
+| **Redemption** | Manual code lookup, redemption log, API credentials and webhooks, integration status                          |
+| **Reports**    | Completion by chapter, question accuracy, recall score, redemption attribution, footfall                      |
+| **Billing**    | Point pre-purchases, settlement statements, invoices, disputes                                                |
+| **Team**       | Members, roles, invitations, audit of who did what                                                            |
 
 ### 2.1 Business roles
 
 Yes — each business administers its own people. Six roles, least-privilege by default:
 
-| Role | Campaigns | Inventory | Redeem | Reports | Billing | Team |
-|---|---|---|---|---|---|---|
-| **Owner** | ✎ | ✎ | ✓ | ✓ | ✎ | ✎ + delete account |
-| **Admin** | ✎ | ✎ | ✓ | ✓ | view | ✎ |
-| **Marketer** | ✎ | — | — | ✓ | — | — |
-| **Merchandiser** | — | ✎ | — | ✓ | — | — |
-| **Finance** | — | — | — | ✓ | ✎ | — |
-| **Analyst** | view | view | — | ✓ | — | — |
-| **Store staff** | — | — | ✓ | — | — | — |
+| Role             | Profile | KYB | Campaigns | Inventory | Redeem | Reports | Billing | Team               |
+| ---------------- | ------- | --- | --------- | --------- | ------ | ------- | ------- | ------------------ |
+| **Owner**        | ✎       | ✎   | ✎         | ✎         | ✓      | ✓       | ✎       | ✎ + delete account |
+| **Admin**        | ✎       | ✎   | ✎         | ✎         | ✓      | ✓       | view    | ✎                  |
+| **Marketer**     | view    | —   | ✎         | —         | —      | ✓       | —       | —                  |
+| **Merchandiser** | view    | —   | —         | ✎         | —      | ✓       | —       | —                  |
+| **Finance**      | view    | —   | —         | —         | —      | ✓       | ✎       | —                  |
+| **Analyst**      | view    | —   | view      | view      | —      | ✓       | —       | —                  |
+| **Store staff**  | —       | —   | —         | —         | ✓      | —       | —       | —                  |
+
+**Profile and KYB are separate columns for a reason.** The business profile is its own name, address and contact — anyone working for the business may read it, and hiding it from a marketer serves nobody. **KYB is director identity and tax registration**, which is sensitive and stays owner/admin. An earlier version of this table had no Profile column at all, which forced an implementer to infer the answer from the Reports column; the inference was right, and the gap was mine.
 
 Rules that are not negotiable:
+
 - **Exactly one Owner**, transferable only by the current Owner with re-authentication.
 - **Two-person approval** on: bulk voucher issuance, changing a settlement value downward by more than a threshold, and API credential rotation.
 - **Every team action is audit-logged** and visible to the business itself, not just to us.
@@ -96,13 +99,13 @@ A cashier on a shared phone in a busy shop is not an office user, and giving the
 
 Consumers do not want a dashboard; they want to know three things at a glance. The **Wallet** answers them:
 
-| Question | Answer on screen |
-|---|---|
-| *What do I have?* | Available balance, prominent |
-| *What's coming?* | Pending points still in holdback, **with the date they unlock** |
-| *What am I about to lose?* | Expiring soon, surfaced before it matters, never after |
+| Question                   | Answer on screen                                                |
+| -------------------------- | --------------------------------------------------------------- |
+| _What do I have?_          | Available balance, prominent                                    |
+| _What's coming?_           | Pending points still in holdback, **with the date they unlock** |
+| _What am I about to lose?_ | Expiring soon, surfaced before it matters, never after          |
 
-Plus: active vouchers with their offline QR, redemption history, points history in plain language (*"Completed Kopi Kenangan campaign — 2,400 points"*, not `TXN_CREDIT_CAMPAIGN_4471`), and progress toward the next tier or streak.
+Plus: active vouchers with their offline QR, redemption history, points history in plain language (_"Completed Kopi Kenangan campaign — 2,400 points"_, not `TXN_CREDIT_CAMPAIGN_4471`), and progress toward the next tier or streak.
 
 **Me** carries profile, declared interests, per-purpose consent toggles that actually work, passkey setup, language and referrals.
 
@@ -116,10 +119,10 @@ Anonymous visitors are the **primary organic acquisition channel** (the catalogu
 
 An earlier draft rejected anonymous watching. That was too blunt: it conflated two different things.
 
-| Pattern | Verdict |
-|---|---|
-| Anonymous watch → **no reward, not retroactively claimable, ever** | **Safe.** There is nothing to extract, so there is no farming incentive. |
-| Anonymous watch → **claim the reward after signing up** | **Rejected.** Checkpoint tokens bind to a user, the risk score gates the credit, and the holdback clock starts at earn. A claimable anonymous path is a free farming surface with no identity anchor, no velocity cap and no holdback. |
+| Pattern                                                            | Verdict                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anonymous watch → **no reward, not retroactively claimable, ever** | **Safe.** There is nothing to extract, so there is no farming incentive.                                                                                                                                                               |
+| Anonymous watch → **claim the reward after signing up**            | **Rejected.** Checkpoint tokens bind to a user, the risk score gates the credit, and the holdback clock starts at earn. A claimable anonymous path is a free farming surface with no identity anchor, no velocity cap and no holdback. |
 
 The line is **claimability**, not anonymity. Open Viewing sits safely on the right side of it.
 
@@ -127,14 +130,14 @@ The line is **claimability**, not anonymity. Open Viewing sits safely on the rig
 
 This creates a genuinely useful product split, and it is the same split the ad industry already understands as performance versus awareness:
 
-| | **Rewarded view** | **Open view** |
-|---|---|---|
-| Viewer | Signed in, phone-verified, risk-scored | Anonymous |
-| Questions | Required, gate the reward | Offered, optional, never gate |
-| Reward cost to business | Points + voucher/merchandise | **None** |
-| Platform fee | Full rate per verified completed view | **Low rate per qualified view** |
-| Verification | Checkpoint tokens, CDN cross-check, attention proof | IVT filtration only |
-| What the business buys | Verified attention + a measured conversion | Reach and funnel |
+|                         | **Rewarded view**                                   | **Open view**                   |
+| ----------------------- | --------------------------------------------------- | ------------------------------- |
+| Viewer                  | Signed in, phone-verified, risk-scored              | Anonymous                       |
+| Questions               | Required, gate the reward                           | Offered, optional, never gate   |
+| Reward cost to business | Points + voucher/merchandise                        | **None**                        |
+| Platform fee            | Full rate per verified completed view               | **Low rate per qualified view** |
+| Verification            | Checkpoint tokens, CDN cross-check, attention proof | IVT filtration only             |
+| What the business buys  | Verified attention + a measured conversion          | Reach and funnel                |
 
 **Open views are billed, not free.** Delivery costs us roughly $0.03 for a 30-minute view, and the rule from [`10-tech-stack.md`](10-tech-stack.md) still holds: **every delivered minute must belong to a funded campaign.** Unfunded anonymous viewing is an unbounded bill with no offsetting revenue.
 
@@ -142,16 +145,16 @@ Practically: Open Viewing is a **per-campaign opt-in with its own budget line**,
 
 ### 4.3 What this forces us to get right
 
-| Requirement | Why |
-|---|---|
+| Requirement                       | Why                                                                                                                                                                                                             |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **IVT filtration before billing** | Once open views are billable, bots have an incentive again — for the advertiser's money rather than the reward. MRC GIVT filtration moves from a Phase-2 nicety to a **prerequisite for billing an open view**. |
-| **Rate limits** | Cap open-view minutes per device and IP per day; Turnstile after the first view; no concurrent anonymous sessions. |
-| **Data-cost honesty** | An anonymous viewer spending 180 MB for no reward deserves to know first. Show duration and MB more prominently, not less, and default to the lowest quality tier. |
-| **No reward machinery** | Open views issue no checkpoint tokens and touch neither the Reward Engine nor the ledger. Cleanly separate code paths. |
+| **Rate limits**                   | Cap open-view minutes per device and IP per day; Turnstile after the first view; no concurrent anonymous sessions.                                                                                              |
+| **Data-cost honesty**             | An anonymous viewer spending 180 MB for no reward deserves to know first. Show duration and MB more prominently, not less, and default to the lowest quality tier.                                              |
+| **No reward machinery**           | Open views issue no checkpoint tokens and touch neither the Reward Engine nor the ledger. Cleanly separate code paths.                                                                                          |
 
 ### 4.4 The conversion mechanic
 
-An anonymous viewer who has just watched twenty minutes is the warmest possible signup. Show the foregone reward honestly throughout — *"a signed-in viewer would have earned 2,400 points here"* — and prompt at the moment a logged-in user would have been paid.
+An anonymous viewer who has just watched twenty minutes is the warmest possible signup. Show the foregone reward honestly throughout — _"a signed-in viewer would have earned 2,400 points here"_ — and prompt at the moment a logged-in user would have been paid.
 
 That is the moment of maximum regret and maximum intent. It is also completely honest: we are telling them exactly what they chose not to have, and offering it for next time.
 
@@ -172,16 +175,16 @@ Hold a balance · earn or accrue anything · redeem · transfer or receive a vou
 
 ## 5. Internal roles
 
-| Role | Can |
-|---|---|
-| **Support** | View a user's account and history, open a case, issue a goodwill credit below a threshold — **from the funded reserve, never minted** |
-| **Moderator** | Review flagged creatives and question banks, approve/reject with a reason |
-| **Risk analyst** | Review suspicious clusters, suspend and reinstate, never adjust balances |
-| **Finance** | Ledger adjustments (dual-approved), settlement runs, breakage and liability reporting |
-| **Ops** | Merchant onboarding, KYB, listing approval |
-| **Admin** | Role grants, feature flags, kill switches — **no direct data access** |
+| Role             | Can                                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Support**      | View a user's account and history, open a case, issue a goodwill credit below a threshold — **from the funded reserve, never minted** |
+| **Moderator**    | Review flagged creatives and question banks, approve/reject with a reason                                                             |
+| **Risk analyst** | Review suspicious clusters, suspend and reinstate, never adjust balances                                                              |
+| **Finance**      | Ledger adjustments (dual-approved), settlement runs, breakage and liability reporting                                                 |
+| **Ops**          | Merchant onboarding, KYB, listing approval                                                                                            |
+| **Admin**        | Role grants, feature flags, kill switches — **no direct data access**                                                                 |
 
-Separation of duties throughout: whoever can *suspend* cannot *adjust*, and whoever can *adjust* cannot *approve their own adjustment*.
+Separation of duties throughout: whoever can _suspend_ cannot _adjust_, and whoever can _adjust_ cannot _approve their own adjustment_.
 
 ---
 

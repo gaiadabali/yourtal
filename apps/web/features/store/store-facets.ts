@@ -1,4 +1,5 @@
 import type { Listing } from "@yourtal/contracts/listing";
+import { listingHasDistrict } from "./listing-locations";
 
 /**
  * Merchant and location filters for the Store browse grid (YT-0420).
@@ -24,14 +25,19 @@ export interface StoreMerchantOption {
   name: string;
 }
 
-/** Every district represented in `listings`, alphabetised for a `<select>`. */
+/**
+ * Every district represented in `listings`, alphabetised for a `<select>`.
+ * A listing with branches in three districts contributes all three, because
+ * a filter that could not offer two of them would hide real inventory from
+ * a user who is standing in one of those two districts.
+ */
 export function listingLocations(
   listings: readonly Listing[],
   locale: SupportedLocale = "id-ID",
 ): string[] {
-  return Array.from(new Set(listings.map((listing) => listing.district))).sort((a, b) =>
-    a.localeCompare(b, locale),
-  );
+  return Array.from(
+    new Set(listings.flatMap((listing) => listing.locations.map((location) => location.district))),
+  ).sort((a, b) => a.localeCompare(b, locale));
 }
 
 /** Every merchant represented in `listings`, deduplicated by id and alphabetised by name. */
@@ -55,7 +61,7 @@ export function filterListingsByLocation(
   if (district === STORE_LOCATION_ALL) {
     return [...listings];
   }
-  return listings.filter((listing) => listing.district === district);
+  return listings.filter((listing) => listingHasDistrict(listing, district));
 }
 
 export function filterListingsByMerchant(

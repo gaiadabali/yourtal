@@ -1,0 +1,45 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Business reports (docs/17 section 2, Reports zone). All six office roles
+  read reports; a counter device never does, and that is stated as a DENY
+  because "never see reports" is a property of the device session, not an
+  accident of which roles happen to be listed below.
+
+  A report that resolves to an individual is not exportable by a business at
+  all. Cohort floors are the product (YT-0217), and an export is the one
+  operation that takes the data out of reach of any later control.
+resourcePolicy:
+  version: default
+  resource: report
+  importDerivedRoles:
+    - business
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/report.json
+  rules:
+    - name: counter-devices-never-see-reports
+      actions: ["view", "export"]
+      effect: EFFECT_DENY
+      roles: ["store_device"]
+
+    - name: no-business-exports-individuals
+      actions: ["export"]
+      effect: EFFECT_DENY
+      roles: ["business_user"]
+      condition:
+        match:
+          expr: has(R.attr.containsPii) && R.attr.containsPii
+
+    - name: office-roles-read-reports
+      actions: ["view", "export"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_report_viewer_of
+
+    - name: internal-analysis
+      actions: ["view"]
+      effect: EFFECT_ALLOW
+      roles: ["support", "risk_analyst", "finance", "ops"]

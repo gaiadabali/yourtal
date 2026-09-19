@@ -1,0 +1,96 @@
+---
+name: KybDocumentSuite
+description: |-
+  KYB onboarding documents (docs/17 section 5; docs/03 section 2.3 PSE
+  registration; KYB itself required under Permendag 19/2026 per docs/02).
+  Owner and admin submit and read their own business's documents; review is
+  `ops`'s job, named explicitly in docs/17 section 5. The suite pins the
+  invariant the ticket called out by name: no business role -- not even the
+  owner, not even freshly reauthenticated -- ever approves or rejects its
+  own KYB.
+tests:
+  - name: owner and admin submit and view; marketer and analyst cannot
+    input:
+      principals: [budi_owner, citra_admin, dewi_marketer, gita_analyst]
+      resources: [kyb_document_kopi]
+      actions: [view, submit, approve, reject]
+    expected:
+      - principal: budi_owner
+        resource: kyb_document_kopi
+        actions:
+          view: EFFECT_ALLOW
+          submit: EFFECT_ALLOW
+          approve: EFFECT_DENY
+          reject: EFFECT_DENY
+      - principal: citra_admin
+        resource: kyb_document_kopi
+        actions:
+          view: EFFECT_ALLOW
+          submit: EFFECT_ALLOW
+          approve: EFFECT_DENY
+          reject: EFFECT_DENY
+      - principal: dewi_marketer
+        resource: kyb_document_kopi
+        actions:
+          view: EFFECT_DENY
+          submit: EFFECT_DENY
+          approve: EFFECT_DENY
+          reject: EFFECT_DENY
+      - principal: gita_analyst
+        resource: kyb_document_kopi
+        actions:
+          view: EFFECT_DENY
+          submit: EFFECT_DENY
+          approve: EFFECT_DENY
+          reject: EFFECT_DENY
+
+  - name: ops reviews -- and only ops
+    input:
+      principals: [ops_zul]
+      resources: [kyb_document_kopi]
+      actions: [view, approve, reject]
+    expected:
+      - principal: ops_zul
+        resource: kyb_document_kopi
+        actions: { view: EFFECT_ALLOW, approve: EFFECT_ALLOW, reject: EFFECT_ALLOW }
+
+  - name: no business role ever approves or rejects its own KYB, reauth included
+    input:
+      principals: [budi_owner, budi_owner_reauthed, citra_admin]
+      resources: [kyb_document_kopi]
+      actions: [approve, reject]
+    expected:
+      # Even the owner, even with the step-up re-auth that unlocks ownership
+      # transfer elsewhere -- approving your own KYB is not a re-auth
+      # problem, it is a separation-of-duties problem, so re-auth changes
+      # nothing here.
+      - principal: budi_owner
+        resource: kyb_document_kopi
+        actions: { approve: EFFECT_DENY, reject: EFFECT_DENY }
+      - principal: budi_owner_reauthed
+        resource: kyb_document_kopi
+        actions: { approve: EFFECT_DENY, reject: EFFECT_DENY }
+      - principal: citra_admin
+        resource: kyb_document_kopi
+        actions: { approve: EFFECT_DENY, reject: EFFECT_DENY }
+
+  - name: a rival owner and a counter device are strangers here
+    input:
+      principals: [rival_owner, counter_kemang]
+      resources: [kyb_document_kopi]
+      actions: [view, submit, approve, reject]
+    expected:
+      - principal: rival_owner
+        resource: kyb_document_kopi
+        actions:
+          view: EFFECT_DENY
+          submit: EFFECT_DENY
+          approve: EFFECT_DENY
+          reject: EFFECT_DENY
+      - principal: counter_kemang
+        resource: kyb_document_kopi
+        actions:
+          view: EFFECT_DENY
+          submit: EFFECT_DENY
+          approve: EFFECT_DENY
+          reject: EFFECT_DENY

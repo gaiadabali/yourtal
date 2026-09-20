@@ -67,6 +67,50 @@ tests:
         resource: listing_kopi_cut
         actions: { set_settlement_value: EFFECT_DENY, approve_settlement_decrease: EFFECT_ALLOW }
 
+  - name: >-
+      YT-0574 -- an unstated materiality attribute must be refused, not
+      allowed, because that is exactly what a real controller's synchronous
+      `attrsFrom` produces (no DB read, so no fact about materiality yet).
+      `!has(x) || !x` reads absence as "not material" and was fail-open; the
+      fix requires positive evidence of `false` before the direct-apply path
+      is granted. Every business role that could otherwise apply a listing
+      edit is checked here, not just the merchandiser who raised YT-0574,
+      because the bug was in the shared condition, not in a per-role rule.
+    input:
+      principals: [eka_merchandiser, citra_admin, budi_owner]
+      resources: [listing_kopi_unstated]
+      actions: [set_settlement_value]
+    expected:
+      - principal: eka_merchandiser
+        resource: listing_kopi_unstated
+        actions: { set_settlement_value: EFFECT_DENY }
+      - principal: citra_admin
+        resource: listing_kopi_unstated
+        actions: { set_settlement_value: EFFECT_DENY }
+      - principal: budi_owner
+        resource: listing_kopi_unstated
+        actions: { set_settlement_value: EFFECT_DENY }
+
+  - name: >-
+      YT-0575 -- requesting a settlement decrease is its own action, separate
+      from applying one (set_settlement_value, denied outright for a
+      material change) and from approving one. Any inventory editor may
+      raise a request; a marketer, who has no inventory role at all, may not.
+    input:
+      principals: [eka_merchandiser, dewi_marketer, budi_owner]
+      resources: [listing_kopi]
+      actions: [request_settlement_decrease]
+    expected:
+      - principal: eka_merchandiser
+        resource: listing_kopi
+        actions: { request_settlement_decrease: EFFECT_ALLOW }
+      - principal: dewi_marketer
+        resource: listing_kopi
+        actions: { request_settlement_decrease: EFFECT_DENY }
+      - principal: budi_owner
+        resource: listing_kopi
+        actions: { request_settlement_decrease: EFFECT_ALLOW }
+
   - name: credential rotation needs a second pair of hands
     input:
       principals: [citra_admin, budi_owner, eka_merchandiser]

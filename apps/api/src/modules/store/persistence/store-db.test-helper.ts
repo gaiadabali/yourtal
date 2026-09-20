@@ -3,6 +3,7 @@ import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../../shared/persistence/drizzle-client";
 import { listingPriceRevisions } from "./schema/listing-price-revision.table";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
+import { settlementDecreaseRequests } from "./schema/settlement-decrease-request.table";
 
 /**
  * A real Postgres handle for this module's tests, following the pattern
@@ -66,7 +67,11 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   await owner.execute(sql`DELETE FROM voucher.code_custody`);
   await owner.execute(sql`DELETE FROM voucher.vouchers`);
   await owner.execute(sql`DELETE FROM voucher.batch`);
+  // Child-first within the store tables too: a revision row may reference a
+  // settlement_decrease_request (YT-0575), and a request row references a
+  // listing.
   await db.delete(listingPriceRevisions);
+  await db.delete(settlementDecreaseRequests);
   await db.delete(listingLocations);
   await db.delete(listings);
   await db.delete(merchantLocations);

@@ -41,6 +41,7 @@ type Listing struct {
 	MinimumSpendIdr ListingMinimumSpendIdr `json:"minimumSpendIdr"`
 	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
 	Status ListingStatus `json:"status"`
+	PerUserLimit *int64 `json:"perUserLimit,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -488,6 +489,38 @@ func (o *Listing) SetStatus(v ListingStatus) {
 	o.Status = v
 }
 
+// GetPerUserLimit returns the PerUserLimit field value if set, zero value otherwise.
+func (o *Listing) GetPerUserLimit() int64 {
+	if o == nil || IsNil(o.PerUserLimit) {
+		var ret int64
+		return ret
+	}
+	return *o.PerUserLimit
+}
+
+// GetPerUserLimitOk returns a tuple with the PerUserLimit field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Listing) GetPerUserLimitOk() (*int64, bool) {
+	if o == nil || IsNil(o.PerUserLimit) {
+		return nil, false
+	}
+	return o.PerUserLimit, true
+}
+
+// HasPerUserLimit returns a boolean if a field has been set.
+func (o *Listing) HasPerUserLimit() bool {
+	if o != nil && !IsNil(o.PerUserLimit) {
+		return true
+	}
+
+	return false
+}
+
+// SetPerUserLimit gets a reference to the given int64 and assigns it to the PerUserLimit field.
+func (o *Listing) SetPerUserLimit(v int64) {
+	o.PerUserLimit = &v
+}
+
 func (o Listing) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -515,6 +548,9 @@ func (o Listing) ToMap() (map[string]interface{}, error) {
 	toSerialize["minimumSpendIdr"] = o.MinimumSpendIdr
 	toSerialize["expiresAt"] = o.ExpiresAt
 	toSerialize["status"] = o.Status
+	if !IsNil(o.PerUserLimit) {
+		toSerialize["perUserLimit"] = o.PerUserLimit
+	}
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -591,6 +627,7 @@ func (o *Listing) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "minimumSpendIdr")
 		delete(additionalProperties, "expiresAt")
 		delete(additionalProperties, "status")
+		delete(additionalProperties, "perUserLimit")
 		o.AdditionalProperties = additionalProperties
 	}
 

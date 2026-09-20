@@ -1695,6 +1695,12 @@
           },
           "status": {
             "$ref": "#/components/schemas/ListingStatus"
+          },
+          "perUserLimit": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
           }
         },
         "required": [

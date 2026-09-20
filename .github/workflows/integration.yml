@@ -65,22 +65,6 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
-      # Object storage for the media suite (YT-0521). A service container is
-      # right here, unlike Cerbos above: MinIO mounts nothing from the
-      # repository, so starting before `actions/checkout` costs it nothing.
-      minio:
-        image: quay.io/minio/minio:latest
-        env:
-          MINIO_ROOT_USER: yourtal
-          MINIO_ROOT_PASSWORD: yourtal_local_only
-        ports:
-          - 26900:9000
-        options: >-
-          --health-cmd "mc ready local"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 20
-
     env:
       # The RUNTIME role, unprivileged on purpose (YT-0554, risk 45). CI used
       # this variable for everything, including the app, so CI was exercising
@@ -123,6 +107,30 @@ jobs:
       #
       # None of this was visible until 2026-09-20, because the repository
       # had no remote and this workflow had never executed once.
+      # MinIO is a step for a DIFFERENT reason than Cerbos, and the first
+      # attempt got it wrong by assuming it was the same one. MinIO mounts
+      # nothing from the repo, so the checkout ordering is irrelevant to it.
+      # The blocker is that an Actions `services:` entry has no `command` or
+      # `args` field at all — only image, env, ports, volumes, options and
+      # credentials. MinIO's entrypoint needs `server /data`, so as a service
+      # it printed its usage text and exited before the healthcheck.
+      - name: Start MinIO (a service container cannot pass `server /data`)
+        run: |
+          docker run -d --name minio \
+            -p 127.0.0.1:26900:9000 \
+            -e MINIO_ROOT_USER=yourtal \
+            -e MINIO_ROOT_PASSWORD=yourtal_local_only \
+            quay.io/minio/minio:latest server /data
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:26900/minio/health/live >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::MinIO never became live on 26900."
+          docker logs minio
+          exit 1
+
       - name: Start Cerbos (it needs the repo, so it cannot be a service)
         run: |
           docker run -d --name cerbos \

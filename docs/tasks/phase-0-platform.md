@@ -495,3 +495,5 @@
 - [ ] `integration.yml` confirmed to stand up Postgres **and** confirmed to fail on a SKIP — sabotage-proved, per `docs/13c`
 - [ ] Go's DB-backed suites confirmed **not** skipping in `integration.yml`, and `go test` there carries `-p 1` until YT-0567 lands, or it will race exactly as it does locally
 - [ ] Decide whether path filters stay. If they do, cross-cutting paths (`packages/db/migrations/**`, `packages/contracts/**`) trigger the Go gate too
+- [ ] ⚠️ **`perf-budget.yml` triggers on `pull_request` only — it has no `push` trigger at all.** Work goes straight to `main` without PRs, so the performance budget gate (LCP ≤ 2.0s, initial JS ≤ 200KB, TBT ≤ 200ms) **cannot run under the way this project actually commits**. Either it gains a `push` trigger or the project starts using PRs; leaving both as they are means the budget is enforced by nobody
+- [ ] ⚠️ **`go.yml` had still not run** as of five pushes after the remote was added, because its `paths:` filter matched none of them. A gate that waits for a matching path can sit unexecuted indefinitely while reading as configured — this is the path-filter concern above, observed rather than predicted

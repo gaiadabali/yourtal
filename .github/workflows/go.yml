@@ -84,5 +84,13 @@ jobs:
       # modules run in integration.yml, which stands up Postgres and fails
       # if any of them SKIPs — a skip here would be expected and would teach
       # that guard to be ignored.
+      # -count=1 because Go caches test results per package, and on
+      # 2026-09-20 a cached `ok` hid a genuinely failing invariant check
+      # locally. A gate that may answer from cache is not a gate.
+      #
+      # -p 1 is deliberately NOT set here, unlike integration.yml and
+      # services/*/package.json. The YT-0567 race needs a shared Postgres to
+      # happen, and this job has none — the DB-backed suites skip here by
+      # design, which is what the note above explains.
       - name: Test
-        run: go test ./...
+        run: go test -count=1 ./...

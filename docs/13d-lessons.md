@@ -78,6 +78,8 @@ Two instances on one day. `pnpm verify` answered green in **45ms**: `Cached: 11 
 
 Both are correct behaviour. Neither answers the question a gate is asked. A cache says "inputs unchanged since some earlier run" — and that earlier run may have happened without Postgres, on a different branch, or before the thing you are about to trust it for.
 
+A third instance arrived the same day, from `yourtal-22`: `pnpm verify` reported **12 of 13 turbo tasks cached** on a branch about to be merged. Their response is the right one and is now house practice — **check the Go suites directly after every verify**, because `verify` reports a cached task and an executed one identically, and the distinction is the whole question.
+
 **Rule: when a green result is about to authorise something — a promotion to `done`, a merge, a deploy — force the run.** `-count=1` is mandatory for Go in this repo for exactly this reason, and the flags are documented in the service manifests so whoever tidies next does not remove them as noise.
 
 ## 8. A cause is not a category — including one you just wrote down
@@ -120,6 +122,8 @@ Two things make the last one the sharpest yet.
 **The correct calling pattern is the one that disables it.** `attrsFrom` is `(request) => Record<string, unknown>` — synchronous, request-only, no database. Materiality compares against the _stored_ value. So a controller using the declarative decorator, which is the right and universal pattern everywhere else in this codebase, supplies nothing, and the control switches off. **A guard you disable by following the house style is worse than one you disable by mistake.**
 
 **Two independent places agreed the omission was fine.** The policy expression accepted absence, and the resource schema listed only `businessId` as required. Neither is obviously wrong alone. Together they mean nothing in the system objects, and the redundancy that normally catches this instead confirmed it.
+
+**The sharpest single fact of the four, and it belongs here rather than in a ticket:** `TwoPersonApprovalSuite` passes **28 of 28** against the control that absence switches off. It passes because every fixture supplies `isMaterialSettlementDecrease` directly — so **the absence case, which is the only case a real controller produces, is never exercised**. The suite for the control and the control's real-world failure mode **do not intersect at all**. A green suite was not weak evidence here; it was evidence about a different system.
 
 **Rule: when a check reads an attribute, ask what it does when the attribute is not there — and check that the answer is written down in more than one place, because one of them will be a default.** In CEL specifically, `!has(x) || !x` reads as caution and means the opposite; `has(x) && !x` is the cautious form.
 

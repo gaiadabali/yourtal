@@ -62,7 +62,7 @@ Caps sized against **measured** headroom (22 GB free, load ~1.0) and deliberatel
 - [ ] Restore time measured and written down, because that number is the real RPO conversation
 
 ### YT-0532 · Helios: deploy pipeline with rollback
-`todo` · P0 · infra · 4d · dep: YT-0530, YT-0028
+`doing` · P0 · infra · 4d · dep: YT-0530, YT-0028
 
 **Decided 2026-09-20 (S-1): the existing pull-based poller, not push-from-CI. They are not alternatives — CI proves and publishes the artifact, the poller pulls and installs it.**
 
@@ -77,6 +77,11 @@ The poller `gaiada-poll` already runs on Helios, is **green** (`Result=success`,
 | **Credential blast radius** | Push-deploy puts a key in GitHub that can SSH to a box holding 30 clients. The poller needs only **outbound read** access |
 | **It is the house pattern** | `gaiada-deploy` already does releases + symlink swap + **rollback**, and reloads Node apps with `pm2 reload --update-env` under a per-site user |
 
+- [x] **LIVE 2026-09-20: https://yourtal.gaiada.com** — `/`, `/au` and `/id` all 200 over HTTPS with a valid certificate and CSS served. The full loop runs: push to `production` → CI gates and builds → publishes `deploy/production-*` with a checksum → poller detects within 60 s → verifies the sum → extracts → swaps the symlink → `pm2 reloaded: yourtal-web` → `health check OK (200)` → `DEPLOY OK`. **No inbound port, no key in GitHub, no allowlist touched**
+- [x] **Rollback proved by a real failure, not a drill.** A health check failed, `gaiada-deploy` reverted to the previous release, and **the app kept serving 200 throughout**
+- [x] ⚠️ **The health check must target the port, not the domain.** `gaiada-deploy` uses `http://127.0.0.1:$PORT/` when `port` is set and falls back to `https://$DOMAIN/` when it is not. Setting `domain` alone made it probe a name with no DNS and no certificate, so it got `000` six times and **rolled back a release that was serving correctly the whole time**. A health check aimed at a public URL makes the pipeline depend on DNS, TLS and nginx to report on a process it can already reach — it calls a routing problem a bad release
+- [x] ⚠️ **A manifest change takes up to 15 minutes; a code change takes 60 seconds.** The poller re-reads `.gaiadeploy.yml` only on the discovery sweep, so the `port` fix sat inert while two further deploys failed against the cached copy. **Changing deploy config and changing code are not the same latency**, and nothing says so
+- [ ] ⚠️ **Bug in shared tooling, not ours: `gaiada-deploy`'s rollback path loses `PM2_NAME`.** Forward deploys reload `yourtal-web` correctly; every rollback then reports `no pm2 process found for: uyourtal` — the site *user*, not the configured name. **So a rollback swaps the symlink and cannot restart the process**, leaving pm2 on the new code while `current` points at the old release. Harmless here only because both releases were the same commit. **This affects every Node site on the box**, so it belongs upstream in `deploy-workflows` rather than here
 - [ ] `.gaiadeploy.yml` in this repo naming **server-c**, so the discovery loop enrols it with no server-side edit
 - [ ] CI publishes a `deploy/<env>-` release **only from a green run** — the poller installs whatever it is given, so the gate has to be upstream of it
 - [ ] Rollback **exercised, not assumed**: deploy, roll back, confirm the previous release serves. Per `docs/13c`, a rollback path first used during an incident has not been tested

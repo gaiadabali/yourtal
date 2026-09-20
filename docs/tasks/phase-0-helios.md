@@ -38,7 +38,15 @@ This supersedes the GCP/Cloudflare shape in [`phase-0-foundation.md`](phase-0-fo
 - [ ] Every port we take is recorded in one file; nothing binds `0.0.0.0` that does not have to
 
 ### YT-0530 · Helios: isolation and resource caps
-`todo` · P0 · infra · 2d · dep: YT-0529
+`doing` · P0 · infra · 2d · dep: YT-0529
+
+**Built and proved 2026-09-20.** A dedicated unprivileged system user (`yourtal`, uid 994, `/usr/sbin/nologin`, home `/opt/yourtal` at 0750 with `secrets/` at 0700) and a systemd slice, `/etc/systemd/system/yourtal.slice`, that every YourTal unit joins.
+
+Caps sized against **measured** headroom (22 GB free, load ~1.0) and deliberately leaving the majority to the 30 client sites: `CPUQuota=200%` (2 of 8 cores), `MemoryHigh=3G`, `MemoryMax=4G`, `MemorySwapMax=0`, `TasksMax=512`, `IOWeight=50`.
+
+- [x] **CPU cap proved by a runaway, not by reading the unit file.** Eight busy loops launched into the slice on an 8-core box were throttled to **2.02 cores** against a 2.00 cap. Host load stayed at 1.82 and the client sites were unaffected
+- [ ] ⚠️ **Memory cap only PARTIALLY proved, and the distinction matters.** A deliberate 6 GiB allocation inside the 4 GiB slice hit the runtime limit at a **3.1 G peak against `MemoryHigh=3G`** — so the *soft* limit demonstrably throttled reclaim, and the host finished healthy (22.8 GB free, nginx/docker/postgres all active). **It never reached `MemoryMax`, so the hard OOM-kill-inside-the-slice is still unproven.** Re-run with a faster allocator and no runtime limit
+- [ ] ⚠️ **A first attempt at that proof was mis-read and nearly recorded as a pass**: sampled at 25 s, the unit reported `Result=success`, `ExecMainStatus=0` — which is what a **still-running** unit reports. `systemd-run --wait` gives the true result. A status field read at the wrong moment is indistinguishable from the answer you wanted
 
 - [ ] Dedicated system user, systemd slice with **hard CPU and memory caps**
 - [ ] A YourTal runaway degrades YourTal and nothing else — **proved by running one**, not by reading the unit file

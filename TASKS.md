@@ -29,6 +29,8 @@ Format and rules: [`docs/tasks/_schema.md`](docs/tasks/_schema.md).
 | 🌐 **All that is left of the cloud accounts is a domain** | **YT-0020** (GCP) and **YT-0025** (Cloudflare) are **deferred** — Helios replaces them and they now gate nothing. The one real remnant is **a domain and DNS**; a subdomain on a domain you already own carries us until then. |
 | ✅ **Nothing is blocked on an account signup any more**               | The full stack runs locally: **Postgres · Cerbos · Valkey · Zitadel (real OIDC) · MinIO (S3)**. Eight tasks were re-parented off the cloud chain onto YT-0516 — they needed _a_ service, not a _managed_ one. Cloud tasks now cover **deployment only**. `pnpm dev:up`.                                                                                                                                                                                                                                                                                                                                                         |
 | 🖥️ **Helios is connected, surveyed, and it is in Jakarta** | Reached **directly** 2026-09-20 from the office IP — ufw rule 5 allowlists `<office-ip>`, so no jump host was needed. `server-c`, Ubuntu 24.04.5, **8 cores / 31 GB (22 free) / 166 GB disk free**. **Residency evidence points to Jakarta, Indonesia**: `ipinfo` → Jakarta + AS47583, host `<helios-vps-hostname>`, **14.4 ms to Bandung, 169.7 ms to Sydney**. If confirmed, Indonesian data is onshore and **Australian data becomes an APP 8 cross-border disclosure — on the primary market's main path**. One Hostinger billing-page check closes **YT-0534**, the oldest blocker on this board. |
+| 🔌 **Working from home: one route survives, and it is not the obvious one** | **`<jump-host>` is decommissioned** — it was the **only non-Hostinger jump**, so Helios, Delphi, `jump-e`, `jump-b` and `new-pantheon` are now **all AS47583**. **Use `helios-jb` from home**: it jumps via server-b, and the address Helios allowlists is *server-b's*, not yours — so a rotated home IP still gets in, and it breaks the lock-out loop where adding your IP to `ufw` requires already being in. All three routes tested working from the office. ⚠️ **Nothing survives a Hostinger edge block**, which takes out the destination and every path at once; `ufw` is irrelevant because the block is upstream. **A timeout is ambiguous — not-allowlisted and edge-blocked look identical.** Tell them apart with Delphi: it answers and Helios does not → `ufw`; neither answers → the edge. Runbook in `gaiada-setups/access/ssh.md`. |
+| 🧰 **Helios is provisioned and the caps are proved** | Unprivileged `yourtal` user (nologin, `0750`, `secrets/` at `0700`) and a systemd slice capping **2 of 8 cores, 4 GB hard / 3 GB soft, no swap, IOWeight 50** — sized against measured headroom and leaving the majority to the 30 client sites. **CPU cap proved by running a real runaway**: 8 busy loops throttled to **2.02 cores**, host load 1.82, clients unaffected. **The memory cap is only partly proved** — the soft limit visibly throttled at a 3.1 G peak, but `MemoryMax` was never reached, so the hard kill is still unproven and is recorded as such. |
 | 🔑 **Two Helios findings that change the plan** | **1. Infisical is already self-hosted and running** (`/opt/infisical-core` v0.43.121, active). **YT-0533 was written as "secrets without a KMS" and that premise is wrong** — the question shrinks to whether to adopt the one that is there, which is shared with the client sites and the NOW platform, so it carries risk 39's blast-radius argument applied to credentials. **2. The box is more crowded than recorded**: nginx serves **30 live client hostnames**, plus NOW's 6 containers, sGTM, MariaDB, a host Postgres and CloudPanel. **No `26xxx` port is in use**, so YourTal's port scheme transfers unchanged, and `PORT=3001` avoids the `node` already on 3000. |
 | ⚠️ **What genuinely cannot be simulated** | **1. Where Helios physically sits** (YT-0534) — a fact about a rented box, and it decides whether real Australian or Indonesian personal data may ever land on it. **2. Legal** — PSE registration, notaris, entity formation. **3. Real people** — simulated users cannot tell you whether anyone will watch twenty minutes. Everything else now has a simulator, and **every simulator can be driven into failure** (YT-0536). |
 | ⚠️ **The value chain is proven in tests, and is not yet wired into the running system** | Partner buys points → allocation + reserve + `point_purchase` → user completes a campaign → risk gate, velocity caps, drawdown, ledger post, grant log in one transaction → hard-stop at zero. **YT-0044** proves it every 15 minutes with a write-once daily Merkle root, all against real Postgres. **But this row used to read "the value chain and its proof both run", and that was true of the Go test suites rather than of the product.** Relayed by `yourtal-22` and verified here: `services/ledger/cmd/ledger/main.go` registers exactly **`/healthz` and a 404** — the reward engine, pricing engine, chart of accounts and transfer API have **no HTTP caller at all** — and `apps/api` mentions "ledger" and "voucher" only in comments and Postgres role names, with **no `LEDGER_BASE_URL`, no client and no config anywhere**. The same week's lesson, one level up: a claim can be true of the tests and false of the system. `yourtal-22`'s agents are closing it now. |
@@ -76,7 +78,7 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
-**0 / 272 tasks done (0%)** · 41 in review · 56 in progress · 6 blocked
+**0 / 272 tasks done (0%)** · 41 in review · 57 in progress · 6 blocked
 
 ### By phase
 
@@ -84,7 +86,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 |---|---|---|---|---|
 | Phase U · UI first  ◀ NEXT | 0/34 | 21 | 10 | `▓▓▓▓▓▓░░░░` 62% |
 | Phase −1 · Pilot | 0/13 | 0 | 0 | `░░░░░░░░░░` 0% |
-| Phase 0 · Foundations | 0/107 | 19 | 30 | `▓▓░░░░░░░░` 18% |
+| Phase 0 · Foundations | 0/107 | 19 | 31 | `▓▓░░░░░░░░` 18% |
 | Phase 1 · Indonesia MVP | 0/90 | 1 | 16 | `░░░░░░░░░░` 1% |
 | Phase 2 · Depth | 0/22 | 0 | 0 | `░░░░░░░░░░` 0% |
 | Phase 3 · Marketplace & AU | 0/6 | 0 | 0 | `░░░░░░░░░░` 0% |
@@ -97,7 +99,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 | `commerce` | 0/1 | 0 | 0 | — | 20d | `░░░░░░░░░░` 0% |
 | `data` | 0/9 | 1 | 0 | **3** | 45d | `▓░░░░░░░░░` 11% |
 | `economy` | 0/8 | 0 | 1 | **3** | 31d | `░░░░░░░░░░` 0% |
-| `infra` | 0/27 | 5 | 2 | **9** | 82d | `▓▓░░░░░░░░` 19% |
+| `infra` | 0/27 | 5 | 3 | **10** | 82d | `▓▓░░░░░░░░` 19% |
 | `legal` | 0/9 | 0 | 1 | **4** | 36d | `░░░░░░░░░░` 0% |
 | `media` | 0/13 | 1 | 1 | **1** | 67d | `▓░░░░░░░░░` 8% |
 | `merchant` | 0/16 | 2 | 5 | **6** | 64d | `▓░░░░░░░░░` 13% |
@@ -158,6 +160,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
 - **YT-0010** Legal positions register — 3/4 AC
 - **YT-0529** Helios: environment layout and what shares the box — 1/4 AC
+- **YT-0530** Helios: isolation and resource caps — 1/6 AC
 - **YT-0030** Monorepo skeleton — 1/2 AC
 - **YT-0507** `business` and `kyb_document` resource kinds — 0/3 AC
 - **YT-0508** Promote business shapes into contracts — 0/3 AC
@@ -252,12 +255,12 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 - **YT-0026** Secret Manager and KMS keyrings → waiting on YT-0020
 - **YT-0027** Observability: OpenTelemetry, Grafana Cloud, Sentry → waiting on YT-0516
 - **YT-0028** CI pipeline with all gates → waiting on YT-0030
-- **YT-0530** Helios: isolation and resource caps → waiting on YT-0529
 - **YT-0531** Helios: Postgres with a restore that has actually been run → waiting on YT-0530
 - **YT-0532** Helios: deploy pipeline with rollback → waiting on YT-0530, YT-0028
 - **YT-0533** Secrets and keys without a KMS → waiting on YT-0530
 - **YT-0538** Bot-check, OTP and messaging simulators → waiting on YT-0535
 - **YT-0539** Boundary parity suite → waiting on YT-0537
+- **YT-0540** Email and password authentication → waiting on YT-0516
 
 <!-- /AUTO:DASHBOARD -->
 

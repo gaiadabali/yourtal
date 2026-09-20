@@ -1,5 +1,12 @@
 # Phase 0 · Helios deployment target and the simulation seam
 
+> ⚠️ **This repository is PUBLIC as of 2026-09-20.** Infrastructure addresses that used to appear here inline — Helios's IP, its VPS hostname, the jump hosts, the WireGuard hub, and the office IP that `ufw` allowlists for SSH — are now written as `<placeholders>`. The real values live in **`gaiada-setups/access/`**, which is private: `server-inventory.md` and `helios-home-access.md`.
+>
+> **Why this matters more than it looks.** No credential leaked — `.env` has never been committed and no key files are tracked. The disclosure was *targeting information*: taken together these named which box to attack, what it runs, and which sources it trusts. The sharpest item was not the Helios IP, which DNS publishes anyway, but the **combination** of the WireGuard hub's address with the fact that the mesh subnet is SSH-allowlisted on both boxes — that describes a route which bypasses the per-IP allowlist entirely.
+>
+> ⛔ **Scrubbing HEAD does not remove this from git history**, and the repository was public while it was there. A real scrub needs a history rewrite and a force-push, which breaks every clone and is the founder's decision, not mine. **Assume these values are known** and treat the allowlist as what it always was: a control that requires an attacker to *come from* those addresses, not one that depends on them being secret.
+
+
 **Decision, 2026-09-19:** the deployment target is **Helios** (`server-c`, `<helios-ip>`, Ubuntu 24.04, CloudPanel + nginx, 8 vCPU / 31 GB), the existing production box in the sister-company fleet. **All third-party connections are held** until later; every external boundary runs a simulator instead. Auth is ordinary email + password.
 
 This supersedes the GCP/Cloudflare shape in [`phase-0-foundation.md`](phase-0-foundation.md) (YT-0020, 0021, 0022, 0024, 0025, 0026), which is **deferred, not deleted** — a two-region managed deployment is still the right answer for production, and those tasks describe it.

@@ -179,6 +179,20 @@ Two sub-findings, each its own shape:
 
 **Rule: when tightening a shared definition, enumerate every consumer of the definition, not every caller of the thing you were fixing.** The blast radius of a schema is the kind; the blast radius of a rule is the action. They are not the same set, and the narrower one is the one you are thinking about.
 
+## 15. The most dangerous false green came from prose, not from a check
+
+Every other entry in this file is a mechanism that reported success: a cache, a skip, a regex, a guard satisfied by absence. This one was a sentence.
+
+Closing a status report, I wrote _"everything already pushed is green and the app is live."_ The second half was verified. The first had been false for three consecutive commits, and I had not looked. `yourtal-22` caught it.
+
+**The shape is different from a bad check and worse.** A check that covers too little was at least written as a claim; someone decided what it should assert. This was **throat-clearing that happened to contain an assertion** — nothing in the writing of it felt like making one. There was no moment at which a claim was being evaluated, so there was no moment at which it could feel unverified.
+
+That is why it is worth its own entry rather than a footnote to §7. The others are caught by asking "what does this check do with the case it was not shown?". This one is not caught by that question at all, because there is no check. It is caught only by noticing that a summary sentence is a claim.
+
+**Rule: a status line is a claim, and gets the same bar as an assertion in code.** If a report says green, someone looked at green — recently, on this commit, not at a run they remember. "Everything is fine" is the easiest sentence to write and the only one nobody re-reads.
+
+Worse from the session whose stated job is verifying other sessions' claims, which is the other half of why it is recorded here under its author's name rather than in a commit message nobody will open again.
+
 ---
 
 ## The pattern, restated

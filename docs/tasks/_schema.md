@@ -59,6 +59,16 @@ boxes is the claim; it is not the verification. This is not ceremony — every
 gate failure recorded in `docs/13c` was found by someone other than the author,
 and none were visible from reading the assertion.
 
+## Criteria vs. deferrals
+
+`- [ ]` is **a criterion this ticket must meet to be finished**. Nothing else.
+
+Use `- ⏭️` — no checkbox — for **work that belongs to another ticket**. It is a note, not a bar.
+
+**Why this exists.** Both were being written as `- [ ]`, and the validator requires every box ticked before a task may reach `review`. A ticket carrying a deferral note is therefore **permanently short of its own bar and can never be completed**, however finished it is. YT-0101 is the clearest case: both its remaining boxes defer to YT-0102 and YT-0124, so as written it could never leave `doing`. Found by `yourtal-24` on 2026-09-20 — **the rule was creating the trap.**
+
+The test: *if this ticket were otherwise perfect, would this line still be unticked?* If yes, it is not a criterion.
+
 ## Rules
 
 1. **A task is `done` or `review` only when every AC box is ticked.** The validator enforces both.

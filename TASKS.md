@@ -189,7 +189,7 @@ Of the 44 finished: **1 independently verified**, 43 awaiting a verifier. A task
 - **YT-0548** Storage for campaign chapters and video source — 0/6 AC
 - **YT-0550** Player: `Home` does not return the playhead to zero — 0/4 AC
 - **YT-0552** Wire `apps/api` repositories to Postgres — 7/14 AC
-- **YT-0553** API surface for campaign and watch — 10/12 AC
+- **YT-0553** API surface for campaign and watch — 11/12 AC
 - **YT-0556** Health endpoint — 2/3 AC
 - **YT-0565** The ledger schema-drift regex fails open — 5/8 AC
 - **YT-0513** Currency-tagged Money type — 5/6 AC

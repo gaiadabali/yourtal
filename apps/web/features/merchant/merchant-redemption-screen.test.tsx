@@ -48,6 +48,14 @@ describe("MerchantRedemptionScreen", () => {
     vi.restoreAllMocks();
   });
 
+  // YT-0577: this file used to hand-bump these waits to `{ timeout: 3000 }`
+  // / `it(..., 10000)` and STILL failed under load — evidence that a
+  // per-file timeout bump chases a moving target rather than fixing the
+  // class. Every wait below now relies on the suite-wide policy in
+  // `vitest.setup.ts` (`asyncUtilTimeout: 5000`) and `vitest.config.ts`
+  // (`testTimeout: 15000`), which is strictly more generous than the old
+  // local overrides and is proven (not merely intended) to cover the
+  // simulated `PROCESSING_PHASE_DELAY_MS` network delay under contention.
   it("completes a full redemption in two taps — look up, then confirm — and never shows success before processing finishes", async () => {
     const user = userEvent.setup();
     render(<MerchantRedemptionScreen device={device} vouchers={vouchers} />);
@@ -56,11 +64,7 @@ describe("MerchantRedemptionScreen", () => {
     await user.type(screen.getByLabelText("Voucher code"), healthyVoucherFixture.code);
     await user.click(screen.getByRole("button", { name: "Look up voucher" })); // tap 1
 
-    const confirmButton = await screen.findByRole(
-      "button",
-      { name: "Confirm redemption" },
-      { timeout: 3000 },
-    );
+    const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
     expect(screen.queryByText("Redeemed")).not.toBeInTheDocument();
 
     await user.click(confirmButton); // tap 2
@@ -69,15 +73,13 @@ describe("MerchantRedemptionScreen", () => {
     expect(await screen.findByText(/Verifying voucher|Completing redemption/)).toBeInTheDocument();
     expect(screen.queryByText("Redeemed")).not.toBeInTheDocument();
 
-    await waitFor(() => expect(screen.getByText("Redeemed")).toBeInTheDocument(), {
-      timeout: 3000,
-    });
+    await waitFor(() => expect(screen.getByText("Redeemed")).toBeInTheDocument());
 
     const log = readTodayLog(device.id, "2026-09-19");
     expect(log).toHaveLength(1);
     expect(log[0]?.status).toBe("confirmed");
     expect(log[0]?.voucherCode).toBe(healthyVoucherFixture.code);
-  }, 10000);
+  });
 
   it("shows a plain-language, specific message for a wrong-merchant voucher, not just 'invalid'", async () => {
     const user = userEvent.setup();
@@ -87,20 +89,14 @@ describe("MerchantRedemptionScreen", () => {
     await user.type(screen.getByLabelText("Voucher code"), wrongMerchantVoucherFixture.code);
     await user.click(screen.getByRole("button", { name: "Look up voucher" }));
 
-    const confirmButton = await screen.findByRole(
-      "button",
-      { name: "Confirm redemption" },
-      { timeout: 3000 },
-    );
+    const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
     await user.click(confirmButton);
 
-    await waitFor(() => expect(screen.getByText(/is for a different store/i)).toBeInTheDocument(), {
-      timeout: 3000,
-    });
+    await waitFor(() => expect(screen.getByText(/is for a different store/i)).toBeInTheDocument());
     expect(
       screen.getByText(new RegExp(wrongMerchantVoucherFixture.merchantName)),
     ).toBeInTheDocument();
-  }, 10000);
+  });
 
   it("shows already-redeemed with a specific message when the voucher's own status says so", async () => {
     const user = userEvent.setup();
@@ -110,17 +106,11 @@ describe("MerchantRedemptionScreen", () => {
     await user.type(screen.getByLabelText("Voucher code"), alreadyRedeemedVoucherFixture.code);
     await user.click(screen.getByRole("button", { name: "Look up voucher" }));
 
-    const confirmButton = await screen.findByRole(
-      "button",
-      { name: "Confirm redemption" },
-      { timeout: 3000 },
-    );
+    const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
     await user.click(confirmButton);
 
-    await waitFor(() => expect(screen.getByText(/already redeemed/i)).toBeInTheDocument(), {
-      timeout: 3000,
-    });
-  }, 10000);
+    await waitFor(() => expect(screen.getByText(/already redeemed/i)).toBeInTheDocument());
+  });
 
   it("shows a 'not found' message, not a blank screen, for a code that matches nothing", async () => {
     const user = userEvent.setup();
@@ -130,9 +120,7 @@ describe("MerchantRedemptionScreen", () => {
     await user.type(screen.getByLabelText("Voucher code"), "NOSUCHCODE");
     await user.click(screen.getByRole("button", { name: "Look up voucher" }));
 
-    await waitFor(() => expect(screen.getByText("Code not found")).toBeInTheDocument(), {
-      timeout: 3000,
-    });
+    await waitFor(() => expect(screen.getByText("Code not found")).toBeInTheDocument());
   });
 
   it("queues, rather than claims success, when confirming while offline", async () => {
@@ -144,11 +132,7 @@ describe("MerchantRedemptionScreen", () => {
     await user.type(screen.getByLabelText("Voucher code"), healthyVoucherFixture.code);
     await user.click(screen.getByRole("button", { name: "Look up voucher" }));
 
-    const confirmButton = await screen.findByRole(
-      "button",
-      { name: "Confirm redemption" },
-      { timeout: 3000 },
-    );
+    const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
     await user.click(confirmButton);
 
     expect(await screen.findByText("Waiting for connection")).toBeInTheDocument();
@@ -157,5 +141,5 @@ describe("MerchantRedemptionScreen", () => {
     const log = readTodayLog(device.id, "2026-09-19");
     expect(log).toHaveLength(1);
     expect(log[0]?.status).toBe("pending");
-  }, 10000);
+  });
 });

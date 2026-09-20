@@ -1,0 +1,250 @@
+// Package api is the ledger's HTTP surface: it decodes a request, calls the
+// internal/ledger, internal/reward or internal/pricing library the request
+// names, and encodes the result. docs/13a §7: handlers are thin, business
+// logic never lives here.
+//
+// # Money on the wire
+//
+// Every minor-unit amount (points, IDR, AUD) is a JSON STRING of a decimal
+// integer, never a JSON number. A JSON number is a float64 in every client
+// this API will ever have, and float64 loses precision above 2^53 — a value
+// this ledger can reach once points and IDR sen are in the same range. A
+// price quote of "1999.9999999999998" is not a rounding curiosity here, it
+// is a different amount of money than the database holds. Small bounded
+// integers that are never arithmetic (basis points, a rate row's id) stay
+// JSON numbers or strings as suits them; anything that is an amount of
+// currency or points goes through moneyString / parseMoney below, with no
+// exception.
+//
+// # What unit these amounts are in
+//
+// This package does not know, and does not decide. YT-0506 settled that IDR
+// is stored in sen, but the 100x migration of already-stored values has not
+// run and packages/contracts' currency-tagged Money type is mid-flight,
+// so nothing here hardcodes a scale factor or converts anything. An amount
+// arriving over this API is passed to internal/ledger and internal/pricing
+// exactly as given, in whatever minor unit the caller and the current
+// contents of the database already agree on. That is the same ignorance
+// internal/ledger's own package comment describes ("it never needs to know
+// what the integer MEANS") extended one layer out, not a new assumption.
+package api
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/yourtal/services/ledger/internal/httpx"
+	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/pricing"
+)
+
+// API holds the dependencies every handler needs. Constructed once in main
+// and injected, per docs/13a §5 — nothing below reaches for a global.
+type API struct {
+	logger  *slog.Logger
+	ledger  *ledger.Ledger
+	pricing *pricing.Engine
+}
+
+func New(logger *slog.Logger, book *ledger.Ledger, priced *pricing.Engine) *API {
+	return &API{logger: logger, ledger: book, pricing: priced}
+}
+
+// Routes returns the mountable router. main.go mounts it at /v1 after the
+// fixed middleware prefix (RequestID -> RealIP -> Recoverer -> Timeout);
+// auth, Cerbos and idempotency are not yet in that chain (see the 501
+// handlers below), so nothing mounted here may mutate state unauthenticated.
+func (a *API) Routes() chi.Router {
+	r := chi.NewRouter()
+
+	// --- live: reads and pure computations. Neither writes a row nor moves
+	// a balance, so exposing them ahead of authentication is not the same
+	// mistake as an open transfer endpoint would be. See the 501 handlers
+	// below for the routes that DO move money.
+	r.Get("/accounts/{accountID}/balance", a.getBalance)
+	r.Post("/pricing/quote", a.postPricingQuote)
+
+	// --- not yet exposed: these write to the ledger. Following the pattern
+	// services/voucher/cmd/voucher/main.go already set for exactly this
+	// situation (notYetExposed) rather than inventing a second one.
+	r.Post("/transfers", a.notYetExposed(
+		"the transfer API is implemented but not yet exposed: it is waiting on caller "+
+			"authentication and the shared idempotency interceptor, both of which docs/13a "+
+			"section 7 requires IN FRONT of a money-moving handler. Serving it unauthenticated "+
+			"would let any caller move balances between arbitrary accounts"))
+	r.Post("/rewards/grants", a.notYetExposed(
+		"the reward grant API is implemented but not yet exposed: it is waiting on caller "+
+			"authentication and the shared idempotency interceptor (docs/13a section 7), and on "+
+			"a real risk gate to replace reward.AlwaysAllow. Serving it unauthenticated would let "+
+			"any caller mint points against a funding allocation directly"))
+
+	return r
+}
+
+// notYetExposed mirrors services/voucher/cmd/voucher/main.go's handler of the
+// same name and for the same reason: an honest 501 that names its blocker,
+// rather than a route silently missing or — worse — silently open.
+func (a *API) notYetExposed(reason string) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		httpx.WriteError(w, a.logger, http.StatusNotImplemented,
+			"api_error", "not_exposed", reason)
+	}
+}
+
+// --- balance ----------------------------------------------------------
+
+type balanceResponse struct {
+	AccountID string `json:"account_id"`
+	// BalanceMinor is a decimal-integer STRING; see the package comment.
+	BalanceMinor string `json:"balance_minor"`
+}
+
+// getBalance projects a balance. ledger.Balance is a SUM over entries with no
+// stored row to be missing, so an account nobody ever posted to reads back
+// as zero rather than 404 — that is a property of the projection, not a
+// decision this handler makes.
+func (a *API) getBalance(w http.ResponseWriter, r *http.Request) {
+	accountID := chi.URLParam(r, "accountID")
+	if accountID == "" {
+		httpx.WriteError(w, a.logger, http.StatusBadRequest,
+			"invalid_request_error", "missing_account_id", "an account id is required")
+		return
+	}
+
+	balance, err := a.ledger.Balance(r.Context(), accountID)
+	if err != nil {
+		a.logger.Error("balance lookup failed", "account_id", accountID, "error", err)
+		httpx.WriteError(w, a.logger, http.StatusInternalServerError,
+			"api_error", "balance_lookup_failed", "could not project this account's balance")
+		return
+	}
+
+	httpx.WriteJSON(w, a.logger, http.StatusOK, balanceResponse{
+		AccountID:    accountID,
+		BalanceMinor: moneyString(balance),
+	})
+}
+
+// --- pricing quote ------------------------------------------------------
+
+type quoteRequest struct {
+	Currency string `json:"currency"`
+	// SettlementMinor is S, the supplier's declared settlement value, as a
+	// decimal-integer string; see the package comment.
+	SettlementMinor string `json:"settlement_minor"`
+	// DemandMultiplierBps is a small bounded integer (8000..12500), never an
+	// amount of money, so it stays a plain JSON number.
+	DemandMultiplierBps int32 `json:"demand_multiplier_bps"`
+	// At is optional, RFC3339. Empty means "now". Exists so a caller can
+	// price against a specific instant for reconciliation; it is NOT how a
+	// caller backdates a quote to dodge a rate change — RateAt only ever
+	// returns the rate that was actually in force at that instant.
+	At string `json:"at,omitempty"`
+}
+
+type quoteResponse struct {
+	PricePoints           string `json:"price_points"`
+	SettlementMinor       string `json:"settlement_minor"`
+	BackingMicrosPerPoint string `json:"backing_micros_per_point"`
+	BackingRateID         string `json:"backing_rate_id"`
+	DemandMultiplierBps   int32  `json:"demand_multiplier_bps"`
+}
+
+// postPricingQuote computes a price. It never writes anything — Quote reads
+// the currently-effective backing rate and runs pricing.PriceInPoints, both
+// pure given their inputs — so this is a read for the purposes of the
+// authentication line drawn in Routes above.
+func (a *API) postPricingQuote(w http.ResponseWriter, r *http.Request) {
+	var req quoteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpx.WriteError(w, a.logger, http.StatusBadRequest,
+			"invalid_request_error", "malformed_json", "the request body is not valid JSON")
+		return
+	}
+
+	if req.Currency == "" {
+		httpx.WriteError(w, a.logger, http.StatusBadRequest,
+			"invalid_request_error", "missing_currency", "currency is required")
+		return
+	}
+
+	settlementMinor, err := parseMoney(req.SettlementMinor)
+	if err != nil {
+		httpx.WriteError(w, a.logger, http.StatusBadRequest,
+			"invalid_request_error", "invalid_settlement_minor", err.Error())
+		return
+	}
+
+	at := time.Now().UTC()
+	if req.At != "" {
+		parsed, err := time.Parse(time.RFC3339, req.At)
+		if err != nil {
+			httpx.WriteError(w, a.logger, http.StatusBadRequest,
+				"invalid_request_error", "invalid_at", "at must be RFC3339")
+			return
+		}
+		at = parsed
+	}
+
+	quote, err := a.pricing.Quote(r.Context(), req.Currency, settlementMinor, req.DemandMultiplierBps, at)
+	if err != nil {
+		a.writeQuoteError(w, err)
+		return
+	}
+
+	httpx.WriteJSON(w, a.logger, http.StatusOK, quoteResponse{
+		PricePoints:           moneyString(quote.PricePoints),
+		SettlementMinor:       moneyString(quote.SettlementMinor),
+		BackingMicrosPerPoint: moneyString(quote.BackingMicrosPerPoint),
+		BackingRateID:         quote.BackingRateID,
+		DemandMultiplierBps:   quote.DemandMultiplierBps,
+	})
+}
+
+// writeQuoteError maps pricing's sentinel errors to the status a caller can
+// act on, rather than a flat 500 for everything the package can return.
+func (a *API) writeQuoteError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, pricing.ErrNoRateInForce):
+		httpx.WriteError(w, a.logger, http.StatusNotFound,
+			"invalid_request_error", "no_rate_in_force", err.Error())
+	case errors.Is(err, pricing.ErrSettlementNotPositive),
+		errors.Is(err, pricing.ErrMultiplierOutOfBounds),
+		errors.Is(err, pricing.ErrBackingRateNotPositive):
+		httpx.WriteError(w, a.logger, http.StatusBadRequest,
+			"invalid_request_error", "invalid_quote_input", err.Error())
+	case errors.Is(err, pricing.ErrPriceOutOfRange):
+		httpx.WriteError(w, a.logger, http.StatusBadRequest,
+			"invalid_request_error", "price_out_of_range", err.Error())
+	default:
+		a.logger.Error("pricing quote failed", "error", err)
+		httpx.WriteError(w, a.logger, http.StatusInternalServerError,
+			"api_error", "quote_failed", "could not compute a price for this listing")
+	}
+}
+
+// --- money helpers --------------------------------------------------------
+
+// moneyString renders a minor-unit amount as a decimal string. See the
+// package comment for why this is never a JSON number.
+func moneyString(minor int64) string { return strconv.FormatInt(minor, 10) }
+
+// parseMoney is the inverse, with an error a client can act on rather than a
+// generic "invalid number".
+func parseMoney(s string) (int64, error) {
+	if s == "" {
+		return 0, errors.New("an amount is required")
+	}
+	value, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%q is not a decimal integer minor-unit amount: %w", s, err)
+	}
+	return value, nil
+}

@@ -22,7 +22,13 @@ export function setSettlementValue(
   reason: string,
 ): ResultAsync<SettlementValueChange, SetSettlementValueError> {
   return wrapPersistence(
-    listings.updateSettlementValue(merchantId, listingId, newSettlementValueIdr, requestedBy, reason),
+    listings.updateSettlementValue(
+      merchantId,
+      listingId,
+      newSettlementValueIdr,
+      requestedBy,
+      reason,
+    ),
   ).andThen((change) => {
     if (change === null) {
       return errAsync<SettlementValueChange, SetSettlementValueError>({

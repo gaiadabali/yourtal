@@ -45,7 +45,13 @@ beforeAll(async () => {
 async function seedListing(settlementValueIdr: number) {
   const [location] = await db
     .insert(merchantLocations)
-    .values({ id: randomUUID(), merchantId: TENANT, name: "Outlet", address: "Jl. Test", district: "Kemang" })
+    .values({
+      id: randomUUID(),
+      merchantId: TENANT,
+      name: "Outlet",
+      address: "Jl. Test",
+      district: "Kemang",
+    })
     .returning();
   if (location === undefined) throw new Error("failed to seed a merchant_location row");
 

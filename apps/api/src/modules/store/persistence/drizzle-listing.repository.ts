@@ -36,7 +36,10 @@ export class DrizzleListingRepository implements ListingRepository {
       .select({ id: merchantLocations.id })
       .from(merchantLocations)
       .where(
-        and(eq(merchantLocations.merchantId, merchantId), inArray(merchantLocations.id, [...locationIds])),
+        and(
+          eq(merchantLocations.merchantId, merchantId),
+          inArray(merchantLocations.id, [...locationIds]),
+        ),
       );
     // Every requested id must have matched — a subset match means at least
     // one id belongs to nobody, or to a different merchant.

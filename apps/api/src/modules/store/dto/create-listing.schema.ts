@@ -43,7 +43,8 @@ export const createListingSchema = z
     path: ["settlementValueIdr"],
   })
   .refine(
-    (value) => (value.partialRedemptionPolicy === "minimum_spend") === (value.minimumSpendIdr !== null),
+    (value) =>
+      (value.partialRedemptionPolicy === "minimum_spend") === (value.minimumSpendIdr !== null),
     {
       message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
       path: ["minimumSpendIdr"],

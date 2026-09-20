@@ -32,9 +32,7 @@ export type EditListingError = ListingNotFoundError | PersistenceFailedError;
 export type SetSettlementValueError = ListingNotFoundError | PersistenceFailedError;
 
 export type SetListingLifecycleError =
-  | ListingNotFoundError
-  | InvalidLifecycleTransitionError
-  | PersistenceFailedError;
+  ListingNotFoundError | InvalidLifecycleTransitionError | PersistenceFailedError;
 
 export type GetListingError = ListingNotFoundError | PersistenceFailedError;
 

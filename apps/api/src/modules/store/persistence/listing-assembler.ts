@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Listing } from "@yourtal/contracts/listing";
 import { listingSchema } from "@yourtal/contracts/listing";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
-import type { listings} from "./schema/listing.table";
+import type { listings } from "./schema/listing.table";
 import { listingLocations, merchantLocations } from "./schema/listing.table";
 
 export type ListingRow = typeof listings.$inferSelect;

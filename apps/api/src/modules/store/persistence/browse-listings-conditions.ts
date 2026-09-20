@@ -15,8 +15,10 @@ export function browseConditions(filter: BrowseListingsFilter): SQL {
   const conditions = [eq(listings.lifecycleState, PUBLIC_LIFECYCLE_STATE)];
   if (filter.category !== undefined) conditions.push(eq(listings.category, filter.category));
   if (filter.merchantId !== undefined) conditions.push(eq(listings.merchantId, filter.merchantId));
-  if (filter.minPoints !== undefined) conditions.push(gte(listings.priceInPoints, filter.minPoints));
-  if (filter.maxPoints !== undefined) conditions.push(lte(listings.priceInPoints, filter.maxPoints));
+  if (filter.minPoints !== undefined)
+    conditions.push(gte(listings.priceInPoints, filter.minPoints));
+  if (filter.maxPoints !== undefined)
+    conditions.push(lte(listings.priceInPoints, filter.maxPoints));
   if (filter.startingAfter !== undefined) conditions.push(gt(listings.id, filter.startingAfter));
   if (filter.search !== undefined && filter.search.length > 0) {
     // `sql` template, parameterised — not the string-built SQL docs/13

@@ -1,4 +1,9 @@
-import type { Listing, ListingCategory, ListingStatus, PartialRedemptionPolicy } from "@yourtal/contracts/listing";
+import type {
+  Listing,
+  ListingCategory,
+  ListingStatus,
+  PartialRedemptionPolicy,
+} from "@yourtal/contracts/listing";
 
 /** MERCHANT-side visibility (docs/17 section 2, Inventory). Never a customer-facing value. */
 export type ListingLifecycleState = "active" | "paused" | "retired";

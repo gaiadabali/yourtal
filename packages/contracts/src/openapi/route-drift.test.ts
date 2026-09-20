@@ -175,6 +175,10 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
     "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
   "POST /api/{tenantId}/store/listings/{listingId}/retire":
     "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "POST /api/{tenantId}/store/listings/{listingId}/settlement-decrease-requests":
+    "SettlementDecreaseController -- YT-0575, the two-person-approval workflow YT-0574's fix made necessary. Same StoreModule scope as the rest of this ledger's store entries.",
+  "POST /api/{tenantId}/store/listings/{listingId}/settlement-decrease-requests/{requestId}/approve":
+    "SettlementDecreaseController -- YT-0575, the two-person-approval workflow YT-0574's fix made necessary. Same StoreModule scope as the rest of this ledger's store entries.",
 };
 
 describe("business-module route inventory vs route-registry.ts", () => {

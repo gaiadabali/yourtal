@@ -41,10 +41,22 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   // NOT NULL foreign key to `store.listings` (YT-0519) -- clearing it
   // here is the same move `watch.controller.test.ts` makes for
   // `watch.session`, not a cross-module read. The OWNER connection, because
-  // `yourtal_app` cannot DELETE this table (see `OWNER_URL`'s comment above).
-  await createAppDb(process.env["DATABASE_OWNER_URL"] ?? OWNER_URL).execute(
-    sql`DELETE FROM voucher.vouchers`,
-  );
+  // `yourtal_app` cannot DELETE these tables (see `OWNER_URL`'s comment
+  // above), and on `voucher.code_custody` it holds no grant at all.
+  //
+  // CHILD-FIRST, and the order is the foreign-key graph rather than a guess:
+  // refund -> capture -> authorization -> event -> code_custody -> vouchers.
+  // A bare `DELETE FROM voucher.vouchers` is what CI rejected on 1957fb5 --
+  // it passed locally only because a scratch database that has been migrated
+  // but never SEEDED has no custody rows to violate the constraint. An empty
+  // child table and an absent foreign key look identical from the parent.
+  const owner = createAppDb(process.env["DATABASE_OWNER_URL"] ?? OWNER_URL);
+  await owner.execute(sql`DELETE FROM voucher.refund`);
+  await owner.execute(sql`DELETE FROM voucher.capture`);
+  await owner.execute(sql`DELETE FROM voucher.authorization`);
+  await owner.execute(sql`DELETE FROM voucher.event`);
+  await owner.execute(sql`DELETE FROM voucher.code_custody`);
+  await owner.execute(sql`DELETE FROM voucher.vouchers`);
   await db.delete(listingPriceRevisions);
   await db.delete(listingLocations);
   await db.delete(listings);

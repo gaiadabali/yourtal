@@ -371,7 +371,7 @@
 - [ ] ⚠️ **Until this lands, every `apps/web` screen is unverified against real data.** The UI is substantially built; it has just never met the backend
 
 ### YT-0554 · The API must not connect to Postgres as a superuser
-`doing` · P0 · platform · 2d · dep: YT-0552
+`review` · P0 · platform · 2d · dep: YT-0552
 
 - [x] ✅ **Done and verified independently 2026-09-20.** `DATABASE_URL` is now `yourtal_app`, `DATABASE_OWNER_URL` is the owner, and `has_table_privilege` reports **owner `t`, app `f`** on `ledger.entry`. That write would have succeeded from application code before this change
 - [x] The boot check **queries `pg_roles` rather than parsing the username out of the URL** — a username is what someone typed, the catalogue is what the server will actually permit
@@ -379,12 +379,17 @@
 - [x] Atlas reads `DATABASE_OWNER_URL` with **no fallback to `DATABASE_URL`**, because a fallback would silently re-create the bug this ticket exists to fix
 - [x] **CI was running everything as the superuser too**, so the grants were decorative there as well. `integration.yml` now uses the app role, with the owner only for schema bootstrap
 - [x] Proved by breaking it **twice**, confirming the break landed each time — including sabotaging the new test's own assertion and watching 2 of 3 fail. **A test for a control that cannot fail is worth nothing**
-- **Verified 2026-09-20: `pg_roles` shows `yourtal` with `rolsuper = t` and `rolbypassrls = t`, and `.env` points `DATABASE_URL` at it.** Only `apps/api/vitest.config.ts` uses the least-privilege `yourtal_app`
-- ⚠️ **So role separation is enforced in tests and bypassed by the running application.** Every grant boundary built so far is decorative at runtime: `REVOKE ALL ON SCHEMA ledger FROM yourtal_app`, `ledger.daily_proof` being INSERT/SELECT only so a day can be proved once, the append-only entry grants, the frozen `campaign.terms_version`. A superuser connection ignores all of it, and **`BYPASSRLS` means row-level security will not apply either, the moment RLS exists**
-- This is the eighth instance of the `docs/13c` pattern and the most expensive shape of it: not a gate that fails to check, but **a control that was built, tested, and then not used**
-- [ ] Two URLs: **Atlas keeps owner DDL rights for migrations; the application gets `yourtal_app` and nothing more**
-- [ ] A boot-time assertion that the application's connection is **not** a superuser and does **not** hold `BYPASSRLS`, failing loudly — the same rule the driver seam applies to `live` without a credential
-- [ ] ⚠️ **Prove it by breaking it**, and confirm the break lands: with the app role in place, a write to `ledger.entry` from the app must be refused. A green suite here proves nothing, because it is green today
+- [x] Two URLs: **Atlas keeps owner DDL rights for migrations; the application gets `yourtal_app` and nothing more** — `packages/db/scripts/atlas.mjs` reads `DATABASE_OWNER_URL` and refuses to run without it; `packages/db/src/database-urls.ts` holds the per-role split
+- [x] A boot-time assertion that the application's connection is **not** a superuser and does **not** hold `BYPASSRLS`, failing loudly — the same rule the driver seam applies to `live` without a credential. `apps/api/src/shared/persistence/assert-unprivileged-role.ts`, called from `persistence.module.ts` in `OnApplicationBootstrap`
+- [x] ⚠️ **Prove it by breaking it**, and confirm the break lands: with the app role in place, a write to `ledger.entry` from the app must be refused. `packages/db/src/ledger-constraints.test.ts` asserts the app role is refused on `ledger.entry`; `assert-unprivileged-role.test.ts` asserts the owner URL is rejected by the boot check, so the assertion cannot pass vacuously
+
+**Verification, 2026-09-20 (`yourtal-24`, independent of the session that did the work).** Both suites run in isolation: `assert-unprivileged-role.test.ts` 3/3, `ledger-constraints.test.ts` 10/10. Taken further than the suites, straight to the catalogue — `pg_roles` now reports `yourtal_app` as `rolsuper = f, rolbypassrls = f`, and `has_table_privilege('yourtal_app','ledger.entry','INSERT')` is **false** while the owner's is **true**. The control is live in the running application, not only in the tests.
+
+**The finding that opened this ticket, and why the bullets below are past tense.** Before the fix, `pg_roles` showed `yourtal` with `rolsuper = t` and `rolbypassrls = t`, and `.env` pointed `DATABASE_URL` at it. Only `apps/api/vitest.config.ts` used the least-privilege `yourtal_app`.
+
+- **So role separation was enforced in tests and bypassed by the running application.** Every grant boundary built to that point was decorative at runtime: `REVOKE ALL ON SCHEMA ledger FROM yourtal_app`, `ledger.daily_proof` being INSERT/SELECT only so a day can be proved once, the append-only entry grants, the frozen `campaign.terms_version`. A superuser connection ignored all of it, and **`BYPASSRLS` meant row-level security would not have applied either, the moment RLS existed.** **Closed 2026-09-20 — this is no longer true of the running app**
+- This was the eighth instance of the `docs/13c` pattern and the most expensive shape of it: not a gate that fails to check, but **a control that was built, tested, and then not used**
+- ⚠️ **The ticket itself then reproduced the pattern one level up.** The work landed, but the three acceptance boxes were left unticked as duplicates of the six above them, and the finding bullets were left in the present tense. So the board showed **6/9 `doing`** on a closed risk-45 item, and the entry read as a live superuser vulnerability for a day. **An inaccurate ticket is inaccurate in both directions** — this project has been watching for the optimistic tick, and was bitten by the pessimistic one
 
 ### YT-0555 · The schema-drift gate does not cover the business module
 `todo` · P0 · platform · 1d · dep: YT-0552

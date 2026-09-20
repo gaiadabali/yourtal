@@ -29,3 +29,9 @@ packages/media/fixtures/
 # Agent git worktrees — full checkouts of this repo inside itself. Prettier
 # walked into them and reported every file twice over.
 .claude/worktrees/
+
+# Rendered by gaiada-setups/tools/sync-deploy-config.py from the deploy
+# registry, and written identically to every branch. Prettier reflowing it
+# would make the next `--apply` see a diff and rewrite the file, so the two
+# tools would fight over it on every run.
+.gaiadeploy.yml

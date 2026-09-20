@@ -1,0 +1,20 @@
+# .gaiadeploy.yml — yourtal
+#
+# IDENTICAL ON EVERY BRANCH, on purpose. The poller reads this file from its own
+# DEPLOY_BRANCH (delphi=staging, helios=production) and resolves targets with
+# cfg.get(env) filtered on server, so each box ignores the other's block. Keeping
+# both here is what makes a main -> staging / main -> production promotion PR a
+# clean fast-forward instead of a config rewrite.
+#
+# Generated from gaiada-setups/_data/deploy-registry.yml. Edit there, then run
+# tools/sync-deploy-config.py — hand edits will be overwritten.
+
+# No staging target — nothing on Delphi serves this repo.
+# no Delphi site provisioned; Helios is this project's target
+
+production:
+  - server: helios
+    site_user: uyourtal
+    domain: yourtal.gaiada.com
+    type: node
+    pm2_name: yourtal-web

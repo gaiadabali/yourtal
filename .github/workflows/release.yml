@@ -1,0 +1,104 @@
+# Publish the deploy artifact Helios's poller installs — YT-0532, decision S-1.
+#
+# THE DIVISION OF LABOUR. CI proves and publishes; the poller pulls and
+# installs. They are not alternatives. `gaiada-poll` on Helios watches this
+# repository for a release tagged `deploy/production-*`, verifies the
+# checksum, and hands the tarball to `gaiada-deploy`, which does the
+# releases/ + symlink swap and reloads pm2. Nothing here reaches into the
+# server, and the server opens no port for us.
+#
+# WHY PULL AND NOT PUSH. Helios permits SSH per source IP, and that allowlist
+# is what protects the 30 live client sites on the box. GitHub runners egress
+# from thousands of rotating addresses, so push-deploy means opening 22
+# broadly — discarding the control in order to automate the thing it
+# protects. Recorded as decision S-1 in docs/16.
+#
+# THE GATE IS UPSTREAM. The poller installs whatever it is handed, so this
+# workflow must not publish from a red tree. It re-runs the checks rather
+# than trusting that some earlier run was green: a release is exactly the
+# moment `docs/13d` §7 warns about, where a cached or assumed pass would
+# authorise something.
+name: Release
+
+on:
+  push:
+    branches: [production]
+    paths-ignore:
+      - "docs/**"
+      - "TASKS.md"
+      - "**/*.md"
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish deploy/production
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Not a formality. See the header: the poller installs what it is given,
+      # so this is the last point at which a broken tree can be refused.
+      - name: Gate — line endings, formatting, lint, typecheck, board
+        run: |
+          pnpm check:eol
+          pnpm format:check
+          pnpm exec turbo run typecheck
+          pnpm exec turbo run lint
+          node scripts/tasks.mjs --check
+
+      - name: Build the web app
+        run: pnpm --filter @yourtal/web build
+
+      # `output: "standalone"` emits a flat, self-contained server. The static
+      # and public directories are NOT included by Next and have to be copied
+      # in by hand — a documented sharp edge, and the usual cause of a
+      # standalone deploy that serves HTML with no CSS.
+      - name: Assemble the artifact
+        run: |
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/yourtal-web"
+          mkdir -p "$STAGE"
+          cp -r apps/web/.next/standalone/. "$STAGE"/
+          mkdir -p "$STAGE/apps/web/.next"
+          cp -r apps/web/.next/static "$STAGE/apps/web/.next/static"
+          if [ -d apps/web/public ]; then cp -r apps/web/public "$STAGE/apps/web/public"; fi
+          tar -czf "$RUNNER_TEMP/yourtal-web.tar.gz" -C "$STAGE" .
+          cd "$RUNNER_TEMP" && sha256sum yourtal-web.tar.gz > yourtal-web.tar.gz.sha256
+          ls -l "$RUNNER_TEMP"/yourtal-web.tar.gz*
+
+      # gaiada-deploy requires BOTH assets and refuses a release missing
+      # either: it selects the first *.tar.gz and the first *.sha256, then
+      # compares the sum before extracting.
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="deploy/production-$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "Automated deploy artifact for Helios from ${GITHUB_SHA}." \
+            "$RUNNER_TEMP/yourtal-web.tar.gz" \
+            "$RUNNER_TEMP/yourtal-web.tar.gz.sha256"
+          echo "published $TAG"

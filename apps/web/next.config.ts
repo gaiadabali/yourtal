@@ -7,6 +7,21 @@ const config: NextConfig = {
   // packages/* ship TypeScript source via subpath exports (no barrel files, 13b §5).
   transpilePackages: ["@yourtal/ui", "@yourtal/contracts"],
   typedRoutes: true,
+  // Self-contained server bundle for deployment (YT-0532, decision S-1).
+  //
+  // Required, not a preference: this is a pnpm WORKSPACE, so node_modules is a
+  // tree of symlinks into a content-addressed store. A tarball of it does not
+  // survive being moved to another machine, and the deploy artifact has to.
+  // `standalone` emits .next/standalone with a server.js and only the files
+  // actually reached. It is NOT flat — it keeps a .pnpm tree with 26 internal
+  // symlinks — but measured 2026-09-20, none of them point outside the
+  // bundle, so tar preserves them and they resolve after extraction. That is
+  // the property that matters, and it is the one to re-check if a future
+  // pnpm or Next version changes how the trace is laid out.
+  //
+  // It also keeps the artifact small enough that the checksum-verified
+  // download gaiada-deploy performs stays quick.
+  output: "standalone",
 };
 
 // Bundle-analyzer report for YT-0404 (perf budget harness). Opt-in only —

@@ -10,6 +10,21 @@
 #
 # Ports are deliberately in the 26xxx range: this machine already runs
 # Postgres for other projects on 5432, 15432, 55499 and 55510.
+#
+# Local voucher keyring: `voucher-keygen` below generates one automatically
+# into the `yourtal-voucher-keys` volume the first time this stack comes up,
+# so `pnpm dev:up` alone is enough — there is nothing to run by hand. To
+# regenerate a key on purpose (never as a rotation procedure — see
+# services/voucher/internal/keyring for that):
+#
+#   docker compose stop voucher
+#   docker volume rm yourtal-voucher-keys
+#   docker compose up -d voucher-keygen voucher
+#
+# The key never lives under this repo. services/voucher/internal/keyring
+# refuses to load a master key that has a `.git` ancestor, by design, so it
+# is generated straight into the named volume instead of anywhere a
+# `git add -A` could ever reach.
 
 services:
   postgres:
@@ -128,8 +143,123 @@ services:
       timeout: 3s
       retries: 20
 
+  # --- YT-0517 / docs/15's Phase 1 deployables #1 and #2: the two services
+  # that actually move money. Both were previously absent from this file
+  # entirely, which meant `pnpm dev:up` brought up everything AROUND them
+  # and nothing able to call them.
+
+  ledger:
+    build:
+      context: ./services/ledger
+      dockerfile: Dockerfile
+      # The Dockerfile's healthcheck probe lives under infra/healthcheck,
+      # not inside this service's own tree — see that package's comment.
+      additional_contexts:
+        healthcheck: ./infra/healthcheck
+    image: yourtal/ledger:local
+    container_name: yourtal-ledger
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # The yourtal_ledger credential — never yourtal_app (no grant on the
+      # ledger schema at all, infra/postgres/init/01-schemas.sql) and never
+      # the yourtal superuser. Connecting as either would be YT-0554's bug
+      # one layer down. Local-only password, created by that same init
+      # script.
+      LEDGER_DATABASE_URL: postgres://yourtal_ledger:ledger_local_only@postgres:5432/yourtal
+      # 0.0.0.0, not the binary's loopback-only default: a bind to
+      # 127.0.0.1 inside this container's network namespace is invisible to
+      # the port published below, which arrives on a different interface.
+      LEDGER_ADDR: 0.0.0.0:3010
+    ports:
+      - "127.0.0.1:26910:3010"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck", "http://127.0.0.1:3010/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Generates the voucher service's master keyring on first run and then
+  # exits. internal/keyring.FromDirectory (services/voucher) refuses to load
+  # a master key that lives inside a git working tree — deliberately, so a
+  # dev key can never be one `git add -A` away from being committed — so
+  # this writes into a named DOCKER VOLUME instead of anything under this
+  # repo. The volume is not the repo; nothing it holds has an ancestor
+  # `.git`, so the control that refuses in-tree keys does not fire and does
+  # not need to be worked around.
+  #
+  # A developer never has to run this by hand: `pnpm dev:up` brings it up
+  # with everything else, `voucher` waits for it via
+  # `condition: service_completed_successfully`, and it is a no-op on every
+  # run after the first (see the `if` in `command` below). See "Local
+  # voucher keyring" in this file's own comments at the top for what to do
+  # if a key needs regenerating.
+  voucher-keygen:
+    image: alpine:3.22
+    container_name: yourtal-voucher-keygen
+    volumes:
+      - yourtal-voucher-keys:/keys
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -eu
+        if [ -f /keys/voucher_code.v1.key ]; then
+          echo "voucher_code.v1.key already present, leaving it alone"
+        else
+          head -c 32 /dev/urandom | od -An -vtx1 | tr -d ' \n' > /keys/voucher_code.v1.key
+          echo "generated a dev voucher_code.v1.key"
+        fi
+
+  voucher:
+    build:
+      context: ./services/voucher
+      dockerfile: Dockerfile
+      additional_contexts:
+        healthcheck: ./infra/healthcheck
+    image: yourtal/voucher:local
+    container_name: yourtal-voucher
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      voucher-keygen:
+        condition: service_completed_successfully
+    environment:
+      # The yourtal_voucher credential (packages/db/migrations/
+      # …_voucher_custody.sql) — the same reasoning as the ledger's
+      # LEDGER_DATABASE_URL above applies here without change.
+      VOUCHER_DATABASE_URL: postgres://yourtal_voucher:voucher_local_only@postgres:5432/yourtal
+      VOUCHER_ADDR: 0.0.0.0:3011
+      # Where the master keyring landed. loadKeys() in
+      # services/voucher/cmd/voucher/main.go refuses to boot without this —
+      # by design, see that file's package comment — so a missing or empty
+      # volume fails the container rather than serving with no key.
+      VOUCHER_KEY_DIR: /keys
+    volumes:
+      # Read-only: this service opens ciphertext with these keys, it never
+      # needs to write one. Rotation is a deliberate, separate operation
+      # (docs/15 rule and services/voucher/internal/keyring's Versions),
+      # not something the running service should be able to do to its own
+      # key material.
+      - yourtal-voucher-keys:/keys:ro
+    ports:
+      - "127.0.0.1:26911:3011"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck", "http://127.0.0.1:3011/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
 volumes:
   yourtal-pgdata:
     name: yourtal-pgdata
   yourtal-minio:
     name: yourtal-minio
+  # The voucher master keyring. Deliberately its own volume rather than a
+  # path under yourtal-pgdata or anything bind-mounted from this repo — see
+  # the voucher-keygen service above for why "outside the git working tree"
+  # is a hard requirement, not a preference.
+  yourtal-voucher-keys:
+    name: yourtal-voucher-keys

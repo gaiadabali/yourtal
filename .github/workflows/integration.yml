@@ -39,6 +39,18 @@ on:
       - ".github/workflows/integration.yml"
   push:
     branches: [main]
+    # Documentation cannot break a Postgres-backed suite, and this is the most
+    # expensive workflow in the repo — it stands up Postgres, Cerbos and MinIO
+    # and runs every Go and TypeScript suite.
+    #
+    # Measured 2026-09-20: of 86 commits that day, **38 (44%) changed only
+    # docs/ or TASKS.md**, and every one of them ran this job in full. That is
+    # the largest single line item in an Actions bill the founder has flagged
+    # as "low and dangerous", and it bought nothing.
+    paths-ignore:
+      - "docs/**"
+      - "TASKS.md"
+      - "**/*.md"
 
 concurrency:
   group: integration-${{ github.event.pull_request.number || github.ref }}

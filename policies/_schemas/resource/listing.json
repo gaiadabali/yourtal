@@ -4,7 +4,7 @@
   "description": "A store listing: settlement value S, stock, redemption policy.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["businessId", "isMaterialSettlementDecrease"],
+  "required": ["businessId"],
   "properties": {
     "businessId": { "type": "string" },
     "isMaterialSettlementDecrease": {

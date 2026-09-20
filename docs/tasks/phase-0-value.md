@@ -102,7 +102,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - Held to the classification/valuation line: no backing rate, no coverage ratio, no currency-per-point arithmetic anywhere
 
 ### YT-0044 · Invariant checker and daily proof
-`review` · P0 · value · 3d · dep: YT-0042
+`doing` · P0 · value · 3d · dep: YT-0042
 
 - [x] Continuous job proves every transfer balances — **every 15 minutes in `cmd/ledger`, not nightly**, because a nightly checker leaves a whole day in which the ledger is wrong and nobody knows
 - [x] **"Every cached balance matches entries" is satisfied structurally: there are no cached balances.** `Balance` is a projection over entries, so the invariant is unfalsifiable because the thing it guards against was designed out. Recorded rather than quietly ticked, because a criterion that is true by absence and one that is true by checking are not the same claim
@@ -112,6 +112,8 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [x] Any imbalance pages a human; it does not merely log. `Alerter` is a **required constructor argument**, so a log-only checker cannot be built — the version that can only log is the version that ships. The placeholder is named `LoggingAlerter` for what it is
 - [x] **The tamper test uses a superuser connection**, because the ledger role deliberately cannot alter an entry — the tamper has to outrank the control being tested, or the test proves the grant rather than the proof
 - [x] ⚠️ **Two tests initially skipped and were fixed rather than accepted** — the tamper test and the prove-once test, the two that matter most, in the suite whose entire point is that a silent skip proves nothing. Each now takes an exclusive historical day and cleans up after itself. **The fix is cleanup, not a skip.** 11 tests, zero skips, repeatable
+- [ ] ⚠️ **Held back from `review` on 2026-09-20 by YT-0567.** This ticket's proof is its test suite, and part of that suite is **non-deterministic across package boundaries**: `TestInvariantCheckerFindsNoImbalance` scans the whole ledger while `internal/proof` deliberately unbalances it, and the two packages share one Postgres under a concurrent `go test`. The isolation this ticket claims — _"an exclusive historical day and cleans up after itself"_ — holds **within** the proof package and not **between** packages
+- [ ] ⚠️ The production checker is not implicated; the evidence for it is. **A ticket whose entire claim is "the proof runs and cannot silently skip" cannot be verified by a suite that fails depending on scheduling.** Re-offer for review once YT-0567 lands
 
 ### YT-0045 · Reward Engine skeleton
 `doing` · P0 · value · 5d · dep: YT-0042

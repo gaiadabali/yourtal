@@ -288,7 +288,16 @@ if (errors.length) {
 
 const START = "<!-- AUTO:DASHBOARD -->";
 const END = "<!-- /AUTO:DASHBOARD -->";
-const src = readFileSync(DASHBOARD, "utf8");
+// Normalise to LF on READ, so the generated file cannot inherit CRLF from
+// whatever last touched it. `.gitattributes` declares TASKS.md as eol=lf,
+// and a writer that PRESERVES the endings it finds quietly defeats that
+// declaration: one CRLF write upstream and every regeneration keeps it.
+//
+// Not hypothetical — on 2026-09-20 two sessions hit check:eol failures on
+// files in this cluster, and the propagator was that preserve-what-you-find
+// pattern copied through a dozen ad-hoc edit scripts. Preserving is the
+// wrong default when the correct ending is DECLARED rather than inferred.
+const src = readFileSync(DASHBOARD, "utf8").split(/\r\n/).join("\n");
 const a = src.indexOf(START);
 const b = src.indexOf(END);
 if (a === -1 || b === -1) {

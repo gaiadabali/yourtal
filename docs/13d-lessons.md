@@ -207,6 +207,35 @@ What closed it was the founder flipping visibility back to private. Not my commi
 
 This is §15's shape in a new place. There the false claim was prose; here it was a real commit that really did what it said — to a branch nobody could read.
 
+## 17. When a break-it proof does not break, find out why before concluding the control is sound
+
+`yourtal-24` proved new campaign tests by breaking them, and the first two sabotages **failed to land**. Adding `draft` to `VISIBLE_STATES` left the suite green. Making `publicStatusOf` return `active` for a draft left it green too. Only breaking **both** turned three tests red.
+
+A non-public campaign is hidden by **two independent controls that mask each other**: the repository filters `draft` in SQL, so the mapping never sees one; and the mapping returns `undefined`, so the row drops even if the SQL passes it. Each makes the other unprovable.
+
+**That is good design with a trap inside it.** A future change removing one belt leaves the suite green while halving the protection — and the suite will go on being green for exactly as long as the second belt holds.
+
+This completes a pair with §14. There, **two fixes landed in one commit and one masked the other**, so the tests verified the pair rather than the parts. Here, **two controls that predate each other mutually mask**, so a sabotage that fails to land is evidence about the system rather than about the sabotage.
+
+**Rule: a sabotage that does not break the test is a finding, not a failed attempt.** The instinct is to assume the sabotage was wrong and try a different one; the discipline is to ask what else is holding the line. `yourtal-24` found this only by refusing that instinct twice.
+
+`yourtal-22` drew the sharper operational consequence when relaying it to their voucher agent: **a masked tenant predicate fails toward a leak that looks fixed**, which is worse than this one, where both belts fail toward safety.
+
+## 18. A writer that preserves what it finds defeats a declaration
+
+`.gitattributes` declares these files `eol=lf`. Two sessions hit `check:eol` failures on files in this cluster, and the propagator was mine: a dozen ad-hoc edit scripts all carrying `const nl = raw.includes("
+") ? "
+" : "
+"`, preserving whatever endings they found.
+
+Preserving is the right default when the correct ending is **unknown**. It is the wrong default when the correct ending is **declared** — one CRLF write upstream and every subsequent regeneration faithfully keeps it, including `scripts/tasks.mjs`, which regenerates `TASKS.md` before every commit.
+
+Fixed at the one committed writer: `tasks.mjs` now normalises on read, so it **heals** CRLF rather than propagating it. Sabotage-proved — forced `TASKS.md` to CRLF, guard caught 304, regenerated, guard clean.
+
+**Rule: where an attribute declares the correct form, a writer normalises to it rather than inheriting it.** Inheriting makes every writer a carrier.
+
+---
+
 ---
 
 ## The pattern, restated

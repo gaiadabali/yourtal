@@ -28,6 +28,8 @@ Format and rules: [`docs/tasks/_schema.md`](docs/tasks/_schema.md).
 | ✅ **YT-0506 — decided: IDR is stored in sen** | **Founder decision 2026-09-20.** Sen is uncommon in daily use but **banking uses it** (`Rp 1.000,26`), which matches ISO 4217 and the original intent of `docs/12`/`docs/18`. **This settles the currency, not the processor** — what Xendit accepts is still unconfirmed, and that conversion belongs in the **PSP adapter**, exactly as YT-0537 already assumes. The migration is a **100× change to every stored and fixture IDR value** and runs as one unit of work behind the drift test. |
 | 🌐 **All that is left of the cloud accounts is a domain** | **YT-0020** (GCP) and **YT-0025** (Cloudflare) are **deferred** — Helios replaces them and they now gate nothing. The one real remnant is **a domain and DNS**; a subdomain on a domain you already own carries us until then. |
 | ✅ **Nothing is blocked on an account signup any more**               | The full stack runs locally: **Postgres · Cerbos · Valkey · Zitadel (real OIDC) · MinIO (S3)**. Eight tasks were re-parented off the cloud chain onto YT-0516 — they needed _a_ service, not a _managed_ one. Cloud tasks now cover **deployment only**. `pnpm dev:up`.                                                                                                                                                                                                                                                                                                                                                         |
+| 🖥️ **Helios is connected, surveyed, and it is in Jakarta** | Reached **directly** 2026-09-20 from the office IP — ufw rule 5 allowlists `<office-ip>`, so no jump host was needed. `server-c`, Ubuntu 24.04.5, **8 cores / 31 GB (22 free) / 166 GB disk free**. **Residency evidence points to Jakarta, Indonesia**: `ipinfo` → Jakarta + AS47583, host `<helios-vps-hostname>`, **14.4 ms to Bandung, 169.7 ms to Sydney**. If confirmed, Indonesian data is onshore and **Australian data becomes an APP 8 cross-border disclosure — on the primary market's main path**. One Hostinger billing-page check closes **YT-0534**, the oldest blocker on this board. |
+| 🔑 **Two Helios findings that change the plan** | **1. Infisical is already self-hosted and running** (`/opt/infisical-core` v0.43.121, active). **YT-0533 was written as "secrets without a KMS" and that premise is wrong** — the question shrinks to whether to adopt the one that is there, which is shared with the client sites and the NOW platform, so it carries risk 39's blast-radius argument applied to credentials. **2. The box is more crowded than recorded**: nginx serves **30 live client hostnames**, plus NOW's 6 containers, sGTM, MariaDB, a host Postgres and CloudPanel. **No `26xxx` port is in use**, so YourTal's port scheme transfers unchanged, and `PORT=3001` avoids the `node` already on 3000. |
 | ⚠️ **What genuinely cannot be simulated** | **1. Where Helios physically sits** (YT-0534) — a fact about a rented box, and it decides whether real Australian or Indonesian personal data may ever land on it. **2. Legal** — PSE registration, notaris, entity formation. **3. Real people** — simulated users cannot tell you whether anyone will watch twenty minutes. Everything else now has a simulator, and **every simulator can be driven into failure** (YT-0536). |
 | ⚠️ **The value chain is proven in tests, and is not yet wired into the running system** | Partner buys points → allocation + reserve + `point_purchase` → user completes a campaign → risk gate, velocity caps, drawdown, ledger post, grant log in one transaction → hard-stop at zero. **YT-0044** proves it every 15 minutes with a write-once daily Merkle root, all against real Postgres. **But this row used to read "the value chain and its proof both run", and that was true of the Go test suites rather than of the product.** Relayed by `yourtal-22` and verified here: `services/ledger/cmd/ledger/main.go` registers exactly **`/healthz` and a 404** — the reward engine, pricing engine, chart of accounts and transfer API have **no HTTP caller at all** — and `apps/api` mentions "ledger" and "voucher" only in comments and Postgres role names, with **no `LEDGER_BASE_URL`, no client and no config anywhere**. The same week's lesson, one level up: a claim can be true of the tests and false of the system. `yourtal-22`'s agents are closing it now. |
 | 🔐 **A merchant could have captured another merchant's hold** | Found by `yourtal-22` exposing `/v1/vouchers/{authorize,capture,void,refund}`, **verified here against `main`**: the authorization query is `WHERE id = $1 AND state = 'held' AND expires_at > now()` — **no merchant predicate**. Correct for the invariant the domain tests assert, and false the moment the id is client-supplied over HTTP. Proved by disabling the new check: **a stranger's signed capture succeeded and returned a receipt.** Fixed at the HTTP boundary with the same refusal a missing id gets, so it cannot be used to enumerate. **The query is still unscoped** — safe because one caller checks, which is a convention rather than a constraint. **YT-0571**, risk 50. Two smaller siblings of the same shape: **YT-0572** (a refusal message that reveals which check failed) and **YT-0573** (nothing ever marks a voucher `expired`, so the portal and reconciliation read a stale `state`). |
@@ -74,7 +76,7 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
-**0 / 272 tasks done (0%)** · 41 in review · 55 in progress · 6 blocked
+**0 / 272 tasks done (0%)** · 41 in review · 56 in progress · 6 blocked
 
 ### By phase
 
@@ -82,7 +84,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 |---|---|---|---|---|
 | Phase U · UI first  ◀ NEXT | 0/34 | 21 | 10 | `▓▓▓▓▓▓░░░░` 62% |
 | Phase −1 · Pilot | 0/13 | 0 | 0 | `░░░░░░░░░░` 0% |
-| Phase 0 · Foundations | 0/107 | 19 | 29 | `▓▓░░░░░░░░` 18% |
+| Phase 0 · Foundations | 0/107 | 19 | 30 | `▓▓░░░░░░░░` 18% |
 | Phase 1 · Indonesia MVP | 0/90 | 1 | 16 | `░░░░░░░░░░` 1% |
 | Phase 2 · Depth | 0/22 | 0 | 0 | `░░░░░░░░░░` 0% |
 | Phase 3 · Marketplace & AU | 0/6 | 0 | 0 | `░░░░░░░░░░` 0% |
@@ -95,7 +97,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 | `commerce` | 0/1 | 0 | 0 | — | 20d | `░░░░░░░░░░` 0% |
 | `data` | 0/9 | 1 | 0 | **3** | 45d | `▓░░░░░░░░░` 11% |
 | `economy` | 0/8 | 0 | 1 | **3** | 31d | `░░░░░░░░░░` 0% |
-| `infra` | 0/27 | 5 | 1 | **9** | 82d | `▓▓░░░░░░░░` 19% |
+| `infra` | 0/27 | 5 | 2 | **9** | 82d | `▓▓░░░░░░░░` 19% |
 | `legal` | 0/9 | 0 | 1 | **4** | 36d | `░░░░░░░░░░` 0% |
 | `media` | 0/13 | 1 | 1 | **1** | 67d | `▓░░░░░░░░░` 8% |
 | `merchant` | 0/16 | 2 | 5 | **6** | 64d | `▓░░░░░░░░░` 13% |
@@ -155,6 +157,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 ### In progress
 
 - **YT-0010** Legal positions register — 3/4 AC
+- **YT-0529** Helios: environment layout and what shares the box — 1/4 AC
 - **YT-0030** Monorepo skeleton — 1/2 AC
 - **YT-0507** `business` and `kyb_document` resource kinds — 0/3 AC
 - **YT-0508** Promote business shapes into contracts — 0/3 AC
@@ -229,7 +232,6 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 - **YT-0025** `infra` Cloudflare: domains, CDN, R2, Stream, Turnstile · 3d
 - **YT-0050** `economy` Name the economy owner · 2d
 - **YT-0505** `infra` Reconcile pnpm-lock.yaml across sessions · 1h
-- **YT-0529** `infra` Helios: environment layout and what shares the box · 2d
 - **YT-0558** `platform` Test configs hard-code `DATABASE_URL`, which defeats sabotage · 1h
 - **YT-0569** `infra` No CI has ever run, and the workflows watch a branch that does not exist · 2d
 - **YT-0543** `data` Geography taxonomy and boundary data · 5d

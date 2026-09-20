@@ -11,11 +11,30 @@ This supersedes the GCP/Cloudflare shape in [`phase-0-foundation.md`](phase-0-fo
 ## The target
 
 ### YT-0529 · Helios: environment layout and what shares the box
-`todo` · P0 · infra · 2d · dep: —
+`doing` · P0 · infra · 2d · dep: —
+
+**Surveyed live 2026-09-20 over SSH.** `server-c` / `<helios-vps-hostname>` — Ubuntu 24.04.5 LTS, x86_64, **8 cores, 31 GB RAM (9 used, 22 available), 387 GB disk with 166 GB free**, load average ~1.0. Connection is **direct**, not via the jump host: ufw rule 5 allowlists this office IP (`<office-ip>`, `# operator-ssh`) on 22/tcp.
+
+**What actually shares the box — worse than "some client sites":**
+
+| | |
+| --- | --- |
+| **nginx** | **30 distinct `server_name` entries**, including `balispaguide.com`, `blossomcatering.online`, `cosmedic.bimcbali.com`, `dms.viceroybali.com` — live client production |
+| **NOW platform** | 6 containers: `now-web-bali`, `now-web-jakarta`, `now-engine-api`, `now-engine-worker`, `now-postgres`, `now-redis` |
+| **sGTM** | 2 containers (server-side Google Tag Manager) |
+| **Databases** | **MariaDB** (~0.6 GB, for the PHP/CloudPanel sites) and a **host Postgres on `127.0.0.1:5432`**, separate from `now-postgres` |
+| **Control plane** | CloudPanel (`clp-agent`, `clp-nginx`, `clp-php-fpm`) on `0.0.0.0:8443` |
+| **Secrets** | **Infisical self-hosted and running** — `/opt/infisical-core`, v0.43.121, `active`. See YT-0533, which assumed there was none |
+| **Observability** | Grafana **Alloy**; plus `fail2ban`, `chrony` |
+| **Other** | `bsc-api-proxy`, `cmc-api`, a bare `node` on `0.0.0.0:8082`, a **PM2** process on `0.0.0.0:3016` |
+
+**Port 3000 is already taken** by a `node` process, so `.env.example`'s `PORT=3001` does not clash. **No `26xxx` port is in use anywhere on the box**, so YourTal's entire local port scheme transfers unchanged.
+
+⚠️ **Two existing services bind `0.0.0.0` without obvious need** — `:8082` (node) and `:3016` (PM2). Not ours and not this ticket's to fix, but recorded: the fourth criterion below is a rule we are about to hold ourselves to while the box already breaks it.
 
 - [ ] `staging` and `production` are **separate Postgres databases and separate system users** on one host — not one database with a flag
 - [ ] YourTal cannot read, write or restart anything belonging to the client sites already on Helios
-- [ ] The existing `gaiada-poll.timer` is **green before we add to it** — it was failing every 60 s for an unrelated repo as of 2026-08-18, and adding a site to a red timer hides our own failures in the noise
+- [x] **`gaiada-poll.timer` is green — verified 2026-09-20 on the box, not assumed.** `active (waiting)` since 2026-09-13, `Result=success`, `NRestarts=0`, `ExecMainStatus=0`. The 60-second failure loop recorded on 2026-08-18 has been fixed by someone since. Re-check before adding to it, because this is exactly the kind of fact that expires
 - [ ] Every port we take is recorded in one file; nothing binds `0.0.0.0` that does not have to
 
 ### YT-0530 · Helios: isolation and resource caps
@@ -42,6 +61,10 @@ This supersedes the GCP/Cloudflare shape in [`phase-0-foundation.md`](phase-0-fo
 ### YT-0533 · Secrets and keys without a KMS
 `todo` · P0 · infra · 2d · dep: YT-0530
 
+⚠️ **This ticket's premise is out of date: there is already a secrets manager on the box.** **Infisical is self-hosted and running** on Helios — `/opt/infisical-core`, v0.43.121, `infisical-runsvdir.service` active, config at `/etc/infisical/infisical.rb`. Found while surveying for YT-0529 on 2026-09-20.
+
+That changes the task from _"design secret handling without a KMS"_ to _"decide whether to use the Infisical already here, and on whose terms"_ — a much smaller and much better-supported question. **It is not automatically the answer**: it is shared with the client sites and the NOW platform, so using it means YourTal's secrets live in the same system as another product's, which is the same blast-radius argument as risk 39 applied to credentials rather than CPU. Worth answering deliberately before either adopting or rebuilding.
+
 - [ ] Separate keys for voucher codes, PII and signing — **the separation is the point**, and it survives the move to a real KMS
 - [ ] Keys live outside the repo and outside the build artifact; rotation procedure written and run once
 - [ ] Encrypt/decrypt sits behind one interface so YT-0026 becomes a driver swap, not a rewrite
@@ -49,6 +72,22 @@ This supersedes the GCP/Cloudflare shape in [`phase-0-foundation.md`](phase-0-fo
 
 ### YT-0534 · Data residency: what Helios is allowed to hold
 `blocked` · P0 · legal · 1d · dep: —
+
+**Evidence gathered 2026-09-20 from the box itself. Conclusion: Helios is in JAKARTA, INDONESIA — high confidence, one confirmation short of certain.**
+
+| Signal | Reading |
+| --- | --- |
+| `ipinfo.io` on the IPv4 | **Jakarta, ID**, `AS47583 Hostinger International Limited`, postal 12850 |
+| Reverse hostname | `<helios-vps-hostname>` — a Hostinger VPS |
+| Latency to `itb.ac.id` (Bandung, ~120 km) | **14.4 ms** — consistent with Jakarta |
+| Latency to `sydney.edu.au` | **169.7 ms** — definitively **not** Australia |
+| Server timezone | `Etc/UTC` — deliberately neutral, tells us nothing |
+
+⚠️ **Measurements deliberately discarded, and why this matters more than the ones kept.** `unimelb.edu.au` returned **0.96 ms** and `mit.edu` **0.77 ms** — physically impossible, so those names resolve to local CDN edges rather than the institutions. An earlier pass had `sydney.au.speedtest.net`, `google.co.id` and `google.de` all at ~14.7 ms, which is three continents at one latency and therefore anycast. **Had the first pass been accepted, it would have "proven" the box is simultaneously in Australia, Indonesia and Germany.** The IPv6 `2a02:4780:...` is a RIPE (European) allocation and `ipinfo` flags it `anycast: true` — a registry allocation is not a location, which is the trap this ticket was opened to avoid.
+
+**The legal consequence, if Jakarta is confirmed:** Indonesian personal data is **onshore** and UU PDP's transfer rules do not bite. **Australian personal data would be offshore** — APP 8 cross-border disclosure, where the entity stays accountable for what the overseas recipient does. That is a compliance obligation rather than a prohibition, but **Australia is the primary market**, so it lands on the main path rather than a side one.
+
+**What is still missing is confirmation, not evidence.** Geolocation databases are wrong often enough that a legal position should not rest on one. The authoritative source is the **Hostinger billing/VPS page**, which names the datacentre outright — a founder can read it in under a minute, and that closes this.
 
 - [ ] **Where Helios physically is** is established and written down — this is a fact about a rented box, not a design choice
 - [ ] A one-line rule in `docs/24`: Helios holds **simulated and internal data only** until residency is resolved

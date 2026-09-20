@@ -227,12 +227,18 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - [ ] Velocity caps and trust tiers are built against the anchor's **interface** now, so restoring it is configuration rather than redesign
 
 ### YT-0578 · Rewrite history before this repository is ever public again
-`blocked` · P0 · infra · 1d · dep: —
+`todo` · P0 · infra · 1d · dep: —
 
 - ⛔ **Blocked on a founder decision, and it is a decision rather than a task.** The repository was **public for a few hours on 2026-09-20**, during which `origin/main` served Helios's IP and VPS hostname, its OS version, the jump hosts, and the office IP that `ufw` allowlists for SSH. It is private again, which closed it
 - ⚠️ **The scrub commit does not help.** Two earlier commits carry the values, so removing them from the tip hides them from the tip and from nobody else. **The next flip to public re-exposes everything instantly** — which is the trap: the danger is not the current state but a future, reasonable-looking decision
 - ⚠️ Forks were **0** at the moment it went private and the repo was hours old, so realistic exposure is small. **Not provably zero**, and it should not be recorded as zero
-- [ ] Decide: rewrite (`git filter-repo`) and force-push, or accept the values as known and rely on the controls. **Rewriting breaks every clone**, so it is cheapest now, while there are three
+- [x] **DECIDED 2026-09-20 by the founder: rewrite.** Not accept-as-known. Relayed via `yourtal-24`, who will run it. Unblocked
+- ⛔ **`origin/production` carries the SAME exposed values — rewriting `main` alone leaves a second world-readable copy fully intact.** Verified: `git grep` over `origin/production` finds them in `TASKS.md` and `docs/tasks/phase-0-helios.md`. **This is the single easiest way for this whole exercise to accomplish nothing**, and it is not in the plan as written
+- [ ] **Every ref, not just `main`.** `origin` carries `main` and `production`; there are **3 remote `deploy/*` tags** and 5 local `worktree-agent-*` branches. A rewrite that misses one ref leaves the history reachable from that ref
+- [ ] **Acceptance evidence is `git grep` over the rewritten `origin`, NOT a clean working tree.** `yourtal-24`'s point and my own defect: `git log` and `git log origin/main` answer different questions, and the scrub failed precisely because I checked the wrong one. A green local tree proves nothing about what the remote serves
+- [ ] **Quiesce first.** `yourtal-22` holds three worktrees, two locked and live; 12 unpushed commits here and 2 there all get new SHAs. Their YT-0577 fix is not to be traded for this
+- [ ] **Sweep dangling SHA citations afterwards.** Board prose currently cites `f74897d`, `353b267`, `86df050`, `e485b75` and the deployed release tag — all become dangling references. Content survives; the citations do not
+- ⚠️ **The push freeze is the founder's, not mine.** A rewrite without a force-push accomplishes nothing, since the exposure lives on `origin` — so the decision to rewrite implies the push. **I am not inferring that**; it goes to the founder explicitly, because a force-push of 97 of 104 commits across two branches is not the same action as lifting a pause on ordinary pushes
 - [ ] If rewriting: the office IP, home IPs, fleet addresses, the WireGuard hub and the VPS hostname all go, not only the two files the scrub touched
 - [ ] Either way, a **check that fails when an infrastructure address appears in a tracked file**, so this cannot recur by someone writing a runbook in the wrong repository
 - [ ] ⏭️ The durable fix already exists and is not this ticket: identifiers live in `gaiada-setups/access/` (private) and appear here as `<placeholders>`

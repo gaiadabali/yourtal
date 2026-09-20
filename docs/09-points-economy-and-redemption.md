@@ -196,24 +196,29 @@ Business A must be connected to YourTal so that value is verified and deducted a
 ### 8.1 The API
 
 ```
+Idempotency-Key: <UUIDv7>        ← HEADER on every call below, never a body field
+
 POST /v1/vouchers/authorize
-  { code, amount, currency, merchant_order_ref, idempotency_key }
+  { code, amount, currency, merchant_order_ref }
   → { authorization_id, amount_authorized, remaining_balance, expires_at }
 
 POST /v1/vouchers/capture
-  { authorization_id, final_amount, idempotency_key }
+  { authorization_id, final_amount }
   → { receipt_id, amount_captured, remaining_balance }
 
 POST /v1/vouchers/void
-  { authorization_id, idempotency_key }          → releases the hold
+  { authorization_id }                → releases the hold
 
 POST /v1/vouchers/refund
-  { receipt_id, amount, reason, idempotency_key } → restores value post-capture
+  { receipt_id, amount, reason }      → restores value post-capture
 ```
 
 **Non-negotiables:**
 
-- **Idempotency key mandatory on every call.** Retries are certain; double-spends must be impossible.
+- **Idempotency key mandatory on every call, as the `Idempotency-Key` header.** Retries are certain; double-spends must be impossible.
+
+  > **Corrected 2026-09-20 (decision R-1).** These shapes previously carried `idempotency_key` as a **body field**, contradicting [`13`](13-engineering-standards.md) §5 and [`14`](14-api-design.md), which specify a shared middleware keyed off the header and scoped `(merchant, key)`. The header is correct and the implementation built it: **a cross-service interceptor has to act before the body is decoded for any particular route**, and YT-0039's general platform table assumes exactly that. A body field is not read by anything. This section described an API that does not exist, and someone would have implemented against it — found by `yourtal-22` while building the redemption endpoints.
+
 - **Authorize requires an amount and a merchant order reference.** There is deliberately **no bare balance-lookup endpoint** for merchants — that is the enumeration surface that gets gift-card systems drained.
 - **Capture cannot exceed authorize.** Enforced server-side.
 - **Holds expire automatically** (15 min default), so an abandoned cart cannot lock a voucher forever.

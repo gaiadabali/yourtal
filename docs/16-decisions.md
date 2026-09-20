@@ -251,3 +251,13 @@ And `docs/24` position **ID-1** — that YourTal Points are a loyalty currency a
 **Q-5 · A gate's coverage is part of the gate.** `pnpm verify` ran 282 TypeScript test files and zero Go ones for as long as it existed, because `services/*` had no `package.json` and turbo could not see it. `verify` now runs line endings, formatting, typecheck (incl. `go vet`), lint, every suite including Go, the 384 Cerbos policy tests and board staleness — and **local and CI run the same lint command**, after the first CI run reported 72 errors that no developer could reproduce.
 
 **Q-6 · Where a check and its compensating control share a root cause, the control does not count.** `integration.yml` mounted Cerbos's policies _and_ its config from a workspace that does not exist yet; the argument that `watchForChanges` covered the policy mount was defeated by the config mount failing identically, since that setting lives in the config. **A mitigation that depends on the thing that broke is not a mitigation.** Generalises risk 41's suspicion of simulators to any compensating control.
+
+---
+
+## R — the redemption API's wire contract
+
+**R-1 · The idempotency key is the `Idempotency-Key` header, never a body field.** `docs/09` §8.1's wire shapes carried `idempotency_key` in the **body** of all four redemption calls, contradicting `docs/13` §5 and `docs/14`, which specify a shared middleware keyed off the header and scoped `(merchant, key)`. The header wins, and the implementation already built it: **a cross-service interceptor has to act before the body is decoded for any particular route**, and YT-0039's general platform table assumes exactly that. A body field is read by nothing.
+
+`docs/09` §8.1 is corrected in place, with the correction noted inline rather than silently swapped — the old shapes described **an API that does not exist**, and the risk was never that the code was wrong but that someone would implement against the document. Found by `yourtal-22` while exposing the endpoints.
+
+**The general rule this is an instance of:** where two documents disagree about a wire contract, the one that has been _built and tested_ is evidence and the other is a draft — but the loser must be **corrected, not left standing**, because a contradiction that nobody resolves is resolved independently by each person who finds it.

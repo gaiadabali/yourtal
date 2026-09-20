@@ -189,3 +189,36 @@ The spending half of the loop: points buy things, and those things work at the m
 - [ ] ⚠️ **A donated voucher is spent, not extinguished** — the charity redeems it at the merchant, so the merchant's obligation and the clearing accrual are unchanged. Treating it as a write-off would silently under-state what we owe partners
 - [ ] No tax receipt is issued and nothing implies one, unless someone qualified says otherwise — that is a regulated representation in both markets
 - [ ] Charity recipients are a **verified allow-list**, not free entry, or the donation path becomes an unverified-recipient transfer with a nicer name
+
+### YT-0571 · `Capture` and `Void` resolve an authorization by id alone
+`todo` · P1 · merchant · 2d · dep: YT-0151
+
+- **Found by `yourtal-22` 2026-09-20 while exposing the redemption API; verified here against `main`.** `db/query/redeem.sql` resolves with `WHERE id = $1 AND state = 'held' AND expires_at > now()` — **no `merchant_id` predicate**. Proved by disabling the new HTTP check: a stranger's signed capture succeeded and returned a receipt
+- **The query is correct for the invariant its own tests assert** — an authorization id is only ever handed back to the merchant that placed the hold. That invariant holds in the domain layer and **stops holding the moment the id is client-supplied over HTTP**, which is exactly what exposing the endpoint did
+- ⚠️ Fixed at the boundary (`internal/redeem/ownership.go`), refusing a cross-merchant guess with the **same `no_live_authorization` message** a genuinely missing id gets, per YT-0153's enumeration discipline. **The domain queries are still unscoped.** Safe only because there is one caller that checks — that is a convention, not a constraint, and it is the shape that bites when a second caller appears
+- [ ] `merchant_id` becomes a predicate in the **query**, so the guarantee survives a caller that forgets. A boundary check protects the boundary; a WHERE clause protects the data
+- [ ] Sabotage-prove it at the domain layer, not only over HTTP: call `Capture` directly with another merchant's authorization id and confirm refusal
+- [ ] The refusal stays **indistinguishable** from a missing id — no timing or message difference that lets a merchant enumerate another's holds
+- [ ] Same audit applied to every other query that takes a client-supplied id: `refund` by `receipt_id` is the obvious next one
+
+### YT-0572 · The currency refusal leaks which check failed
+`todo` · P1 · merchant · 4h · dep: YT-0151
+
+- `internal/redeem/redeem.go:243` wraps detail into the error — `"%w: this voucher is denominated in IDR and the request is in %s"` — while **every other `ErrRefused` branch returns the bare sentinel**
+- ⚠️ Currency is checked **after** merchant, state, expiry and value all pass. So the message text distinguishes _"wrong merchant"_ from _"right merchant, wrong currency"_ to anything that echoes `err.Error()` verbatim — an oracle that confirms a guessed code belongs to you
+- ⚠️ `yourtal-22`'s agent closed it at the boundary it owned (`writeAuthorizeError` uses `ErrRefused.Error()`, never `err.Error()`). **So the domain now depends on the HTTP layer papering over it, and that dependency is invisible.** Same shape as YT-0571: the guarantee lives in the caller rather than in the thing being called
+- [ ] The branch returns the bare sentinel like its siblings; the detail moves to a log field, where it is useful and not returned
+- [ ] A test asserts **every** `ErrRefused` branch produces an identical caller-visible string — a table over the branches, so a new one cannot quietly differ
+- [ ] Grep for other wrapped-detail refusals across `services/voucher`; this is unlikely to be the only one
+
+### YT-0573 · Nothing ever marks a voucher expired
+`todo` · P1 · merchant · 2d · dep: YT-0142
+
+- ⚠️ **YT-0142 blurs two different jobs.** `sweepHolds` sweeps **authorizations** — abandoned holds. It is not a voucher expiry job and never was
+- **Verified against `main`**: `lifecycle.Expired` is declared in `lifecycle.go` and appears in `States` and the transition map, and the only file that otherwise references it is `lifecycle_test.go`. `chain.TypeExpired` exists as an event type that **nothing emits**. No production path sets a voucher's `state` to `'expired'`
+- **Safety does not depend on it**: `check()` compares `ExpiresAt` live rather than trusting a sweeper, so an expired voucher cannot be spent. **Correctness of the table does**: a voucher long past expiry still reports `state = 'active'` to anything reading it directly — the merchant portal and reconciliation both see a stale truth
+- ⚠️ This also bears on **P-2 (resale)**: a listing is valid "while the expiry date is still active", and expired means the listing is cancelled. A marketplace that reads `state` would keep expired vouchers listed
+- [ ] A job transitions `active → expired` past `expires_at`, emitting `chain.TypeExpired` so the event exists in the chain rather than only in the column
+- [ ] It **reports liveness and pages when it has not run**, per YT-0566 — a job that stops running produces no errors at all
+- [ ] Alert on the **age of the oldest unexpired-but-past-expiry voucher**, which measures the promise rather than the job
+- [ ] A test asserts the two sweepers are distinct and that neither covers the other's case

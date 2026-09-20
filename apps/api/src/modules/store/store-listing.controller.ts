@@ -106,10 +106,11 @@ export class StoreListingController {
    * against the request alone (see `material-settlement-decrease.ts`). So a
    * SECOND, more specific PDP call runs below, once the current value is
    * known, carrying `isMaterialSettlementDecrease` for real. `listing.yaml`
-   * denies `set_settlement_value` to everyone once that is true -- there is
-   * no `approve_settlement_decrease` request queue in this pass (see the
-   * ticket report), so a material cut is refused outright rather than
-   * silently allowed.
+   * denies `set_settlement_value` to everyone once that is true -- a
+   * material cut is refused HERE outright. Its only path forward is
+   * `SettlementDecreaseController.propose` (YT-0575): a different action,
+   * `request_settlement_decrease`, that records a pending request rather
+   * than applying anything.
    */
   @Authorize({ kind: "listing", action: "set_settlement_value" })
   @Idempotent({ retentionMs: LISTING_WRITE_RETENTION_MS })

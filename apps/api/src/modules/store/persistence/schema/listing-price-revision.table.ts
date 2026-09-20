@@ -21,5 +21,13 @@ export const listingPriceRevisions = storePgSchema.table("listing_price_revision
   newPriceInPoints: bigint("new_price_in_points", { mode: "number" }),
   requestedBy: uuid("requested_by").notNull(),
   reason: text("reason"),
+  /**
+   * NULL for a direct (non-material) edit. Set to the originating row's id
+   * when this revision is the result of an approved
+   * `store.settlement_decrease_request` (YT-0575) — see
+   * `apply-settlement-value-change.ts`, the one function that writes this
+   * table for either path.
+   */
+  settlementDecreaseRequestId: uuid("settlement_decrease_request_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

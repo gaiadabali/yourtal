@@ -82,6 +82,20 @@ resources:
       requestedBy: "eka"
       approvalState: "pending"
 
+  # YT-0574: `isMaterialSettlementDecrease` deliberately ABSENT, not `false`.
+  # This is what a real controller produces through `@Authorize`'s
+  # synchronous `attrsFrom` (no DB read, so no materiality fact is known at
+  # that point) -- see `material-settlement-decrease.ts`'s doc comment. The
+  # broken expression `!has(R.attr.isMaterialSettlementDecrease) ||
+  # !R.attr.isMaterialSettlementDecrease` reads a missing attribute as "safe"
+  # and allows; the fixed one requires positive evidence the change is NOT
+  # material.
+  listing_kopi_unstated:
+    kind: listing
+    id: list-3
+    attr:
+      businessId: "biz-kopi"
+
   batch_kopi:
     kind: voucher_batch
     id: batch-1

@@ -2,10 +2,10 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { Listing } from "@yourtal/contracts/listing";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
+import { applySettlementValueChange } from "./apply-settlement-value-change";
 import { browseConditions, PUBLIC_LIFECYCLE_STATE } from "./browse-listings-conditions";
 import { assembleListing, assembleListings } from "./listing-assembler";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
-import { listingPriceRevisions } from "./schema/listing-price-revision.table";
 import type {
   BrowseListingsFilter,
   BrowseListingsPage,
@@ -169,45 +169,23 @@ export class DrizzleListingRepository implements ListingRepository {
     requestedBy: string,
     reason: string,
   ): Promise<SettlementValueChange | null> {
-    return this.db.transaction(async (tx) => {
-      const [existing] = await tx
-        .select()
-        .from(listings)
-        .where(and(eq(listings.id, listingId), eq(listings.merchantId, merchantId)))
-        .limit(1);
-      if (existing === undefined) return null;
-
-      const previous = await assembleListing(tx, existing);
-      if (previous === null) return null;
-
-      // price_in_points is deliberately untouched -- see this module's
-      // migration header. Only settlement_value_idr moves here.
-      const [updatedRow] = await tx
-        .update(listings)
-        .set({ settlementValueIdr: newSettlementValueIdr })
-        .where(and(eq(listings.id, listingId), eq(listings.merchantId, merchantId)))
-        .returning();
-      if (updatedRow === undefined) return null;
-
-      const updated = await assembleListing(tx, updatedRow);
-      if (updated === null) return null;
-
-      // The audit row lands in the SAME transaction as the value change --
-      // a repricing that "succeeded" with no audit trail is a silent
-      // partial completion, and this module's whole reason for touching
-      // this table is that trail (docs/17 section 2.1).
-      await tx.insert(listingPriceRevisions).values({
+    // `null` for `settlementDecreaseRequestId`: this is the direct-apply
+    // path (non-material change), not an approved request. See
+    // `apply-settlement-value-change.ts`, shared with
+    // `DrizzleSettlementDecreaseRequestRepository.approve` (YT-0575) so
+    // there is exactly one place either kind of settlement-value write and
+    // its audit row happen.
+    return this.db.transaction((tx) =>
+      applySettlementValueChange(
+        tx,
+        merchantId,
         listingId,
-        previousSettlementValueIdr: existing.settlementValueIdr,
         newSettlementValueIdr,
-        previousPriceInPoints: existing.priceInPoints,
-        newPriceInPoints: null,
         requestedBy,
         reason,
-      });
-
-      return { previous, updated };
-    });
+        null,
+      ),
+    );
   }
 
   async setLifecycleState(

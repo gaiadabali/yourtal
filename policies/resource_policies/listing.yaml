@@ -38,7 +38,27 @@ resourcePolicy:
         match:
           # A material decrease is not an edit; it is a request that must then
           # be approved. Route it to approve_settlement_decrease instead.
-          expr: "!has(R.attr.isMaterialSettlementDecrease) || !R.attr.isMaterialSettlementDecrease"
+          #
+          # YT-0574: this MUST require positive evidence the change is not
+          # material. The earlier form -- `!has(x) || !x` -- read a MISSING
+          # attribute as "safe" and allowed, which is backwards: `attrsFrom`
+          # is synchronous and request-only (see
+          # `material-settlement-decrease.ts`), so the normal, correct way to
+          # wire a controller supplies no attribute at all, and that used to
+          # silently disable this control. `policies/tests/
+          # two_person_approval_test.yaml`'s YT-0574 case fails against the
+          # old expression and passes against this one.
+          expr: "has(R.attr.isMaterialSettlementDecrease) && !R.attr.isMaterialSettlementDecrease"
+
+    - name: merchandisers-request-a-settlement-decrease
+      # YT-0575: the propose half of the workflow YT-0574 made mandatory.
+      # Deliberately its own action, not folded into set_settlement_value --
+      # the rule above denies that action outright for a material change, so
+      # raising a request (which applies nothing) needed a different one.
+      actions: ["request_settlement_decrease"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_inventory_editor_of
 
     - name: only-an-owner-or-admin-approves-the-cut
       actions: ["approve_settlement_decrease"]

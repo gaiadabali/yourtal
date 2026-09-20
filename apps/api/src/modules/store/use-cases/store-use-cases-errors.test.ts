@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DrizzleListingRepository } from "../persistence/drizzle-listing.repository";
+import { DrizzleSettlementDecreaseRequestRepository } from "../persistence/drizzle-settlement-decrease-request.repository";
 import { clearStoreTables, testStoreDb } from "../persistence/store-db.test-helper";
 import { merchantLocations } from "../persistence/schema/listing.table";
+import { approveSettlementDecrease } from "./approve-settlement-decrease.use-case";
 import { createListing } from "./create-listing.use-case";
 import { editListing } from "./edit-listing.use-case";
 import { getMyListing } from "./get-my-listing.use-case";
+import { proposeSettlementDecrease } from "./propose-settlement-decrease.use-case";
 import { setListingLifecycle } from "./set-listing-lifecycle.use-case";
 import { setSettlementValue } from "./set-settlement-value.use-case";
 
@@ -18,6 +21,7 @@ import { setSettlementValue } from "./set-settlement-value.use-case";
  */
 const db = testStoreDb();
 const repo = new DrizzleListingRepository(db);
+const decreaseRequests = new DrizzleSettlementDecreaseRequestRepository(db);
 const MERCHANT = "00000000-0000-4000-8000-0000000e0001";
 
 beforeAll(async () => {
@@ -135,5 +139,140 @@ describe("setListingLifecycle", () => {
     const result = await setListingLifecycle(repo, MERCHANT, randomUUID(), "paused");
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toMatchObject({ type: "listing_not_found" });
+  });
+});
+
+describe("proposeSettlementDecrease (YT-0575)", () => {
+  it("reports listing_not_found for a listing outside the tenant", async () => {
+    const listing = await seedListing();
+    const otherTenant = "00000000-0000-4000-8000-0000000e0004";
+    const result = await proposeSettlementDecrease(
+      repo,
+      decreaseRequests,
+      otherTenant,
+      listing.id,
+      1,
+      "actor",
+      "reason",
+    );
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toMatchObject({ type: "listing_not_found" });
+  });
+
+  it("reports not_a_material_decrease for a change below the threshold", async () => {
+    const listing = await seedListing(); // settlementValueIdr: 300_000
+    const result = await proposeSettlementDecrease(
+      repo,
+      decreaseRequests,
+      MERCHANT,
+      listing.id,
+      290_000, // ~3% cut, well below the 20% placeholder threshold
+      "actor",
+      "reason",
+    );
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toMatchObject({ type: "not_a_material_decrease" });
+  });
+
+  it("reports not_a_material_decrease for an increase", async () => {
+    const listing = await seedListing();
+    const result = await proposeSettlementDecrease(
+      repo,
+      decreaseRequests,
+      MERCHANT,
+      listing.id,
+      400_000,
+      "actor",
+      "reason",
+    );
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toMatchObject({ type: "not_a_material_decrease" });
+  });
+
+  it("reports decrease_already_pending for a second request while one is outstanding", async () => {
+    const listing = await seedListing();
+    // A real UUID, not the "actor" placeholder the not-reached error-path
+    // tests above use -- this call actually inserts, and requested_by is
+    // `uuid NOT NULL`.
+    const requester = randomUUID();
+    const first = await proposeSettlementDecrease(
+      repo,
+      decreaseRequests,
+      MERCHANT,
+      listing.id,
+      100_000,
+      requester,
+      "first",
+    );
+    expect(first.isOk()).toBe(true);
+
+    const second = await proposeSettlementDecrease(
+      repo,
+      decreaseRequests,
+      MERCHANT,
+      listing.id,
+      50_000,
+      requester,
+      "second",
+    );
+    expect(second.isErr()).toBe(true);
+    expect(second._unsafeUnwrapErr()).toMatchObject({ type: "decrease_already_pending" });
+  });
+});
+
+describe("approveSettlementDecrease (YT-0575)", () => {
+  it("reports listing_not_found for a listing outside the tenant", async () => {
+    const listing = await seedListing();
+    const otherTenant = "00000000-0000-4000-8000-0000000e0005";
+    const result = await approveSettlementDecrease(
+      repo,
+      decreaseRequests,
+      otherTenant,
+      listing.id,
+      randomUUID(),
+      "approver",
+    );
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toMatchObject({ type: "listing_not_found" });
+  });
+
+  it("reports approval_refused for a self-approval attempt", async () => {
+    const listing = await seedListing();
+    const requester = randomUUID();
+    const proposed = await proposeSettlementDecrease(
+      repo,
+      decreaseRequests,
+      MERCHANT,
+      listing.id,
+      100_000,
+      requester,
+      "reason",
+    );
+    if (proposed.isErr()) throw new Error("test setup: failed to propose a decrease");
+
+    const result = await approveSettlementDecrease(
+      repo,
+      decreaseRequests,
+      MERCHANT,
+      listing.id,
+      proposed.value.id,
+      requester, // same person
+    );
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toMatchObject({ type: "approval_refused" });
+  });
+
+  it("reports approval_refused for a request that does not exist", async () => {
+    const listing = await seedListing();
+    const result = await approveSettlementDecrease(
+      repo,
+      decreaseRequests,
+      MERCHANT,
+      listing.id,
+      randomUUID(),
+      randomUUID(),
+    );
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toMatchObject({ type: "approval_refused" });
   });
 });

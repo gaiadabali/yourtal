@@ -54,13 +54,26 @@ export const RESOURCE_ACTIONS = {
   /** Consumer and anonymous playback. docs/17 section 4, Open Viewing. */
   campaign_view: ["watch_open", "watch_rewarded", "earn", "answer_scored", "resume_session"],
 
-  /** Store inventory and settlement values. */
+  /**
+   * Store inventory and settlement values.
+   *
+   * `request_settlement_decrease` (YT-0575) is the propose half of the
+   * two-person-approval workflow `approve_settlement_decrease` has always
+   * named. It is deliberately its own action rather than folded into
+   * `set_settlement_value`: `merchandisers-run-inventory`'s condition
+   * denies `set_settlement_value` outright for a material change (YT-0574),
+   * full stop, so there had to be a different action for the thing a
+   * material change IS allowed to do -- raise a request that is not
+   * applied. Same shape as `voucher_batch`'s `request_issuance` /
+   * `approve_issuance` split.
+   */
   listing: [
     "view",
     "create",
     "edit",
     "archive",
     "set_settlement_value",
+    "request_settlement_decrease",
     "approve_settlement_decrease",
     "approve_listing",
     "reject_listing",

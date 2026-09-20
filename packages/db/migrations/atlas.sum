@@ -1,4 +1,4 @@
-h1:TCl+HMjaIM9V4OcBKgPuDYoooQAo2iyAbXzLLX1jQT0=
+h1:L+1xKnacbRYag0vF3brKAvIISS1VSm4aWnndf5rP8PI=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -21,3 +21,4 @@ h1:TCl+HMjaIM9V4OcBKgPuDYoooQAo2iyAbXzLLX1jQT0=
 20260920034654_dsar_anonymise_voucher_owner.sql h1:rNu6SlGMqcqUsuC62z2rPYJXUTlu/2HzAeEqZft+6d8=
 20260920035523_minted_voucher_has_no_owner.sql h1:f9eGmhBZwVMKGEy3xBYrcEtieK70aKInV4mlCJ16vVs=
 20260920040000_store_listing_management.sql h1:glO2mNuXSRm69S7rL9rCUmxb7dK4br8UsvpyTeHb930=
+20260920065723_settlement_decrease_requests.sql h1:db32vt6xLc4GMwB2N5ylSVb7weHnUpDoB2ElY7FNvG4=

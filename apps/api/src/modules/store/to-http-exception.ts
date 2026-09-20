@@ -1,15 +1,21 @@
 import {
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import type { HttpException } from "@nestjs/common";
 import type {
+  ApprovalRefusedError,
+  DecreaseAlreadyPendingError,
   InvalidLifecycleTransitionError,
   InvalidLocationsError,
   ListingNotFoundError,
+  NotAMaterialDecreaseError,
   PersistenceFailedError,
+  SettlementDecreaseRequestNotFoundError,
 } from "./store.errors";
 
 const logger = new Logger("StoreErrorMapper");
@@ -22,6 +28,10 @@ export type StoreDomainError =
   | ListingNotFoundError
   | InvalidLocationsError
   | InvalidLifecycleTransitionError
+  | NotAMaterialDecreaseError
+  | DecreaseAlreadyPendingError
+  | SettlementDecreaseRequestNotFoundError
+  | ApprovalRefusedError
   | PersistenceFailedError;
 
 export function mapStoreErrorToHttpException(error: StoreDomainError): HttpException {
@@ -40,6 +50,31 @@ export function mapStoreErrorToHttpException(error: StoreDomainError): HttpExcep
       return new BadRequestException({
         code: "invalid_lifecycle_transition",
         message: `cannot move a listing from ${error.from} to ${error.to}`,
+      });
+    case "not_a_material_decrease":
+      return new BadRequestException({
+        code: "not_a_material_decrease",
+        message: `the proposed change to listing ${error.listingId} is not a material decrease -- use set_settlement_value directly`,
+      });
+    case "decrease_already_pending":
+      return new ConflictException({
+        code: "decrease_already_pending",
+        message: `listing ${error.listingId} already has a settlement decrease awaiting approval`,
+      });
+    case "settlement_decrease_request_not_found":
+      return new NotFoundException({
+        code: "settlement_decrease_request_not_found",
+        message: `settlement decrease request ${error.requestId} was not found`,
+      });
+    case "approval_refused":
+      // Deliberately one status for two causes (docs/13c, mirroring
+      // services/voucher's Minter.Approve): the request was already
+      // resolved, or this principal raised it themselves. Both refuse the
+      // same way and neither is this caller's to distinguish from the
+      // response alone.
+      return new ForbiddenException({
+        code: "approval_refused",
+        message: `settlement decrease request ${error.requestId} could not be approved -- it may already be resolved, or you may be the person who requested it`,
       });
     case "persistence_failed":
       logger.error(error.cause);

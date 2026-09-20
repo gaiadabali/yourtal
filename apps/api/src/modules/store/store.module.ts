@@ -5,12 +5,15 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { SettlementDecreaseController } from "./settlement-decrease.controller";
 import { StoreCatalogueController } from "./store-catalogue.controller";
 import { StoreListingController } from "./store-listing.controller";
 import { DrizzleListingPriceRevisionRepository } from "./persistence/drizzle-listing-price-revision.repository";
 import { DrizzleListingRepository } from "./persistence/drizzle-listing.repository";
+import { DrizzleSettlementDecreaseRequestRepository } from "./persistence/drizzle-settlement-decrease-request.repository";
 import { LISTING_PRICE_REVISION_REPOSITORY } from "./persistence/listing-price-revision.repository";
 import { LISTING_REPOSITORY } from "./persistence/listing.repository";
+import { SETTLEMENT_DECREASE_REQUEST_REPOSITORY } from "./persistence/settlement-decrease-request.repository";
 
 export const STORE_DB = Symbol("STORE_DB");
 
@@ -18,7 +21,10 @@ export const STORE_DB = Symbol("STORE_DB");
  * The catalogue backend: listing management (create/edit/pause/retire,
  * quantity and per-user limits, settlement-value repricing with an audit
  * trail) and the public browse/offer-detail surface. YT-0130/YT-0131/YT-0132
- * backend halves.
+ * backend halves, plus YT-0574/YT-0575: the direct-apply
+ * `set_settlement_value` path refuses a material decrease outright, and
+ * `SettlementDecreaseController` is where that refusal has somewhere to
+ * go — propose, then a second person approves.
  *
  * Postgres-backed from the first line, following YT-0552/YT-0553's rule: no
  * in-memory repository exists, not even behind a flag, because a fallback is
@@ -42,7 +48,7 @@ export const STORE_DB = Symbol("STORE_DB");
  */
 @Module({
   imports: [AuthzModule, PdpClientModule],
-  controllers: [StoreListingController, StoreCatalogueController],
+  controllers: [StoreListingController, StoreCatalogueController, SettlementDecreaseController],
   providers: [
     {
       provide: STORE_DB,
@@ -57,6 +63,11 @@ export const STORE_DB = Symbol("STORE_DB");
     {
       provide: LISTING_PRICE_REVISION_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleListingPriceRevisionRepository(db),
+      inject: [STORE_DB],
+    },
+    {
+      provide: SETTLEMENT_DECREASE_REQUEST_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleSettlementDecreaseRequestRepository(db),
       inject: [STORE_DB],
     },
   ],

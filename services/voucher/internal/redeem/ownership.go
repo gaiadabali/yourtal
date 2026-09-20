@@ -47,10 +47,19 @@ func (n *Network) requireOwnedAuthorization(ctx context.Context, authorizationID
 // merchantID. HTTP-only: docs/09 §8.1's refund call takes a receipt_id, but
 // Refund (release.go) takes the capture's own id, which nothing outside
 // this package's HTTP layer needs to know.
+//
+// YT-0571: GetCaptureByReceipt now carries its own merchant_id predicate, so
+// this is defense in depth rather than the only thing standing between a
+// stranger and somebody else's receipt — the boundary check stays, same as
+// requireOwnedAuthorization above, and the redundant GetAuthorization
+// fetch below still runs so a future change to either layer cannot
+// silently drop the other's coverage.
 func (n *Network) captureForReceipt(ctx context.Context, receiptID string, merchantID uuid.UUID) (uuid.UUID, error) {
 	queries := sqlcgen.New(n.pool)
 
-	capture, err := queries.GetCaptureByReceipt(ctx, receiptID)
+	capture, err := queries.GetCaptureByReceipt(ctx, sqlcgen.GetCaptureByReceiptParams{
+		ReceiptID: receiptID, MerchantID: pgUUID(merchantID),
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return uuid.UUID{}, fmt.Errorf("%w: receipt %s", ErrNotFound, receiptID)
 	}

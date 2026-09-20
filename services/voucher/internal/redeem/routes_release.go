@@ -41,7 +41,7 @@ func voidHandler(logger *slog.Logger, network *Network) http.HandlerFunc {
 			return
 		}
 
-		if err := network.Void(r.Context(), authorizationID); err != nil {
+		if err := network.Void(r.Context(), authorizationID, merchantID); err != nil {
 			writeVoidError(w, logger, err)
 			return
 		}

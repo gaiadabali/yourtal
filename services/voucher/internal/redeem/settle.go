@@ -144,8 +144,15 @@ func (n *Network) replay(
 // policy (docs/09 §8.2, YT-0155), applied here in one place so that a
 // balance-carrying voucher and a single-use one cannot diverge between the
 // merchant portal and the API.
+//
+// merchantID (YT-0571) is enforced here, in the query, not merely at the
+// HTTP boundary. ownership.go's requireOwnedAuthorization still runs first
+// and stays — a boundary check protects the boundary — but this is what
+// makes the data safe on its own for any caller that reaches Capture
+// without going through that boundary. A wrong merchant is indistinguishable
+// from a missing authorization: both are ErrNoLiveHold.
 func (n *Network) Capture(
-	ctx context.Context, authorizationID uuid.UUID, finalAmountMinor int64, receiptID string,
+	ctx context.Context, authorizationID, merchantID uuid.UUID, finalAmountMinor int64, receiptID string,
 ) (Capture, error) {
 	var captured Capture
 
@@ -153,7 +160,7 @@ func (n *Network) Capture(
 		queries := sqlcgen.New(tx)
 
 		authorization, err := queries.ResolveAuthorization(ctx, sqlcgen.ResolveAuthorizationParams{
-			ID: pgUUID(authorizationID), State: "captured",
+			ID: pgUUID(authorizationID), State: "captured", MerchantID: pgUUID(merchantID),
 		})
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("%w: %s", ErrNoLiveHold, authorizationID)

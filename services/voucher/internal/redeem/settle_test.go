@@ -29,7 +29,7 @@ func TestVoidingReleasesTheHoldWithTheValueIntact(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	if err := f.network.Void(ctx, authorization.ID); err != nil {
+	if err := f.network.Void(ctx, authorization.ID, f.merchantID); err != nil {
 		t.Fatalf("Void: %v", err)
 	}
 
@@ -46,7 +46,7 @@ func TestVoidingReleasesTheHoldWithTheValueIntact(t *testing.T) {
 	}
 
 	// Voiding twice is refused: the second call has no live hold.
-	if err := f.network.Void(ctx, authorization.ID); !errors.Is(err, redeem.ErrNoLiveHold) {
+	if err := f.network.Void(ctx, authorization.ID, f.merchantID); !errors.Is(err, redeem.ErrNoLiveHold) {
 		t.Errorf("a hold was voided twice: %v", err)
 	}
 }
@@ -67,11 +67,11 @@ func TestACapturedAuthorizationCannotBeVoided(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	if _, err := f.network.Capture(ctx, authorization.ID, 30_000_00, orderRef()); err != nil {
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000_00, orderRef()); err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
 
-	if err := f.network.Void(ctx, authorization.ID); !errors.Is(err, redeem.ErrNoLiveHold) {
+	if err := f.network.Void(ctx, authorization.ID, f.merchantID); !errors.Is(err, redeem.ErrNoLiveHold) {
 		t.Errorf("a captured authorization was voided: %v", err)
 	}
 }
@@ -90,7 +90,7 @@ func TestARefundRestoresValueToAPartlySpentVoucher(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	capture, err := f.network.Capture(ctx, authorization.ID, 30_000_00, orderRef())
+	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000_00, orderRef())
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestRefundingAFullyRedeemedVoucherRefusesRatherThanGuessing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	capture, err := f.network.Capture(ctx, authorization.ID, 50_000_00, orderRef())
+	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 50_000_00, orderRef())
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
@@ -256,7 +256,7 @@ func TestAnExpiredHoldCannotBeCaptured(t *testing.T) {
 		t.Fatalf("ageing the hold: %v", err)
 	}
 
-	if _, err := f.network.Capture(ctx, authorization.ID, 10_000_00, orderRef()); !errors.Is(
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_00, orderRef()); !errors.Is(
 		err, redeem.ErrNoLiveHold,
 	) {
 		t.Fatalf("an expired hold was captured: %v", err)

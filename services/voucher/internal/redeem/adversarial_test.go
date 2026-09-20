@@ -122,14 +122,14 @@ func TestCaptureCannotExceedItsAuthorization(t *testing.T) {
 		t.Fatalf("Authorize: %v", err)
 	}
 
-	if _, err := f.network.Capture(ctx, authorization.ID, 10_000_01, orderRef()); err == nil {
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_01, orderRef()); err == nil {
 		t.Fatal("a capture one sen above its authorization succeeded")
 	}
 
 	// And the hold survives the refused capture, so the merchant can capture
 	// the correct amount. A failed capture that consumed the hold would
 	// strand a customer at the till.
-	if _, err := f.network.Capture(ctx, authorization.ID, 10_000_00, orderRef()); err != nil {
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_00, orderRef()); err != nil {
 		t.Errorf("the hold did not survive a refused capture: %v", err)
 	}
 }

@@ -28,7 +28,7 @@ func TestEditingAStoredEventBreaksVerification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	if _, err := f.network.Capture(ctx, authorization.ID, 30_000_00, orderRef()); err != nil {
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000_00, orderRef()); err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
 

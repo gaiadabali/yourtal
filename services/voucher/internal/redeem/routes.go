@@ -104,7 +104,7 @@ func captureHandler(logger *slog.Logger, network *Network) http.HandlerFunc {
 			return
 		}
 
-		capture, err := network.Capture(r.Context(), authorizationID, body.FinalAmount, receiptID())
+		capture, err := network.Capture(r.Context(), authorizationID, merchantID, body.FinalAmount, receiptID())
 		if err != nil {
 			writeCaptureError(w, logger, err)
 			return

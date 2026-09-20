@@ -15,7 +15,7 @@ import { listingLocations, listings, merchantLocations } from "./schema/listing.
  * dead-host sabotage of this module's own database provable rather than
  * silently reverted. See this ticket's report for the actual proof run.
  */
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal_wt_store";
+const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
 /**
  * `yourtal_app` lost INSERT/UPDATE/DELETE on `voucher.vouchers` in
  * `20260920000019_voucher_lifecycle.sql` — voucher issuance is value-path,
@@ -24,7 +24,7 @@ const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal_w
  * does for `watch.session`; widening the app grant back to make cleanup
  * convenient would undo a control that exists on purpose.
  */
-const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal_wt_store";
+const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal";
 
 export function testStoreDb(): AppDb {
   return createAppDb(process.env["TEST_DATABASE_URL"] ?? APP_URL);
@@ -38,12 +38,13 @@ export function testStoreDb(): AppDb {
  */
 export async function clearStoreTables(db: AppDb): Promise<void> {
   // `voucher.vouchers` is a different module's table, but it holds a
-  // NOT NULL foreign key to `store.listings` (YT-0519) and this worktree's
-  // database is this module's own (see the ticket report) -- clearing it
+  // NOT NULL foreign key to `store.listings` (YT-0519) -- clearing it
   // here is the same move `watch.controller.test.ts` makes for
   // `watch.session`, not a cross-module read. The OWNER connection, because
   // `yourtal_app` cannot DELETE this table (see `OWNER_URL`'s comment above).
-  await createAppDb(OWNER_URL).execute(sql`DELETE FROM voucher.vouchers`);
+  await createAppDb(process.env["DATABASE_OWNER_URL"] ?? OWNER_URL).execute(
+    sql`DELETE FROM voucher.vouchers`,
+  );
   await db.delete(listingPriceRevisions);
   await db.delete(listingLocations);
   await db.delete(listings);

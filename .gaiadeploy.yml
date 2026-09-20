@@ -17,4 +17,5 @@ production:
     site_user: uyourtal
     domain: yourtal.gaiada.com
     type: node
+    port: 26300
     pm2_name: yourtal-web

@@ -236,6 +236,26 @@ Fixed at the one committed writer: `tasks.mjs` now normalises on read, so it **h
 
 ---
 
+## 19. Three checks in one day, each narrower than the claim resting on it
+
+`yourtal-24` put these together, and the grouping is worth more than any one of them. All three were **real greens answering a smaller question than the one being asked**, and in every case the narrowness was invisible from inside the check.
+
+| Check                                       | Scoped by   | Claim it was used to support      |
+| ------------------------------------------- | ----------- | --------------------------------- |
+| `git grep` over two changed files           | **file**    | that a whole ref was clean        |
+| A redaction table of four known values      | **pattern** | that all identifiers were removed |
+| `git grep <pattern> <ref>` across every ref | **ref tip** | that **history** was clean        |
+
+The third is the sharpest because it was an _acceptance criterion_ — the thing standing between a history rewrite and a force-push. It reported **"clean across 5 refs"** and **would have reported exactly that before the rewrite ran**, since `main`'s tip was already scrubbed. Measured properly by walking `git rev-list --all`: **99 commits carried an identifier before the rewrite, 0 after.** The tip-scoped check returned 0 for both.
+
+The second is mine. My replacement map held four address literals and one hostname, so it redacted addresses and missed **every host name** — `<wg-hub>` and `<decommissioned-jump>` survived a scrub whose banner asserted the file was clean. A redaction list built from one kind of identifier misses every other kind, and `<jump-host>` had to be found separately, which is what proved the table was never a survey.
+
+**Rule: state the claim, then ask what the check would return if the claim were false.** Every one of these three returns the same value either way. That question is cheap, it is answerable before running anything, and it is the one none of us asked.
+
+**Corollary, and the half that keeps getting skipped: show the check failing.** `yourtal-24` ran the scan against the pre-rewrite state and watched it return non-zero — which is the only thing that distinguishes a check that passed from a check that cannot fail. They caught it because an empty diff surprised them and they asked why instead of accepting it.
+
+---
+
 ---
 
 ## The pattern, restated

@@ -44,12 +44,20 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   // `yourtal_app` cannot DELETE these tables (see `OWNER_URL`'s comment
   // above), and on `voucher.code_custody` it holds no grant at all.
   //
-  // CHILD-FIRST, and the order is the foreign-key graph rather than a guess:
-  // refund -> capture -> authorization -> event -> code_custody -> vouchers.
-  // A bare `DELETE FROM voucher.vouchers` is what CI rejected on 1957fb5 --
-  // it passed locally only because a scratch database that has been migrated
-  // but never SEEDED has no custody rows to violate the constraint. An empty
-  // child table and an absent foreign key look identical from the parent.
+  // CHILD-FIRST, along the whole foreign-key graph rather than the part that
+  // happened to fail last. Four tables reference `store.listings` --
+  // `voucher.vouchers` (20260919000004), `store.listing_location`
+  // (20260919000009), `voucher.batch` (20260920000015) and
+  // `store.listing_price_revision` (20260920040000) -- and `voucher.vouchers`
+  // in turn references `voucher.batch`. Hence:
+  //   refund -> capture -> authorization -> event -> code_custody
+  //     -> vouchers -> batch, then the store tables below.
+  //
+  // This list was enumerated from the migrations, not discovered one CI run
+  // at a time. Two rounds were: a bare `DELETE FROM voucher.vouchers` broke
+  // on code_custody, and clearing custody then broke on batch. Fixing the
+  // constraint a failure names, rather than reading the graph, turns one
+  // defect into as many red runs as the graph has edges.
   const owner = createAppDb(process.env["DATABASE_OWNER_URL"] ?? OWNER_URL);
   await owner.execute(sql`DELETE FROM voucher.refund`);
   await owner.execute(sql`DELETE FROM voucher.capture`);
@@ -57,6 +65,7 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   await owner.execute(sql`DELETE FROM voucher.event`);
   await owner.execute(sql`DELETE FROM voucher.code_custody`);
   await owner.execute(sql`DELETE FROM voucher.vouchers`);
+  await owner.execute(sql`DELETE FROM voucher.batch`);
   await db.delete(listingPriceRevisions);
   await db.delete(listingLocations);
   await db.delete(listings);

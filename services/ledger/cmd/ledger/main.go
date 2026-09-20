@@ -1,14 +1,23 @@
-// Command ledger is the service skeleton for YT-0517.
+// Command ledger is the ledger service. docs/15 makes it one of the six
+// Phase 1 deployables and the sole writer of every point and cash balance.
 //
-// It is a SKELETON, deliberately: routing, the response envelope, structured
-// logging and graceful shutdown, and nothing about double-entry. The ledger's
-// actual invariants already exist and are already enforced — in Postgres, by
-// the YT-0518 migration, proved by packages/db's tests. Writing a Go
-// implementation of them before YT-0506 settles the money unit would be
-// writing code against a number whose meaning is still open.
+// # What is live and what is not
 //
-// What this does establish is the shape docs/13a section 7 fixes, so the
-// first real handler has somewhere to land: chi, one httpx pair for every
+// internal/ledger, internal/reward and internal/pricing are real,
+// Postgres-backed implementations, proved by their own tests against a live
+// database. What was missing until now was an HTTP caller — see
+// internal/api. Every one of its four routes currently returns an honest
+// 501: not just the two that write (transfers, reward grants), but also the
+// balance read and the price quote, because an unauthenticated,
+// account-id-keyed balance read is an enumeration surface (the voucher
+// service's YT-0150 draws this exact line: "no bare balance endpoint") and
+// the price quote's inputs touch the backing rate B, which YT-0130 revokes
+// schema access to specifically so no caller outside the ledger can derive
+// a points price. Nothing here is exposed until authentication exists. See
+// internal/api's notYetExposed for the reasoning, which mirrors the
+// pattern services/voucher/cmd/voucher/main.go already set.
+//
+// The shape below is docs/13a section 7's: chi, one httpx pair for every
 // response, slog injected rather than global, and the middleware order
 // `RequestID -> RealIP -> ... -> recover -> timeout -> auth -> Cerbos ->
 // idempotency -> module`. The last three are not here yet; auth and Cerbos
@@ -32,7 +41,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/yourtal/services/ledger/internal/api"
 	"github.com/yourtal/services/ledger/internal/httpx"
+	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/proof"
 )
 
@@ -47,6 +59,12 @@ const (
 	defaultAddr     = "127.0.0.1:3010"
 	requestTimeout  = 10 * time.Second
 	shutdownTimeout = 15 * time.Second
+
+	// readinessPingTimeout bounds /readyz's own database round trip. Short
+	// on purpose: a healthcheck that can hang as long as the outer
+	// middleware Timeout allows is a healthcheck that reports "unhealthy"
+	// ten seconds late, and docker's healthcheck interval below is 5s.
+	readinessPingTimeout = 2 * time.Second
 )
 
 func main() {
@@ -75,25 +93,84 @@ func run(logger *slog.Logger) error {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(requestTimeout))
 
-	// The invariant checker, if a database is configured. Without one the
-	// service still serves — but it says so, rather than running with no
-	// checker and looking identical to one that is healthy.
-	if url := os.Getenv("DATABASE_URL"); url != "" {
-		pool, err := pgxpool.New(ctx, url)
+	// The pool, the invariant checker and the module routes all share one
+	// connection: LEDGER_DATABASE_URL, the yourtal_ledger credential. This
+	// must never be the generic DATABASE_URL (yourtal_app) or the owner URL
+	// (yourtal, superuser) — yourtal_app has no grant on the ledger schema
+	// AT ALL by design (infra/postgres/init/01-schemas.sql), and connecting
+	// as the owner would be YT-0554's bug one layer down. Without one the
+	// service still serves health checks — but it says so, rather than
+	// running with no checker and no live routes and looking identical to a
+	// deployment that has both.
+	var pool *pgxpool.Pool
+	if url := os.Getenv("LEDGER_DATABASE_URL"); url != "" {
+		var err error
+		pool, err = pgxpool.New(ctx, url)
 		if err != nil {
-			return fmt.Errorf("connecting for the invariant checker: %w", err)
+			return fmt.Errorf("connecting as yourtal_ledger: %w", err)
 		}
 		defer pool.Close()
+
+		if err := pool.Ping(ctx); err != nil {
+			return fmt.Errorf("the database is unreachable at boot: %w", err)
+		}
 
 		checker := proof.New(pool, proof.LoggingAlerter{Logger: logger})
 		go runChecker(ctx, logger, checker)
 	} else {
-		logger.Warn("no DATABASE_URL: the ledger invariant checker is NOT running")
+		logger.Warn("no LEDGER_DATABASE_URL: the invariant checker is NOT running " +
+			"and /v1 routes will report the database as unconfigured")
 	}
 
+	// /healthz is pure liveness: it never touches the database, and answers
+	// 200 as long as the process is scheduling goroutines at all. That is
+	// deliberate and it is NOT what a container orchestrator's readiness
+	// probe should point at — a service that answers "ok" while it cannot
+	// reach Postgres is exactly the false "can serve" this docker-compose.yml
+	// healthcheck was found reporting: pausing Postgres left /healthz at 200
+	// throughout, so a check wired to it goes green on a service that cannot
+	// actually do anything.
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		httpx.WriteJSON(w, logger, http.StatusOK, map[string]string{"status": "ok"})
 	})
+
+	// /readyz is what docker-compose.yml's healthcheck now points at: can
+	// this instance actually serve a request that touches the database. A
+	// missing pool is unready by construction (there is nothing to be ready
+	// WITH); a configured pool that fails to answer a Ping within budget is
+	// unready for the same reason a request against it would fail.
+	router.Get("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if pool == nil {
+			httpx.WriteError(w, logger, http.StatusServiceUnavailable,
+				"api_error", "database_not_configured",
+				"LEDGER_DATABASE_URL is not set, so this instance cannot serve a database-backed request")
+			return
+		}
+
+		pingCtx, cancel := context.WithTimeout(r.Context(), readinessPingTimeout)
+		defer cancel()
+		if err := pool.Ping(pingCtx); err != nil {
+			logger.Error("readiness ping failed", "error", err)
+			httpx.WriteError(w, logger, http.StatusServiceUnavailable,
+				"api_error", "database_unreachable", "the database did not answer a ping in time")
+			return
+		}
+
+		httpx.WriteJSON(w, logger, http.StatusOK, map[string]string{"status": "ready"})
+	})
+
+	if pool != nil {
+		module := api.New(logger, ledger.New(pool), pricing.New(pool))
+		router.Mount("/v1", module.Routes())
+	} else {
+		router.Route("/v1", func(r chi.Router) {
+			r.HandleFunc("/*", func(w http.ResponseWriter, _ *http.Request) {
+				httpx.WriteError(w, logger, http.StatusServiceUnavailable,
+					"api_error", "database_not_configured",
+					"LEDGER_DATABASE_URL is not set, so the ledger module has nothing to read or write from")
+			})
+		})
+	}
 
 	router.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		httpx.WriteError(w, logger, http.StatusNotFound,

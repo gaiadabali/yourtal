@@ -130,7 +130,7 @@ The earning half of the loop: a business uploads a video with questions, a user 
 ## Watch session
 
 ### YT-0120 · Watch session service
-`doing` · P1 · watch · 5d · dep: YT-0101, YT-0039
+`review` · P1 · watch · 5d · dep: YT-0101, YT-0039
 
 **Contract + storage landed. `pnpm verify` 11/11, 1959 tests, lint 11/11, `pnpm dev:fresh` green through 13 migrations.**
 
@@ -143,8 +143,10 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - [x] **Coverage is append-only evidence**, `GRANT SELECT, INSERT` with no UPDATE or DELETE, the same grant shape as `ledger.entry`. Derived rather than totalled: a stored total is a second copy a concurrent write can corrupt, and a fraud review needs the SHAPE of a claim — forty identical two-second spans at 3am looks nothing like a person
 - [x] **A session names the terms version it entered under, through a COMPOSITE foreign key** to `(campaign_id, version)`. Two independent ids that each exist but do not belong together is exactly what a single-column key would have let through, and "the terms you agreed to" would be a number nothing verifies
 - [x] Whole seconds throughout, rounded **inward**. Floating positions never sum to exactly the duration, so a rule stated over floats is one no honest viewer can satisfy; rounding outward would credit a partly-played second, and 900 nudges would earn 900 seconds nobody watched
-- [ ] ⚠️ **No API surface yet.** This is the model, the rules and the storage; the endpoints are the next slice. `apps/api` has still never booted (recorded on YT-0100), so wiring this into a live route is the step that would first prove that end of the stack
-- [ ] ⚠️ **The segment-log cross-check is YT-0123**, and it is what turns the rate check from "could not have been watched that fast" into "those bytes were never delivered". The logs exist and are live (YT-0521); this session model is what they get compared against
+**Verified independently 2026-09-20 (`yourtal-24`), past the entry rather than from it.** Two claims checked against the live database rather than the suite: `pg_indexes` shows `session_one_active_per_user` as `UNIQUE ... (user_id) WHERE (state = 'active')`, so the one-active-session rule is the index and not a service check; and `information_schema.table_privileges` reports `yourtal_app` holding **INSERT, SELECT only** on the coverage table — no UPDATE, no DELETE, so coverage really is append-only evidence. `watch.controller.test.ts` passes 14/14 run alone.
+
+- ⏭️ **The API surface is YT-0553, and it has since landed.** This ticket is the model, the rules and the storage. When it was written `apps/api` had never booted; `watch.controller.ts` now exposes start / resume / progress / complete and its suite passes 14/14 alone. Left as a pointer rather than a criterion — endpoints were never this ticket's bar
+- ⏭️ **The segment-log cross-check is YT-0123**, and it is what turns the rate check from "could not have been watched that fast" into "those bytes were actually fetched"
 
 ### YT-0121 · Checkpoint tokens
 `todo` · P1 · watch · 5d · dep: YT-0120

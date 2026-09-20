@@ -65,6 +65,22 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # Object storage for the media suite (YT-0521). A service container is
+      # right here, unlike Cerbos above: MinIO mounts nothing from the
+      # repository, so starting before `actions/checkout` costs it nothing.
+      minio:
+        image: quay.io/minio/minio:latest
+        env:
+          MINIO_ROOT_USER: yourtal
+          MINIO_ROOT_PASSWORD: yourtal_local_only
+        ports:
+          - 26900:9000
+        options: >-
+          --health-cmd "mc ready local"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
     env:
       # The RUNTIME role, unprivileged on purpose (YT-0554, risk 45). CI used
       # this variable for everything, including the app, so CI was exercising
@@ -76,6 +92,11 @@ jobs:
       # Matches docker-compose.yml's mapped host port and .env.example — see
       # the drift test in apps/api/src/config/env.schema.test.ts.
       PDP_BASE_URL: http://127.0.0.1:26592
+      # Matches docker-compose.yml and .env.example (YT-0521).
+      S3_ENDPOINT: http://127.0.0.1:26900
+      S3_ACCESS_KEY: yourtal
+      S3_SECRET_KEY: yourtal_local_only
+      S3_BUCKET: yourtal-media
 
     steps:
       - name: Checkout
@@ -246,4 +267,19 @@ jobs:
       # logs; this catches every suite that has neither — and it is the
       # same command `pnpm verify` runs locally, so the two cannot drift.
       - name: Every remaining suite
-        run: pnpm exec turbo run test --concurrency=1
+        run: |
+          set -o pipefail
+          pnpm exec turbo run test --concurrency=1 2>&1 | tee /tmp/sweep.log
+
+      # This step was added without a skip guard, and the media suite
+      # promptly reported `7 skipped` while failing on a missing MinIO —
+      # the exact thing every other step here guards against. A suite that
+      # opts out because infrastructure is absent has proved nothing, and
+      # this workflow exists to make that impossible.
+      - name: Assert the sweep reported nothing skipped
+        run: |
+          if grep -qiE '[0-9]+ skipped' /tmp/sweep.log; then
+            echo "::error::A suite skipped during the full sweep. It did not run."
+            grep -iE '[0-9]+ skipped' /tmp/sweep.log
+            exit 1
+          fi

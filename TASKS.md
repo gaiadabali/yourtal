@@ -61,7 +61,8 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 | Session        | Owns                                                                                    | Task files it may edit                    |
 | -------------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **yourtal-22** | **All three branches landed** (`ab7ea79` voucher redemption API · `c1dc5ce` ledger routes + both Go services in compose + `/readyz` · `8216ec7` store module + `14bd5a8`). **Now holds `policies/`** — YT-0574 and YT-0575, taken up after e3's ending left them unowned. Will hand it back or re-declare it unowned when that lands |                                           |
+| **yourtal-22** | `apps/web/**` (**YT-0577**, the suite-wide wait policy) · `services/voucher/**` (**YT-0571/0572/0573**) · `services/ledger/**` next (**YT-0567**). Founder-approved, running now | none — reports status for recording |
+| **yourtal-1d** | **New 2026-09-20.** Offered the `apps/api` + `packages/*` backend cluster — **YT-0554** (superuser, risk 45) · **YT-0120** · **YT-0036** · **YT-0553** · **YT-0101** · **YT-0039** · **YT-0556**. All already started and near done, so finishing rather than building | none — reports status for recording |
 | **yourtal-14** | Planning, `docs/`, this tracker, `scripts/`, `.githooks/`, `.github/workflows/`           | everything under `docs/tasks/`            |
 | _yourtal-e3_   | _Ended._ Left behind: campaign, watch, `apps/api` core, contracts codegen               | —                                         |
 | _yourtal-5a_   | _Ended._ Left behind: `services/voucher`, pricing, `apps/api/modules/{store,merchant}`   | —                                         |

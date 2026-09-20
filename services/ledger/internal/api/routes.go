@@ -59,17 +59,37 @@ func New(logger *slog.Logger, book *ledger.Ledger, priced *pricing.Engine) *API 
 
 // Routes returns the mountable router. main.go mounts it at /v1 after the
 // fixed middleware prefix (RequestID -> RealIP -> Recoverer -> Timeout);
-// auth, Cerbos and idempotency are not yet in that chain (see the 501
-// handlers below), so nothing mounted here may mutate state unauthenticated.
+// auth, Cerbos and idempotency are not yet in that chain, so every route
+// below is a 501 naming that gap. None of the four is live.
+//
+// # Every route is gated, including the reads
+//
+// An earlier version of this file drew the line at "does this write a row
+// or move a balance", and left the balance read and the price quote open on
+// that basis. That line is right for WRITE risk and wrong for READ risk,
+// and this codebase had already reasoned that through one layer down:
+// YT-0150 on services/voucher is "no bare balance endpoint", because a
+// caller who can query a balance keyed by account id can binary-search it —
+// which is exactly why unknown-code, wrong-merchant and insufficient-value
+// all return one identical error there. GET /accounts/{id}/balance, open,
+// is that same enumeration surface for this ledger. It is gated for the
+// same reason the voucher service already gates its lookups, not a new one.
 func (a *API) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	// --- live: reads and pure computations. Neither writes a row nor moves
-	// a balance, so exposing them ahead of authentication is not the same
-	// mistake as an open transfer endpoint would be. See the 501 handlers
-	// below for the routes that DO move money.
-	r.Get("/accounts/{accountID}/balance", a.getBalance)
-	r.Post("/pricing/quote", a.postPricingQuote)
+	r.Get("/accounts/{accountID}/balance", a.notYetExposed(
+		"the balance API is implemented but not yet exposed: it is waiting on caller "+
+			"authentication. An account-id-keyed balance read with no caller check is a "+
+			"binary-search enumeration surface (services/voucher's YT-0150 draws the same "+
+			"line: 'no bare balance endpoint'), not a harmless read just because it writes "+
+			"nothing"))
+	r.Post("/pricing/quote", a.notYetExposed(
+		"the pricing quote API is implemented but not yet exposed: it is waiting on caller "+
+			"authentication. This is not only about who may ask — the backing rate B lives in "+
+			"the ledger schema specifically so a supplier cannot compute a points price "+
+			"themselves (YT-0130, enforced by GRANT: yourtal_app has no access to schema "+
+			"ledger at all), and this response never returns B even to an authenticated "+
+			"caller for the same reason"))
 
 	// --- not yet exposed: these write to the ledger. Following the pattern
 	// services/voucher/cmd/voucher/main.go already set for exactly this
@@ -149,18 +169,35 @@ type quoteRequest struct {
 	At string `json:"at,omitempty"`
 }
 
+// quoteResponse deliberately does NOT carry BackingMicrosPerPoint (B).
+//
+// infra/postgres/init/01-schemas.sql revokes yourtal_app's access to the
+// `ledger` schema entirely, specifically so the store service cannot
+// compute a points price itself — YT-0130: "a supplier can never set a
+// points price directly, now true by GRANT rather than by convention." An
+// endpoint that hands B to any caller who can reach it undoes that by a
+// different door: whoever holds B can compute
+// `points = ceil(S × B⁻¹ × multiplier)` themselves, which makes the GRANT
+// boundary decorative for every caller of THIS service, authenticated or
+// not. The store needs the computed price. It does not need the input that
+// produced it, and this type does not offer it a way to ask.
+//
+// BackingRateID stays: it is an opaque identifier for audit correlation
+// ("which rate produced this price"), not the rate's value, and nothing in
+// this package resolves it back to one over this route. If a future
+// endpoint ever needs to resolve a BackingRateID to its MicrosPerPoint,
+// that endpoint needs its own authorization decision — it does not inherit
+// this one's.
 type quoteResponse struct {
-	PricePoints           string `json:"price_points"`
-	SettlementMinor       string `json:"settlement_minor"`
-	BackingMicrosPerPoint string `json:"backing_micros_per_point"`
-	BackingRateID         string `json:"backing_rate_id"`
-	DemandMultiplierBps   int32  `json:"demand_multiplier_bps"`
+	PricePoints         string `json:"price_points"`
+	SettlementMinor     string `json:"settlement_minor"`
+	BackingRateID       string `json:"backing_rate_id"`
+	DemandMultiplierBps int32  `json:"demand_multiplier_bps"`
 }
 
-// postPricingQuote computes a price. It never writes anything — Quote reads
-// the currently-effective backing rate and runs pricing.PriceInPoints, both
-// pure given their inputs — so this is a read for the purposes of the
-// authentication line drawn in Routes above.
+// postPricingQuote computes a price. It never writes anything, and never
+// returns B — see quoteResponse's comment. It is not currently reachable;
+// see Routes.
 func (a *API) postPricingQuote(w http.ResponseWriter, r *http.Request) {
 	var req quoteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -200,11 +237,10 @@ func (a *API) postPricingQuote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.WriteJSON(w, a.logger, http.StatusOK, quoteResponse{
-		PricePoints:           moneyString(quote.PricePoints),
-		SettlementMinor:       moneyString(quote.SettlementMinor),
-		BackingMicrosPerPoint: moneyString(quote.BackingMicrosPerPoint),
-		BackingRateID:         quote.BackingRateID,
-		DemandMultiplierBps:   quote.DemandMultiplierBps,
+		PricePoints:         moneyString(quote.PricePoints),
+		SettlementMinor:     moneyString(quote.SettlementMinor),
+		BackingRateID:       quote.BackingRateID,
+		DemandMultiplierBps: quote.DemandMultiplierBps,
 	})
 }
 

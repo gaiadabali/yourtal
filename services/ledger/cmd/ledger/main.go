@@ -6,11 +6,14 @@
 // internal/ledger, internal/reward and internal/pricing are real,
 // Postgres-backed implementations, proved by their own tests against a live
 // database. What was missing until now was an HTTP caller — see
-// internal/api. Two of its four routes are live (a balance read and a price
-// quote: neither writes a row or moves a balance). The other two
-// (transfers, reward grants) return an honest 501, because docs/13a section
-// 7's middleware order puts auth and Cerbos in front of anything that
-// mutates state, and neither exists yet for this service. See
+// internal/api. Every one of its four routes currently returns an honest
+// 501: not just the two that write (transfers, reward grants), but also the
+// balance read and the price quote, because an unauthenticated,
+// account-id-keyed balance read is an enumeration surface (the voucher
+// service's YT-0150 draws this exact line: "no bare balance endpoint") and
+// the price quote's inputs touch the backing rate B, which YT-0130 revokes
+// schema access to specifically so no caller outside the ledger can derive
+// a points price. Nothing here is exposed until authentication exists. See
 // internal/api's notYetExposed for the reasoning, which mirrors the
 // pattern services/voucher/cmd/voucher/main.go already set.
 //

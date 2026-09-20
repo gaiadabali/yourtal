@@ -209,8 +209,16 @@ Verified: `tsc --noEmit` and `eslint apps/web/features/me "apps/web/app/(app)/me
 
 > The **business console, merchant surfaces and the prototype gate** moved to [`phase-u-ui-business.md`](phase-u-ui-business.md) when this file crossed 300 lines. Same phase, same numbering.
 
-### YT-0577 · A flaky player test, reported rather than retried away
-`todo` · P1 · web · 4h · dep: YT-0412
+### YT-0577 · `pnpm verify` is not reliably green on a loaded machine
+`todo` · P0 · web · 2d · dep: YT-0412
+
+⚠️ **RE-SCOPED 2026-09-20 from "a flaky player test" to a suite-wide defect, and raised to P0.** `yourtal-22` ran the full `pnpm verify` under contention and saw **six failures across four files** — `merchant-redemption-screen`, `team-screen` (×2), `video-player` (×2), `device-session-cookie` — while **all 189 files / 987 tests passed when `@yourtal/web` ran alone, twice.**
+
+**So it is not one test with a bad wait. It is the whole suite being sensitive to CPU contention**, and the `findByRole` 1000 ms-default diagnosis below generalises to every one of them.
+
+**The consequence is the reason this is P0: the repo's one gate is unreliable rather than merely slow.** A `verify` that fails under load and passes alone trains everyone to re-run it, and a re-run is how a real failure gets dismissed — the exact habit `docs/13d` §7 and YT-0558 were written about. It also means CI runners, which are contended, will see this too.
+
+**The fix is a suite-level wait policy, not five timeout bumps.** A per-assertion bump fixes the five that were seen and leaves the class intact for the sixth.
 
 - **Seen once by `yourtal-22` during `verify` on 2026-09-20**, then green on an immediate re-run with no code change (189 files / 987 tests). Neither they nor their agents touched `apps/web`. Recorded because **a test that passes on retry is how a real intermittent failure gets trained into background noise** — and re-running was the cheapest possible response, which is exactly why it is the dangerous one
 - `apps/web/features/player/video-player.test.tsx` — _"offers a resume prompt when a prior position exists in localStorage (Zod-validated on read)"_

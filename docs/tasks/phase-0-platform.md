@@ -530,6 +530,10 @@
 - [ ] Sabotage-prove both: call `set_settlement_value` with the attribute **absent** and confirm a deny. A policy test that only ever supplies the attribute cannot see this class at all
 - [ ] Audit every other `has(...)` in `policies/` for the same shape — **a guard whose condition is satisfied by absence is a guard that anyone can turn off by saying nothing**
 - [ ] ⚠️ `policies/` was **`yourtal-e3`'s and that session has ended**, so this is unowned. It needs an owner before it needs a fix
+- ⚠️ **CORRECTION 2026-09-20 (`yourtal-22`, merged `074dc20`): the absence-case test does not test the CEL expression — it tests the schema.** Isolated three ways: OLD expression + NEW schema → **390 OK, passes**; OLD expression + OLD schema → **3 FAILED**; NEW expression + NEW schema → 390 OK
+- ⚠️ So **the `required` schema change is the fix, and the stronger one because it fails earlier** — once the attribute is required, a resource lacking it is denied at validation before CEL is evaluated. **For every schema-valid input the two expressions are behaviourally identical.** The CEL change is defence-in-depth that **no test can pin**: revert it tomorrow and all 390 still pass
+- ⚠️ Both are kept — the expression is correct on its own merits and schema enforcement is not guaranteed on every path — but this ticket must record **one verified control and one unverified by construction**, not two verified ones. Otherwise the next reader takes 34 green tests as covering both
+- ⚠️ **Twice in one day this suite measured something adjacent to what it named**: at 08:00 it passed 28/28 against a fully broken control because fixtures supplied the attribute; by 09:00 it passed 34/34 against a half-fixed one because the schema masks the other half. General form for `docs/13d`: **when two fixes land in one commit and one masks the other, the tests verify the pair rather than the parts**, and the weaker one silently stops being covered
 
 ### YT-0575 · `approve_settlement_decrease` is a rule with no way to invoke it
 `todo` · P1 · platform · 3d · dep: YT-0574

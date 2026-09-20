@@ -1,10 +1,14 @@
 # Phase 0 · Helios deployment target and the simulation seam
 
-> ⚠️ **This repository is PUBLIC as of 2026-09-20.** Infrastructure addresses that used to appear here inline — Helios's IP, its VPS hostname, the jump hosts, the WireGuard hub, and the office IP that `ufw` allowlists for SSH — are now written as `<placeholders>`. The real values live in **`gaiada-setups/access/`**, which is private: `server-inventory.md` and `helios-home-access.md`.
+> ⚠️ **This repository was PUBLIC for a few hours on 2026-09-20 and is private again.** Infrastructure addresses that used to appear here inline — Helios's IP, its VPS hostname, the jump hosts, the WireGuard hub, and the office IP that `ufw` allowlists for SSH — are now written as `<placeholders>`. The real values live in **`gaiada-setups/access/`**, which is private: `server-inventory.md` and `helios-home-access.md`.
 >
 > **Why this matters more than it looks.** No credential leaked — `.env` has never been committed and no key files are tracked. The disclosure was *targeting information*: taken together these named which box to attack, what it runs, and which sources it trusts. The sharpest item was not the Helios IP, which DNS publishes anyway, but the **combination** of the WireGuard hub's address with the fact that the mesh subnet is SSH-allowlisted on both boxes — that describes a route which bypasses the per-IP allowlist entirely.
 >
-> ⛔ **Scrubbing HEAD does not remove this from git history**, and the repository was public while it was there. A real scrub needs a history rewrite and a force-push, which breaks every clone and is the founder's decision, not mine. **Assume these values are known** and treat the allowlist as what it always was: a control that requires an attacker to *come from* those addresses, not one that depends on them being secret.
+> ⛔ **The scrub closed the tip and not the exposure, for two reasons.** It was never pushed — it sat behind the Actions freeze while `origin/main` went on serving the real values to the world. And even pushed, two earlier commits carry them in history, where a scrub commit hides them from the tip and from nobody else. **What actually closed it was the founder flipping visibility back to private.**
+>
+> ⏭️ **The history rewrite is still outstanding — YT-0578.** Harmless while private; **it must happen before this repository is ever made public again**, or the next flip re-exposes everything instantly. Forks were 0 at the moment it went private and the repo was a few hours old, so realistic exposure is small — not provably zero.
+>
+> **Assume these values are known** and treat the allowlist as what it always was: a control that requires an attacker to *come from* those addresses, not one that depends on them staying secret.
 
 
 **Decision, 2026-09-19:** the deployment target is **Helios** (`server-c`, `<helios-ip>`, Ubuntu 24.04, CloudPanel + nginx, 8 vCPU / 31 GB), the existing production box in the sister-company fleet. **All third-party connections are held** until later; every external boundary runs a simulator instead. Auth is ordinary email + password.
@@ -221,3 +225,14 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - [ ] The fraud model in `docs/18` §5 rests on a **phone-OTP identity anchor**; email and password alone make a fake account nearly free
 - [ ] Recorded as a numbered risk in `docs/03` with the trigger that forces it back in: **the first real points issued to a real person**
 - [ ] Velocity caps and trust tiers are built against the anchor's **interface** now, so restoring it is configuration rather than redesign
+
+### YT-0578 · Rewrite history before this repository is ever public again
+`blocked` · P0 · infra · 1d · dep: —
+
+- ⛔ **Blocked on a founder decision, and it is a decision rather than a task.** The repository was **public for a few hours on 2026-09-20**, during which `origin/main` served Helios's IP and VPS hostname, its OS version, the jump hosts, and the office IP that `ufw` allowlists for SSH. It is private again, which closed it
+- ⚠️ **The scrub commit does not help.** Two earlier commits carry the values, so removing them from the tip hides them from the tip and from nobody else. **The next flip to public re-exposes everything instantly** — which is the trap: the danger is not the current state but a future, reasonable-looking decision
+- ⚠️ Forks were **0** at the moment it went private and the repo was hours old, so realistic exposure is small. **Not provably zero**, and it should not be recorded as zero
+- [ ] Decide: rewrite (`git filter-repo`) and force-push, or accept the values as known and rely on the controls. **Rewriting breaks every clone**, so it is cheapest now, while there are three
+- [ ] If rewriting: the office IP, home IPs, fleet addresses, the WireGuard hub and the VPS hostname all go, not only the two files the scrub touched
+- [ ] Either way, a **check that fails when an infrastructure address appears in a tracked file**, so this cannot recur by someone writing a runbook in the wrong repository
+- [ ] ⏭️ The durable fix already exists and is not this ticket: identifiers live in `gaiada-setups/access/` (private) and appear here as `<placeholders>`

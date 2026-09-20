@@ -193,6 +193,20 @@ That is why it is worth its own entry rather than a footnote to §7. The others 
 
 Worse from the session whose stated job is verifying other sessions' claims, which is the other half of why it is recorded here under its author's name rather than in a commit message nobody will open again.
 
+## 16. A fix that was not pushed is not a fix, and "HEAD" is ambiguous
+
+The repository was public for a few hours. I scrubbed the infrastructure identifiers, committed, and reported the exposure closed at the tip with history still outstanding. Both halves of that sentence were wrong in the same direction.
+
+**It was never pushed.** It sat behind the Actions-spend freeze as one of eight local commits while `origin/main` — the thing that was actually world-readable — went on serving the real values. I wrote "scrubbing HEAD", meaning _my_ HEAD, and read it back as though it meant the published state. Nothing in the phrasing flagged the difference.
+
+**And the framing was wrong even if it had shipped.** I presented history as a residual risk behind a fixed tip. With two earlier commits carrying the values, the tip was never the exposure; it was the least of it.
+
+What closed it was the founder flipping visibility back to private. Not my commit.
+
+**Rule: when the risk is what other people can see, the only state that counts is the published one.** `git log` answers a different question from `git log origin/main`, and under a push freeze those diverge silently and without limit. Ask what the remote serves, not what the working copy says.
+
+This is §15's shape in a new place. There the false claim was prose; here it was a real commit that really did what it said — to a branch nobody could read.
+
 ---
 
 ## The pattern, restated

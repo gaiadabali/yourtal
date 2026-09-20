@@ -7,6 +7,23 @@
 -- later as a scan error.
 CREATE SCHEMA IF NOT EXISTS voucher;
 CREATE SCHEMA IF NOT EXISTS store;
+CREATE SCHEMA IF NOT EXISTS platform;
+
+-- platform.idempotency (packages/db/migrations/20260919000001) is shared by
+-- every service, not owned by voucher — copied here for the same reason as
+-- everything else in this file: sqlc needs a schema to type against, and
+-- `schema_test.go` is what keeps the copy honest.
+CREATE TABLE platform.idempotency (
+  scope        text        NOT NULL,
+  key          text        NOT NULL,
+  fingerprint  char(64)    NOT NULL,
+  state        text        NOT NULL,
+  status       smallint,
+  body         text,
+  started_at   timestamptz NOT NULL DEFAULT now(),
+  expires_at   timestamptz NOT NULL,
+  PRIMARY KEY (scope, key)
+);
 
 CREATE TABLE voucher.batch (
   id                        uuid        PRIMARY KEY,

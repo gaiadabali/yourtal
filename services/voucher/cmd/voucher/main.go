@@ -32,8 +32,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/voucher/internal/httpx"
+	"github.com/yourtal/services/voucher/internal/idempotency"
 	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/keyring"
+	"github.com/yourtal/services/voucher/internal/merchantauth"
 	"github.com/yourtal/services/voucher/internal/redeem"
 )
 
@@ -88,10 +90,11 @@ func run(logger *slog.Logger) error {
 	network := redeem.New(pool)
 
 	router := chi.NewRouter()
-	// docs/13a §7 fixes this order. otelhttp, merchant signature verification
-	// and idempotency slot in here as they arrive; the sequence is what
-	// matters, because idempotency must sit behind authentication or an
-	// unauthenticated caller can write to the idempotency table.
+	// docs/13a §7 fixes this order: RequestID -> RealIP -> Recoverer ->
+	// Timeout -> auth -> idempotency -> module. otelhttp slots in later; the
+	// sequence below is what matters, because idempotency must sit behind
+	// authentication or an unauthenticated caller can write to the shared
+	// idempotency table.
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Recoverer)
@@ -101,16 +104,17 @@ func run(logger *slog.Logger) error {
 		httpx.WriteJSON(w, logger, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
-	// The redemption API (docs/09 §8.1). Mounted but not yet reachable
-	// without the merchant signature middleware and the shared idempotency
-	// interceptor, both of which are the next slice of YT-0152 and YT-0039.
-	// Returning 501 rather than serving unauthenticated is the whole point:
-	// an authorize endpoint anyone can call is the enumeration surface the
-	// design exists to remove.
+	// The redemption API (docs/09 §8.1). YT-0152's signature verification and
+	// YT-0039's idempotency interceptor are the guards that make it safe to
+	// expose: mounted in their own sub-router so the fixed order above still
+	// holds — every request reaching `redeem.Routes` has already had its
+	// merchant signature verified and its idempotency key resolved.
+	verifier := merchantauth.New(pool, keys)
+	interceptor := idempotency.New(pool)
 	router.Route("/v1/vouchers", func(r chi.Router) {
-		for _, path := range []string{"/authorize", "/capture", "/void", "/refund"} {
-			r.Post(path, notYetExposed(logger))
-		}
+		r.Use(verifier.Middleware(logger))
+		r.Use(interceptor.Middleware(logger))
+		r.Mount("/", redeem.Routes(logger, network))
 	})
 
 	go sweepHolds(ctx, logger, network)
@@ -169,28 +173,14 @@ func loadKeys() (*keyring.Keyring, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := keys.RequirePurposes(keyring.PurposeVoucherCode); err != nil {
+	// Both purposes are required at boot, not just voucher_code: a key
+	// directory missing the merchant-HMAC key would otherwise boot cleanly
+	// and fail every redemption call at first use — the exact failure mode
+	// this function exists to convert into a startup error.
+	if err := keys.RequirePurposes(keyring.PurposeVoucherCode, keyring.PurposeMerchantHMAC); err != nil {
 		return nil, err
 	}
 	return keys, nil
-}
-
-// notYetExposed is an honest 501.
-//
-// The alternative — wiring the handlers now and adding signature
-// verification "next" — is how an unauthenticated authorize endpoint reaches
-// a deployment. The implementation behind these routes is complete and
-// tested; what is missing is the middleware that decides who may call it,
-// and that is not a detail to ship without.
-func notYetExposed(logger *slog.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, _ *http.Request) {
-		httpx.WriteError(w, logger, http.StatusNotImplemented,
-			"api_error", "not_exposed",
-			"the redemption API is implemented but not yet exposed: it is waiting on "+
-				"merchant signature verification (YT-0152) and the shared idempotency "+
-				"interceptor (YT-0039). Serving it unauthenticated would be the "+
-				"enumeration surface docs/09 section 10 exists to remove")
-	}
 }
 
 // sweepHolds expires abandoned authorizations.

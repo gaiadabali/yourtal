@@ -8,6 +8,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type PlatformIdempotency struct {
+	Scope       string
+	Key         string
+	Fingerprint string
+	State       string
+	Status      *int16
+	Body        *string
+	StartedAt   pgtype.Timestamptz
+	ExpiresAt   pgtype.Timestamptz
+}
+
 type StoreListing struct {
 	ID                      pgtype.UUID
 	MerchantID              pgtype.UUID

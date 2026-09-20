@@ -51,6 +51,12 @@ var tables = map[string]string{
 	"redemption_attempt":  "voucher",
 	"listings":            "store",
 	"listing_location":    "store",
+	// Shared with every service (packages/db/migrations/20260919000001), not
+	// owned by voucher — checked here anyway. YT-0039's Go-side interceptor
+	// reads and writes this table directly, so a drift between this copy and
+	// the live schema is exactly as dangerous here as for a voucher table:
+	// sqlc would type the interceptor against columns that no longer exist.
+	"idempotency": "platform",
 }
 
 func TestSqlcSchemaMatchesTheLiveDatabase(t *testing.T) {

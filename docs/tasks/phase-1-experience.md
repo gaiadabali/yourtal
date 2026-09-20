@@ -53,7 +53,7 @@
 - [ ] Used and expired vouchers archived, never silently deleted
 
 ### YT-0177 · Streaks and daily check-in
-`review` · P1 · web · 3d · dep: YT-0045
+`doing` · P1 · web · 3d · dep: YT-0045
 
 - [ ] ⚠️ **The mechanic is built exactly as specified — a missed day resets the streak to 1, no grace — and that needs a product decision rather than an engineering default.** Built as asked rather than softened unasked, which was right, but a streak that punishes a missed day works against a rewards product: it converts a good week into a loss the first time someone is busy
 - [ ] ⛔ **"Funded from the reserve like any other faucet" is not built and cannot be built from the frontend.** No streak contract and no faucet endpoint exist. The card is honest about it — it tracks locally and shows the *schedule*, and never claims a point has landed in the wallet. Real issuance is backend work and needs both a contract and a faucet, which rule K6 says must be cash-backed at the moment of issue
@@ -77,7 +77,7 @@
 ## SEO
 
 ### YT-0180 · Public catalogue and merchant pages
-`review` · P1 · seo · 2d · dep: YT-0132
+`doing` · P1 · seo · 2d · dep: YT-0132
 
 - [x] **Both gaps closed and verified in built HTML, not asserted.** `LocalBusiness` is emitted **one node per distinct outlet**, each `branchOf` the existing `Organization` — a three-branch merchant gets three nodes, never one. It returns nothing for a merchant known only from a campaign, because inventing an address is worse than omitting the markup
 - [x] `sitemap.ts` and `robots.ts` exist. The sitemap is generated from the same locale-scoped catalogue calls the routes already use, so it cannot drift from what is actually published; `lastModified` comes only from campaigns’ real `publishedAt` and is omitted where no comparable field exists rather than fabricated
@@ -89,7 +89,7 @@
 - [ ] ⚠️ **There is no sitemap and no robots.txt at all.** No `sitemap.ts`, no `robots.ts` anywhere in `apps/web/app`. Every public page is currently discoverable only by a link someone already followed
 
 ### YT-0181 · Internationalised routing and hreflang
-`review` · P1 · seo · 3d · dep: YT-0058, YT-0180
+`doing` · P1 · seo · 3d · dep: YT-0058, YT-0180
 
 - [x] ✅ **`/au` serves.** `GENERATED_PUBLIC_LOCALES` is now `["id", "au"]` and `next build` emits `● /au` with genuinely Australian data (Cedar Deli Bar, Sydney CBD Cafe — not Jakarta content under an Australian URL). This was the widest gap between plan and build: **Australia is the primary market and its entire public surface returned 404**
 - [x] Locale-scoped data readers never search both catalogues, so an `/au/...` URL for an ID-only entity 404s rather than leaking Jakarta content
@@ -198,7 +198,7 @@
 - [ ] Desktop-first, usable on tablet
 
 ### YT-0203 · User information architecture: five surfaces
-`review` · P1 · web · 4d · dep: YT-0055
+`doing` · P1 · web · 4d · dep: YT-0055
 
 - [x] **Audited 2026-09-20: already built and compliant, tracker was stale.** Five tabs in `features/shell/nav-items.ts`, cards carry duration · reward · estimated MB · merchant, and the shell widens rather than forking. No gaps found against the criteria
 - [ ] Earn, Quick, Store, Wallet, Me as the mobile tab structure
@@ -241,7 +241,7 @@
 - [ ] Share events attributed so we can measure which moments actually spread
 
 ### YT-0212 · Open Graph and share cards on public pages
-`review` · P1 · seo · 3d · dep: YT-0205, YT-0180
+`doing` · P1 · seo · 3d · dep: YT-0205, YT-0180
 
 - [x] **The gap was not what the ticket assumed.** Phase U had already shipped real OG cards on all four public page types; what was missing everywhere was `twitter:card`. Next’s `opengraph-image.tsx` convention emits only `og:image`, so Twitter/X rendered no card at all despite the image existing
 - [x] The Twitter tags reuse the exact title, description and image URL the OG metadata already computes, so **the two cannot drift by construction** rather than by discipline

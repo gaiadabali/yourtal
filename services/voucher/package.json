@@ -1,0 +1,14 @@
+{
+  "name": "@yourtal/voucher-service",
+  "version": "0.0.0",
+  "private": true,
+  "//": [
+    "See services/ledger/package.json for why this file exists and why",
+    "-count=1 and -p 1 are correctness flags rather than preferences.",
+    "This module shares the same Postgres instance."
+  ],
+  "scripts": {
+    "test": "go test -count=1 -p 1 ./...",
+    "typecheck": "go vet ./..."
+  }
+}

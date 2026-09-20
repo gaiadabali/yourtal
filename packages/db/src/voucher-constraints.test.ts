@@ -30,17 +30,15 @@ import { OWNER_URL } from "./database-urls";
 const { Pool } = pg;
 
 let owner: pg.Pool;
-let listingId: string;
 let voucherId: string;
 
 beforeAll(async () => {
   owner = new Pool({ connectionString: OWNER_URL, max: 4 });
 
-  const { rows } = await owner.query<{ id: string; listing_id: string }>(
-    `SELECT id, listing_id FROM voucher.vouchers ORDER BY id LIMIT 1`,
+  const { rows } = await owner.query<{ id: string }>(
+    `SELECT id FROM voucher.vouchers ORDER BY id LIMIT 1`,
   );
   voucherId = rows[0]?.id ?? "";
-  listingId = rows[0]?.listing_id ?? "";
   expect(voucherId, "run `pnpm db:seed` first — these need a real voucher").not.toBe("");
 
   await clearProbeRows();

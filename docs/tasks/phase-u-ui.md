@@ -58,7 +58,7 @@
 - [x] Bundle-size report posted on the PR
 
 ### YT-0405 · Region and locale foundation (AU + ID)
-`review` · PU · web · 4d · dep: YT-0403
+`doing` · PU · web · 4d · dep: YT-0403
 
 - ⚠️ **Verified against the running dev server 2026-09-19 and the AU half does not exist yet.** `PUBLIC_LOCALES` is `["id", "au"]` but `GENERATED_PUBLIC_LOCALES` is `["id"]`, and every public route sets `dynamicParams = false` — so `/id` and `/id/rewards` return 200 while **`/au` returns 404**. The type admits a locale the router refuses to serve, which is why this reads as done from inside the code. **Australia is the primary market**, so its public surface 404ing is the single widest gap between the plan and the build. Not re-opened to `todo` because the foundation genuinely is there — but this task cannot go to `done` until `/au` serves.
 - [x] `Region` is a first-class concept — `AU` and `ID`, each carrying its own locale (`en-AU` / `id-ID`) and currency (`AUD` / `IDR`), selected once and available to every screen without prop-drilling — `@yourtal/contracts/region` (`regionSchema`, `REGION_CONFIG`) plus `apps/web/features/region` (`RegionProvider`/`useRegion()` for Client Components, `getRegion()`/`getRegionDisplayConfig()` for Server Components), mounted once in `app/(app)/layout.tsx`
@@ -88,7 +88,7 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - [x] Single primary action; no dark patterns, no hidden duration
 
 ### YT-0412 · Long-form player UI
-`review` · PU · web · 5d · dep: YT-0411
+`doing` · PU · web · 5d · dep: YT-0411
 
 - [x] Chapter markers, progress, accrued reward visible throughout
 - [x] Quality selector defaulting to 360–480p with the data cost shown per option
@@ -121,7 +121,7 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - [x] Sold-out, expiring and newly-added states designed
 
 ### YT-0421 · Offer detail
-`review` · PU · web · 3d · dep: YT-0420
+`doing` · PU · web · 3d · dep: YT-0420
 
 - [x] Terms, minimum spend, transferability and partial-redemption policy **above the fold, before any action**
 - [ ] Merchant, locations and how to redeem — **merchant and how-to-redeem are done; locations is not.** `listingSchema` carries a single `district: string`, not a list of outlets, so a merchant with several branches can only be shown one. The implementation renders every location the data has; closing this needs a contract change (a `locations` array on `listing.ts`), not more UI. Knowing _which_ branch honours a voucher is load-bearing for redemption, so this should not be waved through.
@@ -143,7 +143,7 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - [x] Empty state teaches the loop rather than showing a zero
 
 ### YT-0424 · Voucher detail and offline QR
-`review` · PU · web · 3d · dep: YT-0423
+`doing` · PU · web · 3d · dep: YT-0423
 
 - [x] Rotating QR with a visible validity countdown
 - [ ] Renders from cache with the network disabled — verified by test (see report: a stubbed-fetch test proves the render path has zero network dependency given a cache entry; full offline page-load still needs the Serwist service worker, not installed in this ticket — left unticked rather than overclaimed)
@@ -153,7 +153,7 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 ## Entry, exit and logged-out
 
 ### YT-0430 · Onboarding and phone OTP
-`review` · PU · web · 4d · dep: YT-0402, YT-0405
+`doing` · PU · web · 4d · dep: YT-0402, YT-0405
 
 - [ ] Signup under 60 seconds on a throttled connection, measured — **built to be short, instrumented, not measured.** The flow is region → consent → phone → OTP, four short screens, native controls throughout, and the region step ships zero client JS (a Server Action + a `<form>`, no hydration needed to submit it). `onboarding-timing.ts` records real Performance API marks (`signup-start` on mount, `signup-complete` once OTP verifies) and computes a `performance.measure` duration, visible in DevTools' Performance panel or via `performance.getEntriesByName`. jsdom (Vitest) cannot render real layout or throttle a network, so no test in this repo produces the actual wall-clock number — left unticked rather than overclaimed. Needs a real-browser pass (Playwright/Lighthouse, neither set up in this repo yet) on a throttled profile before this is honestly tickable.
 - [ ] Interest picker with images, 15 seconds to complete — same honesty split as above. Built genuinely fast (one tap per interest, "Skip for now" always available, never blocks), and images are honest CSS/SVG placeholders (fixed `aspect-square` tiles, a centred Lucide icon on a tinted token background — zero network requests, zero measured CLS contribution, not a grey box standing in for a photo that doesn't exist). `interests-start`/`interests-complete` marks exist via the same `onboarding-timing.ts`. The 15-second figure itself is not measured for the same jsdom reason as above.

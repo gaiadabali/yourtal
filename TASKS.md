@@ -15,6 +15,8 @@ Format and rules: [`docs/tasks/_schema.md`](docs/tasks/_schema.md).
 |                                                                       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Stage** | **Building on our own metal.** The deployment target is **Helios**, all third-party connections are **held**, and auth is ordinary email + password. See [`docs/tasks/phase-0-helios.md`](docs/tasks/phase-0-helios.md). |
+| 📊 **Why `done` still reads 0 — and why that is now honest** | The board had **84 tasks in `review` and none in `done`**, and **43 of the 84 had unticked criteria** (five at 0 of n) under a column headed _"work complete"_. `review` had no validator rule, so it became where tasks went to stop being counted. The rule now exists (`_schema.md` § the status lifecycle): **`review` requires every criterion ticked, same bar as `done` minus the verifier.** The 43 moved to `doing`, which is what they were. The remaining **41 are genuinely finished work awaiting a second pair of eyes** — that sweep is the next job, and it is deliberately not a rubber stamp. |
+| 💰 **The gate did not cover the money** | `pnpm verify` ran **282 TypeScript test files and zero Go ones**. `services/*` was in the pnpm workspace but neither Go service had a `package.json`, so turbo never saw them — the ledger, the invariant checker, the daily Merkle proof and every voucher tamper and adversarial test sat outside the only gate anyone runs. **Now inside it**, along with lint (which was red), the 384 Cerbos policy tests and the board staleness check. The first honest run found a real failure: **YT-0567**. |
 | 🌐 **Australia’s public surface returns 404** | Measured against the running dev server: `PUBLIC_LOCALES` is `["id", "au"]`, `GENERATED_PUBLIC_LOCALES` is `["id"]`, and every public route sets `dynamicParams = false`. So `/id` serves and **`/au` does not exist**. YT-0405 reads as done from inside the code because the type admits a locale the router refuses. **AU is the primary market**; this is the widest gap between plan and build. |
 | 🗺️ **Coverage map — recorded, deliberately not started** | YT-0543..0546. Founder decision: it waits until the current plan is done and running. Three things captured now because they are cheap early and expensive late: **Australia Post licenses postcode data, the ABS does not**; **postcodes are delivery routes, not polygons** (SA2 is the right unit); and the **cohort floor must live in the aggregation, not the renderer** — a density map at low coverage re-identifies people. |
 | 🔄 **Australia-primary — reported confirmed, roadmap not yet re-cut** | Relayed via another session: **Australia is the primary market, Indonesia the proving ground**, and the reward is _a reward, not a wage replacement_, at **less than AUD 5 per twenty minutes** depending on partner funding. Engineering consequences are already in flight (YT-0405 region support, region selection at registration) because they are right either way. **The roadmap, economics and legal sequencing have not been re-cut** — `docs/04` still has Indonesia as Phase 1 and Australia as Phase 3. That is ~2 days of work and I want it confirmed in this session first. See _What AU-primary would change_. |
@@ -44,13 +46,14 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 | Session        | Owns                                                                                    | Task files it may edit                    |
 | -------------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **yourtal-6a** | Phase U — all UI, against mocks                                                         | `phase-u-ui.md`, `phase-minus-1-pilot.md` |
-| **yourtal-e3** | YT-0031 contracts codegen, plus agents on YT-0100 (apps/api) and YT-0037 (jurisdiction) | none — reports status for recording       |
-| **yourtal-14** | Planning, `docs/`, this tracker, `scripts/tasks.mjs`                                    | everything else under `docs/tasks/`       |
+| **yourtal-e3** | Backend: campaign, watch, `apps/api` core, contracts codegen                             | none — reports status for recording       |
+| **yourtal-5a** | `services/voucher`, pricing, `apps/api/modules/{store,merchant}`                         | none — reports status for recording       |
+| **yourtal-af** | Config, persistence, infrastructure                                                     | none — reports status for recording       |
+| **yourtal-14** | Planning, `docs/`, this tracker, `scripts/tasks.mjs`, `.githooks/`                       | everything under `docs/tasks/`            |
 
 **TASKS.md is regenerated by yourtal-14 only.** Other sessions run `node scripts/tasks.mjs --check`, never the writing form.
 
-Directory ownership: `apps/web` + `packages/ui` (6a) · `apps/api` + `packages/{authz,consent,jurisdiction}` + `policies` (e3) · `docs` + `scripts` (14).
+Directory ownership: `apps/api` core + `packages/{authz,consent,jurisdiction}` + `policies` (e3) · `services/voucher` + pricing + `apps/api/modules/{store,merchant}` (5a) · config + persistence + infra (af) · `docs` + `scripts` + `.githooks` (14). **`apps/web` is a shared surface — announce the paths, not just the ticket.** Naming tickets instead of paths caused three mid-write races in one day.
 
 **`packages/contracts` is shared, not disjoint.** It belongs to e3 for API shapes, but Phase U necessarily adds to it — `src/mock-seed.ts` and `src/region/` so far. **Rule: contracts stays e3's, and anyone else announces what they add rather than assuming.** The registry completeness gate has caught every addition so far, which is why the overlap has been safe rather than lucky.
 
@@ -58,16 +61,16 @@ Directory ownership: `apps/web` + `packages/ui` (6a) · `apps/api` + `packages/{
 
 _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
-**0 / 262 tasks done (0%)** · 84 in review · 11 in progress · 5 blocked
+**0 / 264 tasks done (0%)** · 41 in review · 54 in progress · 5 blocked
 
 ### By phase
 
 | Phase | Done | Review | Doing | Settled |
 |---|---|---|---|---|
-| Phase U · UI first  ◀ NEXT | 0/34 | 31 | 0 | `▓▓▓▓▓▓▓▓▓░` 91% |
+| Phase U · UI first  ◀ NEXT | 0/34 | 21 | 10 | `▓▓▓▓▓▓░░░░` 62% |
 | Phase −1 · Pilot | 0/13 | 0 | 0 | `░░░░░░░░░░` 0% |
-| Phase 0 · Foundations | 0/102 | 44 | 3 | `▓▓▓▓░░░░░░` 43% |
-| Phase 1 · Indonesia MVP | 0/85 | 9 | 8 | `▓░░░░░░░░░` 11% |
+| Phase 0 · Foundations | 0/104 | 19 | 28 | `▓▓░░░░░░░░` 18% |
+| Phase 1 · Indonesia MVP | 0/85 | 1 | 16 | `░░░░░░░░░░` 1% |
 | Phase 2 · Depth | 0/22 | 0 | 0 | `░░░░░░░░░░` 0% |
 | Phase 3 · Marketplace & AU | 0/6 | 0 | 0 | `░░░░░░░░░░` 0% |
 
@@ -75,22 +78,22 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
 | Epic | Done | Review | Doing | Ready | Left | Settled |
 |---|---|---|---|---|---|---|
-| `adplatform` | 0/17 | 2 | 0 | **4** | 89d | `▓░░░░░░░░░` 12% |
+| `adplatform` | 0/17 | 0 | 2 | **4** | 98d | `░░░░░░░░░░` 0% |
 | `commerce` | 0/1 | 0 | 0 | — | 20d | `░░░░░░░░░░` 0% |
 | `data` | 0/9 | 1 | 0 | **3** | 45d | `▓░░░░░░░░░` 11% |
-| `economy` | 0/7 | 1 | 0 | **3** | 29d | `▓░░░░░░░░░` 14% |
-| `infra` | 0/24 | 5 | 0 | **8** | 79d | `▓▓░░░░░░░░` 21% |
+| `economy` | 0/7 | 0 | 1 | **3** | 30d | `░░░░░░░░░░` 0% |
+| `infra` | 0/25 | 4 | 1 | **9** | 80d | `▓▓░░░░░░░░` 16% |
 | `legal` | 0/9 | 0 | 1 | **4** | 36d | `░░░░░░░░░░` 0% |
-| `media` | 0/13 | 2 | 0 | **1** | 64d | `▓▓░░░░░░░░` 15% |
+| `media` | 0/13 | 1 | 1 | **1** | 67d | `▓░░░░░░░░░` 8% |
 | `merchant` | 0/13 | 2 | 5 | **3** | 59d | `▓▓░░░░░░░░` 15% |
 | `pilot` | 0/11 | 0 | 0 | **1** | 29d | `░░░░░░░░░░` 0% |
-| `platform` | 0/44 | 22 | 1 | **14** | 77d | `▓▓▓▓▓░░░░░` 50% |
+| `platform` | 0/44 | 8 | 15 | **14** | 111d | `▓▓░░░░░░░░` 18% |
 | `risk` | 0/14 | 0 | 0 | **4** | 67d | `░░░░░░░░░░` 0% |
-| `seo` | 0/5 | 3 | 0 | **1** | 9d | `▓▓▓▓▓▓░░░░` 60% |
+| `seo` | 0/5 | 0 | 3 | **1** | 17d | `░░░░░░░░░░` 0% |
 | `store` | 0/10 | 0 | 1 | **4** | 92d | `░░░░░░░░░░` 0% |
-| `value` | 0/23 | 10 | 2 | **5** | 77d | `▓▓▓▓░░░░░░` 43% |
-| `watch` | 0/7 | 1 | 0 | **1** | 27d | `▓░░░░░░░░░` 14% |
-| `web` | 0/55 | 35 | 1 | **2** | 90d | `▓▓▓▓▓▓░░░░` 64% |
+| `value` | 0/24 | 6 | 6 | **6** | 89d | `▓▓▓░░░░░░░` 25% |
+| `watch` | 0/7 | 0 | 1 | **1** | 32d | `░░░░░░░░░░` 0% |
+| `web` | 0/55 | 19 | 17 | **2** | 138d | `▓▓▓▓░░░░░░` 35% |
 
 ### In review (work complete, gate not yet passed)
 
@@ -105,56 +108,18 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 - **YT-0536** `platform` Simulators that can fail — 7/7 AC ticked
 - **YT-0537** `platform` Payment and disbursement simulator — 10/10 AC ticked
 - **YT-0031** `platform` Contracts package and codegen — 4/4 AC ticked
-- **YT-0507** `platform` `business` and `kyb_document` resource kinds — 0/3 AC ticked
-- **YT-0508** `platform` Promote business shapes into contracts — 0/3 AC ticked
-- **YT-0512** `web` `apps/web` imports an undeclared package — 1/5 AC ticked
-- **YT-0509** `platform` Invert the contracts → authz dependency — 2/7 AC ticked
-- **YT-0510** `platform` Delete duplicate business shapes from `apps/api` — 2/4 AC ticked
-- **YT-0511** `infra` Repo-wide formatting gate — 1/2 AC ticked
-- **YT-0525** `web` Migrate hand-built forms to React Hook Form — 1/6 AC ticked
-- **YT-0526** `web` Testable HLS fixture for the player — 1/6 AC ticked
-- **YT-0502** `platform` Listing contract: multiple merchant locations — 2/3 AC ticked
-- **YT-0503** `platform` Campaign contract: chapters and video source — 2/3 AC ticked
-- **YT-0504** `platform` Wallet contract: points history and ledger projection — 2/3 AC ticked
 - **YT-0035** `platform` Cerbos policies and decision point — 3/3 AC ticked
 - **YT-0500** `platform` PDP enforcement across API routes — 8/8 AC ticked
-- **YT-0501** `web` Field RUM for real INP — 2/6 AC ticked
-- **YT-0036** `platform` Consent service v1 — 7/8 AC ticked
-- **YT-0037** `platform` Jurisdiction policy service — 1/2 AC ticked
-- **YT-0039** `platform` Idempotency middleware (TypeScript) — 2/3 AC ticked
 - **YT-0515** `platform` Durable shared idempotency store — 4/4 AC ticked
-- **YT-0548** `media` Storage for campaign chapters and video source — 0/6 AC ticked
-- **YT-0550** `web` Player: `Home` does not return the playhead to zero — 0/4 AC ticked
 - **YT-0551** `web` Gate the completion hand-off on coverage, not on the `ended` event — 4/4 AC ticked
-- **YT-0552** `platform` Wire `apps/api` repositories to Postgres — 7/14 AC ticked
-- **YT-0553** `platform` API surface for campaign and watch — 8/13 AC ticked
-- **YT-0554** `platform` The API must not connect to Postgres as a superuser — 6/9 AC ticked
-- **YT-0556** `platform` Health endpoint — 2/3 AC ticked
 - **YT-0557** `infra` Load the root `.env` properly — 3/3 AC ticked
-- **YT-0565** `value` The ledger schema-drift regex fails open — 5/8 AC ticked
 - **YT-0041** `value` Ledger schema and constraints — 5/5 AC ticked
-- **YT-0513** `value` Currency-tagged Money type — 5/6 AC ticked
-- **YT-0506** `economy` CONFIRM: does Xendit take IDR in rupiah or sen? — 13/18 AC ticked
 - **YT-0042** `value` Ledger transfer API — 6/6 AC ticked
-- **YT-0043** `value` Chart of accounts — 6/7 AC ticked
 - **YT-0044** `value` Invariant checker and daily proof — 8/8 AC ticked
-- **YT-0045** `value` Reward Engine skeleton — 8/10 AC ticked
 - **YT-0046** `value` Partner funding: point pre-purchase and drawdown — 9/9 AC ticked
-- **YT-0056** `web` UI primitives package — 1/4 AC ticked
-- **YT-0058** `web` Internationalisation scaffolding — 2/6 AC ticked
-- **YT-0100** `adplatform` Advertiser accounts and business onboarding — 1/3 AC ticked
-- **YT-0101** `adplatform` Campaign model and lifecycle — 7/9 AC ticked
-- **YT-0120** `watch` Watch session service — 9/11 AC ticked
-- **YT-0177** `web` Streaks and daily check-in — 0/4 AC ticked
-- **YT-0180** `seo` Public catalogue and merchant pages — 5/7 AC ticked
-- **YT-0181** `seo` Internationalised routing and hreflang — 3/5 AC ticked
-- **YT-0203** `web` User information architecture: five surfaces — 1/4 AC ticked
-- **YT-0212** `seo` Open Graph and share cards on public pages — 2/5 AC ticked
 - **YT-0140** `value` Voucher issuance and code custody — 4/4 AC ticked
-- **YT-0440** `web` Business console shell — 1/2 AC ticked
 - **YT-0441** `web` Campaign builder — 3/3 AC ticked
 - **YT-0442** `web` Question bank authoring — 3/3 AC ticked
-- **YT-0443** `web` Business reports — 1/3 AC ticked
 - **YT-0444** `web` Team management — 2/2 AC ticked
 - **YT-0445** `merchant` Merchant redemption portal — 4/4 AC ticked
 - **YT-0446** `merchant` Store device provisioning and PIN unlock — 3/3 AC ticked
@@ -163,18 +128,13 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 - **YT-0402** `web` App shell and responsive navigation — 4/4 AC ticked
 - **YT-0403** `web` Typed mock data layer — 4/4 AC ticked
 - **YT-0404** `web` Performance budget harness — 3/3 AC ticked
-- **YT-0405** `web` Region and locale foundation (AU + ID) — 4/5 AC ticked
 - **YT-0410** `web` Earn board — 3/3 AC ticked
 - **YT-0411** `web` Campaign entry card — the contract screen — 3/3 AC ticked
-- **YT-0412** `web` Long-form player UI — 4/5 AC ticked
 - **YT-0413** `web` Checkpoint question UI — 4/4 AC ticked
 - **YT-0414** `web` Quick feed — 3/3 AC ticked
 - **YT-0420** `web` Store browse — 3/3 AC ticked
-- **YT-0421** `web` Offer detail — 2/3 AC ticked
 - **YT-0422** `web` Burn flow with price lock — 4/4 AC ticked
 - **YT-0423** `web` Wallet — 3/3 AC ticked
-- **YT-0424** `web` Voucher detail and offline QR — 3/4 AC ticked
-- **YT-0430** `web` Onboarding and phone OTP — 3/5 AC ticked
 - **YT-0431** `web` Logged-out public pages — 3/3 AC ticked
 - **YT-0432** `web` Open Viewing playback and conversion — 4/4 AC ticked
 - **YT-0433** `web` Me, settings and consent controls — 3/3 AC ticked
@@ -183,7 +143,43 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
 - **YT-0010** Legal positions register — 3/4 AC
 - **YT-0030** Monorepo skeleton — 1/2 AC
+- **YT-0507** `business` and `kyb_document` resource kinds — 0/3 AC
+- **YT-0508** Promote business shapes into contracts — 0/3 AC
+- **YT-0512** `apps/web` imports an undeclared package — 1/5 AC
+- **YT-0509** Invert the contracts → authz dependency — 2/7 AC
+- **YT-0510** Delete duplicate business shapes from `apps/api` — 2/4 AC
+- **YT-0511** Repo-wide formatting gate — 1/2 AC
+- **YT-0525** Migrate hand-built forms to React Hook Form — 1/6 AC
+- **YT-0526** Testable HLS fixture for the player — 1/6 AC
+- **YT-0502** Listing contract: multiple merchant locations — 2/3 AC
+- **YT-0503** Campaign contract: chapters and video source — 2/3 AC
+- **YT-0504** Wallet contract: points history and ledger projection — 2/3 AC
+- **YT-0501** Field RUM for real INP — 2/6 AC
+- **YT-0036** Consent service v1 — 7/8 AC
+- **YT-0037** Jurisdiction policy service — 1/2 AC
+- **YT-0039** Idempotency middleware (TypeScript) — 2/3 AC
+- **YT-0548** Storage for campaign chapters and video source — 0/6 AC
+- **YT-0550** Player: `Home` does not return the playhead to zero — 0/4 AC
+- **YT-0552** Wire `apps/api` repositories to Postgres — 7/14 AC
+- **YT-0553** API surface for campaign and watch — 8/13 AC
+- **YT-0554** The API must not connect to Postgres as a superuser — 6/9 AC
+- **YT-0556** Health endpoint — 2/3 AC
+- **YT-0565** The ledger schema-drift regex fails open — 5/8 AC
+- **YT-0513** Currency-tagged Money type — 5/6 AC
+- **YT-0506** CONFIRM: does Xendit take IDR in rupiah or sen? — 13/18 AC
+- **YT-0043** Chart of accounts — 6/7 AC
+- **YT-0045** Reward Engine skeleton — 8/10 AC
 - **YT-0055** Next.js app shell and design tokens — 2/4 AC
+- **YT-0056** UI primitives package — 1/4 AC
+- **YT-0058** Internationalisation scaffolding — 2/6 AC
+- **YT-0100** Advertiser accounts and business onboarding — 1/3 AC
+- **YT-0101** Campaign model and lifecycle — 7/9 AC
+- **YT-0120** Watch session service — 9/11 AC
+- **YT-0177** Streaks and daily check-in — 0/4 AC
+- **YT-0180** Public catalogue and merchant pages — 5/7 AC
+- **YT-0181** Internationalised routing and hreflang — 3/5 AC
+- **YT-0203** User information architecture: five surfaces — 1/4 AC
+- **YT-0212** Open Graph and share cards on public pages — 2/5 AC
 - **YT-0130** Unified catalogue — 4/6 AC
 - **YT-0141** Bulk issuance with two-person approval — 1/3 AC
 - **YT-0142** Voucher lifecycle state machine — 3/5 AC
@@ -192,6 +188,13 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 - **YT-0152** Merchant credentials and request signing — 2/5 AC
 - **YT-0153** Enumeration defence and anomaly detection — 3/5 AC
 - **YT-0155** Partial redemption policy — 2/4 AC
+- **YT-0440** Business console shell — 1/2 AC
+- **YT-0443** Business reports — 1/3 AC
+- **YT-0405** Region and locale foundation (AU + ID) — 4/5 AC
+- **YT-0412** Long-form player UI — 4/5 AC
+- **YT-0421** Offer detail — 2/3 AC
+- **YT-0424** Voucher detail and offline QR — 3/4 AC
+- **YT-0430** Onboarding and phone OTP — 3/5 AC
 
 ### Blocked
 
@@ -213,6 +216,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 - **YT-0505** `infra` Reconcile pnpm-lock.yaml across sessions · 1h
 - **YT-0529** `infra` Helios: environment layout and what shares the box · 2d
 - **YT-0558** `platform` Test configs hard-code `DATABASE_URL`, which defeats sabotage · 1h
+- **YT-0568** `infra` Line endings were never renormalised after `.gitattributes` landed · 1d
 - **YT-0543** `data` Geography taxonomy and boundary data · 5d
 
 ### Waiting on dependencies

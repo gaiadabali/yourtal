@@ -33,9 +33,35 @@ node scripts/tasks.mjs --check   # validate + fail if stale  (CI gate)
 
 `pilot` · `legal` · `infra` · `platform` · `value` · `economy` · `adplatform` · `media` · `watch` · `store` · `commerce` · `merchant` · `risk` · `web` · `data` · `seo`
 
+## The status lifecycle
+
+`todo` → `doing` → `review` → `done`. The two middle states are the ones that
+get abused, so they are defined here and enforced by the validator.
+
+| Status | Means | Bar |
+| --- | --- | --- |
+| `todo` | Not started | — |
+| `doing` | Started, criteria not all met | — |
+| `review` | **Work finished.** Every criterion met. Only independent verification is outstanding | all AC ticked |
+| `done` | A session **other than the one that did the work** has verified it | all AC ticked + a verifier |
+| `blocked` | Waiting on something **outside** the task graph | see rule 2 |
+| `cut` | Dropped. Stays in the file | — |
+
+**Why `review` is constrained.** On 2026-09-20 the board held **84 tasks in
+`review` and 0 in `done`** — and **43 of the 84 had unticked criteria**, five of
+them at 0 of n, under a dashboard column headed _"work complete"_. `review` had
+no rule, so it became the place tasks went to stop being counted, and the
+project's headline figure read 0%. A status that constrains nothing cannot be
+read as a claim about anything.
+
+**`review` → `done` needs a second pair of eyes.** The author ticking their own
+boxes is the claim; it is not the verification. This is not ceremony — every
+gate failure recorded in `docs/13c` was found by someone other than the author,
+and none were visible from reading the assertion.
+
 ## Rules
 
-1. **A task is `done` only when every AC box is ticked.** The validator enforces it.
+1. **A task is `done` or `review` only when every AC box is ticked.** The validator enforces both.
 2. **`blocked` means blocked by something outside the task graph** (a decision, a vendor, a licence). Waiting on another task is not blocked — that is `dep:`, and the dashboard works it out.
 3. **No task larger than 5 days.** If it is bigger, split it. Large tasks hide risk.
 4. **Every task names its acceptance criteria before work starts.** No AC, no start.

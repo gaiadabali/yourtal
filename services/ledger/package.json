@@ -1,0 +1,27 @@
+{
+  "name": "@yourtal/ledger-service",
+  "version": "0.0.0",
+  "private": true,
+  "//": [
+    "This file exists so turbo SEES the Go services. `services/*` was already in",
+    "pnpm-workspace.yaml, but without a package.json pnpm and turbo skipped it",
+    "entirely — so `pnpm verify`, the named repo gate, ran 282 TypeScript test",
+    "files and ZERO Go ones. The ledger, the invariant checker, the daily Merkle",
+    "proof and every voucher tamper test sat outside the only gate anyone runs.",
+    "",
+    "-count=1 is REQUIRED, not tidiness. Go caches test results per package, and",
+    "on 2026-09-20 a cached `ok` hid a genuinely failing invariant check. A gate",
+    "that may answer from cache is not a gate.",
+    "",
+    "-p 1 is REQUIRED for correctness, not speed. Go runs package test binaries",
+    "concurrently, and these packages share ONE Postgres. internal/proof",
+    "deliberately unbalances ledger.entry to prove tampering is detected, while",
+    "internal/ledger asserts the whole ledger is balanced. Run in parallel they",
+    "race. See YT-0567 for the real fix; this flag makes the gate deterministic",
+    "in the meantime."
+  ],
+  "scripts": {
+    "test": "go test -count=1 -p 1 ./...",
+    "typecheck": "go vet ./..."
+  }
+}

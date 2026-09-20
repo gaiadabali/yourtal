@@ -11,7 +11,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "verify": "turbo run typecheck && turbo run test --concurrency=1",
+    "verify": "turbo run typecheck && turbo run lint && turbo run test --concurrency=1 && pnpm policy:test && pnpm tasks:check",
     "policy:test": "node scripts/policy-test.mjs",
     "policy:compile": "node scripts/policy-test.mjs --compile",
     "format": "prettier --write .",
@@ -25,7 +25,8 @@
     "db:migrate": "pnpm --filter @yourtal/db migrate",
     "db:seed": "pnpm --filter @yourtal/db seed",
     "media:publish": "pnpm --filter @yourtal/media publish:fixture",
-    "dev:fresh": "pnpm dev:reset && pnpm db:migrate && pnpm db:seed && pnpm media:publish"
+    "dev:fresh": "pnpm dev:reset && pnpm db:migrate && pnpm db:seed && pnpm media:publish",
+    "//verify": "The repo gate. It runs typecheck (incl. `go vet`), lint, every test suite, the Cerbos policy suite and the task-board staleness check. Each clause was added because it was OUTSIDE the gate and something broke there unseen: Go had no package.json so `turbo run test` ran 0 of 23 Go test files; lint was red in @yourtal/db while verify passed; the 384 policy tests ran only by hand. --concurrency=1 is required — @yourtal/db, @yourtal/api and both Go services share one Postgres."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

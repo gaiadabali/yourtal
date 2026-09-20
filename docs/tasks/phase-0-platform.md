@@ -20,7 +20,7 @@
 - [x] **Money widths pinned to `int64`** — 175 tests passing, 6 money fields marked. See the two findings below
 
 ### YT-0507 · `business` and `kyb_document` resource kinds
-`review` · P0 · platform · 2d · dep: YT-0035, YT-0100
+`doing` · P0 · platform · 2d · dep: YT-0035, YT-0100
 
 - Verified: policies 375 assertions (up from 322), authz 36, api 97. **`GET /business` widened from owner+admin to all six roles — confirmed correct**, and `docs/17` §2.1 now has explicit Profile and KYB columns so it is no longer an inference. KYB stays owner+admin: director identity and tax registration are sensitive. `ops` has `approve`/`reject` on `kyb_document` but **no route calls them** — the review queue is unbuilt
 - [ ] `policies/` has **no `business` resource kind** — only `team` (roster) and `billing` (spend), so "edit a business's own profile" has no policy to ask
@@ -29,7 +29,7 @@
 - The agent correctly declined to invent an action rather than guess at the policy model
 
 ### YT-0508 · Promote business shapes into contracts
-`review` · P0 · platform · 2d · dep: YT-0031, YT-0100
+`doing` · P0 · platform · 2d · dep: YT-0031, YT-0100
 
 - Verified: contracts 215 tests, OpenAPI and Go regenerated, Go builds and vets clean
 - [ ] `@yourtal/contracts/business` has no shape for **members, billing contact or KYB documents**; all three were modelled locally inside `apps/api`
@@ -37,7 +37,7 @@
 - [ ] Required before the advertiser console (YT-0440+) can share the types
 
 ### YT-0512 · `apps/web` imports an undeclared package
-`review` · P0 · web · 1h · dep: YT-0509
+`doing` · P0 · web · 1h · dep: YT-0509
 
 - [x] Already fixed on disk; the tracker was stale. `apps/web` imports `BusinessTeamRole` from `@yourtal/contracts/business/team-role`, and the file this ticket blamed for a syntax error **does not exist**
 - [ ] Six files under `apps/web/features/console/` import `@yourtal/authz`, which **`apps/web/package.json` has never declared** — absent from every commit, and `.npmrc` hoists only eslint and prettier, so the specifier was never resolvable
@@ -46,7 +46,7 @@
 - [ ] Separately, `features/onboarding/onboarding-region-derived.ts` currently has syntax errors (unterminated template literal) — in-flight, not related
 
 ### YT-0509 · Invert the contracts → authz dependency
-`review` · P0 · platform · 1d · dep: YT-0508
+`doing` · P0 · platform · 1d · dep: YT-0508
 
 - [x] Done as specified: `businessTeamRoleSchema` moved to contracts, authz imports it and **keeps its drift test against `principal.json`** — 36/36, so the Cerbos guarantee survived the move. `contracts` deps are now `{zod}` only. Verified acyclic
 - [x] Renamed to **`businessTeamRole`** because `contracts/business.ts` already exported `businessRoleSchema` meaning advertiser/supplier/redeemer. Two concepts competing for one name is how a member record ends up with "supplier" as a job title; a test asserts the option sets never overlap
@@ -58,7 +58,7 @@
 - Raised by the implementer, who correctly declined to refactor the spine on their own reading
 
 ### YT-0510 · Delete duplicate business shapes from `apps/api`
-`review` · P0 · platform · 1h · dep: YT-0508
+`doing` · P0 · platform · 1h · dep: YT-0508
 
 - [x] `apps/api/src/modules/business/domain/` deleted, 25 import sites repointed. Code lines diffed pair-by-pair first: billing-contact and kyb-document identical, business-member differed only in import path. api 97→72 tests is those 25 moving to contracts (229→258), not lost coverage
 - [x] A newer doc comment on the `apps/api` copy — that `ops` has `approve`/`reject` reserved with a policy-level DENY but no route calls them — was **merged forward before deleting.** That detail would otherwise have been silently lost, which is the usual way a delete-the-duplicate task loses information
@@ -66,7 +66,7 @@
 - [ ] Delete and re-point; two definitions of a shared shape is how they drift apart
 
 ### YT-0511 · Repo-wide formatting gate
-`review` · P0 · infra · 1h · dep: —
+`doing` · P0 · infra · 1h · dep: —
 
 - [x] 53 files formatted across `apps/api`, `packages/{contracts,authz,consent,jurisdiction}` and `policies/`; `.github/workflows/format.yml` added running `prettier --check .`
 - [ ] ⚠️ **The gate is RED until someone runs `pnpm format` once.** `apps/web` and `packages/ui` carry ~186 unformatted files, deliberately left because rewriting them mid-change buys a merge conflict and nothing else. **Check landed, cleanup outstanding**
@@ -89,7 +89,7 @@
 - [ ] Each gap closes a metric that `docs/01` sells; until then the panels stay honest
 
 ### YT-0525 · Migrate hand-built forms to React Hook Form
-`review` · PU · web · 2d · dep: —
+`doing` · PU · web · 2d · dep: —
 - [ ] `docs/15` locked RHF + Zod resolver, but neither was ever installed — **now installed (2026-09-19)**
 - [x] Migrated the three genuine multi-field forms; Server Components and single-field forms left alone, matching this ticket’s own carve-outs
 - [ ] ⚠️ **`/onboarding/[region]/consent` measured 181.1 KB gz — over the 180 KB justify line**, for React Hook Form on a three-checkbox form. Under the 200 KB hard gate, so not a failure, but it is exactly the trade `docs/13b` §8 says must be stated rather than absorbed: is RHF worth a few KB on a form this small, or should that one stay hand-built?
@@ -98,7 +98,7 @@
 - [ ] Hand-rolled validation, error and dirty-state handling across a multi-step builder is exactly where form bugs live
 
 ### YT-0526 · Testable HLS fixture for the player
-`review` · PU · web · 1d · dep: YT-0521
+`doing` · PU · web · 1d · dep: YT-0521
 - [ ] YT-0412's keyboard-seeking AC is **untestable, not failing**: the shared placeholder stream's 59 MB segment aborts before the video reports a duration
 - [x] ✅ **Closed for real this time, verified on disk 2026-09-20.** `use-watch-session.ts` reads `campaign.videoSource.manifestUrl` at both call sites; `features/player/video-source.ts` and `apps/web/public/media` are **deleted**, taking 9 MB and the duplicate fixture with them. The origin is now the only HLS path, so per-segment delivery logging is exercised by the real player rather than by a test alone
 - ⚠️ **Correction 2026-09-20: this was reported closed and is not.** Both campaign mocks now carry a correct local manifest URL, guarded by a sabotage-tested drift test — but `use-watch-session.ts` **never reads `campaign.videoSource`**. It uses its own `MOCK_HLS_MANIFEST_URL`. The contract field carries a correct value the player ignores, which is worse than an obviously-missing one because it looks done from the contract side
@@ -112,7 +112,7 @@
 
 
 ### YT-0502 · Listing contract: multiple merchant locations
-`review` · P0 · platform · 2d · dep: YT-0031
+`doing` · P0 · platform · 2d · dep: YT-0031
 
 - [x] `listingSchema` carries a **`locations` array** (min 1), not a single `district: string` — `packages/contracts/src/listing/merchant-location.ts`
 - [x] Each location has an id, name, address and district, so a voucher can name **which branch honours it** — `voucherSchema.location` (denormalised, same reasoning as `merchantName`: must stay honourable offline)
@@ -122,7 +122,7 @@
 - Verified 2026-09-19: `pnpm --filter @yourtal/contracts test` — 299/299 passing; typecheck and lint clean; OpenAPI document regenerated and Go models regenerated (`MerchantLocation` added)
 
 ### YT-0503 · Campaign contract: chapters and video source
-`review` · P0 · platform · 2d · dep: YT-0031
+`doing` · P0 · platform · 2d · dep: YT-0031
 
 - [x] Chapter markers (start, title, reward weight) on the campaign contract — `packages/contracts/src/campaign/campaign-chapter.ts`. No stored `endSeconds` or absolute per-chapter reward: both are derived (`chapterEndSeconds`, `chapterRewardPoints`) from the campaign's own `durationSeconds`/`rewardPoints`, per docs/13's "never store a value you can derive" — `rewardWeight` is what apps/web's local fake calls a weight already, this makes it the contract's own field instead of a client-side back-loading table
 - [x] A video-source field the player can resolve without guessing — `campaignVideoSourceSchema` (`{kind: "hls", manifestUrl}`), additive shape for a later `mp4`/renditions variant
@@ -132,7 +132,7 @@
 - Verified 2026-09-19: same full-suite run as YT-0502, same result
 
 ### YT-0504 · Wallet contract: points history and ledger projection
-`review` · P0 · platform · 3d · dep: YT-0031, YT-0041
+`doing` · P0 · platform · 3d · dep: YT-0031, YT-0041
 
 - [x] A history entry shape covering earn, burn, expiry, reversal and adjustment — `packages/contracts/src/wallet/wallet-history.ts`, with `points`/`direction` (never a signed delta, to keep the branded non-negative `Points` type intact) and a cross-field rule per directional kind
 - [ ] Derived from real ledger entries, not recomputed client-side from `docs/09` §4.1's formula — **PARTIAL. The contract side is done: `points` now travels WITH the entry rather than being re-derived from a formula at display time, which is what makes replacing `apps/web/features/wallet/wallet-history.ts` possible.** What is NOT done: there is no real ledger yet for anything to be derived FROM (YT-0044's invariant checker and the ledger service are separate, undone tasks), so `wallet-history.mock.ts`'s generator still computes a mock burn cost from an illustrative backing rate — same category of gap as every other mock generator in this package, not a new one
@@ -193,7 +193,7 @@
 - [x] The last ad-hoc check removed: `create-business` threw from its own body, one endpoint answering its own question where no policy suite could see it. Now `business:create` in the policy repo, anonymous denied explicitly
 
 ### YT-0501 · Field RUM for real INP
-`review` · P0 · web · 3d · dep: YT-0404
+`doing` · P0 · web · 3d · dep: YT-0404
 
 - [x] Budget rating uses `docs/08` §3.1’s own numbers rather than Lighthouse’s looser CWV defaults, and device class is labelled a **heuristic** because Safari and Firefox expose neither `hardwareConcurrency` nor `deviceMemory`
 - [ ] ⚠️ **There is nowhere to send the samples.** No event-ingestion contract exists (YT-0059 is still `todo`), so the sink logs in development and is a **silent no-op in production rather than faking delivery**. Every sample already carries the segmentation a p75-and-alert pipeline needs; only the transport is missing, and only `rum-sink.ts` changes when YT-0059 lands
@@ -203,7 +203,7 @@
 - [ ] Alert when p75 on mid-tier Android breaches the budget in the field, not only in CI
 
 ### YT-0036 · Consent service v1
-`review` · P0 · platform · 5d · dep: YT-0030
+`doing` · P0 · platform · 5d · dep: YT-0030
 
 - [x] Purpose-scoped, versioned consent records per jurisdiction — closed purpose enum, so _"to improve our services"_ (named in `docs/19` as the classic insufficient PDP formulation) **cannot be asked**, with a test asserting that exact string is rejected. Campaign questions and research answers are separate purposes per `docs/01`. Receipt-derived targeting is its own sensitive purpose gated to P2. Records are append-only — no `granted` boolean to flip — and a same-instant grant/withdraw tie resolves to **withdrawn**, the only direction that cannot be undone after data has been used
 - [x] Other services query the decision, not the record — **satisfied structurally: there is no exported way to fetch raw records for a purpose.** `prohibitedIn` is checked **before** any record is read, so a granted consent can never reach an allow, with tests that fail if someone "optimises" the order. This encodes `docs/19` §6.4: Australia's fair-and-reasonable test applies **regardless of consent**, so `behavioural_profiling` and `purchase_history_targeting` are prohibited in AU even when consented
@@ -216,7 +216,7 @@
 - [ ] ⚠️ **Seven of nine domains still owe a handler — see YT-0528.** `unhandledDomains()` is a query, not a fixture, so the gap stays visible; the test asserts the *shape* (every gap names an owner) rather than a number, because a test people routinely edit stops being read
 
 ### YT-0037 · Jurisdiction policy service
-`review` · P0 · platform · 3d · dep: YT-0030
+`doing` · P0 · platform · 3d · dep: YT-0030
 
 - Verified 2026-09-19: 46 tests passing, largest file 136 lines, no barrels. `resolvePolicy` takes a raw string so an unknown code hits a **standalone restrictive literal** (cash-out off, draws off, age 21, residency required, KYC enhanced) rather than one derived from real data — genuinely fail-closed, not merely claimed
 - ⚠️ `minimumAgeYears: 18` is a **placeholder with no legal citation**. See position ID-12 / AU-9 in `docs/24-legal-positions.md`
@@ -232,7 +232,7 @@
 - [ ] No service can delete or update a record
 
 ### YT-0039 · Idempotency middleware (TypeScript)
-`review` · P0 · platform · 3d · dep: YT-0031
+`doing` · P0 · platform · 3d · dep: YT-0031
 
 - [x] Shared table (`IDEMPOTENCY_TABLE_DDL` exported so every service creates the same one), key + fingerprint, replay returns the original response. Fingerprint is `sha256(METHOD 
  path 
@@ -278,7 +278,7 @@
 - [ ] ⚠️ **The failure mode to design against is the diagnosis, not the flake.** This surfaced as `Hook timed out in 10000ms` in a `beforeAll`, which reads as a slow database rather than as two packages colliding. A test that fails for a reason its message does not name is one that gets rerun until it passes
 
 ### YT-0548 · Storage for campaign chapters and video source
-`review` · P0 · media · 3d · dep: YT-0503
+`doing` · P0 · media · 3d · dep: YT-0503
 
 **Closed by YT-0101's migration `20260920000012_campaign_lifecycle.sql`, 2026-09-20.** `campaign.chapter` and `campaign.video_source` exist, the seed writes them, and `seed.test.ts` reassembles a campaign from Postgres and parses it through `campaignSchema` — which is the only assertion that distinguishes *the columns exist* from *the database can produce a valid campaign*. Adding the tables without writing them would have been the same bug with more scaffolding.
 
@@ -301,7 +301,7 @@
 - [ ] Idempotent per the seeding rule in `docs/13` — idempotent **for a fixed contract**, so a contract change means `pnpm dev:fresh`, not a re-seed
 
 ### YT-0550 · Player: `Home` does not return the playhead to zero
-`review` · PU · web · 1d · dep: YT-0526
+`doing` · PU · web · 1d · dep: YT-0526
 
 - **Handed back rather than tuned green.** 3 of 4 keyboard-seek cases pass against the MinIO origin; `Home` lands the media at **0.35 s** instead of within a frame of zero. In a standalone probe `Home` works and returns exactly 0, so the cause is the **controlled-input / time-remap interaction in the component**, not latency
 - **2026-09-20: a component fix attempted, NOT verified against the real origin — do not mark done from this entry alone.** `toRealSeconds(0, …)` is exactly `0` for any duration, so the arithmetic was ruled out. The remaining candidate named in the previous note — rapid repeat `handleSeekTo` calls issuing overlapping seeks against the network origin before the prior one settles — now has a fix: `handleSeekTo` (`use-watch-session.ts`) coalesces a new target into a queued ref while `video.seeking` is true, instead of layering a second seek on top of an in-flight one; the queued target is applied once `seeked` reports the current one settled (`use-video-event-wiring.ts`). The coalescing mechanism itself is unit-tested and sabotage-confirmed (`use-watch-session.test.tsx`: reverting the coalescing branch makes that test fail, as expected)
@@ -323,7 +323,7 @@
 - ⚠️ **What's NOT covered**: the real Playwright `keyboard-seek.spec.ts`/`earn-journey.spec.ts` suites were not re-run against a real browser + the MinIO origin in this pass (shared-dev-server risk, see YT-0550's note) — the jsdom-level hook test dispatches real DOM events on a real rendered `<video>` element and is sabotage-confirmed, but it is not a substitute for the real-browser run those specs exist to provide
 
 ### YT-0552 · Wire `apps/api` repositories to Postgres
-`review` · P0 · platform · 4d · dep: YT-0527, YT-0518
+`doing` · P0 · platform · 4d · dep: YT-0527, YT-0518
 
 **Done. 96 `apps/api` tests now execute real SQL; `pnpm verify` 11/11, 1959 tests, lint 11/11.**
 
@@ -345,7 +345,7 @@
 - [ ] This is what lets `apps/web` stop mocking, so it is the join between the two halves of the build rather than backend housekeeping
 
 ### YT-0553 · API surface for campaign and watch
-`review` · P0 · platform · 4d · dep: YT-0552, YT-0101, YT-0120
+`doing` · P0 · platform · 4d · dep: YT-0552, YT-0101, YT-0120
 
 **Done. `apps/api` 96 → 112 tests, all against real Postgres. `pnpm verify` 11/11, 1982 tests, lint 11/11.**
 
@@ -366,7 +366,7 @@
 - [ ] ⚠️ **Until this lands, every `apps/web` screen is unverified against real data.** The UI is substantially built; it has just never met the backend
 
 ### YT-0554 · The API must not connect to Postgres as a superuser
-`review` · P0 · platform · 2d · dep: YT-0552
+`doing` · P0 · platform · 2d · dep: YT-0552
 
 - [x] ✅ **Done and verified independently 2026-09-20.** `DATABASE_URL` is now `yourtal_app`, `DATABASE_OWNER_URL` is the owner, and `has_table_privilege` reports **owner `t`, app `f`** on `ledger.entry`. That write would have succeeded from application code before this change
 - [x] The boot check **queries `pg_roles` rather than parsing the username out of the URL** — a username is what someone typed, the catalogue is what the server will actually permit
@@ -389,7 +389,7 @@
 - [ ] ⚠️ **The gate should fail when a mapped schema is missing**, not only when a mapped field is. A per-schema opt-in list silently excludes whatever nobody remembered to add, which is the same failure one level up — the coverage table needs asserting in both directions, exactly as YT-0536 does for the boundary faults
 
 ### YT-0556 · Health endpoint
-`review` · P0 · platform · 1d · dep: YT-0552
+`doing` · P0 · platform · 1d · dep: YT-0552
 
 - [x] `GET /api/health` at `apps/api/src/shared/health/` — a real `SELECT 1` against Postgres and a Cerbos `/_cerbos/health` fetch, **run in parallel**, returning 503 when either fails
 - [x] ✅ **Marked `@PublicRoute` deliberately, and the reason is the good part: a Cerbos outage must not hide the endpoint that reports the Cerbos outage.** A health check behind the dependency it checks reports nothing at the only moment it matters
@@ -446,7 +446,7 @@
 - [ ] ⚠️ **Sweep for the vocabulary, do not fix only this string.** Risk 44 was found by grepping `earned` / `so far` / `accrued`; add **`received` / `diterima` / `total`** to that sweep. A superseded model leaves its words behind in copy long after the logic moves
 
 ### YT-0565 · The ledger schema-drift regex fails open
-`review` · P0 · value · 2h · dep: —
+`doing` · P0 · value · 2h · dep: —
 
 **Done. 100 Go tests, 0 skips; `pnpm verify` 11/11.**
 
@@ -471,3 +471,14 @@
 - [ ] The sweeper reports liveness and **pages when it has not run**, not merely when it errors. A job that stops running produces no errors at all
 - [ ] Alert on the **age of the oldest unswept hold**, which measures the promise directly rather than measuring the job
 - [ ] Expose the count in the merchant portal, so a shop sees _why_ a voucher is unavailable rather than being told it is broken
+
+### YT-0568 · Line endings were never renormalised after `.gitattributes` landed
+`todo` · P0 · infra · 1d · dep: —
+
+- `.gitattributes` declares `* text=auto eol=lf` and marks `*.sh`, `*.mjs`, `*.sql`, `Dockerfile*`, `*.yml` and `.githooks/*` as LF-required — because this repo is authored on Windows and deployed to Linux, and `bad interpreter: /usr/bin/env sh^M` is a **recorded failure in this organisation's fleet notes**, not a hypothesis
+- ⚠️ **The file was added but the working tree was never renormalised**, so the declaration and the bytes on disk disagree. A `git add --renormalize` was started and abandoned mid-session because it collided with a file another session was regenerating
+- ⚠️ **It is already costing time**: an exact-match edit to `packages/db/src/voucher-constraints.test.ts` failed today because the file is CRLF on disk while every tool reports it as LF-declared. That is a silent class of edit failure across the repo
+- [ ] `git add --renormalize .` run when no other session is mid-write, **announced first** — this touches nearly every file and will collide with anything uncommitted
+- [ ] Every shell script and `.githooks/*` hook confirmed LF **on disk**, not merely declared
+- [ ] `.ps1`/`.bat`/`.cmd` confirmed still CRLF — the renormalisation must not flip the Windows-only scripts
+- [ ] A check that fails if a file's on-disk endings disagree with its declared attribute, so this cannot silently drift again

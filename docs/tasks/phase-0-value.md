@@ -17,7 +17,7 @@ The part that must never be wrong. Nothing here is user-visible; all of it gates
 - [x] **Already built and proved by YT-0518** — `ledger.account`, `transfer`, `entry`, the deferred balance trigger, append-only grants, 10 tests against real Postgres. Marked on what exists rather than built twice
 
 ### YT-0513 · Currency-tagged Money type
-`review` · P0 · value · 3d · dep: —
+`doing` · P0 · value · 3d · dep: —
 
 - [x] Adopt Fowler's `(int64 amount_minor, currency)` per `docs/12` §3 — `moneySchema` in `packages/contracts/src/money/money-value.ts`, with currency-checked `addMoney` / `subtractMoneyClamped` / `compareMoney`. Published to OpenAPI as `Money` and `Currency`, so Go has the type before the wire needs it (`AmountMinor int64`, the int-width widening held)
 - [x] **AUD proceeds while IDR stays blocked** — `assertUnitSettled(currency, operation)` passes AUD and throws `UnsettledMinorUnitError` for IDR. Enforced, not remembered
@@ -33,7 +33,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - Raised independently by both implementing sessions. Worth doing **regardless of how Xendit answers**, and now load-bearing if the platform really is two-region
 
 ### YT-0506 · CONFIRM: does Xendit take IDR in rupiah or sen?
-`review` · P0 · economy · 1d · dep: —
+`doing` · P0 · economy · 1d · dep: —
 
 **MIGRATION DONE, 2026-09-20 — one pass, green on `pnpm verify` (9/9, 1658 TS tests), lint 9/9, Go 71 tests 0 skips, prettier clean.**
 
@@ -90,7 +90,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - **Third defect, found by YT-0045:** the retry was not exported, so the Reward Engine opened its own Serializable transaction **with no retry** — 11 of 12 callers hit 40001 and gave up, which to a caller is indistinguishable from *"the allocation is exhausted"*. **Those need different answers: one means stop, the other means try again.** Fixed by exporting `ledger.WithSerializableRetry` rather than writing a second copy — a duplicated backoff policy is a second place to get the jitter subtly wrong, and this retry's behaviour has now mattered three times
 
 ### YT-0043 · Chart of accounts
-`review` · P0 · value · 2d · dep: YT-0041
+`doing` · P0 · value · 2d · dep: YT-0041
 
 - [x] Account taxonomy defined: user, merchant, platform, escrow, charity, suspense, reserve
 - [x] Points liability, breakage revenue and marketing-funded issuance mapped to real accounts
@@ -114,7 +114,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [x] ⚠️ **Two tests initially skipped and were fixed rather than accepted** — the tamper test and the prove-once test, the two that matter most, in the suite whose entire point is that a silent skip proves nothing. Each now takes an exclusive historical day and cleans up after itself. **The fix is cleanup, not a skip.** 11 tests, zero skips, repeatable
 
 ### YT-0045 · Reward Engine skeleton
-`review` · P0 · value · 5d · dep: YT-0042
+`doing` · P0 · value · 5d · dep: YT-0042
 
 - [x] Sole path from a verified action to a points credit; nothing else may credit
 - [x] Versioned action taxonomy with per-action value, caps and evidence requirements
@@ -210,7 +210,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] RTL-safe layout primitives — unverified. Neither shipped locale is RTL, so this has never been exercised
 
 ### YT-0056 · UI primitives package
-`review` · P0 · web · 5d · dep: YT-0055
+`doing` · P0 · web · 5d · dep: YT-0055
 
 - [x] **Audited: already built.** button/input/select/sheet/dialog/toast/skeleton, Radix where interaction demands it, largest non-test file 127 lines. Minor polish left: badge/card/skeleton have no dedicated a11y tests, which is defensible while they stay non-interactive — `skeleton` is correctly `aria-hidden`
 - [ ] Button, input, select, sheet, dialog, toast, skeleton built on Radix
@@ -225,7 +225,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] RUM reports p75 segmented by country, connection and device class
 
 ### YT-0058 · Internationalisation scaffolding
-`review` · P0 · web · 3d · dep: YT-0055
+`doing` · P0 · web · 3d · dep: YT-0055
 
 - [x] **Two real gaps found and closed.** The five nav labels were hardcoded English rendered in both nav components — **the one screen every user sees, unlocalised**. Now resolved through a translator like every other surface
 - [x] **AC3 (a missing translation fails the build) did not exist anywhere.** Now `messages-parity.test.ts` walks every locale pair and asserts identical key sets recursively — and it was **sabotage-tested**: a key deleted, the failure named that exact key, key restored, green
@@ -242,3 +242,17 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] Versioned event schemas in the contracts package
 - [ ] Batched client ingestion; events land in Postgres with a path to ClickHouse later
 - [ ] No PII in analytics events without a consent check
+
+### YT-0567 · The clean-ledger invariant test races the proof test's tamper window
+`todo` · P0 · value · 2d · dep: YT-0044
+
+- **Found 2026-09-20 by running Go under the repo gate for the first time.** `TestInvariantCheckerFindsNoImbalance` (`internal/ledger/transfer_test.go`) failed with `found 1 imbalanced transfers: [{led_txn_proof_… 3}]`. The `3` is not a coincidence: `internal/proof/proof_test.go:280` does `UPDATE ledger.entry SET amount_minor = amount_minor + 3` to prove a tamper is detected, and restores it in a `defer`
+- **The two packages share one Postgres and `go test` runs package binaries concurrently.** While proof's tamper window is open, the ledger package asserts the whole ledger balances. It does not
+- ⚠️ **The test cannot tell a real bypassed trigger from a sibling test's deliberate tamper**, which is exactly what its own comment claims it is for: _"the day it does not [pass], the trigger has been dropped or bypassed and nothing else would say so."_ That sentence is now false
+- ⚠️ **The obvious fix is the wrong one.** Scoping the query to the test's own transfers makes it pass and **destroys the property it exists for** — catching an imbalance *anywhere*, including one nobody predicted. The tenth gate this month to be weaker than its name; the first where the repair is the trap
+- ⚠️ The author knew about this coupling: `proof_test.go:149` reads _"Tamper, keeping the transfer BALANCED so the other invariant stays"_. That care was taken at line 153 and **not** at 242 (`+7`) or 280 (`+3`)
+- [ ] Decide the mechanism: an advisory lock held across a tamper window, a dedicated schema/database per test package, or make every tamper balance-preserving as line 153 already does. **Whatever is chosen must keep the global scan global**
+- [ ] The two unbalanced tamper windows (`+7` at 242, `+3` at 280) stop being unbalanced, or stop being visible to other packages
+- [ ] **The restores are `_, _ = super.Exec(...)` — errors discarded.** A failed restore, a `SIGINT` or a panic leaves permanent imbalance in the shared dev database and nobody is told. Assert the restore, or make cleanup not required for correctness
+- [ ] Sabotage-prove it: hold a tamper window open deliberately and confirm the chosen mechanism reports the *right* answer rather than merely a green one
+- [ ] Remove `-p 1` from `services/*/package.json` once the fix lands, and confirm the suite is still deterministic without it

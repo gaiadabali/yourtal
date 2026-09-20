@@ -7,7 +7,7 @@ The earning half of the loop: a business uploads a video with questions, a user 
 ## Ad platform
 
 ### YT-0100 · Advertiser accounts and business onboarding
-`review` · P1 · adplatform · 4d · dep: YT-0035
+`doing` · P1 · adplatform · 4d · dep: YT-0035
 
 - [x] Business entity, members with roles, billing contact — reuses `@yourtal/contracts/business` and `@yourtal/authz/roles` verbatim, so the data model feeds `P.attr.businessRoles` with no translation layer
 - [ ] KYB capture — **PARTIAL.** Metadata, type, status and expiry tracked; `storageRef` points at the bytes. **Nothing encrypts a document.** KMS envelope encryption and the signed-upload path are unbuilt and were not in this ticket's dependencies
@@ -16,7 +16,7 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - Authz seam as specified: `PrincipalService.resolve()` is the single assembly point and `pdp.requireAction(...)` is called identically at every route, so **YT-0500 changes only the body of `resolve()`** and no call site moves
 
 ### YT-0101 · Campaign model and lifecycle
-`review` · P1 · adplatform · 5d · dep: YT-0100, YT-0031
+`doing` · P1 · adplatform · 5d · dep: YT-0100, YT-0031
 
 **Contract + storage landed. `pnpm verify` 11/11, 1913 tests, lint clean, `pnpm dev:fresh` green through 12 migrations.**
 
@@ -130,7 +130,7 @@ The earning half of the loop: a business uploads a video with questions, a user 
 ## Watch session
 
 ### YT-0120 · Watch session service
-`review` · P1 · watch · 5d · dep: YT-0101, YT-0039
+`doing` · P1 · watch · 5d · dep: YT-0101, YT-0039
 
 **Contract + storage landed. `pnpm verify` 11/11, 1959 tests, lint 11/11, `pnpm dev:fresh` green through 13 migrations.**
 

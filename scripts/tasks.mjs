@@ -84,8 +84,20 @@ for (const t of tasks) {
   for (const d of t.deps ?? []) {
     if (!byId.has(d)) errors.push(`${t.id} depends on unknown task ${d}`);
   }
-  if (t.status === "done" && t.ac !== t.done) {
-    errors.push(`${t.id} is done but ${t.ac - t.done} acceptance criteria are unticked`);
+  // `review` means the work is finished and only independent verification is
+  // outstanding, so every criterion must already be ticked — the same bar as
+  // `done`, minus the verifier.
+  //
+  // Without this rule `review` became a parking bay. On 2026-09-20 it held 84
+  // tasks, **43 of them with unticked criteria**, under a dashboard heading
+  // that reads "work complete" — five of those sat at 0 of n. A status that
+  // constrains nothing cannot be read as a claim about anything, and this one
+  // was being read as the project's progress.
+  if ((t.status === "done" || t.status === "review") && t.ac !== t.done) {
+    errors.push(
+      `${t.id} is ${t.status} but ${t.ac - t.done} acceptance ${t.ac - t.done === 1 ? "criterion is" : "criteria are"} unticked` +
+        (t.status === "review" ? " — move it to `doing`, or tick what is genuinely met" : ""),
+    );
   }
 }
 // dependency cycles
@@ -132,7 +144,9 @@ lines.push(
       const d = ts.filter((t) => t.status === "done").length;
       const r = ts.filter((t) => t.status === "review").length;
       const g = ts.filter((t) => t.status === "doing").length;
-      // Settled = done + review: review work is complete, only the gate remains.
+      // Settled = done + review. Enforced above: a task may only be `review`
+      // with every criterion ticked, so this genuinely is work complete with
+      // only the gate outstanding. Before that rule existed it was not.
       const bar = "█"
         .repeat(Math.round(pct(d, ts.length) / 10))
         .padEnd(Math.round(pct(d + r, ts.length) / 10), "▓")

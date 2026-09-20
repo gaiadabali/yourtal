@@ -473,15 +473,15 @@
 - [ ] Expose the count in the merchant portal, so a shop sees _why_ a voucher is unavailable rather than being told it is broken
 
 ### YT-0568 · Line endings were never renormalised after `.gitattributes` landed
-`todo` · P0 · infra · 1d · dep: —
+`review` · P0 · infra · 1d · dep: —
 
 - `.gitattributes` declares `* text=auto eol=lf` and marks `*.sh`, `*.mjs`, `*.sql`, `Dockerfile*`, `*.yml` and `.githooks/*` as LF-required — because this repo is authored on Windows and deployed to Linux, and `bad interpreter: /usr/bin/env sh^M` is a **recorded failure in this organisation's fleet notes**, not a hypothesis
 - ⚠️ **The file was added but the working tree was never renormalised**, so the declaration and the bytes on disk disagree. A `git add --renormalize` was started and abandoned mid-session because it collided with a file another session was regenerating
 - ⚠️ **It is already costing time**: an exact-match edit to `packages/db/src/voucher-constraints.test.ts` failed today because the file is CRLF on disk while every tool reports it as LF-declared. That is a silent class of edit failure across the repo
-- [ ] `git add --renormalize .` run when no other session is mid-write, **announced first** — this touches nearly every file and will collide with anything uncommitted
-- [ ] Every shell script and `.githooks/*` hook confirmed LF **on disk**, not merely declared
-- [ ] `.ps1`/`.bat`/`.cmd` confirmed still CRLF — the renormalisation must not flip the Windows-only scripts
-- [ ] A check that fails if a file's on-disk endings disagree with its declared attribute, so this cannot silently drift again
+- [x] ⚠️ **`git add --renormalize .` was the wrong instruction and staged ZERO files.** Git compares content *after* normalisation, so the index was already LF and it saw nothing to do — while **27 files sat on disk with CRLF** and `git status` stayed clean throughout. The actual fix is to delete the affected files and `git checkout -- .`, so git rewrites them per the attribute. Done, with `core.autocrlf` set to `false` locally so the setting stops fighting `.gitattributes`
+- [x] `.githooks/pre-commit` confirmed **LF on disk**; it is the only tracked shell script
+- [x] No `.ps1`/`.bat`/`.cmd` is tracked, so there was nothing to flip — checked rather than assumed, because flipping them is the way this fix breaks things
+- [x] `scripts/check-line-endings.mjs`, wired into `pnpm verify`. It asks **git** for each path's attribute (`check-attr --stdin`) rather than keeping a second hard-coded list that could drift from `.gitattributes`. **Sabotage-proved**: the hook rewritten as CRLF, guard named it and the exact count (`19 CRLF line ending(s)`) and exited 1; restored, green across 1285 files
 
 ### YT-0569 · No CI has ever run, and the workflows watch a branch that does not exist
 `todo` · P0 · infra · 2d · dep: —

@@ -27,9 +27,9 @@ import (
 // to prove, so this starts at auth: merchantauth.Verifier ->
 // idempotency.Interceptor -> redeem.Routes. Everything in redeem_test.go,
 // adversarial_test.go and tamper_test.go proves the DOMAIN layer; this file
-// proves the HTTP layer does not undo any of it — the two are different
-// claims, per docs/13c-lessons.md's point that a gate must be shown to cover
-// what it names.
+// (and http_authz_test.go) proves the HTTP layer does not undo any of it —
+// the two are different claims, per docs/13c-lessons.md's point that a gate
+// must be shown to cover what it names.
 
 func discardLogger() *slog.Logger { return slog.New(slog.NewJSONHandler(io.Discard, nil)) }
 
@@ -123,6 +123,15 @@ func decodeBody(t *testing.T, rec *httptest.ResponseRecorder, dst any) {
 	if err := json.Unmarshal(rec.Body.Bytes(), dst); err != nil {
 		t.Fatalf("decoding response %s: %v", rec.Body.String(), err)
 	}
+}
+
+func mustJSON(t *testing.T, v any) []byte {
+	t.Helper()
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	return b
 }
 
 // TestAuthorizeAndCaptureOverHTTP is the control: the whole chain, signed
@@ -255,101 +264,4 @@ func TestDifferentIdempotencyKeysAreCaughtByTheVoucherIndexNotByIdempotency(t *t
 	if envelope.Error.Code != "voucher_already_held" {
 		t.Errorf("error code = %q, want voucher_already_held", envelope.Error.Code)
 	}
-}
-
-// TestWrongMerchantAndUnknownCodeAreIdenticalOverHTTP re-proves
-// adversarial_test.go's enumeration invariant at the HTTP boundary, where a
-// mapping mistake (a distinct status code, a wrapped error message) could
-// reopen the oracle even though the domain layer never leaked it.
-func TestWrongMerchantAndUnknownCodeAreIdenticalOverHTTP(t *testing.T) {
-	f := newFixture(t)
-	handler, _ := f.httpFixture(t)
-
-	ctx := context.Background()
-	keys, err := keyring.New(map[keyring.Purpose]map[int][]byte{
-		keyring.PurposeMerchantHMAC: {1: make([]byte, 32)},
-	})
-	if err != nil {
-		t.Fatalf("keyring: %v", err)
-	}
-	stranger := f.issueCredential(t, ctx, keys, uuid.New())
-
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
-
-	wrongMerchant := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": plaintext, "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
-	}), stranger, uuid.NewString())
-
-	unknownCode := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": mintedButUnknownCode(t), "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
-	}), stranger, uuid.NewString())
-
-	if wrongMerchant.Code != unknownCode.Code {
-		t.Errorf("status differs: wrong-merchant %d vs unknown-code %d", wrongMerchant.Code, unknownCode.Code)
-	}
-	if wrongMerchant.Body.String() != unknownCode.Body.String() {
-		t.Errorf("bodies differ over HTTP, which is the oracle docs/09 §10 exists to remove:\n  wrong merchant: %s\n  unknown code:   %s",
-			wrongMerchant.Body.String(), unknownCode.Body.String())
-	}
-}
-
-// TestAnotherMerchantCannotCaptureYourAuthorization: settle.go's
-// ResolveAuthorization matches an authorization by id alone, with no
-// merchant check of its own (see ownership.go's package comment) — this
-// proves the HTTP-layer check added there actually stops a second
-// merchant's signed, otherwise-valid capture call from resolving somebody
-// else's hold.
-func TestAnotherMerchantCannotCaptureYourAuthorization(t *testing.T) {
-	f := newFixture(t)
-	handler, owner := f.httpFixture(t)
-
-	ctx := context.Background()
-	keys, err := keyring.New(map[keyring.Purpose]map[int][]byte{
-		keyring.PurposeMerchantHMAC: {1: make([]byte, 32)},
-	})
-	if err != nil {
-		t.Fatalf("keyring: %v", err)
-	}
-	stranger := f.issueCredential(t, ctx, keys, uuid.New())
-
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
-
-	authorize := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": plaintext, "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
-	}), owner, uuid.NewString())
-	if authorize.Code != http.StatusOK {
-		t.Fatalf("the owning merchant's authorize failed: %d %s", authorize.Code, authorize.Body.String())
-	}
-	var authorized struct {
-		AuthorizationID string `json:"authorization_id"`
-	}
-	decodeBody(t, authorize, &authorized)
-
-	capture := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/capture", mustJSON(t, map[string]any{
-		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000_00,
-	}), stranger, uuid.NewString())
-
-	if capture.Code != http.StatusNotFound {
-		t.Fatalf("status = %d, want 404 — a stranger captured another merchant's authorization: %s",
-			capture.Code, capture.Body.String())
-	}
-
-	// And the real owner can still capture it — the check refused the
-	// stranger without damaging the hold.
-	retry := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/capture", mustJSON(t, map[string]any{
-		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000_00,
-	}), owner, uuid.NewString())
-	if retry.Code != http.StatusOK {
-		t.Fatalf("the owning merchant's capture failed after a stranger was refused: %d %s",
-			retry.Code, retry.Body.String())
-	}
-}
-
-func mustJSON(t *testing.T, v any) []byte {
-	t.Helper()
-	b, err := json.Marshal(v)
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	return b
 }

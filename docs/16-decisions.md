@@ -235,3 +235,19 @@ And `docs/24` position **ID-1** — that YourTal Points are a loyalty currency a
 **A third option that delivers what you actually want without the regulatory step:** the **platform buys the voucher back** at a formula price in points — not an open market, no user-to-user trade, no bidding, no circulating currency, and the price stays platform-set rather than discovered. An unhappy user still gets an exit, which is the real goal; they just get it from us rather than from each other. It also keeps every leg of ID-1 intact.
 
 **Recorded as a direction, not as buildable.** `yourtal-5a` continues to refuse the full-consumption refund with a named error, which remains correct under P-1. Nothing about resale is to be built until the denomination question is answered — see YT-0562.
+
+---
+
+## Q — CI, and what "verified" is allowed to mean
+
+**Q-1 · The repository has a remote: `github.com/gaiadabali/yourtal`, private.** Provided by the founder 2026-09-20 in response to the finding that no CI had ever executed. Auth is **HTTPS through the `gh` CLI**, not SSH — no key in `~/.ssh/` is registered with GitHub, and `ssh-key-hansel` is the _fleet_ key for Helios, unrelated. Do not set `credential.helper` locally; an empty local value overrides gh's global helper.
+
+**Q-2 · The branch is `main`, not `master`.** All six workflows trigger on `branches: [main]`. On the old name a push would have produced **silence, which is indistinguishable from success** — the same failure shape as a skipped test reporting green. Renaming one branch was the fix; editing six files was the alternative.
+
+**Q-3 · `review` requires every acceptance criterion ticked, enforced by the validator.** The board had held 84 tasks in `review` and 0 in `done`, **43 of them with unticked criteria**, under a dashboard column headed "work complete". An unconstrained status is not a claim about anything, and this one was being read as the project's progress. See `docs/tasks/_schema.md`.
+
+**Q-4 · `review` → `done` requires a session other than the one that did the work.** Not ceremony. **YT-0527 is the proof**: it sat at `review` with 4/4 criteria ticked, and its Cerbos integration had never once been capable of running. Every box was defensible from reading the workflow file and false in the runner. The author ticking their own boxes is the claim, not the verification.
+
+**Q-5 · A gate's coverage is part of the gate.** `pnpm verify` ran 282 TypeScript test files and zero Go ones for as long as it existed, because `services/*` had no `package.json` and turbo could not see it. `verify` now runs line endings, formatting, typecheck (incl. `go vet`), lint, every suite including Go, the 384 Cerbos policy tests and board staleness — and **local and CI run the same lint command**, after the first CI run reported 72 errors that no developer could reproduce.
+
+**Q-6 · Where a check and its compensating control share a root cause, the control does not count.** `integration.yml` mounted Cerbos's policies _and_ its config from a workspace that does not exist yet; the argument that `watchForChanges` covered the policy mount was defeated by the config mount failing identically, since that setting lives in the config. **A mitigation that depends on the thing that broke is not a mitigation.** Generalises risk 41's suspicion of simulators to any compensating control.

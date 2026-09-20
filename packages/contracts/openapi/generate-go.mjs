@@ -79,6 +79,19 @@ const result = spawnSync(
   [
     "run",
     "--rm",
+    // Run as the calling user on Linux. By default the container writes as
+    // root, so the generated tree — including `.gotmp/.openapi-generator` —
+    // comes back root-owned and the caller cannot delete it. The FIRST CI run
+    // of this workflow died on exactly that: `EACCES: permission denied,
+    // rmdir '.../.gotmp/.openapi-generator'`.
+    //
+    // It cannot reproduce on the machine this was written on: Docker Desktop
+    // on Windows and macOS maps ownership to the host user for bind mounts,
+    // and `process.getuid` does not exist there at all — which is why the
+    // guard is a feature check rather than a platform string.
+    ...(typeof process.getuid === "function"
+      ? ["--user", `${process.getuid()}:${process.getgid()}`]
+      : []),
     "-v",
     `${openapiDir}:/local`,
     GENERATOR_IMAGE,

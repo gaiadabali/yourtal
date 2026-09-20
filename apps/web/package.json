@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "typegen": "next typegen"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

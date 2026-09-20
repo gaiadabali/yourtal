@@ -482,3 +482,16 @@
 - [ ] Every shell script and `.githooks/*` hook confirmed LF **on disk**, not merely declared
 - [ ] `.ps1`/`.bat`/`.cmd` confirmed still CRLF — the renormalisation must not flip the Windows-only scripts
 - [ ] A check that fails if a file's on-disk endings disagree with its declared attribute, so this cannot silently drift again
+
+### YT-0569 · No CI has ever run, and the workflows watch a branch that does not exist
+`todo` · P0 · infra · 2d · dep: —
+
+- **The repository has no git remote.** All six workflows — `integration.yml`, `go.yml`, `quality.yml`, `contracts.yml`, `authz.yml`, `format.yml` — have **never executed once**. Every guarantee expressed as CI is currently a statement of intent
+- ⚠️ **Risk 37's mitigation is one of them.** _"Fixed by `integration.yml` with real service containers and a build failure on any SKIP"_ describes a workflow that has never run. The Postgres-backed guarantees it was written to protect are still unprotected
+- ⚠️ **Every workflow triggers on `branches: [main]`; this repo's branch is `master`.** So they would not fire on push even the moment a remote is added — the failure would be silence, which looks exactly like success
+- ⚠️ `go.yml` and the others also filter on `paths:`. A change in `packages/db/migrations` that breaks `services/ledger`'s schema expectations matches no Go path and would not trigger the Go gate. **Path filters make a cheap gate; they also make a gate that a cross-cutting change walks straight past**
+- [ ] A remote exists and the default branch name is reconciled — either rename `master` → `main`, or change all six workflows. **One of the two, not a mix**
+- [ ] **Prove CI runs by making it fail first**: push a deliberate break, watch the red, fix it, watch the green. A workflow first seen green is a workflow that has not been shown to run
+- [ ] `integration.yml` confirmed to stand up Postgres **and** confirmed to fail on a SKIP — sabotage-proved, per `docs/13c`
+- [ ] Go's DB-backed suites confirmed **not** skipping in `integration.yml`, and `go test` there carries `-p 1` until YT-0567 lands, or it will race exactly as it does locally
+- [ ] Decide whether path filters stay. If they do, cross-cutting paths (`packages/db/migrations/**`, `packages/contracts/**`) trigger the Go gate too

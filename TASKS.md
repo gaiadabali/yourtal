@@ -31,6 +31,8 @@ Format and rules: [`docs/tasks/_schema.md`](docs/tasks/_schema.md).
 | ⚠️ **What genuinely cannot be simulated** | **1. Where Helios physically sits** (YT-0534) — a fact about a rented box, and it decides whether real Australian or Indonesian personal data may ever land on it. **2. Legal** — PSE registration, notaris, entity formation. **3. Real people** — simulated users cannot tell you whether anyone will watch twenty minutes. Everything else now has a simulator, and **every simulator can be driven into failure** (YT-0536). |
 | ⚠️ **The value chain is proven in tests, and is not yet wired into the running system** | Partner buys points → allocation + reserve + `point_purchase` → user completes a campaign → risk gate, velocity caps, drawdown, ledger post, grant log in one transaction → hard-stop at zero. **YT-0044** proves it every 15 minutes with a write-once daily Merkle root, all against real Postgres. **But this row used to read "the value chain and its proof both run", and that was true of the Go test suites rather than of the product.** Relayed by `yourtal-22` and verified here: `services/ledger/cmd/ledger/main.go` registers exactly **`/healthz` and a 404** — the reward engine, pricing engine, chart of accounts and transfer API have **no HTTP caller at all** — and `apps/api` mentions "ledger" and "voucher" only in comments and Postgres role names, with **no `LEDGER_BASE_URL`, no client and no config anywhere**. The same week's lesson, one level up: a claim can be true of the tests and false of the system. `yourtal-22`'s agents are closing it now. |
 | 🔐 **A merchant could have captured another merchant's hold** | Found by `yourtal-22` exposing `/v1/vouchers/{authorize,capture,void,refund}`, **verified here against `main`**: the authorization query is `WHERE id = $1 AND state = 'held' AND expires_at > now()` — **no merchant predicate**. Correct for the invariant the domain tests assert, and false the moment the id is client-supplied over HTTP. Proved by disabling the new check: **a stranger's signed capture succeeded and returned a receipt.** Fixed at the HTTP boundary with the same refusal a missing id gets, so it cannot be used to enumerate. **The query is still unscoped** — safe because one caller checks, which is a convention rather than a constraint. **YT-0571**, risk 50. Two smaller siblings of the same shape: **YT-0572** (a refusal message that reveals which check failed) and **YT-0573** (nothing ever marks a voucher `expired`, so the portal and reconciliation read a stale `state`). |
+| 🚨 **A two-person-approval control is switched off by saying nothing** | `policies/resource_policies/listing.yaml:41` allows `set_settlement_value` when `!has(R.attr.isMaterialSettlementDecrease)` — **an `EFFECT_ALLOW` whose guard is satisfied by the attribute being absent**, so every settlement cut passes as non-material however large. Worse: the attribute **cannot** be supplied the normal way, because `attrsFrom` is synchronous and request-only while materiality compares against the *stored* `S`. **The correct calling pattern is the one that disables the control.** Its policy tests pass because they supply the attribute by hand, and nothing had ever reached it over HTTP. Found by `yourtal-22`'s agent 3, verified here. **YT-0574** (deny on absence), **YT-0575** (`approve_settlement_decrease` is a rule with no endpoint), risk 51. ⚠️ `policies/` belonged to `yourtal-e3`, **which has ended — this is unowned**. |
+| ⛔ **Nobody has defined what makes a settlement cut "material"** | `docs/17` line 84 requires two-person approval for _"changing a settlement value downward by more than a threshold"_ and **names no number**; the resource schema repeats the phrase; the policy consumes the boolean. **Three references, zero definitions.** An agent used **20% as a loudly-commented placeholder** so the check would not be a no-op — correct behaviour, and it leaves a number one agent invented standing in front of a two-person control. It is not an engineering default: a decrease in `S` is a **direct cut to what a user's points are worth**, since `points_price = (S / B) × demand_multiplier`. **YT-0576**, and it needs the same person as **YT-0050**. |
 | 🛑 **Do not run `pnpm dev:reset` or `docker compose down -v`** | `yourtal-22` is running three agents in git worktrees, each against **its own database in the shared cluster** — `yourtal_wt_voucher`, `yourtal_wt_ledger`, `yourtal_wt_store` — because `apps/api` suites clear tables in `beforeAll` and `fileParallelism` is off, so three concurrent agents against `yourtal` would have produced failures that looked like product bugs. **`down -v` destroys all three mid-run.** They are disposable once those agents finish and `yourtal-22` will say when. |
 | **Next unblocked engineering** | **YT-0513** (currency-tagged Money) — the structural answer to YT-0506, making the unit a question the compiler asks rather than one a person remembers. Then **YT-0535/0536** (the simulator seam) and **YT-0540/0541** (auth, schema now decided). Phase U continues against mocks. |
 | **Legal**                                                             | Proceeding **without advisory counsel** by founder decision. Positions recorded, sourced and risk-rated in [`docs/24-legal-positions.md`](docs/24-legal-positions.md). A **notaris and a local corporate services provider remain mandatory**.                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -62,13 +64,17 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 **Ownership is stale the moment a session ends, and it ended three times today without the table noticing.** Checked 2026-09-20 against the live session list: **e3, 5a and af are gone**, and `yourtal-22` is running and was not in the table at all. Their unfinished work is now unowned — it is in the task graph, not in anyone's hands. `yourtal-14` owns `docs/`, `scripts/`, `.githooks/`, `.github/workflows/` and this tracker. **`apps/web`, `packages/contracts` and `packages/db` are shared surfaces: announce the paths, not just the ticket.** Naming tickets instead of paths caused three mid-write races in one day.
 
-**`packages/contracts` is shared, not disjoint.** It belongs to e3 for API shapes, but Phase U necessarily adds to it — `src/mock-seed.ts` and `src/region/` so far. **Rule: contracts stays e3's, and anyone else announces what they add rather than assuming.** The registry completeness gate has caught every addition so far, which is why the overlap has been safe rather than lucky.
+**`packages/contracts` is shared, not disjoint.** It was `yourtal-e3`'s for API shapes; **that session has ended, so it is currently unowned** while remaining the one surface where concurrent sessions actually collide. **Rule: anyone adding to it announces what they add rather than assuming.** The registry completeness gate has caught every addition so far, which is why the overlap has been safe rather than lucky.
+
+**Announced 2026-09-20 by `yourtal-22` (agent 3, store module).** In its `src/listing/**` allowlist: **`listing.ts`** gains `perUserLimit`, optional with no default so every existing fixture still parses, and **`listing.test.ts`** covers its round-trip and rejection. **Outside that allowlist, flagged by the agent itself rather than slipped through**: `db-drift/schema-drift.test.ts` adds `lifecycle_state` to `store.listings`' `columnsWithNoField` exemption — the same public/internal split `campaignSchema.status` already makes; `openapi/route-drift.test.ts` adds 11 routes to `KNOWN_OUT_OF_SCOPE`, the convention campaign and watch already use; and `openapi/yourtal.openapi.json` plus `openapi/go/model_listing.go` are **mechanically regenerated** — both gates were red until it ran them. `yourtal-22` reviewed these as additive exemptions and generated output with no schema decisions. **Recorded because the boundary moved**: a module cannot keep the drift gates honest for its own tables without touching the files those gates live in, which is worth knowing before the next allowlist is drawn.
+
+**Open, small, and nobody's yet:** there is **no `listing_view` Cerbos kind**, so public store browse uses `@PublicRoute` rather than the `campaign` / `campaign_view` split. If browse should ever require even a bare signed-in check, that is a `policies/` decision — and `policies/` is unowned.
 
 <!-- AUTO:DASHBOARD -->
 
 _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
-**0 / 269 tasks done (0%)** · 41 in review · 55 in progress · 5 blocked
+**0 / 272 tasks done (0%)** · 41 in review · 55 in progress · 6 blocked
 
 ### By phase
 
@@ -76,8 +82,8 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 |---|---|---|---|---|
 | Phase U · UI first  ◀ NEXT | 0/34 | 21 | 10 | `▓▓▓▓▓▓░░░░` 62% |
 | Phase −1 · Pilot | 0/13 | 0 | 0 | `░░░░░░░░░░` 0% |
-| Phase 0 · Foundations | 0/106 | 19 | 29 | `▓▓░░░░░░░░` 18% |
-| Phase 1 · Indonesia MVP | 0/88 | 1 | 16 | `░░░░░░░░░░` 1% |
+| Phase 0 · Foundations | 0/107 | 19 | 29 | `▓▓░░░░░░░░` 18% |
+| Phase 1 · Indonesia MVP | 0/90 | 1 | 16 | `░░░░░░░░░░` 1% |
 | Phase 2 · Depth | 0/22 | 0 | 0 | `░░░░░░░░░░` 0% |
 | Phase 3 · Marketplace & AU | 0/6 | 0 | 0 | `░░░░░░░░░░` 0% |
 
@@ -88,13 +94,13 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 | `adplatform` | 0/17 | 0 | 2 | **4** | 98d | `░░░░░░░░░░` 0% |
 | `commerce` | 0/1 | 0 | 0 | — | 20d | `░░░░░░░░░░` 0% |
 | `data` | 0/9 | 1 | 0 | **3** | 45d | `▓░░░░░░░░░` 11% |
-| `economy` | 0/7 | 0 | 1 | **3** | 30d | `░░░░░░░░░░` 0% |
+| `economy` | 0/8 | 0 | 1 | **3** | 31d | `░░░░░░░░░░` 0% |
 | `infra` | 0/27 | 5 | 1 | **9** | 82d | `▓▓░░░░░░░░` 19% |
 | `legal` | 0/9 | 0 | 1 | **4** | 36d | `░░░░░░░░░░` 0% |
 | `media` | 0/13 | 1 | 1 | **1** | 67d | `▓░░░░░░░░░` 8% |
 | `merchant` | 0/16 | 2 | 5 | **6** | 64d | `▓░░░░░░░░░` 13% |
 | `pilot` | 0/11 | 0 | 0 | **1** | 29d | `░░░░░░░░░░` 0% |
-| `platform` | 0/44 | 8 | 15 | **14** | 111d | `▓▓░░░░░░░░` 18% |
+| `platform` | 0/46 | 8 | 15 | **15** | 116d | `▓▓░░░░░░░░` 17% |
 | `risk` | 0/14 | 0 | 0 | **4** | 67d | `░░░░░░░░░░` 0% |
 | `seo` | 0/5 | 0 | 3 | **1** | 17d | `░░░░░░░░░░` 0% |
 | `store` | 0/10 | 0 | 1 | **4** | 92d | `░░░░░░░░░░` 0% |
@@ -207,6 +213,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 ### Blocked
 
 - **YT-0534** Data residency: what Helios is allowed to hold
+- **YT-0576** Nobody has defined what makes a settlement decrease "material"
 - **YT-0124** Chapter-level reward accrual
 - **YT-0562** DECIDE: what is a resale bid denominated in?
 - **YT-0450** Clickable prototype walkthrough

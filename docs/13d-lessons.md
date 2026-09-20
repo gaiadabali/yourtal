@@ -102,6 +102,29 @@ pattern in the abstract did not prevent reproducing it within the hour.
 gets its own diagnosis, even when — especially when — the previous one is
 still fresh and fits.**
 
+## 9. The family, named — four in one week, and the fourth was found by looking
+
+`13c` listed ten gates that covered less than their names claimed. This week produced four more, and they are not ten separate lessons — they are **one shape in four places**:
+
+| Where                                      | What made it fail open                                                |
+| ------------------------------------------ | --------------------------------------------------------------------- |
+| The ledger schema-drift regex (YT-0565)    | A column it could not parse became a column it did not check          |
+| The app's Postgres connection (risk 45)    | Connecting as superuser made every `GRANT` decorative                 |
+| `ResolveAuthorization` (risk 50 / YT-0571) | A query correct for its invariant, once the id became client-supplied |
+| `set_settlement_value` (risk 51 / YT-0574) | An `EFFECT_ALLOW` whose guard is satisfied by an **absent** attribute |
+
+The shared mechanism is not "fails open". It is that **each was correct for the case its author had in mind, and permissive for the case they did not**. The regex was right about columns it recognised. The query was right while only the domain called it. The policy was right when the attribute was supplied.
+
+Two things make the last one the sharpest yet.
+
+**The correct calling pattern is the one that disables it.** `attrsFrom` is `(request) => Record<string, unknown>` — synchronous, request-only, no database. Materiality compares against the _stored_ value. So a controller using the declarative decorator, which is the right and universal pattern everywhere else in this codebase, supplies nothing, and the control switches off. **A guard you disable by following the house style is worse than one you disable by mistake.**
+
+**Two independent places agreed the omission was fine.** The policy expression accepted absence, and the resource schema listed only `businessId` as required. Neither is obviously wrong alone. Together they mean nothing in the system objects, and the redundancy that normally catches this instead confirmed it.
+
+**Rule: when a check reads an attribute, ask what it does when the attribute is not there — and check that the answer is written down in more than one place, because one of them will be a default.** In CEL specifically, `!has(x) || !x` reads as caution and means the opposite; `has(x) && !x` is the cautious form.
+
+The fourth was the first found by _looking_ rather than by tripping over it: an agent wiring a controller asked what its policy would receive. That is the review question from `13c` used as a design question, and it cost minutes instead of an incident.
+
 ---
 
 ## The pattern, restated

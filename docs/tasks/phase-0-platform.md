@@ -508,3 +508,38 @@
 - [ ] Key generation happens **outside `$GITHUB_WORKSPACE`**, and the keyring's refusal-inside-a-working-tree check is confirmed still firing — a guard that CI works around is a guard that has been disabled
 - [ ] Any new Go test needing Postgres is **reachable from `integration.yml`**. `go.yml` has no database by design, so such a test skips there silently and is caught nowhere. Confirm reachability by running it, not by asserting it
 - [ ] Health is not readiness, per YT-0527: assert the services answer a real route, not merely that the container is up
+
+### YT-0574 · A two-person-approval control that a missing attribute switches off
+`todo` · P0 · platform · 2d · dep: YT-0035
+
+- **Found by `yourtal-22`'s agent 3, verified here against `main`.** `policies/resource_policies/listing.yaml:41` guards `set_settlement_value`:
+  `expr: "!has(R.attr.isMaterialSettlementDecrease) || !R.attr.isMaterialSettlementDecrease"`
+- ⚠️ **It is an `EFFECT_ALLOW` rule whose guard is satisfied by absence.** A missing attribute makes `!has(...)` true, the allow fires, and **every settlement-value cut passes as non-material however large it is**. Worth stating precisely because the fix follows from it: this is not a deny that fails to fire, it is an **allow that accepts silence as evidence**
+- ⚠️ **And the attribute cannot be supplied by the normal mechanism.** `@Authorize`'s `attrsFrom` is `(request: FastifyRequest) => Readonly<Record<string, unknown>>` — **synchronous, request-only, no database read** — while materiality is a comparison against the *currently stored* `S`. So a controller using the declarative decorator alone, which is the correct and universal pattern everywhere else, sends no attribute. **The correct usage disables the control**
+- ⚠️ **Two independent places agree that absence is fine**, which is why nothing objects: the policy expression above, and `policies/_schemas/resource/listing.json`, where `required` is `["businessId"]` only. The schema permits the omission and the rule rewards it
+- ⚠️ `two_person_approval_test.yaml` **passes** — because it supplies the attribute directly. Nothing had ever reached this policy over HTTP, because there was no store module. **Merged, tested, and unreachable; the first correct caller would have silently disabled it**
+- [ ] The expression requires **positive evidence**: `has(R.attr.isMaterialSettlementDecrease) && !R.attr.isMaterialSettlementDecrease`, so a missing attribute **denies**
+- [ ] `isMaterialSettlementDecrease` becomes **`required`** in the resource schema, so the omission is refused before the expression is even reached
+- [ ] Sabotage-prove both: call `set_settlement_value` with the attribute **absent** and confirm a deny. A policy test that only ever supplies the attribute cannot see this class at all
+- [ ] Audit every other `has(...)` in `policies/` for the same shape — **a guard whose condition is satisfied by absence is a guard that anyone can turn off by saying nothing**
+- [ ] ⚠️ `policies/` was **`yourtal-e3`'s and that session has ended**, so this is unowned. It needs an owner before it needs a fix
+
+### YT-0575 · `approve_settlement_decrease` is a rule with no way to invoke it
+`todo` · P1 · platform · 3d · dep: YT-0574
+
+- The policy routes a material decrease to `approve_settlement_decrease`, and `packages/authz/src/resources.ts:64` registers the action. **Verified: there is no endpoint, no controller and no workflow anywhere** — it is the only reference outside the policy
+- So even once YT-0574 makes the deny fire, the thing it redirects to **does not exist**: a material decrease would be refused with nowhere to go. A correct control that strands the user is still a broken feature
+- The schema already anticipates the shape — `requestedBy` and `approvalState` (`none` / `pending` / `approved`) are declared, and a separate rule enforces `requestedBy != approver`. **The design is written; only the endpoints are missing**
+- [ ] Propose and approve endpoints, with `approvalState` transitions persisted rather than inferred
+- [ ] The approver **cannot be the requester** — proved by trying it, not by reading the policy that says so
+- [ ] A pending proposal is visible to whoever must approve it; a control nobody is told about is a control nobody operates
+
+### YT-0576 · Nobody has defined what makes a settlement decrease "material"
+`blocked` · P1 · economy · 1d · dep: —
+
+- ⛔ **Decision needed from the founder or whoever owns the economy (YT-0050).** `docs/17` line 84 requires two-person approval for _"changing a settlement value downward by more than a threshold"_ and **names no number**. `policies/_schemas/resource/listing.json` repeats _"more than the threshold"_. The policy expression consumes the boolean. **Three references, zero definitions**
+- ⚠️ `yourtal-22`'s agent used **20% as a loudly-commented placeholder** so the check would not be a no-op. That is correct engineering behaviour and it leaves **a number one agent invented sitting in front of a two-person-approval control**
+- The threshold decides how often a merchant needs a second person to cut `S`. Too low and it is friction on ordinary repricing; too high and the control never engages. It also interacts with the pricing engine: `points_price = (S / B) × demand_multiplier`, so a decrease in `S` is a **direct cut to what a user's points are worth in that store**
+- [ ] A number, or a rule that yields one (percentage, absolute floor, or both — a 5% cut on a large `S` may matter more than 30% on a small one)
+- [ ] Whether it is measured per change or cumulatively over a window. **A threshold per change is trivially evaded by making several small ones**
+- [ ] Where it lives so it is not re-invented: a named constant the policy, the API and the docs all read

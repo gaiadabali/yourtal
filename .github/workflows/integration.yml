@@ -117,9 +117,16 @@ jobs:
       # `args` field at all — only image, env, ports, volumes, options and
       # credentials. MinIO's entrypoint needs `server /data`, so as a service
       # it printed its usage text and exited before the healthcheck.
+      # The container names match docker-compose.yml exactly, and that is
+      # load-bearing rather than tidy: `delivery-log.test.ts` reads MinIO's
+      # per-object access log with `docker logs yourtal-minio`, because the
+      # per-segment delivery record is the evidence docs/22 needs and the
+      # S3 API does not expose it. Named `minio` here, that test failed with
+      # `No such container: yourtal-minio`. One canonical name per service
+      # beats teaching the test a second way to find it.
       - name: Start MinIO (a service container cannot pass `server /data`)
         run: |
-          docker run -d --name minio \
+          docker run -d --name yourtal-minio \
             -p 127.0.0.1:26900:9000 \
             -e MINIO_ROOT_USER=yourtal \
             -e MINIO_ROOT_PASSWORD=yourtal_local_only \
@@ -131,12 +138,12 @@ jobs:
             sleep 2
           done
           echo "::error::MinIO never became live on 26900."
-          docker logs minio
+          docker logs yourtal-minio
           exit 1
 
       - name: Start Cerbos (it needs the repo, so it cannot be a service)
         run: |
-          docker run -d --name cerbos \
+          docker run -d --name yourtal-cerbos \
             -p 127.0.0.1:26592:3592 \
             -v "$GITHUB_WORKSPACE/policies:/policies:ro" \
             -v "$GITHUB_WORKSPACE/infra/cerbos/config.yaml:/config/config.yaml:ro" \
@@ -145,22 +152,22 @@ jobs:
       - name: Wait for Cerbos, and assert it loaded actual policies
         run: |
           for _ in $(seq 1 40); do
-            if docker exec cerbos /cerbos healthcheck --config=/config/config.yaml >/dev/null 2>&1; then
+            if docker exec yourtal-cerbos /cerbos healthcheck --config=/config/config.yaml >/dev/null 2>&1; then
               break
             fi
             sleep 2
           done
-          docker exec cerbos /cerbos healthcheck --config=/config/config.yaml
+          docker exec yourtal-cerbos /cerbos healthcheck --config=/config/config.yaml
           # Health is not the question. A PDP that came up with zero policies
           # is HEALTHY and answers DENY to everything — it looks like a
           # working PDP while refusing every request, which is the exact
           # failure that hid here for as long as the workflow existed.
-          if docker logs cerbos 2>&1 | grep -q 'Found 0 executable policies'; then
+          if docker logs yourtal-cerbos 2>&1 | grep -q 'Found 0 executable policies'; then
             echo "::error::Cerbos started with 0 policies — the mount is wrong."
-            docker logs cerbos
+            docker logs yourtal-cerbos
             exit 1
           fi
-          docker logs cerbos 2>&1 | grep -o 'Found [0-9]* executable policies' | tail -1
+          docker logs yourtal-cerbos 2>&1 | grep -o 'Found [0-9]* executable policies' | tail -1
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4.0.0

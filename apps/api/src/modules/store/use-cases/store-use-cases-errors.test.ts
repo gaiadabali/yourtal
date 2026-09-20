@@ -191,13 +191,17 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
 
   it("reports decrease_already_pending for a second request while one is outstanding", async () => {
     const listing = await seedListing();
+    // A real UUID, not the "actor" placeholder the not-reached error-path
+    // tests above use -- this call actually inserts, and requested_by is
+    // `uuid NOT NULL`.
+    const requester = randomUUID();
     const first = await proposeSettlementDecrease(
       repo,
       decreaseRequests,
       MERCHANT,
       listing.id,
       100_000,
-      "actor",
+      requester,
       "first",
     );
     expect(first.isOk()).toBe(true);
@@ -208,7 +212,7 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
       MERCHANT,
       listing.id,
       50_000,
-      "actor",
+      requester,
       "second",
     );
     expect(second.isErr()).toBe(true);
@@ -234,13 +238,14 @@ describe("approveSettlementDecrease (YT-0575)", () => {
 
   it("reports approval_refused for a self-approval attempt", async () => {
     const listing = await seedListing();
+    const requester = randomUUID();
     const proposed = await proposeSettlementDecrease(
       repo,
       decreaseRequests,
       MERCHANT,
       listing.id,
       100_000,
-      "the-requester",
+      requester,
       "reason",
     );
     if (proposed.isErr()) throw new Error("test setup: failed to propose a decrease");
@@ -251,7 +256,7 @@ describe("approveSettlementDecrease (YT-0575)", () => {
       MERCHANT,
       listing.id,
       proposed.value.id,
-      "the-requester", // same person
+      requester, // same person
     );
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toMatchObject({ type: "approval_refused" });
@@ -265,7 +270,7 @@ describe("approveSettlementDecrease (YT-0575)", () => {
       MERCHANT,
       listing.id,
       randomUUID(),
-      "approver",
+      randomUUID(),
     );
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toMatchObject({ type: "approval_refused" });

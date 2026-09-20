@@ -21,5 +21,11 @@ TASKS.md
 # MPEG-TS segments are named `.ts`, the same extension TypeScript uses, so
 # Prettier picks its TypeScript parser and fails on the binary. That breaks
 # `prettier --check .` and the format CI gate for files that are video.
-# ESLint is unaffected — it is scoped to `src`.
+# ESLint needs the same exclusion and now has it in `eslint.config.mjs`:
+# every package's lint script was widened from `eslint src` to `eslint .`,
+# so the old note that ESLint "is scoped to src" stopped being true.
 packages/media/fixtures/
+
+# Agent git worktrees — full checkouts of this repo inside itself. Prettier
+# walked into them and reported every file twice over.
+.claude/worktrees/

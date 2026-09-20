@@ -240,3 +240,10 @@ jobs:
         env:
           VOUCHER_DATABASE_URL: postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal
           OWNER_DATABASE_URL: ${{ env.DATABASE_OWNER_URL }}
+
+      # Everything else, now that Postgres and a live PDP are up. The
+      # targeted steps above exist for their SKIP guards and their tee'd
+      # logs; this catches every suite that has neither — and it is the
+      # same command `pnpm verify` runs locally, so the two cannot drift.
+      - name: Every remaining suite
+        run: pnpm exec turbo run test --concurrency=1

@@ -16,7 +16,9 @@ Format and rules: [`docs/tasks/_schema.md`](docs/tasks/_schema.md).
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Stage** | **Building on our own metal.** The deployment target is **Helios**, all third-party connections are **held**, and auth is ordinary email + password. See [`docs/tasks/phase-0-helios.md`](docs/tasks/phase-0-helios.md). |
 | 📊 **Why `done` still reads 0 — and why that is now honest** | The board had **84 tasks in `review` and none in `done`**, and **43 of the 84 had unticked criteria** (five at 0 of n) under a column headed _"work complete"_. `review` had no validator rule, so it became where tasks went to stop being counted. The rule now exists (`_schema.md` § the status lifecycle): **`review` requires every criterion ticked, same bar as `done` minus the verifier.** The 43 moved to `doing`, which is what they were. The remaining **41 are genuinely finished work awaiting a second pair of eyes** — that sweep is the next job, and it is deliberately not a rubber stamp. |
-| 💰 **The gate did not cover the money** | `pnpm verify` ran **282 TypeScript test files and zero Go ones**. `services/*` was in the pnpm workspace but neither Go service had a `package.json`, so turbo never saw them — the ledger, the invariant checker, the daily Merkle proof and every voucher tamper and adversarial test sat outside the only gate anyone runs. **Now inside it**, along with lint (which was red), the 384 Cerbos policy tests and the board staleness check. The first honest run found a real failure: **YT-0567**. |
+| 💰 **The gate did not cover the money** | `pnpm verify` ran **282 TypeScript test files and zero Go ones**. `services/*` was in the pnpm workspace but neither Go service had a `package.json`, so turbo never saw them — the ledger, the invariant checker, the daily Merkle proof and every voucher tamper and adversarial test sat outside it. **Now inside**, together with line endings, formatting, lint (which was red), the 384 Cerbos policy tests and the board staleness check. The first honest run found a live failure: **YT-0567**. |
+| 🚦 **CI exists now — and its first run failed six ways** | The repo had **no remote**, so six workflows had **never executed once**; each also watched `branches: [main]` while the branch was `master`, so they would have stayed silent anyway — and silence looks exactly like success. Remote added 2026-09-20 (`gaiadabali/yourtal`, private), branch renamed. **Every workflow failed on first execution, and not one failure was a CI quirk**: a Cerbos service container that could never have worked, 72 lint errors from linting video fixtures as TypeScript, 48 more from type-aware rules run without generated types, a migration checksum broken by CRLF, and root-owned codegen output. All fixed; written up in [`docs/13d-lessons.md`](docs/13d-lessons.md). **Risk 37's mitigation was one of the unrun workflows** — it has been qualified in the register rather than rewritten. |
+| 🧪 **YT-0527 is why `done` needs a second pair of eyes** | It sat at `review` with **4/4 criteria ticked**, and its Cerbos integration had never once been capable of running. Every box was defensible from reading the workflow file and false in the runner — including one ticked on reasoning (`watchForChanges` covers the ordering) that was wrong because **the setting lived in the config file that failed to mount for the same reason**. Back to `doing`. This is the argument for not rubber-stamping the other 41. |
 | 🌐 **Australia’s public surface returns 404** | Measured against the running dev server: `PUBLIC_LOCALES` is `["id", "au"]`, `GENERATED_PUBLIC_LOCALES` is `["id"]`, and every public route sets `dynamicParams = false`. So `/id` serves and **`/au` does not exist**. YT-0405 reads as done from inside the code because the type admits a locale the router refuses. **AU is the primary market**; this is the widest gap between plan and build. |
 | 🗺️ **Coverage map — recorded, deliberately not started** | YT-0543..0546. Founder decision: it waits until the current plan is done and running. Three things captured now because they are cheap early and expensive late: **Australia Post licenses postcode data, the ABS does not**; **postcodes are delivery routes, not polygons** (SA2 is the right unit); and the **cohort floor must live in the aggregation, not the renderer** — a density map at low coverage re-identifies people. |
 | 🔄 **Australia-primary — reported confirmed, roadmap not yet re-cut** | Relayed via another session: **Australia is the primary market, Indonesia the proving ground**, and the reward is _a reward, not a wage replacement_, at **less than AUD 5 per twenty minutes** depending on partner funding. Engineering consequences are already in flight (YT-0405 region support, region selection at registration) because they are right either way. **The roadmap, economics and legal sequencing have not been re-cut** — `docs/04` still has Indonesia as Phase 1 and Australia as Phase 3. That is ~2 days of work and I want it confirmed in this session first. See _What AU-primary would change_. |
@@ -61,7 +63,7 @@ Directory ownership: `apps/api` core + `packages/{authz,consent,jurisdiction}` +
 
 _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
-**0 / 265 tasks done (0%)** · 41 in review · 55 in progress · 5 blocked
+**0 / 265 tasks done (0%)** · 42 in review · 54 in progress · 5 blocked
 
 ### By phase
 
@@ -69,7 +71,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 |---|---|---|---|---|
 | Phase U · UI first  ◀ NEXT | 0/34 | 21 | 10 | `▓▓▓▓▓▓░░░░` 62% |
 | Phase −1 · Pilot | 0/13 | 0 | 0 | `░░░░░░░░░░` 0% |
-| Phase 0 · Foundations | 0/105 | 19 | 29 | `▓▓░░░░░░░░` 18% |
+| Phase 0 · Foundations | 0/105 | 20 | 28 | `▓▓░░░░░░░░` 19% |
 | Phase 1 · Indonesia MVP | 0/85 | 1 | 16 | `░░░░░░░░░░` 1% |
 | Phase 2 · Depth | 0/22 | 0 | 0 | `░░░░░░░░░░` 0% |
 | Phase 3 · Marketplace & AU | 0/6 | 0 | 0 | `░░░░░░░░░░` 0% |
@@ -82,7 +84,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 | `commerce` | 0/1 | 0 | 0 | — | 20d | `░░░░░░░░░░` 0% |
 | `data` | 0/9 | 1 | 0 | **3** | 45d | `▓░░░░░░░░░` 11% |
 | `economy` | 0/7 | 0 | 1 | **3** | 30d | `░░░░░░░░░░` 0% |
-| `infra` | 0/26 | 4 | 2 | **9** | 82d | `▓▓░░░░░░░░` 15% |
+| `infra` | 0/26 | 5 | 1 | **9** | 81d | `▓▓░░░░░░░░` 19% |
 | `legal` | 0/9 | 0 | 1 | **4** | 36d | `░░░░░░░░░░` 0% |
 | `media` | 0/13 | 1 | 1 | **1** | 67d | `▓░░░░░░░░░` 8% |
 | `merchant` | 0/13 | 2 | 5 | **3** | 59d | `▓▓░░░░░░░░` 15% |
@@ -97,6 +99,7 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
 ### In review (work complete, gate not yet passed)
 
+- **YT-0527** `infra` Cerbos in the integration workflow — 7/7 AC ticked
 - **YT-0516** `infra` Local development stack — **no cloud account needed** — 6/6 AC ticked
 - **YT-0517** `infra` Declare `services/*` and scaffold the Go module — 4/4 AC ticked
 - **YT-0518** `value` First migration, executed — 5/5 AC ticked
@@ -142,7 +145,6 @@ _Generated by `scripts/tasks.mjs` — do not edit by hand._
 ### In progress
 
 - **YT-0010** Legal positions register — 3/4 AC
-- **YT-0527** Cerbos in the integration workflow — 4/7 AC
 - **YT-0030** Monorepo skeleton — 1/2 AC
 - **YT-0507** `business` and `kyb_document` resource kinds — 0/3 AC
 - **YT-0508** Promote business shapes into contracts — 0/3 AC

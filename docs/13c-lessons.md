@@ -1,6 +1,6 @@
 # 13c · Lessons the hard way
 
-Split out of [`13-engineering-standards.md`](13-engineering-standards.md) on 2026-09-20 when it crossed the 300-line ceiling. Those are the **standards** — what to do. These are the **incidents** — what went wrong, and the rule each one bought. Every entry here was paid for.
+Split out of [`13-engineering-standards.md`](13-engineering-standards.md) on 2026-09-20 when it crossed the 300-line ceiling. Those are the **standards** — what to do. These are the **incidents** — what went wrong, and the rule each one bought. Every entry here was paid for. **Continued in [`13d-lessons.md`](13d-lessons.md)**, which covers the day the first CI run in this repository's history executed — and failed six ways.
 
 ## The one thing all of these have in common
 

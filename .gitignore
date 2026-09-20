@@ -20,3 +20,10 @@ packages/contracts/openapi/.tstmp/
 services/*/*.exe
 services/*/ledger
 services/*/db/sqlc.log
+
+# Agent git worktrees. These are full checkouts of this repository living
+# INSIDE it, created by concurrent sessions. Untracked, they are one
+# `git add -A` away from being committed three times over; and Prettier
+# walked into them and reported every task file as unformatted, which is
+# how they were noticed.
+.claude/worktrees/

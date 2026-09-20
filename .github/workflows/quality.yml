@@ -58,5 +58,18 @@ jobs:
       - name: Typecheck
         run: pnpm exec turbo run typecheck
 
-      - name: Test
-        run: pnpm exec turbo run test
+      # There is deliberately NO test step here.
+      #
+      # This workflow stands up no services, and several suites are
+      # Postgres-backed by design — `@yourtal/idempotency`'s
+      # `postgres-store.test.ts` opens a pool in `beforeAll`. Running
+      # `turbo run test` here failed with ECONNREFUSED on 26432, which is
+      # the CORRECT behaviour: those suites refuse to pretend. A suite that
+      # quietly skipped without a database would be the far worse outcome,
+      # and `integration.yml` fails the build on any SKIP for that reason.
+      #
+      # The wrong fix is to filter the DB-backed packages out here. That
+      # recreates exactly the divergence the Lint comment above describes —
+      # two commands over two sets, neither matching `pnpm verify`. Tests
+      # live in `integration.yml`, which has Postgres and a live PDP; this
+      # workflow stays what its name says: lint, typecheck, and the board.

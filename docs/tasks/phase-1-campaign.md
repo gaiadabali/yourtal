@@ -130,7 +130,7 @@ The earning half of the loop: a business uploads a video with questions, a user 
 ## Watch session
 
 ### YT-0120 · Watch session service
-`review` · P1 · watch · 5d · dep: YT-0101, YT-0039
+`done` · P1 · watch · 5d · dep: YT-0101, YT-0039
 
 **Contract + storage landed. `pnpm verify` 11/11, 1959 tests, lint 11/11, `pnpm dev:fresh` green through 13 migrations.**
 
@@ -147,6 +147,10 @@ The earning half of the loop: a business uploads a video with questions, a user 
 
 - ⏭️ **The API surface is YT-0553, and it has since landed.** This ticket is the model, the rules and the storage. When it was written `apps/api` had never booted; `watch.controller.ts` now exposes start / resume / progress / complete and its suite passes 14/14 alone. Left as a pointer rather than a criterion — endpoints were never this ticket's bar
 - ⏭️ **The segment-log cross-check is YT-0123**, and it is what turns the rate check from "could not have been watched that fast" into "those bytes were actually fetched"
+- **VERIFIED AND PROMOTED 2026-09-20 by `yourtal-14`** — a different session from the one that built it (`yourtal-e3`, ended) and from the one that ticked it (`yourtal-24`). **Verified against the live database by breaking the controls, not by reading them:**
+  - `session_one_active_per_user` is a **partial unique index** — `ON watch.session (user_id) WHERE state = 'active'`. Proved by inserting two active sessions for one user inside a transaction: `ERROR: duplicate key value violates unique constraint "session_one_active_per_user"`
+  - Append-only on `watch.coverage` is real **at the grant level**, not merely in the schema: `has_table_privilege('yourtal_app', …)` returns **UPDATE=f, DELETE=f, INSERT=t**
+- **This is the first task on this board to reach `done`**, and the distinction it is carrying is the point: 43 tasks are finished, and this is the one whose claims someone other than the author has broken on purpose and watched refuse
 
 ### YT-0121 · Checkpoint tokens
 `todo` · P1 · watch · 5d · dep: YT-0120

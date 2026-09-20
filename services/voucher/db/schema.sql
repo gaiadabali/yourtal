@@ -170,7 +170,14 @@ CREATE TABLE store.listings (
   partial_redemption_policy text        NOT NULL,
   minimum_spend_idr         bigint,
   expires_at                timestamptz NOT NULL,
-  status                    text        NOT NULL
+  status                    text        NOT NULL,
+  -- Added by packages/db/migrations/20260920040000_store_listing_management.sql.
+  -- This service does not read either column; they are mirrored because the
+  -- drift guard compares this whole table against the live database, and a
+  -- mirror that omits a column cannot tell "not needed here" apart from
+  -- "nobody noticed it was added".
+  lifecycle_state           text        NOT NULL DEFAULT 'active',
+  per_user_limit            integer
 );
 
 CREATE TABLE store.listing_location (

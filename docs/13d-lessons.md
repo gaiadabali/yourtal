@@ -129,6 +129,16 @@ Two things make the last one the sharpest yet.
 
 The fourth was the first found by _looking_ rather than by tripping over it: an agent wiring a controller asked what its policy would receive. That is the review question from `13c` used as a design question, and it cost minutes instead of an incident.
 
+## 10. A gate added from an incident paid for itself the same day
+
+`format:check` is second in `verify`. It exists only because the first CI run in this repository's history found **9 drifted files** under `format.yml` — a workflow that had been committed all along and had never executed.
+
+Hours later the store module arrived from an agent that had run the tests and not the gate, carrying **8 files Prettier rejected**. `format:check` stopped the merge in about four seconds. That was **the first outside contribution it ever saw, and it caught it** (`14bd5a8`).
+
+Worth recording for a reason beyond the tidy symmetry. The argument against a formatting gate is always that it is trivia. The 9 files were trivia; the 8 files were an **agent skipping the gate and running only the tests**, which is not trivia at all — it is the same class as a cached pass and a skipped suite, a check that did not run reported as work that was checked. **The formatting was the detector, not the defect.**
+
+**Rule: when an incident produces a cheap gate, add it even if what it catches looks unimportant. What it catches is rarely the reason it is worth having.**
+
 ---
 
 ## The pattern, restated

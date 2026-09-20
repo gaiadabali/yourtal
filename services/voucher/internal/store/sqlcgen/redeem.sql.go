@@ -123,6 +123,17 @@ SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
 FROM voucher.authorization WHERE id = $1
 `
 
+// YT-0571 audit: no merchant predicate, by consideration rather than by
+// omission. Both call sites resolve a client-supplied id against merchant
+// ownership without this query's help — ownership.go's
+// requireOwnedAuthorization fetches by id and compares merchant_id itself,
+// which IS the boundary check this ticket says stays; release.go's Refund
+// calls this with an authorization id it already reached through a
+// capture that captureForReceipt resolved under a merchant predicate
+// (GetCaptureByReceipt, below). Scoping this query too would need a
+// merchant_id neither call site is wrong to be missing — the boundary
+// check already does the comparison it exists to do, and the other caller
+// never had an unscoped id in the first place.
 func (q *Queries) GetAuthorization(ctx context.Context, id pgtype.UUID) (VoucherAuthorization, error) {
 	row := q.db.QueryRow(ctx, getAuthorization, id)
 	var i VoucherAuthorization
@@ -179,6 +190,12 @@ SELECT id, authorization_id, authorized_amount_minor, amount_minor, receipt_id,
 FROM voucher.capture WHERE id = $1
 `
 
+// YT-0571 audit: no merchant predicate, considered rather than silent. The
+// only caller is Refund (release.go), and its capture id is never
+// client-supplied — a merchant's refund call carries a receipt_id, resolved
+// to this capture's id by captureForReceipt under a merchant predicate
+// (GetCaptureByReceipt, below) before Refund ever runs. By the time this id
+// reaches here it has already passed a scoped lookup once.
 func (q *Queries) GetCapture(ctx context.Context, id pgtype.UUID) (VoucherCapture, error) {
 	row := q.db.QueryRow(ctx, getCapture, id)
 	var i VoucherCapture
@@ -195,13 +212,28 @@ func (q *Queries) GetCapture(ctx context.Context, id pgtype.UUID) (VoucherCaptur
 }
 
 const getCaptureByReceipt = `-- name: GetCaptureByReceipt :one
-SELECT id, authorization_id, authorized_amount_minor, amount_minor, receipt_id,
-       settled_at, created_at
-FROM voucher.capture WHERE receipt_id = $1
+SELECT c.id, c.authorization_id, c.authorized_amount_minor, c.amount_minor, c.receipt_id,
+       c.settled_at, c.created_at
+FROM voucher.capture c
+JOIN voucher.authorization a ON a.id = c.authorization_id
+WHERE c.receipt_id = $1 AND a.merchant_id = $2
 `
 
-func (q *Queries) GetCaptureByReceipt(ctx context.Context, receiptID string) (VoucherCapture, error) {
-	row := q.db.QueryRow(ctx, getCaptureByReceipt, receiptID)
+type GetCaptureByReceiptParams struct {
+	ReceiptID  string
+	MerchantID pgtype.UUID
+}
+
+// ⚠️ YT-0571: `merchant_id = $2` closes the same hole as ResolveAuthorization,
+// for the same reason — "refund-by-receipt has the same shape as capture."
+// `voucher.capture` carries no merchant_id of its own, so this joins back to
+// the authorization that owns it rather than trusting captureForReceipt's
+// own boundary check (which stays) to be the only thing standing between a
+// stranger's receipt_id guess and somebody else's settled transaction. A
+// receipt from another merchant, real or guessed, now matches no row —
+// the same `pgx.ErrNoRows` an unknown receipt already produced.
+func (q *Queries) GetCaptureByReceipt(ctx context.Context, arg GetCaptureByReceiptParams) (VoucherCapture, error) {
+	row := q.db.QueryRow(ctx, getCaptureByReceipt, arg.ReceiptID, arg.MerchantID)
 	var i VoucherCapture
 	err := row.Scan(
 		&i.ID,
@@ -423,14 +455,15 @@ func (q *Queries) LiftKillSwitch(ctx context.Context, arg LiftKillSwitchParams) 
 const resolveAuthorization = `-- name: ResolveAuthorization :one
 UPDATE voucher.authorization
    SET state = $2, resolved_at = now()
- WHERE id = $1 AND state = 'held' AND expires_at > now()
+ WHERE id = $1 AND merchant_id = $3 AND state = 'held' AND expires_at > now()
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
           state, expires_at, created_at, resolved_at
 `
 
 type ResolveAuthorizationParams struct {
-	ID    pgtype.UUID
-	State string
+	ID         pgtype.UUID
+	State      string
+	MerchantID pgtype.UUID
 }
 
 // `state = 'held' AND expires_at > now()` is the whole expiry policy, applied
@@ -438,8 +471,20 @@ type ResolveAuthorizationParams struct {
 // stopped running must not silently turn every hold into a permanent one —
 // so an expired hold cannot be captured even while its row still says
 // 'held', and the sweeper's only job is tidying.
+//
+// ⚠️ YT-0571: `merchant_id = $3` is the fix, not a hardening. Capture and
+// Void resolve a CLIENT-SUPPLIED authorization id, and this query used to
+// carry no merchant predicate at all — correct for the invariant the
+// domain tests assert (an id is only ever handed back to the merchant that
+// placed the hold), wrong the moment an HTTP client can supply the id.
+// ownership.go's requireOwnedAuthorization is a boundary check and stays;
+// this is the WHERE clause that makes the data safe on its own, for
+// whatever calls this query next without going through that boundary. A
+// wrong merchant and a wrong id now fail identically — both are
+// `pgx.ErrNoRows`, mapped by the caller to the same ErrNoLiveHold — so this
+// does not create a new distinguishable refusal.
 func (q *Queries) ResolveAuthorization(ctx context.Context, arg ResolveAuthorizationParams) (VoucherAuthorization, error) {
-	row := q.db.QueryRow(ctx, resolveAuthorization, arg.ID, arg.State)
+	row := q.db.QueryRow(ctx, resolveAuthorization, arg.ID, arg.State, arg.MerchantID)
 	var i VoucherAuthorization
 	err := row.Scan(
 		&i.ID,
@@ -472,6 +517,10 @@ SELECT COALESCE(SUM(amount_minor), 0)::bigint AS refunded
 FROM voucher.refund WHERE capture_id = $1
 `
 
+// YT-0571 audit: not called from any Go code yet — no caller to audit. When
+// wired, capture_id must arrive the same way Refund's does: resolved from a
+// receipt through GetCaptureByReceipt's merchant predicate, never accepted
+// bare from a request body.
 func (q *Queries) SumRefunds(ctx context.Context, captureID pgtype.UUID) (int64, error) {
 	row := q.db.QueryRow(ctx, sumRefunds, captureID)
 	var refunded int64

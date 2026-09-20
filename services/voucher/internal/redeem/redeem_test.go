@@ -169,7 +169,7 @@ func TestABalanceCarryingVoucherSpendsDownAndStaysActive(t *testing.T) {
 		t.Fatalf("Authorize: %v", err)
 	}
 
-	capture, err := f.network.Capture(ctx, authorization.ID, 30_000_00, orderRef())
+	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000_00, orderRef())
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
@@ -206,7 +206,7 @@ func TestASingleUseVoucherIsConsumedWhatever1sSpent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	capture, err := f.network.Capture(ctx, authorization.ID, 10_000_00, orderRef())
+	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_00, orderRef())
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}

@@ -27,12 +27,16 @@ import (
 // Only ever applies to an authorization, never to a capture — which is how
 // docs/09 §8.1's "once settled, a transaction can only be refunded, never
 // voided" is expressed: there is no code path from a receipt to a void.
-func (n *Network) Void(ctx context.Context, authorizationID uuid.UUID) error {
+//
+// merchantID (YT-0571): same reasoning as Capture. requireOwnedAuthorization
+// stays as the boundary check; this is the query-level predicate that makes
+// the data safe without it.
+func (n *Network) Void(ctx context.Context, authorizationID, merchantID uuid.UUID) error {
 	return pgx.BeginTxFunc(ctx, n.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		queries := sqlcgen.New(tx)
 
 		authorization, err := queries.ResolveAuthorization(ctx, sqlcgen.ResolveAuthorizationParams{
-			ID: pgUUID(authorizationID), State: "voided",
+			ID: pgUUID(authorizationID), State: "voided", MerchantID: pgUUID(merchantID),
 		})
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("%w: %s", ErrNoLiveHold, authorizationID)

@@ -102,3 +102,66 @@ func TestAnotherMerchantCannotCaptureYourAuthorization(t *testing.T) {
 			retry.Code, retry.Body.String())
 	}
 }
+
+// TestAnotherMerchantCannotRefundYourReceipt is
+// TestAnotherMerchantCannotCaptureYourAuthorization's counterpart for
+// refund: YT-0571 point 1 says "refund-by-receipt has the same shape as
+// capture", and GetCaptureByReceipt (redeem.sql) now carries the same
+// merchant_id predicate ResolveAuthorization does. This proves it end to
+// end over HTTP, where captureForReceipt's own boundary check (ownership.go)
+// and the query predicate both have to actually be wired for a stranger's
+// receipt_id guess to be refused.
+func TestAnotherMerchantCannotRefundYourReceipt(t *testing.T) {
+	f := newFixture(t)
+	handler, owner := f.httpFixture(t)
+
+	ctx := context.Background()
+	keys, err := keyring.New(map[keyring.Purpose]map[int][]byte{
+		keyring.PurposeMerchantHMAC: {1: make([]byte, 32)},
+	})
+	if err != nil {
+		t.Fatalf("keyring: %v", err)
+	}
+	stranger := f.issueCredential(t, ctx, keys, uuid.New())
+
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+
+	authorize := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
+		"code": plaintext, "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
+	}), owner, uuid.NewString())
+	if authorize.Code != http.StatusOK {
+		t.Fatalf("the owning merchant's authorize failed: %d %s", authorize.Code, authorize.Body.String())
+	}
+	var authorized struct {
+		AuthorizationID string `json:"authorization_id"`
+	}
+	decodeBody(t, authorize, &authorized)
+
+	capture := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/capture", mustJSON(t, map[string]any{
+		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000_00,
+	}), owner, uuid.NewString())
+	if capture.Code != http.StatusOK {
+		t.Fatalf("the owning merchant's capture failed: %d %s", capture.Code, capture.Body.String())
+	}
+	var captured struct {
+		ReceiptID string `json:"receipt_id"`
+	}
+	decodeBody(t, capture, &captured)
+
+	refund := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/refund", mustJSON(t, map[string]any{
+		"receipt_id": captured.ReceiptID, "amount": 5_000_00, "reason": "not yours",
+	}), stranger, uuid.NewString())
+	if refund.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404 — a stranger refunded another merchant's receipt: %s",
+			refund.Code, refund.Body.String())
+	}
+
+	// The real owner can still refund it.
+	retry := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/refund", mustJSON(t, map[string]any{
+		"receipt_id": captured.ReceiptID, "amount": 5_000_00, "reason": "customer returned an item",
+	}), owner, uuid.NewString())
+	if retry.Code != http.StatusOK {
+		t.Fatalf("the owning merchant's refund failed after a stranger was refused: %d %s",
+			retry.Code, retry.Body.String())
+	}
+}

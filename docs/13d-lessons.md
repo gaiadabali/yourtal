@@ -159,6 +159,26 @@ The existing mitigation — `integration.yml` failing the build on any SKIP — 
 
 **Rule: an explicitly-supplied unreachable dependency is a misconfiguration, not an absent optional one.** A helper that skips when `DATABASE_URL` was _not_ set is being helpful; a helper that skips when `DATABASE_URL` _was_ set and could not be reached is hiding a broken environment. The two cases deserve opposite behaviour, and locally only the second one is ever what happened.
 
+## 13. `git add -A` in a shared working tree is a cross-session hazard
+
+Two sessions work in this one checkout. On 2026-09-20 a `git add -A` intended to stage one workflow file also swept up `policies/_schemas/resource/listing.json` — another session's uncommitted work-in-progress — into a commit whose message was about Actions spend.
+
+It was harmless **only** because that change happened to be one the other session wanted committed and believed correct. That is luck, not process. The next collision is a half-finished edit landing in someone else's commit under someone else's reasoning, where the commit message actively misdescribes what shipped.
+
+**Rule: in a shared working tree, stage paths, not everything.** `git add <path>` is a statement about what you changed; `git add -A` is a statement about what the _directory_ contains, and in a shared tree those are different claims. This is the fourth time this class has bitten here, and the first where the sweeping session did not notice at all.
+
+## 14. A control added to a shared definition is not scoped to what motivated it
+
+`isMaterialSettlementDecrease` was made `required` to close an absence-case hole on `set_settlement_value`. Cerbos validates the resource schema **before** evaluating policy, and `required` applies to the resource **kind**, not to an action — so `approve_settlement_decrease`, which has no business carrying a materiality flag, was refused before any rule ran. Integration went red on three consecutive commits.
+
+Two sub-findings, each its own shape:
+
+**A long-running container is not equivalent to a fresh one.** It passed locally because the Cerbos sidecar was serving schemas cached from before the change; CI starts clean. `docker restart` belongs in the verification of a policy change, not after it. Same family as a cached turbo task and a cached `go test` — a stale answer that is indistinguishable from a computed one.
+
+**The suite could not have caught it.** `policy-test.mjs` runs an ephemeral Cerbos over fixtures, and every fixture for the _other_ actions predates the attribute, so none exercised them against the tightened schema. **It tested the rule that changed, not the resource kind it changed on.**
+
+**Rule: when tightening a shared definition, enumerate every consumer of the definition, not every caller of the thing you were fixing.** The blast radius of a schema is the kind; the blast radius of a rule is the action. They are not the same set, and the narrower one is the one you are thinking about.
+
 ---
 
 ## The pattern, restated

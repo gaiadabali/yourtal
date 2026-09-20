@@ -265,3 +265,17 @@ And `docs/24` position **ID-1** — that YourTal Points are a loyalty currency a
 **R-2 · P-2 (resale) has a dependency nobody wrote down: something must actually mark a voucher expired.** P-2 says a listing is valid while the expiry date is active and is cancelled once it is not. That rule reads a `state` column **no production code ever transitions** — `lifecycle.Expired` is referenced outside its own package only by a test, and `chain.TypeExpired` is an event nothing emits. Spending is safe regardless, because `check()` compares `ExpiresAt` live. **Listing is not**: a marketplace reading `state` keeps lapsed vouchers listed and sellable.
 
 So **YT-0573 is a prerequisite of resale, not an adjacent cleanup**, and it is recorded here rather than only on the ticket because resale is founder-decided and will be built by someone reading `docs/16`, not `docs/tasks/phase-1-store.md`. It joins **YT-0562** (what a bid is denominated in) as a thing that must be settled before any resale code exists — one a legal question, one a mechanical one.
+
+---
+
+## S — deployment
+
+**S-1 · Deploy by pull, not by push. CI and the poller are not alternatives: CI proves and publishes the artifact, the poller pulls and installs it.**
+
+Helios already runs `gaiada-poll`, green and hardened, whose own docstring is the argument: _"No inbound port, no webhook, no DNS, no nginx. Outbound HTTPS only."_ Its discovery loop enrols any repo whose `.gaiadeploy.yml` names the server, so YourTal joins with a file in the repository and no server-side change.
+
+**Push-from-CI is the wrong shape here for a specific reason, not a stylistic one.** Helios permits SSH **per source IP**, and that allowlist is what protects the 30 live client sites sharing the box. GitHub Actions runners egress from thousands of rotating addresses, so push-deploy means opening port 22 broadly — **discarding the control in order to automate the thing it protects.**
+
+It is also the fragile direction, demonstrated the same day: from a rotated home address, direct SSH to Helios _and_ Delphi both timed out while outbound was untouched. The property that makes `helios-w` work from anywhere — outbound is never filtered — is the same property that makes a pull-based deploy survive. And the credential blast radius differs: push-deploy stores a key in GitHub that can reach a box holding 30 clients; the poller needs only outbound read.
+
+**What this does not excuse.** A poller that stops emits no errors — this exact timer was failing every 60 seconds for an unrelated repo in August and nobody noticed. **A deploy pipeline that has silently stopped is indistinguishable from one with nothing to deploy**, so YT-0532 carries a criterion that it pages when it has _not_ run, per YT-0566. Rollback exists in `gaiada-deploy` and must be **exercised before it is needed**: a rollback path first used during an incident has not been tested.

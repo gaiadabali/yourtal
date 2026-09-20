@@ -64,6 +64,26 @@ Caps sized against **measured** headroom (22 GB free, load ~1.0) and deliberatel
 ### YT-0532 · Helios: deploy pipeline with rollback
 `todo` · P0 · infra · 4d · dep: YT-0530, YT-0028
 
+**Decided 2026-09-20 (S-1): the existing pull-based poller, not push-from-CI. They are not alternatives — CI proves and publishes the artifact, the poller pulls and installs it.**
+
+The poller `gaiada-poll` already runs on Helios, is **green** (`Result=success`, `NRestarts=0`, active since 2026-09-13) and states its own case: _"No inbound port, no webhook, no DNS, no nginx. Outbound HTTPS only."_ It polls for `deploy/<env>-` releases with conditional ETag requests, and its discovery loop **auto-enrols any repo whose `.gaiadeploy.yml` names this server** — org `gaiadabali`, which is now where YourTal lives. So joining needs a file in the repo and **no server-side change**.
+
+**Why push-from-CI is the wrong shape here, specifically:**
+
+| | |
+| --- | --- |
+| **The allowlist is the control** | Helios permits SSH **per source IP**, and that is what protects 30 live client sites. GitHub Actions runners egress from thousands of rotating addresses. Push-deploy means opening 22 broadly or maintaining an impossible list — **discarding the control to automate the thing it protects** |
+| **Inbound is the fragile direction** | Proved the same day: from a new home address, direct SSH to Helios **and** Delphi both timed out, while outbound was untouched. A deploy that needs inbound reachability fails exactly when an operator IP rotates |
+| **Credential blast radius** | Push-deploy puts a key in GitHub that can SSH to a box holding 30 clients. The poller needs only **outbound read** access |
+| **It is the house pattern** | `gaiada-deploy` already does releases + symlink swap + **rollback**, and reloads Node apps with `pm2 reload --update-env` under a per-site user |
+
+- [ ] `.gaiadeploy.yml` in this repo naming **server-c**, so the discovery loop enrols it with no server-side edit
+- [ ] CI publishes a `deploy/<env>-` release **only from a green run** — the poller installs whatever it is given, so the gate has to be upstream of it
+- [ ] Rollback **exercised, not assumed**: deploy, roll back, confirm the previous release serves. Per `docs/13c`, a rollback path first used during an incident has not been tested
+- [ ] ⚠️ **The poller must page when it has NOT run**, per YT-0566. This exact timer was failing every 60 s for an unrelated repo in August and nobody noticed — **a job that stops running emits no errors at all**, and a deploy pipeline that has silently stopped looks identical to one with nothing to deploy
+- [ ] ⚠️ The `yourtal` system user is `/usr/sbin/nologin`; confirm `pm2` works under it or give the deploy its own site user. Decide before the first deploy, not during it
+- [ ] Secrets come from `/opt/yourtal/secrets/app.env` (0600), never from the release artifact
+
 - [ ] Build once in CI, publish a checksummed artifact, host verifies before it deploys
 - [ ] Health check after deploy; **failure rolls back automatically** and the rollback path is exercised in CI, not just written
 - [ ] Node version in the build matches the Node version on the host — a standalone bundle shipping native modules (`pg`, `sharp`) built on the wrong major fails at runtime, not at build

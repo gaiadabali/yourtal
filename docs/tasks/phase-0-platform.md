@@ -412,6 +412,8 @@
 
 - **Two sessions independently hit this within hours.** `vitest.config.ts` sets `env.DATABASE_URL`, and that **overrides a value passed on the command line** — so pointing the database at a dead host to prove a suite really talks to it comes back **green**, and reads as proof of exactly the opposite
 - That it happened twice makes it a property of this repo rather than a mistake either person made. The house rule is to prove a check by breaking what it catches; this configuration **silently disarms that rule** for every database-backed suite
+- ⚠️ **Third instance, 2026-09-20, and it reached `main` — `yourtal-22`, fixed in `353b267`.** The store module's test helper hard-coded **`yourtal_wt_store`**, a *private worktree database* created for one agent on one laptop, as the fallback behind `TEST_DATABASE_URL`. It passed the local gate **twice**, for the only reason that matters: **on that machine the database existed.** The test was verifying the laptop
+- ⚠️ This is worse than the first two, which were a config override. Here a **machine-specific name was committed into a shared repository** and would have failed for everyone else while reading as a normal green locally. **The ticket sat in `ready to start` the entire time** — a known defect with a written fix, arriving again in a new form before anyone picked it up. Cheap tickets left unstarted are not cheap
 - [ ] The value under test is resolved from the environment first, with the config supplying only a fallback
 - [ ] A comment at each site naming why, since the next person will reach for the convenient form again
 - [ ] ⚠️ **After fixing, re-run the sabotage that previously passed** and confirm it now fails — a fix to a verification mechanism has to be verified by the mechanism it repairs

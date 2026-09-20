@@ -139,6 +139,26 @@ Worth recording for a reason beyond the tidy symmetry. The argument against a fo
 
 **Rule: when an incident produces a cheap gate, add it even if what it catches looks unimportant. What it catches is rarely the reason it is worth having.**
 
+## 11. Two stale things agreeing is not a passing check
+
+The sharpest one of the week, from `yourtal-22` (`428a0c6`).
+
+`services/voucher/db/schema.sql` mirrors `store.listings` so sqlc can generate against it. The store migration added `lifecycle_state` and `per_user_limit`, and the mirror went stale. There **is** a drift test for exactly this. It passed.
+
+It passed because that machine's dev database had never had the store migration applied either. **So the check compared a stale mirror against a stale database, found them identical, and reported success — for precisely the condition it exists to detect.**
+
+This is a new member of the family rather than another instance. The others were checks that **did not run**: a cache answered, a suite skipped, a path filter never fired. This one **ran**, executed its comparison honestly, and was correct about the two things it was shown. Both were wrong in the same direction.
+
+**Rule: a differential check needs its reference proven current, separately from the comparison.** Ask what makes the _baseline_ trustworthy — a migration count, a schema version, a checksum of the source of truth — because "they match" is a statement about agreement, not about correctness. It was caught in CI, where the database is built from migrations every run and therefore cannot be stale.
+
+## 12. `ok` and `ok (everything skipped)` look identical
+
+Also `yourtal-22`, and nearly recorded as a verification. They ran the drift test against a scratch database and got `ok`. Docker had died moments earlier; `schema_test.go` calls `t.Skipf("no local Postgres")` on a failed ping, and **`go test` prints `ok` for a package whose every test skipped.** They caught it only by chasing why an unrelated docker command had failed.
+
+The existing mitigation — `integration.yml` failing the build on any SKIP — is real and it works. **But it only protects CI.** A developer running a Go suite locally with containers down gets a green wall and no signal at all, which is the same shape as §7's cached pass: the two outcomes are indistinguishable at a glance, and the indistinguishable one is the default.
+
+**Rule: an explicitly-supplied unreachable dependency is a misconfiguration, not an absent optional one.** A helper that skips when `DATABASE_URL` was _not_ set is being helpful; a helper that skips when `DATABASE_URL` _was_ set and could not be reached is hiding a broken environment. The two cases deserve opposite behaviour, and locally only the second one is ever what happened.
+
 ---
 
 ## The pattern, restated

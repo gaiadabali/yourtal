@@ -55,6 +55,15 @@ export const listingSchema = z
     minimumSpendIdr: idrMinorUnitsSchema.nullable(),
     expiresAt: z.iso.datetime(),
     status: listingStatusSchema,
+    /**
+     * The most a single wallet may redeem from this listing, or `undefined`
+     * for no limit. Added for the store module's listing-management surface
+     * (YT-0130/YT-0131/YT-0132 backend); `optional()` rather than
+     * `.nullable().default(...)` so every existing fixture and mock that
+     * predates this field keeps parsing unchanged — an omitted key is a
+     * missing limit, not a validation failure.
+     */
+    perUserLimit: z.number().int().positive().optional(),
   })
   .refine((listing) => listing.stockRemaining <= listing.stockTotal, {
     message: "stockRemaining cannot exceed stockTotal",

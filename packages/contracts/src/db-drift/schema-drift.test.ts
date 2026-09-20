@@ -178,7 +178,10 @@ const MAPPINGS: readonly Mapping[] = [
       locations:
         "A relation, not a column. Stored as store.merchant_location rows joined through store.listing_location (YT-0502), so that a voucher's branch can be constrained to one its listing actually offers.",
     },
-    columnsWithNoField: {},
+    columnsWithNoField: {
+      lifecycle_state:
+        "MERCHANT-side visibility (active/paused/retired), added by the store module's listing-management migration (20260920040000). Deliberately separate from the customer-facing `status` enum, the same split campaignSchema's lifecycle_state/status makes: a customer never sees a listing that is not active at all, so pausing removes it from the browse/offer-detail query rather than adding a value to the public enum.",
+    },
   },
   {
     name: "voucherSchema",

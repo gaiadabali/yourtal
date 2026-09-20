@@ -147,6 +147,34 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "POST /api/watch/sessions/{sessionId}/complete":
     "WatchModule — YT-0120, a separate in-flight stream.",
   "GET /api/health": "Platform infrastructure endpoint, not business-domain API surface.",
+
+  // StoreModule -- YT-0130/YT-0131/YT-0132 backend halves, the first pass of
+  // the store module (previously 0 of 10 tasks, no module at all). Same
+  // convention as campaign/watch above: out of THIS gate's scope rather than
+  // undocumented, because a full route-registry.ts entry needs the same
+  // Zod-schema-to-OpenAPI transcription business.ts's schema-registry does,
+  // which is a separate piece of work from standing the module up.
+  "GET /api/store/listings": "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "GET /api/store/listings/{listingId}":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "POST /api/{tenantId}/store/listings":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "GET /api/{tenantId}/store/listings":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "GET /api/{tenantId}/store/listings/{listingId}":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "PATCH /api/{tenantId}/store/listings/{listingId}":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "POST /api/{tenantId}/store/listings/{listingId}/settlement-value":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "GET /api/{tenantId}/store/listings/{listingId}/price-revisions":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "POST /api/{tenantId}/store/listings/{listingId}/pause":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "POST /api/{tenantId}/store/listings/{listingId}/resume":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
+  "POST /api/{tenantId}/store/listings/{listingId}/retire":
+    "StoreModule -- YT-0130/YT-0131/YT-0132, this pass's own ticket.",
 };
 
 describe("business-module route inventory vs route-registry.ts", () => {

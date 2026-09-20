@@ -3,6 +3,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { AppConfigModule } from "./config/app-config.module";
 import { BusinessModule } from "./modules/business/business.module";
 import { CampaignModule } from "./modules/campaign/campaign.module";
+import { StoreModule } from "./modules/store/store.module";
 import { WatchModule } from "./modules/watch/watch.module";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
@@ -24,6 +25,7 @@ import { PersistenceModule } from "./shared/persistence/persistence.module";
     HealthModule,
     BusinessModule,
     CampaignModule,
+    StoreModule,
     WatchModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency

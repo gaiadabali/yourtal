@@ -42,6 +42,24 @@ describe("listingSchema", () => {
     expect(parsed).toMatchObject({ title: validListing.title, priceInPoints: 2_500 });
   });
 
+  it("round-trips without perUserLimit (undefined means no limit)", () => {
+    const parsed = listingSchema.parse(validListing);
+    expect(parsed.perUserLimit).toBeUndefined();
+  });
+
+  it("round-trips a valid perUserLimit", () => {
+    const parsed = listingSchema.parse({ ...validListing, perUserLimit: 2 });
+    expect(parsed.perUserLimit).toBe(2);
+  });
+
+  it("rejects a zero perUserLimit", () => {
+    expect(listingSchema.safeParse({ ...validListing, perUserLimit: 0 }).success).toBe(false);
+  });
+
+  it("rejects a negative perUserLimit", () => {
+    expect(listingSchema.safeParse({ ...validListing, perUserLimit: -1 }).success).toBe(false);
+  });
+
   const rejectionTable: Array<{ name: string; overrides: Record<string, unknown> }> = [
     { name: "negative face value", overrides: { faceValueIdr: -1 } },
     { name: "negative price in points", overrides: { priceInPoints: -1 } },

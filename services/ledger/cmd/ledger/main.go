@@ -59,6 +59,12 @@ const (
 	defaultAddr     = "127.0.0.1:3010"
 	requestTimeout  = 10 * time.Second
 	shutdownTimeout = 15 * time.Second
+
+	// readinessPingTimeout bounds /readyz's own database round trip. Short
+	// on purpose: a healthcheck that can hang as long as the outer
+	// middleware Timeout allows is a healthcheck that reports "unhealthy"
+	// ten seconds late, and docker's healthcheck interval below is 5s.
+	readinessPingTimeout = 2 * time.Second
 )
 
 func main() {
@@ -116,8 +122,41 @@ func run(logger *slog.Logger) error {
 			"and /v1 routes will report the database as unconfigured")
 	}
 
+	// /healthz is pure liveness: it never touches the database, and answers
+	// 200 as long as the process is scheduling goroutines at all. That is
+	// deliberate and it is NOT what a container orchestrator's readiness
+	// probe should point at — a service that answers "ok" while it cannot
+	// reach Postgres is exactly the false "can serve" this docker-compose.yml
+	// healthcheck was found reporting: pausing Postgres left /healthz at 200
+	// throughout, so a check wired to it goes green on a service that cannot
+	// actually do anything.
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		httpx.WriteJSON(w, logger, http.StatusOK, map[string]string{"status": "ok"})
+	})
+
+	// /readyz is what docker-compose.yml's healthcheck now points at: can
+	// this instance actually serve a request that touches the database. A
+	// missing pool is unready by construction (there is nothing to be ready
+	// WITH); a configured pool that fails to answer a Ping within budget is
+	// unready for the same reason a request against it would fail.
+	router.Get("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if pool == nil {
+			httpx.WriteError(w, logger, http.StatusServiceUnavailable,
+				"api_error", "database_not_configured",
+				"LEDGER_DATABASE_URL is not set, so this instance cannot serve a database-backed request")
+			return
+		}
+
+		pingCtx, cancel := context.WithTimeout(r.Context(), readinessPingTimeout)
+		defer cancel()
+		if err := pool.Ping(pingCtx); err != nil {
+			logger.Error("readiness ping failed", "error", err)
+			httpx.WriteError(w, logger, http.StatusServiceUnavailable,
+				"api_error", "database_unreachable", "the database did not answer a ping in time")
+			return
+		}
+
+		httpx.WriteJSON(w, logger, http.StatusOK, map[string]string{"status": "ready"})
 	})
 
 	if pool != nil {

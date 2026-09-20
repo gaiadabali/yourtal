@@ -176,7 +176,13 @@ services:
     ports:
       - "127.0.0.1:26910:3010"
     healthcheck:
-      test: ["CMD", "/usr/local/bin/healthcheck", "http://127.0.0.1:3010/healthz"]
+      # /readyz, not /healthz: /healthz is pure liveness and stayed at 200
+      # through a Postgres pause in testing, which means a healthcheck
+      # pointed at it reports "can serve" while meaning only "process is
+      # scheduled". /readyz pings the database with its own short budget and
+      # fails closed if the pool is unset or the ping does not return in
+      # time — see services/ledger/cmd/ledger/main.go for both handlers.
+      test: ["CMD", "/usr/local/bin/healthcheck", "http://127.0.0.1:3010/readyz"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -247,6 +253,14 @@ services:
     ports:
       - "127.0.0.1:26911:3011"
     healthcheck:
+      # Still /healthz, unlike the ledger's healthcheck above — this is a
+      # known, reported gap, not an oversight. voucher's main.go has the
+      # same "does not touch the database" liveness-only /healthz the
+      # ledger had before this pass, and it needs the same /readyz split
+      # the ledger just got. But services/voucher/*.go is owned by another
+      # change in flight right now and this pass may not touch it, so this
+      # healthcheck cannot yet tell "process is up" from "can actually
+      # serve" for this service. Follow-up, not fixed here.
       test: ["CMD", "/usr/local/bin/healthcheck", "http://127.0.0.1:3011/healthz"]
       interval: 5s
       timeout: 3s

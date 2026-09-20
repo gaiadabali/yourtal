@@ -80,6 +80,28 @@ Both are correct behaviour. Neither answers the question a gate is asked. A cach
 
 **Rule: when a green result is about to authorise something — a promotion to `done`, a merge, a deploy — force the run.** `-count=1` is mandatory for Go in this repo for exactly this reason, and the flags are documented in the service manifests so whoever tidies next does not remove them as noise.
 
+## 8. A cause is not a category — including one you just wrote down
+
+Cerbos could not be a service container because service containers start
+before `actions/checkout`. Moving MinIO into a step for the same reason
+seemed obvious, and the commit said so in a comment: _"a service container IS
+right here, unlike Cerbos: MinIO mounts nothing from the repository."_
+
+That reasoning was correct and irrelevant. MinIO failed for an unrelated
+cause: an Actions `services:` entry has **no `command` or `args` field at
+all** — only image, env, ports, volumes, options and credentials — and
+MinIO's entrypoint needs `server /data`. As a service it printed its usage
+text and exited before the healthcheck.
+
+The mistake is worth recording because of when it happened: **one commit
+after writing §3 above**, which is about a compensating control that failed
+because its author generalised from a cause instead of checking. Knowing the
+pattern in the abstract did not prevent reproducing it within the hour.
+
+**Rule: a diagnosis explains one failure. The next failure in the same area
+gets its own diagnosis, even when — especially when — the previous one is
+still fresh and fits.**
+
 ---
 
 ## The pattern, restated

@@ -15,6 +15,9 @@
 name: Authorization policies
 
 on:
+  # Runnable on demand. A gate whose paths happen to match nothing cannot
+  # otherwise be proved to run — go.yml sat unexecuted through six pushes.
+  workflow_dispatch:
   pull_request:
     paths:
       - "policies/**"
@@ -27,6 +30,7 @@ on:
     paths:
       - "policies/**"
       - "packages/authz/**"
+      - ".github/workflows/authz.yml"
 
 concurrency:
   group: authz-${{ github.event.pull_request.number || github.ref }}

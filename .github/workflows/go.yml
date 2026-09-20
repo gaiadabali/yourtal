@@ -19,6 +19,9 @@
 name: Go modules
 
 on:
+  # Runnable on demand. A gate whose paths happen to match nothing cannot
+  # otherwise be proved to run — go.yml sat unexecuted through six pushes.
+  workflow_dispatch:
   pull_request:
     paths:
       - "services/**"
@@ -29,6 +32,7 @@ on:
     paths:
       - "services/**"
       - "packages/contracts/openapi/go/**"
+      - ".github/workflows/go.yml"
 
 concurrency:
   group: go-${{ github.event.pull_request.number || github.ref }}

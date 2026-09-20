@@ -32,10 +32,7 @@ import { campaignChapterSchema } from "../campaign/campaign-chapter";
 import { campaignVideoSourceSchema } from "../campaign/campaign-video-source";
 import { merchantLocationSchema } from "../listing/merchant-location";
 import { voucherSchema, voucherStatusSchema } from "../voucher/voucher";
-import {
-  voucherLifecycleStateSchema,
-  voucherVoidReasonSchema,
-} from "../voucher/voucher-lifecycle";
+import { voucherLifecycleStateSchema, voucherVoidReasonSchema } from "../voucher/voucher-lifecycle";
 import { balanceSchema } from "../balance/balance";
 import { walletHistoryEntryKindSchema, walletHistoryEntrySchema } from "../wallet/wallet-history";
 import { BUSINESS_CONTRACT_COMPONENTS } from "./schema-registry-business";

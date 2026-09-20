@@ -10,7 +10,7 @@
     "seed": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/seed.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "eslint src"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@yourtal/consent": "workspace:*",

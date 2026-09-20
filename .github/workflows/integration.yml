@@ -65,29 +65,6 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
-      # Mounts `./policies` and `infra/cerbos/config.yaml` exactly as
-      # `docker-compose.yml` does. Service containers start before any step
-      # in this job runs — including `actions/checkout` — so at boot
-      # `./policies` is still empty and the healthcheck below only proves
-      # the server started, not that a policy is loaded. That is fine:
-      # `storage.disk.watchForChanges: true` in the mounted config means
-      # Cerbos picks the checked-out policies up as soon as `checkout` runs,
-      # and every step between checkout and the apps/api test step below
-      # (install, migrate, seed) is more than enough time for that watch to
-      # fire before anything asks Cerbos a question.
-      cerbos:
-        image: ghcr.io/cerbos/cerbos:0.55.0
-        ports:
-          - 26592:3592
-        volumes:
-          - ${{ github.workspace }}/policies:/policies:ro
-          - ${{ github.workspace }}/infra/cerbos/config.yaml:/config/config.yaml:ro
-        options: >-
-          --health-cmd "/cerbos healthcheck --config=/config/config.yaml"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-
     env:
       # The RUNTIME role, unprivileged on purpose (YT-0554, risk 45). CI used
       # this variable for everything, including the app, so CI was exercising
@@ -103,6 +80,55 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
+
+      # Cerbos runs as a STEP, not a `services:` container.
+      #
+      # It was a service container, and it could never have worked. GitHub
+      # creates service containers BEFORE the job's first step — so before
+      # `actions/checkout` — and `${{ github.workspace }}` is empty at that
+      # moment. `/policies` mounted an empty directory, and Cerbos logged
+      # `Found 0 executable policies`.
+      #
+      # The previous comment here knew that and argued it was fine, because
+      # `storage.disk.watchForChanges: true` would pick the policies up once
+      # checkout ran. **That setting lives in `config.yaml`, which failed to
+      # mount for the same reason** — the path did not exist, so Docker
+      # created a DIRECTORY at `/config/config.yaml`, Cerbos fell back to
+      # `Loading configuration from __default__`, and the compensating
+      # control was disabled by the fault it was compensating for. The
+      # healthcheck then ran `--config=/config/config.yaml` against a
+      # directory, the container went unhealthy, and the job died before a
+      # single test ran.
+      #
+      # None of this was visible until 2026-09-20, because the repository
+      # had no remote and this workflow had never executed once.
+      - name: Start Cerbos (it needs the repo, so it cannot be a service)
+        run: |
+          docker run -d --name cerbos \
+            -p 127.0.0.1:26592:3592 \
+            -v "$GITHUB_WORKSPACE/policies:/policies:ro" \
+            -v "$GITHUB_WORKSPACE/infra/cerbos/config.yaml:/config/config.yaml:ro" \
+            ghcr.io/cerbos/cerbos:0.55.0 server --config=/config/config.yaml
+
+      - name: Wait for Cerbos, and assert it loaded actual policies
+        run: |
+          for _ in $(seq 1 40); do
+            if docker exec cerbos /cerbos healthcheck --config=/config/config.yaml >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          docker exec cerbos /cerbos healthcheck --config=/config/config.yaml
+          # Health is not the question. A PDP that came up with zero policies
+          # is HEALTHY and answers DENY to everything — it looks like a
+          # working PDP while refusing every request, which is the exact
+          # failure that hid here for as long as the workflow existed.
+          if docker logs cerbos 2>&1 | grep -q 'Found 0 executable policies'; then
+            echo "::error::Cerbos started with 0 policies — the mount is wrong."
+            docker logs cerbos
+            exit 1
+          fi
+          docker logs cerbos 2>&1 | grep -o 'Found [0-9]* executable policies' | tail -1
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4.0.0
@@ -163,8 +189,14 @@ jobs:
             exit 1
           fi
 
+      # -p 1 and -count=1 for the same reasons as services/*/package.json:
+      # these packages share ONE Postgres and `go test` runs package binaries
+      # concurrently, so internal/proof's deliberate tamper window races
+      # internal/ledger's clean-ledger assertion (YT-0567). Without -p 1 this
+      # job fails intermittently for a reason that has nothing to do with the
+      # change being tested — the most expensive kind of red.
       - name: Go ledger
-        run: go test ./...
+        run: go test -count=1 -p 1 ./...
         working-directory: services/ledger
 
       # The point of the whole workflow. `go test` prints "no test files" for
@@ -172,7 +204,7 @@ jobs:
       # could not reach the database and reported success anyway.
       - name: Assert nothing skipped (ledger)
         run: |
-          go test ./... -v 2>&1 | tee /tmp/go-test.log
+          go test -count=1 -p 1 ./... -v 2>&1 | tee /tmp/go-test.log
           if grep -q -- "--- SKIP" /tmp/go-test.log; then
             echo "::error::A Postgres-backed test skipped. It did not run, so its result means nothing."
             grep -- "--- SKIP" /tmp/go-test.log
@@ -190,7 +222,7 @@ jobs:
       # work, and the owner for the tamper tests, which have to damage an
       # event log the service itself is deliberately unable to damage.
       - name: Go voucher
-        run: go test ./...
+        run: go test -count=1 -p 1 ./...
         working-directory: services/voucher
         env:
           VOUCHER_DATABASE_URL: postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal
@@ -198,7 +230,7 @@ jobs:
 
       - name: Assert nothing skipped (voucher)
         run: |
-          go test ./... -v 2>&1 | tee /tmp/go-voucher.log
+          go test -count=1 -p 1 ./... -v 2>&1 | tee /tmp/go-voucher.log
           if grep -q -- "--- SKIP" /tmp/go-voucher.log; then
             echo "::error::A Postgres-backed test skipped. It did not run, so its result means nothing."
             grep -- "--- SKIP" /tmp/go-voucher.log

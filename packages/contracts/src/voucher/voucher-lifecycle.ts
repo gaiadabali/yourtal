@@ -53,12 +53,7 @@ export const VOUCHER_LIFECYCLE_STATES = [
 export const voucherLifecycleStateSchema = z.enum(VOUCHER_LIFECYCLE_STATES);
 export type VoucherLifecycleState = z.infer<typeof voucherLifecycleStateSchema>;
 
-export const VOUCHER_VOID_REASONS = [
-  "transfer",
-  "fraud",
-  "refund_reversal",
-  "admin",
-] as const;
+export const VOUCHER_VOID_REASONS = ["transfer", "fraud", "refund_reversal", "admin"] as const;
 
 export const voucherVoidReasonSchema = z.enum(VOUCHER_VOID_REASONS);
 export type VoucherVoidReason = z.infer<typeof voucherVoidReasonSchema>;
@@ -102,10 +97,7 @@ export const VOUCHER_LIFECYCLE_TRANSITIONS: Record<
   voided: [],
 };
 
-export function canTransition(
-  from: VoucherLifecycleState,
-  to: VoucherLifecycleState,
-): boolean {
+export function canTransition(from: VoucherLifecycleState, to: VoucherLifecycleState): boolean {
   return VOUCHER_LIFECYCLE_TRANSITIONS[from].some((allowed) => allowed === to);
 }
 

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  PrivilegedDatabaseRoleError,
-  assertUnprivilegedRole,
-} from "./assert-unprivileged-role";
+import { PrivilegedDatabaseRoleError, assertUnprivilegedRole } from "./assert-unprivileged-role";
 
 /**
  * YT-0554 / risk 45 — the assertion that keeps the schema's grants from

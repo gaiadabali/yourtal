@@ -138,11 +138,14 @@ function key(route: { method: string; path: string }): string {
  */
 const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "GET /api/campaigns": "CampaignModule — YT-0101/YT-0548, a separate in-flight stream.",
-  "GET /api/campaigns/{campaignId}": "CampaignModule — YT-0101/YT-0548, a separate in-flight stream.",
+  "GET /api/campaigns/{campaignId}":
+    "CampaignModule — YT-0101/YT-0548, a separate in-flight stream.",
   "POST /api/watch/sessions": "WatchModule — YT-0120, a separate in-flight stream.",
   "GET /api/watch/sessions/{sessionId}": "WatchModule — YT-0120, a separate in-flight stream.",
-  "POST /api/watch/sessions/{sessionId}/progress": "WatchModule — YT-0120, a separate in-flight stream.",
-  "POST /api/watch/sessions/{sessionId}/complete": "WatchModule — YT-0120, a separate in-flight stream.",
+  "POST /api/watch/sessions/{sessionId}/progress":
+    "WatchModule — YT-0120, a separate in-flight stream.",
+  "POST /api/watch/sessions/{sessionId}/complete":
+    "WatchModule — YT-0120, a separate in-flight stream.",
   "GET /api/health": "Platform infrastructure endpoint, not business-domain API surface.",
 };
 
@@ -200,7 +203,10 @@ describe("routes outside the business module (out of scope for YT-0552)", () => 
 
     const undocumented = [...found]
       .filter((routeKey) => !recorded.has(routeKey))
-      .map((routeKey) => `${routeKey}: new route with no ledger entry — add one, or give it a contract`);
+      .map(
+        (routeKey) =>
+          `${routeKey}: new route with no ledger entry — add one, or give it a contract`,
+      );
     const stale = [...recorded]
       .filter((routeKey) => !found.has(routeKey))
       .map((routeKey) => `${routeKey}: ledger entry for a route that no longer exists — remove it`);

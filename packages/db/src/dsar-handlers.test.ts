@@ -171,9 +171,9 @@ describe("what the application role can and cannot do to a voucher", () => {
     // A no-op today, and an oracle tomorrow: it would report how many rows
     // had already been anonymised, which is a fact about how many people
     // exercised erasure.
-    await expect(
-      pool.query(`SELECT voucher.anonymise_owner($1)`, [TOMBSTONE]),
-    ).rejects.toThrow(/not a subject/);
+    await expect(pool.query(`SELECT voucher.anonymise_owner($1)`, [TOMBSTONE])).rejects.toThrow(
+      /not a subject/,
+    );
   });
 });
 

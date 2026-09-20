@@ -232,7 +232,8 @@ const businessProfileResponseSchema: Record<string, unknown> = {
 /** `create-business.controller.ts` — the founding owner is created atomically with the business. */
 const createBusinessResponseSchema: Record<string, unknown> = {
   type: "object",
-  description: "A business and its founding Owner membership, created together (docs/17 section 2.1).",
+  description:
+    "A business and its founding Owner membership, created together (docs/17 section 2.1).",
   properties: { business: ref("Business"), owner: ref("BusinessMember") },
   required: ["business", "owner"],
   additionalProperties: false,
@@ -284,7 +285,10 @@ export const ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "Create a business and its founding owner",
     tags: ["business"],
     pathParams: [],
-    requestBody: { description: "The new business's onboarding details.", schema: createBusinessRequestSchema },
+    requestBody: {
+      description: "The new business's onboarding details.",
+      schema: createBusinessRequestSchema,
+    },
     successStatus: 201,
     successDescription: "The business was created, with the caller as its Owner.",
     successSchema: createBusinessResponseSchema,
@@ -325,11 +329,20 @@ export const ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "Invite a member to a business's team",
     tags: ["business", "team"],
     pathParams: [TENANT_ID_PARAM],
-    requestBody: { description: "Who to invite and the role to grant.", schema: inviteMemberRequestSchema },
+    requestBody: {
+      description: "Who to invite and the role to grant.",
+      schema: inviteMemberRequestSchema,
+    },
     successStatus: 201,
     successDescription: "The new membership.",
     successSchema: ref("BusinessMember"),
-    errors: [VALIDATION_400, FORBIDDEN, BUSINESS_NOT_FOUND, MEMBER_ALREADY_EXISTS, SERVICE_UNAVAILABLE],
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      BUSINESS_NOT_FOUND,
+      MEMBER_ALREADY_EXISTS,
+      SERVICE_UNAVAILABLE,
+    ],
   },
 
   // --- team-member.controller.ts ---
@@ -339,7 +352,10 @@ export const ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "Change a team member's role",
     tags: ["business", "team"],
     pathParams: [TENANT_ID_PARAM, USER_ID_PARAM],
-    requestBody: { description: "The role to set. Never `owner` — see grantableRoleSchema.", schema: changeMemberRoleRequestSchema },
+    requestBody: {
+      description: "The role to set. Never `owner` — see grantableRoleSchema.",
+      schema: changeMemberRoleRequestSchema,
+    },
     successStatus: 200,
     successDescription: "The member's updated record.",
     successSchema: ref("BusinessMember"),
@@ -352,9 +368,16 @@ export const ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["business", "team"],
     pathParams: [TENANT_ID_PARAM, USER_ID_PARAM],
     successStatus: 200,
-    successDescription: "The member was removed (or already was not present — this route is idempotent).",
+    successDescription:
+      "The member was removed (or already was not present — this route is idempotent).",
     successSchema: removedResponseSchema,
-    errors: [CANNOT_REMOVE_OWNER, FORBIDDEN, BUSINESS_NOT_FOUND, MEMBER_NOT_FOUND, SERVICE_UNAVAILABLE],
+    errors: [
+      CANNOT_REMOVE_OWNER,
+      FORBIDDEN,
+      BUSINESS_NOT_FOUND,
+      MEMBER_NOT_FOUND,
+      SERVICE_UNAVAILABLE,
+    ],
   },
 
   // --- billing-contact.controller.ts ---
@@ -376,7 +399,8 @@ export const ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["business", "billing"],
     pathParams: [TENANT_ID_PARAM],
     requestBody: {
-      description: "A full replacement of the billing contact (idempotent PUT — see @NotValueMoving).",
+      description:
+        "A full replacement of the billing contact (idempotent PUT — see @NotValueMoving).",
       schema: setBillingContactRequestSchema,
     },
     successStatus: 200,
@@ -403,7 +427,10 @@ export const ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "Submit a KYB document",
     tags: ["business", "kyb"],
     pathParams: [TENANT_ID_PARAM],
-    requestBody: { description: "The document type and a reference to its stored bytes.", schema: submitKybDocumentRequestSchema },
+    requestBody: {
+      description: "The document type and a reference to its stored bytes.",
+      schema: submitKybDocumentRequestSchema,
+    },
     successStatus: 201,
     successDescription: "The submitted document, in `submitted` status.",
     successSchema: ref("KybDocument"),
@@ -412,7 +439,10 @@ export const ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
 ];
 
 /** One response object; a bare description for an undocumented shape, a schema otherwise. */
-function responseObject(description: string, schema?: Record<string, unknown>): Record<string, unknown> {
+function responseObject(
+  description: string,
+  schema?: Record<string, unknown>,
+): Record<string, unknown> {
   if (schema === undefined) return { description };
   return { description, content: { "application/json": { schema } } };
 }

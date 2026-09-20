@@ -27,6 +27,14 @@ export default tseslint.config(
       // design, so exclude them rather than force them into one.
       "**/openapi/*.mjs",
       "packages/*/scripts/**/*.mjs",
+      // HLS media fixtures. MPEG transport streams use the .ts extension,
+      // which collides with TypeScript, so ESLint tries to parse binary video
+      // as source and every segment reports "not found by the project
+      // service". `.gitattributes` already declares these binary; this is the
+      // same fact stated to the linter. Found by the FIRST CI run that ever
+      // executed: 72 errors there, 0 locally, because every package's lint
+      // script was scoped to `src` and never looked at `fixtures`.
+      "packages/media/fixtures/**",
     ],
   },
   js.configs.recommended,

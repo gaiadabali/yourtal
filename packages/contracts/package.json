@@ -56,7 +56,7 @@
     "openapi:go": "node openapi/generate-go.mjs",
     "openapi:go:check": "node openapi/generate-go.mjs --check",
     "openapi:go:verify": "node openapi/generate-go.mjs --verify",
-    "lint": "eslint src"
+    "lint": "eslint ."
   },
   "dependencies": {
     "zod": "4.6.5"

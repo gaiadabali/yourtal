@@ -45,8 +45,15 @@ jobs:
       - name: Task dashboard is current
         run: node scripts/tasks.mjs --check
 
+      # The SAME command `pnpm verify` runs locally. It used to be
+      # `pnpm exec eslint apps packages`, which linted a different file set
+      # from every package's own `lint` script — so local green predicted
+      # nothing about CI. The first CI run that ever executed reported 72
+      # errors that no developer could reproduce: it was parsing the MPEG-TS
+      # media fixtures as TypeScript, which the per-package `eslint src`
+      # scope never reached. Two commands, two file sets, one of them wrong.
       - name: Lint
-        run: pnpm exec eslint apps packages
+        run: pnpm exec turbo run lint
 
       - name: Typecheck
         run: pnpm exec turbo run typecheck

@@ -140,7 +140,6 @@ describe("authorization", () => {
     await expect(placeHold(ref("second"), 500)).rejects.toThrow(
       /authorization_one_live_hold_per_voucher/,
     );
-
   });
 
   it("refuses two authorizations for one merchant order", async () => {
@@ -183,7 +182,7 @@ describe("capture", () => {
       owner.query(
         `INSERT INTO voucher.capture
            (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-         VALUES (gen_random_uuid(), $1, 3000, 3001, '${ref('over')}')`,
+         VALUES (gen_random_uuid(), $1, 3000, 3001, '${ref("over")}')`,
         [authorization],
       ),
     ).rejects.toThrow(/capture_within_authorization/);
@@ -200,7 +199,7 @@ describe("capture", () => {
       owner.query(
         `INSERT INTO voucher.capture
            (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-         VALUES (gen_random_uuid(), $1, 999999, 500000, '${ref('lie-receipt')}')`,
+         VALUES (gen_random_uuid(), $1, 999999, 500000, '${ref("lie-receipt")}')`,
         [authorization],
       ),
     ).rejects.toThrow(/capture_authorization_id_authorized_amount_minor_fkey/);
@@ -211,7 +210,7 @@ describe("capture", () => {
     await owner.query(
       `INSERT INTO voucher.capture
          (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-       VALUES (gen_random_uuid(), $1, 2000, 1000, '${ref('twice-a')}')`,
+       VALUES (gen_random_uuid(), $1, 2000, 1000, '${ref("twice-a")}')`,
       [authorization],
     );
 
@@ -220,7 +219,7 @@ describe("capture", () => {
       owner.query(
         `INSERT INTO voucher.capture
            (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-         VALUES (gen_random_uuid(), $1, 2000, 1000, '${ref('twice-b')}')`,
+         VALUES (gen_random_uuid(), $1, 2000, 1000, '${ref("twice-b")}')`,
         [authorization],
       ),
     ).rejects.toThrow(/capture_authorization_id_key/);
@@ -236,7 +235,7 @@ describe("refund", () => {
     const { rows } = await owner.query<{ id: string }>(
       `INSERT INTO voucher.capture
          (id, authorization_id, authorized_amount_minor, amount_minor, receipt_id)
-       VALUES (gen_random_uuid(), $1, 2000, 1200, '${ref('refund-receipt')}')
+       VALUES (gen_random_uuid(), $1, 2000, 1200, '${ref("refund-receipt")}')
        RETURNING id`,
       [authorization],
     );

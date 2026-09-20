@@ -190,8 +190,7 @@ const MAPPINGS: readonly Mapping[] = [
         "Denormalised by id. The voucher carries the whole merchantLocation object so it stays honourable offline (docs/17 §3), but the table stores location_id and relies on the composite foreign key to store.listing_location.",
       status:
         "DERIVED, deliberately (YT-0142). The wallet-facing status comes from `state` plus `void_reason` through `publicVoucherStatusOf`. Storing both would be two copies of one fact — the same call YT-0101 made for campaigns — and the stored copy is the one that goes stale.",
-      code:
-        "NEVER stored in plaintext (docs/15 rule 7). voucher.code_custody holds a SHA-256 for lookup and an envelope-encrypted copy for display, in a table `yourtal_app` cannot read at all. A voucher is a bearer instrument, so a readable code column means one leaked credential is the whole float; encrypting the column in place would not work either, because `WHERE code = $1` against ciphertext needs deterministic encryption.",
+      code: "NEVER stored in plaintext (docs/15 rule 7). voucher.code_custody holds a SHA-256 for lookup and an envelope-encrypted copy for display, in a table `yourtal_app` cannot read at all. A voucher is a bearer instrument, so a readable code column means one leaked credential is the whole float; encrypting the column in place would not work either, because `WHERE code = $1` against ciphertext needs deterministic encryption.",
     },
     columnsWithNoField: {
       location_id: "Holds the `location` field's id. See the note on that field.",

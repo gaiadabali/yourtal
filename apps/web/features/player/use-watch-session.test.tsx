@@ -244,7 +244,9 @@ describe("useWatchSession seek coalescing (YT-0550)", () => {
     // about a target being lost, not about which target it was.
     fireEvent.change(slider, { target: { value: "700" } });
 
-    expect(reads, "the guard must re-read `seeking` after publishing the target").toBeGreaterThan(1);
+    expect(reads, "the guard must re-read `seeking` after publishing the target").toBeGreaterThan(
+      1,
+    );
     expect(video.currentTime, "the seek must not be silently dropped").toBeCloseTo(700, 5);
   });
 

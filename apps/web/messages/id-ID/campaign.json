@@ -19,5 +19,14 @@
     "manyQuestions": "{count} pertanyaan",
     "scoringBaseOnly": "Reward penuh diberikan untuk menonton dan menjawab, tanpa syarat jawaban benar.",
     "scoringBaseBonus": "Reward dasar diberikan untuk menonton dan menjawab; bonus tambahan mengikuti jumlah jawaban yang benar."
+  },
+  "campaign": {
+    "emptyFiltered": "Belum ada campaign {filterLabel} saat ini",
+    "emptyNone": "Belum ada campaign yang tersedia saat ini",
+    "emptyFilteredBody": "Coba tampilkan semua jenis campaign, atau kembali lagi sebentar lagi — daftar ini diperbarui secara berkala.",
+    "emptyNoneBody": "Daftar ini diperbarui secara berkala — coba kembali lagi sebentar lagi.",
+    "emptyShowAll": "Tampilkan semua campaign",
+    "kindLongForm": "video panjang",
+    "kindQuick": "cepat"
   }
 }

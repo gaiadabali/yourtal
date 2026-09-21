@@ -1,4 +1,5 @@
 import type { Listing } from "@yourtal/contracts/listing";
+import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 
 /**
  * Price-band filter for the Store browse grid (YT-0420 acceptance:
@@ -22,26 +23,46 @@ export const DEFAULT_STORE_PRICE_BAND_FILTER: StorePriceBandFilter = "all";
 
 interface PriceBandBounds {
   key: StorePriceBandKey;
-  label: string;
   minPoints: number;
   /** Exclusive upper bound; `null` means unbounded above. */
   maxPointsExclusive: number | null;
 }
 
 const PRICE_BAND_BOUNDS: readonly PriceBandBounds[] = [
-  { key: "under_2500", label: "Di bawah 2.500 poin", minPoints: 0, maxPointsExclusive: 2_500 },
-  { key: "2500_5000", label: "2.500-5.000 poin", minPoints: 2_500, maxPointsExclusive: 5_000 },
-  { key: "5000_10000", label: "5.000-10.000 poin", minPoints: 5_000, maxPointsExclusive: 10_000 },
-  { key: "over_10000", label: "Di atas 10.000 poin", minPoints: 10_000, maxPointsExclusive: null },
+  { key: "under_2500", minPoints: 0, maxPointsExclusive: 2_500 },
+  { key: "2500_5000", minPoints: 2_500, maxPointsExclusive: 5_000 },
+  { key: "5000_10000", minPoints: 5_000, maxPointsExclusive: 10_000 },
+  { key: "over_10000", minPoints: 10_000, maxPointsExclusive: null },
 ];
 
-export const STORE_PRICE_BAND_FILTER_OPTIONS: ReadonlyArray<{
-  key: StorePriceBandFilter;
-  label: string;
-}> = [
-  { key: "all", label: "Semua harga" },
-  ...PRICE_BAND_BOUNDS.map((band) => ({ key: band.key, label: band.label })),
-];
+// `as const` matters: the translator's key parameter is a union of literal
+// message paths, so a `Record<_, string>` widens these to `string` and stops
+// type-checking the very thing the map exists to keep correct.
+const BAND_MESSAGE_KEY = {
+  under_2500: "store.bandUnder2500",
+  "2500_5000": "store.band2500to5000",
+  "5000_10000": "store.band5000to10000",
+  over_10000: "store.bandOver10000",
+} as const satisfies Record<StorePriceBandKey, string>;
+
+/**
+ * Every price-band filter option, translated for `locale`.
+ *
+ * YT-0405: the bounds are data and the labels are copy, and they used to be
+ * the same object — which is why a band could not be renamed for one region
+ * without editing the number it filters on. `locale` is required, the same
+ * call this module's siblings (`store-category.ts`, `store-status.ts`) now
+ * take.
+ */
+export function storePriceBandFilterOptions(
+  locale: SupportedLocale,
+): ReadonlyArray<{ key: StorePriceBandFilter; label: string }> {
+  const t = getStoreTranslator(locale);
+  return [
+    { key: "all", label: t("store.bandAll") },
+    ...PRICE_BAND_BOUNDS.map((band) => ({ key: band.key, label: t(BAND_MESSAGE_KEY[band.key]) })),
+  ];
+}
 
 export function isStorePriceBandFilter(value: string): value is StorePriceBandFilter {
   return (STORE_PRICE_BAND_FILTER_VALUES as readonly string[]).includes(value);

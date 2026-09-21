@@ -19,5 +19,14 @@
     "manyQuestions": "{count} questions",
     "scoringBaseOnly": "Full reward is paid for watching and answering, with no requirement to answer correctly.",
     "scoringBaseBonus": "A base reward is paid for watching and answering; an additional bonus follows the number of correct answers."
+  },
+  "campaign": {
+    "emptyFiltered": "No {filterLabel} campaigns right now",
+    "emptyNone": "No campaigns available right now",
+    "emptyFilteredBody": "Try showing every kind of campaign, or check back shortly — this list is refreshed regularly.",
+    "emptyNoneBody": "This list is refreshed regularly — check back shortly.",
+    "emptyShowAll": "Show all campaigns",
+    "kindLongForm": "long-form",
+    "kindQuick": "quick"
   }
 }

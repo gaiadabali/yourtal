@@ -10,9 +10,10 @@ import {
   parseStoreBoardParams,
 } from "./store-board-params";
 import { storeCategoryFilterOptions, isStoreCategoryFilter } from "./store-category";
-import { STORE_PRICE_BAND_FILTER_OPTIONS, isStorePriceBandFilter } from "./store-price-band";
+import { storePriceBandFilterOptions, isStorePriceBandFilter } from "./store-price-band";
 import { STORE_LOCATION_ALL, STORE_MERCHANT_ALL } from "./store-facets";
 import type { StoreMerchantOption } from "./store-facets";
+import { useTranslations } from "next-intl";
 import { useRegion } from "@/features/region/use-region";
 
 export interface StoreBoardControlsProps {
@@ -61,6 +62,11 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
   const locationId = useId();
   const merchantId = useId();
   const { locale } = useRegion();
+  // YT-0405: this file's own labels were the last hardcoded Indonesian on
+  // the store board — the category options it renders were parameterised
+  // earlier, the chrome around them was not.
+  const t = useTranslations("store");
+  const priceBandOptions = storePriceBandFilterOptions(locale);
   const categoryOptions = storeCategoryFilterOptions(locale);
   const current = parseStoreBoardParams(Object.fromEntries(searchParams.entries()));
 
@@ -78,7 +84,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <label htmlFor={categoryId} className="text-xs text-fg-muted">
-            Kategori
+            {t("store.filterCategory")}
           </label>
           <select
             id={categoryId}
@@ -101,7 +107,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
 
         <div className="flex min-w-0 flex-col gap-1">
           <label htmlFor={priceBandId} className="text-xs text-fg-muted">
-            Harga
+            {t("store.filterPrice")}
           </label>
           <select
             id={priceBandId}
@@ -114,7 +120,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
             }}
             className={SELECT_CLASS}
           >
-            {STORE_PRICE_BAND_FILTER_OPTIONS.map((option) => (
+            {priceBandOptions.map((option) => (
               <option key={option.key} value={option.key}>
                 {option.label}
               </option>
@@ -124,7 +130,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
 
         <div className="flex min-w-0 flex-col gap-1">
           <label htmlFor={locationId} className="text-xs text-fg-muted">
-            Lokasi
+            {t("store.filterLocation")}
           </label>
           <select
             id={locationId}
@@ -132,7 +138,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
             onChange={(event) => navigate({ location: event.target.value })}
             className={SELECT_CLASS}
           >
-            <option value={STORE_LOCATION_ALL}>Semua lokasi</option>
+            <option value={STORE_LOCATION_ALL}>{t("store.filterAllLocations")}</option>
             {locationOptions.map((district) => (
               <option key={district} value={district}>
                 {district}
@@ -143,7 +149,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
 
         <div className="flex min-w-0 flex-col gap-1">
           <label htmlFor={merchantId} className="text-xs text-fg-muted">
-            Merchant
+            {t("store.filterMerchant")}
           </label>
           <select
             id={merchantId}
@@ -151,7 +157,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
             onChange={(event) => navigate({ merchant: event.target.value })}
             className={SELECT_CLASS}
           >
-            <option value={STORE_MERCHANT_ALL}>Semua merchant</option>
+            <option value={STORE_MERCHANT_ALL}>{t("store.filterAllMerchants")}</option>
             {merchantOptions.map((merchant) => (
               <option key={merchant.id} value={merchant.id}>
                 {merchant.name}
@@ -166,7 +172,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           href="/store"
           className="self-start text-xs font-medium text-primary underline-offset-2 hover:underline"
         >
-          Hapus semua filter
+          {t("store.filterClearAll")}
         </Link>
       ) : null}
     </div>

@@ -5,7 +5,7 @@ import { StoreEmptyState } from "./store-empty-state";
 
 describe("StoreEmptyState", () => {
   it("offers a reset action when filters narrowed the grid to nothing", () => {
-    render(<StoreEmptyState hasActiveFilters />);
+    render(<StoreEmptyState hasActiveFilters locale="id-ID" />);
     expect(screen.getByRole("link", { name: /hapus semua filter/i })).toHaveAttribute(
       "href",
       "/store",
@@ -13,7 +13,7 @@ describe("StoreEmptyState", () => {
   });
 
   it("does not offer a reset action when no filter is narrowing the grid", () => {
-    render(<StoreEmptyState hasActiveFilters={false} />);
+    render(<StoreEmptyState hasActiveFilters={false} locale="id-ID" />);
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 });

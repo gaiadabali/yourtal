@@ -1,6 +1,8 @@
 import "@testing-library/jest-dom/vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { NextIntlClientProvider } from "next-intl";
+import idID from "@/messages/id-ID/store.json";
 import { RegionProvider } from "@/features/region/region-context";
 import { StoreBoardControls } from "./store-board-controls";
 
@@ -19,12 +21,21 @@ const merchantOptions = [
   { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Zeta Kopi" },
 ];
 
-/** `StoreBoardControls` reads the region ambiently via `useRegion()` (YT-0405) for its category-option labels. */
+/**
+ * `StoreBoardControls` reads the region ambiently via `useRegion()` (YT-0405)
+ * for its category-option labels, and — since YT-0405's final pass — its own
+ * filter-bar copy via `useTranslations("store")`, so it needs the intl
+ * provider too. It is a genuine Client Component (router, `useId`), which is
+ * why it uses the hook rather than the synchronous translator its Server
+ * Component siblings take a `locale` prop for.
+ */
 function renderControls() {
   return render(
-    <RegionProvider region="ID">
-      <StoreBoardControls locationOptions={locationOptions} merchantOptions={merchantOptions} />
-    </RegionProvider>,
+    <NextIntlClientProvider locale="id-ID" messages={{ store: idID }}>
+      <RegionProvider region="ID">
+        <StoreBoardControls locationOptions={locationOptions} merchantOptions={merchantOptions} />
+      </RegionProvider>
+    </NextIntlClientProvider>,
   );
 }
 

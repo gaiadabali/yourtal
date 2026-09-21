@@ -40,7 +40,7 @@ export default async function StorePage(props: PageProps<"/store">) {
       <h1 className="text-2xl font-semibold text-fg">Store</h1>
       <StoreBoardControls locationOptions={locationOptions} merchantOptions={merchantOptions} />
       {visibleListings.length === 0 ? (
-        <StoreEmptyState hasActiveFilters={hasActiveStoreFilters(params)} />
+        <StoreEmptyState hasActiveFilters={hasActiveStoreFilters(params)} locale={locale} />
       ) : (
         <StoreGrid listings={visibleListings} locale={locale} currency={currency} />
       )}

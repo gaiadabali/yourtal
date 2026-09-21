@@ -46,7 +46,7 @@ async function CampaignBoard({ sort, kind }: CampaignBoardProps) {
   const visibleCampaigns = sortCampaigns(filterCampaignsByKind(campaigns, kind), sort);
 
   return visibleCampaigns.length === 0 ? (
-    <CampaignEmptyState kind={kind} />
+    <CampaignEmptyState kind={kind} locale={locale} />
   ) : (
     <CampaignGrid campaigns={visibleCampaigns} locale={locale} />
   );

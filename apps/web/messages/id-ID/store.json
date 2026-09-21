@@ -45,5 +45,23 @@
     "step1": "1. Tukar poin untuk mendapatkan voucher — harga dan ketentuan di atas berlaku persis seperti yang ditampilkan.",
     "step2": "2. Voucher beserta kode dan QR-nya muncul langsung di Wallet kamu.",
     "step3": "3. Tunjukkan kode voucher saat checkout di {merchantName} (lokasi {locations}), atau ikuti instruksi redeem di website merchant untuk voucher digital."
+  },
+  "store": {
+    "filterCategory": "Kategori",
+    "filterPrice": "Harga",
+    "filterLocation": "Lokasi",
+    "filterMerchant": "Merchant",
+    "filterAllLocations": "Semua lokasi",
+    "filterAllMerchants": "Semua merchant",
+    "filterClearAll": "Hapus semua filter",
+    "bandUnder2500": "Di bawah 2.500 poin",
+    "band2500to5000": "2.500-5.000 poin",
+    "band5000to10000": "5.000-10.000 poin",
+    "bandOver10000": "Di atas 10.000 poin",
+    "emptyFiltered": "Tidak ada item yang cocok dengan filter ini",
+    "emptyNone": "Belum ada item di store saat ini",
+    "bandAll": "Semua harga",
+    "emptyFilteredBody": "Coba ubah atau hapus salah satu filter untuk melihat lebih banyak pilihan.",
+    "emptyNoneBody": "Katalog ini diperbarui secara berkala — coba kembali lagi sebentar lagi."
   }
 }

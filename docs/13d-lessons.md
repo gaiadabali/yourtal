@@ -315,6 +315,28 @@ It was caught only because the same suite had a deny half asserting a **stranger
 
 **Rule: never assert only the absence of a specific failure. Pair it with a positive case that cannot hold unless the subject exists.** "Does not return 403" is not a claim about a route; "a stranger gets 403 here" is, because it fails when the route is missing. The paired case is the one doing the work, and if you only write one, write that one.
 
+## 21. A green check can sit on both sides of a defect that exists only in what you would push
+
+A boot test over eight listing routes was added last, then exercised with `vitest` alone — 16 tests, twice, plus a sabotage run. **Vitest transpiles without typechecking**, so none of that observed the file's `exactOptionalPropertyTypes` error: `payload: cond ? undefined : {}` does not compile, because omitting an optional key and passing it as `undefined` are different types. Every signal looked at was green and none of them was the compiler. The sabotage run made it worse — proving the suite catches a real regression felt like proving the file was sound.
+
+**That is the first narrowing: a tool boundary.** No amount of care with the command would have caught it; only running the other tool would.
+
+**The second narrowing is what makes this its own section.** By the time anyone ran `tsc`, it passed — because **`tsc` reads the working tree, and the working tree had already been repaired by someone else.** The repair was in no commit: `git log -S` on the path returned nothing, and `git show HEAD:<path>` still carried the broken form. So there was a **green typecheck standing over a red commit**, and four commits were built on top of it. Two tools, both green, neither looking at the artefact that would ship.
+
+**Rule: verify the artefact you are shipping, not the one you are editing.** After adding a file, re-run the typechecker rather than the suite you just watched pass — the ordering trap is that `tsc` gets run when you change _types_, and adding a test file does not feel like changing types.
+
+### 21a. And in a shared working tree that rule is not fully achievable
+
+Applying it honestly exposed its own limit, which is worth more than the rule alone. What can be proved locally:
+
+- **Provable:** `git diff HEAD -- <my paths>` is empty, so tree and commit are byte-identical **there**, and a green typecheck covers those files exactly as committed.
+- **Not provable:** that the _commit_ typechecks. The tree is not the commit for anyone else's paths, and `apps/api` and `packages/contracts` held four modified files belonging to two other sessions. **If any dirty version repairs an error its committed version contains, HEAD does not compile and the green says nothing about it** — which is precisely the shape above, one layer out.
+- The honest check is a clean checkout of HEAD, and it is not cheap mid-landing: a fresh `git worktree` has no `node_modules`, and `pnpm install` into the shared store while others are working is a worse risk than the one it checks.
+
+**So the boundary is not carelessness. In a shared working tree, local verification is structurally incapable of checking the artefact** — the same fact behind the index race (`git commit` takes the index, not your arguments) and the phantom-copy reads: the tree is shared mutable state.
+
+**Mitigation: land small and let CI read the commit.** CI on the pushed commit is the first thing in the pipeline that reads the artefact rather than the tree, which makes commit size a verification property and not just hygiene.
+
 ## The pattern, restated
 
 `docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:

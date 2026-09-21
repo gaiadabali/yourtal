@@ -341,6 +341,32 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "ledger.point_purchase": "Same ledger-internals note as ledger.account above.",
   "ledger.backing_rate": "Same ledger-internals note as ledger.account above.",
   "ledger.daily_proof": "Same ledger-internals note as ledger.account above.",
+  // pg-boss's own schema, installed verbatim from its v40 construction plan by
+  // 20260921234000_pgboss_schema.sql (YT-0040). These are a VENDOR's internal
+  // tables, not this project's: nothing in `packages/contracts` describes them,
+  // nothing should, and a public contract mirroring a queue row would couple our
+  // API shape to a dependency's migration history. They are mapped here rather
+  // than excluded from the scan because this ledger IS the record of that
+  // decision -- the gate's whole point is that a schema arriving with no entry
+  // anywhere fails the same day, and "it is a vendor's" has to be written down
+  // rather than assumed by the next reader.
+  //
+  // Read through `pgboss.job`/`pgboss.queue` directly for observability
+  // (packages/queue/src/observability.ts) rather than through a contract: YT-0027
+  // owns graphing it, and a SELECT on a vendor table is honest about what it is.
+  "pgboss.job":
+    "pg-boss's job table -- vendor-internal, installed by its own v40 construction plan (YT-0040). No public contract mirrors a queue row, and one should not: it would tie our API shape to pg-boss's migration history. Queried directly by packages/queue/src/observability.ts.",
+  "pgboss.job_common": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
+  "pgboss.job_dependency": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
+  "pgboss.queue": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
+  "pgboss.queue_stats":
+    "Same pg-boss vendor-schema note as pgboss.job above (YT-0040). Unused at runtime -- the client sets persistQueueStats:false, because pg-boss maintains this partition with CREATE TABLE under whichever role calls supervise(), and yourtal_app holds no DDL grant (docs/14 section 8).",
+  "pgboss.schedule": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
+  "pgboss.subscription": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
+  "pgboss.version":
+    "Same pg-boss vendor-schema note as pgboss.job above (YT-0040). Holds the single row '40' -- the schema version the migration installs and the pinned pg-boss 12.30.0 client expects. A drift between the two is a real defect, which is why the dependency is pinned exact rather than caret-ranged.",
+  "pgboss.warning": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
+  "pgboss.bam": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
   "platform.idempotency":
     "The @yourtal/idempotency package's own dedupe store (packages/idempotency/src/postgres-store.ts) — infrastructure, not a domain contract.",
   "store.listing_location":

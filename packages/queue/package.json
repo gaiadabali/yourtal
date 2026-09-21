@@ -1,0 +1,31 @@
+{
+  "name": "@yourtal/queue",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./config": "./src/config.ts",
+    "./client": "./src/client.ts",
+    "./define-queue": "./src/define-queue.ts",
+    "./idempotent-worker": "./src/idempotent-worker.ts",
+    "./send-idempotent": "./src/send-idempotent.ts",
+    "./canonical-json": "./src/canonical-json.ts",
+    "./observability": "./src/observability.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node ../db/scripts/with-test-db.mjs -- vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@yourtal/idempotency": "workspace:*",
+    "pg": "8.23.0",
+    "pg-boss": "12.30.0"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

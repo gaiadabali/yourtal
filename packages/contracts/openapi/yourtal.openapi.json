@@ -2063,6 +2063,114 @@
           }
         ]
       },
+      "PublicListing": {
+        "description": "A store listing as the PUBLIC catalogue serves it. Identical to Listing except that settlementValueIdr is absent: S beside priceInPoints publishes the backing rate B by arithmetic, and docs/24 ID-1 rests on there being no published fixed cash rate. Consumers of the public catalogue must generate against this, never Listing.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "merchantId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "merchantName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 140
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "category": {
+            "$ref": "#/components/schemas/ListingCategory"
+          },
+          "locations": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MerchantLocation"
+            }
+          },
+          "faceValueIdr": {
+            "$ref": "#/components/schemas/IdrMinorUnits"
+          },
+          "priceInPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "stockRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "stockTotal": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "transferable": {
+            "type": "boolean"
+          },
+          "partialRedemptionPolicy": {
+            "$ref": "#/components/schemas/PartialRedemptionPolicy"
+          },
+          "minimumSpendIdr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdrMinorUnits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ListingStatus"
+          },
+          "perUserLimit": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id",
+          "merchantId",
+          "merchantName",
+          "title",
+          "description",
+          "category",
+          "locations",
+          "faceValueIdr",
+          "priceInPoints",
+          "stockRemaining",
+          "stockTotal",
+          "transferable",
+          "partialRedemptionPolicy",
+          "minimumSpendIdr",
+          "expiresAt",
+          "status"
+        ],
+        "additionalProperties": false
+      },
       "Question": {
         "description": "A checkpoint question, discriminated on type. Variants are inlined rather than named as components because they are never referenced independently.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - multiple_choice: correctOptionId must reference one of the provided options.\n  - likert: scaleMin must be less than scaleMax.",
         "oneOf": [

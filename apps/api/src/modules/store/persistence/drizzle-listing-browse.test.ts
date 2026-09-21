@@ -101,6 +101,30 @@ describe("browsePublic filters", () => {
     expect(ids).not.toContain(noMatch.id);
   });
 
+  // ID-1 (docs/24) is the single largest legal exposure in the plan: points
+  // are a loyalty currency and not e-money BECAUSE, among four things, there
+  // is "no published fixed cash rate". The catalogue is @PublicRoute and
+  // unauthenticated.
+  //
+  // priceInPoints MUST be public -- it is what the user pays. So publishing
+  // settlementValueIdr next to it publishes the backing rate by arithmetic:
+  // points_price = (S / B) x demand_multiplier, and the multiplier is pinned
+  // at 1.0 for launch (YT-0130), so B = S / priceInPoints exactly. Not an
+  // approximation, and not recoverable only in aggregate -- one row is enough.
+  //
+  // faceValueIdr stays public deliberately: it is the voucher's retail value,
+  // the thing a shopper is entitled to compare against, and it reveals a
+  // discount rather than what the platform holds per point.
+  it("never exposes settlementValueIdr -- S with priceInPoints publishes B (ID-1)", async () => {
+    await seededListing(MERCHANT_COFFEE, { title: "Rate leak probe" });
+
+    const page = await repo.browsePublic({ limit: 100 });
+    expect(page.listings.length).toBeGreaterThan(0);
+    for (const listing of page.listings) {
+      expect(listing).not.toHaveProperty("settlementValueIdr");
+    }
+  });
+
   it("paginates with a cursor and reports hasMore honestly", async () => {
     for (let index = 0; index < 3; index += 1) {
       await seededListing(MERCHANT_RETAIL, { title: `Cursor Listing ${String(index)}` });

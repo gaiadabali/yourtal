@@ -18,22 +18,37 @@
  * outside this module's path) or a second, explicit PDP call once the read
  * has happened. `StoreListingController.setSettlementValue` does the latter.
  *
- * ## The threshold is a PLACEHOLDER, not a decision
+ * ## There is no threshold, and that is a decision (YT-0576)
  *
- * docs/17 section 2.1 says "downward by more than a threshold" and names no
- * number. Nothing else in `docs/`, `policies/_schemas/` or `policies/tests/`
- * does either. Twenty percent is chosen so the safety check is not simply
- * disabled (see `store.module.ts`'s doc comment on why a control that never
- * fires is worse than an honest gap) but this number has NOT been confirmed
- * by anyone who owns docs/17 -- flagged explicitly in the ticket report.
+ * **Any downward change to `S` needs two-person approval. No threshold.**
+ * Founder decision, 2026-09-21, recorded by the economy-epic session and
+ * confirmed directly.
+ *
+ * This replaces `MATERIAL_SETTLEMENT_DECREASE_THRESHOLD = 0.2`, which was
+ * never a decision. docs/17 section 2.1 says "downward by more than a
+ * threshold" and names no number; nothing in `docs/`, `policies/_schemas/`
+ * or `policies/tests/` named one either. Twenty percent was invented here so
+ * the control would not be silently disabled, and flagged as a placeholder
+ * in its own doc comment. **It was removed rather than ratified.**
+ *
+ * Why no number is the safer answer rather than a lazy one: a threshold
+ * creates a band, below the line, in which a settlement cut applies with one
+ * pair of hands — and it is reachable repeatedly. Two 15% cuts under a 20%
+ * threshold take `S` down 27.75% with nobody approving anything, so the
+ * control is not merely weakened by a small threshold, it is **bypassable by
+ * anyone willing to make two calls.** Defeating a no-threshold rule requires
+ * defeating the approval workflow itself, which is the thing that was
+ * actually designed. The cost is that trivial corrections now need a second
+ * pair of eyes; the founder took that trade knowingly.
+ *
+ * The name keeps the word "material" because
+ * `R.attr.isMaterialSettlementDecrease` is the attribute name
+ * `listing.yaml` reads and `two_person_approval_test.yaml` asserts on.
+ * Renaming it here would be a policy change wearing a refactor's clothes.
  */
-export const MATERIAL_SETTLEMENT_DECREASE_THRESHOLD = 0.2;
-
 export function isMaterialSettlementDecrease(
   currentSettlementValueIdr: number,
   proposedSettlementValueIdr: number,
 ): boolean {
-  if (proposedSettlementValueIdr >= currentSettlementValueIdr) return false;
-  const decrease = currentSettlementValueIdr - proposedSettlementValueIdr;
-  return decrease > currentSettlementValueIdr * MATERIAL_SETTLEMENT_DECREASE_THRESHOLD;
+  return proposedSettlementValueIdr < currentSettlementValueIdr;
 }

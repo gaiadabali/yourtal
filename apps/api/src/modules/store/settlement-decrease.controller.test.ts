@@ -107,12 +107,16 @@ describe("propose", () => {
     expect(unchanged?.settlementValueIdr).toBe(1_000_000);
   });
 
-  it("REFUSES a non-material change -- that path is set_settlement_value, not this one", async () => {
+  // YT-0576: the non-material case used to be "a 10% cut, below the 20%
+  // threshold". With the threshold removed, the ONLY change that is not a
+  // decrease is an increase -- so that is what this now sends. A 10% cut
+  // belongs to the accepted path and is covered above.
+  it("REFUSES an increase -- that path is set_settlement_value, not this one", async () => {
     const listing = await seedListing(1_000_000);
     const requester = ownerPrincipal(randomUUID());
     const body = proposeSettlementDecreaseSchema.parse({
-      proposedSettlementValueIdr: 900_000, // 10% cut, below the 20% threshold
-      reason: "Minor adjustment.",
+      proposedSettlementValueIdr: 1_100_000,
+      reason: "Rate went up, not down.",
     });
 
     await expect(

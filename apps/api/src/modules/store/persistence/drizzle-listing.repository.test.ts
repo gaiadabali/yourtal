@@ -112,7 +112,15 @@ describe("public visibility follows lifecycle_state, not existence", () => {
   it("a freshly created listing is immediately public (active by default)", async () => {
     const locationId = await seedLocation(MERCHANT_A);
     const created = await repo.create(MERCHANT_A, baseInput({ locationIds: [locationId] }));
-    expect(await repo.findPublicById(created.id)).toStrictEqual(created);
+
+    // The public view is the merchant view MINUS settlementValueIdr, and this
+    // used to read `toStrictEqual(created)` -- which passed precisely because
+    // S was being served to anonymous callers (docs/24 ID-1: S beside
+    // priceInPoints publishes the backing rate B by arithmetic).
+    const { settlementValueIdr: _merchantOnly, ...publicView } = created;
+    const found = await repo.findPublicById(created.id);
+    expect(found).toStrictEqual(publicView);
+    expect(found).not.toHaveProperty("settlementValueIdr");
   });
 
   it("a paused listing disappears from the public catalogue but stays visible to its owner", async () => {

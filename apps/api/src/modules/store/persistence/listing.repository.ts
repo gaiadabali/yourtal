@@ -1,5 +1,6 @@
 import type {
   Listing,
+  PublicListing,
   ListingCategory,
   ListingStatus,
   PartialRedemptionPolicy,
@@ -65,7 +66,7 @@ export interface BrowseListingsFilter {
 }
 
 export interface BrowseListingsPage {
-  readonly listings: readonly Listing[];
+  readonly listings: readonly PublicListing[];
   readonly hasMore: boolean;
 }
 
@@ -93,7 +94,8 @@ export interface ListingRepository {
   /** One of a merchant's own listings, any lifecycle state, or `null`. */
   findOwnedById(merchantId: string, listingId: string): Promise<Listing | null>;
   /** The public catalogue: `active` listings only. */
-  findPublicById(listingId: string): Promise<Listing | null>;
+  /** PUBLIC shape -- no `settlementValueIdr`. See `publicListingSchema`. */
+  findPublicById(listingId: string): Promise<PublicListing | null>;
   browsePublic(filter: BrowseListingsFilter): Promise<BrowseListingsPage>;
 
   create(merchantId: string, input: CreateListingInput): Promise<Listing>;

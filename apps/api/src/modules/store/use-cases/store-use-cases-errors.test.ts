@@ -159,19 +159,32 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
     expect(result._unsafeUnwrapErr()).toMatchObject({ type: "listing_not_found" });
   });
 
-  it("reports not_a_material_decrease for a change below the threshold", async () => {
+  // YT-0576: this asserted the OPPOSITE until the founder removed the 20%
+  // placeholder rather than ratifying it -- a ~3% cut used to be refused here
+  // as "not material". Every decrease is material now, so the small cut is a
+  // VALID proposal and this is the case that proves the threshold is gone.
+  //
+  // Note the actor is a real uuid. It was the string "actor" while this test
+  // expected an error, which worked only because materiality short-circuited
+  // before persistence; flipping the assertion pushed the call through to the
+  // database and the non-uuid surfaced as persistence_failed. A test that
+  // never reaches the write cannot tell you its arguments are wrong.
+  it("accepts a ~3% cut -- there is no threshold below which a decrease is immaterial", async () => {
     const listing = await seedListing(); // settlementValueIdr: 300_000
     const result = await proposeSettlementDecrease(
       repo,
       decreaseRequests,
       MERCHANT,
       listing.id,
-      290_000, // ~3% cut, well below the 20% placeholder threshold
-      "actor",
+      290_000,
+      "00000000-0000-4000-8000-0000000e0009",
       "reason",
     );
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr()).toMatchObject({ type: "not_a_material_decrease" });
+    expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap()).toMatchObject({
+      listingId: listing.id,
+      proposedSettlementValueIdr: 290_000,
+    });
   });
 
   it("reports not_a_material_decrease for an increase", async () => {

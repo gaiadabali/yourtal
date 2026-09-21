@@ -1,10 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
-import type { Listing } from "@yourtal/contracts/listing";
+import type { Listing, PublicListing } from "@yourtal/contracts/listing";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { applySettlementValueChange } from "./apply-settlement-value-change";
 import { browseConditions, PUBLIC_LIFECYCLE_STATE } from "./browse-listings-conditions";
-import { assembleListing, assembleListings } from "./listing-assembler";
+import {
+  assembleListing,
+  assembleListings,
+  assemblePublicListing,
+  assemblePublicListings,
+} from "./listing-assembler";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
 import type {
   BrowseListingsFilter,
@@ -64,13 +69,13 @@ export class DrizzleListingRepository implements ListingRepository {
     return row === undefined ? null : assembleListing(this.db, row);
   }
 
-  async findPublicById(listingId: string): Promise<Listing | null> {
+  async findPublicById(listingId: string): Promise<PublicListing | null> {
     const [row] = await this.db
       .select()
       .from(listings)
       .where(and(eq(listings.id, listingId), eq(listings.lifecycleState, PUBLIC_LIFECYCLE_STATE)))
       .limit(1);
-    return row === undefined ? null : assembleListing(this.db, row);
+    return row === undefined ? null : assemblePublicListing(this.db, row);
   }
 
   async browsePublic(filter: BrowseListingsFilter): Promise<BrowseListingsPage> {
@@ -84,7 +89,7 @@ export class DrizzleListingRepository implements ListingRepository {
 
     const hasMore = rows.length > filter.limit;
     const page = hasMore ? rows.slice(0, filter.limit) : rows;
-    return { listings: await assembleListings(this.db, page), hasMore };
+    return { listings: await assemblePublicListings(this.db, page), hasMore };
   }
 
   async create(merchantId: string, input: CreateListingInput): Promise<Listing> {

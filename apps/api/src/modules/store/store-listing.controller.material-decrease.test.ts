@@ -75,14 +75,53 @@ async function seedListing(settlementValueIdr: number) {
 }
 
 describe("setSettlementValue against a real PDP", () => {
-  it("allows an ordinary (non-material) decrease for an owner", async () => {
+  it("allows an INCREASE for an owner -- the only non-material change there is", async () => {
     const listing = await seedListing(1_000_000);
     const body = setSettlementValueSchema.parse({
-      newSettlementValueIdr: 900_000, // 10% cut, below the 20% threshold
-      reason: "Minor seasonal adjustment.",
+      newSettlementValueIdr: 1_100_000,
+      reason: "Merchant agreed a better settlement rate.",
     });
     const change = await controller.setSettlementValue(TENANT, listing.id, body, request);
-    expect(change.updated.settlementValueIdr).toBe(900_000);
+    expect(change.updated.settlementValueIdr).toBe(1_100_000);
+  });
+
+  // YT-0576: this case used to assert the OPPOSITE -- a 10% cut applied
+  // straight through, "below the 20% threshold". The founder removed the
+  // threshold rather than ratifying it, so the smallest possible decrease is
+  // now material and must go through approval. Pinned at one rupiah
+  // deliberately: a threshold reintroduced at any value makes this red, which
+  // is the whole point of testing the boundary at its minimum rather than at
+  // a comfortable 50%.
+  it("REFUSES a one-rupiah decrease -- there is no threshold to sit under", async () => {
+    const listing = await seedListing(1_000_000);
+    const body = setSettlementValueSchema.parse({
+      newSettlementValueIdr: 999_999,
+      reason: "Rounding tidy-up.",
+    });
+    await expect(
+      controller.setSettlementValue(TENANT, listing.id, body, request),
+    ).rejects.toMatchObject({ status: 403 });
+
+    const unchanged = await repo.findOwnedById(TENANT, listing.id);
+    expect(unchanged?.settlementValueIdr).toBe(1_000_000);
+    expect(await revisions.listForListing(listing.id)).toHaveLength(0);
+  });
+
+  // The bypass the threshold created, kept as a regression: under a 20% band
+  // these two calls together cut S by 27.75% with nobody approving anything.
+  it("REFUSES repeated small cuts that would compound past any old threshold", async () => {
+    const listing = await seedListing(1_000_000);
+    for (const value of [850_000, 722_500]) {
+      const body = setSettlementValueSchema.parse({
+        newSettlementValueIdr: value,
+        reason: "Salami slice.",
+      });
+      await expect(
+        controller.setSettlementValue(TENANT, listing.id, body, request),
+      ).rejects.toMatchObject({ status: 403 });
+    }
+    const unchanged = await repo.findOwnedById(TENANT, listing.id);
+    expect(unchanged?.settlementValueIdr).toBe(1_000_000);
   });
 
   it("REFUSES a material decrease outright, even for the owner", async () => {

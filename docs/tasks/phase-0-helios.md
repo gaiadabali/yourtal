@@ -117,7 +117,7 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - [ ] ⚠️ **Single-host key custody is weaker than a KMS and must not be carried into production.** Recorded in `docs/03` rather than left as a silence
 
 ### YT-0534 · Data residency: what Helios is allowed to hold
-`blocked` · P0 · legal · 1d · dep: —
+`doing` · P0 · legal · 1d · dep: —
 
 **Evidence gathered 2026-09-20 from the box itself. Conclusion: Helios is in JAKARTA, INDONESIA — high confidence, one confirmation short of certain.**
 
@@ -135,10 +135,12 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 
 **What is still missing is confirmation, not evidence.** Geolocation databases are wrong often enough that a legal position should not rest on one. The authoritative source is the **Hostinger billing/VPS page**, which names the datacentre outright — a founder can read it in under a minute, and that closes this.
 
-- [ ] **Where Helios physically is** is established and written down — this is a fact about a rented box, not a design choice
-- [ ] A one-line rule in `docs/24`: Helios holds **simulated and internal data only** until residency is resolved
-- [ ] The architecture's country isolation (`docs/02`) is **not** quietly weakened to match the infrastructure — where the two disagree, the deployment is wrong, not the policy
-- [ ] ⚠️ Blocked on the founder confirming the host's location and that real Indonesian or Australian personal data will **not** land here
+- [x] **Where Helios physically is** is established and written down — **accepted as Jakarta, Indonesia, by founder decision 2026-09-21, on the indirect evidence above, confidence Medium.** Recorded in `docs/24` § _Helios residency_ with the confidence stated, because *accepted on inference* and *confirmed* are different claims and only one of them is true here
+- [x] A one-line rule in `docs/24`: Helios holds **simulated and internal data only** until residency is resolved — now **red line 11**, alongside the other ten absolute prohibitions rather than as a footnote, so it is enforced where the prohibitions are read
+- [x] The architecture's country isolation (`docs/02`) is **not** quietly weakened to match the infrastructure — asserted explicitly in `docs/24`: the two-region design stands, and **Helios is a development box that does not satisfy it**, which is a fact about Helios rather than a reason to change the policy
+- ✅ **The blocker is lifted: the founder accepted Jakarta on the available evidence rather than waiting for the billing page.** That is a defensible call for a development-stage box and it is recorded as *accepted*, not *confirmed*
+- ⛔ **Accepting the location does not lift red line 11, and confirming it would not either.** For **APP 8** and for Indonesian residency obligations, what counts is a **contractual statement of where data is held** — a hosting agreement or an invoice. Geolocation is evidence about a route, not an undertaking by a provider, and no quantity of it becomes a commitment. **Worse: confirming Jakarta makes Australian personal data on Helios a cross-border disclosure requiring APP 8 treatment**, on the primary market's main path. Knowing costs more than not knowing, which is why the rule is written to survive the answer
+- [ ] **A document naming the datacentre, plus the APP 8 position for Australian data** — the two things that would actually lift red line 11. Left open deliberately: this ticket's other criteria are met and this one is the real bar, so closing the ticket without it would retire the question rather than answer it
 
 ## The simulation seam
 

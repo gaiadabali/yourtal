@@ -302,7 +302,9 @@
 `todo` · P0 · platform · 3d · dep: YT-0516
 
 - Re-parented onto the local stack (YT-0516): this needed _a_ service, not a _managed_ one. The cloud task now covers deployment only.
-- [ ] pg-boss with retries, backoff, dead-letter and visibility in Grafana
+- [ ] pg-boss with retries, backoff and a dead-letter path
+- ⏭️ **“and visibility in Grafana” — split out, because there is no Grafana.** Checked before starting rather than after: `docker-compose.yml` has no Grafana, Prometheus, Alloy, Loki or OTel collector, and `apps/api`/`packages` contain no `prom-client`, no `/metrics` route and no OpenTelemetry. **That clause belongs to YT-0027** (Observability: OpenTelemetry, Grafana Cloud, Sentry — `todo`, `infra`), which owns the stack it needs. Left as a criterion it would make this ticket permanently unfinishable, which is the pattern this board has hit six times today
+- ⚠️ **What this ticket CAN own instead of a dashboard: make the queue observable from the database.** pg-boss keeps its state in Postgres, so retry counts, dead-lettered jobs and queue depth are all `SELECT`-able without any collector. Evidence that does not execute application code is worth more than a dashboard here anyway (YT-0547), and it is what YT-0027 would later graph rather than replace
 - [ ] Every consumer is idempotent by construction
 
 ### YT-0547 · Test isolation: one database per package, not one lock per file

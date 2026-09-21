@@ -20,6 +20,7 @@ import type { MerchantLocale } from "./merchant-device";
 export interface MerchantCopy {
   portalHeading: string;
   deviceBadgePrefix: string;
+  deviceLocationPrefix: string;
   tabScan: string;
   tabManual: string;
   manualCodeLabel: string;
@@ -62,6 +63,7 @@ export interface MerchantCopy {
 const idID: MerchantCopy = {
   portalHeading: "Redeem Voucher",
   deviceBadgePrefix: "Perangkat",
+  deviceLocationPrefix: "Lokasi",
   tabScan: "Pindai QR",
   tabManual: "Masukkan kode",
   manualCodeLabel: "Kode voucher",
@@ -108,6 +110,7 @@ const idID: MerchantCopy = {
 const enAU: MerchantCopy = {
   portalHeading: "Redeem Voucher",
   deviceBadgePrefix: "Device",
+  deviceLocationPrefix: "Location",
   tabScan: "Scan QR",
   tabManual: "Enter code",
   manualCodeLabel: "Voucher code",

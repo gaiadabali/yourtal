@@ -27,6 +27,16 @@ describe("provisioning-data", () => {
       locale: "id-ID",
       currency: "IDR",
       countryName: "Indonesia",
+      // YT-0583: this test was already named "...and location" before any
+      // location existed. It does now — derived deterministically from the
+      // merchant id (merchant-counter-location.ts), so the same code always
+      // provisions a device into the same outlet.
+      location: {
+        id: "00000000-0000-4000-8000-000000000601",
+        name: "Toko Berkah — Senayan",
+        address: "20 Senayan Street",
+        district: "Senayan",
+      },
     });
   });
 

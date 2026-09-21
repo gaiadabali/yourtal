@@ -136,6 +136,20 @@ export function VoucherDetailView({ voucherId, initialDetail }: VoucherDetailVie
               <dd className="font-medium text-fg">{formatWalletDate(detail.expiresAt, locale)}</dd>
             </div>
           </dl>
+
+          {/* YT-0583: which branch honours this voucher. Before this, a
+              voucher for a multi-branch merchant named the merchant and not
+              the outlet, so a user standing in the wrong shop had no way to
+              know. `location` is denormalised onto the voucher at issuance,
+              so this renders from cache and works offline — which is the
+              only state that matters when you are at the counter. */}
+          <div className="w-full border-t border-border pt-4">
+            <h2 className="text-xs text-fg-subtle">{t("voucher.redeemAtLabel")}</h2>
+            <p className="font-medium text-fg">{detail.location.name}</p>
+            <p className="text-sm text-fg-muted">{detail.location.address}</p>
+            <p className="text-sm text-fg-muted">{detail.location.district}</p>
+            <p className="mt-1 text-xs text-fg-subtle">{t("voucher.redeemAtHint")}</p>
+          </div>
         </CardContent>
       </Card>
 

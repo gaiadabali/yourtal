@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { merchantLocationSchema } from "@yourtal/contracts/listing/merchant-location";
 import type { MerchantCurrency, MerchantLocale } from "../merchant-device";
 
 /**
@@ -41,6 +42,8 @@ export const deviceBindingSchema = z.object({
   locale: z.enum(merchantLocaleValues),
   currency: z.enum(merchantCurrencyValues),
   countryName: z.string().min(1),
+  /** The outlet this device stands in (YT-0583) — bound at provisioning, so the portal can tell staff which shop they are in, not just which till. */
+  location: merchantLocationSchema,
   pinHash: z.string().min(1),
   pinSalt: z.string().min(1),
   provisionedAt: z.iso.datetime(),

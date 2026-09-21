@@ -9,6 +9,12 @@ const valid = {
   locale: "id-ID",
   currency: "IDR",
   countryName: "Indonesia",
+  location: {
+    id: "00000000-0000-4000-8000-0000000006a1",
+    name: "Test Merchant — Surry Hills",
+    address: "1 Surry Hills Street",
+    district: "Surry Hills",
+  },
   pinHash: "abc123",
   pinSalt: "deadbeef",
   provisionedAt: "2026-09-19T00:00:00.000Z",

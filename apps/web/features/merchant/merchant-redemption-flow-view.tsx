@@ -81,6 +81,14 @@ export function MerchantRedemptionFlowView({
         <p className="text-sm font-sans text-fg-muted">
           {copy.deviceBadgePrefix}: {device.label}
         </p>
+        {/* YT-0583: which outlet this device stands in. `label` is the
+            counter, not the shop, and a merchant with two branches has
+            counters in both — so staff could previously see the till they
+            were on but not the store, while the wrong_merchant error told
+            them to check "the store named on the voucher". */}
+        <p className="text-sm font-sans text-fg-muted">
+          {copy.deviceLocationPrefix}: {device.location.name} — {device.location.district}
+        </p>
       </header>
       <MerchantConnectivityBanner isOnline={isOnline} isSyncing={isSyncing} copy={copy} />
       {step.step === "identify" ? (

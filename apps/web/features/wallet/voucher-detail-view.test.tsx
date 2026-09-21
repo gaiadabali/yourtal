@@ -204,6 +204,41 @@ describe("VoucherDetailView", () => {
   });
 });
 
+describe("VoucherDetailView — which branch honours it (YT-0583)", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("names the outlet, not just the merchant, and does so from cache with the network unreachable", async () => {
+    // The merchant name alone was never enough: `listing.locations` is an
+    // array, so one merchant can be two shops. `voucher.location` is the
+    // branch chosen at issuance and denormalised onto the voucher, which is
+    // what makes it renderable offline — the state you are in at a counter.
+    const instructions = buildRedemptionInstructions(
+      cachedVoucher.merchantName,
+      cachedVoucher.partialRedemptionPolicy,
+      "id-ID",
+    );
+    const detail = buildCachedVoucherDetail(
+      cachedVoucher,
+      instructions,
+      "2026-09-19T08:00:00.000Z",
+    );
+    writeVoucherDetailCache(detail);
+
+    const fetchSpy = vi.fn(() => Promise.reject(new Error("network disabled")));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    renderWithRegion(<VoucherDetailView voucherId={cachedVoucher.id} initialDetail={detail} />);
+    await flushMicrotasks();
+
+    expect(screen.getByText(cachedVoucher.location.name)).toBeInTheDocument();
+    expect(screen.getByText(cachedVoucher.location.address)).toBeInTheDocument();
+    expect(screen.getByText(cachedVoucher.location.district)).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe("VoucherDetailView (en-AU, YT-0405)", () => {
   beforeEach(() => {
     window.localStorage.clear();

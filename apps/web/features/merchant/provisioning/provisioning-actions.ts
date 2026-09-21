@@ -92,6 +92,7 @@ export async function submitProvisioningCode(formData: FormData): Promise<void> 
     locale: template.locale,
     currency: template.currency,
     countryName: template.countryName,
+    location: template.location,
     pinHash,
     pinSalt: salt,
     provisionedAt: new Date().toISOString(),

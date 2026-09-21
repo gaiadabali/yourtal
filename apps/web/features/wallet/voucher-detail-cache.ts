@@ -1,4 +1,5 @@
 import * as z from "zod/mini";
+import { merchantLocationSchema } from "@yourtal/contracts/listing/merchant-location";
 import type { Voucher } from "@yourtal/contracts/voucher";
 
 /**
@@ -43,6 +44,19 @@ export const cachedVoucherDetailSchema = z.object({
   issuedAt: z.iso.datetime(),
   expiresAt: z.iso.datetime(),
   redemptionInstructions: z.string().check(z.minLength(1)),
+  // YT-0583: which branch honours this voucher. Denormalised onto the
+  // voucher at issuance (`voucher.ts:53`, chosen from `listing.locations`),
+  // so it is a property of the voucher rather than a lookup — which is what
+  // makes it cacheable at all, and therefore available offline, standing in
+  // the shop, which is the only moment it matters.
+  //
+  // REQUIRED, not optional, deliberately. An entry cached before this field
+  // existed now fails `safeParse` and is discarded as a cache miss, falling
+  // back to the server-rendered `initialDetail`. That is the correct
+  // trade: an optional field would let a stale entry render a voucher with
+  // no branch on it, which is exactly the "two-branch merchant shows one
+  // address" defect this ticket exists to fix, resurrected from cache.
+  location: merchantLocationSchema,
   cachedAt: z.iso.datetime(),
 });
 
@@ -76,6 +90,7 @@ export function buildCachedVoucherDetail(
     issuedAt: voucher.issuedAt,
     expiresAt: voucher.expiresAt,
     redemptionInstructions,
+    location: voucher.location,
     cachedAt,
   });
 }

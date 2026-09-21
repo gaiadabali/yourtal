@@ -75,6 +75,7 @@ async function getBoundMockDevice(): Promise<MerchantDevice | null> {
     label: binding.label,
     merchantId: binding.merchantId,
     merchantName: binding.merchantName,
+    location: binding.location,
     locale: binding.locale,
     currency: binding.currency,
     countryName: binding.countryName,

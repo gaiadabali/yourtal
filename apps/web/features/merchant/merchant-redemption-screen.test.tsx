@@ -19,6 +19,13 @@ const device: MerchantDevice = {
   locale: "en-AU",
   currency: "AUD",
   countryName: "Australia",
+  location: {
+    id: "00000000-0000-4000-8000-0000000006a1",
+    name: "Test Merchant — Surry Hills",
+    address: "1 Surry Hills Street",
+    district: "Surry Hills",
+  },
+
 };
 
 const vouchers = [

@@ -1,6 +1,8 @@
+import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
 import { MOCK_MERCHANTS } from "@yourtal/contracts/merchant/roster";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import { resolveMerchantRegionInfo } from "../merchant-region-source";
+import { deriveCounterLocation } from "../merchant-counter-location";
 
 /**
  * The provisioning/revocation data-access seam — same shape and same rule
@@ -42,6 +44,8 @@ export interface ProvisioningTemplate {
   merchantId: string;
   merchantName: string;
   label: string;
+  /** The outlet this counter stands in — `label` is the till, this is the shop (YT-0583). */
+  location: MerchantLocation;
   locale: "en-AU" | "id-ID";
   currency: "AUD" | "IDR";
   countryName: string;
@@ -85,6 +89,10 @@ const MOCK_PROVISIONING_CODES: Record<string, ProvisioningTemplate> = Object.fro
       merchantId: merchant.id,
       merchantName: merchant.name,
       label: merchant.counterLabel,
+      // YT-0583: the outlet this counter stands in, as distinct from the
+      // till it is. See merchant-counter-location.ts for what is real here
+      // and what is placeholder.
+      location: deriveCounterLocation(merchant.id, merchant.name, merchant.region),
       ...resolveMerchantRegionInfo(merchant.region),
     },
   ]),

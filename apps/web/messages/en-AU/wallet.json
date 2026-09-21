@@ -27,7 +27,9 @@
     "codeAutoRefresh": "Code refreshes automatically",
     "secondsRemaining": "{seconds}s remaining",
     "refreshCountdownLabel": "Time until the QR code refreshes",
-    "manualCodeLabel": "Or read this code to the cashier:"
+    "manualCodeLabel": "Or read this code to the cashier:",
+    "redeemAtLabel": "Redeem at",
+    "redeemAtHint": "This voucher is valid at this branch only."
   },
   "redemption": {
     "balanceCarrying": "If your purchase is less than the voucher's value, the remainder is kept for next time.",

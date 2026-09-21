@@ -15,6 +15,8 @@
  * region contract is not yet installed, only `merchant-region-source.ts`
  * (and `merchant-data.ts`, which calls it) is affected; nothing here is.
  */
+import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
+
 export type MerchantLocale = "en-AU" | "id-ID";
 export type MerchantCurrency = "AUD" | "IDR";
 
@@ -25,6 +27,15 @@ export interface MerchantDevice {
   label: string;
   merchantId: string;
   merchantName: string;
+  /**
+   * YT-0583: the outlet this device stands in. `label` is the counter
+   * ("Kemang counter 2"); this is the branch, and they are different facts
+   * — a merchant with two shops has counters in both. Without it the portal
+   * could tell staff which till they were on but not which shop, and the
+   * `wrong_merchant` error already told them to "direct the customer to the
+   * store named on the voucher" at a time when no voucher named a store.
+   */
+  location: MerchantLocation;
   locale: MerchantLocale;
   currency: MerchantCurrency;
   countryName: string;

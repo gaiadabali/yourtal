@@ -158,7 +158,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - Scope held: no coverage ratio, no reserve formula, no `B`, nothing converting points to currency
 
 ### YT-0046 · Partner funding: point pre-purchase and drawdown
-`review` · P0 · value · 5d · dep: YT-0042
+`done` · P0 · value · 5d · dep: YT-0042
 
 - [x] A business buys a point block at `P_issue`; cash recorded into the segregated reserve
 - [x] Campaigns draw down against an allocation and hard-stop at zero
@@ -169,7 +169,9 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [x] Hard-stop proved end to end: a purchase funding exactly two completions pays two and refuses the third with `ErrAllocationExhausted`
 - [x] Atomicity tested from the awkward direction — a repeated purchase id creates neither a second allocation nor a second reserve posting. **Cash received against nothing is the same defect as points without cash, pointing the other way, and much harder to notice**
 - [x] Two purchases at genuinely different rates are recorded and asserted to differ — a test that fails if someone later "simplifies" the pairs into a rate column. Had a single rate been stored, one of the two would now be wrong and **which one would be unknowable**
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** All eight criterion tests exist **by name** and pass against live Postgres: `TestPurchaseRecordsBothFactsAndFundsTheReserve`, `TestPurchaseAndAllocationAreAtomic`, `TestAPurchaseFundsGrantsUntilItIsExhausted`, `TestCannotIssueBeyondTheAllocation`, `TestConcurrentGrantsCannotOverdrawAnAllocation`, `TestReserveIsSegregatedPerCurrency`, `TestGrantCreditsTheUserAndDrawsDownTheAllocation`, `TestPurchaseRejectsNonsense`, plus `TestFundedAndMarketingIssuanceAreDistinguishable`
+- ✏️ **Criterion 4's parenthetical has aged into a false statement, and the bar it serves still holds.** It says *"verified: zero rate columns in the `ledger` schema"*. The live schema now has **`ledger.backing_rate.micros_per_point`** and **`issue_price_micros_per_point`** — created later by `20260920000014_pricing.sql`, which is **YT-0049's work, not this ticket's**. The actual bar survives: an anchored grep shows **nothing in `services/ledger/internal/ledger/` reads `backing_rate`**, so the funding path still neither multiplies nor converts
+- ⚠️ **Same family as YT-0518's `IDEMPOTENCY_TABLE_DDL`, and the generalisation is worth more than either instance: a verification note is a MEASUREMENT, so it wants a date — or it reads as a standing property and is falsified by a ticket that was never about it.** Three criteria today have aged this way, each invalidated by a different ticket's correct work
 ### YT-0047 · Solvency monitor and coverage dashboard
 `todo` · P0 · value · 4d · dep: YT-0046
 

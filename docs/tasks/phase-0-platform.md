@@ -31,7 +31,7 @@
 - ℹ️ **YT-0591** now owns the TS client. Filed because this criterion promised it conditionally and the condition arrived — a promise inside a ticked box is invisible the moment the box is ticked
 
 ### YT-0507 · `business` and `kyb_document` resource kinds
-`review` · P0 · platform · 2d · dep: YT-0035
+`done` · P0 · platform · 2d · dep: YT-0035
 
 - Verified: policies 375 assertions (up from 322), authz 36, api 97. **`GET /business` widened from owner+admin to all six roles — confirmed correct**, and `docs/17` §2.1 now has explicit Profile and KYB columns so it is no longer an inference. KYB stays owner+admin: director identity and tax registration are sensitive. `ops` has `approve`/`reject` on `kyb_document` but **no route calls them** — the review queue is unbuilt
 - [x] **A `business` resource kind exists and is used.** `packages/authz/src/resources.ts:31` declares `business: ["view", "edit", "create"]` and `policies/resource_policies/business.yaml` implements it. _Original defect statement, now false: “`policies/` has no `business` resource kind — only `team` (roster) and `billing` (spend), so ‘edit a business’s own profile’ has no policy to ask.”_
@@ -43,9 +43,10 @@
 
 - ⚠️ **A criterion phrased as a defect cannot be ticked once the defect is fixed** — ticking *“`policies/` has no `business` resource kind”* would assert the thing that is no longer true. So this ticket read 0/3 while every deliverable existed, and it will happen again to any ticket whose boxes describe the problem instead of the bar. Criteria reworded below to the deliverables, with the original defect statements preserved as the reason
 - **The `dep: YT-0100` is also stale.** Nothing here waited on advertiser onboarding; the shapes and kinds arrived by other routes. That dependency is why this sat in the blocked column rather than the ready one
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work, and every file:line in the ticket checks out literally**: `resources.ts:31` `business: ["view","edit","create"]`, `:39` `kyb_document: ["view","submit","approve","reject"]`, with both policy files present. The four repointed decorators are exactly where claimed — `business.controller.ts:36`, `create-business.controller.ts:34`, `kyb-document.controller.ts:30,44`
+- ✅ **The absence claim holds, which is the half a grep usually gets wrong.** The only surviving `{kind: "team", action: "view"}` in `apps/api` is `team-directory.controller.ts:19` — **a genuine roster read, not the KYB proxy this ticket removed.** Both kinds sit inside the 452/452 policy run and inside `policy-drift.test.ts`'s set equality, so TypeScript and policy cannot disagree about them in either direction
 ### YT-0508 · Promote business shapes into contracts
-`review` · P0 · platform · 2d · dep: YT-0031
+`done` · P0 · platform · 2d · dep: YT-0031
 
 - Verified: contracts 215 tests, OpenAPI and Go regenerated, Go builds and vets clean
 - [x] **All three shapes are in contracts.** `packages/contracts/src/business/` holds `business-member.ts`, `billing-contact.ts` and `kyb-document.ts`, each with its own `.mock.ts` and `.test.ts`. _Original defect statement, now false: “has no shape for members, billing contact or KYB documents; all three were modelled locally inside `apps/api`.”_
@@ -56,7 +57,8 @@
 
 - ⚠️ **A criterion phrased as a defect cannot be ticked once the defect is fixed** — ticking *“`policies/` has no `business` resource kind”* would assert the thing that is no longer true. So this ticket read 0/3 while every deliverable existed, and it will happen again to any ticket whose boxes describe the problem instead of the bar. Criteria reworded below to the deliverables, with the original defect statements preserved as the reason
 - **The `dep: YT-0100` is also stale.** Nothing here waited on advertiser onboarding; the shapes and kinds arrived by other routes. That dependency is why this sat in the blocked column rather than the ready one
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work, and the stronger half is the negative: `apps/api/src/modules/business/domain/` DOES NOT EXIST** — `ls` errors — while the repositories import from `@yourtal/contracts/business/*`. As the ticket argues, a missed importer could not have typechecked, **so the compiler is the proof rather than a grep**, which is the difference between "I looked and found none" and "one cannot exist"
+- ℹ️ All three shapes are in `packages/contracts/src/business/` with a `.mock.ts` and `.test.ts` each
 ### YT-0509 · Invert the contracts → authz dependency
 `doing` · P0 · platform · 1d · dep: YT-0508
 
@@ -133,7 +135,7 @@
 - ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `listing.ts:52` carries `locations: z.array(merchantLocationSchema).min(1)` and the bare `district: string` is **gone from the listing schema entirely** — not deprecated beside its replacement, which is what would have let the old shape survive. `merchant-location.ts:17-20` gives each location `id`, `name`, `address` and `district`, so a voucher can name which branch honours it; `voucherSchema` carries `location`; and `openapi/go/model_merchant_location.go` exists, so the Go side regenerated as claimed
 - ✅ **The `⏭️` is correctly formed and points at real work.** Surfacing this in the offer page, voucher detail and merchant portal is `apps/web` plus a BFF endpoint, and the ticket says so itself. Per `_schema.md`'s test — *if this ticket were otherwise perfect, would this line still be unticked?* — yes, so it is not a criterion. **Its owning surface is the merchant portal, which YT-0598 now records as having no session holder**
 ### YT-0503 · Campaign contract: chapters and video source
-`review` · P0 · platform · 2d · dep: YT-0031
+`done` · P0 · platform · 2d · dep: YT-0031
 
 - [x] Chapter markers (start, title, reward weight) on the campaign contract — `packages/contracts/src/campaign/campaign-chapter.ts`. No stored `endSeconds` or absolute per-chapter reward: both are derived (`chapterEndSeconds`, `chapterRewardPoints`) from the campaign's own `durationSeconds`/`rewardPoints`, per docs/13's "never store a value you can derive" — `rewardWeight` is what apps/web's local fake calls a weight already, this makes it the contract's own field instead of a client-side back-loading table
 - [x] A video-source field the player can resolve without guessing — `campaignVideoSourceSchema` (`{kind: "hls", manifestUrl}`), additive shape for a later `mp4`/renditions variant
@@ -145,6 +147,8 @@
 **⏭️ ONE CRITERION CONVERTED TO A DEFERRAL, AND THE WORK GIVEN A HOME — 2026-09-21.** This ticket’s last open box described work it says itself belongs elsewhere, so under `_schema.md`’s test — _if this ticket were otherwise perfect, would this line still be unticked?_ — it was never a criterion, and the ticket could not have reached `review` however finished it was. **Converted, and the deferred work filed as a real ticket rather than left as a pointer at nothing**, because a `⏭️` aimed at a ticket that does not exist is worse than a stuck checkbox: the checkbox at least stays visible.
 
 - ✏️ **Cites `apps/web/features/player/video-source.ts`, which no longer exists — and the work it described was not lost, it was promoted.** Added in `316cd53`, deleted in `9bd450d`. `MOCK_HLS_MANIFEST_URL` now lives in `packages/contracts/src/campaign/campaign.mock.ts:46` with its own guard, `hls-fixture-url.test.ts`, and the "KNOWN GAP" that file carried — *`campaignSchema` has no video-source field at all* — was closed by YT-0503. **The citation is stale; the criterion it supports is not weakened.** Found 2026-09-21 by `yourtal-22` sweeping every path cited by a `review` ticket against the tree
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** `campaign-chapter.ts:25-26` carries `startSeconds` and `rewardWeight` and **no `endSeconds`**, with the absence **documented at `:15` rather than merely omitted** — so the next author meets the reasoning instead of the gap. `chapterEndSeconds` (`:35-40`) derives the end from the next chapter's start and falls back to `durationSeconds`; `chapterRewardPoints` (`:52`) splits proportionally with the remainder folded into the last chapter, **so the points always sum to `rewardPoints`** rather than drifting by a rounding unit per chapter
+- ✅ `campaignVideoSourceSchema` is a `z.discriminatedUnion("kind", …)` with one member today — **additive by construction**, so a later `mp4` or per-quality-renditions variant cannot break the `hls` shape already in use
 ### YT-0504 · Wallet contract: points history and ledger projection
 `done` · P0 · platform · 3d · dep: YT-0031, YT-0041
 

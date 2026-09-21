@@ -115,6 +115,22 @@ So the protocol has **two** halves, and only the first was obvious:
 
 **Why the second half exists.** On 2026-09-21 the recorder regenerated without waiting for a signal, while `yourtal-c8` was mid-batch in `phase-u-ui.md`. Nothing was published wrong — but only because c8's last edit landed at 14:06:47 and the regeneration ran at 14:11:57. **Five minutes of luck.** Ninety seconds earlier would have caught three of five blocks rewritten, validating green, publishing one ticket at `review` while another still carried a description its own work had invalidated — and **neither session would have had any signal it happened.** The fix is not more discipline; being mid-batch and being mid-sequence are both normal. It is that a promise to announce the start of a write says nothing about its end.
 
+## A red that is not about the code
+
+Five distinct ways to get a failure on this machine that says nothing about the repository. Every one was found by someone who believed a measurement first, and all five were found on 2026-09-21.
+
+| what you see | what it actually is | how to tell |
+| --- | --- | --- |
+| `check:eol` red on files you never touched | **CRLF drift in the working tree.** The index and every committed blob are LF; only the tree is wrong, so `git status` stays clean (**YT-0590**) | `git cat-file blob HEAD:<path> \| tr -cd '\r' \| wc -c` → 0 |
+| `format:check` red on a file nobody edited | usually **the same** CRLF drift, reporting through a second gate | repair line endings first and re-check **before** touching contents — 20 repairs cleared every remaining warning but one |
+| Go suite prints `ok` | **it skipped.** `pgxpool.New` does not connect eagerly, so a dead host survives to `Ping` → `t.Skipf`. `go test ./...` exits 0 having compared nothing | run with `-v` and grep `--- SKIP`; CI already does (`integration.yml:289-296`) |
+| `go test` prints `FAIL` | **Windows Application Control blocked the compiled test binary** — `fork/exec …\pricing.test.exe: An Application Control policy has blocked this file`. The summary line says only `FAIL` | read the full output, not the summary |
+| `@yourtal/web:lint` crashes in `readdir` | **eslint walking `apps/web` while another session writes in it.** Passes on re-run | re-run once before believing it |
+
+**The unifying instruction is one line: state what the command actually answers, then check that against what you are claiming.** Most of these die at that step. The rest die at *"is this the environment or the repository?"* — which is worth asking before opening a ticket, and is how two false positives were kept off this board today.
+
+**And the same failure has a documentary twin.** A verification note baked into a criterion — *"verified: zero rate columns in the `ledger` schema"* — is a **measurement**, not a property, and it was falsified by a later ticket that was never about it (`ledger.backing_rate` arrived with YT-0049). **A measurement wants a date, or it reads as a standing claim.** Three criteria aged this way in one day, each invalidated by a different ticket's correct work.
+
 ## Rules
 
 1. **A task is `done` or `review` only when every AC box is ticked.** The validator enforces both.

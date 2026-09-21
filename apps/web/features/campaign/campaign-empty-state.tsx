@@ -29,14 +29,10 @@ export function CampaignEmptyState({ kind, locale }: CampaignEmptyStateProps) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-6 py-16 text-center">
       <p className="text-base font-semibold text-fg">
-        {filterLabel
-          ? t("campaign.emptyFiltered", { filterLabel })
-          : t("campaign.emptyNone")}
+        {filterLabel ? t("campaign.emptyFiltered", { filterLabel }) : t("campaign.emptyNone")}
       </p>
       <p className="max-w-sm text-sm text-fg-muted">
-        {filterLabel
-          ? t("campaign.emptyFilteredBody")
-          : t("campaign.emptyNoneBody")}
+        {filterLabel ? t("campaign.emptyFilteredBody") : t("campaign.emptyNoneBody")}
       </p>
       {filterLabel ? (
         <Button asChild variant="secondary">

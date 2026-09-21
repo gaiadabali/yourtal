@@ -25,14 +25,10 @@ export function StoreEmptyState({ hasActiveFilters, locale }: StoreEmptyStatePro
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-6 py-16 text-center">
       <p className="text-base font-semibold text-fg">
-        {hasActiveFilters
-          ? t("store.emptyFiltered")
-          : t("store.emptyNone")}
+        {hasActiveFilters ? t("store.emptyFiltered") : t("store.emptyNone")}
       </p>
       <p className="max-w-sm text-sm text-fg-muted">
-        {hasActiveFilters
-          ? t("store.emptyFilteredBody")
-          : t("store.emptyNoneBody")}
+        {hasActiveFilters ? t("store.emptyFilteredBody") : t("store.emptyNoneBody")}
       </p>
       {hasActiveFilters ? (
         <Button asChild variant="secondary">

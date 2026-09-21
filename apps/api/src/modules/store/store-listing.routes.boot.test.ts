@@ -109,7 +109,11 @@ describe("listing routes reach a live PDP and are not refused for a merchandiser
         method: route.method,
         url: route.url,
         headers: headers(MERCHANDISER_ID, "merchandiser"),
-        payload: route.method === "GET" ? undefined : {},
+        // Spread rather than `payload: cond ? undefined : {}`. `exactOptionalPropertyTypes`
+        // is on (packages/tsconfig/base.json), so an optional property cannot be
+        // handed an explicit `undefined` -- omitting the key and passing it as
+        // undefined are different types, and only the first one compiles.
+        ...(route.method === "GET" ? {} : { payload: {} }),
       });
       expect(response.statusCode).not.toBe(403);
     });
@@ -137,7 +141,11 @@ describe("the same routes still refuse someone with no role at this tenant", () 
           "x-yt-user-id": STRANGER_ID,
           "x-yt-business-roles": JSON.stringify({ "biz-somewhere-else": "owner" }),
         },
-        payload: route.method === "GET" ? undefined : {},
+        // Spread rather than `payload: cond ? undefined : {}`. `exactOptionalPropertyTypes`
+        // is on (packages/tsconfig/base.json), so an optional property cannot be
+        // handed an explicit `undefined` -- omitting the key and passing it as
+        // undefined are different types, and only the first one compiles.
+        ...(route.method === "GET" ? {} : { payload: {} }),
       });
       expect(response.statusCode).toBe(403);
     });

@@ -33,6 +33,16 @@ services/*/db/sqlc.log
 # and staying out of source control means a stale bundle from one bundler
 # flavour (see this ticket's report: `next build`'s default Turbopack never
 # emits this file at all; only `next build --webpack` does) can never be
-# mistaken for a fresh one. `apps/web/public/` has no other contents today;
-# if that changes, narrow this to the one generated file.
-apps/web/public/
+# mistaken for a fresh one.
+#
+# Narrowed to the one file: `apps/web/public/` is Next.js's conventional
+# static-asset directory, so ignoring it wholesale would mean a favicon,
+# manifest or image added later is silently never committed.
+#
+# This file also PERSISTS across builds -- `next build` clears `.next/`,
+# not `public/`. A Turbopack build leaves the previous webpack build's
+# bundle in place, so a service worker can be served that no longer
+# matches `sw.ts`. `playwright.offline.config.ts` is safe because it
+# rebuilds with `--webpack` every run; anything else reading it should
+# delete it first rather than trust that it is current.
+apps/web/public/sw.js

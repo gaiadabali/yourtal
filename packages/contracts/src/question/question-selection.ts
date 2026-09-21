@@ -50,13 +50,11 @@ const SHUFFLE_DOMAIN = "yt:question:shuffle:v1";
  * larger than that would silently start reusing bytes and correlate the
  * tail of the shuffle with its head.
  */
-function* byteStream(
-  domain: string,
-  seed: string,
-  secret: string,
-): Generator<number, never, void> {
+function* byteStream(domain: string, seed: string, secret: string): Generator<number, never, void> {
   for (let block = 0; ; block += 1) {
-    const digest = createHmac("sha256", secret).update(`${domain}.${seed}.${String(block)}`).digest();
+    const digest = createHmac("sha256", secret)
+      .update(`${domain}.${seed}.${String(block)}`)
+      .digest();
     for (const byte of digest) yield byte;
   }
 }
@@ -131,11 +129,7 @@ export function selectQuestionsForSession(
  * and are returned unchanged. A `likert` scale must NOT be shuffled: its
  * order is its meaning, and reversing it silently inverts every answer.
  */
-function shuffleOptions(
-  question: Question,
-  sessionId: string,
-  secret: string,
-): PresentedQuestion {
+function shuffleOptions(question: Question, sessionId: string, secret: string): PresentedQuestion {
   const presented = toPresentedQuestion(question);
   const stream = byteStream(SHUFFLE_DOMAIN, `${sessionId}:${question.id}`, secret);
 

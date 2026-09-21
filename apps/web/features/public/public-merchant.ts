@@ -70,7 +70,10 @@ function mostCommonDistrict(listings: readonly PublicListing[]): string | null {
  * merchants that happen to share a slug across regions.
  */
 export function listPublicMerchants(locale: PublicLocale): PublicMerchant[] {
-  const bySlug = new Map<string, { name: string; campaigns: Campaign[]; listings: PublicListing[] }>();
+  const bySlug = new Map<
+    string,
+    { name: string; campaigns: Campaign[]; listings: PublicListing[] }
+  >();
 
   for (const campaign of listLivePublicCampaigns(locale)) {
     const slug = slugify(campaign.merchantName);

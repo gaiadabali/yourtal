@@ -18,7 +18,6 @@ const device: MerchantDevice = {
     address: "1 Surry Hills Street",
     district: "Surry Hills",
   },
-
 };
 
 /** Rendering-only — see `device-provisioning-form.test.tsx`'s doc comment on why the `unlockWithPin` Server Action is never invoked here. */

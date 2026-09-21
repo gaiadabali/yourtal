@@ -42,13 +42,7 @@ import type { Region } from "@yourtal/contracts/region";
 // that package's public surface for mock placeholder data, the five used
 // here are copied. ⏭️ If a third consumer ever needs them, export the list
 // properly instead of copying it a third time.
-const JAKARTA_DISTRICTS: readonly string[] = [
-  "Kemang",
-  "Senayan",
-  "Tebet",
-  "Setiabudi",
-  "Menteng",
-];
+const JAKARTA_DISTRICTS: readonly string[] = ["Kemang", "Senayan", "Tebet", "Setiabudi", "Menteng"];
 
 // Sydney districts, mirroring JAKARTA_DISTRICTS' role for the AU region.
 // No canonical list exists for AU yet; these are placeholders on the same

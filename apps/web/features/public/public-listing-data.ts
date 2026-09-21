@@ -81,7 +81,10 @@ export function listPublicListings(locale: PublicLocale): PublicListing[] {
 }
 
 /** A single listing for the public offer page, or `undefined` if no such listing exists in this locale's fixed catalogue. */
-export function getPublicListing(listingId: string, locale: PublicLocale): PublicListing | undefined {
+export function getPublicListing(
+  listingId: string,
+  locale: PublicLocale,
+): PublicListing | undefined {
   const found = catalogueFor(locale).find((listing) => listing.id === listingId);
   return found ? toPublic(found) : undefined;
 }

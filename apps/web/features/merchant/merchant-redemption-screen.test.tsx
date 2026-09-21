@@ -25,7 +25,6 @@ const device: MerchantDevice = {
     address: "1 Surry Hills Street",
     district: "Surry Hills",
   },
-
 };
 
 const vouchers = [

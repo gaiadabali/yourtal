@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { RegionProvider } from "@/features/region/region-context";
 import { StoreBoardControls } from "./store-board-controls";
 
 const push = vi.fn();
@@ -18,9 +19,12 @@ const merchantOptions = [
   { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Zeta Kopi" },
 ];
 
+/** `StoreBoardControls` reads the region ambiently via `useRegion()` (YT-0405) for its category-option labels. */
 function renderControls() {
   return render(
-    <StoreBoardControls locationOptions={locationOptions} merchantOptions={merchantOptions} />,
+    <RegionProvider region="ID">
+      <StoreBoardControls locationOptions={locationOptions} merchantOptions={merchantOptions} />
+    </RegionProvider>,
   );
 }
 

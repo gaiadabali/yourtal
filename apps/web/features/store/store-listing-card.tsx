@@ -7,9 +7,15 @@ import { categoryLabel } from "./store-category";
 import { formatListingPrice } from "./store-format";
 import { listingDistrictLabel } from "./listing-locations";
 import { listingStatusPresentation } from "./store-status";
+import type { SupportedLocale } from "./store-i18n";
+
+type SupportedCurrency = "AUD" | "IDR";
 
 export interface StoreListingCardProps {
   listing: Listing;
+  /** YT-0405: required, not defaulted — see `campaign-card.tsx`'s report. */
+  locale: SupportedLocale;
+  currency: SupportedCurrency;
 }
 
 /**
@@ -21,12 +27,14 @@ export interface StoreListingCardProps {
  * Only the title is a real link; a `::after` stretched-link pseudo-element
  * extends the click target to the whole card, matching `campaign-card.tsx`.
  */
-export function StoreListingCard({ listing }: StoreListingCardProps) {
+export function StoreListingCard({ listing, locale, currency }: StoreListingCardProps) {
   const href = `/store/${listing.id}` as Route;
-  const status = listingStatusPresentation(listing.status);
+  const status = listingStatusPresentation(listing.status, locale);
   const { pointsLabel, faceValueLabel } = formatListingPrice(
     listing.priceInPoints,
     listing.faceValueIdr,
+    locale,
+    currency,
   );
 
   return (
@@ -46,7 +54,7 @@ export function StoreListingCard({ listing }: StoreListingCardProps) {
       }
       metaSlot={
         <div className="flex items-center gap-1.5 truncate text-xs text-fg-muted">
-          <span>{categoryLabel(listing.category)}</span>
+          <span>{categoryLabel(listing.category, locale)}</span>
           <span aria-hidden="true">·</span>
           <span className="truncate">{listingDistrictLabel(listing)}</span>
         </div>

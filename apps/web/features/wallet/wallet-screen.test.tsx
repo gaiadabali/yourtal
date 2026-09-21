@@ -7,9 +7,18 @@ import { WalletScreen } from "./wallet-screen";
 
 const nowMs = Date.parse("2026-09-19T09:00:00.000Z");
 
-describe("WalletScreen", () => {
+describe("WalletScreen (id-ID)", () => {
   it("shows the taught empty state for a genuinely new user — zero balance, zero vouchers", () => {
-    render(<WalletScreen balance={zeroBalanceFixture} vouchers={[]} history={[]} nowMs={nowMs} />);
+    render(
+      <WalletScreen
+        balance={zeroBalanceFixture}
+        vouchers={[]}
+        history={[]}
+        nowMs={nowMs}
+        locale="id-ID"
+        currency="IDR"
+      />,
+    );
 
     expect(screen.getByText("Belum ada poin di sini")).toBeInTheDocument();
     expect(screen.queryByText(/Saldo tersedia/)).not.toBeInTheDocument();
@@ -22,6 +31,8 @@ describe("WalletScreen", () => {
         vouchers={[expiredVoucherFixture]}
         history={[]}
         nowMs={nowMs}
+        locale="id-ID"
+        currency="IDR"
       />,
     );
 
@@ -31,9 +42,37 @@ describe("WalletScreen", () => {
 
   it("shows the real balance card for a normal, non-empty wallet", () => {
     render(
-      <WalletScreen balance={mixedStateBalanceFixture} vouchers={[]} history={[]} nowMs={nowMs} />,
+      <WalletScreen
+        balance={mixedStateBalanceFixture}
+        vouchers={[]}
+        history={[]}
+        nowMs={nowMs}
+        locale="id-ID"
+        currency="IDR"
+      />,
     );
 
     expect(screen.getByText("Saldo tersedia")).toBeInTheDocument();
+    expect(screen.getByText("Wallet")).toBeInTheDocument();
+    expect(screen.getByText("Riwayat poin")).toBeInTheDocument();
+  });
+});
+
+describe("WalletScreen (en-AU, YT-0405)", () => {
+  it("shows every heading in English, with no Indonesian copy leaking through", () => {
+    const { container } = render(
+      <WalletScreen
+        balance={mixedStateBalanceFixture}
+        vouchers={[]}
+        history={[]}
+        nowMs={nowMs}
+        locale="en-AU"
+        currency="AUD"
+      />,
+    );
+
+    expect(screen.getByText("Available balance")).toBeInTheDocument();
+    expect(screen.getByText("Points history")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/Saldo tersedia|Riwayat poin/);
   });
 });

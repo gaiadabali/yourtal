@@ -34,5 +34,19 @@
     "singleUseForfeit": "Voucher ini sekali pakai — kalau belanjamu kurang dari nilai voucher, sisanya hangus dan tidak bisa dipakai lagi.",
     "minimumSpend": "Voucher ini hanya bisa dipakai kalau belanjamu mencapai jumlah minimum yang ditentukan merchant.",
     "instructions": "Tunjukkan kode QR ini ke kasir {merchantName} saat membayar, atau sebutkan kode vouchernya kalau diminta secara manual. {policyLine}"
+  },
+  "screen": {
+    "title": "Wallet",
+    "historyHeading": "Riwayat poin"
+  },
+  "emptyState": {
+    "heading": "Belum ada poin di sini",
+    "body": "Poin didapat dengan menonton video singkat dari merchant favoritmu. Selesaikan satu video di papan Earn untuk mulai mengumpulkan poin, lalu tukarkan dengan voucher di Store.",
+    "cta": "Cari video di Earn"
+  },
+  "voucherList": {
+    "activeHeading": "Voucher aktif",
+    "activeEmpty": "Belum ada voucher aktif. Tukar poin di Store untuk mendapatkan voucher.",
+    "archivedHeading": "Arsip (terpakai / kedaluwarsa)"
   }
 }

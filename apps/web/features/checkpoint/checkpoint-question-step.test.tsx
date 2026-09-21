@@ -1,13 +1,26 @@
 import "@testing-library/jest-dom/vitest";
+import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { NextIntlClientProvider } from "next-intl";
+import { RegionProvider } from "@/features/region/region-context";
+import idID from "@/messages/id-ID/checkpoint.json";
 import { CheckpointQuestionStep } from "./checkpoint-question-step";
 import { multipleChoiceFixture, shortTextFixture } from "./checkpoint-question-fixtures";
 
+/** `CheckpointQuestionStep` reads the region and its translations ambiently (YT-0405) — see `checkpoint-result.test.tsx` for the same pattern. */
+function renderStep(ui: ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="id-ID" messages={{ checkpoint: idID }}>
+      <RegionProvider region="ID">{ui}</RegionProvider>
+    </NextIntlClientProvider>,
+  );
+}
+
 describe("CheckpointQuestionStep", () => {
   it("shows progress, the prompt, and disables Lanjut until an answer is chosen for a scored type", () => {
-    render(
+    renderStep(
       <CheckpointQuestionStep
         question={multipleChoiceFixture}
         questionNumber={2}
@@ -26,7 +39,7 @@ describe("CheckpointQuestionStep", () => {
 
   it("enables Lanjut once an answer is present, and calls onNext when pressed", async () => {
     const onNext = vi.fn();
-    render(
+    renderStep(
       <CheckpointQuestionStep
         question={multipleChoiceFixture}
         questionNumber={1}
@@ -48,7 +61,7 @@ describe("CheckpointQuestionStep", () => {
   });
 
   it("short_text is always proceed-able, since it is optional", () => {
-    render(
+    renderStep(
       <CheckpointQuestionStep
         question={shortTextFixture}
         questionNumber={1}
@@ -71,7 +84,7 @@ describe("CheckpointQuestionStep", () => {
       vi.useFakeTimers();
       const onNext = vi.fn();
       const onAnswerChange = vi.fn();
-      render(
+      renderStep(
         <CheckpointQuestionStep
           question={{ ...multipleChoiceFixture, timerSeconds: 2 }}
           questionNumber={1}

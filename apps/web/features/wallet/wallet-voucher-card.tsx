@@ -14,9 +14,9 @@ type SupportedCurrency = "AUD" | "IDR";
 export interface WalletVoucherCardProps {
   voucher: Voucher;
   nowMs: number;
-  /** YT-0405: both default so existing callers render exactly as before. */
-  locale?: SupportedLocale;
-  currency?: SupportedCurrency;
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
+  currency: SupportedCurrency;
 }
 
 /**
@@ -25,12 +25,7 @@ export interface WalletVoucherCardProps {
  * — reduced emphasis, a status badge — but never disappear
  * (YT-0424: "archived and still viewable").
  */
-export function WalletVoucherCard({
-  voucher,
-  nowMs,
-  locale = "id-ID",
-  currency = "IDR",
-}: WalletVoucherCardProps) {
+export function WalletVoucherCard({ voucher, nowMs, locale, currency }: WalletVoucherCardProps) {
   const expired = isVoucherEffectivelyExpired(voucher, nowMs);
   const statusCopy = describeVoucherStatus(voucher.status, expired, locale);
   const href = `/wallet/voucher/${voucher.id}` as Route;

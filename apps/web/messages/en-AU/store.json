@@ -16,5 +16,34 @@
     "descMinimumSpendUnspecified": "This voucher only applies above a set minimum spend.",
     "transferable": "This voucher can be transferred once to another verified YourTal user.",
     "notTransferable": "This voucher cannot be transferred to another user."
+  },
+  "category": {
+    "all": "All categories",
+    "food_beverage": "Food & Beverage",
+    "retail": "Retail",
+    "digital_goods": "Digital Goods",
+    "merchandise": "Merchandise",
+    "services": "Services"
+  },
+  "status": {
+    "soldOut": "Sold out",
+    "expiringSoon": "Expiring soon",
+    "new": "New"
+  },
+  "offer": {
+    "termsBadge": "Terms",
+    "categoryLabel": "Category",
+    "locationLabel": "Location",
+    "stockLabel": "Stock",
+    "expiresLabel": "Valid until",
+    "redeemNow": "Redeem Now",
+    "soldOut": "Sold out",
+    "insufficientPoints": "Not enough points"
+  },
+  "redeemSteps": {
+    "heading": "How to redeem",
+    "step1": "1. Redeem points to get a voucher — the price and terms above apply exactly as shown.",
+    "step2": "2. The voucher, with its code and QR, appears straight away in your Wallet.",
+    "step3": "3. Show the voucher code at checkout at {merchantName} (locations: {locations}), or follow the merchant's redemption instructions for a digital voucher."
   }
 }

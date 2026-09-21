@@ -21,7 +21,7 @@ const entries: WalletHistoryEntry[] = [
 
 describe("WalletHistoryList", () => {
   it("renders each entry's plain-language description, never a transaction code", () => {
-    render(<WalletHistoryList entries={entries} />);
+    render(<WalletHistoryList entries={entries} locale="id-ID" />);
 
     expect(
       screen.getByText("Menyelesaikan video Kopi Kenangan — dapat 2.400 poin"),
@@ -31,14 +31,14 @@ describe("WalletHistoryList", () => {
   });
 
   it("shows a positive sign for earned points and a negative sign for spent points", () => {
-    render(<WalletHistoryList entries={entries} />);
+    render(<WalletHistoryList entries={entries} locale="id-ID" />);
 
     expect(screen.getByText("+2.400")).toBeInTheDocument();
     expect(screen.getByText("-3.000")).toBeInTheDocument();
   });
 
   it("shows a plain message instead of an empty list when there is no history yet", () => {
-    render(<WalletHistoryList entries={[]} />);
+    render(<WalletHistoryList entries={[]} locale="id-ID" />);
 
     expect(screen.getByText(/Belum ada riwayat/)).toBeInTheDocument();
   });

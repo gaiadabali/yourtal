@@ -9,6 +9,7 @@ import { CampaignGrid } from "@/features/campaign/campaign-grid";
 import { CampaignGridSkeleton } from "@/features/campaign/campaign-grid-skeleton";
 import { sortCampaigns } from "@/features/campaign/campaign-sort";
 import { StreakCheckInCard } from "@/features/streak/streak-check-in-card";
+import { getRegionDisplayConfig } from "@/features/region/get-region";
 
 /**
  * The Earn board (YT-0410) — `/`, the app's home surface.
@@ -41,12 +42,12 @@ interface CampaignBoardProps {
 }
 
 async function CampaignBoard({ sort, kind }: CampaignBoardProps) {
-  const campaigns = await listCampaigns();
+  const [campaigns, { locale }] = await Promise.all([listCampaigns(), getRegionDisplayConfig()]);
   const visibleCampaigns = sortCampaigns(filterCampaignsByKind(campaigns, kind), sort);
 
   return visibleCampaigns.length === 0 ? (
     <CampaignEmptyState kind={kind} />
   ) : (
-    <CampaignGrid campaigns={visibleCampaigns} />
+    <CampaignGrid campaigns={visibleCampaigns} locale={locale} />
   );
 }

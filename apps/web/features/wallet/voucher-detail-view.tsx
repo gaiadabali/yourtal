@@ -31,13 +31,22 @@ export interface VoucherDetailViewProps {
  * seeds the cache, stubs `fetch` to reject, and asserts the component still
  * renders the cached voucher correctly and never calls `fetch`.
  *
- * What this does NOT prove: a full offline page load. Getting this
- * component's own HTML/JS shell without a network request needs a service
- * worker (docs/15-stack-locked.md locks Serwist), which is not installed
- * in this ticket. The guarantee here is narrower and still real: once this
- * component's JS and a cache entry exist, nothing in its render path —
- * not the voucher data, not the QR payload, not the redemption copy —
- * depends on a network call.
+ * What this does NOT, on its own, prove: a full offline page load. Getting
+ * this component's own HTML/JS shell without a network request needs a
+ * service worker — docs/15-stack-locked.md locks Serwist, and it is now
+ * installed (`app/sw.ts`, wired in `next.config.ts`) and genuinely caches
+ * a visited page's document response (NetworkFirst, `@serwist/next`'s
+ * `defaultCache`). The gap that remains, and is NOT this component's to
+ * close: Serwist's stable Next.js integration hooks into webpack, and this
+ * app's `next build`/`next start` default to Turbopack (Next 16's default,
+ * unrelated to this ticket) — under Turbopack, `public/sw.js` is silently
+ * never emitted, so the service worker this file's own e2e test proves
+ * against a `next build --webpack` run does not yet exist in what
+ * `pnpm build` actually ships. See `e2e/offline-voucher-detail.spec.ts` and
+ * this ticket's report for the full account. Independent of all of that,
+ * this component's own guarantee is unconditionally real: once its JS and
+ * a cache entry exist, nothing in its render path — not the voucher data,
+ * not the QR payload, not the redemption copy — depends on a network call.
  */
 export function VoucherDetailView({ voucherId, initialDetail }: VoucherDetailViewProps) {
   const { locale, currency } = useRegion();

@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { zeroRewardCampaignFixture } from "@yourtal/contracts/campaign/mock";
+import { manifestUrl } from "@yourtal/media/hls-origin";
 
 // A named, hand-authored fixture with a fixed literal id in its own
 // generator module — not an element of the generated `mockCampaigns` array,
@@ -30,6 +31,44 @@ const LONG_FORM_CAMPAIGN_ID = zeroRewardCampaignFixture.id;
  * — otherwise it would only prove that a controlled input's value prop
  * resists change, not the thing YT-0412 asks about.
  */
+
+/**
+ * A guard that stays untested is not a guard — it is decoration. Every test
+ * below depends on the local HLS origin (YT-0521, `pnpm dev:up && pnpm
+ * media:publish`, or `pnpm dev:fresh`) actually being up, and without this
+ * check a dead origin would fail the WAY THE OLD PLACEHOLDER STREAM DID:
+ * `startPlaybackAndWaitForDuration` timing out after tens of seconds with a
+ * generic "waitForFunction timed out" error that gives no reason. That is
+ * exactly the "guarantees green by never running" failure shape turned
+ * inside out — a false RED that reads like a player bug instead of an
+ * infrastructure gap — and it is just as dishonest as a false green.
+ *
+ * This fetches the manifest directly, from Node, before any browser is
+ * involved, and fails immediately naming the origin and the fix. Proved to
+ * actually fire: run this file with the origin down (stop `pnpm dev:up`'s
+ * MinIO container, or point `S3_ENDPOINT` at a closed port) and confirm
+ * every test fails here, not fifty seconds later inside the page.
+ */
+test.beforeAll(async () => {
+  const url = manifestUrl();
+  let response: Response;
+  try {
+    response = await fetch(url);
+  } catch (cause) {
+    throw new Error(
+      `Media origin unreachable at ${url}. This suite cannot prove anything about ` +
+        `keyboard seeking without it. Run \`pnpm dev:up && pnpm media:publish\` ` +
+        `(or \`pnpm dev:fresh\`) and retry. Underlying error: ${String(cause)}`,
+      { cause },
+    );
+  }
+  if (!response.ok) {
+    throw new Error(
+      `Media origin at ${url} responded ${String(response.status)} ${response.statusText}, ` +
+        `not 200. Run \`pnpm dev:up && pnpm media:publish\` (or \`pnpm dev:fresh\`) and retry.`,
+    );
+  }
+});
 
 async function startPlaybackAndWaitForDuration(page: Page): Promise<void> {
   const playButton = page.getByRole("button", { name: /^Play /i });
@@ -248,6 +287,20 @@ test("seek bar's aria-valuetext tracks keyboard-driven position", async ({ page 
 
   await press40Right(seekBar);
   await expect(seekBar).not.toHaveAttribute("aria-valuetext", /^0:00 of/);
+
+  // Not just the accessible text — the native input's own `value` (the
+  // controlled prop `seek-slider.tsx` sets from `session.virtualCurrentTime`)
+  // must itself have moved. This is the thing the earlier UNTESTABLE pass
+  // could never observe: previously the whole app rendered from a video that
+  // never reported a duration, so `value` never left its initial 0 regardless
+  // of what a key press did. Asserting only the ARIA text would not catch a
+  // regression where the visible slider thumb froze but its label kept
+  // updating some other way.
+  const displayedValue = Number(await seekBar.inputValue());
+  expect(
+    displayedValue,
+    "the seek bar's own displayed value must reflect the keyboard seek, not just its aria-valuetext",
+  ).toBeGreaterThan(0);
 });
 
 async function press40Right(seekBar: ReturnType<Page["getByRole"]>) {

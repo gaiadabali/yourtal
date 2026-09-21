@@ -6,32 +6,34 @@ import {
 
 describe("describePartialRedemptionPolicy", () => {
   it("explains balance-carrying in plain Indonesian", () => {
-    expect(describePartialRedemptionPolicy("balance_carrying")).toMatch(/sisanya tetap tersimpan/);
+    expect(describePartialRedemptionPolicy("balance_carrying", "id-ID")).toMatch(
+      /sisanya tetap tersimpan/,
+    );
   });
 
   it("explains single-use-forfeit in plain Indonesian, including that the remainder is lost", () => {
-    expect(describePartialRedemptionPolicy("single_use_forfeit")).toMatch(/hangus/);
+    expect(describePartialRedemptionPolicy("single_use_forfeit", "id-ID")).toMatch(/hangus/);
   });
 
   it("explains minimum-spend in plain Indonesian", () => {
-    expect(describePartialRedemptionPolicy("minimum_spend")).toMatch(/minimum/);
+    expect(describePartialRedemptionPolicy("minimum_spend", "id-ID")).toMatch(/minimum/);
   });
 });
 
 describe("buildRedemptionInstructions", () => {
   it("names the specific merchant, not a generic placeholder", () => {
-    const instructions = buildRedemptionInstructions("Kopi Sentosa", "balance_carrying");
+    const instructions = buildRedemptionInstructions("Kopi Sentosa", "balance_carrying", "id-ID");
     expect(instructions).toContain("Kopi Sentosa");
   });
 
   it("folds in the policy explanation for this batch", () => {
-    const instructions = buildRedemptionInstructions("Kopi Sentosa", "single_use_forfeit");
+    const instructions = buildRedemptionInstructions("Kopi Sentosa", "single_use_forfeit", "id-ID");
     expect(instructions).toMatch(/hangus/);
   });
 
   it("gives different instructions for different merchants", () => {
-    const a = buildRedemptionInstructions("Kopi Sentosa", "balance_carrying");
-    const b = buildRedemptionInstructions("Toko Berkah", "balance_carrying");
+    const a = buildRedemptionInstructions("Kopi Sentosa", "balance_carrying", "id-ID");
+    const b = buildRedemptionInstructions("Toko Berkah", "balance_carrying", "id-ID");
     expect(a).not.toBe(b);
   });
 });

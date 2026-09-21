@@ -9,8 +9,8 @@ import { getCampaignTranslator, type SupportedLocale } from "./campaign-i18n";
 
 export interface CampaignCardProps {
   campaign: Campaign;
-  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
-  locale?: SupportedLocale;
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface CampaignCardProps {
  * has one clear accessible name instead of one giant link swallowing every
  * word in the card.
  */
-export function CampaignCard({ campaign, locale = "id-ID" }: CampaignCardProps) {
+export function CampaignCard({ campaign, locale }: CampaignCardProps) {
   // typedRoutes only validates literal href strings; a computed one needs an
   // explicit `Route` cast (documented Next.js escape hatch). Safe here
   // because `/campaign/[campaignId]/page.tsx` exists and `campaign.id` is a

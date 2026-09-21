@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useQuestionTimer } from "./use-question-timer";
 
 export interface CheckpointTimerProps {
@@ -30,13 +31,14 @@ function formatClock(totalSeconds: number): string {
  *   speaking, so the countdown never talks over the question.
  */
 export function CheckpointTimer({ totalSeconds, onExpire }: CheckpointTimerProps) {
-  const { remainingSeconds, announcement } = useQuestionTimer(totalSeconds, onExpire);
+  const t = useTranslations("checkpoint");
+  const { remainingSeconds, announcement } = useQuestionTimer(totalSeconds, onExpire, t);
 
   return (
     <div className="flex items-center gap-2">
       <div
         role="timer"
-        aria-label={`Sisa waktu: ${formatClock(remainingSeconds)}`}
+        aria-label={t("timer.remainingLabel", { clock: formatClock(remainingSeconds) })}
         className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-raised px-3 py-1 text-sm font-sans font-medium tabular-nums text-fg"
       >
         {formatClock(remainingSeconds)}

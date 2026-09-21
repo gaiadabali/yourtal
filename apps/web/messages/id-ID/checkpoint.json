@@ -8,5 +8,35 @@
     "accuracyDetail": "{correct} dari {total} jawaban bernilai benar · {percent}% akurasi",
     "noBonus": "Campaign ini tidak memiliki bonus akurasi.",
     "totalReceived": "Total diterima"
+  },
+  "progress": {
+    "label": "Pertanyaan {current} dari {total}"
+  },
+  "timer": {
+    "remainingLabel": "Sisa waktu: {clock}",
+    "startAnnouncement": "Anda memiliki {seconds} detik untuk menjawab pertanyaan ini.",
+    "expiredAnnouncement": "Waktu untuk pertanyaan ini habis.",
+    "remainingAnnouncement": "{seconds} detik tersisa."
+  },
+  "step": {
+    "next": "Lanjut",
+    "seeResult": "Lihat hasil"
+  },
+  "question": {
+    "trueFalse": {
+      "true": "Benar",
+      "false": "Salah"
+    },
+    "ranked": {
+      "moveUp": "Naik",
+      "moveDown": "Turun",
+      "moveUpAria": "Naik: {label}",
+      "moveDownAria": "Turun: {label}",
+      "movedAnnouncement": "{label} dipindahkan ke posisi {position} dari {total}."
+    },
+    "shortText": {
+      "label": "Jawaban Anda (opsional)",
+      "remaining": "{count} karakter tersisa"
+    }
   }
 }

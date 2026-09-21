@@ -76,6 +76,7 @@ describe("VoucherDetailView", () => {
     const cachedInstructions = buildRedemptionInstructions(
       cachedVoucher.merchantName,
       cachedVoucher.partialRedemptionPolicy,
+      "id-ID",
     );
     writeVoucherDetailCache(
       buildCachedVoucherDetail(cachedVoucher, cachedInstructions, "2026-09-19T08:00:00.000Z"),
@@ -91,6 +92,7 @@ describe("VoucherDetailView", () => {
     const staleServerInstructions = buildRedemptionInstructions(
       staleServerVoucher.merchantName,
       staleServerVoucher.partialRedemptionPolicy,
+      "id-ID",
     );
     const staleServerDetail = buildCachedVoucherDetail(
       staleServerVoucher,
@@ -113,6 +115,7 @@ describe("VoucherDetailView", () => {
     const instructions = buildRedemptionInstructions(
       cachedVoucher.merchantName,
       cachedVoucher.partialRedemptionPolicy,
+      "id-ID",
     );
     const detail = buildCachedVoucherDetail(
       cachedVoucher,
@@ -134,6 +137,7 @@ describe("VoucherDetailView", () => {
     const instructions = buildRedemptionInstructions(
       redeemed.merchantName,
       redeemed.partialRedemptionPolicy,
+      "id-ID",
     );
     const detail = buildCachedVoucherDetail(redeemed, instructions, "2026-09-19T09:00:00.000Z");
 
@@ -153,6 +157,7 @@ describe("VoucherDetailView", () => {
     const instructions = buildRedemptionInstructions(
       almostExpired.merchantName,
       almostExpired.partialRedemptionPolicy,
+      "id-ID",
     );
     const detail = buildCachedVoucherDetail(
       almostExpired,
@@ -179,6 +184,7 @@ describe("VoucherDetailView", () => {
     const instructions = buildRedemptionInstructions(
       cachedVoucher.merchantName,
       cachedVoucher.partialRedemptionPolicy,
+      "id-ID",
     );
     const detail = buildCachedVoucherDetail(
       cachedVoucher,
@@ -214,6 +220,7 @@ describe("VoucherDetailView (en-AU, YT-0405)", () => {
     const instructions = buildRedemptionInstructions(
       cachedVoucher.merchantName,
       cachedVoucher.partialRedemptionPolicy,
+      "id-ID",
     );
     const detail = buildCachedVoucherDetail(
       cachedVoucher,
@@ -243,6 +250,7 @@ describe("VoucherDetailView (en-AU, YT-0405)", () => {
     const instructions = buildRedemptionInstructions(
       redeemed.merchantName,
       redeemed.partialRedemptionPolicy,
+      "id-ID",
     );
     const detail = buildCachedVoucherDetail(redeemed, instructions, "2026-09-19T09:00:00.000Z");
 

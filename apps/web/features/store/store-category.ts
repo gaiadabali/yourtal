@@ -1,4 +1,5 @@
 import type { Listing, ListingCategory } from "@yourtal/contracts/listing";
+import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 
 /**
  * Category filter for the Store browse grid (YT-0420). Spelled out rather
@@ -29,26 +30,27 @@ export type StoreCategoryFilter = (typeof STORE_CATEGORY_FILTER_VALUES)[number];
 
 export const DEFAULT_STORE_CATEGORY_FILTER: StoreCategoryFilter = "all";
 
-const CATEGORY_LABELS: Record<ListingCategory, string> = {
-  food_beverage: "Makanan & Minuman",
-  retail: "Retail",
-  digital_goods: "Produk Digital",
-  merchandise: "Merchandise",
-  services: "Jasa",
-};
-
-/** Indonesian display label for a listing's category (used on cards and the offer detail page). */
-export function categoryLabel(category: ListingCategory): string {
-  return CATEGORY_LABELS[category];
+/**
+ * Locale-aware display label for a listing's category (used on cards and
+ * the offer detail page). YT-0405: `locale` is required, not defaulted —
+ * see `campaign-card.tsx`'s report for why an optional prop that silently
+ * defaults to `id-ID` is treated as a bug in this ticket.
+ */
+export function categoryLabel(category: ListingCategory, locale: SupportedLocale): string {
+  const t = getStoreTranslator(locale);
+  return t(`category.${category}`);
 }
 
-export const STORE_CATEGORY_FILTER_OPTIONS: ReadonlyArray<{
-  key: StoreCategoryFilter;
-  label: string;
-}> = [
-  { key: "all", label: "Semua kategori" },
-  ...LISTING_CATEGORIES.map((category) => ({ key: category, label: CATEGORY_LABELS[category] })),
-];
+/** Every category filter option, translated for `locale` — including the "all" pseudo-category the filter bar's own "all" option uses. */
+export function storeCategoryFilterOptions(
+  locale: SupportedLocale,
+): ReadonlyArray<{ key: StoreCategoryFilter; label: string }> {
+  const t = getStoreTranslator(locale);
+  return [
+    { key: "all", label: t("category.all") },
+    ...LISTING_CATEGORIES.map((category) => ({ key: category, label: t(`category.${category}`) })),
+  ];
+}
 
 export function isStoreCategoryFilter(value: string): value is StoreCategoryFilter {
   return (STORE_CATEGORY_FILTER_VALUES as readonly string[]).includes(value);

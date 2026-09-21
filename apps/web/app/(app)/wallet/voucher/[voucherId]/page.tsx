@@ -3,6 +3,7 @@ import { getWalletVoucher } from "@/features/wallet/wallet-data";
 import { buildRedemptionInstructions } from "@/features/wallet/wallet-redemption-copy";
 import { buildCachedVoucherDetail } from "@/features/wallet/voucher-detail-cache";
 import { VoucherDetailView } from "@/features/wallet/voucher-detail-view";
+import { getRegionDisplayConfig } from "@/features/region/get-region";
 
 /**
  * `/wallet/voucher/[voucherId]` (YT-0424). Server Component per
@@ -20,9 +21,11 @@ export default async function WalletVoucherDetailPage(
     notFound();
   }
 
+  const { locale } = await getRegionDisplayConfig();
   const redemptionInstructions = buildRedemptionInstructions(
     voucher.merchantName,
     voucher.partialRedemptionPolicy,
+    locale,
   );
   const initialDetail = buildCachedVoucherDetail(
     voucher,

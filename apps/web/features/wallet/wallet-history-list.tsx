@@ -4,8 +4,8 @@ import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
 
 export interface WalletHistoryListProps {
   entries: WalletHistoryEntry[];
-  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
-  locale?: SupportedLocale;
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
 }
 
 const POINTS_DELTA_FORMATTERS: Record<SupportedLocale, Intl.NumberFormat> = {
@@ -19,7 +19,7 @@ const POINTS_DELTA_FORMATTERS: Record<SupportedLocale, Intl.NumberFormat> = {
  * transaction code. The signed amount is the only number shown alongside
  * it.
  */
-export function WalletHistoryList({ entries, locale = "id-ID" }: WalletHistoryListProps) {
+export function WalletHistoryList({ entries, locale }: WalletHistoryListProps) {
   if (entries.length === 0) {
     return <p className="text-sm text-fg-muted">{getWalletTranslator(locale)("history.empty")}</p>;
   }

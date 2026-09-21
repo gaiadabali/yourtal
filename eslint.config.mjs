@@ -35,6 +35,16 @@ export default tseslint.config(
       // executed: 72 errors there, 0 locally, because every package's lint
       // script was scoped to `src` and never looked at `fixtures`.
       "packages/media/fixtures/**",
+      // YT-0424: the Serwist service worker. `apps/web/app/sw.ts` runs in a
+      // Service Worker global scope and is deliberately excluded from
+      // `apps/web/tsconfig.json` (see that file's comment) — Serwist's own
+      // build bundles it independently via esbuild, not through the app's
+      // TypeScript project, so there is no tsconfig project for type-aware
+      // linting to find it in, same category as the HLS fixtures above.
+      // `apps/web/public/**` is that file's generated, gitignored build
+      // output (`public/sw.js`) — never source, nothing to lint.
+      "apps/web/app/sw.ts",
+      "apps/web/public/**",
     ],
   },
   js.configs.recommended,

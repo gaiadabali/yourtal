@@ -15,7 +15,7 @@ describe("QuickFeedCard", () => {
   it("states merchant, duration, estimated data cost and reward, all in plain text", () => {
     render(
       <ul>
-        <QuickFeedCard campaign={quickCampaign} position={1} total={3} />
+        <QuickFeedCard campaign={quickCampaign} position={1} total={3} locale="id-ID" />
       </ul>,
     );
     expect(screen.getByText(quickCampaign.merchantName)).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe("QuickFeedCard", () => {
   it("links straight to the watch route via its title, the card's only interactive element", () => {
     render(
       <ul>
-        <QuickFeedCard campaign={quickCampaign} position={1} total={3} />
+        <QuickFeedCard campaign={quickCampaign} position={1} total={3} locale="id-ID" />
       </ul>,
     );
     const link = screen.getByRole("link", { name: quickCampaign.title });
@@ -42,7 +42,7 @@ describe("QuickFeedCard", () => {
     };
     render(
       <ul>
-        <QuickFeedCard campaign={withBonus} position={1} total={1} />
+        <QuickFeedCard campaign={withBonus} position={1} total={1} locale="id-ID" />
       </ul>,
     );
     expect(screen.getByText(/^Hingga /)).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("QuickFeedCard", () => {
   it("renders no video element and no play control — nothing here can start media on its own", () => {
     const { container } = render(
       <ul>
-        <QuickFeedCard campaign={quickCampaign} position={1} total={3} />
+        <QuickFeedCard campaign={quickCampaign} position={1} total={3} locale="id-ID" />
       </ul>,
     );
     expect(container.querySelector("video")).not.toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("QuickFeedCard", () => {
   it("carries a machine-readable position label for the feed's screen-reader status region", () => {
     render(
       <ul>
-        <QuickFeedCard campaign={quickCampaign} position={2} total={5} />
+        <QuickFeedCard campaign={quickCampaign} position={2} total={5} locale="id-ID" />
       </ul>,
     );
     const item = screen.getByRole("listitem");
@@ -71,7 +71,7 @@ describe("QuickFeedCard", () => {
   it("truncates the long-merchant-name fixture to a single line instead of breaking layout", () => {
     render(
       <ul>
-        <QuickFeedCard campaign={quickCampaign} position={1} total={1} />
+        <QuickFeedCard campaign={quickCampaign} position={1} total={1} locale="id-ID" />
       </ul>,
     );
     const merchant = screen.getByTitle(quickCampaign.merchantName);

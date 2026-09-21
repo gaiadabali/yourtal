@@ -8,8 +8,14 @@ import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 export interface StoreBalanceNoticeProps {
   priceInPoints: Points;
   availablePoints: Points;
-  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
-  locale?: SupportedLocale;
+  /**
+   * YT-0405: required, not defaulted. Every call site now resolves the
+   * real region via `getRegionDisplayConfig()` (Server Components) or
+   * `useRegion()` (Client Components) and passes it through — a prop that
+   * silently defaults to `id-ID` is the bug this ticket exists to close,
+   * not a convenience worth keeping.
+   */
+  locale: SupportedLocale;
 }
 
 /**
@@ -30,7 +36,7 @@ export interface StoreBalanceNoticeProps {
 export function StoreBalanceNotice({
   priceInPoints,
   availablePoints,
-  locale = "id-ID",
+  locale,
 }: StoreBalanceNoticeProps) {
   const shortfall = computeBalanceShortfall(priceInPoints, availablePoints);
   const t = getStoreTranslator(locale);

@@ -4,6 +4,7 @@ import {
   listWalletVouchers,
 } from "@/features/wallet/wallet-data";
 import { WalletScreen } from "@/features/wallet/wallet-screen";
+import { getRegionDisplayConfig } from "@/features/region/get-region";
 
 /**
  * `/wallet` (YT-0423) — replaces the YT-0402 placeholder. Server Component
@@ -11,13 +12,21 @@ import { WalletScreen } from "@/features/wallet/wallet-screen";
  * voucher detail leaf, not here.
  */
 export default async function WalletPage() {
-  const [balance, vouchers, history] = await Promise.all([
+  const [balance, vouchers, history, { locale, currency }] = await Promise.all([
     getWalletBalance(),
     listWalletVouchers(),
     listWalletHistory(),
+    getRegionDisplayConfig(),
   ]);
 
   return (
-    <WalletScreen balance={balance} vouchers={vouchers} history={history} nowMs={Date.now()} />
+    <WalletScreen
+      balance={balance}
+      vouchers={vouchers}
+      history={history}
+      nowMs={Date.now()}
+      locale={locale}
+      currency={currency}
+    />
   );
 }

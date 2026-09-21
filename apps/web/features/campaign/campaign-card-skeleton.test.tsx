@@ -25,7 +25,9 @@ const campaign: Campaign = mockCampaigns[0]!;
  */
 describe("CampaignCard / CampaignCardSkeleton dimension parity", () => {
   it("gives every row the same fixed-height class in both the card and its skeleton", () => {
-    const { container: cardContainer } = render(<CampaignCard campaign={campaign} />);
+    const { container: cardContainer } = render(
+      <CampaignCard campaign={campaign} locale="id-ID" />,
+    );
     const { container: skeletonContainer } = render(<CampaignCardSkeleton />);
 
     for (const rowClass of [

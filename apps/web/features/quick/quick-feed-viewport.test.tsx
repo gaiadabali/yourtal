@@ -1,7 +1,19 @@
 import "@testing-library/jest-dom/vitest";
+import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, render, screen } from "@testing-library/react";
+import { NextIntlClientProvider } from "next-intl";
+import idID from "@/messages/id-ID/quick.json";
 import { QuickFeedViewport } from "./quick-feed-viewport";
+
+/** `QuickFeedViewport` reads its list's `aria-label` from `useTranslations("quick")` (YT-0405). */
+function renderViewport(ui: ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="id-ID" messages={{ quick: idID }}>
+      {ui}
+    </NextIntlClientProvider>,
+  );
+}
 
 /**
  * jsdom implements no `IntersectionObserver` at all, and cannot produce
@@ -60,7 +72,7 @@ describe("QuickFeedViewport", () => {
   });
 
   it("renders its children inside an accessible, labelled feed list", () => {
-    render(
+    renderViewport(
       <QuickFeedViewport>
         <li data-quick-feed-item data-quick-feed-label="Video 1 dari 1: Toko — Judul">
           Item
@@ -72,7 +84,7 @@ describe("QuickFeedViewport", () => {
   });
 
   it("starts with no position announced until an item actually settles into view", () => {
-    render(
+    renderViewport(
       <QuickFeedViewport>
         <li data-quick-feed-item data-quick-feed-label="Video 1 dari 1: Toko — Judul">
           Item
@@ -83,7 +95,7 @@ describe("QuickFeedViewport", () => {
   });
 
   it("announces the most-visible item's label through a polite status region", () => {
-    render(
+    renderViewport(
       <QuickFeedViewport>
         <li data-quick-feed-item data-quick-feed-label="Video 1 dari 2: Toko A — Judul A">
           A
@@ -109,7 +121,7 @@ describe("QuickFeedViewport", () => {
   });
 
   it("never mounts a video element or anything else that could play on its own", () => {
-    const { container } = render(
+    const { container } = renderViewport(
       <QuickFeedViewport>
         <li data-quick-feed-item data-quick-feed-label="Video 1 dari 1: Toko — Judul">
           Item
@@ -123,7 +135,7 @@ describe("QuickFeedViewport", () => {
   it("does not throw and still renders children when IntersectionObserver is unavailable", () => {
     // @ts-expect-error -- deliberately simulating an environment without it.
     delete globalThis.IntersectionObserver;
-    render(
+    renderViewport(
       <QuickFeedViewport>
         <li data-quick-feed-item data-quick-feed-label="Video 1 dari 1: Toko — Judul">
           Item

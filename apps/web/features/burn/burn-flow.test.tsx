@@ -6,8 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextIntlClientProvider } from "next-intl";
 import { toPoints } from "@yourtal/contracts/money";
 import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
+import type { Region } from "@yourtal/contracts/region";
 import { RegionProvider } from "@/features/region/region-context";
 import idID from "@/messages/id-ID/burn.json";
+import enAU from "@/messages/en-AU/burn.json";
 import { BurnFlow } from "./burn-flow";
 import { computeLockExpiresAt } from "./price-lock";
 import { makeBalanceFixture, makeListingFixture } from "./burn-test-fixtures";
@@ -20,13 +22,17 @@ vi.mock("next/navigation", () => ({
  * `BurnFlow` renders `BurnSummary`/`BurnErrorMessage`, both Client
  * Components that read the region and its translations ambiently (YT-0405)
  * — the same `RegionProvider`/`NextIntlClientProvider` pair
- * `app/(app)/layout.tsx` mounts once for the whole app. Defaults to "ID" so
- * every existing assertion below (still Indonesian) is unaffected.
+ * `app/(app)/layout.tsx` mounts once for the whole app. `BurnFlow`'s own
+ * copy (the buttons/disclaimer/success message in `BurnFlowStep`) now reads
+ * `useTranslations("burn")` the same way. Defaults to "ID" so every existing
+ * assertion below (still Indonesian) is unaffected.
  */
-function renderBurnFlow(ui: ReactElement) {
+function renderBurnFlow(ui: ReactElement, region: Region = "ID") {
+  const locale = region === "AU" ? "en-AU" : "id-ID";
+  const messages = { burn: region === "AU" ? enAU : idID };
   return render(
-    <NextIntlClientProvider locale="id-ID" messages={{ burn: idID }}>
-      <RegionProvider region="ID">{ui}</RegionProvider>
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <RegionProvider region={region}>{ui}</RegionProvider>
     </NextIntlClientProvider>,
   );
 }
@@ -158,5 +164,30 @@ describe("BurnFlow", () => {
       expect(screen.getByRole("alert")).toHaveTextContent("Harga ini sudah tidak berlaku");
       expect(screen.queryByRole("button", { name: "Tukar sekarang" })).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("BurnFlow (en-AU, YT-0405)", () => {
+  it("walks reviewing -> confirming -> success in English, with no Indonesian copy leaking through", async () => {
+    const user = userEvent.setup();
+    const listing = makeListingFixture({ id: successListingId(), priceInPoints: toPoints(1_000) });
+    const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
+    const lockExpiresAt = computeLockExpiresAt(new Date());
+
+    renderBurnFlow(
+      <BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />,
+      "AU",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByRole("heading", { name: "Confirm redemption" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Redeem now" }));
+
+    expect(await screen.findByText("Success")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View in Wallet" })).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(
+      /Lanjutkan|Tukar sekarang|Berhasil|Lihat di Dompet/,
+    );
   });
 });

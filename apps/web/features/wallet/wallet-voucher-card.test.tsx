@@ -11,14 +11,28 @@ const nowMs = Date.parse("2026-09-19T09:00:00.000Z");
 
 describe("WalletVoucherCard", () => {
   it("links to the voucher's detail page via its title", () => {
-    render(<WalletVoucherCard voucher={expiringWithinHourVoucherFixture} nowMs={nowMs} />);
+    render(
+      <WalletVoucherCard
+        voucher={expiringWithinHourVoucherFixture}
+        nowMs={nowMs}
+        locale="id-ID"
+        currency="IDR"
+      />,
+    );
 
     const link = screen.getByRole("link", { name: expiringWithinHourVoucherFixture.title });
     expect(link).toHaveAttribute("href", `/wallet/voucher/${expiringWithinHourVoucherFixture.id}`);
   });
 
   it("shows an already-expired voucher as archived and still fully viewable, never hidden", () => {
-    render(<WalletVoucherCard voucher={expiredVoucherFixture} nowMs={nowMs} />);
+    render(
+      <WalletVoucherCard
+        voucher={expiredVoucherFixture}
+        nowMs={nowMs}
+        locale="id-ID"
+        currency="IDR"
+      />,
+    );
 
     expect(screen.getByText("Kedaluwarsa")).toBeInTheDocument();
     expect(screen.getByText(expiredVoucherFixture.merchantName)).toBeInTheDocument();
@@ -26,7 +40,14 @@ describe("WalletVoucherCard", () => {
   });
 
   it("labels an active, unexpired voucher as active", () => {
-    render(<WalletVoucherCard voucher={expiringWithinHourVoucherFixture} nowMs={nowMs} />);
+    render(
+      <WalletVoucherCard
+        voucher={expiringWithinHourVoucherFixture}
+        nowMs={nowMs}
+        locale="id-ID"
+        currency="IDR"
+      />,
+    );
 
     expect(screen.getByText("Aktif")).toBeInTheDocument();
   });

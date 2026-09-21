@@ -24,5 +24,18 @@
     "balanceCarrying": "Sisa nilai voucher tetap bisa dipakai di transaksi berikutnya.",
     "singleUseForfeit": "Voucher hanya untuk satu transaksi; sisa nilai yang tidak terpakai akan hangus.",
     "minimumSpendPolicy": "Voucher hanya berlaku untuk belanja dengan jumlah minimum tertentu."
+  },
+  "flow": {
+    "continue": "Lanjutkan",
+    "back": "Kembali",
+    "exchangeNow": "Tukar sekarang",
+    "confirmDisclaimer": "Dengan menekan \"Tukar sekarang\", poin Anda akan langsung dipotong dan tidak dapat dibatalkan.",
+    "processing": "Memproses penukaran…",
+    "successBadge": "Berhasil",
+    "successMessage": "Voucher <bold>{voucherTitle}</bold> berhasil ditukar. Kode voucher Anda: <code>{voucherCode}</code>",
+    "viewInWallet": "Lihat di Dompet",
+    "tryAgain": "Coba lagi",
+    "reloadPrice": "Muat ulang harga",
+    "backToStore": "Kembali ke Toko"
   }
 }

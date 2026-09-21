@@ -1,11 +1,23 @@
 import "@testing-library/jest-dom/vitest";
 import { useState } from "react";
+import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { NextIntlClientProvider } from "next-intl";
+import idID from "@/messages/id-ID/checkpoint.json";
 import { shortTextFixture } from "../checkpoint-question-fixtures";
 import type { ShortTextAnswer } from "../checkpoint-types";
 import { ShortTextQuestionView } from "./short-text-question";
+
+/** `ShortTextQuestionView` reads its label/help text from `useTranslations("checkpoint")` (YT-0405). */
+function renderWithIntl(ui: ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="id-ID" messages={{ checkpoint: idID }}>
+      {ui}
+    </NextIntlClientProvider>,
+  );
+}
 
 interface ControlledWrapperProps {
   onAnswerChange: (answer: ShortTextAnswer) => void;
@@ -28,7 +40,7 @@ function ControlledWrapper({ onAnswerChange }: ControlledWrapperProps) {
 
 describe("ShortTextQuestionView", () => {
   it("renders a real, labelled text field", () => {
-    render(
+    renderWithIntl(
       <ShortTextQuestionView
         question={shortTextFixture}
         answer={undefined}
@@ -39,7 +51,7 @@ describe("ShortTextQuestionView", () => {
   });
 
   it("enforces the question's maxLength", () => {
-    render(
+    renderWithIntl(
       <ShortTextQuestionView
         question={shortTextFixture}
         answer={undefined}
@@ -54,7 +66,7 @@ describe("ShortTextQuestionView", () => {
 
   it("reports typed text as it is entered", async () => {
     const onAnswerChange = vi.fn();
-    render(<ControlledWrapper onAnswerChange={onAnswerChange} />);
+    renderWithIntl(<ControlledWrapper onAnswerChange={onAnswerChange} />);
     const field = screen.getByLabelText("Jawaban Anda (opsional)");
 
     await userEvent.type(field, "Kesan saya bagus");

@@ -1,5 +1,6 @@
 import createBundleAnalyzer from "@next/bundle-analyzer";
 import createNextIntlPlugin from "next-intl/plugin";
+import withSerwistInit from "@serwist/next";
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
@@ -39,4 +40,14 @@ const withBundleAnalyzer = createBundleAnalyzer({
 // doc comment for why it does not use next-intl's own URL-based routing.
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
-export default withNextIntl(withBundleAnalyzer(config));
+// docs/15-stack-locked.md's Serwist lock (YT-0424: "renders from cache with
+// the network disabled"). `app/sw.ts` has the full scoping rationale —
+// this wires it into the build: `register: true` (the default) injects the
+// `navigator.serviceWorker.register("/sw.js")` call itself, so no separate
+// registration component is needed anywhere in the app tree.
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+});
+
+export default withSerwist(withNextIntl(withBundleAnalyzer(config)));

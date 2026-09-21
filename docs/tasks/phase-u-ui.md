@@ -11,13 +11,16 @@
 ## Foundation
 
 ### YT-0400 · Design tokens and theme
-`review` · PU · web · 3d · dep: —
+`done` · PU · web · 3d · dep: —
 
 - [x] Colour, type, spacing, radius and elevation scales defined once, as CSS custom properties on `:root`
 - [x] Dark mode via `prefers-color-scheme` plus an explicit override attribute
 - [x] Contrast checked to WCAG AA on both themes, including the reward and price colours
 - [x] One variable font, subsetted to Latin + Indonesian
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work, and the contrast criterion was COMPUTED rather than trusted.** ca implemented WCAG relative luminance independently and checked **40 pairs, 20 per theme — every one passes.** Light: reward `#8a5b00` on white **5.87**, price `#0f6b4f` **6.49**. Dark: reward **10.52**, price **10.85**. Body text 18.89 / 18.09, muted 8.46 / 11.32, all six semantic fg-on-colour pairs ≥ 5.87
+- ✅ Dark mode is declared both ways exactly as the criterion words it: `theme.css:22-23` `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }` and `:58` `:root[data-theme="dark"]`. **The `:not([data-theme="light"])` is what makes an explicit override actually override rather than tie**
+- ⚠️ **One number passes with no margin and nothing guards it: `--color-border` on `--color-surface` in light theme is 3.01 against a 3.0 bar.** It passes today. Any future nudge to `--color-surface` silently drops a non-text contrast requirement below AA, and **nothing in the repo would catch it** — the criterion was checked by hand and there is no test. A token-contrast test is the kind that has to fail once before it can be trusted
+- ✏️ **Wording slightly off, property met**: the criterion says the font covers "Latin + Indonesian"; `root-document.tsx:46-50` ships **one** subset, `latin`, with a written argument that Indonesian orthography is covered by Basic Latin and `latin-ext` is deliberately excluded. The argument is sound and the criterion describes two subsets
 ### YT-0401 · UI primitives
 `done` · PU · web · 5d · dep: YT-0400
 
@@ -48,13 +51,16 @@
 - ✅ **Safe-area handling is the defensive form, not the naive one.** `app-shell.tsx:29` and `bottom-nav.tsx:34` use `max(0px, env(safe-area-inset-bottom))` and `side-nav.tsx` `env(safe-area-inset-left)` — the `max(0px, …)` floor is what stops a browser reporting a negative or absent inset from collapsing the padding. No hardcoded device pixel values anywhere
 - ✅ `e2e/route-transition-cls.spec.ts` exists, and the criterion says it drives real Chrome against a production build rather than asserting CLS in jsdom — which cannot measure layout shift at all
 ### YT-0403 · Typed mock data layer
-`review` · PU · web · 3d · dep: —
+`done` · PU · web · 3d · dep: —
 
 - [x] Zod schemas in `packages/contracts` for campaign, listing, voucher, balance, business, question
 - [x] Deterministic seeded generators producing realistic Indonesian data (IDR amounts, Jakarta districts, real-sounding merchants)
 - [x] One switch flips every screen between mock and live
 - [x] Includes deliberately awkward fixtures: long merchant names, zero balance, expired voucher, sold-out listing
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** All six schemas have `*.ts` + `*.mock.ts` + tests; **129 tests green** across 8 files. The switch is a genuine single seam — `mock-source.ts` parses `YOURTAL_DATA_SOURCE` **once at module load** and exposes `resolveDataSource({mock, live})`, called by **14** `*-data.ts` modules
+- ✅ All four awkward fixtures exist by name — `longMerchantNameCampaignFixture`, `zeroBalanceFixture`, `expiredVoucherFixture`, `soldOutListingFixture` — plus four more the criterion did not ask for. Determinism is **pinned rather than asserted**: `mock-seed.test.ts:22` *"pins known values, so a refactor cannot silently reshuffle every synthesised campaign"*
+- ⚠️ **The criterion aged rather than the work failing, and the file that documents it cites a precedent that does the opposite.** `apps/web/features/public/public-listing-data.ts` imports mocks **directly** and does not use the seam, so the public rewards catalogue would not flip with the switch. Its header says it *"mirrors `public-campaign-data.ts`'s reasoning: … no `mock-source` seam"* — **but `public-campaign-data.ts` DOES call `resolveDataSource`.** Recorded against the public surfaces rather than failing this ticket: those screens did not exist when the criterion was written, and *"one switch flips every screen"* quietly acquired new screens
+- ℹ️ `wallet-history.ts` looks like the same shape and is not — only `wallet-data.ts` calls it, and that one has the seam. Checked so the next reader does not re-open it
 ### YT-0404 · Performance budget harness
 `done` · PU · web · 2d · dep: YT-0402
 

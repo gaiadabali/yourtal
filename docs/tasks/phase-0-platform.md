@@ -552,7 +552,7 @@
 - [ ] ⚠️ **Two copies of one ratio is the derived-value bug with money attached.** Whatever the client shows must be derived from the server's value, not from a second constant that agrees with it today
 
 ### YT-0565 · The ledger schema-drift regex fails open
-`doing` · P0 · value · 2h · dep: —
+`review` · P0 · value · 2h · dep: —
 
 **Done. 100 Go tests, 0 skips; `pnpm verify` 11/11.**
 
@@ -565,10 +565,13 @@
 
 - `services/ledger/internal/store/schema_test.go`'s `columnPattern` is `[a-z_]+`, so **it cannot match a column name containing a digit**. An unmatched column is **not compared** — the gate fails open rather than erroring, so coverage shrinks silently
 - It works today only by luck: **no `ledger` column has a digit**, verified. The identical pattern in the voucher service silently dropped `manifest_sha256` and then reported a drift that did not exist — the same defect, loud in one place and invisible in the other
-- [ ] Widen to `[a-z_0-9]+`, and **assert the match count equals the column count** so an unmatched column becomes a failure rather than an omission
-- [ ] Add `backing_rate` to the table list — a table the loop does not name is one the guard cannot see drift in
-- [ ] ⚠️ **This is the ninth gate that did not cover what its name implied**, and the first to do it through a regex. Any parser-based check needs the same question asked of it: what does it do with input it does not recognise?
-
+- [x] Widen to `[a-z_0-9]+`, and **assert the match count equals the column count** so an unmatched column becomes a failure rather than an omission
+- [x] Add `backing_rate` to the table list — a table the loop does not name is one the guard cannot see drift in
+- [x] ⚠️ **This is the ninth gate that did not cover what its name implied**, and the first to do it through a regex. Any parser-based check needs the same question asked of it: what does it do with input it does not recognise?
+- ✅ **Verified 2026-09-21 by `yourtal-0c`, `value`'s owner: the three open boxes described the PROPOSED fix while the ticked ones described the DELIVERED fix, which is stronger.** The delivered version is not the regex widening: every line inside a `CREATE TABLE` block is classified as column / table-level clause / comment / **error**, with `fmt.Errorf` on anything unrecognised and an empty column list failing at `:81-85`. **Strictly stronger than the match-count assertion the criterion asked for**, which only catches a shortfall the pattern already saw. `TestDigitBearingColumnIsRead`, `TestTableLevelClausesAreNotColumns` and `TestUnterminatedBlockIsAnError` all pass with no database
+- ✅ `backing_rate` is in the table loop at `schema_test.go:70` and its subtest passed against live Postgres
+- ℹ️ **The "ninth gate" line asserts nothing testable and should be prose or a `- ⏭️`**, not a box — it is the generalisation, already recorded in `docs/13c`. Second instance today of a note shaped as a criterion leaving a ticket permanently short of its own bar
+- ⚠️ **A local-only footgun found while verifying and deliberately NOT filed**, because CI already covers it: `TestSqlcSchemaMatchesTheLiveDatabase` **skips silently with no database** — `pgxpool.New` does not connect eagerly, so a dead host survives to `Ping`, which calls `t.Skipf`. Sabotage-confirmed: a dead port gives `--- SKIP` then `PASS` then `ok`. **`integration.yml:289-296` runs the suite with `-v` and fails on `grep -q -- "--- SKIP"`**, so the guard genuinely runs. **The trap is local: `go test ./...` on the ledger can report `ok` while the drift comparison never happened.** Run it with `-v` and look for `--- SKIP`
 ### YT-0566 · The hold sweeper has no alarm and availability depends on it
 `todo` · P1 · merchant · 2d · dep: YT-0151
 
@@ -770,7 +773,7 @@
 - ⏭️ **Relayed, not confirmed to me directly:** the YT-0576 “no threshold” decision reached this ticket via `yourtal-a4`, as a founder decision of 2026-09-21. **The policy and code consequences above are recorded but NOT applied** — same posture the board already takes with the AU-primary relay. Changing an authorization control on a relayed instruction is the one place to want the founder’s own word, and the invented 20% placeholder is exactly what happens when that is skipped
 
 ### YT-0576 · Nobody has defined what makes a settlement decrease "material"
-`review` · P1 · economy · 1d · dep: —
+`done` · P1 · economy · 1d · dep: —
 
 - ✅ **DECIDED 2026-09-21 by the founder, who owns the economy (YT-0050): there is no threshold. Every downward settlement change requires two-person approval.** The 20% placeholder is **removed, not ratified**. Rationale: a decrease in `S` is a direct cut to what a user's points are worth, so the control should engage on every cut rather than above a line nobody could defend. **Recorded first-hand** — answered in `yourtal-a4`'s session directly. `yourtal-b6` reports the same answer from its own session; per `yourtal-08` that is a **second relay, not a second channel**, and `yourtal-08` is deliberately waiting for the founder's word in its own session before touching the CEL. Correct: an authorization control changed on relay is how the invented 20% got there
 - ℹ️ **Two consequences worth recording.** (1) A zero threshold closes the split-the-cut evasion for free — there is no window to stay under, so the "per change or cumulative" question disposes of itself rather than needing extra machinery. (2) It does **not** remove the *comparison*: `isMaterialSettlementDecrease` becomes degenerate (true for any decrease) but you still need the stored `S` to know a change is downward at all, so `attrsFrom` being synchronous and request-only — the YT-0574 finding — is untouched. The correct pattern already exists in `apps/api/src/modules/store/settlement-decrease.controller.ts`: `approve` runs a second authorization after a read. Reported by `yourtal-08`; **verified here** — `:47-50` and `:84-87` carry both endpoints, so routing every decrease through approval does not deadlock settlement changes
@@ -788,7 +791,9 @@
   - **Policy** — `policies/resource_policies/listing.yaml:83`: `has(R.attr.isMaterialSettlementDecrease) && !R.attr.isMaterialSettlementDecrease`. It **consumes** the attribute and **defines no number of its own**, and it denies on absence rather than allowing — the YT-0574 fix, so the control can no longer be switched off by saying nothing
   - **Docs** — `docs/17` line 84. **This was the outlier and this ticket's own decision is what made it wrong**: it still read *"downward by more than a threshold"*, describing a threshold that no longer exists. Now states that there is none, with the compounding argument (two 15% cuts under a 20% band take `S` down 27.75% with nobody approving anything) and a pointer to the other two readers
 - ℹ️ **The attribute keeps the word "material" deliberately.** Renaming it to match the new semantics would be a policy change wearing a refactor's clothes, and `policies/` is not this ticket's to change (`yourtal-b6`'s call, agreed). The name is now slightly wider than its meaning — every decrease is "material" — which is the cheaper of the two errors
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work, and it was HELD until the fourth reader was committed — the first real catch of "verify against the commit, not the tree".** ca found three of the four readers committed and the fourth, `docs/17-surfaces-and-roles.md`, sitting dirty: `git show HEAD:docs/17…` line 84 still read *"downward by **more than a threshold**"*, describing a threshold that exists nowhere. **Promoting then would have asserted an agreement `origin/main` did not have.** `yourtal-28`'s fix is committed here, so it now does
+- ✅ **Four readers, not three, all checked at source:** the API (`material-settlement-decrease.ts:49-54` → `proposed < current`), the policy (`listing.yaml:83`, consumes and defines no number), **the resource schema** (`listing.json:11`, which states there is no threshold and why it is deliberately not in `required`), and the docs. An anchored grep for `MATERIAL_SETTLEMENT_DECREASE_THRESHOLD` across `apps`, `packages`, `policies` and `docs` returns **only prose about its removal**
+- ✅ **The rewording was the mechanism-vs-property rule, correctly applied — ca ruled on it explicitly because `yourtal-28` asked to be judged on their own ticket.** The named constant was deleted by a **founder decision**, not by the author to clear a checkbox, so the criterion had become unsatisfiable by construction. *"So it is not re-invented"* always asked for one definition and several readers, which is what exists
 ### YT-0579 · `turbo run test` strips the env var every isolation escape hatch depends on
 `todo` · P0 · infra · 1d · dep: —
 

@@ -81,7 +81,10 @@ Yes — each business administers its own people. Six roles, least-privilege by 
 Rules that are not negotiable:
 
 - **Exactly one Owner**, transferable only by the current Owner with re-authentication.
-- **Two-person approval** on: bulk voucher issuance, changing a settlement value downward by more than a threshold, and API credential rotation.
+- **Two-person approval** on: bulk voucher issuance, **any downward change to a settlement value**, and API credential rotation.
+  - **There is no materiality threshold, by founder decision 2026-09-21 (YT-0576).** This line previously read _"downward by more than a threshold"_ and **named no number** — as did the resource schema and the policy, so the phrase had three references and zero definitions. An agent supplied `MATERIAL_SETTLEMENT_DECREASE_THRESHOLD = 0.2` as a loudly-commented placeholder so the control would not be a no-op, which was correct behaviour and left a number nobody had decided standing in front of a two-person approval. **It was removed rather than ratified.**
+  - **Why no threshold is safer than a small one:** a threshold creates a band below the line in which a cut passes with one pair of hands, and the band is reachable repeatedly. Two 15% cuts under a 20% threshold take `S` down 27.75% with nobody approving anything. A settlement cut is a direct reduction in what a user's points are worth, since `points_price = (S / B) × demand_multiplier`. Defeating a no-threshold rule requires defeating the approval workflow itself, which is the thing that was actually designed.
+  - **One definition, three readers:** `isMaterialSettlementDecrease(current, proposed)` in `apps/api/src/modules/store/material-settlement-decrease.ts` returns `proposed < current`; `policies/resource_policies/listing.yaml:83` consumes `R.attr.isMaterialSettlementDecrease` and **defines no number of its own**, denying on absence rather than allowing; and this line is the documentation. The attribute keeps the word "material" deliberately — renaming it would be a policy change wearing a refactor's clothes.
 - **Every team action is audit-logged** and visible to the business itself, not just to us.
 - **No business role can ever grant points.** Issuance happens only through Reward Engine campaign rules — a business admin cannot credit an account they control.
 

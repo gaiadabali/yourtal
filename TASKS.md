@@ -123,50 +123,52 @@ Of the 60 finished: **4 independently verified**, 56 awaiting a verifier. A task
 | Phase 2 · Depth | 0/22 | 0 | 0 | 240d | `░░░░░░░░░░` 0% |
 | Phase 3 · Marketplace & AU | 0/6 | 0 | 0 | 112d | `░░░░░░░░░░` 0% |
 
-- **Phase U · UI first  ◀ NEXT** — **24 of 35 settled** (0 verified · 24 awaiting a verifier) · 7 in progress · **28d** left · **1 ready to start** · 2 blocked outside the graph. Widest gate: **YT-0400** `web` `review` — **28** open tasks downstream.
+- **Phase U · UI first  ◀ NEXT** — **24 of 35 settled** (0 verified · 24 awaiting a verifier) · 7 in progress · **28d** left · **nothing ready to start now** · 1 more once in-flight dependencies land · 2 blocked outside the graph. Widest gate: **YT-0400** `web` `review` — **28** open tasks downstream.
 - **Phase −1 · Pilot** — **0 of 13 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **36d** left · **4 ready to start**. Widest gate: **YT-0220** `media` `todo` — **29** open tasks downstream.
-- **Phase 0 · Foundations** — **32 of 120 settled** (3 verified · 29 awaiting a verifier) · 25 in progress · **257d** left · **41 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0041** `value` `review` — **86** open tasks downstream.
-- **Phase 1 · Indonesia MVP** — **4 of 91 settled** (1 verified · 3 awaiting a verifier) · 17 in progress · **332d** left · **20 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0100** `adplatform` `doing` — **63** open tasks downstream.
-- **Phase 2 · Depth** — **0 of 22 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **240d** left · **6 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0543** `data` `todo` — **3** open tasks downstream.
-- **Phase 3 · Marketplace & AU** — **0 of 6 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **112d** left · **nothing ready to start**. Widest gate: **YT-0320** `store` `todo` — **1** open task downstream.
+- **Phase 0 · Foundations** — **32 of 120 settled** (3 verified · 29 awaiting a verifier) · 25 in progress · **257d** left · **20 ready to start** · 21 more once in-flight dependencies land · 1 blocked outside the graph. Widest gate: **YT-0041** `value` `review` — **86** open tasks downstream.
+- **Phase 1 · Indonesia MVP** — **4 of 91 settled** (1 verified · 3 awaiting a verifier) · 17 in progress · **332d** left · **2 ready to start** · 18 more once in-flight dependencies land · 1 blocked outside the graph. Widest gate: **YT-0100** `adplatform` `doing` — **63** open tasks downstream.
+- **Phase 2 · Depth** — **0 of 22 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **240d** left · **1 ready to start** · 5 more once in-flight dependencies land · 1 blocked outside the graph. Widest gate: **YT-0543** `data` `todo` — **3** open tasks downstream.
+- **Phase 3 · Marketplace & AU** — **0 of 6 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **112d** left · **nothing ready to start now**. Widest gate: **YT-0320** `store` `todo` — **1** open task downstream.
 
 ### By epic
 
 | Epic | Done | Review | Doing | Ready | Left | Settled |
 |---|---|---|---|---|---|---|
-| `adplatform` | 0/17 | 1 | 1 | **4** | 93d | `▓░░░░░░░░░` 6% |
+| `adplatform` | 0/17 | 1 | 1 | — +4 | 93d | `▓░░░░░░░░░` 6% |
 | `commerce` | 0/1 | 0 | 0 | — | 20d | `░░░░░░░░░░` 0% |
-| `data` | 0/9 | 0 | 1 | **3** | 47d | `░░░░░░░░░░` 0% |
-| `economy` | 0/8 | 0 | 3 | **2** | 31d | `░░░░░░░░░░` 0% |
-| `infra` | 1/30 | 5 | 3 | **13** | 85d | `▓▓░░░░░░░░` 20% |
-| `legal` | 0/9 | 0 | 1 | **4** | 36d | `░░░░░░░░░░` 0% |
+| `data` | 0/9 | 0 | 1 | **2** +1 | 47d | `░░░░░░░░░░` 0% |
+| `economy` | 0/8 | 0 | 3 | **1** +1 | 31d | `░░░░░░░░░░` 0% |
+| `infra` | 1/30 | 5 | 3 | **9** +4 | 85d | `▓▓░░░░░░░░` 20% |
+| `legal` | 0/9 | 0 | 1 | — +4 | 36d | `░░░░░░░░░░` 0% |
 | `media` | 0/13 | 1 | 1 | **1** | 67d | `▓░░░░░░░░░` 8% |
-| `merchant` | 0/16 | 2 | 5 | **6** | 64d | `▓░░░░░░░░░` 13% |
+| `merchant` | 0/16 | 2 | 5 | — +6 | 64d | `▓░░░░░░░░░` 13% |
 | `pilot` | 0/11 | 0 | 0 | **1** | 29d | `░░░░░░░░░░` 0% |
-| `platform` | 2/52 | 19 | 7 | **17** | 101d | `▓▓▓▓░░░░░░` 40% |
-| `risk` | 0/15 | 0 | 0 | **5** | 69d | `░░░░░░░░░░` 0% |
-| `seo` | 0/5 | 1 | 2 | **1** | 15d | `▓▓░░░░░░░░` 20% |
-| `store` | 0/10 | 0 | 3 | **2** | 92d | `░░░░░░░░░░` 0% |
-| `value` | 0/25 | 5 | 7 | **7** | 95d | `▓▓░░░░░░░░` 20% |
+| `platform` | 2/52 | 19 | 7 | **8** +9 | 101d | `▓▓▓▓░░░░░░` 40% |
+| `risk` | 0/15 | 0 | 0 | **4** +1 | 69d | `░░░░░░░░░░` 0% |
+| `seo` | 0/5 | 1 | 2 | — +1 | 15d | `▓▓░░░░░░░░` 20% |
+| `store` | 0/10 | 0 | 3 | — +2 | 92d | `░░░░░░░░░░` 0% |
+| `value` | 0/25 | 5 | 7 | — +7 | 95d | `▓▓░░░░░░░░` 20% |
 | `watch` | 1/8 | 0 | 1 | **1** | 29d | `█░░░░░░░░░` 13% |
-| `web` | 0/58 | 22 | 14 | **5** | 131d | `▓▓▓▓░░░░░░` 38% |
+| `web` | 0/58 | 22 | 14 | — +5 | 131d | `▓▓▓▓░░░░░░` 38% |
 
-- `adplatform` — **1 of 17 settled** (0 verified · 1 awaiting a verifier) · 1 in progress · **93d** left · **4 ready to start**. Widest gate: **YT-0100** `adplatform` `doing` — **63** open tasks downstream.
-- `commerce` — **0 of 1 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **20d** left · **nothing ready to start**.
-- `data` — **0 of 9 settled** (0 verified · 0 awaiting a verifier) · 1 in progress · **47d** left · **3 ready to start**. Widest gate: **YT-0519** `data` `doing` — **14** open tasks downstream.
-- `economy` — **0 of 8 settled** (0 verified · 0 awaiting a verifier) · 3 in progress · **31d** left · **2 ready to start**. Widest gate: **YT-0048** `economy` `todo` — **25** open tasks downstream.
-- `infra` — **6 of 30 settled** (1 verified · 5 awaiting a verifier) · 3 in progress · **85d** left · **13 ready to start**. Widest gate: **YT-0529** `infra` `doing` — **39** open tasks downstream.
-- `legal` — **0 of 9 settled** (0 verified · 0 awaiting a verifier) · 1 in progress · **36d** left · **4 ready to start** · 2 blocked outside the graph. Widest gate: **YT-0010** `legal` `doing` — **32** open tasks downstream.
+**`Ready`** counts tasks whose every dependency is `done` or `cut` — work someone can pick up today. **`+n`** is how many more become available once dependencies already in flight land: a forecast, not an offer. They used to be summed under the first heading, which overstated it by **45 tasks**.
+
+- `adplatform` — **1 of 17 settled** (0 verified · 1 awaiting a verifier) · 1 in progress · **93d** left · **nothing ready to start now** · 4 more once in-flight dependencies land. Widest gate: **YT-0100** `adplatform` `doing` — **63** open tasks downstream.
+- `commerce` — **0 of 1 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **20d** left · **nothing ready to start now**.
+- `data` — **0 of 9 settled** (0 verified · 0 awaiting a verifier) · 1 in progress · **47d** left · **2 ready to start** · 1 more once in-flight dependencies land. Widest gate: **YT-0519** `data` `doing` — **14** open tasks downstream.
+- `economy` — **0 of 8 settled** (0 verified · 0 awaiting a verifier) · 3 in progress · **31d** left · **1 ready to start** · 1 more once in-flight dependencies land. Widest gate: **YT-0048** `economy` `todo` — **25** open tasks downstream.
+- `infra` — **6 of 30 settled** (1 verified · 5 awaiting a verifier) · 3 in progress · **85d** left · **9 ready to start** · 4 more once in-flight dependencies land. Widest gate: **YT-0529** `infra` `doing` — **39** open tasks downstream.
+- `legal` — **0 of 9 settled** (0 verified · 0 awaiting a verifier) · 1 in progress · **36d** left · **nothing ready to start now** · 4 more once in-flight dependencies land · 2 blocked outside the graph. Widest gate: **YT-0010** `legal` `doing` — **32** open tasks downstream.
 - `media` — **1 of 13 settled** (0 verified · 1 awaiting a verifier) · 1 in progress · **67d** left · **1 ready to start**. Widest gate: **YT-0220** `media` `todo` — **29** open tasks downstream.
-- `merchant` — **2 of 16 settled** (0 verified · 2 awaiting a verifier) · 5 in progress · **64d** left · **6 ready to start**. Widest gate: **YT-0150** `merchant` `doing` — **18** open tasks downstream.
+- `merchant` — **2 of 16 settled** (0 verified · 2 awaiting a verifier) · 5 in progress · **64d** left · **nothing ready to start now** · 6 more once in-flight dependencies land. Widest gate: **YT-0150** `merchant` `doing` — **18** open tasks downstream.
 - `pilot` — **0 of 11 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **29d** left · **1 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0001** `pilot` `todo` — **9** open tasks downstream.
-- `platform` — **21 of 52 settled** (2 verified · 19 awaiting a verifier) · 7 in progress · **101d** left · **17 ready to start**. Widest gate: **YT-0039** `platform` `doing` — **73** open tasks downstream.
-- `risk` — **0 of 15 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **69d** left · **5 ready to start**. Widest gate: **YT-0051** `risk` `todo` — **10** open tasks downstream.
-- `seo` — **1 of 5 settled** (0 verified · 1 awaiting a verifier) · 2 in progress · **15d** left · **1 ready to start**. Widest gate: **YT-0180** `seo` `review` — **8** open tasks downstream.
-- `store` — **0 of 10 settled** (0 verified · 0 awaiting a verifier) · 3 in progress · **92d** left · **2 ready to start**. Widest gate: **YT-0130** `store` `doing` — **22** open tasks downstream.
-- `value` — **5 of 25 settled** (0 verified · 5 awaiting a verifier) · 7 in progress · **95d** left · **7 ready to start**. Widest gate: **YT-0041** `value` `review` — **86** open tasks downstream.
+- `platform` — **21 of 52 settled** (2 verified · 19 awaiting a verifier) · 7 in progress · **101d** left · **8 ready to start** · 9 more once in-flight dependencies land. Widest gate: **YT-0039** `platform` `doing` — **73** open tasks downstream.
+- `risk` — **0 of 15 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **69d** left · **4 ready to start** · 1 more once in-flight dependencies land. Widest gate: **YT-0051** `risk` `todo` — **10** open tasks downstream.
+- `seo` — **1 of 5 settled** (0 verified · 1 awaiting a verifier) · 2 in progress · **15d** left · **nothing ready to start now** · 1 more once in-flight dependencies land. Widest gate: **YT-0180** `seo` `review` — **8** open tasks downstream.
+- `store` — **0 of 10 settled** (0 verified · 0 awaiting a verifier) · 3 in progress · **92d** left · **nothing ready to start now** · 2 more once in-flight dependencies land. Widest gate: **YT-0130** `store` `doing` — **22** open tasks downstream.
+- `value` — **5 of 25 settled** (0 verified · 5 awaiting a verifier) · 7 in progress · **95d** left · **nothing ready to start now** · 7 more once in-flight dependencies land. Widest gate: **YT-0041** `value` `review` — **86** open tasks downstream.
 - `watch` — **1 of 8 settled** (1 verified · 0 awaiting a verifier) · 1 in progress · **29d** left · **1 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0121** `watch` `doing` — **16** open tasks downstream.
-- `web` — **22 of 58 settled** (0 verified · 22 awaiting a verifier) · 14 in progress · **131d** left · **5 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0400** `web` `review` — **28** open tasks downstream.
+- `web` — **22 of 58 settled** (0 verified · 22 awaiting a verifier) · 14 in progress · **131d** left · **nothing ready to start now** · 5 more once in-flight dependencies land · 1 blocked outside the graph. Widest gate: **YT-0400** `web` `review` — **28** open tasks downstream.
 
 ### In review (work complete, gate not yet passed)
 

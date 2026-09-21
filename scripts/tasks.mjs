@@ -188,13 +188,38 @@ const reviewAll = tasks.filter((t) => t.status === "review");
 const doingAll = tasks.filter((t) => t.status === "doing");
 const blockedAll = tasks.filter((t) => t.status === "blocked");
 const todoAll = tasks.filter((t) => t.status === "todo");
-const SETTLED = new Set(["done", "review", "doing"]);
+// Two predicates, because "ready" was one word doing two jobs and the board
+// published the looser one under the stronger name.
+//
+// `readyNow` is the honest headline: every dependency is `done` or `cut`, so
+// nothing is in anyone's way. `readyWhenLanded` additionally counts deps that
+// are merely `doing` or `review` — real information, since work that has
+// started usually finishes, but NOT a claim that someone can pick the task up
+// today.
+//
+// The gap was not marginal. On 2026-09-21 the `Ready` column read **72** while
+// only **27** were genuinely unblocked: **45 tasks, 62% of the column, had a
+// blocker that was merely started.** `yourtal-b6` lost an afternoon to one of
+// them — YT-0133, offered as ready with deps YT-0130 (`doing`) and YT-0042
+// (`review`), where two of its four saga steps turn out to be a 501 and a
+// service with no route at all.
+//
+// The dashboard also contained BOTH definitions at once and disagreed with
+// itself: this column counted `doing` deps as satisfied while the "Ready to
+// start (no open dependencies)" list below used `blockedBy`, which does not.
+// Same word, two numbers, one page.
+const CUT_OR_DONE = new Set(["done", "cut"]);
+const IN_FLIGHT = new Set(["done", "cut", "review", "doing"]);
 const estDays = (e) => {
   const n = Number.parseFloat(e);
   return Number.isNaN(n) ? 0 : /h$/.test(e) ? n / 8 : n;
 };
-const isReady = (t) =>
-  t.status === "todo" && (t.deps ?? []).every((d) => SETTLED.has(byId.get(d)?.status));
+const readyNow = (t) =>
+  t.status === "todo" && (t.deps ?? []).every((d) => CUT_OR_DONE.has(byId.get(d)?.status));
+const readyWhenLanded = (t) =>
+  t.status === "todo" &&
+  !readyNow(t) &&
+  (t.deps ?? []).every((d) => IN_FLIGHT.has(byId.get(d)?.status));
 
 // Remaining effort is the only column that answers "how far from finish".
 // Task counts cannot: thirty 1-hour tasks and thirty 5-day tasks read
@@ -258,14 +283,19 @@ function narrate(ts, label) {
   const r = ts.filter((t) => t.status === "review").length;
   const g = ts.filter((t) => t.status === "doing").length;
   const b = ts.filter((t) => t.status === "blocked").length;
-  const ready = ts.filter(isReady).length;
+  const ready = ts.filter(readyNow).length;
+  const soon = ts.filter(readyWhenLanded).length;
   const left = Math.round(remaining(ts));
   const parts = [
     `**${d + r} of ${ts.length} settled** (${d} verified · ${r} awaiting a verifier)`,
     `${g} in progress`,
     `**${left}d** left`,
-    ready ? `**${ready} ready to start**` : "**nothing ready to start**",
+    ready ? `**${ready} ready to start**` : "**nothing ready to start now**",
   ];
+  // Stated separately rather than added in. A task whose blocker is merely
+  // started is a forecast, and folding a forecast into the headline is what
+  // made the old number wrong.
+  if (soon) parts.push(`${soon} more once in-flight dependencies land`);
   if (b) parts.push(`${b} blocked outside the graph`);
   let s = `- ${label} — ${parts.join(" · ")}.`;
   // The widest gate answers "what one thing most needs finishing", which
@@ -335,7 +365,8 @@ lines.push(
       const d = ts.filter((t) => t.status === "done").length;
       const r = ts.filter((t) => t.status === "review").length;
       const g = ts.filter((t) => t.status === "doing").length;
-      const ready = ts.filter(isReady).length;
+      const ready = ts.filter(readyNow).length;
+      const soon = ts.filter(readyWhenLanded).length;
       const left = remaining(ts);
       const bar = "█"
         .repeat(Math.round(pct(d, ts.length) / 10))
@@ -346,13 +377,18 @@ lines.push(
         `${d}/${ts.length}`,
         String(r),
         String(g),
-        ready ? `**${ready}**` : "—",
+        (ready ? `**${ready}**` : "—") + (soon ? ` +${soon}` : ""),
         `${Math.round(left)}d`,
         `\`${bar}\` ${pct(d + r, ts.length)}%`,
       ];
     }),
     ["Epic", "Done", "Review", "Doing", "Ready", "Left", "Settled"],
   ),
+  "",
+  "**`Ready`** counts tasks whose every dependency is `done` or `cut` — work" +
+    " someone can pick up today. **`+n`** is how many more become available once" +
+    " dependencies already in flight land: a forecast, not an offer. They used to" +
+    " be summed under the first heading, which overstated it by **45 tasks**.",
   "",
   ...epics.map((e) =>
     narrate(

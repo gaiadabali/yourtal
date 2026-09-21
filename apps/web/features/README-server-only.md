@@ -42,9 +42,9 @@ itself would catch.
 Both sabotage proofs below fail the build, but **not via the same control**,
 and reading one as evidence for the other would overstate what is protected:
 
-| Sabotaged module | Fails via | Pre-existing? |
-| --- | --- | --- |
-| `get-region.ts` | `next/headers` | **Yes** — it calls `cookies()`, so Next already guarded it |
+| Sabotaged module   | Fails via         | Pre-existing?                                                      |
+| ------------------ | ----------------- | ------------------------------------------------------------------ |
+| `get-region.ts`    | `next/headers`    | **Yes** — it calls `cookies()`, so Next already guarded it         |
 | `campaign-data.ts` | **`server-only`** | No — it touches no Next server API, and nothing caught this before |
 
 So `server-only` earns its place on modules that are secret-bearing or

@@ -32,7 +32,10 @@ function fakeSecurityStateRepo(
 }
 
 function resolverWith(rows: Record<string, PrincipalSecurityState> = {}): AsyncPrincipalResolver {
-  return new AsyncPrincipalResolver(new PrincipalService(configFor("test")), fakeSecurityStateRepo(rows));
+  return new AsyncPrincipalResolver(
+    new PrincipalService(configFor("test")),
+    fakeSecurityStateRepo(rows),
+  );
 }
 
 describe("AsyncPrincipalResolver — YT-0582", () => {

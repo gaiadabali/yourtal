@@ -90,9 +90,7 @@ async function populatableAttributes(): Promise<Set<string>> {
   const repo: PrincipalSecurityStateRepository = {
     findByUserId: (userId) =>
       Promise.resolve(
-        userId === FROZEN_USER
-          ? { valueFrozenUntil: new Date("2099-01-01T00:00:00.000Z") }
-          : null,
+        userId === FROZEN_USER ? { valueFrozenUntil: new Date("2099-01-01T00:00:00.000Z") } : null,
       ),
   };
   const resolver = new AsyncPrincipalResolver(new PrincipalService(CONFIG), repo);
@@ -152,9 +150,10 @@ describe("principal attribute coverage — YT-0582 criterion 3", () => {
     const locations = uncovered
       .map((attr) => `${attr}: ${(referenced.get(attr) ?? []).join(", ")}`)
       .join("\n");
-    expect(uncovered, `unpopulatable attribute(s) referenced by policy:\n${locations}`).toStrictEqual(
-      [],
-    );
+    expect(
+      uncovered,
+      `unpopulatable attribute(s) referenced by policy:\n${locations}`,
+    ).toStrictEqual([]);
   });
 
   it("KNOWN_UNPRODUCIBLE_ATTRIBUTES carries no stale entry", async () => {

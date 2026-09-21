@@ -89,12 +89,15 @@
 - ⏭️ The `dto/*.schema.ts` request schemas (`submit-kyb-document`, `set-billing-contact`) are **not** a duplication finding — genuine request-payload shapes, an `omit`/subset of the contract schema for input validation. Recorded so a later audit does not re-open this as drift
 
 ### YT-0511 · Repo-wide formatting gate
-`review` · P0 · infra · 1h · dep: —
+`done` · P0 · infra · 1h · dep: —
 
 - [x] 53 files formatted across `apps/api`, `packages/{contracts,authz,consent,jurisdiction}` and `policies/`; `.github/workflows/format.yml` added running `prettier --check .`
 - [x] **Gate is GREEN. `prettier --check .` run across the repo 2026-09-21: zero product files fail.** The ~186 unformatted files in `apps/web` and `packages/ui` have since been swept; the cleanup this box was holding open is done
 - ⚠️ The only six files the check still flags are `.claude/agents/kfc/*.md` and `.claude/system-prompts/spec-workflow-starter.md` — uncommitted working-tree edits to agent configuration, outside the product tree and outside this ticket. They will fail CI if committed unformatted
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`. `.github/workflows/format.yml` exists and `prettier --check .` passes over every product file** — the six that still fail are `.claude/agents/kfc/*.md` and `.claude/system-prompts/spec-workflow-starter.md`, uncommitted working-tree edits belonging to a live session, exactly as this ticket's own ⚠️ predicted
+- ✏️ **The second criterion is written as a snapshot and a snapshot expires. It had already expired once when this verification ran.** *"Gate is GREEN … run 2026-09-21: zero product files fail"* was **false at the moment of checking**: four files had landed unformatted since — `checkpoint.service.test.ts`, `async-principal-resolver.test.ts`, `principal-attribute-coverage.test.ts` and `apps/web/features/README-server-only.md`. Formatted here, and the gate is green again
+- ⚠️ **That is rule 9 breached within the hour of rule 9 being written**, by two separate commits, and it is the second time today this ticket's gate has had to be restored by a passer-by. **It is not a failure of YT-0511** — the gate is what caught it, which is the gate working. But a criterion asserting *"the gate is green"* is asserting a fact about the whole repo at one instant, and every commit by every session can falsify it. The durable form is *"a workflow runs `prettier --check .` and blocks the merge"*, which is criterion 1 and holds
 ### YT-0528 · The remaining seven DSAR handlers
 `todo` · P0 · platform · 5d · dep: YT-0036
 - [ ] Two of nine domains have handlers (`anonymiseVouchers`, `eraseBusinessMemberships`). **Seven do not, so a deletion request returns `complete: false` today** — correctly, and it is a **launch blocker**
@@ -212,7 +215,7 @@
 - Note: the PDP client is **hand-rolled against the Cerbos Check Resources API** rather than using `@cerbos/http` — one endpoint, stable shape, Zod-parsed response, per `docs/14` §7 ("a one-line utility is written, not installed"). Recorded as a deliberate decision
 
 ### YT-0500 · PDP enforcement across API routes
-`review` · P0 · platform · 3d · dep: YT-0035, YT-0100
+`done` · P0 · platform · 3d · dep: YT-0035, YT-0100
 
 - [x] Every API route resolves authorization through the PDP, never ad hoc
 - [x] A route without an authz decorator fails CI
@@ -223,6 +226,11 @@
 - [x] `must-use-result` written as a **local flat-config rule**, not the 2022-era eslintrc plugin. Scoped to `apps/api` and `packages/authz`, since nothing in `apps/web` returns a Result. **Found nine genuinely discarded Results on first run**, all in test setup — hardened rather than exempted, so a broken fixture now fails at the line that broke
 - [x] The last ad-hoc check removed: `create-business` threw from its own body, one endpoint answering its own question where no policy suite could see it. Now `business:create` in the policy repo, anonymous denied explicitly
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** Each criterion checked against an artefact or the running app, never a contended suite:
+  - *Undeclared routes fail CI*: `authorized-routes.test.ts:80` — `it("leaves none undeclared")` — and its failure message states the runtime half, *"PdpGuard will refuse it at runtime, so an undeclared route is a broken route."* The build check and the runtime check agree, which is the criterion's own requirement
+  - *`must-use-result` wired*: `eslint.config.mjs:9` imports the local rule and `:172` registers it as `yt/must-use-result`, a flat-config rule rather than the 2022-era eslintrc plugin — exactly as the criterion describes
+  - *Authorization left controller bodies*: `@Authorize` and `PdpGuard` present in `apps/api/src/shared/authz/`, and **confirmed live** — a booted API refused an anonymous `POST /api/businesses` at the guard
+- ✏️ **"Nine routes converted" has drifted to 31.** Counted from a real boot: `Nest application successfully started`, 31 routes mapped. Growth, not regression, and the criterion's bar — *every* route resolves through the PDP — is the property that still holds
 ### YT-0501 · Field RUM for real INP
 `doing` · P0 · web · 3d · dep: YT-0404
 
@@ -429,7 +437,7 @@
 - ⚠️ **General form worth keeping: a sabotage instruction that names a specific variable ages badly.** `DATABASE_URL` was the right lever when this box was written and is the wrong one now, and following it literally would have produced a green that reads as proof. The durable phrasing is *break what the code under test actually depends on*, never a named environment variable
 
 ### YT-0554 · The API must not connect to Postgres as a superuser
-`review` · P0 · platform · 2d · dep: YT-0552
+`done` · P0 · platform · 2d · dep: YT-0552
 
 - [x] ✅ **Done and verified independently 2026-09-20.** `DATABASE_URL` is now `yourtal_app`, `DATABASE_OWNER_URL` is the owner, and `has_table_privilege` reports **owner `t`, app `f`** on `ledger.entry`. That write would have succeeded from application code before this change
 - [x] The boot check **queries `pg_roles` rather than parsing the username out of the URL** — a username is what someone typed, the catalogue is what the server will actually permit
@@ -449,8 +457,13 @@
 - This was the eighth instance of the `docs/13c` pattern and the most expensive shape of it: not a gate that fails to check, but **a control that was built, tested, and then not used**
 - ⚠️ **The ticket itself then reproduced the pattern one level up.** The work landed, but the three acceptance boxes were left unticked as duplicates of the six above them, and the finding bullets were left in the present tense. So the board showed **6/9 `doing`** on a closed risk-45 item, and the entry read as a live superuser vulnerability for a day. **An inaccurate ticket is inaccurate in both directions** — this project has been watching for the optimistic tick, and was bitten by the pessimistic one
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, a second independent session after `yourtal-24`'s 2026-09-20 pass. Asked the live catalogue rather than the test suite** — deliberately, because YT-0547 shows a suite result here depends on who else is running, and a `pg_roles` row does not:
+  - `yourtal_app` → `rolsuper = f`, `rolbypassrls = f`; `yourtal` → `t`, `t`
+  - `has_table_privilege('yourtal_app','ledger.entry','INSERT')` → **`f`**, and the owner's → **`t`**. The write this ticket exists to prevent is refused by the server, not by convention
+  - All three cited paths present: `assert-unprivileged-role.ts`, `database-urls.ts`, `atlas.mjs`
+- ℹ️ **Two independent verifications a day apart both found it holding**, which is worth more than either alone: the control survived a day of five sessions committing, including a migration applied to the shared cluster.
 ### YT-0555 · The schema-drift gate does not cover the business module
-`review` · P0 · platform · 1d · dep: YT-0552
+`done` · P0 · platform · 1d · dep: YT-0552
 
 - **Verified: `MAPPINGS` in `schema-drift.test.ts` covers listing, voucher, campaign, campaignTerms, campaignRewardConfig, watchSession and merchantLocation — and none of `businessSchema`, `BusinessMember`, `BillingContact` or `KybDocument`.** The gate that exists to catch a contract landing ahead of its migration **silently does not run for the one module that has a live API surface**
 - [x] Business schemas added to `MAPPINGS`, with any genuine gaps recorded in `fieldsAwaitingStorage` rather than left implicit
@@ -475,6 +488,8 @@
 - **Why that is not fixed here:** catching type, nullability and rename means knowing the real Postgres shape, and a text-regex replay is the wrong tool. It wants something reading `information_schema` against a migrated database — **a different-shaped control, not a bigger version of this one.** Recorded rather than bolted on, because widening a shared gate beyond a ticket's stated boxes is how one control becomes two with divided attention
 - ⚠️ **Two contracts suites are red right now and neither is this ticket's:** `openapi.test.ts > registry completeness` (`expected ['publicListingSchema'] to deeply equal []`) and `route-drift.test.ts > routes outside the business module`. Both are **another session's in-flight uncommitted work**, and both are gates firing correctly on it. Flagged so the next reader does not attribute them here — the shared-tree red that looks like a real failure, for the third time today
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** All four business schemas are genuinely in `MAPPINGS` — `businessSchema` → `business.business_accounts` (`:274`), `businessMemberSchema` → `business.business_members` (`:287`), `billingContactSchema` (`:297`) and `kybDocumentSchema`, imported at `:13-16` — and the `describe("table coverage")` block the second criterion demanded exists at `:469`, so a **missing schema fails by table name** rather than being silently excluded
+- ✏️ **A note on the verification rather than the ticket: my first count said three of four were mapped, and my count was wrong.** I grepped `BusinessMember` while the code exports `businessMemberSchema`; a casing mismatch in the check, not a gap in the mapping. Recorded because it is the day's recurring shape — **the instrument narrowing the question** — and because a verifier reporting "3 of 4" would have sent this ticket back for work that was already done
 ### YT-0556 · Health endpoint
 `review` · P0 · platform · 1d · dep: YT-0552
 
@@ -485,14 +500,16 @@
 **→ `review` 2026-09-21.** The endpoint is built and its two real criteria are met: a parallel `SELECT 1` and a Cerbos `/_cerbos/health` fetch returning 503 when either fails, and `@PublicRoute` so **a Cerbos outage cannot hide the endpoint that reports the Cerbos outage**. The third box was YT-0532's work and is now a pointer. Sixth deferral-shaped criterion retired from this epic today.
 
 ### YT-0557 · Load the root `.env` properly
-`review` · P0 · infra · 1h · dep: —
+`done` · P0 · infra · 1h · dep: —
 
 - [x] `pnpm dev` died instantly on a missing `DATABASE_URL` because **nothing loaded the root `.env`**, and `atlas.mjs` carried a hand-rolled parser working around it — a local fix for a global problem, which is the shape `docs/13c` warns about
 - [x] Now Node's native `--env-file-if-exists` / `process.loadEnvFile`, with **real process environment taking precedence** over the file
 - [x] ⚠️ **This is what makes YT-0554 urgent rather than theoretical.** The `.env` is now reliably loaded, so the superuser `DATABASE_URL` in it is now reliably used
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `apps/api/package.json:7-8` passes `--env-file-if-exists=../../.env` to Node on both `dev` and `start`; `atlas.mjs:54` uses `process.loadEnvFile`, with a comment at `:38-41` explaining why the script needs the programmatic form. **The hand-rolled parser is gone** — zero matches for a `.env` `readFileSync` or a bespoke `parseEnv` in that file, which is the "local fix for a global problem" the ticket was filed against
+- ℹ️ **Confirmed live, not only in source.** Booting `apps/api` with no root `.env` present fails immediately and loudly on `CHECKPOINT_TOKEN_SECRET`, and supplying the variables in the real process environment boots it — 31 routes mapped. That is this ticket's "real process environment taking precedence" criterion exercised end to end, and it also confirms the failure is a clean refusal rather than a silent default
 ### YT-0558 · Test configs hard-code `DATABASE_URL`, which defeats sabotage
-`review` · P0 · platform · 1h · dep: —
+`done` · P0 · platform · 1h · dep: —
 
 - **Two sessions independently hit this within hours.** `vitest.config.ts` sets `env.DATABASE_URL`, and that **overrides a value passed on the command line** — so pointing the database at a dead host to prove a suite really talks to it comes back **green**, and reads as proof of exactly the opposite
 - That it happened twice makes it a property of this repo rather than a mistake either person made. The house rule is to prove a check by breaking what it catches; this configuration **silently disarms that rule** for every database-backed suite
@@ -511,6 +528,8 @@
 - ⚠️ **A sibling defect found and deliberately not fixed here: the Go helpers `t.Skipf` instead of failing when the pool cannot connect, and `go test` exits 0 on a skip.** They already read `LEDGER_DATABASE_URL` / `VOUCHER_DATABASE_URL` environment-first, so this ticket's criterion is met on their side — but sabotaging them produces a **SKIP, not a FAIL**, which defeats the same house rule by a different route. The control for that is `integration.yml`'s no-skip guard (YT-0569/0570), and per that ticket **all five of those guards have only ever been seen passing**. So the Go half of this defect currently rests on a guard nobody has watched go red
 - ⏭️ **YT-0553's open box named this ticket as its blocker**, and that blocker is now gone: the dead-host sabotage it was deferring is runnable for the first time. Left as a pointer rather than ticked here — running it is YT-0553's bar, not this one's
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`.** `apps/api/vitest.config.ts:38` reads `process.env.DATABASE_URL ?? "postgres://yourtal_app:…"` — environment first, config as fallback, which is precisely what restores the sabotage test the old form disarmed. The surrounding comment names YT-0558 and explains why, satisfying the second criterion at the one site that had the defect
+- ✅ **The third instance is genuinely gone, not merely fixed at the reported site.** `yourtal_wt_store` — the private worktree database name that reached `main` — returns **zero** matches across `apps`, `packages` and `services`. Swept with agent worktrees excluded, since those are glob-reachable inside the repo root and would have reported a stale copy as live
 ### YT-0559 · Contract entries for the campaign, watch and health routes
 `todo` · P0 · platform · 2d · dep: YT-0553, YT-0556
 
@@ -573,7 +592,7 @@
 - [ ] Expose the count in the merchant portal, so a shop sees _why_ a voucher is unavailable rather than being told it is broken
 
 ### YT-0568 · Line endings were never renormalised after `.gitattributes` landed
-`review` · P0 · infra · 1d · dep: —
+`done` · P0 · infra · 1d · dep: —
 
 - `.gitattributes` declares `* text=auto eol=lf` and marks `*.sh`, `*.mjs`, `*.sql`, `Dockerfile*`, `*.yml` and `.githooks/*` as LF-required — because this repo is authored on Windows and deployed to Linux, and `bad interpreter: /usr/bin/env sh^M` is a **recorded failure in this organisation's fleet notes**, not a hypothesis
 - ⚠️ **The file was added but the working tree was never renormalised**, so the declaration and the bytes on disk disagree. A `git add --renormalize` was started and abandoned mid-session because it collided with a file another session was regenerating
@@ -583,6 +602,9 @@
 - [x] No `.ps1`/`.bat`/`.cmd` is tracked, so there was nothing to flip — checked rather than assumed, because flipping them is the way this fix breaks things
 - [x] `scripts/check-line-endings.mjs`, wired into `pnpm verify`. It asks **git** for each path's attribute (`check-attr --stdin`) rather than keeping a second hard-coded list that could drift from `.gitattributes`. **Sabotage-proved**: the hook rewritten as CRLF, guard named it and the exact count (`19 CRLF line ending(s)`) and exited 1; restored, green across 1285 files
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, and verified the hard way: this guard was watched failing and passing four separate times in one afternoon.** `scripts/check-line-endings.mjs` named the exact drifted paths and their counts on each occasion and returned to `✓ line endings match .gitattributes (1380 tracked files)` after each repair. **A guard first seen passing has not been shown to work** — this one has now been seen working under real conditions, not sabotage
+- ✅ **The committed history is clean and always was.** Measured with `git cat-file blob HEAD:<path> | tr -cd '\r' | wc -c` → **0** CR bytes. Recorded because this verifier's own first pass reported the opposite, having used `grep -c $'\r'`, which counts matching *lines* and matches every line — so "104 CRLF" was the file's length. **Three findings briefly rested on that noise**
+- ⚠️ **The drift recurs and this ticket does not prevent it — that is YT-0590, filed, with the root cause.** `text=auto eol=lf` normalises on *staging*, so a session whose tool writes CRLF produces a correct blob, a clean `git status` and a permanently wrong working tree. **Not a defect in YT-0568**, whose four criteria are all met and whose guard is the only detector the repo has
 ### YT-0569 · No CI has ever run, and the workflows watch a branch that does not exist
 `todo` · P0 · infra · 2d · dep: —
 

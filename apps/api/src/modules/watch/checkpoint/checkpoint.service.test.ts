@@ -222,9 +222,7 @@ describe("logging refusals", () => {
   it("names the session and checkpoint, so a log line locates the attempt", async () => {
     await service.redeem({ token: "not-a-token", sessionId, checkpointIndex: 7, nowMs: NOW });
 
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining(`session=${sessionId} checkpoint=7`),
-    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`session=${sessionId} checkpoint=7`));
   });
 
   it("records a bad signature as a warning, not as routine", async () => {

@@ -22,7 +22,7 @@ Format and rules: [`docs/tasks/_schema.md`](docs/tasks/_schema.md).
 | 📌 **Kept: I once reported a green tree without checking it** | I wrote "everything already pushed is green" while Integration had already failed three times. Caught by `yourtal-22`, not by me. **That is the exact failure this repo has spent the week documenting — asserting a pass rather than verifying one** — and it is worse coming from the session whose job is verifying other sessions' claims. The rule I have applied to ten gates applies to my own status reports: **a green you did not look at is not a green.** |
 | ⚖️ **Two CI decisions waiting on you** | **1. `perf-budget.yml` is `pull_request`-only.** Work goes straight to `main` without PRs, so the performance budget — **LCP ≤ 2.0s, initial JS ≤ 200KB, TBT ≤ 200ms** — **cannot run at all** as this project actually commits. Adding a `push` trigger means Lighthouse on every commit; the alternative is adopting PRs. It is dispatchable on demand meanwhile. **2. Every no-skip guard in `integration.yml` has only ever been seen passing** — five of them. Per the house rule a guard first seen green has not been shown to work, so one deliberate `it.skip` should be pushed to watch it go red. Both are recorded in **YT-0569**. |
 | 🧪 **YT-0527 is why `done` needs a second pair of eyes** | It sat at `review` with **4/4 criteria ticked**, and its Cerbos integration had never once been capable of running. Every box was defensible from reading the workflow file and false in the runner — including one ticked on reasoning (`watchForChanges` covers the ordering) that was wrong because **the setting lived in the config file that failed to mount for the same reason**. Back to `doing`. This is the argument for not rubber-stamping the other 41. |
-| 🌐 **Australia’s public surface returns 404** | Measured against the running dev server: `PUBLIC_LOCALES` is `["id", "au"]`, `GENERATED_PUBLIC_LOCALES` is `["id"]`, and every public route sets `dynamicParams = false`. So `/id` serves and **`/au` does not exist**. YT-0405 reads as done from inside the code because the type admits a locale the router refuses. **AU is the primary market**; this is the widest gap between plan and build. |
+| ✅ **Australia’s public surface serves** | `PUBLIC_LOCALES` and `GENERATED_PUBLIC_LOCALES` are **both** `["id", "au"]` (`apps/web/features/public/public-locale.ts:42,46` — re-read here, not taken on report), and `/au` serves genuinely Australian data — Sydney merchants, `audCents`-scaled amounts — rather than Jakarta content under an Australian URL. Closed by **YT-0181**/**YT-0405**. This row read _“Australia’s public surface returns 404”_ for some time after it stopped being true: it sits **outside the `AUTO:DASHBOARD` markers**, so `scripts/tasks.mjs` never corrects it and `--check` never flags it stale. **Three sessions lost time to it in one day**, and the heading was itself the false claim, so correcting the cell alone would have left the assertion standing as the title. **Prose above the markers is hand-maintained and carries none of the dashboard’s guarantees.** Text by `yourtal-54`, whose epic closed it; applied by the recorder. |
 | 🗺️ **Coverage map — recorded, deliberately not started** | YT-0543..0546. Founder decision: it waits until the current plan is done and running. Three things captured now because they are cheap early and expensive late: **Australia Post licenses postcode data, the ABS does not**; **postcodes are delivery routes, not polygons** (SA2 is the right unit); and the **cohort floor must live in the aggregation, not the renderer** — a density map at low coverage re-identifies people. |
 | 🔄 **Australia-primary — reported confirmed, roadmap not yet re-cut** | Relayed via another session: **Australia is the primary market, Indonesia the proving ground**, and the reward is _a reward, not a wage replacement_, at **less than AUD 5 per twenty minutes** depending on partner funding. Engineering consequences are already in flight (YT-0405 region support, region selection at registration) because they are right either way. **The roadmap, economics and legal sequencing have not been re-cut** — `docs/04` still has Indonesia as Phase 1 and Australia as Phase 3. That is ~2 days of work and I want it confirmed in this session first. See _What AU-primary would change_. |
 | 👤 **YT-0050 is blocking real work now** | **Nobody owns the economy.** Two things wait on that person, not on engineering: **YT-0043's finance review cannot be ticked** (a ledger classification signed off by nobody is how a restatement starts), and **YT-0045's point values are placeholders** — the Reward Engine works, but nobody has said what an action is worth. Naming this person costs nothing and unblocks both. |
@@ -41,7 +41,7 @@ Format and rules: [`docs/tasks/_schema.md`](docs/tasks/_schema.md).
 | 🔐 **A merchant could have captured another merchant's hold** | Found by `yourtal-22` exposing `/v1/vouchers/{authorize,capture,void,refund}`, **verified here against `main`**: the authorization query is `WHERE id = $1 AND state = 'held' AND expires_at > now()` — **no merchant predicate**. Correct for the invariant the domain tests assert, and false the moment the id is client-supplied over HTTP. Proved by disabling the new check: **a stranger's signed capture succeeded and returned a receipt.** Fixed at the HTTP boundary with the same refusal a missing id gets, so it cannot be used to enumerate. **The query is still unscoped** — safe because one caller checks, which is a convention rather than a constraint. **YT-0571**, risk 50. Two smaller siblings of the same shape: **YT-0572** (a refusal message that reveals which check failed) and **YT-0573** (nothing ever marks a voucher `expired`, so the portal and reconciliation read a stale `state`). |
 | 🚨 **A two-person-approval control is switched off by saying nothing** | `policies/resource_policies/listing.yaml:41` allows `set_settlement_value` when `!has(R.attr.isMaterialSettlementDecrease)` — **an `EFFECT_ALLOW` whose guard is satisfied by the attribute being absent**, so every settlement cut passes as non-material however large. Worse: the attribute **cannot** be supplied the normal way, because `attrsFrom` is synchronous and request-only while materiality compares against the *stored* `S`. **The correct calling pattern is the one that disables the control.** Its policy tests pass because they supply the attribute by hand, and nothing had ever reached it over HTTP. Found by `yourtal-22`'s agent 3, verified here. **YT-0574** (deny on absence), **YT-0575** (`approve_settlement_decrease` is a rule with no endpoint), risk 51. ⚠️ `policies/` belonged to `yourtal-e3`, **which has ended — this is unowned**. |
 | ⛔ **Nobody has defined what makes a settlement cut "material"** | `docs/17` line 84 requires two-person approval for _"changing a settlement value downward by more than a threshold"_ and **names no number**; the resource schema repeats the phrase; the policy consumes the boolean. **Three references, zero definitions.** An agent used **20% as a loudly-commented placeholder** so the check would not be a no-op — correct behaviour, and it leaves a number one agent invented standing in front of a two-person control. It is not an engineering default: a decrease in `S` is a **direct cut to what a user's points are worth**, since `points_price = (S / B) × demand_multiplier`. **YT-0576**, and it needs the same person as **YT-0050**. |
-| 🛑 **Do not run `pnpm dev:reset` or `docker compose down -v`** | `yourtal-22` is running three agents in git worktrees, each against **its own database in the shared cluster** — `yourtal_wt_voucher`, `yourtal_wt_ledger`, `yourtal_wt_store` — because `apps/api` suites clear tables in `beforeAll` and `fileParallelism` is off, so three concurrent agents against `yourtal` would have produced failures that looked like product bugs. **`down -v` destroys all three mid-run.** They are disposable once those agents finish and `yourtal-22` will say when. |
+| 🛑 **Still do not run `pnpm dev:reset` or `docker compose down -v` — and note `dev:reset` IS `down -v`** | **Rewritten 2026-09-21 because this row had started protecting the dead.** It named `yourtal-22`'s three worktree databases; that session has ended and **`yourtal_wt_voucher`, `yourtal_wt_ledger` and `yourtal_wt_store` no longer exist** — verified here against `pg_database`, which now holds `yourtal`, `yourtal_wt_policy` and `zitadel`. The whole stack was recreated at one moment and the volumes went with it. Probably harmless, since those three were disposable once their agents finished. **What is live and at risk now: `yourtal` itself, `yourtal_wt_policy`, and Zitadel's realm.** The ban stands and the reason is bigger: `dev:reset` is literally `docker compose down -v && docker compose up -d --wait` — it runs **neither** `db:migrate` nor `db:seed`, so it destroys every database in the shared cluster and hands back an **empty** one. **`pnpm dev:fresh` is the command that rebuilds.** YT-0519's criterion still tells the reader to run `dev:reset`, which is why that ticket failed verification. Also unexplained from the same recreation: **MinIO's S3 API port `26900` is not published** though compose declares it, so `packages/media`'s origin tests fail loud by design — not a regression, not yours, and `yourtal-c8` holds it. Nobody restarts shared infrastructure unilaterally. |
 | **Next unblocked engineering** | **YT-0513** (currency-tagged Money) — the structural answer to YT-0506, making the unit a question the compiler asks rather than one a person remembers. Then **YT-0535/0536** (the simulator seam) and **YT-0540/0541** (auth, schema now decided). Phase U continues against mocks. |
 | **Legal**                                                             | Proceeding **without advisory counsel** by founder decision. Positions recorded, sourced and risk-rated in [`docs/24-legal-positions.md`](docs/24-legal-positions.md). A **notaris and a local corporate services provider remain mandatory**.                                                                                                                                                                                                                                                                                                                                                                                  |
 | **Read before committing spend**                                      | [`docs/23-critique.md`](docs/23-critique.md) and [`docs/21-failed-analogues.md`](docs/21-failed-analogues.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -62,14 +62,37 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 | Session        | Owns                                                                                    | Task files it may edit                    |
 | -------------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **yourtal-22** | `apps/web/**` (**YT-0577**, the suite-wide wait policy) · `services/voucher/**` (**YT-0571/0572/0573**) · `services/ledger/**` next (**YT-0567**). Founder-approved, running now | none — reports status for recording |
-| **yourtal-1d** | **New 2026-09-20.** Offered the `apps/api` + `packages/*` backend cluster — **YT-0554** (superuser, risk 45) · **YT-0120** · **YT-0036** · **YT-0553** · **YT-0101** · **YT-0039** · **YT-0556**. All already started and near done, so finishing rather than building | none — reports status for recording |
-| **yourtal-14** | Planning, `docs/`, this tracker, `scripts/`, `.githooks/`, `.github/workflows/`           | everything under `docs/tasks/`            |
-| _yourtal-e3_   | _Ended._ Left behind: campaign, watch, `apps/api` core, contracts codegen               | —                                         |
-| _yourtal-5a_   | _Ended._ Left behind: `services/voucher`, pricing, `apps/api/modules/{store,merchant}`   | —                                         |
-| _yourtal-af_   | _Ended._ Left behind: config, persistence, infrastructure                               | —                                         |
+| **yourtal-a4** | `economy` · `data` · `legal` (26 tickets). **Held the recorder until 2026-09-21; handed it to `yourtal-22`** — still holds `docs/tasks/**` for its own landings | all of `docs/tasks/` — but only its own `### YT-####` blocks outside its epics |
+| **yourtal-22** _(the second; started 14:20)_ | **The recorder**: `TASKS.md`, `docs/tasks/**`, `scripts/tasks.mjs`, `_schema.md`. **Also the verifier** — sweeping the whole `review` queue to `done` or back to `doing` | all twelve board paths, handed over whole by `-a4` |
+| **yourtal-08** | `platform` (49 tickets) · sole writer of `apps/api/src/modules/**` work it files | own blocks; sole writer of `phase-0-platform.md` before the recorder took the tracker |
+| **yourtal-b6** | `store` (10 tickets) — `apps/api/src/modules/store/**`, `services/ledger/internal/pricing/**` | none — sends status changes to the recorder |
+| **yourtal-c8** | `web` — `apps/web/**`, and writes `yourtal-54`'s `seo` blocks by arrangement | own blocks |
+| **yourtal-54** | `watch` · `seo` · `commerce` — `apps/api/src/modules/watch/**`, `apps/web/features/{player,checkpoint,public}/**` | own blocks |
+| _yourtal-22 (the first) · -1d · -14_ | _Ended._ This table named all three as live until 2026-09-21 while five other sessions worked around it. **The `-22` that holds the tracker below is a DIFFERENT session reusing the name** — see the naming hazard under the table | — |
+| _yourtal-e3 · -5a · -af_ | _Ended._ Left behind: campaign, watch, `apps/api` core, contracts codegen; `services/voucher`, pricing, `apps/api/modules/{store,merchant}`; config, persistence, infrastructure | — |
 
-**TASKS.md is regenerated by yourtal-14 only.** Other sessions run `node scripts/tasks.mjs --check`, never the writing form.
+**`TASKS.md` is regenerated by `yourtal-90` only** (founder decision 2026-09-21, reassigning the role from `yourtal-a4`, which had held it since earlier the same day). Other sessions run `node scripts/tasks.mjs --check`, never the writing form, and send status changes with the command that proves them.
+
+**Two things changed with the handover, and both are load-bearing.**
+
+1. **The per-phase and per-epic narrative is now GENERATED**, inside the `AUTO:DASHBOARD` markers, from the tickets themselves — including a **widest gate** per phase and per epic, computed from *transitive* downstream reach. Do not hand-write status prose above the markers any more: that is the `/au` 404 shape, and row 25 explains what it cost. Prose that states a fact about the board is output. Prose that states intent is not, and belongs in `docs/tasks/` next to the work.
+2. **Run `pnpm verify` before you commit.** Not advice. On 2026-09-21 `7f3317c`, `5eeb9ac` and `7508a56` landed in sequence and **each broke a different gate** — formatting (7 files), `@yourtal/api` typecheck (2), `@yourtal/contracts` lint (2) — and `a119f4d` added a fifth in `@yourtal/api` lint. None was caught by its author. The gate was red for roughly an hour and **no ticket resting on "the tests pass" could be verified against it in that window**, which is the real cost: a red gate does not just block merging, it suspends the review queue. All five are fixed.
+
+⚠️ **A "cannot find module" typecheck failure straight after a merge is usually stale `node_modules`, not a defect.** `a119f4d` brought `@serwist/next` into `apps/web`; typecheck failed on it and on `@yourtal/media/hls-origin` until `pnpm install` relinked the workspace. Relink before you believe it, and before you file anything against the code.
+
+⚠️ **This table is hand-maintained and sits outside the `AUTO:DASHBOARD` markers, so nothing validates it.** It named three dead sessions for at least a day while five live ones routed around it — each noticing it was wrong, none noticing it would never self-correct. **`git worktree list` shows which trees exist, not which are being worked in**, which is how the main tree was read as unclaimed while three sessions were writing in it. Before trusting a row here, ask the session.
+
+⚠️ **`yourtal-22` names two different sessions in this document, and everything historical under that name belongs to the first one.** The first `-22` ran three agents on vouchers and the ledger and **ended** before the current one started; the rows above crediting `-22` with the merchant-capture finding, the `set_settlement_value` hole, the Cerbos schema revert and the worktree databases are **all the first session's work.** The second `-22` started 2026-09-21 ~14:20 and holds the tracker. **Neither wrote the other's rows.** Caught by `yourtal-54`, who had read the morning table and knew the first one was gone; **this line originally claimed the session had been resurrected, which was wrong** — a name was recycled, and a recycled name pointing at two sessions inside one document is worse than a stale row, because nothing about it reads as stale. `yourtal-a4` found the live `-22` at all only by listing sessions after an unexplained `+109` in `scripts/tasks.mjs` did not add up: **the diff caught it, the table did not.**
+
+⚠️ **A session cannot read its own name off its session id, and this one guessed wrong.** `-22` inferred `yourtal-90` from session `906b333a` and wrote it into this table and into a message to `-a4`, who is addressed by the real name and had to point it out. **Ask `ListAgents` for your own name before you sign anything with it** — a wrong name in a hand-maintained table is indistinguishable from a sixth session that does not exist.
+
+⚠️ **The tracker has now had two holders believing they were sole, twice in one day** — `-a4`/`-b6` in the morning, `-a4`/`-22` in the afternoon. Both were caught by a session asking the founder rather than by either claimant standing down. **A grant of this role is not complete until the previous holder has said it is**, and the previous holder is the one who should write the row.
+
+⚠️ **Five sessions share one physical checkout, so file-level ownership is not enough.** Two sessions editing different blocks of one file is a read-modify-write race, not a git merge — there are no conflict markers and the loser's edit vanishes with nothing to review. The working rules: **own `### YT-####` blocks, not files**; **targeted exact-string edits only, never read-whole-file-then-rewrite**; **announce the file before writing it**; **`git add -p`, never a whole shared task file**, and read the staged diff — `git status --porcelain` tells you which paths move, not what they say.
+
+⚠️ **Size every shared file before staging it: a file you touched is not a file you own.** A path list says which files move, not **whose work is in them** — the same lesson as `--porcelain`, one level up. `yourtal-54` caught this on itself before staging: its checkpoint work added **three lines** to `packages/contracts/src/db-drift/schema-drift.test.ts`, and the file's uncommitted diff is **+147**, referencing **YT-0555 ×8**, YT-0554 ×2, YT-0575, YT-0552, YT-0551, YT-0536, YT-0141, YT-0130, YT-0120 — and YT-0121 once. Following an agreed path list would have committed `yourtal-08`'s entire YT-0555 audit under 54's authorship with a message about checkpoint tokens. **That is `182d7fc` reproduced move for move**, and the only thing that stopped it was measuring the diff rather than trusting the list. Shared drift tests, registries and workspace manifests are where this concentrates.
+
+⚠️ **Verifying against the wrong tree is the day's recurring failure, and it has four shapes.** Three are fixable by looking harder: a **stale claim** (board optimistic — a ticket asserts something the code no longer does), a **stale blocker** (board pessimistic — a dependency was satisfied and nobody updated the ticket), and **another session's uncommitted work read as settled state** — a dirty-tree snapshot carries no authorship and no timestamp, so minutes-old and month-old work look identical. The fourth is **not** fixable by looking harder: **a peer's unmerged branch is genuinely invisible**, so a reading that is correct against `main` can be false against a branch you cannot see. The remedy there is to ask the session, not to grep more carefully. Four instances on 2026-09-21; only the last was unavoidable.
 
 **Ownership is stale the moment a session ends, and it ended three times today without the table noticing.** Checked 2026-09-20 against the live session list: **e3, 5a and af are gone**, and `yourtal-22` is running and was not in the table at all. Their unfinished work is now unowned — it is in the task graph, not in anyone's hands. `yourtal-14` owns `docs/`, `scripts/`, `.githooks/`, `.github/workflows/` and this tracker. **`apps/web`, `packages/contracts` and `packages/db` are shared surfaces: announce the paths, not just the ticket.** Naming tickets instead of paths caused three mid-write races in one day.
 
@@ -83,22 +106,29 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
-**275 tasks** — **46 finished (17%)** · 53 in progress · 170 not started · 6 blocked
+**287 tasks** — **60 finished (21%)** · 49 in progress · 173 not started · 5 blocked
 
-**1016 engineer-days left of 1157** — **12% of the estimated effort is settled**, against 17% of the task count. Effort counts every `todo`, `doing` and `blocked` task at its FULL estimate, so a half-finished task bills in full. These are ideal engineer-days for one person — divide by real throughput, not by headcount.
+**1004 engineer-days left of 1179** — **15% of the estimated effort is settled**, against 21% of the task count. Effort counts every `todo`, `doing` and `blocked` task at its FULL estimate, so a half-finished task bills in full. These are ideal engineer-days for one person — divide by real throughput, not by headcount.
 
-Of the 46 finished: **2 independently verified**, 44 awaiting a verifier. A task is only DONE when a session other than the one that did the work has checked it. **The two reviews sampled so far were both wrong**, so that queue is work rather than a formality.
+Of the 60 finished: **4 independently verified**, 56 awaiting a verifier. A task is only DONE when a session other than the one that did the work has checked it. **The two reviews sampled so far were both wrong**, so that queue is work rather than a formality.
 
 ### By phase
 
 | Phase | Done | Review | Doing | Left | Settled |
 |---|---|---|---|---|---|
-| Phase U · UI first  ◀ NEXT | 0/34 | 21 | 10 | 38d | `▓▓▓▓▓▓░░░░` 62% |
+| Phase U · UI first  ◀ NEXT | 0/35 | 24 | 7 | 28d | `▓▓▓▓▓▓▓░░░` 69% |
 | Phase −1 · Pilot | 0/13 | 0 | 0 | 36d | `░░░░░░░░░░` 0% |
-| Phase 0 · Foundations | 1/110 | 21 | 29 | 256d | `▓▓░░░░░░░░` 20% |
-| Phase 1 · Indonesia MVP | 1/90 | 2 | 14 | 334d | `░░░░░░░░░░` 3% |
+| Phase 0 · Foundations | 3/120 | 29 | 25 | 257d | `▓▓▓░░░░░░░` 27% |
+| Phase 1 · Indonesia MVP | 1/91 | 3 | 17 | 332d | `░░░░░░░░░░` 4% |
 | Phase 2 · Depth | 0/22 | 0 | 0 | 240d | `░░░░░░░░░░` 0% |
 | Phase 3 · Marketplace & AU | 0/6 | 0 | 0 | 112d | `░░░░░░░░░░` 0% |
+
+- **Phase U · UI first  ◀ NEXT** — **24 of 35 settled** (0 verified · 24 awaiting a verifier) · 7 in progress · **28d** left · **1 ready to start** · 2 blocked outside the graph. Widest gate: **YT-0400** `web` `review` — **28** open tasks downstream.
+- **Phase −1 · Pilot** — **0 of 13 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **36d** left · **4 ready to start**. Widest gate: **YT-0220** `media` `todo` — **29** open tasks downstream.
+- **Phase 0 · Foundations** — **32 of 120 settled** (3 verified · 29 awaiting a verifier) · 25 in progress · **257d** left · **41 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0041** `value` `review` — **86** open tasks downstream.
+- **Phase 1 · Indonesia MVP** — **4 of 91 settled** (1 verified · 3 awaiting a verifier) · 17 in progress · **332d** left · **20 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0100** `adplatform` `doing` — **63** open tasks downstream.
+- **Phase 2 · Depth** — **0 of 22 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **240d** left · **6 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0543** `data` `todo` — **3** open tasks downstream.
+- **Phase 3 · Marketplace & AU** — **0 of 6 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **112d** left · **nothing ready to start**. Widest gate: **YT-0320** `store` `todo` — **1** open task downstream.
 
 ### By epic
 
@@ -106,47 +136,74 @@ Of the 46 finished: **2 independently verified**, 44 awaiting a verifier. A task
 |---|---|---|---|---|---|---|
 | `adplatform` | 0/17 | 1 | 1 | **4** | 93d | `▓░░░░░░░░░` 6% |
 | `commerce` | 0/1 | 0 | 0 | — | 20d | `░░░░░░░░░░` 0% |
-| `data` | 0/9 | 1 | 0 | **3** | 45d | `▓░░░░░░░░░` 11% |
-| `economy` | 0/8 | 0 | 1 | **3** | 31d | `░░░░░░░░░░` 0% |
-| `infra` | 0/29 | 6 | 3 | **12** | 84d | `▓▓░░░░░░░░` 21% |
+| `data` | 0/9 | 0 | 1 | **3** | 47d | `░░░░░░░░░░` 0% |
+| `economy` | 0/8 | 0 | 3 | **2** | 31d | `░░░░░░░░░░` 0% |
+| `infra` | 1/30 | 5 | 3 | **13** | 85d | `▓▓░░░░░░░░` 20% |
 | `legal` | 0/9 | 0 | 1 | **4** | 36d | `░░░░░░░░░░` 0% |
 | `media` | 0/13 | 1 | 1 | **1** | 67d | `▓░░░░░░░░░` 8% |
 | `merchant` | 0/16 | 2 | 5 | **6** | 64d | `▓░░░░░░░░░` 13% |
 | `pilot` | 0/11 | 0 | 0 | **1** | 29d | `░░░░░░░░░░` 0% |
-| `platform` | 1/46 | 9 | 13 | **15** | 111d | `▓▓░░░░░░░░` 22% |
-| `risk` | 0/14 | 0 | 0 | **4** | 67d | `░░░░░░░░░░` 0% |
-| `seo` | 0/5 | 0 | 3 | **1** | 17d | `░░░░░░░░░░` 0% |
-| `store` | 0/10 | 0 | 1 | **4** | 92d | `░░░░░░░░░░` 0% |
-| `value` | 0/24 | 5 | 7 | **6** | 92d | `▓▓░░░░░░░░` 21% |
-| `watch` | 1/7 | 0 | 0 | **1** | 27d | `█░░░░░░░░░` 14% |
-| `web` | 0/56 | 19 | 17 | **3** | 140d | `▓▓▓░░░░░░░` 34% |
+| `platform` | 2/52 | 19 | 7 | **17** | 101d | `▓▓▓▓░░░░░░` 40% |
+| `risk` | 0/15 | 0 | 0 | **5** | 69d | `░░░░░░░░░░` 0% |
+| `seo` | 0/5 | 1 | 2 | **1** | 15d | `▓▓░░░░░░░░` 20% |
+| `store` | 0/10 | 0 | 3 | **2** | 92d | `░░░░░░░░░░` 0% |
+| `value` | 0/25 | 5 | 7 | **7** | 95d | `▓▓░░░░░░░░` 20% |
+| `watch` | 1/8 | 0 | 1 | **1** | 29d | `█░░░░░░░░░` 13% |
+| `web` | 0/58 | 22 | 14 | **5** | 131d | `▓▓▓▓░░░░░░` 38% |
+
+- `adplatform` — **1 of 17 settled** (0 verified · 1 awaiting a verifier) · 1 in progress · **93d** left · **4 ready to start**. Widest gate: **YT-0100** `adplatform` `doing` — **63** open tasks downstream.
+- `commerce` — **0 of 1 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **20d** left · **nothing ready to start**.
+- `data` — **0 of 9 settled** (0 verified · 0 awaiting a verifier) · 1 in progress · **47d** left · **3 ready to start**. Widest gate: **YT-0519** `data` `doing` — **14** open tasks downstream.
+- `economy` — **0 of 8 settled** (0 verified · 0 awaiting a verifier) · 3 in progress · **31d** left · **2 ready to start**. Widest gate: **YT-0048** `economy` `todo` — **25** open tasks downstream.
+- `infra` — **6 of 30 settled** (1 verified · 5 awaiting a verifier) · 3 in progress · **85d** left · **13 ready to start**. Widest gate: **YT-0529** `infra` `doing` — **39** open tasks downstream.
+- `legal` — **0 of 9 settled** (0 verified · 0 awaiting a verifier) · 1 in progress · **36d** left · **4 ready to start** · 2 blocked outside the graph. Widest gate: **YT-0010** `legal` `doing` — **32** open tasks downstream.
+- `media` — **1 of 13 settled** (0 verified · 1 awaiting a verifier) · 1 in progress · **67d** left · **1 ready to start**. Widest gate: **YT-0220** `media` `todo` — **29** open tasks downstream.
+- `merchant` — **2 of 16 settled** (0 verified · 2 awaiting a verifier) · 5 in progress · **64d** left · **6 ready to start**. Widest gate: **YT-0150** `merchant` `doing` — **18** open tasks downstream.
+- `pilot` — **0 of 11 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **29d** left · **1 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0001** `pilot` `todo` — **9** open tasks downstream.
+- `platform` — **21 of 52 settled** (2 verified · 19 awaiting a verifier) · 7 in progress · **101d** left · **17 ready to start**. Widest gate: **YT-0039** `platform` `doing` — **73** open tasks downstream.
+- `risk` — **0 of 15 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **69d** left · **5 ready to start**. Widest gate: **YT-0051** `risk` `todo` — **10** open tasks downstream.
+- `seo` — **1 of 5 settled** (0 verified · 1 awaiting a verifier) · 2 in progress · **15d** left · **1 ready to start**. Widest gate: **YT-0180** `seo` `review` — **8** open tasks downstream.
+- `store` — **0 of 10 settled** (0 verified · 0 awaiting a verifier) · 3 in progress · **92d** left · **2 ready to start**. Widest gate: **YT-0130** `store` `doing` — **22** open tasks downstream.
+- `value` — **5 of 25 settled** (0 verified · 5 awaiting a verifier) · 7 in progress · **95d** left · **7 ready to start**. Widest gate: **YT-0041** `value` `review` — **86** open tasks downstream.
+- `watch` — **1 of 8 settled** (1 verified · 0 awaiting a verifier) · 1 in progress · **29d** left · **1 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0121** `watch` `doing` — **16** open tasks downstream.
+- `web` — **22 of 58 settled** (0 verified · 22 awaiting a verifier) · 14 in progress · **131d** left · **5 ready to start** · 1 blocked outside the graph. Widest gate: **YT-0400** `web` `review` — **28** open tasks downstream.
 
 ### In review (work complete, gate not yet passed)
 
 - **YT-0527** `infra` Cerbos in the integration workflow — 7/7 AC ticked
-- **YT-0516** `infra` Local development stack — **no cloud account needed** — 6/6 AC ticked
 - **YT-0517** `infra` Declare `services/*` and scaffold the Go module — 4/4 AC ticked
 - **YT-0518** `value` First migration, executed — 5/5 AC ticked
-- **YT-0519** `data` Seed the real database from the mock generators — 7/7 AC ticked
 - **YT-0520** `platform` Local identity provider — 4/4 AC ticked
 - **YT-0521** `media` Local object storage and media origin — 8/8 AC ticked
 - **YT-0535** `platform` One driver interface per external boundary — 6/6 AC ticked
 - **YT-0536** `platform` Simulators that can fail — 7/7 AC ticked
 - **YT-0537** `platform` Payment and disbursement simulator — 10/10 AC ticked
-- **YT-0031** `platform` Contracts package and codegen — 4/4 AC ticked
+- **YT-0510** `platform` Delete duplicate business shapes from `apps/api` — 4/4 AC ticked
 - **YT-0511** `infra` Repo-wide formatting gate — 2/2 AC ticked
+- **YT-0502** `platform` Listing contract: multiple merchant locations — 2/2 AC ticked
+- **YT-0503** `platform` Campaign contract: chapters and video source — 2/2 AC ticked
+- **YT-0504** `platform` Wallet contract: points history and ledger projection — 2/2 AC ticked
 - **YT-0035** `platform` Cerbos policies and decision point — 3/3 AC ticked
 - **YT-0500** `platform` PDP enforcement across API routes — 8/8 AC ticked
+- **YT-0036** `platform` Consent service v1 — 7/7 AC ticked
 - **YT-0515** `platform` Durable shared idempotency store — 4/4 AC ticked
 - **YT-0551** `web` Gate the completion hand-off on coverage, not on the `ended` event — 4/4 AC ticked
+- **YT-0553** `platform` API surface for campaign and watch — 12/12 AC ticked
 - **YT-0554** `platform` The API must not connect to Postgres as a superuser — 9/9 AC ticked
+- **YT-0555** `platform` The schema-drift gate does not cover the business module — 2/2 AC ticked
+- **YT-0556** `platform` Health endpoint — 2/2 AC ticked
 - **YT-0557** `infra` Load the root `.env` properly — 3/3 AC ticked
+- **YT-0558** `platform` Test configs hard-code `DATABASE_URL`, which defeats sabotage — 3/3 AC ticked
 - **YT-0568** `infra` Line endings were never renormalised after `.gitattributes` landed — 4/4 AC ticked
+- **YT-0574** `platform` A two-person-approval control that a missing attribute switches off — 4/4 AC ticked
+- **YT-0580** `platform` A business admin can strip the owner’s role — 4/4 AC ticked
 - **YT-0041** `value` Ledger schema and constraints — 5/5 AC ticked
 - **YT-0042** `value` Ledger transfer API — 6/6 AC ticked
 - **YT-0046** `value` Partner funding: point pre-purchase and drawdown — 9/9 AC ticked
 - **YT-0101** `adplatform` Campaign model and lifecycle — 7/7 AC ticked
+- **YT-0180** `seo` Public catalogue and merchant pages — 7/7 AC ticked
 - **YT-0140** `value` Voucher issuance and code custody — 4/4 AC ticked
+- **YT-0440** `web` Business console shell — 2/2 AC ticked
 - **YT-0441** `web` Campaign builder — 3/3 AC ticked
 - **YT-0442** `web` Question bank authoring — 3/3 AC ticked
 - **YT-0444** `web` Team management — 2/2 AC ticked
@@ -159,9 +216,11 @@ Of the 46 finished: **2 independently verified**, 44 awaiting a verifier. A task
 - **YT-0404** `web` Performance budget harness — 3/3 AC ticked
 - **YT-0410** `web` Earn board — 3/3 AC ticked
 - **YT-0411** `web` Campaign entry card — the contract screen — 3/3 AC ticked
+- **YT-0412** `web` Long-form player UI — 5/5 AC ticked
 - **YT-0413** `web` Checkpoint question UI — 4/4 AC ticked
 - **YT-0414** `web` Quick feed — 3/3 AC ticked
 - **YT-0420** `web` Store browse — 3/3 AC ticked
+- **YT-0421** `web` Offer detail — 3/3 AC ticked
 - **YT-0422** `web` Burn flow with price lock — 4/4 AC ticked
 - **YT-0423** `web` Wallet — 3/3 AC ticked
 - **YT-0431** `web` Logged-out public pages — 3/3 AC ticked
@@ -171,44 +230,43 @@ Of the 46 finished: **2 independently verified**, 44 awaiting a verifier. A task
 ### In progress
 
 - **YT-0010** Legal positions register — 3/4 AC
+- **YT-0519** Seed the real database from the mock generators — 5/7 AC
 - **YT-0529** Helios: environment layout and what shares the box — 3/6 AC
 - **YT-0530** Helios: isolation and resource caps — 1/6 AC
 - **YT-0532** Helios: deploy pipeline with rollback — 4/14 AC
 - **YT-0507** `business` and `kyb_document` resource kinds — 0/3 AC
 - **YT-0508** Promote business shapes into contracts — 0/3 AC
 - **YT-0512** `apps/web` imports an undeclared package — 1/5 AC
-- **YT-0509** Invert the contracts → authz dependency — 2/7 AC
-- **YT-0510** Delete duplicate business shapes from `apps/api` — 2/4 AC
+- **YT-0509** Invert the contracts → authz dependency — 3/5 AC
 - **YT-0525** Migrate hand-built forms to React Hook Form — 1/6 AC
 - **YT-0526** Testable HLS fixture for the player — 3/6 AC
-- **YT-0502** Listing contract: multiple merchant locations — 2/3 AC
-- **YT-0503** Campaign contract: chapters and video source — 2/3 AC
-- **YT-0504** Wallet contract: points history and ledger projection — 2/3 AC
 - **YT-0501** Field RUM for real INP — 2/6 AC
-- **YT-0036** Consent service v1 — 7/8 AC
 - **YT-0037** Jurisdiction policy service — 1/5 AC
 - **YT-0039** Idempotency middleware (TypeScript) — 2/3 AC
 - **YT-0548** Storage for campaign chapters and video source — 0/6 AC
 - **YT-0550** Player: `Home` does not return the playhead to zero — 0/4 AC
-- **YT-0552** Wire `apps/api` repositories to Postgres — 7/14 AC
-- **YT-0553** API surface for campaign and watch — 11/12 AC
-- **YT-0556** Health endpoint — 2/3 AC
+- **YT-0552** Wire `apps/api` repositories to Postgres — 7/13 AC
 - **YT-0565** The ledger schema-drift regex fails open — 5/8 AC
+- **YT-0575** `approve_settlement_decrease` is a rule with no way to invoke it — 1/3 AC
+- **YT-0576** Nobody has defined what makes a settlement decrease "material" — 2/3 AC
 - **YT-0513** Currency-tagged Money type — 5/6 AC
 - **YT-0506** CONFIRM: does Xendit take IDR in rupiah or sen? — 13/18 AC
 - **YT-0043** Chart of accounts — 6/7 AC
 - **YT-0044** Invariant checker and daily proof — 8/10 AC
 - **YT-0045** Reward Engine skeleton — 8/10 AC
+- **YT-0050** Name the economy owner — 1/2 AC
 - **YT-0055** Next.js app shell and design tokens — 2/4 AC
 - **YT-0056** UI primitives package — 1/4 AC
 - **YT-0058** Internationalisation scaffolding — 2/6 AC
 - **YT-0100** Advertiser accounts and business onboarding — 1/3 AC
+- **YT-0121** Checkpoint tokens — 0/3 AC
 - **YT-0177** Streaks and daily check-in — 0/4 AC
-- **YT-0180** Public catalogue and merchant pages — 5/7 AC
-- **YT-0181** Internationalised routing and hreflang — 3/5 AC
+- **YT-0181** Internationalised routing and hreflang — 4/6 AC
 - **YT-0203** User information architecture: five surfaces — 1/4 AC
-- **YT-0212** Open Graph and share cards on public pages — 2/5 AC
+- **YT-0212** Open Graph and share cards on public pages — 3/5 AC
 - **YT-0130** Unified catalogue — 4/6 AC
+- **YT-0131** Supplier listing management — 1/3 AC
+- **YT-0132** Store browse and search — 1/3 AC
 - **YT-0141** Bulk issuance with two-person approval — 1/3 AC
 - **YT-0142** Voucher lifecycle state machine — 3/5 AC
 - **YT-0150** Redemption API: authorize — 2/3 AC
@@ -216,18 +274,14 @@ Of the 46 finished: **2 independently verified**, 44 awaiting a verifier. A task
 - **YT-0152** Merchant credentials and request signing — 2/5 AC
 - **YT-0153** Enumeration defence and anomaly detection — 3/5 AC
 - **YT-0155** Partial redemption policy — 2/4 AC
-- **YT-0440** Business console shell — 1/2 AC
 - **YT-0443** Business reports — 1/3 AC
 - **YT-0405** Region and locale foundation (AU + ID) — 4/5 AC
-- **YT-0412** Long-form player UI — 4/5 AC
-- **YT-0421** Offer detail — 2/3 AC
 - **YT-0424** Voucher detail and offline QR — 3/4 AC
 - **YT-0430** Onboarding and phone OTP — 3/5 AC
 
 ### Blocked
 
 - **YT-0534** Data residency: what Helios is allowed to hold
-- **YT-0576** Nobody has defined what makes a settlement decrease "material"
 - **YT-0124** Chapter-level reward accrual
 - **YT-0562** DECIDE: what is a resale bid denominated in?
 - **YT-0450** Clickable prototype walkthrough
@@ -240,18 +294,27 @@ Of the 46 finished: **2 independently verified**, 44 awaiting a verifier. A task
 - **YT-0221** `risk` Spike: does phone verification earn its friction? · 3d
 - **YT-0222** `economy` Spike: bounded-loss economic model · 3d
 - **YT-0020** `infra` GCP organisation, projects, billing, IAM baseline · 3d
+- **YT-0023** `infra` Redis provisioned per region · 1d
 - **YT-0025** `infra` Cloudflare: domains, CDN, R2, Stream, Turnstile · 3d
+- **YT-0027** `infra` Observability: OpenTelemetry, Grafana Cloud, Sentry · 4d
 - **YT-0028** `infra` CI pipeline with all gates · 4d
-- **YT-0050** `economy` Name the economy owner · 2d
+- **YT-0032** `platform` Zitadel deployed, realm per country · 5d
+- **YT-0038** `platform` Hash-chained audit log · 4d
+- **YT-0040** `platform` Job queue and worker skeleton · 3d
 - **YT-0051** `risk` Device signal interface, web implementation · 4d
+- **YT-0052** `risk` Turnstile and rate limiting · 3d
 - **YT-0505** `infra` Reconcile pnpm-lock.yaml across sessions · 1h
-- **YT-0558** `platform` Test configs hard-code `DATABASE_URL`, which defeats sabotage · 1h
+- **YT-0524** `platform` Reporting contract gaps · 3d
+- **YT-0540** `platform` Email and password authentication · 4d
+- **YT-0547** `platform` Test isolation: one database per package, not one lock per file · 2d
 - **YT-0569** `infra` No CI has ever run, and the workflows watch a branch that does not exist · 2d
 - **YT-0578** `infra` Rewrite history before this repository is ever public again · 1d
 - **YT-0579** `infra` `turbo run test` strips the env var every isolation escape hatch depends on · 1d
-- **YT-0121** `watch` Checkpoint tokens · 5d
+- **YT-0588** `platform` The service worker and the performance budget need different bundlers · 2d
+- **YT-0589** `risk` No public route may leak the backing rate `B` · 2d
+- **YT-0591** `platform` Generate the TypeScript client, now that endpoints exist · 2d
 - **YT-0215** `data` Interest taxonomy · 4d
-- **YT-0543** `data` Geography taxonomy and boundary data · 5d
+- _…and 2 more_
 
 ### Waiting on dependencies
 
@@ -264,17 +327,17 @@ Of the 46 finished: **2 independently verified**, 44 awaiting a verifier. A task
 - **YT-0522** Split cloud tasks into local and deployed → waiting on YT-0520, YT-0521
 - **YT-0021** Terraform skeleton and two data planes → waiting on YT-0020
 - **YT-0022** PostgreSQL provisioned per region → waiting on YT-0021
-- **YT-0023** Redis provisioned per region → waiting on YT-0516
 - **YT-0024** Cloud Run, Artifact Registry, deploy pipeline → waiting on YT-0021
 - **YT-0026** Secret Manager and KMS keyrings → waiting on YT-0020
-- **YT-0027** Observability: OpenTelemetry, Grafana Cloud, Sentry → waiting on YT-0516
 - **YT-0531** Helios: Postgres with a restore that has actually been run → waiting on YT-0530
 - **YT-0533** Secrets and keys without a KMS → waiting on YT-0530
 - **YT-0538** Bot-check, OTP and messaging simulators → waiting on YT-0535
 - **YT-0539** Boundary parity suite → waiting on YT-0537
-- **YT-0540** Email and password authentication → waiting on YT-0516
 - **YT-0541** Identity provider seam → waiting on YT-0540
 - **YT-0542** Record what deferring phone verification costs → waiting on YT-0540
+- **YT-0528** The remaining seven DSAR handlers → waiting on YT-0036
+- **YT-0033** Phone OTP login flow → waiting on YT-0540, YT-0538
+- **YT-0034** OIDC client for the first sister app → waiting on YT-0033
 
 <!-- /AUTO:DASHBOARD -->
 

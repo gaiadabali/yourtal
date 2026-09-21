@@ -167,9 +167,10 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] Every price change is audit-logged per SKU
 
 ### YT-0050 · Name the economy owner
-`todo` · P0 · economy · 2d · dep: —
+`doing` · P0 · economy · 2d · dep: —
 
-- [ ] A named analyst or economist is accountable for issuance vs redemption and coverage
+- ✅ **Founder decision 2026-09-21: the founder holds the economy himself.** Accountable for issuance vs redemption, coverage, point values (**YT-0045**), the chart-of-accounts finance review (**YT-0043**), the settlement materiality rule (**YT-0576**) and `goodwillCreditCeilingIdr` (**YT-0582**). Delegating it later is a change of holder, not a re-opening of this ticket. **Recorded first-hand**: the founder answered it in this session directly. `yourtal-b6` reports the same answer from its own session, but per `yourtal-08` that is a **second relay rather than independent corroboration** — two sessions each reporting "the founder confirmed" is how one answer becomes three records
+- [x] A named analyst or economist is accountable for issuance vs redemption and coverage
 - [ ] Daily review checklist agreed
 
 ## Risk

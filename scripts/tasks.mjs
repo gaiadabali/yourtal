@@ -63,6 +63,23 @@ function parseFile(file) {
     if (/^\s*- \[[ x]\]/.test(line)) {
       cur.ac++;
       if (/^\s*- \[x\]/.test(line)) cur.done++;
+      // Rule 8. An unticked criterion whose text OPENS with a strikethrough is
+      // one its author has declared dead while leaving it blocking, so the
+      // ticket can never reach its own bar. "- 🚫" is the form for retired
+      // work (see _schema.md "Bullet forms"), and it is a note, not a box.
+      //
+      // Anchored at the start of the criterion text deliberately, rather than
+      // testing whether the line contains a strikethrough anywhere. The loose
+      // form was the one proposed, and it would have been a false positive on
+      // YT-0130, whose criterion strikes a quoted fragment of its own former
+      // wording mid-line while remaining a live, unmet bar. Three matches
+      // loose, two anchored, and the two anchored ones are the real defects.
+      if (/^\s*- \[ \]\s*~~/.test(line)) {
+        errors.push(
+          `${at}  ${cur.id} has a struck-through criterion that is still blocking — ` +
+            `use "- 🚫" for work a decision has retired, per _schema.md`,
+        );
+      }
     }
   });
 }
@@ -114,6 +131,36 @@ for (const t of tasks) walk(t.id, []);
 const pct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
 const open = (t) => !["done", "cut"].includes(t.status);
 const blockedBy = (t) => (t.deps ?? []).filter((d) => byId.get(d) && open(byId.get(d)));
+
+// Downstream reach: every OPEN task that would stop waiting, directly or
+// transitively, if this one settled.
+//
+// Transitive rather than direct, because direct dependents undercount exactly
+// the thing this board keeps rediscovering by hand. YT-0012 has two direct
+// dependents and sits under the whole 92-day `store` pricing chain via
+// YT-0049 → YT-0048; a "2" next to it reads as a leaf and it is the gate.
+// That finding was written into YT-0131 as a "⚠️ structural finding" by a
+// session that had to trace the chain manually to see it. A number the
+// generator can compute should not cost a session an afternoon.
+const dependents = new Map();
+for (const t of tasks) {
+  for (const d of t.deps ?? []) {
+    if (!dependents.has(d)) dependents.set(d, []);
+    dependents.get(d).push(t.id);
+  }
+}
+function downstreamOf(id) {
+  const seen = new Set();
+  const stack = [...(dependents.get(id) ?? [])];
+  while (stack.length) {
+    const c = stack.pop();
+    if (seen.has(c)) continue;
+    seen.add(c);
+    stack.push(...(dependents.get(c) ?? []));
+  }
+  return seen;
+}
+const reach = (id) => [...downstreamOf(id)].filter((c) => byId.get(c) && open(byId.get(c))).length;
 
 function table(rows, headers) {
   return [
@@ -189,6 +236,53 @@ lines.push(
   "",
 );
 
+// The per-phase and per-epic narrative used to be hand-written prose sitting
+// ABOVE the AUTO markers, where `--check` never looked. That is how a row
+// reading "Australia's public surface returns 404" survived a full day after
+// it stopped being true and cost three sessions time — and the heading was
+// itself the false claim, so fixing the cell would have left the assertion
+// standing as the title.
+//
+// The rule this encodes: **prose that states a fact about the board is output,
+// and output belongs inside the markers.** Anything a generator cannot derive
+// is intent, not status, and intent belongs in `docs/tasks/`, next to the work.
+//
+// Deliberately NOT harvested from the `# Phase …` / `## …` headings in the task
+// files. Phases cross-cut files (`phase-0-platform.md` alone carries P0, P1 and
+// PU) and the `##` groupings are not epics at all — `## Voucher` holds YT-0140,
+// whose epic is `value`. Harvesting would have published a heading's prose
+// against the wrong slice and looked authoritative doing it.
+function narrate(ts, label) {
+  if (!ts.length) return `- ${label} — _no tasks._`;
+  const d = ts.filter((t) => t.status === "done").length;
+  const r = ts.filter((t) => t.status === "review").length;
+  const g = ts.filter((t) => t.status === "doing").length;
+  const b = ts.filter((t) => t.status === "blocked").length;
+  const ready = ts.filter(isReady).length;
+  const left = Math.round(remaining(ts));
+  const parts = [
+    `**${d + r} of ${ts.length} settled** (${d} verified · ${r} awaiting a verifier)`,
+    `${g} in progress`,
+    `**${left}d** left`,
+    ready ? `**${ready} ready to start**` : "**nothing ready to start**",
+  ];
+  if (b) parts.push(`${b} blocked outside the graph`);
+  let s = `- ${label} — ${parts.join(" · ")}.`;
+  // The widest gate answers "what one thing most needs finishing", which
+  // neither a percentage nor a remaining-day count can. Ties break on id so
+  // the dashboard is stable between runs that changed nothing.
+  const gate = ts
+    .filter(open)
+    .map((t) => ({ t, n: reach(t.id) }))
+    .sort((a, z) => z.n - a.n || a.t.id.localeCompare(z.t.id))[0];
+  if (gate && gate.n > 0) {
+    s +=
+      ` Widest gate: **${gate.t.id}** \`${gate.t.epic}\` \`${gate.t.status}\`` +
+      ` — **${gate.n}** open ${gate.n === 1 ? "task" : "tasks"} downstream.`;
+  }
+  return s;
+}
+
 lines.push("### By phase", "");
 lines.push(
   table(
@@ -214,6 +308,13 @@ lines.push(
       ];
     }),
     ["Phase", "Done", "Review", "Doing", "Left", "Settled"],
+  ),
+  "",
+  ...PHASES.filter((p) => tasks.some((t) => t.phase === p)).map((p) =>
+    narrate(
+      tasks.filter((t) => t.phase === p && t.status !== "cut"),
+      `**${PHASE_LABEL[p]}**`,
+    ),
   ),
   "",
 );
@@ -251,6 +352,13 @@ lines.push(
       ];
     }),
     ["Epic", "Done", "Review", "Doing", "Ready", "Left", "Settled"],
+  ),
+  "",
+  ...epics.map((e) =>
+    narrate(
+      tasks.filter((t) => t.epic === e && t.status !== "cut"),
+      `\`${e}\``,
+    ),
   ),
   "",
 );

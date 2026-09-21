@@ -69,6 +69,48 @@ Use `- ⏭️` — no checkbox — for **work that belongs to another ticket**. 
 
 The test: *if this ticket were otherwise perfect, would this line still be unticked?* If yes, it is not a criterion.
 
+### Bullet forms
+
+Only `- [ ]` / `- [x]` is a **bar**. Every other form is a **note**: it carries information and the validator does not count it.
+
+| form | uses (2026-09-21) | means |
+| --- | --- | --- |
+| `- [ ]` `- [x]` | 1,068 | **a criterion** — a bar this ticket must meet |
+| `- ⚠️` | 88 | a finding or caution — **not a bar** |
+| `- ⏭️` | 21 | **deferred** — another ticket owns this work |
+| `- ⛔` | 16 | a blocker note — **not a bar** |
+| `- ✅` | 7 | resolved, with what resolved it — **not a bar** |
+| `- ℹ️` | 4 | context a reader needs and no one must act on |
+| `- ✏️` | 2 | this ticket's own text was corrected, and how |
+| `- ❌` | 1 | **failed independent verification**, returned from `review` |
+| `- 🚫` | 0 — new | **retired**: cancelled by a decision, nobody will ever do it |
+
+**These were documented, not invented.** Eight of the nine were already in use — 139 bullets in forms this file had never defined, which describes the format drifting from its own documentation rather than 139 defects. Counted three times by three sessions within an hour at 19.8%, 20.0% and 20.7% of all bullets: **the proportion is stable and the absolutes are not**, so a count of this board is stale within tens of minutes. Cite proportions here, timestamp absolutes.
+
+**`🚫` is the only new one, and `⏭️` could not cover it.** `⏭️` says *someone else will do this*; `🚫` says *nobody ever will*. YT-0124's two retired criteria are the case: decision O-1 makes the reward a single grant at completion, so "reward accrues per checkpoint" is not deferred to anyone, it is dead. **Do not reuse `- ❌` for this** — its one use means *failed verification*, a status note, and overloading it would blur the single distinction this table exists to draw.
+
+**A struck-through criterion is the shape to avoid.** `- [ ] ~~dead text~~` is a criterion its own author has declared dead while leaving it blocking, so the ticket can never reach its bar. Write `- 🚫` instead. The validator rejects the old shape; see rule 8.
+
+### Two rules for writing a criterion
+
+1. **A criterion states a bar the ticket must meet; an argument for why the ticket exists is a note.** YT-0546's *"this is the part with near-term value"* and YT-0016's *"this is the one position the register rates Low confidence"* are both arguments for priority — nothing can implement them. **This stays a rule for readers and is deliberately not validated**: YT-0016's neighbour, *"settled before the first merchandise order, not after"*, reads like the same shape and is a real bar, because it is checkable at any moment and failing it is a state the ticket can be in. No scan can draw that line; the epic owner can.
+2. **A criterion that names a mechanism ages badly; a criterion that names a property does not.** YT-0121 said *"nonce burned in Redis"* — and the `redis` service runs Valkey with `--save "" --appendonly no`, so it keeps nothing across a restart and every unexpired spent token becomes replayable at once. The implementation had already, correctly, used Postgres instead: **the criterion named a mechanism and then pointed away from the right answer while staying perfectly tickable.** YT-0553's *"point `DATABASE_URL` at a dead host"* is the same shape, made wrong by `TEST_DATABASE_URL`. Write the property — *"a spent nonce cannot be spent again, across a restart"*.
+
+**A deferral inherits its description from the ticket that deferred it, and that description is exactly as old as the deferral.** So a `- ⏭️` may name the work and the owning ticket; it may **not** assert the current state of the code. YT-0583 was filed as three days of migration on the strength of YT-0502's own breaking-change note, written before the consuming side was migrated — two thirds of it was already done. The deferring ticket reads as authoritative and is not.
+
+**When a defect touches two tickets, it belongs to one and the other gets a pointer.** A defect recorded twice is a defect that can be fixed once and still look open — and, worse, one that can be *closed* once while the second copy quietly goes stale. That is the shape that produced the `/au` 404 row in `TASKS.md`: one claim, two homes, only one of them ever checked. The worked case is 2026-09-21's `lang="id-ID"` defect, which touched YT-0181 (internationalised routing, where it lives) and YT-0180 (whose "indexable" criterion it arguably undermines). YT-0180 kept its tick and gained an `- ℹ️` pointing a verifier at YT-0181 before promoting it to `done`. Proposed by `yourtal-54` after the ruling went against them, which is the reason it is worth keeping.
+
+### Regenerating the dashboard while other sessions are writing
+
+`scripts/tasks.mjs` reads **every** file in this directory and bakes their combined state into `TASKS.md`. It writes only `TASKS.md` — no task file is ever modified — so the risk is not clobbering. The risk is **publishing a half-written board**: a partly-edited ticket is almost always still well-formed, so it validates green and the dashboard silently asserts a state nobody intended.
+
+So the protocol has **two** halves, and only the first was obvious:
+
+1. **The recorder announces before regenerating**, and anyone mid-write says wait.
+2. **A writer announces when its batch is finished**, not only that one is starting.
+
+**Why the second half exists.** On 2026-09-21 the recorder regenerated without waiting for a signal, while `yourtal-c8` was mid-batch in `phase-u-ui.md`. Nothing was published wrong — but only because c8's last edit landed at 14:06:47 and the regeneration ran at 14:11:57. **Five minutes of luck.** Ninety seconds earlier would have caught three of five blocks rewritten, validating green, publishing one ticket at `review` while another still carried a description its own work had invalidated — and **neither session would have had any signal it happened.** The fix is not more discipline; being mid-batch and being mid-sequence are both normal. It is that a promise to announce the start of a write says nothing about its end.
+
 ## Rules
 
 1. **A task is `done` or `review` only when every AC box is ticked.** The validator enforces both.
@@ -78,6 +120,12 @@ The test: *if this ticket were otherwise perfect, would this line still be untic
 5. **Never renumber.** `cut` tasks stay in the file with `cut` status so history stays readable.
 6. Regenerate the dashboard in the same commit as any task change. CI fails otherwise.
 7. **Commit `scripts/tasks.mjs` in the same commit as any dashboard whose format it changes.**
+8. **A criterion may not be struck through and left blocking.** `- [ ] ~~dead text~~` is rejected — use `- 🚫`. Enforced, and **proved in both directions**: a deliberate struck box makes the validator name the file, line and task id, and removing it returns it to green. Added 2026-09-21, after the first version of this guard was written with a corrupted regex (`/^s*- [ ]s*~~/`, backslashes lost in transit) that read correctly and could never match — green on a board that already satisfied it, and still green against deliberate sabotage. **A guard first seen passing has not been shown to work**; this one was only trusted after it was seen failing.
+9. **No commit lands without `pnpm verify` green.** A session that cannot run it says so in its commit message rather than assuming; "my package's tests pass" is not the gate. Founder decision 2026-09-21.
+
+**Why rule 9 exists.** The 2026-09-21 coordinated landing was sequenced specifically to avoid red commits, and **all three source commits broke a different gate anyway**: `7f3317c` left two `as` assertions in `packages/contracts`, which bans them outright; `5eeb9ac` left two `exactOptionalPropertyTypes` errors in `store-listing.routes.boot.test.ts`; `7508a56` landed alongside seven unformatted committed files and seven with CRLF drift that stopped `check:eol` at gate 1. Each session verified its own package and each was right about its own package. **Three for three is a pattern, not bad luck** — and every one was found afterwards by a fourth session running the whole gate, which is the expensive way. Found and fixed by `yourtal-90`.
+
+⚠️ **CRLF drift recurs and nothing prevents it.** The 2026-09-21 occurrence was working-tree-only — index and HEAD were LF throughout — and YT-0568's guard is what caught it, so this is **not** a failure of YT-0568. The remedy is YT-0568's own: delete the affected paths and `git checkout --` **those exact paths**, never `git checkout -- .`, which in a five-session tree destroys everyone's uncommitted work. Deserves its own ticket.
 
 **Why rule 7 exists.** Rule 6 pairs a *task change* with the dashboard and says nothing about the
 generator, so it does not catch the other half. `TASKS.md` is not a document that happens to be

@@ -59,7 +59,7 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 `todo` · P0 · legal · 3d · dep: YT-0010
 
 - [ ] Indonesian marketplace withholding obligations on seller income confirmed with a tax consultant
-- [ ] This is the one position the register rates Low confidence and it is financial, not theoretical
+- ⏭️ **This is the one position the register rates Low confidence and it is financial, not theoretical.** Converted 2026-09-21 — flagged by `yourtal-08`'s board scan and **judged by this session as the owner of `legal`**, which is the right way round: a scan proposes, the epic owner rules. It is an argument for the ticket's priority, so no implementation can tick it. **The other flagged-looking line stays a criterion**: "settled before the first merchandise order, not after" reads like sequencing but is a real bar — it is checkable at any moment, and failing it is a state the ticket can actually be in
 - [ ] Settled before the first merchandise order, not after
 
 ## Infrastructure
@@ -79,7 +79,7 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 
 
 ### YT-0516 · Local development stack — **no cloud account needed**
-`review` · P0 · infra · 1d · dep: —
+`done` · P0 · infra · 1d · dep: —
 
 - [x] `docker-compose.yml` running **Postgres 17**, a **Cerbos 0.55.0** sidecar and **Valkey 8**, all loopback-bound on ports 26432 / 26592 / 26379 — chosen to miss the four other Postgres instances already on this machine. All three healthy
 - [x] `.env.example` covering every variable `apps/api` reads, plus `pnpm dev:up` / `dev:down` / `dev:reset` / `dev:logs` / `dev:psql`
@@ -90,6 +90,16 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - ⚠️ **This should have existed from day one and its absence is a planning error of mine.** YT-0022 provisions _managed_ Postgres in GCP for _deployed_ environments; nothing about local development needs a cloud account. Treating them as the same dependency is why the idempotency store is in-memory and per-process, why every Drizzle line is typechecked but never executed, why there are zero migrations, and why `main.ts` has never started
 - [x] **`apps/api` booted for the first time**, all nine routes mapped. Two real blockers: Node's type stripping cannot resolve this repo's extensionless imports, and esbuild cannot emit the decorator metadata NestJS DI needs — `@swc-node/register` does both. Live smoke through **real Cerbos and real Postgres**: anonymous → 401, create → 201, same key + same body → 201 with the identical id, same key + different body → 409, and the database confirms exactly one business row and one owner membership
 
+- ✅ **Verified 2026-09-21 15:16 by `yourtal-22`, which did not write this ticket. Every bar re-measured from the running system, not from the test suite** — deliberately, because YT-0547 shows a suite result here depends on who else is running, and none of the evidence below does.
+  - Compose: `postgres:17-alpine`, `ghcr.io/cerbos/cerbos:0.55.0`, `valkey/valkey:8-alpine`, bound `127.0.0.1:26432/26592/26379`, all reporting healthy
+  - Cerbos serving a **real decision**: a live `POST /api/check/resources` returned `EFFECT_DENY` with `validationErrors` naming exactly the missing `jurisdiction`, `businessRoles` and `isSuspended` — the ticket's own wording, reproduced. `enforcement: reject` confirmed at `infra/cerbos/config.yaml:30`
+  - Role isolation proved by asking Postgres rather than reading DDL: `has_schema_privilege('yourtal_app','ledger','USAGE')` → **`f`**
+  - `apps/api` **boots**: `Nest application successfully started`, **31** routes mapped, and an anonymous `POST /api/businesses` is refused
+- ✏️ **Three figures in this ticket have drifted upward since it was written. Ticks stand; the numbers are corrected here rather than edited away, because the drift is the healthy direction and hiding it would lose the fact that this ticket is now describing a smaller system than exists.**
+  - *"Six domain schemas"* → **seven**: `business`, `campaign`, `ledger`, `platform`, `store`, `voucher`, `watch`
+  - *"all nine routes mapped"* → **31**
+  - *"anonymous → 401"* → **403**. The refusal still happens, which is the bar; what changed is which refusal, once YT-0500 put the PDP in front of the route. A criterion naming a status code rather than *"an anonymous request is refused"* is `_schema.md` rule 2 in miniature
+- ℹ️ **`/healthz` returns 404; the health route is `/api/health`.** Recorded because the first probe here used the wrong path and nearly became a finding against YT-0556. The route table, not the guess, settled it
 ### YT-0517 · Declare `services/*` and scaffold the Go module
 `review` · P0 · infra · 1d · dep: YT-0516
 
@@ -113,15 +123,19 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - **Defect found by YT-0043 and fixed:** `UNIQUE (owner_type, owner_id, currency)` encoded *one account per owner per currency* — right for a user, wrong for the platform, which needs issued, redeemed, breakage and marketing accounts at once. **A chart of accounts IS several accounts for one owner in one currency, so the constraint forbade the thing it existed to support.** Now a partial unique index over `user`, `merchant`, `charity` only, with both halves tested so the correction does not over-correct
 
 ### YT-0519 · Seed the real database from the mock generators
-`review` · P0 · data · 2d · dep: YT-0518
+`doing` · P0 · data · 2d · dep: YT-0518
+
+- ❌ **Failed independent verification 2026-09-21 (`yourtal-a4`), returned from `review`.** One ticked criterion is false against the code, which is the second sampled review in a row to fail — see the dashboard's note that `review` → `done` is work rather than a formality
 
 - [x] `pnpm db:seed` loads the **existing deterministic generators** in `packages/contracts/*.mock.ts` into local Postgres — same data, real tables
-- [x] Phase U surfaces read it through `apps/api`, not from in-process fixtures
-- [x] Seed is idempotent and re-runnable; `pnpm dev:reset` rebuilds it
+- [ ] Phase U surfaces read it through `apps/api`, not from in-process fixtures — **FALSE, was ticked.** The seam exists and is well built (`resolveDataSource` in `packages/contracts/src/mock-source.ts`, one switch, fails fast on a bad value), but **all 13 of its live implementations are `Promise.reject("Live … data source is not implemented yet (Phase U is mock-only).")`**, and `YOURTAL_DATA_SOURCE` defaults to `"mock"`. `apps/web/features/**` contains **zero `fetch(` calls** and **no API base URL of any kind** (`API_BASE_URL`, `NEXT_PUBLIC_API*` — no matches outside `.next/`), so the web app cannot reach `apps/api` at all. `apps/web/features/public/public-campaign-data.ts` states it outright: _"Fixed catalogue only, no `mock-source`/live seam — Phase U ships no BFF."_ **The database is seeded and nothing reads it.** Commands: `grep -rn "is not implemented yet" apps/web/features` (13, excluding tests), `grep -rn "fetch(" apps/web/features` (0), `grep -rn "API_BASE_URL|NEXT_PUBLIC_API" apps/web` (0 outside `.next/`)
+- [ ] Seed is idempotent and re-runnable; `pnpm dev:reset` rebuilds it — **half true.** Idempotency verified: every insert in `packages/db/src/seed.ts` is `ON CONFLICT … DO NOTHING` and the generators are seeded, so ids are stable. But **`dev:reset` is `docker compose down -v && docker compose up -d --wait`** — it destroys the volume and runs neither `db:migrate` nor `db:seed`, so it leaves an **empty** database rather than rebuilding the seed. `pnpm dev:fresh` is the command that does what this criterion claims, and `seed.ts:417` says so itself: _"use `pnpm dev:fresh` for a clean slate"_. Reword to `dev:fresh` or make `dev:reset` reseed — either closes it.
+  ⚠️ **"False" undersells it** (`yourtal-c8`): `dev:reset` **is** `docker compose down -v`, the one command this board carries a standing 🛑 warning against, because it destroys the worktree databases other sessions are running against. So a ticked criterion instructs the reader to run the forbidden command **and** leaves them with an empty database afterwards. Anyone fixing this should use `pnpm dev:fresh`
 - [x] Includes the awkward fixtures YT-0403 already defines: long merchant names, zero balance, expired voucher, sold-out listing
 - **This is what turns "it works against mocks" into "it works against the stack."** Fixtures cannot surface contract drift, N+1 queries, serialisation bugs, missing indexes or the seam failures this repo has already hit twice. The data stays synthetic; the path becomes real
 - [x] Migration 4 first — `campaign`, `store` and `voucher` schemas existed with **zero tables**, so there was nothing to seed into. Tables shaped exactly as `packages/contracts` defines them, so a column disagreeing with a Zod field is now a bug in one of the two
 - [x] **Verified independently:** 24 campaigns, 30 listings, 60 vouchers; re-run writes 0; **zero vouchers disagree with their listing**; and `listings_settlement_within_face` rejects a settlement above face value at the database
+- ⚠️ **The counts above no longer match the running database**, which is why a number in a criterion is a poor criterion. Measured 2026-09-21 against `yourtal-postgres`: **36 campaigns, 32 listings, 86 vouchers** (`campaign.campaigns`, `store.listings`, `voucher.vouchers`). Most likely later seeding — the AU region fixtures land after this was written — rather than a defect, so the criterion stays ticked. `listings_settlement_within_face` **does** exist in `pg_constraint` and was re-confirmed. Left as a note because a criterion asserting a row count is stale the moment anyone adds a fixture
 - [x] `pnpm dev:fresh` — reset, migrate, seed. One command from nothing to a working stack
 - **The lost `.refine()` rules are now in Postgres**, closing the loop from `docs/13`: quick campaigns ≤ 60s, accuracy bonus requires questions, stock within total, sold_out has no stock, minimum_spend iff threshold, and **settlement within face value** — an economic invariant, not a formatting rule. Settlement above face means the platform pays out more than the voucher was ever worth, silently, on every redemption
 

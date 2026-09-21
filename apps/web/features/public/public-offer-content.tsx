@@ -1,4 +1,4 @@
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent } from "@yourtal/ui/card";
 import { categoryLabel } from "@/features/store/store-category";
@@ -12,7 +12,7 @@ import { computeOfferRewardFacts } from "./public-reward-facts";
 import type { PublicLocaleConfig } from "./public-locale";
 
 export interface PublicOfferContentProps {
-  listing: Listing;
+  listing: PublicListing;
   locale: PublicLocaleConfig;
   merchantHref: string;
 }

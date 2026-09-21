@@ -1,4 +1,4 @@
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { Card, CardContent } from "@yourtal/ui/card";
 import { formatListingPrice } from "@/features/store/store-format";
 import { getPublicTranslator } from "./public-i18n";
@@ -6,7 +6,7 @@ import { slugify } from "./public-slug";
 import type { PublicLocale, PublicLocaleConfig } from "./public-locale";
 
 export interface PublicCatalogueContentProps {
-  listings: readonly Listing[];
+  listings: readonly PublicListing[];
   locale: PublicLocale;
   localeConfig: PublicLocaleConfig;
 }

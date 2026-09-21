@@ -1,5 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { formatMoney, formatPoints } from "@yourtal/contracts/money/format";
 import { formatDataCost, formatDuration } from "@/features/campaign/campaign-format";
 import { splitCampaignReward } from "@/features/campaign/campaign-reward-split";
@@ -59,7 +59,7 @@ export interface OfferRewardFacts {
 }
 
 export function computeOfferRewardFacts(
-  listing: Listing,
+  listing: PublicListing,
   locale: PublicLocaleConfig,
 ): OfferRewardFacts {
   const worthLabel = formatMoney(listing.faceValueIdr, locale.currency);

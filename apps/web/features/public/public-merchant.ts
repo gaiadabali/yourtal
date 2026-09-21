@@ -1,5 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { listLivePublicCampaigns } from "./public-campaign-data";
 import { listPublicListings } from "./public-listing-data";
 import type { PublicLocale } from "./public-locale";
@@ -36,10 +36,10 @@ export interface PublicMerchant {
   /** The district most of this merchant's listings reach, or `null` if it has none (campaigns carry no location). */
   district: string | null;
   campaigns: Campaign[];
-  listings: Listing[];
+  listings: PublicListing[];
 }
 
-function mostCommonDistrict(listings: readonly Listing[]): string | null {
+function mostCommonDistrict(listings: readonly PublicListing[]): string | null {
   if (listings.length === 0) {
     return null;
   }
@@ -70,7 +70,7 @@ function mostCommonDistrict(listings: readonly Listing[]): string | null {
  * merchants that happen to share a slug across regions.
  */
 export function listPublicMerchants(locale: PublicLocale): PublicMerchant[] {
-  const bySlug = new Map<string, { name: string; campaigns: Campaign[]; listings: Listing[] }>();
+  const bySlug = new Map<string, { name: string; campaigns: Campaign[]; listings: PublicListing[] }>();
 
   for (const campaign of listLivePublicCampaigns(locale)) {
     const slug = slugify(campaign.merchantName);

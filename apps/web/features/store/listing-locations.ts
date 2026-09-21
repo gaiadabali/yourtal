@@ -20,8 +20,20 @@ import type { Listing } from "@yourtal/contracts/listing";
  */
 type SupportedLocale = "en-AU" | "id-ID";
 
+/**
+ * Just the part of a listing these helpers actually read.
+ *
+ * Taking the whole `Listing` would force every caller to hold one — and a
+ * `Listing` carries `settlementValueIdr`, which a public surface must not
+ * (`publicListingSchema`'s header, `docs/24` ID-1). Demanding more than you
+ * read is not free: it decides what the caller is allowed to be. These
+ * functions read `locations` and nothing else, so that is what they ask
+ * for, and `Listing` and `PublicListing` both satisfy it.
+ */
+type HasLocations = Pick<Listing, "locations">;
+
 /** Every distinct district this listing can be redeemed in, alphabetised. */
-export function listingDistricts(listing: Listing, locale: SupportedLocale = "id-ID"): string[] {
+export function listingDistricts(listing: HasLocations, locale: SupportedLocale = "id-ID"): string[] {
   return Array.from(new Set(listing.locations.map((location) => location.district))).sort((a, b) =>
     a.localeCompare(b, locale),
   );
@@ -33,7 +45,7 @@ export function listingDistricts(listing: Listing, locale: SupportedLocale = "id
  * branches in Kemang are one place to go, and inflating that to "+1" would
  * overstate reach.
  */
-export function listingDistrictLabel(listing: Listing, locale: SupportedLocale = "id-ID"): string {
+export function listingDistrictLabel(listing: HasLocations, locale: SupportedLocale = "id-ID"): string {
   const districts = listingDistricts(listing, locale);
   const [first, ...rest] = districts;
   if (first === undefined) {

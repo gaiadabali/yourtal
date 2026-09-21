@@ -1,4 +1,4 @@
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import type { PublicMerchant } from "./public-merchant";
 import type { PublicLocale, PublicLocaleConfig } from "./public-locale";
 import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
@@ -63,7 +63,7 @@ export function buildBreadcrumbJsonLd(items: readonly JsonLdBreadcrumbItem[]): o
  * truthfully, without claiming member-price rich-result eligibility.
  */
 export function buildOfferProductJsonLd(params: {
-  listing: Listing;
+  listing: PublicListing;
   url: string;
   imageUrl: string;
   merchantUrl: string;
@@ -190,7 +190,7 @@ export function buildMerchantLocalBusinessJsonLd(params: {
 }
 
 /** Every location a merchant's listings reach, deduplicated by `id` — a location serving several listings must not become several `LocalBusiness` nodes. */
-function distinctMerchantLocations(listings: readonly Listing[]): MerchantLocationLike[] {
+function distinctMerchantLocations(listings: readonly PublicListing[]): MerchantLocationLike[] {
   const byId = new Map<string, MerchantLocationLike>();
   for (const listing of listings) {
     for (const location of listing.locations) {

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -81,13 +82,15 @@ export interface SeedCounts {
   readonly campaigns: number;
   readonly listings: number;
   readonly vouchers: number;
+  readonly questions: number;
 }
 
 export async function seed(pool: pg.Pool): Promise<SeedCounts> {
   const campaigns = await seedCampaigns(pool);
   const listings = await seedListings(pool);
   const vouchers = await seedVouchers(pool, mockListings);
-  return { campaigns, listings, vouchers };
+  const questions = await seedQuestionBank(pool);
+  return { campaigns, listings, vouchers, questions };
 }
 
 async function seedCampaigns(pool: pg.Pool): Promise<number> {
@@ -188,6 +191,133 @@ function lifecycleStateFor(status: Campaign["status"]): string {
     case "ended":
       return "ended";
   }
+}
+
+/**
+ * A question bank for every seeded campaign. YT-0122's unblock.
+ *
+ * `campaign.questionCount` has always been seeded — it is on the campaign
+ * row and on `terms_version`, so the catalogue *claims* a question count —
+ * and the three tables that would hold the questions were empty. A campaign
+ * promising four questions with none in the bank is a campaign nobody can
+ * complete, and it looks complete from the catalogue.
+ *
+ * ## Real rows, not a fake bank
+ *
+ * This writes to `campaign.question`, `campaign.question_option` and
+ * `campaign.question_answer_key` — the actual tables, with the actual
+ * constraints. It is deliberately NOT a code path that returns questions
+ * when storage is empty: `env.schema.ts` records what the last such
+ * fallback cost, when a missing `DATABASE_URL` silently selected in-memory
+ * repositories and the entire backend ran without executing a line of SQL.
+ * Seeding data is safe; branching on its absence is not.
+ *
+ * ## Why the answer key is a separate row, and stays that way here
+ *
+ * `question_answer_key` is its own table so a `SELECT *` on the question
+ * cannot return the answer (YT-0102's schema note). Seeding respects that:
+ * the key is inserted separately and nothing here joins the two.
+ *
+ * Idempotent, so `pnpm dev:seed` can be re-run and so a suite that clears
+ * its own campaign's questions gets them back on the next seed.
+ */
+async function seedQuestionBank(pool: pg.Pool): Promise<number> {
+  let written = 0;
+
+  for (const campaign of mockCampaigns) {
+    // The campaign's own promise decides how many exist. Seeding a fixed
+    // number would contradict `questionCount` on the row beside it, and the
+    // checkpoint schedule derives its length from that same field.
+    for (let index = 0; index < campaign.questionCount; index += 1) {
+      const questionId = deterministicQuestionId(campaign.id, index);
+      const isTrueFalse = index % 2 === 0;
+
+      const inserted = await pool.query(
+        `INSERT INTO campaign.question
+           (id, campaign_id, type, prompt, timer_seconds, status, pii_screen)
+         VALUES ($1, $2, $3, $4, 20, 'approved', 'clear')
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          questionId,
+          campaign.id,
+          isTrueFalse ? "true_false" : "multiple_choice",
+          `${campaign.title} — checkpoint ${String(index + 1)}: was this segment about ${campaign.merchantName}?`,
+        ],
+      );
+      written += inserted.rowCount ?? 0;
+
+      if (isTrueFalse) {
+        await pool.query(
+          `INSERT INTO campaign.question_answer_key (question_id, correct_answer)
+           VALUES ($1, true) ON CONFLICT DO NOTHING`,
+          [questionId],
+        );
+        continue;
+      }
+
+      // Four options, and the correct one is spread across all four
+      // ordinals — a bank whose answer is always first would let a bot score
+      // without reading anything, and would make YT-0122's option shuffling
+      // untestable because every unshuffled order would still be correct.
+      //
+      // Derived from the question id rather than from `index`. `index % 4`
+      // was the obvious choice and was wrong: multiple-choice questions only
+      // occur at odd indices, and odd numbers mod 4 are only ever 1 or 3, so
+      // the answer was never at ordinal 0 or 2. Measured, not assumed — the
+      // distribution came back `1|16, 3|5`. A bank with two dead positions
+      // is a bank a guesser beats at 50%, not 25%.
+      const correctOrdinal = ordinalFromId(questionId);
+      let correctOptionId = "";
+      for (let ordinal = 0; ordinal < 4; ordinal += 1) {
+        const optionId = deterministicOptionId(questionId, ordinal);
+        if (ordinal === correctOrdinal) correctOptionId = optionId;
+        await pool.query(
+          `INSERT INTO campaign.question_option (id, question_id, label, ordinal)
+           VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
+          [optionId, questionId, `Option ${String.fromCharCode(65 + ordinal)}`, ordinal],
+        );
+      }
+      await pool.query(
+        `INSERT INTO campaign.question_answer_key (question_id, correct_option_id)
+         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [questionId, correctOptionId],
+      );
+    }
+  }
+
+  return written;
+}
+
+/** A stable 0-3 drawn from the question's own id, so answers spread evenly. */
+function ordinalFromId(questionId: string): number {
+  const [firstByte = 0] = createHash("sha256").update(questionId).digest();
+  return firstByte % 4;
+}
+
+/**
+ * Stable ids derived from the campaign, so re-seeding updates the same rows
+ * rather than accumulating a new bank on every run. A random uuid here would
+ * make the seed non-idempotent and quietly grow the bank past the
+ * `questionCount` the campaign advertises.
+ */
+function deterministicQuestionId(campaignId: string, index: number): string {
+  return uuidFromParts(campaignId, `q${String(index)}`);
+}
+
+function deterministicOptionId(questionId: string, ordinal: number): string {
+  return uuidFromParts(questionId, `o${String(ordinal)}`);
+}
+
+/** A v4-shaped uuid derived from a seed string, so it is stable across runs. */
+function uuidFromParts(namespace: string, suffix: string): string {
+  const digest = createHash("sha256").update(`${namespace}:${suffix}`).digest("hex");
+  return [
+    digest.slice(0, 8),
+    digest.slice(8, 12),
+    `4${digest.slice(13, 16)}`,
+    `8${digest.slice(17, 20)}`,
+    digest.slice(20, 32),
+  ].join("-");
 }
 
 async function seedListings(pool: pg.Pool): Promise<number> {
@@ -414,7 +544,8 @@ async function main(): Promise<void> {
     const counts = await seed(pool);
     console.log(
       `Seeded ${String(counts.campaigns)} campaigns, ${String(counts.listings)} listings, ` +
-        `${String(counts.vouchers)} vouchers. Re-running is a no-op; use \`pnpm dev:fresh\` for a clean slate.`,
+        `${String(counts.vouchers)} vouchers, ${String(counts.questions)} questions. ` +
+        `Re-running is a no-op; use \`pnpm dev:fresh\` for a clean slate.`,
     );
   } finally {
     await pool.end();

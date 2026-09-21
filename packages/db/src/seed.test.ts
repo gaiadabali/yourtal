@@ -60,10 +60,20 @@ describe("the seed", () => {
     // The owner again: seeding is administration, and since YT-0142 the app
     // role cannot write a voucher. Re-seeding as the app would fail on the
     // grant rather than on idempotency, which is not what this asserts.
+    // Seeded TWICE here, and only the second run is asserted. `beforeAll`
+    // seeds too, but another suite sharing this database can delete rows
+    // between then and now — `question-bank.test.ts` clears its campaign's
+    // questions by design — and the re-insert that follows is the seed
+    // working, not failing. Asserting the first call after `beforeAll` made
+    // this test's result depend on which other file had run, which is
+    // YT-0547 in miniature. Two calls inside the test answer the question
+    // the test is actually asking: does seeding an already-seeded database
+    // write anything?
+    await seed(owner);
     const again = await seed(owner);
     const after = await count("SELECT COUNT(*)::text AS n FROM store.listings");
 
-    expect(again).toEqual({ campaigns: 0, listings: 0, vouchers: 0 });
+    expect(again).toEqual({ campaigns: 0, listings: 0, vouchers: 0, questions: 0 });
     expect(after).toBe(before);
   });
 
@@ -104,6 +114,57 @@ describe("the seed", () => {
       `SELECT COUNT(*)::text AS n FROM voucher.vouchers WHERE batch_id IS NULL`,
     );
     expect(seeded, "the coherence check scanned no rows").toBeGreaterThan(0);
+  });
+});
+
+describe("the seeded question bank (YT-0122)", () => {
+  it("gives every campaign exactly the number of questions it advertises", async () => {
+    // A campaign whose row promises four questions and whose bank holds none
+    // is one nobody can complete, and it looks complete from the catalogue.
+    // `questionCount` is also what the checkpoint schedule derives its length
+    // from (YT-0121), so a mismatch is not cosmetic.
+    const { rows } = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count
+         FROM campaign.campaigns c
+        WHERE c.question_count <> (
+          SELECT count(*) FROM campaign.question q WHERE q.campaign_id = c.id
+        )`,
+    );
+    expect(rows[0]?.count, "every campaign's bank must match its question_count").toBe("0");
+  });
+
+  it("spreads the correct answer across every option position", async () => {
+    // Caught by measuring rather than by reading: the first version derived
+    // the correct ordinal from the question's index, and multiple-choice
+    // questions only occur at odd indices — odd numbers mod 4 are only ever
+    // 1 or 3, so ordinals 0 and 2 were never correct. The distribution came
+    // back `1|16, 3|5`. A bank with two dead positions is one a guesser beats
+    // at 50% rather than 25%, and it would make YT-0122's option shuffling
+    // untestable, because an unshuffled order would still score.
+    const { rows } = await pool.query<{ ordinal: number }>(
+      `SELECT DISTINCT o.ordinal
+         FROM campaign.question_answer_key k
+         JOIN campaign.question_option o ON o.id = k.correct_option_id`,
+    );
+    const used = new Set(rows.map((row) => row.ordinal));
+    expect(used, "the correct answer must be able to sit at any position").toEqual(
+      new Set([0, 1, 2, 3]),
+    );
+  });
+
+  it("keeps the answer key out of the question row", async () => {
+    // `question_answer_key` is its own table precisely so a `SELECT *` on a
+    // question cannot return the answer. The seed must not undo that by
+    // stashing it on the question — asserted against the live column list
+    // rather than the migration, because the migration is what we would be
+    // checking against ourselves.
+    const { rows } = await pool.query<{ column_name: string }>(
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'campaign' AND table_name = 'question'`,
+    );
+    const columns = rows.map((row) => row.column_name);
+    expect(columns).not.toContain("correct_answer");
+    expect(columns).not.toContain("correct_option_id");
   });
 });
 

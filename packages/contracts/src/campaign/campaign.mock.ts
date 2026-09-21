@@ -18,9 +18,11 @@ import { pickMockMerchant } from "../merchant/merchant-roster";
  * ## What this replaced, and why the replacement had to be a ladder
  *
  * It was Apple's `bipbop_16x9_variant.m3u8`, a publicly hosted reference
- * stream. `apps/web/features/player/video-source.ts` explains why that one
- * was chosen over an arbitrary single-bitrate file: it ships a genuine ABR
- * ladder, so the quality selector has real levels to switch between. Any
+ * stream. It was chosen over an arbitrary single-bitrate file because it ships
+ * a genuine ABR ladder, so the quality selector has real levels to switch
+ * between. (That rationale used to live in
+ * `apps/web/features/player/video-source.ts`, deleted in `9bd450d`; it is
+ * restated here rather than pointed at, so it cannot be orphaned twice.) Any
  * replacement had to keep that property or it would have fixed one
  * untestable feature by breaking another — so `packages/media`'s fixture is
  * three renditions with a master playlist, not one stream.

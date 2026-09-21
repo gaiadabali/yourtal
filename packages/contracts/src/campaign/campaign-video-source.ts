@@ -5,7 +5,9 @@ import { z } from "zod";
  *
  * `campaignSchema` had no such field at all: Phase U's player pointed every
  * single campaign at one shared, publicly hosted HLS reference stream
- * (`apps/web/features/player/video-source.ts`'s `MOCK_HLS_MANIFEST_URL`)
+ * (`MOCK_HLS_MANIFEST_URL`, then in `apps/web/features/player/video-source.ts`,
+ * which THIS ticket's work made redundant — the file was deleted in `9bd450d`
+ * and the constant now lives in `campaign.mock.ts`)
  * because there was nowhere real to read a URL from. A discriminated union
  * of one member today, `hls`, matching docs/02's ABR-encode pipeline and
  * YT-0526's HLS fixture — additive to extend later (a raw `mp4` fallback,

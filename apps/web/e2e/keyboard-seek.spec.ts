@@ -207,6 +207,12 @@ test("seek bar responds to ArrowRight, moving playback forwards", async ({ page 
  * (`features/player/use-watch-session.test.tsx`), but **not verified
  * against this real MinIO origin in that pass** — a `next build` here
  * would have shared `.next` with another session's live `next dev`
+ * UPDATE 2026-09-21 (YT-0550): RUN, and running as `test(` below. The
+ * contention described here is gone, the coalescing fix in
+ * `use-watch-session.ts` is in place, and this case was confirmed green
+ * against the real MinIO origin over consecutive repeats rather than one
+ * lucky pass. Original note kept for the reasoning.
+ *
  * (docs/13c, "Two agents, one working tree"). Left `test.fixme` rather than
  * flipped to a real assertion: a green run against the real origin is what
  * proves this, not a unit test of the coalescing logic in isolation. The
@@ -215,7 +221,7 @@ test("seek bar responds to ArrowRight, moving playback forwards", async ({ page 
  * "green once" — this failure was intermittent, so require a few
  * consecutive passes, e.g. `--repeat-each=5`, before trusting it).
  */
-test.fixme("seek bar responds to Home, seeking to the start", async ({ page }) => {
+test("seek bar responds to Home, seeking to the start", async ({ page }) => {
   const seekBar = await openPausedPlayer(page);
   for (let i = 0; i < 40; i += 1) {
     await seekBar.press("ArrowRight");

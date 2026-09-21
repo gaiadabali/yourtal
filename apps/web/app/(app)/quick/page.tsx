@@ -4,6 +4,7 @@ import { QuickFeedCard } from "@/features/quick/quick-feed-card";
 import { QuickFeedEmptyState } from "@/features/quick/quick-feed-empty-state";
 import { QuickFeedSkeleton } from "@/features/quick/quick-feed-skeleton";
 import { QuickFeedViewport } from "@/features/quick/quick-feed-viewport";
+import { getRegionDisplayConfig } from "@/features/region/get-region";
 
 /**
  * The Quick feed (YT-0414) — `/quick`.
@@ -35,10 +36,13 @@ export default function QuickPage() {
 }
 
 async function QuickFeedList() {
-  const campaigns = await listQuickCampaigns();
+  const [campaigns, { locale }] = await Promise.all([
+    listQuickCampaigns(),
+    getRegionDisplayConfig(),
+  ]);
 
   if (campaigns.length === 0) {
-    return <QuickFeedEmptyState />;
+    return <QuickFeedEmptyState locale={locale} />;
   }
 
   return (
@@ -49,6 +53,7 @@ async function QuickFeedList() {
           campaign={campaign}
           position={index + 1}
           total={campaigns.length}
+          locale={locale}
         />
       ))}
     </QuickFeedViewport>

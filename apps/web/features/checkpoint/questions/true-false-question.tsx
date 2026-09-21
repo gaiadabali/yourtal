@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import type { TrueFalseQuestion } from "@yourtal/contracts/question";
 import type { TrueFalseAnswer } from "../checkpoint-types";
 import { seededShuffle } from "../checkpoint-seeded-shuffle";
@@ -15,11 +16,6 @@ export interface TrueFalseQuestionViewProps {
   disabled?: boolean;
 }
 
-const TRUE_FALSE_OPTIONS = [
-  { id: "true", label: "Benar" },
-  { id: "false", label: "Salah" },
-];
-
 export function TrueFalseQuestionView({
   question,
   respondentId,
@@ -28,9 +24,17 @@ export function TrueFalseQuestionView({
   promptId,
   disabled = false,
 }: TrueFalseQuestionViewProps) {
+  const t = useTranslations("checkpoint");
+  const trueFalseOptions = useMemo(
+    () => [
+      { id: "true", label: t("question.trueFalse.true") },
+      { id: "false", label: t("question.trueFalse.false") },
+    ],
+    [t],
+  );
   const shuffledOptions = useMemo(
-    () => seededShuffle(TRUE_FALSE_OPTIONS, [question.campaignId, question.id, respondentId]),
-    [question.campaignId, question.id, respondentId],
+    () => seededShuffle(trueFalseOptions, [question.campaignId, question.id, respondentId]),
+    [question.campaignId, question.id, respondentId, trueFalseOptions],
   );
 
   return (

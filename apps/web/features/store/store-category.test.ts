@@ -54,8 +54,13 @@ describe("isStoreCategoryFilter", () => {
 });
 
 describe("categoryLabel", () => {
-  it("returns an Indonesian label for every real category", () => {
-    expect(categoryLabel("food_beverage")).toBe("Makanan & Minuman");
-    expect(categoryLabel("digital_goods")).toBe("Produk Digital");
+  it("returns an Indonesian label for every real category (id-ID)", () => {
+    expect(categoryLabel("food_beverage", "id-ID")).toBe("Makanan & Minuman");
+    expect(categoryLabel("digital_goods", "id-ID")).toBe("Produk Digital");
+  });
+
+  it("returns an English label for every real category (en-AU, YT-0405)", () => {
+    expect(categoryLabel("food_beverage", "en-AU")).toBe("Food & Beverage");
+    expect(categoryLabel("digital_goods", "en-AU")).toBe("Digital Goods");
   });
 });

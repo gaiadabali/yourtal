@@ -1,3 +1,10 @@
+import { getQuickTranslator, type SupportedLocale } from "./quick-i18n";
+
+export interface QuickFeedEmptyStateProps {
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
+}
+
 /**
  * Empty state for the Quick feed (YT-0414). Unlike the earn board
  * (`campaign-empty-state.tsx`), Quick has no kind filter to relax — every
@@ -7,13 +14,12 @@
  * reflects that: no "try a different filter" action, just an honest
  * "check back soon."
  */
-export function QuickFeedEmptyState() {
+export function QuickFeedEmptyState({ locale }: QuickFeedEmptyStateProps) {
+  const t = getQuickTranslator(locale);
   return (
     <div className="flex flex-col items-center gap-2 p-6 text-center">
-      <p className="text-base font-semibold text-fg">Belum ada video cepat saat ini</p>
-      <p className="max-w-sm text-sm text-fg-muted">
-        Daftar ini diperbarui secara berkala — coba kembali lagi sebentar lagi.
-      </p>
+      <p className="text-base font-semibold text-fg">{t("empty.heading")}</p>
+      <p className="max-w-sm text-sm text-fg-muted">{t("empty.body")}</p>
     </div>
   );
 }

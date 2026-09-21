@@ -24,5 +24,18 @@
     "balanceCarrying": "Any remaining voucher value can still be used on your next transaction.",
     "singleUseForfeit": "This voucher is for one transaction only; any unused value is forfeited.",
     "minimumSpendPolicy": "This voucher only applies to purchases meeting a set minimum spend."
+  },
+  "flow": {
+    "continue": "Continue",
+    "back": "Back",
+    "exchangeNow": "Redeem now",
+    "confirmDisclaimer": "Pressing \"Redeem now\" will deduct your points immediately and cannot be undone.",
+    "processing": "Processing your redemption…",
+    "successBadge": "Success",
+    "successMessage": "Voucher <bold>{voucherTitle}</bold> redeemed successfully. Your voucher code: <code>{voucherCode}</code>",
+    "viewInWallet": "View in Wallet",
+    "tryAgain": "Try again",
+    "reloadPrice": "Reload price",
+    "backToStore": "Back to Store"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import type { RankedQuestion } from "@yourtal/contracts/question";
 import type { RankedAnswer } from "../checkpoint-types";
@@ -43,6 +44,7 @@ export function RankedQuestionView({
   promptId,
   disabled,
 }: RankedQuestionViewProps) {
+  const t = useTranslations("checkpoint");
   const initialOrder = useMemo(
     () =>
       seededShuffle(question.items, [question.campaignId, question.id, respondentId]).map(
@@ -100,7 +102,13 @@ export function RankedQuestionView({
     );
 
     const label = itemsById.get(itemId)?.label ?? "";
-    setAnnouncement(`${label} dipindahkan ke posisi ${targetIndex + 1} dari ${next.length}.`);
+    setAnnouncement(
+      t("question.ranked.movedAnnouncement", {
+        label,
+        position: targetIndex + 1,
+        total: next.length,
+      }),
+    );
   }
 
   return (
@@ -125,7 +133,7 @@ export function RankedQuestionView({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  aria-label={`Naik: ${item.label}`}
+                  aria-label={t("question.ranked.moveUpAria", { label: item.label })}
                   disabled={disabled || index === 0}
                   onClick={() => moveItem(itemId, -1)}
                   ref={(element) => {
@@ -134,13 +142,13 @@ export function RankedQuestionView({
                     }
                   }}
                 >
-                  Naik
+                  {t("question.ranked.moveUp")}
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
-                  aria-label={`Turun: ${item.label}`}
+                  aria-label={t("question.ranked.moveDownAria", { label: item.label })}
                   disabled={disabled || index === order.length - 1}
                   onClick={() => moveItem(itemId, 1)}
                   ref={(element) => {
@@ -149,7 +157,7 @@ export function RankedQuestionView({
                     }
                   }}
                 >
-                  Turun
+                  {t("question.ranked.moveDown")}
                 </Button>
               </span>
             </li>

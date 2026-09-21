@@ -1,16 +1,22 @@
 import type { IdrMinorUnits } from "@yourtal/contracts/money";
 import type { PartialRedemptionPolicy } from "@yourtal/contracts/listing";
 import { Badge } from "@yourtal/ui/badge";
+import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 import {
   partialRedemptionPolicyDescription,
   partialRedemptionPolicyLabel,
   transferabilityDescription,
 } from "./store-redemption-policy";
 
+type SupportedCurrency = "AUD" | "IDR";
+
 export interface StoreOfferTermsProps {
   partialRedemptionPolicy: PartialRedemptionPolicy;
   minimumSpendIdr: IdrMinorUnits | null;
   transferable: boolean;
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
+  currency: SupportedCurrency;
 }
 
 /**
@@ -31,19 +37,27 @@ export function StoreOfferTerms({
   partialRedemptionPolicy,
   minimumSpendIdr,
   transferable,
+  locale,
+  currency,
 }: StoreOfferTermsProps) {
+  const t = getStoreTranslator(locale);
   return (
     <div className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-3">
       <div className="flex items-center gap-2">
-        <Badge variant="secondary">Ketentuan</Badge>
+        <Badge variant="secondary">{t("offer.termsBadge")}</Badge>
         <span className="text-xs font-medium text-fg">
-          {partialRedemptionPolicyLabel(partialRedemptionPolicy)}
+          {partialRedemptionPolicyLabel(partialRedemptionPolicy, locale)}
         </span>
       </div>
       <p className="text-xs text-fg-muted">
-        {partialRedemptionPolicyDescription(partialRedemptionPolicy, minimumSpendIdr)}
+        {partialRedemptionPolicyDescription(
+          partialRedemptionPolicy,
+          minimumSpendIdr,
+          locale,
+          currency,
+        )}
       </p>
-      <p className="text-xs text-fg-muted">{transferabilityDescription(transferable)}</p>
+      <p className="text-xs text-fg-muted">{transferabilityDescription(transferable, locale)}</p>
     </div>
   );
 }

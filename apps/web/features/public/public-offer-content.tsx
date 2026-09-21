@@ -33,7 +33,7 @@ export interface PublicOfferContentProps {
  */
 export function PublicOfferContent({ listing, locale, merchantHref }: PublicOfferContentProps) {
   const t = getPublicTranslator(locale.intlLocale);
-  const status = listingStatusPresentation(listing.status);
+  const status = listingStatusPresentation(listing.status, locale.intlLocale);
   const facts = computeOfferRewardFacts(listing, locale);
 
   return (
@@ -59,7 +59,10 @@ export function PublicOfferContent({ listing, locale, merchantHref }: PublicOffe
         </div>
 
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <PublicFact label={t("offer.categoryLabel")} value={categoryLabel(listing.category)} />
+          <PublicFact
+            label={t("offer.categoryLabel")}
+            value={categoryLabel(listing.category, locale.intlLocale)}
+          />
           <PublicFact
             label={t("offer.districtLabel")}
             value={listingDistricts(listing).join(", ")}

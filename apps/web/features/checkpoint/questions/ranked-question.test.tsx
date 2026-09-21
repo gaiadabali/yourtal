@@ -2,22 +2,27 @@ import "@testing-library/jest-dom/vitest";
 import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { NextIntlClientProvider } from "next-intl";
+import idID from "@/messages/id-ID/checkpoint.json";
 import { rankedFixture } from "../checkpoint-question-fixtures";
 import type { RankedAnswer } from "../checkpoint-types";
 import { RankedQuestionView } from "./ranked-question";
 
+/** `RankedQuestionView` reads its button labels/announcement from `useTranslations("checkpoint")` (YT-0405). */
 function renderView(onAnswerChange = vi.fn()) {
   render(
-    <div>
-      <h2 id="prompt">{rankedFixture.prompt}</h2>
-      <RankedQuestionView
-        question={rankedFixture}
-        respondentId="respondent-1"
-        answer={undefined}
-        onAnswerChange={onAnswerChange}
-        promptId="prompt"
-      />
-    </div>,
+    <NextIntlClientProvider locale="id-ID" messages={{ checkpoint: idID }}>
+      <div>
+        <h2 id="prompt">{rankedFixture.prompt}</h2>
+        <RankedQuestionView
+          question={rankedFixture}
+          respondentId="respondent-1"
+          answer={undefined}
+          onAnswerChange={onAnswerChange}
+          promptId="prompt"
+        />
+      </div>
+    </NextIntlClientProvider>,
   );
   return onAnswerChange;
 }

@@ -9,10 +9,11 @@ import {
   hasActiveStoreFilters,
   parseStoreBoardParams,
 } from "./store-board-params";
-import { STORE_CATEGORY_FILTER_OPTIONS, isStoreCategoryFilter } from "./store-category";
+import { storeCategoryFilterOptions, isStoreCategoryFilter } from "./store-category";
 import { STORE_PRICE_BAND_FILTER_OPTIONS, isStorePriceBandFilter } from "./store-price-band";
 import { STORE_LOCATION_ALL, STORE_MERCHANT_ALL } from "./store-facets";
 import type { StoreMerchantOption } from "./store-facets";
+import { useRegion } from "@/features/region/use-region";
 
 export interface StoreBoardControlsProps {
   /** Locations present in the full catalogue, not the currently-filtered subset, so narrowing one filter never hides another. */
@@ -59,6 +60,8 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
   const priceBandId = useId();
   const locationId = useId();
   const merchantId = useId();
+  const { locale } = useRegion();
+  const categoryOptions = storeCategoryFilterOptions(locale);
   const current = parseStoreBoardParams(Object.fromEntries(searchParams.entries()));
 
   function navigate(update: Parameters<typeof buildStoreBoardQuery>[1]) {
@@ -88,7 +91,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
             }}
             className={SELECT_CLASS}
           >
-            {STORE_CATEGORY_FILTER_OPTIONS.map((option) => (
+            {categoryOptions.map((option) => (
               <option key={option.key} value={option.key}>
                 {option.label}
               </option>

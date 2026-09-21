@@ -7,14 +7,13 @@ import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
  * `@yourtal/contracts/voucher`, so this is safe from a client leaf as well
  * as a Server Component.
  *
- * YT-0405: `locale` defaults to `id-ID` so existing callers are unaffected.
- * The one call site today, `app/(app)/wallet/voucher/[voucherId]/page.tsx`,
- * is outside this ticket's owned files and does not yet pass the real
- * region's locale through — see YT-0405's report.
+ * YT-0405: `locale` is required, not defaulted. Its one call site,
+ * `app/(app)/wallet/voucher/[voucherId]/page.tsx`, now resolves the real
+ * region via `getRegionDisplayConfig()` and passes it through.
  */
 export function describePartialRedemptionPolicy(
   policy: Voucher["partialRedemptionPolicy"],
-  locale: SupportedLocale = "id-ID",
+  locale: SupportedLocale,
 ): string {
   const t = getWalletTranslator(locale);
   switch (policy) {
@@ -40,7 +39,7 @@ export function describePartialRedemptionPolicy(
 export function buildRedemptionInstructions(
   merchantName: string,
   policy: Voucher["partialRedemptionPolicy"],
-  locale: SupportedLocale = "id-ID",
+  locale: SupportedLocale,
 ): string {
   const policyLine = describePartialRedemptionPolicy(policy, locale);
   return getWalletTranslator(locale)("redemption.instructions", { merchantName, policyLine });

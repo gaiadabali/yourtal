@@ -1,8 +1,11 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import { CampaignCard } from "./campaign-card";
+import type { SupportedLocale } from "./campaign-i18n";
 
 export interface CampaignGridProps {
   campaigns: readonly Campaign[];
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
 }
 
 /**
@@ -11,12 +14,12 @@ export interface CampaignGridProps {
  * larger viewports per §1.1 ("Tablet and desktop widen the layout — more
  * columns ... not a different product").
  */
-export function CampaignGrid({ campaigns }: CampaignGridProps) {
+export function CampaignGrid({ campaigns, locale }: CampaignGridProps) {
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {campaigns.map((campaign) => (
         <li key={campaign.id} className="min-w-0">
-          <CampaignCard campaign={campaign} />
+          <CampaignCard campaign={campaign} locale={locale} />
         </li>
       ))}
     </ul>

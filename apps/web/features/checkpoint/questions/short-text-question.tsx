@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input } from "@yourtal/ui/input";
 import type { ShortTextQuestion } from "@yourtal/contracts/question";
 import type { ShortTextAnswer } from "../checkpoint-types";
@@ -23,16 +24,17 @@ export function ShortTextQuestionView({
   onAnswerChange,
   disabled,
 }: ShortTextQuestionViewProps) {
+  const t = useTranslations("checkpoint");
   const text = answer?.text ?? "";
   const remaining = question.maxLength - text.length;
 
   return (
     <Input
-      label="Jawaban Anda (opsional)"
+      label={t("question.shortText.label")}
       value={text}
       maxLength={question.maxLength}
       disabled={disabled}
-      helpText={`${remaining} karakter tersisa`}
+      helpText={t("question.shortText.remaining", { count: remaining })}
       onChange={(event) => onAnswerChange({ type: "short_text", text: event.target.value })}
     />
   );

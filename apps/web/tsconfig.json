@@ -6,5 +6,18 @@
   // segments use the `.ts` extension for MPEG transport streams, which
   // collides with TypeScript's — without this, `tsc` tries to compile the
   // video fixture and fails with "File appears to be binary".
-  "exclude": ["node_modules", "public"]
+  //
+  // `app/sw.ts` (YT-0424, Serwist) runs in a Service Worker global scope,
+  // not DOM — it needs the "webworker" lib (for `ServiceWorkerGlobalScope`,
+  // a worker-scoped `self`, etc.), which conflicts with the "DOM" lib every
+  // other file in this project needs (both declare incompatible globals,
+  // e.g. `self`). TypeScript has no per-file lib override, so the standard
+  // fix (same one the official Serwist Next.js examples use) is excluding
+  // the service worker source from the app-wide program entirely: Serwist's
+  // own build step (`@serwist/build`, wired in `next.config.ts`) bundles
+  // `app/sw.ts` independently via esbuild, not through this tsconfig, so
+  // excluding it here does not stop it from being built. `app/sw.ts`'s own
+  // `/// <reference lib="webworker" />` is what gives it correct types when
+  // opened directly in an editor.
+  "exclude": ["node_modules", "public", "app/sw.ts"]
 }

@@ -7,8 +7,8 @@ import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
 export interface WalletBalanceSummaryProps {
   balance: Balance;
   nowMs: number;
-  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
-  locale?: SupportedLocale;
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
 }
 
 /**
@@ -18,11 +18,7 @@ export interface WalletBalanceSummaryProps {
  * combined number — the "pending" and "expiring" rows always show their
  * date (`pendingUnlockAt` / `expiringAt`), never just an amount.
  */
-export function WalletBalanceSummary({
-  balance,
-  nowMs,
-  locale = "id-ID",
-}: WalletBalanceSummaryProps) {
+export function WalletBalanceSummary({ balance, nowMs, locale }: WalletBalanceSummaryProps) {
   const t = getWalletTranslator(locale);
   return (
     <Card>

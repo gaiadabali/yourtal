@@ -18,7 +18,7 @@ const withBonus: Campaign = {
 
 describe("CampaignEntryCard", () => {
   it("states duration, data cost, question count and scoring rule as plain text, with no expansion needed", () => {
-    render(<CampaignEntryCard campaign={withBonus} />);
+    render(<CampaignEntryCard campaign={withBonus} locale="id-ID" />);
     expect(screen.getByText("Durasi")).toBeInTheDocument();
     expect(screen.getByText("Estimasi data")).toBeInTheDocument();
     expect(screen.getByText("Pertanyaan")).toBeInTheDocument();
@@ -30,32 +30,34 @@ describe("CampaignEntryCard", () => {
   });
 
   it("states the duration before the single primary action, in document order", () => {
-    const { container } = render(<CampaignEntryCard campaign={withBonus} />);
+    const { container } = render(<CampaignEntryCard campaign={withBonus} locale="id-ID" />);
     const html = container.innerHTML;
     expect(html.indexOf("Durasi")).toBeLessThan(html.indexOf("Mulai video"));
   });
 
   it("shows the base reward and the accuracy bonus as two separate figures, never combined into one", () => {
-    render(<CampaignEntryCard campaign={withBonus} />);
+    render(<CampaignEntryCard campaign={withBonus} locale="id-ID" />);
     expect(screen.getByText("Reward dasar")).toBeInTheDocument();
     expect(screen.getByText("Bonus akurasi")).toBeInTheDocument();
     expect(screen.getByText(/^Hingga \+/)).toBeInTheDocument();
   });
 
   it("omits the bonus row entirely for a base_only campaign rather than showing a zero bonus", () => {
-    render(<CampaignEntryCard campaign={{ ...withBonus, scoringRule: "base_only" }} />);
+    render(
+      <CampaignEntryCard campaign={{ ...withBonus, scoringRule: "base_only" }} locale="id-ID" />,
+    );
     expect(screen.queryByText("Bonus akurasi")).not.toBeInTheDocument();
   });
 
   it("has exactly one primary action", () => {
-    render(<CampaignEntryCard campaign={withBonus} />);
+    render(<CampaignEntryCard campaign={withBonus} locale="id-ID" />);
     const actions = [...screen.queryAllByRole("link"), ...screen.queryAllByRole("button")];
     expect(actions).toHaveLength(1);
     expect(actions[0]).toHaveTextContent("Mulai video");
   });
 
   it("the primary action points at the watch route for this campaign", () => {
-    render(<CampaignEntryCard campaign={withBonus} />);
+    render(<CampaignEntryCard campaign={withBonus} locale="id-ID" />);
     expect(screen.getByRole("link", { name: "Mulai video" })).toHaveAttribute(
       "href",
       `/watch/${withBonus.id}`,
@@ -63,18 +65,18 @@ describe("CampaignEntryCard", () => {
   });
 
   it("states plainly that these terms are the terms honoured", () => {
-    render(<CampaignEntryCard campaign={withBonus} />);
+    render(<CampaignEntryCard campaign={withBonus} locale="id-ID" />);
     expect(screen.getByText(/ketentuan.*akan dihormati/i)).toBeInTheDocument();
   });
 
   it("renders the zero-reward fixture's 0-point reward plainly rather than hiding it", () => {
-    render(<CampaignEntryCard campaign={zeroRewardCampaignFixture} />);
+    render(<CampaignEntryCard campaign={zeroRewardCampaignFixture} locale="id-ID" />);
     expect(screen.getByText("0 poin")).toBeInTheDocument();
   });
 
   it("renders the long-merchant-name fixture without throwing", () => {
     expect(() =>
-      render(<CampaignEntryCard campaign={longMerchantNameCampaignFixture} />),
+      render(<CampaignEntryCard campaign={longMerchantNameCampaignFixture} locale="id-ID" />),
     ).not.toThrow();
     expect(screen.getByText("Tidak ada pertanyaan")).toBeInTheDocument();
   });

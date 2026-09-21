@@ -12,8 +12,8 @@ export interface QuickFeedCardProps {
   /** 1-based position in the feed, for the screen-reader "Video N dari M" status. */
   position: number;
   total: number;
-  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
-  locale?: SupportedLocale;
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
 }
 
 /**
@@ -46,7 +46,7 @@ export interface QuickFeedCardProps {
  * prevent. See `campaign-entry-card.tsx` for the identical reasoning
  * applied to its own "Mulai video" action.
  */
-export function QuickFeedCard({ campaign, position, total, locale = "id-ID" }: QuickFeedCardProps) {
+export function QuickFeedCard({ campaign, position, total, locale }: QuickFeedCardProps) {
   const watchHref = `/watch/${campaign.id}`;
   const t = getQuickTranslator(locale);
   const rewardLabel =

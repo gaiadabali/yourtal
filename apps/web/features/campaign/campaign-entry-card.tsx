@@ -11,8 +11,8 @@ import { getCampaignTranslator, type SupportedLocale } from "./campaign-i18n";
 
 export interface CampaignEntryCardProps {
   campaign: Campaign;
-  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
-  locale?: SupportedLocale;
+  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
+  locale: SupportedLocale;
 }
 
 /**
@@ -28,7 +28,7 @@ export interface CampaignEntryCardProps {
  * the watch begins" principle extends to never inflating them up front
  * either).
  */
-export function CampaignEntryCard({ campaign, locale = "id-ID" }: CampaignEntryCardProps) {
+export function CampaignEntryCard({ campaign, locale }: CampaignEntryCardProps) {
   const { baseRewardPoints, maxAccuracyBonusPoints } = splitCampaignReward(campaign);
   const watchHref = `/watch/${campaign.id}`;
   const t = getCampaignTranslator(locale);

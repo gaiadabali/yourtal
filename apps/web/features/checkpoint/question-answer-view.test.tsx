@@ -1,6 +1,8 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { NextIntlClientProvider } from "next-intl";
+import idID from "@/messages/id-ID/checkpoint.json";
 import { QuestionAnswerView } from "./question-answer-view";
 import {
   likertFixture,
@@ -11,18 +13,26 @@ import {
 } from "./checkpoint-question-fixtures";
 import type { Question } from "@yourtal/contracts/question";
 
+/**
+ * `QuestionAnswerView` itself has no copy of its own — it only dispatches
+ * to a type-specific view — but two of those (`true_false`, `short_text`)
+ * now read `useTranslations("checkpoint")` (YT-0405), so every case here
+ * needs a `NextIntlClientProvider` ancestor.
+ */
 function renderQuestion(question: Question) {
   return render(
-    <div>
-      <h2 id="prompt">{question.prompt}</h2>
-      <QuestionAnswerView
-        question={question}
-        respondentId="respondent-1"
-        answer={undefined}
-        onAnswerChange={vi.fn()}
-        promptId="prompt"
-      />
-    </div>,
+    <NextIntlClientProvider locale="id-ID" messages={{ checkpoint: idID }}>
+      <div>
+        <h2 id="prompt">{question.prompt}</h2>
+        <QuestionAnswerView
+          question={question}
+          respondentId="respondent-1"
+          answer={undefined}
+          onAnswerChange={vi.fn()}
+          promptId="prompt"
+        />
+      </div>
+    </NextIntlClientProvider>,
   );
 }
 

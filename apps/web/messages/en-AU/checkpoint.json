@@ -8,5 +8,35 @@
     "accuracyDetail": "{correct} of {total} scored answers correct · {percent}% accuracy",
     "noBonus": "This campaign has no accuracy bonus.",
     "totalReceived": "Total received"
+  },
+  "progress": {
+    "label": "Question {current} of {total}"
+  },
+  "timer": {
+    "remainingLabel": "Time remaining: {clock}",
+    "startAnnouncement": "You have {seconds} seconds to answer this question.",
+    "expiredAnnouncement": "Time is up for this question.",
+    "remainingAnnouncement": "{seconds} seconds remaining."
+  },
+  "step": {
+    "next": "Next",
+    "seeResult": "See result"
+  },
+  "question": {
+    "trueFalse": {
+      "true": "True",
+      "false": "False"
+    },
+    "ranked": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "moveUpAria": "Move up: {label}",
+      "moveDownAria": "Move down: {label}",
+      "movedAnnouncement": "{label} moved to position {position} of {total}."
+    },
+    "shortText": {
+      "label": "Your answer (optional)",
+      "remaining": "{count} characters remaining"
+    }
   }
 }

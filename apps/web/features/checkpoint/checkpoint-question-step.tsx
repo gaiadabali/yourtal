@@ -1,8 +1,10 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import type { Question } from "@yourtal/contracts/question";
+import { useRegion } from "@/features/region/use-region";
 import { CheckpointProgress } from "./checkpoint-progress";
 import { CheckpointTimer } from "./checkpoint-timer";
 import { isAnswerPresent, type QuestionAnswer } from "./checkpoint-types";
@@ -38,6 +40,8 @@ export function CheckpointQuestionStep({
 }: CheckpointQuestionStepProps) {
   const promptId = useId();
   const [isExpired, setIsExpired] = useState(false);
+  const { locale } = useRegion();
+  const t = useTranslations("checkpoint");
 
   function handleExpire() {
     setIsExpired(true);
@@ -49,7 +53,7 @@ export function CheckpointQuestionStep({
 
   return (
     <section aria-labelledby={promptId} className="flex flex-col gap-6">
-      <CheckpointProgress current={questionNumber} total={totalQuestions} />
+      <CheckpointProgress current={questionNumber} total={totalQuestions} locale={locale} />
       <CheckpointTimer
         key={question.id}
         totalSeconds={question.timerSeconds}
@@ -67,7 +71,7 @@ export function CheckpointQuestionStep({
         disabled={isExpired}
       />
       <Button onClick={onNext} disabled={!canProceed}>
-        {isLastQuestion ? "Lihat hasil" : "Lanjut"}
+        {isLastQuestion ? t("step.seeResult") : t("step.next")}
       </Button>
     </section>
   );

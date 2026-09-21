@@ -7,15 +7,21 @@ import { computeBalanceShortfall } from "./store-balance";
 import { StoreBalanceNotice } from "./store-balance-notice";
 import { categoryLabel } from "./store-category";
 import { formatExpiryDate, formatListingPrice, formatStockRemaining } from "./store-format";
+import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 import { listingDistricts } from "./listing-locations";
 import { StoreOfferFact } from "./store-offer-fact";
 import { StoreOfferRedeemSteps } from "./store-offer-redeem-steps";
 import { StoreOfferTerms } from "./store-offer-terms";
 import { listingStatusPresentation } from "./store-status";
 
+type SupportedCurrency = "AUD" | "IDR";
+
 export interface StoreOfferCardProps {
   listing: Listing;
   balance: Balance;
+  /** YT-0405: required, not defaulted — see `campaign-card.tsx`'s report. */
+  locale: SupportedLocale;
+  currency: SupportedCurrency;
 }
 
 /**
@@ -28,11 +34,14 @@ export interface StoreOfferCardProps {
  * behind a collapsed accordion, so scrolling straight down the page reads
  * the terms before ever reaching a button.
  */
-export function StoreOfferCard({ listing, balance }: StoreOfferCardProps) {
-  const status = listingStatusPresentation(listing.status);
+export function StoreOfferCard({ listing, balance, locale, currency }: StoreOfferCardProps) {
+  const t = getStoreTranslator(locale);
+  const status = listingStatusPresentation(listing.status, locale);
   const { pointsLabel, faceValueLabel } = formatListingPrice(
     listing.priceInPoints,
     listing.faceValueIdr,
+    locale,
+    currency,
   );
   const isSoldOut = listing.status === "sold_out" || listing.stockRemaining === 0;
   const shortfall = computeBalanceShortfall(listing.priceInPoints, balance.availablePoints);
@@ -64,23 +73,39 @@ export function StoreOfferCard({ listing, balance }: StoreOfferCardProps) {
           partialRedemptionPolicy={listing.partialRedemptionPolicy}
           minimumSpendIdr={listing.minimumSpendIdr}
           transferable={listing.transferable}
+          locale={locale}
+          currency={currency}
         />
 
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <StoreOfferFact label="Kategori" value={categoryLabel(listing.category)} />
-          <StoreOfferFact label="Lokasi" value={listingDistricts(listing).join(", ")} />
-          <StoreOfferFact label="Stok" value={formatStockRemaining(listing.stockRemaining)} />
-          <StoreOfferFact label="Berlaku hingga" value={formatExpiryDate(listing.expiresAt)} />
+          <StoreOfferFact
+            label={t("offer.categoryLabel")}
+            value={categoryLabel(listing.category, locale)}
+          />
+          <StoreOfferFact
+            label={t("offer.locationLabel")}
+            value={listingDistricts(listing).join(", ")}
+          />
+          <StoreOfferFact
+            label={t("offer.stockLabel")}
+            value={formatStockRemaining(listing.stockRemaining, locale)}
+          />
+          <StoreOfferFact
+            label={t("offer.expiresLabel")}
+            value={formatExpiryDate(listing.expiresAt, locale)}
+          />
         </dl>
 
         <StoreOfferRedeemSteps
           merchantName={listing.merchantName}
           districts={listingDistricts(listing)}
+          locale={locale}
         />
 
         <StoreBalanceNotice
           priceInPoints={listing.priceInPoints}
           availablePoints={balance.availablePoints}
+          locale={locale}
         />
 
         {canRedeem ? (
@@ -89,11 +114,11 @@ export function StoreOfferCard({ listing, balance }: StoreOfferCardProps) {
                 in-flight ticket's route (YT-0422) and may not exist on disk
                 yet, mirroring campaign-entry-card.tsx's own reasoning for
                 its watch link. */}
-            <a href={redeemHref}>Tukar Sekarang</a>
+            <a href={redeemHref}>{t("offer.redeemNow")}</a>
           </Button>
         ) : (
           <Button size="lg" disabled>
-            {isSoldOut ? "Stok habis" : "Poin belum cukup"}
+            {isSoldOut ? t("offer.soldOut") : t("offer.insufficientPoints")}
           </Button>
         )}
       </CardContent>

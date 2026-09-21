@@ -14,7 +14,7 @@ const baseCampaign: Campaign = { ...mockCampaigns[0]!, scoringRule: "base_only" 
 
 describe("CampaignCard", () => {
   it("shows duration, reward, estimated data cost and merchant — all four, per YT-0410", () => {
-    render(<CampaignCard campaign={baseCampaign} />);
+    render(<CampaignCard campaign={baseCampaign} locale="id-ID" />);
     expect(screen.getByText(baseCampaign.merchantName)).toBeInTheDocument();
     expect(screen.getByText(/menit|detik|jam/)).toBeInTheDocument();
     expect(screen.getByText(/~.*MB/)).toBeInTheDocument();
@@ -22,7 +22,7 @@ describe("CampaignCard", () => {
   });
 
   it("links to the campaign's entry card via its title as an accessible link", () => {
-    render(<CampaignCard campaign={baseCampaign} />);
+    render(<CampaignCard campaign={baseCampaign} locale="id-ID" />);
     const link = screen.getByRole("link", { name: baseCampaign.title });
     expect(link).toHaveAttribute("href", `/campaign/${baseCampaign.id}`);
   });
@@ -33,24 +33,24 @@ describe("CampaignCard", () => {
       scoringRule: "base_plus_accuracy_bonus",
       questionCount: 3,
     };
-    render(<CampaignCard campaign={withBonus} />);
+    render(<CampaignCard campaign={withBonus} locale="id-ID" />);
     expect(screen.getByText(/^Hingga /)).toBeInTheDocument();
   });
 
   it("renders the zero-reward fixture plainly as 0 points, not blank or hidden", () => {
-    render(<CampaignCard campaign={zeroRewardCampaignFixture} />);
+    render(<CampaignCard campaign={zeroRewardCampaignFixture} locale="id-ID" />);
     expect(screen.getByText("0 poin")).toBeInTheDocument();
   });
 
   it("truncates the 78-character merchant-name fixture to a single line instead of breaking layout", () => {
-    render(<CampaignCard campaign={longMerchantNameCampaignFixture} />);
+    render(<CampaignCard campaign={longMerchantNameCampaignFixture} locale="id-ID" />);
     const merchant = screen.getByTitle(longMerchantNameCampaignFixture.merchantName);
     expect(merchant).toHaveClass("truncate");
     expect(merchant.textContent).toBe(longMerchantNameCampaignFixture.merchantName);
   });
 
   it("renders the long-merchant-name fixture's title link without throwing", () => {
-    render(<CampaignCard campaign={longMerchantNameCampaignFixture} />);
+    render(<CampaignCard campaign={longMerchantNameCampaignFixture} locale="id-ID" />);
     expect(
       screen.getByRole("link", { name: longMerchantNameCampaignFixture.title }),
     ).toBeInTheDocument();

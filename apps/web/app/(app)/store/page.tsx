@@ -5,6 +5,7 @@ import { StoreEmptyState } from "@/features/store/store-empty-state";
 import { listingLocations, listingMerchants } from "@/features/store/store-facets";
 import { filterListings } from "@/features/store/store-filter";
 import { StoreGrid } from "@/features/store/store-grid";
+import { getRegionDisplayConfig } from "@/features/region/get-region";
 
 /**
  * The Store browse grid (YT-0420) — `/store`, replacing the YT-0402
@@ -32,6 +33,7 @@ export default async function StorePage(props: PageProps<"/store">) {
   const visibleListings = filterListings(listings, params);
   const locationOptions = listingLocations(listings);
   const merchantOptions = listingMerchants(listings);
+  const { locale, currency } = await getRegionDisplayConfig();
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -40,7 +42,7 @@ export default async function StorePage(props: PageProps<"/store">) {
       {visibleListings.length === 0 ? (
         <StoreEmptyState hasActiveFilters={hasActiveStoreFilters(params)} />
       ) : (
-        <StoreGrid listings={visibleListings} />
+        <StoreGrid listings={visibleListings} locale={locale} currency={currency} />
       )}
     </div>
   );

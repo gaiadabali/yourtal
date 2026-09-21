@@ -2,5 +2,12 @@
   "card": {
     "upToReward": "Up to {amount}"
   },
-  "feedLabel": "Video {position} of {total}: {merchantName} — {title}"
+  "feedLabel": "Video {position} of {total}: {merchantName} — {title}",
+  "viewport": {
+    "ariaLabel": "Quick feed"
+  },
+  "empty": {
+    "heading": "No quick videos right now",
+    "body": "This list refreshes regularly — check back again shortly."
+  }
 }

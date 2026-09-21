@@ -4,13 +4,15 @@ import { render, screen } from "@testing-library/react";
 import { rupiah } from "@yourtal/contracts/money";
 import { StoreOfferTerms } from "./store-offer-terms";
 
-describe("StoreOfferTerms", () => {
+describe("StoreOfferTerms (id-ID)", () => {
   it("shows the minimum spend amount for a minimum_spend policy", () => {
     render(
       <StoreOfferTerms
         partialRedemptionPolicy="minimum_spend"
         minimumSpendIdr={rupiah(100_000)}
         transferable={false}
+        locale="id-ID"
+        currency="IDR"
       />,
     );
     expect(screen.getByText(/100\.000/)).toBeInTheDocument();
@@ -22,6 +24,8 @@ describe("StoreOfferTerms", () => {
         partialRedemptionPolicy="balance_carrying"
         minimumSpendIdr={null}
         transferable
+        locale="id-ID"
+        currency="IDR"
       />,
     );
     expect(screen.getByText(/satu pengguna/i)).toBeInTheDocument();
@@ -33,8 +37,28 @@ describe("StoreOfferTerms", () => {
         partialRedemptionPolicy="single_use_forfeit"
         minimumSpendIdr={null}
         transferable={false}
+        locale="id-ID"
+        currency="IDR"
       />,
     );
     expect(screen.getByText("Sekali pakai, sisa hangus")).toBeInTheDocument();
+    expect(screen.getByText("Ketentuan")).toBeInTheDocument();
+  });
+});
+
+describe("StoreOfferTerms (en-AU, YT-0405)", () => {
+  it("shows the minimum spend amount in AUD, with no Indonesian copy leaking through", () => {
+    const { container } = render(
+      <StoreOfferTerms
+        partialRedemptionPolicy="minimum_spend"
+        minimumSpendIdr={rupiah(100_000)}
+        transferable={false}
+        locale="en-AU"
+        currency="AUD"
+      />,
+    );
+    expect(screen.getByText("Terms")).toBeInTheDocument();
+    expect(container.textContent).toMatch(/\$/);
+    expect(container.textContent).not.toMatch(/Ketentuan|Rp\d/);
   });
 });

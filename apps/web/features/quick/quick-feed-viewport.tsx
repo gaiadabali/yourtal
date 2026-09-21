@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@yourtal/ui/cn";
 import { QUICK_FEED_VIEWPORT_HEIGHT_CLASS } from "./quick-feed-layout";
 
@@ -46,6 +47,7 @@ const IN_VIEW_THRESHOLD = 0.6;
  * ticket's report for the full no-autoplay interpretation.
  */
 export function QuickFeedViewport({ children }: QuickFeedViewportProps) {
+  const t = useTranslations("quick");
   const containerRef = useRef<HTMLUListElement>(null);
   const [activeLabel, setActiveLabel] = useState("");
 
@@ -91,7 +93,7 @@ export function QuickFeedViewport({ children }: QuickFeedViewportProps) {
       </p>
       <ul
         ref={containerRef}
-        aria-label="Feed Quick"
+        aria-label={t("viewport.ariaLabel")}
         className={cn(
           "flex flex-col overflow-y-auto overscroll-y-contain snap-y snap-mandatory motion-safe:scroll-smooth",
           QUICK_FEED_VIEWPORT_HEIGHT_CLASS,

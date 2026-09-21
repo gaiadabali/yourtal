@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Listing } from "@yourtal/contracts/listing";
 import type { Balance } from "@yourtal/contracts/balance";
 import { Button } from "@yourtal/ui/button";
@@ -105,13 +106,14 @@ function BurnFlowStep({
   onConfirm,
   onRequote,
 }: BurnFlowStepProps) {
+  const t = useTranslations("burn");
   switch (state.step) {
     case "reviewing":
       return (
         <>
           <BurnSummary listing={listing} variant="review" />
           <Button type="button" onClick={onContinue}>
-            Lanjutkan
+            {t("flow.continue")}
           </Button>
         </>
       );
@@ -119,16 +121,13 @@ function BurnFlowStep({
       return (
         <>
           <BurnSummary listing={listing} variant="confirmation" />
-          <p className="text-xs font-sans text-fg-subtle">
-            Dengan menekan &quot;Tukar sekarang&quot;, poin Anda akan langsung dipotong dan tidak
-            dapat dibatalkan.
-          </p>
+          <p className="text-xs font-sans text-fg-subtle">{t("flow.confirmDisclaimer")}</p>
           <div className="flex gap-2">
             <Button type="button" variant="secondary" onClick={onBack} className="flex-1">
-              Kembali
+              {t("flow.back")}
             </Button>
             <Button type="button" onClick={onConfirm} className="flex-1">
-              Tukar sekarang
+              {t("flow.exchangeNow")}
             </Button>
           </div>
         </>
@@ -140,22 +139,25 @@ function BurnFlowStep({
           aria-live="polite"
           className="rounded-lg border border-border bg-surface p-6 text-center text-sm font-sans text-fg-muted"
         >
-          Memproses penukaran…
+          {t("flow.processing")}
         </div>
       );
     case "success":
       return (
         <div className="flex flex-col gap-3 rounded-lg border border-success bg-success/10 p-4">
           <Badge variant="success" className="w-fit">
-            Berhasil
+            {t("flow.successBadge")}
           </Badge>
           <p className="text-sm font-sans text-fg">
-            Voucher <span className="font-semibold">{state.voucher.title}</span> berhasil ditukar.
-            Kode voucher Anda:{" "}
-            <span className="font-semibold tabular-nums">{state.voucher.code}</span>
+            {t.rich("flow.successMessage", {
+              voucherTitle: state.voucher.title,
+              voucherCode: state.voucher.code,
+              bold: (chunks) => <span className="font-semibold">{chunks}</span>,
+              code: (chunks) => <span className="font-semibold tabular-nums">{chunks}</span>,
+            })}
           </p>
           <Button asChild>
-            <Link href="/wallet">Lihat di Dompet</Link>
+            <Link href="/wallet">{t("flow.viewInWallet")}</Link>
           </Button>
         </div>
       );
@@ -166,15 +168,15 @@ function BurnFlowStep({
           <BurnErrorMessage error={state.error} />
           {recovery.kind === "retry" ? (
             <Button type="button" onClick={onConfirm}>
-              Coba lagi
+              {t("flow.tryAgain")}
             </Button>
           ) : recovery.kind === "requote" ? (
             <Button type="button" onClick={onRequote}>
-              Muat ulang harga
+              {t("flow.reloadPrice")}
             </Button>
           ) : (
             <Button asChild variant="secondary">
-              <Link href={storeHref}>Kembali ke Toko</Link>
+              <Link href={storeHref}>{t("flow.backToStore")}</Link>
             </Button>
           )}
         </div>

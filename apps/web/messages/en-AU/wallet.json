@@ -34,5 +34,19 @@
     "singleUseForfeit": "This voucher is single-use — if your purchase is less than the voucher's value, the remainder is forfeited and cannot be used again.",
     "minimumSpend": "This voucher can only be used once your purchase reaches the minimum amount the merchant set.",
     "instructions": "Show this QR code to {merchantName}'s cashier when paying, or read out the voucher code if asked to enter it manually. {policyLine}"
+  },
+  "screen": {
+    "title": "Wallet",
+    "historyHeading": "Points history"
+  },
+  "emptyState": {
+    "heading": "No points here yet",
+    "body": "You earn points by watching short videos from your favourite merchants. Finish one video on the Earn board to start collecting points, then redeem them for a voucher in the Store.",
+    "cta": "Find a video in Earn"
+  },
+  "voucherList": {
+    "activeHeading": "Active vouchers",
+    "activeEmpty": "No active vouchers yet. Redeem points in the Store to get one.",
+    "archivedHeading": "Archive (used / expired)"
   }
 }

@@ -3,6 +3,13 @@ import type { FastifyRequest } from "fastify";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import {
+  EMAIL_VERIFY_REQUEST_RATE_LIMIT,
+  LOGIN_RATE_LIMIT,
+  PASSWORD_RESET_REQUEST_RATE_LIMIT,
+  REGISTER_RATE_LIMIT,
+  RateLimit,
+} from "../../shared/rate-limit/rate-limit.decorator";
+import {
   CHANGE_PASSWORD_RETENTION_MS,
   CONFIRM_EMAIL_VERIFICATION_RETENTION_MS,
   CONFIRM_PASSWORD_RESET_RETENTION_MS,
@@ -46,6 +53,7 @@ import { ConfirmEmailVerificationDto } from "./dto/confirm-email-verification.sc
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  @RateLimit(REGISTER_RATE_LIMIT)
   @Idempotent({ retentionMs: REGISTER_RETENTION_MS })
   @Authorize({ kind: "session", action: "register" })
   @Post("register")
@@ -63,6 +71,7 @@ export class AuthController {
       "The account-and-source throttle in identity.session's write path " +
       "already bounds how many attempts a retry storm can cost.",
   )
+  @RateLimit(LOGIN_RATE_LIMIT)
   @Authorize({ kind: "session", action: "create" })
   @Post("login")
   async login(@Body() body: LoginDto, @Req() request: FastifyRequest) {
@@ -106,6 +115,7 @@ export class AuthController {
       "notice.",
   )
   @Authorize({ kind: "session", action: "request_password_reset" })
+  @RateLimit(PASSWORD_RESET_REQUEST_RATE_LIMIT)
   @Post("password/reset/request")
   async requestPasswordReset(@Body() body: RequestPasswordResetDto) {
     const result = await this.auth.requestPasswordReset(body.email, new Date());
@@ -129,6 +139,7 @@ export class AuthController {
       "token is.",
   )
   @Authorize({ kind: "session", action: "request_email_verification" })
+  @RateLimit(EMAIL_VERIFY_REQUEST_RATE_LIMIT)
   @Post("email/verify/request")
   async requestEmailVerification(@Req() request: FastifyRequest) {
     const result = await this.auth.requestEmailVerification(bearerToken(request), new Date());

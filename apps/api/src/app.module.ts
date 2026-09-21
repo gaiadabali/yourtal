@@ -14,12 +14,15 @@ import { IdempotencyInterceptor } from "./shared/idempotency/idempotency.interce
 import { IdempotencyModule } from "./shared/idempotency/idempotency.module";
 import { PdpClientModule } from "./shared/pdp/pdp-client.module";
 import { PersistenceModule } from "./shared/persistence/persistence.module";
+import { RateLimitGuard } from "./shared/rate-limit/rate-limit.guard";
+import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
 
 @Module({
   imports: [
     AppConfigModule,
     PdpClientModule,
     AuthzModule,
+    RateLimitModule,
     IdempotencyModule,
     // Refuses to boot as a Postgres superuser (YT-0554). Early in the list
     // so the refusal happens before modules that open pools.
@@ -40,6 +43,11 @@ import { PersistenceModule } from "./shared/persistence/persistence.module";
     // auth -> Cerbos -> idempotency -> module. An unauthenticated caller
     // must not reach the idempotency table at all, or they could poison a
     // key and have a legitimate request replay their stored response.
+    // Rate limiting first, ahead of PdpGuard: the cheapest refusal. A
+    // limiter behind authorization would still pay a principal resolution
+    // and a Cerbos round trip for every request in a flood, which bounds
+    // the wrong cost. Acts only on routes carrying @RateLimit (YT-0052).
+    { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: PdpGuard },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],

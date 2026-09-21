@@ -81,8 +81,8 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 
 **Recommendation: sen**, on the reasoning in `docs/12` — an external constraint we do not control beats an internal convenience. **But confirm with Xendit first**, because the two processors in our stack may genuinely differ, and that possibility is the real lesson here.
 
-### YT-0042 · Ledger transfer API
-`review` · P0 · value · 5d · dep: YT-0041, YT-0039
+### YT-0042 · Ledger `transfer()`: balanced, idempotent, serialisable
+`done` · P0 · value · 5d · dep: YT-0041, YT-0039
 
 - [x] `transfer()` writes ≥2 balanced entries in one transaction
 - [x] Replay of an idempotency key returns the original transfer, never a second one
@@ -100,6 +100,11 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - ⛔ **It should not reach `done` while the title still claims an API that does not exist.** `done` is the board's strongest public statement and this one would be read as *"the API is finished and verified"*. The fix is one of: retitle to what the criteria actually cover, or add a criterion for the route and return this to `doing`. **That is the epic owner's call, not the verifier's** — flagged here rather than decided. This is the third instance in one day of *proved in tests, absent from the running system*, after YT-0519 and the ledger having no HTTP caller
 - ✅ **Criteria CONFIRMED 6/6 by `yourtal-ca`, which wrote none of this work — but it stays at `review` deliberately.** Against live Postgres: `TestTransferWritesBalancedEntries`, `TestReplayReturnsTheOriginalTransfer`, `TestConcurrentTransfersOnOneAccountAreCorrect`, `TestConcurrentReplaysOfOneKeyMoveValueOnce` and `TestRejectsMalformedTransfers` (unbalanced, single-entry, zero amount, mixed currency) all pass. `ON CONFLICT (idempotency_key) DO NOTHING` at `db/query/ledger.sql:6`; `WithSerializableRetry` exported at `transfer.go:263`; balance is `COALESCE(SUM(amount_minor),0)` at `:40`, a projection and never a stored column
 - ⛔ **The criteria are signed off and the promotion is not the verifier's to make.** The title says *"Ledger transfer API"* and `routes.go:63` states of its own four v1 routes that *"None of the four is live"* — YT-0593 carries the missing surface. Retitling or adding a route criterion each unblock it, and **both change what six verified criteria were verified against**, so it belongs to whoever owns `value` — currently contested between `yourtal-0c` and `yourtal-6c`, and the founder's to settle
+- ⏭️ **HTTP surface is YT-0593.** No route exists — `services/ledger/internal/api/routes.go:63` states of its own four v1 routes that *"None of the four is live."* **This ticket is the Go function only.** Kept in the ticket body rather than only in a commit message, because `done` is the board's strongest public statement and nobody reading this at 3am should be able to conclude the ledger is callable
+- ✅ **Retitled 2026-09-21 by `yourtal-0c`, `value`'s owner, who argued the opposite two hours earlier and recorded why the earlier objection does not survive.** The objection was that retitling at `review` retroactively alters what six verified criteria were verified against. **That holds for a retitle that WIDENS scope; this one narrows it.** The criteria are untouched — the label stops claiming something they never covered. A title that over-claims is itself the defect, so correcting it makes the record more accurate, not less
+- ✅ **A seventh criterion was deliberately NOT added, and that is the load-bearing half.** YT-0593 already exists, already carries *"`POST /v1/transfers` is reachable and moves balances"* as its own criterion, and already depends on this ticket. Adding it here would be **two tickets for one piece of work** — the same drift as the 15-minute price lock that sat in both YT-0133 and YT-0049 and had to be deduplicated this afternoon
+- ℹ️ **43 open tickets sat behind this label.** Holding them for a naming defect that has its own ticket and its own owner trades real throughput for tidiness
+
 ### YT-0043 · Chart of accounts
 `review` · P0 · value · 2d · dep: YT-0041
 

@@ -20,12 +20,15 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - ✏️ **This ticket's own header note says the register holds 19 positions. It holds 21** — twelve Indonesian, nine Australian. The count was never recomputed after positions were added; corrected in `docs/24` too
 
 ### YT-0011 · Red-line register and enforcement
-`todo` · P0 · legal · 2d · dep: YT-0010
+`doing` · P0 · legal · 2d · dep: YT-0010
 
-- [ ] The ten absolute prohibitions published where product and sales will actually read them
-- [ ] Each red line mapped to the feature flag or code path that enforces it
-- [ ] Jurisdiction policy service defaults set so a red line cannot be crossed by configuration alone
-- [ ] Sales training covers the breakage-claim prohibition specifically (Scoopon precedent)
+- ✏️ **There are now ELEVEN red lines, not ten.** Red line 11 — no real personal data on Helios until its location is established by a document — was added 2026-09-21 alongside the residency decision (YT-0534). The criterion below still says "ten"; the count is the outlier, not the register
+- [ ] The ~~ten~~ eleven absolute prohibitions published where product and sales will actually read them — **they are published in `docs/24`, which is where engineering reads. Whether that is where _sales_ reads is the open half**, and it is not a documentation task: red line 5 (no forward breakage claim to a merchant) is a thing a salesperson says out loud in a meeting, so the register being correct does not reach the person who can breach it
+- [ ] Each red line mapped to the feature flag or code path that enforces it — **the mapping is now written** (`docs/24` § _What actually enforces each red line_, audited 2026-09-21), **and it is what proves this criterion unmet: 2 of 11 are enforced.** A mapping whose entries are mostly "nothing" is an audit, not a satisfied criterion
+- [x] Jurisdiction policy service defaults set so a red line cannot be crossed by configuration alone — **met, and better than the criterion asks.** `packages/jurisdiction` makes the flags **mandatory** in the schema, so a new jurisdiction cannot be added without answering; sets `cashOutEnabled: false` and `prizeDrawsEnabled: false` for both ID and AU; defaults **stricter than the live data** (`minimumAgeYears` 21 vs 18 live, `minimumKycTier: enhanced`), so a misconfiguration fails toward caution; and `policy-data.test.ts:17-18` asserts both `false` for **every** jurisdiction, so flipping one in configuration alone turns the suite red. **That last part is what makes it a control rather than a default**
+- [ ] Sales training covers the breakage-claim prohibition specifically (Scoopon precedent) — not started, and not an engineering task. The only trace in the codebase is a doc comment citing Scoopon in an onboarding page
+- ⚠️ **The audit's real finding: nine of eleven red lines rest on nobody having built the thing yet, which is a different guarantee and a weaker one.** Red lines 4 (no user purchase of points) and 8 (no charitable funds held) are currently unreachable because the feature does not exist — safety by absence, which ends the day someone implements the feature correctly and innocently, **with no test failing and no reviewer alerted, because nothing anywhere states the prohibition in code**
+- ⚠️ **The sharpest asymmetry**: red lines 3 and 4 are the pair that **void the counsel-substitution risk acceptance** (YT-0012) if crossed. **Red line 3 is enforced and config-proof; red line 4 is enforced by nothing at all.** Closing that one gap is the highest-value item in this ticket, and the pattern to copy is sitting in `packages/jurisdiction` already
 
 ### YT-0012 · Counsel-substitution risk acceptance
 `done` · P0 · legal · 1d · dep: YT-0010
@@ -247,3 +250,14 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 
 - [ ] Gates: lint, types, unit, integration, file-length, bundle size, Lighthouse CWV, migration safety, secret scan, SBOM
 - [ ] `node scripts/tasks.mjs --check` runs and fails on a stale dashboard
+
+### YT-0602 · Red line 4 voids the risk acceptance and nothing enforces it
+`todo` · P0 · legal · 3d · dep: YT-0011
+
+- ⛔ **Filed 2026-09-21 by `yourtal-fe` from `yourtal-28`'s YT-0011 audit.** Red lines **3 and 4** are the pair that make the YT-0012 counsel-substitution acceptance **void rather than expired** if crossed. **Red line 3 is enforced and configuration-proof. Red line 4 is enforced by nothing at all.**
+- ⚠️ **The asymmetry is the whole finding.** A risk acceptance whose voiding conditions are half-enforced is an acceptance that can be voided silently — the signature stops being valid and no signal anywhere says so. That is worse than an unenforced prohibition on its own, because the register still reads as though the acceptance stands
+- ℹ️ **Red line 3 shows what "enforced" looks like here, and it is copyable.** `packages/jurisdiction` makes the flags **mandatory** in `policy-schema.ts`, so a new jurisdiction cannot be added without answering the question; schema defaults are **stricter than the live data** (`minimumAgeYears` 21 against 18 live, `minimumKycTier: enhanced`), so a misconfiguration fails toward caution; and `policy-data.test.ts:17-18` asserts the flags `false` for **every** jurisdiction, so flipping one in configuration alone turns the suite red. **The test is what makes it a control rather than a default**
+- ⚠️ **"Not yet built" is not "forbidden", and this is where the two get confused.** Red lines 4 and 8 are unreachable today only because the feature does not exist — safety by absence. **That ends the day someone implements the feature correctly and innocently, with no test failing and no reviewer alerted**, because nothing states the prohibition in code. Same shape as `perUserLimit` stored and never read, and `IDEMPOTENCY_TABLE_DDL` exported and never imported
+- [ ] Red line 4 is enforced in code by the YT-0011 pattern — a mandatory flag, a default that fails toward caution, and a test that fails if the flag is flipped by configuration alone
+- [ ] **A test fails if the prohibition is removed**, not merely if it is violated, so safety-by-absence cannot be mistaken for enforcement
+- [ ] Every red line that **voids** the YT-0012 acceptance is enforced to the same standard, **stated as a property** — a criterion naming only red line 4 leaves the next voiding condition to be found the same way

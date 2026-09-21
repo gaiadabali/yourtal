@@ -191,13 +191,16 @@
 - [ ] End-to-end login proven from the sister app
 
 ### YT-0035 · Cerbos policies and decision point
-`review` · P0 · platform · 4d · dep: YT-0030
+`done` · P0 · platform · 4d · dep: YT-0030
 
 - [x] Role model per `docs/17` §2.1/§2.2: flat principal roles plus **tenant-scoped business roles via Cerbos derived roles** (a flat role cannot answer "admin of _which_ business"), and merchant staff as `store_device` sessions rather than personal accounts. Supersedes the older role list in `docs/02`
 - [x] Policies version-controlled and unit-tested — 14 resource policies, 2 derived-role files, 15 JSON schemas, 12 suites, **322 assertions passing** against Cerbos 0.55.0 (verified 2026-09-19). Suites assert **denies as well as allows**, covering the invariants that are really product rules: no business role can grant points; exactly one owner with step-up-gated transfer; all three two-person approvals; store devices limited to redeem/lookup/today; separation of duties; support cannot change a phone number; anonymous can watch but never earn; unfunded open views refused; `admin` reaches no data anywhere
 - [x] `packages/authz`: PDP client, typed principal/resource/action registry, and a drift test that fails CI when a TS action has no backing policy — 34 tests passing, largest file 209 lines, no barrels
 - Note: the PDP client is **hand-rolled against the Cerbos Check Resources API** rather than using `@cerbos/http` — one endpoint, stable shape, Zod-parsed response, per `docs/14` §7 ("a one-line utility is written, not installed"). Recorded as a deliberate decision
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** `pnpm policy:test` → **452 tests executed [452 OK]** across 15 suites. The named suites the criterion depends on — denies asserted, two-person approvals, the admin boundary, separation of duties — are all present and green. `packages/authz` 37 passed; largest non-test file `pdp-client.ts` at 209 lines, matching the criterion; no barrel file
+- ✅ **The drift test fails in BOTH directions**, which is what the criterion actually needs: `policy-drift.test.ts:73` is `expect(inPolicy).toEqual(inTypeScript)`, a set equality, so a TS action with no policy and a policy with no TS action both fail
+- ⚠️ **Declared limit, and the reason is sound: that drift test was NOT sabotage-proved.** Proving it would mean editing `resources.ts`, a shared source file, while several sessions write the same tree. **A verifier declaring what it did not check is worth more than one quietly checking less** — recorded so a later reader knows this one rests on a structural read
+- ✏️ **Every count in criterion 2 has drifted upward**: 14 → **17** resource policies, 15 → **18** JSON schemas, 12 → **15** suites, 322 → **452** assertions. `packages/authz` 34 → **37**. Growth, not regression, and the property holds — but this is the seventh ticket today whose numbers aged while its property did not
 ### YT-0500 · PDP enforcement across API routes
 `done` · P0 · platform · 3d · dep: YT-0035, YT-0100
 
@@ -216,7 +219,7 @@
   - *Authorization left controller bodies*: `@Authorize` and `PdpGuard` present in `apps/api/src/shared/authz/`, and **confirmed live** — a booted API refused an anonymous `POST /api/businesses` at the guard
 - ✏️ **"Nine routes converted" has drifted to 31.** Counted from a real boot: `Nest application successfully started`, 31 routes mapped. Growth, not regression, and the criterion's bar — *every* route resolves through the PDP — is the property that still holds
 ### YT-0036 · Consent service v1
-`review` · P0 · platform · 5d · dep: YT-0030
+`done` · P0 · platform · 5d · dep: YT-0030
 
 - [x] Purpose-scoped, versioned consent records per jurisdiction — closed purpose enum, so _"to improve our services"_ (named in `docs/19` as the classic insufficient PDP formulation) **cannot be asked**, with a test asserting that exact string is rejected. Campaign questions and research answers are separate purposes per `docs/01`. Receipt-derived targeting is its own sensitive purpose gated to P2. Records are append-only — no `granted` boolean to flip — and a same-instant grant/withdraw tie resolves to **withdrawn**, the only direction that cannot be undone after data has been used
 - [x] Other services query the decision, not the record — **satisfied structurally: there is no exported way to fetch raw records for a purpose.** `prohibitedIn` is checked **before** any record is read, so a granted consent can never reach an allow, with tests that fail if someone "optimises" the order. This encodes `docs/19` §6.4: Australia's fair-and-reasonable test applies **regardless of consent**, so `behavioural_profiling` and `purchase_history_targeting` are prohibited in AU even when consented
@@ -229,7 +232,9 @@
 - ⏭️ ⚠️ **Seven of nine domains still owe a handler — that is YT-0528**, which is titled exactly that work and **depends on this ticket**, so the dependency direction settles whose bar it is. This ticket’s deliverable is the service plus a gap that stays visible: `unhandledDomains()` is a **query, not a fixture**, and the test asserts the *shape* (every gap names an owner) rather than a number, so adding a domain cannot quietly widen the hole. Converted because no amount of work on THIS ticket can tick a box whose work is another ticket’s
 
 **⏭️ ONE CRITERION CONVERTED TO A DEFERRAL — 2026-09-21.** The last open box was YT-0528’s work, named in the box itself, and YT-0528 **depends on this ticket** — so it could never have been ticked here. Unlike the three contract tickets converted alongside it, this deferral already had a home, which is why nothing new was filed. `review`, not `done`: a verifier still has to check that `unhandledDomains()` really is a query over the registry and not a list someone maintains.
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work, and it closed the exact check this ticket had left open for a verifier.** `unhandledDomains()` (`dsar-orchestrator.ts:131-138`) is `domains.filter(d => d.onDeletion !== "retain" && handlers[d.id] === undefined)` over `DATA_DOMAINS` — **a computed query, not a maintained list**, so adding a data domain cannot quietly widen the hole. That is the criterion met in the form that survives new domains
+- ✅ `packages/consent` 5 files, **62 passed**. `TOMBSTONE` is the shared nil UUID at `dsar-handlers.ts:40`; `prohibitedIn` typed and documented at `purpose-catalogue.ts:20,59` as checked before any record read
+- ✏️ **Criterion 1 overstates its own test and the correction is worth making.** It claims a test asserting the exact string *"to improve our services"* is rejected; the test is `purpose-catalogue.test.ts:14`, `expect(definitionFor("to_improve_our_services")).toBeUndefined()` — an **enum-shaped token, not the prose string**. The property is the same and is stronger than the criterion describes: the enum is closed, so no open-ended purpose can be asked at all. But the wording invites a reader to believe the prose form is what is guarded, and it is not
 ### YT-0037 · Jurisdiction policy service
 `doing` · P0 · platform · 3d · dep: YT-0030
 
@@ -252,7 +257,7 @@
 - [ ] No service can delete or update a record
 
 ### YT-0039 · Idempotency middleware (TypeScript)
-`review` · P0 · platform · 3d · dep: YT-0031
+`done` · P0 · platform · 3d · dep: YT-0031
 
 - [x] **One shared table, created by one migration** — `20260919000001_platform_idempotency.sql` creates `platform.idempotency`, and it is the only creator. Key + fingerprint, and a replay returns the original response. Fingerprint is `sha256(METHOD \n path \n sha256(body))`, **deliberately the same canonical shape as the merchant HMAC request in `docs/14` §6**, with a test pinning the exact hex digest because that value is a **cross-language wire contract** — verified independently by recomputing it outside the code under test. _Criterion reworded 2026-09-21: it used to assert the table was shared via an exported `IDEMPOTENCY_TABLE_DDL` constant “so every service creates the same one”, and that mechanism was false and has been deleted — see below._
  path 
@@ -279,7 +284,11 @@
 - **A pointer comment replaces it** naming the migration and recording why there is deliberately no DDL here, so the next reader does not helpfully re-add one
 - **Its own stale caveat is gone with it:** *“UNTESTED against a live Postgres: YT-0022 has not provisioned one”*. Postgres has been live for days and `postgres-store.test.ts` exercises the real `INSERT … ON CONFLICT DO NOTHING` against it
 - ⚠️ **Why deletion rather than a drift test**, since the ticket offered both: a drift test would have kept two definitions and added a gate to notice when they disagree. **One definition cannot drift.** Same argument as YT-0510, which deleted duplicate business shapes rather than reconciling them, and the reason that ticket's criterion reads *“two definitions of a shared shape is how they drift apart”*
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work, and sabotage-proved independently rather than on report.** `grep -rn IDEMPOTENCY_TABLE_DDL apps packages services` returns **one** hit — `record.ts:81`, the pointer comment. The sole executed creator is `20260919000001_platform_idempotency.sql:12`
+- ✅ **A second `CREATE TABLE platform.idempotency` exists and is genuinely harmless, which took looking rather than grepping.** `services/voucher/db/schema.sql:16` is an **sqlc typing copy that nothing applies**, and `schema_test.go` lists `"idempotency": "platform"` in its drift map, so it is guarded against the live database. `services/ledger` does not copy it at all
+- ✅ **The undeclared-route guard proved by planting one**: a bare `@Post` in a scratch controller made `mutating-routes.test.ts` fail **naming the file and line**; removed, tree clean, baseline green either side
+- ✅ **The fingerprint pin re-derived in Python, outside the implementation's language** — `sha256("POST\n/v1/redemptions\n" + sha256(""))` is byte-identical to `fingerprint.test.ts:28-30`. A cross-language wire contract checked cross-language is worth more than the same language agreeing with itself
+- ✅ **The Postgres store is unconditional, not flagged**: `selectStore()` returns `new PostgresIdempotencyStore(...)` with no branch. Proved non-vacuous by pointing `TEST_DATABASE_URL` at a dead host and watching the suite fail with `ECONNREFUSED`
 ### YT-0514 · Idempotency: Go implementation
 `todo` · P0 · platform · 2d · dep: YT-0039
 

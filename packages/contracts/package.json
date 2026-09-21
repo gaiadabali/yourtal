@@ -38,7 +38,6 @@
     "./question/presented": "./src/question/presented-question.ts",
     "./question/bank": "./src/question/question-bank.ts",
     "./question/selection": "./src/question/question-selection.ts",
-    "./question/response-signals": "./src/question/question-response-signals.ts",
     "./question/mock": "./src/question/question.mock.ts",
     "./money": "./src/money/money.ts",
     "./money/currency": "./src/money/currency.ts",

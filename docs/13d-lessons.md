@@ -520,7 +520,38 @@ The cause was an **untracked** `docs/tasks/phase-0-web.md`: nine `web` tickets s
 
 Both directions of that trap landed on the same board in one afternoon: **288 versus 287**, where the extra was a documentation example inside `_schema.md` (§19b), and **294 versus 294**, where equality concealed a file outside the commit. _A matching count is evidence about arithmetic, not about membership._
 
-**Rule: to check what a commit contains, enumerate its files — do not total its contents.** `git ls-files`, or `git archive HEAD | tar -t`, answers “which files are in here”; a count never will. And an untracked file in a directory that a generator globs is invisible to every git-based check and fully visible to the generator, which is the same asymmetry as §13's worktrees: **gitignored and untracked both mean _unseen by git_, never _absent from the filesystem_.**
+**Rule: to check what a commit contains, enumerate its files — do not total its contents.**
+
+### 26a. Untracked work mutating tracked shared state
+
+The generalisation, and it is the one to carry rather than the three instances:
+
+> **Untracked work that writes to a tracked file has already reached everyone else, while remaining invisible to every check that starts from git.**
+
+Three instances in one evening, escalating in cost:
+
+| Untracked                   | Tracked file it wrote | Damage                                                                     |
+| --------------------------- | --------------------- | -------------------------------------------------------------------------- |
+| `docs/tasks/phase-0-web.md` | `TASKS.md`            | dashboard described a tree no commit contained                             |
+| `packages/queue/`           | `pnpm-lock.yaml`      | every session's `pnpm verify` died at gate 1 on a package none had touched |
+| `…_pgboss_schema.sql`       | `atlas.sum`           | **`apps/api`'s suite could not start at all**                              |
+
+The third is the one to lead with. The lockfile only **refused** a gate; this stopped a package's tests **executing**, because the test harness creates a fresh database per run and applies migrations into it — so a migration that cannot apply means the suite never runs, and no session can satisfy the commit-time verify rule for that package. _“It is only untracked scaffolding”_ is never the reassurance it sounds like, **because the damage travels through the tracked file every time.**
+
+**Why it kept recurring despite a constraint after each one.** After the lockfile incident I sent the agent lockfile-specific prohibitions — never move the lockfile, no bare `pnpm install/add/update`. A migration is not a dependency operation, so **none of it covered the next instance, forty minutes later.** I had written _“guarding against the last incident is not the same as guarding against the class”_ an hour earlier, about this same agent, and then wrote another incident-shaped constraint. **A prohibition named after the tool that broke transfers nothing; one named after the mechanism transfers to every tool.**
+
+**Rule: commit an untracked file in the same commit as the tracked file it modifies, or do not modify the tracked file yet.** And when briefing anyone — human or agent — state the mechanism, not the last tool: _do not let untracked work write to a tracked file_ covers pnpm, Atlas, the board generator and whatever is next.
+
+### 26b. A directive that is ignored without erroring is worse than one that fails
+
+The pgboss migration carried `-- atlas:txmode none` as its **first line**, correctly spelled, to stop Atlas wrapping the file in a transaction so pg-boss's own `BEGIN`/advisory-lock/`COMMIT` could work. The comment above it explained the reasoning in five lines. **It was present and it silently did nothing** — Atlas wrapped the file anyway, pg-boss's inner `COMMIT` ended Atlas's transaction mid-file, and the first statements to run afterwards failed with `pq: unexpected transaction status idle`.
+
+**The author did everything right and got no signal.** They identified the conflict, found the documented remedy, applied it, and wrote down why — and the remedy was inert. A directive that fails loudly costs a minute; one that is ignored silently costs an evening and sends the next reader down the same path, because **the file will still contain a correct-looking directive and a five-line comment vouching for it.**
+
+Fixed by removing the need for the directive rather than by making it work: **the inner `BEGIN`/`COMMIT` are gone and Atlas's transaction is the only one.** `pg_advisory_xact_lock` then binds to Atlas's transaction and serves pg-boss's exact intent — two processes cannot install concurrently — and `SET LOCAL` still has a transaction to be local to. **One transaction is simpler than two cooperating, and there is no longer a mode for the runner and the file to disagree about.**
+
+**Rule: when a vendor ships SQL written to run standalone, strip its transaction control rather than asking the runner to stand down.** The runner's transaction is the one you can reason about. And if you do rely on a directive, **prove it took effect** — a directive is a claim about a tool's behaviour, and this file's §22 rule applies to it exactly: state what it actually does before believing it.
+`git ls-files`, or `git archive HEAD | tar -t`, answers “which files are in here”; a count never will. And an untracked file in a directory that a generator globs is invisible to every git-based check and fully visible to the generator, which is the same asymmetry as §13's worktrees: **gitignored and untracked both mean _unseen by git_, never _absent from the filesystem_.**
 
 ## 27. One defect can report through two gates, and the second report is the misleading one
 
@@ -533,6 +564,39 @@ Applying the documented remedy for that — `rm <paths> && git checkout -- <path
 **Rule: a `format:check` failure on a file you have not edited is a line-ending suspect first.** Check `git cat-file blob HEAD:<path>` and `git status` before accepting the formatter's suggestion — if the blob is clean and the file is unmodified, the formatter is a symptom and reformatting is the wrong fix.
 
 **And the general form, which is why this is its own section:** when two gates fail together, they are more likely reporting one defect than two, and **the gate whose remedy is easiest to apply is the one most likely to be the symptom.** Fix the one that names state, not the one that names style.
+
+## 28. Five fixes for the shared index, each the fix for the last, and the final one deleted committed work
+
+Five or more sessions commit from one working copy — which means one `.git/index`. Over one afternoon four sessions arrived at four successive corrections for the collisions that causes. **Every one of them was a reasonable response to the failure before it, and every one failed differently.**
+
+**1. `git add <shared file>`** — swept another session's concurrent edits into a commit, under an author who had not written them and a message describing the opposite of the diff.
+
+**2. `git status --porcelain` before staging** — the natural remedy, and insufficient: _a file list says which paths move, not what they say._
+
+**3. `git add <explicit paths>` then `git commit`** — the obvious next step, right arguments and wrong mechanism. **`git commit` commits the index, not your `add` list.** A peer staging work in the seconds between your `add` and your `commit` puts it in your commit. Observed: 15 foreign files sat staged while a commit was being prepared; only re-reading `git diff --cached` immediately before committing kept them out.
+
+**4. `git commit -- <paths>`** — genuinely closes it, because a pathspec commit never consults the shared index. And it **cannot stage an untracked file**: `pathspec … did not match any file(s) known to git`. So it works for edits and fails exactly where new work lives, sending you back to step 3. A module committed that way landed inside another session's board commit, whose message mentions neither it nor the 300 lines it carried.
+
+**5. A private `GIT_INDEX_FILE`** — closes both cases, never touches `.git/index`, and **silently produced the worst outcome of the five.** A normal `git commit` updates the shared index as a side effect; a private-index commit cannot, so `.git/index` is left describing the tree _before_ your commit. The next session commits that stale index — and **an index that does not know about a file present in HEAD does not leave it alone, it deletes it.** Seven files and 566 lines were removed this way by a board-sweep commit — which reported 607 deletions across 12 files, so the seven were not distinguishable from the sweep's own churn in its author's diff. They found it and restored it themselves regardless.
+
+**The completed rule:** a private index is safe only if `git read-tree HEAD` resyncs the shared index **in the same command as the commit.** That resync was run — after the next commit had already landed, refreshing to a tree that no longer contained the files. **A correct action, too late, is indistinguishable from not doing it.**
+
+### Two checkable invariants, worth more than the rule
+
+Habits degrade; these are observations anyone can make in one command.
+
+- **A file that is simultaneously `??` untracked and present in HEAD means the index is stale**, and the next commit from it will delete something. This state is visible in `git status` and reads as unremarkable unless you know the tell.
+- **The index can be staged to DELETE a file that is present on disk and in HEAD.** Found on `.githooks/pre-commit`'s stale-dashboard guard: every session's working copy showed a protection the next commit would have removed. **This one is invisible in `git status` entirely** — only `git diff --cached` shows it. It is the more dangerous of the two.
+
+### And the failure mode that nearly repeated during the repair
+
+Re-committing the restored files, `git diff --cached --name-only` listed **exactly the seven paths intended** — while `--numstat` showed them as pure deletions. Committing would have deleted them a second time. **Read the numstat, not the names**: this is section 19's "the check was narrower than the claim" wearing the shape of a file list, and it is the third time in this document that a list of paths has been mistaken for a description of content.
+
+### Why this is its own section rather than a line in section 25
+
+`docs/13c`'s "Two agents, one working tree" covers the _working tree_. This is about the _index_, which is shared state nobody thinks of as shared — it has no path, does not appear in `git status` output as an actor, and is mutated as a side effect of commands whose purpose is something else.
+
+The sharpest framing came from the session that inherited the rule: **a private index sounds like the correct engineering answer to a shared checkout, which is exactly why the next person will reach for it.** The four earlier rungs have the same property. This section exists so the fifth is not rediscovered by someone who reads the first four and concludes, reasonably, that isolation is the answer.
 
 ## The pattern, restated
 

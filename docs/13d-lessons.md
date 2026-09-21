@@ -373,6 +373,108 @@ It is luck worth noting that **the board gate is the self-contained kind**, beca
 
 **The pre-commit hook runs `node scripts/tasks.mjs` in its _writing_ form, not `--check`.** So it can regenerate the dashboard _during_ a commit and place content in that commit which was never staged. Harmless when the output is already current, and the same family as `git commit` taking the index rather than your arguments: **a step between your decision and the artefact can add to the artefact.** Verifying the commit afterwards catches it; verifying what you staged does not.
 
+## 22. The measurement was the artefact, three times, and once it nearly overturned a correct finding
+
+A CRLF finding was reported: `* text=auto eol=lf` normalises on staging, so stored blobs are LF while a working tree can hold CRLF. Another session went to check it against their own committed files with `git show HEAD:<path> | grep -c
+
+`docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:
+
+> **Has this check ever run — on this code, in this environment, without a cache answering for it?**
+
+Almost everything found on 2026-09-20 was invisible to every form of reading: the file, the assertion, the config, the risk register. Each became visible the moment something executed for real.
+
+The cheapest way to learn whether a guarantee holds is unchanged from `13c`: break what it is meant to catch, and confirm the break reached the code. The addition is that you must first confirm **there is code for it to reach**.
+\r'`, got **153 and 158 CR lines**, and was one message from reporting that the finding was wrong. They then measured again, got 0, and diagnosed it as porcelain-versus-plumbing: `git show`applies checkout conversion,`git cat-file blob` does not. A good rule — **and not what happened.**
+
+Measured here on a 384-line file:
+
+```
+git show HEAD:<path>    | grep -c
+
+`docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:
+
+> **Has this check ever run — on this code, in this environment, without a cache answering for it?**
+
+Almost everything found on 2026-09-20 was invisible to every form of reading: the file, the assertion, the config, the risk register. Each became visible the moment something executed for real.
+
+The cheapest way to learn whether a guarantee holds is unchanged from `13c`: break what it is meant to catch, and confirm the break reached the code. The addition is that you must first confirm **there is code for it to reach**.
+\r'   ->  384
+git cat-file blob <sha> | grep -c
+
+`docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:
+
+> **Has this check ever run — on this code, in this environment, without a cache answering for it?**
+
+Almost everything found on 2026-09-20 was invisible to every form of reading: the file, the assertion, the config, the risk register. Each became visible the moment something executed for real.
+
+The cheapest way to learn whether a guarantee holds is unchanged from `13c`: break what it is meant to catch, and confirm the break reached the code. The addition is that you must first confirm **there is code for it to reach**.
+\r'   ->  384      # porcelain and plumbing AGREE
+git cat-file blob <sha> | tr -dc '\r' | wc -c  ->  0   # zero CR bytes stored
+tr -dc '\r' < <path>   | wc -c            ->  0        # zero in the tree either
+node scripts/check-line-endings.mjs        ->  exit 0, 1380 tracked files clean
+```
+
+384 is the file's **line count**. Confirmed with a control file containing exactly one CR byte across two lines:
+
+```
+printf 'a\r\nb\n' > mix.txt
+tr -dc '\r' < mix.txt | wc -c   ->  1      # one CR, correct
+grep -c
+
+`docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:
+
+> **Has this check ever run — on this code, in this environment, without a cache answering for it?**
+
+Almost everything found on 2026-09-20 was invisible to every form of reading: the file, the assertion, the config, the risk register. Each became visible the moment something executed for real.
+
+The cheapest way to learn whether a guarantee holds is unchanged from `13c`: break what it is meant to catch, and confirm the break reached the code. The addition is that you must first confirm **there is code for it to reach**.
+\r'   mix.txt         ->  2      # every line
+```
+
+**`grep -c
+
+`docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:
+
+> **Has this check ever run — on this code, in this environment, without a cache answering for it?**
+
+Almost everything found on 2026-09-20 was invisible to every form of reading: the file, the assertion, the config, the risk register. Each became visible the moment something executed for real.
+
+The cheapest way to learn whether a guarantee holds is unchanged from `13c`: break what it is meant to catch, and confirm the break reached the code. The addition is that you must first confirm **there is code for it to reach**.
+\r'` is not a CR detector in this environment. It matches every line.** So neither the 153/158 that appeared to refute the finding, nor the number that appeared to confirm the diagnosis, was measuring carriage returns at all. The porcelain/plumbing explanation is plausible, real in general, and was fitted to noise.
+
+**Three of these in one day, all the same shape, all caught before they became claims:**
+
+- `grep -rn 'gin'` over migrations returned only `bigint` declarations, with `head` hiding how imprecise the pattern was (§19a).
+- `node script | tail -3; echo $?` reported `tail`'s exit status, not the script's — printing **0** for a script that crashed, which is precisely the false pass it was written to check for (§21b).
+- `grep -c
+
+`docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:
+
+> **Has this check ever run — on this code, in this environment, without a cache answering for it?**
+
+Almost everything found on 2026-09-20 was invisible to every form of reading: the file, the assertion, the config, the risk register. Each became visible the moment something executed for real.
+
+The cheapest way to learn whether a guarantee holds is unchanged from `13c`: break what it is meant to catch, and confirm the break reached the code. The addition is that you must first confirm **there is code for it to reach**.
+\r'` counting lines rather than carriage returns, above.
+
+**Rule: when a measurement is the evidence, measure the measurement first.** A control case with a known answer costs one command — `printf 'a\r\nb\n'` settles the CR question outright — and it is the only thing that distinguishes a tool from a hypothesis. Prefer counting **bytes** over matching **lines** when the question is about bytes, and prefer the project's own committed checker over an ad-hoc pipeline, because the checker has been sabotage-proved and the pipeline has not.
+
+**And the sharpest part: a bad measurement nearly overturned a correct finding.** Every other entry here is a check that was too weak to catch a defect. This is a check that was strong enough to manufacture one, aimed at a colleague's correct report. The asymmetry matters — a false negative costs a bug, a false positive costs someone else's credibility.
+
+## 23. Caution aimed at the wrong mechanism costs availability and buys nothing
+
+Nearly every other entry here is a case of being **less safe than it looked**. This one is the inverse.
+
+MinIO published its console on `26901` and **never bound the S3 API on** `26900`, although `docker-compose.yml` declares both. Nothing regressed — the container had been started from a configuration that did not match the file. Its healthcheck, `mc ready local`, runs **inside** the container and never touches a published port, so it read `healthy` for four hours while serving nothing. Same shape as §11: a check passing on a different thing than the one you care about.
+
+The media path was dead for hours. `hls-origin.test.ts` and `delivery-log.test.ts` failed loud by design — correct behaviour, read as a known-bad condition to work around and excuse in ticket notes.
+
+**Four sessions independently declined to touch the container, and each was right by accident.** The prohibition in force was _never run `pnpm dev:reset` or `docker compose down -v`_, because three live worktree databases and other sessions' applied migrations sat in the shared cluster and `down -v` destroys volumes. Correct — and it never applied here. The fix was `docker compose up -d --force-recreate minio`: one service, no volumes touched. The named volume survived and the HLS fixture with it, so no re-publish was needed.
+
+**The prohibition was precise; the caution it produced was not.** _Do not destroy volumes_ became _do not touch containers_ second-hand, which protected nothing and cost a dead dependency plus every downstream test excused rather than fixed.
+
+**Rule: state a prohibition as the mechanism it guards, and name what remains allowed.** _Never `down -v`; `up -d --force-recreate <service>` and `docker restart <service>` are fine_ is one clause longer and would have saved the hours. **A prohibition without a permitted neighbour gets rounded up to the whole category by everyone who inherits it second-hand.**
+
 ## The pattern, restated
 
 `docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:

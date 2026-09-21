@@ -76,38 +76,31 @@ export const idempotencyRecordSchema = z
 export type IdempotencyRecord = z.infer<typeof idempotencyRecordSchema>;
 
 /**
- * The shared table, as DDL, so every service creates the same one.
+ * There is deliberately no DDL in this file.
  *
- * Not executed by this package — `docs/14` §8 gives the migration job its own
- * DDL-only role and the app roles no DDL grant at all, so the app that
- * imports this must never run it. It lives here because the alternative is
- * the definition existing once per service and drifting.
+ * It used to export `IDEMPOTENCY_TABLE_DDL`, described as "the shared table,
+ * as DDL, so every service creates the same one" and justified on the grounds
+ * that "the alternative is the definition existing once per service and
+ * drifting". Both halves turned out to be false, and in the way the comment
+ * predicted:
  *
- * UNTESTED against a live Postgres: YT-0022 has not provisioned one.
+ *   - **Nothing imported it.** An anchored search across `apps/`,
+ *     `packages/` and `services/` returned exactly one hit: its own
+ *     definition. It was never a shared definition, only a second one.
+ *   - **It had already drifted**, on day one, with a single service shipped.
+ *     The real table comes from `packages/db/migrations/
+ *     20260919000001_platform_idempotency.sql`, which creates
+ *     `platform.idempotency` — schema-qualified, with named constraints, an
+ *     `idempotency_key_length` CHECK and a GRANT. This constant created a
+ *     bare `idempotency` with none of them.
+ *
+ * So the drift it existed to prevent was the thing it was. **A shared
+ * definition that nothing imports is not shared; it is a second definition
+ * with a comment claiming otherwise.**
+ *
+ * The migration is the single creator, and it is genuinely shared: one
+ * database, one table, every service — including the Go implementation in
+ * YT-0514 — reaching the same rows. `docs/14` §8 still holds, and is the
+ * reason no DDL belongs in an application package at all: the migration job
+ * has the only DDL-granted role, and the app roles have none.
  */
-export const IDEMPOTENCY_TABLE_DDL = `
-CREATE TABLE IF NOT EXISTS idempotency (
-  scope        text        NOT NULL,
-  key          text        NOT NULL,
-  fingerprint  char(64)    NOT NULL,
-  state        text        NOT NULL CHECK (state IN ('in_progress', 'completed')),
-  status       smallint,
-  body         text,
-  started_at   timestamptz NOT NULL DEFAULT now(),
-  expires_at   timestamptz NOT NULL,
-
-  PRIMARY KEY (scope, key),
-
-  -- A completed row must carry what it replays, and an in-progress row must
-  -- not pretend to. The same invariant as the Zod refinements above; stated
-  -- twice on purpose, because the database is the only one of the two that
-  -- a second service in another language is guaranteed to go through.
-  CONSTRAINT completed_has_response CHECK (
-    (state = 'completed' AND status IS NOT NULL AND body IS NOT NULL) OR
-    (state = 'in_progress' AND status IS NULL AND body IS NULL)
-  )
-);
-
--- Pruning reads this; nothing else does.
-CREATE INDEX IF NOT EXISTS idempotency_expires_at_idx ON idempotency (expires_at);
-`;

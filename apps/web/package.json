@@ -45,6 +45,7 @@
     "@types/qrcode": "1.5.6",
     "@types/react": "19.3.0",
     "@vitejs/plugin-react": "6.1.1",
+    "@yourtal/media": "workspace:*",
     "@yourtal/tsconfig": "workspace:*",
     "jsdom": "30.1.0",
     "postcss": "8.5.28",

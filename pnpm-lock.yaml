@@ -196,6 +196,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: 6.1.1
         version: 6.1.1(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@yourtal/media':
+        specifier: workspace:*
+        version: link:../../packages/media
       '@yourtal/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig

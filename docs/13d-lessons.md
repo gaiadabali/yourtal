@@ -510,6 +510,29 @@ Neither session did anything locally wrong. One regenerated a shared artefact wh
 
 Related and worth knowing separately: `pnpm dev:reset` is not merely dangerous in a shared cluster, **it is broken as a recovery** — it runs neither `db:migrate` nor `db:seed`, so it destroys every database and hands back an empty one. A ticket criterion still instructs the reader to run it, which is part of why that ticket failed verification.
 
+## 26. A count cannot see a reorganisation
+
+The committed board was stale while every local check said green. The count was the first thing checked and it **matched exactly** — 294 `### YT-` blocks in the working tree, `**294 tasks**` in the committed dashboard — which correctly ruled out a missing ticket and wrongly felt like ruling out a missing *file*.
+
+The cause was an **untracked** `docs/tasks/phase-0-web.md`: nine `web` tickets split out of `phase-0-platform.md` by another session. The generator reads every file in that directory whether tracked or not, the pre-commit hook runs it in its **writing** form, and the commit staged the dashboard against only the task files its author had touched. So the dashboard described a tree no commit contained.
+
+**Why the count was blind: the nine tickets existed either way.** They were in the old file at `HEAD` and in the new file in the working tree. A total is invariant under moving a ticket between files, so **the one number everyone reaches for first cannot distinguish a reorganisation from nothing happening at all.**
+
+Both directions of that trap landed on the same board in one afternoon: **288 versus 287**, where the extra was a documentation example inside `_schema.md` (§19b), and **294 versus 294**, where equality concealed a file outside the commit. *A matching count is evidence about arithmetic, not about membership.*
+
+**Rule: to check what a commit contains, enumerate its files — do not total its contents.** `git ls-files`, or `git archive HEAD | tar -t`, answers “which files are in here”; a count never will. And an untracked file in a directory that a generator globs is invisible to every git-based check and fully visible to the generator, which is the same asymmetry as §13's worktrees: **gitignored and untracked both mean *unseen by git*, never *absent from the filesystem*.**
+
+## 27. One defect can report through two gates, and the second report is the misleading one
+
+`packages/db/src/seed.ts` and `seed.test.ts` were failing **both** `check-line-endings.mjs` and `prettier --check`. The line-ending failure was the real one: `git cat-file blob HEAD:<path>` showed **0 CR bytes**, and `git status` showed the files unmodified — pure working-tree drift with a correct index.
+
+Applying the documented remedy for that — `rm <paths> && git checkout -- <paths>` on files confirmed clean — **made the format failure disappear with no reformatting whatsoever.** Prettier had been objecting to line endings, not to formatting.
+
+**The trap is that the second gate's advice is actionable and wrong.** `format:check` says *“run Prettier with --write to fix”*, and doing so **rewrites a file whose committed content was already correct** — producing a diff that looks like a tidy-up, hides the real defect, and leaves the drift free to recur. Four committed files were reformatted earlier the same day for exactly this reason, before anyone checked whether endings were the cause.
+
+**Rule: a `format:check` failure on a file you have not edited is a line-ending suspect first.** Check `git cat-file blob HEAD:<path>` and `git status` before accepting the formatter's suggestion — if the blob is clean and the file is unmodified, the formatter is a symptom and reformatting is the wrong fix.
+
+**And the general form, which is why this is its own section:** when two gates fail together, they are more likely reporting one defect than two, and **the gate whose remedy is easiest to apply is the one most likely to be the symptom.** Fix the one that names state, not the one that names style.
 ## The pattern, restated
 
 `docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:

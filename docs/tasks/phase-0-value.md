@@ -100,7 +100,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - ⛔ **It should not reach `done` while the title still claims an API that does not exist.** `done` is the board's strongest public statement and this one would be read as *"the API is finished and verified"*. The fix is one of: retitle to what the criteria actually cover, or add a criterion for the route and return this to `doing`. **That is the epic owner's call, not the verifier's** — flagged here rather than decided. This is the third instance in one day of *proved in tests, absent from the running system*, after YT-0519 and the ledger having no HTTP caller
 
 ### YT-0043 · Chart of accounts
-`doing` · P0 · value · 2d · dep: YT-0041
+`review` · P0 · value · 2d · dep: YT-0041
 
 - [x] Account taxonomy defined: user, merchant, platform, escrow, charity, suspense, reserve
 - [x] Points liability, breakage revenue and marketing-funded issuance mapped to real accounts
@@ -108,8 +108,17 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [x] Five account kinds, seven owner types (adding the `suspense` and `reserve` YT-0518 never created), currency constrained to **YTP/IDR/AUD**. Points as a first-class ledger currency is what gives "a transfer may not mix currencies" teeth — a points entry and a Rupiah entry cannot accidentally sum
 - [x] **Posting rules as code, not prose**: `EarnPoints`, `BurnPoints`, `ExpirePoints`, `IssueMarketingPoints`, `ToSuspense`. A pattern written in prose is one every caller re-derives, and re-derivation is where a sign flips
 - [x] Points liability classified as a **liability** — points are a claim the user holds on us, and classifying them otherwise is how a growing obligation reads as a growing asset. **Funded issuance posts to a different contra account from marketing issuance**, because sharing one would make marketing spend indistinguishable from advertiser-funded issuance in every report that matters
-- [ ] Finance review — **cannot be ticked: nobody owns finance yet** (YT-0050 still `todo`)
+- [x] **Finance review — signed off first-hand by the founder (the economy owner, per YT-0050) on 2026-09-21**, against the classification and all five posting rules, with breakage-at-expiry and unfunded-issuance-as-expense raised explicitly and accepted
 - Held to the classification/valuation line: no backing rate, no coverage ratio, no currency-per-point arithmetic anywhere
+- ✅ **What was actually signed, recorded so the tick is auditable rather than a status change.** Put to the founder by `yourtal-0c` as substance, not as *"do you approve YT-0043"*:
+  - **User points are a LIABILITY** — a claim the user holds on the platform, not the platform's money
+  - **Points issued and points redeemed are EQUITY contra accounts**
+  - **Breakage is REVENUE**, recognised when points expire unspent
+  - **Unfunded issuance is EXPENSE, on a different contra account from advertiser-funded issuance**, so marketing spend cannot hide inside funded issuance in any report
+  - Five posting rules as code rather than prose: `EarnPoints`, `BurnPoints` (**no revenue recognised** — the obligation changes shape rather than disappearing), `ExpirePoints`, `IssueMarketingPoints`, `ToSuspense`; and `FundReserve` segregating the cash side
+- ✅ **Two positions were named as challengeable before he signed**, so they are declined knowingly rather than by omission: **breakage recognised at expiry rather than accrued over time**, and **marketing issuance carried as EXPENSE with no cash leg behind it**. Signed as written
+- ✏️ **The criterion's old text said "cannot be ticked: nobody owns finance yet (YT-0050 still `todo`)", and it was stale in two different ways at once.** YT-0050 is `done` — so the *blocker* had expired — **and** the review has since been performed. Only the second one ticks the box. `yourtal-0c` found the expiry, deliberately did **not** record it, and waited until the review existed, on the grounds that a ticket briefly claiming a review nobody performed is worse than one that looks stale. **The fifth expired blocker found today and the only one whose expiry did not by itself unblock the work**
+- ℹ️ Goes to `review`, not `done`: the founder performed the review and `yourtal-0c` recorded it, so a **third** session still owes the independent check
 
 ### YT-0044 · Invariant checker and daily proof
 `doing` · P0 · value · 3d · dep: YT-0042

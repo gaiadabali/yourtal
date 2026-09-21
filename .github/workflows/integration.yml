@@ -157,6 +157,35 @@ jobs:
           docker logs yourtal-minio
           exit 1
 
+      # YT-0599. apps/api opens a Valkey connection at boot, so without this the
+      # PDP boot check dies on `connect ECONNREFUSED 127.0.0.1:26379` before it
+      # asks Cerbos anything — and the failure reads as an authorization problem
+      # because of the step it happens in.
+      #
+      # docker-compose.yml has declared this service all along; only the
+      # workflow lacked it. Reported by yourtal-b4 while reviewing the auth work
+      # that needs it, filed as YT-0599, and confirmed here by Integration
+      # failing on exactly that port at 613ec48.
+      #
+      # `--save "" --appendonly no` matches compose deliberately: this instance
+      # keeps nothing across a restart, which is WHY YT-0121's checkpoint nonces
+      # live in Postgres rather than here. A CI instance that persisted would let
+      # a replay test pass for a reason production does not have.
+      - name: Start Valkey (compose declares it; the workflow did not)
+        run: |
+          docker run -d --name yourtal-redis \
+            -p 127.0.0.1:26379:6379 \
+            valkey/valkey:8-alpine valkey-server --save "" --appendonly no
+          for _ in $(seq 1 30); do
+            if docker exec yourtal-redis valkey-cli ping 2>/dev/null | grep -q PONG; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Valkey never answered PING on 26379."
+          docker logs yourtal-redis
+          exit 1
+
       - name: Start Cerbos (it needs the repo, so it cannot be a service)
         run: |
           docker run -d --name yourtal-cerbos \

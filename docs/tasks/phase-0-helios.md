@@ -204,7 +204,7 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 ## Auth
 
 ### YT-0540 · Email and password authentication
-`review` · P0 · platform · 4d · dep: YT-0516
+`done` · P0 · platform · 4d · dep: YT-0516
 
 - **Schema decided 2026-09-19 (coordination session) so this is no longer blocked.** Four tables in an `identity` schema, and the shape is dictated by rules this codebase already follows:
   - `identity.credential` — `(user_id, kind, secret_hash, updated_at)`, **one row per credential kind**, not a password column on the user. This *is* the seam in YT-0541: adding phone-OTP or an OIDC subject later is a new row, not a migration of the user table.
@@ -256,7 +256,12 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - **One leftover removed on its own merits:** the reset-delivery log line used to hash the identifier, because the identifier *was* the email. It logs `userId` directly now — hashing an opaque UUID hides nothing and suggests it is sensitive when it is not
 - **Live evidence rather than inference:** a real run printed `password_reset token for 5eddc991-…: <token>` — a UUID, confirming the opaque value flows through in execution and not merely in the type signature
 - **Re-proved after the key changed, since every property hung on it:** raw session token absent from the stored row, tampered token refused, expired session refused, `changePassword` revoking every other session, lockout still returning `throttled` on the **correct** password after five failures, account and source counters independent. `apps/api` **41 files / 240 tests**; `packages/db` **81** from a **fresh per-package database that applied the edited migration from scratch** — the strongest evidence the migration is sound; `packages/contracts` **559/559** including the schema-drift gate, so the Drizzle table matches the applied schema down to the constraint name; policy suite **452/452**
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work, against the RUNNING database rather than the migration file.** `information_schema.columns` for schema `identity` returns exactly `credential(user_id, kind, identifier, secret_hash, updated_at)`, `session(id, user_id, created_at, last_seen_at, absolute_expires_at, revoked_at)`, `verification_token(id, user_id, purpose, expires_at, consumed_at, created_at)` and `principal_security_state`
+- ✅ **The NEGATIVE check is the one worth having and it passes.** Querying `identity` for any column named `is_expired`, `failed_attempt_count`, `is_locked`, `password`, `password_hash` or `email` returns **zero rows** — no derived state stored, and **no email anywhere in the session or token tables**, which is the whole point of moving `user_id` to an opaque UUID
+- ✅ **Single-use is atomic, not check-then-set**: `drizzle-verification-token.repository.ts:36-41` is `UPDATE … SET consumedAt = now WHERE … consumedAt IS NULL`, so **a replay loses the race** rather than being detected after it. `:66` distinguishes *consumed* from *never existed*, which is what this ticket's "not by deletion" argument was for
+- ✅ **Throttling has two scopes that are never combined** — `"account"` and `"source"` under separate keys, with `reset` deliberately never called for `"source"`, **so a legitimate success cannot clear a broad attack's counter**. The account key is `sha256(identifier)` with the reason written down: an operator listing throttle keys should not get a mailing list for free
+- ✅ Argon2id via `@node-rs/argon2`; session ids hashed at rest (`opaque-token.ts:39` returns `sha256(token)` and the mint function hands back `{token, hash}`), **so a database read yields no usable credential**. A password reset rotates every session and issues a fresh one (`auth.service.ts:232-233`), on the stated ground that a reset is exactly as privilege-relevant as a change
+- ℹ️ The 45 new `session` assertions are part of the **452/452** run under YT-0035, so that figure is now confirmed independently from two directions
 ### YT-0541 · Identity provider seam
 `todo` · P0 · platform · 2d · dep: YT-0540
 

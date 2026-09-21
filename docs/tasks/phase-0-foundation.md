@@ -126,7 +126,7 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `pnpm-workspace.yaml:6` declares `services/*`; there are now **two** Go modules, `services/ledger/go.mod` and `services/voucher/go.mod`, which is the per-module choice this ticket argued for rather than one at the repo root. `go build ./...` and `go vet ./...` both exit **0** in `services/ledger`, re-run here rather than accepted — and neither touches Postgres, so unlike a vitest suite this evidence is unaffected by YT-0547's contention
 - ✏️ **The third box is a finding, not a criterion, and it has since become false — which is the point of recording rather than re-ticking it.** It reads *"Zero Go service code exists today"*, true when written and now **67 Go files** across the two services. As a bar it is unfalsifiable-in-reverse: the ticket's own success makes it false. `_schema.md` rule 1 covers this — an observation that motivated the work is a note, and the form for it is `- ℹ️`, not a box
 ### YT-0518 · First migration, executed
-`review` · P0 · value · 2d · dep: YT-0516, YT-0043
+`done` · P0 · value · 2d · dep: YT-0516, YT-0043
 
 - [x] **There are zero `.sql` files in the repository.** Atlas is the chosen migration tool (`docs/15`) and has never been run
 - [x] Generate and apply the first migration against local Postgres, including `IDEMPOTENCY_TABLE_DDL`
@@ -136,7 +136,14 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - **A DEFERRED constraint trigger, not a CHECK, and the reasoning is worth keeping:** a CHECK sees one row, and _"these rows sum to zero"_ is a statement about a set. It also cannot fire per-statement, because a transfer is legitimately built from several INSERTs. **Deferring to COMMIT is what makes the invariant absolute rather than "absolute except while we are mid-write"**
 - Money columns are `bigint` minor units plus explicit currency. **This does not settle YT-0506** — that question is which integer a given amount _is_, and bigint is right under either answer
 - **Defect found by YT-0043 and fixed:** `UNIQUE (owner_type, owner_id, currency)` encoded *one account per owner per currency* — right for a user, wrong for the platform, which needs issued, redeemed, breakage and marketing accounts at once. **A chart of accounts IS several accounts for one owner in one currency, so the constraint forbade the thing it existed to support.** Now a partial unique index over `user`, `merchant`, `charity` only, with both halves tested so the correction does not over-correct
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work, and the criterion that matters was proved IN THE DATABASE with no service in the path.** Inside a transaction forced with `SET CONSTRAINTS ALL IMMEDIATE` and rolled back, so nothing persisted:
+  - single-entry transfer → `ERROR: ledger: transfer … has 1 entries; double-entry needs at least 2`
+  - two entries summing to **+100** → `ERROR: ledger: transfer … is unbalanced by 100`
+  - both rolled back clean, `select count(*) … where transfer_id = …` → **0** leftovers each time
+- ✅ **The trigger's deferredness confirmed from the catalogue rather than the DDL**: `pg_trigger` → `entry_balances_at_commit | tgdeferrable=t | tginitdeferred=t`. That is the *"absolute rather than absolute-except-while-mid-write"* claim checked at the source of truth
+- ✅ Grants from the live database: `has_table_privilege('yourtal_ledger','ledger.entry','UPDATE'|'DELETE')` → **f | f**, `has_schema_privilege('yourtal_app','ledger','USAGE')` → **f**. And YT-0043's correction is genuinely in place — `account_one_per_owner_currency` is `UNIQUE … WHERE owner_type = ANY (ARRAY['user','merchant','charity'])`, **partial**, so the platform can hold issued / redeemed / breakage / marketing accounts at once. Atlas pinned by digest at `atlas.mjs:29`, not by tag
+- ✏️ **Criterion 2 names a mechanism that stopped existing tonight**: *"including `IDEMPOTENCY_TABLE_DDL`"*. **YT-0039 deleted that constant hours ago** — the migration `20260919000001_platform_idempotency.sql` is the sole creator and it applied. Property met, wording stale, and the two tickets now disagree in writing. Corrected here while YT-0039's promotion is fresh rather than left for whoever finds the contradiction later
+- ℹ️ Criterion 1 — *"There are zero `.sql` files in the repository"* — is a statement of the **problem**, not a bar this ticket meets, which is `_schema.md` rule 1's shape. Ticked and the work is done; flagged because it reads oddly to anyone auditing criteria
 ### YT-0519 · Seed the real database from the mock generators
 `doing` · P0 · data · 2d · dep: YT-0518, YT-0600
 

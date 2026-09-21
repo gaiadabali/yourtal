@@ -7,8 +7,16 @@ import { InMemoryIdempotencyStore } from "@yourtal/idempotency/in-memory-store";
 import { IdempotencyInterceptor } from "./idempotency.interceptor";
 import { IDEMPOTENT_METADATA } from "./idempotent.decorator";
 import { ONBOARDING_RETENTION_MS } from "./retention";
+import { AsyncPrincipalResolver } from "../authz/async-principal-resolver";
 import { PrincipalService } from "./../authz/principal.service";
 import type { AppConfig } from "../../config/app-config";
+import type { PrincipalSecurityStateRepository } from "../../modules/identity/persistence/principal-security-state.repository";
+
+// Every context in this suite carries a tenantId, so the principal fallback
+// in `scopeFor` (and the database read behind it) is never reached.
+const NO_SECURITY_STATE: PrincipalSecurityStateRepository = {
+  findByUserId: () => Promise.resolve(null),
+};
 
 /**
  * The half `mutating-routes.test.ts` cannot cover: that the interceptor
@@ -39,7 +47,11 @@ beforeEach(() => {
     key === IDEMPOTENT_METADATA ? { retentionMs: ONBOARDING_RETENTION_MS } : undefined,
   );
 
-  interceptor = new IdempotencyInterceptor(reflector, store, new PrincipalService(CONFIG));
+  interceptor = new IdempotencyInterceptor(
+    reflector,
+    store,
+    new AsyncPrincipalResolver(new PrincipalService(CONFIG), NO_SECURITY_STATE),
+  );
 });
 
 function contextWith(headers: Record<string, string>, body: string): ExecutionContext {

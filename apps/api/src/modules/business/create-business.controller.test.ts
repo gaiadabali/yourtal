@@ -3,6 +3,7 @@ import { describe, expect, it, vi, beforeAll } from "vitest";
 import { DrizzleBusinessOnboardingUnitOfWork } from "./persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "./persistence/business-db.test-helper";
 import type { FastifyRequest } from "fastify";
+import type { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { CreateBusinessController } from "./create-business.controller";
 import type { CreateBusinessRequest } from "./dto/create-business.schema";
 
@@ -41,7 +42,9 @@ describe("CreateBusinessController", () => {
       roles: ["user"],
       attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false },
     };
-    const principals = { resolve: vi.fn().mockReturnValue(signedIn) };
+    const principals = {
+      resolve: vi.fn().mockResolvedValue(signedIn),
+    } as unknown as AsyncPrincipalResolver;
     const controller = new CreateBusinessController(principals, unitOfWork);
 
     const result = await controller.create(validBody, {} as FastifyRequest);

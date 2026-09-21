@@ -1,4 +1,6 @@
 import { Global, Module } from "@nestjs/common";
+import { IdentityModule } from "../../modules/identity/identity.module";
+import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { PrincipalService } from "./principal.service";
 
 /**
@@ -6,11 +8,19 @@ import { PrincipalService } from "./principal.service";
  * `PrincipalService` plus `PDP_CLIENT` (from `PdpClientModule`) — see
  * `business.controller.ts` for the call-site shape every later controller
  * should copy.
+ *
+ * Also provides `AsyncPrincipalResolver` as of YT-0582: it composes
+ * `PrincipalService.resolve()` with a read of
+ * `identity.principal_security_state` (the freeze attribute
+ * `policies/derived_roles/common.yaml` depends on) — see that class's own
+ * doc comment for why it is a separate class rather than a new method on
+ * `PrincipalService`. Imports `IdentityModule` to get that repository.
  */
 @Global()
 @Module({
-  providers: [PrincipalService],
-  exports: [PrincipalService],
+  imports: [IdentityModule],
+  providers: [PrincipalService, AsyncPrincipalResolver],
+  exports: [PrincipalService, AsyncPrincipalResolver],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class AuthzModule {}

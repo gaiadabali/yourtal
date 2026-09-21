@@ -1,5 +1,5 @@
 import { Body, Controller, Inject, Post, Req } from "@nestjs/common";
-import { PrincipalService } from "../../shared/authz/principal.service";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { CreateBusinessDto } from "./dto/create-business.schema";
 import { BUSINESS_ONBOARDING_UNIT_OF_WORK } from "./persistence/business-onboarding.unit-of-work";
 import type { BusinessOnboardingUnitOfWork } from "./persistence/business-onboarding.unit-of-work";
@@ -22,7 +22,7 @@ import type { FastifyRequest } from "fastify";
 @Controller("api/businesses")
 export class CreateBusinessController {
   constructor(
-    private readonly principals: PrincipalService,
+    private readonly principals: AsyncPrincipalResolver,
     @Inject(BUSINESS_ONBOARDING_UNIT_OF_WORK)
     private readonly unitOfWork: BusinessOnboardingUnitOfWork,
   ) {}
@@ -39,7 +39,7 @@ export class CreateBusinessController {
     // covered by a test, rather than an `if` in one controller that no
     // policy suite can see. The principal is still resolved here because the
     // caller becomes the business's owner.
-    const principal = this.principals.resolve(request);
+    const principal = await this.principals.resolve(request);
 
     const result = await createBusiness(
       this.unitOfWork,

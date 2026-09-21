@@ -1,5 +1,5 @@
 import { Body, Controller, Inject, Param, Req, Post } from "@nestjs/common";
-import { PrincipalService } from "../../shared/authz/principal.service";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { InviteMemberDto } from "./dto/invite-member.schema";
 import { BUSINESS_ACCOUNT_REPOSITORY } from "./persistence/business-account.repository";
 import type { BusinessAccountRepository } from "./persistence/business-account.repository";
@@ -15,7 +15,7 @@ import type { FastifyRequest } from "fastify";
 @Controller("api/:tenantId/business/team")
 export class TeamInviteController {
   constructor(
-    private readonly principals: PrincipalService,
+    private readonly principals: AsyncPrincipalResolver,
     @Inject(BUSINESS_ACCOUNT_REPOSITORY) private readonly businesses: BusinessAccountRepository,
     @Inject(BUSINESS_MEMBER_REPOSITORY) private readonly members: BusinessMemberRepository,
   ) {}
@@ -30,7 +30,7 @@ export class TeamInviteController {
     @Body() body: InviteMemberDto,
     @Req() request: FastifyRequest,
   ) {
-    const principal = this.principals.resolve(request);
+    const principal = await this.principals.resolve(request);
 
     const result = await inviteMember(this.businesses, this.members, {
       businessId: tenantId,

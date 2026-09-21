@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Inject, Param, Patch, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import type { PdpClient } from "@yourtal/authz/pdp-client";
-import { PrincipalService } from "../../shared/authz/principal.service";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { mapAuthzErrorToHttpException } from "../../shared/authz/authz-error.mapper";
 import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
 import { ChangeMemberRoleDto } from "./dto/change-member-role.schema";
@@ -18,7 +18,7 @@ import { Authorize } from "../../shared/authz/authorize.decorator";
 @Controller("api/:tenantId/business/team/:userId")
 export class TeamMemberController {
   constructor(
-    private readonly principals: PrincipalService,
+    private readonly principals: AsyncPrincipalResolver,
     @Inject(PDP_CLIENT) private readonly pdp: PdpClient,
     @Inject(BUSINESS_ACCOUNT_REPOSITORY) private readonly businesses: BusinessAccountRepository,
     @Inject(BUSINESS_MEMBER_REPOSITORY) private readonly members: BusinessMemberRepository,
@@ -51,7 +51,7 @@ export class TeamMemberController {
     @Body() body: ChangeMemberRoleDto,
     @Req() request: FastifyRequest,
   ) {
-    const principal = this.principals.resolve(request);
+    const principal = await this.principals.resolve(request);
 
     const currentMember = await this.members.findMember(tenantId, userId);
     if (currentMember !== null) {

@@ -15,7 +15,7 @@ import type { IdempotencyStore } from "@yourtal/idempotency/store";
 import { IDEMPOTENT_METADATA } from "./idempotent.decorator";
 import type { IdempotentOptions } from "./idempotent.decorator";
 import { IDEMPOTENCY_STORE } from "./idempotency.module";
-import { PrincipalService } from "../authz/principal.service";
+import { AsyncPrincipalResolver } from "../authz/async-principal-resolver";
 
 /**
  * Applies `@yourtal/idempotency` to routes marked `@Idempotent`. YT-0039.
@@ -39,7 +39,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
   constructor(
     private readonly reflector: Reflector,
     @Inject(IDEMPOTENCY_STORE) private readonly store: IdempotencyStore,
-    private readonly principals: PrincipalService,
+    private readonly principals: AsyncPrincipalResolver,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -67,56 +67,69 @@ export class IdempotencyInterceptor implements NestInterceptor {
       });
     }
 
-    const scope = this.scopeFor(request);
+    return from(this.scopeFor(request)).pipe(
+      switchMap((scope) =>
+        from(
+          begin(this.store, {
+            scope,
+            key,
+            method: request.method,
+            path: request.url,
+            rawBody: rawBodyOf(request),
+            startedAt: new Date(),
+            retentionMs: options.retentionMs,
+          }),
+        ).pipe(switchMap((outcome) => this.handleOutcome(outcome, scope, key, reply, next))),
+      ),
+    );
+  }
 
-    return from(
-      begin(this.store, {
-        scope,
-        key,
-        method: request.method,
-        path: request.url,
-        rawBody: rawBodyOf(request),
-        startedAt: new Date(),
-        retentionMs: options.retentionMs,
+  /**
+   * Split out of `intercept()` only so `scopeFor` (YT-0582: now an async,
+   * DB-reading resolve) can sit ahead of it in an outer `switchMap` without
+   * this whole method's body living inside a second level of nesting.
+   */
+  private handleOutcome(
+    outcome: Awaited<ReturnType<typeof begin>>,
+    scope: string,
+    key: string,
+    reply: FastifyReply,
+    next: CallHandler,
+  ): Observable<unknown> {
+    if (outcome.kind === "fingerprint_mismatch") {
+      throw new ConflictException({
+        type: "idempotency_error",
+        code: "idempotency_key_reused",
+        message: "This Idempotency-Key was already used with a different request body.",
+      });
+    }
+    if (outcome.kind === "in_progress") {
+      throw new ConflictException({
+        type: "idempotency_error",
+        code: "idempotency_request_in_progress",
+        message: "An earlier request with this Idempotency-Key is still being processed.",
+      });
+    }
+    if (outcome.kind === "replay") {
+      reply.status(outcome.status);
+      // Re-serialised by Nest rather than written byte for byte. The
+      // value is identical; the bytes may differ in key order if the
+      // handler returned a differently-ordered object. Storing the
+      // serialised form keeps it stable for the common case and avoids
+      // bypassing the framework's own response pipeline.
+      return of(parseStoredBody(outcome.body));
+    }
+
+    return next.handle().pipe(
+      tap((value: unknown) => {
+        void complete(this.store, scope, key, {
+          status: reply.statusCode,
+          body: JSON.stringify(value),
+        });
       }),
-    ).pipe(
-      switchMap((outcome) => {
-        if (outcome.kind === "fingerprint_mismatch") {
-          throw new ConflictException({
-            type: "idempotency_error",
-            code: "idempotency_key_reused",
-            message: "This Idempotency-Key was already used with a different request body.",
-          });
-        }
-        if (outcome.kind === "in_progress") {
-          throw new ConflictException({
-            type: "idempotency_error",
-            code: "idempotency_request_in_progress",
-            message: "An earlier request with this Idempotency-Key is still being processed.",
-          });
-        }
-        if (outcome.kind === "replay") {
-          reply.status(outcome.status);
-          // Re-serialised by Nest rather than written byte for byte. The
-          // value is identical; the bytes may differ in key order if the
-          // handler returned a differently-ordered object. Storing the
-          // serialised form keeps it stable for the common case and avoids
-          // bypassing the framework's own response pipeline.
-          return of(parseStoredBody(outcome.body));
-        }
-
-        return next.handle().pipe(
-          tap((value: unknown) => {
-            void complete(this.store, scope, key, {
-              status: reply.statusCode,
-              body: JSON.stringify(value),
-            });
-          }),
-          catchError((error: unknown) => {
-            void this.recordFailure(scope, key, error);
-            throw error;
-          }),
-        );
+      catchError((error: unknown) => {
+        void this.recordFailure(scope, key, error);
+        throw error;
       }),
     );
   }
@@ -154,8 +167,15 @@ export class IdempotencyInterceptor implements NestInterceptor {
    *
    * Never taken from the body. A scope a client can choose is a scope a
    * client can choose to collide with.
+   *
+   * Async since YT-0582: the principal fallback now goes through
+   * `AsyncPrincipalResolver`, which can read stored state. This runs AFTER
+   * `PdpGuard` (docs/13a's fixed order), so the id it scopes by has already
+   * been through one authorization decision either way — this call does not
+   * change what is trusted, only what the resolver is capable of knowing
+   * about the id it already trusted.
    */
-  private scopeFor(request: FastifyRequest): string {
+  private async scopeFor(request: FastifyRequest): Promise<string> {
     const params: unknown = request.params;
     if (typeof params === "object" && params !== null && "tenantId" in params) {
       const tenantId: unknown = Reflect.get(params, "tenantId");
@@ -163,7 +183,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
         return `tenant:${tenantId}`;
       }
     }
-    return `principal:${this.principals.resolve(request).id}`;
+    return `principal:${(await this.principals.resolve(request)).id}`;
   }
 }
 

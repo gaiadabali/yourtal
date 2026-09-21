@@ -5,6 +5,7 @@ import { DrizzleBusinessOnboardingUnitOfWork } from "./persistence/drizzle-busin
 import { clearBusinessTables, testBusinessDb } from "./persistence/business-db.test-helper";
 import type { Principal } from "@yourtal/authz/principal";
 import type { FastifyRequest } from "fastify";
+import type { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { TeamInviteController } from "./team-invite.controller";
 
 const ownerPrincipal: Principal = {
@@ -48,7 +49,9 @@ beforeAll(async () => {
 describe("TeamInviteController", () => {
   it("invites a member and records who invited them", async () => {
     const { businesses, members, businessId } = await setup();
-    const principals = { resolve: vi.fn().mockReturnValue(ownerPrincipal) };
+    const principals = {
+      resolve: vi.fn().mockResolvedValue(ownerPrincipal),
+    } as unknown as AsyncPrincipalResolver;
     const controller = new TeamInviteController(principals, businesses, members);
 
     const result = await controller.invite(

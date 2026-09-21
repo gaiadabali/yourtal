@@ -4,7 +4,7 @@ import { Reflector } from "@nestjs/core";
 import type { FastifyRequest } from "fastify";
 import type { PdpClient } from "@yourtal/authz/pdp-client";
 import { PDP_CLIENT } from "../pdp/pdp-client.module";
-import { PrincipalService } from "./principal.service";
+import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { mapAuthzErrorToHttpException } from "./authz-error.mapper";
 import { AUTHORIZE_METADATA, PUBLIC_ROUTE_METADATA } from "./authorize.decorator";
 import type { AuthorizeOptions } from "./authorize.decorator";
@@ -32,7 +32,7 @@ export class PdpGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     @Inject(PDP_CLIENT) private readonly pdp: PdpClient,
-    private readonly principals: PrincipalService,
+    private readonly principals: AsyncPrincipalResolver,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -56,7 +56,11 @@ export class PdpGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<FastifyRequest>();
-    const principal = this.principals.resolve(request);
+    // AsyncPrincipalResolver (YT-0582): this is the primary allow/deny gate
+    // for every route, so it is the highest-leverage place to read stored
+    // security state (the account freeze in particular) into the principal
+    // the PDP actually reasons about.
+    const principal = await this.principals.resolve(request);
     const tenantId = tenantOf(request);
 
     const result = await this.pdp.requireAction(

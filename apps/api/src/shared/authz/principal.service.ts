@@ -32,6 +32,22 @@ import type { AppConfig } from "../../config/app-config";
  * anyone could name themselves the owner of any business. A comment is
  * documentation, not a control, and the failure mode it guards against is
  * someone deploying this without reading it.
+ *
+ * ## This class's shape is deliberately untouched by YT-0582
+ *
+ * `resolve()` is synchronous and reads only the request — it cannot ask
+ * anything of stored state, which is why `valueFrozenUntil` and three other
+ * `policies/_schemas/principal.json` attributes were never populatable
+ * (`principal-attribute-coverage.test.ts` proves that generically). The fix
+ * is `AsyncPrincipalResolver` (this same directory), a SEPARATE class that
+ * composes this one with a database read, rather than a new method added
+ * here. That is deliberate, not a style choice: `apps/api/src/modules/store/**`
+ * and `apps/api/src/modules/watch/**` (other work in flight, out of this
+ * ticket's reach) duck-type `PrincipalService` directly in their own tests —
+ * `{ resolve: vi.fn() }` passed where a `PrincipalService` is expected, with
+ * no cast — so any new public member on this class breaks their structural
+ * typing without a line of theirs being touched. Composing instead of
+ * widening keeps this class's type exactly as it was.
  */
 @Injectable()
 export class PrincipalService {

@@ -374,6 +374,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "question-bank.ts/presented-question.ts define contract schemas for this table's data; neither has a MAPPINGS row yet — a tracked gap in the question-bank module, out of YT-0555's scope (business module only).",
   "campaign.question_answer_key": "Same question-bank note as campaign.question above.",
   "campaign.question_option": "Same question-bank note as campaign.question above.",
+  "identity.principal_security_state":
+    "The 72h SIM-swap / account-recovery freeze read into AsyncPrincipalResolver.resolve() (YT-0582, docs/14 section 5). No public contract — a principal's freeze is enforced through the PDP's ALLOW/DENY, never returned to any client as a field of its own.",
 };
 
 const TABLES = replayMigrations();

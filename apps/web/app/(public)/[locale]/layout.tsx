@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
 import {
   GENERATED_PUBLIC_LOCALES,
   PUBLIC_SITE_URL,
@@ -43,8 +44,11 @@ export function generateStaticParams() {
 export const dynamicParams = false;
 
 export const metadata: Metadata = {
+  ...baseMetadata,
   metadataBase: new URL(PUBLIC_SITE_URL),
 };
+
+export const viewport = baseViewport;
 
 export interface PublicLocaleLayoutProps {
   children: ReactNode;
@@ -56,9 +60,11 @@ export default async function PublicLocaleLayout({ children, params }: PublicLoc
   const config = publicLocaleConfig(locale);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-surface">
-      <PublicHeader locale={config.intlLocale} homeHref={`/${locale}`} />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">{children}</main>
-    </div>
+    <RootDocument lang={config.intlLocale}>
+      <div className="flex min-h-dvh flex-col bg-surface">
+        <PublicHeader locale={config.intlLocale} homeHref={`/${locale}`} />
+        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">{children}</main>
+      </div>
+    </RootDocument>
   );
 }

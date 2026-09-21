@@ -4,6 +4,10 @@ import { NextIntlClientProvider } from "next-intl";
 import { AppShell } from "@/features/shell/app-shell";
 import { getRegion } from "@/features/region/get-region";
 import { RegionProvider } from "@/features/region/region-context";
+import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
+
+export const metadata = baseMetadata;
+export const viewport = baseViewport;
 
 export interface AppLayoutProps {
   children: ReactNode;
@@ -41,11 +45,18 @@ export default async function AppLayout({ children }: AppLayoutProps) {
   const region = await getRegion();
   const locale = await getLocale();
   const messages = await getMessages();
+  // YT-0181: this group is a ROOT layout now, so it owns its own `<html>`.
+  // `locale` is the BCP-47 tag next-intl already resolved from the region
+  // cookie via `i18n/request.ts`, so `lang` costs nothing extra here and is
+  // guaranteed to agree with the catalogue the page renders from — the same
+  // single-source-of-truth argument the comment above makes for messages.
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <RegionProvider region={region}>
-        <AppShell>{children}</AppShell>
-      </RegionProvider>
-    </NextIntlClientProvider>
+    <RootDocument lang={locale}>
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        <RegionProvider region={region}>
+          <AppShell>{children}</AppShell>
+        </RegionProvider>
+      </NextIntlClientProvider>
+    </RootDocument>
   );
 }

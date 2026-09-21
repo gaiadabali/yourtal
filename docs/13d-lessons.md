@@ -534,6 +534,39 @@ Applying the documented remedy for that — `rm <paths> && git checkout -- <path
 
 **And the general form, which is why this is its own section:** when two gates fail together, they are more likely reporting one defect than two, and **the gate whose remedy is easiest to apply is the one most likely to be the symptom.** Fix the one that names state, not the one that names style.
 
+## 28. Five fixes for the shared index, each the fix for the last, and the final one deleted committed work
+
+Five or more sessions commit from one working copy — which means one `.git/index`. Over one afternoon four sessions arrived at four successive corrections for the collisions that causes. **Every one of them was a reasonable response to the failure before it, and every one failed differently.**
+
+**1. `git add <shared file>`** — swept another session's concurrent edits into a commit, under an author who had not written them and a message describing the opposite of the diff.
+
+**2. `git status --porcelain` before staging** — the natural remedy, and insufficient: *a file list says which paths move, not what they say.*
+
+**3. `git add <explicit paths>` then `git commit`** — the obvious next step, right arguments and wrong mechanism. **`git commit` commits the index, not your `add` list.** A peer staging work in the seconds between your `add` and your `commit` puts it in your commit. Observed: 15 foreign files sat staged while a commit was being prepared; only re-reading `git diff --cached` immediately before committing kept them out.
+
+**4. `git commit -- <paths>`** — genuinely closes it, because a pathspec commit never consults the shared index. And it **cannot stage an untracked file**: `pathspec … did not match any file(s) known to git`. So it works for edits and fails exactly where new work lives, sending you back to step 3. A module committed that way landed inside another session's board commit, whose message mentions neither it nor the 300 lines it carried.
+
+**5. A private `GIT_INDEX_FILE`** — closes both cases, never touches `.git/index`, and **silently produced the worst outcome of the five.** A normal `git commit` updates the shared index as a side effect; a private-index commit cannot, so `.git/index` is left describing the tree *before* your commit. The next session commits that stale index — and **an index that does not know about a file present in HEAD does not leave it alone, it deletes it.** Seven files and 566 lines were removed this way by a board-sweep commit — which reported 607 deletions across 12 files, so the seven were not distinguishable from the sweep's own churn in its author's diff. They found it and restored it themselves regardless.
+
+**The completed rule:** a private index is safe only if `git read-tree HEAD` resyncs the shared index **in the same command as the commit.** That resync was run — after the next commit had already landed, refreshing to a tree that no longer contained the files. **A correct action, too late, is indistinguishable from not doing it.**
+
+### Two checkable invariants, worth more than the rule
+
+Habits degrade; these are observations anyone can make in one command.
+
+- **A file that is simultaneously `??` untracked and present in HEAD means the index is stale**, and the next commit from it will delete something. This state is visible in `git status` and reads as unremarkable unless you know the tell.
+- **The index can be staged to DELETE a file that is present on disk and in HEAD.** Found on `.githooks/pre-commit`'s stale-dashboard guard: every session's working copy showed a protection the next commit would have removed. **This one is invisible in `git status` entirely** — only `git diff --cached` shows it. It is the more dangerous of the two.
+
+### And the failure mode that nearly repeated during the repair
+
+Re-committing the restored files, `git diff --cached --name-only` listed **exactly the seven paths intended** — while `--numstat` showed them as pure deletions. Committing would have deleted them a second time. **Read the numstat, not the names**: this is section 19's "the check was narrower than the claim" wearing the shape of a file list, and it is the third time in this document that a list of paths has been mistaken for a description of content.
+
+### Why this is its own section rather than a line in section 25
+
+`docs/13c`'s "Two agents, one working tree" covers the *working tree*. This is about the *index*, which is shared state nobody thinks of as shared — it has no path, does not appear in `git status` output as an actor, and is mutated as a side effect of commands whose purpose is something else.
+
+The sharpest framing came from the session that inherited the rule: **a private index sounds like the correct engineering answer to a shared checkout, which is exactly why the next person will reach for it.** The four earlier rungs have the same property. This section exists so the fifth is not rediscovered by someone who reads the first four and concludes, reasonably, that isolation is the answer.
+
 ## The pattern, restated
 
 `docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:

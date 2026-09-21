@@ -141,7 +141,7 @@
 
 
 ### YT-0502 · Listing contract: multiple merchant locations
-`review` · P0 · platform · 2d · dep: YT-0031
+`done` · P0 · platform · 2d · dep: YT-0031
 
 - [x] `listingSchema` carries a **`locations` array** (min 1), not a single `district: string` — `packages/contracts/src/listing/merchant-location.ts`
 - [x] Each location has an id, name, address and district, so a voucher can name **which branch honours it** — `voucherSchema.location` (denormalised, same reasoning as `merchantName`: must stay honourable offline)
@@ -152,6 +152,8 @@
 
 **⏭️ ONE CRITERION CONVERTED TO A DEFERRAL, AND THE WORK GIVEN A HOME — 2026-09-21.** This ticket’s last open box described work it says itself belongs elsewhere, so under `_schema.md`’s test — _if this ticket were otherwise perfect, would this line still be unticked?_ — it was never a criterion, and the ticket could not have reached `review` however finished it was. **Converted, and the deferred work filed as a real ticket rather than left as a pointer at nothing**, because a `⏭️` aimed at a ticket that does not exist is worse than a stuck checkbox: the checkbox at least stays visible.
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `listing.ts:52` carries `locations: z.array(merchantLocationSchema).min(1)` and the bare `district: string` is **gone from the listing schema entirely** — not deprecated beside its replacement, which is what would have let the old shape survive. `merchant-location.ts:17-20` gives each location `id`, `name`, `address` and `district`, so a voucher can name which branch honours it; `voucherSchema` carries `location`; and `openapi/go/model_merchant_location.go` exists, so the Go side regenerated as claimed
+- ✅ **The `⏭️` is correctly formed and points at real work.** Surfacing this in the offer page, voucher detail and merchant portal is `apps/web` plus a BFF endpoint, and the ticket says so itself. Per `_schema.md`'s test — *if this ticket were otherwise perfect, would this line still be unticked?* — yes, so it is not a criterion. **Its owning surface is the merchant portal, which YT-0598 now records as having no session holder**
 ### YT-0503 · Campaign contract: chapters and video source
 `review` · P0 · platform · 2d · dep: YT-0031
 
@@ -166,7 +168,7 @@
 
 - ✏️ **Cites `apps/web/features/player/video-source.ts`, which no longer exists — and the work it described was not lost, it was promoted.** Added in `316cd53`, deleted in `9bd450d`. `MOCK_HLS_MANIFEST_URL` now lives in `packages/contracts/src/campaign/campaign.mock.ts:46` with its own guard, `hls-fixture-url.test.ts`, and the "KNOWN GAP" that file carried — *`campaignSchema` has no video-source field at all* — was closed by YT-0503. **The citation is stale; the criterion it supports is not weakened.** Found 2026-09-21 by `yourtal-22` sweeping every path cited by a `review` ticket against the tree
 ### YT-0504 · Wallet contract: points history and ledger projection
-`review` · P0 · platform · 3d · dep: YT-0031, YT-0041
+`done` · P0 · platform · 3d · dep: YT-0031, YT-0041
 
 - [x] A history entry shape covering earn, burn, expiry, reversal and adjustment — `packages/contracts/src/wallet/wallet-history.ts`, with `points`/`direction` (never a signed delta, to keep the branded non-negative `Points` type intact) and a cross-field rule per directional kind
 - ⏭️ Derived from real ledger entries, not recomputed client-side from `docs/09` §4.1’s formula — **the contract half is done and is this ticket’s bar**: `points` travels WITH the entry instead of being re-derived at display time. **There is no real ledger to derive FROM yet** — YT-0044 and the ledger service are separate, undone tickets — so `wallet-history.mock.ts` still computes a mock burn cost from an illustrative backing rate, which is the same gap every mock generator in this package has. Now **YT-0585**
@@ -176,6 +178,8 @@
 
 **⏭️ ONE CRITERION CONVERTED TO A DEFERRAL, AND THE WORK GIVEN A HOME — 2026-09-21.** This ticket’s last open box described work it says itself belongs elsewhere, so under `_schema.md`’s test — _if this ticket were otherwise perfect, would this line still be unticked?_ — it was never a criterion, and the ticket could not have reached `review` however finished it was. **Converted, and the deferred work filed as a real ticket rather than left as a pointer at nothing**, because a `⏭️` aimed at a ticket that does not exist is worse than a stuck checkbox: the checkbox at least stays visible.
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `wallet-history.ts` covers all five kinds — `earn`, `burn`, `expiry`, `reversal`, `adjustment` — and uses `points`/`direction` rather than a signed delta, with the file's own comment giving the reason the criterion gives: a signed delta would have required a second, weaker points type alongside the branded non-negative `Points`
+- ✅ **The plain-language criterion is enforced, not merely intended.** `wallet-history.test.ts:78` — *"never emits a bare transaction code — every description is prose"* — so a future generator emitting `TXN_EARN_01` fails rather than passing review. That is the difference between a style note and a bar, and this one is a bar
 ### YT-0505 · Reconcile pnpm-lock.yaml across sessions
 `todo` · P0 · infra · 1h · dep: —
 
@@ -374,7 +378,7 @@
 - ⚠️ **Not run in this pass**: `pnpm dev:up`/`pnpm media:publish` + the real Playwright suite. A live `next dev` was already running against this same `apps/web` checkout (docs/13c, "Two agents, one working tree" — a `next build` here would share `.next` with it), so `keyboard-seek.spec.ts`'s `Home` case stays `test.fixme`, now with a note on what to run and what to require (a few consecutive green repeats, not one) before flipping it
 
 ### YT-0551 · Gate the completion hand-off on coverage, not on the `ended` event
-`review` · PU · web · 2d · dep: YT-0526
+`done` · PU · web · 2d · dep: YT-0526
 
 - **Implements decision O-4 in the player.** `use-watch-session.ts` sets `hasEnded` from the `ended` event alone, so **the only thing currently preventing scrub-to-complete is that Chrome declines to fire `ended` on a seek** — see risk 43. A fraud control resting on one browser's incidental behaviour is not a control
 - **2026-09-20: done, verified at the unit/jsdom level; real-browser Playwright re-verification still recommended.** New pure module `watch-coverage-tracker.ts` tracks real-second watched ranges via a `seeking`-flagged tick (`applyCoverageTick`) and asks `hasFullRealCoverage` fresh on every `timeupdate`/`seeked`/`ended` — never trusting which event fired. `use-video-event-wiring.ts` (split out of `use-watch-session.ts` to hold the 300-line ceiling) wires this to the DOM
@@ -384,6 +388,9 @@
 - [x] ⚠️ **This is defence in depth and must not be described as the control.** Stated in `watch-coverage-tracker.ts`'s own header, citing the server's checkpoint-token/segment-log model, matching this ticket's wording
 - ⚠️ **What's NOT covered**: the real Playwright `keyboard-seek.spec.ts`/`earn-journey.spec.ts` suites were not re-run against a real browser + the MinIO origin in this pass (shared-dev-server risk, see YT-0550's note) — the jsdom-level hook test dispatches real DOM events on a real rendered `<video>` element and is sabotage-confirmed, but it is not a substitute for the real-browser run those specs exist to provide
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `watch-coverage-tracker.ts` exists and mirrors `packages/contracts/src/watch/watch-coverage.ts`, and `use-watch-session.test.tsx` carries both named attacks — the single scrub to the end, and the synthetic `ended` event with zero real playback. Both were sabotage-confirmed by the author, which is the standard this repo holds itself to and is why they are credible
+- ✅ **The fourth box is the most valuable thing in this ticket and it is correctly written as a bar.** It requires the module to state that client-side coverage is **defence in depth and not the control** — and `watch-coverage-tracker.ts`'s own header says so, citing the server's checkpoint-token and segment-log model. A client-side anti-cheat that does not say this is one refactor away from being trusted
+- ⚠️ **Promoted with its stated gap intact, not in spite of it.** The ticket records that the real-browser Playwright suites were not re-run against a browser plus the MinIO origin in this pass. That is honest and it is **not** an unticked criterion — every bar here is at the unit/jsdom level and each is met. It is worth knowing that MinIO's API port was unpublished for part of today (fixed by `yourtal-c8` with `--force-recreate`), so a browser re-run was not available to this verifier either
 ### YT-0552 · Wire `apps/api` repositories to Postgres
 `doing` · P0 · platform · 4d · dep: YT-0527, YT-0518
 
@@ -634,7 +641,7 @@
 - [ ] Health is not readiness, per YT-0527: assert the services answer a real route, not merely that the container is up
 
 ### YT-0574 · A two-person-approval control that a missing attribute switches off
-`review` · P0 · platform · 2d · dep: YT-0035
+`done` · P0 · platform · 2d · dep: YT-0035
 
 - **Found by `yourtal-22`'s agent 3, verified here against `main`.** `policies/resource_policies/listing.yaml:41` guards `set_settlement_value`:
   `expr: "!has(R.attr.isMaterialSettlementDecrease) || !R.attr.isMaterialSettlementDecrease"`
@@ -683,6 +690,9 @@
 - ⚠️ **Fifth instance of the family this ticket already records: a control added to a SHARED definition is not scoped to the case that motivated it.** The others were the reverted `required` schema change (broke `approve_settlement_decrease` because `required` applies to the resource kind, not an action) and this rule. **The two failures are the same mistake at two altitudes** — kind-wide schema, rule-wide condition — and both were introduced while fixing this ticket. The lesson is not “be careful with schemas”; it is that **the blast radius of an authorization fix is the definition it is written on, never the case that prompted it**
 - **Resource-schema description corrected rather than its `required` list.** `isMaterialSettlementDecrease` now documents that there is **no threshold** (YT-0576), that it is computed from the **stored** `S` so `attrsFrom` alone cannot supply it, and — explicitly — that it is **deliberately not in `required`**, with the reason, so the next reader does not re-apply the change that turned Integration red on three commits. **`required` is unchanged at `["businessId"]`**
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `listing.yaml:83` now reads `has(R.attr.isMaterialSettlementDecrease) && !R.attr.isMaterialSettlementDecrease` — positive evidence, so absence **denies**. The sabotage case is a real fixture, not a described one: `policies/tests/testdata/resources.yaml:85` carries a resource with the attribute *"deliberately ABSENT, not `false`"*, and the suite asserts `set_settlement_value: EFFECT_DENY` for three separate principals against it
+- ✅ **The audit criterion genuinely holds, and it takes a second look to see why — so the reasoning is recorded here to stop the next reader reopening it.** Four `!has(...)` guards remain in `policies/`: `moderation_item.yaml:32` (an exact `!has(x) || !x` match), `campaign.yaml:42`, `team.yaml:43` and `user_account.yaml:55-56`. **Every one is on an `EFFECT_DENY` rule.** The defect was never the shape — it was the shape on an `EFFECT_ALLOW`, where absence satisfies the guard and the allow fires. On a DENY the identical expression means absence **denies**, which is the fail-safe polarity and correct. **A grep for the pattern reopens this ticket; a grep for the pattern plus its effect closes it**
+- ℹ️ **The schema deliberately does not `require` the attribute, and that is the right call rather than an oversight.** `policies/_schemas/resource/listing.json:11` explains: `required` applies to the resource *kind*, not one action, so requiring it refuses `approve_settlement_decrease` — which carries no materiality flag — before any rule runs. It was tried, turned Integration red on three commits, and was reverted. The CEL fix is sufficient alone, as the fourth criterion says
 ### YT-0580 · A business admin can strip the owner’s role
 `done` · P0 · platform · 2d · dep: YT-0574
 

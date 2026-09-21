@@ -80,9 +80,7 @@ function isExternalPackage(specifier: string): boolean {
 
 describe("apps/web dependency declarations (YT-0512)", () => {
   it("declares every package it imports", async () => {
-    const manifest: unknown = JSON.parse(
-      readFileSync(path.join(APP_DIR, "package.json"), "utf8"),
-    );
+    const manifest: unknown = JSON.parse(readFileSync(path.join(APP_DIR, "package.json"), "utf8"));
     const { dependencies = {}, devDependencies = {} } = manifest as {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;

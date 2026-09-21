@@ -86,9 +86,12 @@ describe("checkpoint token", () => {
     // the signature stops them.
     const token = issueCheckpointToken(claims(), SECRET);
     const separator = token.lastIndexOf(".");
-    const decoded = JSON.parse(
+    // Annotated, not asserted: `as` is banned outright across this package,
+    // tests included (`eslint.config.mjs` section 2). `JSON.parse` returns
+    // `any`, so the annotation types it without an assertion.
+    const decoded: CheckpointClaims = JSON.parse(
       Buffer.from(token.slice(0, separator), "base64url").toString("utf8"),
-    ) as CheckpointClaims;
+    );
     const forged = Buffer.from(
       JSON.stringify({ ...decoded, expiresAtMs: decoded.expiresAtMs + 86_400_000 }),
       "utf8",
@@ -145,12 +148,14 @@ describe("checkpoint token", () => {
     expect(refused(verify(token, { nowMs: NOW + 1 })).kind).toBe("expired");
   });
 
-  it.each([["", "empty"], ["no-separator", "no separator"], [".sig", "empty payload"], ["payload.", "empty signature"]])(
-    "refuses %s as malformed (%s)",
-    (token) => {
-      expect(refused(verify(token)).kind).toBe("malformed");
-    },
-  );
+  it.each([
+    ["", "empty"],
+    ["no-separator", "no separator"],
+    [".sig", "empty payload"],
+    ["payload.", "empty signature"],
+  ])("refuses %s as malformed (%s)", (token) => {
+    expect(refused(verify(token)).kind).toBe("malformed");
+  });
 
   /**
    * The gap this module documents rather than closes.

@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { MockInstance } from "vitest";
+import { Logger } from "@nestjs/common";
 import { CHECKPOINT_TOKEN_TTL_MS } from "@yourtal/contracts/watch/checkpoint-token";
 import { CheckpointService } from "./checkpoint.service";
 import type {
@@ -130,9 +132,9 @@ describe("redeeming", () => {
   it("refuses a token minted for another session", async () => {
     const { token } = service.issue(randomUUID(), 0, NOW);
 
-    expect(await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW })).toMatchObject(
-      { redeemed: false, refusal: { kind: "token_rejected" } },
-    );
+    expect(
+      await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW }),
+    ).toMatchObject({ redeemed: false, refusal: { kind: "token_rejected" } });
   });
 
   /**
@@ -163,9 +165,9 @@ describe("redeeming", () => {
     // And the checkpoint is still answerable, which is the point — three
     // hostile requests left the viewer's own token working.
     const { token } = service.issue(sessionId, 0, NOW);
-    expect((await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW })).redeemed).toBe(
-      true,
-    );
+    expect(
+      (await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW })).redeemed,
+    ).toBe(true);
   });
 
   it("records the token's own expiry on the spend, so pruning has something true to read", async () => {
@@ -174,6 +176,85 @@ describe("redeeming", () => {
 
     const [spend] = [...nonces.spent.values()];
     expect(spend?.expiresAt.getTime()).toBe(expiresAtMs);
+  });
+});
+
+describe("logging refusals", () => {
+  /**
+   * AC3's second half: *rejected **and logged***.
+   *
+   * These assert the log because the log is the only place the distinction
+   * the caller is denied survives. The HTTP boundary collapses every refusal
+   * into one message so it cannot be used to probe (YT-0153) — that protects
+   * the client side and destroys the evidence, so a fraud review depends
+   * entirely on these lines existing.
+   */
+  let warn: MockInstance<(message: unknown, ...rest: unknown[]) => void>;
+  let info: MockInstance<(message: unknown, ...rest: unknown[]) => void>;
+
+  beforeEach(() => {
+    warn = vi.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined);
+    info = vi.spyOn(Logger.prototype, "log").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("distinguishes a replay from a second issuance, which the caller cannot", async () => {
+    const { token } = service.issue(sessionId, 0, NOW);
+    const input = { token, sessionId, checkpointIndex: 0, nowMs: NOW };
+    await service.redeem(input);
+
+    await service.redeem(input);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("nonce_already_spent"));
+
+    warn.mockClear();
+    await service.redeem({
+      token: service.issue(sessionId, 0, NOW).token,
+      sessionId,
+      checkpointIndex: 0,
+      nowMs: NOW,
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("checkpoint_already_answered"));
+  });
+
+  it("names the session and checkpoint, so a log line locates the attempt", async () => {
+    await service.redeem({ token: "not-a-token", sessionId, checkpointIndex: 7, nowMs: NOW });
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining(`session=${sessionId} checkpoint=7`),
+    );
+  });
+
+  it("records a bad signature as a warning, not as routine", async () => {
+    const stranger = new CheckpointService(new FakeNonceRepository(), "a-different-secret");
+    const forged = stranger.issue(sessionId, 0, NOW).token;
+
+    await service.redeem({ token: forged, sessionId, checkpointIndex: 0, nowMs: NOW });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("bad_signature"));
+  });
+
+  /**
+   * An expired token is what an honest viewer's idle tab produces. If it
+   * warned, it would be the loudest line in the log and mean nothing — and a
+   * signal that fires constantly is one nobody reads, which is how the real
+   * ones get buried.
+   */
+  it("logs an expiry at info, never as a warning", async () => {
+    const { token, expiresAtMs } = service.issue(sessionId, 0, NOW);
+    await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: expiresAtMs + 1 });
+
+    expect(info).toHaveBeenCalledWith(expect.stringContaining("expired"));
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("says nothing when a checkpoint is redeemed legitimately", async () => {
+    const { token } = service.issue(sessionId, 0, NOW);
+    await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW });
+
+    expect(warn).not.toHaveBeenCalled();
+    expect(info).not.toHaveBeenCalled();
   });
 });
 

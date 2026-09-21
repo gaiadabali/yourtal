@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import {
   CHECKPOINT_TOKEN_TTL_MS,
   checkpointSchedule,
@@ -60,6 +60,8 @@ export interface RedeemInput {
 
 @Injectable()
 export class CheckpointService {
+  private readonly logger = new Logger("CheckpointService");
+
   constructor(
     @Inject(CHECKPOINT_NONCE_REPOSITORY) private readonly nonces: CheckpointNonceRepository,
     @Inject(CHECKPOINT_SECRET) private readonly secret: string,
@@ -101,6 +103,7 @@ export class CheckpointService {
     });
 
     if (!verdict.accepted) {
+      this.refuse(input, { kind: "token_rejected", detail: verdict.reason.kind });
       return { redeemed: false, refusal: { kind: "token_rejected", detail: verdict.reason.kind } };
     }
 
@@ -112,8 +115,42 @@ export class CheckpointService {
     });
 
     if (refused !== null) {
+      this.refuse(input, { kind: refused });
       return { redeemed: false, refusal: { kind: refused } };
     }
     return { redeemed: true, nonce: verdict.claims.nonce };
+  }
+
+  /**
+   * Records a refusal server-side. AC3's second half — *rejected **and
+   * logged*** — and the only place the distinction the caller is denied is
+   * written down.
+   *
+   * The HTTP boundary collapses every refusal into one message, because a
+   * response naming which check failed answers the prober's question for
+   * them (YT-0153). That discipline protects the client side and destroys
+   * the evidence, so it has to be recreated here: a fraud review needs to
+   * tell a replay of one token from a viewer who collected two issuances for
+   * one checkpoint, and those are `nonce_already_spent` and
+   * `checkpoint_already_answered` respectively.
+   *
+   * ## Why `expired` is not a warning
+   *
+   * An expired token is what an honest viewer's idle tab produces. Warning
+   * on it would be the loudest line in the log and mean nothing, and a
+   * signal that fires constantly is one nobody reads — which is how the real
+   * ones get buried. Everything else here is a shape an honest client does
+   * not produce: a bad signature is hostile by construction, and a replay or
+   * a second answer is either an attack or a bug worth finding.
+   */
+  private refuse(input: RedeemInput, refusal: RedeemRefusal): void {
+    const where = `session=${input.sessionId} checkpoint=${String(input.checkpointIndex)}`;
+    if (refusal.kind === "token_rejected" && refusal.detail === "expired") {
+      this.logger.log(`checkpoint token expired — ${where}`);
+      return;
+    }
+    const what =
+      refusal.kind === "token_rejected" ? `token_rejected:${refusal.detail}` : refusal.kind;
+    this.logger.warn(`checkpoint refused ${what} — ${where}`);
   }
 }

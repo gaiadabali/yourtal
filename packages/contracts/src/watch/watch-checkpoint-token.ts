@@ -145,9 +145,7 @@ export interface VerifyCheckpointInput {
  * Verifies a token and returns its claims — **including the nonce, which the
  * caller must still burn.** See this module's header.
  */
-export function verifyCheckpointToken(
-  input: VerifyCheckpointInput,
-): CheckpointVerdict {
+export function verifyCheckpointToken(input: VerifyCheckpointInput): CheckpointVerdict {
   const separator = input.token.lastIndexOf(".");
   if (separator <= 0 || separator === input.token.length - 1) {
     return { accepted: false, reason: { kind: "malformed" } };
@@ -176,12 +174,31 @@ export function verifyCheckpointToken(
     return { accepted: false, reason: { kind: "wrong_session", signedFor: claims.sessionId } };
   }
   if (claims.checkpointIndex !== input.checkpointIndex) {
-    return { accepted: false, reason: { kind: "wrong_checkpoint", signedFor: claims.checkpointIndex } };
+    return {
+      accepted: false,
+      reason: { kind: "wrong_checkpoint", signedFor: claims.checkpointIndex },
+    };
   }
   if (input.nowMs > claims.expiresAtMs) {
-    return { accepted: false, reason: { kind: "expired", ageMs: input.nowMs - claims.expiresAtMs } };
+    return {
+      accepted: false,
+      reason: { kind: "expired", ageMs: input.nowMs - claims.expiresAtMs },
+    };
   }
   return { accepted: true, claims };
+}
+
+/**
+ * Narrows to a plain object without a type assertion.
+ *
+ * `as` is banned outright in this package (`eslint.config.mjs` section 2) because it is
+ * value-path code, and a token decoder is the last place to work that ban
+ * around: every field read below is attacker-supplied. Mirrors the guard in
+ * `openapi/json-schema-helpers.ts` rather than importing it, so the watch
+ * contract does not take a dependency on the JSON Schema tooling.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function decodeClaims(encoded: string): CheckpointClaims | null {
@@ -191,8 +208,8 @@ function decodeClaims(encoded: string): CheckpointClaims | null {
   } catch {
     return null;
   }
-  if (typeof parsed !== "object" || parsed === null) return null;
-  const candidate = parsed as Record<string, unknown>;
+  if (!isRecord(parsed)) return null;
+  const candidate = parsed;
   if (
     typeof candidate.sessionId !== "string" ||
     typeof candidate.nonce !== "string" ||

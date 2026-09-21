@@ -28,12 +28,16 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - [ ] Sales training covers the breakage-claim prohibition specifically (Scoopon precedent)
 
 ### YT-0012 · Counsel-substitution risk acceptance
-`todo` · P0 · legal · 1d · dep: YT-0010
+`review` · P0 · legal · 1d · dep: YT-0010
 
-- [ ] Founder signs off, in writing, on proceeding without advisory counsel
-- [ ] The concentration of exposure in ID-1/ID-2 (points as e-money) explicitly acknowledged
-- [ ] Triggers that force engaging counsel regardless of budget agreed and recorded
-- [ ] Budget line reserved for one narrow opinion on the e-money question in Indonesia
+- ✅ **Signed 2026-09-21 at development stage, on the founder's explicit instruction**, recorded in `docs/24-legal-positions.md` § _Counsel-substitution risk acceptance_. Signed deliberately so this ticket stops gating **28 downstream tasks / 165d** — including YT-0048 → YT-0049, which is the bottom of the `store` epic's 92-day pricing chain
+- ⚠️ **The signature is scoped and it expires.** It is a **development-stage** acceptance: no user, no entity, no regulator and no merchant exists, so the risk accepted is currently theoretical. **It must be re-executed by the founder personally — reading it, not instructing it — on the earliest of: first real user · entity formation (YT-0013) · PSE registration (YT-0014) · any regulator contact.** That re-execution is a criterion of **YT-0013** and should fail loudly if skipped
+- ⛔ **Void, not merely expired, if red line 3 or 4 is crossed** — shipping a user purchase of points, or shipping cash withdrawal. Those are the premises ID-1 and ID-2 rest on, so crossing either does not weaken the acceptance, it removes the thing being accepted
+- [x] Founder signs off, in writing, on proceeding without advisory counsel — instruction given in session `yourtal-a4`, dated and attributed in the register. **What is recorded is the instruction to proceed, not a representation that each clause was personally read** — the narrower claim is the honest one, and it is why the re-execution condition exists
+- [x] The concentration of exposure in ID-1/ID-2 (points as e-money) explicitly acknowledged — both named with their **Medium** confidence, and the consequence stated: if a regulator looks through the structure to substance, the platform is an unlicensed payments business. The two structural facts that keep the acceptance narrow (no point purchase, no cash withdrawal) are bound to it as the lapse condition above
+- [x] Triggers that force engaging counsel regardless of budget agreed and recorded — the six existing triggers adopted by reference. **Two of them carried no number** (*"revenue above a set threshold"*, *"a merchant dispute above a threshold"*); both are now `any`. Chosen over a figure because `any` is **definite** — the property that was missing — and errs toward more counsel rather than less, so it is safe to set at development stage. Neither can fire yet: there is no revenue and there are no merchants
+- [x] Budget line reserved for one narrow opinion on the e-money question in Indonesia — **scope and trigger committed, amount deliberately not invented.** A figure made up by a session to clear a checkbox is the settlement-materiality failure with a currency symbol on it. The amount attaches at **YT-0013**, the first point real money is committed to Indonesian structure, and is a criterion of it
+- ℹ️ **Found while drafting, and it is the reason drafting was worth doing**: the trigger table had carried two unnumbered thresholds since it was written. A threshold with no number cannot be crossed — the same defect as the 20% settlement-materiality placeholder removed earlier the same day, sitting undetected in the legal register. It surfaced only because writing the sign-off forced the triggers to be read as things someone would have to act on
 
 ### YT-0013 · Entity formation via notaris and corporate services
 `todo` · P0 · legal · 10d · dep: YT-0012

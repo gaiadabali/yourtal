@@ -187,9 +187,6 @@ importers:
       '@playwright/test':
         specifier: 1.63.0
         version: 1.63.0
-      '@serwist/build':
-        specifier: ^9.5.12
-        version: 9.5.12(browserslist@4.28.6)(typescript@5.9.3)
       '@tailwindcss/postcss':
         specifier: 4.3.3
         version: 4.3.3

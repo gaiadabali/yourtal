@@ -8,6 +8,7 @@ import {
 import type { HttpException } from "@nestjs/common";
 import type {
   BusinessNotFoundError,
+  CannotChangeOwnerRoleError,
   CannotRemoveOwnerError,
   MemberAlreadyExistsError,
   MemberNotFoundError,
@@ -30,6 +31,7 @@ export type BusinessDomainError =
   | MemberAlreadyExistsError
   | MemberNotFoundError
   | CannotRemoveOwnerError
+  | CannotChangeOwnerRoleError
   | PersistenceFailedError;
 
 export function mapBusinessErrorToHttpException(error: BusinessDomainError): HttpException {
@@ -53,6 +55,11 @@ export function mapBusinessErrorToHttpException(error: BusinessDomainError): Htt
       return new BadRequestException({
         code: "cannot_remove_owner",
         message: "the owner cannot be removed directly; transfer ownership first",
+      });
+    case "cannot_change_owner_role":
+      return new BadRequestException({
+        code: "cannot_change_owner_role",
+        message: "the owner's role cannot be changed directly; transfer ownership first",
       });
     case "persistence_failed":
       logger.error(error.cause);

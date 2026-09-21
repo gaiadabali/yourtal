@@ -8,7 +8,7 @@
   "properties": {
     "businessId": { "type": "string" },
     "isMaterialSettlementDecrease": {
-      "description": "True when the proposed change lowers S by more than the threshold. docs/17 section 2.1 makes this one of the three two-person-approval actions.",
+      "description": "True when the proposed change lowers S at all. There is NO threshold: founder decision 2026-09-21 (YT-0576) removed the invented 20% placeholder rather than ratifying it, because a threshold creates a band below the line that is reachable repeatedly -- two 15% cuts under a 20% threshold take S down 27.75% with nobody approving anything. Computed in apps/api/src/modules/store/material-settlement-decrease.ts, which needs the STORED S, so this attribute cannot be supplied by attrsFrom alone. Deliberately NOT in `required`: required applies to the resource kind, not one action, so requiring it refuses approve_settlement_decrease -- which carries no materiality flag -- before any rule runs. That was tried and reverted after turning Integration red on three commits. docs/17 section 2.1 makes this one of the three two-person-approval actions.",
       "type": "boolean"
     },
     "requestedBy": {

@@ -63,6 +63,20 @@ describe("changeMemberRole", () => {
     expect(result._unsafeUnwrap().role).toBe("analyst");
   });
 
+  it("refuses to change the owner's role, even though the caller is not asked whether they are one", async () => {
+    const { businesses, members, businessId } = await setup();
+
+    const result = await changeMemberRole(businesses, members, {
+      businessId,
+      userId: "owner-1",
+      role: "admin",
+    });
+
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "cannot_change_owner_role" });
+    expect((await members.findMember(businessId, "owner-1"))?.role).toBe("owner");
+  });
+
   it("rejects a role change for a member who does not exist", async () => {
     const { businesses, members, businessId } = await setup();
 

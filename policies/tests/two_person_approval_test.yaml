@@ -79,17 +79,47 @@ tests:
     input:
       principals: [eka_merchandiser, citra_admin, budi_owner]
       resources: [listing_kopi_unstated]
-      actions: [set_settlement_value]
+      # create/edit/archive are asserted here too, and that is the point.
+      # This case used to list set_settlement_value ALONE while its own
+      # description said "the bug was in the shared condition" -- so the
+      # condition was shared by four actions and the test checked one. The
+      # positive-evidence fix then OVER-DENIED: with the attribute absent,
+      # which is exactly what @Authorize alone produces, ordinary listing
+      # edits were denied over HTTP -- and this suite stayed 390/390 green
+      # both before and after the repair, because every other listing
+      # fixture supplies the attribute by hand.
+      #
+      # A guardian that asserts only the action a bug was found in cannot
+      # see the blast radius of its own fix.
+      actions: [set_settlement_value, create, edit, archive]
     expected:
       - principal: eka_merchandiser
         resource: listing_kopi_unstated
-        actions: { set_settlement_value: EFFECT_DENY }
+        actions:
+          {
+            set_settlement_value: EFFECT_DENY,
+            create: EFFECT_ALLOW,
+            edit: EFFECT_ALLOW,
+            archive: EFFECT_ALLOW,
+          }
       - principal: citra_admin
         resource: listing_kopi_unstated
-        actions: { set_settlement_value: EFFECT_DENY }
+        actions:
+          {
+            set_settlement_value: EFFECT_DENY,
+            create: EFFECT_ALLOW,
+            edit: EFFECT_ALLOW,
+            archive: EFFECT_ALLOW,
+          }
       - principal: budi_owner
         resource: listing_kopi_unstated
-        actions: { set_settlement_value: EFFECT_DENY }
+        actions:
+          {
+            set_settlement_value: EFFECT_DENY,
+            create: EFFECT_ALLOW,
+            edit: EFFECT_ALLOW,
+            archive: EFFECT_ALLOW,
+          }
 
   - name: >-
       YT-0575 -- requesting a settlement decrease is its own action, separate

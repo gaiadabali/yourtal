@@ -10,6 +10,10 @@ import { voucherSchema } from "../voucher/voucher";
 import { campaignTermsSchema } from "../campaign/campaign-terms";
 import { campaignRewardConfigSchema } from "../campaign/campaign-reward-config";
 import { watchSessionSchema } from "../watch/watch-session";
+import { businessSchema } from "../business/business";
+import { businessMemberSchema } from "../business/business-member";
+import { billingContactSchema } from "../business/billing-contact";
+import { kybDocumentSchema } from "../business/kyb-document";
 
 /**
  * The contracts ↔ migrations drift gate.
@@ -264,7 +268,113 @@ const MAPPINGS: readonly Mapping[] = [
         "The owning merchant. Not on merchantLocationSchema because a location is always read through its listing, which already names the merchant; the column exists so a branch cannot be re-parented by editing a listing.",
     },
   },
+  {
+    // YT-0555: the business module had a live API surface and zero rows in
+    // this table — the drift gate ran, and had nothing to say about it.
+    name: "businessSchema",
+    schema: businessSchema,
+    table: "business.business_accounts",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {},
+    columnsWithNoField: {
+      created_at:
+        "An audit timestamp with a database default, the same convention as merchantLocationSchema's created_at above — nothing in the product reads it and putting it on the schema would oblige every caller constructing a Business to invent one.",
+      updated_at:
+        "Bumped by the persistence layer on every UPDATE; write-side bookkeeping with no reader on the contract side.",
+    },
+  },
+  {
+    name: "businessMemberSchema",
+    schema: businessMemberSchema,
+    table: "business.business_members",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {},
+    columnsWithNoField: {
+      id: "A surrogate key with no meaning to any consumer of the contract. A membership is identified by (businessId, userId) — business_members_business_id_user_id_key enforces the fact the contract already assumes: one membership row per person per business.",
+    },
+  },
+  {
+    name: "billingContactSchema",
+    schema: billingContactSchema,
+    table: "business.billing_contacts",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {},
+    columnsWithNoField: {},
+  },
+  {
+    name: "kybDocumentSchema",
+    schema: kybDocumentSchema,
+    table: "business.kyb_documents",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {},
+    columnsWithNoField: {},
+  },
 ];
+
+/**
+ * Every table the migrations create, that is not the `table` of some
+ * `MAPPINGS` entry above — with the reason it has none. YT-0555's second
+ * criterion: a per-schema opt-in list (`MAPPINGS` itself) silently excludes
+ * whatever nobody remembered to add, which is the same failure `MAPPINGS`
+ * exists to catch, one level up. So the universe here is not "the schemas
+ * someone thought to list" — it is `TABLES`, parsed independently from the
+ * migrations themselves — and the two checks below assert every migrated
+ * table is accounted for on exactly one side, the same shape YT-0536's
+ * `BOUNDARY_NAMES` check applies to the fault-exercise table.
+ *
+ * A table that is genuinely a relation already documented under a mapped
+ * schema's `fieldsWithNoColumn` (e.g. `store.listing_location` under
+ * `listingSchema.locations`) says so and points back at that note rather
+ * than repeating it. A table with a real, tracked, not-yet-wired contract
+ * (e.g. `campaign.chapter`/`campaign.video_source`, and the question-bank
+ * tables) says that too, and names the ticket boundary — YT-0555 closes the
+ * business gap; it does not open new work in campaign or question-bank.
+ */
+const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
+  "ledger.account":
+    "Internal ledger primitive (docs/13b, YT-0552/YT-0554). No public contract mirrors a row of this table 1:1 — balanceSchema and walletHistoryEntrySchema are the derived public views, computed from ledger.entry rather than read directly off any one ledger table.",
+  "ledger.transfer": "Same ledger-internals note as ledger.account above.",
+  "ledger.entry":
+    "The append-only ledger fact table asserted by ledger-constraints.test.ts (YT-0554's role-separation fix — yourtal_app is refused INSERT). No public contract mirrors a row of it; see ledger.account's note.",
+  "ledger.allocation": "Same ledger-internals note as ledger.account above.",
+  "ledger.grant": "Same ledger-internals note as ledger.account above.",
+  "ledger.point_purchase": "Same ledger-internals note as ledger.account above.",
+  "ledger.backing_rate": "Same ledger-internals note as ledger.account above.",
+  "ledger.daily_proof": "Same ledger-internals note as ledger.account above.",
+  "platform.idempotency":
+    "The @yourtal/idempotency package's own dedupe store (packages/idempotency/src/postgres-store.ts) — infrastructure, not a domain contract.",
+  "store.listing_location":
+    "The join table behind listingSchema.locations, named in that mapping's fieldsWithNoColumn above. A pure many-to-many join on two foreign keys, with no field of its own to map.",
+  "store.listing_price_revision":
+    "Settlement-value audit trail (YT-0130/131/132). No public contract — a merchant reads the result through listingSchema's settlement value, never this row.",
+  "store.settlement_decrease_request":
+    "Two-person-approval workflow table for a material settlement decrease (YT-0575). No public contract; its state is surfaced through the approval endpoint's own response.",
+  "voucher.batch":
+    "The issuance batch named in voucherSchema's columnsWithNoField.batch_id above — carries the funding record and two-person approval (YT-0141). No public contract of its own for the same reason: a holder has no business knowing which batch minted their voucher.",
+  "voucher.code_custody":
+    "Holds the voucher's SHA-256 lookup hash and envelope-encrypted display copy (docs/15 rule 7, see voucherSchema's code note above). yourtal_app cannot read this table in full; no public contract represents it, by design.",
+  "voucher.event":
+    "Append-only voucher lifecycle event log backing voucher-lifecycle.ts's state derivation. No public contract mirrors an event row directly.",
+  "voucher.authorization":
+    "Redemption-network internals (20260920000016_redemption_network.sql) — merchant-terminal authorization plumbing. No public contract; a holder or merchant never reads this table's rows directly.",
+  "voucher.capture": "Same redemption-network note as voucher.authorization above.",
+  "voucher.refund": "Same redemption-network note as voucher.authorization above.",
+  "voucher.merchant_credential": "Same redemption-network note as voucher.authorization above.",
+  "voucher.kill_switch": "Same redemption-network note as voucher.authorization above.",
+  "voucher.redemption_attempt": "Same redemption-network note as voucher.authorization above.",
+  "watch.coverage":
+    "The raw evidence rows behind watch-coverage.ts's range arithmetic (YT-0120/YT-0551). That module exports functions and types over server-computed ranges, not a persisted object schema, so there is no contract to map.",
+  "watch.checkpoint_nonce":
+    "The spend record that makes a checkpoint token single-use (YT-0121). watch-checkpoint-token.ts's CheckpointClaims is what a token CARRIES, not what this table stores — the row exists to be conflicted with, and its columns are the burn's own bookkeeping. Deliberately has no public contract: a nonce is a value a client presents once and must never be able to enumerate or read back.",
+  "campaign.chapter":
+    "Already declared as a relation under campaignSchema.chapters above. campaignChapterSchema also exists standalone (packages/contracts/src/campaign/campaign-chapter.ts) but has not been given its own MAPPINGS row — a tracked gap in the campaign module, out of YT-0555's scope (business module only).",
+  "campaign.video_source":
+    "Already declared as a relation under campaignSchema.videoSource above. campaignVideoSourceSchema also exists standalone but has not been given its own MAPPINGS row — same tracked gap as campaign.chapter, out of YT-0555's scope.",
+  "campaign.question":
+    "question-bank.ts/presented-question.ts define contract schemas for this table's data; neither has a MAPPINGS row yet — a tracked gap in the question-bank module, out of YT-0555's scope (business module only).",
+  "campaign.question_answer_key": "Same question-bank note as campaign.question above.",
+  "campaign.question_option": "Same question-bank note as campaign.question above.",
+};
 
 const TABLES = replayMigrations();
 
@@ -342,5 +452,42 @@ describe("known storage gaps", () => {
     // that is the state it should stay in — a new entry here needs a
     // deliberate edit and a ticket, not a quiet append.
     expect(gaps).toStrictEqual([]);
+  });
+});
+
+/**
+ * YT-0555's second criterion: every migrated table is accounted for on
+ * exactly one side of `MAPPINGS` / `TABLES_WITH_NO_MAPPING`, checked in both
+ * directions. This is what makes the gate fail when a mapped SCHEMA goes
+ * missing, not only when a mapped FIELD does — a new module landing with
+ * tables and no entry anywhere fails here immediately, the same day, in the
+ * package where it was added. Before YT-0555 this is exactly how the whole
+ * business module went unmapped without the suite ever going red.
+ */
+describe("table coverage", () => {
+  it("every migrated table is mapped or has a written reason for why not", () => {
+    const mappedTables = new Set(MAPPINGS.map((mapping) => mapping.table));
+
+    const uncovered = [...TABLES.keys()]
+      .filter((table) => !mappedTables.has(table))
+      .filter((table) => TABLES_WITH_NO_MAPPING[table] === undefined);
+
+    // A table with no MAPPINGS row and no entry in TABLES_WITH_NO_MAPPING.
+    // Map it, or write down why it has no contract, in this file.
+    expect(uncovered).toStrictEqual([]);
+  });
+
+  it("TABLES_WITH_NO_MAPPING carries no stale entry", () => {
+    const mappedTables = new Set(MAPPINGS.map((mapping) => mapping.table));
+    const tableNames = new Set(TABLES.keys());
+
+    const stale = Object.keys(TABLES_WITH_NO_MAPPING).filter(
+      (table) => mappedTables.has(table) || !tableNames.has(table),
+    );
+
+    // Either the table gained a MAPPINGS row and this line was not removed,
+    // or the table no longer exists in the migrations at all. Both mean the
+    // reason on file no longer describes anything real.
+    expect(stale).toStrictEqual([]);
   });
 });

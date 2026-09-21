@@ -29,8 +29,33 @@ resourcePolicy:
         match:
           expr: has(R.attr.requestedBy) && R.attr.requestedBy == P.id
 
+    # Ordinary inventory work. NO materiality condition, deliberately.
+    #
+    # YT-0574 originally put the `has(...)` condition on a single rule
+    # covering all four actions, and that over-denied: `create`, `edit` and
+    # `archive` are wired with `@Authorize` alone, which supplies no
+    # attributes at all, so requiring positive evidence denied every
+    # ordinary listing edit over HTTP. Isolated against a fresh sidecar:
+    # attribute absent gave create/edit/archive/set_settlement_value all
+    # EFFECT_DENY; attribute present and false gave all four EFFECT_ALLOW.
+    #
+    # Nothing caught it. The policy fixtures supply the attribute by hand,
+    # so the suite was 390/390 green, and no test drives these three
+    # routes over HTTP (zero `inject` calls in the store controller tests).
+    # That is the SAME failure YT-0574 itself records, one level out, and
+    # the same failure as the reverted `required` schema change: a control
+    # added to a definition SHARED by several actions is not scoped to the
+    # one action that motivated it.
     - name: merchandisers-run-inventory
-      actions: ["create", "edit", "archive", "set_settlement_value"]
+      actions: ["create", "edit", "archive"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_inventory_editor_of
+
+    # The settlement value is the only action materiality gates, so the
+    # condition lives on its own rule where it cannot reach anything else.
+    - name: settlement-value-needs-positive-evidence
+      actions: ["set_settlement_value"]
       effect: EFFECT_ALLOW
       derivedRoles:
         - business_inventory_editor_of
@@ -48,6 +73,13 @@ resourcePolicy:
           # silently disable this control. `policies/tests/
           # two_person_approval_test.yaml`'s YT-0574 case fails against the
           # old expression and passes against this one.
+          #
+          # This route CAN satisfy it, and is the only one that can: it does
+          # a second authorization AFTER loading the listing
+          # (`store-listing.controller.ts:129-138`), because materiality
+          # compares against the STORED S. YT-0576 removed the threshold, so
+          # "material" now means "lowers S at all" -- which removes the
+          # number, not the comparison, and therefore not the need to read.
           expr: "has(R.attr.isMaterialSettlementDecrease) && !R.attr.isMaterialSettlementDecrease"
 
     - name: merchandisers-request-a-settlement-decrease

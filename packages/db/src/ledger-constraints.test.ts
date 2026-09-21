@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
+import { APP_URL, LEDGER_URL } from "./database-urls";
 
 /**
  * YT-0518: the ledger's invariants, proved against a real Postgres.
@@ -13,12 +14,19 @@ import pg from "pg";
  *
  * These tests therefore connect as `yourtal_ledger` and `yourtal_app`
  * directly, not through any application code. They need `pnpm dev:up`.
+ *
+ * YT-0558: the two URLs used to be literals duplicated here, immune to any
+ * environment override — exactly the shape `database-urls.ts`'s own header
+ * comment describes as the reason it exists (six files once hard-coded the
+ * same two strings). Pointing a dead host at this suite via `PGHOST_OVERRIDE`
+ * had no effect on it; it would connect to whatever `pnpm dev:up` left
+ * running regardless of what the environment said. Importing from
+ * `database-urls.ts` gives this file the same `PGHOST_OVERRIDE`-first
+ * resolution every other `packages/db` test already has, so sabotaging the
+ * host is provable here too.
  */
 
 const { Client } = pg;
-
-const LEDGER_URL = "postgres://yourtal_ledger:ledger_local_only@127.0.0.1:26432/yourtal";
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
 
 let ledger: pg.Client;
 let app: pg.Client;

@@ -222,6 +222,42 @@ resources:
       targetRole: "owner"
       targetPrincipalId: "budi"
 
+  # YT-0580: the target IS the real owner (budi), and `targetRole` carries
+  # budi's REAL STORED role ("owner") rather than whatever new role the
+  # caller asked for. This is the shape `TeamMemberController.changeRole`'s
+  # post-read `requireAction` call sends after YT-0580; before that fix, the
+  # route sent the requested new role instead (e.g. "admin"), which this
+  # rule cannot tell apart from a legitimate change and therefore let
+  # through -- verified separately by an unrestricted curl against a
+  # restarted sidecar, not a fixture, because the wrong value is a real
+  # string like "admin", not an absence CEL can catch.
+  team_kopi_demoting_owner:
+    kind: team
+    id: team-5
+    attr:
+      businessId: "biz-kopi"
+      targetRole: "owner"
+      targetPrincipalId: "budi"
+
+  # YT-0581's shape: no `targetRole` attribute at all, exactly what
+  # `TeamMemberController.remove`'s `attrsFrom` sends today for every
+  # `remove_member` call. `has(R.attr.targetRole)` is false, so
+  # `ownership-moves-only-by-transfer` cannot fire and falls through to
+  # `owner-and-admin-run-the-team`'s ALLOW -- the PDP alone does not stop an
+  # admin removing the owner. Not exploitable in production only because
+  # `remove-member.use-case.ts` reads the real stored role itself; this case
+  # exists so a future change to that use-case cannot silently reopen the
+  # gap without a red test. Included for `change_role` too, since
+  # `ownership-moves-only-by-transfer` covers both actions and a rule this
+  # ticket touches gets every action it covers asserted, not just the one
+  # the bug was found in.
+  team_kopi_no_target_role:
+    kind: team
+    id: team-6
+    attr:
+      businessId: "biz-kopi"
+      targetPrincipalId: "budi"
+
   account_wina:
     kind: user_account
     id: acct-1

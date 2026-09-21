@@ -1,6 +1,9 @@
-import { Body, Controller, Delete, Inject, Param, Patch } from "@nestjs/common";
+import { Body, Controller, Delete, Inject, Param, Patch, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
+import type { PdpClient } from "@yourtal/authz/pdp-client";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import { mapAuthzErrorToHttpException } from "../../shared/authz/authz-error.mapper";
+import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
 import { ChangeMemberRoleDto } from "./dto/change-member-role.schema";
 import { BUSINESS_ACCOUNT_REPOSITORY } from "./persistence/business-account.repository";
 import type { BusinessAccountRepository } from "./persistence/business-account.repository";
@@ -16,6 +19,7 @@ import { Authorize } from "../../shared/authz/authorize.decorator";
 export class TeamMemberController {
   constructor(
     private readonly principals: PrincipalService,
+    @Inject(PDP_CLIENT) private readonly pdp: PdpClient,
     @Inject(BUSINESS_ACCOUNT_REPOSITORY) private readonly businesses: BusinessAccountRepository,
     @Inject(BUSINESS_MEMBER_REPOSITORY) private readonly members: BusinessMemberRepository,
   ) {}
@@ -27,9 +31,14 @@ export class TeamMemberController {
   @Authorize({
     kind: "team",
     action: "change_role",
-    // team.yaml refuses any change_role whose target is the owner — the
-    // owner moves only through transfer_ownership, which is re-auth gated.
-    // The policy can only enforce that if it is told what is being set.
+    // This first check only proves the caller may change SOME member's
+    // role, and — as a bonus, redundant with the DTO's `.exclude(["owner"])`
+    // — that they are not trying to GRANT owner via this route. It cannot
+    // refuse DEMOTING the owner, because that needs the target's real
+    // STORED role and `attrsFrom` runs synchronously against the request
+    // alone; the role below is only what the caller is asking to set it to.
+    // See the second, post-read `requireAction` call in `changeRole` for
+    // that half (YT-0580).
     attrsFrom: (request) => ({
       targetRole: readBodyField(request, "role"),
       targetPrincipalId: readParam(request, "userId"),
@@ -40,7 +49,37 @@ export class TeamMemberController {
     @Param("tenantId") tenantId: string,
     @Param("userId") userId: string,
     @Body() body: ChangeMemberRoleDto,
+    @Req() request: FastifyRequest,
   ) {
+    const principal = this.principals.resolve(request);
+
+    const currentMember = await this.members.findMember(tenantId, userId);
+    if (currentMember !== null) {
+      // The `@Authorize` above cannot see whether the TARGET is the owner
+      // (see the comment there). Now that the member has been read, ask
+      // the PDP again with the fact that matters: the target's real STORED
+      // role, not the role the caller is requesting. Mirrors
+      // `StoreListingController.setSettlementValue`'s second, post-read
+      // authorization call for `set_settlement_value`. `team.yaml`'s
+      // `ownership-moves-only-by-transfer` rule denies `change_role`
+      // whenever `targetRole == "owner"` — this is what lets that
+      // condition see the truth instead of a client-supplied value.
+      const authz = await this.pdp.requireAction(
+        principal,
+        {
+          kind: "team",
+          id: userId,
+          attr: {
+            businessId: tenantId,
+            targetRole: currentMember.role,
+            targetPrincipalId: userId,
+          },
+        },
+        "change_role",
+      );
+      if (authz.isErr()) throw mapAuthzErrorToHttpException(authz.error);
+    }
+
     const result = await changeMemberRole(this.businesses, this.members, {
       businessId: tenantId,
       userId,

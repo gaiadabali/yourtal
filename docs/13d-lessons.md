@@ -179,6 +179,30 @@ Two sub-findings, each its own shape:
 
 **Rule: when tightening a shared definition, enumerate every consumer of the definition, not every caller of the thing you were fixing.** The blast radius of a schema is the kind; the blast radius of a rule is the action. They are not the same set, and the narrower one is the one you are thinking about.
 
+### 14a. The same mistake at the next altitude down — and this section had already named it
+
+**2026-09-21, the second instance, introduced by the fix for the same ticket.** The rule above was written after the `required` schema change refused `approve_settlement_decrease`. Its closing sentence says *the blast radius of a rule is the action*. The next change to that policy put a condition on a **rule covering four actions**, and three of them broke.
+
+`merchandisers-run-inventory` granted `create`, `edit`, `archive` and `set_settlement_value` under one `EFFECT_ALLOW`. YT-0574's fix added `has(R.attr.isMaterialSettlementDecrease) && !R.attr.isMaterialSettlementDecrease` — correct for the action that motivated it, and **fatal to the other three**, because only `set_settlement_value` has a route that can supply the attribute: it does a second authorization *after* loading the listing, since materiality compares against the stored `S`. `create`, `edit` and `archive` are wired with `@Authorize` alone, which is synchronous and request-only and supplies no attributes at all. So `has(...)` was false and the ALLOW never fired.
+
+Isolated against a freshly restarted sidecar, one variable:
+
+```
+attribute ABSENT        create DENY   edit DENY   archive DENY   set_settlement_value DENY
+attribute PRESENT+false create ALLOW  edit ALLOW  archive ALLOW  set_settlement_value ALLOW
+```
+
+**A fix for a bypass produced a lockout.** Fixed by splitting the rule — ordinary inventory work with no condition, `set_settlement_value` on its own rule where the expression cannot reach anything else.
+
+**The guardian was green on both sides of the defect, and its own description named the cause.** The suite read 390/390 before the repair and 390/390 after. The YT-0574 case used the right fixture — `listing_kopi_unstated`, attribute deliberately absent — and asserted `set_settlement_value` **alone**, varying the *principal* across three business roles. Its description reads: *"Every business role that could otherwise apply a listing edit is checked here … because the bug was in the shared condition, not in a per-role rule."* It correctly identified that the condition was shared, then tested the axis the **previous** bug had moved along.
+
+**Rule: a guardian must assert every action on the definition it guards, not the action the bug was found in.** Extending that case to four actions × three roles took the suite to 399/399, and reverting the split produced 6 failures naming `create` and `edit` — so the guardian is proved, not assumed.
+
+**What makes this worth a section rather than a line.** Five instances of this family now, and **two of them were introduced while fixing the ticket that documents it**: the kind-wide schema and the rule-wide condition. Written guidance did not prevent the second, because the guidance was read as being about schemas — the altitude of the first instance — rather than about *shared definitions*. The generalisation that does the work is not "be careful with schemas" but:
+
+**The blast radius of an authorization fix is the definition it is written on, never the case that prompted it.** Before adding a condition, enumerate the actions on that rule. Before tightening a schema, enumerate the actions on that kind. If the set is larger than one, the fix belongs on a narrower definition.
+
+
 ## 15. The most dangerous false green came from prose, not from a check
 
 Every other entry in this file is a mechanism that reported success: a cache, a skip, a regex, a guard satisfied by absence. This one was a sentence.

@@ -12,19 +12,62 @@ export default defineConfig({
 
     /**
      * The app role, not the owner — so a missing grant fails here rather
-     * than in production. Set in the config rather than left to each
-     * developer's `.env`, because `app.boot.test.ts` boots the real
-     * `AppModule`, which reads `process.env` directly, and a suite that only
-     * passes on a machine that happens to have the variable is one that will
-     * fail in CI for a reason nobody can reproduce locally.
+     * than in production. Supplied here as a FALLBACK ONLY, not an
+     * assignment, because `app.boot.test.ts` boots the real `AppModule`,
+     * which reads `process.env` directly, and a suite that only passes on a
+     * machine that happens to have the variable is one that will fail in CI
+     * for a reason nobody can reproduce locally.
      *
      * `DATABASE_URL` is required by `env.schema.ts` as of YT-0552. It used
      * to be optional, and the module fell back to in-memory repositories
      * when it was missing — so the whole backend ran, and its tests passed,
      * without a line of SQL ever executing.
+     *
+     * YT-0558: this used to be a bare assignment, `DATABASE_URL: "postgres://…"`,
+     * which Vitest's `test.env` applies unconditionally — it OVERWRITES a
+     * value already sitting in `process.env`, including one passed on the
+     * command line specifically to redirect the connection. That silently
+     * defeated the one way anyone has to prove this suite really talks to a
+     * database (point `DATABASE_URL` at a dead host and expect red): the
+     * override made it come back green regardless. Reading
+     * `process.env.DATABASE_URL` first and falling back to the literal only
+     * when it is unset restores the command line's ability to win.
      */
     env: {
-      DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+      DATABASE_URL:
+        process.env.DATABASE_URL ?? "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+
+      /**
+       * Added for YT-0121 at the checkpoint-token work's request, and it
+       * goes in BEFORE `env.schema.ts` makes it required — otherwise every
+       * suite that boots `AppModule` goes red at once and four sessions see
+       * a failure none of them can explain from their own work.
+       *
+       * Fallback form, not a bare assignment, for the reason above it: a
+       * value here that OVERWRITES `process.env` cannot be redirected from
+       * the command line, and that is exactly the defect YT-0558 removed.
+       *
+       * The literal is deliberately not a plausible key. It never leaves
+       * this file, and the signing secret has NO default in
+       * `env.schema.ts` — a signing key with a default is a key every
+       * reader of the repository already holds, which is the
+       * `DATABASE_URL` argument with the stakes raised. The tempting fix
+       * when a boot fails for a missing secret is to give it a default,
+       * and the default IS the vulnerability.
+       *
+       * DO NOT SHORTEN THIS STRING. `env.schema.ts:56` requires
+       * `z.string().min(32)`. The first version of this literal was
+       * exactly 32 characters — valid, with zero margin — so trimming a
+       * word while tidying would have failed the schema and turned EVERY
+       * `apps/api` suite that boots `AppModule` red at once, with nothing
+       * in the output naming the length as the cause. Caught by another
+       * session measuring it rather than reading it. It is now
+       * comfortably over, matching the other three sites, and the length
+       * is load-bearing rather than cosmetic.
+       */
+      CHECKPOINT_TOKEN_SECRET:
+        process.env.CHECKPOINT_TOKEN_SECRET ??
+        "vitest-only-checkpoint-signing-key-not-a-real-secret",
     },
 
     /**

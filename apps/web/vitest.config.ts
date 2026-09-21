@@ -55,6 +55,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": rootDir,
+      // YT-0589: see test-stubs/server-only.ts for why this is aliased
+      // rather than fixed with `resolve.conditions`.
+      "server-only": `${rootDir}/test-stubs/server-only.ts`,
     },
   },
   test: {

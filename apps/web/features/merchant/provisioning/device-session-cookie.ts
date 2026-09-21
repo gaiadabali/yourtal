@@ -1,3 +1,8 @@
+import "server-only";
+// YT-0589: the enforcement this module's doc comment says does not exist.
+// Importing this file from a client graph is now a BUILD FAILURE rather
+// than a review catch. See apps/web/features/README-server-only.md.
+
 import { cookies } from "next/headers";
 import { deviceBindingSchema, type DeviceBinding } from "./device-binding-schema";
 

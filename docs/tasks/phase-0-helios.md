@@ -143,7 +143,7 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 ## The simulation seam
 
 ### YT-0535 · One driver interface per external boundary
-`review` · P0 · platform · 3d · dep: YT-0031
+`done` · P0 · platform · 3d · dep: YT-0031
 
 **`packages/drivers`, 60 tests. `pnpm verify` 11/11, 1745 tests, lint 11/11.**
 
@@ -154,6 +154,8 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - [x] `eslint-rules/no-vendor-sdk.mjs`, applied repo-wide. **Verified it fires** — a `stripe` import in `packages/contracts` errors, the same import inside an adapter does not. Adapters are allowlisted inside the rule (`packages/drivers`, `packages/media`), next to the reasoning
 - [x] The money unit is a **declared property of the payments driver**, not inherited from storage. YT-0506 settled what we store, not what a processor accepts, so `declaredMinorUnitExponent` is what YT-0537's parity test compares against
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `BOUNDARY_NAMES` (`boundary.ts:29-38`) holds exactly **eight** — `payments`, `disbursement`, `bot_check`, `otp`, `messaging`, `digital_goods`, `receipt_ingest`, `moderation` — and the `BOUNDARIES` record defines all eight, no more and no fewer. The catalogue-versus-wiring check the criterion describes is real: `registry.test.ts:19` asserts `Object.values(DRIVER_KEY_TO_BOUNDARY).sort()` equals `[...BOUNDARY_NAMES].sort()`, so a boundary in code but not in the catalogue fails. `eslint-rules/no-vendor-sdk.mjs` exists and is referenced three times from `eslint.config.mjs`
+- ✏️ **A note on the verification, not the ticket.** My first count of the registry returned **5**, because the pattern I matched keys with excluded underscores and silently dropped `bot_check`, `digital_goods` and `receipt_ingest`. A verifier reporting "5 of 8 boundaries defined" would have sent a correct ticket back. Fifth instance today of the instrument narrowing the question — see `_schema.md` and the `grep -c $'\r'` case on YT-0568
 ### YT-0536 · Simulators that can fail
 `review` · P0 · platform · 3d · dep: YT-0535
 
@@ -166,7 +168,7 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - [x] ⚠️ **Faults cannot be switched on by environment**, only passed in by a test. A fault configurable from the outside is one that can reach a running deployment
 
 ### YT-0537 · Payment and disbursement simulator
-`review` · P0 · platform · 3d · dep: YT-0535, YT-0536
+`done` · P0 · platform · 3d · dep: YT-0535, YT-0536
 
 **88 tests in `packages/drivers` (was 60). Typecheck, lint and prettier clean.**
 
@@ -181,6 +183,8 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - [x] **Replay is a separate defence from the signature, and the test proves it.** Under the `duplicate_webhook` fault both copies verify — they are genuinely from the provider — and the inbox admits each event id once. A signature cannot help here, which is the whole point of having both
 - [x] Idempotency: a replayed key returns the original charge and the provider is charged once
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `packages/drivers/src/boundaries/provider-amount.ts` exists and `declaredMinorUnitExponent` is a property of the driver (`disbursement.ts:47,53,69`), defaulting IDR to 2 **per driver** rather than reading `MINOR_UNIT` — which is the criterion's load-bearing claim that *neither side derives from the other*. A test comparing a value to itself is precisely the failure this design avoids, and it is avoided structurally rather than by care
+- ✅ **The webhook scheme is what the ticket says it is, read rather than assumed.** `boundaries/webhook-signature.ts` imports `createHmac` and `timingSafeEqual` from `node:crypto` (`:1`), signs with `createHmac("sha256", secret)` (`:77`), and its comment at `:39` states why constant-time comparison rather than `===` — *"string comparison short-circuits"*. That is real HMAC-SHA256 with a constant-time compare, not a stub shaped like one
 ### YT-0538 · Bot-check, OTP and messaging simulators
 `todo` · P0 · platform · 2d · dep: YT-0535
 

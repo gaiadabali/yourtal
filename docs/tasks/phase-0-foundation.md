@@ -103,7 +103,7 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
   - *"anonymous → 401"* → **403**. The refusal still happens, which is the bar; what changed is which refusal, once YT-0500 put the PDP in front of the route. A criterion naming a status code rather than *"an anonymous request is refused"* is `_schema.md` rule 2 in miniature
 - ℹ️ **`/healthz` returns 404; the health route is `/api/health`.** Recorded because the first probe here used the wrong path and nearly became a finding against YT-0556. The route table, not the guess, settled it
 ### YT-0517 · Declare `services/*` and scaffold the Go module
-`review` · P0 · infra · 1d · dep: YT-0516
+`done` · P0 · infra · 1d · dep: YT-0516
 
 - [x] `services/*` now declared in `pnpm-workspace.yaml`
 - [x] Scaffold `services/` as one Go module per `docs/13a`, with `go build` and `go vet` in CI
@@ -112,6 +112,8 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - **Its own Go module, not one at the repo root** — a shared module lets the voucher service import the ledger's internals by accident; per-module means `internal/` means what it says. Cost is a CI matrix row per service, which is friction in the right direction
 - **Deliberately contains no double-entry logic.** Those invariants exist and are enforced in Postgres (YT-0518). Writing a Go implementation of them before YT-0506 settles the money unit would be writing code against a number whose meaning is still open
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `pnpm-workspace.yaml:6` declares `services/*`; there are now **two** Go modules, `services/ledger/go.mod` and `services/voucher/go.mod`, which is the per-module choice this ticket argued for rather than one at the repo root. `go build ./...` and `go vet ./...` both exit **0** in `services/ledger`, re-run here rather than accepted — and neither touches Postgres, so unlike a vitest suite this evidence is unaffected by YT-0547's contention
+- ✏️ **The third box is a finding, not a criterion, and it has since become false — which is the point of recording rather than re-ticking it.** It reads *"Zero Go service code exists today"*, true when written and now **67 Go files** across the two services. As a bar it is unfalsifiable-in-reverse: the ticket's own success makes it false. `_schema.md` rule 1 covers this — an observation that motivated the work is a note, and the form for it is `- ℹ️`, not a box
 ### YT-0518 · First migration, executed
 `review` · P0 · value · 2d · dep: YT-0516, YT-0043
 

@@ -11,6 +11,10 @@ packages:
 allowBuilds:
   "@parcel/watcher": true
   "@swc/core": true
+  # YT-0588: esbuild bundles app/sw.ts into public/sw.js
+  # (apps/web/scripts/build-service-worker.mjs). Same category as the two
+  # above — a compiler binary, not an arbitrary script.
+  esbuild: true
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.11.2"
   - "@turbo/darwin-arm64@2.11.2"

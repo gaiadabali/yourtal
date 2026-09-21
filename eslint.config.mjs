@@ -27,6 +27,7 @@ export default tseslint.config(
       // design, so exclude them rather than force them into one.
       "**/openapi/*.mjs",
       "packages/*/scripts/**/*.mjs",
+      "apps/*/scripts/**/*.mjs",
       // HLS media fixtures. MPEG transport streams use the .ts extension,
       // which collides with TypeScript, so ESLint tries to parse binary video
       // as source and every segment reports "not found by the project

@@ -5,6 +5,7 @@ import { AppShell } from "@/features/shell/app-shell";
 import { getRegion } from "@/features/region/get-region";
 import { RegionProvider } from "@/features/region/region-context";
 import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
+import { ServiceWorkerRegistrar } from "@/app/service-worker-registrar";
 
 export const metadata = baseMetadata;
 export const viewport = baseViewport;
@@ -52,6 +53,9 @@ export default async function AppLayout({ children }: AppLayoutProps) {
   // single-source-of-truth argument the comment above makes for messages.
   return (
     <RootDocument lang={locale}>
+      {/* YT-0588: registers /sw.js. The webpack plugin used to inject this;
+          under Turbopack nothing did, so the worker was built and never ran. */}
+      <ServiceWorkerRegistrar />
       <NextIntlClientProvider locale={locale} messages={messages}>
         <RegionProvider region={region}>
           <AppShell>{children}</AppShell>

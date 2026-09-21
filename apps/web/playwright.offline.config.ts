@@ -5,6 +5,14 @@ import { defineConfig, devices } from "@playwright/test";
  * for exactly one spec: `e2e/offline-voucher-detail.spec.ts` (YT-0424,
  * "renders from cache with the network disabled").
  *
+ * UPDATE (YT-0588): the `--webpack` workaround below is GONE. `pnpm build`
+ * now compiles the service worker itself, as a step after `next build`
+ * (`scripts/build-service-worker.mjs`), so this suite runs against exactly
+ * what ships instead of against a bundler nothing else uses. The original
+ * reasoning is kept because it explains why the separate config still
+ * exists at all — it needs its own port and a serial run, not its own
+ * bundler.
+ *
  * WHY THIS CANNOT SHARE THE MAIN CONFIG'S `webServer`: that server runs
  * `next build && next start`, and this app's `next build` defaults to
  * Turbopack (Next 16's own default; nothing in this repo forces webpack).
@@ -56,7 +64,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "next build --webpack && next start --port 3102",
+    command: "pnpm build && next start --port 3102",
     url: "http://127.0.0.1:3102",
     reuseExistingServer: !process.env["CI"],
     timeout: 300_000,

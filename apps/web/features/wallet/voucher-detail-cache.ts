@@ -1,5 +1,5 @@
 import * as z from "zod/mini";
-import { merchantLocationSchema } from "@yourtal/contracts/listing/merchant-location";
+import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
 import type { Voucher } from "@yourtal/contracts/voucher";
 
 /**
@@ -31,6 +31,47 @@ const partialRedemptionPolicyValues = [
 ] as const;
 const voucherStatusValues = ["active", "redeemed", "expired", "transferred"] as const;
 
+/**
+ * The voucher's outlet, re-declared in `zod/mini` rather than imported from
+ * `@yourtal/contracts/listing/merchant-location`.
+ *
+ * That contract module is built with full `zod`, and this file is reachable
+ * from a Client Component, so importing its schema pulls the whole Zod
+ * runtime into the browser — the ~96 KB gz cost `merchant-region-source.ts`
+ * warns about. It is not theoretical: importing it here first put
+ * `/wallet/voucher/[voucherId]` at **264.2 KB** against a 200 KB hard gate,
+ * caught by `scripts/perf-check-bundle-size.mjs`.
+ *
+ * `satisfies` below keeps the two in step at compile time at zero runtime
+ * cost: if the contract gains or renames a field, this stops type-checking.
+ */
+const cachedMerchantLocationSchema = z.object({
+  id: z.string().check(z.minLength(1)),
+  name: z.string().check(z.minLength(1)),
+  address: z.string().check(z.minLength(1)),
+  district: z.string().check(z.minLength(1)),
+});
+
+/**
+ * Compile-time only: resolves to `true` while this mini schema and the
+ * contract's `MerchantLocation` describe each other, and to `never` the
+ * moment either gains, drops or renames a field.
+ *
+ * The exported constant below is what ENFORCES it. A type alias alone only
+ * documents: one that resolves to `never` is perfectly legal and fails
+ * nothing. Assigning `true` to it is what makes drift a compile error,
+ * because `true` is not assignable to `never`.
+ */
+export type CachedLocationMatchesContract =
+  z.infer<typeof cachedMerchantLocationSchema> extends MerchantLocation
+    ? MerchantLocation extends z.infer<typeof cachedMerchantLocationSchema>
+      ? true
+      : never
+    : never;
+
+/** Exists to be type-checked, not read: see the type above. */
+export const CACHED_LOCATION_MATCHES_CONTRACT: CachedLocationMatchesContract = true;
+
 export const cachedVoucherDetailSchema = z.object({
   id: z.string().check(z.minLength(1)),
   code: z.string().check(z.minLength(1)),
@@ -56,7 +97,7 @@ export const cachedVoucherDetailSchema = z.object({
   // trade: an optional field would let a stale entry render a voucher with
   // no branch on it, which is exactly the "two-branch merchant shows one
   // address" defect this ticket exists to fix, resurrected from cache.
-  location: merchantLocationSchema,
+  location: cachedMerchantLocationSchema,
   cachedAt: z.iso.datetime(),
 });
 

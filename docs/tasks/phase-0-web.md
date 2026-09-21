@@ -18,14 +18,14 @@
 ## Web
 
 ### YT-0512 · `apps/web` imports an undeclared package
-`doing` · P0 · web · 1h · dep: YT-0509
+`review` · P0 · web · 1h · dep: YT-0509
 
-- [x] Already fixed on disk; the tracker was stale. `apps/web` imports `BusinessTeamRole` from `@yourtal/contracts/business/team-role`, and the file this ticket blamed for a syntax error **does not exist**
-- [ ] Six files under `apps/web/features/console/` import `@yourtal/authz`, which **`apps/web/package.json` has never declared** — absent from every commit, and `.npmrc` hoists only eslint and prettier, so the specifier was never resolvable
-- [ ] **Not caused by YT-0509.** The files are untracked, so they never passed through CI; authz was never an `apps/web` dependency at any commit
-- [ ] **Fix: import `BusinessTeamRole` from `@yourtal/contracts/business/team-role`**, which `apps/web` already depends on — exactly what YT-0509 made possible. Adding an `authz` dependency to a web app would be the worse fix
-- [ ] Separately, `features/onboarding/onboarding-region-derived.ts` currently has syntax errors (unterminated template literal) — in-flight, not related
-
+- [x] Already fixed on disk; the tracker was stale. `apps/web` imports `BusinessTeamRole` from `@yourtal/contracts/business/team-role` — verified 2026-09-21 at `app/(app)/business/team/page.tsx:1` and `features/console/console-roles.ts:1`, both `import type` — and the file this ticket blamed for a syntax error **does not exist**
+- [x] **The six `@yourtal/authz` importers are gone.** Re-checked against the tree rather than the ticket: `grep -rl "@yourtal/authz" apps/web` returns **zero** files. `apps/web/package.json` still does not declare `authz`, and correctly so — nothing needs it. The criterion described a real condition that the tree no longer has
+- [x] **`features/onboarding/onboarding-region-derived.ts` no longer exists**, so its unterminated template literal went with it
+- [x] **A live instance was found while verifying the stale ones, and fixed.** `scripts/build-service-worker.mjs` imported **`@serwist/build`** while `apps/web/package.json` declared only `@serwist/next`. It resolved from pnpm's store as a transitive dependency, so it typechecked, built and shipped — the exact shape this ticket is about. Introduced hours earlier by the session that then found it, under YT-0588. Now declared
+- [x] **Every package `apps/web` imports is declared — enforced, not asserted.** `apps/web/dependency-declaration.test.ts` walks the app's source, extracts static specifiers with patterns anchored to real import syntax, and fails naming both the package and the importing file. **Proved by breaking it**: removing `@serwist/build` from `package.json` turned it red with `"@serwist/build": ["scripts/build-service-worker.mjs"]`; restoring it turned it green. The anchoring matters — a looser first scan reported `holdback_blocks` and `jumped` as packages, which are values in object literals, and a guard that cries wolf gets switched off rather than fixed
+- ⏭️ **Not caused by YT-0509** — kept as the note it always was. This line states *why* a conclusion is right; it is not work, and as a `- [ ]` it could never be ticked however finished the ticket was. Same rationale-as-criterion shape recorded against YT-0509 itself
 ### YT-0525 · Migrate hand-built forms to React Hook Form
 `doing` · PU · web · 2d · dep: —
 - [ ] `docs/15` locked RHF + Zod resolver, but neither was ever installed — **now installed (2026-09-19)**
@@ -120,3 +120,15 @@
 - ⚠️ **Why holding beats ticking: a pinned worked example is hard to remove later.** Deleting a test that pins a documented example reads as **weakening coverage**, not as removing a dead mechanism — so pinning it now would make the honest outcome of YT-0124 look like a regression. The inverse of the trap on YT-0124 itself: not a criterion that can never be ticked, but **one that should not be ticked yet.** Resolve YT-0124, then this becomes either a criterion or a deletion
 
 **One criterion split out and held, 2026-09-21, before anyone started.** The deletion half stands on its own merits — two definitions of one shape is how they drift, true whatever O-1 does to the distribution. The pinning half is sequenced behind YT-0124. **Found because another session read a neighbouring epic's ticket**, the fifth cross-ticket coupling surfaced that way today and an argument for the practice rather than for more process.
+
+### YT-0600 · Nothing wires `apps/web` to `apps/api`
+`todo` · P0 · web · 5d · dep: YT-0553, YT-0031
+
+- ⛔ **Filed 2026-09-21 by `yourtal-fe` after `yourtal-28` found YT-0519 blocked on it and searched for an owner. Verified here: there is none.** The closest is YT-0583, whose own note already records that its BFF criterion **has no consumer**. So the work is referenced by at least three tickets and owned by none
+- ⚠️ **This is the THIRD ticket today found blocked on unticketed work**, after YT-0133 (two saga steps whose service APIs are a 501 and a service with no route — now YT-0593 and YT-0594) and the ledger having no HTTP caller at all. The pattern is worth naming: **a criterion that says "X reads Y" is silently a dependency on the transport between them**, and this board has three instances where the transport was assumed into existence by both sides
+- ℹ️ **`yourtal-28` deliberately did NOT narrow YT-0519's criterion to reach `review`**, and said why: that would be an author trimming their own bar, which is what they had told another session not to do hours earlier on YT-0181. Recorded because the restraint is the reason this ticket exists — a reworded criterion would have hidden the gap instead of surfacing it
+- ℹ️ **Contrast worth keeping, from the same session and the same hour.** YT-0519's *other* open criterion named `pnpm dev:reset`, which rebuilds nothing — it is `down -v` with neither migrate nor seed. That one **was** reworded, to `pnpm dev:fresh`, because the criterion named the wrong command for work that had genuinely been done. **Rewording a criterion that names the wrong mechanism is correct; rewording one whose subject is absent is trimming the bar.** The two decisions were made minutes apart and the distinction is the useful part
+- [ ] `apps/web` reads campaign, listing, wallet and watch data through `apps/api` rather than in-process fixtures
+- [ ] The seam is a single module, so a second surface cannot quietly reintroduce a fixture import
+- [ ] **A test fails if any `apps/web` feature imports a mock generator directly** — the property, not the instance, since 13 of 13 sources were stubbed and a per-source check would pass as each one is migrated
+- [ ] Failure is visible: an unavailable API renders a stated error state, never silently-empty content that reads as "no results"

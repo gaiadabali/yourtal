@@ -31,21 +31,31 @@
 - ℹ️ **YT-0591** now owns the TS client. Filed because this criterion promised it conditionally and the condition arrived — a promise inside a ticked box is invisible the moment the box is ticked
 
 ### YT-0507 · `business` and `kyb_document` resource kinds
-`doing` · P0 · platform · 2d · dep: YT-0035, YT-0100
+`review` · P0 · platform · 2d · dep: YT-0035
 
 - Verified: policies 375 assertions (up from 322), authz 36, api 97. **`GET /business` widened from owner+admin to all six roles — confirmed correct**, and `docs/17` §2.1 now has explicit Profile and KYB columns so it is no longer an inference. KYB stays owner+admin: director identity and tax registration are sensitive. `ops` has `approve`/`reject` on `kyb_document` but **no route calls them** — the review queue is unbuilt
-- [ ] `policies/` has **no `business` resource kind** — only `team` (roster) and `billing` (spend), so "edit a business's own profile" has no policy to ask
-- [ ] KYB submit/list currently borrow **`team:view`** as a proxy. It is a tested action rather than an invented one, but not a designed fit — and `team:view` is owner/admin-only, so marketer, finance and analyst cannot see the business profile or KYB, which is likely narrower than intended
-- [ ] Add both kinds with actions designed against `docs/17` §2.1, and repoint `apps/api`
+- [x] **A `business` resource kind exists and is used.** `packages/authz/src/resources.ts:31` declares `business: ["view", "edit", "create"]` and `policies/resource_policies/business.yaml` implements it. _Original defect statement, now false: “`policies/` has no `business` resource kind — only `team` (roster) and `billing` (spend), so ‘edit a business’s own profile’ has no policy to ask.”_
+- [x] **KYB no longer borrows `team:view`.** `kyb_document` is its own kind — `resources.ts:39` declares `["view", "submit", "approve", "reject"]` with `policies/resource_policies/kyb_document.yaml` — so `ops` review and business submission are distinct actions rather than a proxy. Verified that the only remaining `team:view` in `apps/api` is `team-directory.controller.ts`, which is a **genuine roster read** and not the proxy. _Original: “KYB submit/list currently borrow `team:view` as a proxy … not a designed fit.”_
+- [x] Both kinds added with actions designed against `docs/17` §2.1, and **`apps/api` repointed** — verified on disk: `business.controller.ts:36` (`business`/`view`), `create-business.controller.ts:34` (`business`/`create`), `kyb-document.controller.ts:30,44` (`kyb_document`/`view`, `kyb_document`/`submit`)
 - The agent correctly declined to invent an action rather than guess at the policy model
 
+**→ `review` 2026-09-21. The work was already finished; the ticket could not say so because its criteria are written as statements of a defect.**
+
+- ⚠️ **A criterion phrased as a defect cannot be ticked once the defect is fixed** — ticking *“`policies/` has no `business` resource kind”* would assert the thing that is no longer true. So this ticket read 0/3 while every deliverable existed, and it will happen again to any ticket whose boxes describe the problem instead of the bar. Criteria reworded below to the deliverables, with the original defect statements preserved as the reason
+- **The `dep: YT-0100` is also stale.** Nothing here waited on advertiser onboarding; the shapes and kinds arrived by other routes. That dependency is why this sat in the blocked column rather than the ready one
+
 ### YT-0508 · Promote business shapes into contracts
-`doing` · P0 · platform · 2d · dep: YT-0031, YT-0100
+`review` · P0 · platform · 2d · dep: YT-0031
 
 - Verified: contracts 215 tests, OpenAPI and Go regenerated, Go builds and vets clean
-- [ ] `@yourtal/contracts/business` has no shape for **members, billing contact or KYB documents**; all three were modelled locally inside `apps/api`
-- [ ] Promote them, mirroring `apps/api/src/modules/business/domain/*.ts`, which were designed against `docs/17` directly
-- [ ] Required before the advertiser console (YT-0440+) can share the types
+- [x] **All three shapes are in contracts.** `packages/contracts/src/business/` holds `business-member.ts`, `billing-contact.ts` and `kyb-document.ts`, each with its own `.mock.ts` and `.test.ts`. _Original defect statement, now false: “has no shape for members, billing contact or KYB documents; all three were modelled locally inside `apps/api`.”_
+- [x] Promoted, and **the local copies are gone** — which YT-0510 did and proved by compiler: `apps/api/src/modules/business/domain/` does not exist, every repository imports from `@yourtal/contracts/business/*`, and a missed importer could not have typechecked
+- ⏭️ Required before the advertiser console (YT-0440+) can share the types — **a reason this ticket exists, not a bar it can meet.** Rationale-as-criterion, the variant recorded on YT-0509; the console's use of the shapes is the console's ticket
+
+**→ `review` 2026-09-21. The work was already finished; the ticket could not say so because its criteria are written as statements of a defect.**
+
+- ⚠️ **A criterion phrased as a defect cannot be ticked once the defect is fixed** — ticking *“`policies/` has no `business` resource kind”* would assert the thing that is no longer true. So this ticket read 0/3 while every deliverable existed, and it will happen again to any ticket whose boxes describe the problem instead of the bar. Criteria reworded below to the deliverables, with the original defect statements preserved as the reason
+- **The `dep: YT-0100` is also stale.** Nothing here waited on advertiser onboarding; the shapes and kinds arrived by other routes. That dependency is why this sat in the blocked column rather than the ready one
 
 ### YT-0509 · Invert the contracts → authz dependency
 `doing` · P0 · platform · 1d · dep: YT-0508

@@ -75,7 +75,7 @@
 - ⚠️ **The inversion is now unprotected by tooling.** I proved today under YT-0030 that the boundary lint rules enforce import *shape* and not a direction-aware layering *matrix*: a legitimate subpath import in the architecturally wrong direction **passes lint**. So nothing stops a future `packages/contracts` file importing `@yourtal/authz` through a declared door and quietly restoring the cycle this ticket exists to remove. A test pinning the direction would be cheap; without one, this ticket's outcome rests on everyone remembering
 
 ### YT-0510 · Delete duplicate business shapes from `apps/api`
-`review` · P0 · platform · 1h · dep: YT-0508
+`done` · P0 · platform · 1h · dep: YT-0508
 
 - [x] `apps/api/src/modules/business/domain/` deleted, 25 import sites repointed. Code lines diffed pair-by-pair first: billing-contact and kyb-document identical, business-member differed only in import path. api 97→72 tests is those 25 moving to contracts (229→258), not lost coverage
 - [x] A newer doc comment on the `apps/api` copy — that `ops` has `approve`/`reject` reserved with a policy-level DENY but no route calls them — was **merged forward before deleting.** That detail would otherwise have been silently lost, which is the usual way a delete-the-duplicate task loses information
@@ -88,6 +88,8 @@
 - Corroborated **structurally** instead — a field present locally but absent from the contract would surface as a type error, and the typecheck is clean — but that is weaker than the diff it stands in for. **A history rewrite destroys the evidence for every claim of the form “I checked X before deleting it”**, and this is the first ticket where that has cost something. The claims most damaged by a rewrite are the ones about things that no longer exist
 - ⏭️ The `dto/*.schema.ts` request schemas (`submit-kyb-document`, `set-billing-contact`) are **not** a duplication finding — genuine request-payload shapes, an `omit`/subset of the contract schema for input validation. Recorded so a later audit does not re-open this as drift
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `apps/api/src/modules/business/domain/` **does not exist**, and all three repositories — `business-member`, `billing-contact`, `kyb-document` — import their shapes from `@yourtal/contracts`. The duplication this ticket existed to remove is gone, checked against the tree rather than the commit message
+- ✅ **The ticket's own ⚠️ is the right call and is endorsed here rather than overturned.** It records that one ticked claim — the shapes were *diffed field by field before deletion* — **cannot be independently reproduced**, because the deleted artefact is what a re-diff would need. A verifier cannot confirm it and should not pretend to. **Marking an irreproducible claim as irreproducible is a better outcome than either endorsing or failing it**, and it is the only honest one available
 ### YT-0511 · Repo-wide formatting gate
 `done` · P0 · infra · 1h · dep: —
 
@@ -682,7 +684,7 @@
 - **Resource-schema description corrected rather than its `required` list.** `isMaterialSettlementDecrease` now documents that there is **no threshold** (YT-0576), that it is computed from the **stored** `S` so `attrsFrom` alone cannot supply it, and — explicitly — that it is **deliberately not in `required`**, with the reason, so the next reader does not re-apply the change that turned Integration red on three commits. **`required` is unchanged at `["businessId"]`**
 
 ### YT-0580 · A business admin can strip the owner’s role
-`review` · P0 · platform · 2d · dep: YT-0574
+`done` · P0 · platform · 2d · dep: YT-0574
 
 - ⛔ **LIVE AND EXPLOITABLE TODAY, found 2026-09-21 by the YT-0574 audit, verified here against the working tree.** `PATCH /api/:tenantId/team/:userId/role` lets **any business admin demote the owner**. Nothing in the stack stops it: the PDP allows it and the use case does not check
 - **Why the PDP allows it.** `team.yaml`'s `ownership-moves-only-by-transfer` DENY tests `has(R.attr.targetRole) && R.attr.targetRole == "owner"`, but `change_role`'s `attrsFrom` sends the **requested new role**, never the target's **current** role. So the rule blocks *promoting someone to* owner and never *demoting the actual owner*. Sabotage-proved against a restarted sidecar: admin `citra` changing owner `budi` to `admin` returns **`EFFECT_ALLOW`**
@@ -705,6 +707,9 @@
 - **And the route is now driven end to end**, which is why this shipped in the first place: `team-member.routes.boot.test.ts` boots the real `AppModule` against live Cerbos and Postgres — admin demoting owner → 403, admin changing an ordinary member → 200, stranger → 403. **Verified here: `apps/api` 37 files / 206 tests green, policy suite 407/407 against a restarted sidecar**
 - ⚠️ **(C) The false comment is gone.** `remove-member.use-case.ts` claimed *“`team.yaml`'s rule already denies this at the PDP”*. That is false for `remove_member` — its `attrsFrom` sends no `targetRole` at all — so its guard is the **only** control on that path, not a second layer behind a working one. The comment now says so. **A correct-looking comment on the safe path is what made the unsafe path read as covered**, and it is the reason this took a day to find
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket. The exploit is closed, and closed on the right value.** `change-member-role.use-case.ts:48` guards `if (member.role === "owner")` → `cannot_change_owner_role`, reading the **stored** `member.role` after the DB read — not the client-supplied `targetRole` that made the PDP rule unfireable. That is the second criterion's requirement met in the form it names
+- ✅ **Both missing policy tests exist, and they test the two distinct holes.** `team_test.yaml:69` — *"demoting the real owner is denied, on the target's stored role"* — and `:89` — *"an omitted `targetRole` cannot deny, on either action the rule covers"*. The second is the one that matters: `has(R.attr.targetRole)` being false was the mechanism, so a suite without it passes 390/390 over a live hole
+- ✅ **The misleading comment is genuinely fixed, not merely softened.** `remove-member.use-case.ts:31-34` now states the opposite of what it used to: that `attrsFrom` sends only `targetPrincipalId`, *"so `has(R.attr.targetRole)` is always false and the DENY can never fire for `remove_member`"*. It previously cited `team.yaml` as already denying this — **a comment that documented an unguarded path as safe**, which is what let the sibling action ship unprotected
 ### YT-0581 · `remove_member` never sends `targetRole`, so its PDP guard cannot fire
 `todo` · P1 · platform · 1d · dep: YT-0580
 

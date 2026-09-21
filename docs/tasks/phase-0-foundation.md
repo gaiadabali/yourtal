@@ -67,7 +67,7 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 ## Infrastructure
 
 ### YT-0527 · Cerbos in the integration workflow
-`review` · P0 · infra · 1d · dep: YT-0516
+`done` · P0 · infra · 1d · dep: YT-0516
 - [x] ⚠️ **Had never run.** The repository had no remote until 2026-09-20, so this workflow had executed zero times when these boxes were first ticked. Its first real execution died in `Initialize containers`, before any test. **Now green**: run `35489234086`, `apps/api` 26 files against a live PDP
 - [x] The 403-before-any-rule regression (YT-0500, `policies/_schemas/resource/business.json`'s comment on `businessId`) is exactly the class this catches — sabotage-tested: re-required `businessId` on the schema, `app.boot.test.ts`'s create case failed with `expected 403 not to be 403`, reverted, green again
 - [x] ⚠️ **Was ticked on reasoning, and the reasoning was wrong.** A service container starts before `actions/checkout`, which the note acknowledged — but the argument that `watchForChanges` covered it fails because **that setting lives in `config.yaml`, which failed to mount for the identical reason**. Docker created a *directory* at `/config/config.yaml`, Cerbos logged `Loading configuration from __default__` and `Found 0 executable policies`, and the healthcheck ran against a directory. **The compensating control was disabled by the fault it was compensating for** — invisible to any amount of reading, visible the instant it ran. See [`docs/13d`](../13d-lessons.md) §3
@@ -80,6 +80,8 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - Trigger paths widened to `apps/api/**`, `packages/authz/**`, `policies/**`, `infra/cerbos/**` — previously the workflow would not even run on changes to any of these
 
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `integration.yml` runs Cerbos as a **post-checkout `docker run`** (`:162-166`), mounting `$GITHUB_WORKSPACE/infra/cerbos/config.yaml` — so it mounts a repository that exists, which is the whole fix. The no-skip guard is a real step, *"Assert apps/api reported nothing skipped"* (`:239`), mirroring the Go suites
+- ✏️ **One ticked bullet describes the readiness assertion more strongly than the workflow implements, and the criterion still holds.** It says the wait step asserts **`Found 16 executable policies`**. What `:181` actually does is fail on `Found 0 executable policies` and then echo the count at `:186` — a **non-zero** check, not a sixteen check. The criterion it serves is *"asserts policies actually loaded, not merely that the container is healthy"*, and non-zero satisfies that exactly; a PDP with zero policies is healthy and denies everything, which is the trap named. But **a single loaded policy would also pass**, so the bullet's specific number is not enforced anywhere. Recorded rather than re-ticked: pinning the count would make the gate fail on every legitimate policy addition, so the looser check is probably the right design and the prose is what should change
 ### YT-0516 · Local development stack — **no cloud account needed**
 `done` · P0 · infra · 1d · dep: —
 

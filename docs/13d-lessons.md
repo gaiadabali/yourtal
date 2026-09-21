@@ -293,7 +293,16 @@ Every line returned was a `bigint` column declaration, because **`bigint` contai
 
 **Neither ingredient is dangerous alone.** A substring match is recognisable when you can see all of it; a truncation is harmless when the pattern is precise. The failure needs both — an imprecise pattern **and** a cut-off that hides how imprecise it was. Same family as the `grep -v "\.test\.ts"` that produced _"imported by nothing"_ on a symbol two test files import, and as a duplicate-ID sweep whose one hit was the worked example in `_schema.md`.
 
-**Rule stays the same and gains a second clause: state the conclusion at the width of the search, and never let `head` decide the width.** If the output is truncated, the search has not answered the question yet — it has answered a prefix of it.
+**Rule stays the same and gains a second clause: state the conclusion at the width of the search, and never let `head` decide the width.**
+
+### 19b. A false positive reported in a message recurred within hours
+
+**The same false hit, twice, by two sessions.** `grep -c "^### YT-" docs/tasks/*.md` returns **288**; the board has **287**. The extra is `### YT-0042 · Ledger: double-entry transfer API` — the **worked example inside `_schema.md`**, which `scripts/tasks.mjs` never parses because it filters `!f.startsWith("_")`. So the natural command for auditing the board counts a documentation example as a ticket.
+
+One session hit it during a duplicate-ID sweep, recognised it, and **reported it to the others as a near-miss**. A few hours later the next session to audit the board ran the same natural command and reported a one-ticket drift that did not exist. The correct form is `docs/tasks/[!_]*.md`, matching what the generator actually reads.
+
+**Rule: a false positive announced in conversation does not stop the next person walking into it, because the next person runs the obvious command, not the transcript.** The fix has to live where the mistake is made — in a committed note, a script, or the glob itself. **Which is the argument for this file existing at all:** a lesson that stays in a message has a half-life measured in hours, and five sessions each rediscovering the same artefact is not five findings, it is one finding and four wasted checks.
+If the output is truncated, the search has not answered the question yet — it has answered a prefix of it.
 
 ---
 

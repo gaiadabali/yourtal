@@ -165,6 +165,7 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 - **Found while building:** ffmpeg on Windows wrote `v0\index.m3u8` into the master playlist, because it copies the path separator it was handed. A backslash is not a valid URI path — the master would have listed three renditions and every one would have failed to resolve, i.e. broken everywhere except where you look first. Caught by the fixture test. `.prettierignore` also needed the fixture directory: MPEG-TS segments are named `.ts`, so Prettier picked its TypeScript parser and failed the format gate on binary video
 - ⚠️ Image is `quay.io/minio/minio:latest`; Docker Hub's `minio/minio` is no longer public. **Pin by digest**, per the Atlas lesson in YT-0518
 
+- ✏️ **Cites `apps/web/features/player/video-source.ts`, which no longer exists — and the work it described was not lost, it was promoted.** Added in `316cd53`, deleted in `9bd450d`. `MOCK_HLS_MANIFEST_URL` now lives in `packages/contracts/src/campaign/campaign.mock.ts:46` with its own guard, `hls-fixture-url.test.ts`, and the "KNOWN GAP" that file carried — *`campaignSchema` has no video-source field at all* — was closed by YT-0503. **The citation is stale; the criterion it supports is not weakened.** Found 2026-09-21 by `yourtal-22` sweeping every path cited by a `review` ticket against the tree
 ### YT-0522 · Split cloud tasks into local and deployed
 `todo` · P0 · infra · 1h · dep: YT-0520, YT-0521
 

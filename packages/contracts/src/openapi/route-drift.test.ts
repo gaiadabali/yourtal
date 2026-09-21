@@ -146,6 +146,8 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
     "WatchModule — YT-0120, a separate in-flight stream.",
   "POST /api/watch/sessions/{sessionId}/complete":
     "WatchModule — YT-0120, a separate in-flight stream.",
+  "POST /api/watch/sessions/{sessionId}/checkpoints/{checkpointIndex}/token":
+    "CheckpointModule — YT-0121, a separate in-flight stream. Its response is deliberately NOT a published contract yet: the body carries a signed single-use token and the one checkpoint time being asked for, and publishing that shape invites a client to expect the whole schedule alongside it — which is exactly the predictability the PRF in watch-checkpoint-token.ts exists to deny. It gets a contract when the player consumes it (YT-0122).",
   "GET /api/health": "Platform infrastructure endpoint, not business-domain API surface.",
 
   // StoreModule -- YT-0130/YT-0131/YT-0132 backend halves, the first pass of

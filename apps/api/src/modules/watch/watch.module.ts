@@ -28,6 +28,11 @@ import { WatchController } from "./watch.controller";
       inject: [CAMPAIGN_DB],
     },
   ],
+  // Exported so `CheckpointModule` (YT-0121) reads sessions through THIS
+  // repository rather than constructing a second one over the same table.
+  // Additive: exporting a provider changes nothing for existing consumers,
+  // and two repositories over one table is how they drift.
+  exports: [WATCH_SESSION_REPOSITORY],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class WatchModule {}

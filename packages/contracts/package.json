@@ -14,6 +14,7 @@
     "./watch/session": "./src/watch/watch-session.ts",
     "./watch/coverage": "./src/watch/watch-coverage.ts",
     "./watch/progress-report": "./src/watch/watch-progress-report.ts",
+    "./watch/checkpoint-token": "./src/watch/watch-checkpoint-token.ts",
     "./listing": "./src/listing/listing.ts",
     "./listing/mock": "./src/listing/listing.mock.ts",
     "./listing/merchant-location": "./src/listing/merchant-location.ts",

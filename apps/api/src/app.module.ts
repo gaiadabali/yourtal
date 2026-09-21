@@ -5,6 +5,7 @@ import { BusinessModule } from "./modules/business/business.module";
 import { CampaignModule } from "./modules/campaign/campaign.module";
 import { StoreModule } from "./modules/store/store.module";
 import { WatchModule } from "./modules/watch/watch.module";
+import { CheckpointModule } from "./modules/watch/checkpoint/checkpoint.module";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
 import { HealthModule } from "./shared/health/health.module";
@@ -27,6 +28,7 @@ import { PersistenceModule } from "./shared/persistence/persistence.module";
     CampaignModule,
     StoreModule,
     WatchModule,
+    CheckpointModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

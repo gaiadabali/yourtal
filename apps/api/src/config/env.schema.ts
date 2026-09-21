@@ -38,6 +38,22 @@ export const envSchema = z.object({
 
   /** Required. See the doc comment above for why this is not optional. */
   DATABASE_URL: z.url(),
+
+  /**
+   * Signs checkpoint tokens (YT-0121). Required, with no default, and the
+   * absence of a default is the point.
+   *
+   * `DATABASE_URL`'s argument above is that a fallback is the thing tests
+   * quietly select. For a signing key it is worse than that: a default
+   * committed here is a key every reader of this repository holds, so every
+   * environment that forgot to set one issues checkpoint tokens that anybody
+   * can forge — and a forged checkpoint token is a claim to have been
+   * present for a segment of video nobody watched.
+   *
+   * `.min(32)` because a short key is a guessable one, and a boot that
+   * accepts `"secret"` has checked a box rather than a key.
+   */
+  CHECKPOINT_TOKEN_SECRET: z.string().min(32),
 });
 
 export type Env = z.infer<typeof envSchema>;

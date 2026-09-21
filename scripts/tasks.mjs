@@ -141,10 +141,46 @@ const reviewAll = tasks.filter((t) => t.status === "review");
 const doingAll = tasks.filter((t) => t.status === "doing");
 const blockedAll = tasks.filter((t) => t.status === "blocked");
 const todoAll = tasks.filter((t) => t.status === "todo");
+const SETTLED = new Set(["done", "review", "doing"]);
+const estDays = (e) => {
+  const n = Number.parseFloat(e);
+  return Number.isNaN(n) ? 0 : /h$/.test(e) ? n / 8 : n;
+};
+const isReady = (t) =>
+  t.status === "todo" && (t.deps ?? []).every((d) => SETTLED.has(byId.get(d)?.status));
+
+// Remaining effort is the only column that answers "how far from finish".
+// Task counts cannot: thirty 1-hour tasks and thirty 5-day tasks read
+// identically at 0% settled, and the second is forty times the work.
+//
+// Counted over todo + doing + blocked, so a half-finished task still bills
+// its whole estimate. Deliberately pessimistic: the alternative is guessing
+// what fraction of a `doing` task is behind us, and this board has just been
+// through a round of exactly that kind of guess being wrong in the optimistic
+// direction. An estimate that cannot be checked should read high, not low.
+const remaining = (ts) =>
+  ts
+    .filter((t) => t.status === "todo" || t.status === "doing" || t.status === "blocked")
+    .reduce((sum, t) => sum + estDays(t.est), 0);
+
 const finished = doneAll.length + reviewAll.length;
+// Two denominators, because they answer different questions and disagree here.
+// Percent-of-TASKS is what a board reports; percent-of-EFFORT is what a date
+// rests on. They diverge because the settled work is not a random sample of
+// the board — the small, well-understood tasks went first, so task-count
+// progress runs ahead of effort progress and will keep doing so.
+const totalDays = total.reduce((sum, t) => sum + estDays(t.est), 0);
+const leftDays = remaining(total);
 lines.push(
   `**${total.length} tasks** — **${finished} finished (${pct(finished, total.length)}%)** · ` +
     `${doingAll.length} in progress · ${todoAll.length} not started · ${blockedAll.length} blocked`,
+  "",
+  `**${Math.round(leftDays)} engineer-days left of ${Math.round(totalDays)}** — ` +
+    `**${pct(totalDays - leftDays, totalDays)}% of the estimated effort is settled**, against ` +
+    `${pct(finished, total.length)}% of the task count.` +
+    " Effort counts every `todo`, `doing` and `blocked` task at its FULL estimate, so a" +
+    " half-finished task bills in full. These are ideal engineer-days for one person —" +
+    " divide by real throughput, not by headcount.",
   "",
   `Of the ${finished} finished: **${doneAll.length} independently verified**, ` +
     `${reviewAll.length} awaiting a verifier. A task is only DONE when a session ` +
@@ -173,10 +209,11 @@ lines.push(
         `${d}/${ts.length}`,
         String(r),
         String(g),
+        `${Math.round(remaining(ts))}d`,
         `\`${bar}\` ${pct(d + r, ts.length)}%`,
       ];
     }),
-    ["Phase", "Done", "Review", "Doing", "Settled"],
+    ["Phase", "Done", "Review", "Doing", "Left", "Settled"],
   ),
   "",
 );
@@ -187,13 +224,6 @@ lines.push(
 // `Ready` is the load-bearing column: todo tasks whose dependencies are all
 // settled. `Left` is the work still to do, so a small Ready over a large Left
 // reads as a bottleneck rather than as progress.
-const SETTLED = new Set(["done", "review", "doing"]);
-const estDays = (e) => {
-  const n = Number.parseFloat(e);
-  return Number.isNaN(n) ? 0 : /h$/.test(e) ? n / 8 : n;
-};
-const isReady = (t) =>
-  t.status === "todo" && (t.deps ?? []).every((d) => SETTLED.has(byId.get(d)?.status));
 
 lines.push("### By epic", "");
 const epics = [...new Set(tasks.map((t) => t.epic))].filter(Boolean).sort();
@@ -205,9 +235,7 @@ lines.push(
       const r = ts.filter((t) => t.status === "review").length;
       const g = ts.filter((t) => t.status === "doing").length;
       const ready = ts.filter(isReady).length;
-      const left = ts
-        .filter((t) => t.status === "todo" || t.status === "doing" || t.status === "blocked")
-        .reduce((sum, t) => sum + estDays(t.est), 0);
+      const left = remaining(ts);
       const bar = "█"
         .repeat(Math.round(pct(d, ts.length) / 10))
         .padEnd(Math.round(pct(d + r, ts.length) / 10), "▓")

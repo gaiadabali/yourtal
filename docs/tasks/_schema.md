@@ -77,3 +77,20 @@ The test: *if this ticket were otherwise perfect, would this line still be untic
 4. **Every task names its acceptance criteria before work starts.** No AC, no start.
 5. **Never renumber.** `cut` tasks stay in the file with `cut` status so history stays readable.
 6. Regenerate the dashboard in the same commit as any task change. CI fails otherwise.
+7. **Commit `scripts/tasks.mjs` in the same commit as any dashboard whose format it changes.**
+
+**Why rule 7 exists.** Rule 6 pairs a *task change* with the dashboard and says nothing about the
+generator, so it does not catch the other half. `TASKS.md` is not a document that happens to be
+checked — it is **output**, and output and the code that produces it are one artifact. Split them
+across two commits and the first one is broken by construction: CI runs `node scripts/tasks.mjs
+--check` in both `quality.yml` and `release.yml`, so a clean checkout regenerates with the OLD
+generator, gets the OLD format back, and fails as stale.
+
+The failure is nastier than an ordinary red build, which is the point worth keeping. **The commit
+that breaks CI contains no cause.** A reviewer sees a dashboard diff, a legitimate one, and the
+generator change that explains it is somewhere else or nowhere yet. The natural fix — regenerate
+and commit again — reverts the format instead of restoring it, silently, and passes. A rule that
+protects a generated file has to name its generator, or it protects the copy and not the source.
+
+Found 2026-09-21 by `yourtal-08` and `yourtal-c8` while rebasing onto an uncommitted generator
+change, **before** anyone committed it. The gap was in the rule, not in what anyone did.

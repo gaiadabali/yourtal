@@ -3,7 +3,6 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { AppModule } from "../../app.module";
-import { DrizzleBusinessAccountRepository } from "./persistence/drizzle-business-account.repository";
 import { DrizzleBusinessMemberRepository } from "./persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "./persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "./persistence/business-db.test-helper";
@@ -60,7 +59,6 @@ const STRANGER_ID = "stranger-boot-1";
 
 async function seed() {
   const db = testBusinessDb();
-  const businesses = new DrizzleBusinessAccountRepository(db);
   const members = new DrizzleBusinessMemberRepository(db);
   const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
   const created = await unitOfWork.createBusinessWithOwner(

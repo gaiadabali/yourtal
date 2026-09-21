@@ -116,6 +116,24 @@ export function useWatchSession(
     [campaign.durationSeconds],
   );
 
+  /**
+   * Reads `seeking` through a call so it is a fresh observation, not a
+   * narrowed fact. YT-0586.
+   *
+   * Inside `if (video.seeking) { … }` TypeScript narrows `video.seeking` to
+   * `true`, so a second read of it is reported by
+   * `@typescript-eslint/no-unnecessary-condition` as "always falsy". That
+   * narrowing is sound for an ordinary property and **wrong for this one**:
+   * `HTMLMediaElement.seeking` is owned by the media element and changes
+   * underneath us between any two statements. The re-check the linter calls
+   * unnecessary is the entire fix.
+   *
+   * Narrowing does not cross a function boundary, so this indirection is
+   * not ceremony to silence a rule — it is the honest way to say "ask the
+   * element again" to a compiler that believes it already knows.
+   */
+  const isSeeking = (element: HTMLVideoElement): boolean => element.seeking;
+
   const flushQueuedSeek = useCallback(
     (video: HTMLVideoElement) => {
       const queued = queuedSeekRef.current;
@@ -167,13 +185,30 @@ export function useWatchSession(
         pendingSeekRef.current = virtualSeconds;
         return;
       }
-      if (video.seeking) {
+      if (isSeeking(video)) {
         queuedSeekRef.current = virtualSeconds;
+        // YT-0586. Re-read `seeking` AFTER publishing the target, because
+        // the read above and this write are not one atomic step from the
+        // media element's point of view: the browser can settle the
+        // in-flight seek and dispatch `seeked` in between. If it does,
+        // `flushQueuedSeek` has already run against an empty queue, no
+        // further `seeked` is coming, and the target just written is never
+        // applied — the press is silently dropped and the playhead stays
+        // wherever the previous seek left it.
+        //
+        // This is the check-then-act shape `packages/idempotency`'s store
+        // refuses for the same reason, in a different medium: a decision
+        // made on a value that can change before you act on it. There it is
+        // fixed by making the write atomic; here the write cannot be, so
+        // the fix is to re-check and recover rather than to assume.
+        if (!isSeeking(video)) {
+          flushQueuedSeek(video);
+        }
         return;
       }
       applyRealSeek(video, virtualSeconds);
     },
-    [applyRealSeek],
+    [applyRealSeek, flushQueuedSeek],
   );
 
   const handlePlay = useCallback(() => {

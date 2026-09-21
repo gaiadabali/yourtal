@@ -200,4 +200,74 @@ describe("useWatchSession seek coalescing (YT-0550)", () => {
     fireEvent.change(slider, { target: { value: "300" } });
     expect(video.currentTime).toBeCloseTo(300, 5);
   });
+
+  /**
+   * YT-0586 — the window YT-0550's coalescing left open.
+   *
+   * `handleSeekTo` reads `video.seeking`, and only then writes the queued
+   * target. Those two steps are not atomic from the media element's point
+   * of view: the browser can settle the in-flight seek and dispatch
+   * `seeked` between them. When it does, `flushQueuedSeek` has already run
+   * against an empty queue, no further `seeked` is coming, and the target
+   * written a moment later is never applied.
+   *
+   * The `seeking` getter below returns `true` once and `false` afterwards,
+   * which is exactly that interleaving expressed in a single-threaded test:
+   * the guard sees a seek in flight, and by the time the target is
+   * published it has already settled.
+   *
+   * Without the re-check in `handleSeekTo` this test fails with the
+   * playhead still at 5 — the press silently dropped, the symptom
+   * `keyboard-seek.spec.ts` records for `Home`.
+   */
+  it("does not drop a seek that settles between the in-flight check and the queue write", () => {
+    const video = mountAndReadyVideo(900);
+    const slider = screen.getByRole("slider", { name: "Seek" });
+
+    fireEvent.change(slider, { target: { value: "5" } });
+    expect(video.currentTime).toBeCloseTo(5, 5);
+
+    let reads = 0;
+    Object.defineProperty(video, "seeking", {
+      configurable: true,
+      get: () => {
+        reads += 1;
+        return reads === 1;
+      },
+    });
+
+    // 700, not 0, even though `Home` is where this was found. The slider is
+    // controlled by `virtualCurrentTime`, which only advances on `timeupdate`
+    // or `seeked` — neither of which jsdom fires for a `currentTime`
+    // assignment. So its displayed value is still "0" here, and changing it
+    // to "0" dispatches no change event at all. The drop being tested is
+    // about a target being lost, not about which target it was.
+    fireEvent.change(slider, { target: { value: "700" } });
+
+    expect(reads, "the guard must re-read `seeking` after publishing the target").toBeGreaterThan(1);
+    expect(video.currentTime, "the seek must not be silently dropped").toBeCloseTo(700, 5);
+  });
+
+  /**
+   * The partner to the test above: re-checking must not turn one seek into
+   * two. If the element is still genuinely seeking, the target stays queued
+   * and waits for `seeked` — issuing it immediately would reintroduce the
+   * overlapping seeks YT-0550 removed.
+   */
+  it("still waits when the seek is genuinely still in flight", () => {
+    const video = mountAndReadyVideo(900);
+    const slider = screen.getByRole("slider", { name: "Seek" });
+
+    fireEvent.change(slider, { target: { value: "5" } });
+    Object.defineProperty(video, "seeking", { value: true, configurable: true });
+
+    fireEvent.change(slider, { target: { value: "700" } });
+    expect(video.currentTime, "a still-in-flight seek must not be overtaken").toBeCloseTo(5, 5);
+
+    Object.defineProperty(video, "seeking", { value: false, configurable: true });
+    act(() => {
+      video.dispatchEvent(new Event("seeked"));
+    });
+    expect(video.currentTime).toBeCloseTo(700, 5);
+  });
 });

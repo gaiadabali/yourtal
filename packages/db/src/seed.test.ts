@@ -118,19 +118,26 @@ describe("the seed", () => {
 });
 
 describe("the seeded question bank (YT-0122)", () => {
-  it("gives every campaign exactly the number of questions it advertises", async () => {
-    // A campaign whose row promises four questions and whose bank holds none
-    // is one nobody can complete, and it looks complete from the catalogue.
-    // `questionCount` is also what the checkpoint schedule derives its length
-    // from (YT-0121), so a mismatch is not cosmetic.
+  it("gives every campaign a bank at least three times the questions asked", async () => {
+    // Not "exactly `question_count`", which is what this test asserted first
+    // and which would have locked in the defect it was meant to prevent.
+    // `question-bank.ts` is explicit: "with a bank the same size as the ask,
+    // every viewer sees every question and a single leaked set covers the
+    // whole campaign forever". At 1x, YT-0122's per-user subset is a subset
+    // of one and YT-0125's population-accuracy signal has no unknowing
+    // viewers left to measure.
+    //
+    // The ask is the larger of `question_count` and the duration-derived
+    // count, because those two disagree — quick campaigns run 15-58s with
+    // `question_count` 0-2 while the duration rule returns 0 below 300s.
+    // Asserting against the larger holds whichever is authoritative.
     const { rows } = await pool.query<{ count: string }>(
       `SELECT count(*)::text AS count
          FROM campaign.campaigns c
-        WHERE c.question_count <> (
-          SELECT count(*) FROM campaign.question q WHERE q.campaign_id = c.id
-        )`,
+        WHERE (SELECT count(*) FROM campaign.question q WHERE q.campaign_id = c.id)
+              < 3 * greatest(c.question_count, least(c.duration_seconds / 300, 5))`,
     );
-    expect(rows[0]?.count, "every campaign's bank must match its question_count").toBe("0");
+    expect(rows[0]?.count, "every bank must be at least 3x the questions asked").toBe("0");
   });
 
   it("spreads the correct answer across every option position", async () => {

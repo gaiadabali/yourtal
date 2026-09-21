@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import pg from "pg";
 import { mockCampaigns } from "@yourtal/contracts/campaign/mock";
+import { BANK_MULTIPLE, questionsAskedFor } from "@yourtal/contracts/question/bank";
 import { mockListings } from "@yourtal/contracts/listing/mock";
 import { generateVouchers } from "@yourtal/contracts/voucher/mock";
 import type { Campaign } from "@yourtal/contracts/campaign";
@@ -225,10 +226,23 @@ async function seedQuestionBank(pool: pg.Pool): Promise<number> {
   let written = 0;
 
   for (const campaign of mockCampaigns) {
-    // The campaign's own promise decides how many exist. Seeding a fixed
-    // number would contradict `questionCount` on the row beside it, and the
-    // checkpoint schedule derives its length from that same field.
-    for (let index = 0; index < campaign.questionCount; index += 1) {
+    // THREE TIMES the number asked, not one each. `question-bank.ts` is
+    // explicit about why: "with a bank the same size as the ask, every
+    // viewer sees every question and a single leaked set covers the whole
+    // campaign forever". A 1x bank makes YT-0122's per-user subset a subset
+    // of one — every viewer gets the identical questions — and leaves
+    // YT-0125's population-accuracy signal with no unknowing viewers to
+    // measure against.
+    //
+    // The ask count is taken as the larger of the campaign's own
+    // `questionCount` and `questionsAskedFor(duration)`, because the two
+    // disagree and neither is obviously wrong: quick campaigns run 15-58s
+    // and carry `questionCount` 0-2, while `questionsAskedFor` returns 0
+    // below 300s. Seeding the larger keeps the 3x property true whichever
+    // field turns out to be authoritative. That disagreement is a real
+    // modelling question and not this seed's to settle.
+    const asked = Math.max(campaign.questionCount, questionsAskedFor(campaign.durationSeconds));
+    for (let index = 0; index < asked * BANK_MULTIPLE; index += 1) {
       const questionId = deterministicQuestionId(campaign.id, index);
       const isTrueFalse = index % 2 === 0;
 

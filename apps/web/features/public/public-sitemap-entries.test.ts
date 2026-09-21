@@ -70,7 +70,9 @@ describe("publicSitemapEntries", () => {
     // `/` and `/rewards` are the two genuine per-locale pairs — the only
     // pages that exist in both regions, which is why they are also the only
     // two carrying hreflang alternates.
-    const duplicated = [...seen].filter(([path, count]) => count > 1 && path !== "/" && path !== "/rewards");
+    const duplicated = [...seen].filter(
+      ([path, count]) => count > 1 && path !== "/" && path !== "/rewards",
+    );
     expect(duplicated).toEqual([]);
   });
 

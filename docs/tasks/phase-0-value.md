@@ -157,11 +157,14 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 ## Economy
 
 ### YT-0048 · Monetary policy, written down
-`todo` · P0 · economy · 3d · dep: YT-0012
+`doing` · P0 · economy · 3d · dep: YT-0012
 
-- [ ] Opening `P_issue`, `B`, expiry policy, faucet rates and sink list agreed and recorded
-- [ ] Devaluation playbook written, including how a change is announced
-- [ ] Checked against position ID-1 in `docs/24-legal-positions.md`: no fixed consumer rate is ever published, and `B` never appears in a user-facing surface
+- ✏️ **Unblocked 2026-09-21 by YT-0012 being signed. Written up as [`docs/25-monetary-policy.md`](../25-monetary-policy.md)** — a decision record, deliberately separate from `docs/09` §6, which is the design. Design explains why faucets need sinks and ranks the levers; this commits to what the parameters are, what happens when they change, and the bound they must never cross
+- [ ] Opening `P_issue`, `B`, expiry policy, faucet rates and sink list agreed and recorded — **sink list and faucet list are in `docs/09` §6 and adopted unchanged; three scalars are blank and stay blank.** `P_issue`, `B` (ID) and `B` (AU) are the economy owner's to set. **Deliberately not placeholdered**: `B` is the 20% settlement-materiality failure with far more reach — it does not guard one control, it prices the entire catalogue via `points_price = (S / B) × demand_multiplier`, so a placeholder propagates into every price the moment anything reads it rather than sitting inertly waiting to be replaced
+- [x] Devaluation playbook written, including how a change is announced — `docs/25` §4. Six steps. **Defines a devaluation by its effect rather than its mechanism**: any change that raises the points price of an unchanged item, so a sustained demand-multiplier increase counts as well as a cut to `B` — it is the same event to a user either way. Requires levers 1–2 tried and recorded first, **two-person approval with no threshold** (the catalogue-wide analogue of YT-0576, and it cannot have a weaker bar than a single listing's `S`), announcement before rather than after, the 15-minute price lock honoured through the change, and a log table in the document itself
+- [ ] Checked against position ID-1 in `docs/24-legal-positions.md` — **checked, and it FAILS today.** `MOCK_BACKING_RATE_IDR_SEN_PER_POINT` and `MOCK_BACKING_RATE_AUD_CENTS_PER_POINT` reach the browser: `campaign-editor-reward.tsx:1` is `"use client"`, `:10` imports `./campaign-reward-risk`, which imports both rates at `:33-35` and uses them at `:73-74`, with no `server-only` on the path. The check was performed; the criterion is not met, and ticking it would claim a compliance the code contradicts
+- ⛔ **YT-0589's `apps/web` half is a precondition of this ticket, not a follow-up.** Today the leak is harmless because it is the *mock* rate. **The blanks are load-bearing in both directions**: they are why the breach is currently theoretical, and filling them is what makes it real — because the obvious maintenance action when `B` is decided is to update that very constant, and then the true rate reaches browsers **with nothing failing**, since every consumer agrees with it
+- ℹ️ **Expiry is the one blank that is not a commercial judgement.** It is bounded on both sides by law: too short reads as a gift-card expiry under Australian consumer guarantees (**AU-4**), and too long — or absent — removes one of the four features **ID-1** rests on. It must be set with `docs/24` open
 
 ### YT-0049 · Pricing engine
 `todo` · P0 · economy · 5d · dep: YT-0048
@@ -175,7 +178,8 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 
 - ✅ **Founder decision 2026-09-21: the founder holds the economy himself.** Accountable for issuance vs redemption, coverage, point values (**YT-0045**), the chart-of-accounts finance review (**YT-0043**), the settlement materiality rule (**YT-0576**) and `goodwillCreditCeilingIdr` (**YT-0582**). Delegating it later is a change of holder, not a re-opening of this ticket. **Recorded first-hand**: the founder answered it in this session directly. `yourtal-b6` reports the same answer from its own session, but per `yourtal-08` that is a **second relay rather than independent corroboration** — two sessions each reporting "the founder confirmed" is how one answer becomes three records
 - [x] A named analyst or economist is accountable for issuance vs redemption and coverage
-- [ ] Daily review checklist agreed
+- [x] Daily review checklist agreed — **it already existed and nobody had adopted it.** `docs/09` §6 specifies what the economy owner looks at each morning: issuance rate vs redemption rate · points outstanding and its growth · coverage ratio · average realised value per point · days-to-first-redemption · catalogue depth by price band · share of outstanding points held by the top 1% of holders. Adopted **unchanged** as the agreed checklist in [`docs/25-monetary-policy.md`](../25-monetary-policy.md) §6, on the founder's standing instruction to proceed. Found while drafting YT-0048, not by looking for it
+- ⚠️ **The checklist is agreed and is not yet a control anyone can perform.** None of the seven measures is instrumented: the coverage ratio is measured from ledger projections rather than a stored total (**YT-0130**), and the rest needs the event schema (**YT-0059**) and the economy dashboard (**YT-0307**). So this criterion is honestly met — it asked for agreement, not instrumentation — but **the checklist is currently a specification of what to build, and must not be recorded anywhere as a working control**
 
 ## Risk
 

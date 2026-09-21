@@ -7,7 +7,7 @@ The part that must never be wrong. Nothing here is user-visible; all of it gates
 ## Value
 
 ### YT-0041 · Ledger schema and constraints
-`review` · P0 · value · 4d · dep: YT-0516
+`done` · P0 · value · 4d · dep: YT-0516
 
 - Re-parented onto the local stack (YT-0516): this needed _a_ service, not a _managed_ one. The cloud task now covers deployment only.
 - [x] `account` / `entry` / `transfer` tables; entries append-only, no UPDATE or DELETE grant
@@ -16,6 +16,12 @@ The part that must never be wrong. Nothing here is user-visible; all of it gates
 - [x] **IDR unit is CONTESTED — see YT-0506.** This AC currently mandates sen; `packages/contracts` explicitly forbids it. Do not implement the ledger until YT-0506 is decided, or the 100× error this AC warns about is the one we ship
 - [x] **Already built and proved by YT-0518** — `ledger.account`, `transfer`, `entry`, the deferred balance trigger, append-only grants, 10 tests against real Postgres. Marked on what exists rather than built twice
 
+- ✅ **Verified 2026-09-21 by `yourtal-fe`, which did not write this ticket. This ticket cites no file paths, and needed none — every claim is about the database, so the database was asked.**
+  - `ledger.account`, `ledger.transfer`, `ledger.entry` all exist (alongside `allocation`, `backing_rate`, `daily_proof`, `grant`, `point_purchase`)
+  - **Append-only is real**: `yourtal_ledger` holds exactly `INSERT, SELECT` on both `entry` and `transfer`. No UPDATE, no DELETE. Only the DDL owner `yourtal` has more, which is what an owner is for
+  - `transfer_idempotency_key_key UNIQUE (idempotency_key)` exists
+  - `entry.amount_minor` is **`bigint`** — integer minor units, never float, enforced by the column type rather than by care
+- ✏️ **The second criterion asks for a mechanism that cannot do the job, and the implementation correctly ignored it.** It says *"DB-level `CHECK` that a transfer's entries sum to zero"*. **A `CHECK` constraint cannot sum across rows** — it sees one row at a time. What exists is `entry_balances_at_commit`, a constraint trigger that is `DEFERRABLE INITIALLY DEFERRED` (`tgdeferrable = t`, `tginitdeferred = t`), so the balance is asserted **at commit**, once every entry of the transfer is present. That is the only shape that can enforce this, and the ticket's own last bullet calls it "the deferred balance trigger" — so the criterion's wording is the outlier, not the code
 ### YT-0513 · Currency-tagged Money type
 `doing` · P0 · value · 3d · dep: —
 

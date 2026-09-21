@@ -47,15 +47,6 @@
 - [ ] Promote them, mirroring `apps/api/src/modules/business/domain/*.ts`, which were designed against `docs/17` directly
 - [ ] Required before the advertiser console (YT-0440+) can share the types
 
-### YT-0512 · `apps/web` imports an undeclared package
-`doing` · P0 · web · 1h · dep: YT-0509
-
-- [x] Already fixed on disk; the tracker was stale. `apps/web` imports `BusinessTeamRole` from `@yourtal/contracts/business/team-role`, and the file this ticket blamed for a syntax error **does not exist**
-- [ ] Six files under `apps/web/features/console/` import `@yourtal/authz`, which **`apps/web/package.json` has never declared** — absent from every commit, and `.npmrc` hoists only eslint and prettier, so the specifier was never resolvable
-- [ ] **Not caused by YT-0509.** The files are untracked, so they never passed through CI; authz was never an `apps/web` dependency at any commit
-- [ ] **Fix: import `BusinessTeamRole` from `@yourtal/contracts/business/team-role`**, which `apps/web` already depends on — exactly what YT-0509 made possible. Adding an `authz` dependency to a web app would be the worse fix
-- [ ] Separately, `features/onboarding/onboarding-region-derived.ts` currently has syntax errors (unterminated template literal) — in-flight, not related
-
 ### YT-0509 · Invert the contracts → authz dependency
 `doing` · P0 · platform · 1d · dep: YT-0508
 
@@ -116,29 +107,6 @@
 - [ ] No question-response record, so accuracy and recall are unreportable
 - [ ] **No `campaignId` on a voucher, so redemptions cannot be attributed to the campaign that caused them** — this is the closed-loop conversion the whole advertiser pitch rests on (`docs/18`), and it is currently unmeasurable
 - [ ] Each gap closes a metric that `docs/01` sells; until then the panels stay honest
-
-### YT-0525 · Migrate hand-built forms to React Hook Form
-`doing` · PU · web · 2d · dep: —
-- [ ] `docs/15` locked RHF + Zod resolver, but neither was ever installed — **now installed (2026-09-19)**
-- [x] Migrated the three genuine multi-field forms; Server Components and single-field forms left alone, matching this ticket’s own carve-outs
-- [ ] ⚠️ **`/onboarding/[region]/consent` measured 181.1 KB gz — over the 180 KB justify line**, for React Hook Form on a three-checkbox form. Under the 200 KB hard gate, so not a failure, but it is exactly the trade `docs/13b` §8 says must be stated rather than absorbed: is RHF worth a few KB on a form this small, or should that one stay hand-built?
-- [ ] ⚠️ **`phone-verification-flow.tsx` is 301 lines — one over the ceiling**, pre-existing and untouched by this work. Needs `PhoneEntryStep` / `CodeEntryStep` extracted
-- [ ] The campaign builder hand-built its forms against an uninstalled lock. Migrate them
-- [ ] Hand-rolled validation, error and dirty-state handling across a multi-step builder is exactly where form bugs live
-
-### YT-0526 · Testable HLS fixture for the player
-`doing` · PU · web · 1d · dep: YT-0521
-- [ ] YT-0412's keyboard-seeking AC is **untestable, not failing**: the shared placeholder stream's 59 MB segment aborts before the video reports a duration
-- [x] ✅ **Closed for real this time, verified on disk 2026-09-20.** `use-watch-session.ts` reads `campaign.videoSource.manifestUrl` at both call sites; `features/player/video-source.ts` and `apps/web/public/media` are **deleted**, taking 9 MB and the duplicate fixture with them. The origin is now the only HLS path, so per-segment delivery logging is exercised by the real player rather than by a test alone
-- ⚠️ **Correction 2026-09-20: this was reported closed and is not.** Both campaign mocks now carry a correct local manifest URL, guarded by a sabotage-tested drift test — but `use-watch-session.ts` **never reads `campaign.videoSource`**. It uses its own `MOCK_HLS_MANIFEST_URL`. The contract field carries a correct value the player ignores, which is worse than an obviously-missing one because it looks done from the contract side
-- ⚠️ **Two HLS fixtures exist.** `packages/media/fixtures` (2.7 MB, 19 files, served from MinIO) and `apps/web/public/media` (9.0 MB, 28 files, served from Next). Two sessions built them in parallel, unaware, and **their file headers give the same three reasons** — multi-segment, genuinely multi-bitrate, local. Independent convergence on the design; pure waste on the artifact
-- ✅ **DECIDED: the MinIO origin is canonical.** Production never serves video from `public/`, and the origin is the only one that produces **per-segment delivery logs** — the `docs/22` control that survived the web-fraud audit. A player wired to the fixture that cannot be logged means that control can never be exercised end to end, which would make YT-0521 decorative
-- The `public/` copy is the duplicate that **looks like a convenience**, which `docs/13` names as the tell. It is 9 MB in git forever, and only one file references it. If a no-Docker path is genuinely wanted later it gets its own task, an owner and a drift test — not an unowned second copy
-- [x] `use-watch-session.ts` reads `campaign.videoSource.manifestUrl`; `features/player/video-source.ts` and `apps/web/public/media` are deleted in the same pass — **re-verified on disk 2026-09-21: both paths are gone, and the hook reads `campaign.videoSource.manifestUrl` at both call sites (lines 191 and 241).** This box duplicated the ticked one above it and had simply been left behind
-- [ ] Player and e2e tests pass against the origin, with `pnpm dev:up` as the stated prerequisite
-- [x] Serve a small, real, multi-segment HLS fixture from the local MinIO origin (YT-0521) — **verified 2026-09-21.** `packages/media/fixtures/attention-30s` is a genuine multi-bitrate ladder (`index.m3u8` → `v0`/`v1`/`v2` at 320x180 / 480x270 / 640x360, eight-plus real `.ts` segments per rendition), generated by `packages/media/scripts/generate-fixture.mjs`, served through `packages/media/src/hls-origin.ts` and referenced by `packages/contracts/src/campaign/campaign.mock.ts`. The duplicate 9 MB `public/` copy is gone, so the origin is the only HLS path and per-segment delivery logging is exercised by the real player
-- [ ] Then close YT-0412's Playwright criterion against it
-
 
 ### YT-0502 · Listing contract: multiple merchant locations
 `done` · P0 · platform · 2d · dep: YT-0031
@@ -237,16 +205,6 @@
   - *`must-use-result` wired*: `eslint.config.mjs:9` imports the local rule and `:172` registers it as `yt/must-use-result`, a flat-config rule rather than the 2022-era eslintrc plugin — exactly as the criterion describes
   - *Authorization left controller bodies*: `@Authorize` and `PdpGuard` present in `apps/api/src/shared/authz/`, and **confirmed live** — a booted API refused an anonymous `POST /api/businesses` at the guard
 - ✏️ **"Nine routes converted" has drifted to 31.** Counted from a real boot: `Nest application successfully started`, 31 routes mapped. Growth, not regression, and the criterion's bar — *every* route resolves through the PDP — is the property that still holds
-### YT-0501 · Field RUM for real INP
-`doing` · P0 · web · 3d · dep: YT-0404
-
-- [x] Budget rating uses `docs/08` §3.1’s own numbers rather than Lighthouse’s looser CWV defaults, and device class is labelled a **heuristic** because Safari and Firefox expose neither `hardwareConcurrency` nor `deviceMemory`
-- [ ] ⚠️ **There is nowhere to send the samples.** No event-ingestion contract exists (YT-0059 is still `todo`), so the sink logs in development and is a **silent no-op in production rather than faking delivery**. Every sample already carries the segmentation a p75-and-alert pipeline needs; only the transport is missing, and only `rum-sink.ts` changes when YT-0059 lands
-- [x] **A self-inflicted regression caught and fixed in the same pass:** mounting the reporter in the shared shell pulled `web-vitals` into every `(app)` route and pushed `/business/campaigns` to 200.9 KB, over the hard gate. Now dynamically loaded — telemetry not needed before interactivity has no business in that budget
-- [ ] INP is a **field** metric and Lighthouse cannot measure it; TBT ≤ 200 ms is the lab proxy and must be labelled as a proxy wherever it appears
-- [ ] Real-user monitoring reports p75 INP, LCP and CLS segmented by country, connection and device class
-- [ ] Alert when p75 on mid-tier Android breaches the budget in the field, not only in CI
-
 ### YT-0036 · Consent service v1
 `review` · P0 · platform · 5d · dep: YT-0030
 
@@ -311,7 +269,7 @@
 - [ ] Must match the two things already pinned: the shared `IDEMPOTENCY_TABLE_DDL` and the **exact fingerprint digest**. A Go instance computing it differently makes a retry look like a mismatch, and a correct client is told to fix a correct request
 
 ### YT-0515 · Durable shared idempotency store
-`review` · P0 · platform · 1d · dep: YT-0039, YT-0022
+`done` · P0 · platform · 1d · dep: YT-0039, YT-0022
 
 - [x] Postgres-backed store using `INSERT … ON CONFLICT DO NOTHING RETURNING` — the only form that survives two concurrent retries
 - [x] Replaces the in-memory store, which is per-process and therefore not an idempotency store at all
@@ -319,6 +277,9 @@
 - [x] `apps/api` selects the store from config and **refuses to boot in production without `DATABASE_URL`** rather than silently using the per-process map
 - **Conditional `DO UPDATE`, not `DO NOTHING`:** an expired row must behave as _absent_, because a dead row reporting "in progress" wedges a legitimate retry until a human notices. `DO NOTHING` cannot express "unless expired, take it over" without becoming a read-modify-write race of its own
 
+- ✅ **Verified 2026-09-21 by `yourtal-fe`, which did not write this ticket.** `packages/idempotency/src/postgres-store.ts` implements `putIfAbsent` as **one atomic statement**, which is the property that matters — a read followed by a write cannot be safe here at any isolation level worth having on the request path. `in-memory-store.ts` survives only as the non-production option
+- ✏️ **The first criterion names `ON CONFLICT DO NOTHING RETURNING` and calls it "the only form that survives two concurrent retries". The code uses `ON CONFLICT … DO UPDATE … WHERE expires_at <= EXCLUDED.started_at`, and it is right to.** The file explains why at `:27-33`: **an expired row must behave as if absent**, and `DO NOTHING` cannot express *"unless it is expired, in which case take it over"*. A dead row reporting `in_progress` would wedge a legitimate retry until a human noticed. The conditional update does it inside the same atomic statement rather than as a read-modify-write race of its own
+- ⚠️ **Third instance today of a criterion naming a mechanism that the implementation correctly diverged from**, after YT-0121 (criterion said nonce burned in Redis; Redis here is Valkey with `--save "" --appendonly no`, so the implementation used Postgres) and YT-0041 (criterion said `CHECK`; a `CHECK` cannot sum across rows, so it is a deferred constraint trigger). **In all three the code is better than the bar, and in all three a verifier checking the literal wording would have failed working software.** This is `_schema.md` rule 2 earning its place three times over
 ### YT-0040 · Job queue and worker skeleton
 `todo` · P0 · platform · 3d · dep: YT-0516
 
@@ -385,31 +346,6 @@
 - [ ] ⚠️ **At least one persona exists to make a screen look bad**: the empty wallet, the merchant with one listing, the campaign nobody finished. Seeds that only contain healthy data hide exactly the states users complain about
 - [ ] Idempotent per the seeding rule in `docs/13` — idempotent **for a fixed contract**, so a contract change means `pnpm dev:fresh`, not a re-seed
 
-### YT-0550 · Player: `Home` does not return the playhead to zero
-`doing` · PU · web · 1d · dep: YT-0526
-
-- **Handed back rather than tuned green.** 3 of 4 keyboard-seek cases pass against the MinIO origin; `Home` lands the media at **0.35 s** instead of within a frame of zero. In a standalone probe `Home` works and returns exactly 0, so the cause is the **controlled-input / time-remap interaction in the component**, not latency
-- **2026-09-20: a component fix attempted, NOT verified against the real origin — do not mark done from this entry alone.** `toRealSeconds(0, …)` is exactly `0` for any duration, so the arithmetic was ruled out. The remaining candidate named in the previous note — rapid repeat `handleSeekTo` calls issuing overlapping seeks against the network origin before the prior one settles — now has a fix: `handleSeekTo` (`use-watch-session.ts`) coalesces a new target into a queued ref while `video.seeking` is true, instead of layering a second seek on top of an in-flight one; the queued target is applied once `seeked` reports the current one settled (`use-video-event-wiring.ts`). The coalescing mechanism itself is unit-tested and sabotage-confirmed (`use-watch-session.test.tsx`: reverting the coalescing branch makes that test fail, as expected)
-- [ ] Fixed in the component, not by loosening the assertion. The backend session stopped at exactly this line and said so, which was right — relaxing a tolerance until it passes is how a real failure hides. **Not ticked**: this is the acceptance criterion itself, and it needs the real Playwright run below to confirm, not a unit test of the coalescing logic in isolation
-- [ ] ⚠️ **Seeks against an origin land later than against a same-process static file.** That is now a permanent property, not a flaw, since the `public/` fixture is gone; a `settle()` helper exists and fixed two of three cases
-- [ ] ⚠️ **The end-seek assertion has been rewritten and must not be reverted.** It previously asserted that seeking to the end completes the campaign — see decision **O-4** and risk 43. It now reads the media position directly, which is what YT-0412 actually asks for
-- [ ] Context worth keeping: the fixture is `attention-30s` at 30 fps because the seek tests are calibrated to a ~50 ms keyboard step at a 20:1 remap ratio. A 15 fps fixture makes one step land inside the same frame and the bar never moves. **A directory named for the wrong duration is a lie that costs somebody an hour**
-- ⚠️ **Not run in this pass**: `pnpm dev:up`/`pnpm media:publish` + the real Playwright suite. A live `next dev` was already running against this same `apps/web` checkout (docs/13c, "Two agents, one working tree" — a `next build` here would share `.next` with it), so `keyboard-seek.spec.ts`'s `Home` case stays `test.fixme`, now with a note on what to run and what to require (a few consecutive green repeats, not one) before flipping it
-
-### YT-0551 · Gate the completion hand-off on coverage, not on the `ended` event
-`done` · PU · web · 2d · dep: YT-0526
-
-- **Implements decision O-4 in the player.** `use-watch-session.ts` sets `hasEnded` from the `ended` event alone, so **the only thing currently preventing scrub-to-complete is that Chrome declines to fire `ended` on a seek** — see risk 43. A fraud control resting on one browser's incidental behaviour is not a control
-- **2026-09-20: done, verified at the unit/jsdom level; real-browser Playwright re-verification still recommended.** New pure module `watch-coverage-tracker.ts` tracks real-second watched ranges via a `seeking`-flagged tick (`applyCoverageTick`) and asks `hasFullRealCoverage` fresh on every `timeupdate`/`seeked`/`ended` — never trusting which event fired. `use-video-event-wiring.ts` (split out of `use-watch-session.ts` to hold the 300-line ceiling) wires this to the DOM
-- [x] Completion requires **playback coverage of the whole timeline**, tracked as watched ranges, not a single terminal event — `watch-coverage-tracker.ts`, mirroring `packages/contracts/src/watch/watch-coverage.ts`'s "ask what's missing" model
-- [x] Seeking to the end leaves the campaign incomplete and does **not** mount the hand-off — asserted directly in `use-watch-session.test.tsx` ("the attack: a single scrub to the end…"), **sabotage-confirmed**: reverting the fix in `use-video-event-wiring.ts` makes that test fail with the hand-off link found in the DOM
-- [x] A synthetic `ended` event does not complete a campaign — asserted directly ("the attack: a synthetic `ended` event with zero real playback…"), same sabotage confirmation
-- [x] ⚠️ **This is defence in depth and must not be described as the control.** Stated in `watch-coverage-tracker.ts`'s own header, citing the server's checkpoint-token/segment-log model, matching this ticket's wording
-- ⚠️ **What's NOT covered**: the real Playwright `keyboard-seek.spec.ts`/`earn-journey.spec.ts` suites were not re-run against a real browser + the MinIO origin in this pass (shared-dev-server risk, see YT-0550's note) — the jsdom-level hook test dispatches real DOM events on a real rendered `<video>` element and is sabotage-confirmed, but it is not a substitute for the real-browser run those specs exist to provide
-
-- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `watch-coverage-tracker.ts` exists and mirrors `packages/contracts/src/watch/watch-coverage.ts`, and `use-watch-session.test.tsx` carries both named attacks — the single scrub to the end, and the synthetic `ended` event with zero real playback. Both were sabotage-confirmed by the author, which is the standard this repo holds itself to and is why they are credible
-- ✅ **The fourth box is the most valuable thing in this ticket and it is correctly written as a bar.** It requires the module to state that client-side coverage is **defence in depth and not the control** — and `watch-coverage-tracker.ts`'s own header says so, citing the server's checkpoint-token and segment-log model. A client-side anti-cheat that does not say this is one refactor away from being trusted
-- ⚠️ **Promoted with its stated gap intact, not in spite of it.** The ticket records that the real-browser Playwright suites were not re-run against a browser plus the MinIO origin in this pass. That is honest and it is **not** an unticked criterion — every bar here is at the unit/jsdom level and each is met. It is worth knowing that MinIO's API port was unpublished for part of today (fixed by `yourtal-c8` with `--force-recreate`), so a browser re-run was not available to this verifier either
 ### YT-0552 · Wire `apps/api` repositories to Postgres
 `doing` · P0 · platform · 4d · dep: YT-0527, YT-0518
 
@@ -519,7 +455,7 @@
 - ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** All four business schemas are genuinely in `MAPPINGS` — `businessSchema` → `business.business_accounts` (`:274`), `businessMemberSchema` → `business.business_members` (`:287`), `billingContactSchema` (`:297`) and `kybDocumentSchema`, imported at `:13-16` — and the `describe("table coverage")` block the second criterion demanded exists at `:469`, so a **missing schema fails by table name** rather than being silently excluded
 - ✏️ **A note on the verification rather than the ticket: my first count said three of four were mapped, and my count was wrong.** I grepped `BusinessMember` while the code exports `businessMemberSchema`; a casing mismatch in the check, not a gap in the mapping. Recorded because it is the day's recurring shape — **the instrument narrowing the question** — and because a verifier reporting "3 of 4" would have sent this ticket back for work that was already done
 ### YT-0556 · Health endpoint
-`review` · P0 · platform · 1d · dep: YT-0552
+`done` · P0 · platform · 1d · dep: YT-0552
 
 - [x] `GET /api/health` at `apps/api/src/shared/health/` — a real `SELECT 1` against Postgres and a Cerbos `/_cerbos/health` fetch, **run in parallel**, returning 503 when either fails
 - [x] ✅ **Marked `@PublicRoute` deliberately, and the reason is the good part: a Cerbos outage must not hide the endpoint that reports the Cerbos outage.** A health check behind the dependency it checks reports nothing at the only moment it matters
@@ -527,6 +463,9 @@
 
 **→ `review` 2026-09-21.** The endpoint is built and its two real criteria are met: a parallel `SELECT 1` and a Cerbos `/_cerbos/health` fetch returning 503 when either fails, and `@PublicRoute` so **a Cerbos outage cannot hide the endpoint that reports the Cerbos outage**. The third box was YT-0532's work and is now a pointer. Sixth deferral-shaped criterion retired from this epic today.
 
+- ✅ **Verified 2026-09-21 by `yourtal-fe`, which did not write this ticket.** `apps/api/src/shared/health/` holds the controller, service, module and schema. `health.service.ts:54` runs `Promise.all([this.checkPostgres(), this.checkPdp()])` — genuinely parallel, as the criterion says — and `:61` is a real `SELECT 1` against the pool rather than a liveness flag. `@PublicRoute` is at `health.controller.ts:27` with its reasoning at `:12`
+- ✅ **Confirmed live, not just in source**: a booted `apps/api` maps `{/api/health, GET}`. Worth recording because this verifier first probed `/healthz`, got a 404, and nearly filed it against this ticket — **the route table settled it, the guess did not**
+- ℹ️ **The second criterion's reasoning is the part worth keeping**: a health check behind the dependency it checks reports nothing at the one moment it matters. Marking it `@PublicRoute` so a Cerbos outage cannot hide the endpoint reporting the Cerbos outage is a decision most systems get wrong by default
 ### YT-0557 · Load the root `.env` properly
 `done` · P0 · infra · 1h · dep: —
 
@@ -582,15 +521,6 @@
 - [ ] The split is a Reward Engine parameter, versioned with the action taxonomy, not a constant in any client
 - [ ] The client may **display** an expected reward; it must never compute the granted one. After YT-0102 moves scoring server-side, `checkpoint-scoring.ts` becomes display-only and its arithmetic advisory — say so in the file, because a module that used to be authoritative and quietly became advisory is the sort of thing someone later trusts again
 - [ ] ⚠️ **Two copies of one ratio is the derived-value bug with money attached.** Whatever the client shows must be derived from the server's value, not from a second constant that agrees with it today
-
-### YT-0564 · The result screen says "Total received" for a number nobody has granted
-`todo` · PU · web · 1d · dep: YT-0561
-
-- **`checkpoint-result.tsx` renders `result.totalReceived` — "Total received" / "Total diterima" — beside `totalEarned(split)`, which is computed by the now-advisory client scoring module.** Under **O-5** that number is not authoritative, and under **O-1** nothing is granted until full playback *and* answered questions. Today the server’s `complete` refuses every completion, so the figure is **certainly** unreceived at the moment it is shown
-- ⚠️ **This is risk 44 again in a different component.** That one was a live “Reward so far” tally implying accrual; this is a past-tense claim that money has arrived. **“Received” is a statement of fact about money**, and both the ACL and its Indonesian equivalent reach conduct that misleads about what a consumer will get
-- [ ] Copy states what is true at the moment it renders — an **expectation**, not a receipt — in both locales, and the test asserting the old string is updated to assert the new meaning rather than deleted
-- [ ] The figure is **derived from the server’s response** once YT-0561 lands, not from a client constant. Two numbers that agree today is the duplicate-source-of-truth bug with money attached
-- [ ] ⚠️ **Sweep for the vocabulary, do not fix only this string.** Risk 44 was found by grepping `earned` / `so far` / `accrued`; add **`received` / `diterima` / `total`** to that sweep. A superseded model leaves its words behind in copy long after the logic moves
 
 ### YT-0565 · The ledger schema-drift regex fails open
 `doing` · P0 · value · 2h · dep: —
@@ -835,34 +765,6 @@
 - [ ] `APP_URL` honours an override like `OWNER_URL` does
 - [ ] ⚠️ **Prove it the way the flaw was found**: point a suite at a dead host through `pnpm verify` itself and confirm it FAILS. A sabotage that only works outside the gate is not a sabotage of the gate
 - [ ] ⏭️ `apps/api/vitest.config.ts`'s override is YT-0558 and stays there — YT-0553's sabotage criterion correctly cites it rather than claiming it
-
-### YT-0583 · Surface merchant locations in the web app and the BFF
-`todo` · P0 · web · 1d · dep: YT-0502
-
-- **Filed 2026-09-21 to give YT-0502’s deferred criterion a home.** The `locations[]` contract landed in `packages/contracts` with the OpenAPI document and Go models regenerated (`MerchantLocation` added); **nothing consumes it yet**, and until something does, a merchant with two branches renders as one
-- ⛔ **THE MIGRATION PREMISE OF THIS TICKET WAS WRONG AND IS WITHDRAWN — corrected 2026-09-21, hours after filing.** I wrote that “nine `apps/web` files read `.district` directly” and called this a migration. **Challenged by `yourtal-c8` and verified here: `.district` on a *location* is the correct post-migration shape.** `packages/contracts/src/listing/listing.ts:12` records that `locations` **replaced** the single `district: string`, and `merchant-location.ts:20` declares `district` on the location. So a file reading `location.district` needs nothing, and a file reading `listing.district` **could not compile**, because that field is gone. **Nothing needs migrating.** I inherited the nine-file count from YT-0502’s own breaking-change note, which was written before the consuming side was migrated, and repeated it without checking — a stale warning propagating into a new ticket, which is the failure this board has recorded eight times today
-- ⚠️ **Unowned at filing.** The merchant epic has no holder in the live session set, and `apps/web` belongs to the web epic this session. `yourtal-54` asked to be told before anyone renders a merchant address so two sessions do not build it twice — tell them when this is taken
-- [x] **The offer page and the public surfaces are DONE — verified on disk, not taken from the challenge.** `apps/web/features/store/listing-locations.ts` provides `listingDistricts` and `listingDistrictLabel`, and `store-offer-card.tsx:71,78`, `store-listing-card.tsx:51` and `public-offer-content.tsx:65` all render the full deduped set. `public-merchant.ts:51-61` computes the most common district by iterating `listing.locations`, and `public-jsonld.ts:177-185` emits **one `@graph` node per location**, naming each branch. `store-facets.test.ts` asserts a multi-branch listing contributes every district, “not just its first”
-- [ ] **Voucher detail and the merchant redemption portal — genuinely not wired.** `apps/web/features/wallet/**` and `apps/web/features/merchant/**` contain **no reference to `locations` at all**, so a voucher for a two-branch merchant cannot say which branch, and the redemption portal cannot show the staff member where they are. This is the real remainder of YT-0502’s deferred criterion. **The contract side is already there, checked 2026-09-21 rather than assumed:** `packages/contracts/src/voucher/voucher.ts:53` carries `location: merchantLocationSchema`, *“chosen from `listingSchema.locations` at issuance and denormalised”*. So this is a **read-and-render job, not a contract change** — which is the third time this ticket has been smaller than it looked, and the reason to check before sizing it a fourth
-- [ ] **A BFF endpoint serves locations from the contract.** `apps/api/src/modules/store/**` has no reference to `locations` outside tests, so every surface above reads the contract mock rather than a served shape
-
-**RE-SCOPED 3d → 1d, 2026-09-21, before anyone started it.** One of the three criteria was already met, the headline warning was void, and what is left is narrower and different in kind from what I filed. Recorded rather than quietly edited, because the correction is the useful part: **I converted YT-0502’s criterion to a `⏭️` and filed a 3-day ticket for work that was two-thirds finished.** That is the same defect as the eight tickets audited today — blocked on a condition the code had already removed — committed while filing the fix for it, and it took a peer checking my claim to catch. **Filing the deferred work was still right; describing it from the producing ticket’s stale note was not.** The general form for `docs/13d`: _a deferral inherits its description from the ticket that deferred it, and that description is exactly as old as the deferral._
-
-**⛔ HOLD on the `features/wallet/**` half — do not start it.** Another session's agent is editing `wallet-voucher-card.tsx`, `voucher-detail-view.tsx`, `wallet-history-list.tsx` and `wallet-redemption-copy.ts` right now under YT-0405/YT-0424, converting currency formatting and wiring translations. They will signal when YT-0405 lands. **`features/merchant/**` and `apps/api/src/modules/store/**` are clear** and can be taken first.
-- ⚠️ **The BFF criterion has no consumer yet.** YT-0519 failed independent verification 2026-09-21: **13 of 13 live data sources are not-implemented stubs, there are zero `fetch(` calls in `apps/web/features`, and there is no API base URL anywhere.** So an endpoint built for this ticket would be served to nobody. Build the render halves first, or accept that the endpoint ships ahead of its caller — but do not record it as “surfaced” when nothing fetches it
-
-### YT-0584 · Replace the player’s local chapter fakes with the contract
-`todo` · PU · web · 1d · dep: YT-0503
-
-- **Filed 2026-09-21 to give YT-0503’s deferred criterion a home.** Delete `apps/web/features/player/chapter.ts`, `derive-chapters.ts` and `video-source.ts` and read the contract instead
-- **The swap is pre-proved, which is why this is 1d and not 3.** `chapterRewardPoints` reproduces `derive-chapters.ts`’s `distributeBackLoaded` exactly on the `docs/06` §3 worked example: `[1,1,1,2,5]` → `[200,200,200,400,1000]` on 2,000 points. If the outputs ever differ, the contract is right and the local copy is the bug
-- ⚠️ **Two definitions of one shape is how they drift**, which is the whole argument of YT-0510 applied to the player. `video-source.ts` is additionally the file that pointed every campaign at Apple’s 59 MB `bipbop` segment, the blocker YT-0526 removed
-- ⚠️ `apps/web/features/player/**` is live for another session under YT-0412 — coordinate before deleting anything there
-- [ ] The three local files are deleted and the player reads `@yourtal/contracts`
-- ⏭️ **Chapter reward points come from the contract, with the worked example pinned as a test — HELD, deliberately not a criterion yet.** Flagged by `yourtal-54`: this would pin `chapterRewardPoints`/`distributeBackLoaded` while **YT-0124 is blocked asking whether that mechanism should exist at all.** Founder decision O-1 makes the reward a single grant after the full video *and* the questions; back-loaded weights existed to allocate **partial** credit, and with one grant at completion there is nothing to allocate. YT-0124's surviving question is literally _“does `rewardWeight` still have a consumer?”_
-- ⚠️ **Why holding beats ticking: a pinned worked example is hard to remove later.** Deleting a test that pins a documented example reads as **weakening coverage**, not as removing a dead mechanism — so pinning it now would make the honest outcome of YT-0124 look like a regression. The inverse of the trap on YT-0124 itself: not a criterion that can never be ticked, but **one that should not be ticked yet.** Resolve YT-0124, then this becomes either a criterion or a deletion
-
-**One criterion split out and held, 2026-09-21, before anyone started.** The deletion half stands on its own merits — two definitions of one shape is how they drift, true whatever O-1 does to the distribution. The pinning half is sequenced behind YT-0124. **Found because another session read a neighbouring epic's ticket**, the fifth cross-ticket coupling surfaced that way today and an argument for the practice rather than for more process.
 
 ### YT-0585 · Wallet history derived from real ledger entries
 `todo` · P0 · value · 3d · dep: YT-0504, YT-0044

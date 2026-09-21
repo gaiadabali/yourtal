@@ -51,12 +51,15 @@
 - [x] Includes deliberately awkward fixtures: long merchant names, zero balance, expired voucher, sold-out listing
 
 ### YT-0404 · Performance budget harness
-`review` · PU · web · 2d · dep: YT-0402
+`done` · PU · web · 2d · dep: YT-0402
 
 - [x] Lighthouse CI on every PR, throttled to mid-tier Android over 4G
 - [x] Fails the build on LCP > 2.0 s, CLS > 0.1, **TBT > 200 ms (the lab proxy, not INP)**, and initial JS over the 200 KB hard gate (180–200 KB passes but is flagged as needing written justification). **INP is deliberately NOT asserted: it is a field metric that Lighthouse cannot produce in a lab run at all, so Total Blocking Time stands in for it.** Real p75 INP from users is YT-0501, not this task. Rationale in `apps/web/lighthouserc.cjs`; budget per `docs/13b-typescript-standards.md` §8.
 - [x] Bundle-size report posted on the PR
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `.github/workflows/perf-budget.yml` runs on pull requests, and `apps/web/lighthouserc.cjs` sets every throttling field explicitly rather than taking a preset: `formFactor: "mobile"`, `rttMs: 170`, `throughputKbps: 9000`, `cpuSlowdownMultiplier: 4`. The three budgets are `error`-level, not warnings — `largest-contentful-paint` 2000 (`:116`), `cumulative-layout-shift` 0.1 (`:118`), `total-blocking-time` 200 (`:121`)
+- ✅ **The JS gate and the PR report are both real.** `scripts/perf-check-bundle-size.mjs` implements the 200 KB hard gate with a 180 KB warning band, binary KB, and its header states the revision history — the original 170 KB predated measuring the Next 16 + React 19 framework floor of ~147 KB. The workflow posts a sticky comment via `actions/github-script` `createComment`, with `pull-requests: write` declared for it
+- ℹ️ **The TBT-is-not-INP caveat in the second criterion is honoured in the config itself**, not just in the ticket: `lighthouserc.cjs:58-61` states TBT is the lab proxy a field INP ≤ 200 ms is achievable from, and that real INP must come from field RUM. A budget that documents what it cannot measure is the rarer half of a performance gate
 ### YT-0405 · Region and locale foundation (AU + ID)
 `doing` · PU · web · 4d · dep: YT-0403
 
@@ -112,7 +115,7 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - [x] Result screen distinguishes base reward from accuracy bonus
 
 ### YT-0414 · Quick feed
-`review` · PU · web · 4d · dep: YT-0402, YT-0403
+`done` · PU · web · 4d · dep: YT-0402, YT-0403
 
 - [x] Vertical swipeable feed of short campaigns with snap scrolling — CSS-only (`scroll-snap-type: y mandatory` on the container, `scroll-snap-align: start` + `snap-always` per item), no JS scroll hijack. Verified by source inspection, a passing production build, and component tests asserting the container/item structure. **Not genuinely verified**: jsdom implements no real layout or momentum scrolling, so the actual felt swipe/snap physics need a real mobile browser pass.
 - [x] Never autoplays into an item the user did not navigate to — interpreted strictly: the feed itself contains no `<video>`/`<audio>` element and nothing that could play at all (asserted directly in `quick-feed-card.test.tsx` and `quick-feed-viewport.test.tsx`). Reaching real video is a genuine navigation to the existing long-form player (`/watch/[campaignId]`, YT-0412), which itself still requires its own explicit tap-to-play overlay before anything plays or makes sound.
@@ -120,6 +123,8 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 
 ## The spend loop
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** Snap scrolling is CSS-only as claimed: `snap-y snap-mandatory` on the viewport (`quick-feed-viewport.tsx`) and `snap-start snap-always` per card (`quick-feed-card.tsx:69`), with no JS scroll handler doing the work. Desktop degrades through the **same DOM tree** — `md:grid md:grid-cols-2 … md:snap-none` at `quick-feed-viewport.tsx:100`, not a second component and not a fixed-width phone frame
+- ✅ **The no-autoplay criterion holds in its strict form: the feed contains no `<video>` or `<audio>` element at all.** The single textual match in the directory is `quick-feed-card.tsx:27`, a comment reading *"DELIBERATELY NOT A VIDEO PLAYER: there is no `<video>` element"* — **a grep for the element finds the sentence denying it.** Recorded because this verifier briefly counted that comment as a hit, which is the sixth time today an instrument answered a narrower question than the claim
 ### YT-0420 · Store browse
 `review` · PU · web · 4d · dep: YT-0402, YT-0403
 
@@ -128,12 +133,14 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - [x] Sold-out, expiring and newly-added states designed
 
 ### YT-0421 · Offer detail
-`review` · PU · web · 3d · dep: YT-0420
+`done` · PU · web · 3d · dep: YT-0420
 
 - [x] Terms, minimum spend, transferability and partial-redemption policy **above the fold, before any action**
 - [x] Merchant, locations and how to redeem — `listingSchema.locations` (an array of outlets, landed under YT-0502) closed the contract gap this ticket was blocked on, after the text above was written. Every surface checked — `StoreOfferCard`'s "Lokasi" row, `StoreOfferRedeemSteps`'s redeem step and the public offer page — renders every distinct district the listing's `locations[]` carries via `listingDistricts()`, never just the first, asserted by `store-facets.test.ts`'s "offers every district a multi-branch listing reaches, not just its first". `vitest run features/store` 83 passed, `packages/contracts` listing suite 26 passed. **No UI change was needed.** Note for redemption: the physical outlet is not committed until issuance (`voucherSchema.location`, picked from `listing.locations`), so the offer page correctly shows which districts a voucher could be redeemed in rather than a single address.
 - [x] Insufficient-balance state shows exactly how much more is needed and how to earn it — links to Earn and Quick rather than estimating "worth ~N campaigns", deliberately keeping Store decoupled from the earn loop's data shape.
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `store-offer-terms.tsx` carries the terms surface with its own test; `store-offer-redeem-steps.tsx:37` renders merchant and `locations` together — the contract gap YT-0502 closed, consumed here rather than merely available; and the insufficient-balance state is asserted directly at `store-offer-card.test.tsx:43`, *"disables the primary action and shows the shortfall when the balance is insufficient"*
+- ℹ️ **The third criterion's design note is the part worth keeping**: the shortfall links to Earn and Quick rather than estimating *"worth ~N campaigns"*. That keeps Store decoupled from the earn loop's data shape, so a change to campaign rewards cannot silently make a Store screen lie
 ### YT-0422 · Burn flow with price lock
 `review` · PU · web · 4d · dep: YT-0421
 

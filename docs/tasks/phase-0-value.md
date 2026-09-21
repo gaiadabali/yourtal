@@ -174,7 +174,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] Every price change is audit-logged per SKU
 
 ### YT-0050 · Name the economy owner
-`doing` · P0 · economy · 2d · dep: —
+`done` · P0 · economy · 2d · dep: —
 
 - ✅ **Founder decision 2026-09-21: the founder holds the economy himself.** Accountable for issuance vs redemption, coverage, point values (**YT-0045**), the chart-of-accounts finance review (**YT-0043**), the settlement materiality rule (**YT-0576**) and `goodwillCreditCeilingIdr` (**YT-0582**). Delegating it later is a change of holder, not a re-opening of this ticket. **Recorded first-hand**: the founder answered it in this session directly. `yourtal-b6` reports the same answer from its own session, but per `yourtal-08` that is a **second relay rather than independent corroboration** — two sessions each reporting "the founder confirmed" is how one answer becomes three records
 - [x] A named analyst or economist is accountable for issuance vs redemption and coverage
@@ -182,6 +182,9 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - ⚠️ **The checklist is agreed and is not yet a control anyone can perform.** None of the seven measures is instrumented: the coverage ratio is measured from ledger projections rather than a stored total (**YT-0130**), and the rest needs the event schema (**YT-0059**) and the economy dashboard (**YT-0307**). So this criterion is honestly met — it asked for agreement, not instrumentation — but **the checklist is currently a specification of what to build, and must not be recorded anywhere as a working control**
 
 ## Risk
+
+- ✅ **Verified 2026-09-21 by `yourtal-fe`, which did not write this ticket — `yourtal-28` (formerly `-a4`) authored it and correctly declined to promote its own work.** Both criteria re-checked at source: the founder decision names an accountable owner, and `docs/09-points-economy-and-redemption.md:137` genuinely carries all seven measures, adopted unchanged at `docs/25-monetary-policy.md` §6 under this ticket's id
+- ✅ **The ⚠️ is the reason this ticket is worth reading and it is kept, not resolved away.** The checklist is **agreed and not yet a control anyone can perform**: none of the seven measures is instrumented, the coverage ratio comes from ledger projections rather than a stored total (YT-0130), and the rest waits on the event schema (YT-0059) and the economy dashboard (YT-0307). **Promoting this to `done` records that the checklist is agreed — it does not claim the economy is being reviewed daily**, and the distinction is exactly what a status field is bad at carrying, which is why the note stays on the ticket
 
 ### YT-0051 · Device signal interface, web implementation
 `todo` · P0 · risk · 4d · dep: YT-0030

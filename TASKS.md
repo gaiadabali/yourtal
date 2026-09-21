@@ -63,7 +63,7 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 | Session        | Owns                                                                                    | Task files it may edit                    |
 | -------------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
 | **yourtal-fe** _(this session; was addressed as `yourtal-22` until ~16:50)_ | **The recorder**: `TASKS.md`, `docs/tasks/**`, `scripts/tasks.mjs`, `_schema.md`. **Also the verifier** sweeping the `review` queue | all twelve board paths |
-| _yourtal-a4 · -08 · -b6 · -c8 · -54_ | **_All five ended between ~16:30 and ~16:50 on 2026-09-21._** They held `economy`/`data`/`legal`, `platform`, `store`, `web`, and `watch`/`seo`/`commerce` respectively. **Every one of those epics is now unowned.** Their last work is committed — nothing was lost — but nobody is holding any of it | — |
+| _yourtal-a4 · -08 · -b6 · -c8 · -54_ | **_Renamed, not ended._** These addresses stopped resolving between ~16:30 and ~16:50 on 2026-09-21 and this table briefly recorded them as ended. **Two have now confirmed they are the same sessions under new names** — `yourtal-28` (formerly `-a4`, `economy`/`data`/`legal`, continuous since ~13:00) and `yourtal-b4` (formerly `-08`, `platform`, 13 done · 10 doing · 8 review · 23 todo of 54, with an agent writing in the tree). **Neither epic was ever free.** That is: `yourtal-28` identified itself as the former `-a4`, holding `economy`/`data`/`legal` continuously since ~13:00 — its third name in one day. **Assume the others were renamed too until one of them says otherwise** They held `economy`/`data`/`legal`, `platform`, `store`, `web`, and `watch`/`seo`/`commerce` respectively. **Every one of those epics is now unowned.** Their last work is committed — nothing was lost — but nobody is holding any of it | — |
 | _yourtal-28 · -5f · -0c · -4d · -b4_ | **Live, started 16:4x–16:5x, ownership unknown to this table.** Listed so the next reader knows they exist; **ask them, do not infer** | — |
 | _yourtal-22 (the first) · -1d · -14 · -e3 · -5a · -af_ | _Ended earlier._ Left behind: campaign, watch, `apps/api` core, contracts codegen; `services/voucher`, pricing, `apps/api/modules/{store,merchant}`; config, persistence, infrastructure | — |
 
@@ -80,7 +80,7 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 ⚠️ **A session's own name can change while it is running, and this one's did.** The session that holds the tracker was addressed as `yourtal-22` for most of 2026-09-21 and is `yourtal-fe` from ~16:50. **Every "Verified by `yourtal-22`" note dated 2026-09-21 after 14:20 is this session**, and so is every commit in that window. Nothing was handed over; only the address changed. Combined with the row below — where `yourtal-22` already named an *earlier, unrelated* session — the name is now ambiguous in two directions at once, which is the argument for **dating a verification rather than only signing it**.
 
-⚠️ **The whole roster turned over inside twenty minutes, and the table did not notice — again.** All five peer sessions (`-a4`, `-08`, `-b6`, `-c8`, `-54`) ended between roughly 16:30 and 16:50, and five new ones started. **`economy`, `data`, `legal`, `platform`, `store`, `web`, `watch`, `seo` and `commerce` are all unowned as of 16:50.** Nothing was lost — each committed before ending — but the coordination this table describes no longer exists, and the previous warning about `git worktree list` applies to session lists too: **a name in this table is a claim about the past.**
+⚠️ **A name that stops resolving means the NAME ended, not the session — and this table got that wrong within minutes of being written to warn about it.** At ~16:50 all five peer addresses stopped resolving and five new ones appeared. This session recorded that as "all five ended, nine epics unowned". **It was wrong.** `yourtal-28` then identified itself as the former `yourtal-a4`, same session, same 26 tickets, continuous since ~13:00, third name of the day — and this session's own address had changed the same way an hour earlier. **The correct inference from a vanished name is that addressing changed, not that work was abandoned**; the expensive version of this mistake is reassigning an epic that already has a holder. Ask before you reassign.
 
 ⚠️ **`yourtal-22` names two different sessions in this document, and everything historical under that name belongs to the first one.** The first `-22` ran three agents on vouchers and the ledger and **ended** before the current one started; the rows above crediting `-22` with the merchant-capture finding, the `set_settlement_value` hole, the Cerbos schema revert and the worktree databases are **all the first session's work.** The second `-22` started 2026-09-21 ~14:20 and holds the tracker. **Neither wrote the other's rows.** Caught by `yourtal-54`, who had read the morning table and knew the first one was gone; **this line originally claimed the session had been resurrected, which was wrong** — a name was recycled, and a recycled name pointing at two sessions inside one document is worse than a stale row, because nothing about it reads as stale. `yourtal-a4` found the live `-22` at all only by listing sessions after an unexplained `+109` in `scripts/tasks.mjs` did not add up: **the diff caught it, the table did not.**
 
@@ -106,11 +106,11 @@ Recorded so the decision is made with the consequences visible. **Needs founder 
 
 _Generated by `scripts/tasks.mjs` — do not edit by hand._
 
-**293 tasks** — **62 finished (21%)** · 52 in progress · 174 not started · 5 blocked
+**294 tasks** — **63 finished (21%)** · 51 in progress · 175 not started · 5 blocked
 
-**1010 engineer-days left of 1190** — **15% of the estimated effort is settled**, against 21% of the task count. Effort counts every `todo`, `doing` and `blocked` task at its FULL estimate, so a half-finished task bills in full. These are ideal engineer-days for one person — divide by real throughput, not by headcount.
+**1008 engineer-days left of 1190** — **15% of the estimated effort is settled**, against 21% of the task count. Effort counts every `todo`, `doing` and `blocked` task at its FULL estimate, so a half-finished task bills in full. These are ideal engineer-days for one person — divide by real throughput, not by headcount.
 
-Of the 62 finished: **36 independently verified**, 26 awaiting a verifier. A task is only DONE when a session other than the one that did the work has checked it. **The two reviews sampled so far were both wrong**, so that queue is work rather than a formality.
+Of the 63 finished: **37 independently verified**, 26 awaiting a verifier. A task is only DONE when a session other than the one that did the work has checked it. **The two reviews sampled so far were both wrong**, so that queue is work rather than a formality.
 
 ### By phase
 
@@ -118,14 +118,14 @@ Of the 62 finished: **36 independently verified**, 26 awaiting a verifier. A tas
 |---|---|---|---|---|---|
 | Phase U · UI first  ◀ NEXT | 13/36 | 11 | 7 | 30d | `████▓▓▓░░░` 67% |
 | Phase −1 · Pilot | 0/13 | 0 | 0 | 36d | `░░░░░░░░░░` 0% |
-| Phase 0 · Foundations | 20/124 | 14 | 28 | 258d | `██▓░░░░░░░` 27% |
+| Phase 0 · Foundations | 21/125 | 14 | 27 | 256d | `██▓░░░░░░░` 28% |
 | Phase 1 · Indonesia MVP | 3/92 | 1 | 17 | 335d | `░░░░░░░░░░` 4% |
 | Phase 2 · Depth | 0/22 | 0 | 0 | 240d | `░░░░░░░░░░` 0% |
 | Phase 3 · Marketplace & AU | 0/6 | 0 | 0 | 112d | `░░░░░░░░░░` 0% |
 
 - **Phase U · UI first  ◀ NEXT** — **24 of 36 settled** (13 verified · 11 awaiting a verifier) · 7 in progress · **30d** left · **nothing ready to start now** · 2 more once in-flight dependencies land · 2 blocked outside the graph. Widest gate: **YT-0400** `web` `review` — **16** open tasks downstream.
 - **Phase −1 · Pilot** — **0 of 13 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **36d** left · **4 ready to start**. Widest gate: **YT-0220** `media` `todo` — **28** open tasks downstream.
-- **Phase 0 · Foundations** — **34 of 124 settled** (20 verified · 14 awaiting a verifier) · 28 in progress · **258d** left · **27 ready to start** · 18 more once in-flight dependencies land · 1 blocked outside the graph. Widest gate: **YT-0041** `value` `review` — **84** open tasks downstream.
+- **Phase 0 · Foundations** — **35 of 125 settled** (21 verified · 14 awaiting a verifier) · 27 in progress · **256d** left · **28 ready to start** · 18 more once in-flight dependencies land · 1 blocked outside the graph. Widest gate: **YT-0041** `value` `review` — **84** open tasks downstream.
 - **Phase 1 · Indonesia MVP** — **4 of 92 settled** (3 verified · 1 awaiting a verifier) · 17 in progress · **335d** left · **6 ready to start** · 13 more once in-flight dependencies land · 1 blocked outside the graph. Widest gate: **YT-0100** `adplatform` `doing` — **62** open tasks downstream.
 - **Phase 2 · Depth** — **0 of 22 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **240d** left · **1 ready to start** · 5 more once in-flight dependencies land · 1 blocked outside the graph. Widest gate: **YT-0543** `data` `todo` — **3** open tasks downstream.
 - **Phase 3 · Marketplace & AU** — **0 of 6 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **112d** left · **nothing ready to start now**. Widest gate: **YT-0320** `store` `todo` — **1** open task downstream.
@@ -137,8 +137,8 @@ Of the 62 finished: **36 independently verified**, 26 awaiting a verifier. A tas
 | `adplatform` | 1/17 | 0 | 1 | **2** +2 | 93d | `█░░░░░░░░░` 6% |
 | `commerce` | 0/1 | 0 | 0 | — | 20d | `░░░░░░░░░░` 0% |
 | `data` | 0/9 | 0 | 1 | **2** +1 | 47d | `░░░░░░░░░░` 0% |
-| `economy` | 0/8 | 0 | 4 | **1** +2 | 31d | `░░░░░░░░░░` 0% |
-| `infra` | 6/31 | 0 | 3 | **11** +3 | 86d | `██░░░░░░░░` 19% |
+| `economy` | 1/8 | 0 | 3 | **1** +2 | 29d | `█░░░░░░░░░` 13% |
+| `infra` | 6/32 | 0 | 3 | **12** +3 | 86d | `██░░░░░░░░` 19% |
 | `legal` | 1/9 | 1 | 0 | **3** +1 | 31d | `█▓░░░░░░░░` 22% |
 | `media` | 0/13 | 1 | 1 | **1** | 67d | `▓░░░░░░░░░` 8% |
 | `merchant` | 2/17 | 0 | 5 | — +7 | 66d | `█░░░░░░░░░` 12% |
@@ -156,8 +156,8 @@ Of the 62 finished: **36 independently verified**, 26 awaiting a verifier. A tas
 - `adplatform` — **1 of 17 settled** (1 verified · 0 awaiting a verifier) · 1 in progress · **93d** left · **2 ready to start** · 2 more once in-flight dependencies land. Widest gate: **YT-0100** `adplatform` `doing` — **62** open tasks downstream.
 - `commerce` — **0 of 1 settled** (0 verified · 0 awaiting a verifier) · 0 in progress · **20d** left · **nothing ready to start now**.
 - `data` — **0 of 9 settled** (0 verified · 0 awaiting a verifier) · 1 in progress · **47d** left · **2 ready to start** · 1 more once in-flight dependencies land. Widest gate: **YT-0519** `data` `doing` — **13** open tasks downstream.
-- `economy` — **0 of 8 settled** (0 verified · 0 awaiting a verifier) · 4 in progress · **31d** left · **1 ready to start** · 2 more once in-flight dependencies land. Widest gate: **YT-0048** `economy` `doing` — **24** open tasks downstream.
-- `infra` — **6 of 31 settled** (6 verified · 0 awaiting a verifier) · 3 in progress · **86d** left · **11 ready to start** · 3 more once in-flight dependencies land. Widest gate: **YT-0529** `infra` `doing` — **46** open tasks downstream.
+- `economy` — **1 of 8 settled** (1 verified · 0 awaiting a verifier) · 3 in progress · **29d** left · **1 ready to start** · 2 more once in-flight dependencies land. Widest gate: **YT-0048** `economy` `doing` — **24** open tasks downstream.
+- `infra` — **6 of 32 settled** (6 verified · 0 awaiting a verifier) · 3 in progress · **86d** left · **12 ready to start** · 3 more once in-flight dependencies land. Widest gate: **YT-0529** `infra` `doing` — **46** open tasks downstream.
 - `legal` — **2 of 9 settled** (1 verified · 1 awaiting a verifier) · 0 in progress · **31d** left · **3 ready to start** · 1 more once in-flight dependencies land · 2 blocked outside the graph. Widest gate: **YT-0012** `legal` `review` — **27** open tasks downstream.
 - `media` — **1 of 13 settled** (0 verified · 1 awaiting a verifier) · 1 in progress · **67d** left · **1 ready to start**. Widest gate: **YT-0220** `media` `todo` — **28** open tasks downstream.
 - `merchant` — **2 of 17 settled** (2 verified · 0 awaiting a verifier) · 5 in progress · **66d** left · **nothing ready to start now** · 7 more once in-flight dependencies land. Widest gate: **YT-0150** `merchant` `doing` — **18** open tasks downstream.
@@ -229,7 +229,6 @@ Of the 62 finished: **36 independently verified**, 26 awaiting a verifier. A tas
 - **YT-0044** Invariant checker and daily proof — 8/10 AC
 - **YT-0045** Reward Engine skeleton — 8/10 AC
 - **YT-0048** Monetary policy, written down — 1/3 AC
-- **YT-0050** Name the economy owner — 2/2 AC
 - **YT-0055** Next.js app shell and design tokens — 2/4 AC
 - **YT-0056** UI primitives package — 1/4 AC
 - **YT-0058** Internationalisation scaffolding — 2/6 AC
@@ -289,7 +288,7 @@ Of the 62 finished: **36 independently verified**, 26 awaiting a verifier. A tas
 - **YT-0578** `infra` Rewrite history before this repository is ever public again · 1d
 - **YT-0579** `infra` `turbo run test` strips the env var every isolation escape hatch depends on · 1d
 - **YT-0583** `web` Surface merchant locations in the web app and the BFF · 1d
-- _…and 13 more_
+- _…and 14 more_
 
 ### Waiting on dependencies
 

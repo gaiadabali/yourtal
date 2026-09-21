@@ -41,9 +41,9 @@ describe("reading time", () => {
   it("is generous enough that a quick reader is not a suspect", () => {
     // ~22 words at 400wpm is roughly 3.3s; a real reader who answers that
     // long prompt in 4 seconds must not be flagged.
-    expect(timingSignals({ latencyMs: 4_000, promptLength: LONG_PROMPT, timerSeconds: 20 })).toEqual(
-      [],
-    );
+    expect(
+      timingSignals({ latencyMs: 4_000, promptLength: LONG_PROMPT, timerSeconds: 20 }),
+    ).toEqual([]);
   });
 });
 
@@ -114,7 +114,9 @@ describe("machine regularity", () => {
 
     // Each answer individually looks completely ordinary.
     for (const latencyMs of padded) {
-      expect(timingSignals({ latencyMs, promptLength: SHORT_PROMPT, timerSeconds: 20 })).toEqual([]);
+      expect(timingSignals({ latencyMs, promptLength: SHORT_PROMPT, timerSeconds: 20 })).toEqual(
+        [],
+      );
     }
     // Together they do not.
     expect(isMachineRegular(padded)).toBe(true);

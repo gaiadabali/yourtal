@@ -123,10 +123,9 @@ describe("campaign.question_response", () => {
     // A count is a read. Without this the business could learn one user's
     // answers by counting rows under a filter, one predicate at a time.
     await expect(
-      app.query(
-        `SELECT count(*) FROM campaign.question_response WHERE selected_option_id = $1`,
-        [optionId],
-      ),
+      app.query(`SELECT count(*) FROM campaign.question_response WHERE selected_option_id = $1`, [
+        optionId,
+      ]),
     ).rejects.toThrow(/permission denied/i);
   });
 

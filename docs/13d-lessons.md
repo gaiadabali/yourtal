@@ -346,6 +346,33 @@ Applying it honestly exposed its own limit, which is worth more than the rule al
 
 **Mitigation: land small and let CI read the commit.** CI on the pushed commit is the first thing in the pipeline that reads the artefact rather than the tree, which makes commit size a verification property and not just hygiene.
 
+### 21b. Correction: for self-contained checks, local verification CAN read the commit
+
+§21a overstated this. **Some** artefact checks are runnable locally, and it is one command:
+
+```
+git archive HEAD | tar -x -C <tmpdir>
+cd <tmpdir> && node scripts/tasks.mjs --check
+→ ✓ 287 tasks valid, dashboard current.
+```
+
+That is **the commit**, exported from the object database. No working tree is involved, and it is not a clone that could drift — the export has no `.git` directory at all. For any check whose inputs are entirely tracked files, this closes the gap §21a describes rather than merely naming it. The board gate qualifies: it reads `docs/tasks/*.md` and `TASKS.md` and nothing else.
+
+**The sharper form, which is the useful line:**
+
+> A check whose inputs are all tracked files can be run against the commit. A check that needs an environment cannot.
+
+- **Runnable against the commit:** the board gate, and anything else that only reads repository files.
+- **Not runnable:** `tsc`, eslint and vitest all need `node_modules`, which is not in the commit — an export would have to install first, and then you are testing the commit plus whatever the registry served you today. **§21's original point stands untouched for these, which is most of the gate.** Likewise anything touching Postgres, Cerbos or MinIO: the commit does not contain the running stack.
+
+It is luck worth noting that **the board gate is the self-contained kind**, because it is also the one that goes red at the split point when `{generator, task files, dashboard}` are committed separately.
+
+**Two traps in the technique, both measured.**
+
+`scripts/check-line-endings.mjs` is not of the first kind despite looking like it — it shells out to `git check-attr`, and an export has no git directory. **The reported worry was that someone would read the resulting error as a pass; measured, it does not: exit code 1, with `fatal: not a git repository` as the first line.** So it fails loudly and legibly. Worth recording the measurement rather than the worry — and worth noting the first attempt to measure it was itself wrong, because `node … | tail -3; echo $?` reports `tail`'s exit status, not node's.
+
+**The pre-commit hook runs `node scripts/tasks.mjs` in its _writing_ form, not `--check`.** So it can regenerate the dashboard _during_ a commit and place content in that commit which was never staged. Harmless when the output is already current, and the same family as `git commit` taking the index rather than your arguments: **a step between your decision and the artefact can add to the artefact.** Verifying the commit afterwards catches it; verifying what you staged does not.
+
 ## The pattern, restated
 
 `docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:

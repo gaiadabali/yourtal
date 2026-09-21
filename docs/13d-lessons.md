@@ -475,6 +475,41 @@ The media path was dead for hours. `hls-origin.test.ts` and `delivery-log.test.t
 
 **Rule: state a prohibition as the mechanism it guards, and name what remains allowed.** _Never `down -v`; `up -d --force-recreate <service>` and `docker restart <service>` are fine_ is one clause longer and would have saved the hours. **A prohibition without a permitted neighbour gets rounded up to the whole category by everyone who inherits it second-hand.**
 
+## 24. A search for a dangerous command finds the warnings against it
+
+I grepped for `git checkout -- .` across the task files, found it in `_schema.md`, and reported to a newly-started session that **the repo recommends a command that would destroy five sessions' uncommitted work.** Then I broadcast that warning to the new cohort as one of five traps.
+
+The line says the opposite. Verbatim:
+
+> The remedy is YT-0568's own: delete the affected paths and `git checkout --` **those exact paths**, never `git checkout -- .`, which in a five-session tree destroys everyone's uncommitted work.
+
+**The string is present precisely because the document forbids it.** Documentation that warns about a command contains that command; a search for the dangerous thing therefore hits the safety notes, the post-mortems and the tickets tracking it, and every hit looks like evidence of the danger rather than evidence of care.
+
+**This is not the narrow-search family of §19, and the difference is the point.** Those were searches that answered a _smaller_ question than the claim resting on them — a truncating `head`, `bigint` containing `gin`, `grep -c
+
+`docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:
+
+> **Has this check ever run — on this code, in this environment, without a cache answering for it?**
+
+Almost everything found on 2026-09-20 was invisible to every form of reading: the file, the assertion, the config, the risk register. Each became visible the moment something executed for real.
+
+The cheapest way to learn whether a guarantee holds is unchanged from `13c`: break what it is meant to catch, and confirm the break reached the code. The addition is that you must first confirm **there is code for it to reach**.
+\r'` counting lines. Here the search was **correct and complete**. It found exactly the line it should have. **What inverted was the polarity: a mention read as an endorsement.** No better pattern would have helped; only reading the sentence would.
+
+The cost is what makes it worth a section. A narrow search produces a wrong belief in one head. **This one produced a confident, specific, false safety warning delivered to a session that had just started and had no way to check it** — a new arrival's cheapest source of truth is the session that greets them, and I spent that credibility telling them a correct document was dangerous. Caught only because its author read my message and invited me to re-read the line rather than take their word.
+
+**Rule: a grep hit is a location, never a claim.** Before reporting what a file says, read the sentence the match sits in. And when the subject is a prohibition, expect the forbidden string to appear in the very place that forbids it — **the safest documents are the ones that mention the dangerous thing most often.**
+
+## 25. Regenerating a shared generated file is a write to everyone's commit
+
+`TASKS.md` is generated from `docs/tasks/*.md`. A commit landed whose dashboard said a ticket was `review` at 4/4 while **that same commit's task file said** `todo`, so `tasks.mjs --check` failed at that commit. Cause: the dashboard was regenerated from a working tree that held _another session's_ uncommitted edit, and then committed without it.
+
+Neither session did anything locally wrong. One regenerated a shared artefact while another was mid-commit; the generator faithfully read the tree it was given, and the tree was not the commit. **A regeneration is not a private act — its output encodes whatever everyone else happens to have uncommitted at that instant**, and then one person's commit ships it as a statement about the repository.
+
+**Rule, from the session that hit it: confirm `git status` shows zero dirty instances of the generated file's _inputs_ before regenerating.** Then the output can only contain your change. It is the generated-file counterpart of `git commit -- <paths>` ignoring the index: both replace _what I intended to include_ with _what can possibly be included_.
+
+Related and worth knowing separately: `pnpm dev:reset` is not merely dangerous in a shared cluster, **it is broken as a recovery** — it runs neither `db:migrate` nor `db:seed`, so it destroys every database and hands back an empty one. A ticket criterion still instructs the reader to run it, which is part of why that ticket failed verification.
+
 ## The pattern, restated
 
 `docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:

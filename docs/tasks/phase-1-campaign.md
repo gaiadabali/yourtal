@@ -16,7 +16,7 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - Authz seam as specified: `PrincipalService.resolve()` is the single assembly point and `pdp.requireAction(...)` is called identically at every route, so **YT-0500 changes only the body of `resolve()`** and no call site moves
 
 ### YT-0101 · Campaign model and lifecycle
-`review` · P1 · adplatform · 5d · dep: YT-0100, YT-0031
+`done` · P1 · adplatform · 5d · dep: YT-0100, YT-0031
 
 **Contract + storage landed. `pnpm verify` 11/11, 1913 tests, lint clean, `pnpm dev:fresh` green through 12 migrations.**
 
@@ -30,6 +30,11 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - ⏭️ ⚠️ **Question bank not modelled here** — that is YT-0102, which depends on this. The campaign carries `questionCount`; the bank itself is a separate aggregate with its own ≥3× rule
 - ⏭️ ⚠️ **`rewardWeight` still has no consumer, and YT-0124's open question stands.** Stored, because dropping a field mid-decision is worse than carrying one whose purpose is being settled — but under O-1 there is no partial credit to allocate, so `chapterRewardPoints` has no caller on the value path. Either it drives a progress curve and should be renamed to say so, or it goes. **Per-chapter points are never stored**, which is the half that matters
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket. Checked against the live database and the contract, not the suite.**
+  - Six lifecycle states exist and the transition table matches the ticket exactly: `draft: ["in_review"]`, `in_review: ["live","rejected","draft"]`, `rejected: ["draft"]`, `live: ["paused","ended"]`, `paused: ["live","ended"]`, `ended: []`. **There is no `draft → live`**, which is the criterion's load-bearing claim
+  - `campaigns.status` is genuinely **gone from the live schema** — `information_schema.columns` for `campaign.campaigns` returns `lifecycle_state` and no `status`. Dropped, not merely stopped-being-written, so the two-copies-of-one-fact failure is structurally impossible
+  - `publicStatusOf` exists with a test asserting it returns `undefined` for `draft`
+- ✅ **"Terms are frozen as immutable versions" is enforced by the database, not by discipline.** `yourtal_app`'s grants on `campaign.terms_version` are exactly **SELECT and INSERT** — no UPDATE, no DELETE. A frozen promise the application physically cannot rewrite is a different claim from one it merely does not rewrite, and this is the first
 ### YT-0102 · Question bank authoring
 `todo` · P1 · adplatform · 5d · dep: YT-0101
 

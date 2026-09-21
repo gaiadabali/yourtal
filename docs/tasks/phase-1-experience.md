@@ -77,7 +77,7 @@
 ## SEO
 
 ### YT-0180 · Public catalogue and merchant pages
-`review` · P1 · seo · 2d · dep: YT-0132
+`done` · P1 · seo · 2d · dep: YT-0132
 
 - [x] **Both gaps closed and verified in built HTML, not asserted.** `LocalBusiness` is emitted **one node per distinct outlet**, each `branchOf` the existing `Organization` — a three-branch merchant gets three nodes, never one. It returns nothing for a merchant known only from a campaign, because inventing an address is worse than omitting the markup
 - [x] `sitemap.ts` and `robots.ts` exist. The sitemap is generated from the same locale-scoped catalogue calls the routes already use, so it cannot drift from what is actually published; `lastModified` comes only from campaigns’ real `publishedAt` and is omitted where no comparable field exists rather than fabricated
@@ -89,6 +89,9 @@
 - [x] ~~⚠️ **LocalBusiness is missing.**~~ — **no longer true, and it contradicted a ticked line in this same ticket.** **Verified 2026-09-21 by `yourtal-a4`** (reported by `yourtal-54`, who wrote none of this code, then re-checked here rather than accepted): `LocalBusiness` appears **12×** in `apps/web/features/public/public-jsonld.ts`. `yourtal-08` separately confirms `:177-185` emits one `@graph` node per branch, and that the `locations[]` dependency this line named is satisfied — `locations` **replaced** the single `district: string` in `packages/contracts/src/listing/listing.ts:12`
 - [x] ~~⚠️ **There is no sitemap and no robots.txt at all.**~~ — **false; both exist.** **Verified 2026-09-21 by `yourtal-a4`** (reported by `yourtal-54`, who wrote none of this code, then re-checked here rather than accepted): `apps/web/app/robots.ts` and `apps/web/app/sitemap.ts` are both present. Like the line above it, this was contradicted by a **ticked** criterion three lines earlier in its own ticket — the ticket disagreed with itself and the validator cannot see that
 
+- ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `sitemap.ts` and `robots.ts` both exist, and `robots.ts` is the allowlist the third criterion requires — `allow: GENERATED_PUBLIC_LOCALES.map(l => `/${l}`)` with `disallow: "/"` (`:27-28`), so a future private route stays unindexed with no robots change. `public-jsonld.ts` emits **LocalBusiness, Offer, BreadcrumbList, Product, Organization and ItemList**, covering both JSON-LD criteria with room to spare, and the merchant page carries `alternates: { canonical: url }`
+- ✅ **THE `ℹ️` HOLD IS RESOLVED, which is what was keeping this at `review`.** It stayed back because every AU page declared `lang="id-ID"`, and an offer page in the wrong declared language is exactly this ticket's business. Re-checked at source: `public-locale.ts:76-77` maps `id → id-ID` and `au → en-AU`, and the public locale layout renders `<RootDocument lang={config.intlLocale}>`. **The defect was YT-0181's, the fix was `yourtal-c8`'s in `705623b`, and this ticket was right to wait for it rather than tick around it**
+- ℹ️ **One hardcoded `id-ID` remains and it is deliberate and out of scope here**: `app/(merchant)/layout.tsx:44`, whose own comment explains that nothing in that route group resolves a region. Not indexed, so no SEO consequence — tracked as **YT-0598**
 ### YT-0181 · Internationalised routing and hreflang
 `doing` · P1 · seo · 3d · dep: YT-0058, YT-0180
 

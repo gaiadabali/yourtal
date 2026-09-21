@@ -27,3 +27,12 @@ services/*/db/sqlc.log
 # walked into them and reported every task file as unformatted, which is
 # how they were noticed.
 .claude/worktrees/
+
+# YT-0424: Serwist's generated service worker bundle (apps/web/app/sw.ts is
+# the real source). Built output, same as `.next/` above — not committed,
+# and staying out of source control means a stale bundle from one bundler
+# flavour (see this ticket's report: `next build`'s default Turbopack never
+# emits this file at all; only `next build --webpack` does) can never be
+# mistaken for a fresh one. `apps/web/public/` has no other contents today;
+# if that changes, narrow this to the one generated file.
+apps/web/public/

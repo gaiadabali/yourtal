@@ -61,9 +61,23 @@ const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal
  * value passed on the command line, so a sabotage aimed at `DATABASE_URL`
  * comes back green and reads as proof of the opposite. That is YT-0558.
  * `TEST_DATABASE_URL` is the handle a deliberate break can actually reach.
+ *
+ * YT-0547: `owner` used to be the bare `OWNER_URL` literal, unconditionally
+ * — the one connection in this file that did NOT read an override. That was
+ * invisible for as long as every package's tests shared one real database,
+ * because the literal and `db`'s fallback pointed at the same place anyway.
+ * It stopped being invisible the moment `db` started following
+ * `TEST_DATABASE_URL` into `yourtal_test_api`
+ * (`packages/db/scripts/with-test-db.mjs`) while `owner` kept writing the
+ * `beforeAll` fixture into the real `yourtal` instead: the THIRD test below
+ * flips this row to `live` and reads it back through `db`, and a write that
+ * landed in a different database is indistinguishable from a write that
+ * never happened — the controller correctly 404s a row it never received.
+ * `DATABASE_OWNER_URL` is the same override `store-db.test-helper.ts` and
+ * `with-test-db.mjs` already use for exactly this connection.
  */
 const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? APP_URL);
-const owner = createAppDb(OWNER_URL);
+const owner = createAppDb(process.env["DATABASE_OWNER_URL"] ?? OWNER_URL);
 const campaigns = new DrizzleCampaignRepository(db);
 const controller = new CampaignController(campaigns);
 

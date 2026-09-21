@@ -5,17 +5,24 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     passWithNoTests: false,
-    // These talk to the real Postgres from docker-compose. Serial, because
-    // they assert on database state and a parallel worker writing the same
-    // ledger rows would make failures unreproducible.
+    // YT-0547. `fileParallelism: false` used to live here, with a comment
+    // saying a parallel worker writing the same ledger rows would make
+    // failures unreproducible. That was serialising files WITHIN this
+    // package and nothing else: `turbo run test` still ran @yourtal/db and
+    // @yourtal/api at the same time against the one real "yourtal"
+    // database, so these suites were never actually alone with Postgres,
+    // whatever the old comment claimed.
     //
-    // `fileParallelism: false` only serialises THIS package. `turbo run test`
-    // still runs @yourtal/db and @yourtal/api at the same time, and
-    // apps/api/src/app.boot.test.ts talks to the same database — so under
-    // `pnpm verify` these are not actually alone with Postgres, whatever this
-    // line says. Serialising the two packages against each other is a change
-    // to the workspace gate, not to this file.
-    fileParallelism: false,
+    // `pnpm test` here now runs through `scripts/with-test-db.mjs`, which
+    // creates a database named for this package (`yourtal_test_db_<token>`
+    // — the suffix is random per invocation, see that script's header for
+    // why a fixed name reintroduced the same cross-session collision one
+    // level down) before `vitest` starts, and drops it after. Files within
+    // it are safe to run in parallel because each
+    // one clears and asserts on rows it scopes by a key it generated
+    // itself (a session id, a campaign id, `funding_reference = 'probe'`),
+    // not by wiping a whole shared table — see e.g. `voucher-constraints
+    // .test.ts` and `watch-session.test.ts`.
     testTimeout: 20_000,
     // `testTimeout` does NOT cover hooks — Vitest times those separately and
     // defaults to 10s. The expensive work here is in a hook: seed.test.ts's

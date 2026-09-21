@@ -181,6 +181,22 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
     "SettlementDecreaseController -- YT-0575, the two-person-approval workflow YT-0574's fix made necessary. Same StoreModule scope as the rest of this ledger's store entries.",
   "POST /api/{tenantId}/store/listings/{listingId}/settlement-decrease-requests/{requestId}/approve":
     "SettlementDecreaseController -- YT-0575, the two-person-approval workflow YT-0574's fix made necessary. Same StoreModule scope as the rest of this ledger's store entries.",
+
+  // AuthModule -- YT-0540. No `:tenantId`, matching create-business's own
+  // out-of-scope entry pattern: these are account-level, not business-level.
+  // Not given a full route-registry.ts entry for the same reason StoreModule
+  // isn't: a request/response transcription is separate work from standing
+  // the module up, and none of these responses are stable yet in the sense
+  // route-registry.ts asserts (auth.service.test.ts is this ticket's
+  // verification instead).
+  "POST /api/auth/register": "AuthModule -- YT-0540, a separate in-flight stream.",
+  "POST /api/auth/login": "AuthModule -- YT-0540, a separate in-flight stream.",
+  "POST /api/auth/logout": "AuthModule -- YT-0540, a separate in-flight stream.",
+  "POST /api/auth/password/change": "AuthModule -- YT-0540, a separate in-flight stream.",
+  "POST /api/auth/password/reset/request": "AuthModule -- YT-0540, a separate in-flight stream.",
+  "POST /api/auth/password/reset/confirm": "AuthModule -- YT-0540, a separate in-flight stream.",
+  "POST /api/auth/email/verify/request": "AuthModule -- YT-0540, a separate in-flight stream.",
+  "POST /api/auth/email/verify/confirm": "AuthModule -- YT-0540, a separate in-flight stream.",
 };
 
 describe("business-module route inventory vs route-registry.ts", () => {

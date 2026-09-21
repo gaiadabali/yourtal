@@ -376,6 +376,12 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "campaign.question_option": "Same question-bank note as campaign.question above.",
   "identity.principal_security_state":
     "The 72h SIM-swap / account-recovery freeze read into AsyncPrincipalResolver.resolve() (YT-0582, docs/14 section 5). No public contract — a principal's freeze is enforced through the PDP's ALLOW/DENY, never returned to any client as a field of its own.",
+  "identity.credential":
+    "YT-0540. One row per (userId, kind) holding an Argon2id hash — never returned to any client, and secret_hash is never a field on a public contract by construction. Adding a phone-OTP or OIDC kind (YT-0541) is a new row, not a new mapping.",
+  "identity.session":
+    "YT-0540. The server-side session record behind AuthService/SessionService — id is a SHA-256 hash of an opaque bearer token, never readable back through any endpoint (see auth.service.test.ts's own proof of that). AuthController's own responses carry the raw token once, at issuance; this row is never serialised.",
+  "identity.verification_token":
+    "YT-0540. Password-reset and email-verification tokens, hashed at rest like identity.session.id above. Single-use via consumed_at (see the migration's own header); no public contract represents a row of it, only the confirm endpoints' generic ok/token_invalid outcome.",
 };
 
 const TABLES = replayMigrations();

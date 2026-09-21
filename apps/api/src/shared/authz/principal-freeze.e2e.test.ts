@@ -30,6 +30,7 @@ const CONFIG: AppConfig = {
   databaseUrl:
     process.env["TEST_DATABASE_URL"] ??
     "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+  redisUrl: "redis://127.0.0.1:26379",
 };
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);

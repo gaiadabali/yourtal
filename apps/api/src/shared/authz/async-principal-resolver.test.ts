@@ -15,6 +15,7 @@ function configFor(nodeEnv: AppConfig["nodeEnv"]): AppConfig {
     port: 3001,
     pdp: { baseUrl: "http://127.0.0.1:3592", timeoutMs: 500 },
     databaseUrl: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+    redisUrl: "redis://127.0.0.1:26379",
   };
 }
 

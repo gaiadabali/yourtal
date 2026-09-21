@@ -75,6 +75,7 @@ const CONFIG: AppConfig = {
   port: 3001,
   pdp: { baseUrl: "http://127.0.0.1:26592", timeoutMs: 500 },
   databaseUrl: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+  redisUrl: "redis://127.0.0.1:26379",
 };
 
 const BUSINESS_ID = "11111111-1111-4111-8111-111111111111";

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "session",
+  "description": "A principal's own credential and session lifecycle (YT-0540) -- register, log in, log out, change password, reset password, verify email. No attributes: every action is about the caller's OWN account, so there is nothing about the resource instance for a rule to read. See policies/README.md and policies/resource_policies/session.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

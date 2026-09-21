@@ -138,6 +138,29 @@ export const RESOURCE_ACTIONS = {
 
   /** Phase 3 placeholder. */
   charity_settlement: ["view", "view_statement"],
+
+  /**
+   * A principal's own credential and session lifecycle. YT-0540. This is
+   * the one resource kind with no per-instance `id` that varies — every
+   * action is always about the caller's OWN account, never another
+   * principal's, so there is no `ownerId`-comparing derived role the way
+   * `wallet`/`user_account` have: the caller IS the resource, and the
+   * question the PDP answers is only "does a principal of this SHAPE ever
+   * reach this action at all". See `policies/resource_policies/session.yaml`
+   * for why `admin` appears in none of these rules — the same structural
+   * boundary `policies/README.md` and `policy-drift.test.ts` already
+   * enforce for `platform_setting`.
+   */
+  session: [
+    "register",
+    "create",
+    "delete",
+    "change_password",
+    "request_password_reset",
+    "confirm_password_reset",
+    "request_email_verification",
+    "confirm_email_verification",
+  ],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

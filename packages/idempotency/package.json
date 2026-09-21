@@ -15,7 +15,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "node ../db/scripts/with-test-db.mjs -- vitest run",
     "lint": "eslint ."
   },
   "dependencies": {

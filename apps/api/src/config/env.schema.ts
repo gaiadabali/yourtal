@@ -54,6 +54,26 @@ export const envSchema = z.object({
    * accepts `"secret"` has checked a box rather than a key.
    */
   CHECKPOINT_TOKEN_SECRET: z.string().min(32),
+
+  /**
+   * Valkey (Redis-compatible), YT-0540 — server-side session lookup and the
+   * login throttle counters (account and source, kept separately). Already
+   * named in `.env.example`/`.env` ("sessions, rate limits, checkpoint
+   * nonces, price locks, idempotency claims") and already running in
+   * `docker-compose.yml` (`--save "" --appendonly no`); this is the first
+   * consumer that actually connects.
+   *
+   * Given a DEFAULT, deliberately, unlike `DATABASE_URL` and
+   * `CHECKPOINT_TOKEN_SECRET`: this is a loopback sidecar address, the same
+   * shape as `PDP_BASE_URL` above, not a secret or a credential. There is no
+   * password on the local Valkey instance to leak by defaulting this, and a
+   * missing Valkey fails at the first real command (a `PING` on boot would
+   * be the more thorough check, and is not this ticket's to add) rather
+   * than by silently keeping a private in-process counter — the failure
+   * mode a per-process fallback would produce is wrong answers, not a
+   * refusal to boot, which is worse.
+   */
+  REDIS_URL: z.url().default("redis://127.0.0.1:26379"),
 });
 
 export type Env = z.infer<typeof envSchema>;

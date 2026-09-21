@@ -13,6 +13,7 @@ function configFor(nodeEnv: AppConfig["nodeEnv"]): AppConfig {
     // object that can omit it would mean the type still permits the
     // fallback this ticket removed.
     databaseUrl: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+    redisUrl: "redis://127.0.0.1:26379",
   };
 }
 

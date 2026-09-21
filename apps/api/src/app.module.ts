@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { AppConfigModule } from "./config/app-config.module";
+import { AuthModule } from "./modules/auth/auth.module";
 import { BusinessModule } from "./modules/business/business.module";
 import { CampaignModule } from "./modules/campaign/campaign.module";
 import { StoreModule } from "./modules/store/store.module";
@@ -24,6 +25,7 @@ import { PersistenceModule } from "./shared/persistence/persistence.module";
     // so the refusal happens before modules that open pools.
     PersistenceModule,
     HealthModule,
+    AuthModule,
     BusinessModule,
     CampaignModule,
     StoreModule,

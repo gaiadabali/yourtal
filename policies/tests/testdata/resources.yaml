@@ -311,3 +311,11 @@ resources:
     kind: business
     id: new
     attr: {}
+
+  # Every session action is about the caller's OWN account (YT-0540) — see
+  # _schemas/resource/session.json and resource_policies/session.yaml. No
+  # attributes, and the id is a placeholder rather than anything looked up.
+  session_self:
+    kind: session
+    id: self
+    attr: {}

@@ -1,0 +1,99 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  A principal's own credential and session lifecycle -- register, log in,
+  log out, change password, request/confirm a password reset,
+  request/confirm email verification. YT-0540.
+
+  There is no derived role here, and no `ownerId` on the resource schema
+  (`policies/_schemas/resource/session.json` declares no attributes at
+  all). Every other tenant-scoped or ownership-scoped kind in this repo
+  answers "may THIS principal act on THIS resource instance"; every action
+  here is already about the caller's own account by construction -- there
+  is nothing narrower to check, because a login/logout/password-change
+  request names no other principal's account to act on. So the rules below
+  answer a coarser and still real question: "does a principal of this
+  SHAPE ever reach this action at all", which is exactly the same question
+  `business.yaml`'s `create` rule answers for a business that does not
+  exist yet.
+
+  `register` and `create` (login) are reachable only while signed out --
+  realistically the ONLY way either is ever asked, since
+  `AsyncPrincipalResolver` resolves an anonymous principal whenever there
+  is no valid session to read (interim: from absent `x-yt-*` headers; see
+  that class's own doc comment). `request_password_reset`,
+  `confirm_password_reset` and `confirm_email_verification` are reachable
+  either way, because a forgotten password or an unread inbox does not
+  imply a live session, and a token in the request body -- not a session
+  -- is what actually authorises those three. `delete` (logout),
+  `change_password` and `request_email_verification` require a real
+  identity and are refused to `anonymous` explicitly, matching
+  `business.yaml`'s `anonymous-visitors-create-nothing` pattern rather than
+  relying on omission alone.
+
+  `store_device` (a provisioned counter, not a person -- docs/17 section
+  2.2) is deliberately absent from every rule: it has no email-and-password
+  identity in this model, and a PIN unlock is a separate mechanism this
+  ticket does not touch.
+
+  `admin` is deliberately absent from every rule in this file, even
+  `change_password`/`delete` for the admin's own account. docs/17 section 5
+  and `policies/README.md` fix admin's ENTIRE surface as role grants,
+  feature flags and kill switches, enforced structurally by admin
+  appearing in exactly one resource policy file
+  (`policies/tests/admin_boundary_test.yaml`,
+  `packages/authz/src/policy-drift.test.ts`). Granting admin anything here,
+  even something as narrow as their own logout, would break that
+  boundary. This is a real gap this ticket surfaces rather than quietly
+  works around: how an `admin` principal authenticates at all is not
+  decided by this file, and is flagged in this ticket's report as a
+  follow-up for whoever owns that boundary.
+resourcePolicy:
+  version: default
+  resource: session
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/session.json
+  rules:
+    - name: signed-out-is-the-only-way-to-start-authenticating
+      actions: ["register", "create"]
+      effect: EFFECT_ALLOW
+      roles: ["anonymous"]
+
+    - name: a-forgotten-password-or-an-unread-inbox-needs-no-session
+      actions: ["request_password_reset", "confirm_password_reset", "confirm_email_verification"]
+      effect: EFFECT_ALLOW
+      roles:
+        [
+          "anonymous",
+          "user",
+          "business_user",
+          "charity_admin",
+          "support",
+          "moderator",
+          "risk_analyst",
+          "finance",
+          "ops",
+        ]
+
+    - name: only-a-real-signed-in-identity-manages-its-own-session
+      actions: ["delete", "change_password", "request_email_verification"]
+      effect: EFFECT_ALLOW
+      roles:
+        [
+          "user",
+          "business_user",
+          "charity_admin",
+          "support",
+          "moderator",
+          "risk_analyst",
+          "finance",
+          "ops",
+        ]
+
+    - name: anonymous-has-no-session-to-manage
+      actions: ["delete", "change_password", "request_email_verification"]
+      effect: EFFECT_DENY
+      roles: ["anonymous"]

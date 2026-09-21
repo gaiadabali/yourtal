@@ -15,6 +15,8 @@ export interface AppConfig {
   };
   /** Required since YT-0552 — there is no in-memory fallback to select. */
   readonly databaseUrl: string;
+  /** Valkey (YT-0540) — sessions and login throttle counters. */
+  readonly redisUrl: string;
 }
 
 /**
@@ -32,5 +34,6 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       timeoutMs: env.PDP_TIMEOUT_MS,
     },
     databaseUrl: env.DATABASE_URL,
+    redisUrl: env.REDIS_URL,
   };
 }

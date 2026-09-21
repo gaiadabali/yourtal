@@ -45,3 +45,34 @@ describe("PDP_BASE_URL's default agrees with docker-compose and .env.example", (
     expect(schemaDefault).toBe(line?.[1]?.trim());
   });
 });
+
+/**
+ * The same drift, for the same reason, for `REDIS_URL` (YT-0540). Unlike
+ * `PDP_BASE_URL` this one has never disagreed with the other two copies —
+ * but it had never been compared either, and "has not drifted yet" is not
+ * a property a schema default can claim on its own behalf.
+ */
+describe("REDIS_URL's default agrees with docker-compose and .env.example", () => {
+  const schemaDefault = envSchema.parse({
+    DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+    CHECKPOINT_TOKEN_SECRET: "test-only-checkpoint-signing-key-not-a-real-secret",
+  }).REDIS_URL;
+
+  it("matches the host port docker-compose.yml maps Valkey to", () => {
+    const compose = readFileSync(path.join(repoRoot, "docker-compose.yml"), "utf8");
+    // `"127.0.0.1:26379:6379"` under the redis service.
+    const mapped = /redis:[\s\S]*?ports:\s*\n\s*-\s*"127\.0\.0\.1:(\d+):6379"/.exec(compose);
+    expect(
+      mapped,
+      "could not find the redis service's port mapping in docker-compose.yml",
+    ).not.toBeNull();
+    expect(schemaDefault).toBe(`redis://127.0.0.1:${mapped?.[1] ?? ""}`);
+  });
+
+  it("matches .env.example", () => {
+    const envExample = readFileSync(path.join(repoRoot, ".env.example"), "utf8");
+    const line = /^REDIS_URL=(.+)$/m.exec(envExample);
+    expect(line, "could not find REDIS_URL in .env.example").not.toBeNull();
+    expect(schemaDefault).toBe(line?.[1]?.trim());
+  });
+});

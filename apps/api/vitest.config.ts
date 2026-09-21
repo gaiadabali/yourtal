@@ -71,14 +71,33 @@ export default defineConfig({
     },
 
     /**
-     * Serial. Every file in this package now writes to one shared database,
-     * and `clearBusinessTables` empties those tables — a parallel worker
-     * would have its rows deleted mid-test by a neighbour, producing
-     * failures that move around between runs.
+     * YT-0547 gave this package its own database (`with-test-db.mjs`), which
+     * is what makes it safe to run concurrently with `packages/db` and
+     * `packages/idempotency` — proved by running them at the same time, see
+     * that ticket's report. It does NOT make it safe to remove this line.
      *
-     * This is the same arrangement `packages/db` needs and for the same
-     * reason. YT-0547 is the real fix: a database per package, at which
-     * point removing this line is the proof the isolation is genuine.
+     * PROVED BY BREAKING IT, not assumed: with `fileParallelism: false`
+     * deleted, three separate runs against a freshly isolated database each
+     * failed, 4-7 files at a time, always inside `modules/business` and
+     * `modules/store` — the two places where MANY files share ONE
+     * whole-table-wipe helper (`clearBusinessTables`, `clearStoreTables`),
+     * each called from that file's own `beforeAll`. Two files racing to
+     * "DELETE everything, then insert my fixture, then assert" on the SAME
+     * table is not made safe by which database it happens in — it is the
+     * cross-FILE version of the cross-PACKAGE bug this ticket exists to
+     * fix, and it reproduces the ticket's own signature exactly: a
+     * different file fails each run, and every one of them passes alone.
+     *
+     * `modules/store/**` is fenced to another session for this ticket, so
+     * its seven files cannot be moved off whole-table clearing here.
+     * `modules/business/**` is not fenced and shares the identical pattern
+     * across thirteen files — fixing it is a real, separate piece of work
+     * (scoping cleanup to rows a test itself created, the way
+     * `packages/db`'s own suites already do) and is exactly the shape of
+     * thing that should not be rushed into the same change that is also
+     * touching how every package's tests get a database. Left serial, with
+     * this now-accurate reason instead of the stale one about a single
+     * shared "yourtal".
      */
     fileParallelism: false,
     testTimeout: 20_000,

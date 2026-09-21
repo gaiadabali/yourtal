@@ -30,19 +30,33 @@
  * taken on report: `yourtal_app` is `rolsuper = false, rolbypassrls =
  * false`, and `.env`'s `DATABASE_URL` names it. So a grant proved by these
  * tests is now also a statement about the running app.
+ *
+ * ## YT-0547 — which DATABASE these roles connect to
+ *
+ * Every URL below used to end `/yourtal`, the one real database every
+ * package's tests shared — which is exactly why `turbo run test` running
+ * `@yourtal/db` and `@yourtal/api` at the same time corrupted each other's
+ * rows regardless of `fileParallelism`. `packages/db/scripts/with-test-db.mjs`
+ * now creates a database of its own for this package before `vitest` ever
+ * starts and sets `TEST_DATABASE_NAME` to its name; these constants read
+ * that and fall back to the real "yourtal" only when it is unset (running a
+ * file directly, outside `pnpm test`). There is no fallback DATABASE NAME
+ * invented here — "yourtal" is the one real database this file has always
+ * pointed at, not a guess.
  */
 
 const HOST = process.env.PGHOST_OVERRIDE ?? "127.0.0.1:26432";
+const DB_NAME = process.env.TEST_DATABASE_NAME ?? "yourtal";
 
 /** The application role: no ledger, no voucher writes, no key custody. */
-export const APP_URL = `postgres://yourtal_app:app_local_only@${HOST}/yourtal`;
+export const APP_URL = `postgres://yourtal_app:app_local_only@${HOST}/${DB_NAME}`;
 
 /** The owner. Migrations and fixtures only — never an application path. */
 export const OWNER_URL =
-  process.env.DATABASE_OWNER_URL ?? `postgres://yourtal:yourtal_local_only@${HOST}/yourtal`;
+  process.env.DATABASE_OWNER_URL ?? `postgres://yourtal:yourtal_local_only@${HOST}/${DB_NAME}`;
 
 /** The ledger's own credential: the sole writer of balances. */
-export const LEDGER_URL = `postgres://yourtal_ledger:ledger_local_only@${HOST}/yourtal`;
+export const LEDGER_URL = `postgres://yourtal_ledger:ledger_local_only@${HOST}/${DB_NAME}`;
 
 /** The voucher service's credential: the sole minter and mutator of vouchers. */
-export const VOUCHER_URL = `postgres://yourtal_voucher:voucher_local_only@${HOST}/yourtal`;
+export const VOUCHER_URL = `postgres://yourtal_voucher:voucher_local_only@${HOST}/${DB_NAME}`;

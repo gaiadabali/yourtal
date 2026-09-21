@@ -1,0 +1,153 @@
+---
+name: SessionSuite
+description: |-
+  A principal's own credential and session lifecycle (YT-0540) --
+  register/login are signed-out only; logout, password change and
+  requesting an email-verification link need a real identity; a forgotten
+  password or an unread inbox needs none. `admin` and `store_device` are
+  asserted to reach nothing here — see resource_policies/session.yaml for
+  why.
+tests:
+  - name: only a signed-out visitor may register or log in
+    input:
+      principals: [anon, wina, budi_owner, support_sari]
+      resources: [session_self]
+      actions: [register, create]
+    expected:
+      - principal: anon
+        resource: session_self
+        actions: { register: EFFECT_ALLOW, create: EFFECT_ALLOW }
+      - principal: wina
+        resource: session_self
+        actions: { register: EFFECT_DENY, create: EFFECT_DENY }
+      - principal: budi_owner
+        resource: session_self
+        actions: { register: EFFECT_DENY, create: EFFECT_DENY }
+      - principal: support_sari
+        resource: session_self
+        actions: { register: EFFECT_DENY, create: EFFECT_DENY }
+
+  - name: a forgotten password or an unread inbox needs no session either way
+    input:
+      principals: [anon, wina, budi_owner, support_sari]
+      resources: [session_self]
+      actions: [request_password_reset, confirm_password_reset, confirm_email_verification]
+    expected:
+      - principal: anon
+        resource: session_self
+        actions:
+          {
+            request_password_reset: EFFECT_ALLOW,
+            confirm_password_reset: EFFECT_ALLOW,
+            confirm_email_verification: EFFECT_ALLOW,
+          }
+      - principal: wina
+        resource: session_self
+        actions:
+          {
+            request_password_reset: EFFECT_ALLOW,
+            confirm_password_reset: EFFECT_ALLOW,
+            confirm_email_verification: EFFECT_ALLOW,
+          }
+      - principal: budi_owner
+        resource: session_self
+        actions:
+          {
+            request_password_reset: EFFECT_ALLOW,
+            confirm_password_reset: EFFECT_ALLOW,
+            confirm_email_verification: EFFECT_ALLOW,
+          }
+      - principal: support_sari
+        resource: session_self
+        actions:
+          {
+            request_password_reset: EFFECT_ALLOW,
+            confirm_password_reset: EFFECT_ALLOW,
+            confirm_email_verification: EFFECT_ALLOW,
+          }
+
+  - name: only a real signed-in identity manages its own session
+    input:
+      principals: [anon, wina, budi_owner, support_sari]
+      resources: [session_self]
+      actions: [delete, change_password, request_email_verification]
+    expected:
+      - principal: anon
+        resource: session_self
+        actions:
+          {
+            delete: EFFECT_DENY,
+            change_password: EFFECT_DENY,
+            request_email_verification: EFFECT_DENY,
+          }
+      - principal: wina
+        resource: session_self
+        actions:
+          {
+            delete: EFFECT_ALLOW,
+            change_password: EFFECT_ALLOW,
+            request_email_verification: EFFECT_ALLOW,
+          }
+      - principal: budi_owner
+        resource: session_self
+        actions:
+          {
+            delete: EFFECT_ALLOW,
+            change_password: EFFECT_ALLOW,
+            request_email_verification: EFFECT_ALLOW,
+          }
+      - principal: support_sari
+        resource: session_self
+        actions:
+          {
+            delete: EFFECT_ALLOW,
+            change_password: EFFECT_ALLOW,
+            request_email_verification: EFFECT_ALLOW,
+          }
+
+  - name: a store device has no email-and-password identity to manage
+    input:
+      principals: [counter_kemang]
+      resources: [session_self]
+      actions: [register, create, delete, change_password, request_email_verification]
+    expected:
+      - principal: counter_kemang
+        resource: session_self
+        actions:
+          {
+            register: EFFECT_DENY,
+            create: EFFECT_DENY,
+            delete: EFFECT_DENY,
+            change_password: EFFECT_DENY,
+            request_email_verification: EFFECT_DENY,
+          }
+
+  - name: admin reaches no data anywhere, including its own session (docs/17 section 5)
+    input:
+      principals: [admin_root]
+      resources: [session_self]
+      actions:
+        [
+          register,
+          create,
+          delete,
+          change_password,
+          request_password_reset,
+          confirm_password_reset,
+          request_email_verification,
+          confirm_email_verification,
+        ]
+    expected:
+      - principal: admin_root
+        resource: session_self
+        actions:
+          {
+            register: EFFECT_DENY,
+            create: EFFECT_DENY,
+            delete: EFFECT_DENY,
+            change_password: EFFECT_DENY,
+            request_password_reset: EFFECT_DENY,
+            confirm_password_reset: EFFECT_DENY,
+            request_email_verification: EFFECT_DENY,
+            confirm_email_verification: EFFECT_DENY,
+          }

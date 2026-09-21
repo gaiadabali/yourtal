@@ -28,7 +28,8 @@ const { Pool } = pg;
  * literal only as the fallback.
  */
 const APP_URL =
-  process.env["TEST_DATABASE_URL"] ?? "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
+  process.env["TEST_DATABASE_URL"] ??
+  "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
 const AT = new Date("2026-09-19T10:00:00Z");
 
 let pool: pg.Pool;

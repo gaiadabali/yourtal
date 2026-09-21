@@ -59,10 +59,7 @@ export type InviteMemberError =
  * `CannotChangeOwnerRoleError` exists and is in this union.
  */
 export type ChangeMemberRoleError =
-  | BusinessNotFoundError
-  | MemberNotFoundError
-  | CannotChangeOwnerRoleError
-  | PersistenceFailedError;
+  BusinessNotFoundError | MemberNotFoundError | CannotChangeOwnerRoleError | PersistenceFailedError;
 
 export type RemoveMemberError =
   BusinessNotFoundError | MemberNotFoundError | CannotRemoveOwnerError | PersistenceFailedError;

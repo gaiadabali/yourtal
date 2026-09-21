@@ -181,9 +181,9 @@ Two sub-findings, each its own shape:
 
 ### 14a. The same mistake at the next altitude down — and this section had already named it
 
-**2026-09-21, the second instance, introduced by the fix for the same ticket.** The rule above was written after the `required` schema change refused `approve_settlement_decrease`. Its closing sentence says *the blast radius of a rule is the action*. The next change to that policy put a condition on a **rule covering four actions**, and three of them broke.
+**2026-09-21, the second instance, introduced by the fix for the same ticket.** The rule above was written after the `required` schema change refused `approve_settlement_decrease`. Its closing sentence says _the blast radius of a rule is the action_. The next change to that policy put a condition on a **rule covering four actions**, and three of them broke.
 
-`merchandisers-run-inventory` granted `create`, `edit`, `archive` and `set_settlement_value` under one `EFFECT_ALLOW`. YT-0574's fix added `has(R.attr.isMaterialSettlementDecrease) && !R.attr.isMaterialSettlementDecrease` — correct for the action that motivated it, and **fatal to the other three**, because only `set_settlement_value` has a route that can supply the attribute: it does a second authorization *after* loading the listing, since materiality compares against the stored `S`. `create`, `edit` and `archive` are wired with `@Authorize` alone, which is synchronous and request-only and supplies no attributes at all. So `has(...)` was false and the ALLOW never fired.
+`merchandisers-run-inventory` granted `create`, `edit`, `archive` and `set_settlement_value` under one `EFFECT_ALLOW`. YT-0574's fix added `has(R.attr.isMaterialSettlementDecrease) && !R.attr.isMaterialSettlementDecrease` — correct for the action that motivated it, and **fatal to the other three**, because only `set_settlement_value` has a route that can supply the attribute: it does a second authorization _after_ loading the listing, since materiality compares against the stored `S`. `create`, `edit` and `archive` are wired with `@Authorize` alone, which is synchronous and request-only and supplies no attributes at all. So `has(...)` was false and the ALLOW never fired.
 
 Isolated against a freshly restarted sidecar, one variable:
 
@@ -194,14 +194,13 @@ attribute PRESENT+false create ALLOW  edit ALLOW  archive ALLOW  set_settlement_
 
 **A fix for a bypass produced a lockout.** Fixed by splitting the rule — ordinary inventory work with no condition, `set_settlement_value` on its own rule where the expression cannot reach anything else.
 
-**The guardian was green on both sides of the defect, and its own description named the cause.** The suite read 390/390 before the repair and 390/390 after. The YT-0574 case used the right fixture — `listing_kopi_unstated`, attribute deliberately absent — and asserted `set_settlement_value` **alone**, varying the *principal* across three business roles. Its description reads: *"Every business role that could otherwise apply a listing edit is checked here … because the bug was in the shared condition, not in a per-role rule."* It correctly identified that the condition was shared, then tested the axis the **previous** bug had moved along.
+**The guardian was green on both sides of the defect, and its own description named the cause.** The suite read 390/390 before the repair and 390/390 after. The YT-0574 case used the right fixture — `listing_kopi_unstated`, attribute deliberately absent — and asserted `set_settlement_value` **alone**, varying the _principal_ across three business roles. Its description reads: _"Every business role that could otherwise apply a listing edit is checked here … because the bug was in the shared condition, not in a per-role rule."_ It correctly identified that the condition was shared, then tested the axis the **previous** bug had moved along.
 
 **Rule: a guardian must assert every action on the definition it guards, not the action the bug was found in.** Extending that case to four actions × three roles took the suite to 399/399, and reverting the split produced 6 failures naming `create` and `edit` — so the guardian is proved, not assumed.
 
-**What makes this worth a section rather than a line.** Five instances of this family now, and **two of them were introduced while fixing the ticket that documents it**: the kind-wide schema and the rule-wide condition. Written guidance did not prevent the second, because the guidance was read as being about schemas — the altitude of the first instance — rather than about *shared definitions*. The generalisation that does the work is not "be careful with schemas" but:
+**What makes this worth a section rather than a line.** Five instances of this family now, and **two of them were introduced while fixing the ticket that documents it**: the kind-wide schema and the rule-wide condition. Written guidance did not prevent the second, because the guidance was read as being about schemas — the altitude of the first instance — rather than about _shared definitions_. The generalisation that does the work is not "be careful with schemas" but:
 
 **The blast radius of an authorization fix is the definition it is written on, never the case that prompted it.** Before adding a condition, enumerate the actions on that rule. Before tightening a schema, enumerate the actions on that kind. If the set is larger than one, the fix belongs on a narrower definition.
-
 
 ## 15. The most dangerous false green came from prose, not from a check
 
@@ -281,6 +280,40 @@ The second is mine. My replacement map held four address literals and one hostna
 ---
 
 ---
+
+### 19a. A fourth, and the first where two harmless things combined
+
+**2026-09-21.** Checking whether the catalogue's full-text search had a GIN index:
+
+```
+grep -rn "to_tsvector\|gin\|GIN" packages/db/migrations/*.sql | head
+```
+
+Every line returned was a `bigint` column declaration, because **`bigint` contains `gin`** — and `head` cut the output before the real hits. One step from reporting _"no GIN index, the FTS is a sequential scan"_: plausible, alarming, and false. `listings_search_idx` exists and matches the query expression exactly. Caught by listing the indexes directly instead of grepping for them.
+
+**Neither ingredient is dangerous alone.** A substring match is recognisable when you can see all of it; a truncation is harmless when the pattern is precise. The failure needs both — an imprecise pattern **and** a cut-off that hides how imprecise it was. Same family as the `grep -v "\.test\.ts"` that produced _"imported by nothing"_ on a symbol two test files import, and as a duplicate-ID sweep whose one hit was the worked example in `_schema.md`.
+
+**Rule stays the same and gains a second clause: state the conclusion at the width of the search, and never let `head` decide the width.** If the output is truncated, the search has not answered the question yet — it has answered a prefix of it.
+
+---
+
+## 20. An assertion phrased as the absence of a failure passes on every other failure
+
+A boot test was added over the eight listing routes after the `create`/`edit`/`archive` outage of §14a, precisely because the store module could not have seen it — its PDP-backed tests call controller methods directly, so `PdpGuard` never runs, and the decorator was the broken part.
+
+The first draft asserted, for a merchandiser:
+
+```ts
+expect(response.statusCode).not.toBe(403);
+```
+
+All eight passed. **They were passing on 404s.** The URLs had been written as `/api/:tenantId/listings`, missing the `store` segment, so not one route existed. `not.toBe(403)` is satisfied by a route that is not there, by a 500, by a 400 — by everything except the one failure it names. **The suite's green was evidence of the opposite of its claim.**
+
+It was caught only because the same suite had a deny half asserting a **stranger gets 403**, which failed with 404 and exposed the missing segment. A stranger receiving 403 can only happen if the route exists **and** the guard ran, so the negative case turned out to be the only thing pinning the positive one.
+
+**This is not the guard-never-seen-red family.** The guard ran. It proved something else. The shape is the assertion's polarity: `not.toBe(x)`, `not.toThrow()`, `toBeDefined()` on a value with a default — each is satisfied by an unbounded set of states, most of which are broken.
+
+**Rule: never assert only the absence of a specific failure. Pair it with a positive case that cannot hold unless the subject exists.** "Does not return 403" is not a claim about a route; "a stranger gets 403 here" is, because it fails when the route is missing. The paired case is the one doing the work, and if you only write one, write that one.
 
 ## The pattern, restated
 

@@ -34,11 +34,12 @@ The spending half of the loop: points buy things, and those things work at the m
 - [ ] Server-rendered for SEO; see the SEO task set
 
 ### YT-0133 · Redemption: burn points for a voucher
-`todo` · P1 · store · 5d · dep: YT-0130, YT-0042
+`todo` · P1 · store · 5d · dep: YT-0130, YT-0042, YT-0593, YT-0594
 
 - [ ] Reserve stock → debit points → issue voucher → confirm, as a compensating saga
 - [ ] Any failure releases the reservation and reverses the debit; every step idempotent
-- [ ] Price locked for 15 minutes from the moment it is shown
+- ⏭️ **Price lock belongs to YT-0049, not here.** This box read *"price locked for 15 minutes from the moment it is shown"*, which is **verbatim YT-0049's second criterion** — the pricing engine owns price semantics, and a second lock inside the redemption saga is two implementations of one control, which is how they drift apart. Found by `yourtal-b6` while checking `economy`'s scope before starting `store`'s; neither ticket referenced the other
+- ⚠️ **This ticket was offered as ready work and is not buildable, which is why its `dep:` grew.** Two of its four saga steps have no callable interface: `POST /v1/transfers` is a 501 (**YT-0593**) and voucher issuance is routed nowhere (**YT-0594**). Nothing decrements `stockRemaining` either. Its old deps — YT-0130 `doing` and YT-0042 `review` — both counted as satisfied under the board's former readiness rule, so it showed as startable; `yourtal-b6` lost an afternoon to that before reaching the 501. The rule is fixed and the missing work is now ticketed, so the board and the code agree
 
 ### YT-0134 · Holdback and trust gate on redemption
 `todo` · P1 · store · 3d · dep: YT-0133, YT-0054
@@ -67,6 +68,10 @@ The spending half of the loop: points buy things, and those things work at the m
 - [x] `voucher.code_custody` holds SHA-256 for lookup plus an envelope-encrypted copy for display. The **plaintext column was dropped**, not encrypted in place — `WHERE code = $1` against ciphertext needs deterministic encryption, which is a dictionary away from being no encryption. `yourtal_app` has **no grant on that table at all**, proved by a test that watches the refusal
 - [x] Per-voucher hash-chained event log, **and the tamper detection is driven rather than claimed**: editing a stored event and deleting one both break verification, against the real table, with the sabotage confirmed to have touched exactly one row first
 - ⚠️ **"KMS" is not a KMS.** Custody is `internal/keyring` on Helios (YT-0533): AES-256-GCM, per-record data keys, purpose bound into the AEAD so a relabelled ciphertext does not decrypt, and master keys refused if they live inside a git working tree. **Single-host key custody is weaker than a KMS and must not be carried into production**
+
+- ⚠️ **Title and criteria disagree about scope, and the title is the one people read.** This ticket is called *"Voucher issuance and code custody"*, and **not one of its criteria mentions a route** — every bar describes the Go function. The work is defensibly complete as written and the criteria are unusually rigorous; what overpromises is the word in the title. Raised by `yourtal-b6` while tracing why YT-0133 was unbuildable, escalated by `yourtal-a4`, and confirmed here against the source
+- ℹ️ **The missing HTTP surface is now ticketed as **YT-0594****, so it is work in the graph rather than an implication nobody owns. **YT-0140 is not failed for this** — a ticket is measured against its criteria, not its title, and re-scoping it retrospectively would move the bar under work that already met it
+- ⛔ **It should not reach `done` while the title still claims an API that does not exist.** `done` is the board's strongest public statement and this one would be read as *"the API is finished and verified"*. The fix is one of: retitle to what the criteria actually cover, or add a criterion for the route and return this to `doing`. **That is the epic owner's call, not the verifier's** — flagged here rather than decided. This is the third instance in one day of *proved in tests, absent from the running system*, after YT-0519 and the ledger having no HTTP caller
 
 ### YT-0141 · Bulk issuance with two-person approval
 `doing` · P1 · value · 4d · dep: YT-0140, YT-0038
@@ -227,3 +232,15 @@ The spending half of the loop: points buy things, and those things work at the m
 - [ ] It **reports liveness and pages when it has not run**, per YT-0566 — a job that stops running produces no errors at all
 - [ ] Alert on the **age of the oldest unexpired-but-past-expiry voucher**, which measures the promise rather than the job
 - [ ] A test asserts the two sweepers are distinct and that neither covers the other's case
+
+### YT-0594 · Voucher issuance is routed nowhere
+`todo` · P1 · value · 3d · dep: YT-0140, YT-0593
+
+- ℹ️ **Filed 2026-09-21 by `yourtal-22`, from `yourtal-b6`'s finding, re-verified here.** `services/voucher/cmd/voucher/main.go:89` builds the minter — `minter := issue.New(pool, keys)` — and **its only other appearance in the file is a log line**: `logger.Info("voucher listening", "addr", addr, "minter", minter != nil)`. Searching `services/voucher/internal/httpx` for an issuance handler returns nothing
+- ⚠️ **`minter != nil` is the entire consumer of the voucher issuance engine.** Unlike the ledger, there is not even a 501 here: the ledger at least mounts an honest refusal that names its blocker, so a caller learns the route exists and why it will not serve. Issuance has no route to refuse, so the same question gets a 404 and reads as "wrong URL" rather than "not built yet"
+- ℹ️ Same shape as YT-0593 and the same reporting gap: **YT-0140 sits at `review`** covering code generation, custody and the event chain, and no criterion mentions a route
+- [ ] Voucher issuance is reachable over HTTP, behind the same caller authentication and idempotency the ledger's write routes require
+- [ ] Until it is, the endpoint **exists and refuses with a 501 naming its blocker**, matching the ledger's `notYetExposed` pattern — so an unbuilt surface is distinguishable from a wrong path
+- [ ] A replayed issuance request returns the original batch rather than minting twice
+- [ ] Per-batch `transferable` and `partialPolicy` survive the HTTP boundary, since YT-0131 proved them at the function boundary only
+

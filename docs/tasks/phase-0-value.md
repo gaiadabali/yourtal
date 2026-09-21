@@ -89,6 +89,10 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - **Defect found by YT-0043 and fixed: the concurrency test was passing for the wrong reason.** The earlier green was masked by a duplicate-key bug — every goroutine sent the same idempotency key, so fifteen of sixteen were cheap replays and there was almost no contention. With genuinely unique keys they all write, and five attempts exhausted on persistent 40001s. Now exponential backoff **with jitter**, ten attempts
 - **Third defect, found by YT-0045:** the retry was not exported, so the Reward Engine opened its own Serializable transaction **with no retry** — 11 of 12 callers hit 40001 and gave up, which to a caller is indistinguishable from *"the allocation is exhausted"*. **Those need different answers: one means stop, the other means try again.** Fixed by exporting `ledger.WithSerializableRetry` rather than writing a second copy — a duplicated backoff policy is a second place to get the jitter subtly wrong, and this retry's behaviour has now mattered three times
 
+- ⚠️ **Title and criteria disagree about scope, and the title is the one people read.** This ticket is called *"Ledger transfer API"*, and **not one of its criteria mentions a route** — every bar describes the Go function. The work is defensibly complete as written and the criteria are unusually rigorous; what overpromises is the word in the title. Raised by `yourtal-b6` while tracing why YT-0133 was unbuildable, escalated by `yourtal-a4`, and confirmed here against the source
+- ℹ️ **The missing HTTP surface is now ticketed as **YT-0593****, so it is work in the graph rather than an implication nobody owns. **YT-0042 is not failed for this** — a ticket is measured against its criteria, not its title, and re-scoping it retrospectively would move the bar under work that already met it
+- ⛔ **It should not reach `done` while the title still claims an API that does not exist.** `done` is the board's strongest public statement and this one would be read as *"the API is finished and verified"*. The fix is one of: retitle to what the criteria actually cover, or add a criterion for the route and return this to `doing`. **That is the epic owner's call, not the verifier's** — flagged here rather than decided. This is the third instance in one day of *proved in tests, absent from the running system*, after YT-0519 and the ledger having no HTTP caller
+
 ### YT-0043 · Chart of accounts
 `doing` · P0 · value · 2d · dep: YT-0041
 
@@ -259,3 +263,15 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] **The restores are `_, _ = super.Exec(...)` — errors discarded.** A failed restore, a `SIGINT` or a panic leaves permanent imbalance in the shared dev database and nobody is told. Assert the restore, or make cleanup not required for correctness
 - [ ] Sabotage-prove it: hold a tamper window open deliberately and confirm the chosen mechanism reports the *right* answer rather than merely a green one
 - [ ] Remove `-p 1` from `services/*/package.json` once the fix lands, and confirm the suite is still deterministic without it
+
+### YT-0593 · The ledger's four v1 routes are all 501
+`todo` · P0 · value · 3d · dep: YT-0042, YT-0036, YT-0515
+
+- ℹ️ **Filed 2026-09-21 by `yourtal-22`, from a finding by `yourtal-b6` relayed via `yourtal-a4`, re-verified here against the source rather than accepted.** `services/ledger/internal/api/routes.go` — its own comment at `:63` says **"None of the four is live."** `/accounts/{accountID}/balance` (`:80`), `/pricing/quote` (`:86`), `/transfers` (`:97`) and `/rewards/grants` (`:102`) are each `a.notYetExposed(...)`, returning `http.StatusNotImplemented`
+- ✅ **The 501s are honest engineering, not neglect, and each names its own blocker.** `/transfers` is waiting on caller authentication and the shared idempotency interceptor, which `docs/13a` section 7 requires **in front of** a money-moving handler — serving it unauthenticated would let any caller move balances between arbitrary accounts. This ticket is to satisfy those blockers, not to remove the guard
+- ⚠️ **The gap this closes is a reporting one as much as a functional one.** YT-0042 is titled *"Ledger transfer API"* and sits at `review` with 6/6, yet every one of its criteria describes `transfer()` the Go function and **not one mentions a route**. Defensibly complete as written, misleading as titled. This is the third instance in one day of *proved in tests, absent from the running system*, after YT-0519 and the ledger having no HTTP caller at all
+- [ ] `POST /v1/transfers` is reachable and moves balances, behind caller authentication and the shared idempotency store
+- [ ] A replay of the same request returns the original transfer rather than moving money twice — the property YT-0042 proves at the function boundary, re-proved at the HTTP boundary, because the interceptor is what YT-0042 did not cover
+- [ ] The other three routes are either exposed under the same conditions or their 501 is reaffirmed with a stated reason, so the count of unexposed routes is a decision rather than a leftover
+- [ ] **`B` is not returned to any caller, authenticated or not** — `/pricing/quote`'s existing refusal is preserved, per YT-0130's GRANT-level control and `docs/24` ID-1
+

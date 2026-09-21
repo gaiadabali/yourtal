@@ -9,13 +9,15 @@ Nothing user-visible ships except a login. **Gate:** a sister app can log a user
 ## Legal
 
 ### YT-0010 · Legal positions register
-`doing` · P0 · legal · 4d · dep: —
+`done` · P0 · legal · 4d · dep: —
 
 - **Audited 2026-09-19: three of four criteria already met, still recorded as not started — while blocking four tasks.** `docs/24-legal-positions.md` exists with 19 positions
 - [x] Every legal position the product relies on stated explicitly in `docs/24-legal-positions.md`
 - [x] Each position traced to a primary or official source, with a confidence rating
 - [x] Residual risk named per position; unsourced positions marked as guesses — ID-12 and AU-9 (minimum age) are carried openly as uncited
-- [ ] ⚠️ **Re-verification dates are missing** — the one criterion unmet, and the one that matters most over time. A legal register with no expiry quietly becomes a record of what was true once. Both regimes are mid-reform: Australia's Privacy Act is in passage, and Indonesia's GR 33/2026 sanctions bite 16 Jan 2027
+- [x] **Re-verification dates, now present on all 21 positions.** A legal register with no expiry quietly becomes a record of what was true once, and both regimes are mid-reform: Australia's Privacy Act is in passage, and Indonesia's GR 33/2026 sanctions bite 16 Jan 2027. **The dates are derived by a stated rule rather than chosen per position**, and the rule is written into `docs/24` so a later reader can recompute them and argue with the rule instead of trusting twenty-one judgements
+- ✅ **Verified 2026-09-21 by `yourtal-22`; written by `yourtal-a4`, so author and verifier are different sessions.** Re-measured here rather than accepted on report — **21 position rows, 0 missing a `Re-verify by` value**, and every row populated across all six columns, which is the other three criteria as well. The anchor date 2026-09-19 is explicitly **not** claimed as a per-position verification event: nobody checked 21 positions individually that day, and a column asserting they did would be the unearned precision this register exists to avoid
+- ✏️ **This ticket's own header note says the register holds 19 positions. It holds 21** — twelve Indonesian, nine Australian. The count was never recomputed after positions were added; corrected in `docs/24` too
 
 ### YT-0011 · Red-line register and enforcement
 `todo` · P0 · legal · 2d · dep: YT-0010

@@ -104,3 +104,14 @@ Verified: `tsc --noEmit` clean for everything touched (three pre-existing, unrel
 - [ ] **Ask what a twenty-minute campaign _should_ pay, unprompted, and record whether anyone reaches for a per-hour figure.** This is the falsification test for §2.6: if users spontaneously compute a rate, the long-form format has left the rewards frame whatever we intended it to be, and the comparison class is paid research panels rather than loyalty schemes. Quick (15–60 s) and long-form must be asked about separately — the tension lives in long-form plus the checkpoint quiz, not in Quick.
 - [ ] **Test a thinly-funded campaign deliberately, in both markets.** Rewards are partner-funded and therefore variable, so the worst case is a long-form campaign carrying a loyalty-sized reward while asking for research-panel effort. This is **not** an Australia-specific risk and must not be filed as one — it is live in Indonesia today.
 - [ ] Findings feed the Phase 1 scope decision before a line of backend is written
+
+### YT-0598 · The merchant portal is hardcoded Indonesian
+`todo` · PU · merchant · 2d · dep: YT-0405
+
+- ⛔ **UNOWNED.** The `merchant` epic has no holder in the live session set (confirmed 2026-09-21 by `yourtal-08` against the running sessions). This is the **second** thing stranded there today, after YT-0502's surfacing criterion — recorded so the epic's lack of an owner is visible on the board rather than rediscovered a third time
+- ℹ️ **Filed by `yourtal-22` so that `yourtal-54`'s deferral on YT-0181 points at something real.** `_schema.md` requires a `- ⏭️` to name an owning ticket, and there was none; without this the deferral is not a valid deferral
+- ⚠️ **This is an accessibility defect, not a localisation nicety, and it is on the primary market's staff-facing screen.** The `(merchant)` route group hardcodes `lang="id-ID"` because nothing in that group resolves a region. **A screen reader takes `lang` literally, so Australian merchant staff hear English read with Indonesian pronunciation rules.** No SEO consequence — the portal is not indexed — which is exactly why it will not be caught by anything watching search
+- ℹ️ Same root cause as YT-0181, fixed there for the public surface by deleting `apps/web/app/layout.tsx`, which hardcoded `id-ID` sitewide and made **all of `/au`** claim Indonesian. The public half is closed; this is the half that was left
+- [ ] `(merchant)` resolves a region rather than assuming one, and declares the matching `lang`
+- [ ] **Proved in built output, not in source** — the YT-0181 fix was verified that way and the defect it fixed was invisible in the component tree
+- [ ] No route group anywhere declares a language it has not resolved. **The property, not the instance**: two route groups have now hardcoded a locale, so a criterion naming only `(merchant)` would leave the third to be found the same way

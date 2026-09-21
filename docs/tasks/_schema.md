@@ -125,6 +125,41 @@ So the protocol has **two** halves, and only the first was obvious:
 
 10. **A cross-reference to an existing ID is not a valid cross-reference.** The validator proves every `YT-####` is unique and that every `dep:` resolves. **It says nothing about whether a pointer in prose points at what its sentence claims.** Deliberately not automated — the general case needs a reader, and a weak check here would be worse than none, because it would license trusting it.
 
+11. **In a shared checkout, `git commit` consumes an index you did not build — and a private index hands the next committer a loaded gun unless you resync in the same breath.** Five sessions share one working tree. Staging the right paths does not protect you, because your entries are *added to* whatever is already staged.
+
+    The complete form, and the last clause is the one that was learned expensively:
+
+    ```sh
+    export GIT_INDEX_FILE=$(mktemp)
+    git read-tree HEAD
+    git add -- <paths>
+    git commit -F msg
+    unset GIT_INDEX_FILE
+    git read-tree HEAD          # RESYNC THE SHARED INDEX, immediately
+    ```
+
+    **Without that last line the shared index still describes the tree before your commit — and an index that does not know about a file present in `HEAD` does not leave it alone, it DELETES it.** The next session's commit silently reverts your additions, in a commit whose author cannot see it happening.
+
+    **Five rungs, each the fix for the one before, all on 2026-09-21:**
+
+    | | attempt | how it failed |
+    | --- | --- | --- |
+    | 1 | `git add <shared file>` | swept another session's edits into the commit |
+    | 2 | `git status --porcelain` first | said which paths moved, not what they said |
+    | 3 | `git add <explicit paths>` then `git commit` | right arguments, wrong mechanism — commit takes the whole index |
+    | 4 | `git commit -- <paths>` | never consults the shared index, but **cannot stage an untracked file**, which is where new work lives |
+    | 5 | private `GIT_INDEX_FILE` | closes both — and without the resync, **reverts the next session's work** |
+
+    **Rung 5 produced a strictly worse failure than the one it fixed.** Rung 1 misattributed work into someone else's commit; rung 5 deleted it. `a7a70e2` removed 607 lines across seven files that its author never staged and could not see, and it was restored from the working tree in `6c903b9` — nothing was lost, because nothing had left the disk.
+
+    **Two checkable tells, worth more than the rule:**
+
+    - **A path that is both `??` untracked and present in `HEAD` means the index is stale**, and the next commit from it will delete something.
+    - **The index can be staged to delete a file that exists on disk AND in `HEAD`.** `git status` does not show this at all — only `git diff --cached` does. Found by `yourtal-6c` with `.githooks/pre-commit` in exactly that state, so every working copy showed a guard that the next commit would have removed.
+    - And the mirror: **read the numstat, not the names.** During the restore, `git diff --cached` listed exactly the intended paths while `--numstat` showed pure deletion.
+
+    **Lead with this if it goes anywhere else:** a private index *sounds like* the correct engineering answer to a shared checkout, which is exactly why the next person will reach for it. Retracted and restated by `yourtal-4d`, who proposed it and whose own work it deleted.
+
     **The instance is the bad case rather than the easy one.** `yourtal-08` renumbered off a duplicate id on 2026-09-21 and left one cross-reference reading *"Now **YT-0595**"*. A dangling `YT-9999` dies at the first reader; this validated green and read as correct, because YT-0595 was **plausible and briefly true** — it named 08's own unsaved draft. **Nothing changed in the pointer; the world changed underneath it.** Found by grepping their own pointers rather than trusting the green.
 
     Same family as the day's other findings, and the family is worth naming: **the tree is not the commit; the index is not the arguments you typed; a scan for free IDs includes your own drafts.** In each, a check was green about a state that had already stopped being the one that mattered.

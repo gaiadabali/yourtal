@@ -70,11 +70,22 @@ export function CheckpointResult({ campaign, questions, answers }: CheckpointRes
           <p className="text-xs font-sans text-fg-subtle">{t("result.noBonus")}</p>
         )}
 
-        <div className="flex items-center justify-between gap-4 border-t border-border pt-4">
-          <p className="text-sm font-sans font-semibold text-fg">{t("result.totalReceived")}</p>
-          <p className="text-lg font-sans font-semibold text-reward">
-            {formatPoints(totalEarned(split), locale)}
-          </p>
+        {/* YT-0564. This said "Total received" / "Total diterima" — a
+            past-tense claim that money had arrived, beside a figure from the
+            client scoring module, which O-5 made advisory. Under O-1 nothing
+            is granted until full playback AND answered questions, and the
+            server's `complete` refuses every completion today, so the number
+            was certainly unreceived at the moment it rendered. Risk 44 in a
+            second component: that one was a "Reward so far" tally implying
+            accrual; this claimed the accrual had landed. */}
+        <div className="flex flex-col gap-1 border-t border-border pt-4">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-sans font-semibold text-fg">{t("result.totalExpected")}</p>
+            <p className="text-lg font-sans font-semibold text-reward">
+              {formatPoints(totalEarned(split), locale)}
+            </p>
+          </div>
+          <p className="text-xs font-sans text-fg-subtle">{t("result.totalPendingNote")}</p>
         </div>
       </CardContent>
     </Card>

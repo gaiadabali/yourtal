@@ -7,7 +7,8 @@
     "accuracyBonus": "Bonus akurasi",
     "accuracyDetail": "{correct} dari {total} jawaban bernilai benar · {percent}% akurasi",
     "noBonus": "Campaign ini tidak memiliki bonus akurasi.",
-    "totalReceived": "Total diterima"
+    "totalExpected": "Total yang akan kamu terima",
+    "totalPendingNote": "Belum masuk ke saldomu — akan ditambahkan setelah campaign ini dikonfirmasi selesai."
   },
   "progress": {
     "label": "Pertanyaan {current} dari {total}"

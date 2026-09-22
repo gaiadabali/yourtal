@@ -7,7 +7,8 @@
     "accuracyBonus": "Accuracy bonus",
     "accuracyDetail": "{correct} of {total} scored answers correct · {percent}% accuracy",
     "noBonus": "This campaign has no accuracy bonus.",
-    "totalReceived": "Total received"
+    "totalExpected": "Total you should receive",
+    "totalPendingNote": "Not yet in your balance — it lands once this campaign is confirmed complete."
   },
   "progress": {
     "label": "Question {current} of {total}"

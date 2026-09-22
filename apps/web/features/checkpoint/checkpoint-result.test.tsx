@@ -97,6 +97,38 @@ describe("CheckpointResult (en-AU, YT-0405)", () => {
     );
 
     expect(screen.getByText(/has no accuracy bonus/)).toBeInTheDocument();
-    expect(screen.getByText("Total received")).toBeInTheDocument();
+    expect(screen.getByText("Total you should receive")).toBeInTheDocument();
   });
+
+  /**
+   * YT-0564. The assertion this replaces was `getByText("Total received")`,
+   * and it passed for as long as the screen made a false claim: under O-1
+   * nothing is granted until full playback AND answered questions, and the
+   * server's `complete` refuses every completion today, so the figure was
+   * certainly unreceived at the moment it rendered.
+   *
+   * Asserting the replacement string alone would repeat that mistake in the
+   * other direction — it would pin today's wording without pinning what the
+   * wording has to MEAN. So this asserts the property: the screen states an
+   * expectation, says the points are not in the balance yet, and never
+   * claims receipt. Reintroducing "received" fails it whatever the key is
+   * called.
+   */
+  it.each([
+    ["AU" as const, "Total you should receive", /Not yet in your balance/i, /received/i],
+    ["ID" as const, "Total yang akan kamu terima", /Belum masuk ke saldomu/i, /diterima/i],
+  ])(
+    "promises the reward rather than reporting it as received (%s)",
+    (region, expectedLabel, pendingNote, receiptClaim) => {
+      const campaign = makeCampaignFixture({ rewardPoints: toPoints(500) });
+      renderWithRegion(
+        <CheckpointResult campaign={campaign} questions={questions} answers={new Map()} />,
+        region,
+      );
+
+      expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+      expect(screen.getByText(pendingNote)).toBeInTheDocument();
+      expect(screen.queryByText(receiptClaim)).not.toBeInTheDocument();
+    },
+  );
 });

@@ -218,7 +218,7 @@ Of the 81 finished: **73 independently verified**, 8 awaiting a verifier. A task
 
 - **YT-0011** Red-line register and enforcement — 1/4 AC
 - **YT-0519** Seed the real database from the mock generators — 6/7 AC
-- **YT-0529** Helios: environment layout and what shares the box — 3/6 AC
+- **YT-0529** Helios: environment layout and what shares the box — 3/5 AC
 - **YT-0530** Helios: isolation and resource caps — 1/6 AC
 - **YT-0532** Helios: deploy pipeline with rollback — 4/14 AC
 - **YT-0534** Data residency: what Helios is allowed to hold — 3/4 AC

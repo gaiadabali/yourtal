@@ -270,6 +270,24 @@ So **YT-0573 is a prerequisite of resale, not an adjacent cleanup**, and it is r
 
 ## S — deployment
 
+**S-3 · Staging and production are the same environment. There will be no separate staging while the project is in development. (2026-09-22)**
+
+Founder's words, relayed: _"staging and production will be the same. don't worry about it. we are still in dev, so nothing will matter."_
+
+**Scope, stated because it is a development-stage decision and the same shape as YT-0012's signature:** if a real staging environment is wanted before launch, that is a **new decision**, not a reversal of this one.
+
+Consequence on the board: **YT-0529's first criterion is not unprovable, it is void as written.** It asks that `staging` and `production` be _"separate Postgres databases and separate system users"_ — a comparison between two environments where only one will exist. Retired with `- 🚫` rather than left unticked, which is exactly the case `_schema.md` added that form for: **not deferred to anyone, cancelled by a decision.** Left as an open box it would cost the next reader a session trying to verify a separation between a thing and nothing.
+
+**S-4 · YT-0532's rollback is fixed before the next deploy. (2026-09-22)**
+
+Founder's words, relayed: _"better fix it before deploy and proceed."_
+
+This **changes the status of a known defect rather than discovering one.** The broken reverse path was knowingly shipped on 2026-09-21 with the numbers put in front of the founder first; it is no longer an accepted standing risk carried forward, it is a **blocker on the next release**.
+
+The failure, first-hand from `yourtal-0c`: `gaiada-deploy` loses `PM2_NAME` on rollback, reports `no pm2 process found for: uyourtal`, swaps the symlink and then cannot restart — **leaving pm2 running new code while `current` points at old, across every Node site on that box.**
+
+⚠️ **Provenance for both, stated because it is the weakest link.** Given by the founder in `yourtal-ca`'s session and **relayed** to the recorder, which did not witness either. Written down for the same reason as S-2: a verbal ruling relayed through a peer is weaker than a draft document, and a draft document was misread twice on 2026-09-21. **If either entry is wrong it should be struck rather than softened.**
+
 **S-2 · The Helios retirement / observe-only constraint is STALE. Building and deploying there is permitted. (2026-09-22)**
 
 Recorded because two sessions read a draft as a ruling this evening and one of them broadcast it to all seven. The correction, in order of what is actually in force:

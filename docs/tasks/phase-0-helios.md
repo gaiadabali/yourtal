@@ -43,7 +43,8 @@ This supersedes the GCP/Cloudflare shape in [`phase-0-foundation.md`](phase-0-fo
 
 ⚠️ **Two existing services bind `0.0.0.0` without obvious need** — `:8082` (node) and `:3016` (PM2). Not ours and not this ticket's to fix, but recorded: the fourth criterion below is a rule we are about to hold ourselves to while the box already breaks it.
 
-- [ ] `staging` and `production` are **separate Postgres databases and separate system users** on one host — not one database with a flag
+- 🚫 **RETIRED by founder decision S-3, 2026-09-22 — not deferred, cancelled.** `staging` and `production` are **separate Postgres databases and separate system users** on one host — not one database with a flag
+- ℹ️ **Why it is retired rather than failed**: it asks for a separation between `staging` and `production`, and there will be **only one environment** while the project is in development. A comparison with nothing on one side cannot be verified or falsified. Left as an open box it would cost the next reader a session discovering that. **If a real staging environment is wanted before launch, that is a new decision and a new criterion**
 - [ ] YourTal cannot read, write or restart anything belonging to the client sites already on Helios
 - [x] **`gaiada-poll.timer` is green — verified 2026-09-20 on the box, not assumed.** `active (waiting)` since 2026-09-13, `Result=success`, `NRestarts=0`, `ExecMainStatus=0`. The 60-second failure loop recorded on 2026-08-18 has been fixed by someone since. Re-check before adding to it, because this is exactly the kind of fact that expires
 - [x] **Access survives leaving the office.** `<decommissioned-jump>` is decommissioned and was the only non-Hostinger jump, so every remaining route and destination is AS47583 — a Hostinger-wide block on an address removes the box and all paths to it simultaneously, and a firewall cannot help because the block is upstream. **Solved using what already existed**: the Alloy WireGuard mesh's hub is `<wg-hub>`, **Tencent Cloud Singapore**, and Helios dials **out** to it. `helios-w` (`ProxyJump <wg-hub>` → `10.88.0.3`) contacts no Hostinger address and does not need the operator's IP allowlisted, because the source Helios sees is the hub's `10.88.0.2`. **Tested end to end.** Needed one firewall rule for `10.88.0.0/24` — the fix the org's own notes had recommended for months without anyone applying it
@@ -111,6 +112,8 @@ The poller `gaiada-poll` already runs on Helios, is **green** (`Result=success`,
 - [ ] Build once in CI, publish a checksummed artifact, host verifies before it deploys
 - [ ] Health check after deploy; **failure rolls back automatically** and the rollback path is exercised in CI, not just written
 - [ ] Node version in the build matches the Node version on the host — a standalone bundle shipping native modules (`pg`, `sharp`) built on the wrong major fails at runtime, not at build
+- ⛔ **STATUS CHANGED BY FOUNDER DECISION S-4, 2026-09-22: the rollback defect is a BLOCKER ON THE NEXT DEPLOY, no longer an accepted standing risk.** It was knowingly shipped on 2026-09-21 with the numbers put in front of the founder beforehand — that acceptance is now withdrawn, and the reverse path is fixed before anything else goes out
+- ℹ️ **The failure, first-hand from `yourtal-0c`**: `gaiada-deploy` loses `PM2_NAME` on rollback, reports `no pm2 process found for: uyourtal`, swaps the symlink and then **cannot restart** — leaving pm2 running new code while `current` points at old, **across every Node site on that box**. The blast radius is the reason this one stopped being acceptable: it is shared tooling, and the damage is not confined to YourTal
 
 ### YT-0533 · Secrets and keys without a KMS
 `todo` · P0 · infra · 2d · dep: YT-0530

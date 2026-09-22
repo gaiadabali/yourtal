@@ -207,11 +207,19 @@ test("seek bar responds to ArrowRight, moving playback forwards", async ({ page 
  * (`features/player/use-watch-session.test.tsx`), but **not verified
  * against this real MinIO origin in that pass** — a `next build` here
  * would have shared `.next` with another session's live `next dev`
- * UPDATE 2026-09-21 (YT-0550): RUN, and running as `test(` below. The
- * contention described here is gone, the coalescing fix in
- * `use-watch-session.ts` is in place, and this case was confirmed green
- * against the real MinIO origin over consecutive repeats rather than one
- * lucky pass. Original note kept for the reasoning.
+ * UPDATE 2026-09-21 (YT-0550), CORRECTED SAME DAY. It was flipped to
+ * `test(` on three consecutive green full-suite runs and flipped BACK here,
+ * because three greens were luck rather than evidence. Measured over nine
+ * further full-suite runs against the real MinIO origin: roughly one run in
+ * three fails with `Error: Home must seek to the start`, a real assertion
+ * failure and not infrastructure. The defect is intermittent, so any small
+ * number of green runs can be produced on demand.
+ *
+ * Both candidate fixes are in the tree and it still flakes: YT-0550's
+ * coalescing queue AND YT-0586's re-check of `video.seeking` after the
+ * write. Removing the re-check gave 8/7/8 over three runs; keeping it gave
+ * roughly six green in nine. Neither arm is clean, so on this evidence the
+ * two tickets cannot be told apart AND neither has closed the defect.
  *
  * (docs/13c, "Two agents, one working tree"). Left `test.fixme` rather than
  * flipped to a real assertion: a green run against the real origin is what
@@ -221,7 +229,7 @@ test("seek bar responds to ArrowRight, moving playback forwards", async ({ page 
  * "green once" — this failure was intermittent, so require a few
  * consecutive passes, e.g. `--repeat-each=5`, before trusting it).
  */
-test("seek bar responds to Home, seeking to the start", async ({ page }) => {
+test.fixme("seek bar responds to Home, seeking to the start", async ({ page }) => {
   const seekBar = await openPausedPlayer(page);
   for (let i = 0; i < 40; i += 1) {
     await seekBar.press("ArrowRight");

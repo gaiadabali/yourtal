@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { Campaign } from "@yourtal/contracts/campaign";
-import type { Chapter } from "./chapter";
+import type { PlayerChapter } from "./player-chapters";
 import { getQualityTier } from "./quality-tier";
 import { useTabVisibility } from "./use-tab-visibility";
 import { useWatchSession } from "./use-watch-session";
@@ -28,7 +28,7 @@ const HlsAttacher = dynamic(() => import("./hls-attacher").then((mod) => mod.Hls
 
 export interface VideoPlayerProps {
   campaign: Campaign;
-  chapters: readonly Chapter[];
+  chapters: readonly PlayerChapter[];
 }
 
 export function VideoPlayer({ campaign, chapters }: VideoPlayerProps) {

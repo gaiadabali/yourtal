@@ -1,11 +1,11 @@
 "use client";
 
 import { Button } from "@yourtal/ui/button";
-import type { Chapter } from "./chapter";
+import type { PlayerChapter } from "./player-chapters";
 import { formatClock } from "./format-clock";
 
 export interface ChapterTrackProps {
-  chapters: readonly Chapter[];
+  chapters: readonly PlayerChapter[];
   reachedChapterIndex: number;
   currentSeconds: number;
   onSelectChapter: (startSeconds: number) => void;
@@ -57,7 +57,7 @@ export function ChapterTrack({
               aria-current={isCurrent ? "step" : undefined}
               onClick={() => onSelectChapter(chapter.startSeconds)}
             >
-              <span className="text-xs font-semibold">{chapter.label}</span>
+              <span className="text-xs font-semibold">{chapter.title}</span>
               <span className="text-[10px] font-normal opacity-80">
                 {formatClock(chapter.startSeconds)}–{formatClock(chapter.endSeconds)} · {status}
               </span>

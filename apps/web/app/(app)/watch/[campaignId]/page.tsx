@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { deriveChapters } from "@/features/player/derive-chapters";
+import { playerChapters } from "@/features/player/player-chapters";
 import { getWatchCampaign } from "@/features/player/get-watch-campaign";
 import { VideoPlayer } from "@/features/player/video-player";
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: WatchPageProps): Promise<Meta
 export default async function WatchPage({ params }: WatchPageProps) {
   const { campaignId } = await params;
   const campaign = getWatchCampaign(campaignId);
-  const chapters = deriveChapters(campaign);
+  const chapters = playerChapters(campaign);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">

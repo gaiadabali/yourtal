@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { Campaign } from "@yourtal/contracts/campaign";
-import type { Chapter } from "@/features/player/chapter";
+import type { PlayerChapter } from "@/features/player/player-chapters";
 import { getQualityTier } from "@/features/player/quality-tier";
 import { useWatchSession } from "@/features/player/use-watch-session";
 import { PlayerControls } from "@/features/player/player-controls";
@@ -27,7 +27,7 @@ const HlsAttacher = dynamic(
 
 export interface OpenViewPlayerProps {
   campaign: Campaign;
-  chapters: readonly Chapter[];
+  chapters: readonly PlayerChapter[];
   copy: OpenViewCopy;
 }
 

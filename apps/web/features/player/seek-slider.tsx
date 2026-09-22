@@ -1,12 +1,12 @@
 "use client";
 
-import type { Chapter } from "./chapter";
+import type { PlayerChapter } from "./player-chapters";
 import { formatClock } from "./format-clock";
 
 export interface SeekSliderProps {
   currentSeconds: number;
   durationSeconds: number;
-  chapters: readonly Chapter[];
+  chapters: readonly PlayerChapter[];
   onSeek: (seconds: number) => void;
 }
 

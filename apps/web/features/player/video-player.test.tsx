@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { campaignSchema } from "@yourtal/contracts/campaign";
-import { deriveChapters } from "./derive-chapters";
+import { playerChapters } from "./player-chapters";
 import { writeResumePosition } from "./resume-position";
 import { VideoPlayer } from "./video-player";
 
@@ -48,7 +48,7 @@ const campaign = campaignSchema.parse({
   status: "active",
   publishedAt: "2026-09-19T09:00:00.000Z",
 });
-const chapters = deriveChapters(campaign);
+const chapters = playerChapters(campaign);
 
 describe("VideoPlayer", () => {
   beforeEach(() => {
@@ -89,10 +89,32 @@ describe("VideoPlayer", () => {
     expect(await screen.findByRole("button", { name: /480p/ })).toBeInTheDocument();
   });
 
-  it("shows all 5 chapter markers, each carrying only progress status (O-1: never a banked reward)", () => {
+  it("shows a marker for each chapter the CAMPAIGN carries, named by its own title (YT-0584)", () => {
     render(<VideoPlayer campaign={campaign} chapters={chapters} />);
     expect(screen.getByRole("list", { name: "Chapters" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /Chapter \d/ })).toHaveLength(5);
+
+    // This asserted five markers matching /Chapter \d/ until YT-0584. That
+    // was the shape `derive-chapters.ts` invented: always five, evenly
+    // split, generically named — for a campaign that carries three, called
+    // Pembuka, Isi and Penutup. The test passed because it described the
+    // fake rather than the campaign, so the drift was invisible from here.
+    const markers = screen.getAllByRole("button", { name: /Pembuka|Isi|Penutup/ });
+    expect(markers).toHaveLength(campaign.chapters.length);
+    // Accessible name comes from the marker's text, not an aria-label, so
+    // read what a screen reader would actually announce.
+    const names = markers.map((marker) => marker.textContent ?? "");
+    for (const title of campaign.chapters.map((chapter) => chapter.title)) {
+      expect(names.some((name) => name.includes(title))).toBe(true);
+    }
+  });
+
+  it("carries only progress status on a marker, never a banked reward (O-1)", () => {
+    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    // O-1: the reward is one grant after the full video and the questions,
+    // so a chapter marker must never read as points already earned.
+    for (const marker of screen.getAllByRole("button", { name: /Pembuka|Isi|Penutup/ })) {
+      expect(marker.textContent ?? "").not.toMatch(/points?/i);
+    }
   });
 
   it("shows a progress bar toward the total reward before playback starts, never a running figure", () => {

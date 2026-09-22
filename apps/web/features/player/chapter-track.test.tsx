@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChapterTrack } from "./chapter-track";
-import type { Chapter } from "./chapter";
+import type { PlayerChapter } from "./player-chapters";
 
-const chapters: Chapter[] = [
-  { index: 0, label: "Chapter 1", startSeconds: 0, endSeconds: 180, rewardPoints: 200 },
-  { index: 1, label: "Chapter 2", startSeconds: 180, endSeconds: 360, rewardPoints: 400 },
+const chapters: PlayerChapter[] = [
+  { index: 0, title: "Chapter 1", startSeconds: 0, endSeconds: 180, rewardPoints: 200 },
+  { index: 1, title: "Chapter 2", startSeconds: 180, endSeconds: 360, rewardPoints: 400 },
 ];
 
 describe("ChapterTrack", () => {

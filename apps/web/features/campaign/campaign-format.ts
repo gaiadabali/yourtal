@@ -37,7 +37,18 @@ const DURATION_WORDS: Record<SupportedLocale, DurationWords> = {
 };
 
 /** Formats a duration in seconds as short copy, e.g. "18 menit" or "18 min". */
-export function formatDuration(durationSeconds: number, locale: SupportedLocale = "id-ID"): string {
+/**
+ * YT-0405: `locale` is REQUIRED on both formatters, not defaulted.
+ *
+ * They previously defaulted to `"id-ID"`. Every production call site passed
+ * it explicitly, so nothing rendered Indonesian to an AU user — the leak was
+ * latent, not live. It is still worth removing: in an AU-primary product a
+ * shared formatter that silently falls back to Indonesian fails in the
+ * wrong direction, and a default turns "someone forgot the argument" into a
+ * wrong-language render instead of a compile error. Found by `yourtal-ca`
+ * during the Phase U review sweep.
+ */
+export function formatDuration(durationSeconds: number, locale: SupportedLocale): string {
   const words = DURATION_WORDS[locale];
   const numberFormatter = NUMBER_FORMATTERS[locale];
 
@@ -64,7 +75,7 @@ export function formatDuration(durationSeconds: number, locale: SupportedLocale 
  * guarantee — actual bytes depend on the player's chosen quality. "MB" is
  * not translated: it reads identically in both locales.
  */
-export function formatDataCost(estimatedDataMb: number, locale: SupportedLocale = "id-ID"): string {
+export function formatDataCost(estimatedDataMb: number, locale: SupportedLocale): string {
   const formatted =
     estimatedDataMb < 10
       ? ONE_DECIMAL_FORMATTERS[locale].format(estimatedDataMb)

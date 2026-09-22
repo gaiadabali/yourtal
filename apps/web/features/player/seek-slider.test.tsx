@@ -2,11 +2,11 @@ import "@testing-library/jest-dom/vitest";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { SeekSlider } from "./seek-slider";
-import type { Chapter } from "./chapter";
+import type { PlayerChapter } from "./player-chapters";
 
-const chapters: Chapter[] = [
-  { index: 0, label: "Chapter 1", startSeconds: 0, endSeconds: 180, rewardPoints: 200 },
-  { index: 1, label: "Chapter 2", startSeconds: 180, endSeconds: 360, rewardPoints: 200 },
+const chapters: PlayerChapter[] = [
+  { index: 0, title: "Chapter 1", startSeconds: 0, endSeconds: 180, rewardPoints: 200 },
+  { index: 1, title: "Chapter 2", startSeconds: 180, endSeconds: 360, rewardPoints: 200 },
 ];
 
 describe("SeekSlider", () => {

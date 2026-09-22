@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { deriveChapters } from "@/features/player/derive-chapters";
+import { playerChapters } from "@/features/player/player-chapters";
 import { computeOpenViewCopy } from "@/features/open-view/open-view-copy";
 import { OpenViewPlayer } from "@/features/open-view/open-view-player";
 import { getPublicCampaign, listLivePublicCampaigns } from "@/features/public/public-campaign-data";
@@ -71,7 +71,7 @@ export default async function OpenViewWatchPage({ params }: OpenViewWatchPagePro
 
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
-  const chapters = deriveChapters(campaign);
+  const chapters = playerChapters(campaign);
   const copy = computeOpenViewCopy(campaign, config);
   const merchantSlug = slugify(campaign.merchantName);
 

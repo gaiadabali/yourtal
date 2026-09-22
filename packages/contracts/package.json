@@ -16,6 +16,8 @@
     "./watch/progress-report": "./src/watch/watch-progress-report.ts",
     "./watch/checkpoint-token": "./src/watch/watch-checkpoint-token.ts",
     "./listing": "./src/listing/listing.ts",
+    "./interest/taxonomy": "./src/interest/taxonomy.ts",
+    "./interest/category-map": "./src/interest/category-map.ts",
     "./listing/mock": "./src/listing/listing.mock.ts",
     "./listing/merchant-location": "./src/listing/merchant-location.ts",
     "./voucher": "./src/voucher/voucher.ts",

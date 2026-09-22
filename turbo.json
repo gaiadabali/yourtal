@@ -1,6 +1,41 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "stream",
+
+  // Turbo 2 runs tasks in `strict` env mode by default: a task sees only the
+  // variables declared here plus a small system allowlist. Nothing was
+  // declared, so every Postgres credential the CI job sets at job level was
+  // stripped before it reached a task -- and the failure was invisible three
+  // ways at once.
+  //
+  // 1. The SAME package passed and failed in one CI job, 100 seconds apart.
+  //    `packages/idempotency` runs twice in integration.yml: once directly
+  //    (`pnpm --filter ... test`, line 254) which keeps the environment, and
+  //    once through `turbo run test` in the sweep (line 335) which does not.
+  //    Reading either step alone gives the wrong answer.
+  // 2. It cannot reproduce locally. A developer `.env` supplies the same
+  //    variables by another route, so the sweep passes on every machine that
+  //    has one and fails on CI, which has none.
+  // 3. The tests did not fail -- they never RAN. `test-db.mjs` refuses to
+  //    create a database without the owner credential and exits 1, which is
+  //    the honest behaviour and reads in the log like a test failure.
+  //
+  // `globalPassThroughEnv` rather than `env`: these point at a database
+  // rather than change what the code does, so they must reach the task
+  // without becoming part of the cache key -- hashing them would miss every
+  // cache across machines for no gain.
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "DATABASE_OWNER_URL",
+    "TEST_DATABASE_URL",
+    "OWNER_DATABASE_URL",
+    "VOUCHER_DATABASE_URL",
+    "LEDGER_DATABASE_URL",
+    "PDP_BASE_URL",
+    "S3_ENDPOINT",
+    "CHECKPOINT_TOKEN_SECRET",
+    "PGHOST_OVERRIDE"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

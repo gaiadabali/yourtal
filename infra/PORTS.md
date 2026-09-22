@@ -69,6 +69,36 @@ Both processes sit inside `yourtal.slice`, confirmed from
 is a direct child of the slice. So YT-0530's CPU and memory caps are in
 force for the workload that is actually running.
 
+## Two Postgres instances, and why that is the isolation story
+
+`5432` and `26432` are **different Postgres servers**, and the distinction
+is load-bearing for YT-0529's second criterion.
+
+| Port  | Bound     | Instance                                                       |
+| ----- | --------- | -------------------------------------------------------------- |
+| 5432  | 127.0.0.1 | The **host** Postgres. Not ours. Holds client production data. |
+| 26432 | 127.0.0.1 | YourTal's Postgres, containerised, inside `yourtal.slice`.     |
+
+Both listening simultaneously is directly observable with `ss -ltn` and was
+observed on 2026-09-21. `gaiada-setups`'s deploy registry states the intent
+behind it: YourTal's Postgres is deliberately **not** the host instance,
+which carries seven client production databases.
+
+So the documented isolation here is **instance separation, not role
+separation inside a shared server** — a stronger position, and a different
+one from what a reader would assume from `docs/13`'s `yourtal_app` /
+`yourtal_ledger` split, which operates _within_ YourTal's own instance.
+
+**What is observed and what is claimed are not the same thing.** Two
+separate listeners is observed. That YourTal cannot reach the host
+instance is a _claim_ from a config registry, and a registry asserting
+isolation is not evidence of isolation. Criterion 2 closes by attempting
+the connection and being refused, which needs a privileged session — see
+the ticket. Recorded here so the next reader does not mistake the
+observable half for the whole.
+
+The blast radius, if it were ever wrong, is those seven databases.
+
 ## What is NOT ours, and why it is recorded here anyway
 
 Two processes on Helios bind `0.0.0.0`. **Neither is YourTal's**, both

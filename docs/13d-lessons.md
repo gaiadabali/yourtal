@@ -621,6 +621,18 @@ git add <paths> && git commit -- <paths> # then stage and commit, chained
 
 **The general form, because both rules were individually right:** _read the diff before staging_ and _commit by pathspec_ appear to conflict only if you assume inspection requires staging. It does not. **Two correct rules can compose into a dangerous procedure purely through ordering**, and nothing in either rule's statement warns you — which is why the ordering, not just the rules, belongs in the write-up.
 
+### Rung seven: a pathspec commit protects files, not hunks
+
+Having adopted the corrected ordering above, a third foreign change still reached one of my commits — two `packages/contracts/package.json` export lines belonging to other sessions, one of which points at a file that is untracked, so a clean checkout gets a dangling export.
+
+The procedure worked exactly as designed. **`git commit -- <paths>` is file-granular.** It guarantees that no *file* outside your pathspec enters the commit; it says nothing about *lines inside a file you legitimately need to commit*. `package.json` is shared — several epics each add one export line — so committing it takes whatever else is sitting in it.
+
+**Rule: a shared file needs `git add -p`, not a pathspec.** In this repository that is at least `packages/contracts/package.json`, `packages/db/migrations/atlas.sum`, `db-drift/schema-drift.test.ts` and `openapi/route-drift.test.ts` — every file where multiple epics legitimately contribute a line each.
+
+This was `yourtal-b6`'s advice on the morning of the same day, after the collision that opens this section. It was discarded on adopting pathspec commits, **because the newer and narrower tool looked like a superset of the older advice when the two are orthogonal**: one controls which files, the other which hunks. That is the transferable error — a refinement that addresses the same symptom is not necessarily a replacement, and nothing about `git commit -- <paths>` announces the axis it does not cover.
+
+**The full record of one session's three foreign changes, each through a different mechanism and each after fixing the previous one:** a bare `git add` on a shared file (300 lines of a module, into someone else's commit message); a window between verifying the index and staging (a whole file nobody meant to commit); and file-granularity (two lines inside a file that genuinely had to be committed). **Seven rungs, and the count of distinct mechanisms is the finding** — it is not one mistake being repeated, it is one *structure* producing a new failure each time a narrower control is applied to it.
+
 ### Why this is its own section rather than a line in section 25
 
 `docs/13c`'s "Two agents, one working tree" covers the _working tree_. This is about the _index_, which is shared state nobody thinks of as shared — it has no path, does not appear in `git status` output as an actor, and is mutated as a side effect of commands whose purpose is something else.

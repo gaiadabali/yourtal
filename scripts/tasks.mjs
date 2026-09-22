@@ -149,18 +149,35 @@ for (const t of tasks) {
     dependents.get(d).push(t.id);
   }
 }
+// Blocking propagates only THROUGH OPEN NODES, and the first version of this
+// did not. It walked every transitive dependent and filtered the result for
+// open, which counts tickets sitting behind a chain that is already severed:
+// if A <- B <- C and B is `done`, C is not waiting on A any more, because the
+// thing it was waiting for is finished.
+//
+// The error was always in the same direction — inflating — and it inflated
+// most where the most work had been completed, so the tickets it most
+// overstated were the ones nearest to being unblocked. Corrected 2026-09-22
+// after `yourtal-ca` found the same defect in their own independent
+// implementation and reported it; measured here before and after.
+//
+// The general form is worth keeping: a reachability count over a dependency
+// graph must stop at satisfied nodes, or it measures the SHAPE of the graph
+// rather than what is actually blocked.
 function downstreamOf(id) {
-  const seen = new Set();
+  const blocked = new Set();
   const stack = [...(dependents.get(id) ?? [])];
   while (stack.length) {
     const c = stack.pop();
-    if (seen.has(c)) continue;
-    seen.add(c);
+    if (blocked.has(c)) continue;
+    const t = byId.get(c);
+    if (!t || !open(t)) continue; // satisfied: it blocks nothing behind it
+    blocked.add(c);
     stack.push(...(dependents.get(c) ?? []));
   }
-  return seen;
+  return blocked;
 }
-const reach = (id) => [...downstreamOf(id)].filter((c) => byId.get(c) && open(byId.get(c))).length;
+const reach = (id) => downstreamOf(id).size;
 
 function table(rows, headers) {
   return [

@@ -204,13 +204,26 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - [ ] Accuracy bonus applied once at the end, idempotently
 
 ### YT-0125 · Answer-key leak detection
-`todo` · P1 · watch · 4d · dep: YT-0122
+`done` · P1 · watch · 4d · dep: YT-0122
 
-- [ ] Per-question population accuracy tracked over time
-- [ ] A sudden accuracy jump auto-retires the question and flags the cohort
-- [ ] Answer-pattern clustering identifies accounts answering identical subsets identically
+- [x] Per-question population accuracy tracked over time
+- [x] A sudden accuracy jump auto-retires the question and flags the cohort
+- [x] Answer-pattern clustering identifies accounts answering identical subsets identically
 
 ## Open Viewing
+- ✅ **Verified 2026-09-22 by `yourtal-fe`; built by `yourtal-4d`, so author and verifier differ. The security boundary was checked at the database, because that is where it lives.**
+  - `yourtal_analyst` holds **SELECT** on `campaign.question_response`; `yourtal_app` holds **INSERT only**. The role YT-0122 deliberately left uncreated now exists and is scoped
+  - Its write scope is **column-level and minimal**: `UPDATE` on exactly `campaign.question.status` and `campaign.question.retired_reason` and nothing else. **It can retire a question and cannot rewrite a prompt** — which matters, because a role that can edit the question it is judging could make its own verdict true
+  - No answer-key column is readable; correctness is already scored at write time
+- ✅ **The sabotage is worth more than the assertion, and `yourtal-4d` noticed why.** Granting `yourtal_app` membership of the analyst role does not merely fail the membership test — **it makes the application able to read per-user answers, so YT-0122's two refusal tests fail as well. Four red from one `GRANT`.** That is the boundary proving it is load-bearing across two tickets rather than locally asserted in one
+- ✅ **Criterion 2's three guards are each the non-obvious choice**: a **signed** comparison, because `Math.abs` would retire a question for getting *harder*; a floor on **both** windows, because three lucky viewers look identical to a leak and retiring on that hands anyone a way to delete a campaign's bank by answering well a few times; and a test asserting a **steady 95%-accuracy question is NOT retired**, because the signal is the change and a detector without that deletes the bank's best content first. `retire` defaults to **false** — a sweep that retires on its first run in a new environment is how a detector deletes a bank
+- ✅ **Criterion 3 fingerprints question AND answer**, proved by sabotage: matching the served subset alone groups honest viewers who drew the same questions and disagreed, and fails two tests. Singletons dropped; accounts with no answers excluded rather than grouped, since they all trivially share the empty subset
+- ✅ **RULING on criterion 1, which the author declined to make about their own work and was right to.** *"Per-question population accuracy tracked over time"* is **met** by on-demand computation from timestamped rows. Two reasons, and the second is the deciding one:
+  - The data exists over time and is comparable across time — `answered_at` is stored per response, and **there is no retention or pruning of `campaign.question_response` anywhere**: the only `DELETE`s against it are test cleanup. So nothing erodes the history
+  - **A materialised time series would be a second source of truth for a quantity derivable from the rows**, which this codebase has twice treated as a defect on purpose — balance is *"a projection over entries, never a stored column"* (YT-0042), and `campaigns.status` was **dropped and derived** rather than stored beside `lifecycle_state` (YT-0101). Persisting the series here would contradict the pattern the rest of the system is built on
+- ⚠️ **The condition under which that ruling changes, stated so it is checkable rather than re-argued**: if a retention policy is ever added to `campaign.question_response`, the tracking window silently shortens to the retention window and this criterion quietly stops being met. **Whoever adds retention owns re-opening it**
+- ✅ **The two-window design is better than the criterion asked for.** A running average **absorbs the leak it exists to reveal** — every leaked answer drags the mean toward the new normal and erodes the baseline it is measured against. Splitting at a cutoff keeps the baseline fixed
+- ⏭️ **Where the sweep is scheduled from is an open DEPLOYMENT decision and is not `watch`'s to settle.** The constraint is not that no handler calls it: **an `apps/api` process holding an analyst pool is a process that CAN read those rows**, and the guarantee was about the process rather than anyone's discipline. There is a test asserting the sweep fails with `permission denied` on the application's credential. **Owner: `infra`** — it sits with YT-0532 and YT-0604 as deploy-shaped work
 
 ### YT-0207 · Open Viewing: anonymous full-campaign playback
 `todo` · P1 · watch · 4d · dep: YT-0120, YT-0205

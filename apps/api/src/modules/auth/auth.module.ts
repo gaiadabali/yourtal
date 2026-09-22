@@ -6,6 +6,7 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { RedisClientModule } from "../../shared/redis/redis-client.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
+import { DevTokenAccess } from "./dev-token-access";
 import { SessionService } from "./session/session.service";
 import { ThrottleService } from "./throttle/throttle.service";
 import { CREDENTIAL_REPOSITORY } from "./persistence/credential.repository";
@@ -41,6 +42,7 @@ export const AUTH_DB = Symbol("AUTH_DB");
     AuthService,
     SessionService,
     ThrottleService,
+    DevTokenAccess,
     {
       provide: AUTH_DB,
       useFactory: (config: AppConfig): AppDb => createAppDb(config.databaseUrl),

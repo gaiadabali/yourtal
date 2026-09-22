@@ -1,17 +1,21 @@
 import { createHash, randomUUID } from "node:crypto";
-import { afterAll, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { Logger } from "@nestjs/common";
 import { Redis } from "ioredis";
 import { eq } from "drizzle-orm";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppConfig } from "../../config/app-config";
 import { AuthService } from "./auth.service";
+import { DevTokenAccess } from "./dev-token-access";
 import { SessionService } from "./session/session.service";
 import {
   ThrottleService,
   ACCOUNT_THROTTLE_LIMITS,
   SOURCE_THROTTLE_LIMITS,
 } from "./throttle/throttle.service";
+import { PASSWORD_CREDENTIAL_KIND } from "./persistence/credential.repository";
 import { DrizzleCredentialRepository } from "./persistence/drizzle-credential.repository";
 import { DrizzleSessionRepository } from "./persistence/drizzle-session.repository";
 import { DrizzleVerificationTokenRepository } from "./persistence/drizzle-verification-token.repository";
@@ -52,7 +56,15 @@ const sessionRepo = new DrizzleSessionRepository(db);
 const verificationTokens = new DrizzleVerificationTokenRepository(db);
 const sessionService = new SessionService(sessionRepo);
 const throttle = new ThrottleService(redis);
-const auth = new AuthService(CONFIG, credentials, verificationTokens, sessionService, throttle);
+const devTokenAccess = new DevTokenAccess();
+const auth = new AuthService(
+  CONFIG,
+  credentials,
+  verificationTokens,
+  sessionService,
+  throttle,
+  devTokenAccess,
+);
 
 function freshEmail(): string {
   return `auth-test-${randomUUID()}@example.com`;
@@ -329,27 +341,24 @@ describe("session lifecycle — validated by breaking it, not reading it", () =>
 });
 
 describe("password reset — single-use, and a replay is refused", () => {
-  it("a reset token can be consumed exactly once; a replay and a forgery are refused the SAME way", async () => {
+  it("a reset token can be consumed exactly once; a wrong presentation, a replay and a forgery are all refused the SAME way", async () => {
     const email = freshEmail();
     await registerOk(email, "the-original-password");
 
-    let issuedToken = "";
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- captured only to `.apply(this, ...)` below, which explicitly rebinds it
-    const originalDebug = Logger.prototype.debug;
-    Logger.prototype.debug = function patched(this: Logger, message?: unknown, ...rest: unknown[]) {
-      if (typeof message === "string" && message.includes("password_reset token for")) {
-        issuedToken = message.split(": ").pop() ?? "";
-      }
-      return originalDebug.apply(this, [message, ...rest] as Parameters<typeof originalDebug>);
-    };
+    const credential = await credentials.findByKindAndIdentifier(PASSWORD_CREDENTIAL_KIND, email);
+    expect(credential).not.toBeNull();
+    const userId = credential?.userId ?? "";
 
-    try {
-      const requested = await auth.requestPasswordReset(email, new Date());
-      expect(requested.isOk()).toBe(true);
-      expect(issuedToken.length).toBeGreaterThan(0);
-    } finally {
-      Logger.prototype.debug = originalDebug;
-    }
+    const requested = await auth.requestPasswordReset(email, new Date());
+    expect(requested.isOk()).toBe(true);
+
+    // The seam, not a log scrape: `peekToken` is development/test-only and
+    // lives on `DevTokenAccess`, never on `AuthService` — see
+    // `dev-token-access.ts`'s own doc. This is still the IDENTICAL real
+    // token `deliver()` minted, not a fabricated stand-in — the replay
+    // assertion below depends on that.
+    const realToken = devTokenAccess.peekToken("password_reset", userId, Date.now()) ?? "";
+    expect(realToken.length).toBeGreaterThan(0);
 
     // `user_id` is opaque — the stored verification-token row must not
     // carry the email this reset was requested for, in any form. Read
@@ -357,27 +366,46 @@ describe("password reset — single-use, and a replay is refused", () => {
     const [tokenRow] = await db
       .select()
       .from(verificationTokensTable)
-      .where(eq(verificationTokensTable.id, hashOpaqueToken(issuedToken)));
+      .where(eq(verificationTokensTable.id, hashOpaqueToken(realToken)));
     expect(tokenRow).toBeDefined();
     expect(JSON.stringify(tokenRow)).not.toContain(email);
     expect(tokenRow?.userId).not.toContain("@");
 
+    // wrong-verify: a tampered presentation of the REAL token is refused,
+    // and — critically — must NOT consume it, so the right-verify below
+    // still succeeds.
+    const tampered = realToken.slice(0, -1) + (realToken.endsWith("A") ? "B" : "A");
+    const wrongVerify = await auth.confirmPasswordReset(tampered, "irrelevant", new Date());
+    expect(wrongVerify.isErr() && wrongVerify.error.type).toBe("token_invalid");
+
+    // right-verify: the identical real token.
     const first = await auth.confirmPasswordReset(
-      issuedToken,
+      realToken,
       "a-brand-new-reset-password",
       new Date(),
     );
     expect(first.isOk()).toBe(true);
 
-    const replay = await auth.confirmPasswordReset(issuedToken, "yet-another-password", new Date());
+    // replay: the SAME real token, presented again after it was consumed.
+    const replay = await auth.confirmPasswordReset(realToken, "yet-another-password", new Date());
     expect(replay.isErr() && replay.error.type).toBe("token_invalid");
 
+    // a pure forgery — a token nobody ever issued — collapses to the exact
+    // same refusal as the replay above at this boundary, even though the
+    // two are internally distinguished (proven in the repository test
+    // below): a caller cannot tell a forgery from a replay by probing.
     const neverIssued = await auth.confirmPasswordReset(
       "not-a-real-token-nobody-ever-issued",
       "irrelevant",
       new Date(),
     );
     expect(neverIssued.isErr() && neverIssued.error.type).toBe("token_invalid");
+    expect(wrongVerify.isErr() && wrongVerify.error.type).toBe(
+      neverIssued.isErr() ? neverIssued.error.type : undefined,
+    );
+    expect(replay.isErr() && replay.error.type).toBe(
+      neverIssued.isErr() ? neverIssued.error.type : undefined,
+    );
   });
 
   it("the repository tells a replay apart from a token that never existed", async () => {
@@ -427,5 +455,108 @@ describe("password reset — single-use, and a replay is refused", () => {
     expect(result.consumed).toBe(false);
     const refusal = !result.consumed ? result.refusal : undefined;
     expect(refusal).toBe("expired");
+  });
+});
+
+describe("the raw token never reaches a logger", () => {
+  it("issue -> wrong-verify -> right-verify -> replay never prints the token, on console or the Nest logger", async () => {
+    // All five `console.*` methods AND every level `Logger` exposes —
+    // "a different log level on the same logger is not a different
+    // destination", so proving absence means capturing everything a
+    // logging call of any shape could reach, not just the one method the
+    // old code happened to use.
+    const calls: unknown[] = [];
+    const consoleSpies = (["log", "info", "warn", "error", "debug"] as const).map((method) =>
+      vi.spyOn(console, method).mockImplementation((...args: unknown[]) => {
+        calls.push(args);
+      }),
+    );
+    /* eslint-disable @typescript-eslint/unbound-method -- captured only to be restored below, never called through `this` */
+    const originalLog = Logger.prototype.log;
+    const originalDebug = Logger.prototype.debug;
+    const originalWarn = Logger.prototype.warn;
+    const originalError = Logger.prototype.error;
+    const originalVerbose = Logger.prototype.verbose;
+    /* eslint-enable @typescript-eslint/unbound-method */
+    function capture(this: Logger, message?: unknown, ...rest: unknown[]): void {
+      calls.push([message, ...rest]);
+    }
+    Logger.prototype.log = capture;
+    Logger.prototype.debug = capture;
+    Logger.prototype.warn = capture;
+    Logger.prototype.error = capture;
+    Logger.prototype.verbose = capture;
+
+    try {
+      const email = freshEmail();
+      await registerOk(email, "the-original-password-for-log-absence");
+      const credential = await credentials.findByKindAndIdentifier(PASSWORD_CREDENTIAL_KIND, email);
+      const userId = credential?.userId ?? "";
+
+      // issue
+      const requested = await auth.requestPasswordReset(email, new Date());
+      expect(requested.isOk()).toBe(true);
+      const realToken = devTokenAccess.peekToken("password_reset", userId, Date.now()) ?? "";
+      expect(realToken.length).toBeGreaterThan(0);
+
+      // wrong-verify: a tampered presentation of the same real token.
+      const tampered = realToken.slice(0, -1) + (realToken.endsWith("A") ? "B" : "A");
+      const wrongVerify = await auth.confirmPasswordReset(tampered, "irrelevant", new Date());
+      expect(wrongVerify.isErr() && wrongVerify.error.type).toBe("token_invalid");
+
+      // right-verify: the identical real token.
+      const confirmed = await auth.confirmPasswordReset(
+        realToken,
+        "a-completely-different-password",
+        new Date(),
+      );
+      expect(confirmed.isOk()).toBe(true);
+
+      // replay: the SAME real token, presented again after consumption.
+      const replay = await auth.confirmPasswordReset(
+        realToken,
+        "yet-another-password-again",
+        new Date(),
+      );
+      expect(replay.isErr() && replay.error.type).toBe("token_invalid");
+
+      // The behavioural proof: whatever was actually written, captured
+      // for real, does not contain the token — not "we removed the line".
+      const captured = JSON.stringify(calls);
+      expect(captured).not.toContain(realToken);
+      // The dev seam's own audit trail records THAT it was read, never
+      // the value read.
+      expect(JSON.stringify(devTokenAccess.devAccessLog)).not.toContain(realToken);
+    } finally {
+      for (const spy of consoleSpies) spy.mockRestore();
+      Logger.prototype.log = originalLog;
+      Logger.prototype.debug = originalDebug;
+      Logger.prototype.warn = originalWarn;
+      Logger.prototype.error = originalError;
+      Logger.prototype.verbose = originalVerbose;
+    }
+  });
+
+  it("no logger call in auth.service.ts interpolates the raw token variable — structural, not behavioural", () => {
+    // Belt-and-suspenders alongside the spy test above, mirroring the
+    // determinism proof YT-0536 uses for `Math.random`: read the actual
+    // source rather than trusting that no code path prints a credential.
+    // `token` (and `rawToken`, `sessionToken` — every parameter this file
+    // ever names that way) must never appear inside a template literal
+    // passed to a logger call. This is deliberately narrower than "the
+    // word 'token' near a logger call" — `this.logger.warn(\`password
+    // reset token refused: ${consumed.refusal}\`)` is fine, since
+    // `consumed.refusal` is a fixed enum, not the credential — and is
+    // exactly the pattern the original defect had: a logger call whose
+    // template string interpolates a variable that IS the raw secret.
+    const path = fileURLToPath(new URL("./auth.service.ts", import.meta.url));
+    const source = readFileSync(path, "utf8");
+    const loggerCallLines = source
+      .split("\n")
+      .filter((line) => /\blogger\.(log|debug|warn|error|verbose)\(/.test(line));
+    expect(loggerCallLines.length).toBeGreaterThan(0);
+    for (const line of loggerCallLines) {
+      expect(line).not.toMatch(/\$\{(raw)?[a-zA-Z]*[tT]oken\}/);
+    }
   });
 });

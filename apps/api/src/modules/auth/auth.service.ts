@@ -6,6 +6,7 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { hashPassword, verifyPassword } from "./crypto/password-hash";
 import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
+import { DevTokenAccess } from "./dev-token-access";
 import { normalizeEmail } from "./email";
 import {
   CREDENTIAL_REPOSITORY,
@@ -65,6 +66,7 @@ export class AuthService {
     private readonly verificationTokens: VerificationTokenRepository,
     private readonly sessions: SessionService,
     private readonly throttle: ThrottleService,
+    private readonly devTokenAccess: DevTokenAccess,
   ) {}
 
   async register(
@@ -308,27 +310,26 @@ export class AuthService {
 
   /**
    * Stand-in for a real delivery channel. `YT-0538`'s own AC for its
-   * simulators states the pattern this borrows: *"never printed into
-   * ordinary logs"* in production. Wiring this to a real or simulated
-   * messaging boundary (the `messaging` boundary `packages/drivers`
-   * already catalogues) is explicitly NOT done here — see this ticket's
-   * report.
+   * simulators states the pattern this now follows too: *"never printed
+   * into ordinary logs"*. See `dev-token-access.ts`'s own doc for why that
+   * used to be a `nodeEnv` branch and is not one any more — `token` is
+   * passed to `devTokenAccess.record`, never to `this.logger`. Wiring this
+   * to a real or simulated messaging boundary (the `messaging` boundary
+   * `packages/drivers` already catalogues) is explicitly NOT done here —
+   * see this ticket's report.
    */
   private deliver(
     purpose: "password_reset" | "email_verification",
     userId: string,
     token: string,
   ): void {
-    if (this.config.nodeEnv === "production") {
-      // `userId` is already opaque (a minted UUID, not the email) — no
-      // hashing needed here the way `hashForThrottleKey` needs it for the
-      // ATTEMPTED identifier in `login`/throttle keys.
-      this.logger.log(`${purpose} token issued for ${userId}`);
-      return;
-    }
-    // Development/test only. The raw token never appears in a production
-    // log line — only its issuance does, above.
-    this.logger.debug(`[dev-only] ${purpose} token for ${userId}: ${token}`);
+    // `userId` is already opaque (a minted UUID, not the email) — no
+    // hashing needed here the way `hashForThrottleKey` needs it for the
+    // ATTEMPTED identifier in `login`/throttle keys. Logged at both levels
+    // — neither one gets the token; only that issuance happened.
+    this.logger.log(`${purpose} token issued for ${userId}`);
+    this.logger.debug(`${purpose} token issued for ${userId}`);
+    this.devTokenAccess.record(purpose, userId, token);
   }
 
   /** One place every method wraps an unexpected store failure. */

@@ -238,16 +238,7 @@ func TestRunPagesRatherThanMerelyLogging(t *testing.T) {
 	transferID := writeTransfer(t, pool, 500)
 
 	// Break the balance with a superuser, which is the only thing that can.
-	if _, err := super.Exec(ctx,
-		`UPDATE ledger.entry SET amount_minor = amount_minor + 7 WHERE transfer_id = $1 AND amount_minor > 0`,
-		transferID); err != nil {
-		t.Fatalf("tamper: %v", err)
-	}
-	defer func() {
-		_, _ = super.Exec(ctx,
-			`UPDATE ledger.entry SET amount_minor = amount_minor - 7 WHERE transfer_id = $1 AND amount_minor > 0`,
-			transferID)
-	}()
+	defer tamperBalance(t, ctx, super, transferID, 7)()
 
 	findings, err := checker.Run(ctx)
 	if err != nil {
@@ -276,16 +267,7 @@ func TestAFailedPageIsItselfAnIncident(t *testing.T) {
 	defer super.Close()
 
 	transferID := writeTransfer(t, pool, 300)
-	if _, err := super.Exec(ctx,
-		`UPDATE ledger.entry SET amount_minor = amount_minor + 3 WHERE transfer_id = $1 AND amount_minor > 0`,
-		transferID); err != nil {
-		t.Fatalf("tamper: %v", err)
-	}
-	defer func() {
-		_, _ = super.Exec(ctx,
-			`UPDATE ledger.entry SET amount_minor = amount_minor - 3 WHERE transfer_id = $1 AND amount_minor > 0`,
-			transferID)
-	}()
+	defer tamperBalance(t, ctx, super, transferID, 3)()
 
 	if _, err := checker.Run(ctx); err == nil {
 		t.Error("the pager failed during an imbalance and Run reported success")
@@ -410,4 +392,62 @@ func backdatedTransfer(t *testing.T, super *pgxpool.Pool, day time.Time, amount 
 		t.Fatalf("entries: %v", err)
 	}
 	return transferID
+}
+
+// tamperBalance applies a superuser imbalance to a transfer and returns a
+// restore function that VERIFIES the ledger balanced again, rather than
+// merely attempting it. YT-0567.
+//
+// # Why the discarded error was worth a ticket
+//
+// The restores here were `_, _ = super.Exec(...)` inside a `defer`. Three
+// ways that goes wrong and says nothing: the Exec fails, the process takes a
+// SIGINT between tamper and defer, or an assertion panics. Each leaves
+// `ledger.entry` PERMANENTLY imbalanced in a database several packages and,
+// on this machine, several sessions share — and the next thing to notice is
+// `TestInvariantCheckerFindsNoImbalance` in another package failing for a
+// reason that has nothing to do with it. That is the confusion YT-0567 was
+// filed about, arriving by a second route.
+//
+// # Verified, not attempted
+//
+// Asserting the Exec's error is necessary and not sufficient: an UPDATE that
+// matches zero rows succeeds. So the restore re-reads the transfer and
+// asserts the entries sum to zero, which is the property the other package
+// depends on. A cleanup that reports success without checking its own effect
+// is the same shape as the gates `docs/13d` collects.
+//
+// Deliberately NOT made balance-preserving. Line 149's tamper keeps the
+// transfer balanced on purpose, because that test's subject is a change the
+// balance check CANNOT see. These two are the opposite: their subject is the
+// imbalance itself — "Break the balance with a superuser, which is the only
+// thing that can" — so making them balanced would delete the thing under
+// test. Isolation is the fix for cross-package visibility (YT-0547), not
+// weakening the tamper.
+func tamperBalance(t *testing.T, ctx context.Context, super *pgxpool.Pool, transferID string, delta int64) func() {
+	t.Helper()
+	if _, err := super.Exec(ctx,
+		`UPDATE ledger.entry SET amount_minor = amount_minor + $2 WHERE transfer_id = $1 AND amount_minor > 0`,
+		transferID, delta); err != nil {
+		t.Fatalf("tamper: %v", err)
+	}
+	return func() {
+		if _, err := super.Exec(ctx,
+			`UPDATE ledger.entry SET amount_minor = amount_minor - $2 WHERE transfer_id = $1 AND amount_minor > 0`,
+			transferID, delta); err != nil {
+			t.Errorf("RESTORE FAILED — ledger.entry is left imbalanced for transfer %s by %d: %v",
+				transferID, delta, err)
+			return
+		}
+		var sum int64
+		if err := super.QueryRow(ctx,
+			`SELECT COALESCE(SUM(amount_minor), 0) FROM ledger.entry WHERE transfer_id = $1`,
+			transferID).Scan(&sum); err != nil {
+			t.Errorf("restore not verified for transfer %s: %v", transferID, err)
+			return
+		}
+		if sum != 0 {
+			t.Errorf("restore ran and did NOT balance transfer %s: entries sum to %d, want 0", transferID, sum)
+		}
+	}
 }

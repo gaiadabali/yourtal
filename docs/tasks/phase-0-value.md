@@ -155,10 +155,13 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [x] **Velocity counted from the grant log, not a counter.** A cap enforced against something lossy is not a cap — a dropped metric or evicted cache key becomes free points, and the attacker who notices first is the one it was meant to stop. Device and IP caps span all actions, since a per-action cap is defeated by doing several different actions from one farm
 - [x] **`RiskGate` returns a decision, never a multiplier** — `docs/18` §9's "smarter in inputs, never in arithmetic" made structural. A gate that could scale a reward would be arithmetic, and two users completing the same campaign would quietly be paid differently; there is a test asserting they are not. The placeholder is named `AlwaysAllow` so it cannot be mistaken for a real control in a stack trace
 - [x] Check order is the design: everything that can refuse runs **before** the ledger is touched, and drawdown + post + log share one transaction. An allocation decremented for points never issued destroys funding nobody can account for
-- [ ] ⚠️ **Point values are placeholders at taxonomy v1** — needs the economy owner (YT-0050, still `todo`)
+- [ ] **Non-campaign action values** (streak, referral, receipt scan) are platform defaults and signed off; **campaign reward values are the PARTNER's**, per `campaign.reward_config`, and are the subject of **YT-0610**
 - [ ] ⚠️ `AlwaysAllow` stands in for YT-0054's real risk gate
 - Scope held: no coverage ratio, no reserve formula, no `B`, nothing converting points to currency
-
+- ✏️ **Criterion above rewritten 2026-09-22 on `yourtal-0c`'s finding, and three things were wrong with it.** It read *"point values are placeholders at taxonomy v1 — needs the economy owner (YT-0050, still `todo`)"*:
+  1. **YT-0050 is `done`** — the sixth expired blocker found this week
+  2. **The owner question was the wrong question.** On the founder's model there is **no global price list to sign off**: the taxonomy's six numbers are defaults for *non-campaign* actions, and campaign rewards belong to the partner
+  3. **The code's own justification conflates two things**, and it is worth fixing in place: `taxonomy.go:69` says *"`Points` is a fixed quantity… docs/18 §9's 'never in its arithmetic' means two users completing the same campaign are paid the same."* **That principle is not violated by per-campaign values** — everyone completing campaign X still gets X's rate. **A global taxonomy is a strictly stronger constraint than §9 requires**, and the comment reads as though §9 demands it
 ### YT-0046 · Partner funding: point pre-purchase and drawdown
 `done` · P0 · value · 5d · dep: YT-0042
 
@@ -337,3 +340,18 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] **No IDR amount anywhere is scaled by a literal `100`** — the property, checked across the workspace, since the whole reason this is affordable is that the previous migration removed those
 - [ ] `packages/drivers` has **no IDR exponent default at all**, and a driver constructed without declaring one fails to construct
 - [ ] Daily Merkle roots are rebuilt, with the invalidation recorded rather than silently re-rooted
+
+### YT-0610 · The Reward Engine grants a global constant, not the partner's campaign reward
+`todo` · P0 · value · 4d · dep: —
+
+- ⛔ **Filed 2026-09-22 from `yourtal-0c`'s finding, verified here against the live database and the source. The founder's model is that reward values, vouchers and points are decided by the PARTNER company, per campaign — and the schema already implements exactly that, while the engine ignores it.**
+- ℹ️ `campaign.reward_config` (`20260920000012_campaign_lifecycle.sql:154`) carries `allocation_id`, `funder_type`, `max_points_for_campaign`, `reward_points_per_completion` and `accuracy_bonus_points`, with a CHECK that one completion fits inside the campaign ceiling. **Its own migration comment says the link is *"checked by the Reward Engine at grant time, which is the only place it can be enforced honestly anyway."* It is not checked anywhere**
+- ⛔ **`GrantRequest` (`engine.go:65`) carries no campaign id and no amount.** The engine calls `Definition(req.Action)` and grants `def.Points` from the **global taxonomy** (`:261`, `:292`, `:294`). So a partner setting 5,000 points per completion gets viewers paid **2,400**, and nothing reports the disagreement. **Confirmed by sweep: the only reference to `reward_config` outside generated Go models and the Zod schema is `schema-drift.test.ts:245` — no code reads it**
+- ⛔ **A second gap in the same place, and arguably worse: `AllocationID` is CALLER-SUPPLIED.** The engine draws down whatever allocation the caller names (`:227-232`). `reward_config` exists to say **which** allocation funds a given campaign, so today a caller can point a grant at an allocation that is not the one funding that campaign. **Reading the config closes the funding-integrity hole and the partner-reward gap with one change**
+- ⛔ **BLOCKED on a GRANT, measured rather than assumed**: `has_table_privilege('yourtal_ledger','campaign.reward_config','SELECT')` → **`f`**, and `campaign.campaigns` → **`f`**. `ledger.allocation` → `t`. **The ledger role cannot read the table the design says it must check.** That needs a migration and a deliberate decision about the `campaign` ↔ `value` zone boundary — which the same migration comment is explicitly careful about in the other direction. **DB-role and platform territory, not something `value` should grant itself into**
+- ℹ️ **Same shape as YT-0133**: buildable in principle, with steps that have no reachable interface. `yourtal-0c` declined to build an engine wired to a port that returns permission denied, which is the right call
+- [ ] `GrantRequest` carries the campaign, and for campaign actions the engine takes `reward_points_per_completion` from `campaign.reward_config` rather than the taxonomy
+- [ ] The funding allocation comes from the campaign's config, **never from the caller**
+- [ ] `max_points_for_campaign` is enforced at grant time — a completion that would exceed it is **refused, not truncated**
+- [ ] Non-campaign actions keep taxonomy defaults, and **a test asserts the two paths cannot be confused**
+- [ ] **Sabotage-proved**: set a campaign's reward to a value different from the taxonomy and confirm the grant follows the campaign

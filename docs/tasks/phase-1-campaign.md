@@ -226,13 +226,17 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - ⏭️ **Where the sweep is scheduled from is an open DEPLOYMENT decision and is not `watch`'s to settle.** The constraint is not that no handler calls it: **an `apps/api` process holding an analyst pool is a process that CAN read those rows**, and the guarantee was about the process rather than anyone's discipline. There is a test asserting the sweep fails with `permission denied` on the application's credential. **Owner: `infra`** — it sits with YT-0532 and YT-0604 as deploy-shaped work
 
 ### YT-0207 · Open Viewing: anonymous full-campaign playback
-`todo` · P1 · watch · 4d · dep: YT-0120, YT-0205
+`doing` · P1 · watch · 4d · dep: YT-0120, YT-0205
 
 - [ ] Anonymous session plays the full video with no checkpoint tokens issued
 - [ ] Code path never touches the Reward Engine or the ledger
 - [ ] Questions offered but optional, and never counted toward any reward
 - [ ] No mechanism exists, anywhere, to claim a reward for an open view afterwards
-
+- ✅ **Three of four verified 2026-09-22 by `yourtal-4d`, which built none of this.** No playback cap anywhere in `open-view-player.tsx`, and **no checkpoint token is possible** — that route carries `@Authorize({ kind: "campaign_view", action: "earn" })` and `pdp.guard.ts:141` proves a route declaring nothing is **refused** rather than falling through. Zero non-comment references to the reward engine, ledger, points or accrual across `features/open-view/**`; every match is a doc comment explaining what was deliberately excluded
+- ✅ **The no-claim criterion holds at three levels**, the same verification as YT-0205: zero `fetch(` in `apps/web`; every watch endpoint `@Authorize`d behind a fail-closed guard; and the signup hand-off carries `positionSeconds` only, **never coverage** — so by decision O-4 an anonymous viewer who watches everything, signs up and resumes at the end has **zero server-side coverage and must re-watch to earn**
+- ⛔ **Criterion 3 is NOT met and is deliberately not being built: questions are not offered at all.** `features/open-view/**` contains no question component; the only matches for "checkpoint" or "question" are doc comments explaining their removal
+- ℹ️ **It is a product question with two coherent answers, and this board has already ruled once that an implementer should not settle one by writing a component.** When YT-0205's AC demanded a ≤90 s preview and YT-0432 had shipped uncapped playback deliberately, the cap was declined — *silently regressing a shipped, deliberately designed feature to satisfy stale AC text is not a call an implementer should make.* **Same shape**: Open Viewing was built to exclude every rewarded-only piece on purpose, and this criterion asks for one back in a non-rewarding form
+- ⏭️ **With the founder.** Either offering questions that earn nothing is a genuine taste of the experience and serves `docs/19` §5's reciprocity argument — or it is confusing, since **decision O-1 makes reward require the questions**, so presenting them to someone who cannot earn invites exactly the misunderstanding O-1 exists to remove. **Left at `doing` 3/4 rather than `review`, visibly short of its bar**
 ### YT-0208 · Open Viewing campaign setting and budget
 `todo` · P1 · adplatform · 3d · dep: YT-0207, YT-0106
 

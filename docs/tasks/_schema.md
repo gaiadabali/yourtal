@@ -144,6 +144,10 @@ Five distinct ways to get a failure on this machine that says nothing about the 
 3. **No task larger than 5 days.** If it is bigger, split it. Large tasks hide risk.
 4. **Every task names its acceptance criteria before work starts.** No AC, no start.
 5. **Never renumber.** `cut` tasks stay in the file with `cut` status so history stays readable.
+
+    **Except on a same-minute collision, where the later writer renumbers.** Three happened on 2026-09-22 — YT-0594, YT-0606 and YT-0609 — each because two sessions took “the next free number” within seconds of each other. **The validator catches every one of them immediately and names both files**, so the cost is a renumber rather than a defect, and rule 5 is about not renumbering *published* ids rather than about a number that was never committed. Leave the gap: **YT-0595 is a deliberate hole** from one of these.
+
+    ⚠️ **The guard is blind to the other half.** It proves ids are unique and says nothing about **two ids describing one defect** — which also happened on 2026-09-22, when YT-0604 and YT-0606 were filed minutes apart from the same report. **Only reading both titles finds that**, and the remedy is `cut` on the later one with a pointer, never a merge.
 6. Regenerate the dashboard in the same commit as any task change. CI fails otherwise.
 7. **Commit `scripts/tasks.mjs` in the same commit as any dashboard whose format it changes.**
 8. **A criterion may not be struck through and left blocking.** `- [ ] ~~dead text~~` is rejected — use `- 🚫`. Enforced, and **proved in both directions**: a deliberate struck box makes the validator name the file, line and task id, and removing it returns it to green. Added 2026-09-21, after the first version of this guard was written with a corrupted regex (`/^s*- [ ]s*~~/`, backslashes lost in transit) that read correctly and could never match — green on a board that already satisfied it, and still green against deliberate sabotage. **A guard first seen passing has not been shown to work**; this one was only trusted after it was seen failing.

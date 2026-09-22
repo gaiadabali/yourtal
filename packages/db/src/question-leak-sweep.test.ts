@@ -41,12 +41,7 @@ async function makeQuestion(id: string): Promise<void> {
 }
 
 /** Answers written as the OWNER: the app may insert but this suite needs exact timestamps. */
-async function answer(
-  questionId: string,
-  at: Date,
-  count: number,
-  correct: number,
-): Promise<void> {
+async function answer(questionId: string, at: Date, count: number, correct: number): Promise<void> {
   for (let index = 0; index < count; index += 1) {
     const sessionId = randomUUID();
     await owner.query(
@@ -88,10 +83,9 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await owner.query(
-    `DELETE FROM campaign.question_response WHERE question_id = ANY($1::uuid[])`,
-    [[leakedQuestion, steadyQuestion]],
-  );
+  await owner.query(`DELETE FROM campaign.question_response WHERE question_id = ANY($1::uuid[])`, [
+    [leakedQuestion, steadyQuestion],
+  ]);
   await owner.query(`DELETE FROM watch.session WHERE campaign_id = $1`, [campaignId]);
   await owner.query(`DELETE FROM campaign.question WHERE id = ANY($1::uuid[])`, [
     [leakedQuestion, steadyQuestion],

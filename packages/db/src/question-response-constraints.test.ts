@@ -212,9 +212,10 @@ describe("campaign.question_response", () => {
       ]),
     ).rejects.toThrow(/permission denied/i);
 
-    await owner.query(`UPDATE campaign.question SET status = 'approved', retired_reason = NULL WHERE id = $1`, [
-      questionId,
-    ]);
+    await owner.query(
+      `UPDATE campaign.question SET status = 'approved', retired_reason = NULL WHERE id = $1`,
+      [questionId],
+    );
   });
 
   /**

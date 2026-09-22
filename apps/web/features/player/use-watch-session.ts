@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import type { Campaign } from "@yourtal/contracts/campaign";
-import type { Chapter } from "./chapter";
+import type { PlayerChapter } from "./player-chapters";
 import { DEFAULT_QUALITY_TIER_ID, type QualityTierId } from "./quality-tier";
 import { MIN_RESUMABLE_SECONDS, clearResumePosition, readResumePosition } from "./resume-position";
 import { toRealSeconds } from "./time-remap";
@@ -45,7 +45,7 @@ export interface WatchSession {
  */
 export function useWatchSession(
   campaign: Campaign,
-  chapters: readonly Chapter[],
+  chapters: readonly PlayerChapter[],
   isBackgrounded: boolean,
 ): WatchSession {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -91,24 +91,6 @@ export function useWatchSession(
     [campaign.id],
   );
 
-  const applyPendingSeek = useCallback(() => {
-    const video = videoRef.current;
-    if (
-      !video ||
-      pendingSeekRef.current === null ||
-      !Number.isFinite(video.duration) ||
-      video.duration <= 0
-    ) {
-      return;
-    }
-    video.currentTime = toRealSeconds(
-      pendingSeekRef.current,
-      video.duration,
-      campaign.durationSeconds,
-    );
-    pendingSeekRef.current = null;
-  }, [campaign.durationSeconds]);
-
   const applyRealSeek = useCallback(
     (video: HTMLVideoElement, virtualSeconds: number) => {
       video.currentTime = toRealSeconds(virtualSeconds, video.duration, campaign.durationSeconds);
@@ -144,6 +126,73 @@ export function useWatchSession(
     },
     [applyRealSeek],
   );
+
+  /**
+   * The ONE guarded way to move the playhead. YT-0586.
+   *
+   * There were two seek paths and only one was coalesced: `handleSeekTo`
+   * queued behind an in-flight seek, while `applyPendingSeek` — wired to
+   * `loadedmetadata` — assigned `currentTime` directly, with no `seeking`
+   * check and no queue. A seek requested before the duration was known
+   * parked in `pendingSeekRef` and was then applied on that uncoalesced
+   * path, issuing exactly the overlapping seek YT-0550 exists to prevent.
+   *
+   * That is consistent with what the e2e measured: run in isolation the
+   * `Home` case fails about two times in three, and passes only when
+   * earlier tests have warmed the media. Warm media means the duration is
+   * already known, so the pending path never fires. Cold media takes it.
+   *
+   * Both callers now go through here, so "is a seek already in flight" is
+   * asked in one place rather than in one of the two places that move the
+   * playhead.
+   */
+  const seekOrQueue = useCallback(
+    (video: HTMLVideoElement, virtualSeconds: number) => {
+      if (isSeeking(video)) {
+        queuedSeekRef.current = virtualSeconds;
+        // Re-read AFTER publishing the target: the read above and this
+        // write are not one atomic step from the media element's point of
+        // view. The browser can settle the in-flight seek and dispatch
+        // `seeked` between them, leaving `flushQueuedSeek` to run on an
+        // empty queue with no further `seeked` coming — so the target just
+        // written would never be applied and the seek is silently dropped.
+        //
+        // The check-then-act shape `packages/idempotency`'s store refuses
+        // for the same reason, in a different medium: a decision made on a
+        // value that can change before you act on it. There the write is
+        // made atomic; here it cannot be, so the fix is to re-check and
+        // recover rather than to assume.
+        if (!isSeeking(video)) {
+          flushQueuedSeek(video);
+        }
+        return;
+      }
+      applyRealSeek(video, virtualSeconds);
+    },
+    [applyRealSeek, flushQueuedSeek],
+  );
+
+  /**
+   * Applies a seek that arrived before the duration was known, once
+   * `loadedmetadata` supplies one.
+   *
+   * Clears `pendingSeekRef` BEFORE handing off, so a target that ends up
+   * queued cannot also remain pending and be applied twice.
+   */
+  const applyPendingSeek = useCallback(() => {
+    const video = videoRef.current;
+    if (
+      !video ||
+      pendingSeekRef.current === null ||
+      !Number.isFinite(video.duration) ||
+      video.duration <= 0
+    ) {
+      return;
+    }
+    const target = pendingSeekRef.current;
+    pendingSeekRef.current = null;
+    seekOrQueue(video, target);
+  }, [seekOrQueue]);
 
   /**
    * YT-0550. `Home` was landing at 0.35 s instead of zero, only against the
@@ -182,33 +231,15 @@ export function useWatchSession(
     (virtualSeconds: number) => {
       const video = videoRef.current;
       if (!video || !Number.isFinite(video.duration) || video.duration <= 0) {
+        // No duration yet, so there is nothing to remap onto. Parked, and
+        // applied by `applyPendingSeek` on `loadedmetadata` — through the
+        // same guard, which is what YT-0586's second window was about.
         pendingSeekRef.current = virtualSeconds;
         return;
       }
-      if (isSeeking(video)) {
-        queuedSeekRef.current = virtualSeconds;
-        // YT-0586. Re-read `seeking` AFTER publishing the target, because
-        // the read above and this write are not one atomic step from the
-        // media element's point of view: the browser can settle the
-        // in-flight seek and dispatch `seeked` in between. If it does,
-        // `flushQueuedSeek` has already run against an empty queue, no
-        // further `seeked` is coming, and the target just written is never
-        // applied — the press is silently dropped and the playhead stays
-        // wherever the previous seek left it.
-        //
-        // This is the check-then-act shape `packages/idempotency`'s store
-        // refuses for the same reason, in a different medium: a decision
-        // made on a value that can change before you act on it. There it is
-        // fixed by making the write atomic; here the write cannot be, so
-        // the fix is to re-check and recover rather than to assume.
-        if (!isSeeking(video)) {
-          flushQueuedSeek(video);
-        }
-        return;
-      }
-      applyRealSeek(video, virtualSeconds);
+      seekOrQueue(video, virtualSeconds);
     },
-    [applyRealSeek, flushQueuedSeek],
+    [seekOrQueue],
   );
 
   const handlePlay = useCallback(() => {

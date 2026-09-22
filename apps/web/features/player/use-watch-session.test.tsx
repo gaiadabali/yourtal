@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { campaignSchema } from "@yourtal/contracts/campaign";
-import { deriveChapters } from "./derive-chapters";
+import { playerChapters } from "./player-chapters";
 import { VideoPlayer } from "./video-player";
 
 /**
@@ -47,7 +47,7 @@ const campaign = campaignSchema.parse({
   status: "active",
   publishedAt: "2026-09-19T09:00:00.000Z",
 });
-const chapters = deriveChapters(campaign);
+const chapters = playerChapters(campaign);
 const HAND_OFF_LINK = { name: "Continue to questions" };
 
 function mountAndReadyVideo(realDurationSeconds: number): HTMLVideoElement {
@@ -248,6 +248,56 @@ describe("useWatchSession seek coalescing (YT-0550)", () => {
       1,
     );
     expect(video.currentTime, "the seek must not be silently dropped").toBeCloseTo(700, 5);
+  });
+
+  /**
+   * YT-0586, second window — the one the e2e data points at.
+   *
+   * There are TWO seek paths and only one is coalesced. `handleSeekTo`
+   * queues behind an in-flight seek; `applyPendingSeek`, wired to
+   * `loadedmetadata`, assigns `video.currentTime` directly — no `seeking`
+   * check, no queue, no participation in the coalescing at all. A seek
+   * requested before the duration is known parks in `pendingSeekRef` and
+   * is then applied on that uncoalesced path.
+   *
+   * That matches what `yourtal-5f` measured: run alone the `Home` case
+   * fails ~2 of 3, and it only passes when earlier tests have warmed the
+   * media. Warm media means the duration is already known, so the pending
+   * path never fires and only the coalesced one runs. Cold media takes the
+   * uncoalesced path — which is why neither existing fix clears it. Both
+   * of them guard the window that is not the problem.
+   */
+  it("does not issue an uncoalesced seek when metadata arrives mid-seek", () => {
+    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    const video = document.querySelector("video");
+    if (!video) throw new Error("expected the player to render a <video> element");
+
+    // Duration unknown: a seek now parks in `pendingSeekRef`.
+    Object.defineProperty(video, "duration", { value: Number.NaN, configurable: true });
+    Object.defineProperty(video, "currentTime", { value: 0, writable: true, configurable: true });
+
+    const slider = screen.getByRole("slider", { name: "Seek" });
+    fireEvent.change(slider, { target: { value: "300" } });
+    expect(video.currentTime, "a seek with no duration must not be applied yet").toBe(0);
+
+    // Metadata lands while the element reports a seek already in flight.
+    Object.defineProperty(video, "duration", { value: 900, configurable: true });
+    Object.defineProperty(video, "seeking", { value: true, configurable: true });
+    act(() => {
+      video.dispatchEvent(new Event("loadedmetadata"));
+    });
+
+    expect(
+      video.currentTime,
+      "the pending seek must not overtake an in-flight one — that is the overlapping seek YT-0550 removed, on the path it never covered",
+    ).toBe(0);
+
+    // It is not lost either: once the in-flight seek settles it lands.
+    Object.defineProperty(video, "seeking", { value: false, configurable: true });
+    act(() => {
+      video.dispatchEvent(new Event("seeked"));
+    });
+    expect(video.currentTime, "the pending target must still arrive").toBeCloseTo(300, 5);
   });
 
   /**

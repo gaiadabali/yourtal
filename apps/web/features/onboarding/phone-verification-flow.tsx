@@ -4,18 +4,16 @@ import { useEffect, useReducer } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import type { Region } from "@yourtal/contracts/region";
-import { Button } from "@yourtal/ui/button";
-import { Input } from "@yourtal/ui/input";
 import { regionDisplayConfig } from "@/features/region/region-config";
-import { callingCodeForRegion } from "./calling-code";
-import type { OnboardingCopy, OnboardingLocale } from "./onboarding-copy";
 import { getOnboardingCopy } from "./onboarding-copy";
 import { measureOnboardingDuration, recordOnboardingMark } from "./onboarding-timing";
 import { isOtpCodeCorrect, MOCK_NETWORK_DELAY_MS } from "./otp-mock-service";
 import { initialPhoneFlowState, phoneFlowReducer } from "./phone-verification-reducer";
 import { withReturnTo } from "./onboarding-return-to";
-import type { ResendCooldownState } from "./use-resend-cooldown";
 import { useResendCooldown } from "./use-resend-cooldown";
+import { PhoneEntryStep } from "./phone-entry-step";
+import { CodeEntryStep } from "./code-entry-step";
+import { RateLimitedStep } from "./rate-limited-step";
 
 export interface PhoneVerificationFlowProps {
   region: Region;
@@ -134,168 +132,4 @@ export function PhoneVerificationFlow({ region, returnTo }: PhoneVerificationFlo
       return exhaustive;
     }
   }
-}
-
-interface PhoneEntryStepProps {
-  copy: OnboardingCopy["verify"];
-  region: Region;
-  phone: string;
-  disabled: boolean;
-  onPhoneChange: (phone: string) => void;
-  onSubmit: () => void;
-}
-
-function PhoneEntryStep({
-  copy,
-  region,
-  phone,
-  disabled,
-  onPhoneChange,
-  onSubmit,
-}: PhoneEntryStepProps) {
-  const callingCode = callingCodeForRegion(region);
-  const canSubmit = !disabled && phone.replace(/\D/g, "").length >= 8;
-
-  return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (canSubmit) {
-          onSubmit();
-        }
-      }}
-      className="flex flex-col gap-4"
-    >
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-sans font-semibold text-fg">{copy.phoneHeading}</h2>
-        <p className="text-sm font-sans text-fg-muted">{copy.phoneIntro}</p>
-      </div>
-      <Input
-        type="tel"
-        inputMode="tel"
-        autoComplete="tel"
-        label={copy.phoneLabel}
-        helpText={copy.phoneHelp}
-        value={phone}
-        disabled={disabled}
-        onChange={(event) => onPhoneChange(event.target.value)}
-        placeholder={`${callingCode} 4XX XXX XXX`}
-      />
-      <Button type="submit" disabled={!canSubmit}>
-        {disabled ? copy.sending : copy.sendCode}
-      </Button>
-    </form>
-  );
-}
-
-interface CodeEntryStepProps {
-  copy: OnboardingCopy["verify"];
-  phone: string;
-  code: string;
-  codeError: boolean;
-  resendCooldown: ResendCooldownState;
-  onCodeChange: (code: string) => void;
-  onVerify: () => void;
-  onResend: () => void;
-  onEditNumber: () => void;
-}
-
-function CodeEntryStep({
-  copy,
-  phone,
-  code,
-  codeError,
-  resendCooldown,
-  onCodeChange,
-  onVerify,
-  onResend,
-  onEditNumber,
-}: CodeEntryStepProps) {
-  const canVerify = code.trim().length === 6;
-
-  return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (canVerify) {
-          onVerify();
-        }
-      }}
-      className="flex flex-col gap-4"
-    >
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-sans font-semibold text-fg">{copy.codeHeading}</h2>
-        <p className="text-sm font-sans text-fg-muted">
-          {copy.codeSentPrefix} <span className="font-medium text-fg">{phone}</span>
-        </p>
-      </div>
-      <Input
-        type="text"
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        maxLength={6}
-        label={copy.codeLabel}
-        value={code}
-        onChange={(event) => onCodeChange(event.target.value.replace(/\D/g, ""))}
-        errorMessage={codeError ? copy.wrongCode : ""}
-      />
-      <Button type="submit" disabled={!canVerify}>
-        {copy.verifyCta}
-      </Button>
-      <div className="flex items-center justify-between gap-3 text-sm font-sans">
-        <button
-          type="button"
-          onClick={onResend}
-          disabled={!resendCooldown.canResend}
-          className="text-primary underline decoration-dotted underline-offset-2 disabled:cursor-not-allowed disabled:text-fg-subtle disabled:no-underline"
-        >
-          {resendCooldown.canResend
-            ? copy.resend
-            : `${copy.resendCooldownPrefix} ${resendCooldown.secondsRemaining}${copy.resendCooldownSuffix}`}
-        </button>
-        <button
-          type="button"
-          onClick={onEditNumber}
-          className="text-fg-muted underline decoration-dotted underline-offset-2"
-        >
-          {copy.wrongNumber}
-        </button>
-      </div>
-      <p className="text-xs font-sans text-fg-subtle">{copy.demoCodeHint}</p>
-      <p className="text-xs font-sans text-fg-subtle">{copy.otpDisclaimer}</p>
-    </form>
-  );
-}
-
-interface RateLimitedStepProps {
-  copy: OnboardingCopy["verify"];
-  locale: OnboardingLocale;
-  retryAt: number | null;
-  onEditNumber: () => void;
-}
-
-function RateLimitedStep({ copy, locale, retryAt, onEditNumber }: RateLimitedStepProps) {
-  const retryLabel =
-    retryAt !== null
-      ? new Date(retryAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-      : null;
-
-  return (
-    <div
-      role="alert"
-      className="flex flex-col gap-3 rounded-lg border border-warning bg-warning/10 p-4"
-    >
-      <p className="text-sm font-sans font-semibold text-warning">{copy.rateLimitedHeading}</p>
-      <p className="text-sm font-sans text-fg">{copy.rateLimitedBody}</p>
-      {retryLabel !== null ? (
-        <p className="text-sm font-sans text-fg">
-          {copy.rateLimitedRetryPrefix}{" "}
-          <span className="font-semibold tabular-nums">{retryLabel}</span>.
-        </p>
-      ) : null}
-      <Button type="button" variant="secondary" onClick={onEditNumber}>
-        {copy.wrongNumber}
-      </Button>
-    </div>
-  );
 }

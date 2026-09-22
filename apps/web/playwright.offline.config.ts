@@ -5,33 +5,36 @@ import { defineConfig, devices } from "@playwright/test";
  * for exactly one spec: `e2e/offline-voucher-detail.spec.ts` (YT-0424,
  * "renders from cache with the network disabled").
  *
- * UPDATE (YT-0588): the `--webpack` workaround below is GONE. `pnpm build`
- * now compiles the service worker itself, as a step after `next build`
- * (`scripts/build-service-worker.mjs`), so this suite runs against exactly
- * what ships instead of against a bundler nothing else uses. The original
- * reasoning is kept because it explains why the separate config still
- * exists at all — it needs its own port and a serial run, not its own
- * bundler.
+ * WHY A SEPARATE CONFIG, as of YT-0588: a distinct port and a serial run.
+ * That is the whole reason. It runs the SAME `pnpm build` as the main
+ * config — no `--webpack`, no special bundler — so it measures exactly what
+ * ships.
  *
- * WHY THIS CANNOT SHARE THE MAIN CONFIG'S `webServer`: that server runs
- * `next build && next start`, and this app's `next build` defaults to
- * Turbopack (Next 16's own default; nothing in this repo forces webpack).
- * Serwist's stable Next.js integration (`@serwist/next`, wired in
- * `next.config.ts`) hooks into webpack's compiler — under Turbopack it is
- * silently a no-op: no build error, no warning at build time, and
- * `public/sw.js` is simply never written. Proving the offline behaviour
- * therefore needs a real `next build --webpack` — a build flavour this
- * repo does not otherwise run anywhere. Forcing `--webpack` onto the main
- * `playwright.config.ts` server would also silently break YT-0404's perf
- * budget gate: `.next/diagnostics/route-bundle-stats.json`
- * (`scripts/perf-check-bundle-size.mjs` reads it directly) is only written
- * by a Turbopack build — verified directly against a webpack build in this
- * ticket's own testing, where the file does not exist afterwards. Changing
- * the app's default bundler for production is exactly the kind of
- * app-wide decision this ticket has no brief to make (see this ticket's
- * report), so this config isolates the one build flavour that needs
- * webpack instead of changing what `pnpm build`/`pnpm exec playwright
- * test` already run everywhere else.
+ * ⚠️ THE ORIGINAL REASON IS GONE. DO NOT REINSTATE `--webpack`.
+ *
+ * This file used to argue at length that the offline proof required
+ * `next build --webpack`, because `@serwist/next` hooks into webpack's
+ * compiler and was a silent no-op under Turbopack, so `public/sw.js` was
+ * never written. That was true when it was written and **YT-0588 removed
+ * the constraint rather than working around it**:
+ * `scripts/build-service-worker.mjs` compiles the worker with esbuild and
+ * injects the precache manifest, independent of whichever bundler Next
+ * uses. `pnpm build` produces the worker AND `next build` stays on
+ * Turbopack.
+ *
+ * Why the warning is stronger than the tidy-up: forcing `--webpack` onto
+ * any config **silently disables YT-0404's performance budget**.
+ * `.next/diagnostics/route-bundle-stats.json`, which
+ * `scripts/perf-check-bundle-size.mjs:53` reads directly, is written ONLY
+ * by a Turbopack build. Per YT-0569 that gate is `pull_request`-only and
+ * barely fires, so its disappearance would not be noticed. A reader acting
+ * on the old paragraph would trade a live gate for a workaround that is no
+ * longer needed.
+ *
+ * ⏭️ Whether this config still earns a separate file is a fair question
+ * now that it runs the same build on another port. Kept for the serial run
+ * and the dedicated port; folding it into the main config is a change worth
+ * its own ticket rather than a side effect of correcting a comment.
  *
  * Run with: `pnpm exec playwright test --config=playwright.offline.config.ts`.
  * Port 3102 (distinct from the main config's 3100 and any dev server on

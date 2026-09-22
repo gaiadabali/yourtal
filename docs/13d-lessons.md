@@ -669,6 +669,36 @@ This is the mirror of §15, where the most dangerous false green came from prose
 
 **Corollary for the fix, and it generalises past this file:** a caller forced to supply a value it does not care about, purely to satisfy a compiler, **manufactures exactly this defect** — fourteen webhook tests passing `{ IDR: 2 }` would become a future reader's evidence that 2 was considered and chosen. Make the declaration carry information: a named fixture meaning _this test never converts an IDR amount_ says something true, where a magic number says something false.
 
+## 30. A wrong diagnosis of a check is worse than a broken check
+
+For most of a day every session in this tree operated on _“CI has executed nothing since 15:14 — runs are created and fail in three seconds with zero steps, so CI is not a signal.”_ I repeated it in four agent briefs and several peer messages, as settled fact.
+
+**It was wrong.** Measured with `gh run list`:
+
+```
+conclusion "cancelled", not "failure"
+05:57:14 -> 05:59:58   (2m44s)
+05:55:01 -> 05:57:16   (2m15s)
+quality.yml:19   cancel-in-progress: true
+format.yml:34    cancel-in-progress: true
+```
+
+Minutes of real execution, then **cancelled by the next push**. Pushes were landing every two minutes, so each run killed the one before it. **CI worked the whole time; it needed a gap.**
+
+**And the remedy was the exact inverse of the conclusion.** _Broken, so stop reading it_ leads everyone to keep pushing, which keeps it cancelled — the diagnosis was self-fulfilling. _Works, so hold pushes for ten minutes_ would have produced an answer any time that day.
+
+**What it cost, which is the point.** When the pushes happened to pause at 03:54, CI answered plainly: **Quality success, Integration success, Format failure.** That Format red was real — two committed files, genuinely mis-formatted, still red at `HEAD` hours later. **Nobody acted on it, because we had all agreed the signal was noise.** A broken check is a gap one person notices; **a check everyone has agreed to discount is a gap nobody can see, and a true red inside it is invisible by consensus.**
+
+Same mechanism as the six `.claude` files that made `format:check` unreadable for a day: a signal that is noisy for a **shared** reason gets discounted by every reader at once, and the next genuine failure arrives inside the noise.
+
+**How I got it wrong, and it is a pattern this file already names.** I did not measure it. **I inherited the diagnosis from another session's commit message and re-broadcast it as measured.** The original observation was real — runs _were_ completing in seconds with no steps at the moment it was taken — but I never checked whether it still held, and I stated it without the as-of that would have let anyone else check. That is §19b (_a false positive announced in conversation does not stop the next person walking into it_) and §26's stale-description rule, applied to a **diagnosis** rather than to a criterion: **a diagnosis inherited from a message is exactly as old as the message, and a diagnosis about infrastructure decays faster than one about code.**
+
+**Rules:**
+
+- **Never restate someone else's diagnosis of shared infrastructure without re-measuring it.** Code changes when someone edits it; infrastructure changes when anyone does anything.
+- **Read `conclusion`, not `status`, and read the duration.** `cancelled` and `failure` mean opposite things about your code, and a two-minute run is not a three-second one.
+- **When declaring a check untrustworthy, say so with an as-of and a re-check condition.** _“CI is dead”_ spreads and never expires; _“cancelled by push cadence as of 05:59, retest after a quiet ten minutes”_ carries its own refutation.
+
 ## The pattern, restated
 
 `docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:

@@ -1005,3 +1005,15 @@
 - [ ] Neither driver supplies an IDR exponent by default; omitting it is a compile-time failure at the call sites that convert
 - [ ] The callers that never convert IDR say so by name rather than by declaring a number
 - [ ] `payments.ts:10-30`'s doc comment and the code below it agree — proved by the parity test failing on a mis-declared unit, which is what that comment already claims and what nothing currently checks for the default path
+
+### YT-0611 · `cancel-in-progress` on main means rapid pushes produce no CI signal at all
+`todo` · P0 · platform · 4h · dep: —
+
+- **`quality.yml:19` and `format.yml:34` both set `cancel-in-progress: true`, grouped by ref.** Correct and conventional for pull requests, where only the tip matters. **On `main` with pushes landing every two minutes it means every run is killed by its successor and nobody ever sees a result** — measured 2026-09-22: `conclusion: cancelled` at 2m15s and 2m44s, repeatedly, with a successful Quality and Integration only at 03:54 when the pushes happened to pause
+- ⛔ **The cost is not the missing runs, it is that the fleet concluded CI was broken.** For most of a day every session operated on *“CI executes nothing, so it is not a signal”* — a diagnosis I propagated into four agent briefs. **A real Format failure from 03:54 sat unactioned at `HEAD` for hours because the signal had been agreed to be noise.** Recorded as `docs/13d` §30
+- **The trade is genuine, which is why this is a decision and not a one-line fix.** Cancelling saves runner minutes and keeps the queue short; not cancelling means every commit gets a verdict and a burst of ten pushes costs ten full runs. **A middle option exists**: keep `cancel-in-progress` for pull requests and drop it for `push` on `main`, since a commit that has landed is the artefact anyone will later bisect
+- ⚠️ **Whatever is chosen, the failure mode to design against is silence that reads as success.** A cancelled run is not a red and not a green; it is an absence, and `gh run list`'s `status` field says `completed` for it. **Reading `status` rather than `conclusion` is what made this look like failure rather than cancellation** — and anything that surfaces CI state to a human should distinguish the three
+- ⏭️ **Short-term mitigation is process, not config:** a ten-minute push freeze produces a real answer today. Proposed to the founder by two sessions independently; it needs every session to hold at once, so it cannot be imposed by any of us
+- [ ] `push` on `main` produces a verdict per commit, or the reason it deliberately does not is written down
+- [ ] A cancelled run is distinguishable from a pass and from a fail wherever CI state is reported or read
+- [ ] Proved by pushing twice in quick succession and confirming both commits end with a conclusion that is not `cancelled`

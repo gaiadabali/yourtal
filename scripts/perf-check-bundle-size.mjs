@@ -26,6 +26,17 @@
 // not the goal; do not contort a route to shave bytes that buy no measured
 // improvement in those numbers.
 //
+// TBT IS A LAB PROXY, NOT THE TARGET (YT-0501). The metric the product
+// actually cares about is INP, and INP is a FIELD metric: Lighthouse cannot
+// measure it, because it needs real interactions from real users. TBT is
+// Lighthouse's documented stand-in — see apps/web/lighthouserc.cjs for the
+// substitution rationale in full. Passing TBT here is evidence about a lab
+// run on a throttled profile, not evidence that real users experience a
+// responsive page; only the field RUM reporting p75 INP can say that.
+// Stated here rather than only where the assertion lives, because this is
+// the file someone reads when a route is near the cap and it was the one
+// place TBT appeared without the qualifier.
+//
 // Both thresholds use the binary (1024-based) "KB", i.e. 200 * 1024 =
 // 204,800 bytes — the stricter of the two common conventions.
 //

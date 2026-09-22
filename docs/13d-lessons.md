@@ -592,6 +592,35 @@ Habits degrade; these are observations anyone can make in one command.
 
 Re-committing the restored files, `git diff --cached --name-only` listed **exactly the seven paths intended** — while `--numstat` showed them as pure deletions. Committing would have deleted them a second time. **Read the numstat, not the names**: this is section 19's "the check was narrower than the claim" wearing the shape of a file list, and it is the third time in this document that a list of paths has been mistaken for a description of content.
 
+### Rung six: `HEAD` is shared state too, and every relative ref is a trap
+
+The five rungs above are about the index. The same property holds for the commit pointer, and it is worse because the failure is silent.
+
+Repairing a commit that had swept in a foreign file, I ran `git reset --soft HEAD~1` to amend it out. **Another session had committed in between, so `HEAD~1` was my commit and the reset undid theirs** — dropping four of their files into the index, staged, looking exactly like my own work. Caught from the reflog and restored within the minute; nothing was lost, but only because the reflog was checked rather than the working tree, which looked entirely normal.
+
+**`HEAD`, `HEAD~1`, `@{1}`, `ORIG_HEAD` and `--amend` all resolve against a pointer another session can move between your reading it and your using it.** In a single-author repository `git reset --soft HEAD~1` is muscle memory. Here it reaches into whoever committed last.
+
+**Rule: never use a relative ref in a shared checkout.** Resolve the absolute SHA, confirm it is the commit you believe it is, and operate on that. `git reset --soft <sha>` would have been harmless.
+
+And the failure mode deserves naming on its own: **a soft reset of someone else's commit leaves their work staged and indistinguishable from yours.** The next commit from that index re-commits their changes under your message — which is rung one again, arrived at from the opposite direction.
+
+### The correct ordering, which the two rules above got wrong
+
+This section originally advised reading `git diff --cached` before committing. Followed literally that requires staging first, and **the inspection is then exactly what holds the window open** — the longer you look, the longer another session has to stage something into the commit you are about to make. Both times a foreign file was swept in, the sequence was `add`, inspect, commit.
+
+The resolution, from `yourtal-6c`, is that **`git diff` without `--cached` inspects the working tree without staging anything**:
+
+```sh
+git diff --numstat -- <paths>            # inspect first; index untouched
+git add <paths> && git commit -- <paths> # then stage and commit, chained
+```
+
+`git commit -- <paths>` is pathspec-limited, so it takes only those paths and **ignores whatever else is in the index** — including a new file, provided it was added in the same compound command. The window shrinks from "however long you spend inspecting" to the microseconds between two chained commands.
+
+**What this does not close**, and nothing on one side can: between your `add` and your `commit`, a *bare* `git commit` from another session takes your staged file. That is the direction that produced the 300-line module inside someone else's commit message.
+
+**The general form, because both rules were individually right:** _read the diff before staging_ and _commit by pathspec_ appear to conflict only if you assume inspection requires staging. It does not. **Two correct rules can compose into a dangerous procedure purely through ordering**, and nothing in either rule's statement warns you — which is why the ordering, not just the rules, belongs in the write-up.
+
 ### Why this is its own section rather than a line in section 25
 
 `docs/13c`'s "Two agents, one working tree" covers the _working tree_. This is about the _index_, which is shared state nobody thinks of as shared — it has no path, does not appear in `git status` output as an actor, and is mutated as a side effect of commands whose purpose is something else.

@@ -35,6 +35,7 @@ export const BOUNDARY_NAMES = [
   "digital_goods",
   "receipt_ingest",
   "moderation",
+  "device_reputation",
 ] as const;
 
 export type BoundaryName = (typeof BOUNDARY_NAMES)[number];
@@ -117,6 +118,18 @@ export const BOUNDARIES: Record<BoundaryName, BoundaryDefinition> = {
     liveCredentialEnvVars: ["RECEIPT_INGEST_API_KEY"],
     liveVendor: "An OCR service, not yet chosen.",
     liveTicket: "YT-0535",
+  },
+  device_reputation: {
+    name: "device_reputation",
+    purpose:
+      "Reputation of the network a registration arrived from (YT-0051). The one " +
+      "device signal that cannot be computed locally -- fingerprinting and headless " +
+      "detection run in the client; this needs somebody's view of which networks " +
+      "have been abusive lately.",
+    modeEnvVar: "DEVICE_REPUTATION_DRIVER",
+    liveCredentialEnvVars: ["DEVICE_REPUTATION_API_KEY"],
+    liveVendor: "An IP intelligence provider, not yet chosen.",
+    liveTicket: "YT-0051",
   },
   moderation: {
     name: "moderation",

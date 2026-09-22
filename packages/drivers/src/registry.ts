@@ -9,6 +9,10 @@ import { type MessagingDriver, createMessagingDriver } from "./boundaries/messag
 import { type DigitalGoodsDriver, createDigitalGoodsDriver } from "./boundaries/digital-goods";
 import { type ReceiptIngestDriver, createReceiptIngestDriver } from "./boundaries/receipt-ingest";
 import { type ModerationDriver, createModerationDriver } from "./boundaries/moderation";
+import {
+  type DeviceReputationDriver,
+  createDeviceReputationDriver,
+} from "./boundaries/device-reputation";
 
 /**
  * Every external boundary, constructed together. YT-0535.
@@ -43,6 +47,7 @@ export interface Drivers {
   readonly digitalGoods: DigitalGoodsDriver;
   readonly receiptIngest: ReceiptIngestDriver;
   readonly moderation: ModerationDriver;
+  readonly deviceReputation: DeviceReputationDriver;
 }
 
 export type FaultPlans = Partial<Record<BoundaryName, FaultPlan>>;
@@ -62,6 +67,11 @@ export function createDrivers(env: Environment, faults: FaultPlans = {}): Driver
     digitalGoods: createDigitalGoodsDriver(modes.digital_goods, env, faults.digital_goods),
     receiptIngest: createReceiptIngestDriver(modes.receipt_ingest, env, faults.receipt_ingest),
     moderation: createModerationDriver(modes.moderation, env, faults.moderation),
+    deviceReputation: createDeviceReputationDriver(
+      modes.device_reputation,
+      env,
+      faults.device_reputation,
+    ),
   };
 }
 
@@ -75,4 +85,5 @@ export const DRIVER_KEY_TO_BOUNDARY: Record<keyof Drivers, BoundaryName> = {
   digitalGoods: "digital_goods",
   receiptIngest: "receipt_ingest",
   moderation: "moderation",
+  deviceReputation: "device_reputation",
 };

@@ -176,5 +176,6 @@ export function assertDriversConfigured(env: Environment): Record<BoundaryName, 
     digital_goods: modeOf("digital_goods"),
     receipt_ingest: modeOf("receipt_ingest"),
     moderation: modeOf("moderation"),
+    device_reputation: modeOf("device_reputation"),
   };
 }

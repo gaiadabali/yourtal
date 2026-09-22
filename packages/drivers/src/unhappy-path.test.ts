@@ -4,6 +4,7 @@ import { BOUNDARY_NAMES, type BoundaryName } from "./boundary";
 import { FAULT_KINDS, type FaultPlan } from "./faults";
 import type { BoundaryFailure } from "./fault-engine";
 import { createDrivers } from "./registry";
+import { SIMULATED_REPUTATION_IPS } from "./boundaries/device-reputation";
 
 /**
  * YT-0536: **at least one test per boundary asserts the unhappy path.**
@@ -103,6 +104,14 @@ const EXERCISES: readonly Exercise[] = [
     describe: "classifying a submission",
     call: (fault) => driversWith("moderation", fault).moderation.classify("looks fine to me"),
   },
+  {
+    boundary: "device_reputation",
+    describe: "looking up the reputation of a source address",
+    call: (fault) =>
+      driversWith("device_reputation", fault).deviceReputation.lookup(
+        SIMULATED_REPUTATION_IPS.residential,
+      ),
+  },
 ];
 
 describe("every boundary is covered", () => {
@@ -198,6 +207,10 @@ function boundCall(
         });
     case "bot_check":
       return () => drivers.botCheck.verify("sim-bot-pass");
+    case "device_reputation":
+      // A recognised fixture address, so a failure here is the injected
+      // fault and never an unknown-address fallback.
+      return () => drivers.deviceReputation.lookup(SIMULATED_REPUTATION_IPS.residential);
     case "otp":
       return () => drivers.otp.issue("+6281234567890", NOW);
     case "messaging":

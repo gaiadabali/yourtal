@@ -137,3 +137,68 @@ describe("PATCH .../business/team/:userId/role against a live PDP and a live use
     expect(response.statusCode).toBe(403);
   });
 });
+
+/**
+ * YT-0581 -- `DELETE /api/:tenantId/business/team/:userId` against a LIVE
+ * Cerbos and a LIVE use-case, over a real HTTP round trip.
+ *
+ * Sibling of the YT-0580 suite above, and not exploitable the way that one
+ * was: `remove-member.use-case.ts:28-33` already refuses on the target's
+ * stored role, so an admin removing the owner has always ended in an error
+ * here. What this file proves is WHICH layer answers first, because that
+ * changed. Before this fix, `TeamMemberController.remove`'s `@Authorize`
+ * sent no `targetRole` at all, so `ownership-moves-only-by-transfer` could
+ * never fire for `remove_member` and the PDP call returned `EFFECT_ALLOW`;
+ * the use-case's own guard was consequently the ONLY thing stopping the
+ * removal, answering with `cannot_remove_owner` (400). Now that the
+ * controller makes a second, post-read `requireAction` call supplying the
+ * target's real stored role, the PDP itself denies first, so the same
+ * request now surfaces as `forbidden` (403) before the use-case ever runs.
+ */
+describe("DELETE .../business/team/:userId against a live PDP and a live use-case", () => {
+  it("refuses a business admin removing the owner, and the PDP answers first (YT-0581)", async () => {
+    const { businessId, members } = await seed();
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: `/api/${businessId}/business/team/${OWNER_ID}`,
+      headers: principalHeaders(ADMIN_ID, { [businessId]: "admin" }),
+    });
+
+    // The post-read `requireAction` call now sits BEFORE the use-case in
+    // `remove`'s body, so it is the one that answers: 403, not the
+    // use-case's 400 `cannot_remove_owner`. That guard still exists and is
+    // exercised directly at the use-case level in
+    // `remove-member.use-case.test.ts` -- this file only proves the PDP
+    // itself no longer stays silent on this action.
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({ code: "forbidden" });
+    expect((await members.findMember(businessId, OWNER_ID))?.role).toBe("owner");
+  });
+
+  it("still allows a business admin to remove an ordinary member", async () => {
+    const { businessId, members } = await seed();
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: `/api/${businessId}/business/team/${MARKETER_ID}`,
+      headers: principalHeaders(ADMIN_ID, { [businessId]: "admin" }),
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ removed: true });
+    expect(await members.findMember(businessId, MARKETER_ID)).toBeNull();
+  });
+
+  it("refuses a caller with no role at this tenant (pins that the route exists at all)", async () => {
+    const { businessId } = await seed();
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: `/api/${businessId}/business/team/${OWNER_ID}`,
+      headers: principalHeaders(STRANGER_ID, { "biz-somewhere-else": "owner" }),
+    });
+
+    expect(response.statusCode).toBe(403);
+  });
+});

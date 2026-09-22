@@ -89,13 +89,23 @@ tests:
   - name: YT-0580/YT-0581 -- an omitted targetRole cannot deny, on either action the rule covers
     description: |-
       `team_kopi_no_target_role` has no `targetRole` attribute at all --
-      `remove_member`'s `attrsFrom` never sends one today (YT-0581), and it
-      is what `change_role` sent before YT-0580 fixed it to send the target's
-      stored role. `has(R.attr.targetRole)` is false either way, so
-      `ownership-moves-only-by-transfer` cannot fire and the ALLOW from
-      `owner-and-admin-run-the-team` stands -- this is the PDP alone, with
-      no attribute to reason about, not a statement that either route is
-      safe without its own application-layer guard.
+      the shape of BOTH actions' FIRST, pre-read `@Authorize` call in
+      `TeamMemberController` (`changeRole`'s decorator sends the caller's
+      requested role, but that is a body field, not this fixture's shape;
+      `remove`'s decorator sends no role at all, unconditionally, because a
+      removal has no request-supplied role to check). `has(R.attr.
+      targetRole)` is false either way, so `ownership-moves-only-by-transfer`
+      cannot fire and the ALLOW from `owner-and-admin-run-the-team` stands.
+      This is intentional and unchanged by YT-0581: it is the coarse
+      capability gate common to both routes, not the ownership control.
+      The ownership control -- for both actions -- is the SECOND, post-read
+      `requireAction` call each route now makes once the target's real
+      stored role is known, proved by `team_kopi_demoting_owner` above
+      (`targetRole: "owner"`, both actions DENY) and, for `remove_member`
+      specifically, by `team-member.routes.boot.test.ts` driving the real
+      route end to end. Before YT-0581, `remove_member` had no second call
+      at all, so this fixture's ALLOW was the ONLY thing the PDP ever said
+      about a removal -- that gap is what closed, not this assertion.
     input:
       principals: [budi_owner, citra_admin]
       resources: [team_kopi_no_target_role]

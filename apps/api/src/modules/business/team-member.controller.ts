@@ -98,10 +98,50 @@ export class TeamMemberController {
   @Authorize({
     kind: "team",
     action: "remove_member",
+    // This check only proves the caller may remove SOME member of this
+    // business; it cannot see whether the TARGET is the owner, because
+    // `attrsFrom` runs synchronously against the request alone and there is
+    // no request-supplied role to read for a removal (unlike `change_role`,
+    // there is nothing here to distinguish from a legitimate case by
+    // rejecting it up front). See the second, post-read `requireAction`
+    // call below for that half (YT-0581, sibling of YT-0580).
     attrsFrom: (request) => ({ targetPrincipalId: readParam(request, "userId") }),
   })
   @Delete()
-  async remove(@Param("tenantId") tenantId: string, @Param("userId") userId: string) {
+  async remove(
+    @Param("tenantId") tenantId: string,
+    @Param("userId") userId: string,
+    @Req() request: FastifyRequest,
+  ) {
+    const currentMember = await this.members.findMember(tenantId, userId);
+    if (currentMember !== null) {
+      // The `@Authorize` above cannot see whether the TARGET is the owner
+      // (see the comment there). Now that the member has been read, ask
+      // the PDP again with the fact that matters: the target's real STORED
+      // role. Mirrors `TeamMemberController.changeRole`'s second, post-read
+      // authorization call (YT-0580) and `StoreListingController
+      // .setSettlementValue`'s for `set_settlement_value`. `team.yaml`'s
+      // `ownership-moves-only-by-transfer` rule denies `remove_member`
+      // whenever `targetRole == "owner"` — this is what lets that
+      // condition see the truth, where before this fix `attrsFrom` sent no
+      // `targetRole` at all and the rule could never fire for this action.
+      const principal = await this.principals.resolve(request);
+      const authz = await this.pdp.requireAction(
+        principal,
+        {
+          kind: "team",
+          id: userId,
+          attr: {
+            businessId: tenantId,
+            targetRole: currentMember.role,
+            targetPrincipalId: userId,
+          },
+        },
+        "remove_member",
+      );
+      if (authz.isErr()) throw mapAuthzErrorToHttpException(authz.error);
+    }
+
     const result = await removeMember(this.businesses, this.members, {
       businessId: tenantId,
       userId,

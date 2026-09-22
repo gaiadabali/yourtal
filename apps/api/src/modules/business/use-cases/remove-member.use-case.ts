@@ -25,19 +25,18 @@ export function removeMember(
       if (member === null) {
         return errAsync({ type: "member_not_found" as const, userId: input.userId });
       }
-      // Defense in depth, and NOT redundant with the PDP the way this
-      // comment used to claim (YT-0580 correction).
-      //
-      // `team.yaml`'s `ownership-moves-only-by-transfer` rule covers this
-      // action, but `TeamMemberController.remove`'s `attrsFrom` sends only
-      // `targetPrincipalId` — never `targetRole` — so `has(R.attr.targetRole)`
-      // is always false and the DENY can never fire for `remove_member`
-      // (tracked separately as YT-0581; sabotage-proved: an admin removing
-      // the real owner gets `EFFECT_ALLOW` from the PDP). This check is
-      // consequently the ONLY control on this path today, not a second
-      // layer behind one that already works. It reads the real stored role
-      // regardless, so a repository that can be called directly (a future
-      // job, a script) does not depend on the PDP having been asked at all.
+      // Defense in depth, mirroring `change-member-role.use-case.ts`: the
+      // owner role moves only through `transfer_ownership`, never
+      // `remove_member` (docs/17 section 2.1). `team.yaml`'s `ownership-
+      // moves-only-by-transfer` rule enforces this too, now that
+      // `TeamMemberController.remove` makes a second, post-read
+      // authorization call supplying the target's real STORED role as
+      // `targetRole` (YT-0581, sibling fix to YT-0580) — before that fix,
+      // `attrsFrom` sent only `targetPrincipalId` and the DENY could never
+      // fire for this action. This check does not depend on that call
+      // having been made: a repository reachable directly (a future job,
+      // a script) should not rely on the caller having asked the PDP at
+      // all, so it reads the real stored role itself regardless.
       if (member.role === "owner") {
         return errAsync({ type: "cannot_remove_owner" as const });
       }

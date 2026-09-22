@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CURRENCY_CODES, type Currency } from "./currency";
-import { toIdrMinorUnits, type IdrMinorUnits } from "./money";
+import { toMinorUnits, type MinorUnits } from "./money";
 
 /**
  * `Money` — an integer amount that carries its own currency. YT-0513.
@@ -100,7 +100,7 @@ export function zeroMoney(currency: Currency): Money {
  * Making it an argument forces the migration to answer, once per call site,
  * the question the field name has been guessing at.
  */
-export function fromLegacyAmount(value: IdrMinorUnits, currency: Currency): Money {
+export function fromLegacyAmount(value: MinorUnits, currency: Currency): Money {
   return money(value, currency);
 }
 
@@ -147,6 +147,6 @@ export function compareMoney(left: Money, right: Money): number {
  * value really is validated as money in a named currency rather than merely
  * annotated as one.
  */
-export function audCents(cents: number): IdrMinorUnits {
-  return toIdrMinorUnits(money(cents, "AUD").amountMinor);
+export function audCents(cents: number): MinorUnits {
+  return toMinorUnits(money(cents, "AUD").amountMinor);
 }

@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552, extended by YT-0559). Do not edit by hand.  `paths` covers every route the business module (apps/api/src/modules/business), campaign module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint serve, hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the watch module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this package has not given a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a documented module's controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -22,7 +23,6 @@ var _ MappedNullable = &CampaignVideoSourceOneOf{}
 type CampaignVideoSourceOneOf struct {
 	Kind string `json:"kind"`
 	ManifestUrl string `json:"manifestUrl"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _CampaignVideoSourceOneOf CampaignVideoSourceOneOf
@@ -106,11 +106,6 @@ func (o CampaignVideoSourceOneOf) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["kind"] = o.Kind
 	toSerialize["manifestUrl"] = o.ManifestUrl
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -139,21 +134,15 @@ func (o *CampaignVideoSourceOneOf) UnmarshalJSON(data []byte) (err error) {
 
 	varCampaignVideoSourceOneOf := _CampaignVideoSourceOneOf{}
 
-	err = json.Unmarshal(data, &varCampaignVideoSourceOneOf)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varCampaignVideoSourceOneOf)
 
 	if err != nil {
 		return err
 	}
 
 	*o = CampaignVideoSourceOneOf(varCampaignVideoSourceOneOf)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "kind")
-		delete(additionalProperties, "manifestUrl")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

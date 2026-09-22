@@ -87,6 +87,29 @@ function replayMigrations(): Map<string, Set<string>> {
       for (const dropped of body.matchAll(/DROP COLUMN\s+(?:IF EXISTS\s+)?(\w+)/gi)) {
         if (dropped[1] !== undefined) columns.delete(dropped[1].toLowerCase());
       }
+      // RENAME COLUMN, added by YT-0513 — and its absence was a hole in this
+      // gate rather than an omission in its scope.
+      //
+      // A rename is the one schema change that leaves the column COUNT
+      // unchanged, so every "does each field have a column" assertion below
+      // still had the same number of things to compare and simply compared
+      // the wrong ones. Replaying only ADD and DROP meant a migration that
+      // renamed `face_value_idr` to `face_value_minor` was invisible here:
+      // the gate went on asserting against a name the database no longer
+      // had, and would have reported drift against the CONTRACT for
+      // correctly following the migration.
+      //
+      // Postgres takes one rename per ALTER statement, so this does not
+      // need to handle a list.
+      for (const renamed of body.matchAll(
+        /RENAME COLUMN\s+(?:IF EXISTS\s+)?(\w+)\s+TO\s+(\w+)/gi,
+      )) {
+        const from = renamed[1]?.toLowerCase();
+        const to = renamed[2]?.toLowerCase();
+        if (from === undefined || to === undefined) continue;
+        columns.delete(from);
+        columns.add(to);
+      }
     }
   }
 

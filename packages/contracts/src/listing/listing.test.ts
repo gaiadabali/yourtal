@@ -24,14 +24,15 @@ const validListing = {
       district: "Tebet",
     },
   ],
-  faceValueIdr: 50_000,
-  settlementValueIdr: 15_000,
+  currency: "IDR" as const,
+  faceValueMinor: 50_000,
+  settlementValueMinor: 15_000,
   priceInPoints: 2_500,
   stockRemaining: 10,
   stockTotal: 20,
   transferable: true,
   partialRedemptionPolicy: "balance_carrying",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   expiresAt: "2026-12-01T00:00:00.000Z",
   status: "available",
 };
@@ -61,7 +62,7 @@ describe("listingSchema", () => {
   });
 
   const rejectionTable: Array<{ name: string; overrides: Record<string, unknown> }> = [
-    { name: "negative face value", overrides: { faceValueIdr: -1 } },
+    { name: "negative face value", overrides: { faceValueMinor: -1 } },
     { name: "negative price in points", overrides: { priceInPoints: -1 } },
     { name: "invalid category enum value", overrides: { category: "gambling" } },
     { name: "invalid status enum value", overrides: { status: "hidden" } },
@@ -75,7 +76,7 @@ describe("listingSchema", () => {
     },
     {
       name: "settlementValue greater than faceValue",
-      overrides: { settlementValueIdr: 60_000, faceValueIdr: 50_000 },
+      overrides: { settlementValueMinor: 60_000, faceValueMinor: 50_000 },
     },
     {
       name: "sold_out status with remaining stock",
@@ -83,11 +84,11 @@ describe("listingSchema", () => {
     },
     {
       name: "minimum_spend policy without a minimum spend amount",
-      overrides: { partialRedemptionPolicy: "minimum_spend", minimumSpendIdr: null },
+      overrides: { partialRedemptionPolicy: "minimum_spend", minimumSpendMinor: null },
     },
     {
       name: "non-minimum_spend policy with a minimum spend amount set",
-      overrides: { partialRedemptionPolicy: "balance_carrying", minimumSpendIdr: 10_000 },
+      overrides: { partialRedemptionPolicy: "balance_carrying", minimumSpendMinor: 10_000 },
     },
     { name: "zero stockTotal", overrides: { stockTotal: 0 } },
     { name: "non-datetime expiresAt", overrides: { expiresAt: "next week" } },

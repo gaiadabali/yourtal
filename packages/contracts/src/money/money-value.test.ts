@@ -19,7 +19,7 @@ import {
   zeroMoney,
 } from "./money-value";
 import { formatMoney, formatMoneyValue } from "./money-format";
-import { toIdrMinorUnits } from "./money";
+import { toMinorUnits } from "./money";
 import { REGION_CONFIG } from "../region/region";
 
 describe("moneySchema", () => {
@@ -80,17 +80,17 @@ describe("currency-checked arithmetic", () => {
 });
 
 describe("fromLegacyAmount", () => {
-  // `region-mock-au-listing.ts` stores AUD cents in `faceValueIdr`. A
+  // `region-mock-au-listing.ts` stores AUD cents in `faceValueMinor`. A
   // one-argument converter would have relabelled all of it as Rupiah with
   // the type system's blessing, so the currency is a required argument.
   it("tags a legacy amount with the currency the caller names", () => {
-    const legacy = toIdrMinorUnits(1_250);
+    const legacy = toMinorUnits(1_250);
     expect(fromLegacyAmount(legacy, "AUD")).toStrictEqual(money(1_250, "AUD"));
     expect(fromLegacyAmount(legacy, "IDR")).toStrictEqual(money(1_250, "IDR"));
   });
 
   it("renders the same legacy integer differently once it is tagged", () => {
-    const legacy = toIdrMinorUnits(1_250);
+    const legacy = toMinorUnits(1_250);
     expect(formatMoneyValue(fromLegacyAmount(legacy, "AUD"))).toContain("12.50");
     expect(formatMoneyValue(fromLegacyAmount(legacy, "IDR"))).toContain("12,5");
   });
@@ -182,13 +182,13 @@ describe("formatting derives its scale from the registry", () => {
    * sees, or the two changes become impossible to tell apart in a bug report.
    */
   it("renders AUD cents as dollars", () => {
-    expect(formatMoney(toIdrMinorUnits(1_250), "AUD")).toContain("12.50");
+    expect(formatMoney(toMinorUnits(1_250), "AUD")).toContain("12.50");
   });
 
   it("divides IDR by its two-decimal minor unit", () => {
     // 4_500_000 sen is Rp 45.000. Before YT-0506 this integer was undivided;
     // the formatter needed no edit, because its scale comes from MINOR_UNIT.
-    expect(formatMoney(toIdrMinorUnits(4_500_000), "IDR")).toContain("45.000");
+    expect(formatMoney(toMinorUnits(4_500_000), "IDR")).toContain("45.000");
   });
 
   it("scales by ten to the power of the declared exponent", () => {

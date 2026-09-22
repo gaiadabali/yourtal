@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { idrMinorUnitsSchema, pointsSchema } from "../money/money";
+import { minorUnitsSchema, pointsSchema } from "../money/money";
+import { currencySchema } from "../money/money-value";
 import { merchantLocationSchema } from "./merchant-location";
 
 /**
@@ -50,14 +51,32 @@ const listingFields = z.object({
   description: z.string().min(1).max(500),
   category: listingCategorySchema,
   locations: z.array(merchantLocationSchema).min(1),
-  faceValueIdr: idrMinorUnitsSchema,
-  settlementValueIdr: idrMinorUnitsSchema,
+  /**
+   * YT-0513. ONE currency per listing, not one per amount.
+   *
+   * Three separate currency columns would permit a listing whose face value
+   * is AUD and whose settlement value is IDR. Nothing would reject it, and
+   * `B = S / priceInPoints` would silently compute across two currencies.
+   * A single field makes that unrepresentable -- the argument `moneySchema`
+   * makes about a transfer not mixing currencies, one level up.
+   *
+   * Amounts stay SCALAR minor units rather than nested `Money` objects, and
+   * that is the drift test's doing rather than a preference:
+   * `schema-drift.test.ts` maps each field to a snake_case column and
+   * demands correspondence both ways, so a nested object would need a
+   * written exemption plus two columns corresponding to nothing. Callers
+   * build `money(listing.faceValueMinor, listing.currency)` at the point of
+   * use, which is how the ledger tables already work.
+   */
+  currency: currencySchema,
+  faceValueMinor: minorUnitsSchema,
+  settlementValueMinor: minorUnitsSchema,
   priceInPoints: pointsSchema,
   stockRemaining: z.number().int().min(0),
   stockTotal: z.number().int().positive(),
   transferable: z.boolean(),
   partialRedemptionPolicy: partialRedemptionPolicySchema,
-  minimumSpendIdr: idrMinorUnitsSchema.nullable(),
+  minimumSpendMinor: minorUnitsSchema.nullable(),
   expiresAt: z.iso.datetime(),
   status: listingStatusSchema,
   /**
@@ -79,13 +98,13 @@ const soldOutMeansEmpty = (l: { status: string; stockRemaining: number }) =>
   l.status !== "sold_out" || l.stockRemaining === 0;
 const minimumSpendMatchesPolicy = (l: {
   partialRedemptionPolicy: string;
-  minimumSpendIdr: number | null;
-}) => (l.partialRedemptionPolicy === "minimum_spend") === (l.minimumSpendIdr !== null);
+  minimumSpendMinor: number | null;
+}) => (l.partialRedemptionPolicy === "minimum_spend") === (l.minimumSpendMinor !== null);
 const locationIdsUnique = (l: { locations: readonly { id: string }[] }) =>
   new Set(l.locations.map((location) => location.id)).size === l.locations.length;
 
 /**
- * The MERCHANT-facing listing. Carries `settlementValueIdr` -- S, what the
+ * The MERCHANT-facing listing. Carries `settlementValueMinor` -- S, what the
  * merchant is paid per redemption. Never return this from a public route;
  * use `publicListingSchema`, which cannot express S at all.
  */
@@ -94,18 +113,18 @@ export const listingSchema = listingFields
     message: "stockRemaining cannot exceed stockTotal",
     path: ["stockRemaining"],
   })
-  .refine((listing) => listing.settlementValueIdr <= listing.faceValueIdr, {
+  .refine((listing) => listing.settlementValueMinor <= listing.faceValueMinor, {
     message:
-      "settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3)",
-    path: ["settlementValueIdr"],
+      "settlementValueMinor (what the merchant is paid) cannot exceed faceValueMinor (docs/09 section 3)",
+    path: ["settlementValueMinor"],
   })
   .refine(soldOutMeansEmpty, {
     message: "A sold_out listing must have zero stockRemaining",
     path: ["status"],
   })
   .refine(minimumSpendMatchesPolicy, {
-    message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
-    path: ["minimumSpendIdr"],
+    message: "minimumSpendMinor must be set if and only if the policy is minimum_spend",
+    path: ["minimumSpendMinor"],
   })
   .refine(locationIdsUnique, {
     message: "location ids must be unique within a listing",
@@ -113,13 +132,13 @@ export const listingSchema = listingFields
   });
 
 /**
- * The PUBLIC catalogue listing -- `settlementValueIdr` omitted, so the field
+ * The PUBLIC catalogue listing -- `settlementValueMinor` omitted, so the field
  * is absent from the TYPE rather than stripped at each route. Anything that
  * parses to `PublicListing` cannot carry S even by mistake, the same
  * "unrepresentable rather than excluded" move `Campaign.status` makes for
  * draft campaigns (YT-0553).
  *
- * ## Why S specifically, when faceValueIdr stays
+ * ## Why S specifically, when faceValueMinor stays
  *
  * docs/24 ID-1 is named there as the single largest legal exposure in the
  * plan: YourTal Points are a loyalty currency rather than e-money BECAUSE,
@@ -131,12 +150,12 @@ export const listingSchema = listingFields
  * at 1.0 for launch (YT-0130), so `B = S / priceInPoints` exactly. One row
  * is enough; this needs no aggregation and is not an approximation.
  *
- * `faceValueIdr` stays public deliberately. It is the voucher's retail
+ * `faceValueMinor` stays public deliberately. It is the voucher's retail
  * value, the number a shopper is entitled to compare a price against, and it
  * reveals a discount rather than what the platform holds per point.
  */
 export const publicListingSchema = listingFields
-  .omit({ settlementValueIdr: true })
+  .omit({ settlementValueMinor: true })
   .refine(stockWithinTotal, {
     message: "stockRemaining cannot exceed stockTotal",
     path: ["stockRemaining"],
@@ -146,8 +165,8 @@ export const publicListingSchema = listingFields
     path: ["status"],
   })
   .refine(minimumSpendMatchesPolicy, {
-    message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
-    path: ["minimumSpendIdr"],
+    message: "minimumSpendMinor must be set if and only if the policy is minimum_spend",
+    path: ["minimumSpendMinor"],
   })
   .refine(locationIdsUnique, {
     message: "location ids must be unique within a listing",

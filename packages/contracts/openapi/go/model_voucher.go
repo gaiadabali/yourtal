@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552, extended by YT-0559). Do not edit by hand.  `paths` covers every route the business module (apps/api/src/modules/business), campaign module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint serve, hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the watch module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this package has not given a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a documented module's controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -19,7 +19,7 @@ import (
 // checks if the Voucher type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Voucher{}
 
-// Voucher An issued voucher held by a user, with its remaining value and expiry.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - remainingValueIdr cannot exceed faceValueIdr.   - expiresAt must be after issuedAt.   - minimumSpendIdr is set if and only if the policy is minimum_spend.
+// Voucher An issued voucher held by a user, with its remaining value and expiry.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - remainingValueMinor cannot exceed faceValueMinor.   - expiresAt must be after issuedAt.   - minimumSpendIdr is set if and only if the policy is minimum_spend.
 type Voucher struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	ListingId string `json:"listingId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
@@ -29,12 +29,13 @@ type Voucher struct {
 	MerchantName string `json:"merchantName"`
 	Location MerchantLocation `json:"location"`
 	Title string `json:"title"`
-	// Indonesian Rupiah as an integer number of SEN — one hundredth of a Rupiah. Rp 45.000 is 4500000. Settled by YT-0506 on 2026-09-20: ISO 4217 gives IDR a sen minor unit, Indonesian banking uses it (amounts appear as Rp 1.000,26), and Stripe treats IDR as two-decimal. This settles what we STORE, not what a processor accepts: Xendit publishes no amount-unit spec and Adyen flags IDR as diverging from ISO, so conversion belongs in each PSP adapter. Prefer Money, which carries its own currency.
-	FaceValueIdr int64 `json:"faceValueIdr"`
-	// Indonesian Rupiah as an integer number of SEN — one hundredth of a Rupiah. Rp 45.000 is 4500000. Settled by YT-0506 on 2026-09-20: ISO 4217 gives IDR a sen minor unit, Indonesian banking uses it (amounts appear as Rp 1.000,26), and Stripe treats IDR as two-decimal. This settles what we STORE, not what a processor accepts: Xendit publishes no amount-unit spec and Adyen flags IDR as diverging from ISO, so conversion belongs in each PSP adapter. Prefer Money, which carries its own currency.
-	RemainingValueIdr int64 `json:"remainingValueIdr"`
+	Currency Currency `json:"currency"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	FaceValueMinor int64 `json:"faceValueMinor"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	RemainingValueMinor int64 `json:"remainingValueMinor"`
 	PartialRedemptionPolicy PartialRedemptionPolicy `json:"partialRedemptionPolicy"`
-	MinimumSpendIdr ListingMinimumSpendIdr `json:"minimumSpendIdr"`
+	MinimumSpendMinor ListingMinimumSpendMinor `json:"minimumSpendMinor"`
 	Transferable bool `json:"transferable"`
 	Status VoucherStatus `json:"status"`
 	IssuedAt time.Time `json:"issuedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
@@ -48,7 +49,7 @@ type _Voucher Voucher
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName string, location MerchantLocation, title string, faceValueIdr int64, remainingValueIdr int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendIdr ListingMinimumSpendIdr, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
+func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName string, location MerchantLocation, title string, currency Currency, faceValueMinor int64, remainingValueMinor int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor ListingMinimumSpendMinor, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
 	this := Voucher{}
 	this.Id = id
 	this.ListingId = listingId
@@ -58,10 +59,11 @@ func NewVoucher(id string, listingId string, ownerId string, code string, mercha
 	this.MerchantName = merchantName
 	this.Location = location
 	this.Title = title
-	this.FaceValueIdr = faceValueIdr
-	this.RemainingValueIdr = remainingValueIdr
+	this.Currency = currency
+	this.FaceValueMinor = faceValueMinor
+	this.RemainingValueMinor = remainingValueMinor
 	this.PartialRedemptionPolicy = partialRedemptionPolicy
-	this.MinimumSpendIdr = minimumSpendIdr
+	this.MinimumSpendMinor = minimumSpendMinor
 	this.Transferable = transferable
 	this.Status = status
 	this.IssuedAt = issuedAt
@@ -269,52 +271,76 @@ func (o *Voucher) SetTitle(v string) {
 	o.Title = v
 }
 
-// GetFaceValueIdr returns the FaceValueIdr field value
-func (o *Voucher) GetFaceValueIdr() int64 {
+// GetCurrency returns the Currency field value
+func (o *Voucher) GetCurrency() Currency {
+	if o == nil {
+		var ret Currency
+		return ret
+	}
+
+	return o.Currency
+}
+
+// GetCurrencyOk returns a tuple with the Currency field value
+// and a boolean to check if the value has been set.
+func (o *Voucher) GetCurrencyOk() (*Currency, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Currency, true
+}
+
+// SetCurrency sets field value
+func (o *Voucher) SetCurrency(v Currency) {
+	o.Currency = v
+}
+
+// GetFaceValueMinor returns the FaceValueMinor field value
+func (o *Voucher) GetFaceValueMinor() int64 {
 	if o == nil {
 		var ret int64
 		return ret
 	}
 
-	return o.FaceValueIdr
+	return o.FaceValueMinor
 }
 
-// GetFaceValueIdrOk returns a tuple with the FaceValueIdr field value
+// GetFaceValueMinorOk returns a tuple with the FaceValueMinor field value
 // and a boolean to check if the value has been set.
-func (o *Voucher) GetFaceValueIdrOk() (*int64, bool) {
+func (o *Voucher) GetFaceValueMinorOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.FaceValueIdr, true
+	return &o.FaceValueMinor, true
 }
 
-// SetFaceValueIdr sets field value
-func (o *Voucher) SetFaceValueIdr(v int64) {
-	o.FaceValueIdr = v
+// SetFaceValueMinor sets field value
+func (o *Voucher) SetFaceValueMinor(v int64) {
+	o.FaceValueMinor = v
 }
 
-// GetRemainingValueIdr returns the RemainingValueIdr field value
-func (o *Voucher) GetRemainingValueIdr() int64 {
+// GetRemainingValueMinor returns the RemainingValueMinor field value
+func (o *Voucher) GetRemainingValueMinor() int64 {
 	if o == nil {
 		var ret int64
 		return ret
 	}
 
-	return o.RemainingValueIdr
+	return o.RemainingValueMinor
 }
 
-// GetRemainingValueIdrOk returns a tuple with the RemainingValueIdr field value
+// GetRemainingValueMinorOk returns a tuple with the RemainingValueMinor field value
 // and a boolean to check if the value has been set.
-func (o *Voucher) GetRemainingValueIdrOk() (*int64, bool) {
+func (o *Voucher) GetRemainingValueMinorOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.RemainingValueIdr, true
+	return &o.RemainingValueMinor, true
 }
 
-// SetRemainingValueIdr sets field value
-func (o *Voucher) SetRemainingValueIdr(v int64) {
-	o.RemainingValueIdr = v
+// SetRemainingValueMinor sets field value
+func (o *Voucher) SetRemainingValueMinor(v int64) {
+	o.RemainingValueMinor = v
 }
 
 // GetPartialRedemptionPolicy returns the PartialRedemptionPolicy field value
@@ -341,28 +367,28 @@ func (o *Voucher) SetPartialRedemptionPolicy(v PartialRedemptionPolicy) {
 	o.PartialRedemptionPolicy = v
 }
 
-// GetMinimumSpendIdr returns the MinimumSpendIdr field value
-func (o *Voucher) GetMinimumSpendIdr() ListingMinimumSpendIdr {
+// GetMinimumSpendMinor returns the MinimumSpendMinor field value
+func (o *Voucher) GetMinimumSpendMinor() ListingMinimumSpendMinor {
 	if o == nil {
-		var ret ListingMinimumSpendIdr
+		var ret ListingMinimumSpendMinor
 		return ret
 	}
 
-	return o.MinimumSpendIdr
+	return o.MinimumSpendMinor
 }
 
-// GetMinimumSpendIdrOk returns a tuple with the MinimumSpendIdr field value
+// GetMinimumSpendMinorOk returns a tuple with the MinimumSpendMinor field value
 // and a boolean to check if the value has been set.
-func (o *Voucher) GetMinimumSpendIdrOk() (*ListingMinimumSpendIdr, bool) {
+func (o *Voucher) GetMinimumSpendMinorOk() (*ListingMinimumSpendMinor, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MinimumSpendIdr, true
+	return &o.MinimumSpendMinor, true
 }
 
-// SetMinimumSpendIdr sets field value
-func (o *Voucher) SetMinimumSpendIdr(v ListingMinimumSpendIdr) {
-	o.MinimumSpendIdr = v
+// SetMinimumSpendMinor sets field value
+func (o *Voucher) SetMinimumSpendMinor(v ListingMinimumSpendMinor) {
+	o.MinimumSpendMinor = v
 }
 
 // GetTransferable returns the Transferable field value
@@ -479,10 +505,11 @@ func (o Voucher) ToMap() (map[string]interface{}, error) {
 	toSerialize["merchantName"] = o.MerchantName
 	toSerialize["location"] = o.Location
 	toSerialize["title"] = o.Title
-	toSerialize["faceValueIdr"] = o.FaceValueIdr
-	toSerialize["remainingValueIdr"] = o.RemainingValueIdr
+	toSerialize["currency"] = o.Currency
+	toSerialize["faceValueMinor"] = o.FaceValueMinor
+	toSerialize["remainingValueMinor"] = o.RemainingValueMinor
 	toSerialize["partialRedemptionPolicy"] = o.PartialRedemptionPolicy
-	toSerialize["minimumSpendIdr"] = o.MinimumSpendIdr
+	toSerialize["minimumSpendMinor"] = o.MinimumSpendMinor
 	toSerialize["transferable"] = o.Transferable
 	toSerialize["status"] = o.Status
 	toSerialize["issuedAt"] = o.IssuedAt
@@ -508,10 +535,11 @@ func (o *Voucher) UnmarshalJSON(data []byte) (err error) {
 		"merchantName",
 		"location",
 		"title",
-		"faceValueIdr",
-		"remainingValueIdr",
+		"currency",
+		"faceValueMinor",
+		"remainingValueMinor",
 		"partialRedemptionPolicy",
-		"minimumSpendIdr",
+		"minimumSpendMinor",
 		"transferable",
 		"status",
 		"issuedAt",
@@ -553,10 +581,11 @@ func (o *Voucher) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "merchantName")
 		delete(additionalProperties, "location")
 		delete(additionalProperties, "title")
-		delete(additionalProperties, "faceValueIdr")
-		delete(additionalProperties, "remainingValueIdr")
+		delete(additionalProperties, "currency")
+		delete(additionalProperties, "faceValueMinor")
+		delete(additionalProperties, "remainingValueMinor")
 		delete(additionalProperties, "partialRedemptionPolicy")
-		delete(additionalProperties, "minimumSpendIdr")
+		delete(additionalProperties, "minimumSpendMinor")
 		delete(additionalProperties, "transferable")
 		delete(additionalProperties, "status")
 		delete(additionalProperties, "issuedAt")

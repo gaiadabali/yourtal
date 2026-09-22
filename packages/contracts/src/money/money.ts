@@ -59,6 +59,42 @@ export const idrMinorUnitsSchema = z
 
 export type IdrMinorUnits = z.infer<typeof idrMinorUnitsSchema>;
 
+/**
+ * A whole number of some currency's minor unit, WITHOUT saying which
+ * currency (YT-0513).
+ *
+ * `IdrMinorUnits` above answers "how much" and "in what" at once, which is
+ * why AU fixtures could store AUD cents in a field typed `IdrMinorUnits`
+ * and render correctly only because every call site remembered to pass
+ * `"AUD"` -- `region-mock-au-listing.ts`'s own header calls that the known
+ * IDR-field wart.
+ *
+ * This brand answers only "how much". The currency is a SIBLING field on
+ * the same record -- `listingSchema.currency`, one per listing -- so a
+ * record cannot carry an amount whose currency is unstated, and cannot
+ * carry two amounts in different currencies either.
+ *
+ * Deliberately NOT a nested `Money` object, though `moneySchema` exists and
+ * is the right shape for values in flight. `schema-drift.test.ts` maps each
+ * contract field to a snake_case column and demands correspondence both
+ * ways, so a nested object needs a written exemption plus columns that
+ * correspond to nothing. Callers compose `money(record.fooMinor,
+ * record.currency)` at the point of use; the ledger tables already work
+ * this way, and matching a table that works beats inventing a second
+ * convention.
+ *
+ * The ceiling is the IDR one, because sen is the smallest minor unit this
+ * platform stores and therefore the largest count for a given real value.
+ */
+export const minorUnitsSchema = z
+  .number()
+  .int("A money amount must be a whole number of minor units, never fractional")
+  .min(0, "A money amount cannot be negative")
+  .max(MAX_SAFE_IDR_MINOR_UNITS, "Amount exceeds the sane ceiling for this platform")
+  .brand<"MinorUnits">();
+
+export type MinorUnits = z.infer<typeof minorUnitsSchema>;
+
 export const pointsSchema = z
   .number()
   .int("Points must be a whole number")
@@ -73,14 +109,19 @@ export function toIdrMinorUnits(value: number): IdrMinorUnits {
   return idrMinorUnitsSchema.parse(value);
 }
 
+/** Parses a raw number into `MinorUnits`, throwing on anything invalid (YT-0513). */
+export function toMinorUnits(value: number): MinorUnits {
+  return minorUnitsSchema.parse(value);
+}
+
 /** Parses a raw number into `Points`, throwing on anything invalid. */
 export function toPoints(value: number): Points {
   return pointsSchema.parse(value);
 }
 
-/** Integer-safe addition of two IDR amounts. */
-export function addIdr(a: IdrMinorUnits, b: IdrMinorUnits): IdrMinorUnits {
-  return toIdrMinorUnits(a + b);
+/** Integer-safe addition of two amounts in the SAME currency (YT-0513: the caller states which). */
+export function addIdr(a: MinorUnits, b: MinorUnits): MinorUnits {
+  return toMinorUnits(a + b);
 }
 
 /**
@@ -88,8 +129,8 @@ export function addIdr(a: IdrMinorUnits, b: IdrMinorUnits): IdrMinorUnits {
  * balance-carrying voucher redemption (docs/09 section 8.2) where a partial
  * spend must never leave a negative remaining value.
  */
-export function subtractIdrClamped(a: IdrMinorUnits, b: IdrMinorUnits): IdrMinorUnits {
-  return toIdrMinorUnits(Math.max(0, a - b));
+export function subtractIdrClamped(a: MinorUnits, b: MinorUnits): MinorUnits {
+  return toMinorUnits(Math.max(0, a - b));
 }
 
 /** Integer-safe addition of two point amounts. */
@@ -119,13 +160,13 @@ export function subtractPointsClamped(a: Points, b: Points): Points {
  * carried past this function's own division step.
  */
 export function pointsPriceFromSettlement(
-  settlementValueIdr: IdrMinorUnits,
+  settlementValueMinor: MinorUnits,
   backingRateIdrPerPoint: number,
 ): Points {
   if (backingRateIdrPerPoint <= 0) {
     throw new Error("backingRateIdrPerPoint must be positive");
   }
-  return toPoints(Math.round(settlementValueIdr / backingRateIdrPerPoint));
+  return toPoints(Math.round(settlementValueMinor / backingRateIdrPerPoint));
 }
 
 /** One Rupiah is one hundred sen (YT-0506, settled 2026-09-20). */
@@ -155,6 +196,6 @@ export const SEN_PER_RUPIAH = 100;
  * different functions, and the 100x conversion exists in exactly one place
  * rather than ninety.
  */
-export function rupiah(wholeRupiah: number): IdrMinorUnits {
-  return toIdrMinorUnits(Math.round(wholeRupiah * SEN_PER_RUPIAH));
+export function rupiah(wholeRupiah: number): MinorUnits {
+  return toMinorUnits(Math.round(wholeRupiah * SEN_PER_RUPIAH));
 }

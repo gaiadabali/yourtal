@@ -34,7 +34,7 @@ function auVoucherFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
         )
       : faceValueCents;
 
-  const minimumSpendIdr =
+  const minimumSpendMinor =
     partialRedemptionPolicy === "minimum_spend" ? audCents(Math.round(faceValueCents / 2)) : null;
 
   return voucherSchema.parse({
@@ -46,10 +46,11 @@ function auVoucherFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
     merchantName,
     location: generateMerchantLocationAu(faker, merchantName, "Main Branch"),
     title: `Voucher — ${merchantName}`,
-    faceValueIdr: faceValueCents,
-    remainingValueIdr: remainingValueCents,
+    currency: "AUD" as const,
+    faceValueMinor: faceValueCents,
+    remainingValueMinor: remainingValueCents,
     partialRedemptionPolicy,
-    minimumSpendIdr,
+    minimumSpendMinor,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
     status: "active",
     issuedAt: toIsoString(addDays(now, -issuedDaysAgo)),
@@ -80,10 +81,11 @@ export const auExpiredVoucherFixture: Voucher = voucherSchema.parse({
     district: "Manly",
   },
   title: "Voucher — Wharf Espresso Co",
-  faceValueIdr: audCents(2_000),
-  remainingValueIdr: audCents(2_000),
+  currency: "AUD" as const,
+  faceValueMinor: audCents(2_000),
+  remainingValueMinor: audCents(2_000),
   partialRedemptionPolicy: "single_use_forfeit",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   transferable: false,
   status: "expired",
   issuedAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, -60)),
@@ -105,10 +107,11 @@ export const auExpiringWithinHourVoucherFixture: Voucher = voucherSchema.parse({
     district: "Surry Hills",
   },
   title: "Voucher — Cedar Deli Bar",
-  faceValueIdr: audCents(5_000),
-  remainingValueIdr: audCents(5_000),
+  currency: "AUD" as const,
+  faceValueMinor: audCents(5_000),
+  remainingValueMinor: audCents(5_000),
   partialRedemptionPolicy: "balance_carrying",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   transferable: true,
   status: "active",
   issuedAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, -10)),

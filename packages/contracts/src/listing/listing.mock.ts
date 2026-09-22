@@ -3,7 +3,7 @@ import { listingSchema } from "./listing";
 import { DEFAULT_REFERENCE_INSTANT, addDays, addHours, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
 import { LONG_MERCHANT_NAME, generateMerchantLocations } from "../internal/jakarta";
-import { pointsPriceFromSettlement, rupiah, toIdrMinorUnits, toPoints } from "../money/money";
+import { pointsPriceFromSettlement, rupiah, toMinorUnits, toPoints } from "../money/money";
 import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "../money/mock-backing-rate";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 
@@ -27,11 +27,11 @@ export function generateListing(params: GenerateListingParams): Listing {
   // merchant, so a generated one could never match. See merchant-roster.ts.
   const merchant = pickMockMerchant(faker, "ID");
   const merchantName = merchant.name;
-  const faceValueIdr = rupiah(faker.number.int({ min: 15, max: 400 }) * 1_000);
-  // `faceValueIdr` is already in IDR minor units — currently whole Rupiah, see
+  const faceValueMinor = rupiah(faker.number.int({ min: 15, max: 400 }) * 1_000);
+  // `faceValueMinor` is already in IDR minor units — currently whole Rupiah, see
   // money.ts and YT-0506 — so scaling it by 0.3 keeps it in the same unit and
-  // `toIdrMinorUnits` here only re-brands the result, it does not convert.
-  const settlementValueIdr = toIdrMinorUnits(Math.round(faceValueIdr * 0.3));
+  // `toMinorUnits` here only re-brands the result, it does not convert.
+  const settlementValueMinor = toMinorUnits(Math.round(faceValueMinor * 0.3));
   const stockTotal = faker.number.int({ min: 5, max: 500 });
   const stockRemaining = faker.number.int({ min: 0, max: stockTotal });
   const status =
@@ -65,19 +65,20 @@ export function generateListing(params: GenerateListingParams): Listing {
       "services",
     ] as const),
     locations: generateMerchantLocations(faker, merchantName, locationCount),
-    faceValueIdr,
-    settlementValueIdr,
+    currency: "IDR" as const,
+    faceValueMinor,
+    settlementValueMinor,
     priceInPoints: pointsPriceFromSettlement(
-      settlementValueIdr,
+      settlementValueMinor,
       MOCK_BACKING_RATE_IDR_SEN_PER_POINT,
     ),
     stockRemaining,
     stockTotal,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
     partialRedemptionPolicy,
-    minimumSpendIdr:
+    minimumSpendMinor:
       partialRedemptionPolicy === "minimum_spend"
-        ? toIdrMinorUnits(Math.round(faceValueIdr * 0.5))
+        ? toMinorUnits(Math.round(faceValueMinor * 0.5))
         : null,
     expiresAt: toIsoString(addDays(now, faker.number.int({ min: 7, max: 90 }))),
     status,
@@ -107,14 +108,15 @@ export const soldOutListingFixture: Listing = listingSchema.parse({
       district: "Kemang",
     },
   ],
-  faceValueIdr: rupiah(30_000),
-  settlementValueIdr: rupiah(9_000),
+  currency: "IDR" as const,
+  faceValueMinor: rupiah(30_000),
+  settlementValueMinor: rupiah(9_000),
   priceInPoints: pointsPriceFromSettlement(rupiah(9_000), MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
   stockRemaining: 0,
   stockTotal: 100,
   transferable: false,
   partialRedemptionPolicy: "single_use_forfeit",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   expiresAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 30)),
   status: "sold_out",
 });
@@ -140,14 +142,15 @@ export const abovePlausibleBalanceListingFixture: Listing = listingSchema.parse(
       district: "Senayan",
     },
   ],
-  faceValueIdr: rupiah(15_000_000),
-  settlementValueIdr: rupiah(9_000_000),
+  currency: "IDR" as const,
+  faceValueMinor: rupiah(15_000_000),
+  settlementValueMinor: rupiah(9_000_000),
   priceInPoints: toPoints(1_500_000),
   stockRemaining: 3,
   stockTotal: 10,
   transferable: false,
   partialRedemptionPolicy: "single_use_forfeit",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   expiresAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 60)),
   status: "available",
 });
@@ -174,14 +177,15 @@ export const expiringSoonListingFixture: Listing = listingSchema.parse({
       district: "Setiabudi",
     },
   ],
-  faceValueIdr: rupiah(50_000),
-  settlementValueIdr: rupiah(15_000),
+  currency: "IDR" as const,
+  faceValueMinor: rupiah(50_000),
+  settlementValueMinor: rupiah(15_000),
   priceInPoints: pointsPriceFromSettlement(rupiah(15_000), MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
   stockRemaining: 12,
   stockTotal: 50,
   transferable: true,
   partialRedemptionPolicy: "balance_carrying",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   expiresAt: toIsoString(addHours(DEFAULT_REFERENCE_INSTANT, 3)),
   status: "expiring_soon",
 });

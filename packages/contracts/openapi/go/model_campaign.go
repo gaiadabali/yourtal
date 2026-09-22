@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552, extended by YT-0559). Do not edit by hand.  `paths` covers every route the business module (apps/api/src/modules/business), campaign module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint serve, hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the watch module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this package has not given a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a documented module's controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -37,7 +38,6 @@ type Campaign struct {
 	PublishedAt time.Time `json:"publishedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
 	Chapters []CampaignChapter `json:"chapters"`
 	VideoSource CampaignVideoSource `json:"videoSource"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _Campaign Campaign
@@ -459,11 +459,6 @@ func (o Campaign) ToMap() (map[string]interface{}, error) {
 	toSerialize["publishedAt"] = o.PublishedAt
 	toSerialize["chapters"] = o.Chapters
 	toSerialize["videoSource"] = o.VideoSource
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -505,34 +500,15 @@ func (o *Campaign) UnmarshalJSON(data []byte) (err error) {
 
 	varCampaign := _Campaign{}
 
-	err = json.Unmarshal(data, &varCampaign)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varCampaign)
 
 	if err != nil {
 		return err
 	}
 
 	*o = Campaign(varCampaign)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "kind")
-		delete(additionalProperties, "title")
-		delete(additionalProperties, "merchantId")
-		delete(additionalProperties, "merchantName")
-		delete(additionalProperties, "synopsis")
-		delete(additionalProperties, "durationSeconds")
-		delete(additionalProperties, "estimatedDataMb")
-		delete(additionalProperties, "rewardPoints")
-		delete(additionalProperties, "questionCount")
-		delete(additionalProperties, "scoringRule")
-		delete(additionalProperties, "status")
-		delete(additionalProperties, "publishedAt")
-		delete(additionalProperties, "chapters")
-		delete(additionalProperties, "videoSource")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

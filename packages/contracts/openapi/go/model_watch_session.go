@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552, extended by YT-0559). Do not edit by hand.  `paths` covers every route the business module (apps/api/src/modules/business), campaign module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint serve, hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the watch module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this package has not given a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a documented module's controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -28,8 +29,7 @@ type WatchSession struct {
 	State WatchSessionState `json:"state"`
 	StartedAt time.Time `json:"startedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
 	LastProgressAt time.Time `json:"lastProgressAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
-	CompletedAt BalancePendingUnlockAt `json:"completedAt"`
-	AdditionalProperties map[string]interface{}
+	CompletedAt NullableTime `json:"completedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
 }
 
 type _WatchSession WatchSession
@@ -38,7 +38,7 @@ type _WatchSession WatchSession
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWatchSession(id string, userId string, campaignId string, termsVersion int64, state WatchSessionState, startedAt time.Time, lastProgressAt time.Time, completedAt BalancePendingUnlockAt) *WatchSession {
+func NewWatchSession(id string, userId string, campaignId string, termsVersion int64, state WatchSessionState, startedAt time.Time, lastProgressAt time.Time, completedAt NullableTime) *WatchSession {
 	this := WatchSession{}
 	this.Id = id
 	this.UserId = userId
@@ -228,27 +228,29 @@ func (o *WatchSession) SetLastProgressAt(v time.Time) {
 }
 
 // GetCompletedAt returns the CompletedAt field value
-func (o *WatchSession) GetCompletedAt() BalancePendingUnlockAt {
-	if o == nil {
-		var ret BalancePendingUnlockAt
+// If the value is explicit nil, the zero value for time.Time will be returned
+func (o *WatchSession) GetCompletedAt() time.Time {
+	if o == nil || o.CompletedAt.Get() == nil {
+		var ret time.Time
 		return ret
 	}
 
-	return o.CompletedAt
+	return *o.CompletedAt.Get()
 }
 
 // GetCompletedAtOk returns a tuple with the CompletedAt field value
 // and a boolean to check if the value has been set.
-func (o *WatchSession) GetCompletedAtOk() (*BalancePendingUnlockAt, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *WatchSession) GetCompletedAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.CompletedAt, true
+	return o.CompletedAt.Get(), o.CompletedAt.IsSet()
 }
 
 // SetCompletedAt sets field value
-func (o *WatchSession) SetCompletedAt(v BalancePendingUnlockAt) {
-	o.CompletedAt = v
+func (o *WatchSession) SetCompletedAt(v time.Time) {
+	o.CompletedAt.Set(&v)
 }
 
 func (o WatchSession) MarshalJSON() ([]byte, error) {
@@ -268,12 +270,7 @@ func (o WatchSession) ToMap() (map[string]interface{}, error) {
 	toSerialize["state"] = o.State
 	toSerialize["startedAt"] = o.StartedAt
 	toSerialize["lastProgressAt"] = o.LastProgressAt
-	toSerialize["completedAt"] = o.CompletedAt
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
+	toSerialize["completedAt"] = o.CompletedAt.Get()
 	return toSerialize, nil
 }
 
@@ -308,27 +305,15 @@ func (o *WatchSession) UnmarshalJSON(data []byte) (err error) {
 
 	varWatchSession := _WatchSession{}
 
-	err = json.Unmarshal(data, &varWatchSession)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varWatchSession)
 
 	if err != nil {
 		return err
 	}
 
 	*o = WatchSession(varWatchSession)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "userId")
-		delete(additionalProperties, "campaignId")
-		delete(additionalProperties, "termsVersion")
-		delete(additionalProperties, "state")
-		delete(additionalProperties, "startedAt")
-		delete(additionalProperties, "lastProgressAt")
-		delete(additionalProperties, "completedAt")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

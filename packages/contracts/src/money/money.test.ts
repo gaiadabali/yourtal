@@ -10,7 +10,7 @@ import {
   pointsSchema,
   subtractIdrClamped,
   subtractPointsClamped,
-  toIdrMinorUnits,
+  toMinorUnits,
   toPoints,
 } from "./money";
 
@@ -59,14 +59,14 @@ describe("pointsSchema", () => {
 
 describe("arithmetic helpers", () => {
   it("adds IDR amounts without floating point drift", () => {
-    const a = toIdrMinorUnits(15_000);
-    const b = toIdrMinorUnits(30_000);
+    const a = toMinorUnits(15_000);
+    const b = toMinorUnits(30_000);
     expect(addIdr(a, b)).toBe(45_000);
   });
 
   it("clamps IDR subtraction at zero", () => {
-    const a = toIdrMinorUnits(10_000);
-    const b = toIdrMinorUnits(30_000);
+    const a = toMinorUnits(10_000);
+    const b = toMinorUnits(30_000);
     expect(subtractIdrClamped(a, b)).toBe(0);
   });
 
@@ -114,7 +114,7 @@ describe("formatting", () => {
     // its scale from MINOR_UNIT rather than from a literal.
     expect(formatIdr(rupiah(45_000))).toContain("45.000");
     // ...while the raw integer that USED to mean Rp 45.000 is now Rp 450.
-    expect(formatIdr(toIdrMinorUnits(45_000))).toContain("450");
+    expect(formatIdr(toMinorUnits(45_000))).toContain("450");
   });
 
   it("formats points with the Indonesian word for points", () => {
@@ -124,8 +124,8 @@ describe("formatting", () => {
 
 describe("determinism", () => {
   it("parsing the same input twice yields deep-equal, byte-identical branded values", () => {
-    const first = { idr: toIdrMinorUnits(45_000), points: toPoints(2_400) };
-    const second = { idr: toIdrMinorUnits(45_000), points: toPoints(2_400) };
+    const first = { idr: toMinorUnits(45_000), points: toPoints(2_400) };
+    const second = { idr: toMinorUnits(45_000), points: toPoints(2_400) };
     expect(first).toStrictEqual(second);
   });
 });

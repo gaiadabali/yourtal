@@ -3,7 +3,7 @@
   "info": {
     "title": "YourTal contracts",
     "version": "0.0.0",
-    "description": "Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.\n\n`paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.\n\nCross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule."
+    "description": "Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552, extended by YT-0559). Do not edit by hand.\n\n`paths` covers every route the business module (apps/api/src/modules/business), campaign module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint serve, hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the watch module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this package has not given a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a documented module's controller route and a route-registry entry ever disagree, in either direction.\n\nCross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule."
   },
   "paths": {
     "/api/businesses": {
@@ -921,6 +921,1017 @@
           }
         }
       }
+    },
+    "/api/campaigns": {
+      "get": {
+        "summary": "List visible campaigns for the Earn board",
+        "tags": [
+          "campaign"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "How many campaigns to return. Clamped server-side to [1, 100] regardless of what is asked for — an unauthenticated route's own denial-of-service guard (campaign.controller.ts) — and defaulted to 30 when absent or not a base-10 integer.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The visible campaigns, most-recently-published first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Every campaign currently visible to a viewer. The authoring state (draft/in_review/rejected) cannot reach this response — Campaign['status'] has no value capable of expressing it, so it is unrepresentable here rather than filtered.",
+                  "properties": {
+                    "campaigns": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Campaign"
+                      }
+                    }
+                  },
+                  "required": [
+                    "campaigns"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/campaigns/{campaignId}": {
+      "get": {
+        "summary": "Get one visible campaign",
+        "tags": [
+          "campaign"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The campaign being read.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The campaign.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Campaign"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such campaign — deliberately the SAME answer whether the id does not exist or exists as an unpublished draft (campaign.controller.ts), so this 404 never discloses that a draft with this id exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/watch/sessions": {
+      "post": {
+        "summary": "Start (or supersede into) a watch session",
+        "tags": [
+          "watch"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The campaign to start watching.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "campaignId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "campaignId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The session was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "The new session — superseding any previous active one for this user, since only one reward-bearing session per user is live at a time — plus the campaign's duration, so the client knows what full coverage means without a second call.",
+                  "properties": {
+                    "session": {
+                      "$ref": "#/components/schemas/WatchSession"
+                    },
+                    "durationSeconds": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "session",
+                    "durationSeconds"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body is missing campaignId, or it is not a UUID. This route parses its own body with a local zod schema rather than a createZodDto — the global ZodValidationPipe (apps/api/src/main.ts) never runs for it, so VALIDATION_400 above does not apply here.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Two mechanisms share this status here. A PDP denial (authz-error.mapper.ts's `forbidden` case, action `earn`) returns the ErrorResponse {code,message} envelope. A domain refusal thrown directly by watch.controller.ts — the campaign is not currently live, or has no published terms to watch under — returns Nest's own {statusCode,message,error} body instead. A client cannot tell the two apart by status code alone, so both shapes are asserted rather than picking one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "type": "object",
+                      "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                      "properties": {
+                        "statusCode": {
+                          "type": "integer"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "statusCode",
+                        "message",
+                        "error"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such campaign.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/watch/sessions/{sessionId}": {
+      "get": {
+        "summary": "Resume a watch session",
+        "tags": [
+          "watch"
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "description": "The watch session being resumed, progressed, or completed.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The session, its recorded coverage, and where it still has gaps.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Everything needed to resume at the first GAP rather than at a stored playhead position, which says nothing about whether the middle was actually watched (decision O-4).",
+                  "properties": {
+                    "session": {
+                      "$ref": "#/components/schemas/WatchSession"
+                    },
+                    "durationSeconds": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "coverage": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "A half-open span of playback, in whole seconds: [fromSecond, toSecond).",
+                        "properties": {
+                          "fromSecond": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "toSecond": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "fromSecond",
+                          "toSecond"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "coveredSeconds": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "fraction": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "gaps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "A half-open span of playback, in whole seconds: [fromSecond, toSecond).",
+                        "properties": {
+                          "fromSecond": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "toSecond": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "fromSecond",
+                          "toSecond"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "session",
+                    "durationSeconds",
+                    "coverage",
+                    "coveredSeconds",
+                    "fraction",
+                    "gaps"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such watch session belonging to this caller (a session owned by someone else 404s identically, rather than 403ing and confirming the id exists) — or the campaign it belongs to is no longer available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/watch/sessions/{sessionId}/progress": {
+      "post": {
+        "summary": "Report a span of playback",
+        "tags": [
+          "watch"
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "description": "The watch session being resumed, progressed, or completed.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The span played, in the client's own playback-position seconds.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fromSeconds": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "toSeconds": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "reportedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "fromSeconds",
+                  "toSeconds",
+                  "reportedAt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The report was accepted and merged into this session's coverage.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Coverage after this report was merged in. `accepted` is always true here — a refused report throws instead of returning a body (see the 400 below).",
+                  "properties": {
+                    "accepted": {
+                      "const": true
+                    },
+                    "coveredSeconds": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "fraction": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": [
+                    "accepted",
+                    "coveredSeconds",
+                    "fraction"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Either the body is missing fromSeconds/toSeconds/reportedAt, or the report itself was refused by judgeProgressReport (watch-progress-report.ts) — not forward-moving, faster than realtime, past the campaign's duration, or sub-second after rounding. describeRefusal() supplies the message; the shape is the same Nest default either way.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Two mechanisms share this status here, same as POST /api/watch/sessions. A PDP denial (action `earn`) returns ErrorResponse; a domain refusal — this session is not `active` (superseded/completed/void) — is thrown directly by watch.controller.ts and returns Nest's own body instead.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "type": "object",
+                      "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                      "properties": {
+                        "statusCode": {
+                          "type": "integer"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "statusCode",
+                        "message",
+                        "error"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such watch session belonging to this caller (a session owned by someone else 404s identically, rather than 403ing and confirming the id exists) — or the campaign it belongs to is no longer available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/watch/sessions/{sessionId}/complete": {
+      "post": {
+        "summary": "Claim a watch session's reward",
+        "tags": [
+          "watch"
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "description": "The watch session being resumed, progressed, or completed.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The session earned its reward under decision O-1 (full coverage) — questionsAnswered is hard-coded false pending YT-0122's question bank, so this response cannot currently occur.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Always `{ completed: true }` on success — a refusal throws instead (see the 403 below).",
+                  "properties": {
+                    "completed": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Two mechanisms share this status here, same as the other watch routes. A PDP denial (action `watch_rewarded`) returns ErrorResponse. A domain refusal — judgeCompletion (watch-session.ts) said not_active, coverage_incomplete, questions_unanswered, or campaign_not_live — is thrown directly by watch.controller.ts and returns Nest's own body instead; describeCompletionRefusal() supplies the message.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "type": "object",
+                      "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                      "properties": {
+                        "statusCode": {
+                          "type": "integer"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "error": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "statusCode",
+                        "message",
+                        "error"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such watch session belonging to this caller (a session owned by someone else 404s identically, rather than 403ing and confirming the id exists) — or the campaign it belongs to is no longer available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Readiness/liveness probe for Postgres and the PDP",
+        "tags": [
+          "health"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Both Postgres and the PDP answered within the check timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok",
+                        "degraded"
+                      ]
+                    },
+                    "checks": {
+                      "type": "object",
+                      "properties": {
+                        "postgres": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "ok"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "error"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "error": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs",
+                                "error"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "pdp": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "ok"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "error"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "error": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs",
+                                "error"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "postgres",
+                        "pdp"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "checks"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Postgres or the PDP (or both) failed its check within the 2s timeout (health.service.ts) — the same HealthResponse body as 200, with status: \"degraded\".",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok",
+                        "degraded"
+                      ]
+                    },
+                    "checks": {
+                      "type": "object",
+                      "properties": {
+                        "postgres": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "ok"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "error"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "error": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs",
+                                "error"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "pdp": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "ok"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "error"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "error": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs",
+                                "error"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "postgres",
+                        "pdp"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "checks"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1613,7 +2624,7 @@
         ]
       },
       "Listing": {
-        "description": "A store listing: what it costs in points, what it settles at, and its stock.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - settlementValueIdr (what the merchant is paid) cannot exceed faceValueIdr (docs/09 section 3).\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
+        "description": "A store listing: what it costs in points, what it settles at, and its stock.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - settlementValueMinor (what the merchant is paid) cannot exceed faceValueMinor (docs/09 section 3).\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
         "type": "object",
         "properties": {
           "id": {
@@ -1651,11 +2662,14 @@
               "$ref": "#/components/schemas/MerchantLocation"
             }
           },
-          "faceValueIdr": {
-            "$ref": "#/components/schemas/IdrMinorUnits"
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
           },
-          "settlementValueIdr": {
-            "$ref": "#/components/schemas/IdrMinorUnits"
+          "faceValueMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "settlementValueMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
           },
           "priceInPoints": {
             "$ref": "#/components/schemas/Points"
@@ -1678,10 +2692,10 @@
           "partialRedemptionPolicy": {
             "$ref": "#/components/schemas/PartialRedemptionPolicy"
           },
-          "minimumSpendIdr": {
+          "minimumSpendMinor": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IdrMinorUnits"
+                "$ref": "#/components/schemas/MinorUnits"
               },
               {
                 "type": "null"
@@ -1711,14 +2725,15 @@
           "description",
           "category",
           "locations",
-          "faceValueIdr",
-          "settlementValueIdr",
+          "currency",
+          "faceValueMinor",
+          "settlementValueMinor",
           "priceInPoints",
           "stockRemaining",
           "stockTotal",
           "transferable",
           "partialRedemptionPolicy",
-          "minimumSpendIdr",
+          "minimumSpendMinor",
           "expiresAt",
           "status"
         ],
@@ -1777,6 +2792,13 @@
           "district"
         ],
         "additionalProperties": false
+      },
+      "MinorUnits": {
+        "description": "A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1000000000000,
+        "format": "int64"
       },
       "Money": {
         "description": "An integer amount that carries its own currency — Fowler's Money pattern per docs/12 section 3 (YT-0513). Deliberately carries NO minor-unit exponent: an amount can be stored, transported and added without one, and only rendering and settlement need it (see MINOR_UNIT). Prefer this over IdrMinorUnits, which names a currency it does not always hold.",
@@ -2102,8 +3124,11 @@
               "$ref": "#/components/schemas/MerchantLocation"
             }
           },
-          "faceValueIdr": {
-            "$ref": "#/components/schemas/IdrMinorUnits"
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "faceValueMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
           },
           "priceInPoints": {
             "$ref": "#/components/schemas/Points"
@@ -2126,10 +3151,10 @@
           "partialRedemptionPolicy": {
             "$ref": "#/components/schemas/PartialRedemptionPolicy"
           },
-          "minimumSpendIdr": {
+          "minimumSpendMinor": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IdrMinorUnits"
+                "$ref": "#/components/schemas/MinorUnits"
               },
               {
                 "type": "null"
@@ -2159,13 +3184,14 @@
           "description",
           "category",
           "locations",
-          "faceValueIdr",
+          "currency",
+          "faceValueMinor",
           "priceInPoints",
           "stockRemaining",
           "stockTotal",
           "transferable",
           "partialRedemptionPolicy",
-          "minimumSpendIdr",
+          "minimumSpendMinor",
           "expiresAt",
           "status"
         ],
@@ -2460,7 +3486,7 @@
         ]
       },
       "Voucher": {
-        "description": "An issued voucher held by a user, with its remaining value and expiry.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - remainingValueIdr cannot exceed faceValueIdr.\n  - expiresAt must be after issuedAt.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.",
+        "description": "An issued voucher held by a user, with its remaining value and expiry.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - remainingValueMinor cannot exceed faceValueMinor.\n  - expiresAt must be after issuedAt.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.",
         "type": "object",
         "properties": {
           "id": {
@@ -2501,19 +3527,22 @@
             "minLength": 1,
             "maxLength": 140
           },
-          "faceValueIdr": {
-            "$ref": "#/components/schemas/IdrMinorUnits"
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
           },
-          "remainingValueIdr": {
-            "$ref": "#/components/schemas/IdrMinorUnits"
+          "faceValueMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "remainingValueMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
           },
           "partialRedemptionPolicy": {
             "$ref": "#/components/schemas/PartialRedemptionPolicy"
           },
-          "minimumSpendIdr": {
+          "minimumSpendMinor": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/IdrMinorUnits"
+                "$ref": "#/components/schemas/MinorUnits"
               },
               {
                 "type": "null"
@@ -2546,10 +3575,11 @@
           "merchantName",
           "location",
           "title",
-          "faceValueIdr",
-          "remainingValueIdr",
+          "currency",
+          "faceValueMinor",
+          "remainingValueMinor",
           "partialRedemptionPolicy",
-          "minimumSpendIdr",
+          "minimumSpendMinor",
           "transferable",
           "status",
           "issuedAt",

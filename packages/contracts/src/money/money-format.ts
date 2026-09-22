@@ -25,7 +25,7 @@
  */
 import type { Currency } from "./currency";
 import { minorUnitExponent } from "./minor-unit";
-import type { IdrMinorUnits, Points } from "./money";
+import type { MinorUnits, Points } from "./money";
 import type { Money } from "./money-value";
 
 /** The two locales this platform renders in (docs/15: `id-ID`, `en-AU`, locked). */
@@ -57,7 +57,7 @@ const CURRENCY_LOCALE: Record<Currency, SupportedLocale> = {
  * separately. `formatMoneyValue` is the version for amounts that already
  * know their own currency, and is what new call sites should use.
  */
-export function formatMoney(amountMinor: IdrMinorUnits, currency: Currency): string {
+export function formatMoney(amountMinor: MinorUnits, currency: Currency): string {
   const exponent = minorUnitExponent(currency);
   return new Intl.NumberFormat(CURRENCY_LOCALE[currency], {
     style: "currency",
@@ -84,7 +84,7 @@ export function formatMoneyValue(value: Money): string {
  * formatting implementation, not two that can drift. New call sites that
  * know their region's currency should call `formatMoney` directly.
  */
-export function formatIdr(amount: IdrMinorUnits): string {
+export function formatIdr(amount: MinorUnits): string {
   return formatMoney(amount, "IDR");
 }
 
@@ -131,7 +131,7 @@ export function asDisplayPoints(value: number): Points {
 }
 
 /** Unchecked IDR brand for display call sites. See `asDisplayPoints`. */
-export function asDisplayIdr(value: number): IdrMinorUnits {
+export function asDisplayIdr(value: number): MinorUnits {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- display-only brand, never on the value path, YT-0412
-  return value as IdrMinorUnits;
+  return value as MinorUnits;
 }

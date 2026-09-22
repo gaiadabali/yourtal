@@ -64,8 +64,9 @@ function auListingFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
       "services",
     ] as const),
     locations: generateMerchantLocationsAu(faker, merchantName, locationCount),
-    faceValueIdr: faceValueCents,
-    settlementValueIdr: settlementValueCents,
+    currency: "AUD" as const,
+    faceValueMinor: faceValueCents,
+    settlementValueMinor: settlementValueCents,
     priceInPoints: pointsPriceFromSettlement(
       settlementValueCents,
       MOCK_BACKING_RATE_AUD_CENTS_PER_POINT,
@@ -74,7 +75,7 @@ function auListingFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
     stockTotal,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
     partialRedemptionPolicy,
-    minimumSpendIdr:
+    minimumSpendMinor:
       partialRedemptionPolicy === "minimum_spend"
         ? audCents(Math.round(faceValueCents * 0.5))
         : null,
@@ -107,14 +108,15 @@ export const auSoldOutListingFixture: Listing = listingSchema.parse({
       district: "Manly",
     },
   ],
-  faceValueIdr: audCents(2_000), // $20.00
-  settlementValueIdr: audCents(600), // $6.00
+  currency: "AUD" as const,
+  faceValueMinor: audCents(2_000), // $20.00
+  settlementValueMinor: audCents(600), // $6.00
   priceInPoints: pointsPriceFromSettlement(audCents(600), MOCK_BACKING_RATE_AUD_CENTS_PER_POINT),
   stockRemaining: 0,
   stockTotal: 100,
   transferable: false,
   partialRedemptionPolicy: "single_use_forfeit",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   expiresAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 30)),
   status: "sold_out",
 });
@@ -135,14 +137,15 @@ export const auLongMerchantNameListingFixture: Listing = listingSchema.parse({
       district: "Chatswood",
     },
   ],
-  faceValueIdr: audCents(1_000_000), // $10,000.00
-  settlementValueIdr: audCents(600_000),
+  currency: "AUD" as const,
+  faceValueMinor: audCents(1_000_000), // $10,000.00
+  settlementValueMinor: audCents(600_000),
   priceInPoints: toPoints(1_500_000),
   stockRemaining: 3,
   stockTotal: 10,
   transferable: false,
   partialRedemptionPolicy: "single_use_forfeit",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   expiresAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 60)),
   status: "available",
 });

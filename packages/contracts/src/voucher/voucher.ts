@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { idrMinorUnitsSchema } from "../money/money";
+import { minorUnitsSchema } from "../money/money";
+import { currencySchema } from "../money/money-value";
 import { partialRedemptionPolicySchema } from "../listing/listing";
 import { merchantLocationSchema } from "../listing/merchant-location";
 
@@ -52,8 +53,20 @@ export const voucherSchema = z
      */
     location: merchantLocationSchema,
     title: z.string().min(1).max(140),
-    faceValueIdr: idrMinorUnitsSchema,
-    remainingValueIdr: idrMinorUnitsSchema,
+    /**
+     * YT-0513. One currency per voucher, for the same reason
+     * `listingSchema` carries one per listing: separate currency fields per
+     * amount would permit a voucher whose face value is AUD and whose
+     * remaining value is IDR, and nothing would reject it.
+     *
+     * Denormalised like everything else here. A voucher is a bearer
+     * instrument that must remain honourable offline (`docs/17` §3), so the
+     * currency its amounts are in travels with it rather than being looked
+     * up from a listing that may have changed.
+     */
+    currency: currencySchema,
+    faceValueMinor: minorUnitsSchema,
+    remainingValueMinor: minorUnitsSchema,
     partialRedemptionPolicy: partialRedemptionPolicySchema,
     /**
      * The threshold a `minimum_spend` voucher must be spent against, carried
@@ -69,15 +82,15 @@ export const voucherSchema = z
      * everything needed to honour it travels with it. A later edit to the
      * listing must not change the terms of a voucher already issued.
      */
-    minimumSpendIdr: idrMinorUnitsSchema.nullable(),
+    minimumSpendMinor: minorUnitsSchema.nullable(),
     transferable: z.boolean(),
     status: voucherStatusSchema,
     issuedAt: z.iso.datetime(),
     expiresAt: z.iso.datetime(),
   })
-  .refine((voucher) => voucher.remainingValueIdr <= voucher.faceValueIdr, {
-    message: "remainingValueIdr cannot exceed faceValueIdr",
-    path: ["remainingValueIdr"],
+  .refine((voucher) => voucher.remainingValueMinor <= voucher.faceValueMinor, {
+    message: "remainingValueMinor cannot exceed faceValueMinor",
+    path: ["remainingValueMinor"],
   })
   .refine(
     (voucher) => new Date(voucher.expiresAt).getTime() > new Date(voucher.issuedAt).getTime(),
@@ -88,13 +101,13 @@ export const voucherSchema = z
   )
   .refine(
     (voucher) =>
-      (voucher.partialRedemptionPolicy === "minimum_spend") === (voucher.minimumSpendIdr !== null),
+      (voucher.partialRedemptionPolicy === "minimum_spend") === (voucher.minimumSpendMinor !== null),
     {
       // The same invariant listingSchema enforces. A minimum_spend voucher
       // with no threshold cannot be honoured; a threshold on any other policy
       // is a number the counter would have to decide whether to obey.
-      message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
-      path: ["minimumSpendIdr"],
+      message: "minimumSpendMinor must be set if and only if the policy is minimum_spend",
+      path: ["minimumSpendMinor"],
     },
   );
 

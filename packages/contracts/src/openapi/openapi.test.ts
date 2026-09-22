@@ -133,7 +133,7 @@ describe("cross-field rules", () => {
   it("reaches the document, where generated code can see it", () => {
     const listing = componentSchema("Listing");
 
-    expect(listing.description).toContain("cannot exceed faceValueIdr");
+    expect(listing.description).toContain("cannot exceed faceValueMinor");
     expect(listing.description).toContain("NOT enforced by this schema");
   });
 

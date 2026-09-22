@@ -22,10 +22,11 @@ const validVoucher = {
     district: "Setiabudi",
   },
   title: "Voucher Kopi Kenangan",
-  faceValueIdr: 30_000,
-  remainingValueIdr: 30_000,
+  currency: "IDR" as const,
+  faceValueMinor: 30_000,
+  remainingValueMinor: 30_000,
   partialRedemptionPolicy: "single_use_forfeit",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   transferable: false,
   status: "active",
   issuedAt: "2026-09-01T00:00:00.000Z",
@@ -39,10 +40,10 @@ describe("voucherSchema", () => {
   });
 
   const rejectionTable: Array<{ name: string; overrides: Record<string, unknown> }> = [
-    { name: "negative remaining value", overrides: { remainingValueIdr: -1 } },
+    { name: "negative remaining value", overrides: { remainingValueMinor: -1 } },
     {
       name: "remainingValue greater than faceValue",
-      overrides: { remainingValueIdr: 40_000, faceValueIdr: 30_000 },
+      overrides: { remainingValueMinor: 40_000, faceValueMinor: 30_000 },
     },
     { name: "invalid status enum value", overrides: { status: "burned" } },
     {

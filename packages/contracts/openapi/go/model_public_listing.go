@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552). Do not edit by hand.  `paths` covers every route the business module serves (apps/api/src/modules/business), hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the campaign and watch modules are separate, concurrently in-flight streams (YT-0101/YT-0120/YT-0548) this ticket did not give a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a business-module controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552, extended by YT-0559). Do not edit by hand.  `paths` covers every route the business module (apps/api/src/modules/business), campaign module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint serve, hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the watch module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this package has not given a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a documented module's controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -28,15 +28,16 @@ type PublicListing struct {
 	Description string `json:"description"`
 	Category ListingCategory `json:"category"`
 	Locations []MerchantLocation `json:"locations"`
-	// Indonesian Rupiah as an integer number of SEN — one hundredth of a Rupiah. Rp 45.000 is 4500000. Settled by YT-0506 on 2026-09-20: ISO 4217 gives IDR a sen minor unit, Indonesian banking uses it (amounts appear as Rp 1.000,26), and Stripe treats IDR as two-decimal. This settles what we STORE, not what a processor accepts: Xendit publishes no amount-unit spec and Adyen flags IDR as diverging from ISO, so conversion belongs in each PSP adapter. Prefer Money, which carries its own currency.
-	FaceValueIdr int64 `json:"faceValueIdr"`
+	Currency Currency `json:"currency"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	FaceValueMinor int64 `json:"faceValueMinor"`
 	// Platform points. Always a whole number; there is no fractional point.
 	PriceInPoints int64 `json:"priceInPoints"`
 	StockRemaining int64 `json:"stockRemaining"`
 	StockTotal int64 `json:"stockTotal"`
 	Transferable bool `json:"transferable"`
 	PartialRedemptionPolicy PartialRedemptionPolicy `json:"partialRedemptionPolicy"`
-	MinimumSpendIdr ListingMinimumSpendIdr `json:"minimumSpendIdr"`
+	MinimumSpendMinor ListingMinimumSpendMinor `json:"minimumSpendMinor"`
 	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
 	Status ListingStatus `json:"status"`
 	PerUserLimit *int64 `json:"perUserLimit,omitempty"`
@@ -49,7 +50,7 @@ type _PublicListing PublicListing
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPublicListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, faceValueIdr int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendIdr ListingMinimumSpendIdr, expiresAt time.Time, status ListingStatus) *PublicListing {
+func NewPublicListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor ListingMinimumSpendMinor, expiresAt time.Time, status ListingStatus) *PublicListing {
 	this := PublicListing{}
 	this.Id = id
 	this.MerchantId = merchantId
@@ -58,13 +59,14 @@ func NewPublicListing(id string, merchantId string, merchantName string, title s
 	this.Description = description
 	this.Category = category
 	this.Locations = locations
-	this.FaceValueIdr = faceValueIdr
+	this.Currency = currency
+	this.FaceValueMinor = faceValueMinor
 	this.PriceInPoints = priceInPoints
 	this.StockRemaining = stockRemaining
 	this.StockTotal = stockTotal
 	this.Transferable = transferable
 	this.PartialRedemptionPolicy = partialRedemptionPolicy
-	this.MinimumSpendIdr = minimumSpendIdr
+	this.MinimumSpendMinor = minimumSpendMinor
 	this.ExpiresAt = expiresAt
 	this.Status = status
 	return &this
@@ -246,28 +248,52 @@ func (o *PublicListing) SetLocations(v []MerchantLocation) {
 	o.Locations = v
 }
 
-// GetFaceValueIdr returns the FaceValueIdr field value
-func (o *PublicListing) GetFaceValueIdr() int64 {
+// GetCurrency returns the Currency field value
+func (o *PublicListing) GetCurrency() Currency {
+	if o == nil {
+		var ret Currency
+		return ret
+	}
+
+	return o.Currency
+}
+
+// GetCurrencyOk returns a tuple with the Currency field value
+// and a boolean to check if the value has been set.
+func (o *PublicListing) GetCurrencyOk() (*Currency, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Currency, true
+}
+
+// SetCurrency sets field value
+func (o *PublicListing) SetCurrency(v Currency) {
+	o.Currency = v
+}
+
+// GetFaceValueMinor returns the FaceValueMinor field value
+func (o *PublicListing) GetFaceValueMinor() int64 {
 	if o == nil {
 		var ret int64
 		return ret
 	}
 
-	return o.FaceValueIdr
+	return o.FaceValueMinor
 }
 
-// GetFaceValueIdrOk returns a tuple with the FaceValueIdr field value
+// GetFaceValueMinorOk returns a tuple with the FaceValueMinor field value
 // and a boolean to check if the value has been set.
-func (o *PublicListing) GetFaceValueIdrOk() (*int64, bool) {
+func (o *PublicListing) GetFaceValueMinorOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.FaceValueIdr, true
+	return &o.FaceValueMinor, true
 }
 
-// SetFaceValueIdr sets field value
-func (o *PublicListing) SetFaceValueIdr(v int64) {
-	o.FaceValueIdr = v
+// SetFaceValueMinor sets field value
+func (o *PublicListing) SetFaceValueMinor(v int64) {
+	o.FaceValueMinor = v
 }
 
 // GetPriceInPoints returns the PriceInPoints field value
@@ -390,28 +416,28 @@ func (o *PublicListing) SetPartialRedemptionPolicy(v PartialRedemptionPolicy) {
 	o.PartialRedemptionPolicy = v
 }
 
-// GetMinimumSpendIdr returns the MinimumSpendIdr field value
-func (o *PublicListing) GetMinimumSpendIdr() ListingMinimumSpendIdr {
+// GetMinimumSpendMinor returns the MinimumSpendMinor field value
+func (o *PublicListing) GetMinimumSpendMinor() ListingMinimumSpendMinor {
 	if o == nil {
-		var ret ListingMinimumSpendIdr
+		var ret ListingMinimumSpendMinor
 		return ret
 	}
 
-	return o.MinimumSpendIdr
+	return o.MinimumSpendMinor
 }
 
-// GetMinimumSpendIdrOk returns a tuple with the MinimumSpendIdr field value
+// GetMinimumSpendMinorOk returns a tuple with the MinimumSpendMinor field value
 // and a boolean to check if the value has been set.
-func (o *PublicListing) GetMinimumSpendIdrOk() (*ListingMinimumSpendIdr, bool) {
+func (o *PublicListing) GetMinimumSpendMinorOk() (*ListingMinimumSpendMinor, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MinimumSpendIdr, true
+	return &o.MinimumSpendMinor, true
 }
 
-// SetMinimumSpendIdr sets field value
-func (o *PublicListing) SetMinimumSpendIdr(v ListingMinimumSpendIdr) {
-	o.MinimumSpendIdr = v
+// SetMinimumSpendMinor sets field value
+func (o *PublicListing) SetMinimumSpendMinor(v ListingMinimumSpendMinor) {
+	o.MinimumSpendMinor = v
 }
 
 // GetExpiresAt returns the ExpiresAt field value
@@ -511,13 +537,14 @@ func (o PublicListing) ToMap() (map[string]interface{}, error) {
 	toSerialize["description"] = o.Description
 	toSerialize["category"] = o.Category
 	toSerialize["locations"] = o.Locations
-	toSerialize["faceValueIdr"] = o.FaceValueIdr
+	toSerialize["currency"] = o.Currency
+	toSerialize["faceValueMinor"] = o.FaceValueMinor
 	toSerialize["priceInPoints"] = o.PriceInPoints
 	toSerialize["stockRemaining"] = o.StockRemaining
 	toSerialize["stockTotal"] = o.StockTotal
 	toSerialize["transferable"] = o.Transferable
 	toSerialize["partialRedemptionPolicy"] = o.PartialRedemptionPolicy
-	toSerialize["minimumSpendIdr"] = o.MinimumSpendIdr
+	toSerialize["minimumSpendMinor"] = o.MinimumSpendMinor
 	toSerialize["expiresAt"] = o.ExpiresAt
 	toSerialize["status"] = o.Status
 	if !IsNil(o.PerUserLimit) {
@@ -543,13 +570,14 @@ func (o *PublicListing) UnmarshalJSON(data []byte) (err error) {
 		"description",
 		"category",
 		"locations",
-		"faceValueIdr",
+		"currency",
+		"faceValueMinor",
 		"priceInPoints",
 		"stockRemaining",
 		"stockTotal",
 		"transferable",
 		"partialRedemptionPolicy",
-		"minimumSpendIdr",
+		"minimumSpendMinor",
 		"expiresAt",
 		"status",
 	}
@@ -588,13 +616,14 @@ func (o *PublicListing) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "description")
 		delete(additionalProperties, "category")
 		delete(additionalProperties, "locations")
-		delete(additionalProperties, "faceValueIdr")
+		delete(additionalProperties, "currency")
+		delete(additionalProperties, "faceValueMinor")
 		delete(additionalProperties, "priceInPoints")
 		delete(additionalProperties, "stockRemaining")
 		delete(additionalProperties, "stockTotal")
 		delete(additionalProperties, "transferable")
 		delete(additionalProperties, "partialRedemptionPolicy")
-		delete(additionalProperties, "minimumSpendIdr")
+		delete(additionalProperties, "minimumSpendMinor")
 		delete(additionalProperties, "expiresAt")
 		delete(additionalProperties, "status")
 		delete(additionalProperties, "perUserLimit")

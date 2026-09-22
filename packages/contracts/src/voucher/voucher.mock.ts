@@ -3,7 +3,7 @@ import { voucherSchema } from "./voucher";
 import { DEFAULT_REFERENCE_INSTANT, addDays, addMinutes, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
 import { generateMerchantLocation } from "../internal/jakarta";
-import { rupiah, toIdrMinorUnits } from "../money/money";
+import { rupiah, toMinorUnits } from "../money/money";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 
 export interface GenerateVoucherParams {
@@ -22,7 +22,7 @@ export function generateVoucher(params: GenerateVoucherParams): Voucher {
   // merchant, so a generated one could never match. See merchant-roster.ts.
   const merchant = pickMockMerchant(faker, "ID");
   const merchantName = merchant.name;
-  const faceValueIdr = rupiah(faker.number.int({ min: 15, max: 400 }) * 1_000);
+  const faceValueMinor = rupiah(faker.number.int({ min: 15, max: 400 }) * 1_000);
   const issuedDaysAgo = faker.number.int({ min: 0, max: 45 });
   const validForDays = faker.number.int({ min: 7, max: 90 });
   const partialRedemptionPolicy = faker.helpers.arrayElement([
@@ -30,20 +30,20 @@ export function generateVoucher(params: GenerateVoucherParams): Voucher {
     "single_use_forfeit",
     "minimum_spend",
   ] as const);
-  // Derived from faceValueIdr, which is already in the stored minor unit,
-  // so it goes through toIdrMinorUnits rather than any Rupiah conversion.
-  const remainingValueIdr =
+  // Derived from faceValueMinor, which is already in the stored minor unit,
+  // so it goes through toMinorUnits rather than any Rupiah conversion.
+  const remainingValueMinor =
     partialRedemptionPolicy === "balance_carrying"
-      ? toIdrMinorUnits(
-          Math.round(faceValueIdr * faker.number.float({ min: 0, max: 1, fractionDigits: 2 })),
+      ? toMinorUnits(
+          Math.round(faceValueMinor * faker.number.float({ min: 0, max: 1, fractionDigits: 2 })),
         )
-      : faceValueIdr;
+      : faceValueMinor;
 
   // Set if and only if the policy is minimum_spend — voucherSchema enforces
   // the biconditional, so a mock that got this wrong would fail to parse.
-  const minimumSpendIdr =
+  const minimumSpendMinor =
     partialRedemptionPolicy === "minimum_spend"
-      ? toIdrMinorUnits(Math.round(faceValueIdr / 2))
+      ? toMinorUnits(Math.round(faceValueMinor / 2))
       : null;
 
   return voucherSchema.parse({
@@ -55,10 +55,11 @@ export function generateVoucher(params: GenerateVoucherParams): Voucher {
     merchantName,
     location: generateMerchantLocation(faker, merchantName, "Cabang Utama"),
     title: `Voucher ${merchantName}`,
-    faceValueIdr,
-    remainingValueIdr,
+    currency: "IDR" as const,
+    faceValueMinor,
+    remainingValueMinor,
     partialRedemptionPolicy,
-    minimumSpendIdr,
+    minimumSpendMinor,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
     status: "active",
     issuedAt: toIsoString(addDays(now, -issuedDaysAgo)),
@@ -88,10 +89,11 @@ export const expiredVoucherFixture: Voucher = voucherSchema.parse({
     district: "Kemang",
   },
   title: "Voucher Kopi Sentosa Rp30.000",
-  faceValueIdr: rupiah(30_000),
-  remainingValueIdr: rupiah(30_000),
+  currency: "IDR" as const,
+  faceValueMinor: rupiah(30_000),
+  remainingValueMinor: rupiah(30_000),
   partialRedemptionPolicy: "single_use_forfeit",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   transferable: false,
   status: "expired",
   issuedAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, -60)),
@@ -117,10 +119,11 @@ export const expiringWithinHourVoucherFixture: Voucher = voucherSchema.parse({
     district: "Tebet",
   },
   title: "Voucher Belanja Toko Berkah",
-  faceValueIdr: rupiah(50_000),
-  remainingValueIdr: rupiah(50_000),
+  currency: "IDR" as const,
+  faceValueMinor: rupiah(50_000),
+  remainingValueMinor: rupiah(50_000),
   partialRedemptionPolicy: "balance_carrying",
-  minimumSpendIdr: null,
+  minimumSpendMinor: null,
   transferable: true,
   status: "active",
   issuedAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, -10)),

@@ -26,14 +26,17 @@ export const listings = storePgSchema.table("listings", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(),
-  faceValueIdr: bigint("face_value_idr", { mode: "number" }).notNull(),
-  settlementValueIdr: bigint("settlement_value_idr", { mode: "number" }).notNull(),
+  // YT-0513: one currency per listing, stated rather than implied by a
+  // column name. See the migration for why there is no DEFAULT.
+  currency: text("currency").notNull(),
+  faceValueMinor: bigint("face_value_minor", { mode: "number" }).notNull(),
+  settlementValueMinor: bigint("settlement_value_minor", { mode: "number" }).notNull(),
   priceInPoints: bigint("price_in_points", { mode: "number" }).notNull(),
   stockRemaining: integer("stock_remaining").notNull(),
   stockTotal: integer("stock_total").notNull(),
   transferable: boolean("transferable").notNull(),
   partialRedemptionPolicy: text("partial_redemption_policy").notNull(),
-  minimumSpendIdr: bigint("minimum_spend_idr", { mode: "number" }),
+  minimumSpendMinor: bigint("minimum_spend_minor", { mode: "number" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   status: text("status").notNull(),
   /** MERCHANT-side visibility. Never served to a customer. See the repository. */

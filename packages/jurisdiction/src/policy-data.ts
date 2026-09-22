@@ -21,6 +21,9 @@ const RAW_POLICIES: Record<JurisdictionCode, unknown> = {
   ID: {
     // docs/03 §2.1, docs/24 ID-2, red line #3 — no cash-out until PJP-licensed.
     cashOutEnabled: false,
+    // docs/24 red line #4 and ID-1 - users may never buy points. Typed
+    // z.literal(false), so true cannot parse. See policy-schema.ts.
+    userPointPurchaseEnabled: false,
     // docs/03 §2.2 — no standing draw permit; enabled only per permitted campaign.
     prizeDrawsEnabled: false,
     // docs/05 C4 — no published legal minimum; conservative default pending sign-off.
@@ -34,6 +37,9 @@ const RAW_POLICIES: Record<JurisdictionCode, unknown> = {
   AU: {
     // docs/03 §3.1, docs/24 AU-2, red line #3 — AFSL/relief line not crossed.
     cashOutEnabled: false,
+    // docs/24 red line #4 and ID-1 - users may never buy points. Typed
+    // z.literal(false), so true cannot parse. See policy-schema.ts.
+    userPointPurchaseEnabled: false,
     // docs/03 §3.3 — state permits (NSW/ACT/SA/NT) are per-promotion, not standing.
     prizeDrawsEnabled: false,
     // docs/05 C4 — no published legal minimum; conservative default pending sign-off.

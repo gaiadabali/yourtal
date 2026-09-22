@@ -34,6 +34,43 @@ export const jurisdictionPolicySchema = z
     cashOutEnabled: z.boolean(),
 
     /**
+     * Whether a **user** may buy points with money. Red line #4, and it is
+     * `z.literal(false)` rather than `z.boolean()` on purpose.
+     *
+     * ## Why this one cannot be a boolean
+     *
+     * Red line #3 reads "no cash withdrawal, in either market, **until
+     * licensed**" — a prohibition with a condition, so a switch is the
+     * honest type: one day a licensing project flips it. Red line #4 reads
+     * "No user purchase of points. **Ever.**" There is no condition and no
+     * project that ends it, because it is the single clearest e-money
+     * indicator (docs/24 ID-1) and enabling it does not weaken that position,
+     * it removes it.
+     *
+     * A `z.boolean()` here would model a decision that is not ours to make
+     * as a configuration value someone could set. `z.literal(false)` makes
+     * the prohibited state **unrepresentable**: a policy record with
+     * `true` fails to parse, so it cannot reach a running system even if
+     * someone writes it, reviews it and ships it.
+     *
+     * ## This is a voiding condition, which is why it is here at all
+     *
+     * YT-0012's counsel-substitution risk acceptance is **void rather than
+     * expired** if red line 3 or 4 is crossed — those two are the premises
+     * ID-1 and ID-2 rest on, so crossing either does not weaken the
+     * acceptance, it removes the thing being accepted. Red line 3 was
+     * enforced here and red line 4 was enforced by nothing, which meant the
+     * acceptance could be voided **silently**: the signature stops being
+     * valid and no signal anywhere says so. Found by the YT-0011 audit,
+     * filed as YT-0602.
+     *
+     * Note this is about **users** buying points. A *partner* pre-purchasing
+     * points to fund campaigns is the funding model (`ledger.point_purchase`,
+     * YT-0046) and is untouched by this.
+     */
+    userPointPurchaseEnabled: z.literal(false),
+
+    /**
      * Whether a chance-based prize draw may currently run.
      *
      * docs/03 §2.2 (Indonesia — MOSA Reg. 3/2024 draw + promotion permits,
@@ -110,6 +147,7 @@ export type JurisdictionPolicy = z.infer<typeof jurisdictionPolicySchema>;
  */
 export const RESTRICTIVE_FALLBACK_POLICY: JurisdictionPolicy = {
   cashOutEnabled: false,
+  userPointPurchaseEnabled: false,
   prizeDrawsEnabled: false,
   minimumAgeYears: 21,
   residencyVerificationRequired: true,

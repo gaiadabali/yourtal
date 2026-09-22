@@ -9,7 +9,8 @@
     "./decision": "./src/decision.ts",
     "./policy-schema": "./src/policy-schema.ts",
     "./policy-data": "./src/policy-data.ts",
-    "./policy-query": "./src/policy-query.ts"
+    "./policy-query": "./src/policy-query.ts",
+    "./voiding-red-lines": "./src/voiding-red-lines.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

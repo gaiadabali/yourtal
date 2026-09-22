@@ -7,6 +7,10 @@ import {
 
 const VALID_POLICY = {
   cashOutEnabled: false,
+  // Added with the field itself (YT-0602): the schema is strict, so a new
+  // required prohibition cannot be introduced without every policy record
+  // answering it. That propagation is the control working, not friction.
+  userPointPurchaseEnabled: false,
   prizeDrawsEnabled: false,
   minimumAgeYears: 18,
   residencyVerificationRequired: true,

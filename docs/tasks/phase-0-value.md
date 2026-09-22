@@ -318,3 +318,22 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] The other three routes are either exposed under the same conditions or their 501 is reaffirmed with a stated reason, so the count of unexposed routes is a decision rather than a leftover
 - [ ] **`B` is not returned to any caller, authenticated or not** — `/pricing/quote`'s existing refusal is preserved, per YT-0130's GRANT-level control and `docs/24` ID-1
 
+
+### YT-0608 · Move IDR storage from sen to whole Rupiah
+`todo` · P0 · value · 3d · dep: YT-0506
+
+- ℹ️ **Founder decision T-1, 2026-09-22: the stored unit follows the payment gateway. IDR exponent 2 → 0. AUD does not move** — Stripe speaks cents and `MINOR_UNIT.AUD` is already exponent 2 `confirmed`, **so the AUD half is satisfied by changing nothing.** Scoped from surfaces `yourtal-28` audited; it spans `platform`, `value` and `web` and should land as **one unit behind a drift test**, exactly as the sen migration did
+- ⛔ **Do the `packages/drivers` default FIRST and separately, because the hazard is live from the moment this decision is recorded and it now fails quietly.** `declaredMinorUnitExponent.IDR ?? 2` meant over-sending 100× while storage was sen; against whole-Rupiah storage it means **under-sending 100×** — a Rp 45,000 payout leaving as **Rp 450**. **An overcharge is reported by the recipient within a day; an undercharge looks like a pricing bug and can run for months.** IDR gets **no default** — each driver declares what its provider speaks. With two gateways on two conventions there is no defensible platform-wide default left
+- ℹ️ **The change map:**
+  1. `MINOR_UNIT.IDR` exponent **2 → 0**, with the evidence rewritten to cite **the gateway** rather than ISO 4217 — the reasoning moves, not just the number
+  2. A migration **÷100 on every IDR row**, catalogue and IDR-scoped ledger, mirroring `20260920000011_idr_sen.sql` **with the same guard that refuses if an AU-merchant row is present**
+  3. `rupiah()` changes meaning; `audCents()` does not
+  4. `mock-backing-rate.ts`: `600` → **6**, and the name stops saying `SEN`. **AUD constant untouched** — see YT-0601, which is the rename and is now also a unit change
+  5. Pricing engine `B`: **600_000_000 → 6_000_000** micros-per-point, plus `price_test.go`'s worked comments, which state the sen figure in words
+  6. **Daily Merkle proofs invalidated again** — rewriting `amount_minor` invalidates every root over it. Same handling as last time
+  7. `public-jsonld.ts` needs **no change**: it already scales by `MINOR_UNIT` rather than a literal. **That property is why the unit can move twice safely, and it is the best single argument for the work YT-0506 did**
+- [ ] `MINOR_UNIT.IDR` is exponent 0, and its recorded evidence names the gateway rather than ISO 4217
+- [ ] Every stored IDR value is divided by 100 in one migration, which **refuses to run if an AU-merchant row is present**
+- [ ] **No IDR amount anywhere is scaled by a literal `100`** — the property, checked across the workspace, since the whole reason this is affordable is that the previous migration removed those
+- [ ] `packages/drivers` has **no IDR exponent default at all**, and a driver constructed without declaring one fails to construct
+- [ ] Daily Merkle roots are rebuilt, with the invalidation recorded rather than silently re-rooted

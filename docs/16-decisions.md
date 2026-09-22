@@ -268,6 +268,29 @@ So **YT-0573 is a prerequisite of resale, not an adjacent cleanup**, and it is r
 
 ---
 
+## T — the storage unit follows the payment gateway (2026-09-22)
+
+**T-1 · The stored minor unit follows the payment gateway, per currency. IDR moves from sen (exponent 2) to whole Rupiah (exponent 0). AUD does not move.**
+
+| Currency | Gateway | Unit         | Exponent | Change   |
+| -------- | ------- | ------------ | -------- | -------- |
+| **IDR**  | Xendit  | whole Rupiah | **0**    | ⚠️ was 2 |
+| **AUD**  | Stripe  | cents        | **2**    | none     |
+
+**Only IDR moves, and that is worth stating loudly so nobody migrates AUD for symmetry.** The instruction was _"follow their way for IDR and AUD"_ — and AUD already does: `docs/04:141` and `docs/07:72` name Stripe as the Australian gateway, Stripe expresses AUD in cents, and `MINOR_UNIT.AUD` is already exponent 2 `confirmed`. **The AUD half of this decision is satisfied by changing nothing.**
+
+**This reverses the 2026-09-20 sen decision and the migration that shipped it**, and it settles YT-0506's oldest open criterion — but not the way either option read. That criterion said the _recorded_ decision was **hold** while what shipped was **adopt sen**, and two sessions declined to resolve it unilaterally. The founder decided **neither**: follow the gateway. **So the sen migration was real work that is now superseded, not unauthorised work that was reverted**, and the ticket should say so.
+
+⚠️ **This rests on an inference, and the founder was told so before deciding.** Xendit's documentation **never states its IDR unit in words**. The finding is three consistent signals — `request_amount` typed as a plain `number` with every IDR example a whole-Rupiah figure, a **minimum QR transaction of 1 IDR** (which would be Rp 0.01 if the field were sen), and no minor-unit convention documented anywhere. **High confidence, not certain.** "Confirm with a sandbox first" was offered as an explicit option and declined. That is the founder's call and it is on the record with its basis attached.
+
+🔁 **The 100× hazard inverts, and the new direction is the quieter one.** Before: storage in sen against a gateway speaking Rupiah, so a driver that failed to convert **over-sent by 100×** — Rp 45,000 leaving as Rp 4,500,000. After: `packages/drivers` still defaults `declaredMinorUnitExponent.IDR` to `2`, so a driver taking the default now **under-sends by 100×** — the same payout leaving as **Rp 450**.
+
+**An overcharge is reported by the recipient within a day. An undercharge looks like a pricing bug and can run for months.** The remedy is unchanged and now unarguable: **IDR gets no default, and each driver declares what its provider speaks.** With two gateways on two conventions there is no defensible platform-wide default left.
+
+ℹ️ **Why this is cheap to do twice, which is the argument for the first migration rather than against it.** YT-0506 put the ×100 in one place and replaced roughly ninety bare literals with `rupiah()` / `audCents()`. `public-jsonld.ts` needs **no change at all** because it already scales by `MINOR_UNIT` rather than by a literal. **The previous decision paid for the ability to undo it.**
+
+⚠️ **Provenance:** given by the founder in `yourtal-28`'s session and **relayed** to the recorder, which did not witness it. Same standing as S-2, S-3 and S-4 — **if it is wrong it should be struck rather than softened.**
+
 ## S — deployment
 
 **S-3 · Staging and production are the same environment. There will be no separate staging while the project is in development. (2026-09-22)**

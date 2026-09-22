@@ -150,3 +150,24 @@
 - [ ] **No `SupportedLocale` parameter anywhere in `apps/web` has a default value** — the property, checked across the workspace rather than in the three files named here
 - [ ] Every affected call site passes a resolved locale, so the omission is a **compile error** rather than a wrong-language render
 - [ ] A test fails if a default is reintroduced, since this is now the second time the same shape has been fixed and the first fix did not prevent the second
+
+### YT-0604 · Nothing ever starts the app the way production does
+`todo` · P0 · web · 1d · dep: —
+
+- ⛔ **Filed 2026-09-22 from `yourtal-ca`'s browser run, verified here at source. `apps/web` builds `output: "standalone"` (`next.config.ts:25`) and every test starts `next start` instead** — `package.json:9` is `"start": "next start"`, `playwright.config.ts:52` runs `pnpm build && pnpm start`, and `playwright.offline.config.ts:67` runs `pnpm build && next start`. **Next prints its own warning during these runs: *"next start does not work with output: standalone"***
+- ⚠️ **The standalone artefact exists and is never exercised.** `.next/standalone/apps/web/server.js` is produced on every build and no test, gate or harness starts it. **This matters more since 2026-09-21, because that artefact is what is now serving production**
+- ⚠️ **The difference is exactly where a missing traced dependency hides.** Standalone ships its **own bundled `node_modules`** from Next's dependency trace; `next start` has the **whole workspace** to fall back on. **A dependency that resolves only because the monorepo is present passes every test here and fails on the box** — and in a pnpm workspace with `public-hoist-pattern`, resolution differences between those two worlds are the normal case rather than the exotic one
+- ✅ **YT-0588 already handles the worst known gap**, which is why this is a gap and not an incident: Next does not copy `public/` into standalone output, so `scripts/build-service-worker.mjs` creates the directory and places the worker there. `yourtal-ca` verified both copies are **byte-identical** — 44,491 bytes, `md5 19110e76…`
+- [ ] At least one browser suite starts `.next/standalone/apps/web/server.js`, the artefact that ships, rather than `next start`
+- [ ] **Proved by sabotage in the direction that matters**: remove a dependency from the trace and the standalone run fails while `next start` still passes — otherwise the new harness is not testing what this ticket claims
+- [ ] `"start"` either starts the standalone server or is renamed, so nothing invites `next start` against a standalone build again
+
+### YT-0605 · The offline config's reason for existing was removed by YT-0588
+`todo` · P0 · web · 2h · dep: —
+
+- ⛔ **Filed 2026-09-22 from `yourtal-ca`'s run. `playwright.offline.config.ts`'s header (`:16-28`) says it cannot share the main config because the offline proof needs `next build --webpack`** — `@serwist/next` hooks webpack's compiler and is a silent no-op under Turbopack. **Its actual `webServer.command` at `:67` is `pnpm build && next start`: the plain Turbopack build, no `--webpack` anywhere.** The run log confirms it, including Serwist's own unsupported-bundler warning
+- ✅ **It still works, and the reason is YT-0588**: `scripts/build-service-worker.mjs` now compiles the worker independently of Next's bundler, and **deliberately rejects `--webpack`** because `.next/diagnostics/route-bundle-stats.json` — which YT-0404's perf gate reads — is written only by a Turbopack build. **The conflict was dissolved rather than chosen between**
+- ⚠️ **The danger is the comment, not the config.** It documents a constraint that no longer exists, in the file whose entire justification was that constraint. **Someone will read it and force `--webpack`, silently disabling the perf gate** — and a perf gate that stops producing its input does not fail, it stops measuring
+- ℹ️ **The separate config may now be redundant entirely** — it runs the same build as the main one, on a different port. That is `web`'s call and is not assumed here
+- [ ] The header describes what the file actually does, or the file is merged into the main config
+- [ ] If it stays separate, the reason it stays separate is stated and is true today

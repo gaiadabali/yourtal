@@ -12,6 +12,7 @@ Split out of [`phase-u-ui.md`](phase-u-ui.md) on 2026-09-19 when that file cross
 
 **Also in this ticket's report, not a checkbox here:** the console nests inside the consumer's five-tab `AppShell` (forced by the shared route contract — `app/(app)/business/**`, with `app/(app)/layout.tsx` off-limits) even though it is a different, desktop-first audience; see the report for why that wasn't fixable from this ticket and what it costs.
 - ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** `console-zone-access.ts` transcribes the derived roles, and notably **documents that it renders the zone structure including zones this batch does not build**, rather than hiding them — an honest shell rather than a shell that lies about its own scope. `e2e/tablet-768.spec.ts` exists for the measured no-horizontal-scroll claim
+- ✅ **Declared Playwright limit CLOSED 2026-09-22.** `yourtal-ca` ran `tablet-768` against a fresh production build (`.next/BUILD_ID` mtime checked before trusting it) once `apps/web` was signalled quiet — **22 passed** across `chromium` and `mobile-320`, exit 0. The measured no-horizontal-scroll claim now has a browser behind it rather than a spec file
 ### YT-0441 · Campaign builder
 `done` · PU · web · 5d · dep: YT-0440, YT-0403
 

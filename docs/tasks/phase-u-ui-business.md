@@ -5,13 +5,13 @@ Split out of [`phase-u-ui.md`](phase-u-ui.md) on 2026-09-19 when that file cross
 ## Business and merchant
 
 ### YT-0440 · Business console shell
-`review` · PU · web · 3d · dep: YT-0401
+`done` · PU · web · 3d · dep: YT-0401
 
 - [x] Desktop-first; three zones shown only when the business holds that relationship — `features/console/console-zone-access.ts` transcribes `policies/derived_roles/business.yaml` and docs/17 §2.1's table into one `ZONE_ACCESS` map; `getVisibleZones` hides Campaigns/Inventory/Redemption unless the business holds the matching advertiser/supplier/redeemer relationship, gates all six zones by the viewer's team role, and is unit-tested against fixtures that mirror `policies/tests/business_test.yaml`/`team_test.yaml` exactly (`console-zone-access.test.ts`). The demo business (`longNameBusinessFixture`) deliberately lacks `redeemer`, so the shell genuinely hides that zone rather than showing all three unconditionally — confirmed via `node scripts/perf-check-bundle-size.mjs apps/web` rendering `/business/redemption` at all (it degrades to an honest access/relationship-denied panel for a role or business that doesn't qualify, not a 404).
 - [x] Usable at tablet width; no horizontal scrolling — **measured, not reasoned**: `apps/web/e2e/tablet-768.spec.ts` (new) checks `document.documentElement.scrollWidth <= clientWidth` at 768px, the narrowest width a real tablet reports, chosen the same way `overflow-320.spec.ts` chose 320px. Covers all seven `/business/**` routes the console shell serves plus the zone-tab nav's own bounding box, against a real production build in real Chrome. **16/16 pass, zero horizontal overflow**, and no layout changes were needed — the fluid Tailwind the shell was built with (`max-w-6xl mx-auto`, `min-w-0`, `flex-wrap`, no fixed-px widths) held up.
 
 **Also in this ticket's report, not a checkbox here:** the console nests inside the consumer's five-tab `AppShell` (forced by the shared route contract — `app/(app)/business/**`, with `app/(app)/layout.tsx` off-limits) even though it is a different, desktop-first audience; see the report for why that wasn't fixable from this ticket and what it costs.
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** `console-zone-access.ts` transcribes the derived roles, and notably **documents that it renders the zone structure including zones this batch does not build**, rather than hiding them — an honest shell rather than a shell that lies about its own scope. `e2e/tablet-768.spec.ts` exists for the measured no-horizontal-scroll claim
 ### YT-0441 · Campaign builder
 `done` · PU · web · 5d · dep: YT-0440, YT-0403
 

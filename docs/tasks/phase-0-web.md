@@ -18,7 +18,7 @@
 ## Web
 
 ### YT-0512 · `apps/web` imports an undeclared package
-`review` · P0 · web · 1h · dep: YT-0509
+`done` · P0 · web · 1h · dep: YT-0509
 
 - [x] Already fixed on disk; the tracker was stale. `apps/web` imports `BusinessTeamRole` from `@yourtal/contracts/business/team-role` — verified 2026-09-21 at `app/(app)/business/team/page.tsx:1` and `features/console/console-roles.ts:1`, both `import type` — and the file this ticket blamed for a syntax error **does not exist**
 - [x] **The six `@yourtal/authz` importers are gone.** Re-checked against the tree rather than the ticket: `grep -rl "@yourtal/authz" apps/web` returns **zero** files. `apps/web/package.json` still does not declare `authz`, and correctly so — nothing needs it. The criterion described a real condition that the tree no longer has
@@ -26,6 +26,8 @@
 - [x] **A live instance was found while verifying the stale ones, and fixed.** `scripts/build-service-worker.mjs` imported **`@serwist/build`** while `apps/web/package.json` declared only `@serwist/next`. It resolved from pnpm's store as a transitive dependency, so it typechecked, built and shipped — the exact shape this ticket is about. Introduced hours earlier by the session that then found it, under YT-0588. Now declared
 - [x] **Every package `apps/web` imports is declared — enforced, not asserted.** `apps/web/dependency-declaration.test.ts` walks the app's source, extracts static specifiers with patterns anchored to real import syntax, and fails naming both the package and the importing file. **Proved by breaking it**: removing `@serwist/build` from `package.json` turned it red with `"@serwist/build": ["scripts/build-service-worker.mjs"]`; restoring it turned it green. The anchoring matters — a looser first scan reported `holdback_blocks` and `jumped` as packages, which are values in object literals, and a guard that cries wolf gets switched off rather than fixed
 - ⏭️ **Not caused by YT-0509** — kept as the note it always was. This line states *why* a conclusion is right; it is not work, and as a `- [ ]` it could never be ticked however finished the ticket was. Same rationale-as-criterion shape recorded against YT-0509 itself
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** `dependency-declaration.test.ts` is committed (`4ffad0e`), the tree is clean, and it **passes**
+- ⚠️ **Declared limit: not sabotage-proved.** Proving it fails would mean editing `apps/web/package.json`, a shared file, while `yourtal-5f` writes in that package. Structural read only — the same limit ca declared on YT-0035's drift test, and stated for the same reason: **a verifier saying what it did not check is worth more than one quietly checking less**
 ### YT-0525 · Migrate hand-built forms to React Hook Form
 `doing` · PU · web · 2d · dep: —
 - [ ] `docs/15` locked RHF + Zod resolver, but neither was ever installed — **now installed (2026-09-19)**

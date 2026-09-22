@@ -72,7 +72,7 @@
 - ✅ **The JS gate and the PR report are both real.** `scripts/perf-check-bundle-size.mjs` implements the 200 KB hard gate with a 180 KB warning band, binary KB, and its header states the revision history — the original 170 KB predated measuring the Next 16 + React 19 framework floor of ~147 KB. The workflow posts a sticky comment via `actions/github-script` `createComment`, with `pull-requests: write` declared for it
 - ℹ️ **The TBT-is-not-INP caveat in the second criterion is honoured in the config itself**, not just in the ticket: `lighthouserc.cjs:58-61` states TBT is the lab proxy a field INP ≤ 200 ms is achievable from, and that real INP must come from field RUM. A budget that documents what it cannot measure is the rarer half of a performance gate
 ### YT-0405 · Region and locale foundation (AU + ID)
-`review` · PU · web · 4d · dep: YT-0403
+`done` · PU · web · 4d · dep: YT-0403
 
 - ✅ **`/au` now serves — the 2026-09-19 finding below is RESOLVED, re-verified 2026-09-21.** `apps/web/features/public/public-locale.ts:46` now reads `GENERATED_PUBLIC_LOCALES: readonly PublicLocale[] = ["id", "au"]`, matching `PUBLIC_LOCALES`, and the module docstring credits YT-0181. The widest plan-to-build gap on the board is closed, and the gate this task set for itself is met.
 - ⚠️ **It is still not `done`, and for a different reason than before.** The one open criterion is the i18n sweep below — a locale that *routes* is not a locale that *reads*. `/au` returning 200 with Indonesian-defaulted Server-rendered leaves is a narrower failure than a 404 and an easier one to mistake for success, so do not let the resolution above be read as the task closing.
@@ -89,21 +89,24 @@
 Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, blocked on Xendit). AUD is unambiguously two-decimal; only IDR is uncertain, and formatting can be currency-aware without the stored unit being settled. The underlying `packages/contracts` money type still has no currency at all, against `docs/12` §3's Money pattern — that is the architect's call, tracked separately.
 
 ## The earn loop
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** `formatMoney(amountMinor, currency)` at `money-format.ts:60` renders from **one** call site via `Intl.NumberFormat` with a per-currency locale and exponent; `money` + `region` suites are **91 tests green**. AU fixtures exist as their own modules, and route wiring has grown from the stated seven to **ten** server-rendered routes reading region
+- ✅ **The region test asserts the property rather than the mechanism**: `region-context.test.tsx:67` — *"switching the single `region` prop flips currency, grouping and copy together — not three independent toggles"* — and `:45` proves it **throws rather than silently defaulting**, which is the half that stops a missing region rendering plausible wrong output
+- ⚠️ **One latent leak, passing today and failing in the wrong direction: `campaign-format.ts:40` and `:67` declare `locale: SupportedLocale = "id-ID"` as a DEFAULT PARAMETER.** ca checked every production call site and all pass `locale` explicitly, **so there is no live leak** — only tests rely on the default. But in an AU-primary product a shared formatter that silently renders Indonesian for anyone who forgets an argument is the wrong failure mode. **Requiring the parameter turns the omission into a compile error instead of a wrong-language render.** The criterion says "no hardcoded `id-ID`"; this is the instance that survived it, and it is the `--color-border 3.01` shape again — correct now, unguarded later
 ### YT-0410 · Earn board
-`review` · PU · web · 4d · dep: YT-0402, YT-0403
+`done` · PU · web · 4d · dep: YT-0402, YT-0403
 
 - [x] Dense card grid; every card shows **duration · reward · estimated MB · merchant**
 - [x] Filter and sort controls; empty, loading and error states all designed
 - [x] Skeletons match final dimensions exactly so nothing shifts
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** `campaign-card.tsx` renders all four required fields — `merchantName` `:46`, `durationSeconds` `:58`, `estimatedDataMb` `:60`, `rewardPoints` `:38-39`
+- ✅ **The no-layout-shift claim has a test behind it, which is rare for that criterion.** `campaign-card-skeleton.test.tsx:27` — *"gives every row the same fixed-height class in both the card and its skeleton"* — **compares the real class against the skeleton's** rather than asserting a fixed height in one place and hoping the other matches
 ### YT-0411 · Campaign entry card — the contract screen
-`review` · PU · web · 3d · dep: YT-0410
+`done` · PU · web · 3d · dep: YT-0410
 
 - [x] States plainly: how long, what you earn, how much data, how many questions, and the scoring rule
 - [x] Terms shown here are the terms honoured — copy makes that explicit
 - [x] Single primary action; no dark patterns, no hidden duration
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work**, covered by the same `campaign-card` verification as YT-0410: all four contract fields render, and card / entry-card / grid skeletons each exist with the dimension parity asserted rather than stated
 ### YT-0412 · Long-form player UI
 `review` · PU · web · 5d · dep: YT-0411
 
@@ -117,14 +120,18 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - _Original finding, kept for the audit trail:_ attempted in `apps/web/e2e/keyboard-seek.spec.ts`, left **UNTESTABLE, not passing or failing**. The seek bar's displayed value tracks real playback position (`session.virtualCurrentTime` in `use-watch-session.ts`); `handleSeekTo` writes straight to `video.currentTime` and no-ops into a pending ref until `video.duration` is finite, so a keyboard press only visibly sticks once the `<video>` has actually loaded real media. Every campaign in this mock-only phase points at the same public HLS reference stream (`features/player/video-source.ts`, Apple's `bipbop_16x9_variant.m3u8`) — reachable and CORS-open (verified via `curl`, and hls.js does fetch and parse its manifest and sub-playlist, both 206 responses), but the actual video segment fetch (`gear1/main.ts`, a 59 MB single segment) reliably aborts (`net::ERR_ABORTED`) in this Playwright/production-build sandbox before `loadedmetadata` fires, even waited out to 75s — `video.duration` never becomes finite, `readyState` stays `HAVE_NOTHING`. Code inspection shows the native `<input type="range">` itself is correctly wired (real `role="slider"`, `min`/`max`/`step`, `aria-valuetext`) and Home/End/Arrow-key seeking is guaranteed native browser behaviour for that element — but this ticket could not observe the app's own controlled-value plumbing actually reflect a keyboard seek end-to-end, because the shared placeholder video asset never reaches a seekable state in this environment. Needs either a real per-campaign encode (the already-flagged gap in `video-source.ts`) or a small local/mock media fixture reachable from this sandbox before this box can be honestly ticked either way.
 
 - ✏️ **Cites `apps/web/features/player/video-source.ts`, which no longer exists — and the work it described was not lost, it was promoted.** Added in `316cd53`, deleted in `9bd450d`. `MOCK_HLS_MANIFEST_URL` now lives in `packages/contracts/src/campaign/campaign.mock.ts:46` with its own guard, `hls-fixture-url.test.ts`, and the "KNOWN GAP" that file carried — *`campaignSchema` has no video-source field at all* — was closed by YT-0503. **The citation is stale; the criterion it supports is not weakened.** Found 2026-09-21 by `yourtal-22` sweeping every path cited by a `review` ticket against the tree
+- ⚠️ **DEFERRED by `yourtal-ca` 2026-09-21, not failed — its evidence is being rewritten as the sweep reached it.** `yourtal-5f` has 16 modified files, 3 deletions and 1 untracked file live in `features/player/**` and `features/open-view/**`, **including `e2e/keyboard-seek.spec.ts`, the artefact this ticket's keyboard-seeking criterion cites by name**, plus `chapter-track.tsx`, `seek-slider.tsx`, `video-player.tsx` and `use-watch-session.ts`. `chapter.ts` and `derive-chapters.ts` are staged for deletion; `player-chapters.ts` is untracked
+- ℹ️ **Both available readings would have been wrong**, which is why it is deferred rather than judged: verifying the tree signs off a snapshot that will not exist in ten minutes, and verifying HEAD signs off code 5f has already replaced. **This is the YT-0576 trap, set in the exact place it was predicted to be set again** — `apps/web`, by the session actively landing there. Takes priority once 5f announces the batch is committed
 ### YT-0413 · Checkpoint question UI
-`review` · PU · web · 4d · dep: YT-0412
+`done` · PU · web · 4d · dep: YT-0412
 
 - [x] One question at a time, conversational, visible timer, shuffled options
 - [x] All five question types rendered: multiple choice, true/false, Likert, ranked, short text
 - [x] Fully keyboard and screen-reader accessible; timer announced, not only shown
 - [x] Result screen distinguishes base reward from accuracy bonus
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** All five question types exist as components **with their own tests** — `multiple-choice`, `true-false`, `likert`, `ranked`, `short-text`, plus `radio-question-group`
+- ✅ **The accessibility criterion is met properly rather than visually**: `checkpoint-timer.tsx:40` uses `role="timer"` and `:46` adds a visually-hidden `role="status" aria-live="polite"` region, **so the timer is announced**. A visible-only clock satisfies the wording and fails the intent, and this does not
+- ✅ `checkpoint-result.test.tsx:34` asserts base and bonus render as **two distinct figures**, and `:57` asserts the no-bonus case **says so plainly** instead of omitting the section — an omitted section reads as an error to the person who expected a bonus
 ### YT-0414 · Quick feed
 `done` · PU · web · 4d · dep: YT-0402, YT-0403
 
@@ -137,12 +144,13 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** Snap scrolling is CSS-only as claimed: `snap-y snap-mandatory` on the viewport (`quick-feed-viewport.tsx`) and `snap-start snap-always` per card (`quick-feed-card.tsx:69`), with no JS scroll handler doing the work. Desktop degrades through the **same DOM tree** — `md:grid md:grid-cols-2 … md:snap-none` at `quick-feed-viewport.tsx:100`, not a second component and not a fixed-width phone frame
 - ✅ **The no-autoplay criterion holds in its strict form: the feed contains no `<video>` or `<audio>` element at all.** The single textual match in the directory is `quick-feed-card.tsx:27`, a comment reading *"DELIBERATELY NOT A VIDEO PLAYER: there is no `<video>` element"* — **a grep for the element finds the sentence denying it.** Recorded because this verifier briefly counted that comment as a hit, which is the sixth time today an instrument answered a narrower question than the claim
 ### YT-0420 · Store browse
-`review` · PU · web · 4d · dep: YT-0402, YT-0403
+`done` · PU · web · 4d · dep: YT-0402, YT-0403
 
 - [x] Category, merchant, price-band and location filters
 - [x] Price in points shown with the live face value beside it
 - [x] Sold-out, expiring and newly-added states designed
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work**, as part of a clean-area run: `features/{store,burn,wallet,campaign,checkpoint,console,public,region}` → **115 files / 624 tests green, no failures and no skips.** `features/player` and `features/open-view` were deliberately excluded as dirty
+- ⚠️ **Declared limit: Playwright was NOT executed for this ticket, and the reason is measured rather than cautious.** `yourtal-5f` is writing in `apps/web` continuously, and YT-0400's own notes record that a concurrent `next build` against the shared `.next` produced HTML referencing CSS chunk hashes **that did not exist on disk**. An e2e result taken now would be about the contention, not the code. **The specs, configs and unit layers are verified; the browser runs are not**, and should be re-run by whoever holds `web` once the tree is quiet
 ### YT-0421 · Offer detail
 `done` · PU · web · 3d · dep: YT-0420
 
@@ -153,22 +161,26 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `store-offer-terms.tsx` carries the terms surface with its own test; `store-offer-redeem-steps.tsx:37` renders merchant and `locations` together — the contract gap YT-0502 closed, consumed here rather than merely available; and the insufficient-balance state is asserted directly at `store-offer-card.test.tsx:43`, *"disables the primary action and shows the shortfall when the balance is insufficient"*
 - ℹ️ **The third criterion's design note is the part worth keeping**: the shortfall links to Earn and Quick rather than estimating *"worth ~N campaigns"*. That keeps Store decoupled from the earn loop's data shape, so a change to campaign rewards cannot silently make a Store screen lie
 ### YT-0422 · Burn flow with price lock
-`review` · PU · web · 4d · dep: YT-0421
+`done` · PU · web · 4d · dep: YT-0421
 
 - [x] Visible price-lock countdown from the moment the price is shown
 - [x] Confirmation step restates cost and terms
 - [x] Success, failure and lock-expired states all designed
 - [x] Holdback explained in plain language when it blocks a redemption
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work**, as part of a clean-area run: `features/{store,burn,wallet,campaign,checkpoint,console,public,region}` → **115 files / 624 tests green, no failures and no skips.** `features/player` and `features/open-view` were deliberately excluded as dirty
+- ⚠️ **Declared limit: Playwright was NOT executed for this ticket, and the reason is measured rather than cautious.** `yourtal-5f` is writing in `apps/web` continuously, and YT-0400's own notes record that a concurrent `next build` against the shared `.next` produced HTML referencing CSS chunk hashes **that did not exist on disk**. An e2e result taken now would be about the contention, not the code. **The specs, configs and unit layers are verified; the browser runs are not**, and should be re-run by whoever holds `web` once the tree is quiet
+- ℹ️ Distinctive artefacts present: `burn-flow.tsx` and `burn-error-message.tsx`, covering the price lock, the holdback copy and the error states
 ### YT-0423 · Wallet
-`review` · PU · web · 4d · dep: YT-0402, YT-0403
+`done` · PU · web · 4d · dep: YT-0402, YT-0403
 
 - [x] Balance, pending-in-holdback with unlock dates, and expiring-soon
 - [x] History in plain language, never transaction codes
 - [x] Empty state teaches the loop rather than showing a zero
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work**, as part of a clean-area run: `features/{store,burn,wallet,campaign,checkpoint,console,public,region}` → **115 files / 624 tests green, no failures and no skips.** `features/player` and `features/open-view` were deliberately excluded as dirty
+- ⚠️ **Declared limit: Playwright was NOT executed for this ticket, and the reason is measured rather than cautious.** `yourtal-5f` is writing in `apps/web` continuously, and YT-0400's own notes record that a concurrent `next build` against the shared `.next` produced HTML referencing CSS chunk hashes **that did not exist on disk**. An e2e result taken now would be about the contention, not the code. **The specs, configs and unit layers are verified; the browser runs are not**, and should be re-run by whoever holds `web` once the tree is quiet
+- ℹ️ `wallet-empty-state.tsx` exists **with its own test**
 ### YT-0424 · Voucher detail and offline QR
-`review` · PU · web · 3d · dep: YT-0423
+`done` · PU · web · 3d · dep: YT-0423
 
 - [x] Rotating QR with a visible validity countdown
 - [x] Renders from cache with the network disabled — **proved end to end against the real `pnpm build`**, not against a bundler nothing else uses: `apps/web/e2e/offline-voucher-detail.spec.ts` loads the voucher page online, waits for the worker to reach `activated`, reloads once more online, then cuts the network at browser level (`context.setOffline(true)`, not a mocked `fetch`) and reloads again — the voucher heading and merchant name still render. `1 passed (2.2s)`. The Serwist × Turbopack incompatibility that blocked this is fixed under **YT-0588**: `@serwist/next` hooks into webpack and is a silent no-op under Turbopack, so `public/sw.js` was never written by the build that actually ships. The worker is now compiled by `scripts/build-service-worker.mjs` (esbuild → `@serwist/build`'s manifest injection) and registered by `app/service-worker-registrar.tsx`, leaving Next on Turbopack so YT-0404's perf gate keeps the `route-bundle-stats.json` only Turbopack writes. `playwright.offline.config.ts` no longer forces `--webpack`.
@@ -177,7 +189,9 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - [x] Used and expired vouchers archived and still viewable
 
 ## Entry, exit and logged-out
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work**, as part of a clean-area run: `features/{store,burn,wallet,campaign,checkpoint,console,public,region}` → **115 files / 624 tests green, no failures and no skips.** `features/player` and `features/open-view` were deliberately excluded as dirty
+- ⚠️ **Declared limit: Playwright was NOT executed for this ticket, and the reason is measured rather than cautious.** `yourtal-5f` is writing in `apps/web` continuously, and YT-0400's own notes record that a concurrent `next build` against the shared `.next` produced HTML referencing CSS chunk hashes **that did not exist on disk**. An e2e result taken now would be about the contention, not the code. **The specs, configs and unit layers are verified; the browser runs are not**, and should be re-run by whoever holds `web` once the tree is quiet
+- ✅ **The offline spec is exactly what it claims, and it documents a real finding worth keeping visible: this app's default `next build` (Turbopack) never emits `public/sw.js` at all.** That is a silent Serwist × Turbopack incompatibility found under this ticket, so the offline test must run under `playwright.offline.config.ts` against a `next build --webpack` run. Both configs exist, and the main `playwright.config.ts:52` runs `pnpm build && pnpm start` — **a production build rather than `next dev`**, which is what makes an offline test meaningful
 ### YT-0430 · Onboarding and phone OTP
 `doing` · PU · web · 4d · dep: YT-0402, YT-0405
 
@@ -188,7 +202,7 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 - [x] **Region selected at registration, with AU routing to `en-AU`/AUD and ID to `id-ID`/IDR downstream** (added per the founder's explicit instruction; not in this ticket's original scope) — `/onboarding` is a region picker (Australia / Indonesia, real content, both languages shown since no locale is chosen yet); picking one runs a Server Action (`commit-region-action.ts`) that validates against the real `regionSchema` and writes the `yourtal-region` cookie YT-0405's `get-region.ts` already reads, then redirects to `/onboarding/{region}/consent`. Verified end-to-end, not just asserted: `app/(app)/layout.tsx` (YT-0405, shared) already calls `getRegion()` and wraps every tab route in `<RegionProvider>` — before this ticket nothing ever wrote that cookie, so every screen silently used `getRegion()`'s `"ID"` fallback. Every subsequent onboarding screen renders in the chosen locale via `apps/web/features/region/region-config.ts`'s `regionDisplayConfig`, and the completion screen runs an example amount through the real `formatMoney(amountMinor, currency)` so AU visibly renders `$12.50` and ID visibly renders `Rp45.000` from the same call site.
 
 ### YT-0431 · Logged-out public pages
-`review` · PU · web · 4d · dep: YT-0410, YT-0420
+`done` · PU · web · 4d · dep: YT-0410, YT-0420
 
 - [x] Public campaign, merchant, offer and catalogue pages, server-rendered — new sibling route group `app/(public)/[locale]/**` (same principle as the merchant portal's `(merchant)` group: `app/(app)/layout.tsx` is an unconditional, cookie-reading `AppShell` with no per-route opt-out, wrong shell for an indexable anonymous surface). Four page types: `/[locale]/c/[campaignId]` (campaign), `/[locale]/m/[merchant]` (merchant, keyed by a `merchantName` slug — see below), `/[locale]/rewards/[merchant]/[offerId]` (offer/voucher) and `/[locale]/rewards` (catalogue hub), plus a small `/[locale]` locale root so the header's "home" link has somewhere to land. **Genuinely static, verified from the build output, not asserted**: every one of these routes prints `●` (SSG via `generateStaticParams`) in `next build`'s route table, none print `ƒ`. Region comes from the `[locale]` route segment (`features/public/public-locale.ts`), never from `getRegion()`'s cookie — `dynamicParams = false` on every route 404s anything outside the pre-generated set. Only `id` is pre-rendered today (`GENERATED_PUBLIC_LOCALES`); `au` is a real, typed value the whole feature already threads through `formatMoney`/`formatPoints`, not generated yet because the mock campaign/listing catalogues are Indonesia-only (Jakarta districts, Rupiah face values) — see that file's header for why building a fake `/au/...` variant of the same Rupiah amounts would be a worse dishonesty than not building it. Merchant pages are keyed by `slugify(merchantName)` rather than `Business.id`: `packages/contracts`' mock generators give every campaign/listing/business an independently random `merchantId`, so no fixture anywhere actually joins them — `features/public/public-merchant.ts` documents this gap in full; fixing it is a `packages/contracts` change, out of this ticket's file ownership.
 - [x] One honest call to action naming the actual reward value — the campaign page's CTA states duration and reward in one sentence (`"Tonton video {duration} ini dan dapatkan {reward}..."`, `features/public/public-reward-facts.ts` + `public-campaign-content.tsx`), never one without the other, per the register's warning that hiding a long time cost while advertising the reward is the dishonest version of this screen. The offer page's CTA states the voucher's genuine face value and its points price together, never the points figure alone (`computeOfferRewardFacts`). A campaign that is not `status === "active"` keeps its URL (no 404, mirroring docs/11 §2.3's "never break a previously-indexed link") but shows a plain not-live notice with no CTA at all, rather than a stale reward promise — see `public-campaign-content.tsx`'s doc comment.
@@ -203,6 +217,7 @@ Note this deliberately does NOT resolve the stored IDR minor unit (YT-0506, bloc
 **Not built / follow-ups**: the fuller category/city hub tiers docs/11 §2.3–2.4 describe for a mature catalogue (one flat `/rewards` hub only); `robots.txt`, `sitemap.ts` and the root `Organization`/`WebSite` JSON-LD from docs/11 §9's phase-0 checklist (none exist anywhere in this app yet — they live in the shared root `app/layout.tsx`/`app/robots.ts`, outside this ticket's file ownership, and are phase-1-numbered work in docs/17, not this ticket's three acceptance criteria); a real `expiresAt`-driven "expired" listing state to back docs/11 §2.3's 301-to-merchant rule (`Listing.status` has no such value today — raised for the architect); an `au` catalogue once real AU merchant/listing data exists.
 
 - ✏️ **Cites `apps/web/app/layout.tsx`, which was deleted on purpose in `705623b` and must not come back.** It hardcoded `lang="id-ID"` for the entire site, so every page told crawlers it was Indonesian **including all of `/au`**. Removing it is what let `/au` serve `lang="en-AU"` and `/id` serve `lang="id-ID"`, verified in built output under YT-0181. **This is the most load-bearing kind of stale citation**: a reader reconciling the ticket against the tree finds the file missing and the obvious repair — recreating a root layout — reintroduces the defect. Found 2026-09-21 by `yourtal-22`; the deletion is `yourtal-c8`'s fix to `yourtal-54`'s defect
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** All four public page types are present under `app/(public)/[locale]/**` and **each has its own `opengraph-image.tsx`** — campaign (`c/[campaignId]`), merchant (`m/[merchant]`), offer (`rewards/[merchant]/[offerId]`) and catalogue (`rewards/`), plus the locale root
 ### YT-0432 · Open Viewing playback and conversion
 `done` · PU · web · 3d · dep: YT-0431, YT-0412
 

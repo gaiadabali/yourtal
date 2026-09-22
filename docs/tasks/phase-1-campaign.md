@@ -92,7 +92,8 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - [ ] Signed upload URLs; video never transits our servers
 - [ ] Duration, size and format limits enforced before upload starts
 - [ ] Source asset also written to R2 for the future self-host migration
-
+- ✏️ **The "~100× cheaper" figure in this ticket's re-parenting note is a DESIGN ESTIMATE, not a YT-0220 finding, and the note attributes it to one.** Its origin is `docs/08:62`, a table row describing the option; **YT-0220's *"measure real delivery cost"* criterion is unticked and that ticket has measured nothing.** Found by `yourtal-6c`, verified at source by `yourtal-ca` and again here
+- ⚠️ **This matters because the dependency graph was restructured on it.** A re-parenting justified by a measurement that did not happen is not wrong by arithmetic — the estimate may well be right — **it is wrong by provenance, and the correction is to cite `docs/08` as an estimate rather than YT-0220 as a result.** If the re-parenting only holds with a real measurement behind it, it waits on YT-0220
 ### YT-0111 · Hash dedupe at ingest
 `todo` · P1 · media · 2d · dep: YT-0110
 

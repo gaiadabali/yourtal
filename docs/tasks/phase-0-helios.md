@@ -114,7 +114,9 @@ The poller `gaiada-poll` already runs on Helios, is **green** (`Result=success`,
 - [ ] Node version in the build matches the Node version on the host — a standalone bundle shipping native modules (`pg`, `sharp`) built on the wrong major fails at runtime, not at build
 - ⛔ **STATUS CHANGED BY FOUNDER DECISION S-4, 2026-09-22: the rollback defect is a BLOCKER ON THE NEXT DEPLOY, no longer an accepted standing risk.** It was knowingly shipped on 2026-09-21 with the numbers put in front of the founder beforehand — that acceptance is now withdrawn, and the reverse path is fixed before anything else goes out
 - ℹ️ **The failure, first-hand from `yourtal-0c`**: `gaiada-deploy` loses `PM2_NAME` on rollback, reports `no pm2 process found for: uyourtal`, swaps the symlink and then **cannot restart** — leaving pm2 running new code while `current` points at old, **across every Node site on that box**. The blast radius is the reason this one stopped being acceptable: it is shared tooling, and the damage is not confined to YourTal
-
+- ✅ **The one-line diagnosis, from `yourtal-6c`: the rollback re-exec omits `--pm2-name`, so `targets=${PM2_NAME:-$SITE_USER}` silently substitutes the site user.** That is why it reports `no pm2 process found for: uyourtal` — it is looking for a process named after the account rather than the app
+- ⛔ **And the ordering is what makes it dangerous rather than merely broken: the `die` fires AFTER the symlink swap.** So a failed rollback leaves **pm2 running new code while `current` points at old, and nothing on the box says which is live.** An operator reading `current` gets the wrong answer, which is worse than an outage because it is silent
+- ℹ️ Blocker on the next deploy per founder decision **S-4**, no longer an accepted standing risk
 ### YT-0533 · Secrets and keys without a KMS
 `todo` · P0 · infra · 2d · dep: YT-0530
 

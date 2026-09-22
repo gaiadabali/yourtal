@@ -92,7 +92,10 @@ These change the architecture. All are cheap and all gate decisions already made
 - [ ] Signed per-session segment URLs, and confirm per-segment request logs are actually retrievable
 - [ ] Measure real delivery cost per 30-minute view against the Cloudflare Stream equivalent
 - [ ] Decide: does this restore a usable attention check, and at what engineering cost
-
+- ⚠️ **A figure from this ticket is being cited elsewhere as a FINDING of this ticket, and this ticket has not measured anything.** `yourtal-6c` reported it and `yourtal-ca` verified it at source; confirmed again here. YT-0110's re-parenting note attributes *"~100× cheaper"* to a YT-0220 finding. **Its actual origin is `docs/08-web-app-and-performance.md:62`** — *"\$0.0003 vs \$0.03 per 30-minute view — about 100× cheaper"* — sitting in a **table row under a "Why this one holds" column, describing an OPTION.** It is a design-document estimate
+- ⛔ **This ticket's third criterion is literally *"measure real delivery cost"*, and it is unticked.** So a design estimate has been promoted to a measurement **by being cited as one**, and **YT-0110's dependency graph was restructured on it.** That is the deferral rule in its sharpest form: a note asserting the state of *another* ticket, where the other ticket is at 0/4
+- ⛔ **The signing half of criterion 2 does not exist either**: **zero hits** for `presign`, `signature`, `hmac`, `expiry` or `expires` anywhere in `packages/media/src`. The origin serves an anonymous `hls/`-only grant (YT-0521), which is not the same thing as **signed per-session URLs**, and the per-segment delivery logs the whole control depends on need the latter
+- ℹ️ **Recorded as 0/4 and that is CORRECT** — the concern is not that the board understates it. It is that the parts which do exist are being cited as though the measurement had happened. **This ticket is now `media`'s widest gate at 24 open tickets downstream**, so the citation matters more than it did
 ### YT-0221 · Spike: does phone verification earn its friction?
 `todo` · P-1 · risk · 3d · dep: —
 

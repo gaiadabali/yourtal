@@ -627,7 +627,11 @@ Having adopted the corrected ordering above, a third foreign change still reache
 
 The procedure worked exactly as designed. **`git commit -- <paths>` is file-granular.** It guarantees that no *file* outside your pathspec enters the commit; it says nothing about *lines inside a file you legitimately need to commit*. `package.json` is shared — several epics each add one export line — so committing it takes whatever else is sitting in it.
 
-**Rule: a shared file needs `git add -p`, not a pathspec.** In this repository that is at least `packages/contracts/package.json`, `packages/db/migrations/atlas.sum`, `db-drift/schema-drift.test.ts` and `openapi/route-drift.test.ts` — every file where multiple epics legitimately contribute a line each.
+**Rule: a shared file needs `git add -p`, not a pathspec.**
+
+And the way to know which files those are, from `yourtal-6c`, is a test rather than a list: **if a file's job is to be appended to by everyone, it is a carrier and it needs `-p`.** An export map, a hash manifest, an exemption ledger — their whole purpose is to accumulate one line per feature, which is exactly the property that guarantees someone else has an uncommitted line in them right now. A list of such files goes stale as the repository grows; the test does not. Today's carriers are `packages/contracts/package.json`, `packages/db/migrations/atlas.sum`, `db-drift/schema-drift.test.ts` and `openapi/route-drift.test.ts`, and they are illustrations of the property rather than the rule.
+
+A corollary worth stating because it is the cheap half of the fix: **commit the source file before the carrier line that points at it.** An export entry landing first is a dangling reference for whoever commits the carrier next, and that is a landmine you set for a stranger. Ordering costs nothing and removes the failure entirely.
 
 This was `yourtal-b6`'s advice on the morning of the same day, after the collision that opens this section. It was discarded on adopting pathspec commits, **because the newer and narrower tool looked like a superset of the older advice when the two are orthogonal**: one controls which files, the other which hunks. That is the transferable error — a refinement that addresses the same symptom is not necessarily a replacement, and nothing about `git commit -- <paths>` announces the axis it does not cover.
 

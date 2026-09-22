@@ -159,7 +159,7 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - ✅ **Verified 2026-09-21 by `yourtal-22`, which did not write this ticket.** `BOUNDARY_NAMES` (`boundary.ts:29-38`) holds exactly **eight** — `payments`, `disbursement`, `bot_check`, `otp`, `messaging`, `digital_goods`, `receipt_ingest`, `moderation` — and the `BOUNDARIES` record defines all eight, no more and no fewer. The catalogue-versus-wiring check the criterion describes is real: `registry.test.ts:19` asserts `Object.values(DRIVER_KEY_TO_BOUNDARY).sort()` equals `[...BOUNDARY_NAMES].sort()`, so a boundary in code but not in the catalogue fails. `eslint-rules/no-vendor-sdk.mjs` exists and is referenced three times from `eslint.config.mjs`
 - ✏️ **A note on the verification, not the ticket.** My first count of the registry returned **5**, because the pattern I matched keys with excluded underscores and silently dropped `bot_check`, `digital_goods` and `receipt_ingest`. A verifier reporting "5 of 8 boundaries defined" would have sent a correct ticket back. Fifth instance today of the instrument narrowing the question — see `_schema.md` and the `grep -c $'\r'` case on YT-0568
 ### YT-0536 · Simulators that can fail
-`review` · P0 · platform · 3d · dep: YT-0535
+`done` · P0 · platform · 3d · dep: YT-0535
 
 - [x] All five faults, driveable on every boundary through one shared `FaultEngine` — so "what a timeout looks like" has one answer across payments, OTP and messaging rather than eight
 - [x] `FAULT_CATALOGUE` names each one with **the caller bug it catches**, not just an error code. A fault nobody can state the purpose of is one that gets deleted the first time it is inconvenient
@@ -168,7 +168,10 @@ That changes the task from _"design secret handling without a KMS"_ to _"decide 
 - [x] `mayHaveSucceeded` is on the failure type, and `true` for timeouts. That is the whole reason the field exists: a caller retrying an uncertain operation without an idempotency key double-charges, so the uncertainty has to be something a caller must look at
 - [x] Webhook faults act on **delivery, not the call** — the request succeeds and the events arrive twice, or reversed. A caller that only tests the request path never sees either, which is exactly how they reach production
 - [x] ⚠️ **Faults cannot be switched on by environment**, only passed in by a test. A fault configurable from the outside is one that can reach a running deployment
-
+- ✅ **Verified 2026-09-21 by `yourtal-ca`, which wrote none of this work.** `packages/drivers` is **6 files / 88 tests green**, with one shared `FaultEngine` across every boundary — so *"what a timeout looks like"* genuinely has one answer rather than one per adapter
+- ✅ **`mayHaveSucceeded` is exactly right where it matters**, which is the field this design exists for: `fault-engine.ts:103` `decline → false` (*"the call completed and the answer was no"*), `:110` `timeout → true` (*"no response; the operation may have completed on the far side"*). Getting that backwards is how a retry double-charges
+- ✅ **The coverage assertion is real set equality, not a loop that can drift**: `driver-mode.test.ts:106` — `expect(Object.keys(modes).sort()).toStrictEqual([...BOUNDARY_NAMES].sort())`. A new boundary fails the suite **and** an orphaned exercise cannot keep passing
+- ✅ **Determinism holds structurally rather than by discipline**: zero `Math.random`, `setTimeout` or `sleep(` in `packages/drivers/src` outside tests, and **no `process.env` read anywhere near fault selection** — so faults are passed in by a test or they do not exist, and cannot be switched on by environment
 ### YT-0537 · Payment and disbursement simulator
 `done` · P0 · platform · 3d · dep: YT-0535, YT-0536
 

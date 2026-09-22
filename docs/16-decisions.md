@@ -270,6 +270,20 @@ So **YT-0573 is a prerequisite of resale, not an adjacent cleanup**, and it is r
 
 ## S — deployment
 
+**S-2 · The Helios retirement / observe-only constraint is STALE. Building and deploying there is permitted. (2026-09-22)**
+
+Recorded because two sessions read a draft as a ruling this evening and one of them broadcast it to all seven. The correction, in order of what is actually in force:
+
+- `docs/plans/2026-09-04-hostinger-shared-replatform.md` is headed **"Status: PLANNED — authoring only. Nothing has been executed."** Its own line 252 says _"WSK-D37 is proposed, not landed."_ The other program's decision log tops out at **D36**, so by that program's own standing rule — **no ruling exists outside the decision log** — the retirement is not in force.
+- Its draft scope is _"client delivery is shared hosting only"_, which governs machines filling the **client delivery** role. YourTal is the company's own product, not client delivery.
+- What **is** landed is a 2026-08-22 owner ruling making both boxes **observe-only**, scoped to Plane A observability onboarding — it governs what **monitoring** may install. YourTal's 2026-09-19 target decision and the 2026-09-21 owner-instructed deployment are later and more specific.
+
+So **decision N-1 and the 2026-09-20 deployment stand unqualified**, and `docs/16` line 277's argument for pull-based deploy keeps its footing — it rests on that box's per-source-IP allowlist protecting 30 client sites, which is unaffected.
+
+⚠️ **Provenance, stated because it is the weakest link in this entry.** The ruling was given by the founder in `yourtal-4d`'s session and **relayed** to the recorder, which did not witness it. It is written down here precisely because the evening's clearest lesson is that a verbal ruling relayed through a peer is **weaker than a draft document** — and a draft document was already misread twice today. **If this entry is wrong, it is wrong in the direction of recording something the founder did not say, and it should be struck rather than softened.**
+
+ℹ️ **This is a POLICY ruling and changes no session's tool permissions.** At least one YourTal session is permission-denied for SSH to that box by its own configuration. This entry does not lift that, and a session in that position should raise it with the founder rather than treat a relayed ruling as authorisation.
+
 **S-1 · Deploy by pull, not by push. CI and the poller are not alternatives: CI proves and publishes the artifact, the poller pulls and installs it.**
 
 Helios already runs `gaiada-poll`, green and hardened, whose own docstring is the argument: _"No inbound port, no webhook, no DNS, no nginx. Outbound HTTPS only."_ Its discovery loop enrols any repo whose `.gaiadeploy.yml` names the server, so YourTal joins with a file in the repository and no server-side change.

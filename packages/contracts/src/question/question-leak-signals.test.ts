@@ -54,7 +54,10 @@ describe("accuracy jump", () => {
    * campaign's bank by answering it well a few times.
    */
   it("refuses to judge a window too small to mean anything", () => {
-    const tiny = judgeAccuracyJump({ answered: MIN_WINDOW_ANSWERS - 1, correct: 4 }, window(200, 1));
+    const tiny = judgeAccuracyJump(
+      { answered: MIN_WINDOW_ANSWERS - 1, correct: 4 },
+      window(200, 1),
+    );
     expect(tiny).toEqual({ leaked: false, reason: "insufficient_data" });
 
     const tinyRecent = judgeAccuracyJump(window(200, 0.2), window(MIN_WINDOW_ANSWERS - 1, 1));
@@ -156,11 +159,7 @@ describe("answer-pattern cohorts", () => {
   it("excludes accounts that answered nothing rather than grouping them together", () => {
     // They all trivially share the empty subset. A cohort of everyone who
     // has answered nothing is an artefact of the grouping, not a finding.
-    const cohorts = identicalAnswerCohorts([
-      pattern("a", {}),
-      pattern("b", {}),
-      pattern("c", {}),
-    ]);
+    const cohorts = identicalAnswerCohorts([pattern("a", {}), pattern("b", {}), pattern("c", {})]);
     expect(cohorts).toEqual([]);
   });
 

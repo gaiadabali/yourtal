@@ -73,10 +73,7 @@ function accuracyOf(window: AccuracyWindow): number | null {
  * measured against. Holding the baseline separate means a leak stays
  * visible for as long as it is happening.
  */
-export function judgeAccuracyJump(
-  baseline: AccuracyWindow,
-  recent: AccuracyWindow,
-): LeakVerdict {
+export function judgeAccuracyJump(baseline: AccuracyWindow, recent: AccuracyWindow): LeakVerdict {
   if (baseline.answered < MIN_WINDOW_ANSWERS || recent.answered < MIN_WINDOW_ANSWERS) {
     return { leaked: false, reason: "insufficient_data" };
   }

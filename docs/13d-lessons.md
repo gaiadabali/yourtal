@@ -643,6 +643,32 @@ This was `yourtal-b6`'s advice on the morning of the same day, after the collisi
 
 The sharpest framing came from the session that inherited the rule: **a private index sounds like the correct engineering answer to a shared checkout, which is exactly why the next person will reach for it.** The four earlier rungs have the same property. This section exists so the fifth is not rediscovered by someone who reads the first four and concludes, reasonably, that isolation is the answer.
 
+## 29. A comment that makes the code look reviewed
+
+Two instances in one day, found by different sessions, and neither is a wrong comment in the ordinary sense — both comments are **correct**, well-argued, and describe what the code should do. That is what makes them dangerous.
+
+**`payments.ts`**, lines 10-30, on why the money unit must be declared per driver:
+
+> A driver that inherited the storage unit would be assuming the answer. Declaring it, and converting through `provider-amount.ts`, turns the open question into a per-adapter conversion.
+
+Twelve lines later, under the comment **“Sen and cents. Stated, not inherited”**:
+
+```ts
+IDR: options.declaredMinorUnitExponent?.IDR ?? 2,
+```
+
+`?? 2` **is** inheriting the storage unit, with one extra step. A 100× money defect sitting directly beneath a paragraph explaining why it must not exist.
+
+**`AuthService.deliver()`** cited YT-0538's rule by name — _“never printed into ordinary logs”_ — and then wrote the raw password-reset token to `logger.debug`, behind an environment guard that could not work in this deployment.
+
+**Why this is its own class rather than an instance of “stale comment”.** A stale comment describes behaviour the code **used to** have, and a careful reader who tests the claim finds the divergence. Here the comment describes behaviour the code **ought** to have, and a careful reader who checks the _intent_ finds it **correct and stops there.** The comment is not evidence of the behaviour — **it is evidence that someone thought about the behaviour**, and the two are indistinguishable from the outside. **The better the comment, the more effectively it conceals the defect below it.**
+
+This is the mirror of §15, where the most dangerous false green came from prose rather than a check. There, prose asserted a state nothing verified. Here, prose asserts an _intention_ the code contradicts — and intention is exactly what a reviewer reads a comment to learn.
+
+**Rule: when a comment states a rule, check the code against the rule, not against the comment.** And when you write one, prefer a form that **fails** if violated over one that merely explains: `payments.ts` already has the right instrument — a parity test that fails on a mis-declared unit — and the defaulting path is simply not covered by it. **A rule worth writing in a comment is usually worth writing as a test**, and where both exist the comment should name the test rather than restate the rule.
+
+**Corollary for the fix, and it generalises past this file:** a caller forced to supply a value it does not care about, purely to satisfy a compiler, **manufactures exactly this defect** — fourteen webhook tests passing `{ IDR: 2 }` would become a future reader's evidence that 2 was considered and chosen. Make the declaration carry information: a named fixture meaning _this test never converts an IDR amount_ says something true, where a magic number says something false.
+
 ## The pattern, restated
 
 `docs/13c` asked what a check does with the case it was not shown. Today adds the question that comes _before_ it:

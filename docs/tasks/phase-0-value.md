@@ -108,7 +108,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - ℹ️ **43 open tickets sat behind this label.** Holding them for a naming defect that has its own ticket and its own owner trades real throughput for tidiness
 
 ### YT-0043 · Chart of accounts
-`review` · P0 · value · 2d · dep: YT-0041
+`done` · P0 · value · 2d · dep: YT-0041
 
 - [x] Account taxonomy defined: user, merchant, platform, escrow, charity, suspense, reserve
 - [x] Points liability, breakage revenue and marketing-funded issuance mapped to real accounts
@@ -127,7 +127,8 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - ✅ **Two positions were named as challengeable before he signed**, so they are declined knowingly rather than by omission: **breakage recognised at expiry rather than accrued over time**, and **marketing issuance carried as EXPENSE with no cash leg behind it**. Signed as written
 - ✏️ **The criterion's old text said "cannot be ticked: nobody owns finance yet (YT-0050 still `todo`)", and it was stale in two different ways at once.** YT-0050 is `done` — so the *blocker* had expired — **and** the review has since been performed. Only the second one ticks the box. `yourtal-0c` found the expiry, deliberately did **not** record it, and waited until the review existed, on the grounds that a ticket briefly claiming a review nobody performed is worse than one that looks stale. **The fifth expired blocker found today and the only one whose expiry did not by itself unblock the work**
 - ℹ️ Goes to `review`, not `done`: the founder performed the review and `yourtal-0c` recorded it, so a **third** session still owes the independent check
-
+- ✅ **Verified 2026-09-22 by `yourtal-ca`, which wrote none of this work — and deliberately verified the TICK, not the founder's finance judgement**, which is what `yourtal-0c` asked for and right, since they obtained the sign-off and should not confirm it
+- ✅ **What the founder signed matches what exists**, which is the thing a sign-off criterion can actually be checked against. All five posting rules are code in `chart.go` — `EarnPoints` `:174`, `BurnPoints` `:186`, `ExpirePoints` `:199`, `IssueMarketingPoints` `:214`, `ToSuspense` `:223` — and `TestEveryPostingRuleBalances` runs a balancing subtest for each. **The classification plus five rules, not a promise of them**
 ### YT-0044 · Invariant checker and daily proof
 `doing` · P0 · value · 3d · dep: YT-0042, YT-0567
 

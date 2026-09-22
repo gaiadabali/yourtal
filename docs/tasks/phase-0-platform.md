@@ -312,7 +312,7 @@
 - ✏️ **The first criterion names `ON CONFLICT DO NOTHING RETURNING` and calls it "the only form that survives two concurrent retries". The code uses `ON CONFLICT … DO UPDATE … WHERE expires_at <= EXCLUDED.started_at`, and it is right to.** The file explains why at `:27-33`: **an expired row must behave as if absent**, and `DO NOTHING` cannot express *"unless it is expired, in which case take it over"*. A dead row reporting `in_progress` would wedge a legitimate retry until a human noticed. The conditional update does it inside the same atomic statement rather than as a read-modify-write race of its own
 - ⚠️ **Third instance today of a criterion naming a mechanism that the implementation correctly diverged from**, after YT-0121 (criterion said nonce burned in Redis; Redis here is Valkey with `--save "" --appendonly no`, so the implementation used Postgres) and YT-0041 (criterion said `CHECK`; a `CHECK` cannot sum across rows, so it is a deferred constraint trigger). **In all three the code is better than the bar, and in all three a verifier checking the literal wording would have failed working software.** This is `_schema.md` rule 2 earning its place three times over
 ### YT-0040 · Job queue and worker skeleton
-`review` · P0 · platform · 3d · dep: YT-0516
+`done` · P0 · platform · 3d · dep: YT-0516
 
 - Re-parented onto the local stack (YT-0516): this needed _a_ service, not a _managed_ one. The cloud task now covers deployment only.
 - [x] pg-boss with retries, backoff and a dead-letter path
@@ -332,7 +332,8 @@
 - **Verified:** `packages/queue` lint clean, typecheck clean, **3 files / 11 tests**; `packages/contracts` 586; `check:eol` and `prettier --check` clean on the committed set
 - ⚠️ **Two deliberate non-goals, documented in the code so they are not read as oversights:** `defineQueue`'s `partition:true` path is unsupported (it would need its own migration and grant story), and `idempotentWorker` refuses `batchSize > 1` by throwing if it ever sees more than one job in a batch
 - ⛔ **This ticket also broke the tree twice, and both are recorded in `docs/13d` §26a/§26b rather than here.** An untracked `packages/queue/` mutated the tracked `pnpm-lock.yaml`, taking every session's `pnpm verify` down at gate 1 on a package none of them had touched; then an untracked migration mutated the tracked `atlas.sum` and **stopped `apps/api`'s suite from starting at all**, because the harness applies migrations into a fresh database per run. The general rule that came out of it: **untracked work that writes to a tracked file has already reached everyone else while staying invisible to every check that starts from git**
-
+- ✅ **Verified 2026-09-22 by `yourtal-ca`, which wrote none of this work.** `packages/queue` is **3 files / 11 tests green**. Retries, backoff and dead-lettering are real — `config.ts:22`, `deadLetterQueueName` at `:40`, and `define-queue.ts` documents why the dead-letter queue's own `retryLimit` is 0. `idempotent-worker.ts:119-127` makes criterion 2 structural rather than conventional: **a job arriving with no `idempotencyKey` throws before the handler runs**, with the reasoning written at `:120` — *"a job without a key is not idempotent by default, it is a producer bug"* — and it then goes through YT-0039's `begin`/`complete` store, so the guarantee is the same one the HTTP path has
+- ⚠️ **"Every consumer is idempotent by construction" has no guard and, right now, no consumers — so the claim is currently VACUOUS.** There are **zero production `boss.work(` call sites**; the only ones are the package's own tests. Nothing stops the first real consumer calling `boss.work()` directly and bypassing the wrapper. **Exactly YT-0052's AC2 shape: the mechanism is right and the universal quantifier is unenforced.** Filed as **YT-0607** — worth doing before the first consumer lands, because after that it is a migration rather than a guard
 ### YT-0547 · Test isolation: one database per package, not one lock per file
 `doing` · P0 · platform · 2d · dep: YT-0516
 
@@ -571,7 +572,7 @@
 - [ ] ⚠️ **Two copies of one ratio is the derived-value bug with money attached.** Whatever the client shows must be derived from the server's value, not from a second constant that agrees with it today
 
 ### YT-0565 · The ledger schema-drift regex fails open
-`review` · P0 · value · 2h · dep: —
+`done` · P0 · value · 2h · dep: —
 
 **Done. 100 Go tests, 0 skips; `pnpm verify` 11/11.**
 
@@ -591,6 +592,8 @@
 - ✅ `backing_rate` is in the table loop at `schema_test.go:70` and its subtest passed against live Postgres
 - ℹ️ **The "ninth gate" line asserts nothing testable and should be prose or a `- ⏭️`**, not a box — it is the generalisation, already recorded in `docs/13c`. Second instance today of a note shaped as a criterion leaving a ticket permanently short of its own bar
 - ⚠️ **A local-only footgun found while verifying and deliberately NOT filed**, because CI already covers it: `TestSqlcSchemaMatchesTheLiveDatabase` **skips silently with no database** — `pgxpool.New` does not connect eagerly, so a dead host survives to `Ping`, which calls `t.Skipf`. Sabotage-confirmed: a dead port gives `--- SKIP` then `PASS` then `ok`. **`integration.yml:289-296` runs the suite with `-v` and fails on `grep -q -- "--- SKIP"`**, so the guard genuinely runs. **The trap is local: `go test ./...` on the ledger can report `ok` while the drift comparison never happened.** Run it with `-v` and look for `--- SKIP`
+- ✅ **Verified 2026-09-22 by `yourtal-ca`, which wrote none of this work, and called "the best-specified ticket I have verified".** Every claim is literally true: the pattern at `schema_test.go:31` is `^[a-z_][a-z0-9_]*$` — **anchored, which is better than the widening the ticket proposed**, since a bare `[a-z_0-9]+` would still match a fragment of a malformed line. `backing_rate` is in the table loop at `:70` with a note recording when it joined
+- ✅ **The ticket said six parser tests and there are exactly six**, all database-free and green by name in their own file. `TestUnreadableLineIsAnErrorNotAnOmission` is the criterion *"assert the match count equals the column count"* **rewritten as a property**: a line the parser cannot read now fails, instead of silently contributing nothing. That is the defect closed in the direction that fails safe
 ### YT-0566 · The hold sweeper has no alarm and availability depends on it
 `todo` · P1 · merchant · 2d · dep: YT-0151
 
@@ -721,7 +724,7 @@
 - ✅ **Both missing policy tests exist, and they test the two distinct holes.** `team_test.yaml:69` — *"demoting the real owner is denied, on the target's stored role"* — and `:89` — *"an omitted `targetRole` cannot deny, on either action the rule covers"*. The second is the one that matters: `has(R.attr.targetRole)` being false was the mechanism, so a suite without it passes 390/390 over a live hole
 - ✅ **The misleading comment is genuinely fixed, not merely softened.** `remove-member.use-case.ts:31-34` now states the opposite of what it used to: that `attrsFrom` sends only `targetPrincipalId`, *"so `has(R.attr.targetRole)` is always false and the DENY can never fire for `remove_member`"*. It previously cited `team.yaml` as already denying this — **a comment that documented an unguarded path as safe**, which is what let the sibling action ship unprotected
 ### YT-0581 · `remove_member` never sends `targetRole`, so its PDP guard cannot fire
-`review` · P1 · platform · 1d · dep: YT-0580
+`done` · P1 · platform · 1d · dep: YT-0580
 
 - **Sibling of YT-0580, separated because it is not exploitable and the fix is different.** `remove_member`'s `attrsFrom` is `(request) => ({ targetPrincipalId: readParam(request, "userId") })` — **no `targetRole` at all** — so `has(R.attr.targetRole)` is always false and `ownership-moves-only-by-transfer` never fires for this action. Sabotage-proved: an admin removing the owner returns **`EFFECT_ALLOW`** from the PDP
 - **Not exploitable**, because `remove-member.use-case.ts:28-33` independently refuses on the stored role. So the control that works is the application check, and the control that is *documented* as working is the policy one
@@ -744,7 +747,8 @@
 - **And the fixture is right as it stands.** It models the **pre-read decorator call**, which legitimately carries no role for either action. Its ALLOW is correct behaviour, not a live gap — which is exactly the misreading that the old `remove-member.use-case.ts` comment made in reverse. Its description now says so, naming `team_kopi_demoting_owner` and the HTTP boot test as what actually proves the control
 - **The only way to flip it is a third option the ticket never offered** — a fail-closed CEL for `remove_member` denying on a *missing* attribute — which would also refuse the legitimate pre-read decorator call. Correctly **not** built: it changes the security posture of the pre-read gate and nobody asked for it
 - ⚠️ **General form worth keeping: a test at one layer cannot verify a fix at another.** Writing *“these assertions must flip”* without checking which layer a fixture exercises produces a verification instruction that **fails correct work** — the inverse of the ticked-and-false family, and arguably worse, because it rejects a good change rather than accepting a bad one. The agent flagged the contradiction rather than silently following the note or silently ignoring it, which is the only reason it surfaced
-
+- ✅ **Verified 2026-09-22 by `yourtal-ca`, which wrote none of this work. The fix is the right one rather than the easy one**: `team-member.controller.ts:128-140` makes a **second, post-read `requireAction`** supplying the target's **stored** role, mirroring YT-0580's `changeRole` and the `set_settlement_value` pattern. `team.yaml:25-31`'s `ownership-moves-only-by-transfer` DENY can now actually fire on `remove_member`, where before `attrsFrom` sent no `targetRole` and the rule was decorative. Policy suite re-run: **452/452**
+- ✅ **The policy test is unusually honest about what it does not prove.** `team_test.yaml:89` explains that the resulting ALLOW is the coarse capability gate and **not** the ownership control, and states that before YT-0581 that ALLOW *"was the ONLY thing the PDP ever said about a removal — that gap is what closed, not this assertion."* A test that says what it is not evidence for is rarer than one that passes
 ### YT-0582 · `PrincipalService` cannot populate the attributes four policies depend on
 `doing` · P0 · platform · 3d · dep: YT-0500
 
@@ -975,3 +979,14 @@
 - [ ] The file, the constants and every import site stop claiming the value is a mock
 - [ ] **The new name states what it is**: a backing rate that is currently published to clients, with the ID-1 exposure named at the definition site so the next reader meets it before the number
 - [ ] No behaviour change and no value change — **this ticket must not be the one that alters a rate**, since a rename and a repricing in one commit is unreviewable
+
+### YT-0607 · Nothing enforces that a queue consumer is idempotent
+`todo` · P0 · platform · 4h · dep: YT-0040
+
+- ⛔ **Filed 2026-09-22 from `yourtal-ca`'s YT-0040 verification. That ticket's criterion 2 — *"every consumer is idempotent by construction"* — is currently VACUOUS: there are zero production `boss.work(` call sites.** The only ones are inside `packages/queue`'s own tests
+- ⚠️ **The mechanism is right and the universal quantifier is unenforced.** `idempotentJobHandler` throws on a job with no `idempotencyKey` before the handler runs, which is genuinely structural — **but nothing stops the first real consumer calling `boss.work()` directly and bypassing the wrapper entirely.** Exactly YT-0052's AC2 shape, and the third instance of an "every X" criterion with no guard behind it
+- ℹ️ **The pattern to copy already exists in this repo**: `mutating-routes.test.ts`, a source-reading test that fails the build for any route missing its decorator. YT-0039 was verified by **planting** a bare `@Post` and watching it name the file and line
+- ⛔ **Timing is the argument for doing this now: before the first consumer lands it is a guard, and after it is a migration.** The queue package has no consumers today, so the test would go green immediately and stay green — which is also the reason it is easy to keep postponing
+- [ ] A source-reading test fails the build for any `boss.work(` not wrapped in `idempotentJobHandler`
+- [ ] **Proved by planting one**, per YT-0039's precedent — a guard first seen passing has not been shown to work, and this one starts with nothing to catch
+- [ ] The failure names the file and line, so the fix is obvious to whoever trips it

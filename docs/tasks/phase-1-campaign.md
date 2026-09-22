@@ -175,12 +175,17 @@ The earning half of the loop: a business uploads a video with questions, a user 
 - ✅ **Sabotage evidence supplied by the author and recorded rather than re-run**: both branches of the constant-time compare fail independently, and making `refuse()` a no-op turns exactly the four positive logging assertions red while the fifth — asserting silence on a legitimate redemption — correctly stays green, **because a disabled logger is also silent**. That fifth case is what stops the logging test passing vacuously
 - ℹ️ The third criterion is the one its author nearly ticked on inspection of the code rather than the criterion: rejection was built, **logging was not**, found by reading the bar rather than the implementation
 ### YT-0122 · Checkpoint delivery and answer capture
-`todo` · P1 · watch · 5d · dep: YT-0121, YT-0102
+`done` · P1 · watch · 5d · dep: YT-0121, YT-0102
 
-- [ ] Per-user random subset from the bank, shuffled options, per-question timer
-- [ ] Response latency and input entropy recorded as risk signals
-- [ ] Answers stored against the campaign, never exposed per-user to the business
-
+- [x] Per-user random subset from the bank, shuffled options, per-question timer
+- [x] Response latency and input entropy recorded as risk signals
+- [x] Answers stored against the campaign, never exposed per-user to the business
+- ✅ **Verified 2026-09-22 by `yourtal-fe`; built by `yourtal-4d`, so author and verifier are different sessions. The third criterion was checked at the database, which is where it is actually enforced.** `campaign.question_response` grants `yourtal_app` **INSERT and nothing else** — `has_table_privilege(…, 'SELECT')` returns **`f`**, `INSERT` returns `t`. Every business surface is served by that role, **so a surface that renders per-user answers cannot exist, including endpoints nobody has written yet.** That is a control rather than a convention
+- ✅ **The answer key is stripped by TYPE, not by discipline.** `presented-question.ts` notes at `:10` that `questionSchema` carries `correctOptionId` and `correctAnswer`; `toPresentedQuestion` (`:85`) returns `PresentedQuestion`, which cannot express them, and `ANSWER_KEY_FIELDS` (`:144`) names all three so the stripping is enumerated in one place. **A selected question cannot carry its answer key out** — the compiler enforces it
+- ✅ **`likert` is deliberately never shuffled and the file says why** (`:128-130`): *"its order is its meaning, and reversing it silently inverts every answer."* Shuffling it would have passed every test that checks options were permuted, and corrupted every response
+- ✅ **Rejection sampling rather than `byte % range`**, and the reason is quantified in the module: modulo biases toward low indices whenever 256 is not a multiple of the range, **which for a bank of 12 makes the first four questions appear more often**. A subtle bias in question selection is exactly the kind that would never be noticed from outside
+- ⛔ **A security decision travels with this ticket and must not be lost: the role that CAN read `campaign.question_response` does not exist, deliberately.** YT-0125 needs it — clustering accounts that answer identical subsets identically is its whole job. **That role is the entire security boundary of this table.** Granted to anything a business surface can reach, the control evaporates with **no schema change for anyone to notice**, because the grant would read as deliberate. Named in the migration rather than created, on `yourtal-6c`'s argument that inventing a boundary before YT-0125 has a shape leaves it defended by nobody
+- ⚠️ **Provenance: `question-selection.ts` is committed inside `f6985b1`, a board commit whose message describes YT-0600 and never mentions it.** 300 lines swept from the shared index by the recorder's own `git commit`. Recorded here because history cannot be rewritten across five sessions' branch — **this ticket is the provenance**
 ### YT-0123 · CDN segment-log cross-check
 `todo` · P1 · watch · 5d · dep: YT-0121, YT-0110
 

@@ -88,14 +88,14 @@
 - ⚠️ **Promoted with its stated gap intact, not in spite of it.** The ticket records that the real-browser Playwright suites were not re-run against a browser plus the MinIO origin in this pass. That is honest and it is **not** an unticked criterion — every bar here is at the unit/jsdom level and each is met. It is worth knowing that MinIO's API port was unpublished for part of today (fixed by `yourtal-c8` with `--force-recreate`), so a browser re-run was not available to this verifier either
 
 ### YT-0564 · The result screen says "Total received" for a number nobody has granted
-`todo` · PU · web · 1d · dep: YT-0561
+`doing` · PU · web · 1d · dep: YT-0561
 
 - **`checkpoint-result.tsx` renders `result.totalReceived` — "Total received" / "Total diterima" — beside `totalEarned(split)`, which is computed by the now-advisory client scoring module.** Under **O-5** that number is not authoritative, and under **O-1** nothing is granted until full playback *and* answered questions. Today the server’s `complete` refuses every completion, so the figure is **certainly** unreceived at the moment it is shown
 - ⚠️ **This is risk 44 again in a different component.** That one was a live “Reward so far” tally implying accrual; this is a past-tense claim that money has arrived. **“Received” is a statement of fact about money**, and both the ACL and its Indonesian equivalent reach conduct that misleads about what a consumer will get
-- [ ] Copy states what is true at the moment it renders — an **expectation**, not a receipt — in both locales, and the test asserting the old string is updated to assert the new meaning rather than deleted
+- [x] Copy states what is true at the moment it renders — an **expectation**, not a receipt — in both locales. `result.totalReceived` ("Total received" / "Total diterima") is gone, replaced by `result.totalExpected` ("Total you should receive" / "Total yang akan kamu terima") plus a `result.totalPendingNote` stating the points are not in the balance yet and land once the campaign is confirmed complete. **The test was updated to assert the meaning, not the string**: it checks the expectation label, the pending note, and that no receipt word (`received` / `diterima`) appears at all, in both locales — so reintroducing the claim under any key name fails it. **Sabotage-proved**: setting the label back to "Total received" turned two tests red; reverting turned them green.
 - [ ] The figure is **derived from the server’s response** once YT-0561 lands, not from a client constant. Two numbers that agree today is the duplicate-source-of-truth bug with money attached
-- [ ] ⚠️ **Sweep for the vocabulary, do not fix only this string.** Risk 44 was found by grepping `earned` / `so far` / `accrued`; add **`received` / `diterima` / `total`** to that sweep. A superseded model leaves its words behind in copy long after the logic moves
-
+- [x] ⚠️ **Swept, not spot-fixed.** Ran `received|diterima|earned|so far|accrued|didapat|terkumpul|kamu dapat` across every catalogue in both locales. Six hits, one defect: `wallet.history.earned` is past tense about a grant that genuinely happened, `burn.error.holdbackBody` describes points already held, and `wallet.emptyState.body` is a generic description of how points are obtained. Worth recording that `public.campaign.ctaHeading` is already **"Yang akan kamu dapatkan"** — *what you will get* — so the correct future framing was present elsewhere in the product while this screen claimed receipt.
+- ⛔ **The second criterion is genuinely blocked and stays open.** It requires the figure to be derived from the server's response, and that response is **YT-0561** — `todo`, P0, `value` epic, not this one. Until it lands the number still comes from the advisory client scoring module, so the duplicate-source-of-truth problem is unfixed even though the copy no longer lies about it. Ticking this on a corrected label would be exactly the trimmed bar this board keeps auditing: the copy fix makes the screen honest, not correct.
 ### YT-0583 · Surface merchant locations in the web app and the BFF
 `todo` · P0 · web · 1d · dep: YT-0502
 
@@ -136,3 +136,17 @@
 - [ ] The seam is a single module, so a second surface cannot quietly reintroduce a fixture import
 - [ ] **A test fails if any `apps/web` feature imports a mock generator directly** — the property, not the instance, since 13 of 13 sources were stubbed and a per-source check would pass as each one is migrated
 - [ ] Failure is visible: an unavailable API renders a stated error state, never silently-empty content that reads as "no results"
+
+### YT-0603 · The `id-ID` default was removed from one file and survives in two
+`todo` · P0 · web · 4h · dep: —
+
+- ⛔ **Filed 2026-09-22 by `yourtal-fe` while verifying the fix for the previous instance. `listingDistricts` and `listingDistrictLabel` have live production call sites that omit the locale and fall through to `"id-ID"`** — unlike `campaign-format.ts`, where every production caller passed it explicitly and only tests relied on the default:
+  - `apps/web/features/public/public-offer-content.tsx` → `listingDistricts(listing)` — **a public page, so it serves `/au`**
+  - `apps/web/features/store/store-offer-card.tsx` → `listingDistricts(listing)`, twice
+  - `apps/web/features/store/store-listing-card.tsx` → `listingDistrictLabel(listing)`
+- ℹ️ **What it actually affects is collation, not translation**: `listing-locations.ts:41` sorts districts with `a.localeCompare(b, locale)`. So an Australian shopper sees the same district names in **Indonesian collation order**. Small, real, and on the primary market's storefront
+- ⚠️ **The interesting half is that the previous fix was applied to the INSTANCE and not the PROPERTY.** `yourtal-ca` measured `campaign-format.ts`, `yourtal-5f` removed its default, and the compiler enumerated all seven dependent sites — **all in tests, no production path**, exactly as measured. That was a clean fix. But the same shape sat in `listing-locations.ts` (2) and `campaign-scoring-copy.ts` (2) and was not swept, because the finding named a file rather than a pattern. **This board keeps recording "name the property, not the instance" and this is the fourth time it has cost something**
+- ℹ️ `campaign-scoring-copy.ts`'s two defaults are currently harmless — its only production caller, `campaign-entry-card.tsx`, passes `locale` explicitly. **Fix them anyway**: harmless-today is what `listing-locations.ts` was before someone added a caller
+- [ ] **No `SupportedLocale` parameter anywhere in `apps/web` has a default value** — the property, checked across the workspace rather than in the three files named here
+- [ ] Every affected call site passes a resolved locale, so the omission is a **compile error** rather than a wrong-language render
+- [ ] A test fails if a default is reintroduced, since this is now the second time the same shape has been fixed and the first fix did not prevent the second

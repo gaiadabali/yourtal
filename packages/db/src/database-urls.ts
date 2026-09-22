@@ -60,3 +60,15 @@ export const LEDGER_URL = `postgres://yourtal_ledger:ledger_local_only@${HOST}/$
 
 /** The voucher service's credential: the sole minter and mutator of vouchers. */
 export const VOUCHER_URL = `postgres://yourtal_voucher:voucher_local_only@${HOST}/${DB_NAME}`;
+
+/**
+ * The ANALYSIS role (YT-0125). Reads per-user checkpoint answers, which
+ * `yourtal_app` deliberately cannot — that missing SELECT is what makes
+ * "never exposed per-user to the business" a property rather than a
+ * convention.
+ *
+ * It exists here so the boundary can be TESTED, and for no other reason.
+ * Nothing that serves an HTTP request may connect as this role: doing so
+ * would dissolve the control with no schema change for anyone to notice.
+ */
+export const ANALYST_URL = `postgres://yourtal_analyst:analyst_local_only@${HOST}/${DB_NAME}`;

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import pg from "pg";
-import { APP_URL, OWNER_URL } from "./database-urls";
+import { ANALYST_URL, APP_URL, OWNER_URL } from "./database-urls";
 
 /**
  * "Answers stored against the campaign, never exposed per-user to the
@@ -18,6 +18,7 @@ const { Pool } = pg;
 
 let app: pg.Pool;
 let owner: pg.Pool;
+let analyst: pg.Pool;
 /** Fixed and unique to this suite, so no other file can reach them. */
 const campaignId = "d1d1d1d1-0000-4000-8000-0000000c0122";
 const merchantId = "d1d1d1d1-0000-4000-8000-0000000b0122";
@@ -28,6 +29,7 @@ const sessionId = "d1d1d1d1-0000-4000-8000-0000000e0122";
 beforeAll(async () => {
   app = new Pool({ connectionString: APP_URL, max: 4 });
   owner = new Pool({ connectionString: OWNER_URL, max: 2 });
+  analyst = new Pool({ connectionString: ANALYST_URL, max: 2 });
 
   // This suite builds its ENTIRE fixture — campaign, terms, question,
   // option, session — rather than borrowing seeded rows, and that is not
@@ -86,6 +88,7 @@ afterAll(async () => {
   await owner.query(`DELETE FROM campaign.terms_version WHERE campaign_id = $1`, [campaignId]);
   await owner.query(`DELETE FROM campaign.campaigns WHERE id = $1`, [campaignId]);
   await app.end();
+  await analyst.end();
   await owner.end();
 });
 
@@ -162,6 +165,76 @@ describe("campaign.question_response", () => {
     await expect(record(questionId, null)).rejects.toThrow(
       /question_response_carries_an_answer|violates check/i,
     );
+  });
+
+  /**
+   * The role YT-0122's migration named and deliberately did not create.
+   *
+   * `yourtal_app`'s missing SELECT is only a boundary if something else
+   * holds that SELECT and is unreachable from an HTTP handler. These
+   * assert both halves: the analyst can do its job, and the application
+   * cannot become it.
+   */
+  it("lets the ANALYST read the per-user rows the app cannot", async () => {
+    await record();
+
+    const { rows } = await analyst.query<{ n: string }>(
+      `SELECT count(*)::text AS n FROM campaign.question_response WHERE session_id = $1`,
+      [sessionId],
+    );
+    expect(rows[0]?.n).toBe("1");
+  });
+
+  it("REFUSES the analyst the answer key — correctness is already scored on the row", async () => {
+    // Withholding the key is not symbolic. A process that could read both
+    // the answers and the key is one compromise away from being able to
+    // answer every question in the bank correctly, and it needs neither:
+    // `was_correct` is written at answer time.
+    await expect(
+      analyst.query(`SELECT * FROM campaign.question_answer_key LIMIT 1`),
+    ).rejects.toThrow(/permission denied/i);
+  });
+
+  it("lets the analyst retire a question, and nothing else on it", async () => {
+    await expect(
+      analyst.query(
+        `UPDATE campaign.question SET status = 'retired', retired_reason = $2 WHERE id = $1`,
+        [questionId, "population accuracy jumped — YT-0125"],
+      ),
+    ).resolves.toBeDefined();
+
+    // Column-level grant: retirement is a write, but the role must not be
+    // able to edit a prompt or a timer. A role that can retire a question
+    // and nothing else can be wrong; it cannot be catastrophic.
+    await expect(
+      analyst.query(`UPDATE campaign.question SET prompt = 'rewritten' WHERE id = $1`, [
+        questionId,
+      ]),
+    ).rejects.toThrow(/permission denied/i);
+
+    await owner.query(`UPDATE campaign.question SET status = 'approved', retired_reason = NULL WHERE id = $1`, [
+      questionId,
+    ]);
+  });
+
+  /**
+   * The negative the whole control rests on.
+   *
+   * If `yourtal_app` were ever granted membership of `yourtal_analyst`, the
+   * application would inherit the SELECT and every business surface could
+   * read per-user answers again — with no schema change, and with grants
+   * that still read as deliberate. Asserted against `pg_auth_members`
+   * rather than against intent.
+   */
+  it("REFUSES the app role membership of the analyst role", async () => {
+    const { rows } = await owner.query<{ n: string }>(
+      `SELECT count(*)::text AS n
+         FROM pg_auth_members m
+         JOIN pg_roles member ON member.oid = m.member
+         JOIN pg_roles granted ON granted.oid = m.roleid
+        WHERE member.rolname = 'yourtal_app' AND granted.rolname = 'yourtal_analyst'`,
+    );
+    expect(rows[0]?.n, "yourtal_app must never inherit the analyst's SELECT").toBe("0");
   });
 
   it("REFUSES a negative latency", async () => {

@@ -1,0 +1,42 @@
+-- The Reward Engine may read the partner's per-campaign reward.
+--
+-- `campaign.reward_config` (20260920000012) exists so a PARTNER decides what
+-- their own campaign pays: `reward_points_per_completion`, an accuracy bonus,
+-- a `max_points_for_campaign` ceiling, and which allocation funds it. That
+-- migration's own comment says the link "is checked by the Reward Engine at
+-- grant time, which is the only place it can be enforced honestly anyway".
+--
+-- It was never checked, because the engine could not see the table:
+--
+--   has_table_privilege('yourtal_ledger','campaign.reward_config','SELECT') -> false
+--   has_schema_privilege('yourtal_ledger','campaign','USAGE')               -> false
+--
+-- So `services/ledger/internal/reward` grants a global constant from its own
+-- taxonomy instead, and a partner who sets 5,000 points per completion has
+-- their viewers paid 2,400 with nothing reporting the disagreement. The
+-- design was written down, the storage was built, and the privilege that
+-- makes it reachable was the piece nobody added.
+--
+-- ## Least privilege, deliberately narrower than the zone
+--
+-- SELECT on ONE table, not the schema. `campaign.campaigns` is NOT granted:
+-- `reward_config` is keyed by `campaign_id` and already carries every value
+-- a grant decision needs, so reading the campaign row would widen the
+-- crossing and buy nothing. No INSERT, UPDATE or DELETE — the engine is a
+-- consumer of the partner's decision and must never be able to edit it.
+--
+-- ## Why this crossing is not the one the zone separation forbids
+--
+-- 20260920000012 is careful that `apps/api` must not read value-zone state,
+-- because that would hand the business surface a dependency on the ledger
+-- and make the separation decorative. This is the other direction and a
+-- different kind of read: the value zone reading a small, partner-authored
+-- parameter table in order to pay the amount the partner chose. The engine
+-- still owns every value decision; it is being told the price, not asked to
+-- trust a balance.
+--
+-- Authorised by the founder 2026-09-22, who also confirmed the underlying
+-- model: reward values, vouchers and points are the partner company's
+-- decision, per campaign, not a YourTal-wide price list.
+GRANT USAGE ON SCHEMA campaign TO yourtal_ledger;
+GRANT SELECT ON campaign.reward_config TO yourtal_ledger;

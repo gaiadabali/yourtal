@@ -178,6 +178,23 @@ Five distinct ways to get a failure on this machine that says nothing about the 
     - **The index can be staged to delete a file that exists on disk AND in `HEAD`.** `git status` does not show this at all — only `git diff --cached` does. Found by `yourtal-6c` with `.githooks/pre-commit` in exactly that state, so every working copy showed a guard that the next commit would have removed.
     - And the mirror: **read the numstat, not the names.** During the restore, `git diff --cached` listed exactly the intended paths while `--numstat` showed pure deletion.
 
+    **Rung 6, and the first to damage another session's history rather than its own.** `yourtal-4d` ran `git reset --soft HEAD~1` to amend a file out of their own commit — **on the assumption that `HEAD` was still theirs.** Another session had committed in between, so `HEAD~1` was *their* commit and the reset undid *someone else's*. Caught from the reflog and restored within a minute, nothing lost, and the recorder verified the restoration independently rather than accepting the report.
+
+    So: **`HEAD` is shared state too.** Every relative ref — `HEAD~1`, `@{1}`, `--amend` — silently means something different the moment another session commits. **Never use a relative ref in a shared checkout.** Resolve the absolute SHA, confirm it is the commit you think it is, and operate on that: `git reset --soft <sha>` would have been harmless.
+
+    **And two rules this file already carried were in direct conflict, which is what caused the third provenance incident.** *"Size the diff before staging"* requires `git add` → inspect → `git commit`, and that opens a window on the shared index measured in seconds. *"Use `git commit -- <paths>`"* closes the window but commits without letting you look first. `yourtal-6c` followed the inspection rule and lost the race; `infra/PORTS.md`, 117 lines of theirs, is committed under a watch-epic seek-guard message that says nothing about a port registry.
+
+    **The resolution is that the index is never the right place to stage something you are about to read:**
+
+    ```sh
+    git diff --numstat -- <paths>   # inspect the WORKING TREE; touches no index
+    git commit -- <paths>           # commit those paths directly
+    ```
+
+    Inspection with zero shared-index occupancy. **Three provenance incidents in one day, by three different sessions, each following advice that was correct in isolation** — which is the evidence that this is a property of the shared checkout and not a discipline problem.
+
+    **Nobody rewrote history to repair any of the three, and that is the right call.** The content is correct and intact in each; the cost of leaving it is an unexplained file in one commit, and the cost of fixing it is an interactive rebase across five sessions' branch — precisely the reasonable-sounding fix that produced the 607-line deletion. **The record is the repair.**
+
     **Lead with this if it goes anywhere else:** a private index *sounds like* the correct engineering answer to a shared checkout, which is exactly why the next person will reach for it. Retracted and restated by `yourtal-4d`, who proposed it and whose own work it deleted.
 
     **The instance is the bad case rather than the easy one.** `yourtal-08` renumbered off a duplicate id on 2026-09-21 and left one cross-reference reading *"Now **YT-0595**"*. A dangling `YT-9999` dies at the first reader; this validated green and read as correct, because YT-0595 was **plausible and briefly true** — it named 08's own unsaved draft. **Nothing changed in the pointer; the world changed underneath it.** Found by grepping their own pointers rather than trusting the green.

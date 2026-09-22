@@ -129,7 +129,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - ℹ️ Goes to `review`, not `done`: the founder performed the review and `yourtal-0c` recorded it, so a **third** session still owes the independent check
 
 ### YT-0044 · Invariant checker and daily proof
-`doing` · P0 · value · 3d · dep: YT-0042
+`doing` · P0 · value · 3d · dep: YT-0042, YT-0567
 
 - [x] Continuous job proves every transfer balances — **every 15 minutes in `cmd/ledger`, not nightly**, because a nightly checker leaves a whole day in which the ledger is wrong and nobody knows
 - [x] **"Every cached balance matches entries" is satisfied structurally: there are no cached balances.** `Balance` is a projection over entries, so the invariant is unfalsifiable because the thing it guards against was designed out. Recorded rather than quietly ticked, because a criterion that is true by absence and one that is true by checking are not the same claim
@@ -141,6 +141,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [x] ⚠️ **Two tests initially skipped and were fixed rather than accepted** — the tamper test and the prove-once test, the two that matter most, in the suite whose entire point is that a silent skip proves nothing. Each now takes an exclusive historical day and cleans up after itself. **The fix is cleanup, not a skip.** 11 tests, zero skips, repeatable
 - [ ] ⚠️ **Held back from `review` on 2026-09-20 by YT-0567.** This ticket's proof is its test suite, and part of that suite is **non-deterministic across package boundaries**: `TestInvariantCheckerFindsNoImbalance` scans the whole ledger while `internal/proof` deliberately unbalances it, and the two packages share one Postgres under a concurrent `go test`. The isolation this ticket claims — _"an exclusive historical day and cleans up after itself"_ — holds **within** the proof package and not **between** packages
 - [ ] ⚠️ The production checker is not implicated; the evidence for it is. **A ticket whose entire claim is "the proof runs and cannot silently skip" cannot be verified by a suite that fails depending on scheduling.** Re-offer for review once YT-0567 lands
+- ✏️ **The dependency between this ticket and YT-0567 was recorded BACKWARDS, and the board offered the wrong one as startable.** YT-0567 carried `dep: YT-0044` while **both of this ticket's open criteria say they are blocked by YT-0567** — so the prose and the machine-readable graph disagreed, and only the prose was right. Corrected 2026-09-22: YT-0567 now depends on YT-0547, and this ticket depends on YT-0567. **The chain is YT-0547 → YT-0567 → YT-0044**, which is what `yourtal-0c` described and what the dashboard now computes
 
 ### YT-0045 · Reward Engine skeleton
 `doing` · P0 · value · 5d · dep: YT-0042
@@ -283,7 +284,7 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] No PII in analytics events without a consent check
 
 ### YT-0567 · The clean-ledger invariant test races the proof test's tamper window
-`todo` · P0 · value · 2d · dep: YT-0044
+`todo` · P0 · value · 2d · dep: YT-0547
 
 - **Found 2026-09-20 by running Go under the repo gate for the first time.** `TestInvariantCheckerFindsNoImbalance` (`internal/ledger/transfer_test.go`) failed with `found 1 imbalanced transfers: [{led_txn_proof_… 3}]`. The `3` is not a coincidence: `internal/proof/proof_test.go:280` does `UPDATE ledger.entry SET amount_minor = amount_minor + 3` to prove a tamper is detected, and restores it in a `defer`
 - **The two packages share one Postgres and `go test` runs package binaries concurrently.** While proof's tamper window is open, the ledger package asserts the whole ledger balances. It does not
@@ -295,6 +296,10 @@ The live symptom is `region-mock-au-listing.ts`, whose own header calls it "the 
 - [ ] **The restores are `_, _ = super.Exec(...)` — errors discarded.** A failed restore, a `SIGINT` or a panic leaves permanent imbalance in the shared dev database and nobody is told. Assert the restore, or make cleanup not required for correctness
 - [ ] Sabotage-prove it: hold a tamper window open deliberately and confirm the chosen mechanism reports the *right* answer rather than merely a green one
 - [ ] Remove `-p 1` from `services/*/package.json` once the fix lands, and confirm the suite is still deterministic without it
+- ⏭️ **Criterion 1 belongs to YT-0547, not here — `dep` added 2026-09-22 on `yourtal-0c`'s finding.** This ticket says *"decide the mechanism … a database per test package"*; **YT-0547's own criterion already reads *"each package that touches Postgres gets its own database, created and dropped by its own setup"*.** Same mechanism, different epic (`platform`). Building it in `value` would be the 15-minute price lock again — one control implemented twice, drifting apart
+- ℹ️ **The chain is YT-0547 → YT-0567 → YT-0044**, and it is worth stating because the downstream reach is larger than any of the three tickets shows: **YT-0044 is held at 8/10 by this ticket, and both of its open criteria say so.** YT-0547 is `platform`'s and `doing`
+- ✅ **Criterion 3 landed in `2d3f7a7` and its sabotage produced the ticket's original symptom from the other direction.** The two tamper restores were `_, _ = super.Exec(...)` in a `defer`; `tamperBalance` now asserts the restore **and** re-reads the transfer to confirm entries sum to zero — **necessary and not sufficient, because an UPDATE matching zero rows succeeds.** Neutering the restore failed three tests, the third being `TestACleanLedgerPagesNobody` **failing from a sibling's leaked tamper**: the same corruption arriving through a failed cleanup rather than through concurrency, which **no amount of test isolation would have prevented.** So criteria 1 and 3 are complements, not alternatives
+- ✏️ **Half of criterion 2 is impossible and the ticket should say so.** It offers *"stop being unbalanced, or stop being visible"*. The first cannot apply — `proof_test.go:240`'s own comment is *"break the balance with a superuser, which is the only thing that can"*, so **the imbalance IS the subject of those two tests** and a balanced tamper deletes what is under test. Contrast `:149`, which keeps its transfer balanced deliberately because that test's subject is a change the balance check cannot see. Narrow criterion 2 to visibility only
 
 ### YT-0593 · The ledger's four v1 routes are all 501
 `todo` · P0 · value · 3d · dep: YT-0042, YT-0036, YT-0515

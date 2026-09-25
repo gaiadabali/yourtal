@@ -32,7 +32,7 @@
     "react-hook-form": "^7.88.0",
     "server-only": "^0.0.1",
     "serwist": "^9.5.12",
-    "web-vitals": "4.2.4",
+    "web-vitals": "6.2.0",
     "zod": "4.6.5"
   },
   "devDependencies": {

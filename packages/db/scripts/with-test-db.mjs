@@ -140,6 +140,8 @@ const childEnv = {
   // `packages/db/src/database-urls.ts` builds APP_URL/OWNER_URL/LEDGER_URL/
   // VOUCHER_URL from this instead of the literal "yourtal".
   TEST_DATABASE_NAME: dbName,
+  // Each run counts rate limits in its own keyspace of the shared Valkey.
+  RATE_LIMIT_NAMESPACE: dbName,
   // YT-0571: the Go services' own test-only guard (internal/testdb, each
   // service) reads these directly — they have no TEST_DATABASE_NAME
   // fallback path to derive them from, unlike the TS side. Same roles as

@@ -76,6 +76,13 @@ export const envSchema = z.object({
   REDIS_URL: z.url().default("redis://127.0.0.1:26379"),
 
   /**
+   * Separates rate-limit counters that share one Valkey database. Test runs
+   * set it to their own test database name (`with-test-db.mjs`), so one
+   * run's route-wide counts never refuse the next.
+   */
+  RATE_LIMIT_NAMESPACE: z.string().default(""),
+
+  /**
    * TASKS.md 1.2.d. `fake` runs `FakeLedgerClient`/`FakeVoucherClient`
    * against `platform.{ledger,voucher}_fake_*` — real semantics, no network
    * call. `live` calls the real services over HTTP, signed with

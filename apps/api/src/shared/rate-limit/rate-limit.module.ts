@@ -1,4 +1,8 @@
 import { Global, Module } from "@nestjs/common";
+import type { Redis } from "ioredis";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
+import { REDIS_CLIENT } from "../redis/redis-client.module";
 import { RateLimitService } from "./rate-limit.service";
 
 /**
@@ -13,7 +17,14 @@ import { RateLimitService } from "./rate-limit.service";
  */
 @Global()
 @Module({
-  providers: [RateLimitService],
+  providers: [
+    {
+      provide: RateLimitService,
+      useFactory: (redis: Redis, config: AppConfig) =>
+        new RateLimitService(redis, config.rateLimitNamespace ?? ""),
+      inject: [REDIS_CLIENT, APP_CONFIG],
+    },
+  ],
   exports: [RateLimitService],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100

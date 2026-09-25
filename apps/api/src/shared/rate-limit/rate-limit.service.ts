@@ -111,7 +111,11 @@ const KEY_PREFIX = "yt:ratelimit";
 
 @Injectable()
 export class RateLimitService {
-  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}
+  private readonly prefix: string;
+
+  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis, namespace = "") {
+    this.prefix = namespace === "" ? KEY_PREFIX : `${KEY_PREFIX}:${namespace}`;
+  }
 
   /**
    * Counts this request against every configured dimension and returns the
@@ -202,6 +206,6 @@ export class RateLimitService {
   }
 
   private keyFor(dimension: RateLimitDimension, routeId: string, subject: string): string {
-    return `${KEY_PREFIX}:${dimension}:${routeId}:${subject}`;
+    return `${this.prefix}:${dimension}:${routeId}:${subject}`;
   }
 }

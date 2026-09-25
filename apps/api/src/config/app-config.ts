@@ -17,6 +17,7 @@ export interface AppConfig {
   readonly databaseUrl: string;
   /** Valkey (YT-0540) — sessions and login throttle counters. */
   readonly redisUrl: string;
+  readonly rateLimitNamespace?: string;
   /** TASKS.md 1.2.d — `LedgerInternalClient`/`VoucherInternalClient`'s fake-vs-live switch. */
   readonly ledger: {
     readonly mode: Env["LEDGER_MODE"];
@@ -49,6 +50,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
     },
     databaseUrl: env.DATABASE_URL,
     redisUrl: env.REDIS_URL,
+    rateLimitNamespace: env.RATE_LIMIT_NAMESPACE,
     ledger: {
       mode: env.LEDGER_MODE,
       baseUrl: env.LEDGER_BASE_URL,

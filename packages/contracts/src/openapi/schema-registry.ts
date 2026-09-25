@@ -48,6 +48,12 @@ import {
   walletVoucherSchema,
 } from "../wallet/wallet";
 import {
+  checkoutQuoteRequestSchema,
+  checkoutQuoteSchema,
+  checkoutRequestSchema,
+  checkoutResultSchema,
+} from "../checkout/checkout";
+import {
   ageBandSchema as identityAgeBandSchema,
   displayLocaleSchema,
   userProfileSchema,
@@ -449,6 +455,33 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "WalletQr",
     schema: walletQrSchema,
     description: "A short-lived signed token a counter scans to redeem the voucher.",
+    crossFieldRules: [],
+  },
+
+  // --- checkout ---
+  {
+    id: "CheckoutQuoteRequest",
+    schema: checkoutQuoteRequestSchema,
+    description: "Ask for a listing's points price, held for 15 minutes (4.7).",
+    crossFieldRules: [],
+  },
+  {
+    id: "CheckoutQuote",
+    schema: checkoutQuoteSchema,
+    description: "A held points price. Confirm it with checkoutId before expiresAt.",
+    crossFieldRules: [],
+  },
+  {
+    id: "CheckoutRequest",
+    schema: checkoutRequestSchema,
+    description: "Confirm a quoted checkout. Send an Idempotency-Key; a retry never spends twice.",
+    crossFieldRules: [],
+  },
+  {
+    id: "CheckoutResult",
+    schema: checkoutResultSchema,
+    description:
+      "done: the voucher is in the wallet. pending: the points are spent and the voucher is still being issued; it finishes on its own.",
     crossFieldRules: [],
   },
 

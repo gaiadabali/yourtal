@@ -242,3 +242,54 @@ export const WALLET_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     errors: [...WALLET_ERRORS, VOUCHER_NOT_FOUND],
   },
 ];
+
+// --- checkout.controller.ts ---
+//
+// A refusal is a 409 carrying one closed ledger code (insufficient_available,
+// quote_expired, region_mismatch, audience_blocked, ...); the web words it.
+
+const CHECKOUT_REFUSED: RouteErrorResponse = {
+  status: 409,
+  description:
+    "Refused with a closed code: insufficient_available, quote_expired, region_mismatch, audience_blocked or idempotency_conflict.",
+  documented: false,
+};
+
+export const CHECKOUT_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "post",
+    path: "/api/checkout/quote",
+    summary: "Hold a listing's points price for 15 minutes",
+    tags: ["checkout"],
+    pathParams: [],
+    requestBody: { description: "The listing to buy.", schema: ref("CheckoutQuoteRequest") },
+    successStatus: 201,
+    successDescription: "The held price and the checkout to confirm.",
+    successSchema: ref("CheckoutQuote"),
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      PDP_UNAVAILABLE,
+      { status: 404, description: "The listing is not available.", documented: false },
+      CHECKOUT_REFUSED,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/checkout",
+    summary: "Spend the held points and issue the voucher, exactly once",
+    tags: ["checkout"],
+    pathParams: [],
+    requestBody: { description: "The quoted checkout.", schema: ref("CheckoutRequest") },
+    successStatus: 200,
+    successDescription: "The voucher, issued or still being issued.",
+    successSchema: ref("CheckoutResult"),
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      PDP_UNAVAILABLE,
+      { status: 404, description: "No such checkout for this caller.", documented: false },
+      CHECKOUT_REFUSED,
+    ],
+  },
+];

@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 31/44 | `███████░░░`  70% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 4/7 | 31/44 | `███████░░░`  70% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 23/52 | `████░░░░░░`  44% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **16/82** | **130/366** | `████░░░░░░`  36% |
+| **All** | | | **17/82** | **130/366** | `████░░░░░░`  36% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 1.2 ✅ on `main`, resumed (`phase/4`). Done early (F21/F22/F24): 4.1.a, 4.2, 4.3.a–d, 4.4.e/f/h/i/k, 4.9.b/c, 4.6.a–e, the 4.3.e burn engine. Now 4.1.b live routes, then 4.1.c client, 4.3.e route, 4.5 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1 ✅ (98d7aa1); 1.2 ✅ (bbf01bd); 1.3 ✅ (199958e). A (`yourtal-3`, `phase/1`) done with 1.5.d and 1.5.c (don't need 1.4); STOPPED before 1.5.a/b/e/f — 1.4 still 🔄 (only 1.4.f open per its own line, but the task isn't ✅ yet). B (`yourtal-p1-b`, `phase/1-b`) still on 1.4 → rest of 1.6 → 1.7; C (`yourtal-p1-c`, `phase/1-c`) done with 1.2.f |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1 ✅ (98d7aa1); 1.2 ✅ (bbf01bd); 1.3 ✅ (199958e); 1.4 ✅ (da67873) — A's 1.5.a/b/e/f are unblocked. A (`yourtal-3`, `phase/1`) done with 1.5.c/d, stopped before 1.5.a/b/e/f pending this; B (`yourtal-p1-b`, `phase/1-b`) now on the rest of 1.6 (AuthService email-driver wiring, `/dev/inbox`, 1.6.d Check) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) done with 1.2.f |
 
 ## Decisions for the founder
 
@@ -466,7 +466,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.3.d `apps/api/src/shared/testing/session-for.ts` (register + login → cookie) for everyone's tests. Until 1.5.a lands it **also returns the matching `x-yt-*` headers**, so a test passes both before and after 1.5.a. The boot tests move onto it in 1.5.a.
   - [x] 1.3.e **Check:** a new job file is picked up without editing any other file, and a new route passes route-drift once it is added to its area's registry. Verified: `apps/worker/src/job-loader.test.ts` adds `second.job.ts` next to `real.job.ts` with no other file touched; `packages/contracts/src/openapi/route-drift.test.ts` passes for the whole `apps/api` route set against the concatenated `route-registry.{a,b,c}.ts`.
   - [x] 1.3.f (requested by 4) `pnpm --filter @yourtal/db test` is red on `main` since 199958e: `seed.test.ts` fails 3 tests ("is idempotent" hits `question_option_question_id_fkey` in `seed/studio.ts:244`, plus the question-bank 3x and chapter checks). `pnpm check` does not run this suite, so the merge gate stayed green. — Fixed (cfd14af, merged f421695): the real bug was `question-bank.test.ts` borrowing a real seeded "live" campaign and deleting its `campaign.question` rows in `beforeEach`, racing `seed.test.ts`'s own concurrent idempotency check (`fileParallelism` is on for this package). It now clones a private campaign row in `beforeAll` instead, which `seed()` never iterates. Confirmed with three consecutive full runs (99/99) before merging, green again after every subsequent rebase.
-- [ ] **1.4 Accounts and profile** · needs: 1.1 — 🔄 slot 3 — b, c merged (beea3ce, b1bb6fd); a, d merged as a WIP checkpoint (8196a94), still being verified; e, f open
+- [x] **1.4 Accounts and profile** · needs: 1.1 — ✅ 2026-09-26 da67873
   - [x] 1.4.a Add a migration for `identity.user_profile` with these fields:
     - `region` AU | ID, immutable after signup;
     - `display_locale`, defaulting to `en-AU` and independent of region;
@@ -1259,6 +1259,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · B · 1.4 Accounts and profile done: email verification stores `identity.credential.verified_at` (1.4.e), and DSAR erasure for `identity.user_profile`/`.credential`/`.session` plus business membership, one `identity` domain handler registered with `dsar-orchestrator` (1.4.f) · da67873
 - 2026-09-26 · B · ⚠️ Slot 2 ran `git checkout -- TASKS.md` in the main checkout by mistake, discarding any tick made after b0519b7 that was not yet committed. If a tick of yours is missing, please re-tick it · b0519b7
 - 2026-09-25 · A · 1.2 Internal ledger and voucher contracts: `ledger-internal`/`voucher-internal` operation types (1.2.a-b), the shared closed error enum (1.2.c), `FakeLedgerClient`/`FakeVoucherClient` with real semantics against `platform.ledger_fake_*`/`voucher_fake_*` plus HTTP twins waiting on 4.1/4.5 (1.2.d), contract specs (1.2.e), and getSettings/proposeSetting/approveSetting wired onto C's `platform.region_setting` (1.2.g) · bbf01bd
 - 2026-09-25 · B · 3.4 Primitives: 11 reworked onto tokens v2 with every v1 export and variant kept, 26 new ones, all in the `/lab/ui` gallery; console and merchant screens still render · ec58a47

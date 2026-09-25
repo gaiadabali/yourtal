@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 3/43 | `█░░░░░░░░░`   7% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 1/6 | 8/32 | `███░░░░░░░`  25% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 5/49 | `█░░░░░░░░░`  10% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 10/49 | `██░░░░░░░░`  20% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **10/82** | **62/362** | `██░░░░░░░░`  17% |
+| **All** | | | **10/82** | **67/362** | `██░░░░░░░░`  19% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`): 4.1.a ✅, 4.2 ✅, now 4.3.a–d. 4.1.b/c, 4.3.e and 4.4+ wait for 1.2 |
+| 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`, F21/F22): 4.1.a ✅, 4.2 ✅, 4.3.a–d ✅ (0f18df1); now 4.4.f, 4.4.i, 4.9.b, 4.6.a–e. Routes and TS clients wait for 1.2 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1 ✅ (0.4.h can go now: `test:rendered` exists). Now 3.2 prototypes |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); agent B on helper `yourtal-p1-b` (`phase/1-b`) merged 1.3.a/c/d, stopped ⛔ waiting on 1.1 ✅ for 1.3.b and 1.3's Check, then 1.4 and 1.6; 1.5 and 1.7 last |
 
@@ -122,6 +122,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F19** | Only `web-gaiada` can push to `gaiadabali/yourtal`; the active gh account cannot | **Push as web-gaiada** through a one-off credential helper, without switching the active account. Until FA1 gives `hansel-gaiada` write access. |
 | **F20** | The shared `yourtal` dev database was full of Go-test leftovers, some not whole Rupiah, so 0.7's migration refused it | **Recreate it clean** (migrations + seed), done 2026-09-25. Slot databases untouched. |
 | **F21** | Phase 4 is gated on Phase 1, which had just started | **Start Phase 4's Go-only parts early** in slot 1: 4.1.a, 4.2 and 4.3.a–d touch only `services/**` and add-only migrations, not 1.2's contracts. Everything that needs 1.2 still waits for it. |
+| **F22** | F21's early scope was done and 1.2 had not started | **More Go-only fixes** in slot 1, inside `services/**` only: 4.4.f, 4.4.i, 4.9.b, then the voucher defects 4.6.a–e. HTTP routes, TS clients and anything needing 1.2's contracts still wait for 1.2. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -713,14 +714,14 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     | Reversal | the exact inverse, referencing the original transfer |
   - [x] 4.2.d **Check:** a trial balance by account kind passes. After a 100-pt grant, points outstanding = +100, and coverage is not reported as "no points outstanding".
 - [ ] **4.3 Ledger guards** · needs: 4.2 (4.3.a–d early, F21; 4.3.e waits for 1.2) — 🔄 slot 1
-  - [ ] 4.3.a Overdraft guard: a per-account `pg_advisory_xact_lock`, and no debit below zero, for user available, pending and escrow, marketing cash and merchant payable. Test: two concurrent burns of 400 and 400 on a balance of 500 → exactly one succeeds (EM-04).
-  - [ ] 4.3.b A trigger enforces `entry.currency = account.currency`, and balance queries filter by currency (EM-09).
-  - [ ] 4.3.c Idempotency: store a request hash, so the same key with a different payload returns `idempotency_conflict` and a replay returns the original result (EM-14). Transfer and grant IDs include the user ID (EM-17, EW-13).
-  - [ ] 4.3.d Seal transfers:
+  - [x] 4.3.a Overdraft guard: a per-account `pg_advisory_xact_lock`, and no debit below zero, for user available, pending and escrow, marketing cash and merchant payable. Test: two concurrent burns of 400 and 400 on a balance of 500 → exactly one succeeds (EM-04).
+  - [x] 4.3.b A trigger enforces `entry.currency = account.currency`, and balance queries filter by currency (EM-09).
+  - [x] 4.3.c Idempotency: store a request hash, so the same key with a different payload returns `idempotency_conflict` and a replay returns the original result (EM-14). Transfer and grant IDs include the user ID (EM-17, EW-13).
+  - [x] 4.3.d Seal transfers:
     - a trigger forces `created_at = now()`, and entries cannot be added to a transfer from an earlier transaction (EM-18);
     - `validate` uses checked int64 addition, and the checker sums as numeric (EM-23).
   - [ ] 4.3.e Add `/v1/burns` (`burnForVoucher`, `getBurn`, `reinstateBurn`) on these guards, where `reinstateBurn` is K13.
-  - [ ] 4.3.f **Check:** each of EM-04/09/14/17/18/23 has a test that failed before the fix and passes after.
+  - [x] 4.3.f **Check:** each of EM-04/09/14/17/18/23 has a test that failed before the fix and passes after.
 - [ ] **4.4 The Reward Engine pays what the partner set, once** · needs: 4.3
   - [ ] 4.4.a The amount comes from the **frozen terms version**, never from the editable `reward_config`, so viewers are paid the terms they entered under (EM-05, EM-16, EW-05).
     - A migration creates the view `campaign.campaign_owner(id, business_id, region, state)`, with SELECT granted to `yourtal_ledger`.

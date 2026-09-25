@@ -30,7 +30,7 @@ Written 2026-09-25 from a full audit of the code, then checked by five independe
 Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs`.
 
 <!-- progress:start -->
-| Phase | Track | Status | Tasks | Subtasks | Progress |
+| Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | 🔄 in progress | 1/8 | 10/46 | `██░░░░░░░░`  22% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/42 | `░░░░░░░░░░`   0% |
@@ -49,15 +49,38 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **All** | | | **1/81** | **10/351** | `░░░░░░░░░░`   3% |
 <!-- progress:end -->
 
+## Running order: which phases to start
+
+**One session runs one phase**, from its first task to its **Done when**, in a free slot (see **Now**). Start a phase once everything in its "Starts when" column is ✅. Phases in the same wave touch different files, so they can run side by side. Run 2 or 3 sessions at once, as you like: about 6 weeks with 3 sessions, about 8 with 2.
+
+| Wave | Phase (one session each) | Starts when | Size |
+| --- | --- | --- | --- |
+| 1 | **0** Reset | now (in progress) | ~2.5d |
+| 1 | **3** Design language | 0.2.b ✅. It needs no database. Until 0.3, 0.5 and 0.7 are merged it stays out of `apps/web/features/**`, `app/(app)/**`, `app/(merchant)/**` and the existing e2e specs, and its first merge waits for 0.4. | ~6d, plus your F3 pick |
+| 2 | **1** Identity, contracts & plumbing | Phase 0 ✅ | ~4d |
+| 3 | **4** The bank is correct | Phase 1 ✅ | ~9d |
+| 3 | **5** Watch & earn | Phase 1 ✅ | ~5d |
+| 3 | **2** Staging on Helios | Phase 1 ✅. Start it as soon as a slot is free: after it, every merge is live on staging. | ~2.5d |
+| 4 | **7** Business studio | Phase 1 ✅. Its 7.7 also needs 5.4, and its UI task 7.8 needs Phase 3. | ~9d |
+| 4 | **10** Settlement, lifecycle & risk | Phase 4 ✅ | ~5d |
+| 5 | **6** Viewer app | Phases 3 and 5 ✅, plus 7.4 and 7.7 | ~7d |
+| 5 | **8** Voucher engine for clients | Phases 4 and 5 ✅ | ~5d |
+| 5 | **11** Public site | Phases 3 and 7 ✅ | ~3d |
+| 6 | **9** Staff console | Phases 7 and 10 ✅ | ~5d |
+| 6 | **12** Teen & family mode | Phases 7 and 10 ✅ | ~3d |
+| 7 | **13** Ready for live review | every other phase ✅ | ~3d |
+
+**Never run these two at once:** 4 and 10 (both rewrite `services/ledger`), and 5 and 6 (both change the player and watch flow). The waves above already keep them apart.
+
 ## Now
 
-One row per track. Update it when you start or finish a task.
+One row per slot. The session in a slot updates its row when it starts, when it finishes a task, and when it stops.
 
-| Track                  | Working on | Since | Next |
-| ---------------------- | ---------- | ----- | ---- |
-| **A** Bank & platform  | 0.8 (a–e, h done; f, g, i and the Check wait for the green gate) | 2026-09-25 | 0.2 |
-| **B** Viewer app       | —          | —     | 3.1 (starts after 0.2) |
-| **C** Business side    | —          | —     | 7.1 (starts after 1.1) |
+| Slot | Worktree | Phase | Since | Note |
+| ---- | -------- | ----- | ----- | ---- |
+| 1 | `yourtal-1` | **0** Reset (running in the main checkout until 0.2.b) | 2026-09-25 | 0.1 ✅; 0.8.a–e and 0.8.h ✅. Next: 0.2 |
+| 2 | `yourtal-2` | — free | — | Next: Phase 3, once 0.2.b ✅ |
+| 3 | `yourtal-3` | — free | — | Next: Phase 1, once Phase 0 ✅ |
 
 ## Decisions for the founder
 
@@ -118,15 +141,16 @@ One row per track. Update it when you start or finish a task.
 
 This file is how the founder sees progress without asking. **It is updated as work happens, not afterwards.** The same rule is in `CLAUDE.md`, so every session loads it.
 
-1. **Starting a task:** append `— 🔄 A` (your track letter) to the task line, and update your row in **Now**.
+1. **Starting a task:** append `— 🔄 slot 2` (your slot) to the task line, and update your slot's row in **Now**.
 2. **Finishing a subtask:** tick it `[x]` **straight away** in the **main checkout's** `TASKS.md`, then run `node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs`. Do not save ticks up for later. Re-read the file just before each edit, because other sessions are ticking too.
 3. **Finishing a task:** only when every subtask is ticked **and** its **Check** passed on merged `main`. Tick the task line, replace `🔄` with `✅ YYYY-MM-DD <short sha>`, add one line to the top of **Log**, update **Now**, then commit `TASKS.md` (command below).
 4. **Blocked:** append `— ⛔ <reason>` to the task line, note it in **Now**, and move to your next unblocked task.
 5. **New work you discover:** add it as a subtask, or as a new task at the end of the right phase, with the next free ID. **Never delete a task.** If one is dropped, append `— ✂️ cut: <reason>`; the progress script then stops counting it.
-6. **Edit only your own track's lines**, your **Now** row and your **Log** lines. Ticks are facts, so committing another session's ticks together with yours is fine.
-7. **Pick work by `needs:`.** Take the lowest-numbered task in your track whose `needs:` are all ✅ (a need like `7.2.f` means that one subtask). A phase that states its own order overrides this.
+6. **Edit only your own phase's lines**, your slot's **Now** row and your **Log** lines. Ticks are facts, so committing another session's ticks together with yours is fine.
+7. **Work in task order within your phase.** A phase that states its own order overrides this.
+   - `needs:` says what must be ✅ first; a need like `7.2.f` means that one subtask.
    - A need marked "(fake ok)" can be built now against the 1.2 fakes, or against the contract's mock data where no fake exists.
-   - Tick the Check for such a task only once the real thing is merged.
+   - Tick the Check for such a task only once the real thing is merged. If that lands after your phase ends, leave the Check open with ⛔ and the task it waits for; the next session in that phase finishes it.
 
 **What "done" means here:**
 
@@ -134,16 +158,16 @@ This file is how the founder sees progress without asking. **It is updated as wo
 - UI: **screenshots at 390 px and 1280 px, light and dark, with axe clean**.
 - A library passing its own tests is not done. That is how the old board reached "83 done" with nothing working.
 
-## Tracks and ownership
+## Areas and ownership
 
-Three sessions, one per track, each in its own git worktree. A track edits only the paths it owns. **Phase 0, task 1.1, subtasks 1.5.a, 1.5.b and 1.5.d, and 12.1.b are exempt**: they put fixes and the region and audience walls into everyone's files at once. Announce each in **Now** before starting.
+Every phase belongs to one area (A, B or C, shown in its heading). A phase session edits only its area's paths and the shared files, even when another phase of the same area is not running. **Phase 0, task 1.1, subtasks 1.5.a, 1.5.b and 1.5.d, and 12.1.b are exempt**: they put fixes and the region and audience walls into everyone's files at once. Announce each in **Now** before starting.
 
-| Track | Owns |
-| ----- | ---- |
+| Area | Owns |
+| ---- | ---- |
 | **A — Bank & platform** | `services/**` · `packages/{db,drivers,queue,idempotency,authz,jurisdiction,consent}/**` · `policies/derived_roles/**` · `apps/api/src/{main.ts,config,shared}/**` · `apps/api/src/modules/{auth,identity,checkout,wallet}/**` · `apps/worker/**` (the runner) · `apps/web/lib/api/**` · `apps/web/proxy.ts` · `apps/web/app/dev/**` (inbox, clock) · `infra/**` · `docker-compose*.yml` · `.github/**` · `.gaiadeploy.yml` · root configs (`package.json`, `turbo.json`, `pnpm-workspace.yaml`, `eslint.config.mjs`, `eslint-rules/**`) · `scripts/**` |
 | **B — Viewer app** | `packages/ui/**` · `apps/web/app/{globals.css,root-document.tsx,robots.ts,sitemap.ts,sw.ts}` · `apps/web/app/{(app),(public),(auth),(lab)}/**`, except `(app)/business/**` · `apps/web/features/{auth,campaign,player,checkpoint,quick,store,burn,wallet,me,streak,shell,onboarding,region,open-view,public,notifications,rum}/**` · `apps/web/{i18n,public}/**` · `apps/web/{next.config.ts,playwright*.config.ts}` · `apps/web/messages/*/*` except C's files · `apps/api/src/modules/{watch,campaign,me}/**`, except `campaign/persistence/schema/**` |
 | **C — Business side** | `apps/web/app/{(business),(merchant),(staff)}/**` and `(app)/business/**` (which it moves out) · `apps/web/features/{console,studio,merchant,staff}/**` · `apps/web/messages/*/{studio,merchant,staff}.json` · `apps/api/src/modules/{business,studio,store,billing,devices,partners,staff,reports,feed}/**` · `apps/api/src/modules/campaign/persistence/schema/**` (C writes the campaign and question tables; B reads them) · `packages/media/**` · `packages/sdk-merchant/**` |
-| **Shared (add your lines only)** | `eslint.config.mjs` (one block per track, for its own paths) · root `package.json` `scripts` · `apps/web/route-redirects.ts` · `apps/api/src/app.module.ts` · `apps/api/src/config/env.schema.ts` (every new variable needs a dev default) · `.env.example` · `apps/*/package.json` (through pnpm only) · `pnpm-lock.yaml` (pnpm only) · `packages/db/migrations/**` (add-only) · `packages/db/src/seed/*.ts` (one file per domain; 1.3 splits it) · `packages/contracts/src/openapi/route-registry.*.ts` (one per track; 1.3 splits it) · `packages/contracts/src/**/drift` test tables · `policies/resource_policies/<resource>.yaml` and its test, owned by whoever owns the module · `packages/authz/src/resources.ts` · `apps/worker/src/jobs/*.ts` (one file per job) · `apps/web/e2e/<track>-*.spec.ts` (each owned by its prefix) · `TASKS.md` (your own lines) |
+| **Shared (add your lines only)** | `eslint.config.mjs` (one block per area, for its own paths) · root `package.json` `scripts` · `apps/web/route-redirects.ts` · `apps/api/src/app.module.ts` · `apps/api/src/config/env.schema.ts` (every new variable needs a dev default) · `.env.example` · `apps/*/package.json` (through pnpm only) · `pnpm-lock.yaml` (pnpm only) · `packages/db/migrations/**` (add-only) · `packages/db/src/seed/*.ts` (one file per domain; 1.3 splits it) · `packages/contracts/src/openapi/route-registry.*.ts` (one per area; 1.3 splits it) · `packages/contracts/src/**/drift` test tables · `policies/resource_policies/<resource>.yaml` and its test, owned by whoever owns the module · `packages/authz/src/resources.ts` · `apps/worker/src/jobs/*.ts` (one file per job) · `apps/web/e2e/<area>-*.spec.ts` (each owned by its prefix, `a-`, `b-` or `c-`) · `TASKS.md` (your own lines) |
 
 **Contract folders in `packages/contracts/src/`:**
 
@@ -152,57 +176,62 @@ Three sessions, one per track, each in its own git worktree. A track edits only 
 - **C:** `business`, `studio`, `listing`, `billing`, `device`, `merchant`; in `campaign/` the files `campaign-lifecycle`, `campaign-reward-config`, `campaign-terms` and `campaign-chapter`; in `question/` the files `question`, `question-bank` and `question-leak-signals`
 - The rest of `campaign/` is B's.
 
-**If you need something another track owns:** add a subtask under that track's relevant task marked `(requested by B)`, and build against the contract or the fake in the meantime. Do not edit their files.
+**If you need something another area owns:** add a subtask to that area's relevant task, marked `(requested by B)`, and build against the contract or the fake in the meantime. Do not edit their files.
 
 ## Session protocol
 
-**Start order.**
+**Starting or resuming a phase.** Pick the phase from **Running order**. Open a free slot's worktree folder, for example `C:/Users/Hansel/Documents/Hansel/Projects/yourtal-2`, in VS Code or with `claude` in a terminal. Paste this, changing the phase number and name:
 
-1. Session **A** starts Phase 0.
-2. Start **B** once 0.2.b is ticked; 3.1 and 3.2 need no database. Until 0.3, 0.5 and 0.7 are merged, B stays out of the files they edit: `apps/web/features/**`, `app/(app)/**`, `app/(merchant)/**` and the existing `e2e/*.spec.ts`. Everything else B owns is open, including `packages/ui`, `globals.css`, `root-document.tsx`, `(lab)`, `i18n/**`, `messages/**`, new `e2e/b-*.spec.ts` files and `apps/web/package.json` (through pnpm). B's first merge waits for 0.4.
-3. Start **C** once 1.1, 1.3.a and 1.3.b are merged, which are the contract, route-registry and seed splits C adds lines to. A does 1.3.a–b straight after 1.1.
+> You are the session for **Phase 4 — The bank is correct** on YourTal. The main checkout (the control room) is `C:/Users/Hansel/Documents/Hansel/Projects/yourtal`. Read `CLAUDE.md`, then `TASKS.md` there.
+>
+> 1. Claim this worktree's slot: write your phase into its row in **Now**.
+> 2. Work here on the branch `phase/4`. For a new phase: `git switch -c phase/4 main`. When resuming: `git switch phase/4 && git rebase main`. Then run `pnpm install --frozen-lockfile && pnpm db:migrate`.
+> 3. Do Phase 4's tasks in order. A phase that states its own order overrides that.
+> 4. As you go: mark each task 🔄 when you start it, tick each subtask in the main checkout's `TASKS.md` as soon as it is done, and run its `progress.mjs`.
+> 5. Merge to `main` at the end of each task, and at each green subtask where you can, using the session protocol. Commit at every clean boundary.
+> 6. If a task needs something from a phase that is not done: when the need says "(fake ok)", build against the fake. Otherwise mark the task ⛔ with the task it waits for, and carry on.
+> 7. Stop when the phase's **Done when** holds, or when everything left is ⛔. Then update your slot's row in **Now**: free it, or say what it waits for.
+> 8. If you need the founder, ask with options and a recommendation.
 
-**Starting or resuming a session.** Open the track's worktree folder: `C:/Users/Hansel/Documents/Hansel/Projects/yourtal-b` for B, in VS Code or with `claude` in a terminal. Then paste this, changing the letter and name:
-
-> You are **Track B — Viewer app** on YourTal. The main checkout (the control room) is `C:/Users/Hansel/Documents/Hansel/Projects/yourtal`; your worktree is `C:/Users/Hansel/Documents/Hansel/Projects/yourtal-b`. Read `CLAUDE.md`, then `TASKS.md` in the main checkout. Before anything else, update your worktree: `git rebase main && pnpm install --frozen-lockfile && pnpm db:migrate`. Take the lowest-numbered Track B task whose `needs:` are all ✅, mark it 🔄, and work through its subtasks. Tick each one in the main checkout's `TASKS.md` as soon as it is done, and run its `progress.mjs`. Merge to `main` at the end of each task (at each green subtask where you can) using the session protocol. Commit at every clean boundary. Keep going task after task. If you are blocked, mark it ⛔ and take the next task. If you need the founder, ask with options and a recommendation.
-
-**Worktree setup.** Once per track; task 0.2 does this. Run in Git Bash with literal paths, because shell variables do not persist between tool calls.
+**Slot setup.** Once, in task 0.2. Run it in Git Bash with literal paths, because shell variables do not persist between tool calls.
 
 ```bash
 cd C:/Users/Hansel/Documents/Hansel/Projects/yourtal
-git worktree add ../yourtal-b -b track/b main
-cp .env.example ../yourtal-b/.env   # not .env: the main .env lacks CHECKPOINT_TOKEN_SECRET and the ledger/voucher URLs
-# edit ../yourtal-b/.env now (0.2.b), before any pnpm db:* command
-mkdir -p ../yourtal-b/.claude && printf '{"permissions":{"additionalDirectories":["C:/Users/Hansel/Documents/Hansel/Projects/yourtal"]}}\n' > ../yourtal-b/.claude/settings.local.json
-cd ../yourtal-b && pnpm install --frozen-lockfile
-# once 0.3.c is on main (0.2.e): node packages/db/scripts/test-db.mjs create yourtal_b
+git worktree add --detach ../yourtal-2 main
+cp .env.example ../yourtal-2/.env   # not .env: the main .env lacks CHECKPOINT_TOKEN_SECRET and the ledger/voucher URLs
+# edit ../yourtal-2/.env now (0.2.b), before any pnpm db:* command
+mkdir -p ../yourtal-2/.claude && printf '{"permissions":{"additionalDirectories":["C:/Users/Hansel/Documents/Hansel/Projects/yourtal"]}}\n' > ../yourtal-2/.claude/settings.local.json
+cd ../yourtal-2 && pnpm install --frozen-lockfile
+# once 0.3.c is on main (0.2.e): node packages/db/scripts/test-db.mjs create yourtal_s2
 ```
 
 The settings file lets the session edit the main checkout's `TASKS.md` from its worktree. Do not commit it. Never run a `pnpm db:*` command in a worktree whose `.env` still names the `yourtal` database.
 
+**When a phase is done:** once its branch is merged, run `git branch -d phase/4` and `git switch --detach main`, and free the slot in **Now**. The slot's database and ports stay; the next phase reuses them.
+
 **Each merge.** One line, repeated whole if the fast-forward fails:
 
 ```bash
-cd C:/Users/Hansel/Documents/Hansel/Projects/yourtal-b && git rebase main && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm check && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal merge --ff-only track/b && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal push origin main
+cd C:/Users/Hansel/Documents/Hansel/Projects/yourtal-2 && git rebase main && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm check && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal merge --ff-only phase/4 && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal push origin main
 ```
 
 **`TASKS.md`:** always edit the main checkout's copy by absolute path, never your worktree's. Commit it on its own:
 
 ```bash
-node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal commit -m "tasks: 5.2 done" -- TASKS.md && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal push origin main
+node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal commit -m "tasks: 4.2 done" -- TASKS.md && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal push origin main
 ```
 
 **Rules that prevent the collisions the last week had:**
 
-- **The main checkout stays on `main` and holds no code edits.** Track branches never touch `TASKS.md`. If a fast-forward complains about `TASKS.md`, run `git checkout main -- TASKS.md` in your worktree, commit, and retry. **Never stash, checkout or reset anything in the main checkout** (0.1.a and 0.1.c are the only exceptions: they run before any worktree exists).
+- **The main checkout stays on `main` and holds no code edits.** Phase branches never touch `TASKS.md`. If a fast-forward complains about `TASKS.md`, run `git checkout main -- TASKS.md` in your worktree, commit, and retry. **Never stash, checkout or reset anything in the main checkout** (0.1.a and 0.1.c are the only exceptions: they run before any worktree exists).
 - **Never rewrite pushed history** or force-push `main`. Use absolute SHAs, never `HEAD~1`.
-- **Your own dev data.** Each worktree has its own database (`yourtal_a`, `_b`, `_c`), Valkey DB index, MinIO bucket and Cerbos container (0.2).
-  - Only the main checkout runs `pnpm dev:up`. **Nobody runs `pnpm dev:reset` or `pnpm dev:fresh` once worktrees exist:** `down -v` deletes the shared Postgres volume, and every track's database with it.
+- **Your own dev data.** Each slot worktree has its own database (`yourtal_s1`, `_s2`, `_s3`), Valkey DB index, MinIO bucket and Cerbos container (0.2).
+  - Only the main checkout runs `pnpm dev:up`. **Nobody runs `pnpm dev:reset` or `pnpm dev:fresh` once worktrees exist:** `down -v` deletes the shared Postgres volume, and every slot's database with it.
   - Worktrees run no `docker compose` command at all, because with `name: yourtal` it acts on the shared stack.
-  - Reset only your own data, with `pnpm db:reset:track`.
+  - Reset only your own data, with `pnpm db:reset:slot`.
   - Tests use `yourtal_test_*` databases, never a dev database.
 - **Migrations:**
-  - Any track may add one. Never edit one that is on `main`.
+  - Any phase may add one. Never edit one that is on `main`.
   - Before merging, if `main` has a migration newer than your unmerged one, `git mv` yours to a fresh `date -u +%Y%m%d%H%M%S` name and re-run `pnpm --filter @yourtal/db migrate:hash`.
   - On an `atlas.sum` conflict during a rebase: `git checkout --ours packages/db/migrations/atlas.sum` (during a rebase, "ours" is `main`), then `pnpm --filter @yourtal/db migrate:hash && git add packages/db/migrations/atlas.sum && git rebase --continue`.
 - **Other conflicts:**
@@ -213,11 +242,11 @@ node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs && g
 - **Environment variables:** every new one gets a dev default in `apps/api/src/config` and a line in `.env.example`. After a rebase, add any keys from `.env.example` missing from your `.env`.
 - **Ports:**
 
-  | Track | web | api | ledger | voucher | Playwright | Cerbos |
-  | ----- | --- | --- | ------ | ------- | ---------- | ------ |
-  | A | 26310 | 26311 | 26312 | 26313 | 26314 | 26315 |
-  | B | 26320 | 26321 | 26322 | 26323 | 26324 | 26325 |
-  | C | 26330 | 26331 | 26332 | 26333 | 26334 | 26335 |
+  | Slot | web | api | ledger | voucher | Playwright | Cerbos |
+  | ---- | --- | --- | ------ | ------- | ---------- | ------ |
+  | 1 | 26310 | 26311 | 26312 | 26313 | 26314 | 26315 |
+  | 2 | 26320 | 26321 | 26322 | 26323 | 26324 | 26325 |
+  | 3 | 26330 | 26331 | 26332 | 26333 | 26334 | 26335 |
 
   The main checkout keeps the existing ports. Record everything in `infra/PORTS.md`.
 - **Commit as you go.** A quota cut-off can end a session mid-task, and uncommitted work is how 85 files nearly vanished last week.
@@ -225,11 +254,11 @@ node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs && g
 
 ---
 
-## Phase 0 — Reset · Track A · ~2.5d
+## Phase 0 — Reset · Area A · ~2.5d
 
-One session, from day 1. Unbreak `main`, retire the old process, move IDR to whole Rupiah, get every gate green, and give each track an isolated environment. Nothing else can merge until this compiles.
+One session, from day 1. Unbreak `main`, retire the old process, move IDR to whole Rupiah, get every gate green, and give each slot an isolated environment. Nothing else can merge until this compiles.
 
-**Where Phase 0 runs.** 0.1 and 0.2.b–d run in the main checkout. After 0.2.b, **session A restarts in `yourtal-a`** with the start prompt, which gives it a clean permission scope, and every later edit happens there. Until 0.4.a exists, the merge line runs the task's own Check instead of `pnpm check`. **Until 0.3.f passes, leave `&& git … push origin main` out** of both the merge line and the `TASKS.md` commit line.
+**Where Phase 0 runs.** 0.1 and 0.2.b–d run in the main checkout. After 0.2.b, **the Phase 0 session restarts in `yourtal-1`** with the start prompt, which gives it a clean permission scope, and every later edit happens there. Until 0.4.a exists, the merge line runs the task's own Check instead of `pnpm check`. **Until 0.3.f passes, leave `&& git … push origin main` out** of both the merge line and the `TASKS.md` commit line.
 
 - [x] **0.1 Land the plan and save the leftovers** · needs: — — ✅ 2026-09-25 fbd26c0
   - [x] 0.1.a Save the uncommitted files from earlier sessions to a branch, not to `main`:
@@ -242,29 +271,29 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
   - [x] 0.1.b Commit this plan: `TASKS.md`, `CLAUDE.md`, `scripts/progress.mjs` and the deletion of `scripts/tasks.mjs` (archived as `docs/tasks/_generator-v1.mjs`), `.gitignore` (with `TASKS.md.lock`, `.claude/settings.local.json` and `apps/web/public/lab-media/`), `docs/audit/2026-09-25/`, the archive of the old board in `docs/tasks/`, and the gate removals (`quality.yml`, `release.yml`, `package.json`, `.githooks/pre-commit`, `.prettierignore`, `.gitattributes`, `README.md`). This closes the old board (EW-23).
   - [x] 0.1.c Fast-forward `main` to this branch and check out `main` in the main checkout. It keeps `b225116`, whose currency tagging we need; 0.3 finishes it. Do not push until 0.3 compiles.
   - [x] 0.1.d **Check:** `git status` is clean on `main`, and `wip/leftovers-2026-09-22` holds the leftovers.
-- [ ] **0.2 One isolated environment per track** · needs: 0.1 (0.2.e needs 0.3.c)
+- [ ] **0.2 One isolated environment per slot** · needs: 0.1 (0.2.e needs 0.3.c)
   - [ ] 0.2.a Add a top-level `name: yourtal` to `docker-compose.yml`. Zitadel is already removed (0.8.d). The worker (1.3) runs on the host with ffmpeg on PATH (this machine has ffmpeg 8.1.2 from winget); record that in `infra/PORTS.md`, and add no worker image or compose service. `pnpm dev:up` from the main checkout comes up healthy.
-  - [ ] 0.2.b Create the worktrees `../yourtal-a|b|c` on `track/a|b|c` (setup commands above), each with `.claude/settings.local.json`. Each worktree's `.env` (copied from `.env.example`) gets:
-    - the database `yourtal_a|b|c` in DATABASE_URL, DATABASE_OWNER_URL, LEDGER_DATABASE_URL and VOUCHER_DATABASE_URL;
+  - [ ] 0.2.b Create the slot worktrees `../yourtal-1|2|3`, detached at `main` (setup commands above), each with `.claude/settings.local.json`. Each worktree's `.env` (copied from `.env.example`) gets:
+    - the database `yourtal_s1|s2|s3` in DATABASE_URL, DATABASE_OWNER_URL, LEDGER_DATABASE_URL and VOUCHER_DATABASE_URL;
     - `REDIS_URL=redis://127.0.0.1:26379/1|2|3`;
-    - `S3_BUCKET=yourtal-media-a|b|c` (there is no prefix setting);
-    - no pg-boss change, since each track's own database already isolates the `pgboss` schema;
+    - `S3_BUCKET=yourtal-media-1|2|3` (there is no prefix setting);
+    - no pg-boss change, since each slot's own database already isolates the `pgboss` schema;
     - `PORT` (api), `WEB_PORT`, `PLAYWRIGHT_PORT` and `PDP_BASE_URL` from the ports table.
 
-    `apps/web` gets `scripts/dev.mjs`, which loads the root `.env` and runs `next dev -p $WEB_PORT`. Both Playwright configs read `PLAYWRIGHT_PORT`; the offline config uses 26316, 26326 or 26336. The ledger and voucher ports stay reserved for 4.1; until then every track uses the shared containers.
-  - [ ] 0.2.c Add the scripts `pnpm db:reset:track` (drop, create, migrate and seed only this worktree's database) and `pnpm dev:cerbos` (run a Cerbos container named `yourtal-cerbos-a|b|c` on this worktree's port, mounting this worktree's `./policies`).
+    `apps/web` gets `scripts/dev.mjs`, which loads the root `.env` and runs `next dev -p $WEB_PORT`. Both Playwright configs read `PLAYWRIGHT_PORT`; the offline config uses 26316, 26326 or 26336. The ledger and voucher ports stay reserved for 4.1; until then every slot uses the shared containers.
+  - [ ] 0.2.c Add the scripts `pnpm db:reset:slot` (drop, create, migrate and seed only this worktree's database) and `pnpm dev:cerbos` (run a Cerbos container named `yourtal-cerbos-1|2|3` on this worktree's port, mounting this worktree's `./policies`).
   - [ ] 0.2.d Run `git worktree prune`. List the `worktree-agent-*` branches; delete those with no unmerged commits and note any that have some.
-  - [ ] 0.2.e After 0.3.c is on `main`, in each worktree run `node packages/db/scripts/test-db.mjs create yourtal_a|b|c`, which drops, creates, migrates and seeds. Before 0.3.c it fails, because `atlas.sum` has no line for `20260922030000_currency_tagged_money.sql` and `seed.ts` still inserts `face_value_idr`.
-  - [ ] 0.2.f **Check** (after 0.2.e): all three worktrees run web and api side by side, and a migration applied in `yourtal-b` does not change `yourtal-a`'s schema.
+  - [ ] 0.2.e After 0.3.c is on `main`, in each worktree run `node packages/db/scripts/test-db.mjs create yourtal_s1|s2|s3`, which drops, creates, migrates and seeds. Before 0.3.c it fails, because `atlas.sum` has no line for `20260922030000_currency_tagged_money.sql` and `seed.ts` still inserts `face_value_idr`.
+  - [ ] 0.2.f **Check** (after 0.2.e): all three worktrees run web and api side by side, and a migration applied in `yourtal-2` does not change `yourtal-1`'s schema.
 - [ ] **0.3 Unbreak HEAD: finish currency-tagged money (was YT-0513 part 2; EM-22, D1)** · needs: 0.1
   - [ ] 0.3.a In the `apps/api` store module, change every `*Idr` field to `*Minor` + `currency`: `listing-assembler.ts`, `drizzle-listing.repository.ts`, the DTOs and the controllers. `assembleListings` must **throw** on a row that fails `listingSchema`, not silently drop it. The `listing_price_revision` and `settlement_decrease_request` `_idr` columns move to `*_minor` + currency in a new migration. `tsc` must be clean.
   - [ ] 0.3.b In `apps/web`, fix the 26 files still reading `faceValueIdr` etc. Format money with **`listing.currency`, never the viewer's region**: `store/page.tsx:36,45`, `wallet-voucher-card.tsx:66`, `store-format.ts:45`. `tsc` must be clean.
   - [ ] 0.3.c `packages/db`: make `seed.ts` insert the new columns, regenerate `atlas.sum`, and confirm a fresh `yourtal_scratch` database migrates and seeds cleanly.
-  - [ ] 0.3.d `services/voucher`: move `db/schema.sql`, `db/query/issue.sql` and `redeem.sql` to `*_minor` + currency, and regenerate from `services/voucher` with `MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W)":/src -w /src sqlc/sqlc:1.31.1 generate` (Git Bash rewrites the paths without `MSYS_NO_PATHCONV`). `InsertVoucher` copies `batch.currency`. At `redeem.go:241`, compare the request currency with the voucher's and return a new `currency_mismatch` outcome that is not counted as a probe (D10). `TestSqlcSchemaMatchesTheLiveDatabase` passes against `yourtal_a` (see 0.3.f).
+  - [ ] 0.3.d `services/voucher`: move `db/schema.sql`, `db/query/issue.sql` and `redeem.sql` to `*_minor` + currency, and regenerate from `services/voucher` with `MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W)":/src -w /src sqlc/sqlc:1.31.1 generate` (Git Bash rewrites the paths without `MSYS_NO_PATHCONV`). `InsertVoucher` copies `batch.currency`. At `redeem.go:241`, compare the request currency with the voucher's and return a new `currency_mismatch` outcome that is not counted as a probe (D10). `TestSqlcSchemaMatchesTheLiveDatabase` passes against `yourtal_s1` (see 0.3.f).
   - [ ] 0.3.e The voucher-keygen generates **each missing key independently**: `for k in voucher_code merchant_hmac; do [ -f /keys/$k.v1.key ] || head -c 32 /dev/urandom | od -An -vtx1 | tr -d ' \n' > /keys/$k.v1.key; done`. The existing volume already has `voucher_code.v1.key`. Today's image predates the `merchant_hmac` check, so a 200 without `--build` proves nothing (D2).
   - [ ] 0.3.f **Check:**
     - `tsc` is clean in web and api.
-    - In `yourtal-a`: `set -a; . ./.env; set +a; (cd services/voucher && go test -count=1 -p 1 ./...) && (cd services/ledger && go test -count=1 -p 1 ./...)` passes. Go does not read `.env`; without this the tests use the unmigrated shared database. The pricing and reward `engine_test.go` still write to `yourtal` until 0.4.b, and that is accepted.
+    - In `yourtal-1`: `set -a; . ./.env; set +a; (cd services/voucher && go test -count=1 -p 1 ./...) && (cd services/ledger && go test -count=1 -p 1 ./...)` passes. Go does not read `.env`; without this the tests use the unmigrated shared database. The pricing and reward `engine_test.go` still write to `yourtal` until 0.4.b, and that is accepted.
     - After the fast-forward, from the main checkout: `pnpm db:migrate && docker compose up -d --build --force-recreate --wait voucher-keygen voucher`, then voucher `/healthz` returns 200.
 - [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3
   - [ ] 0.4.a Add `pnpm check`: line endings, format, typecheck, lint, and the unit tests that need no services. It should finish in under 3 minutes. `pnpm verify` becomes `check` plus the database, Go and Cerbos suites.
@@ -285,7 +314,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - Add a `govulncheck` step to `go.yml` for each module, add `infra/healthcheck` to its matrix and paths, and use `go-version-file`.
     - Pin `runs-on: ubuntu-24.04`, because `ubuntu-latest` moves to 26.04 on 2026-10-19.
     - CI and dev use Node 24 LTS: add `.nvmrc`, set `engines` to `>=24`, and use `node-version-file`. Check the Helios Node major in 2.1.
-  - [ ] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-a`, merge them; otherwise record them here as ✂️ with the reason.
+  - [ ] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-1`, merge them; otherwise record them here as ✂️ with the reason.
   - [ ] 0.4.g **Check:** every workflow is green on `main`, `pnpm check` is green in all three worktrees, and no workflow log shows a Node 20 deprecation warning.
 - [ ] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3
   - [ ] 0.5.a Set `DEFAULT_REGION = "AU"` in `apps/web/features/region/get-region.ts:11`, and update `region-cookie-roundtrip.test.ts`.
@@ -347,7 +376,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - `.gitignore` gets `.env.*` with `!.env.example`, the Go binaries (`services/*/voucher`, `infra/healthcheck/healthcheck`, `*.exe`), `*.log`, `blob-report/`, `playwright/.cache/`, `.eslintcache`, `/bundle-report.md`, and Windows and editor files;
     - replace the literal NUL bytes in `packages/idempotency/src/key.ts` and `scripts/check-line-endings.mjs` with `\0` escapes;
     - mark the voucher sqlcgen as linguist-generated.
-  - [ ] 0.8.i Hygiene that touches other tracks' files, done in their tasks:
+  - [ ] 0.8.i Hygiene that touches other areas' files, done in their tasks:
     - (requested by A) C: test data uses `kopikenangan.example`, never the real `kopikenangan.id` (6 files);
     - (requested by A) C: `packages/media/src/hls-origin.ts:103` fails closed outside dev, instead of falling back to `yourtal_local_only`;
     - add `services/{ledger,voucher}/.dockerignore`;
@@ -361,7 +390,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
 
 **Done when:** `main` compiles and every CI workflow is green; three worktrees run side by side on their own data; a first-time visitor gets English and AUD; IDR amounts are whole Rupiah everywhere.
 
-## Phase 1 — Identity, contracts & plumbing · Track A · ~4d
+## Phase 1 — Identity, contracts & plumbing · Area A · ~4d
 
 Everything else depends on knowing who is calling, and on a shared shape everyone builds against. Today the API builds identity from `x-yt-user-id` / `x-yt-business-roles` headers that anyone can send (`principal.service.ts:70-85`, EW-02), and the web app has no login. **Do 1.1 to 1.3 first:** they publish the contracts, columns and fakes that let B and C build before Phase 4 lands.
 
@@ -420,12 +449,12 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - the ledger reads its own keys (caps, holdback, coverage thresholds, marketing limits) through a view granted to `yourtal_ledger`;
     - `ledger-internal` gains `getSettings(region)`, `proposeSetting` and `approveSetting` (two-person) for 9.5.d.
   - [ ] 1.2.g **Check:** B and C can call every operation above against the fake from a test, and `getSetting('AU', 'daily_earn_cap')` returns 500.
-- [ ] **1.3 Plumbing for three parallel tracks** · needs: 1.1
+- [ ] **1.3 Plumbing for parallel phase sessions** · needs: 1.1
   - [ ] 1.3.a Add `"./*": "./src/*.ts"` to the contracts package's exports, so nobody edits the exports map again. Split `openapi/route-registry.ts` into `route-registry.{a,b,c}.ts`, concatenated. Make `route-drift.test.ts` discover the modules and assert registry ⇔ live equality, instead of hard-coded route counts.
   - [ ] 1.3.b Split `packages/db/src/seed.ts` into `seed/{identity,ledger,watch,studio,store}.ts`, with `seed.ts` importing them.
   - [ ] 1.3.c Create `apps/worker`: a pg-boss runner (`packages/queue`) that **auto-loads** every `src/jobs/*.ts` exporting `job`, with no central list. Add ffmpeg to the Helios host prerequisites (`infra/HELIOS.md`).
   - [ ] 1.3.d `apps/api/src/shared/testing/session-for.ts` (register + login → cookie) for everyone's tests. Until 1.5.a lands it **also returns the matching `x-yt-*` headers**, so a test passes both before and after 1.5.a. The boot tests move onto it in 1.5.a.
-  - [ ] 1.3.e **Check:** a new job file is picked up without editing any other file, and a new route passes route-drift once it is added to its track's registry.
+  - [ ] 1.3.e **Check:** a new job file is picked up without editing any other file, and a new route passes route-drift once it is added to its area's registry.
 - [ ] **1.4 Accounts and profile** · needs: 1.1
   - [ ] 1.4.a Add a migration for `identity.user_profile` with these fields:
     - `region` AU | ID, immutable after signup;
@@ -447,7 +476,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [ ] 1.4.f (requested by B for 5.4.b) DSAR handlers for `identity.user_profile`, credentials and sessions, registered with `dsar-orchestrator`.
   - [ ] 1.4.g **Check:** register → `GET /api/me` shows region AU, locale en-AU and age band adult. With the flag off, a 15-year-old is refused.
 - [ ] **1.5 The principal comes from the session, never from headers** · needs: 1.4
-  - [ ] 1.5.a `PrincipalService.resolve` reads the `yt_session` httpOnly cookie (or Bearer token) through `SessionService.validateAndTouch`. **Delete every `x-yt-*` header path**, and remove the refusal to boot when `NODE_ENV=production`. **In the same commit** (exempt), remove the header fallback from `session-for.ts` and move every boot test in every track that still sends raw `x-yt-*` headers onto it.
+  - [ ] 1.5.a `PrincipalService.resolve` reads the `yt_session` httpOnly cookie (or Bearer token) through `SessionService.validateAndTouch`. **Delete every `x-yt-*` header path**, and remove the refusal to boot when `NODE_ENV=production`. **In the same commit** (exempt), remove the header fallback from `session-for.ts` and move every boot test in every area that still sends raw `x-yt-*` headers onto it.
   - [ ] 1.5.b The principal carries:
     - business roles from `business.business_members`, only where `joined_at` is set;
     - staff roles from a new `identity.staff_role` table, with the roles in `packages/authz/src/roles.ts`;
@@ -473,20 +502,20 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [ ] 1.6.c (requested by B and C) `push` and `webhook` boundaries in `packages/drivers`, with simulated drivers that store to `platform.sim_outbox`.
   - [ ] 1.6.d **Check:** register → the verification email appears in `/dev/inbox` → its link verifies the account.
 - [ ] **1.7 Web ↔ API plumbing** · needs: 1.5
-  - [ ] 1.7.a `apps/web/lib/api/`: a server-only `apiFetch(path, zodSchema)` that calls `API_INTERNAL_URL`, forwards `yt_session` and returns typed errors. Per-domain calls live in each track's `features/<x>/<x>-api.ts`.
+  - [ ] 1.7.a `apps/web/lib/api/`: a server-only `apiFetch(path, zodSchema)` that calls `API_INTERNAL_URL`, forwards `yt_session` and returns typed errors. Per-domain calls live in each area's `features/<x>/<x>-api.ts`.
   - [ ] 1.7.b The login and `PATCH /api/me` Server Actions set the `yt_session`, `yt_locale` and `yt_region` cookies. `proxy.ts` reads only those cookies and defaults to AU / en-AU. (requested by A) B makes `i18n/request.ts` read only `yt_locale` and `yt_region`, defaulting to en-AU, under 6.1.b.
   - [ ] 1.7.c `apps/web/proxy.ts` protects these exact prefixes, redirecting to `/login?returnTo=`: `/home`, `/watch`, `/campaign`, `/store`, `/wallet`, `/me`, `/onboarding`, `/quick`, `/business`, `/studio`, `/staff`. Everything else stays public, with these exceptions for the merchant counter:
     - `/merchant/pair` is public;
     - `/merchant/**` also passes with a `yt_device` cookie (the 8.1 device credential), which the page and the BFF verify on the server through the 1.5.c resolver;
     - there is never an open fallback.
 
-    Redirects come from `apps/web/route-redirects.ts`, which starts empty; each track adds its own lines.
+    Redirects come from `apps/web/route-redirects.ts`, which starts empty; each area adds its own lines.
   - [ ] 1.7.d (requested by B) In `money-format.ts`, add `formatPointsIn(locale, amount)` with no default, change `formatPoints`'s default to `en-AU` and mark it deprecated. B and C move their own call sites (6.1.c, 7.8.c, 8.2.d).
   - [ ] 1.7.e **Check:** a Server Component shows the signed-in user's name through `apiFetch`, and `/wallet` without a session redirects to `/login`.
 
 **Done when:** you can register, verify through the simulated inbox, log in and see your name; no `x-yt-*` header is accepted anywhere; a principal can never read another region's data; B and C are building against the contracts and fakes.
 
-## Phase 2 — Staging on Helios · Track A · ~2.5d
+## Phase 2 — Staging on Helios · Area A · ~2.5d
 
 Deploy early. After this phase every merge to `main` goes to staging within minutes, so the founder can watch progress live. Mechanically, Helios's poller follows gaiada-deploy's `production` channel. "Staging" is the posture we give it: banner, demo data, simulated drivers, `noindex`.
 
@@ -531,7 +560,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
 
 **Done when:** every merge to `main` is live on staging within minutes, with the API, both Go services and the datastores running on Helios, backed up nightly.
 
-## Phase 3 — Design language · Track B · ~6d
+## Phase 3 — Design language · Area B · ~6d
 
 **Direction (founder, 2026-09-25): video-first social.** Think YouTube, TikTok and Instagram, with YouTube's model inverted: here **the viewer is the one who is rewarded**. It should feel native to Gen Z and Gen Alpha (fast, visual, playful, rewarding) and still be clear for older viewers, with legible type, obvious actions and honest numbers. The hooks are the feed and the moment points land. What is broken today is detailed in `docs/audit/2026-09-25/ui-design.md`.
 
@@ -634,7 +663,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
 
 **Done when:** the founder has picked a variant from real motion captures, and every primitive, video component and shell exists in the gallery in light and dark at phone and desktop widths.
 
-## Phase 4 — The bank is correct · Track A · ~9d
+## Phase 4 — The bank is correct · Area A · ~9d
 
 The money engines are sound libraries with **confirmed defects and no callers**. Fix each defect with a regression test that fails on the audit's scenario first, then expose the engines. Defect IDs point into `docs/audit/2026-09-25/`: `engine-money.md` (EM-), `engine-voucher.md` (D) and `engine-watch.md` (EW-). The order below is chosen to replace B's and C's fakes as early as possible. **The regions are separate economies** (F2): every account, rate, allocation, reserve and voucher is region-scoped, and the ledger refuses anything that crosses.
 
@@ -766,7 +795,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
 
 **Done when:** every verified defect in the three engine reports is fixed with a regression test; points, rates and vouchers never cross regions; the ledger and voucher services accept only signed internal calls from apps/api.
 
-## Phase 5 — Watch & earn · Track B · ~5d
+## Phase 5 — Watch & earn · Area B · ~5d
 
 Earning is the product. Today completion is hard-coded to refuse (`watch.controller.ts:186`), the browser receives the answer keys and scores itself, and the progress check can be farmed. Build it server-first and the UI second, against the 1.2 fake until Phase 4 lands.
 
@@ -812,7 +841,7 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
 
 **Done when:** a signed-in user can watch a campaign, answer the questions that pause it, and see pending points appear in the ledger for exactly the terms the business set, once per campaign. The audit's farming probes all fail.
 
-## Phase 6 — Viewer app · Track B · ~7d
+## Phase 6 — Viewer app · Area B · ~7d
 
 Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen task includes:
 
@@ -873,9 +902,9 @@ Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen t
 
 **Done when:** the whole viewer journey (register → feed → earn in place → watch with questions → store → voucher in wallet → dispute) works on staging in both regions, on the new design, with no mock data and no hard-coded strings.
 
-## Phase 7 — Business studio · Track C · ~9d
+## Phase 7 — Business studio · Area C · ~9d
 
-The business console becomes **YourTal Studio**, in the spirit of YouTube Studio. Work in this order, which overrides the lowest-number rule for Track C: 7.1 → 7.4 → 7.5 → 7.3 → 7.2 → 7.7 → 9.1 → 9.2 → 7.8 → 8.1 → 8.2 → 7.6, then the rest by number. Every Studio route sits under `api/:tenantId/studio/...`. Evidence: `docs/audit/2026-09-25/business-merchant.md`.
+The business console becomes **YourTal Studio**, in the spirit of YouTube Studio. Work in this order, which overrides task order: 7.1 → 7.4 → 7.5 → 7.3 → 7.2 → 7.7 → 7.8 → 7.6. Every Studio route sits under `api/:tenantId/studio/...`. Evidence: `docs/audit/2026-09-25/business-merchant.md`.
 
 - [ ] **7.1 Business accounts** · needs: 1.1, 1.3.a, 1.3.b, 1.6 (fake ok)
   - [ ] 7.1.a Migration: a tax ID kind and value (ABN for AU, NIB or NPWP for ID) and an address (state and postcode for AU, city for ID). Region, currency and handle came in 1.1. `district` is no longer required.
@@ -927,7 +956,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
   - [ ] 7.5.a `quotePurchase` shows pack prices (F12; P_issue appears only here, never on consumer surfaces). `POST /api/:tenantId/studio/billing/purchases` goes through the simulated payments driver, with the currency always stated (no IDR default), to a ledger purchase. That funds the region reserve and creates the business's allocation, idempotently.
   - [ ] 7.5.b Balance, per-campaign spend (`campaignSpend`) and remainder (remaining minus active holds). Unused points stay with the business; there are no cash refunds. Statements come from 10.1, and `POST …/statements/:id/dispute` holds the payout.
   - [ ] 7.5.c **Check:** a simulated purchase appears as a ledger purchase with its allocation, and a replay does not charge twice.
-- [ ] **7.6 Reports** · needs: 7.3, 5.3, 8.2
+- [ ] **7.6 Reports** · needs: 7.3, 5.3, 8.2 (fake ok: the voucher fake provides `merchantCaptureStats`)
   - [ ] 7.6.a Per campaign, **aggregates only**, each suppressed below the F12 cohort floor:
     - rewarded views, completions, completion rate, average watch time, question accuracy, points spent;
     - "your points bought N views and M of your own vouchers were redeemed" (docs/23 §1.0b, from `merchantCaptureStats`).
@@ -969,7 +998,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
 
 **Done when:** a business owner can register, set up a channel, buy points (simulated), upload a video, write questions, fund and submit a campaign, list a voucher, see redemptions and read real reports, all in Studio on staging.
 
-## Phase 8 — Voucher engine for clients · Track C · ~5d
+## Phase 8 — Voucher engine for clients · Area C · ~5d
 
 F11: vouchers must really work for YourTal, brands and users. That means generation (4.5), redemption at the counter and online, and a secure SDK brands can integrate. Tamper evidence is the voucher hash chain anchored in the daily proof, whose root is published (10.3). No blockchain for now.
 
@@ -1005,7 +1034,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
 
 **Done when:** store staff redeem vouchers on a paired device; a brand can integrate authorize and capture from the SDK and docs alone; and a simulated snap-app earns and redeems through the documented APIs.
 
-## Phase 9 — Staff console · Track C · ~5d
+## Phase 9 — Staff console · Area C · ~5d
 
 The internal team runs the economy and the review queues. Today none of it exists.
 
@@ -1039,7 +1068,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 
 **Done when:** a staff member can approve a campaign and a business, suspend a user into escrow, resolve a voucher dispute, change a rate with a second approver, and adjust any economy setting per region, all on staging.
 
-## Phase 10 — Settlement, lifecycle & risk · Track A · ~5d
+## Phase 10 — Settlement, lifecycle & risk · Area A · ~5d
 
 - [ ] **10.1 Clearing & settlement** · needs: 4.6, 4.7
   - [ ] 10.1.a A worker job posts each `capture_outbox` row to the ledger with idempotency key = capture ID: voucher liability → merchant payable, at ceil(S × captured ÷ face value), capped so the total never exceeds S. Test: Σ captures = Σ payable postings.
@@ -1063,7 +1092,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 
 **Done when:** a week of simulated activity produces statements that reproduce from the ledger; expiry does nothing until it is switched on; the proof, solvency and risk jobs run and alert.
 
-## Phase 11 — Public site · Track B · ~3d
+## Phase 11 — Public site · Area B · ~3d
 
 - [ ] **11.1 Landing page and chooser** · needs: 3.5, 7.2.e, 7.7
   - [ ] 11.1.a `/` becomes a public landing page, with logged-in visitors sent to `/home`:
@@ -1085,7 +1114,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 
 **Done when:** a logged-out visitor lands on a real, video-led page in English, can watch an opted-in campaign without earning, and signing up brings them back to that same campaign.
 
-## Phase 12 — Teen & family mode · Tracks A + B + C · ~3d
+## Phase 12 — Teen & family mode · Areas A + B + C · ~3d
 
 **Founder decision 2026-09-25 (F4), reversing C4 ("18+ only"):** teens aged 13–17 get their own age-appropriate YourTal, like YouTube Kids. It suits companies that sell to teenagers (games, books). Products for young children (strollers and the like) are aimed at **parents**, who are adult users; under-13s never get accounts. Teen mode is built fully and switched on in staging for review. It is switched on for real minors only after the legal review in 12.4. The platform is already free of user-to-user interaction (Phase 3), so teens need no special handling there.
 
@@ -1121,7 +1150,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 
 **Done when:** on staging, a 14-year-old demo account (approved by a guardian through the inbox) sees only teen-rated and all-ages campaigns and vouchers, a parent demo account sees campaigns for young children's products, and an adult-only campaign never reaches a teen through any endpoint.
 
-## Phase 13 — Ready for live review · All tracks · ~3d
+## Phase 13 — Ready for live review · All areas · ~3d
 
 - [ ] **13.1 The demo world** · C (A does the ledger part) · needs: 7.2, 7.3, 7.4, 8.1, 4.7, 9.1, 10.1, 12.1
   - [ ] 13.1.a `pnpm demo:reset`, **on demand** (a CLI and a staff button), never deleting or editing ledger, voucher or proof rows: it suspends the current demo accounts, reverses their balances with postings, and creates fresh demo accounts with new IDs. It covers AU (the default) and ID. Each region gets:
@@ -1190,8 +1219,8 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 | Risk | Mitigation |
 | ---- | ---------- |
-| **Track A's Phase 4 and Track B's design work are the long poles** (about 25 and 24 agent-days) | The 1.2 fakes with real semantics let B and C proceed. Phase 4 is ordered to replace the fakes early. F3 defaults after 24 h. |
-| **Three sessions on one repo** | Worktrees, their own databases and ports, fast-forward-only merges, `needs:` on every task, and additive-only shared files. |
+| **Phase 4 (the bank) and Phase 3 (design) are the long poles** | The 1.2 fakes with real semantics let other phases proceed. Phase 4 is ordered to replace the fakes early. F3 defaults after 24 h. |
+| **Several sessions on one repo** | One phase per session, in slot worktrees with their own databases and ports; fast-forward-only merges; `needs:` on every task; additive-only shared files; the wave table says what may run together. |
 | **Design taste stalls the reskin** | The founder judges motion captures, not screenshots. Token names are fixed, so a later change of mind only swaps values. |
 | **Farming on an open staging site** | Money there is simulated. 5.1, 4.4.d, 10.4 and signed segments close the known exploits. Staff logins are never published. |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
@@ -1203,6 +1232,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · plan · Sessions now run one phase each, in slots 1–3; the Running order table says which phases can run together
 - 2026-09-25 · A · 0.8.d–e MinIO on a maintained fork pinned by digest, Zitadel removed, Dependabot on · 163f309
 - 2026-09-25 · A · 0.8.c Go advisories to zero (chi 5.3.2 without RealIP, x/text 0.42.0, go1.26.8) · e0d8f1c
 - 2026-09-25 · A · 0.8.a–b npm and pnpm advisories to zero (`pnpm audit` clean), pnpm 11.27.1 · 32787de

@@ -1,18 +1,18 @@
 # YourTal — working rules
 
-**The plan is [`TASKS.md`](TASKS.md).** Read it before doing anything: which track you are, what you own, and what is next. The evidence behind each task is in [`docs/audit/2026-09-25/`](docs/audit/2026-09-25/). Design docs `docs/00`–`docs/25` are reference; where they disagree with `TASKS.md`, `TASKS.md` wins.
+**The plan is [`TASKS.md`](TASKS.md).** Read it before doing anything: **one session runs one phase**, and _Running order_ says which phases can run now. It also says what your phase's area owns and what is next. The evidence behind each task is in [`docs/audit/2026-09-25/`](docs/audit/2026-09-25/). Design docs `docs/00`–`docs/25` are reference; where they disagree with `TASKS.md`, `TASKS.md` wins.
 
 ## The rule: update TASKS.md as you go
 
 The founder follows progress through `TASKS.md` and should never have to ask. So:
 
-1. **Starting a task:** append `— 🔄 <track letter>` to its line, and update your row in **Now**.
+1. **Starting a task:** append `— 🔄 slot <n>` to its line, and update your slot's row in **Now**.
 2. **Finishing a subtask:** tick it `[x]` **immediately**, then run `node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs`. One tick per finished subtask, as it happens. Never batch ticks at the end of a task or a session.
 3. **Finishing a task:** only when every subtask is ticked and its **Check** has passed on merged `main`. Mark it `✅ YYYY-MM-DD <sha>`, add a line to the top of **Log**, update **Now**, and commit `TASKS.md`.
 4. **Blocked:** append `— ⛔ <reason>` and take your next unblocked task.
 5. **New work:** add it as a subtask or task with the next free ID. Never delete one; mark it `— ✂️ cut: <reason>`.
 
-Always edit the **main checkout's** `TASKS.md` at `C:/Users/Hansel/Documents/Hansel/Projects/yourtal/TASKS.md`, never the copy in your worktree. Edit only your own track's lines. Pick the next task by its `needs:`.
+Always edit the **main checkout's** `TASKS.md` at `C:/Users/Hansel/Documents/Hansel/Projects/yourtal/TASKS.md`, never the copy in your worktree. Edit only your own phase's lines. Work in task order within your phase, and respect each task's `needs:`.
 
 ## When you need the founder
 
@@ -20,8 +20,8 @@ Ask with `AskUserQuestion`, never in open prose. Give 2–4 options, **with the 
 
 ## How to work
 
-- **One worktree per track** (`../yourtal-a`, `-b`, `-c`). The main checkout stays on `main`, with no code edits; it is for `TASKS.md`, fast-forward merges and pushes. The exact commands are in `TASKS.md` → _Session protocol_.
-- **Stay inside your track's paths** (`TASKS.md` → _Tracks and ownership_). If you need something another track owns, add a `(requested by X)` subtask to their task and build against the contract or fake meanwhile.
+- **One phase per session, in a slot worktree** (`../yourtal-1`, `-2`, `-3`) on a `phase/<n>` branch. The main checkout stays on `main`, with no code edits; it is for `TASKS.md`, fast-forward merges and pushes. The exact commands are in `TASKS.md` → _Session protocol_.
+- **Stay inside your phase's area** (`TASKS.md` → _Areas and ownership_). If you need something another area owns, add a `(requested by X)` subtask to its task and build against the contract or the fake meanwhile. When your phase is done, or everything left in it is ⛔, free your slot in **Now** and stop.
 - **Done means it works end to end:** an HTTP round trip plus the database row it should write, or screenshots at 390 px and 1280 px, light and dark, with axe clean. A library passing its own tests is not done.
 - **Money is exact.** Integer minor units only, and a currency on every amount (AUD exponent 2, IDR exponent 0). The server computes every price. B (the backing rate) never reaches a client. Every point not paid for by a business is backed by reserve cash at the moment of issue (K6).
 - **AU and ID are separate economies.** Every user, business, campaign, point, rate, voucher and setting belongs to exactly one region, and nothing crosses. Enforce this in the database, the ledger and Cerbos, not only in the UI.

@@ -9,8 +9,8 @@
 //   node scripts/progress.mjs --print    print the table, change nothing
 //
 // Line shapes it understands (see "How to update this file" in TASKS.md):
-//   ## Phase 4 — The bank is correct · Track A · ~7d
-//   - [ ] **4.2 Burn saga** — 🔄 A            task, in progress
+//   ## Phase 4 — The bank is correct · Area A · ~9d
+//   - [ ] **4.2 Burn saga** — 🔄 slot 2       task, in progress
 //   - [x] **4.2 Burn saga** — ✅ 2026-09-30 1a2b3c4
 //     - [ ] 4.2.a Reserve stock ...           subtask
 //   A task line containing ⛔ counts as blocked; one containing ✂️ (cut) is
@@ -77,13 +77,13 @@ let current = null;
 let cut = false; // subtasks under a task marked ✂️ are not counted either
 for (const line of lines) {
   const heading = line.match(
-    /^## (Phase [0-9]+) — (.+?)(?: · (Tracks? [A-C+ ]+|All tracks))?(?: · (~[^·]+))?\s*$/,
+    /^## (Phase [0-9]+) — (.+?)(?: · (Areas? [A-C+ ]+|All areas))?(?: · (~[^·]+))?\s*$/,
   );
   if (heading) {
     current = {
       id: heading[1],
       title: heading[2].trim(),
-      track: (heading[3] ?? "").replace(/^Tracks? /, "").replace("All tracks", "all"),
+      track: (heading[3] ?? "").replace(/^Areas? /, "").replace("All areas", "all"),
       tasks: 0,
       tasksDone: 0,
       doing: 0,
@@ -141,7 +141,7 @@ const total = phases.reduce(
 );
 
 const rows = [
-  "| Phase | Track | Status | Tasks | Subtasks | Progress |",
+  "| Phase | Area | Status | Tasks | Subtasks | Progress |",
   "| --- | --- | --- | --- | --- | --- |",
   ...phases.map(
     (p) =>

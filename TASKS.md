@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | ✅ done | 8/8 | 45/45 | `██████████` 100% |
+| **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 0/6 | 0/32 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **8/82** | **45/360** | `█░░░░░░░░░`  13% |
+| **All** | | | **8/82** | **46/361** | `█░░░░░░░░░`  13% |
 <!-- progress:end -->
 
 ## Running order: which phases to start

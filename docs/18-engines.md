@@ -50,13 +50,13 @@ Holds with TTL, capture bounded by authorize, idempotency mandatory, **no balanc
 
 **Covers:** registration, session, per-event, velocity, behavioural clustering, trust tiering, referral abuse, answer-key leakage, merchant-side anomalies.
 
-| Phase | Intelligence                                                                                                                                                                    |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P1    | Layered **rules**: device fingerprint, phone-OTP identity anchor, Turnstile, timing plausibility, velocity caps, impossible-flow detection, per-checkpoint token verification   |
-| P1    | **CDN segment-log cross-check** — claimed watch position against bytes actually delivered. Deterministic, needs no client cooperation, and the single hardest control to defeat |
-| P2    | **Graph clustering** on device / IP-ASN / phone prefix / payout destination / referral edge / answer pattern                                                                    |
-| P2    | **Gradient-boosted risk scoring** with rules retained as a fallback                                                                                                             |
-| P3    | Sequence models over behaviour; adaptive thresholds per cohort                                                                                                                  |
+| Phase | Intelligence                                                                                                                                                                                                                                                |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1    | Layered **rules**: device fingerprint, Turnstile, timing plausibility, velocity caps, impossible-flow detection, per-checkpoint token verification. Phone-OTP identity anchor is deferred per docs/16 N-5 and will be re-added when real points are issued. |
+| P1    | **CDN segment-log cross-check** — claimed watch position against bytes actually delivered. Deterministic, needs no client cooperation, and the single hardest control to defeat                                                                             |
+| P2    | **Graph clustering** on device / IP-ASN / phone prefix / payout destination / referral edge / answer pattern                                                                                                                                                |
+| P2    | **Gradient-boosted risk scoring** with rules retained as a fallback                                                                                                                                                                                         |
+| P3    | Sequence models over behaviour; adaptive thresholds per cohort                                                                                                                                                                                              |
 
 **This is where the most intelligence belongs**, because it is the only adversarial engine — the opponent adapts. It also carries more weight here than at a native-app competitor, because shipping as web cost us Play Integrity and App Attest.
 

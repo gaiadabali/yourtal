@@ -33,18 +33,18 @@ This is what we use. No options, no "either/or". Reasoning lives in [`10-tech-st
 
 ## Backend
 
-| Concern             | Locked choice                                                                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Go services         | Standard library + **chi** router · **pgx** · **sqlc** for typed queries                                                                  |
-| Go tooling          | **golangci-lint** · **testcontainers-go** · **slog**                                                                                      |
-| TypeScript services | **NestJS** (Fastify adapter)                                                                                                              |
-| ORM / DB access     | **Drizzle ORM** (TS) · **sqlc** (Go) — both SQL-first, no query magic                                                                     |
-| Validation          | **Zod** at every boundary, shared via `packages/contracts`                                                                                |
-| API style           | **REST + OpenAPI 3.1**, generated from Zod. Stripe conventions: cursor pagination, dated versions, idempotency keys, typed error envelope |
-| Jobs / queue        | **pg-boss** (Postgres-backed)                                                                                                             |
-| Identity provider   | **Zitadel**, self-hosted, one realm per country                                                                                           |
-| Authorization       | **Cerbos** — policy-as-code, stateless PDP                                                                                                |
-| ML serving (P2)     | **FastAPI**                                                                                                                               |
+| Concern             | Locked choice                                                                                                                                 |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Go services         | Standard library + **chi** router · **pgx** · **sqlc** for typed queries                                                                      |
+| Go tooling          | **golangci-lint** · **testcontainers-go** · **slog**                                                                                          |
+| TypeScript services | **NestJS** (Fastify adapter)                                                                                                                  |
+| ORM / DB access     | **Drizzle ORM** (TS) · **sqlc** (Go) — both SQL-first, no query magic                                                                         |
+| Validation          | **Zod** at every boundary, shared via `packages/contracts`                                                                                    |
+| API style           | **REST + OpenAPI 3.1**, generated from Zod. Stripe conventions: cursor pagination, dated versions, idempotency keys, typed error envelope     |
+| Jobs / queue        | **pg-boss** (Postgres-backed)                                                                                                                 |
+| Identity provider   | **Email and password** behind an IdentityProvider seam (superseded 2026-09-25: docs/16 N-3, U-6; Zitadel removed). OIDC is a deferred driver. |
+| Authorization       | **Cerbos** — policy-as-code, stateless PDP                                                                                                    |
+| ML serving (P2)     | **FastAPI**                                                                                                                                   |
 
 ## Data
 
@@ -81,18 +81,18 @@ Dev-time prompt iteration and offline evaluation may use the shared Ollama Cloud
 
 ## Infrastructure
 
-| Concern                 | Locked choice                                                                                 |
-| ----------------------- | --------------------------------------------------------------------------------------------- |
-| Cloud                   | **GCP** — `asia-southeast2` (Jakarta) + `australia-southeast1` (Sydney), isolated data planes |
-| Compute                 | **Cloud Run** — not Kubernetes                                                                |
-| Edge / CDN / WAF / bots | **Cloudflare** — CDN, WAF, Turnstile, R2, Stream, DNS                                         |
-| IaC                     | **Terraform** — one region module, instantiated twice                                         |
-| CI/CD                   | **GitHub Actions**                                                                            |
-| Secrets                 | **GCP Secret Manager** + **Cloud KMS** envelope encryption for voucher codes and PII          |
-| Observability           | **OpenTelemetry → Grafana Cloud** (Mimir / Loki / Tempo)                                      |
-| Errors                  | **Sentry**                                                                                    |
-| Payments                | **Xendit** (Indonesia — collection _and_ disbursement) · **Stripe** (Australia)               |
-| Email / SMS OTP         | Provider with genuine Indonesian delivery — evaluate in YT-0033                               |
+| Concern                 | Locked choice                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Cloud                   | **GCP** — `asia-southeast2` (Jakarta) + `australia-southeast1` (Sydney), isolated data planes                  |
+| Compute                 | **Cloud Run** — not Kubernetes                                                                                 |
+| Edge / CDN / WAF / bots | **Cloudflare** — CDN, WAF, Turnstile, R2, Stream, DNS                                                          |
+| IaC                     | **Terraform** — one region module, instantiated twice                                                          |
+| CI/CD                   | **GitHub Actions**                                                                                             |
+| Secrets                 | **GCP Secret Manager** + **Cloud KMS** envelope encryption for voucher codes and PII                           |
+| Observability           | **OpenTelemetry → Grafana Cloud** (Mimir / Loki / Tempo)                                                       |
+| Errors                  | **Sentry**                                                                                                     |
+| Payments                | **Xendit** (Indonesia — collection _and_ disbursement) · **Stripe** (Australia)                                |
+| Email                   | Provider for password-reset and email verification — reevaluate phase 1; phone OTP is deferred per docs/16 N-5 |
 
 ## Repository
 

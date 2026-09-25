@@ -46,7 +46,7 @@ lose an afternoon to this tool.
 
 ## The role model
 
-Flat roles come from the identity provider (Zitadel, YT-0032):
+Flat roles come from the identity provider (email and password auth behind an IdentityProvider seam, per docs/16 N-3; Zitadel YT-0032 is deferred):
 
 `anonymous` · `user` · `business_user` · `store_device` · `charity_admin` ·
 `support` · `moderator` · `risk_analyst` · `finance` · `ops` · `admin`

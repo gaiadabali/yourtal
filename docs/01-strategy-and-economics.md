@@ -136,7 +136,7 @@ This is the single most important piece of design in the platform. Get it wrong 
    **Businesses can and must** — a partner pre-purchases points at a wholesale rate to give away as campaign rewards. That is the coalition funding model (see [`07`](07-coalition-clearing-and-commerce.md) §2) and it is B2B, not consumer stored value. Keep the two paths architecturally distinct and never let a consumer-facing surface expose a purchase price per point.
 2. **Points have no fixed, published cash exchange rate.** Their value floats against a reward pool (see §3.1). A guaranteed "1,000 points = IDR 10,000" is what makes a regulator call it e-money.
 3. **Points cannot be transferred between users.** Gifting is a fraud vector and a monetary feature.
-4. **Points expire** (12–24 months, rolling). Expiry is what makes breakage estimable and caps the liability.
+4. **Points never expire by default** (superseded 2026-09-25: expiry is built and switchable per region, off by default — docs/16 U, F2). Expiry was what made breakage estimable and capped the liability; with it off, both have to be managed another way.
 5. **The cash wallet is one-way with respect to points.** Cash enters from advertiser billing and marketplace sales. It never becomes points.
 6. **Voucher transfer voids the old code and mints a new one.** This is the lesson of Cardpool and Raise — never let two parties hold the same live code.
 

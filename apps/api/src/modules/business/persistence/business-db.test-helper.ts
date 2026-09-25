@@ -1,3 +1,4 @@
+import { inArray } from "drizzle-orm";
 import type { BusinessDb } from "./drizzle-client";
 import { createBusinessDb } from "./drizzle-client";
 import { billingContacts } from "./schema/billing-contact.table";
@@ -54,21 +55,61 @@ function requiredEnv(name: string): string {
 }
 
 /**
- * Empties the business tables, child-first.
+ * Deletes only the businesses owned by the given fixture user ids —
+ * child-first, then the account itself. YT-0547's cross-FILE half.
  *
- * Order matters and is not defensive: `billing_contacts` and `kyb_documents`
- * both reference `business_accounts`, and `business_members` does too.
- * Deleting the parent first is a foreign-key violation — which is itself one
- * of the constraints an in-memory store could never have shown us.
+ * ## Why this takes ids now, and used to take none
  *
- * Called at the START of a suite rather than only at the end. A test that
- * fails part-way leaves its rows behind, and the next run then collides on a
- * unique index and fails for a reason unrelated to what it tests — burying a
- * real failure under a fake one.
+ * It used to be an unconditional whole-table wipe, called from every
+ * business-module file's own `beforeAll`. That was safe only as long as
+ * `apps/api` ran its files one at a time (`fileParallelism: false`) — the
+ * moment two files run concurrently against the SAME per-package database
+ * (YT-0547's per-package half), one file's "DELETE everything, insert my
+ * fixture, assert" erases a neighbour's fixture mid-test. It reproduces the
+ * cross-PACKAGE bug this ticket was filed for, one layer down: a different
+ * file fails each run, and every one passes alone. See
+ * `apps/api/vitest.config.ts` for where that was proved by removing the
+ * flag and watching it fail.
+ *
+ * The fix is the one `packages/db`'s own suites already use
+ * (`voucher-constraints.test.ts`, `watch-session.test.ts`): scope cleanup to
+ * rows a test itself created, identified by a fixture id unique to the
+ * FILE, rather than wiping the table for everyone. `business_accounts` has
+ * no "created by" column of its own, but every business created through
+ * `createBusiness`/`createBusinessWithOwner` gets an owner row in
+ * `business_members` in the same transaction (docs/17 section 2.1: a
+ * business and its founding owner membership exist together or not at
+ * all) — so the owner's user id is the tag, found via that join, and
+ * `business_members`/`billing_contacts`/`kyb_documents` are deleted by the
+ * `business_id`s that resolves to before the account rows themselves go.
+ *
+ * Each calling file now uses a fixture user id that no sibling file
+ * reuses (they used to share literals like `"owner-1"`, which would have
+ * kept the race: two files tagging their fixtures identically are exactly
+ * as unsafe as no tag at all). Called at the START of a suite as well as
+ * the end — a test that fails part-way leaves its rows behind, and with a
+ * stable per-file tag the NEXT run of that same file (e.g. under
+ * `vitest --watch`, which does not get a fresh database the way a fresh
+ * `with-test-db.mjs` invocation does) would otherwise collide on
+ * `business_members`'s `(business_id, user_id)` unique index.
  */
-export async function clearBusinessTables(db: BusinessDb): Promise<void> {
-  await db.delete(kybDocuments);
-  await db.delete(billingContacts);
-  await db.delete(businessMembers);
-  await db.delete(businessAccounts);
+export async function clearBusinessTables(
+  db: BusinessDb,
+  ownerUserIds: readonly string[],
+): Promise<void> {
+  if (ownerUserIds.length === 0) {
+    return;
+  }
+  const owned = await db
+    .select({ businessId: businessMembers.businessId })
+    .from(businessMembers)
+    .where(inArray(businessMembers.userId, ownerUserIds));
+  const businessIds = [...new Set(owned.map((row) => row.businessId))];
+  if (businessIds.length === 0) {
+    return;
+  }
+  await db.delete(kybDocuments).where(inArray(kybDocuments.businessId, businessIds));
+  await db.delete(billingContacts).where(inArray(billingContacts.businessId, businessIds));
+  await db.delete(businessMembers).where(inArray(businessMembers.businessId, businessIds));
+  await db.delete(businessAccounts).where(inArray(businessAccounts.id, businessIds));
 }

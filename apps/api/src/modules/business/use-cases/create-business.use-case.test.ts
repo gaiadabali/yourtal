@@ -1,8 +1,14 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
 import { createBusiness } from "./create-business.use-case";
+
+/**
+ * A fixture id unique to THIS FILE, not `"user-1"` shared with siblings —
+ * see `business-db.test-helper.ts` for why that used to be unsafe.
+ */
+const OWNER_ID = "user-create-business-use-case";
 
 function setup() {
   const db = testBusinessDb();
@@ -11,17 +17,15 @@ function setup() {
 }
 
 /**
- * A clean start, not only a clean finish.
- *
- * These tests share one database (the package runs serially for that
- * reason). A run that fails part-way leaves its rows behind, and the next
- * one then trips a unique index and fails for a reason unrelated to what it
- * tests — burying a real failure under a fake one. Clearing before is what
- * makes the suite repeatable; clearing after only helps when the previous
- * run got that far.
+ * A clean start, not only a clean finish — scoped to this file's own
+ * fixtures now, not the whole table. See `business-db.test-helper.ts`.
  */
 beforeAll(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
+});
+
+afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
 });
 
 describe("createBusiness", () => {
@@ -37,14 +41,14 @@ describe("createBusiness", () => {
         roles: ["advertiser"],
         logoUrl: null,
       },
-      "user-1",
+      OWNER_ID,
     );
 
     expect(result.isOk()).toBe(true);
     const value = result._unsafeUnwrap();
     expect(value.business.displayName).toBe("Kopi Kenangan");
     expect(value.owner).toMatchObject({
-      userId: "user-1",
+      userId: OWNER_ID,
       role: "owner",
       businessId: value.business.id,
     });

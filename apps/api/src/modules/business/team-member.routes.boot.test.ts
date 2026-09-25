@@ -38,11 +38,18 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
   await app.close();
 });
 
+/**
+ * `OWNER_ID` below (`"owner-boot-1"`) is already unique to this file, so
+ * cleanup scopes to it rather than the whole table — see
+ * `persistence/business-db.test-helper.ts` for why a shared literal like
+ * the sibling files' old `"owner-1"` would still race.
+ */
 beforeEach(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
 });
 
 function principalHeaders(userId: string, businessRoles: Record<string, string>) {

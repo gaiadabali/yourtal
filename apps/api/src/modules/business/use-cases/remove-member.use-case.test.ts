@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
 import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
@@ -6,6 +6,12 @@ import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.
 import { createBusiness } from "./create-business.use-case";
 import { inviteMember } from "./invite-member.use-case";
 import { removeMember } from "./remove-member.use-case";
+
+/**
+ * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings —
+ * see `business-db.test-helper.ts` for why that used to be unsafe.
+ */
+const OWNER_ID = "owner-remove-member";
 
 async function setup() {
   const db = testBusinessDb();
@@ -21,7 +27,7 @@ async function setup() {
       roles: ["advertiser"],
       logoUrl: null,
     },
-    "owner-1",
+    OWNER_ID,
   );
   const businessId = created._unsafeUnwrap().business.id;
   (
@@ -29,24 +35,22 @@ async function setup() {
       businessId,
       userId: "member-1",
       role: "marketer",
-      invitedByUserId: "owner-1",
+      invitedByUserId: OWNER_ID,
     })
   )._unsafeUnwrap();
   return { businesses, members, businessId };
 }
 
 /**
- * A clean start, not only a clean finish.
- *
- * These tests share one database (the package runs serially for that
- * reason). A run that fails part-way leaves its rows behind, and the next
- * one then trips a unique index and fails for a reason unrelated to what it
- * tests — burying a real failure under a fake one. Clearing before is what
- * makes the suite repeatable; clearing after only helps when the previous
- * run got that far.
+ * A clean start, not only a clean finish — scoped to this file's own
+ * fixtures now, not the whole table. See `business-db.test-helper.ts`.
  */
 beforeAll(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
+});
+
+afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
 });
 
 describe("removeMember", () => {
@@ -62,11 +66,11 @@ describe("removeMember", () => {
   it("refuses to remove the owner, even though the caller is not asked whether they are one", async () => {
     const { businesses, members, businessId } = await setup();
 
-    const result = await removeMember(businesses, members, { businessId, userId: "owner-1" });
+    const result = await removeMember(businesses, members, { businessId, userId: OWNER_ID });
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "cannot_remove_owner" });
-    expect(await members.findMember(businessId, "owner-1")).not.toBeNull();
+    expect(await members.findMember(businessId, OWNER_ID)).not.toBeNull();
   });
 
   it("rejects removing a member that does not exist", async () => {

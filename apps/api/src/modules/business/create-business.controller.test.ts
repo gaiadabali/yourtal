@@ -1,5 +1,5 @@
 import type { Principal } from "@yourtal/authz/principal";
-import { describe, expect, it, vi, beforeAll } from "vitest";
+import { describe, expect, it, vi, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessOnboardingUnitOfWork } from "./persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "./persistence/business-db.test-helper";
 import type { FastifyRequest } from "fastify";
@@ -16,17 +16,23 @@ const validBody: CreateBusinessRequest = {
 };
 
 /**
- * A clean start, not only a clean finish.
- *
- * These tests share one database (the package runs serially for that
- * reason). A run that fails part-way leaves its rows behind, and the next
- * one then trips a unique index and fails for a reason unrelated to what it
- * tests — burying a real failure under a fake one. Clearing before is what
- * makes the suite repeatable; clearing after only helps when the previous
- * run got that far.
+ * A fixture id unique to THIS FILE, not `"user-1"` shared with siblings —
+ * see `persistence/business-db.test-helper.ts` for why that used to be
+ * unsafe.
+ */
+const SIGNED_IN_ID = "user-create-business-controller";
+
+/**
+ * A clean start, not only a clean finish — scoped to this file's own
+ * fixtures now, not the whole table. See
+ * `persistence/business-db.test-helper.ts`.
  */
 beforeAll(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [SIGNED_IN_ID]);
+});
+
+afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [SIGNED_IN_ID]);
 });
 
 describe("CreateBusinessController", () => {
@@ -38,7 +44,7 @@ describe("CreateBusinessController", () => {
   it("creates the business and joins the signed-in caller as owner", async () => {
     const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(testBusinessDb());
     const signedIn: Principal = {
-      id: "user-1",
+      id: SIGNED_IN_ID,
       roles: ["user"],
       attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false },
     };
@@ -51,7 +57,7 @@ describe("CreateBusinessController", () => {
 
     expect(result).toMatchObject({
       business: { displayName: "Kopi Kenangan" },
-      owner: { userId: "user-1", role: "owner" },
+      owner: { userId: SIGNED_IN_ID, role: "owner" },
     });
   });
 });

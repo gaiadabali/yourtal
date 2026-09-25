@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
 import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
@@ -6,6 +6,15 @@ import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.
 import { changeMemberRole } from "./change-member-role.use-case";
 import { createBusiness } from "./create-business.use-case";
 import { inviteMember } from "./invite-member.use-case";
+
+/**
+ * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings.
+ * YT-0547's cross-file half: `clearBusinessTables` now scopes cleanup to
+ * the businesses this tag owns, and two files tagging their fixtures
+ * identically would be exactly as unsafe as the whole-table wipe it
+ * replaces. See `business-db.test-helper.ts`.
+ */
+const OWNER_ID = "owner-change-member-role";
 
 async function setup() {
   const db = testBusinessDb();
@@ -21,7 +30,7 @@ async function setup() {
       roles: ["advertiser"],
       logoUrl: null,
     },
-    "owner-1",
+    OWNER_ID,
   );
   const businessId = created._unsafeUnwrap().business.id;
   (
@@ -29,24 +38,22 @@ async function setup() {
       businessId,
       userId: "member-1",
       role: "marketer",
-      invitedByUserId: "owner-1",
+      invitedByUserId: OWNER_ID,
     })
   )._unsafeUnwrap();
   return { businesses, members, businessId };
 }
 
 /**
- * A clean start, not only a clean finish.
- *
- * These tests share one database (the package runs serially for that
- * reason). A run that fails part-way leaves its rows behind, and the next
- * one then trips a unique index and fails for a reason unrelated to what it
- * tests — burying a real failure under a fake one. Clearing before is what
- * makes the suite repeatable; clearing after only helps when the previous
- * run got that far.
+ * A clean start, not only a clean finish — scoped to this file's own
+ * fixtures now, not the whole table. See `business-db.test-helper.ts`.
  */
 beforeAll(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
+});
+
+afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
 });
 
 describe("changeMemberRole", () => {
@@ -68,13 +75,13 @@ describe("changeMemberRole", () => {
 
     const result = await changeMemberRole(businesses, members, {
       businessId,
-      userId: "owner-1",
+      userId: OWNER_ID,
       role: "admin",
     });
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "cannot_change_owner_role" });
-    expect((await members.findMember(businessId, "owner-1"))?.role).toBe("owner");
+    expect((await members.findMember(businessId, OWNER_ID))?.role).toBe("owner");
   });
 
   it("rejects a role change for a member who does not exist", async () => {

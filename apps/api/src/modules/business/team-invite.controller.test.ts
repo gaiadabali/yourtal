@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeAll } from "vitest";
+import { describe, expect, it, vi, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "./persistence/drizzle-business-account.repository";
 import { DrizzleBusinessMemberRepository } from "./persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "./persistence/drizzle-business-onboarding.unit-of-work";
@@ -8,8 +8,15 @@ import type { FastifyRequest } from "fastify";
 import type { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { TeamInviteController } from "./team-invite.controller";
 
+/**
+ * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings —
+ * see `persistence/business-db.test-helper.ts` for why that used to be
+ * unsafe.
+ */
+const OWNER_ID = "owner-team-invite-controller";
+
 const ownerPrincipal: Principal = {
-  id: "owner-1",
+  id: OWNER_ID,
   roles: ["business_user"],
   attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false },
 };
@@ -27,23 +34,22 @@ async function setup() {
       roles: ["advertiser"],
       logoUrl: null,
     },
-    "owner-1",
+    OWNER_ID,
   );
   return { businesses, members, businessId: created.business.id };
 }
 
 /**
- * A clean start, not only a clean finish.
- *
- * These tests share one database (the package runs serially for that
- * reason). A run that fails part-way leaves its rows behind, and the next
- * one then trips a unique index and fails for a reason unrelated to what it
- * tests — burying a real failure under a fake one. Clearing before is what
- * makes the suite repeatable; clearing after only helps when the previous
- * run got that far.
+ * A clean start, not only a clean finish — scoped to this file's own
+ * fixtures now, not the whole table. See
+ * `persistence/business-db.test-helper.ts`.
  */
 beforeAll(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
+});
+
+afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
 });
 
 describe("TeamInviteController", () => {

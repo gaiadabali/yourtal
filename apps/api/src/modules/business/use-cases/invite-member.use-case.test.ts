@@ -1,10 +1,16 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
 import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { createBusiness } from "./create-business.use-case";
 import { inviteMember } from "./invite-member.use-case";
+
+/**
+ * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings —
+ * see `business-db.test-helper.ts` for why that used to be unsafe.
+ */
+const OWNER_ID = "owner-invite-member";
 
 async function setupWithBusiness() {
   const db = testBusinessDb();
@@ -20,24 +26,22 @@ async function setupWithBusiness() {
       roles: ["advertiser"],
       logoUrl: null,
     },
-    "owner-1",
+    OWNER_ID,
   );
   const businessId = created._unsafeUnwrap().business.id;
   return { businesses, members, businessId };
 }
 
 /**
- * A clean start, not only a clean finish.
- *
- * These tests share one database (the package runs serially for that
- * reason). A run that fails part-way leaves its rows behind, and the next
- * one then trips a unique index and fails for a reason unrelated to what it
- * tests — burying a real failure under a fake one. Clearing before is what
- * makes the suite repeatable; clearing after only helps when the previous
- * run got that far.
+ * A clean start, not only a clean finish — scoped to this file's own
+ * fixtures now, not the whole table. See `business-db.test-helper.ts`.
  */
 beforeAll(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
+});
+
+afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
 });
 
 describe("inviteMember", () => {
@@ -48,7 +52,7 @@ describe("inviteMember", () => {
       businessId,
       userId: "marketer-1",
       role: "marketer",
-      invitedByUserId: "owner-1",
+      invitedByUserId: OWNER_ID,
     });
 
     expect(result.isOk()).toBe(true);
@@ -63,7 +67,7 @@ describe("inviteMember", () => {
         businessId,
         userId: "marketer-1",
         role: "marketer",
-        invitedByUserId: "owner-1",
+        invitedByUserId: OWNER_ID,
       })
     )._unsafeUnwrap();
 
@@ -71,7 +75,7 @@ describe("inviteMember", () => {
       businessId,
       userId: "marketer-1",
       role: "analyst",
-      invitedByUserId: "owner-1",
+      invitedByUserId: OWNER_ID,
     });
 
     expect(result.isErr()).toBe(true);
@@ -90,7 +94,7 @@ describe("inviteMember", () => {
       businessId: "00000000-0000-4000-8000-000000000000",
       userId: "marketer-1",
       role: "marketer",
-      invitedByUserId: "owner-1",
+      invitedByUserId: OWNER_ID,
     });
 
     expect(result.isErr()).toBe(true);

@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
 import { DrizzleBillingContactRepository } from "../persistence/drizzle-billing-contact.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
@@ -7,17 +7,21 @@ import { createBusiness } from "./create-business.use-case";
 import { setBillingContact } from "./set-billing-contact.use-case";
 
 /**
- * A clean start, not only a clean finish.
- *
- * These tests share one database (the package runs serially for that
- * reason). A run that fails part-way leaves its rows behind, and the next
- * one then trips a unique index and fails for a reason unrelated to what it
- * tests — burying a real failure under a fake one. Clearing before is what
- * makes the suite repeatable; clearing after only helps when the previous
- * run got that far.
+ * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings —
+ * see `business-db.test-helper.ts` for why that used to be unsafe.
+ */
+const OWNER_ID = "owner-set-billing-contact";
+
+/**
+ * A clean start, not only a clean finish — scoped to this file's own
+ * fixtures now, not the whole table. See `business-db.test-helper.ts`.
  */
 beforeAll(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
+});
+
+afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
 });
 
 describe("setBillingContact", () => {
@@ -35,7 +39,7 @@ describe("setBillingContact", () => {
         roles: ["advertiser"],
         logoUrl: null,
       },
-      "owner-1",
+      OWNER_ID,
     );
     const businessId = created._unsafeUnwrap().business.id;
 

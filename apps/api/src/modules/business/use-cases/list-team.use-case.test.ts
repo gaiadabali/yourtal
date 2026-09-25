@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
 import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
@@ -8,17 +8,21 @@ import { inviteMember } from "./invite-member.use-case";
 import { listTeam } from "./list-team.use-case";
 
 /**
- * A clean start, not only a clean finish.
- *
- * These tests share one database (the package runs serially for that
- * reason). A run that fails part-way leaves its rows behind, and the next
- * one then trips a unique index and fails for a reason unrelated to what it
- * tests — burying a real failure under a fake one. Clearing before is what
- * makes the suite repeatable; clearing after only helps when the previous
- * run got that far.
+ * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings —
+ * see `business-db.test-helper.ts` for why that used to be unsafe.
+ */
+const OWNER_ID = "owner-list-team";
+
+/**
+ * A clean start, not only a clean finish — scoped to this file's own
+ * fixtures now, not the whole table. See `business-db.test-helper.ts`.
  */
 beforeAll(async () => {
-  await clearBusinessTables(testBusinessDb());
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
+});
+
+afterAll(async () => {
+  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
 });
 
 describe("listTeam", () => {
@@ -36,7 +40,7 @@ describe("listTeam", () => {
         roles: ["advertiser"],
         logoUrl: null,
       },
-      "owner-1",
+      OWNER_ID,
     );
     const businessId = created._unsafeUnwrap().business.id;
     (
@@ -44,7 +48,7 @@ describe("listTeam", () => {
         businessId,
         userId: "member-1",
         role: "finance",
-        invitedByUserId: "owner-1",
+        invitedByUserId: OWNER_ID,
       })
     )._unsafeUnwrap();
 
@@ -53,7 +57,7 @@ describe("listTeam", () => {
     expect(result.isOk()).toBe(true);
     const team = result._unsafeUnwrap();
     expect(team).toHaveLength(2);
-    expect(team.map((member) => member.userId).sort()).toStrictEqual(["member-1", "owner-1"]);
+    expect(team.map((member) => member.userId).sort()).toStrictEqual(["member-1", OWNER_ID].sort());
   });
 
   it("rejects listing the team of a business that does not exist", async () => {

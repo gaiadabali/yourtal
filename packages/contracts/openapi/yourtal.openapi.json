@@ -2624,7 +2624,7 @@
         ]
       },
       "Listing": {
-        "description": "A store listing: what it costs in points, what it settles at, and its stock.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - settlementValueMinor (what the merchant is paid) cannot exceed faceValueMinor (docs/09 section 3).\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
+        "description": "A store listing: what it costs in points, what it settles at, and its stock.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - settlementValueMinor (what the merchant is paid) cannot exceed faceValueMinor (docs/09 section 3).\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendMinor is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
         "type": "object",
         "properties": {
           "id": {
@@ -3086,7 +3086,7 @@
         ]
       },
       "PublicListing": {
-        "description": "A store listing as the PUBLIC catalogue serves it. Identical to Listing except that settlementValueIdr is absent: S beside priceInPoints publishes the backing rate B by arithmetic, and docs/24 ID-1 rests on there being no published fixed cash rate. Consumers of the public catalogue must generate against this, never Listing.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
+        "description": "A store listing as the PUBLIC catalogue serves it. Identical to Listing except that settlementValueMinor is absent: S beside priceInPoints publishes the backing rate B by arithmetic, and docs/24 ID-1 rests on there being no published fixed cash rate. Consumers of the public catalogue must generate against this, never Listing.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendMinor is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
         "type": "object",
         "properties": {
           "id": {
@@ -3486,7 +3486,7 @@
         ]
       },
       "Voucher": {
-        "description": "An issued voucher held by a user, with its remaining value and expiry.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - remainingValueMinor cannot exceed faceValueMinor.\n  - expiresAt must be after issuedAt.\n  - minimumSpendIdr is set if and only if the policy is minimum_spend.",
+        "description": "An issued voucher held by a user, with its remaining value and expiry.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - remainingValueMinor cannot exceed faceValueMinor.\n  - expiresAt must be after issuedAt.\n  - minimumSpendMinor is set if and only if the policy is minimum_spend.",
         "type": "object",
         "properties": {
           "id": {

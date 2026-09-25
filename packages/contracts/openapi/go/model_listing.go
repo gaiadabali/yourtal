@@ -19,7 +19,7 @@ import (
 // checks if the Listing type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Listing{}
 
-// Listing A store listing: what it costs in points, what it settles at, and its stock.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - stockRemaining cannot exceed stockTotal.   - settlementValueMinor (what the merchant is paid) cannot exceed faceValueMinor (docs/09 section 3).   - A sold_out listing must have zero stockRemaining.   - minimumSpendIdr is set if and only if the policy is minimum_spend.   - location ids must be unique within a listing.
+// Listing A store listing: what it costs in points, what it settles at, and its stock.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - stockRemaining cannot exceed stockTotal.   - settlementValueMinor (what the merchant is paid) cannot exceed faceValueMinor (docs/09 section 3).   - A sold_out listing must have zero stockRemaining.   - minimumSpendMinor is set if and only if the policy is minimum_spend.   - location ids must be unique within a listing.
 type Listing struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	MerchantId string `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`

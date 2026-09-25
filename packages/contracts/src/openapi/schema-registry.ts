@@ -292,7 +292,7 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       "stockRemaining cannot exceed stockTotal.",
       "settlementValueMinor (what the merchant is paid) cannot exceed faceValueMinor (docs/09 section 3).",
       "A sold_out listing must have zero stockRemaining.",
-      "minimumSpendIdr is set if and only if the policy is minimum_spend.",
+      "minimumSpendMinor is set if and only if the policy is minimum_spend.",
       "location ids must be unique within a listing.",
     ],
   },
@@ -301,13 +301,13 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: publicListingSchema,
     description:
       "A store listing as the PUBLIC catalogue serves it. Identical to Listing except that " +
-      "settlementValueIdr is absent: S beside priceInPoints publishes the backing rate B by " +
+      "settlementValueMinor is absent: S beside priceInPoints publishes the backing rate B by " +
       "arithmetic, and docs/24 ID-1 rests on there being no published fixed cash rate. " +
       "Consumers of the public catalogue must generate against this, never Listing.",
     crossFieldRules: [
       "stockRemaining cannot exceed stockTotal.",
       "A sold_out listing must have zero stockRemaining.",
-      "minimumSpendIdr is set if and only if the policy is minimum_spend.",
+      "minimumSpendMinor is set if and only if the policy is minimum_spend.",
       "location ids must be unique within a listing.",
     ],
   },
@@ -341,7 +341,7 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [
       "remainingValueMinor cannot exceed faceValueMinor.",
       "expiresAt must be after issuedAt.",
-      "minimumSpendIdr is set if and only if the policy is minimum_spend.",
+      "minimumSpendMinor is set if and only if the policy is minimum_spend.",
     ],
   },
 

@@ -19,7 +19,7 @@ import (
 // checks if the Voucher type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Voucher{}
 
-// Voucher An issued voucher held by a user, with its remaining value and expiry.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - remainingValueMinor cannot exceed faceValueMinor.   - expiresAt must be after issuedAt.   - minimumSpendIdr is set if and only if the policy is minimum_spend.
+// Voucher An issued voucher held by a user, with its remaining value and expiry.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - remainingValueMinor cannot exceed faceValueMinor.   - expiresAt must be after issuedAt.   - minimumSpendMinor is set if and only if the policy is minimum_spend.
 type Voucher struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	ListingId string `json:"listingId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`

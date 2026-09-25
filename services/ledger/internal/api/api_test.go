@@ -234,16 +234,18 @@ func TestRatesAndMarketingNeedTwoPeople(t *testing.T) {
 	if proposal.State != "pending" {
 		t.Fatalf("proposal %+v", proposal)
 	}
-	if code := s.call("/economy/rates/approve", map[string]any{"proposalId": proposal.ProposalID, "approvedBy": "alice"}, nil); code != http.StatusBadRequest {
-		t.Errorf("self-approval answered %d, want 400", code)
+	// The closed enum has no two-person code; the contract answers already_granted.
+	var p problem
+	if code := s.call("/economy/rates/approve", map[string]any{"proposalId": proposal.ProposalID, "approvedBy": "alice"}, &p); code != http.StatusConflict || p.Code != "already_granted" {
+		t.Errorf("self-approval answered %d %s, want 409 already_granted", code, p.Code)
 	}
 	s.mustCall("/economy/rates/approve", map[string]any{"proposalId": proposal.ProposalID, "approvedBy": "bob"}, &proposal)
 	if proposal.State != "approved" {
 		t.Errorf("after approval: %+v", proposal)
 	}
 	if code := s.call("/economy/marketing/fund", map[string]any{"region": "ID", "amountMinor": 1000,
-		"proposedBy": "alice", "approvedBy": "alice"}, nil); code != http.StatusBadRequest {
-		t.Errorf("one-person marketing funding answered %d, want 400", code)
+		"proposedBy": "alice", "approvedBy": "alice"}, &p); code != http.StatusConflict || p.Code != "already_granted" {
+		t.Errorf("one-person marketing funding answered %d %s, want 409 already_granted", code, p.Code)
 	}
 	if code := s.call("/escrow", map[string]any{}, nil); code != http.StatusNotImplemented {
 		t.Errorf("escrow answered %d, want 501 until its task", code)

@@ -1,0 +1,25 @@
+{
+  "name": "@yourtal/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/main.ts",
+    "start": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "node ../../packages/db/scripts/with-test-db.mjs -- vitest run"
+  },
+  "dependencies": {
+    "@yourtal/queue": "workspace:*",
+    "pg-boss": "12.34.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@swc-node/register": "^1.12.1",
+    "@swc/core": "^1.16.2",
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

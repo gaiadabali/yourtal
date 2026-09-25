@@ -89,7 +89,7 @@ export interface PdpClient {
 export function createPdpClient(config: PdpClientConfig): PdpClient {
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const doFetch = config.fetchImpl ?? globalThis.fetch;
-  const endpoint = `${config.baseUrl.replace(/\/+$/, "")}/api/check/resources`;
+  const endpoint = `${trimTrailingSlashes(config.baseUrl)}/api/check/resources`;
 
   function checkResource<K extends ResourceKind>(
     principal: Principal,
@@ -206,4 +206,11 @@ function parseDecisions<K extends ResourceKind>(
   // Invariant: the loop above assigned every member of `actions` or returned
   // early, so `decisions` is total over the requested keys by construction.
   return okAsync(decisions as ActionDecisions<K>);
+}
+
+// A loop, not /\/+$/: that regex backtracks polynomially on long runs of "/".
+function trimTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (end > 0 && url[end - 1] === "/") end--;
+  return url.slice(0, end);
 }

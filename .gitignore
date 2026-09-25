@@ -6,7 +6,8 @@ dist/
 coverage/
 *.tsbuildinfo
 .env
-.env.local
+.env.*
+!.env.example
 .DS_Store
 .lighthouseci/
 playwright-report/
@@ -53,3 +54,20 @@ TASKS.md.lock
 .claude/settings.local.json
 # Third-party clips fetched for the design prototypes (TASKS.md 3.2.a); licences in CREDITS.txt
 apps/web/public/lab-media/
+
+# Go build outputs (ledger is covered above)
+services/*/voucher
+infra/healthcheck/healthcheck
+infra/healthcheck/*.exe
+# Logs, caches and reports
+*.log
+.eslintcache
+blob-report/
+playwright/.cache/
+/bundle-report.md
+# OS and editor files
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json

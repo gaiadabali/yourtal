@@ -1,0 +1,116 @@
+/* Prototype palettes for the two design variants. Raw values live here only until
+   the founder picks one; 3.3 turns the winner into packages/ui tokens. */
+
+[data-variant="after-dark"][data-theme="dark"] {
+  --lab-canvas: #0b0b0f;
+  --lab-surface: #17171f;
+  --lab-surface-2: #22222c;
+  --lab-fg: #f5f5f7;
+  --lab-fg-muted: #a9a9b8;
+  --lab-border: #2e2e3a;
+  --lab-accent: #ff3d6e;
+  --lab-fg-on-accent: #0b0b0f;
+  --lab-accent-text: #ff6b8e;
+  --lab-streak: #ff9f43;
+}
+[data-variant="after-dark"][data-theme="light"] {
+  --lab-canvas: #ffffff;
+  --lab-surface: #f3f3f6;
+  --lab-surface-2: #e8e8ee;
+  --lab-fg: #0b0b0f;
+  --lab-fg-muted: #55556a;
+  --lab-border: #d9d9e2;
+  --lab-accent: #d81b52;
+  --lab-fg-on-accent: #ffffff;
+  --lab-accent-text: #c4144a;
+  --lab-streak: #c2410c;
+}
+[data-variant="daylight"][data-theme="light"] {
+  --lab-canvas: #ffffff;
+  --lab-surface: #f4f4f7;
+  --lab-surface-2: #e9e9ef;
+  --lab-fg: #0e0e12;
+  --lab-fg-muted: #55556a;
+  --lab-border: #dcdce4;
+  --lab-accent: #5b2eff;
+  --lab-fg-on-accent: #ffffff;
+  --lab-accent-text: #5b2eff;
+  --lab-streak: #ff7a59;
+}
+[data-variant="daylight"][data-theme="dark"] {
+  --lab-canvas: #0e0e12;
+  --lab-surface: #1a1a22;
+  --lab-surface-2: #25252f;
+  --lab-fg: #f4f4f7;
+  --lab-fg-muted: #a8a8b8;
+  --lab-border: #30303c;
+  --lab-accent: #9d85ff;
+  --lab-fg-on-accent: #0e0e12;
+  --lab-accent-text: #b3a1ff;
+  --lab-streak: #ff8a6b;
+}
+
+/* Shared by both variants. Gold is a fill only, never text on a light surface. */
+[data-variant] {
+  --lab-points: #ffc53d;
+  --lab-points-strong: #ffb400;
+  --lab-fg-on-points: #1a1300;
+  --lab-scrim: linear-gradient(to top, rgb(0 0 0 / 0.72), rgb(0 0 0 / 0.35) 45%, transparent);
+  --lab-scrim-top: linear-gradient(to bottom, rgb(0 0 0 / 0.5), transparent);
+  background-color: var(--lab-canvas);
+  color: var(--lab-fg);
+  font-family: var(--lab-body), system-ui, sans-serif;
+  color-scheme: dark;
+}
+[data-variant][data-theme="light"] {
+  color-scheme: light;
+}
+
+[data-variant] video::cue {
+  font-family: var(--lab-body), system-ui, sans-serif;
+  font-size: 1rem;
+  background: rgb(0 0 0 / 0.75);
+  color: #ffffff;
+}
+
+@keyframes lab-coin {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(var(--burst-x), var(--burst-y)) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--to-x), var(--to-y)) scale(0.5);
+    opacity: 0.9;
+  }
+}
+@keyframes lab-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.lab-coin {
+  animation: lab-coin 900ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+.lab-pop {
+  animation: lab-pop 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-coin {
+    display: none;
+  }
+  .lab-pop {
+    animation: none;
+  }
+}

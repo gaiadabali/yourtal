@@ -21,10 +21,10 @@ func TestTheSpreadCoversTheDemandFloor(t *testing.T) {
 			IssuePriceMicrosPerPoint: 1_000_000, EffectiveFrom: time.Now().UTC().Add(time.Hour),
 			Reason: "margin test", SetBy: "pricing_test"}
 	}
-	if err := engine.SetRate(context.Background(), rate(800_000)); err != nil {
+	if err := engine.ProposeRate(context.Background(), rate(800_000)); err != nil {
 		t.Fatalf("B = 0.8 × P_issue was refused: %v", err)
 	}
-	if err := engine.SetRate(context.Background(), rate(800_001)); !errors.Is(err, pricing.ErrMarginTooThin) {
+	if err := engine.ProposeRate(context.Background(), rate(800_001)); !errors.Is(err, pricing.ErrMarginTooThin) {
 		t.Fatalf("B above 0.8 × P_issue: err = %v, want ErrMarginTooThin", err)
 	}
 	_, err := pool.Exec(context.Background(), `INSERT INTO ledger.backing_rate
@@ -38,11 +38,8 @@ func TestTheSpreadCoversTheDemandFloor(t *testing.T) {
 // F12: points are sold in packs of 1,000, and the server sets the charge.
 func TestQuotePurchaseSellsPacksAtTheIssuePrice(t *testing.T) {
 	engine, _ := newEngine(t)
-	if err := engine.SetRate(context.Background(), pricing.Rate{ID: unique("rate"), Currency: "IDR",
-		MicrosPerPoint: 6_000_000, IssuePriceMicrosPerPoint: 9_000_000, EffectiveFrom: time.Now().UTC(),
-		Reason: "F1", SetBy: "pricing_test"}); err != nil {
-		t.Fatal(err)
-	}
+	inForce(t, engine, pricing.Rate{ID: unique("rate"), Currency: "IDR",
+		MicrosPerPoint: 6_000_000, IssuePriceMicrosPerPoint: 9_000_000, Reason: "F1", SetBy: "pricing_test"})
 	quote, err := engine.QuotePurchase(context.Background(), ledger.RegionID, 3_000)
 	if err != nil {
 		t.Fatal(err)

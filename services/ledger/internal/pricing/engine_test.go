@@ -28,11 +28,11 @@ import (
 const (
 	testCountry  = "AU"
 	testCurrency = "AUD"
-	// B = 0.6 cents per point, P_issue = 1 cent per point. Plausible AU
-	// figures, and deliberately NOT whole cents — the fractional case is the
-	// one that forced micros in the first place.
-	backingAUD = 600_000
-	issueAUD   = 1_000_000
+	// F1: B = 3 cents per point, P_issue = 4.5 cents. The same as the seeded
+	// AU rate, so a fixture never cuts B (which needs 15 minutes' notice);
+	// P_issue is deliberately NOT whole cents, the case that forced micros.
+	backingAUD = 3_000_000
+	issueAUD   = 4_500_000
 )
 
 var counter atomic.Uint64
@@ -62,19 +62,26 @@ func newEngine(t *testing.T) (*pricing.Engine, *pgxpool.Pool) {
 // instant to price at.
 func withRate(t *testing.T, engine *pricing.Engine) time.Time {
 	t.Helper()
-	at := time.Now().UTC()
-
-	err := engine.SetRate(context.Background(), pricing.Rate{
+	return inForce(t, engine, pricing.Rate{
 		ID:                       unique("rate"),
 		Currency:                 testCurrency,
 		MicrosPerPoint:           backingAUD,
 		IssuePriceMicrosPerPoint: issueAUD,
-		EffectiveFrom:            at,
 		Reason:                   "test fixture",
 		SetBy:                    "pricing_test",
 	})
+}
+
+// inForce proposes and approves a rate, and returns when it takes effect.
+func inForce(t *testing.T, engine *pricing.Engine, rate pricing.Rate) time.Time {
+	t.Helper()
+	ctx := context.Background()
+	if err := engine.ProposeRate(ctx, rate); err != nil {
+		t.Fatalf("ProposeRate: %v", err)
+	}
+	at, err := engine.ApproveRate(ctx, rate.ID, "pricing_approver")
 	if err != nil {
-		t.Fatalf("SetRate: %v", err)
+		t.Fatalf("ApproveRate: %v", err)
 	}
 	return at
 }
@@ -89,18 +96,15 @@ func TestAFutureRateDoesNotPriceToday(t *testing.T) {
 	ctx := context.Background()
 	now := withRate(t, engine)
 
-	future := now.Add(90 * 24 * time.Hour)
-	if err := engine.SetRate(ctx, pricing.Rate{
+	future := inForce(t, engine, pricing.Rate{
 		ID:                       unique("rate"),
 		Currency:                 testCurrency,
 		MicrosPerPoint:           backingAUD / 2, // a devaluation, announced in advance
 		IssuePriceMicrosPerPoint: issueAUD,
-		EffectiveFrom:            future,
+		EffectiveFrom:            now.Add(90 * 24 * time.Hour),
 		Reason:                   "announced devaluation, effective in 90 days",
 		SetBy:                    "pricing_test",
-	}); err != nil {
-		t.Fatalf("SetRate (future): %v", err)
-	}
+	})
 
 	today, err := engine.RateAt(ctx, testCurrency, now)
 	if err != nil {
@@ -128,7 +132,7 @@ func TestABackingRateAtOrAboveTheIssuePriceIsRefused(t *testing.T) {
 	engine, _ := newEngine(t)
 
 	for _, backing := range []int64{issueAUD, issueAUD + 1} {
-		err := engine.SetRate(context.Background(), pricing.Rate{
+		err := engine.ProposeRate(context.Background(), pricing.Rate{
 			ID:                       unique("rate"),
 			Currency:                 testCurrency,
 			MicrosPerPoint:           backing,
@@ -147,7 +151,7 @@ func TestABackingRateAtOrAboveTheIssuePriceIsRefused(t *testing.T) {
 func TestARateChangeMustCarryItsReason(t *testing.T) {
 	engine, _ := newEngine(t)
 
-	err := engine.SetRate(context.Background(), pricing.Rate{
+	err := engine.ProposeRate(context.Background(), pricing.Rate{
 		ID:                       unique("rate"),
 		Currency:                 testCurrency,
 		MicrosPerPoint:           backingAUD,
@@ -183,9 +187,9 @@ func TestAQuoteNamesTheRateItWasPricedAt(t *testing.T) {
 		t.Fatalf("Quote: %v", err)
 	}
 
-	// AUD 30.00 = 3000 cents, at 0.6 cents/point, is 5,000 points.
-	if quote.PricePoints != 5_000 {
-		t.Errorf("got %d points, want 5000", quote.PricePoints)
+	// AUD 30.00 = 3000 cents, at 3 cents/point, is 1,000 points.
+	if quote.PricePoints != 1_000 {
+		t.Errorf("got %d points, want 1000", quote.PricePoints)
 	}
 	if quote.BackingRateID == "" || quote.BackingMicrosPerPoint != backingAUD {
 		t.Errorf("the quote does not name its rate: %+v", quote)

@@ -89,3 +89,10 @@ CREATE TABLE ledger.backing_rate (
   set_by                       text        NOT NULL,
   created_at                   timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE ledger.backing_rate_approval (
+  rate_id     text        PRIMARY KEY REFERENCES ledger.backing_rate (id),
+  approved_by    text        NOT NULL,
+  approved_at    timestamptz NOT NULL DEFAULT now(),
+  effective_from timestamptz NOT NULL
+);

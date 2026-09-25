@@ -40,6 +40,13 @@ type LedgerBackingRate struct {
 	CreatedAt                pgtype.Timestamptz
 }
 
+type LedgerBackingRateApproval struct {
+	RateID        string
+	ApprovedBy    string
+	ApprovedAt    pgtype.Timestamptz
+	EffectiveFrom pgtype.Timestamptz
+}
+
 type LedgerDailyProof struct {
 	ProofDate    pgtype.Date
 	MerkleRoot   string

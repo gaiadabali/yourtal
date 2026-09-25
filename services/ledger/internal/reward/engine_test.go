@@ -71,11 +71,15 @@ func withF1Rates(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	rates := pricing.New(pool)
 	for currency, r := range map[string][2]int64{"IDR": {6_000_000, 9_000_000}, "AUD": {3_000_000, 4_500_000}} {
-		if err := rates.SetRate(context.Background(), pricing.Rate{
-			ID: unique("rate"), Currency: currency, MicrosPerPoint: r[0], IssuePriceMicrosPerPoint: r[1],
-			EffectiveFrom: time.Now().UTC(), Reason: "F1 test fixture", SetBy: "reward_test",
+		id := unique("rate")
+		if err := rates.ProposeRate(context.Background(), pricing.Rate{
+			ID: id, Currency: currency, MicrosPerPoint: r[0], IssuePriceMicrosPerPoint: r[1],
+			Reason: "F1 test fixture", SetBy: "reward_test",
 		}); err != nil {
 			t.Fatalf("rate %s: %v", currency, err)
+		}
+		if _, err := rates.ApproveRate(context.Background(), id, "reward_approver"); err != nil {
+			t.Fatalf("approving %s: %v", currency, err)
 		}
 	}
 }

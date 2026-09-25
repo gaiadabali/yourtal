@@ -12,11 +12,12 @@ import (
 )
 
 const getBackingRateAt = `-- name: GetBackingRateAt :one
-SELECT id, currency, micros_per_point, issue_price_micros_per_point,
-       effective_from, reason, set_by, created_at
-FROM ledger.backing_rate
-WHERE currency = $1 AND effective_from <= $2
-ORDER BY effective_from DESC
+SELECT r.id, r.currency, r.micros_per_point, r.issue_price_micros_per_point,
+       a.effective_from, r.reason, r.set_by, r.created_at
+FROM ledger.backing_rate r
+JOIN ledger.backing_rate_approval a ON a.rate_id = r.id
+WHERE r.currency = $1 AND a.effective_from <= $2
+ORDER BY a.effective_from DESC, a.approved_at DESC
 LIMIT 1
 `
 
@@ -25,13 +26,24 @@ type GetBackingRateAtParams struct {
 	EffectiveFrom pgtype.Timestamptz
 }
 
+type GetBackingRateAtRow struct {
+	ID                       string
+	Currency                 string
+	MicrosPerPoint           int64
+	IssuePriceMicrosPerPoint int64
+	EffectiveFrom            pgtype.Timestamptz
+	Reason                   string
+	SetBy                    string
+	CreatedAt                pgtype.Timestamptz
+}
+
 // The rate in force for a currency at an instant: the latest row effective
 // at or before it. `LIMIT 1` over a DESC index, so a price never depends on
 // how Postgres happened to order two equally-valid rows — and the unique
 // constraint on (currency, effective_from) means there cannot be two.
-func (q *Queries) GetBackingRateAt(ctx context.Context, arg GetBackingRateAtParams) (LedgerBackingRate, error) {
+func (q *Queries) GetBackingRateAt(ctx context.Context, arg GetBackingRateAtParams) (GetBackingRateAtRow, error) {
 	row := q.db.QueryRow(ctx, getBackingRateAt, arg.Currency, arg.EffectiveFrom)
-	var i LedgerBackingRate
+	var i GetBackingRateAtRow
 	err := row.Scan(
 		&i.ID,
 		&i.Currency,
@@ -46,19 +58,31 @@ func (q *Queries) GetBackingRateAt(ctx context.Context, arg GetBackingRateAtPara
 }
 
 const getBackingRateInForce = `-- name: GetBackingRateInForce :one
-SELECT id, currency, micros_per_point, issue_price_micros_per_point,
-       effective_from, reason, set_by, created_at
-FROM ledger.backing_rate
-WHERE currency = $1 AND effective_from <= now()
-ORDER BY effective_from DESC
+SELECT r.id, r.currency, r.micros_per_point, r.issue_price_micros_per_point,
+       a.effective_from, r.reason, r.set_by, r.created_at
+FROM ledger.backing_rate r
+JOIN ledger.backing_rate_approval a ON a.rate_id = r.id
+WHERE r.currency = $1 AND a.effective_from <= now()
+ORDER BY a.effective_from DESC, a.approved_at DESC
 LIMIT 1
 `
 
+type GetBackingRateInForceRow struct {
+	ID                       string
+	Currency                 string
+	MicrosPerPoint           int64
+	IssuePriceMicrosPerPoint int64
+	EffectiveFrom            pgtype.Timestamptz
+	Reason                   string
+	SetBy                    string
+	CreatedAt                pgtype.Timestamptz
+}
+
 // The rate in force now, on the database's clock, so no caller can price
 // against an instant of its own choosing.
-func (q *Queries) GetBackingRateInForce(ctx context.Context, currency string) (LedgerBackingRate, error) {
+func (q *Queries) GetBackingRateInForce(ctx context.Context, currency string) (GetBackingRateInForceRow, error) {
 	row := q.db.QueryRow(ctx, getBackingRateInForce, currency)
-	var i LedgerBackingRate
+	var i GetBackingRateInForceRow
 	err := row.Scan(
 		&i.ID,
 		&i.Currency,
@@ -76,7 +100,8 @@ const insertBackingRate = `-- name: InsertBackingRate :exec
 INSERT INTO ledger.backing_rate
   (id, currency, micros_per_point, issue_price_micros_per_point,
    effective_from, reason, set_by)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4,
+        COALESCE($5::timestamptz, now()), $6, $7)
 `
 
 type InsertBackingRateParams struct {
@@ -92,6 +117,8 @@ type InsertBackingRateParams struct {
 // Append-only. A rate is never updated: changing B is a devaluation
 // (docs/09 §6 lever 3) and the history of what it has been must survive the
 // change, or nobody can say what a voucher sold under last month.
+// A proposal: in force only once InsertRateApproval records a second person.
+// No effective_from means "now", on the database's clock.
 func (q *Queries) InsertBackingRate(ctx context.Context, arg InsertBackingRateParams) error {
 	_, err := q.db.Exec(ctx, insertBackingRate,
 		arg.ID,
@@ -105,25 +132,57 @@ func (q *Queries) InsertBackingRate(ctx context.Context, arg InsertBackingRatePa
 	return err
 }
 
-const listBackingRates = `-- name: ListBackingRates :many
-SELECT id, currency, micros_per_point, issue_price_micros_per_point,
-       effective_from, reason, set_by, created_at
-FROM ledger.backing_rate
-WHERE currency = $1
-ORDER BY effective_from
+const insertRateApproval = `-- name: InsertRateApproval :one
+INSERT INTO ledger.backing_rate_approval (rate_id, approved_by, effective_from)
+VALUES ($1, $2, now()) -- the trigger sets the real effective_from
+RETURNING effective_from
 `
+
+type InsertRateApprovalParams struct {
+	RateID     string
+	ApprovedBy string
+}
+
+// The approval trigger enforces a second person, approval before effect,
+// and 15 minutes' notice for a cut to B.
+func (q *Queries) InsertRateApproval(ctx context.Context, arg InsertRateApprovalParams) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, insertRateApproval, arg.RateID, arg.ApprovedBy)
+	var effective_from pgtype.Timestamptz
+	err := row.Scan(&effective_from)
+	return effective_from, err
+}
+
+const listBackingRates = `-- name: ListBackingRates :many
+SELECT r.id, r.currency, r.micros_per_point, r.issue_price_micros_per_point,
+       a.effective_from, r.reason, r.set_by, r.created_at
+FROM ledger.backing_rate r
+JOIN ledger.backing_rate_approval a ON a.rate_id = r.id
+WHERE r.currency = $1
+ORDER BY a.effective_from
+`
+
+type ListBackingRatesRow struct {
+	ID                       string
+	Currency                 string
+	MicrosPerPoint           int64
+	IssuePriceMicrosPerPoint int64
+	EffectiveFrom            pgtype.Timestamptz
+	Reason                   string
+	SetBy                    string
+	CreatedAt                pgtype.Timestamptz
+}
 
 // Every rate a currency has ever had, oldest first. This is the devaluation
 // record docs/09 §6 requires be announceable rather than silent.
-func (q *Queries) ListBackingRates(ctx context.Context, currency string) ([]LedgerBackingRate, error) {
+func (q *Queries) ListBackingRates(ctx context.Context, currency string) ([]ListBackingRatesRow, error) {
 	rows, err := q.db.Query(ctx, listBackingRates, currency)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []LedgerBackingRate
+	var items []ListBackingRatesRow
 	for rows.Next() {
-		var i LedgerBackingRate
+		var i ListBackingRatesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Currency,

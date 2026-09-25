@@ -1,4 +1,4 @@
-h1:aveovpYCh0WhsIbFvU4nMBTEnSzmeQ1I2g83w5Rke34=
+h1:oL2glBt5MmZLKvt5/NgTK6EnwitT36yPSqGa69vq5oE=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -37,3 +37,4 @@ h1:aveovpYCh0WhsIbFvU4nMBTEnSzmeQ1I2g83w5Rke34=
 20260925180500_ledger_chart_per_region.sql h1:I4kzw49N4nbLp2J+X6SyQzwZd+4II6+fy+5gNTzCgpY=
 20260925181000_ledger_guards.sql h1:ZMAQ1XsC2cvOp2nC+9of4bl0wZOApg+8IBLOkwDyL5o=
 20260925182000_backing_rate_margin.sql h1:cJVN1RaBK2t9UHo4W6+IpkDVpHeEKrlJ/MJxp6eDBWw=
+20260925183000_rate_governance.sql h1:jm4HQxz4YeKSSr7XQWfra6GecmDVTpfT3uJ0EZi+vLM=

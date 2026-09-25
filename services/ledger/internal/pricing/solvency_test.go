@@ -41,7 +41,7 @@ func TestAnUnfundedFaucetDrivesCoverageDown(t *testing.T) {
 		ID:          unique("pur"),
 		PartnerID:   unique("partner"),
 		Points:      1_000_000,
-		AmountMinor: 1_000_000, // cents, at P_issue = 1 cent/point
+		AmountMinor: 4_500_000, // cents, at P_issue = 4.5 cents/point
 		Currency:    testCurrency,
 	})
 	if err != nil {

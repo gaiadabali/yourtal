@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -27,6 +29,12 @@ var (
 	ErrRateNotBelowIssuePrice = errors.New("pricing: the backing rate must be below the issue price")
 	// ErrReasonRequired — a rate change with no stated reason.
 	ErrReasonRequired = errors.New("pricing: a rate change must carry its reason")
+
+	// ErrSameApprover — a rate needs a second person to approve it.
+	ErrSameApprover = errors.New("pricing: the proposer cannot approve their own rate")
+	// ErrRateCutTooSoon — a cut to B lands no sooner than 15 minutes after
+	// approval, so every locked quote is honoured.
+	ErrRateCutTooSoon = errors.New("pricing: a cut to B needs 15 minutes' notice")
 )
 
 // Rate is one row of the backing-rate history: B, the issue price it was set
@@ -52,21 +60,10 @@ type Engine struct {
 
 func New(pool *pgxpool.Pool) *Engine { return &Engine{pool: pool} }
 
-// SetRate records a new backing rate, effective from an instant.
-//
-// # Why there is no UpdateRate
-//
-// Changing B reprices the entire catalogue at once — docs/09 §6 lever 3,
-// the one annotated "High — this is a devaluation. Announce it, never do it
-// silently". An UPDATE would leave no trace of what the rate had been, so
-// the question a user asks after a reprice ("what was this worth
-// yesterday?") would have no answer, and the announcement requirement would
-// rest entirely on someone remembering to send an email.
-//
-// Effective-dating also means a rate can be set AHEAD of time, which is what
-// makes announcing one possible at all: you cannot give notice of a change
-// you can only make at the instant it applies.
-func (e *Engine) SetRate(ctx context.Context, rate Rate) error {
+// ProposeRate records a new backing rate. It prices nothing until a second
+// person approves it (ApproveRate). A zero EffectiveFrom means "as soon as
+// approved"; a rate never takes effect before it is approved (4.9.b).
+func (e *Engine) ProposeRate(ctx context.Context, rate Rate) error {
 	if rate.MicrosPerPoint <= 0 {
 		return fmt.Errorf("%w: got %d", ErrBackingRateNotPositive, rate.MicrosPerPoint)
 	}
@@ -88,7 +85,7 @@ func (e *Engine) SetRate(ctx context.Context, rate Rate) error {
 		Currency:                 rate.Currency,
 		MicrosPerPoint:           rate.MicrosPerPoint,
 		IssuePriceMicrosPerPoint: rate.IssuePriceMicrosPerPoint,
-		EffectiveFrom:            pgtype.Timestamptz{Time: rate.EffectiveFrom, Valid: true},
+		EffectiveFrom:            pgtype.Timestamptz{Time: rate.EffectiveFrom, Valid: !rate.EffectiveFrom.IsZero()},
 		Reason:                   rate.Reason,
 		SetBy:                    rate.SetBy,
 	})
@@ -168,4 +165,25 @@ func (e *Engine) History(ctx context.Context, currency string) ([]Rate, error) {
 		})
 	}
 	return rates, nil
+}
+
+// ApproveRate is the second person's signature. It returns when the rate
+// takes effect: its proposed time, or now if that has already passed.
+func (e *Engine) ApproveRate(ctx context.Context, rateID, approvedBy string) (time.Time, error) {
+	effective, err := sqlcgen.New(e.pool).InsertRateApproval(ctx, sqlcgen.InsertRateApprovalParams{
+		RateID: rateID, ApprovedBy: approvedBy,
+	})
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch {
+		case strings.Contains(pgErr.Message, "needs a second person"):
+			return time.Time{}, fmt.Errorf("%w: %s", ErrSameApprover, pgErr.Message)
+		case strings.Contains(pgErr.Message, "a cut to B"):
+			return time.Time{}, fmt.Errorf("%w: %s", ErrRateCutTooSoon, pgErr.Message)
+		}
+	}
+	if err != nil {
+		return time.Time{}, fmt.Errorf("approving rate %s: %w", rateID, err)
+	}
+	return effective.Time, nil
 }

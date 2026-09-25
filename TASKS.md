@@ -464,7 +464,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.3.c Create `apps/worker`: a pg-boss runner (`packages/queue`) that **auto-loads** every `src/jobs/*.ts` exporting `job`, with no central list. Add ffmpeg to the Helios host prerequisites (`infra/HELIOS.md`).
   - [x] 1.3.d `apps/api/src/shared/testing/session-for.ts` (register + login → cookie) for everyone's tests. Until 1.5.a lands it **also returns the matching `x-yt-*` headers**, so a test passes both before and after 1.5.a. The boot tests move onto it in 1.5.a.
   - [x] 1.3.e **Check:** a new job file is picked up without editing any other file, and a new route passes route-drift once it is added to its area's registry. Verified: `apps/worker/src/job-loader.test.ts` adds `second.job.ts` next to `real.job.ts` with no other file touched; `packages/contracts/src/openapi/route-drift.test.ts` passes for the whole `apps/api` route set against the concatenated `route-registry.{a,b,c}.ts`.
-- [ ] **1.4 Accounts and profile** · needs: 1.1
+- [ ] **1.4 Accounts and profile** · needs: 1.1 — 🔄 slot 3
   - [ ] 1.4.a Add a migration for `identity.user_profile` with these fields:
     - `region` AU | ID, immutable after signup;
     - `display_locale`, defaulting to `en-AU` and independent of region;

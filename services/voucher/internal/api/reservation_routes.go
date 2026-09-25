@@ -19,7 +19,7 @@ type reservationView struct {
 func toReservationView(r issue.Reservation) reservationView {
 	return reservationView{
 		VoucherID: r.VoucherID.String(), ListingID: r.ListingID.String(),
-		SagaID: r.SagaID, State: string(r.State),
+		SagaID: r.SagaID, State: contractState(string(r.State)),
 	}
 }
 

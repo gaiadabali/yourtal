@@ -22,6 +22,20 @@ ALTER TABLE voucher.vouchers ALTER COLUMN region DROP DEFAULT;
 
 CREATE INDEX voucher_vouchers_saga_id ON voucher.vouchers (saga_id) WHERE saga_id IS NOT NULL;
 
+-- `vouchers_owner_iff_issued` (20260920035523) was written when `minted` was
+-- the only pre-ownership state: `(state = 'minted') = (owner_id IS NULL)`.
+-- `reserve` (4.5.a) adds a second one -- `allocated` is now a SAGA'S
+-- reservation, owned by nobody until `activate` -- so the equality has to
+-- cover both. `expired`/`voided` are reachable from either an owned or an
+-- unowned voucher (lifecycle.Transitions: minted and active can both reach
+-- them), so they are excluded from the equality rather than forced either
+-- way -- the same gap the original constraint already had for a minted
+-- voucher voided directly, made explicit instead of silently widened.
+ALTER TABLE voucher.vouchers DROP CONSTRAINT vouchers_owner_iff_issued;
+ALTER TABLE voucher.vouchers ADD CONSTRAINT vouchers_owner_iff_issued CHECK (
+  state IN ('expired', 'voided') OR (state IN ('minted', 'allocated')) = (owner_id IS NULL)
+);
+
 -- device_id on voucher.authorization: 4.5.c's device mode. NULL means the
 -- hold was placed by a merchant HMAC credential with no device attached
 -- (today's only path); a device-scoped credential (4.5.d) fills it in.

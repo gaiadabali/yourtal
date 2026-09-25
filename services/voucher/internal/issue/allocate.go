@@ -47,17 +47,6 @@ func (m *Minter) Reveal(ctx context.Context, voucherID uuid.UUID) (string, error
 	return string(plaintext), nil
 }
 
-// Allocate hands a minted voucher to a user: the step the redemption saga
-// takes after debiting points.
-func (m *Minter) Allocate(ctx context.Context, voucherID, owner uuid.UUID) error {
-	return m.transition(ctx, voucherID, lifecycle.Allocated, "", &owner, chain.TypeAllocated)
-}
-
-// Activate puts an allocated voucher in the wallet.
-func (m *Minter) Activate(ctx context.Context, voucherID uuid.UUID) error {
-	return m.transition(ctx, voucherID, lifecycle.Active, "", nil, chain.TypeActivated)
-}
-
 // Void kills a voucher for a reason (fraud, admin). Legal from every live
 // state, including held: a kill must not wait for a cart (lifecycle.Held).
 func (m *Minter) Void(ctx context.Context, voucherID uuid.UUID, reason lifecycle.VoidReason) error {

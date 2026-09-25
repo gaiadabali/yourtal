@@ -170,14 +170,19 @@ func (f *fixture) mintOne(t *testing.T, policy string, faceMinor int64, minimum 
 		t.Fatalf("minted %d vouchers, want 1", len(result.VoucherIDs))
 	}
 
-	voucherID := result.VoucherIDs[0]
+	// 4.5.a's saga path: reserve (Minted -> Allocated, no owner yet) then
+	// activate (Allocated -> Active, owner set) — the production route
+	// every voucher now reaches a wallet through.
+	sagaID := uuid.NewString()
+	if _, err := f.minter.Reserve(ctx, listingID, sagaID); err != nil {
+		t.Fatalf("Reserve: %v", err)
+	}
 	owner := uuid.New()
-	if err := f.minter.Allocate(ctx, voucherID, owner); err != nil {
-		t.Fatalf("Allocate: %v", err)
+	reservation, err := f.minter.ActivateReservation(ctx, sagaID, owner)
+	if err != nil {
+		t.Fatalf("ActivateReservation: %v", err)
 	}
-	if err := f.minter.Activate(ctx, voucherID); err != nil {
-		t.Fatalf("Activate: %v", err)
-	}
+	voucherID := reservation.VoucherID
 
 	plaintext, err := f.minter.Reveal(ctx, voucherID)
 	if err != nil {

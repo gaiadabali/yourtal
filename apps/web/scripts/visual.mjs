@@ -151,7 +151,14 @@ async function main() {
   // args array is silently reinterpreted. Every arg here is a fixed literal
   // or one of this script's own trusted argv, never external input.
   const extraArgs = process.argv.slice(2);
-  const command = ["pnpm", "exec", "playwright", "test", "--config=playwright.visual.config.ts", ...extraArgs]
+  const command = [
+    "pnpm",
+    "exec",
+    "playwright",
+    "test",
+    "--config=playwright.visual.config.ts",
+    ...extraArgs,
+  ]
     .map((part) => (/[\s"]/.test(part) ? JSON.stringify(part) : part))
     .join(" ");
   const test = spawn(command, { cwd: webRoot, stdio: "inherit", shell: true });

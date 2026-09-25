@@ -14,7 +14,7 @@ import (
 const countFailedAttemptsSince = `-- name: CountFailedAttemptsSince :one
 SELECT COUNT(*)::bigint AS failures
 FROM voucher.redemption_attempt
-WHERE merchant_id = $1 AND outcome NOT IN ('authorized', 'currency_mismatch')
+WHERE merchant_id = $1 AND outcome IN ('unknown_code', 'wrong_merchant')
   AND occurred_at >= $2
 `
 
@@ -32,6 +32,11 @@ type CountFailedAttemptsSinceParams struct {
 // integration bug, not a signal of a compromised key or an enumeration
 // attempt, so counting it toward the throttle would rate-limit a merchant
 // whose integration has a bug rather than one who is probing codes.
+//
+// Only PROBES count (D13): a code that does not exist or is not this
+// merchant's. A real voucher refused on its own rules (minimum spend, value,
+// state) is an honest till, and a killed or throttled attempt counted here
+// kept a till throttled for as long as it retried.
 func (q *Queries) CountFailedAttemptsSince(ctx context.Context, arg CountFailedAttemptsSinceParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countFailedAttemptsSince, arg.MerchantID, arg.OccurredAt)
 	var failures int64

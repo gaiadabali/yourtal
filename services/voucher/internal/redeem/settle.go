@@ -202,6 +202,17 @@ func (n *Network) Capture(
 		if lifecycle.State(voucher.State) != lifecycle.Held {
 			return fmt.Errorf("%w: voucher %s is %s", ErrNoLiveHold, asUUID(voucher.ID), voucher.State)
 		}
+		// A kill stops captures too, not only new holds: a stolen key's
+		// outstanding holds must not settle (D4).
+		killed, err := queries.IsKilled(ctx, sqlcgen.IsKilledParams{
+			ScopeID: pgUUID(merchantID), ScopeID_2: voucher.BatchID,
+		})
+		if err != nil {
+			return fmt.Errorf("reading the kill switch: %w", err)
+		}
+		if killed {
+			return ErrKilled
+		}
 
 		remaining, state := afterCapture(
 			voucher.PartialRedemptionPolicy, voucher.RemainingValueMinor, finalAmountMinor)

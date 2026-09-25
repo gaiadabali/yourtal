@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/yourtal/services/voucher/internal/httpx"
+	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/merchantauth"
 )
 
@@ -61,6 +62,10 @@ func receiptID() string { return "rcpt_" + uuid.New().String() }
 // reasons" invariant is enforced at the HTTP boundary.
 func writeAuthorizeError(w http.ResponseWriter, logger *slog.Logger, err error) {
 	switch {
+	case errors.Is(err, issue.ErrStaleVersion):
+		// Lost a race with another write to this voucher: retry (D14).
+		httpx.WriteError(w, logger, http.StatusConflict,
+			"api_error", "retry", "the voucher changed under this request; retry")
 	case errors.Is(err, ErrKilled):
 		// Not an enumeration signal: this discloses the MERCHANT's own
 		// operational state, the same fact regardless of which code was
@@ -115,6 +120,13 @@ func writeAuthorizeError(w http.ResponseWriter, logger *slog.Logger, err error) 
 
 func writeCaptureError(w http.ResponseWriter, logger *slog.Logger, err error) {
 	switch {
+	case errors.Is(err, issue.ErrStaleVersion):
+		// Lost a race with another write to this voucher: retry (D14).
+		httpx.WriteError(w, logger, http.StatusConflict,
+			"api_error", "retry", "the voucher changed under this request; retry")
+	case errors.Is(err, ErrKilled):
+		httpx.WriteError(w, logger, http.StatusForbidden,
+			"permission_error", "redemption_disabled", err.Error())
 	case errors.Is(err, ErrNoLiveHold):
 		httpx.WriteError(w, logger, http.StatusNotFound,
 			"invalid_request_error", "no_live_authorization", err.Error())
@@ -133,6 +145,10 @@ func writeCaptureError(w http.ResponseWriter, logger *slog.Logger, err error) {
 
 func writeVoidError(w http.ResponseWriter, logger *slog.Logger, err error) {
 	switch {
+	case errors.Is(err, issue.ErrStaleVersion):
+		// Lost a race with another write to this voucher: retry (D14).
+		httpx.WriteError(w, logger, http.StatusConflict,
+			"api_error", "retry", "the voucher changed under this request; retry")
 	case errors.Is(err, ErrNoLiveHold):
 		httpx.WriteError(w, logger, http.StatusNotFound,
 			"invalid_request_error", "no_live_authorization", err.Error())
@@ -144,6 +160,10 @@ func writeVoidError(w http.ResponseWriter, logger *slog.Logger, err error) {
 
 func writeRefundError(w http.ResponseWriter, logger *slog.Logger, err error) {
 	switch {
+	case errors.Is(err, issue.ErrStaleVersion):
+		// Lost a race with another write to this voucher: retry (D14).
+		httpx.WriteError(w, logger, http.StatusConflict,
+			"api_error", "retry", "the voucher changed under this request; retry")
 	case errors.Is(err, ErrNotFound):
 		httpx.WriteError(w, logger, http.StatusNotFound,
 			"invalid_request_error", "not_found", err.Error())

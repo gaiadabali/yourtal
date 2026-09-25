@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -81,7 +82,7 @@ func (n *Network) Refund(
 		return fmt.Errorf("%w: a refund needs a positive amount", ErrRefused)
 	}
 
-	return pgx.BeginTxFunc(ctx, n.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	err := pgx.BeginTxFunc(ctx, n.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		queries := sqlcgen.New(tx)
 
 		capture, err := queries.GetCapture(ctx, pgUUID(captureID))
@@ -151,6 +152,13 @@ func (n *Network) Refund(
 		})
 		return err
 	})
+	// The refund total is checked at COMMIT; over-refunding is a refusal,
+	// not a 500 (D14).
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && strings.Contains(pgErr.Message, "refunds on capture") {
+		return fmt.Errorf("%w: %s", ErrRefused, pgErr.Message)
+	}
+	return err
 }
 
 func constraintIs(err error, name string) bool {

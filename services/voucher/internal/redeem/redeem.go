@@ -220,6 +220,22 @@ func (n *Network) Authorize(ctx context.Context, req AuthorizeRequest) (Authoriz
 		return Authorization{}, fmt.Errorf("looking up the voucher: %w", err)
 	}
 
+	// Again with the voucher's batch, now that it is known: a leaked batch
+	// is killed by its own id (D4). Only for this merchant's vouchers, so the
+	// answer never reveals another merchant's batch state.
+	if voucher.MerchantID.Bytes == req.MerchantID {
+		batchKilled, err := queries.IsKilled(ctx, sqlcgen.IsKilledParams{
+			ScopeID: pgUUID(req.MerchantID), ScopeID_2: voucher.BatchID,
+		})
+		if err != nil {
+			return Authorization{}, fmt.Errorf("reading the kill switch: %w", err)
+		}
+		if batchKilled {
+			n.record(ctx, req.MerchantID, OutcomeKilled, req.AmountMinor)
+			return Authorization{}, ErrKilled
+		}
+	}
+
 	if outcome, err := n.check(voucher, req); err != nil {
 		n.record(ctx, req.MerchantID, outcome, req.AmountMinor)
 		return Authorization{}, err

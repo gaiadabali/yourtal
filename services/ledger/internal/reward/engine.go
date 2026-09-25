@@ -78,6 +78,8 @@ type GrantRequest struct {
 	AllocationID string
 	DeviceID     string
 	IPAddress    string
+	// HoldID is the reward session's hold (Hold), when it has one.
+	HoldID string
 }
 
 // GrantResult is what was paid, and from where.
@@ -191,20 +193,12 @@ func (e *Engine) issue(
 				return err
 			}
 
-			// K6, structurally. The statement is
-			// `UPDATE ... WHERE remaining_points >= $n`, so an exhausted
-			// allocation matches no row and nothing is issued. A read-then-
-			// write would let two concurrent grants both see enough and both
-			// draw — which is precisely how unfunded points get minted.
-			allocation, err := queries.DrawDownAllocation(ctx, sqlcgen.DrawDownAllocationParams{
-				ID: req.AllocationID, RemainingPoints: def.Points,
-			})
-			if errors.Is(err, pgx.ErrNoRows) {
-				return fmt.Errorf("%w: %s cannot fund %d points",
-					ErrAllocationExhausted, req.AllocationID, def.Points)
-			}
+			// K6, structurally: the allocation verbs are the only way points
+			// leave an allocation, and an exhausted one draws nothing.
+			ref := fmt.Sprintf("%s_%s_%s", req.UserID, req.Action, req.ExternalRef)
+			allocation, err := drawFor(ctx, queries, req, ref, def.Points)
 			if err != nil {
-				return fmt.Errorf("drawing down allocation: %w", err)
+				return err
 			}
 
 			if err := checkFunder(def, allocation.FunderType); err != nil {
@@ -212,7 +206,6 @@ func (e *Engine) issue(
 			}
 			entries := e.postingFor(def, req.UserID)
 			// Ids carry the user: two users may share an external ref (EM-17).
-			ref := fmt.Sprintf("%s_%s_%s", req.UserID, req.Action, req.ExternalRef)
 			transferID := "led_txn_" + ref
 
 			if err := e.ensureUserAccount(ctx, queries, req.UserID); err != nil {

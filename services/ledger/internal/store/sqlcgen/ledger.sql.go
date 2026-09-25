@@ -11,6 +11,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const consumeHold = `-- name: ConsumeHold :one
+SELECT COALESCE(ledger.allocation_consume($1::text, $2::bigint), '')::text AS allocation_id
+`
+
+type ConsumeHoldParams struct {
+	HoldID string
+	Points int64
+}
+
+// The allocation id, or ” when the hold is no longer live.
+func (q *Queries) ConsumeHold(ctx context.Context, arg ConsumeHoldParams) (string, error) {
+	row := q.db.QueryRow(ctx, consumeHold, arg.HoldID, arg.Points)
+	var allocation_id string
+	err := row.Scan(&allocation_id)
+	return allocation_id, err
+}
+
 const countRecentGrantsForDevice = `-- name: CountRecentGrantsForDevice :one
 SELECT COUNT(*)::bigint AS grants
 FROM ledger.grant
@@ -53,38 +70,6 @@ func (q *Queries) CountRecentGrantsForUser(ctx context.Context, arg CountRecentG
 	var grants int64
 	err := row.Scan(&grants)
 	return grants, err
-}
-
-const drawDownAllocation = `-- name: DrawDownAllocation :one
-UPDATE ledger.allocation
-   SET remaining_points = remaining_points - $2
- WHERE id = $1 AND remaining_points >= $2
-RETURNING id, funder_type, funder_id, currency, total_points, remaining_points, created_at
-`
-
-type DrawDownAllocationParams struct {
-	ID              string
-	RemainingPoints int64
-}
-
-// The K6 gate. `WHERE remaining_points >= $2` means an exhausted allocation
-// matches NO ROW rather than going negative — so "cannot issue an unfunded
-// point" is a property of this one statement, not of the caller checking
-// first. A read-then-write would let two concurrent grants both see enough
-// and both draw, which is exactly how unfunded points get minted.
-func (q *Queries) DrawDownAllocation(ctx context.Context, arg DrawDownAllocationParams) (LedgerAllocation, error) {
-	row := q.db.QueryRow(ctx, drawDownAllocation, arg.ID, arg.RemainingPoints)
-	var i LedgerAllocation
-	err := row.Scan(
-		&i.ID,
-		&i.FunderType,
-		&i.FunderID,
-		&i.Currency,
-		&i.TotalPoints,
-		&i.RemainingPoints,
-		&i.CreatedAt,
-	)
-	return i, err
 }
 
 const findImbalancedTransfers = `-- name: FindImbalancedTransfers :many
@@ -254,6 +239,35 @@ func (q *Queries) GetTransferByIdempotencyKey(ctx context.Context, idempotencyKe
 		&i.RequestHash,
 	)
 	return i, err
+}
+
+const holdAllocation = `-- name: HoldAllocation :one
+
+SELECT ledger.allocation_hold($1::text, $2::text,
+  $3::bigint, $4::bigint)::boolean AS held
+`
+
+type HoldAllocationParams struct {
+	HoldID       string
+	AllocationID string
+	Points       int64
+	TtlSeconds   int64
+}
+
+// The four allocation verbs (4.4.e). The ledger role has no UPDATE on
+// ledger.allocation; these SECURITY DEFINER functions are the only way its
+// remaining_points moves, and an exhausted allocation is a `false`, never a
+// negative balance (K6).
+func (q *Queries) HoldAllocation(ctx context.Context, arg HoldAllocationParams) (bool, error) {
+	row := q.db.QueryRow(ctx, holdAllocation,
+		arg.HoldID,
+		arg.AllocationID,
+		arg.Points,
+		arg.TtlSeconds,
+	)
+	var held bool
+	err := row.Scan(&held)
+	return held, err
 }
 
 const insertAccount = `-- name: InsertAccount :exec
@@ -669,6 +683,39 @@ SELECT pg_advisory_lock(hashtextextended('ledger.grant:' || $1::text, 0))
 func (q *Queries) LockUserGrantsSession(ctx context.Context, userID string) error {
 	_, err := q.db.Exec(ctx, lockUserGrantsSession, userID)
 	return err
+}
+
+const releaseExpiredHolds = `-- name: ReleaseExpiredHolds :one
+SELECT ledger.allocation_release_expired()::integer AS released
+`
+
+func (q *Queries) ReleaseExpiredHolds(ctx context.Context) (int32, error) {
+	row := q.db.QueryRow(ctx, releaseExpiredHolds)
+	var released int32
+	err := row.Scan(&released)
+	return released, err
+}
+
+const releaseHold = `-- name: ReleaseHold :one
+SELECT ledger.allocation_release($1::text)::boolean AS released
+`
+
+func (q *Queries) ReleaseHold(ctx context.Context, holdID string) (bool, error) {
+	row := q.db.QueryRow(ctx, releaseHold, holdID)
+	var released bool
+	err := row.Scan(&released)
+	return released, err
+}
+
+const returnGrant = `-- name: ReturnGrant :one
+SELECT ledger.allocation_return($1::text)::boolean AS returned
+`
+
+func (q *Queries) ReturnGrant(ctx context.Context, grantID string) (bool, error) {
+	row := q.db.QueryRow(ctx, returnGrant, grantID)
+	var returned bool
+	err := row.Scan(&returned)
+	return returned, err
 }
 
 const sumPointsEarnedThisPeriod = `-- name: SumPointsEarnedThisPeriod :one

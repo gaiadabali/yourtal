@@ -75,16 +75,27 @@ INSERT INTO ledger.allocation
   (id, funder_type, funder_id, currency, total_points, remaining_points)
 VALUES ($1, $2, $3, 'YTP', $4, $4);
 
--- name: DrawDownAllocation :one
--- The K6 gate. `WHERE remaining_points >= $2` means an exhausted allocation
--- matches NO ROW rather than going negative — so "cannot issue an unfunded
--- point" is a property of this one statement, not of the caller checking
--- first. A read-then-write would let two concurrent grants both see enough
--- and both draw, which is exactly how unfunded points get minted.
-UPDATE ledger.allocation
-   SET remaining_points = remaining_points - $2
- WHERE id = $1 AND remaining_points >= $2
-RETURNING id, funder_type, funder_id, currency, total_points, remaining_points, created_at;
+-- The four allocation verbs (4.4.e). The ledger role has no UPDATE on
+-- ledger.allocation; these SECURITY DEFINER functions are the only way its
+-- remaining_points moves, and an exhausted allocation is a `false`, never a
+-- negative balance (K6).
+
+-- name: HoldAllocation :one
+SELECT ledger.allocation_hold(sqlc.arg(hold_id)::text, sqlc.arg(allocation_id)::text,
+  sqlc.arg(points)::bigint, sqlc.arg(ttl_seconds)::bigint)::boolean AS held;
+
+-- name: ConsumeHold :one
+-- The allocation id, or '' when the hold is no longer live.
+SELECT COALESCE(ledger.allocation_consume(sqlc.arg(hold_id)::text, sqlc.arg(points)::bigint), '')::text AS allocation_id;
+
+-- name: ReleaseHold :one
+SELECT ledger.allocation_release(sqlc.arg(hold_id)::text)::boolean AS released;
+
+-- name: ReleaseExpiredHolds :one
+SELECT ledger.allocation_release_expired()::integer AS released;
+
+-- name: ReturnGrant :one
+SELECT ledger.allocation_return(sqlc.arg(grant_id)::text)::boolean AS returned;
 
 -- name: GetAllocation :one
 SELECT id, funder_type, funder_id, currency, total_points, remaining_points, created_at

@@ -29,6 +29,23 @@ type LedgerAllocation struct {
 	CreatedAt       pgtype.Timestamptz
 }
 
+type LedgerAllocationHold struct {
+	ID             string
+	AllocationID   string
+	Points         int64
+	State          string
+	ConsumedPoints *int64
+	ExpiresAt      pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	ResolvedAt     pgtype.Timestamptz
+}
+
+type LedgerAllocationReturn struct {
+	GrantID    string
+	Points     int64
+	ReturnedAt pgtype.Timestamptz
+}
+
 type LedgerBackingRate struct {
 	ID                       string
 	Currency                 string

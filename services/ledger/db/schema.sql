@@ -106,3 +106,33 @@ CREATE TABLE ledger.marketing_funding (
   transfer_id  text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
   created_at   timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE ledger.allocation_hold (
+  id              text        PRIMARY KEY,
+  allocation_id   text        NOT NULL REFERENCES ledger.allocation (id),
+  points          bigint      NOT NULL,
+  state           text        NOT NULL,
+  consumed_points bigint,
+  expires_at      timestamptz NOT NULL,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  resolved_at     timestamptz
+);
+
+CREATE TABLE ledger.allocation_return (
+  grant_id    text        PRIMARY KEY REFERENCES ledger.grant (id),
+  points      bigint      NOT NULL,
+  returned_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Signatures only, so sqlc can type the calls. The bodies are in
+-- packages/db/migrations/20260925195500_allocation_holds.sql.
+CREATE FUNCTION ledger.allocation_hold(p_hold_id text, p_allocation_id text, p_points bigint, p_ttl_seconds bigint)
+  RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
+CREATE FUNCTION ledger.allocation_consume(p_hold_id text, p_points bigint)
+  RETURNS text LANGUAGE sql AS $$ SELECT '' $$;
+CREATE FUNCTION ledger.allocation_release(p_hold_id text)
+  RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
+CREATE FUNCTION ledger.allocation_release_expired()
+  RETURNS integer LANGUAGE sql AS $$ SELECT 0 $$;
+CREATE FUNCTION ledger.allocation_return(p_grant_id text)
+  RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;

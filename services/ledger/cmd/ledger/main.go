@@ -46,6 +46,7 @@ import (
 	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/proof"
 	"github.com/yourtal/services/ledger/internal/serviceauth"
+	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
 
 const (
@@ -118,7 +119,7 @@ func run(logger *slog.Logger) error {
 		}
 
 		checker := proof.New(pool, proof.LoggingAlerter{Logger: logger})
-		go runChecker(ctx, logger, checker)
+		go runChecker(ctx, logger, checker, sqlcgen.New(pool))
 	} else {
 		logger.Warn("no LEDGER_DATABASE_URL: the invariant checker is NOT running " +
 			"and /v1 routes will report the database as unconfigured")
@@ -238,11 +239,20 @@ func run(logger *slog.Logger) error {
 // first transient database error is a checker that silently stops watching,
 // which is worse than one that never existed because everyone believes it is
 // still there.
-func runChecker(ctx context.Context, logger *slog.Logger, checker *proof.Checker) {
+//
+// The same loop releases allocation holds past their TTL (4.4.e), so an
+// abandoned reward session's points return to the campaign.
+func runChecker(ctx context.Context, logger *slog.Logger, checker *proof.Checker, queries *sqlcgen.Queries) {
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
 
 	for {
+		if released, err := queries.ReleaseExpiredHolds(ctx); err != nil {
+			logger.Error("releasing expired allocation holds failed", "error", err)
+		} else if released > 0 {
+			logger.Info("released expired allocation holds", "count", released)
+		}
+
 		findings, err := checker.Run(ctx)
 		if err != nil {
 			logger.Error("invariant check failed to complete", "error", err)

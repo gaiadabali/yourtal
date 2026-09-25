@@ -159,9 +159,6 @@ type quoteRequest struct {
 	// SettlementMinor is S, the supplier's declared settlement value, as a
 	// decimal-integer string; see the package comment.
 	SettlementMinor string `json:"settlement_minor"`
-	// DemandMultiplierBps is a small bounded integer (8000..12500), never an
-	// amount of money, so it stays a plain JSON number.
-	DemandMultiplierBps int32 `json:"demand_multiplier_bps"`
 	// At is optional, RFC3339. Empty means "now". Exists so a caller can
 	// price against a specific instant for reconciliation; it is NOT how a
 	// caller backdates a quote to dodge a rate change — RateAt only ever
@@ -230,7 +227,7 @@ func (a *API) postPricingQuote(w http.ResponseWriter, r *http.Request) {
 		at = parsed
 	}
 
-	quote, err := a.pricing.Quote(r.Context(), req.Currency, settlementMinor, req.DemandMultiplierBps, at)
+	quote, err := a.pricing.Quote(r.Context(), req.Currency, settlementMinor, at)
 	if err != nil {
 		a.writeQuoteError(w, err)
 		return

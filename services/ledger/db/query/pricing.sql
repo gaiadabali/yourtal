@@ -43,3 +43,13 @@ FROM ledger.entry e
 JOIN ledger.account a ON a.id = e.account_id
 WHERE a.owner_type = 'user' AND a.currency = 'YTP' AND e.currency = 'YTP' AND a.country = $1
   AND a.purpose IN ('available', 'pending', 'escrow');
+
+-- name: GetBackingRateInForce :one
+-- The rate in force now, on the database's clock, so no caller can price
+-- against an instant of its own choosing.
+SELECT id, currency, micros_per_point, issue_price_micros_per_point,
+       effective_from, reason, set_by, created_at
+FROM ledger.backing_rate
+WHERE currency = $1 AND effective_from <= now()
+ORDER BY effective_from DESC
+LIMIT 1;

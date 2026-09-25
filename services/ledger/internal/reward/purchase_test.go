@@ -118,10 +118,10 @@ func TestPurchaseAndAllocationAreAtomic(t *testing.T) {
 	// cash, pointing the other way, and harder to notice.
 	id := unique("pur")
 	partner := unique("adv")
-	if _, err := engine.RecordPurchase(ctx, purchase(id, partner, 1_000, 5_000)); err != nil {
+	if _, err := engine.RecordPurchase(ctx, purchase(id, partner, 1_000, 9_000)); err != nil {
 		t.Fatalf("first: %v", err)
 	}
-	if _, err := engine.RecordPurchase(ctx, purchase(id, partner, 1_000, 5_000)); err == nil {
+	if _, err := engine.RecordPurchase(ctx, purchase(id, partner, 1_000, 9_000)); err == nil {
 		t.Fatal("a repeated purchase id created a second allocation")
 	}
 
@@ -129,8 +129,8 @@ func TestPurchaseAndAllocationAreAtomic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reserve: %v", err)
 	}
-	if after != before+5_000 {
-		t.Errorf("reserve moved by %d, want exactly one purchase's 5000", after-before)
+	if after != before+9_000 {
+		t.Errorf("reserve moved by %d, want exactly one purchase's 9000", after-before)
 	}
 }
 
@@ -141,8 +141,8 @@ func TestAPurchaseFundsGrantsUntilItIsExhausted(t *testing.T) {
 	engine = engine.WithCaps(uncapped)
 	ctx := context.Background()
 
-	// Exactly two completions' worth.
-	result, err := engine.RecordPurchase(ctx, purchase(unique("pur"), unique("adv"), 4_800, 120_000))
+	// Two completions' worth (2 × 2,400), with 200 left over.
+	result, err := engine.RecordPurchase(ctx, purchase(unique("pur"), unique("adv"), 5_000, 120_000))
 	if err != nil {
 		t.Fatalf("purchase: %v", err)
 	}
@@ -213,11 +213,11 @@ func TestReservesAreSeparatePerRegion(t *testing.T) {
 	auEngine := reward.New(pool, ledger.New(pool), reward.AlwaysAllow{}, ledger.RegionAU)
 	ctx := context.Background()
 
-	if _, err := idEngine.RecordPurchase(ctx, purchase(unique("pur"), unique("adv"), 100, 900)); err != nil {
+	if _, err := idEngine.RecordPurchase(ctx, purchase(unique("pur"), unique("adv"), 1_000, 9_000)); err != nil {
 		t.Fatalf("idr purchase: %v", err)
 	}
 	aud := reward.PurchaseRequest{
-		ID: unique("pur"), PartnerID: unique("adv"), Points: 100, AmountMinor: 700, Currency: "AUD",
+		ID: unique("pur"), PartnerID: unique("adv"), Points: 1_000, AmountMinor: 4_500, Currency: "AUD",
 	}
 	if _, err := auEngine.RecordPurchase(ctx, aud); err != nil {
 		t.Fatalf("aud purchase: %v", err)
@@ -231,7 +231,7 @@ func TestReservesAreSeparatePerRegion(t *testing.T) {
 	book := ledger.New(pool)
 	idr, _ := book.Balance(ctx, ledger.PlatformAccountID(ledger.RegionID, ledger.RoleReserve))
 	audBalance, _ := book.Balance(ctx, ledger.PlatformAccountID(ledger.RegionAU, ledger.RoleReserve))
-	if idr < 900 || audBalance < 700 {
-		t.Fatalf("reserves hold IDR %d and AUD %d, want at least 900 and 700", idr, audBalance)
+	if idr < 9_000 || audBalance < 4_500 {
+		t.Fatalf("reserves hold IDR %d and AUD %d, want at least 9000 and 4500", idr, audBalance)
 	}
 }

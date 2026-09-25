@@ -84,7 +84,7 @@ func TestPostPricingQuoteRejectsMalformedJSON(t *testing.T) {
 
 func TestPostPricingQuoteRejectsMissingCurrency(t *testing.T) {
 	a := New(discardLogger(), nil, nil)
-	body, _ := json.Marshal(quoteRequest{SettlementMinor: "100", DemandMultiplierBps: 10_000})
+	body, _ := json.Marshal(quoteRequest{SettlementMinor: "100"})
 	r := httptest.NewRequest(http.MethodPost, "/pricing/quote", bytes.NewReader(body))
 	w := httptest.NewRecorder()
 
@@ -98,7 +98,7 @@ func TestPostPricingQuoteRejectsMissingCurrency(t *testing.T) {
 func TestPostPricingQuoteRejectsBadSettlement(t *testing.T) {
 	a := New(discardLogger(), nil, nil)
 	body, _ := json.Marshal(quoteRequest{
-		Currency: "IDR", SettlementMinor: "not-a-number", DemandMultiplierBps: 10_000,
+		Currency: "IDR", SettlementMinor: "not-a-number",
 	})
 	r := httptest.NewRequest(http.MethodPost, "/pricing/quote", bytes.NewReader(body))
 	w := httptest.NewRecorder()
@@ -137,10 +137,9 @@ func TestMoneyNeverJSONNumbers(t *testing.T) {
 // different one — anything that would let a client recover B.
 func TestQuoteResponseNeverCarriesBackingRate(t *testing.T) {
 	resp := quoteResponse{
-		PricePoints:         "2000",
-		SettlementMinor:     "12000",
-		BackingRateID:       "rate_1",
-		DemandMultiplierBps: 10_000,
+		PricePoints:     "2000",
+		SettlementMinor: "12000",
+		BackingRateID:   "rate_1",
 	}
 	encoded, err := json.Marshal(resp)
 	if err != nil {

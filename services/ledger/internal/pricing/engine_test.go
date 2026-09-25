@@ -165,7 +165,7 @@ func TestARateChangeMustCarryItsReason(t *testing.T) {
 func TestPricingWithoutARateIsRefused(t *testing.T) {
 	engine, _ := newEngine(t)
 
-	_, err := engine.Quote(context.Background(), "IDR", 50_000, pricing.NeutralDemandBps,
+	_, err := engine.Quote(context.Background(), "IDR", 50_000,
 		time.Unix(0, 0).UTC())
 	if !errors.Is(err, pricing.ErrNoRateInForce) {
 		t.Errorf("expected a refusal before any rate existed, got %v", err)
@@ -178,7 +178,7 @@ func TestAQuoteNamesTheRateItWasPricedAt(t *testing.T) {
 	engine, _ := newEngine(t)
 	at := withRate(t, engine)
 
-	quote, err := engine.Quote(context.Background(), testCurrency, 3_000, pricing.NeutralDemandBps, at)
+	quote, err := engine.Quote(context.Background(), testCurrency, 3_000, at)
 	if err != nil {
 		t.Fatalf("Quote: %v", err)
 	}

@@ -75,6 +75,10 @@ func (e *Engine) SetRate(ctx context.Context, rate Rate) error {
 			ErrRateNotBelowIssuePrice, rate.MicrosPerPoint,
 			rate.IssuePriceMicrosPerPoint, rate.SpreadMicros())
 	}
+	if !marginCovered(rate.MicrosPerPoint, rate.IssuePriceMicrosPerPoint) {
+		return fmt.Errorf("%w: B=%d, P_issue=%d", ErrMarginTooThin,
+			rate.MicrosPerPoint, rate.IssuePriceMicrosPerPoint)
+	}
 	if rate.Reason == "" {
 		return ErrReasonRequired
 	}
@@ -121,8 +125,10 @@ func (e *Engine) RateAt(ctx context.Context, currency string, at time.Time) (Rat
 // audit row the store writes can answer "why did this change?" — see the
 // note on Quote.
 func (e *Engine) Quote(
-	ctx context.Context, currency string, settlementMinor int64, demandBps int32, at time.Time,
+	ctx context.Context, currency string, settlementMinor int64, at time.Time,
 ) (Quote, error) {
+	// Pinned at 1.00 (EM-11): no caller chooses the multiplier.
+	const demandBps = NeutralDemandBps
 	rate, err := e.RateAt(ctx, currency, at)
 	if err != nil {
 		return Quote{}, err

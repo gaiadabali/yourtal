@@ -45,6 +45,33 @@ func (q *Queries) GetBackingRateAt(ctx context.Context, arg GetBackingRateAtPara
 	return i, err
 }
 
+const getBackingRateInForce = `-- name: GetBackingRateInForce :one
+SELECT id, currency, micros_per_point, issue_price_micros_per_point,
+       effective_from, reason, set_by, created_at
+FROM ledger.backing_rate
+WHERE currency = $1 AND effective_from <= now()
+ORDER BY effective_from DESC
+LIMIT 1
+`
+
+// The rate in force now, on the database's clock, so no caller can price
+// against an instant of its own choosing.
+func (q *Queries) GetBackingRateInForce(ctx context.Context, currency string) (LedgerBackingRate, error) {
+	row := q.db.QueryRow(ctx, getBackingRateInForce, currency)
+	var i LedgerBackingRate
+	err := row.Scan(
+		&i.ID,
+		&i.Currency,
+		&i.MicrosPerPoint,
+		&i.IssuePriceMicrosPerPoint,
+		&i.EffectiveFrom,
+		&i.Reason,
+		&i.SetBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const insertBackingRate = `-- name: InsertBackingRate :exec
 INSERT INTO ledger.backing_rate
   (id, currency, micros_per_point, issue_price_micros_per_point,

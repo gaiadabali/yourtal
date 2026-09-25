@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
 
@@ -36,6 +37,8 @@ var (
 	// ErrPurchaseNotPositive — a zero-point or zero-cash purchase records
 	// nothing and would create an allocation nobody paid for.
 	ErrPurchaseNotPositive = errors.New("reward: a purchase needs both points and payment")
+	// ErrUnderpriced — the payment is below points × P_issue.
+	ErrUnderpriced = errors.New("reward: the payment is below the issue price")
 )
 
 // PurchaseRequest is one partner buying a block of points.
@@ -88,6 +91,9 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 		return PurchaseResult{}, fmt.Errorf("%w: %s money cannot buy %s points",
 			ErrRegionMismatch, req.Currency, e.region)
 	}
+	if req.Points%pricing.PackPoints != 0 {
+		return PurchaseResult{}, fmt.Errorf("%w: %d", pricing.ErrNotAPack, req.Points)
+	}
 
 	allocationID := fmt.Sprintf("alloc_%s", req.ID)
 	transferID := fmt.Sprintf("led_txn_purchase_%s", req.ID)
@@ -98,6 +104,17 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 
 		if err := ensureChart(ctx, queries, e.region); err != nil {
 			return err
+		}
+
+		// K6: a point is only ever sold at or above P_issue, priced in this
+		// transaction at the database's now().
+		quote, err := pricing.QuotePurchaseIn(ctx, queries, e.region, req.Points)
+		if err != nil {
+			return err
+		}
+		if req.AmountMinor < quote.AmountMinor {
+			return fmt.Errorf("%w: %d paid for %d points, the price is %d",
+				ErrUnderpriced, req.AmountMinor, req.Points, quote.AmountMinor)
 		}
 
 		// Fact one: the points, as an allocation the engine can draw down.

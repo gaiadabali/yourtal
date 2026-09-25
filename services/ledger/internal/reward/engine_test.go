@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/reward"
 	"github.com/yourtal/services/ledger/internal/testdb"
 )
@@ -60,7 +61,23 @@ func newEngine(t *testing.T, gate reward.RiskGate) (*reward.Engine, *pgxpool.Poo
 	if err := engine.EnsureChart(ctx); err != nil {
 		t.Fatalf("ensure chart: %v", err)
 	}
+	withF1Rates(t, pool)
 	return engine, pool
+}
+
+// withF1Rates puts the decided rates in force (F1): ID B = IDR 6, P_issue =
+// IDR 9; AU B = 3¢, P_issue = 4.5¢.
+func withF1Rates(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	rates := pricing.New(pool)
+	for currency, r := range map[string][2]int64{"IDR": {6_000_000, 9_000_000}, "AUD": {3_000_000, 4_500_000}} {
+		if err := rates.SetRate(context.Background(), pricing.Rate{
+			ID: unique("rate"), Currency: currency, MicrosPerPoint: r[0], IssuePriceMicrosPerPoint: r[1],
+			EffectiveFrom: time.Now().UTC(), Reason: "F1 test fixture", SetBy: "reward_test",
+		}); err != nil {
+			t.Fatalf("rate %s: %v", currency, err)
+		}
+	}
 }
 
 func fundedAllocation(t *testing.T, engine *reward.Engine, points int64) string {

@@ -46,6 +46,18 @@ const campaign = campaignSchema.parse({
   scoringRule: "base_only",
   status: "active",
   publishedAt: "2026-09-19T09:00:00.000Z",
+  businessId: "44444444-4444-4444-8444-444444444444",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "food-and-drink",
+  posterUrl: "https://mock.yourtal.test/poster.jpg",
+  teaserUrl: "https://mock.yourtal.test/teaser.mp4",
+  hlsUrl: "https://mock.yourtal.test/hls/sample.m3u8",
+  captionsUrl: null,
+  aspect: "16:9",
+  estimatedBytes: 94_371_840,
+  startsAt: "2026-09-19T09:00:00.000Z",
+  endsAt: "2026-12-19T09:00:00.000Z",
 });
 const chapters = playerChapters(campaign);
 const HAND_OFF_LINK = { name: "Continue to questions" };

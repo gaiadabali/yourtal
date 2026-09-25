@@ -42,18 +42,21 @@ beforeAll(async () => {
     `INSERT INTO campaign.campaigns
        (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
         estimated_data_mb, reward_points, question_count, scoring_rule,
-        lifecycle_state, published_at)
+        lifecycle_state, published_at, business_id, region, audience, content_category,
+        poster_url, teaser_url, hls_url, aspect, estimated_bytes, starts_at, ends_at)
      VALUES ($1, 'long_form', 'question-response-constraints fixture', $2,
              'Fixture Merchant', 'Owned by question-response-constraints.test.ts',
-             900, 20, 100, 1, 'base_only', 'live', now())
+             900, 20, 100, 1, 'base_only', 'live', now(), $2, 'ID', 'all_ages', 'food-and-drink',
+             'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
+             'https://cdn.example.com/hls.m3u8', '16:9', 1000000, now(), now() + interval '90 days')
      ON CONFLICT (id) DO NOTHING`,
     [campaignId, merchantId],
   );
   await owner.query(
     `INSERT INTO campaign.terms_version
        (campaign_id, version, reward_points, question_count, scoring_rule,
-        duration_seconds, effective_from)
-     VALUES ($1, 1, 100, 1, 'base_only', 900, now())
+        duration_seconds, accuracy_bonus_points, effective_from)
+     VALUES ($1, 1, 100, 1, 'base_only', 900, 0, now())
      ON CONFLICT (campaign_id, version) DO NOTHING`,
     [campaignId],
   );

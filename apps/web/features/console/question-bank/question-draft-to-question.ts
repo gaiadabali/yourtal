@@ -23,6 +23,12 @@ export function toPublishableQuestionInput(draft: QuestionDraft): Record<string,
     campaignId: draft.campaignId,
     prompt: draft.prompt,
     timerSeconds: draft.timerSeconds,
+    // Not yet authorable in the studio draft (TASKS.md 1.1.f added the
+    // column; a per-question timing control in the question-bank editor is
+    // studio UI work, not this task's). 0 keeps every existing question
+    // askable from the start, the same default the F10 migration backfilled
+    // onto rows written before this field existed.
+    answerableAfterSeconds: 0,
   };
 
   switch (draft.type) {

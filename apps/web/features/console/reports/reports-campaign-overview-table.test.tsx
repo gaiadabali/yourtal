@@ -24,6 +24,18 @@ const CAMPAIGN = campaignSchema.parse({
   scoringRule: "base_plus_accuracy_bonus",
   status: "active",
   publishedAt: "2026-01-01T00:00:00.000Z",
+  businessId: "00000000-0000-4000-8000-000000009901",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "food-and-drink",
+  posterUrl: "https://mock.yourtal.test/poster.jpg",
+  teaserUrl: "https://mock.yourtal.test/teaser.mp4",
+  hlsUrl: "https://mock.yourtal.test/hls/sample.m3u8",
+  captionsUrl: null,
+  aspect: "16:9",
+  estimatedBytes: 209_715_200,
+  startsAt: "2026-01-01T00:00:00.000Z",
+  endsAt: "2026-04-01T00:00:00.000Z",
 });
 
 describe("ReportsCampaignOverviewTable", () => {

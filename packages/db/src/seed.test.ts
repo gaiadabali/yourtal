@@ -194,6 +194,12 @@ describe("the catalogue constraints hold in Postgres", () => {
     minimum_spend_minor: null,
     expires_at: "2027-01-01T00:00:00Z",
     status: "available",
+    region: "ID",
+    audience: "all_ages",
+    content_category: "food-and-drink",
+    image_url: "https://cdn.example.com/listing.jpg",
+    channel: "in_store",
+    partial_redemption: "single_use",
     ...over,
   });
 
@@ -240,10 +246,15 @@ describe("the catalogue constraints hold in Postgres", () => {
       pool.query(
         `INSERT INTO campaign.campaigns
            (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
-            estimated_data_mb, reward_points, question_count, scoring_rule, lifecycle_state, published_at)
+            estimated_data_mb, reward_points, question_count, scoring_rule, lifecycle_state, published_at,
+            business_id, region, audience, content_category, poster_url, teaser_url, hls_url,
+            aspect, estimated_bytes, starts_at, ends_at)
          VALUES ('00000000-0000-4000-8000-0000000000f3','quick','T',
                  '00000000-0000-4000-8000-0000000000f4','M','S',
-                 120, 5, 100, 0, 'base_only', 'live', now())`,
+                 120, 5, 100, 0, 'base_only', 'live', now(),
+                 '00000000-0000-4000-8000-0000000000f4', 'ID', 'all_ages', 'food-and-drink',
+                 'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
+                 'https://cdn.example.com/hls.m3u8', '9:16', 1000000, now(), now() + interval '90 days')`,
       ),
     ).rejects.toThrow(/campaigns_quick_is_short/);
   });
@@ -253,10 +264,15 @@ describe("the catalogue constraints hold in Postgres", () => {
       pool.query(
         `INSERT INTO campaign.campaigns
            (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
-            estimated_data_mb, reward_points, question_count, scoring_rule, lifecycle_state, published_at)
+            estimated_data_mb, reward_points, question_count, scoring_rule, lifecycle_state, published_at,
+            business_id, region, audience, content_category, poster_url, teaser_url, hls_url,
+            aspect, estimated_bytes, starts_at, ends_at)
          VALUES ('00000000-0000-4000-8000-0000000000f5','long_form','T',
                  '00000000-0000-4000-8000-0000000000f6','M','S',
-                 600, 50, 100, 0, 'base_plus_accuracy_bonus', 'live', now())`,
+                 600, 50, 100, 0, 'base_plus_accuracy_bonus', 'live', now(),
+                 '00000000-0000-4000-8000-0000000000f6', 'ID', 'all_ages', 'food-and-drink',
+                 'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
+                 'https://cdn.example.com/hls.m3u8', '16:9', 1000000, now(), now() + interval '90 days')`,
       ),
     ).rejects.toThrow(/campaigns_bonus_needs_questions/);
   });
@@ -410,6 +426,20 @@ describe("a seeded campaign can be read back as a Campaign (YT-0548)", () => {
       publishedAt: (row?.["published_at"] as Date).toISOString(),
       chapters: row?.["chapters"],
       videoSource: row?.["video_source"],
+      businessId: row?.["business_id"],
+      region: row?.["region"],
+      audience: row?.["audience"],
+      contentCategory: row?.["content_category"],
+      posterUrl: row?.["poster_url"],
+      teaserUrl: row?.["teaser_url"],
+      hlsUrl: row?.["hls_url"],
+      captionsUrl: row?.["captions_url"],
+      aspect: row?.["aspect"],
+      estimatedBytes: Number(row?.["estimated_bytes"]),
+      startsAt: (row?.["starts_at"] as Date).toISOString(),
+      endsAt: (row?.["ends_at"] as Date).toISOString(),
+      openViewing: row?.["open_viewing"],
+      teaserStartSeconds: row?.["teaser_start_seconds"],
     });
 
     expect(parsed.success, parsed.success ? "" : JSON.stringify(parsed.error.issues, null, 2)).toBe(

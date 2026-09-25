@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessOnboardingUnitOfWork } from "./drizzle-business-onboarding.unit-of-work";
@@ -68,7 +69,7 @@ describe("DrizzleBusinessOnboardingUnitOfWork — real Postgres transaction", ()
         logoUrl: null,
         region: "ID" as const,
         currency: "IDR" as const,
-        handle: "test-business-001",
+        handle: `test-business-${randomUUID().slice(0, 8)}`,
         coverUrl: null,
       },
       COMMIT_OWNER_ID,
@@ -98,7 +99,7 @@ describe("DrizzleBusinessOnboardingUnitOfWork — real Postgres transaction", ()
           logoUrl: null,
           region: "ID" as const,
           currency: "IDR" as const,
-          handle: "test-business-002",
+          handle: `test-business-${randomUUID().slice(0, 8)}`,
           coverUrl: null,
         },
         // The NUL byte only reaches business_members (user_id,

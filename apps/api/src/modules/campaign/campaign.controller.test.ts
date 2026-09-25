@@ -127,11 +127,16 @@ beforeAll(async () => {
     INSERT INTO campaign.campaigns (
       id, kind, title, merchant_id, merchant_name, synopsis,
       duration_seconds, estimated_data_mb, reward_points, question_count,
-      scoring_rule, lifecycle_state, published_at
+      scoring_rule, lifecycle_state, published_at, business_id, region, audience,
+      content_category, poster_url, teaser_url, hls_url, aspect, estimated_bytes,
+      starts_at, ends_at
     ) VALUES (
       '${draftId}', 'quick', 'Unpublished draft', '${merchantId}', 'A Merchant',
       'Should never reach a viewer.', 30, 1.5, 100, 0,
-      'base_only', 'draft', now()
+      'base_only', 'draft', now(), '${merchantId}', 'ID', 'all_ages',
+      'food-and-drink', 'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
+      'https://cdn.example.com/hls.m3u8', '9:16', 1000000,
+      now(), now() + interval '90 days'
     )`);
 
   // Given a video source too, so that when this row is later flipped to

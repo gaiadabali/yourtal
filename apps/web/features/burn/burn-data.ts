@@ -73,6 +73,12 @@ export const holdbackDemoListing: Listing = listingSchema.parse({
   minimumSpendMinor: null,
   expiresAt: "2026-12-31T00:00:00.000Z",
   status: "available",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "personal-care",
+  imageUrl: "https://cdn.example.com/listing.jpg",
+  channel: "in_store",
+  partialRedemption: "single_use",
 });
 
 function findListing(listingId: string): Listing | undefined {

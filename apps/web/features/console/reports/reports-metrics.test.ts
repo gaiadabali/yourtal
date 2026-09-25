@@ -39,6 +39,18 @@ function campaign(overrides: Partial<Campaign>): Campaign {
     scoringRule: "base_only",
     status: "active",
     publishedAt: "2026-01-01T00:00:00.000Z",
+    businessId: "00000000-0000-4000-8000-000000009901",
+    region: "ID",
+    audience: "all_ages",
+    contentCategory: "food-and-drink",
+    posterUrl: "https://mock.yourtal.test/posters/sample.jpg",
+    teaserUrl: "https://mock.yourtal.test/teasers/sample.mp4",
+    hlsUrl: "https://mock.yourtal.test/hls/sample.m3u8",
+    captionsUrl: null,
+    aspect: "16:9",
+    estimatedBytes: 209_715_200,
+    startsAt: "2026-01-01T00:00:00.000Z",
+    endsAt: "2026-04-01T00:00:00.000Z",
     ...overrides,
   });
 }
@@ -49,6 +61,7 @@ function trueFalseQuestion(id: string, campaignId: string): Question {
     campaignId,
     prompt: "Was this true?",
     timerSeconds: 20,
+    answerableAfterSeconds: 0,
     type: "true_false",
     correctAnswer: true,
   });
@@ -60,6 +73,7 @@ function multipleChoiceQuestion(id: string, campaignId: string): Question {
     campaignId,
     prompt: "Which one?",
     timerSeconds: 20,
+    answerableAfterSeconds: 0,
     type: "multiple_choice",
     options: [
       { id: "00000000-0000-4000-8000-000000000201", label: "A" },

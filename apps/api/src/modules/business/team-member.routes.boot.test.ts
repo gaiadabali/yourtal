@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
@@ -77,7 +78,7 @@ async function seed() {
       logoUrl: null,
       region: "ID" as const,
       currency: "IDR" as const,
-      handle: "test-business-004",
+      handle: `test-business-${randomUUID().slice(0, 8)}`,
       coverUrl: null,
     },
     OWNER_ID,

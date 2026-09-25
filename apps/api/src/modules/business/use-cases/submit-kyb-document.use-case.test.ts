@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
 import { DrizzleKybDocumentRepository } from "../persistence/drizzle-kyb-document.repository";
@@ -28,7 +29,7 @@ async function setup() {
       logoUrl: null,
       region: "ID" as const,
       currency: "IDR" as const,
-      handle: "test-business-015",
+      handle: `test-business-${randomUUID().slice(0, 8)}`,
       coverUrl: null,
     },
     OWNER_ID,

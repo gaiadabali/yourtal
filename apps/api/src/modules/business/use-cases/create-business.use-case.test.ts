@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
@@ -42,7 +43,7 @@ describe("createBusiness", () => {
         logoUrl: null,
         region: "ID" as const,
         currency: "IDR" as const,
-        handle: "test-business-006",
+        handle: `test-business-${randomUUID().slice(0, 8)}`,
         coverUrl: null,
       },
       OWNER_ID,
@@ -80,7 +81,7 @@ describe("createBusiness", () => {
         logoUrl: null,
         region: "ID" as const,
         currency: "IDR" as const,
-        handle: "test-business-007",
+        handle: `test-business-${randomUUID().slice(0, 8)}`,
         coverUrl: null,
       },
       "user-1",

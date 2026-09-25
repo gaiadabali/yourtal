@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
 import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business-member.repository";
@@ -47,7 +48,7 @@ describe("getBusinessProfile", () => {
         logoUrl: null,
         region: "ID" as const,
         currency: "IDR" as const,
-        handle: "test-business-010",
+        handle: `test-business-${randomUUID().slice(0, 8)}`,
         coverUrl: null,
       },
       OWNER_ID,

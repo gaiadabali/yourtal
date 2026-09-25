@@ -130,8 +130,8 @@ describe("the terms a viewer entered under", () => {
     await pool.query(
       `INSERT INTO campaign.terms_version
          (campaign_id, version, reward_points, question_count, scoring_rule,
-          duration_seconds, effective_from)
-       VALUES ($1, 2, 100, 0, 'base_only', 600, now())
+          duration_seconds, accuracy_bonus_points, effective_from)
+       VALUES ($1, 2, 100, 0, 'base_only', 600, 0, now())
        ON CONFLICT DO NOTHING`,
       [otherCampaign],
     );

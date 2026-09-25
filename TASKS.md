@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 3/8 | 25/46 | `█████░░░░░`  54% |
+| **Phase 0** Reset | A | 🔄 in progress | 4/8 | 32/46 | `███████░░░`  70% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/3 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **3/81** | **25/352** | `█░░░░░░░░░`   7% |
+| **All** | | | **4/81** | **32/352** | `█░░░░░░░░░`   9% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -297,10 +297,10 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - `tsc` is clean in web and api.
     - In `yourtal-1`: `set -a; . ./.env; set +a; (cd services/voucher && go test -count=1 -p 1 ./...) && (cd services/ledger && go test -count=1 -p 1 ./...)` passes. Go does not read `.env`; without this the tests use the unmigrated shared database. The pricing and reward `engine_test.go` still write to `yourtal` until 0.4.b, and that is accepted.
     - After the fast-forward, from the main checkout: `pnpm db:migrate && docker compose up -d --build --force-recreate --wait voucher-keygen voucher`, then voucher `/healthz` returns 200.
-- [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3
-  - [ ] 0.4.a Add `pnpm check`: line endings, format, typecheck, lint, and the unit tests that need no services. It should finish in under 3 minutes. `pnpm verify` becomes `check` plus the database, Go and Cerbos suites.
+- [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3 — 🔄 slot 1
+  - [x] 0.4.a Add `pnpm check`: line endings, format, typecheck, lint, and the unit tests that need no services. It should finish in under 3 minutes. `pnpm verify` becomes `check` plus the database, Go and Cerbos suites.
   - [ ] 0.4.b Every Go and TypeScript database suite runs against a `yourtal_test_*` database. A guard fails any test helper whose URL names a dev database; `engine_test.go:26` hard-codes one today. Once this is in, the Go tests stop writing fake AUD rates and coverage fixtures into dev data.
-  - [ ] 0.4.c Fix what is red today:
+  - [x] 0.4.c Fix what is red today:
     - CRLF in 4 files, with `.gitattributes` `eol=lf` rules so it cannot come back;
     - the 2 files failing Format in CI;
     - the `packages/db` `seed.test.ts` idempotency failure that keeps Integration red.
@@ -318,12 +318,12 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - CI and dev use Node 24 LTS: add `.nvmrc`, set `engines` to `>=24`, and use `node-version-file`. Check the Helios Node major in 2.1.
   - [ ] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-1`, merge them; otherwise record them here as ✂️ with the reason.
   - [ ] 0.4.g **Check:** every workflow is green on `main`, `pnpm check` is green in all three worktrees, and no workflow log shows a Node 20 deprecation warning.
-- [ ] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3
-  - [ ] 0.5.a Set `DEFAULT_REGION = "AU"` in `apps/web/features/region/get-region.ts:11`, and update `region-cookie-roundtrip.test.ts`.
-  - [ ] 0.5.b The merchant layout's `lang` comes from the device binding's locale, defaulting to `en-AU`, instead of the hard-coded `id-ID` at `app/(merchant)/layout.tsx:44`.
-  - [ ] 0.5.c Make the player pass `locale` to `AccrualIndicator` and `CompletionHandoff` (`video-player.tsx:76,108`), so English sentences stop saying "1.250 poin" (EW-22).
-  - [ ] 0.5.d Pin a region cookie in every e2e spec that assumes ID: `earn-journey`, `redeem-journey`, `spend-journey`, `open-view-journey`, `overflow-320` (have it read the pinned locale's catalogue), `keyboard-seek`, `find-bonus-accuracy-campaign`. Afterwards `grep -l "id-ID\|DEFAULT_REGION" apps/web/e2e` lists only pinned specs.
-  - [ ] 0.5.e **Check:** a fresh browser with no cookies sees English and AUD at `/`, and `/id` is still Indonesian.
+- [x] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3 — ✅ 2026-09-25 3d166a2
+  - [x] 0.5.a Set `DEFAULT_REGION = "AU"` in `apps/web/features/region/get-region.ts:11`, and update `region-cookie-roundtrip.test.ts`.
+  - [x] 0.5.b The merchant layout's `lang` comes from the device binding's locale, defaulting to `en-AU`, instead of the hard-coded `id-ID` at `app/(merchant)/layout.tsx:44`.
+  - [x] 0.5.c Make the player pass `locale` to `AccrualIndicator` and `CompletionHandoff` (`video-player.tsx:76,108`), so English sentences stop saying "1.250 poin" (EW-22).
+  - [x] 0.5.d Pin a region cookie in every e2e spec that assumes ID: `earn-journey`, `redeem-journey`, `spend-journey`, `open-view-journey`, `overflow-320` (have it read the pinned locale's catalogue), `keyboard-seek`, `find-bonus-accuracy-campaign`. Afterwards `grep -l "id-ID\|DEFAULT_REGION" apps/web/e2e` lists only pinned specs.
+  - [x] 0.5.e **Check:** a fresh browser with no cookies sees English and AUD at `/`, and `/id` is still Indonesian. Verified 2026-09-25: `/` is `lang=en-AU` and all English (it shows no amounts), `/id` is Indonesian. `/store` still lists the ID-only mock catalogue in Rupiah to an AU visitor; that is 6.6.a (region-scoped store).
 - [ ] **0.6 Retire the old story in the docs** · needs: 0.1 — 🔄 slot 1
   - [x] 0.6.a `README.md`: remove the remaining false claims ("under 300 lines, enforced in CI"; the "six things" section's "Run the pilot before writing any code").
   - [x] 0.6.b Add a "Superseded by TASKS.md (2026-09-25)" banner to `docs/04-roadmap.md`. Add rows to `docs/16` for every **F** answer above and for each of these:
@@ -1236,6 +1236,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · A · 0.5 A first visit is English: AU by default, merchant `lang` from the device, player and earn-board copy from the catalogues · 3d166a2
 - 2026-09-25 · A · 0.2 Three slot worktrees run web, api and Cerbos side by side on their own databases; a migration in one leaves the others alone · efffeda
 - 2026-09-25 · A · 0.3 HEAD compiles: store, web, seed and voucher service on `*_minor` + currency; migrations apply again; voucher `/healthz` 200 · d9762ae
 - 2026-09-25 · plan · Sessions now run one phase each, in slots 1–3; the Running order table says which phases can run together

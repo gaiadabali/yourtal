@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 5/8 | 36/47 | `████████░░`  77% |
+| **Phase 0** Reset | A | 🔄 in progress | 5/8 | 38/47 | `████████░░`  81% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/3 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **5/81** | **36/353** | `█░░░░░░░░░`  10% |
+| **All** | | | **5/81** | **38/353** | `█░░░░░░░░░`  11% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -334,9 +334,9 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - B4 (24 → no expiry by default), K2 (IDR 8 → 9) and docs/18 §1 ("IDR in sen") superseded.
   - [x] 0.6.c Bring `docs/24` and `docs/25` from `wip/leftovers-2026-09-22` onto `main`, and amend them to match F2: no expiry by default, Helios acceptable for production.
   - [x] 0.6.d **Check:** no document still describes Indonesia-first, Zitadel, phone OTP, 24-month expiry or IDR-in-sen as current.
-- [ ] **0.7 IDR in whole Rupiah (decision T-1): a data migration, not a constant** · needs: 0.3
-  - [ ] 0.7.a Add a migration that divides IDR amounts by 100 where `currency = 'IDR'`. It covers `store.listings`, `voucher.vouchers`, `store.listing_price_revision`, `store.settlement_decrease_request`, and every ledger entry, allocation, purchase and pricing-rate row. The ID rates become micros per point: B = 6_000_000, P_issue = 9_000_000.
-  - [ ] 0.7.b `MINOR_UNIT.IDR` becomes exponent 0.
+- [ ] **0.7 IDR in whole Rupiah (decision T-1): a data migration, not a constant** · needs: 0.3 — 🔄 slot 1
+  - [x] 0.7.a Add a migration that divides IDR amounts by 100 where `currency = 'IDR'`. It covers `store.listings`, `voucher.vouchers`, `store.listing_price_revision`, `store.settlement_decrease_request`, and every ledger entry, allocation, purchase and pricing-rate row. The ID rates become micros per point: B = 6_000_000, P_issue = 9_000_000.
+  - [x] 0.7.b `MINOR_UNIT.IDR` becomes exponent 0.
     - Remove `SEN_PER_RUPIAH`; `rupiah(n)` scales by `10^exponent` (= 1).
     - Rename `MOCK_BACKING_RATE_IDR_SEN_PER_POINT` to `…_IDR_PER_POINT = 6`, until 4.9 deletes it.
     - `pointsPriceFromSettlement` rounds **up** (EM-20).

@@ -1,4 +1,4 @@
-import { integer, numeric, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, integer, numeric, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { campaignPgSchema } from "./campaign-schema";
 
 /**
@@ -26,6 +26,21 @@ export const campaigns = campaignPgSchema.table("campaigns", {
   lifecycleState: text("lifecycle_state").notNull(),
   rejectionReason: text("rejection_reason"),
   publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
+  // TASKS.md 1.1.a.
+  businessId: uuid("business_id").notNull(),
+  region: text("region").notNull(),
+  audience: text("audience").notNull(),
+  contentCategory: text("content_category").notNull(),
+  posterUrl: text("poster_url").notNull(),
+  teaserUrl: text("teaser_url").notNull(),
+  hlsUrl: text("hls_url").notNull(),
+  captionsUrl: text("captions_url"),
+  aspect: text("aspect").notNull(),
+  estimatedBytes: bigint("estimated_bytes", { mode: "number" }).notNull(),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+  openViewing: boolean("open_viewing").notNull().default(false),
+  teaserStartSeconds: integer("teaser_start_seconds").notNull().default(0),
 });
 
 export const campaignChapters = campaignPgSchema.table("chapter", {
@@ -49,5 +64,7 @@ export const campaignTermsVersions = campaignPgSchema.table("terms_version", {
   questionCount: integer("question_count").notNull(),
   scoringRule: text("scoring_rule").notNull(),
   durationSeconds: integer("duration_seconds").notNull(),
+  /** Frozen alongside the other reward-affecting fields (TASKS.md 1.1.f). */
+  accuracyBonusPoints: bigint("accuracy_bonus_points", { mode: "number" }).notNull(),
   effectiveFrom: timestamp("effective_from", { withTimezone: true }).notNull(),
 });

@@ -40,6 +40,10 @@ describe("createBusiness", () => {
         district: "Kemang",
         roles: ["advertiser"],
         logoUrl: null,
+        region: "ID" as const,
+        currency: "IDR" as const,
+        handle: "test-business-006",
+        coverUrl: null,
       },
       OWNER_ID,
     );
@@ -74,6 +78,10 @@ describe("createBusiness", () => {
         district: "Kemang",
         roles: ["advertiser"],
         logoUrl: null,
+        region: "ID" as const,
+        currency: "IDR" as const,
+        handle: "test-business-007",
+        coverUrl: null,
       },
       "user-1",
     );

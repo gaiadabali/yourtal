@@ -28,6 +28,7 @@ export function generateQuestion(params: GenerateQuestionParams): Question {
         campaignId,
         prompt: "Apa yang paling sesuai dengan video yang baru saja Anda tonton?",
         timerSeconds,
+        answerableAfterSeconds: 0,
         type,
         options,
         correctOptionId: correctOption.id,
@@ -39,6 +40,7 @@ export function generateQuestion(params: GenerateQuestionParams): Question {
         campaignId,
         prompt: "Video ini menjelaskan cara mendapatkan promo secara online.",
         timerSeconds,
+        answerableAfterSeconds: 0,
         type,
         correctAnswer: faker.datatype.boolean(),
       });
@@ -48,6 +50,7 @@ export function generateQuestion(params: GenerateQuestionParams): Question {
         campaignId,
         prompt: "Seberapa besar kemungkinan Anda merekomendasikan merchant ini ke teman?",
         timerSeconds,
+        answerableAfterSeconds: 0,
         type,
         scaleMin: 1,
         scaleMax: 5,
@@ -64,6 +67,7 @@ export function generateQuestion(params: GenerateQuestionParams): Question {
         campaignId,
         prompt: "Urutkan alasan berikut dari yang paling penting bagi Anda.",
         timerSeconds,
+        answerableAfterSeconds: 0,
         type,
         items,
       });
@@ -74,6 +78,7 @@ export function generateQuestion(params: GenerateQuestionParams): Question {
         campaignId,
         prompt: "Sebutkan satu hal yang Anda ingat dari video ini.",
         timerSeconds,
+        answerableAfterSeconds: 0,
         type,
         maxLength: 140,
       });
@@ -97,6 +102,7 @@ export const singleShortTextQuestionFixture: Question = questionSchema.parse({
   campaignId: "00000000-0000-4000-8000-000000000001",
   prompt: "Apa kesan Anda terhadap layanan ini?",
   timerSeconds: 20,
+  answerableAfterSeconds: 0,
   type: "short_text",
   maxLength: 140,
 });

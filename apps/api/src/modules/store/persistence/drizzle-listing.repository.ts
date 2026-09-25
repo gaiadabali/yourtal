@@ -118,6 +118,12 @@ export class DrizzleListingRepository implements ListingRepository {
           status: input.status,
           lifecycleState: "active",
           perUserLimit: input.perUserLimit ?? null,
+          region: input.region,
+          audience: input.audience,
+          contentCategory: input.contentCategory,
+          imageUrl: input.imageUrl,
+          channel: input.channel,
+          partialRedemption: input.partialRedemption,
         })
         .returning();
       if (row === undefined) {

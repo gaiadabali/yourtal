@@ -1,7 +1,16 @@
 import { z } from "zod";
+import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 import { pointsSchema } from "../money/money";
+import { regionSchema } from "../region/region";
+import { audienceSchema } from "../audience/audience";
 import { campaignChapterSchema } from "./campaign-chapter";
 import { campaignVideoSourceSchema } from "./campaign-video-source";
+
+// Re-exported here (rather than added to packages/contracts/package.json's
+// exports map, which 1.3.a is about to restructure into a wildcard) so B and
+// C can reach it as `@yourtal/contracts/campaign` today.
+export { audienceSchema, reachesAudience, isBoostedForParents } from "../audience/audience";
+export type { Audience, AgeBand, AudienceReachContext } from "../audience/audience";
 
 /**
  * A campaign is the earn-loop unit: a video a user watches for points,
@@ -26,8 +35,15 @@ export type CampaignStatus = z.infer<typeof campaignStatusSchema>;
 
 const MAX_DURATION_SECONDS = 3 * 60 * 60; // 3 hours, a generous ceiling for long-form
 const MAX_ESTIMATED_DATA_MB = 2_000;
-const MAX_QUESTION_COUNT = 20;
+// F10 caps how many questions a session ever asks at 5
+// (`questionsAskedFor`, ../question/question-bank.ts). This field IS that
+// asked count (frozen per session onto `campaignTermsSchema`), so its ceiling
+// must agree — TASKS.md 1.1.f. It was 20 before F10 was decided; nothing
+// seeded or tested ever used a value above 6, so tightening it is a pure
+// narrowing.
+const MAX_QUESTION_COUNT = 5;
 const MAX_MERCHANT_NAME_LENGTH = 120;
+const ASPECT_RATIOS = ["16:9", "9:16"] as const;
 
 export const campaignSchema = z
   .object({
@@ -46,6 +62,35 @@ export const campaignSchema = z
     publishedAt: z.iso.datetime(),
     chapters: z.array(campaignChapterSchema),
     videoSource: campaignVideoSourceSchema,
+    /** The business running this campaign. TASKS.md 1.1.a. */
+    businessId: z.uuid(),
+    /** Immutable per business (`businessSchema.region`); every account, rate and job stays inside it (F2). */
+    region: regionSchema,
+    audience: audienceSchema,
+    contentCategory: contentCategorySchema,
+    /** Feed and card image, shown before any video loads. */
+    posterUrl: z.url(),
+    /** A progressive MP4, autoplayed muted in the vertical feed (docs/17, 3.5.a). */
+    teaserUrl: z.url(),
+    /**
+     * Convenience mirror of `videoSource`'s manifest for the `hls` kind. Kept
+     * alongside rather than replacing `videoSource` — `videoSource` stays the
+     * canonical, extensible (discriminated-union) source, and a future
+     * non-hls member does not retroactively make this field a lie because the
+     * player never needs to fall back to it once one exists.
+     */
+    hlsUrl: z.url(),
+    /** A WebVTT track, or `null` until one is authored (3.5.b's CC toggle). */
+    captionsUrl: z.url().nullable(),
+    aspect: z.enum(ASPECT_RATIOS),
+    /** Byte-precise sibling of `estimatedDataMb`, for a data-cost estimate that does not round-trip through megabytes. */
+    estimatedBytes: z.number().int().positive(),
+    startsAt: z.iso.datetime(),
+    endsAt: z.iso.datetime(),
+    /** F8: only an opted-in, all-ages campaign may ever play logged out. Off by default. */
+    openViewing: z.boolean().default(false),
+    /** Where the vertical teaser clip starts within the full video. */
+    teaserStartSeconds: z.number().int().min(0).default(0),
   })
   .refine((campaign) => campaign.kind !== "quick" || campaign.durationSeconds <= 60, {
     message: "A quick campaign must be 60 seconds or shorter (docs/17 section 1.1)",
@@ -102,6 +147,14 @@ export const campaignSchema = z
       message: "Every chapter must start before the campaign's own durationSeconds",
       path: ["chapters"],
     },
-  );
+  )
+  .refine((campaign) => new Date(campaign.endsAt) > new Date(campaign.startsAt), {
+    message: "endsAt must be after startsAt",
+    path: ["endsAt"],
+  })
+  .refine((campaign) => campaign.teaserStartSeconds < campaign.durationSeconds, {
+    message: "teaserStartSeconds must be before the campaign ends",
+    path: ["teaserStartSeconds"],
+  });
 
 export type Campaign = z.infer<typeof campaignSchema>;

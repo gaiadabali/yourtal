@@ -50,9 +50,17 @@ export const campaignTermsSchema = z.object({
    */
   version: z.number().int().positive(),
   rewardPoints: pointsSchema,
-  questionCount: z.number().int().min(0).max(20),
+  // F10 (TASKS.md 1.1.f): a session never asks more than 5 questions.
+  questionCount: z.number().int().min(0).max(5),
   scoringRule: campaignScoringRuleSchema,
   durationSeconds: z.number().int().positive(),
+  /**
+   * Frozen alongside `rewardPoints` for the same reason: the accuracy bonus
+   * is reward-affecting (`campaignRewardConfigSchema.accuracyBonusPoints`
+   * already funds it), so a viewer mid-watch must not have it change under
+   * them either. TASKS.md 1.1.f.
+   */
+  accuracyBonusPoints: pointsSchema,
   /** When these terms began applying. */
   effectiveFrom: z.iso.datetime(),
 });
@@ -65,6 +73,7 @@ export const REWARD_AFFECTING_FIELDS = [
   "questionCount",
   "scoringRule",
   "durationSeconds",
+  "accuracyBonusPoints",
 ] as const;
 
 export type RewardAffectingField = (typeof REWARD_AFFECTING_FIELDS)[number];
@@ -97,6 +106,7 @@ export function nextTermsVersion(
     questionCount: proposed.questionCount,
     scoringRule: proposed.scoringRule,
     durationSeconds: proposed.durationSeconds,
+    accuracyBonusPoints: proposed.accuracyBonusPoints,
     effectiveFrom,
   });
 }

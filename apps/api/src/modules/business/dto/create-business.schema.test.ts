@@ -7,6 +7,9 @@ const valid = {
   district: "Kemang",
   roles: ["advertiser"],
   logoUrl: null,
+  region: "ID",
+  handle: "kopi-kenangan",
+  coverUrl: null,
 };
 
 describe("createBusinessSchema", () => {
@@ -34,6 +37,9 @@ describe("createBusinessSchema", () => {
     { name: "invalid role enum value", overrides: { roles: ["owner"] } },
     { name: "non-url logoUrl", overrides: { logoUrl: "not-a-url" } },
     { name: "legalName over the length limit", overrides: { legalName: "a".repeat(161) } },
+    { name: "invalid region enum value", overrides: { region: "US" } },
+    { name: "uppercase handle", overrides: { handle: "Kopi-Kenangan" } },
+    { name: "handle too short", overrides: { handle: "ab" } },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ overrides }) => {

@@ -32,6 +32,10 @@ export class DrizzleBusinessAccountRepository implements BusinessAccountReposito
       roles: row.roles,
       isVerified: row.isVerified,
       logoUrl: row.logoUrl,
+      region: row.region,
+      currency: row.currency,
+      handle: row.handle,
+      coverUrl: row.coverUrl,
     });
   }
 }

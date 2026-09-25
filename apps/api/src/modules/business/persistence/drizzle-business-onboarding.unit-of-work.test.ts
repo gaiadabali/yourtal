@@ -66,6 +66,10 @@ describe("DrizzleBusinessOnboardingUnitOfWork — real Postgres transaction", ()
         district: "Kemang",
         roles: ["advertiser"],
         logoUrl: null,
+        region: "ID" as const,
+        currency: "IDR" as const,
+        handle: "test-business-001",
+        coverUrl: null,
       },
       COMMIT_OWNER_ID,
     );
@@ -92,6 +96,10 @@ describe("DrizzleBusinessOnboardingUnitOfWork — real Postgres transaction", ()
           district: "Kemang",
           roles: ["advertiser"],
           logoUrl: null,
+          region: "ID" as const,
+          currency: "IDR" as const,
+          handle: "test-business-002",
+          coverUrl: null,
         },
         // The NUL byte only reaches business_members (user_id,
         // invited_by_user_id) — business_accounts has no column built

@@ -8,6 +8,40 @@ import { pointsPriceFromSettlement, toPoints } from "../money/money";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 import { audCents } from "../money/money-value";
 import { MOCK_BACKING_RATE_AUD_CENTS_PER_POINT } from "../money/mock-backing-rate";
+import type { Audience } from "../audience/audience";
+import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
+import type { ListingChannel, PartialRedemption } from "../listing/listing";
+
+const MOCK_MEDIA_ORIGIN = "http://127.0.0.1:26900/yourtal-media";
+
+const MOCK_CONTENT_CATEGORIES: readonly ContentCategory[] = [
+  "food-and-drink",
+  "fashion",
+  "personal-care",
+  "electronics",
+  "telco",
+  "transport",
+  "fitness",
+  "education",
+  "travel",
+  "home",
+  "entertainment",
+  "games",
+  "books",
+  "family",
+  "toys",
+  "digital-goods",
+  "services",
+];
+
+const MOCK_AUDIENCES: readonly { value: Audience; weight: number }[] = [
+  { value: "all_ages", weight: 6 },
+  { value: "adult", weight: 2 },
+  { value: "parents", weight: 1 },
+];
+
+const MOCK_CHANNELS: readonly ListingChannel[] = ["in_store", "online", "both"];
+const MOCK_PARTIAL_REDEMPTIONS: readonly PartialRedemption[] = ["single_use", "balance_carries"];
 
 /**
  * AU counterpart to `listing.mock.ts` — Sydney flavour, AUD-cents scale
@@ -81,6 +115,12 @@ function auListingFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
         : null,
     expiresAt: toIsoString(addDays(now, faker.number.int({ min: 7, max: 90 }))),
     status,
+    region: merchant.region,
+    audience: faker.helpers.weightedArrayElement(MOCK_AUDIENCES),
+    contentCategory: faker.helpers.arrayElement(MOCK_CONTENT_CATEGORIES),
+    imageUrl: `${MOCK_MEDIA_ORIGIN}/listings/${faker.string.uuid()}.jpg`,
+    channel: faker.helpers.arrayElement(MOCK_CHANNELS),
+    partialRedemption: faker.helpers.arrayElement(MOCK_PARTIAL_REDEMPTIONS),
   });
 }
 
@@ -119,6 +159,12 @@ export const auSoldOutListingFixture: Listing = listingSchema.parse({
   minimumSpendMinor: null,
   expiresAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 30)),
   status: "sold_out",
+  region: "AU",
+  audience: "all_ages",
+  contentCategory: "food-and-drink",
+  imageUrl: `${MOCK_MEDIA_ORIGIN}/listings/00000000-0000-4000-8000-0000000002a1.jpg`,
+  channel: "in_store",
+  partialRedemption: "single_use",
 });
 
 /** The AU "long merchant name" listing fixture, for 320px-viewport checks. */
@@ -148,4 +194,10 @@ export const auLongMerchantNameListingFixture: Listing = listingSchema.parse({
   minimumSpendMinor: null,
   expiresAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 60)),
   status: "available",
+  region: "AU",
+  audience: "all_ages",
+  contentCategory: "electronics",
+  imageUrl: `${MOCK_MEDIA_ORIGIN}/listings/00000000-0000-4000-8000-0000000002a2.jpg`,
+  channel: "online",
+  partialRedemption: "single_use",
 });

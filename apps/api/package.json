@@ -19,6 +19,7 @@
     "@yourtal/contracts": "workspace:*",
     "@yourtal/drivers": "workspace:*",
     "@yourtal/idempotency": "workspace:*",
+    "@yourtal/jurisdiction": "workspace:*",
     "drizzle-orm": "0.45.3",
     "fastify": "5.12.5",
     "ioredis": "6.0.0",

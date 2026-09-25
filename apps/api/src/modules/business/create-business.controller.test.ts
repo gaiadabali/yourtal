@@ -13,6 +13,9 @@ const validBody: CreateBusinessRequest = {
   district: "Kemang",
   roles: ["advertiser"],
   logoUrl: null,
+  region: "ID",
+  handle: "kopi-kenangan-ctrl-test",
+  coverUrl: null,
 };
 
 /**

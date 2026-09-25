@@ -12,6 +12,7 @@ const validMultipleChoice = {
   campaignId: "22222222-2222-4222-8222-222222222222",
   prompt: "Apa produk utama yang ditampilkan?",
   timerSeconds: 15,
+  answerableAfterSeconds: 0,
   type: "multiple_choice",
   options: [
     { id: "33333333-3333-4333-8333-333333333333", label: "Kopi susu" },
@@ -25,6 +26,7 @@ const validTrueFalse = {
   campaignId: "22222222-2222-4222-8222-222222222222",
   prompt: "Video ini berdurasi lebih dari 10 menit.",
   timerSeconds: 10,
+  answerableAfterSeconds: 0,
   type: "true_false",
   correctAnswer: true,
 };
@@ -34,6 +36,7 @@ const validLikert = {
   campaignId: "22222222-2222-4222-8222-222222222222",
   prompt: "Seberapa puas Anda dengan layanan ini?",
   timerSeconds: 20,
+  answerableAfterSeconds: 0,
   type: "likert",
   scaleMin: 1,
   scaleMax: 5,
@@ -80,6 +83,7 @@ describe("questionSchema", () => {
         campaignId: validTrueFalse.campaignId,
         prompt: "x",
         timerSeconds: 10,
+        answerableAfterSeconds: 0,
         type: "short_text",
         maxLength: 9_999,
       },

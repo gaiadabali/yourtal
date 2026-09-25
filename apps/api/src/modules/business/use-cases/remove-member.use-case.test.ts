@@ -26,6 +26,10 @@ async function setup() {
       district: "Kemang",
       roles: ["advertiser"],
       logoUrl: null,
+      region: "ID" as const,
+      currency: "IDR" as const,
+      handle: "test-business-013",
+      coverUrl: null,
     },
     OWNER_ID,
   );

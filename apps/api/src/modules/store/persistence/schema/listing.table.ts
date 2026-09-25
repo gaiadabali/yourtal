@@ -42,6 +42,13 @@ export const listings = storePgSchema.table("listings", {
   /** MERCHANT-side visibility. Never served to a customer. See the repository. */
   lifecycleState: text("lifecycle_state").notNull().default("active"),
   perUserLimit: integer("per_user_limit"),
+  // TASKS.md 1.1.a.
+  region: text("region").notNull(),
+  audience: text("audience").notNull(),
+  contentCategory: text("content_category").notNull(),
+  imageUrl: text("image_url").notNull(),
+  channel: text("channel").notNull(),
+  partialRedemption: text("partial_redemption").notNull(),
 });
 
 export const merchantLocations = storePgSchema.table("merchant_location", {

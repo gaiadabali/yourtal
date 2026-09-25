@@ -19,7 +19,7 @@ import (
 // checks if the Business type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Business{}
 
-// Business An advertiser, supplier and/or redeemer.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - roles must not contain duplicates.
+// Business An advertiser, supplier and/or redeemer.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - roles must not contain duplicates.   - currency must match the business's own region (F2: regions never cross).
 type Business struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	LegalName string `json:"legalName"`
@@ -28,6 +28,11 @@ type Business struct {
 	Roles []BusinessRole `json:"roles"`
 	IsVerified bool `json:"isVerified"`
 	LogoUrl NullableString `json:"logoUrl"`
+	Region Region `json:"region"`
+	Currency Currency `json:"currency"`
+	// A business's url-safe public handle — lowercase letters, digits and single hyphens.
+	Handle string `json:"handle" validate:"regexp=^[a-z0-9]+(-[a-z0-9]+)*$"`
+	CoverUrl NullableString `json:"coverUrl"`
 }
 
 type _Business Business
@@ -36,7 +41,7 @@ type _Business Business
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBusiness(id string, legalName string, displayName string, district string, roles []BusinessRole, isVerified bool, logoUrl NullableString) *Business {
+func NewBusiness(id string, legalName string, displayName string, district string, roles []BusinessRole, isVerified bool, logoUrl NullableString, region Region, currency Currency, handle string, coverUrl NullableString) *Business {
 	this := Business{}
 	this.Id = id
 	this.LegalName = legalName
@@ -45,6 +50,10 @@ func NewBusiness(id string, legalName string, displayName string, district strin
 	this.Roles = roles
 	this.IsVerified = isVerified
 	this.LogoUrl = logoUrl
+	this.Region = region
+	this.Currency = currency
+	this.Handle = handle
+	this.CoverUrl = coverUrl
 	return &this
 }
 
@@ -226,6 +235,104 @@ func (o *Business) SetLogoUrl(v string) {
 	o.LogoUrl.Set(&v)
 }
 
+// GetRegion returns the Region field value
+func (o *Business) GetRegion() Region {
+	if o == nil {
+		var ret Region
+		return ret
+	}
+
+	return o.Region
+}
+
+// GetRegionOk returns a tuple with the Region field value
+// and a boolean to check if the value has been set.
+func (o *Business) GetRegionOk() (*Region, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Region, true
+}
+
+// SetRegion sets field value
+func (o *Business) SetRegion(v Region) {
+	o.Region = v
+}
+
+// GetCurrency returns the Currency field value
+func (o *Business) GetCurrency() Currency {
+	if o == nil {
+		var ret Currency
+		return ret
+	}
+
+	return o.Currency
+}
+
+// GetCurrencyOk returns a tuple with the Currency field value
+// and a boolean to check if the value has been set.
+func (o *Business) GetCurrencyOk() (*Currency, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Currency, true
+}
+
+// SetCurrency sets field value
+func (o *Business) SetCurrency(v Currency) {
+	o.Currency = v
+}
+
+// GetHandle returns the Handle field value
+func (o *Business) GetHandle() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Handle
+}
+
+// GetHandleOk returns a tuple with the Handle field value
+// and a boolean to check if the value has been set.
+func (o *Business) GetHandleOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Handle, true
+}
+
+// SetHandle sets field value
+func (o *Business) SetHandle(v string) {
+	o.Handle = v
+}
+
+// GetCoverUrl returns the CoverUrl field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *Business) GetCoverUrl() string {
+	if o == nil || o.CoverUrl.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.CoverUrl.Get()
+}
+
+// GetCoverUrlOk returns a tuple with the CoverUrl field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Business) GetCoverUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.CoverUrl.Get(), o.CoverUrl.IsSet()
+}
+
+// SetCoverUrl sets field value
+func (o *Business) SetCoverUrl(v string) {
+	o.CoverUrl.Set(&v)
+}
+
 func (o Business) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -243,6 +350,10 @@ func (o Business) ToMap() (map[string]interface{}, error) {
 	toSerialize["roles"] = o.Roles
 	toSerialize["isVerified"] = o.IsVerified
 	toSerialize["logoUrl"] = o.LogoUrl.Get()
+	toSerialize["region"] = o.Region
+	toSerialize["currency"] = o.Currency
+	toSerialize["handle"] = o.Handle
+	toSerialize["coverUrl"] = o.CoverUrl.Get()
 	return toSerialize, nil
 }
 
@@ -258,6 +369,10 @@ func (o *Business) UnmarshalJSON(data []byte) (err error) {
 		"roles",
 		"isVerified",
 		"logoUrl",
+		"region",
+		"currency",
+		"handle",
+		"coverUrl",
 	}
 
 	allProperties := make(map[string]interface{})

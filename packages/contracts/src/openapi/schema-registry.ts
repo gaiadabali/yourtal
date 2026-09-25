@@ -28,7 +28,10 @@ import {
   publicListingSchema,
   listingStatusSchema,
   partialRedemptionPolicySchema,
+  listingChannelSchema,
+  partialRedemptionSchema,
 } from "../listing/listing";
+import { audienceSchema } from "../audience/audience";
 import { campaignChapterSchema } from "../campaign/campaign-chapter";
 import { campaignVideoSourceSchema } from "../campaign/campaign-video-source";
 import { merchantLocationSchema } from "../listing/merchant-location";
@@ -242,6 +245,13 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [],
   },
   {
+    id: "Audience",
+    schema: audienceSchema,
+    description:
+      "Who a campaign or listing may reach (TASKS.md 1.1.c): all_ages reaches everyone; teen and adult are age-gated; parents reaches 18+ and is boosted, never gated further, for accounts that declared the parent-of-young-children interest with ad-targeting consent.",
+    crossFieldRules: [],
+  },
+  {
     id: "Campaign",
     schema: campaignSchema,
     description:
@@ -255,6 +265,8 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       "The first chapter must start at second 0.",
       "Chapter start times must be strictly increasing.",
       "Every chapter must start before the campaign's own durationSeconds.",
+      "endsAt must be after startsAt.",
+      "teaserStartSeconds must be before the campaign ends.",
     ],
   },
 
@@ -282,6 +294,19 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "PartialRedemptionPolicy",
     schema: partialRedemptionPolicySchema,
     description: "What happens when a voucher is spent below its face value (docs/09 section 8.2).",
+    crossFieldRules: [],
+  },
+  {
+    id: "ListingChannel",
+    schema: listingChannelSchema,
+    description: "Where a listing may be redeemed (TASKS.md 1.1.a).",
+    crossFieldRules: [],
+  },
+  {
+    id: "PartialRedemption",
+    schema: partialRedemptionSchema,
+    description:
+      "The counter-facing, two-value framing of partial redemption (TASKS.md 1.1.a) — see listing.ts's own comment for why this sits alongside PartialRedemptionPolicy rather than replacing it.",
     crossFieldRules: [],
   },
   {

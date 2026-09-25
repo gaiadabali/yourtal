@@ -5,7 +5,12 @@ import type {
   ListingCategory,
   ListingStatus,
   PartialRedemptionPolicy,
+  ListingChannel,
+  PartialRedemption,
 } from "@yourtal/contracts/listing";
+import type { Audience } from "@yourtal/contracts/campaign";
+import type { Region } from "@yourtal/contracts/region";
+import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
 
 /** MERCHANT-side visibility (docs/17 section 2, Inventory). Never a customer-facing value. */
 export type ListingLifecycleState = "active" | "paused" | "retired";
@@ -32,6 +37,15 @@ export interface CreateListingInput {
   readonly expiresAt: string;
   readonly status: ListingStatus;
   readonly perUserLimit: number | undefined;
+  // TASKS.md 1.1.a/1.1.h: until a listing's region is derived from its
+  // business, the caller supplies it — the same stopgap `currency` above
+  // already follows.
+  readonly region: Region;
+  readonly audience: Audience;
+  readonly contentCategory: ContentCategory;
+  readonly imageUrl: string;
+  readonly channel: ListingChannel;
+  readonly partialRedemption: PartialRedemption;
 }
 
 /**

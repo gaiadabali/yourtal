@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
+import { regionSchema } from "../region/region";
+import { audienceSchema } from "../audience/audience";
 import { merchantLocationSchema } from "./merchant-location";
 
 /**
@@ -34,6 +37,32 @@ export const partialRedemptionPolicySchema = z.enum([
   "minimum_spend",
 ]);
 export type PartialRedemptionPolicy = z.infer<typeof partialRedemptionPolicySchema>;
+
+/**
+ * Where a listing may be redeemed. TASKS.md 1.1.a — a coarser, storefront-facing
+ * question than `partialRedemptionPolicy` above, which governs what happens to
+ * the remainder of a partially-spent voucher.
+ */
+export const listingChannelSchema = z.enum(["in_store", "online", "both"]);
+export type ListingChannel = z.infer<typeof listingChannelSchema>;
+
+/**
+ * TASKS.md 1.1.a's `partialRedemption`, deliberately a SECOND field alongside
+ * `partialRedemptionPolicy` rather than a replacement for it.
+ *
+ * `partialRedemptionPolicy` already has three values, one of which
+ * (`minimum_spend`) is wired through the store, wallet, merchant and burn
+ * modules end to end (~49 call sites). TASKS.md's two-value list
+ * (`single_use` | `balance_carries`) reads as that same policy's coarser,
+ * counter-facing framing — plain language a merchant terminal shows a
+ * cashier, not the billing-detail enum a settlement audit needs — so it is
+ * additive here rather than a rename that would touch every one of those call
+ * sites for a task whose own scope is "add these columns". A later phase
+ * (7.8/8.2) can derive one from the other, or fold them together, once
+ * whichever surface reads `partialRedemption` is actually built.
+ */
+export const partialRedemptionSchema = z.enum(["single_use", "balance_carries"]);
+export type PartialRedemption = z.infer<typeof partialRedemptionSchema>;
 
 const MAX_MERCHANT_NAME_LENGTH = 120;
 
@@ -88,6 +117,14 @@ const listingFields = z.object({
    * missing limit, not a validation failure.
    */
   perUserLimit: z.number().int().positive().optional(),
+  /** Immutable per business (`businessSchema.region`); every account, rate and job stays inside it (F2). */
+  region: regionSchema,
+  audience: audienceSchema,
+  contentCategory: contentCategorySchema,
+  /** The storefront card image. */
+  imageUrl: z.url(),
+  channel: listingChannelSchema,
+  partialRedemption: partialRedemptionSchema,
 });
 
 // The invariants shared by both shapes, written once as plain predicates so

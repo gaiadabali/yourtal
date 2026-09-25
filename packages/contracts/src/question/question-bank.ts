@@ -28,10 +28,23 @@ import { z } from "zod";
  */
 export const SECONDS_PER_QUESTION = 5 * 60;
 export const MAX_QUESTIONS_ASKED = 5;
+/** F10: under a minute, a session asks nothing at all — too short for a checkpoint to feel earned rather than intrusive. */
+const NO_QUESTIONS_BELOW_SECONDS = 60;
 
+/**
+ * F10 exactly: `d < 60` asks none; from 60s to under 10 minutes asks exactly
+ * one; longer asks one per five minutes, capped at five —
+ * `max(1, min(5, floor(d / 300)))`. The `max(1, …)` is what changed from the
+ * pre-F10 version of this function: without it, a 4-minute campaign (at or
+ * above the 60s floor but under one `SECONDS_PER_QUESTION` block) asked zero,
+ * which F10 does not allow — anything 60s or longer asks at least one.
+ */
 export function questionsAskedFor(durationSeconds: number): number {
-  if (durationSeconds <= 0) return 0;
-  return Math.min(Math.floor(durationSeconds / SECONDS_PER_QUESTION), MAX_QUESTIONS_ASKED);
+  if (durationSeconds < NO_QUESTIONS_BELOW_SECONDS) return 0;
+  return Math.max(
+    1,
+    Math.min(MAX_QUESTIONS_ASKED, Math.floor(durationSeconds / SECONDS_PER_QUESTION)),
+  );
 }
 
 /**

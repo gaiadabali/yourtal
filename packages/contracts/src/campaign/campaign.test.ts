@@ -28,6 +28,18 @@ const validCampaign = {
     { title: "Chapter 3", startSeconds: 400, rewardWeight: 2 },
   ],
   videoSource: { kind: "hls", manifestUrl: "https://cdn.example.com/campaign.m3u8" },
+  businessId: "22222222-2222-4222-8222-222222222222",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "food-and-drink",
+  posterUrl: "https://cdn.example.com/poster.jpg",
+  teaserUrl: "https://cdn.example.com/teaser.mp4",
+  hlsUrl: "https://cdn.example.com/campaign.m3u8",
+  captionsUrl: null,
+  aspect: "16:9",
+  estimatedBytes: 220_200_960,
+  startsAt: "2026-09-01T00:00:00.000Z",
+  endsAt: "2026-12-01T00:00:00.000Z",
 };
 
 describe("campaignSchema", () => {
@@ -92,6 +104,20 @@ describe("campaignSchema", () => {
       name: "invalid video source kind",
       overrides: { videoSource: { kind: "mp4", url: "https://cdn.example.com/campaign.mp4" } },
     },
+    { name: "invalid region enum value", overrides: { region: "US" } },
+    { name: "invalid audience enum value", overrides: { audience: "everyone" } },
+    { name: "invalid contentCategory enum value", overrides: { contentCategory: "crypto" } },
+    { name: "invalid aspect ratio", overrides: { aspect: "4:3" } },
+    { name: "non-url posterUrl", overrides: { posterUrl: "not-a-url" } },
+    {
+      name: "endsAt before startsAt",
+      overrides: { startsAt: "2026-12-01T00:00:00.000Z", endsAt: "2026-09-01T00:00:00.000Z" },
+    },
+    {
+      name: "teaserStartSeconds at or after durationSeconds",
+      overrides: { teaserStartSeconds: 600 },
+    },
+    { name: "question count over the F10 ceiling of 5", overrides: { questionCount: 6 } },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ overrides }) => {

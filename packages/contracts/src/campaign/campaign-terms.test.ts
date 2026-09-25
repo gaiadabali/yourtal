@@ -21,6 +21,7 @@ const baseTerms = campaignTermsSchema.parse({
   questionCount: 3,
   scoringRule: "base_plus_accuracy_bonus",
   durationSeconds: 1_800,
+  accuracyBonusPoints: toPoints(500),
   effectiveFrom: "2026-09-20T00:00:00.000Z",
 });
 
@@ -29,6 +30,7 @@ const sameTerms = {
   questionCount: 3,
   scoringRule: "base_plus_accuracy_bonus" as const,
   durationSeconds: 1_800,
+  accuracyBonusPoints: toPoints(500),
 };
 
 describe("freezing the terms a viewer entered under", () => {
@@ -46,6 +48,7 @@ describe("freezing the terms a viewer entered under", () => {
       ...(field === "questionCount" ? { questionCount: 5 } : {}),
       ...(field === "scoringRule" ? { scoringRule: "base_only" as const } : {}),
       ...(field === "durationSeconds" ? { durationSeconds: 3_600 } : {}),
+      ...(field === "accuracyBonusPoints" ? { accuracyBonusPoints: toPoints(0) } : {}),
     };
     expect(requiresNewTermsVersion(baseTerms, changed)).toBe(true);
   });

@@ -26,6 +26,7 @@ export const multipleChoiceFixture: MultipleChoiceQuestion = {
   campaignId: SAMPLE_CAMPAIGN_ID,
   prompt: "Apa warna kemasan produk yang ditampilkan dalam video?",
   timerSeconds: 20,
+  answerableAfterSeconds: 0,
   type: "multiple_choice",
   options: [
     { id: "aaaaaaaa-2222-4222-8222-000000000001", label: "Merah" },
@@ -40,6 +41,7 @@ export const trueFalseFixture: TrueFalseQuestion = {
   campaignId: SAMPLE_CAMPAIGN_ID,
   prompt: "Video ini menjelaskan promo yang berlaku akhir pekan ini.",
   timerSeconds: 15,
+  answerableAfterSeconds: 0,
   type: "true_false",
   correctAnswer: true,
 };
@@ -49,6 +51,7 @@ export const likertFixture: LikertQuestion = {
   campaignId: SAMPLE_CAMPAIGN_ID,
   prompt: "Seberapa besar kemungkinan Anda merekomendasikan merchant ini ke teman?",
   timerSeconds: 20,
+  answerableAfterSeconds: 0,
   type: "likert",
   scaleMin: 1,
   scaleMax: 5,
@@ -61,6 +64,7 @@ export const rankedFixture: RankedQuestion = {
   campaignId: SAMPLE_CAMPAIGN_ID,
   prompt: "Urutkan alasan berikut dari yang paling penting bagi Anda.",
   timerSeconds: 30,
+  answerableAfterSeconds: 0,
   type: "ranked",
   items: [
     { id: "dddddddd-2222-4222-8222-000000000001", label: "Harga" },
@@ -74,6 +78,7 @@ export const shortTextFixture: ShortTextQuestion = {
   campaignId: SAMPLE_CAMPAIGN_ID,
   prompt: "Sebutkan satu hal yang Anda ingat dari video ini.",
   timerSeconds: 25,
+  answerableAfterSeconds: 0,
   type: "short_text",
   maxLength: 140,
 };
@@ -105,6 +110,20 @@ export function makeCampaignFixture(overrides: Partial<Campaign> = {}): Campaign
       { title: "Penutup", startSeconds: 420, rewardWeight: 5 },
     ],
     videoSource: { kind: "hls", manifestUrl: MOCK_HLS_MANIFEST_URL },
+    businessId: "10000000-0000-4000-8000-000000000002",
+    region: "ID",
+    audience: "all_ages",
+    contentCategory: "food-and-drink",
+    posterUrl: "https://cdn.example.com/poster.jpg",
+    teaserUrl: "https://cdn.example.com/teaser.mp4",
+    hlsUrl: MOCK_HLS_MANIFEST_URL,
+    captionsUrl: null,
+    aspect: "16:9",
+    estimatedBytes: 220_200_960,
+    startsAt: "2026-09-19T09:00:00.000Z",
+    endsAt: "2026-12-19T09:00:00.000Z",
+    openViewing: false,
+    teaserStartSeconds: 0,
     ...overrides,
   };
 }

@@ -1,4 +1,5 @@
 import { Body, Controller, Inject, Post, Req } from "@nestjs/common";
+import { REGION_CONFIG } from "@yourtal/contracts/region";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { CreateBusinessDto } from "./dto/create-business.schema";
 import { BUSINESS_ONBOARDING_UNIT_OF_WORK } from "./persistence/business-onboarding.unit-of-work";
@@ -49,6 +50,10 @@ export class CreateBusinessController {
         district: body.district,
         roles: body.roles,
         logoUrl: body.logoUrl,
+        region: body.region,
+        currency: REGION_CONFIG[body.region].currency,
+        handle: body.handle,
+        coverUrl: body.coverUrl,
       },
       principal.id,
     );

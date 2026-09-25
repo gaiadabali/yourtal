@@ -26,6 +26,7 @@ const ONE_OF_EACH: Question[] = [
     campaignId: CAMPAIGN,
     prompt: "Which drink was shown?",
     timerSeconds: 20,
+    answerableAfterSeconds: 0,
     type: "multiple_choice",
     options: [
       { id: "00000000-0000-4000-8000-00000000b001", label: "Kopi susu" },
@@ -38,6 +39,7 @@ const ONE_OF_EACH: Question[] = [
     campaignId: CAMPAIGN,
     prompt: "The shop opens at 7am.",
     timerSeconds: 15,
+    answerableAfterSeconds: 0,
     type: "true_false",
     correctAnswer: true,
   }),
@@ -46,6 +48,7 @@ const ONE_OF_EACH: Question[] = [
     campaignId: CAMPAIGN,
     prompt: "How likely are you to visit?",
     timerSeconds: 20,
+    answerableAfterSeconds: 0,
     type: "likert",
     scaleMin: 1,
     scaleMax: 5,
@@ -57,6 +60,7 @@ const ONE_OF_EACH: Question[] = [
     campaignId: CAMPAIGN,
     prompt: "Rank these by appeal.",
     timerSeconds: 30,
+    answerableAfterSeconds: 0,
     type: "ranked",
     items: [
       { id: "00000000-0000-4000-8000-00000000b003", label: "Price" },
@@ -68,6 +72,7 @@ const ONE_OF_EACH: Question[] = [
     campaignId: CAMPAIGN,
     prompt: "What stood out?",
     timerSeconds: 45,
+    answerableAfterSeconds: 0,
     type: "short_text",
     maxLength: 200,
   }),
@@ -121,9 +126,12 @@ describe("a presented question cannot carry the answer", () => {
 
 describe("how many questions a campaign asks", () => {
   const table = [
+    // F10: under a minute asks none; 60s up to (but under) 10 minutes asks
+    // exactly one — `max(1, …)` is what makes 60 and 299 both 1, not 0.
     { durationSeconds: 0, expected: 0 },
-    { durationSeconds: 60, expected: 0 },
-    { durationSeconds: 299, expected: 0 },
+    { durationSeconds: 59, expected: 0 },
+    { durationSeconds: 60, expected: 1 },
+    { durationSeconds: 299, expected: 1 },
     { durationSeconds: 300, expected: 1 },
     { durationSeconds: 900, expected: 3 },
     { durationSeconds: 1_500, expected: 5 },
@@ -142,7 +150,9 @@ describe("how many questions a campaign asks", () => {
   it("requires three times what it asks", () => {
     expect(requiredBankSize(1_800)).toBe(5 * BANK_MULTIPLE);
     expect(requiredBankSize(900)).toBe(3 * BANK_MULTIPLE);
-    expect(requiredBankSize(60)).toBe(0);
+    // F10: 60s asks one question (see the table above), so it needs a bank too.
+    expect(requiredBankSize(60)).toBe(1 * BANK_MULTIPLE);
+    expect(requiredBankSize(59)).toBe(0);
   });
 });
 
@@ -214,7 +224,8 @@ describe("approving a campaign's bank", () => {
   });
 
   it("says a short campaign needs no bank at all", () => {
-    const verdict = judgeBankForApproval([], 60);
+    // Under F10's 60s floor, not merely short — see the table above.
+    const verdict = judgeBankForApproval([], 30);
     expect(verdict).toMatchObject({ kind: "no_questions_required" });
   });
 });

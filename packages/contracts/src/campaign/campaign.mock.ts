@@ -11,6 +11,39 @@ import {
 } from "../internal/jakarta";
 import { toPoints } from "../money/money";
 import { pickMockMerchant } from "../merchant/merchant-roster";
+import type { Audience } from "../audience/audience";
+import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
+
+/**
+ * The "ordinary" (never adult_only/prohibited anywhere) categories, for a
+ * generator that has no reason to pick a regulated one — TASKS.md 1.1.a/d.
+ */
+const MOCK_CONTENT_CATEGORIES: readonly ContentCategory[] = [
+  "food-and-drink",
+  "fashion",
+  "personal-care",
+  "electronics",
+  "telco",
+  "transport",
+  "fitness",
+  "education",
+  "travel",
+  "home",
+  "entertainment",
+  "games",
+  "books",
+  "family",
+  "toys",
+  "digital-goods",
+  "services",
+];
+
+/** Skewed toward the common case; TEEN_ACCOUNTS is off everywhere today (1.1.c), so this never picks "teen". */
+const MOCK_AUDIENCES: readonly { value: Audience; weight: number }[] = [
+  { value: "all_ages", weight: 6 },
+  { value: "adult", weight: 2 },
+  { value: "parents", weight: 1 },
+];
 
 /**
  * The local HLS origin (YT-0521), which every mock campaign now plays.
@@ -49,6 +82,14 @@ export const MOCK_HLS_MANIFEST_URL =
   "http://127.0.0.1:26900/yourtal-media/hls/attention-30s/index.m3u8";
 
 const MOCK_VIDEO_SOURCE: CampaignVideoSource = { kind: "hls", manifestUrl: MOCK_HLS_MANIFEST_URL };
+
+/**
+ * Same local MinIO origin as `MOCK_HLS_MANIFEST_URL` above, for the poster
+ * and teaser fields TASKS.md 1.1.a adds. No file is guaranteed to exist at
+ * these paths yet — publishing real posters and teaser clips is 3.2/5.1's
+ * job — this only needs to be a well-formed URL for `campaignSchema` today.
+ */
+const MOCK_MEDIA_ORIGIN = "http://127.0.0.1:26900/yourtal-media";
 
 /**
  * Back-loaded chapter weights reproducing docs/06 section 3's own worked
@@ -90,12 +131,17 @@ export function generateCampaign(params: GenerateCampaignParams): Campaign {
     kind === "quick"
       ? faker.number.int({ min: 15, max: 60 })
       : faker.number.int({ min: 300, max: 1_800 });
+  // Capped at 5, not 6: F10 (question-bank.ts's questionsAskedFor) never
+  // asks more than MAX_QUESTIONS_ASKED, and campaignSchema.questionCount now
+  // enforces the same ceiling (TASKS.md 1.1.f).
   const questionCount =
-    kind === "quick" ? faker.number.int({ min: 0, max: 2 }) : faker.number.int({ min: 1, max: 6 });
+    kind === "quick" ? faker.number.int({ min: 0, max: 2 }) : faker.number.int({ min: 1, max: 5 });
   const scoringRule =
     questionCount > 0 && faker.datatype.boolean({ probability: 0.7 })
       ? "base_plus_accuracy_bonus"
       : "base_only";
+  const publishedAt = addDays(now, -faker.number.int({ min: 0, max: 30 }));
+  const estimatedDataMb = Math.round(durationSeconds * 0.35 * 10) / 10;
 
   return campaignSchema.parse({
     id: faker.string.uuid(),
@@ -105,16 +151,33 @@ export function generateCampaign(params: GenerateCampaignParams): Campaign {
     merchantName,
     synopsis: generateCampaignSynopsis(faker, merchantName),
     durationSeconds,
-    estimatedDataMb: Math.round(durationSeconds * 0.35 * 10) / 10,
+    estimatedDataMb,
     rewardPoints: toPoints(
       faker.number.int({ min: kind === "quick" ? 50 : 500, max: kind === "quick" ? 400 : 4_000 }),
     ),
     questionCount,
     scoringRule,
     status: "active",
-    publishedAt: toIsoString(addDays(now, -faker.number.int({ min: 0, max: 30 }))),
+    publishedAt: toIsoString(publishedAt),
     chapters: kind === "long_form" ? mockChapters(durationSeconds) : [],
     videoSource: MOCK_VIDEO_SOURCE,
+    // A business account roster does not exist separately from the merchant
+    // roster yet (TASKS.md 1.1's scope is the shape, not that reconciliation)
+    // — a merchant's own id stands in as its business id until one does.
+    businessId: merchant.id,
+    region: merchant.region,
+    audience: faker.helpers.weightedArrayElement(MOCK_AUDIENCES),
+    contentCategory: faker.helpers.arrayElement(MOCK_CONTENT_CATEGORIES),
+    posterUrl: `${MOCK_MEDIA_ORIGIN}/posters/${faker.string.uuid()}.jpg`,
+    teaserUrl: `${MOCK_MEDIA_ORIGIN}/teasers/${faker.string.uuid()}.mp4`,
+    hlsUrl: MOCK_VIDEO_SOURCE.manifestUrl,
+    captionsUrl: null,
+    aspect: kind === "quick" ? "9:16" : "16:9",
+    estimatedBytes: Math.round(estimatedDataMb * 1024 * 1024),
+    startsAt: toIsoString(publishedAt),
+    endsAt: toIsoString(addDays(publishedAt, 90)),
+    openViewing: false,
+    teaserStartSeconds: 0,
   });
 }
 
@@ -142,6 +205,20 @@ export const zeroRewardCampaignFixture: Campaign = campaignSchema.parse({
   publishedAt: toIsoString(DEFAULT_REFERENCE_INSTANT),
   chapters: mockChapters(600),
   videoSource: MOCK_VIDEO_SOURCE,
+  businessId: "00000000-0000-4000-8000-000000000606",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "entertainment",
+  posterUrl: `${MOCK_MEDIA_ORIGIN}/posters/00000000-0000-4000-8000-000000000001.jpg`,
+  teaserUrl: `${MOCK_MEDIA_ORIGIN}/teasers/00000000-0000-4000-8000-000000000001.mp4`,
+  hlsUrl: MOCK_VIDEO_SOURCE.manifestUrl,
+  captionsUrl: null,
+  aspect: "16:9",
+  estimatedBytes: Math.round(210 * 1024 * 1024),
+  startsAt: toIsoString(DEFAULT_REFERENCE_INSTANT),
+  endsAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 90)),
+  openViewing: false,
+  teaserStartSeconds: 0,
 });
 
 /** A quick campaign with the long merchant-name fixture, for 320px-viewport checks. */
@@ -161,6 +238,20 @@ export const longMerchantNameCampaignFixture: Campaign = campaignSchema.parse({
   publishedAt: toIsoString(DEFAULT_REFERENCE_INSTANT),
   chapters: [],
   videoSource: MOCK_VIDEO_SOURCE,
+  businessId: "00000000-0000-4000-8000-000000000606",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "food-and-drink",
+  posterUrl: `${MOCK_MEDIA_ORIGIN}/posters/00000000-0000-4000-8000-000000000002.jpg`,
+  teaserUrl: `${MOCK_MEDIA_ORIGIN}/teasers/00000000-0000-4000-8000-000000000002.mp4`,
+  hlsUrl: MOCK_VIDEO_SOURCE.manifestUrl,
+  captionsUrl: null,
+  aspect: "9:16",
+  estimatedBytes: Math.round(12 * 1024 * 1024),
+  startsAt: toIsoString(DEFAULT_REFERENCE_INSTANT),
+  endsAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 90)),
+  openViewing: false,
+  teaserStartSeconds: 0,
 });
 
 export const mockCampaigns: Campaign[] = generateCampaigns(24, 1_000);

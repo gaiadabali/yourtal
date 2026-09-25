@@ -37,6 +37,12 @@ const BASE_LISTING = {
   minimumSpendMinor: null,
   expiresAt: "2026-12-31T00:00:00.000Z",
   status: "available",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "food-and-drink",
+  imageUrl: "https://cdn.example.com/listing.jpg",
+  channel: "in_store",
+  partialRedemption: "single_use",
 } as const;
 
 export function makeListingFixture(overrides: Record<string, unknown> = {}): Listing {

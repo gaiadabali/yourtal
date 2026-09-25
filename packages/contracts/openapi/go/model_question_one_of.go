@@ -24,6 +24,7 @@ type QuestionOneOf struct {
 	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Prompt string `json:"prompt"`
 	TimerSeconds int32 `json:"timerSeconds"`
+	AnswerableAfterSeconds int64 `json:"answerableAfterSeconds"`
 	Type string `json:"type"`
 	Options []QuestionOption `json:"options"`
 	CorrectOptionId string `json:"correctOptionId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
@@ -36,12 +37,13 @@ type _QuestionOneOf QuestionOneOf
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewQuestionOneOf(id string, campaignId string, prompt string, timerSeconds int32, type_ string, options []QuestionOption, correctOptionId string) *QuestionOneOf {
+func NewQuestionOneOf(id string, campaignId string, prompt string, timerSeconds int32, answerableAfterSeconds int64, type_ string, options []QuestionOption, correctOptionId string) *QuestionOneOf {
 	this := QuestionOneOf{}
 	this.Id = id
 	this.CampaignId = campaignId
 	this.Prompt = prompt
 	this.TimerSeconds = timerSeconds
+	this.AnswerableAfterSeconds = answerableAfterSeconds
 	this.Type = type_
 	this.Options = options
 	this.CorrectOptionId = correctOptionId
@@ -152,6 +154,30 @@ func (o *QuestionOneOf) SetTimerSeconds(v int32) {
 	o.TimerSeconds = v
 }
 
+// GetAnswerableAfterSeconds returns the AnswerableAfterSeconds field value
+func (o *QuestionOneOf) GetAnswerableAfterSeconds() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.AnswerableAfterSeconds
+}
+
+// GetAnswerableAfterSecondsOk returns a tuple with the AnswerableAfterSeconds field value
+// and a boolean to check if the value has been set.
+func (o *QuestionOneOf) GetAnswerableAfterSecondsOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.AnswerableAfterSeconds, true
+}
+
+// SetAnswerableAfterSeconds sets field value
+func (o *QuestionOneOf) SetAnswerableAfterSeconds(v int64) {
+	o.AnswerableAfterSeconds = v
+}
+
 // GetType returns the Type field value
 func (o *QuestionOneOf) GetType() string {
 	if o == nil {
@@ -238,6 +264,7 @@ func (o QuestionOneOf) ToMap() (map[string]interface{}, error) {
 	toSerialize["campaignId"] = o.CampaignId
 	toSerialize["prompt"] = o.Prompt
 	toSerialize["timerSeconds"] = o.TimerSeconds
+	toSerialize["answerableAfterSeconds"] = o.AnswerableAfterSeconds
 	toSerialize["type"] = o.Type
 	toSerialize["options"] = o.Options
 	toSerialize["correctOptionId"] = o.CorrectOptionId
@@ -258,6 +285,7 @@ func (o *QuestionOneOf) UnmarshalJSON(data []byte) (err error) {
 		"campaignId",
 		"prompt",
 		"timerSeconds",
+		"answerableAfterSeconds",
 		"type",
 		"options",
 		"correctOptionId",
@@ -294,6 +322,7 @@ func (o *QuestionOneOf) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "campaignId")
 		delete(additionalProperties, "prompt")
 		delete(additionalProperties, "timerSeconds")
+		delete(additionalProperties, "answerableAfterSeconds")
 		delete(additionalProperties, "type")
 		delete(additionalProperties, "options")
 		delete(additionalProperties, "correctOptionId")

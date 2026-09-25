@@ -14,6 +14,7 @@ function multipleChoice(index: number): Question {
     type: "multiple_choice",
     prompt: `Question ${String(index)}`,
     timerSeconds: 20,
+    answerableAfterSeconds: 0,
     options: [0, 1, 2, 3].map((ordinal) => ({
       id: `00000000-0000-4000-9000-${String(index * 10 + ordinal).padStart(12, "0")}`,
       label: `Option ${String(ordinal)}`,

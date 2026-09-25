@@ -4,9 +4,14 @@ import {
   listingCategorySchema,
   listingStatusSchema,
   partialRedemptionPolicySchema,
+  listingChannelSchema,
+  partialRedemptionSchema,
 } from "@yourtal/contracts/listing";
 import { minorUnitsSchema, pointsSchema } from "@yourtal/contracts/money";
 import { currencySchema } from "@yourtal/contracts/money/value";
+import { audienceSchema } from "@yourtal/contracts/campaign";
+import { regionSchema } from "@yourtal/contracts/region";
+import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 
 /**
  * `merchantId` is the route's `:tenantId`, never a body field — same rule
@@ -40,6 +45,13 @@ export const createListingSchema = z
     expiresAt: z.iso.datetime(),
     status: listingStatusSchema,
     perUserLimit: z.number().int().positive().optional(),
+    // Until businesses carry a region, the caller names it too; see TASKS.md 1.1.
+    region: regionSchema,
+    audience: audienceSchema,
+    contentCategory: contentCategorySchema,
+    imageUrl: z.url(),
+    channel: listingChannelSchema,
+    partialRedemption: partialRedemptionSchema,
   })
   .refine((value) => value.settlementValueMinor <= value.faceValueMinor, {
     message: "settlementValueMinor cannot exceed faceValueMinor",

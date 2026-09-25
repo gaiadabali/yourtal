@@ -101,8 +101,10 @@ async function seedCampaigns(pool: pg.Pool): Promise<number> {
       `INSERT INTO campaign.campaigns
          (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
           estimated_data_mb, reward_points, question_count, scoring_rule,
-          lifecycle_state, published_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+          lifecycle_state, published_at, business_id, region, audience, content_category,
+          poster_url, teaser_url, hls_url, captions_url, aspect, estimated_bytes,
+          starts_at, ends_at, open_viewing, teaser_start_seconds)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27)
        ON CONFLICT (id) DO NOTHING`,
       [
         campaign.id,
@@ -122,6 +124,20 @@ async function seedCampaigns(pool: pg.Pool): Promise<number> {
         // storing both would be two copies of one fact.
         lifecycleStateFor(campaign.status),
         campaign.publishedAt,
+        campaign.businessId,
+        campaign.region,
+        campaign.audience,
+        campaign.contentCategory,
+        campaign.posterUrl,
+        campaign.teaserUrl,
+        campaign.hlsUrl,
+        campaign.captionsUrl,
+        campaign.aspect,
+        campaign.estimatedBytes,
+        campaign.startsAt,
+        campaign.endsAt,
+        campaign.openViewing,
+        campaign.teaserStartSeconds,
       ],
     );
     written += result.rowCount ?? 0;
@@ -150,8 +166,8 @@ async function seedCampaignCreative(pool: pg.Pool, campaign: Campaign): Promise<
   await pool.query(
     `INSERT INTO campaign.terms_version
        (campaign_id, version, reward_points, question_count, scoring_rule,
-        duration_seconds, effective_from)
-     VALUES ($1, 1, $2, $3, $4, $5, $6)
+        duration_seconds, accuracy_bonus_points, effective_from)
+     VALUES ($1, 1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (campaign_id, version) DO NOTHING`,
     [
       campaign.id,
@@ -159,6 +175,12 @@ async function seedCampaignCreative(pool: pg.Pool, campaign: Campaign): Promise<
       campaign.questionCount,
       campaign.scoringRule,
       campaign.durationSeconds,
+      // No `campaignRewardConfigSchema` row is seeded yet (that table is
+      // still unwired end to end — see this file's INSERT list), so there is
+      // no real accuracy-bonus figure to freeze here. Zero is the honest
+      // placeholder rather than a guess: it never overstates what a viewer
+      // is owed.
+      0,
       campaign.publishedAt,
     ],
   );
@@ -248,14 +270,19 @@ async function seedQuestionBank(pool: pg.Pool): Promise<number> {
 
       const inserted = await pool.query(
         `INSERT INTO campaign.question
-           (id, campaign_id, type, prompt, timer_seconds, status, pii_screen)
-         VALUES ($1, $2, $3, $4, 20, 'approved', 'clear')
+           (id, campaign_id, type, prompt, timer_seconds, status, pii_screen, answerable_after_seconds)
+         VALUES ($1, $2, $3, $4, 20, 'approved', 'clear', $5)
          ON CONFLICT (id) DO NOTHING`,
         [
           questionId,
           campaign.id,
           isTrueFalse ? "true_false" : "multiple_choice",
           `${campaign.title} — checkpoint ${String(index + 1)}: was this segment about ${campaign.merchantName}?`,
+          // Spread evenly across the video so every question in the bank is
+          // not eligible from second 0 — a fixed, deterministic function of
+          // the question's own position rather than a random draw, so
+          // re-seeding is still idempotent.
+          Math.min(index * 60, Math.max(0, campaign.durationSeconds - 10)),
         ],
       );
       written += inserted.rowCount ?? 0;
@@ -342,8 +369,9 @@ async function seedListings(pool: pg.Pool): Promise<number> {
          (id, merchant_id, merchant_name, title, description, category,
           face_value_minor, settlement_value_minor, price_in_points, stock_remaining,
           stock_total, transferable, partial_redemption_policy, minimum_spend_minor,
-          expires_at, status, currency)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+          expires_at, status, currency, region, audience, content_category, image_url,
+          channel, partial_redemption)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
        ON CONFLICT (id) DO NOTHING`,
       [
         listing.id,
@@ -363,6 +391,12 @@ async function seedListings(pool: pg.Pool): Promise<number> {
         listing.expiresAt,
         listing.status,
         listing.currency,
+        listing.region,
+        listing.audience,
+        listing.contentCategory,
+        listing.imageUrl,
+        listing.channel,
+        listing.partialRedemption,
       ],
     );
     written += result.rowCount ?? 0;

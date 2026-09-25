@@ -218,11 +218,11 @@ describe("integer width", () => {
   it("leaves small bounded integers alone", () => {
     // Widening everything would be the lazy fix, and would make every small
     // count field an int64 for no reason. A campaign's questionCount maxes
-    // at 20 and stays a plain integer.
+    // at 5 (F10, TASKS.md 1.1.f) and stays a plain integer.
     const properties = componentSchema("Campaign").properties;
     const questionCount = isRecord(properties) ? properties.questionCount : undefined;
 
-    expect(questionCount).toMatchObject({ type: "integer", maximum: 20 });
+    expect(questionCount).toMatchObject({ type: "integer", maximum: 5 });
     expect(isRecord(questionCount) ? questionCount.format : "missing").toBeUndefined();
   });
 });

@@ -1,4 +1,4 @@
-import { businessRoleSchema, businessSchema } from "../business/business";
+import { businessHandleSchema, businessRoleSchema, businessSchema } from "../business/business";
 import { businessTeamRoleSchema } from "../business/business-team-role";
 import { businessMemberSchema } from "../business/business-member";
 import { billingContactSchema } from "../business/billing-contact";
@@ -42,6 +42,13 @@ export const BUSINESS_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [],
   },
   {
+    id: "BusinessHandle",
+    schema: businessHandleSchema,
+    description:
+      "A business's url-safe public handle — lowercase letters, digits and single hyphens.",
+    crossFieldRules: [],
+  },
+  {
     id: "BusinessTeamRole",
     schema: businessTeamRoleSchema,
     description:
@@ -52,7 +59,10 @@ export const BUSINESS_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "Business",
     schema: businessSchema,
     description: "An advertiser, supplier and/or redeemer.",
-    crossFieldRules: ["roles must not contain duplicates."],
+    crossFieldRules: [
+      "roles must not contain duplicates.",
+      "currency must match the business's own region (F2: regions never cross).",
+    ],
   },
   {
     id: "BusinessMember",

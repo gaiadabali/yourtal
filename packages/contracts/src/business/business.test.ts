@@ -15,6 +15,10 @@ const validBusiness = {
   roles: ["advertiser", "supplier"],
   isVerified: true,
   logoUrl: "https://example.com/logo.png",
+  region: "ID",
+  currency: "IDR",
+  handle: "kopi-kenangan",
+  coverUrl: "https://example.com/cover.png",
 };
 
 describe("businessSchema", () => {
@@ -30,6 +34,17 @@ describe("businessSchema", () => {
     expect(businessSchema.safeParse({ ...validBusiness, logoUrl: null }).success).toBe(true);
   });
 
+  it("round-trips an AU business whose currency matches its region", () => {
+    expect(
+      businessSchema.safeParse({
+        ...validBusiness,
+        region: "AU",
+        currency: "AUD",
+        handle: "wharf-espresso",
+      }).success,
+    ).toBe(true);
+  });
+
   const rejectionTable: Array<{ name: string; overrides: Record<string, unknown> }> = [
     { name: "empty roles array", overrides: { roles: [] } },
     { name: "invalid role enum value", overrides: { roles: ["owner"] } },
@@ -41,6 +56,14 @@ describe("businessSchema", () => {
     { name: "non-url logoUrl", overrides: { logoUrl: "not-a-url" } },
     { name: "non-uuid id", overrides: { id: "not-a-uuid" } },
     { name: "roles not an array", overrides: { roles: "advertiser" } },
+    { name: "invalid region enum value", overrides: { region: "US" } },
+    {
+      name: "currency crossing region (F2: regions never cross)",
+      overrides: { region: "AU", currency: "IDR" },
+    },
+    { name: "uppercase handle", overrides: { handle: "Kopi-Kenangan" } },
+    { name: "handle with an underscore", overrides: { handle: "kopi_kenangan" } },
+    { name: "handle too short", overrides: { handle: "ab" } },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ overrides }) => {

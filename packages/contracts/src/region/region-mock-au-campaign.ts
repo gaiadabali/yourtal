@@ -12,6 +12,36 @@ import {
 import { toPoints } from "../money/money";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 import { MOCK_HLS_MANIFEST_URL } from "../campaign/campaign.mock";
+import type { Audience } from "../audience/audience";
+import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
+
+const MOCK_MEDIA_ORIGIN = "http://127.0.0.1:26900/yourtal-media";
+
+const MOCK_CONTENT_CATEGORIES: readonly ContentCategory[] = [
+  "food-and-drink",
+  "fashion",
+  "personal-care",
+  "electronics",
+  "telco",
+  "transport",
+  "fitness",
+  "education",
+  "travel",
+  "home",
+  "entertainment",
+  "games",
+  "books",
+  "family",
+  "toys",
+  "digital-goods",
+  "services",
+];
+
+const MOCK_AUDIENCES: readonly { value: Audience; weight: number }[] = [
+  { value: "all_ages", weight: 6 },
+  { value: "adult", weight: 2 },
+  { value: "parents", weight: 1 },
+];
 
 /**
  * AU counterpart to `campaign.mock.ts` — see `region-mock-au-listing.ts`'s
@@ -51,12 +81,15 @@ function auCampaignFrom(faker: ReturnType<typeof createSeededFaker>, now: Date):
     kind === "quick"
       ? faker.number.int({ min: 15, max: 60 })
       : faker.number.int({ min: 300, max: 1_800 });
+  // Capped at 5, not 6 — see campaign.mock.ts's generateCampaign for why (F10).
   const questionCount =
-    kind === "quick" ? faker.number.int({ min: 0, max: 2 }) : faker.number.int({ min: 1, max: 6 });
+    kind === "quick" ? faker.number.int({ min: 0, max: 2 }) : faker.number.int({ min: 1, max: 5 });
   const scoringRule =
     questionCount > 0 && faker.datatype.boolean({ probability: 0.7 })
       ? "base_plus_accuracy_bonus"
       : "base_only";
+  const publishedAt = addDays(now, -faker.number.int({ min: 0, max: 30 }));
+  const estimatedDataMb = Math.round(durationSeconds * 0.35 * 10) / 10;
 
   return campaignSchema.parse({
     id: faker.string.uuid(),
@@ -66,16 +99,30 @@ function auCampaignFrom(faker: ReturnType<typeof createSeededFaker>, now: Date):
     merchantName,
     synopsis: generateCampaignSynopsisAu(faker, merchantName),
     durationSeconds,
-    estimatedDataMb: Math.round(durationSeconds * 0.35 * 10) / 10,
+    estimatedDataMb,
     rewardPoints: toPoints(
       faker.number.int({ min: kind === "quick" ? 50 : 500, max: kind === "quick" ? 400 : 4_000 }),
     ),
     questionCount,
     scoringRule,
     status: "active",
-    publishedAt: toIsoString(addDays(now, -faker.number.int({ min: 0, max: 30 }))),
+    publishedAt: toIsoString(publishedAt),
     chapters: kind === "long_form" ? auChapters(durationSeconds) : [],
     videoSource: MOCK_VIDEO_SOURCE,
+    businessId: merchant.id,
+    region: merchant.region,
+    audience: faker.helpers.weightedArrayElement(MOCK_AUDIENCES),
+    contentCategory: faker.helpers.arrayElement(MOCK_CONTENT_CATEGORIES),
+    posterUrl: `${MOCK_MEDIA_ORIGIN}/posters/${faker.string.uuid()}.jpg`,
+    teaserUrl: `${MOCK_MEDIA_ORIGIN}/teasers/${faker.string.uuid()}.mp4`,
+    hlsUrl: MOCK_VIDEO_SOURCE.manifestUrl,
+    captionsUrl: null,
+    aspect: kind === "quick" ? "9:16" : "16:9",
+    estimatedBytes: Math.round(estimatedDataMb * 1024 * 1024),
+    startsAt: toIsoString(publishedAt),
+    endsAt: toIsoString(addDays(publishedAt, 90)),
+    openViewing: false,
+    teaserStartSeconds: 0,
   });
 }
 
@@ -104,4 +151,18 @@ export const auLongMerchantNameCampaignFixture: Campaign = campaignSchema.parse(
   publishedAt: toIsoString(DEFAULT_REFERENCE_INSTANT),
   chapters: [],
   videoSource: MOCK_VIDEO_SOURCE,
+  businessId: "00000000-0000-4000-8000-0000000006a2",
+  region: "AU",
+  audience: "all_ages",
+  contentCategory: "food-and-drink",
+  posterUrl: `${MOCK_MEDIA_ORIGIN}/posters/00000000-0000-4000-8000-0000000001a2.jpg`,
+  teaserUrl: `${MOCK_MEDIA_ORIGIN}/teasers/00000000-0000-4000-8000-0000000001a2.mp4`,
+  hlsUrl: MOCK_VIDEO_SOURCE.manifestUrl,
+  captionsUrl: null,
+  aspect: "9:16",
+  estimatedBytes: Math.round(12 * 1024 * 1024),
+  startsAt: toIsoString(DEFAULT_REFERENCE_INSTANT),
+  endsAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 90)),
+  openViewing: false,
+  teaserStartSeconds: 0,
 });

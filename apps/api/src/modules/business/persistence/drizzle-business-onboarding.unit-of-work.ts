@@ -39,6 +39,10 @@ export class DrizzleBusinessOnboardingUnitOfWork implements BusinessOnboardingUn
           district: input.district,
           roles: input.roles,
           logoUrl: input.logoUrl,
+          region: input.region,
+          currency: input.currency,
+          handle: input.handle,
+          coverUrl: input.coverUrl,
         })
         .returning();
       if (businessRow === undefined) {
@@ -67,6 +71,10 @@ export class DrizzleBusinessOnboardingUnitOfWork implements BusinessOnboardingUn
         roles: businessRow.roles,
         isVerified: businessRow.isVerified,
         logoUrl: businessRow.logoUrl,
+        region: businessRow.region,
+        currency: businessRow.currency,
+        handle: businessRow.handle,
+        coverUrl: businessRow.coverUrl,
       });
       const owner: BusinessMember = {
         businessId: memberRow.businessId,

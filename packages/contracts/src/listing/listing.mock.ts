@@ -6,6 +6,40 @@ import { LONG_MERCHANT_NAME, generateMerchantLocations } from "../internal/jakar
 import { pointsPriceFromSettlement, rupiah, toMinorUnits, toPoints } from "../money/money";
 import { MOCK_BACKING_RATE_IDR_PER_POINT } from "../money/mock-backing-rate";
 import { pickMockMerchant } from "../merchant/merchant-roster";
+import type { Audience } from "../audience/audience";
+import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
+import type { ListingChannel, PartialRedemption } from "./listing";
+
+const MOCK_MEDIA_ORIGIN = "http://127.0.0.1:26900/yourtal-media";
+
+const MOCK_CONTENT_CATEGORIES: readonly ContentCategory[] = [
+  "food-and-drink",
+  "fashion",
+  "personal-care",
+  "electronics",
+  "telco",
+  "transport",
+  "fitness",
+  "education",
+  "travel",
+  "home",
+  "entertainment",
+  "games",
+  "books",
+  "family",
+  "toys",
+  "digital-goods",
+  "services",
+];
+
+const MOCK_AUDIENCES: readonly { value: Audience; weight: number }[] = [
+  { value: "all_ages", weight: 6 },
+  { value: "adult", weight: 2 },
+  { value: "parents", weight: 1 },
+];
+
+const MOCK_CHANNELS: readonly ListingChannel[] = ["in_store", "online", "both"];
+const MOCK_PARTIAL_REDEMPTIONS: readonly PartialRedemption[] = ["single_use", "balance_carries"];
 
 /** Illustrative mock backing rate (IDR per point), see docs/09 section 4.1. Not the real pricing engine. */
 // Rupiah per point (FOUNDER DECISION T-1: IDR is whole Rupiah, exponent 0).
@@ -80,6 +114,12 @@ export function generateListing(params: GenerateListingParams): Listing {
         : null,
     expiresAt: toIsoString(addDays(now, faker.number.int({ min: 7, max: 90 }))),
     status,
+    region: merchant.region,
+    audience: faker.helpers.weightedArrayElement(MOCK_AUDIENCES),
+    contentCategory: faker.helpers.arrayElement(MOCK_CONTENT_CATEGORIES),
+    imageUrl: `${MOCK_MEDIA_ORIGIN}/listings/${faker.string.uuid()}.jpg`,
+    channel: faker.helpers.arrayElement(MOCK_CHANNELS),
+    partialRedemption: faker.helpers.arrayElement(MOCK_PARTIAL_REDEMPTIONS),
   });
 }
 
@@ -117,6 +157,12 @@ export const soldOutListingFixture: Listing = listingSchema.parse({
   minimumSpendMinor: null,
   expiresAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 30)),
   status: "sold_out",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "food-and-drink",
+  imageUrl: `${MOCK_MEDIA_ORIGIN}/listings/00000000-0000-4000-8000-000000000201.jpg`,
+  channel: "in_store",
+  partialRedemption: "single_use",
 });
 
 /**
@@ -151,6 +197,12 @@ export const abovePlausibleBalanceListingFixture: Listing = listingSchema.parse(
   minimumSpendMinor: null,
   expiresAt: toIsoString(addDays(DEFAULT_REFERENCE_INSTANT, 60)),
   status: "available",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "electronics",
+  imageUrl: `${MOCK_MEDIA_ORIGIN}/listings/00000000-0000-4000-8000-000000000202.jpg`,
+  channel: "online",
+  partialRedemption: "single_use",
 });
 
 /** A listing expiring within the next few hours — the "expiring soon" catalogue state. */
@@ -186,6 +238,12 @@ export const expiringSoonListingFixture: Listing = listingSchema.parse({
   minimumSpendMinor: null,
   expiresAt: toIsoString(addHours(DEFAULT_REFERENCE_INSTANT, 3)),
   status: "expiring_soon",
+  region: "ID",
+  audience: "all_ages",
+  contentCategory: "home",
+  imageUrl: `${MOCK_MEDIA_ORIGIN}/listings/00000000-0000-4000-8000-000000000203.jpg`,
+  channel: "both",
+  partialRedemption: "balance_carries",
 });
 
 export const mockListings: Listing[] = generateListings(30, 2_000);

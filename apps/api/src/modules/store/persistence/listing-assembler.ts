@@ -60,6 +60,12 @@ export async function assembleListing(
     expiresAt: row.expiresAt.toISOString(),
     status: row.status,
     perUserLimit: row.perUserLimit ?? undefined,
+    region: row.region,
+    audience: row.audience,
+    contentCategory: row.contentCategory,
+    imageUrl: row.imageUrl,
+    channel: row.channel,
+    partialRedemption: row.partialRedemption,
   });
   return parsed.success ? parsed.data : null;
 }

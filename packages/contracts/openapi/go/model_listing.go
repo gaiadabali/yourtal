@@ -44,6 +44,12 @@ type Listing struct {
 	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	Status ListingStatus `json:"status"`
 	PerUserLimit *int64 `json:"perUserLimit,omitempty"`
+	Region Region `json:"region"`
+	Audience Audience `json:"audience"`
+	ContentCategory string `json:"contentCategory"`
+	ImageUrl string `json:"imageUrl"`
+	Channel ListingChannel `json:"channel"`
+	PartialRedemption PartialRedemption `json:"partialRedemption"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -53,7 +59,7 @@ type _Listing Listing
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, settlementValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus) *Listing {
+func NewListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, settlementValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, imageUrl string, channel ListingChannel, partialRedemption PartialRedemption) *Listing {
 	this := Listing{}
 	this.Id = id
 	this.MerchantId = merchantId
@@ -73,6 +79,12 @@ func NewListing(id string, merchantId string, merchantName string, title string,
 	this.MinimumSpendMinor = minimumSpendMinor
 	this.ExpiresAt = expiresAt
 	this.Status = status
+	this.Region = region
+	this.Audience = audience
+	this.ContentCategory = contentCategory
+	this.ImageUrl = imageUrl
+	this.Channel = channel
+	this.PartialRedemption = partialRedemption
 	return &this
 }
 
@@ -550,6 +562,150 @@ func (o *Listing) SetPerUserLimit(v int64) {
 	o.PerUserLimit = &v
 }
 
+// GetRegion returns the Region field value
+func (o *Listing) GetRegion() Region {
+	if o == nil {
+		var ret Region
+		return ret
+	}
+
+	return o.Region
+}
+
+// GetRegionOk returns a tuple with the Region field value
+// and a boolean to check if the value has been set.
+func (o *Listing) GetRegionOk() (*Region, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Region, true
+}
+
+// SetRegion sets field value
+func (o *Listing) SetRegion(v Region) {
+	o.Region = v
+}
+
+// GetAudience returns the Audience field value
+func (o *Listing) GetAudience() Audience {
+	if o == nil {
+		var ret Audience
+		return ret
+	}
+
+	return o.Audience
+}
+
+// GetAudienceOk returns a tuple with the Audience field value
+// and a boolean to check if the value has been set.
+func (o *Listing) GetAudienceOk() (*Audience, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Audience, true
+}
+
+// SetAudience sets field value
+func (o *Listing) SetAudience(v Audience) {
+	o.Audience = v
+}
+
+// GetContentCategory returns the ContentCategory field value
+func (o *Listing) GetContentCategory() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ContentCategory
+}
+
+// GetContentCategoryOk returns a tuple with the ContentCategory field value
+// and a boolean to check if the value has been set.
+func (o *Listing) GetContentCategoryOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ContentCategory, true
+}
+
+// SetContentCategory sets field value
+func (o *Listing) SetContentCategory(v string) {
+	o.ContentCategory = v
+}
+
+// GetImageUrl returns the ImageUrl field value
+func (o *Listing) GetImageUrl() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ImageUrl
+}
+
+// GetImageUrlOk returns a tuple with the ImageUrl field value
+// and a boolean to check if the value has been set.
+func (o *Listing) GetImageUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ImageUrl, true
+}
+
+// SetImageUrl sets field value
+func (o *Listing) SetImageUrl(v string) {
+	o.ImageUrl = v
+}
+
+// GetChannel returns the Channel field value
+func (o *Listing) GetChannel() ListingChannel {
+	if o == nil {
+		var ret ListingChannel
+		return ret
+	}
+
+	return o.Channel
+}
+
+// GetChannelOk returns a tuple with the Channel field value
+// and a boolean to check if the value has been set.
+func (o *Listing) GetChannelOk() (*ListingChannel, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Channel, true
+}
+
+// SetChannel sets field value
+func (o *Listing) SetChannel(v ListingChannel) {
+	o.Channel = v
+}
+
+// GetPartialRedemption returns the PartialRedemption field value
+func (o *Listing) GetPartialRedemption() PartialRedemption {
+	if o == nil {
+		var ret PartialRedemption
+		return ret
+	}
+
+	return o.PartialRedemption
+}
+
+// GetPartialRedemptionOk returns a tuple with the PartialRedemption field value
+// and a boolean to check if the value has been set.
+func (o *Listing) GetPartialRedemptionOk() (*PartialRedemption, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PartialRedemption, true
+}
+
+// SetPartialRedemption sets field value
+func (o *Listing) SetPartialRedemption(v PartialRedemption) {
+	o.PartialRedemption = v
+}
+
 func (o Listing) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -581,6 +737,12 @@ func (o Listing) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.PerUserLimit) {
 		toSerialize["perUserLimit"] = o.PerUserLimit
 	}
+	toSerialize["region"] = o.Region
+	toSerialize["audience"] = o.Audience
+	toSerialize["contentCategory"] = o.ContentCategory
+	toSerialize["imageUrl"] = o.ImageUrl
+	toSerialize["channel"] = o.Channel
+	toSerialize["partialRedemption"] = o.PartialRedemption
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -612,6 +774,12 @@ func (o *Listing) UnmarshalJSON(data []byte) (err error) {
 		"minimumSpendMinor",
 		"expiresAt",
 		"status",
+		"region",
+		"audience",
+		"contentCategory",
+		"imageUrl",
+		"channel",
+		"partialRedemption",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -660,6 +828,12 @@ func (o *Listing) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "expiresAt")
 		delete(additionalProperties, "status")
 		delete(additionalProperties, "perUserLimit")
+		delete(additionalProperties, "region")
+		delete(additionalProperties, "audience")
+		delete(additionalProperties, "contentCategory")
+		delete(additionalProperties, "imageUrl")
+		delete(additionalProperties, "channel")
+		delete(additionalProperties, "partialRedemption")
 		o.AdditionalProperties = additionalProperties
 	}
 

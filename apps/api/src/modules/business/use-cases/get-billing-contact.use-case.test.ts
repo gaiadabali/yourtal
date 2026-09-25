@@ -39,6 +39,10 @@ describe("getBillingContact", () => {
         district: "Kemang",
         roles: ["advertiser"],
         logoUrl: null,
+        region: "ID" as const,
+        currency: "IDR" as const,
+        handle: "test-business-008",
+        coverUrl: null,
       },
       OWNER_ID,
     );
@@ -63,6 +67,10 @@ describe("getBillingContact", () => {
         district: "Kemang",
         roles: ["advertiser"],
         logoUrl: null,
+        region: "ID" as const,
+        currency: "IDR" as const,
+        handle: "test-business-009",
+        coverUrl: null,
       },
       OWNER_ID,
     );

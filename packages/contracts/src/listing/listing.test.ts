@@ -35,6 +35,13 @@ const validListing = {
   minimumSpendMinor: null,
   expiresAt: "2026-12-01T00:00:00.000Z",
   status: "available",
+  region: "ID",
+  audience: "all_ages",
+  // "retail" is a listingCategorySchema value, not a contentCategory one — see jurisdiction/content-category.ts.
+  contentCategory: "home",
+  imageUrl: "https://cdn.example.com/listing.jpg",
+  channel: "in_store",
+  partialRedemption: "single_use",
 };
 
 describe("listingSchema", () => {
@@ -104,6 +111,15 @@ describe("listingSchema", () => {
       name: "a location missing an address",
       overrides: { locations: [{ ...validListing.locations[0], address: "" }] },
     },
+    { name: "invalid region enum value", overrides: { region: "US" } },
+    { name: "invalid audience enum value", overrides: { audience: "everyone" } },
+    { name: "invalid contentCategory enum value", overrides: { contentCategory: "crypto" } },
+    { name: "invalid channel enum value", overrides: { channel: "drone" } },
+    {
+      name: "invalid partialRedemption enum value",
+      overrides: { partialRedemption: "full_refund" },
+    },
+    { name: "non-url imageUrl", overrides: { imageUrl: "not-a-url" } },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ overrides }) => {

@@ -21,6 +21,13 @@ const baseQuestionShape = {
   campaignId: z.uuid(),
   prompt: z.string().min(1).max(MAX_PROMPT_LENGTH),
   timerSeconds: z.number().int().positive().max(MAX_TIMER_SECONDS),
+  /**
+   * The earliest second of the video this question may be asked at
+   * (TASKS.md 1.1.f). Required, not derived: the server picks the actual
+   * moment per F10, but it may never pick one before the question's own
+   * eligible point — a question about the ending cannot fire at second 5.
+   */
+  answerableAfterSeconds: z.number().int().min(0),
 };
 
 const multipleChoiceQuestionSchema = z

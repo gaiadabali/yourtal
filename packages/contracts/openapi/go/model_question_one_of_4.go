@@ -12,7 +12,6 @@ package contracts
 
 import (
 	"encoding/json"
-	"bytes"
 	"fmt"
 )
 
@@ -25,8 +24,10 @@ type QuestionOneOf4 struct {
 	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Prompt string `json:"prompt"`
 	TimerSeconds int32 `json:"timerSeconds"`
+	AnswerableAfterSeconds int64 `json:"answerableAfterSeconds"`
 	Type string `json:"type"`
 	MaxLength int32 `json:"maxLength"`
+	AdditionalProperties map[string]interface{}
 }
 
 type _QuestionOneOf4 QuestionOneOf4
@@ -35,12 +36,13 @@ type _QuestionOneOf4 QuestionOneOf4
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewQuestionOneOf4(id string, campaignId string, prompt string, timerSeconds int32, type_ string, maxLength int32) *QuestionOneOf4 {
+func NewQuestionOneOf4(id string, campaignId string, prompt string, timerSeconds int32, answerableAfterSeconds int64, type_ string, maxLength int32) *QuestionOneOf4 {
 	this := QuestionOneOf4{}
 	this.Id = id
 	this.CampaignId = campaignId
 	this.Prompt = prompt
 	this.TimerSeconds = timerSeconds
+	this.AnswerableAfterSeconds = answerableAfterSeconds
 	this.Type = type_
 	this.MaxLength = maxLength
 	return &this
@@ -150,6 +152,30 @@ func (o *QuestionOneOf4) SetTimerSeconds(v int32) {
 	o.TimerSeconds = v
 }
 
+// GetAnswerableAfterSeconds returns the AnswerableAfterSeconds field value
+func (o *QuestionOneOf4) GetAnswerableAfterSeconds() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.AnswerableAfterSeconds
+}
+
+// GetAnswerableAfterSecondsOk returns a tuple with the AnswerableAfterSeconds field value
+// and a boolean to check if the value has been set.
+func (o *QuestionOneOf4) GetAnswerableAfterSecondsOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.AnswerableAfterSeconds, true
+}
+
+// SetAnswerableAfterSeconds sets field value
+func (o *QuestionOneOf4) SetAnswerableAfterSeconds(v int64) {
+	o.AnswerableAfterSeconds = v
+}
+
 // GetType returns the Type field value
 func (o *QuestionOneOf4) GetType() string {
 	if o == nil {
@@ -212,8 +238,14 @@ func (o QuestionOneOf4) ToMap() (map[string]interface{}, error) {
 	toSerialize["campaignId"] = o.CampaignId
 	toSerialize["prompt"] = o.Prompt
 	toSerialize["timerSeconds"] = o.TimerSeconds
+	toSerialize["answerableAfterSeconds"] = o.AnswerableAfterSeconds
 	toSerialize["type"] = o.Type
 	toSerialize["maxLength"] = o.MaxLength
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
@@ -226,6 +258,7 @@ func (o *QuestionOneOf4) UnmarshalJSON(data []byte) (err error) {
 		"campaignId",
 		"prompt",
 		"timerSeconds",
+		"answerableAfterSeconds",
 		"type",
 		"maxLength",
 	}
@@ -246,15 +279,26 @@ func (o *QuestionOneOf4) UnmarshalJSON(data []byte) (err error) {
 
 	varQuestionOneOf4 := _QuestionOneOf4{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varQuestionOneOf4)
+	err = json.Unmarshal(data, &varQuestionOneOf4)
 
 	if err != nil {
 		return err
 	}
 
 	*o = QuestionOneOf4(varQuestionOneOf4)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "id")
+		delete(additionalProperties, "campaignId")
+		delete(additionalProperties, "prompt")
+		delete(additionalProperties, "timerSeconds")
+		delete(additionalProperties, "answerableAfterSeconds")
+		delete(additionalProperties, "type")
+		delete(additionalProperties, "maxLength")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }

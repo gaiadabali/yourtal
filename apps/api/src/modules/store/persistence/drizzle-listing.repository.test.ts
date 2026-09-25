@@ -52,6 +52,12 @@ function baseInput(overrides: Partial<CreateListingInput> = {}): CreateListingIn
     expiresAt: "2027-01-01T00:00:00.000Z",
     status: "available",
     perUserLimit: undefined,
+    region: "ID",
+    audience: "all_ages",
+    contentCategory: "food-and-drink",
+    imageUrl: "https://cdn.example.com/listing.jpg",
+    channel: "in_store",
+    partialRedemption: "single_use",
     ...overrides,
   };
 }

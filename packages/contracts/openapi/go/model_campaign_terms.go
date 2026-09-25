@@ -28,6 +28,8 @@ type CampaignTerms struct {
 	QuestionCount int32 `json:"questionCount"`
 	ScoringRule CampaignScoringRule `json:"scoringRule"`
 	DurationSeconds int64 `json:"durationSeconds"`
+	// Platform points. Always a whole number; there is no fractional point.
+	AccuracyBonusPoints int64 `json:"accuracyBonusPoints"`
 	EffectiveFrom time.Time `json:"effectiveFrom" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	AdditionalProperties map[string]interface{}
 }
@@ -38,7 +40,7 @@ type _CampaignTerms CampaignTerms
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignTerms(campaignId string, version int64, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, durationSeconds int64, effectiveFrom time.Time) *CampaignTerms {
+func NewCampaignTerms(campaignId string, version int64, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, durationSeconds int64, accuracyBonusPoints int64, effectiveFrom time.Time) *CampaignTerms {
 	this := CampaignTerms{}
 	this.CampaignId = campaignId
 	this.Version = version
@@ -46,6 +48,7 @@ func NewCampaignTerms(campaignId string, version int64, rewardPoints int64, ques
 	this.QuestionCount = questionCount
 	this.ScoringRule = scoringRule
 	this.DurationSeconds = durationSeconds
+	this.AccuracyBonusPoints = accuracyBonusPoints
 	this.EffectiveFrom = effectiveFrom
 	return &this
 }
@@ -202,6 +205,30 @@ func (o *CampaignTerms) SetDurationSeconds(v int64) {
 	o.DurationSeconds = v
 }
 
+// GetAccuracyBonusPoints returns the AccuracyBonusPoints field value
+func (o *CampaignTerms) GetAccuracyBonusPoints() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.AccuracyBonusPoints
+}
+
+// GetAccuracyBonusPointsOk returns a tuple with the AccuracyBonusPoints field value
+// and a boolean to check if the value has been set.
+func (o *CampaignTerms) GetAccuracyBonusPointsOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.AccuracyBonusPoints, true
+}
+
+// SetAccuracyBonusPoints sets field value
+func (o *CampaignTerms) SetAccuracyBonusPoints(v int64) {
+	o.AccuracyBonusPoints = v
+}
+
 // GetEffectiveFrom returns the EffectiveFrom field value
 func (o *CampaignTerms) GetEffectiveFrom() time.Time {
 	if o == nil {
@@ -242,6 +269,7 @@ func (o CampaignTerms) ToMap() (map[string]interface{}, error) {
 	toSerialize["questionCount"] = o.QuestionCount
 	toSerialize["scoringRule"] = o.ScoringRule
 	toSerialize["durationSeconds"] = o.DurationSeconds
+	toSerialize["accuracyBonusPoints"] = o.AccuracyBonusPoints
 	toSerialize["effectiveFrom"] = o.EffectiveFrom
 
 	for key, value := range o.AdditionalProperties {
@@ -262,6 +290,7 @@ func (o *CampaignTerms) UnmarshalJSON(data []byte) (err error) {
 		"questionCount",
 		"scoringRule",
 		"durationSeconds",
+		"accuracyBonusPoints",
 		"effectiveFrom",
 	}
 
@@ -298,6 +327,7 @@ func (o *CampaignTerms) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "questionCount")
 		delete(additionalProperties, "scoringRule")
 		delete(additionalProperties, "durationSeconds")
+		delete(additionalProperties, "accuracyBonusPoints")
 		delete(additionalProperties, "effectiveFrom")
 		o.AdditionalProperties = additionalProperties
 	}

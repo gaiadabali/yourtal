@@ -6,6 +6,10 @@ export interface CreateBusinessAccountInput {
   readonly district: string;
   readonly roles: Business["roles"];
   readonly logoUrl: string | null;
+  readonly region: Business["region"];
+  readonly currency: Business["currency"];
+  readonly handle: string;
+  readonly coverUrl: string | null;
 }
 
 export interface BusinessAccountRepository {

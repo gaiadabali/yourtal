@@ -1936,6 +1936,16 @@
   },
   "components": {
     "schemas": {
+      "Audience": {
+        "description": "Who a campaign or listing may reach (TASKS.md 1.1.c): all_ages reaches everyone; teen and adult are age-gated; parents reaches 18+ and is boosted, never gated further, for accounts that declared the parent-of-young-children interest with ad-targeting consent.",
+        "type": "string",
+        "enum": [
+          "all_ages",
+          "teen",
+          "adult",
+          "parents"
+        ]
+      },
       "Balance": {
         "description": "What the Wallet surface answers: what do I have, what is coming, what am I about to lose (docs/17 section 3).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - pendingUnlockAt is set if and only if pendingPoints is positive.\n  - expiringAt is set if and only if expiringPoints is positive.\n  - expiringPoints cannot exceed availablePoints — points still in holdback cannot be about to expire.",
         "type": "object",
@@ -2096,7 +2106,7 @@
         "additionalProperties": false
       },
       "Business": {
-        "description": "An advertiser, supplier and/or redeemer.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - roles must not contain duplicates.",
+        "description": "An advertiser, supplier and/or redeemer.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - roles must not contain duplicates.\n  - currency must match the business's own region (F2: regions never cross).",
         "type": "object",
         "properties": {
           "id": {
@@ -2139,6 +2149,26 @@
                 "type": "null"
               }
             ]
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "handle": {
+            "$ref": "#/components/schemas/BusinessHandle"
+          },
+          "coverUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2148,9 +2178,20 @@
           "district",
           "roles",
           "isVerified",
-          "logoUrl"
+          "logoUrl",
+          "region",
+          "currency",
+          "handle",
+          "coverUrl"
         ],
         "additionalProperties": false
+      },
+      "BusinessHandle": {
+        "description": "A business's url-safe public handle — lowercase letters, digits and single hyphens.",
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 40,
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
       },
       "BusinessMember": {
         "description": "A person's membership at one business (docs/17 section 2.1's six roles). NOT the Business-level `BusinessRole` above — this is the per-person team role, sourced from @yourtal/authz/roles so it cannot drift from the authorization model.",
@@ -2222,7 +2263,7 @@
         ]
       },
       "Campaign": {
-        "description": "The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).\n  - A long-form campaign must have at least one chapter.\n  - A quick campaign must have no chapters.\n  - An accuracy bonus requires at least one question to score accuracy against.\n  - A long_form campaign must have at least one chapter; a quick campaign has none.\n  - The first chapter must start at second 0.\n  - Chapter start times must be strictly increasing.\n  - Every chapter must start before the campaign's own durationSeconds.",
+        "description": "The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).\n  - A long-form campaign must have at least one chapter.\n  - A quick campaign must have no chapters.\n  - An accuracy bonus requires at least one question to score accuracy against.\n  - A long_form campaign must have at least one chapter; a quick campaign has none.\n  - The first chapter must start at second 0.\n  - Chapter start times must be strictly increasing.\n  - Every chapter must start before the campaign's own durationSeconds.\n  - endsAt must be after startsAt.\n  - teaserStartSeconds must be before the campaign ends.",
         "type": "object",
         "properties": {
           "id": {
@@ -2269,7 +2310,7 @@
           "questionCount": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 20
+            "maximum": 5
           },
           "scoringRule": {
             "$ref": "#/components/schemas/CampaignScoringRule"
@@ -2290,6 +2331,105 @@
           },
           "videoSource": {
             "$ref": "#/components/schemas/CampaignVideoSource"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/Audience"
+          },
+          "contentCategory": {
+            "type": "string",
+            "enum": [
+              "food-and-drink",
+              "fashion",
+              "personal-care",
+              "electronics",
+              "telco",
+              "transport",
+              "fitness",
+              "education",
+              "travel",
+              "home",
+              "entertainment",
+              "games",
+              "books",
+              "family",
+              "toys",
+              "digital-goods",
+              "services",
+              "tobacco",
+              "vaping",
+              "gambling",
+              "alcohol",
+              "dating",
+              "financial-products",
+              "weight-loss",
+              "cosmetic-procedures",
+              "energy-drinks"
+            ]
+          },
+          "posterUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "teaserUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "hlsUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "captionsUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "aspect": {
+            "type": "string",
+            "enum": [
+              "16:9",
+              "9:16"
+            ]
+          },
+          "estimatedBytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "openViewing": {
+            "default": false,
+            "type": "boolean"
+          },
+          "teaserStartSeconds": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
           }
         },
         "required": [
@@ -2307,7 +2447,21 @@
           "status",
           "publishedAt",
           "chapters",
-          "videoSource"
+          "videoSource",
+          "businessId",
+          "region",
+          "audience",
+          "contentCategory",
+          "posterUrl",
+          "teaserUrl",
+          "hlsUrl",
+          "captionsUrl",
+          "aspect",
+          "estimatedBytes",
+          "startsAt",
+          "endsAt",
+          "openViewing",
+          "teaserStartSeconds"
         ],
         "additionalProperties": false
       },
@@ -2440,7 +2594,7 @@
           "questionCount": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 20
+            "maximum": 5
           },
           "scoringRule": {
             "$ref": "#/components/schemas/CampaignScoringRule"
@@ -2450,6 +2604,9 @@
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991,
             "format": "int64"
+          },
+          "accuracyBonusPoints": {
+            "$ref": "#/components/schemas/Points"
           },
           "effectiveFrom": {
             "type": "string",
@@ -2464,6 +2621,7 @@
           "questionCount",
           "scoringRule",
           "durationSeconds",
+          "accuracyBonusPoints",
           "effectiveFrom"
         ],
         "additionalProperties": false
@@ -2715,6 +2873,53 @@
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991,
             "format": "int64"
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/Audience"
+          },
+          "contentCategory": {
+            "type": "string",
+            "enum": [
+              "food-and-drink",
+              "fashion",
+              "personal-care",
+              "electronics",
+              "telco",
+              "transport",
+              "fitness",
+              "education",
+              "travel",
+              "home",
+              "entertainment",
+              "games",
+              "books",
+              "family",
+              "toys",
+              "digital-goods",
+              "services",
+              "tobacco",
+              "vaping",
+              "gambling",
+              "alcohol",
+              "dating",
+              "financial-products",
+              "weight-loss",
+              "cosmetic-procedures",
+              "energy-drinks"
+            ]
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ListingChannel"
+          },
+          "partialRedemption": {
+            "$ref": "#/components/schemas/PartialRedemption"
           }
         },
         "required": [
@@ -2735,7 +2940,13 @@
           "partialRedemptionPolicy",
           "minimumSpendMinor",
           "expiresAt",
-          "status"
+          "status",
+          "region",
+          "audience",
+          "contentCategory",
+          "imageUrl",
+          "channel",
+          "partialRedemption"
         ],
         "additionalProperties": false
       },
@@ -2748,6 +2959,15 @@
           "digital_goods",
           "merchandise",
           "services"
+        ]
+      },
+      "ListingChannel": {
+        "description": "Where a listing may be redeemed (TASKS.md 1.1.a).",
+        "type": "string",
+        "enum": [
+          "in_store",
+          "online",
+          "both"
         ]
       },
       "ListingStatus": {
@@ -2819,6 +3039,14 @@
           "currency"
         ],
         "additionalProperties": false
+      },
+      "PartialRedemption": {
+        "description": "The counter-facing, two-value framing of partial redemption (TASKS.md 1.1.a) — see listing.ts's own comment for why this sits alongside PartialRedemptionPolicy rather than replacing it.",
+        "type": "string",
+        "enum": [
+          "single_use",
+          "balance_carries"
+        ]
       },
       "PartialRedemptionPolicy": {
         "description": "What happens when a voucher is spent below its face value (docs/09 section 8.2).",
@@ -3174,6 +3402,53 @@
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991,
             "format": "int64"
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/Audience"
+          },
+          "contentCategory": {
+            "type": "string",
+            "enum": [
+              "food-and-drink",
+              "fashion",
+              "personal-care",
+              "electronics",
+              "telco",
+              "transport",
+              "fitness",
+              "education",
+              "travel",
+              "home",
+              "entertainment",
+              "games",
+              "books",
+              "family",
+              "toys",
+              "digital-goods",
+              "services",
+              "tobacco",
+              "vaping",
+              "gambling",
+              "alcohol",
+              "dating",
+              "financial-products",
+              "weight-loss",
+              "cosmetic-procedures",
+              "energy-drinks"
+            ]
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ListingChannel"
+          },
+          "partialRedemption": {
+            "$ref": "#/components/schemas/PartialRedemption"
           }
         },
         "required": [
@@ -3193,7 +3468,13 @@
           "partialRedemptionPolicy",
           "minimumSpendMinor",
           "expiresAt",
-          "status"
+          "status",
+          "region",
+          "audience",
+          "contentCategory",
+          "imageUrl",
+          "channel",
+          "partialRedemption"
         ],
         "additionalProperties": false
       },
@@ -3223,6 +3504,12 @@
                 "exclusiveMinimum": 0,
                 "maximum": 120
               },
+              "answerableAfterSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
               "type": {
                 "type": "string",
                 "const": "multiple_choice"
@@ -3246,6 +3533,7 @@
               "campaignId",
               "prompt",
               "timerSeconds",
+              "answerableAfterSeconds",
               "type",
               "options",
               "correctOptionId"
@@ -3275,6 +3563,12 @@
                 "exclusiveMinimum": 0,
                 "maximum": 120
               },
+              "answerableAfterSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
               "type": {
                 "type": "string",
                 "const": "true_false"
@@ -3288,6 +3582,7 @@
               "campaignId",
               "prompt",
               "timerSeconds",
+              "answerableAfterSeconds",
               "type",
               "correctAnswer"
             ],
@@ -3315,6 +3610,12 @@
                 "type": "integer",
                 "exclusiveMinimum": 0,
                 "maximum": 120
+              },
+              "answerableAfterSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "format": "int64"
               },
               "type": {
                 "type": "string",
@@ -3348,6 +3649,7 @@
               "campaignId",
               "prompt",
               "timerSeconds",
+              "answerableAfterSeconds",
               "type",
               "scaleMin",
               "scaleMax",
@@ -3379,6 +3681,12 @@
                 "exclusiveMinimum": 0,
                 "maximum": 120
               },
+              "answerableAfterSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
               "type": {
                 "type": "string",
                 "const": "ranked"
@@ -3397,6 +3705,7 @@
               "campaignId",
               "prompt",
               "timerSeconds",
+              "answerableAfterSeconds",
               "type",
               "items"
             ],
@@ -3425,6 +3734,12 @@
                 "exclusiveMinimum": 0,
                 "maximum": 120
               },
+              "answerableAfterSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
               "type": {
                 "type": "string",
                 "const": "short_text"
@@ -3440,6 +3755,7 @@
               "campaignId",
               "prompt",
               "timerSeconds",
+              "answerableAfterSeconds",
               "type",
               "maxLength"
             ],

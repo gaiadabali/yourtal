@@ -13,4 +13,10 @@ export const businessAccounts = businessPgSchema.table("business_accounts", {
   logoUrl: text("logo_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  // TASKS.md 1.1.a. `region` is set once at onboarding and never changed
+  // after — see businessSchema's own comment.
+  region: text("region").notNull(),
+  currency: text("currency").notNull(),
+  handle: text("handle").notNull(),
+  coverUrl: text("cover_url"),
 });

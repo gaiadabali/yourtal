@@ -20,7 +20,7 @@ import (
 // checks if the Campaign type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Campaign{}
 
-// Campaign The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).   - A long-form campaign must have at least one chapter.   - A quick campaign must have no chapters.   - An accuracy bonus requires at least one question to score accuracy against.   - A long_form campaign must have at least one chapter; a quick campaign has none.   - The first chapter must start at second 0.   - Chapter start times must be strictly increasing.   - Every chapter must start before the campaign's own durationSeconds.
+// Campaign The earn-loop unit. Duration, reward, data cost and question count are never optional — the entry card is a contract with the viewer (docs/17 section 1.2).  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - A quick campaign must be 60 seconds or shorter (docs/17 section 1.1).   - A long-form campaign must have at least one chapter.   - A quick campaign must have no chapters.   - An accuracy bonus requires at least one question to score accuracy against.   - A long_form campaign must have at least one chapter; a quick campaign has none.   - The first chapter must start at second 0.   - Chapter start times must be strictly increasing.   - Every chapter must start before the campaign's own durationSeconds.   - endsAt must be after startsAt.   - teaserStartSeconds must be before the campaign ends.
 type Campaign struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Kind CampaignKind `json:"kind"`
@@ -38,6 +38,20 @@ type Campaign struct {
 	PublishedAt time.Time `json:"publishedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	Chapters []CampaignChapter `json:"chapters"`
 	VideoSource CampaignVideoSource `json:"videoSource"`
+	BusinessId string `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Region Region `json:"region"`
+	Audience Audience `json:"audience"`
+	ContentCategory string `json:"contentCategory"`
+	PosterUrl string `json:"posterUrl"`
+	TeaserUrl string `json:"teaserUrl"`
+	HlsUrl string `json:"hlsUrl"`
+	CaptionsUrl NullableString `json:"captionsUrl"`
+	Aspect string `json:"aspect"`
+	EstimatedBytes int64 `json:"estimatedBytes"`
+	StartsAt time.Time `json:"startsAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	EndsAt time.Time `json:"endsAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	OpenViewing bool `json:"openViewing"`
+	TeaserStartSeconds int64 `json:"teaserStartSeconds"`
 }
 
 type _Campaign Campaign
@@ -46,7 +60,7 @@ type _Campaign Campaign
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaign(id string, kind CampaignKind, title string, merchantId string, merchantName string, synopsis string, durationSeconds int32, estimatedDataMb float32, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, status CampaignStatus, publishedAt time.Time, chapters []CampaignChapter, videoSource CampaignVideoSource) *Campaign {
+func NewCampaign(id string, kind CampaignKind, title string, merchantId string, merchantName string, synopsis string, durationSeconds int32, estimatedDataMb float32, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, status CampaignStatus, publishedAt time.Time, chapters []CampaignChapter, videoSource CampaignVideoSource, businessId string, region Region, audience Audience, contentCategory string, posterUrl string, teaserUrl string, hlsUrl string, captionsUrl NullableString, aspect string, estimatedBytes int64, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int64) *Campaign {
 	this := Campaign{}
 	this.Id = id
 	this.Kind = kind
@@ -63,6 +77,20 @@ func NewCampaign(id string, kind CampaignKind, title string, merchantId string, 
 	this.PublishedAt = publishedAt
 	this.Chapters = chapters
 	this.VideoSource = videoSource
+	this.BusinessId = businessId
+	this.Region = region
+	this.Audience = audience
+	this.ContentCategory = contentCategory
+	this.PosterUrl = posterUrl
+	this.TeaserUrl = teaserUrl
+	this.HlsUrl = hlsUrl
+	this.CaptionsUrl = captionsUrl
+	this.Aspect = aspect
+	this.EstimatedBytes = estimatedBytes
+	this.StartsAt = startsAt
+	this.EndsAt = endsAt
+	this.OpenViewing = openViewing
+	this.TeaserStartSeconds = teaserStartSeconds
 	return &this
 }
 
@@ -71,6 +99,10 @@ func NewCampaign(id string, kind CampaignKind, title string, merchantId string, 
 // but it doesn't guarantee that properties required by API are set
 func NewCampaignWithDefaults() *Campaign {
 	this := Campaign{}
+	var openViewing bool = false
+	this.OpenViewing = openViewing
+	var teaserStartSeconds int64 = 0
+	this.TeaserStartSeconds = teaserStartSeconds
 	return &this
 }
 
@@ -434,6 +466,344 @@ func (o *Campaign) SetVideoSource(v CampaignVideoSource) {
 	o.VideoSource = v
 }
 
+// GetBusinessId returns the BusinessId field value
+func (o *Campaign) GetBusinessId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.BusinessId
+}
+
+// GetBusinessIdOk returns a tuple with the BusinessId field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetBusinessIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.BusinessId, true
+}
+
+// SetBusinessId sets field value
+func (o *Campaign) SetBusinessId(v string) {
+	o.BusinessId = v
+}
+
+// GetRegion returns the Region field value
+func (o *Campaign) GetRegion() Region {
+	if o == nil {
+		var ret Region
+		return ret
+	}
+
+	return o.Region
+}
+
+// GetRegionOk returns a tuple with the Region field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetRegionOk() (*Region, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Region, true
+}
+
+// SetRegion sets field value
+func (o *Campaign) SetRegion(v Region) {
+	o.Region = v
+}
+
+// GetAudience returns the Audience field value
+func (o *Campaign) GetAudience() Audience {
+	if o == nil {
+		var ret Audience
+		return ret
+	}
+
+	return o.Audience
+}
+
+// GetAudienceOk returns a tuple with the Audience field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetAudienceOk() (*Audience, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Audience, true
+}
+
+// SetAudience sets field value
+func (o *Campaign) SetAudience(v Audience) {
+	o.Audience = v
+}
+
+// GetContentCategory returns the ContentCategory field value
+func (o *Campaign) GetContentCategory() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ContentCategory
+}
+
+// GetContentCategoryOk returns a tuple with the ContentCategory field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetContentCategoryOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ContentCategory, true
+}
+
+// SetContentCategory sets field value
+func (o *Campaign) SetContentCategory(v string) {
+	o.ContentCategory = v
+}
+
+// GetPosterUrl returns the PosterUrl field value
+func (o *Campaign) GetPosterUrl() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.PosterUrl
+}
+
+// GetPosterUrlOk returns a tuple with the PosterUrl field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetPosterUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PosterUrl, true
+}
+
+// SetPosterUrl sets field value
+func (o *Campaign) SetPosterUrl(v string) {
+	o.PosterUrl = v
+}
+
+// GetTeaserUrl returns the TeaserUrl field value
+func (o *Campaign) GetTeaserUrl() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.TeaserUrl
+}
+
+// GetTeaserUrlOk returns a tuple with the TeaserUrl field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetTeaserUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TeaserUrl, true
+}
+
+// SetTeaserUrl sets field value
+func (o *Campaign) SetTeaserUrl(v string) {
+	o.TeaserUrl = v
+}
+
+// GetHlsUrl returns the HlsUrl field value
+func (o *Campaign) GetHlsUrl() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.HlsUrl
+}
+
+// GetHlsUrlOk returns a tuple with the HlsUrl field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetHlsUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.HlsUrl, true
+}
+
+// SetHlsUrl sets field value
+func (o *Campaign) SetHlsUrl(v string) {
+	o.HlsUrl = v
+}
+
+// GetCaptionsUrl returns the CaptionsUrl field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *Campaign) GetCaptionsUrl() string {
+	if o == nil || o.CaptionsUrl.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.CaptionsUrl.Get()
+}
+
+// GetCaptionsUrlOk returns a tuple with the CaptionsUrl field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Campaign) GetCaptionsUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.CaptionsUrl.Get(), o.CaptionsUrl.IsSet()
+}
+
+// SetCaptionsUrl sets field value
+func (o *Campaign) SetCaptionsUrl(v string) {
+	o.CaptionsUrl.Set(&v)
+}
+
+// GetAspect returns the Aspect field value
+func (o *Campaign) GetAspect() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Aspect
+}
+
+// GetAspectOk returns a tuple with the Aspect field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetAspectOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Aspect, true
+}
+
+// SetAspect sets field value
+func (o *Campaign) SetAspect(v string) {
+	o.Aspect = v
+}
+
+// GetEstimatedBytes returns the EstimatedBytes field value
+func (o *Campaign) GetEstimatedBytes() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.EstimatedBytes
+}
+
+// GetEstimatedBytesOk returns a tuple with the EstimatedBytes field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetEstimatedBytesOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.EstimatedBytes, true
+}
+
+// SetEstimatedBytes sets field value
+func (o *Campaign) SetEstimatedBytes(v int64) {
+	o.EstimatedBytes = v
+}
+
+// GetStartsAt returns the StartsAt field value
+func (o *Campaign) GetStartsAt() time.Time {
+	if o == nil {
+		var ret time.Time
+		return ret
+	}
+
+	return o.StartsAt
+}
+
+// GetStartsAtOk returns a tuple with the StartsAt field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetStartsAtOk() (*time.Time, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.StartsAt, true
+}
+
+// SetStartsAt sets field value
+func (o *Campaign) SetStartsAt(v time.Time) {
+	o.StartsAt = v
+}
+
+// GetEndsAt returns the EndsAt field value
+func (o *Campaign) GetEndsAt() time.Time {
+	if o == nil {
+		var ret time.Time
+		return ret
+	}
+
+	return o.EndsAt
+}
+
+// GetEndsAtOk returns a tuple with the EndsAt field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetEndsAtOk() (*time.Time, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.EndsAt, true
+}
+
+// SetEndsAt sets field value
+func (o *Campaign) SetEndsAt(v time.Time) {
+	o.EndsAt = v
+}
+
+// GetOpenViewing returns the OpenViewing field value
+func (o *Campaign) GetOpenViewing() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.OpenViewing
+}
+
+// GetOpenViewingOk returns a tuple with the OpenViewing field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetOpenViewingOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.OpenViewing, true
+}
+
+// SetOpenViewing sets field value
+func (o *Campaign) SetOpenViewing(v bool) {
+	o.OpenViewing = v
+}
+
+// GetTeaserStartSeconds returns the TeaserStartSeconds field value
+func (o *Campaign) GetTeaserStartSeconds() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.TeaserStartSeconds
+}
+
+// GetTeaserStartSecondsOk returns a tuple with the TeaserStartSeconds field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetTeaserStartSecondsOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TeaserStartSeconds, true
+}
+
+// SetTeaserStartSeconds sets field value
+func (o *Campaign) SetTeaserStartSeconds(v int64) {
+	o.TeaserStartSeconds = v
+}
+
 func (o Campaign) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -459,6 +829,20 @@ func (o Campaign) ToMap() (map[string]interface{}, error) {
 	toSerialize["publishedAt"] = o.PublishedAt
 	toSerialize["chapters"] = o.Chapters
 	toSerialize["videoSource"] = o.VideoSource
+	toSerialize["businessId"] = o.BusinessId
+	toSerialize["region"] = o.Region
+	toSerialize["audience"] = o.Audience
+	toSerialize["contentCategory"] = o.ContentCategory
+	toSerialize["posterUrl"] = o.PosterUrl
+	toSerialize["teaserUrl"] = o.TeaserUrl
+	toSerialize["hlsUrl"] = o.HlsUrl
+	toSerialize["captionsUrl"] = o.CaptionsUrl.Get()
+	toSerialize["aspect"] = o.Aspect
+	toSerialize["estimatedBytes"] = o.EstimatedBytes
+	toSerialize["startsAt"] = o.StartsAt
+	toSerialize["endsAt"] = o.EndsAt
+	toSerialize["openViewing"] = o.OpenViewing
+	toSerialize["teaserStartSeconds"] = o.TeaserStartSeconds
 	return toSerialize, nil
 }
 
@@ -482,6 +866,20 @@ func (o *Campaign) UnmarshalJSON(data []byte) (err error) {
 		"publishedAt",
 		"chapters",
 		"videoSource",
+		"businessId",
+		"region",
+		"audience",
+		"contentCategory",
+		"posterUrl",
+		"teaserUrl",
+		"hlsUrl",
+		"captionsUrl",
+		"aspect",
+		"estimatedBytes",
+		"startsAt",
+		"endsAt",
+		"openViewing",
+		"teaserStartSeconds",
 	}
 
 	allProperties := make(map[string]interface{})

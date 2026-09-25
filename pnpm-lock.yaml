@@ -68,6 +68,9 @@ importers:
       '@yourtal/idempotency':
         specifier: workspace:*
         version: link:../../packages/idempotency
+      '@yourtal/jurisdiction':
+        specifier: workspace:*
+        version: link:../../packages/jurisdiction
       drizzle-orm:
         specifier: 0.45.3
         version: 0.45.3(@types/pg@8.23.1)(pg@8.23.0)
@@ -319,6 +322,9 @@ importers:
 
   packages/contracts:
     dependencies:
+      '@yourtal/jurisdiction':
+        specifier: workspace:*
+        version: link:../jurisdiction
       zod:
         specifier: 4.6.5
         version: 4.6.5

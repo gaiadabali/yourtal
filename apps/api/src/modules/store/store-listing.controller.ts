@@ -64,6 +64,12 @@ export class StoreListingController {
       expiresAt: body.expiresAt,
       status: body.status,
       perUserLimit: body.perUserLimit,
+      region: body.region,
+      audience: body.audience,
+      contentCategory: body.contentCategory,
+      imageUrl: body.imageUrl,
+      channel: body.channel,
+      partialRedemption: body.partialRedemption,
     });
     if (result.isErr()) throw mapStoreErrorToHttpException(result.error);
     return result.value;

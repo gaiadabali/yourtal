@@ -136,7 +136,7 @@ const KNOWN_UNPRODUCIBLE_ATTRIBUTES: Readonly<Record<string, string>> = {
   goodwillCreditCeilingIdr:
     "Economy-owned (YT-0050) — the founder holds this ceiling (user_account.yaml). Populating it here would repeat the invented-number mistake YT-0576 flagged for a different figure.",
   deviceBusinessId:
-    "derived_roles/business.yaml's store_device_of role reads this, but no store_device principal resolver exists anywhere in this codebase (docs/17 section 2.2 describes the feature; nothing implements it yet). Found by this check, not assumed by it.",
+    "derived_roles/business.yaml's store_device_of role reads this. 1.5.c adds StoreDevicePrincipalResolver and the DeviceCredentialVerifier port it calls, but the only binding today (NoDeviceCredentialVerifier) refuses every credential — there is no real device-credential store until 8.1.b, so resolve() always throws rather than ever returning a populated attr. This test's own populatableAttributes() only drives AsyncPrincipalResolver (the header-based user path), which is a second, independent reason this key stays here regardless.",
 };
 
 describe("principal attribute coverage — YT-0582 criterion 3", () => {

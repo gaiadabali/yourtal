@@ -2,6 +2,11 @@ import { Global, Module } from "@nestjs/common";
 import { IdentityModule } from "../../modules/identity/identity.module";
 import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { PrincipalService } from "./principal.service";
+import {
+  DEVICE_CREDENTIAL_VERIFIER,
+  NoDeviceCredentialVerifier,
+} from "./device-credential-verifier";
+import { StoreDevicePrincipalResolver } from "./store-device-principal-resolver";
 
 /**
  * Every module that authorizes a route imports this one and injects
@@ -19,8 +24,15 @@ import { PrincipalService } from "./principal.service";
 @Global()
 @Module({
   imports: [IdentityModule],
-  providers: [PrincipalService, AsyncPrincipalResolver],
-  exports: [PrincipalService, AsyncPrincipalResolver],
+  providers: [
+    PrincipalService,
+    AsyncPrincipalResolver,
+    // 1.5.c: NoDeviceCredentialVerifier until 8.1.b's real device-credential
+    // store lands — swapping the binding is the only change that task needs.
+    { provide: DEVICE_CREDENTIAL_VERIFIER, useClass: NoDeviceCredentialVerifier },
+    StoreDevicePrincipalResolver,
+  ],
+  exports: [PrincipalService, AsyncPrincipalResolver, StoreDevicePrincipalResolver],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class AuthzModule {}

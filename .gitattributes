@@ -59,4 +59,3 @@ pnpm-lock.yaml                        linguist-generated=true -diff
 packages/contracts/openapi/go/**      linguist-generated=true
 packages/contracts/openapi/*.json     linguist-generated=true
 services/ledger/internal/store/sqlcgen/** linguist-generated=true
-TASKS.md                              linguist-generated=true

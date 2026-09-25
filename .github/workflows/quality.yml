@@ -43,11 +43,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Cheapest gate first: this one needs no build and catches the most
-      # common class of drift (a task edited without regenerating TASKS.md).
-      - name: Task dashboard is current
-        run: node scripts/tasks.mjs --check
-
       # The SAME command `pnpm verify` runs locally. It used to be
       # `pnpm exec eslint apps packages`, which linted a different file set
       # from every package's own `lint` script — so local green predicted

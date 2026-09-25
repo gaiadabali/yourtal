@@ -59,13 +59,12 @@ jobs:
 
       # Not a formality. See the header: the poller installs what it is given,
       # so this is the last point at which a broken tree can be refused.
-      - name: Gate — line endings, formatting, lint, typecheck, board
+      - name: Gate — line endings, formatting, lint, typecheck
         run: |
           pnpm check:eol
           pnpm format:check
           pnpm exec turbo run typecheck
           pnpm exec turbo run lint
-          node scripts/tasks.mjs --check
 
       - name: Build the web app
         run: pnpm --filter @yourtal/web build

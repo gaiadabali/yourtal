@@ -46,3 +46,10 @@ services/*/db/sqlc.log
 # rebuilds with `--webpack` every run; anything else reading it should
 # delete it first rather than trust that it is current.
 apps/web/public/sw.js
+
+# scripts/progress.mjs holds this while it rewrites TASKS.md
+TASKS.md.lock
+# Per-machine Claude Code permissions; every track worktree writes one (TASKS.md session protocol)
+.claude/settings.local.json
+# Third-party clips fetched for the design prototypes (TASKS.md 3.2.a); licences in CREDITS.txt
+apps/web/public/lab-media/

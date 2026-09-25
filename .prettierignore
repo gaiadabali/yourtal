@@ -11,9 +11,9 @@ pnpm-lock.yaml
 packages/contracts/openapi/yourtal.openapi.json
 packages/contracts/openapi/go/
 
-# Machine-parsed by scripts/tasks.mjs. Prettier reflowing these adds blank
-# lines between a task heading and its meta line, which is parser-adjacent
-# churn for no readability gain, and it pushed files over the 300-line rule.
+# TASKS.md is edited live by several sessions and parsed by
+# scripts/progress.mjs; a formatter reflowing it mid-edit would turn every
+# checkbox tick into a format failure. docs/tasks/ is the archived v1 board.
 docs/tasks/
 TASKS.md
 

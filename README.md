@@ -6,7 +6,7 @@ That makes YourTal three things at once: a long-form video ad platform, the **ce
 
 Ships as a **web app (PWA)** — mobile-first, excellent on tablet and desktop, fast on a mid-tier Android phone over 4G.
 
-**Status:** planning. No code yet.
+**Status:** building toward a staging review on Helios — see [TASKS.md](TASKS.md).
 
 ## Documents
 
@@ -43,7 +43,7 @@ Ships as a **web app (PWA)** — mobile-first, excellent on tablet and desktop, 
 
 ## Tracker
 
-**[TASKS.md](TASKS.md)** is the single source of truth for status. Every file in this repo is under 300 lines, enforced in CI. Its dashboard is _generated_ from `docs/tasks/*.md` by `scripts/tasks.mjs`, and CI fails if the two disagree — so it cannot silently drift. **208 tasks** across Phase U to Phase 3 — 22 at review, 1 blocked, as of 2026-09-19.
+**[TASKS.md](TASKS.md)** is the plan and the single source of truth for status: fourteen phases to a staging build on Helios, with every task and subtask as a checkbox that sessions tick as they go. `pnpm progress` rebuilds its progress table. The audit it was written from is in [`docs/audit/2026-09-25/`](docs/audit/2026-09-25/); the previous generated board is archived in [`docs/tasks/`](docs/tasks/README.md).
 
 ## The six things to know before reading anything else
 

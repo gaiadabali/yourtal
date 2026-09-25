@@ -28,6 +28,9 @@ const RAW_POLICIES: Record<JurisdictionCode, unknown> = {
     prizeDrawsEnabled: false,
     // docs/05 C4 — no published legal minimum; conservative default pending sign-off.
     minimumAgeYears: 18,
+    // F4 (2026-09-25): 13-17 with parental consent, only while TEEN_ACCOUNTS
+    // is on (default false everywhere; staging only, pending counsel — 12.4).
+    minimumAgeWithParentalConsentYears: 13,
     // docs/03 §2.3 — PSE registration scopes the platform to Indonesian users.
     residencyVerificationRequired: true,
     // docs/03 §1 risk #3 — device-farm extraction is the top risk on web; the
@@ -44,6 +47,9 @@ const RAW_POLICIES: Record<JurisdictionCode, unknown> = {
     prizeDrawsEnabled: false,
     // docs/05 C4 — no published legal minimum; conservative default pending sign-off.
     minimumAgeYears: 18,
+    // F4 (2026-09-25): 13-17 with parental consent, only while TEEN_ACCOUNTS
+    // is on (default false everywhere; staging only, pending counsel — 12.4).
+    minimumAgeWithParentalConsentYears: 13,
     // docs/03 §3.1 / §1 risk #5 — AU relief tested against Australian users/product.
     residencyVerificationRequired: true,
     // docs/03 §1 risk #3 — no NIK-equivalent anchor available; phone OTP baseline.

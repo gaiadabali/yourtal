@@ -23,6 +23,8 @@ export interface AppConfig {
     readonly baseUrl: string;
     readonly voucherBaseUrl: string;
   };
+  /** 1.4.b, F4 — default false everywhere; only 12.1 turns it on, for staging. */
+  readonly teenAccounts: boolean;
 }
 
 /**
@@ -46,5 +48,6 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       baseUrl: env.LEDGER_BASE_URL,
       voucherBaseUrl: env.VOUCHER_BASE_URL,
     },
+    teenAccounts: env.TEEN_ACCOUNTS,
   };
 }

@@ -4,6 +4,7 @@ import {
   mayRunPrizeDraw,
   meetsKycTier,
   meetsMinimumAge,
+  meetsMinimumAgeWithParentalConsent,
   meetsResidencyRequirement,
 } from "./policy-query";
 
@@ -62,6 +63,25 @@ describe("meetsMinimumAge", () => {
 
   it("fails closed for an unknown jurisdiction regardless of stated age", () => {
     const decision = meetsMinimumAge("XX", 99);
+    expect(decision.allowed).toBe(false);
+  });
+});
+
+describe("meetsMinimumAgeWithParentalConsent", () => {
+  it("allows a 13-year-old in both markets (F4)", () => {
+    expect(meetsMinimumAgeWithParentalConsent("ID", 13).allowed).toBe(true);
+    expect(meetsMinimumAgeWithParentalConsent("AU", 13).allowed).toBe(true);
+  });
+
+  it("denies a 12-year-old, with the required/actual ages", () => {
+    expect(meetsMinimumAgeWithParentalConsent("ID", 12)).toEqual({
+      allowed: false,
+      reason: { type: "below_minimum_age", requiredYears: 13, actualYears: 12 },
+    });
+  });
+
+  it("fails closed for an unknown jurisdiction regardless of stated age", () => {
+    const decision = meetsMinimumAgeWithParentalConsent("XX", 25);
     expect(decision.allowed).toBe(false);
   });
 });

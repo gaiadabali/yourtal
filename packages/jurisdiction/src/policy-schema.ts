@@ -99,6 +99,18 @@ export const jurisdictionPolicySchema = z
     minimumAgeYears: z.number().int().positive(),
 
     /**
+     * The minimum age, in years, to hold an account WITH a parent or
+     * guardian's consent — 1.4.b (TASKS.md), F4. Only reachable while
+     * `apps/api`'s `TEEN_ACCOUNTS` flag is on (default false everywhere;
+     * only 12.1 switches it on, and only for staging): with the flag off,
+     * `minimumAgeYears` above is the only threshold that applies, and this
+     * field is simply never asked about. Below this age there is no account
+     * at any consent level (1.4.b: a neutral refusal, no age stated, the
+     * date of birth discarded).
+     */
+    minimumAgeWithParentalConsentYears: z.number().int().positive(),
+
+    /**
      * Whether a user must have their residency in this jurisdiction verified
      * before using jurisdiction-gated features.
      *
@@ -150,6 +162,7 @@ export const RESTRICTIVE_FALLBACK_POLICY: JurisdictionPolicy = {
   userPointPurchaseEnabled: false,
   prizeDrawsEnabled: false,
   minimumAgeYears: 21,
+  minimumAgeWithParentalConsentYears: 21,
   residencyVerificationRequired: true,
   minimumKycTier: "enhanced",
 };

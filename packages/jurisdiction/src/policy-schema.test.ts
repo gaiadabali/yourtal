@@ -13,6 +13,7 @@ const VALID_POLICY = {
   userPointPurchaseEnabled: false,
   prizeDrawsEnabled: false,
   minimumAgeYears: 18,
+  minimumAgeWithParentalConsentYears: 13,
   residencyVerificationRequired: true,
   minimumKycTier: "basic",
 } as const;
@@ -46,6 +47,8 @@ describe("jurisdictionPolicySchema", () => {
     ["prizeDrawsEnabled", 1],
     ["minimumAgeYears", -5],
     ["minimumAgeYears", "18"],
+    ["minimumAgeWithParentalConsentYears", -5],
+    ["minimumAgeWithParentalConsentYears", "13"],
     ["residencyVerificationRequired", null],
     ["minimumKycTier", "platinum"],
   ])("rejects malformed '%s' value %j", (field, badValue) => {
@@ -80,5 +83,8 @@ describe("parseJurisdictionPolicy", () => {
     expect(RESTRICTIVE_FALLBACK_POLICY.residencyVerificationRequired).toBe(true);
     expect(RESTRICTIVE_FALLBACK_POLICY.minimumKycTier).toBe("enhanced");
     expect(RESTRICTIVE_FALLBACK_POLICY.minimumAgeYears).toBeGreaterThanOrEqual(18);
+    expect(RESTRICTIVE_FALLBACK_POLICY.minimumAgeWithParentalConsentYears).toBeGreaterThanOrEqual(
+      18,
+    );
   });
 });

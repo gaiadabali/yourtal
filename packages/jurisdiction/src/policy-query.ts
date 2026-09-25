@@ -73,6 +73,30 @@ export function meetsMinimumAge(jurisdiction: string, ageYears: number): PolicyD
       });
 }
 
+/**
+ * Does this age satisfy the jurisdiction's minimum to hold an account WITH a
+ * parent or guardian's consent (F4, 1.4.b)? Only meaningful while
+ * `apps/api`'s `TEEN_ACCOUNTS` flag is on — that flag lives outside this
+ * package (it is a rollout switch, not a jurisdiction fact), so a caller with
+ * the flag off should keep asking `meetsMinimumAge` instead of this.
+ */
+export function meetsMinimumAgeWithParentalConsent(
+  jurisdiction: string,
+  ageYears: number,
+): PolicyDecision {
+  const policy = resolvePolicy(jurisdiction);
+  if (!isKnownJurisdiction(jurisdiction)) {
+    return deny({ type: "unknown_jurisdiction", jurisdiction });
+  }
+  return ageYears >= policy.minimumAgeWithParentalConsentYears
+    ? allow()
+    : deny({
+        type: "below_minimum_age",
+        requiredYears: policy.minimumAgeWithParentalConsentYears,
+        actualYears: ageYears,
+      });
+}
+
 /** Has this subject's residency in the jurisdiction been verified, if required? docs/03 §2.3, §3.1. */
 export function meetsResidencyRequirement(
   jurisdiction: string,

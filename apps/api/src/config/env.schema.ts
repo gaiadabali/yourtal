@@ -87,6 +87,25 @@ export const envSchema = z.object({
   LEDGER_BASE_URL: z.url().default("http://ledger:8080"),
   /** Only read when `LEDGER_MODE=live` (`VoucherInternalClient` shares the same switch). */
   VOUCHER_BASE_URL: z.url().default("http://voucher:8080"),
+
+  /**
+   * Feature flag: whether a 13-17-year-old may register at all, with
+   * parental consent (1.4.b, F4 — reverses the old C4 default). Default
+   * `false` EVERYWHERE, deliberately not opt-out: this reaches minors, and
+   * only 12.1 switches it on, for staging only, pending counsel review
+   * (12.4). With it off, `AuthService` refuses anyone under 18 outright, the
+   * same way it always has.
+   *
+   * `z.enum(["true","false"])`, not `z.coerce.boolean()`: coercion makes
+   * ANY non-empty string truthy, including the literal string `"false"` —
+   * exactly the typo-becomes-silently-on shape `driver-mode.ts` refuses for
+   * the same reason (`DriverMode` is `z.enum`, never `z.coerce.boolean()`).
+   * A flag reaching minors is not the place to relax that.
+   */
+  TEEN_ACCOUNTS: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 export type Env = z.infer<typeof envSchema>;

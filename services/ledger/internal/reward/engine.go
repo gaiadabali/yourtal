@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -80,6 +81,18 @@ type GrantRequest struct {
 	IPAddress    string
 	// HoldID is the reward session's hold (Hold), when it has one.
 	HoldID string
+	// CampaignID is set for campaign rewards.
+	CampaignID string
+	// HoldbackHours is the trust tier's holdback (4.4.g): the grant unlocks
+	// at now() + this. 0 releases it at once; nil leaves it in pending with
+	// no unlock time (callers that predate holdback).
+	HoldbackHours *int32
+	// IdempotencyKey is the caller's key, stored with the grant.
+	IdempotencyKey string
+
+	// def replaces the taxonomy entry, for the contract's grants whose
+	// points the caller sets (GrantReward, GrantAction).
+	def *ActionDefinition
 }
 
 // GrantResult is what was paid, and from where.
@@ -87,6 +100,11 @@ type GrantResult struct {
 	GrantID    string
 	TransferID string
 	Points     int64
+	Region     ledger.Region
+	GrantedAt  time.Time
+	// UnlockAt is when the points become spendable; zero when the grant has
+	// no holdback schedule.
+	UnlockAt time.Time
 }
 
 // Engine is the sole path from a verified action to a points credit.
@@ -128,6 +146,9 @@ func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, region ledger.R
 // account for.
 func (e *Engine) Grant(ctx context.Context, req GrantRequest) (GrantResult, error) {
 	definition, known := Definition(req.Action)
+	if req.def != nil {
+		definition, known = *req.def, true
+	}
 	if !known {
 		return GrantResult{}, fmt.Errorf("%w: %q", ErrUnknownAction, req.Action)
 	}
@@ -231,26 +252,38 @@ func (e *Engine) issue(
 			}
 
 			grantID := fmt.Sprintf("grt_%s_%s_%s", req.UserID, req.Action, req.ExternalRef)
-			if err := queries.InsertGrant(ctx, sqlcgen.InsertGrantParams{
-				ID:           grantID,
-				UserID:       req.UserID,
-				ActionType:   string(req.Action),
-				TaxonomyVer:  TaxonomyVersion,
-				Points:       def.Points,
-				AllocationID: allocation.ID,
-				TransferID:   transfer.TransferID,
-				DeviceID:     optional(req.DeviceID),
-				IpAddress:    optional(req.IPAddress),
-				ExternalRef:  req.ExternalRef,
-			}); err != nil {
+			region := string(e.region)
+			recorded, err := queries.InsertGrant(ctx, sqlcgen.InsertGrantParams{
+				ID:             grantID,
+				UserID:         req.UserID,
+				ActionType:     string(req.Action),
+				TaxonomyVer:    TaxonomyVersion,
+				Points:         def.Points,
+				AllocationID:   allocation.ID,
+				TransferID:     transfer.TransferID,
+				DeviceID:       optional(req.DeviceID),
+				IpAddress:      optional(req.IPAddress),
+				ExternalRef:    req.ExternalRef,
+				CampaignID:     optionalUUID(req.CampaignID),
+				Region:         &region,
+				HoldbackHours:  req.HoldbackHours,
+				IdempotencyKey: optional(req.IdempotencyKey),
+			})
+			if err != nil {
 				if isUniqueViolation(err) {
 					return fmt.Errorf("%w: %s/%s", ErrAlreadyGranted, req.Action, req.ExternalRef)
 				}
 				return fmt.Errorf("recording grant: %w", err)
 			}
+			if req.HoldbackHours != nil && *req.HoldbackHours == 0 {
+				if err := e.releaseInTx(ctx, tx, queries, grantID, req.UserID, def.Points); err != nil {
+					return err
+				}
+			}
 
 			result = GrantResult{
 				GrantID: grantID, TransferID: transfer.TransferID, Points: def.Points,
+				Region: e.region, GrantedAt: recorded.CreatedAt.Time, UnlockAt: recorded.UnlockAt.Time,
 			}
 			return nil
 		})

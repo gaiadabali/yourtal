@@ -57,15 +57,15 @@ func (e *Engine) ReturnGrant(ctx context.Context, grantID string) (bool, error) 
 // drawFor takes a grant's points from its allocation inside the grant's
 // transaction: from the session's hold when it is still live, otherwise by
 // holding and consuming at once. Returns the allocation it drew.
-func drawFor(ctx context.Context, q *sqlcgen.Queries, req GrantRequest, ref string, points int64) (sqlcgen.LedgerAllocation, error) {
+func drawFor(ctx context.Context, q *sqlcgen.Queries, req GrantRequest, ref string, points int64) (sqlcgen.GetAllocationRow, error) {
 	if req.HoldID != "" {
 		allocationID, err := q.ConsumeHold(ctx, sqlcgen.ConsumeHoldParams{HoldID: req.HoldID, Points: points})
 		if err != nil {
-			return sqlcgen.LedgerAllocation{}, fmt.Errorf("consuming hold %s: %w", req.HoldID, err)
+			return sqlcgen.GetAllocationRow{}, fmt.Errorf("consuming hold %s: %w", req.HoldID, err)
 		}
 		if allocationID != "" {
 			if allocationID != req.AllocationID {
-				return sqlcgen.LedgerAllocation{}, fmt.Errorf("%w: hold %s is on %s, not %s",
+				return sqlcgen.GetAllocationRow{}, fmt.Errorf("%w: hold %s is on %s, not %s",
 					ErrWrongFunder, req.HoldID, allocationID, req.AllocationID)
 			}
 			return q.GetAllocation(ctx, allocationID)
@@ -77,14 +77,14 @@ func drawFor(ctx context.Context, q *sqlcgen.Queries, req GrantRequest, ref stri
 		HoldID: inline, AllocationID: req.AllocationID, Points: points, TtlSeconds: 60,
 	})
 	if err != nil {
-		return sqlcgen.LedgerAllocation{}, fmt.Errorf("drawing down allocation: %w", err)
+		return sqlcgen.GetAllocationRow{}, fmt.Errorf("drawing down allocation: %w", err)
 	}
 	if !held {
-		return sqlcgen.LedgerAllocation{}, fmt.Errorf("%w: %s cannot fund %d points",
+		return sqlcgen.GetAllocationRow{}, fmt.Errorf("%w: %s cannot fund %d points",
 			ErrAllocationExhausted, req.AllocationID, points)
 	}
 	if _, err := q.ConsumeHold(ctx, sqlcgen.ConsumeHoldParams{HoldID: inline, Points: points}); err != nil {
-		return sqlcgen.LedgerAllocation{}, fmt.Errorf("consuming the draw: %w", err)
+		return sqlcgen.GetAllocationRow{}, fmt.Errorf("consuming the draw: %w", err)
 	}
 	return q.GetAllocation(ctx, req.AllocationID)
 }

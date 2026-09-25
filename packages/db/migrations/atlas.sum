@@ -1,4 +1,4 @@
-h1:mponkj05S51MY2GPDPdYE6ZwZA0gYRMOamII4mBrXJo=
+h1:KEyKzArJf6v2Hd6NG1DjXMy6c2GrfbvAr7xvj8GWxKo=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -49,5 +49,6 @@ h1:mponkj05S51MY2GPDPdYE6ZwZA0gYRMOamII4mBrXJo=
 20260925195500_allocation_holds.sql h1:xtKQPlZo+Np6BAd2iHhfDXgkgx3MA+RbJSbVcAH+zO4=
 20260925196000_ledger_burns.sql h1:lvL6dhlnmU1CYjiq5pIHRz+8SB3SJmsQcJeD59Wk5Nk=
 20260925196100_identity_user_profile.sql h1:szvlOKCUQPwUxm2NBMGfWZ1s72wIlJR6Y7AI5apobbU=
-20260925200000_credential_verified_at.sql h1:r3gCizHnV++uaMvVnhbo2p1bcMIHISGwSCxLqgpkIGI=
-20260925200100_credential_delete_grant.sql h1:qPQcFxXfqVd0fy0ze/x7GlgxUb2jlmyMbX7nYGnPODk=
+20260925197000_ledger_live_api.sql h1:NcFLbIkRfc7PdPHYTQUYyC09Nf8efvzjFWYQdZ6gK9I=
+20260925200000_credential_verified_at.sql h1:MLeZ242J5do8ioZQNOvq7RpUIh8rGeffKWJtLVG6Nwo=
+20260925200100_credential_delete_grant.sql h1:vxn+Q2HSiMNDJTqTjOgUZv7+v4cGaKqWYuAmTgliRoc=

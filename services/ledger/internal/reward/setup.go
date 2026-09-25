@@ -68,6 +68,7 @@ func (e *Engine) CreateAllocation(
 		FunderType:  funderType,
 		FunderID:    funderID,
 		TotalPoints: points,
+		Region:      regionPtr(e.region),
 	}); err != nil {
 		return fmt.Errorf("creating allocation %s: %w", id, err)
 	}
@@ -90,4 +91,9 @@ const uniqueViolation = "23505"
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == uniqueViolation
+}
+
+func regionPtr(region ledger.Region) *string {
+	value := string(region)
+	return &value
 }

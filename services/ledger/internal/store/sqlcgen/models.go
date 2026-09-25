@@ -8,6 +8,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type CampaignRewardConfig struct {
+	CampaignID                pgtype.UUID
+	AllocationID              string
+	FunderType                string
+	MaxPointsForCampaign      int64
+	RewardPointsPerCompletion int64
+	AccuracyBonusPoints       int64
+}
+
 type LedgerAccount struct {
 	ID        string
 	OwnerType string
@@ -27,6 +36,7 @@ type LedgerAllocation struct {
 	TotalPoints     int64
 	RemainingPoints int64
 	CreatedAt       pgtype.Timestamptz
+	Region          *string
 }
 
 type LedgerAllocationHold struct {
@@ -73,6 +83,7 @@ type LedgerBurn struct {
 	PointsTransferID    string
 	LiabilityTransferID string
 	CreatedAt           pgtype.Timestamptz
+	ListingID           pgtype.UUID
 }
 
 type LedgerBurnReinstatement struct {
@@ -102,17 +113,37 @@ type LedgerEntry struct {
 }
 
 type LedgerGrant struct {
-	ID           string
-	UserID       string
-	ActionType   string
-	TaxonomyVer  int32
-	Points       int64
-	AllocationID string
-	TransferID   string
-	DeviceID     *string
-	IpAddress    *string
-	ExternalRef  string
-	CreatedAt    pgtype.Timestamptz
+	ID             string
+	UserID         string
+	ActionType     string
+	TaxonomyVer    int32
+	Points         int64
+	AllocationID   string
+	TransferID     string
+	DeviceID       *string
+	IpAddress      *string
+	ExternalRef    string
+	CreatedAt      pgtype.Timestamptz
+	CampaignID     pgtype.UUID
+	Region         *string
+	UnlockAt       pgtype.Timestamptz
+	IdempotencyKey *string
+}
+
+type LedgerGrantRelease struct {
+	GrantID    string
+	TransferID string
+	ReleasedAt pgtype.Timestamptz
+}
+
+type LedgerListingPrice struct {
+	ListingID       pgtype.UUID
+	Region          string
+	Currency        string
+	SettlementMinor int64
+	PricePoints     int64
+	BackingRateID   string
+	ComputedAt      pgtype.Timestamptz
 }
 
 type LedgerMarketingFunding struct {
@@ -134,6 +165,22 @@ type LedgerPointPurchase struct {
 	AllocationID   string
 	CashTransferID string
 	CreatedAt      pgtype.Timestamptz
+}
+
+type LedgerQuote struct {
+	ID              pgtype.UUID
+	Region          string
+	Currency        string
+	SettlementMinor int64
+	PricePoints     int64
+	BackingRateID   string
+	CreatedAt       pgtype.Timestamptz
+	ExpiresAt       pgtype.Timestamptz
+}
+
+type LedgerQuoteLock struct {
+	QuoteID  pgtype.UUID
+	LockedAt pgtype.Timestamptz
 }
 
 type LedgerTransfer struct {

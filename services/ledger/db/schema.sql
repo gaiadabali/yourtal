@@ -42,7 +42,8 @@ CREATE TABLE ledger.allocation (
   currency         char(3)     NOT NULL,
   total_points     bigint      NOT NULL,
   remaining_points bigint      NOT NULL,
-  created_at       timestamptz NOT NULL DEFAULT now()
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  region           text
 );
 
 CREATE TABLE ledger.grant (
@@ -56,7 +57,11 @@ CREATE TABLE ledger.grant (
   device_id     text,
   ip_address    text,
   external_ref  text        NOT NULL,
-  created_at    timestamptz NOT NULL DEFAULT now()
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  campaign_id   uuid,
+  region        text,
+  unlock_at     timestamptz,
+  idempotency_key text
 );
 
 CREATE TABLE ledger.point_purchase (
@@ -145,7 +150,8 @@ CREATE TABLE ledger.burn (
   settlement_minor      bigint      NOT NULL,
   points_transfer_id    text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
   liability_transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
-  created_at            timestamptz NOT NULL DEFAULT now()
+  created_at            timestamptz NOT NULL DEFAULT now(),
+  listing_id            uuid
 );
 
 CREATE TABLE ledger.burn_reinstatement (
@@ -154,4 +160,48 @@ CREATE TABLE ledger.burn_reinstatement (
   liability_transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
   reason                text        NOT NULL,
   created_at            timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ledger.grant_release (
+  grant_id    text        PRIMARY KEY REFERENCES ledger.grant (id),
+  transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  released_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ledger.quote (
+  id               uuid        PRIMARY KEY,
+  region           text        NOT NULL,
+  currency         char(3)     NOT NULL,
+  settlement_minor bigint      NOT NULL,
+  price_points     bigint      NOT NULL,
+  backing_rate_id  text        NOT NULL REFERENCES ledger.backing_rate (id),
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  expires_at       timestamptz NOT NULL
+);
+
+CREATE TABLE ledger.quote_lock (
+  quote_id  uuid        PRIMARY KEY REFERENCES ledger.quote (id),
+  locked_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ledger.listing_price (
+  listing_id       uuid        PRIMARY KEY,
+  region           text        NOT NULL,
+  currency         char(3)     NOT NULL,
+  settlement_minor bigint      NOT NULL,
+  price_points     bigint      NOT NULL,
+  backing_rate_id  text        NOT NULL REFERENCES ledger.backing_rate (id),
+  computed_at      timestamptz NOT NULL DEFAULT now()
+);
+
+-- Read-only to the ledger (20260922020000): which allocation pays a
+-- campaign, and the most one completion may earn.
+CREATE SCHEMA IF NOT EXISTS campaign;
+CREATE TABLE campaign.reward_config (
+  campaign_id                  uuid   PRIMARY KEY,
+  allocation_id                text   NOT NULL,
+  funder_type                  text   NOT NULL,
+  max_points_for_campaign      bigint NOT NULL,
+  reward_points_per_completion bigint NOT NULL,
+  accuracy_bonus_points        bigint NOT NULL
 );

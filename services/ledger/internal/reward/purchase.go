@@ -120,7 +120,7 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 		// Fact one: the points, as an allocation the engine can draw down.
 		if err := queries.InsertAllocation(ctx, sqlcgen.InsertAllocationParams{
 			ID: allocationID, FunderType: "partner", FunderID: req.PartnerID,
-			TotalPoints: req.Points,
+			TotalPoints: req.Points, Region: regionPtr(e.region),
 		}); err != nil {
 			if isUniqueViolation(err) {
 				return fmt.Errorf("%w: purchase %s", ErrAlreadyGranted, req.ID)

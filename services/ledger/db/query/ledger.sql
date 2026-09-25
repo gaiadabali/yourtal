@@ -72,8 +72,8 @@ HAVING SUM(amount_minor) <> 0;
 
 -- name: InsertAllocation :exec
 INSERT INTO ledger.allocation
-  (id, funder_type, funder_id, currency, total_points, remaining_points)
-VALUES ($1, $2, $3, 'YTP', $4, $4);
+  (id, funder_type, funder_id, currency, total_points, remaining_points, region)
+VALUES ($1, $2, $3, 'YTP', $4, $4, $5);
 
 -- The four allocation verbs (4.4.e). The ledger role has no UPDATE on
 -- ledger.allocation; these SECURITY DEFINER functions are the only way its
@@ -101,11 +101,17 @@ SELECT ledger.allocation_return(sqlc.arg(grant_id)::text)::boolean AS returned;
 SELECT id, funder_type, funder_id, currency, total_points, remaining_points, created_at
 FROM ledger.allocation WHERE id = $1;
 
--- name: InsertGrant :exec
+-- name: InsertGrant :one
+-- unlock_at is the database's now() plus the tier's holdback (4.4.g).
 INSERT INTO ledger.grant
   (id, user_id, action_type, taxonomy_ver, points, allocation_id, transfer_id,
-   device_id, ip_address, external_ref)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+   device_id, ip_address, external_ref, campaign_id, region, unlock_at, idempotency_key)
+VALUES (sqlc.arg(id), sqlc.arg(user_id), sqlc.arg(action_type), sqlc.arg(taxonomy_ver), sqlc.arg(points),
+        sqlc.arg(allocation_id), sqlc.arg(transfer_id), sqlc.narg(device_id), sqlc.narg(ip_address),
+        sqlc.arg(external_ref), sqlc.narg(campaign_id), sqlc.narg(region),
+        -- NULL holdback: no unlock time, the grant waits in pending (legacy callers).
+        now() + make_interval(hours => sqlc.narg(holdback_hours)::int), sqlc.narg(idempotency_key))
+RETURNING created_at, unlock_at;
 
 -- Velocity counts run inside the grant's transaction on the database's
 -- clock; a caller-supplied time let a future `now` skip every cap (EM-06).
@@ -196,12 +202,12 @@ INSERT INTO ledger.marketing_funding (id, region, amount_minor, proposed_by, app
 VALUES ($1, $2, $3, $4, $5, $6);
 
 -- name: InsertBurn :exec
-INSERT INTO ledger.burn (saga_id, user_id, region, points, settlement_minor, points_transfer_id, liability_transfer_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7);
+INSERT INTO ledger.burn (saga_id, user_id, region, points, settlement_minor, points_transfer_id, liability_transfer_id, listing_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: GetBurn :one
 SELECT b.saga_id, b.user_id, b.region, b.points, b.settlement_minor, b.created_at,
-       r.created_at AS reinstated_at
+       r.created_at AS reinstated_at, b.listing_id
 FROM ledger.burn b
 LEFT JOIN ledger.burn_reinstatement r ON r.saga_id = b.saga_id
 WHERE b.saga_id = $1;
@@ -209,3 +215,103 @@ WHERE b.saga_id = $1;
 -- name: InsertBurnReinstatement :exec
 INSERT INTO ledger.burn_reinstatement (saga_id, points_transfer_id, liability_transfer_id, reason)
 VALUES ($1, $2, $3, $4);
+
+-- name: GetAllocationWithRegion :one
+SELECT id, funder_type, funder_id, region, total_points, remaining_points, created_at
+FROM ledger.allocation WHERE id = $1;
+
+-- name: ListAllocationsForFunder :many
+SELECT id, funder_type, funder_id, region, total_points, remaining_points, created_at
+FROM ledger.allocation WHERE funder_id = $1 ORDER BY created_at;
+
+-- name: GetHold :one
+SELECT id, allocation_id, points, state, expires_at FROM ledger.allocation_hold WHERE id = $1;
+
+-- name: GetGrant :one
+SELECT id, user_id, action_type, points, campaign_id, region, created_at, unlock_at
+FROM ledger.grant WHERE id = $1;
+
+-- name: GetGrantByExternalRef :one
+SELECT id, user_id, action_type, points, campaign_id, region, created_at, unlock_at, idempotency_key
+FROM ledger.grant WHERE user_id = $1 AND action_type = $2 AND external_ref = $3;
+
+-- name: ListUnlockedGrants :many
+-- 4.4.g: grants whose holdback has passed and that are not yet released.
+SELECT g.id, g.user_id, g.points
+FROM ledger.grant g
+LEFT JOIN ledger.grant_release r ON r.grant_id = g.id
+WHERE g.unlock_at IS NOT NULL AND g.unlock_at <= now() AND r.grant_id IS NULL
+ORDER BY g.unlock_at
+LIMIT $1;
+
+-- name: InsertGrantRelease :execrows
+INSERT INTO ledger.grant_release (grant_id, transfer_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;
+
+-- name: PendingBuckets :many
+-- A user's held-back points, one bucket per unlock time still ahead.
+SELECT g.unlock_at, SUM(g.points)::bigint AS points
+FROM ledger.grant g
+LEFT JOIN ledger.grant_release r ON r.grant_id = g.id
+WHERE g.user_id = $1 AND g.unlock_at IS NOT NULL AND r.grant_id IS NULL
+GROUP BY g.unlock_at
+ORDER BY g.unlock_at;
+
+-- name: CampaignSpend :one
+SELECT COUNT(*)::bigint AS completions, COALESCE(SUM(points), 0)::bigint AS granted_points
+FROM ledger.grant WHERE campaign_id = $1;
+
+-- name: UserHistory :many
+-- Newest first: grants, burns and reinstatements. `before_at`/`before_id` is
+-- the cursor of the last entry already seen; NULL starts at the newest.
+WITH entries AS (
+  SELECT g.id, 'grant'::text AS kind, g.points, g.external_ref, g.campaign_id, NULL::uuid AS listing_id, g.created_at AS at
+    FROM ledger.grant g WHERE g.user_id = sqlc.arg(user_id)
+  UNION ALL
+  SELECT 'burn_' || b.saga_id, 'burn', b.points, b.saga_id, NULL::uuid, b.listing_id, b.created_at
+    FROM ledger.burn b WHERE b.user_id = sqlc.arg(user_id)
+  UNION ALL
+  SELECT 'reinstatement_' || r.saga_id, 'reinstatement', b.points, r.saga_id, NULL::uuid, b.listing_id, r.created_at
+    FROM ledger.burn_reinstatement r JOIN ledger.burn b ON b.saga_id = r.saga_id WHERE b.user_id = sqlc.arg(user_id)
+)
+SELECT id, kind, points, external_ref, campaign_id, listing_id, at FROM entries
+WHERE sqlc.narg(before_at)::timestamptz IS NULL
+   OR (at, id) < (sqlc.narg(before_at)::timestamptz, sqlc.narg(before_id)::text)
+ORDER BY at DESC, id DESC
+LIMIT sqlc.arg(max_rows);
+
+-- name: InsertQuote :one
+INSERT INTO ledger.quote (id, region, currency, settlement_minor, price_points, backing_rate_id, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6, now() + interval '15 minutes')
+RETURNING id, region, currency, settlement_minor, price_points, backing_rate_id, created_at, expires_at;
+
+-- name: GetQuote :one
+SELECT q.id, q.region, q.currency, q.settlement_minor, q.price_points, q.backing_rate_id,
+       q.created_at, q.expires_at, (l.quote_id IS NOT NULL)::boolean AS locked, (q.expires_at <= now())::boolean AS expired
+FROM ledger.quote q LEFT JOIN ledger.quote_lock l ON l.quote_id = q.id WHERE q.id = $1;
+
+-- name: LockQuote :exec
+INSERT INTO ledger.quote_lock (quote_id) VALUES ($1) ON CONFLICT DO NOTHING;
+
+-- name: UpsertListingPrice :one
+INSERT INTO ledger.listing_price (listing_id, region, currency, settlement_minor, price_points, backing_rate_id, computed_at)
+VALUES ($1, $2, $3, $4, $5, $6, now())
+ON CONFLICT (listing_id) DO UPDATE
+  SET settlement_minor = EXCLUDED.settlement_minor, price_points = EXCLUDED.price_points,
+      backing_rate_id = EXCLUDED.backing_rate_id, computed_at = now()
+  WHERE ledger.listing_price.region = EXCLUDED.region
+RETURNING listing_id, region, currency, settlement_minor, price_points, backing_rate_id, computed_at;
+
+-- name: GetListingPrice :one
+SELECT listing_id, region, currency, settlement_minor, price_points, backing_rate_id, computed_at
+FROM ledger.listing_price WHERE listing_id = $1;
+
+-- name: GetRewardConfig :one
+-- Which allocation pays a campaign, and the most one completion may earn.
+SELECT campaign_id, allocation_id, funder_type, max_points_for_campaign,
+       reward_points_per_completion, accuracy_bonus_points
+FROM campaign.reward_config WHERE campaign_id = $1;
+
+-- name: GetRateProposal :one
+SELECT r.id, r.currency, r.micros_per_point, r.issue_price_micros_per_point, r.set_by,
+       a.approved_by
+FROM ledger.backing_rate r LEFT JOIN ledger.backing_rate_approval a ON a.rate_id = r.id WHERE r.id = $1;

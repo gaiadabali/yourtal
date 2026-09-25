@@ -49,6 +49,8 @@ const (
 	ActionReferralConfirmed ActionType = "referral_confirmed"
 	// ActionReceiptScanned — snap-apps receipt earning (docs/02 §8).
 	ActionReceiptScanned ActionType = "receipt_scanned"
+	// ActionGoodwill — support's goodwill credit (F12: capped per case).
+	ActionGoodwill ActionType = "goodwill"
 )
 
 // EvidenceRequirement names what must be presented for an action to count.
@@ -103,7 +105,11 @@ var taxonomy = map[ActionType]ActionDefinition{
 		Points: 5_000, MaxPerUserPerDay: 5, Evidence: EvidenceReferralCode, MarketingFunded: true,
 	},
 	ActionReceiptScanned: {
-		Points: 300, MaxPerUserPerDay: 10, Evidence: EvidenceReceiptHash,
+		// Marketing-funded (K6): the platform pays for receipts, not a partner.
+		Points: 300, MaxPerUserPerDay: 10, Evidence: EvidenceReceiptHash, MarketingFunded: true,
+	},
+	ActionGoodwill: {
+		Points: 500, MaxPerUserPerDay: 3, Evidence: EvidenceNone, MarketingFunded: true,
 	},
 }
 

@@ -7,6 +7,9 @@ import { describe, expect, it } from "vitest";
 import { PdpGuard } from "../../shared/authz/pdp.guard";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import { alwaysValidSessionValidator } from "../../shared/testing/fake-session-validator";
+import { seedBusinessMembership } from "../../shared/testing/seed-business-membership";
+import { seedUserProfile } from "../../shared/testing/seed-user-profile";
 import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
@@ -19,8 +22,10 @@ import { StoreListingController } from "./store-listing.controller";
 /**
  * 1.5.d's "one guard-to-real-Cerbos integration test per module":
  * `listing.yaml`'s `view` rule needs `business_inventory_viewer_of`
- * (owner/admin/merchandiser/analyst), the same `x-yt-business-roles` shape
- * `business.controller.e2e.test.ts` exercises.
+ * (owner/admin/merchandiser/analyst), which as of 1.5.b comes from a real
+ * `business.business_members` row, the same shape
+ * `business.controller.e2e.test.ts` exercises now that 1.5.a removed the
+ * `x-yt-business-roles` header this used to be faked through.
  */
 const CONFIG: AppConfig = {
   nodeEnv: "test",
@@ -43,7 +48,7 @@ const profiles = new DrizzleUserProfileRepository(db);
 const businessMemberships = new DrizzleBusinessMembershipReader(db);
 const staffRoles = new DrizzleStaffRoleReader(db);
 const principals = new AsyncPrincipalResolver(
-  new PrincipalService(CONFIG),
+  new PrincipalService(alwaysValidSessionValidator()),
   securityState,
   profiles,
   businessMemberships,
@@ -58,11 +63,11 @@ function guard(): PdpGuard {
 function contextFor(
   handler: (...args: never[]) => unknown,
   tenantId: string,
-  headers: Record<string, string>,
+  userId: string,
 ): ExecutionContext {
   const request = {
     params: { tenantId },
-    headers: { "x-yt-user-id": randomUUID(), ...headers },
+    headers: { cookie: `yt_session=${userId}` },
   } as unknown as FastifyRequest;
   return {
     getHandler: () => handler,
@@ -77,16 +82,17 @@ const list = StoreListingController.prototype.list;
 
 describe("StoreListingController.list against real Cerbos", () => {
   it("ALLOWS a merchandiser at the tenant named in the URL", async () => {
-    const tenantId = `biz-e2e-${randomUUID()}`;
-    const context = contextFor(list, tenantId, {
-      "x-yt-business-roles": JSON.stringify({ [tenantId]: "merchandiser" }),
-    });
+    const userId = `user-e2e-${randomUUID()}`;
+    await seedUserProfile(db, { userId });
+    const businessId = await seedBusinessMembership(db, { userId, role: "merchandiser" });
+
+    const context = contextFor(list, businessId, userId);
     await expect(guard().canActivate(context)).resolves.toBe(true);
   });
 
   it("DENIES a caller with no role at that tenant", async () => {
-    const tenantId = `biz-e2e-${randomUUID()}`;
-    const context = contextFor(list, tenantId, {});
+    const userId = `user-e2e-${randomUUID()}`;
+    const context = contextFor(list, randomUUID(), userId);
     await expect(guard().canActivate(context)).rejects.toBeTruthy();
   });
 });

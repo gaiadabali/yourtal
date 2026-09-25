@@ -9,7 +9,7 @@ import { IDEMPOTENT_METADATA } from "./idempotent.decorator";
 import { ONBOARDING_RETENTION_MS } from "./retention";
 import { AsyncPrincipalResolver } from "../authz/async-principal-resolver";
 import { PrincipalService } from "./../authz/principal.service";
-import type { AppConfig } from "../../config/app-config";
+import { alwaysValidSessionValidator } from "../testing/fake-session-validator";
 import type { PrincipalSecurityStateRepository } from "../../modules/identity/persistence/principal-security-state.repository";
 import type { UserProfileRepository } from "../../modules/identity/persistence/user-profile.repository";
 import type { BusinessMembershipReader } from "../../modules/identity/persistence/business-membership-reader";
@@ -34,25 +34,6 @@ const NO_STAFF_ROLES: StaffRoleReader = { listForUser: () => Promise.resolve([])
  * DECLARED idempotent; this proves the declaration does something.
  */
 
-const CONFIG: AppConfig = {
-  nodeEnv: "test",
-  port: 3001,
-  pdp: { baseUrl: "http://127.0.0.1:3592", timeoutMs: 500 },
-  // Required since YT-0552. These suites do not touch it, but a config
-  // object that can omit it would mean the type still permits the
-  // fallback this ticket removed.
-  databaseUrl: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
-  redisUrl: "redis://127.0.0.1:26379",
-  ledger: {
-    mode: "fake" as const,
-    baseUrl: "http://127.0.0.1:26312",
-    voucherBaseUrl: "http://127.0.0.1:26313",
-    serviceSecret: "test-only-ledger-service-secret-not-real",
-  },
-  teenAccounts: false,
-  appEnv: "dev",
-};
-
 let store: InMemoryIdempotencyStore;
 let interceptor: IdempotencyInterceptor;
 let statusCode: number;
@@ -70,7 +51,7 @@ beforeEach(() => {
     reflector,
     store,
     new AsyncPrincipalResolver(
-      new PrincipalService(CONFIG),
+      new PrincipalService(alwaysValidSessionValidator()),
       NO_SECURITY_STATE,
       NO_PROFILE,
       NO_MEMBERSHIPS,

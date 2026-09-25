@@ -5,6 +5,7 @@ import { Authorize } from "../../shared/authz/authorize.decorator";
 import { mapAuthzErrorToHttpException } from "../../shared/authz/authz-error.mapper";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
 import { CreateListingDto } from "./dto/create-listing.schema";
 import { EditListingDto } from "./dto/edit-listing.schema";
@@ -38,7 +39,7 @@ import { setSettlementValue } from "./use-cases/set-settlement-value.use-case";
 @Controller("api/:tenantId/store/listings")
 export class StoreListingController {
   constructor(
-    private readonly principals: PrincipalService,
+    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
     @Inject(LISTING_REPOSITORY) private readonly listings: ListingRepository,
     @Inject(LISTING_PRICE_REVISION_REPOSITORY)
     private readonly priceRevisions: ListingPriceRevisionRepository,
@@ -131,7 +132,7 @@ export class StoreListingController {
     @Body() body: SetSettlementValueDto,
     @Req() request: FastifyRequest,
   ) {
-    const principal = this.principals.resolve(request);
+    const principal = await this.principals.resolve(request);
 
     const current = await getMyListing(this.listings, tenantId, listingId);
     if (current.isErr()) throw mapStoreErrorToHttpException(current.error);

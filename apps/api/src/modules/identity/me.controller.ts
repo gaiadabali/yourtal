@@ -3,6 +3,7 @@ import type { FastifyRequest } from "fastify";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import {
   BUSINESS_MEMBERSHIP_READER,
   type BusinessMembershipReader,
@@ -30,7 +31,7 @@ import { updateMe } from "./use-cases/update-me.use-case";
 @Controller("api/me")
 export class MeController {
   constructor(
-    private readonly principals: PrincipalService,
+    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(BUSINESS_MEMBERSHIP_READER)
     private readonly businessMemberships: BusinessMembershipReader,
@@ -40,7 +41,7 @@ export class MeController {
   @Authorize({ kind: "session", action: "view_profile" })
   @Get()
   async getMe(@Req() request: FastifyRequest) {
-    const userId = this.principals.resolve(request).id;
+    const userId = (await this.principals.resolve(request)).id;
     const result = await getMe(
       this.profiles,
       this.businessMemberships,
@@ -59,7 +60,7 @@ export class MeController {
   @Authorize({ kind: "session", action: "update_profile" })
   @Patch()
   async patchMe(@Req() request: FastifyRequest, @Body() body: UpdateMeDto) {
-    const userId = this.principals.resolve(request).id;
+    const userId = (await this.principals.resolve(request)).id;
     const result = await updateMe(this.profiles, userId, {
       // `exactOptionalPropertyTypes`: an explicit `displayName: undefined`
       // is not the same as omitting the key, so each is only ever included

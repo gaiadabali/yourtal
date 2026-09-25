@@ -8,10 +8,10 @@ import type { DeviceCredentialVerifier } from "./device-credential-verifier";
 /**
  * 1.5.c: a `store_device` principal, for the redemption-terminal routes
  * (`policies/resource_policies/redemption.yaml`'s `store_device_of` derived
- * role) — a SEPARATE identity path from `PrincipalService`'s `x-yt-user-id`,
+ * role) — a SEPARATE identity path from `PrincipalService`'s session cookie,
  * because a counter device is not a person and must never be able to claim
- * a business or a location for itself the way a header-trusting principal
- * could. `deviceBusinessId`/`deviceLocationId` come only from
+ * a business or a location for itself the way a signed-in principal could.
+ * `deviceBusinessId`/`deviceLocationId` come only from
  * `DeviceCredentialVerifier`, which is provisioning-time truth, never the
  * request.
  *

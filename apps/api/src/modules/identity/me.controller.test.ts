@@ -50,7 +50,7 @@ describe("GET /api/me", () => {
     const response = await app.inject({
       method: "GET",
       url: "/api/me",
-      headers: session.headers,
+      headers: { cookie: session.cookie },
     });
 
     expect(response.statusCode).toBe(200);
@@ -75,7 +75,7 @@ describe("GET /api/me", () => {
     const response = await app.inject({
       method: "GET",
       url: "/api/me",
-      headers: session.headers,
+      headers: { cookie: session.cookie },
     });
 
     expect(response.statusCode).toBe(200);
@@ -98,7 +98,7 @@ describe("PATCH /api/me", () => {
     const patched = await app.inject({
       method: "PATCH",
       url: "/api/me",
-      headers: { ...session.headers, "idempotency-key": randomUUID() },
+      headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
       payload: { displayName: "Changed Name", displayLocale: "id-ID" },
     });
     expect(patched.statusCode).toBe(200);
@@ -106,7 +106,11 @@ describe("PATCH /api/me", () => {
       profile: { displayName: "Changed Name", displayLocale: "id-ID" },
     });
 
-    const reread = await app.inject({ method: "GET", url: "/api/me", headers: session.headers });
+    const reread = await app.inject({
+      method: "GET",
+      url: "/api/me",
+      headers: { cookie: session.cookie },
+    });
     expect(reread.json()).toMatchObject({
       profile: { displayName: "Changed Name", displayLocale: "id-ID", region: "AU" },
     });
@@ -120,7 +124,7 @@ describe("PATCH /api/me", () => {
     const patched = await app.inject({
       method: "PATCH",
       url: "/api/me",
-      headers: { ...session.headers, "idempotency-key": randomUUID() },
+      headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
       payload: { region: "ID", displayName: "Still AU" },
     });
     expect(patched.statusCode).toBe(200);
@@ -141,7 +145,11 @@ describe("PATCH /api/me", () => {
 describe("1.4.g's Check: the age policy at registration, TEEN_ACCOUNTS off (the default)", () => {
   it("register -> GET /api/me shows region AU, locale en-AU and age band adult", async () => {
     const session = await sessionFor(app, { jurisdiction: "AU", dateOfBirth: "2000-01-01" });
-    const response = await app.inject({ method: "GET", url: "/api/me", headers: session.headers });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/me",
+      headers: { cookie: session.cookie },
+    });
     expect(response.json()).toMatchObject({
       profile: { region: "AU", displayLocale: "en-AU", ageBand: "adult" },
     });
@@ -286,12 +294,12 @@ describe("1.4.b: TEEN_ACCOUNTS on", () => {
       },
     });
     expect(registered.statusCode).toBe(201);
-    const { userId } = registered.json();
+    const { token } = registered.json();
 
     const response = await teenApp.inject({
       method: "GET",
       url: "/api/me",
-      headers: { "x-yt-user-id": userId, "x-yt-jurisdiction": "AU" },
+      headers: { cookie: `yt_session=${String(token)}` },
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({

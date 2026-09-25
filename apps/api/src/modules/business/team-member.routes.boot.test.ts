@@ -1,12 +1,16 @@
 import { randomUUID } from "node:crypto";
+import { and, eq } from "drizzle-orm";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../../app.module";
+import { sessionFor } from "../../shared/testing/session-for";
+import type { TestSession } from "../../shared/testing/session-for";
 import { DrizzleBusinessMemberRepository } from "./persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "./persistence/drizzle-business-onboarding.unit-of-work";
-import { clearBusinessTables, testBusinessDb } from "./persistence/business-db.test-helper";
+import { testBusinessDb } from "./persistence/business-db.test-helper";
+import { businessMembers } from "./persistence/schema/business-member.table";
 
 /**
  * YT-0580 — `PATCH /api/:tenantId/business/team/:userId/role` against a
@@ -28,6 +32,14 @@ import { clearBusinessTables, testBusinessDb } from "./persistence/business-db.t
  * 404 would hide the very thing this file exists to prove (that an owner's
  * stored role, not a 403 door check, is what stops the demotion), so real
  * rows are seeded via the same Drizzle repositories the use-case tests use.
+ *
+ * 1.5.a: every actor is a real, registered account via `sessionFor` — a
+ * fixed literal like the old `"admin-boot-1"` has no `identity.user_profile`
+ * row, so `AsyncPrincipalResolver`'s 1.5.b overlay would never see the
+ * `business.business_members` rows this file seeds for it, no matter how
+ * real those rows are. Each test gets its own fresh business, since a new
+ * random user backs every actor now rather than a handful of shared literals
+ * a `beforeEach` used to reset.
  */
 let app: NestFastifyApplication;
 
@@ -39,33 +51,22 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
   await app.close();
 });
 
-/**
- * `OWNER_ID` below (`"owner-boot-1"`) is already unique to this file, so
- * cleanup scopes to it rather than the whole table — see
- * `persistence/business-db.test-helper.ts` for why a shared literal like
- * the sibling files' old `"owner-1"` would still race.
- */
-beforeEach(async () => {
-  await clearBusinessTables(testBusinessDb(), [OWNER_ID]);
-});
-
-function principalHeaders(userId: string, businessRoles: Record<string, string>) {
-  return {
-    "x-yt-user-id": userId,
-    "x-yt-business-roles": JSON.stringify(businessRoles),
-  };
-}
-
-const OWNER_ID = "owner-boot-1";
-const ADMIN_ID = "admin-boot-1";
-const MARKETER_ID = "marketer-boot-1";
-const STRANGER_ID = "stranger-boot-1";
-
 async function seed() {
+  // 1.5.b's F2 region wall denies a caller whose own region differs from
+  // the resource's — the seeded business below is region ID (a real
+  // Indonesian merchant), so every actor who is meant to succeed against it
+  // has to be ID too. `stranger` has no membership at this business at all,
+  // so their own region does not matter for what this file tests.
+  const [owner, admin, marketer, stranger] = await Promise.all([
+    sessionFor(app, { jurisdiction: "ID" }),
+    sessionFor(app, { jurisdiction: "ID" }),
+    sessionFor(app, { jurisdiction: "ID" }),
+    sessionFor(app),
+  ]);
+
   const db = testBusinessDb();
   const members = new DrizzleBusinessMemberRepository(db);
   const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
@@ -81,32 +82,54 @@ async function seed() {
       handle: `test-business-${randomUUID().slice(0, 8)}`,
       coverUrl: null,
     },
-    OWNER_ID,
+    owner.userId,
   );
   const businessId = created.business.id;
   await members.addMember({
     businessId,
-    userId: ADMIN_ID,
+    userId: admin.userId,
     role: "admin",
-    invitedByUserId: OWNER_ID,
+    invitedByUserId: owner.userId,
   });
   await members.addMember({
     businessId,
-    userId: MARKETER_ID,
+    userId: marketer.userId,
     role: "marketer",
-    invitedByUserId: OWNER_ID,
+    invitedByUserId: owner.userId,
   });
-  return { businessId, members };
+  // `addMember` leaves `joined_at` NULL — an outstanding invite, not yet a
+  // membership `BusinessMembershipReader.listForUser` (1.5.b) will return.
+  // These tests are about an ALREADY-accepted admin/marketer acting on the
+  // team, so mark both as joined directly; there is no accept-invite route
+  // to drive instead, and this file is not testing the invite flow itself.
+  await markJoined(db, businessId, admin.userId);
+  await markJoined(db, businessId, marketer.userId);
+  return { businessId, members, owner, admin, marketer, stranger };
+}
+
+async function markJoined(
+  db: ReturnType<typeof testBusinessDb>,
+  businessId: string,
+  userId: string,
+): Promise<void> {
+  await db
+    .update(businessMembers)
+    .set({ joinedAt: new Date() })
+    .where(and(eq(businessMembers.businessId, businessId), eq(businessMembers.userId, userId)));
+}
+
+function cookieHeader(session: TestSession): { readonly cookie: string } {
+  return { cookie: session.cookie };
 }
 
 describe("PATCH .../business/team/:userId/role against a live PDP and a live use-case", () => {
   it("refuses a business admin demoting the owner (the YT-0580 exploit, reproduced over HTTP)", async () => {
-    const { businessId, members } = await seed();
+    const { businessId, members, owner, admin } = await seed();
 
     const response = await app.inject({
       method: "PATCH",
-      url: `/api/${businessId}/business/team/${OWNER_ID}/role`,
-      headers: principalHeaders(ADMIN_ID, { [businessId]: "admin" }),
+      url: `/api/${businessId}/business/team/${owner.userId}/role`,
+      headers: cookieHeader(admin),
       payload: { role: "admin" },
     });
 
@@ -119,30 +142,30 @@ describe("PATCH .../business/team/:userId/role against a live PDP and a live use
     // proven at the use-case level.
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ code: "forbidden" });
-    expect((await members.findMember(businessId, OWNER_ID))?.role).toBe("owner");
+    expect((await members.findMember(businessId, owner.userId))?.role).toBe("owner");
   });
 
   it("still allows a business admin to change an ordinary member's role", async () => {
-    const { businessId, members } = await seed();
+    const { businessId, members, admin, marketer } = await seed();
 
     const response = await app.inject({
       method: "PATCH",
-      url: `/api/${businessId}/business/team/${MARKETER_ID}/role`,
-      headers: principalHeaders(ADMIN_ID, { [businessId]: "admin" }),
+      url: `/api/${businessId}/business/team/${marketer.userId}/role`,
+      headers: cookieHeader(admin),
       payload: { role: "analyst" },
     });
 
     expect(response.statusCode).toBe(200);
-    expect((await members.findMember(businessId, MARKETER_ID))?.role).toBe("analyst");
+    expect((await members.findMember(businessId, marketer.userId))?.role).toBe("analyst");
   });
 
   it("refuses a caller with no role at this tenant (pins that the route exists at all)", async () => {
-    const { businessId } = await seed();
+    const { businessId, owner, stranger } = await seed();
 
     const response = await app.inject({
       method: "PATCH",
-      url: `/api/${businessId}/business/team/${OWNER_ID}/role`,
-      headers: principalHeaders(STRANGER_ID, { "biz-somewhere-else": "owner" }),
+      url: `/api/${businessId}/business/team/${owner.userId}/role`,
+      headers: cookieHeader(stranger),
       payload: { role: "admin" },
     });
 
@@ -169,12 +192,12 @@ describe("PATCH .../business/team/:userId/role against a live PDP and a live use
  */
 describe("DELETE .../business/team/:userId against a live PDP and a live use-case", () => {
   it("refuses a business admin removing the owner, and the PDP answers first (YT-0581)", async () => {
-    const { businessId, members } = await seed();
+    const { businessId, members, owner, admin } = await seed();
 
     const response = await app.inject({
       method: "DELETE",
-      url: `/api/${businessId}/business/team/${OWNER_ID}`,
-      headers: principalHeaders(ADMIN_ID, { [businessId]: "admin" }),
+      url: `/api/${businessId}/business/team/${owner.userId}`,
+      headers: cookieHeader(admin),
     });
 
     // The post-read `requireAction` call now sits BEFORE the use-case in
@@ -185,30 +208,30 @@ describe("DELETE .../business/team/:userId against a live PDP and a live use-cas
     // itself no longer stays silent on this action.
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ code: "forbidden" });
-    expect((await members.findMember(businessId, OWNER_ID))?.role).toBe("owner");
+    expect((await members.findMember(businessId, owner.userId))?.role).toBe("owner");
   });
 
   it("still allows a business admin to remove an ordinary member", async () => {
-    const { businessId, members } = await seed();
+    const { businessId, members, admin, marketer } = await seed();
 
     const response = await app.inject({
       method: "DELETE",
-      url: `/api/${businessId}/business/team/${MARKETER_ID}`,
-      headers: principalHeaders(ADMIN_ID, { [businessId]: "admin" }),
+      url: `/api/${businessId}/business/team/${marketer.userId}`,
+      headers: cookieHeader(admin),
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ removed: true });
-    expect(await members.findMember(businessId, MARKETER_ID)).toBeNull();
+    expect(await members.findMember(businessId, marketer.userId)).toBeNull();
   });
 
   it("refuses a caller with no role at this tenant (pins that the route exists at all)", async () => {
-    const { businessId } = await seed();
+    const { businessId, owner, stranger } = await seed();
 
     const response = await app.inject({
       method: "DELETE",
-      url: `/api/${businessId}/business/team/${OWNER_ID}`,
-      headers: principalHeaders(STRANGER_ID, { "biz-somewhere-else": "owner" }),
+      url: `/api/${businessId}/business/team/${owner.userId}`,
+      headers: cookieHeader(stranger),
     });
 
     expect(response.statusCode).toBe(403);

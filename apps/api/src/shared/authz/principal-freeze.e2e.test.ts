@@ -5,6 +5,7 @@ import type { FastifyRequest } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { PrincipalService } from "./principal.service";
+import { alwaysValidSessionValidator } from "../testing/fake-session-validator";
 import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../persistence/drizzle-client";
 import type { AppDb } from "../persistence/drizzle-client";
@@ -51,7 +52,7 @@ const profiles = new DrizzleUserProfileRepository(db);
 const businessMemberships = new DrizzleBusinessMembershipReader(db);
 const staffRoles = new DrizzleStaffRoleReader(db);
 const principals = new AsyncPrincipalResolver(
-  new PrincipalService(CONFIG),
+  new PrincipalService(alwaysValidSessionValidator()),
   securityState,
   profiles,
   businessMemberships,
@@ -60,7 +61,7 @@ const principals = new AsyncPrincipalResolver(
 const pdp = createPdpClient({ baseUrl: CONFIG.pdp.baseUrl });
 
 function requestFor(userId: string): FastifyRequest {
-  return { headers: { "x-yt-user-id": userId } } as unknown as FastifyRequest;
+  return { headers: { cookie: `yt_session=${userId}` } } as unknown as FastifyRequest;
 }
 
 function walletOf(ownerId: string): Resource<"wallet"> {

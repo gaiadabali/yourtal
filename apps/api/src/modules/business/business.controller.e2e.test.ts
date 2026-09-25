@@ -7,6 +7,9 @@ import { describe, expect, it } from "vitest";
 import { PdpGuard } from "../../shared/authz/pdp.guard";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import { alwaysValidSessionValidator } from "../../shared/testing/fake-session-validator";
+import { seedBusinessMembership } from "../../shared/testing/seed-business-membership";
+import { seedUserProfile } from "../../shared/testing/seed-user-profile";
 import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
@@ -20,9 +23,12 @@ import { BusinessController } from "./business.controller";
  * 1.5.d's "one guard-to-real-Cerbos integration test per module": proof this
  * module's existing (synchronous, tenant-only) attribute wiring already
  * produces a correct answer from a REAL Cerbos, not the mocked
- * `pdp.guard.test.ts`. `business.yaml`'s `view` rule needs a real
- * `x-yt-business-roles` header to resolve `business_report_viewer_of` — see
- * `principal.service.ts` for that header's shape, current pending 1.5.a.
+ * `pdp.guard.test.ts`. `business.yaml`'s `view` rule needs
+ * `business_report_viewer_of`, which as of 1.5.b comes from a REAL
+ * `business.business_members` row (via `AsyncPrincipalResolver`'s overlay,
+ * which only engages once a principal has a real `identity.user_profile`
+ * row) — the `x-yt-business-roles` header this used to be faked through no
+ * longer exists as of 1.5.a.
  */
 const CONFIG: AppConfig = {
   nodeEnv: "test",
@@ -45,7 +51,7 @@ const profiles = new DrizzleUserProfileRepository(db);
 const businessMemberships = new DrizzleBusinessMembershipReader(db);
 const staffRoles = new DrizzleStaffRoleReader(db);
 const principals = new AsyncPrincipalResolver(
-  new PrincipalService(CONFIG),
+  new PrincipalService(alwaysValidSessionValidator()),
   securityState,
   profiles,
   businessMemberships,
@@ -57,14 +63,15 @@ function guard(): PdpGuard {
   return new PdpGuard(new Reflector(), pdp, principals, []);
 }
 
+/** `alwaysValidSessionValidator` treats the cookie's token as the user id directly. */
 function contextFor(
   handler: (...args: never[]) => unknown,
   tenantId: string,
-  headers: Record<string, string>,
+  userId: string,
 ): ExecutionContext {
   const request = {
     params: { tenantId },
-    headers: { "x-yt-user-id": randomUUID(), ...headers },
+    headers: { cookie: `yt_session=${userId}` },
   } as unknown as FastifyRequest;
   return {
     getHandler: () => handler,
@@ -79,25 +86,26 @@ const getProfile = BusinessController.prototype.getProfile;
 
 describe("BusinessController.getProfile against real Cerbos", () => {
   it("ALLOWS an owner of the tenant named in the URL", async () => {
-    const tenantId = `biz-e2e-${randomUUID()}`;
-    const context = contextFor(getProfile, tenantId, {
-      "x-yt-business-roles": JSON.stringify({ [tenantId]: "owner" }),
-    });
+    const userId = `user-e2e-${randomUUID()}`;
+    await seedUserProfile(db, { userId });
+    const businessId = await seedBusinessMembership(db, { userId, role: "owner" });
+
+    const context = contextFor(getProfile, businessId, userId);
     await expect(guard().canActivate(context)).resolves.toBe(true);
   });
 
   it("DENIES someone with no role at that tenant at all", async () => {
-    const tenantId = `biz-e2e-${randomUUID()}`;
-    const context = contextFor(getProfile, tenantId, {});
+    const userId = `user-e2e-${randomUUID()}`;
+    const context = contextFor(getProfile, randomUUID(), userId);
     await expect(guard().canActivate(context)).rejects.toBeTruthy();
   });
 
   it("DENIES a role held at a DIFFERENT tenant (F2-shaped: no cross-tenant leak)", async () => {
-    const tenantId = `biz-e2e-${randomUUID()}`;
-    const otherTenantId = `biz-e2e-${randomUUID()}`;
-    const context = contextFor(getProfile, tenantId, {
-      "x-yt-business-roles": JSON.stringify({ [otherTenantId]: "owner" }),
-    });
+    const userId = `user-e2e-${randomUUID()}`;
+    await seedUserProfile(db, { userId });
+    await seedBusinessMembership(db, { userId, role: "owner" }); // membership at a business OTHER than the one below
+
+    const context = contextFor(getProfile, randomUUID(), userId);
     await expect(guard().canActivate(context)).rejects.toBeTruthy();
   });
 });

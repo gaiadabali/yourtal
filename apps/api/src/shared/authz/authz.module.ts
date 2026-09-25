@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { IdentityModule } from "../../modules/identity/identity.module";
+import { AuthModule } from "../../modules/auth/auth.module";
 import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { PrincipalService } from "./principal.service";
 import {
@@ -20,10 +21,15 @@ import { StoreDevicePrincipalResolver } from "./store-device-principal-resolver"
  * `policies/derived_roles/common.yaml` depends on) — see that class's own
  * doc comment for why it is a separate class rather than a new method on
  * `PrincipalService`. Imports `IdentityModule` to get that repository.
+ *
+ * Imports `AuthModule` as of 1.5.a, for the one thing `PrincipalService`
+ * itself now needs: `SessionService.validateAndTouch`. `AuthModule` does not
+ * import this module back (`@Global()` already makes everything here
+ * visible to it without that), so this is not a cycle.
  */
 @Global()
 @Module({
-  imports: [IdentityModule],
+  imports: [IdentityModule, AuthModule],
   providers: [
     PrincipalService,
     AsyncPrincipalResolver,

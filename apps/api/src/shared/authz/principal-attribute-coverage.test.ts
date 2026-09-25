@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { FastifyRequest } from "fastify";
 import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { PrincipalService } from "./principal.service";
-import type { AppConfig } from "../../config/app-config";
+import { alwaysValidSessionValidator } from "../testing/fake-session-validator";
 import type { PrincipalSecurityStateRepository } from "../../modules/identity/persistence/principal-security-state.repository";
 
 /**
@@ -66,27 +66,13 @@ function policyAttributeReferences(): Map<string, string[]> {
   return refs;
 }
 
-function requestWith(headers: Record<string, string>): FastifyRequest {
-  return { headers } as unknown as FastifyRequest;
+/** `alwaysValidSessionValidator` treats the cookie's token as the user id directly. */
+function requestForUser(userId: string | undefined): FastifyRequest {
+  return {
+    headers: userId === undefined ? {} : { cookie: `yt_session=${userId}` },
+  } as unknown as FastifyRequest;
 }
 
-const CONFIG: AppConfig = {
-  nodeEnv: "test",
-  port: 3001,
-  pdp: { baseUrl: "http://127.0.0.1:26592", timeoutMs: 500 },
-  databaseUrl: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
-  redisUrl: "redis://127.0.0.1:26379",
-  ledger: {
-    mode: "fake" as const,
-    baseUrl: "http://127.0.0.1:26312",
-    voucherBaseUrl: "http://127.0.0.1:26313",
-    serviceSecret: "test-only-ledger-service-secret-not-real",
-  },
-  teenAccounts: false,
-  appEnv: "dev",
-};
-
-const BUSINESS_ID = "11111111-1111-4111-8111-111111111111";
 const FROZEN_USER = "coverage-check-frozen-user";
 
 /**
@@ -102,12 +88,14 @@ async function populatableAttributes(): Promise<Set<string>> {
         userId === FROZEN_USER ? { valueFrozenUntil: new Date("2099-01-01T00:00:00.000Z") } : null,
       ),
   };
-  // No profile/membership/staff-role rows in this suite (1.5.b): every
-  // scenario below is header-driven, matching how the OTHER five optional
-  // attributes here are already proved. async-principal-resolver.test.ts is
-  // where the database overlay itself is exercised.
+  // No profile/membership/staff-role rows in this suite (1.5.b): `jurisdiction`,
+  // `businessRoles` and `isSuspended` are all REQUIRED fields on every
+  // principal regardless (principalAttrSchema's own `required` array), so
+  // the plain anonymous/signed-in scenarios below already prove them
+  // populatable without needing a real profile row — that overlay itself is
+  // async-principal-resolver.test.ts's job.
   const resolver = new AsyncPrincipalResolver(
-    new PrincipalService(CONFIG),
+    new PrincipalService(alwaysValidSessionValidator()),
     repo,
     {
       create: () => Promise.reject(new Error("unused")),
@@ -119,14 +107,9 @@ async function populatableAttributes(): Promise<Set<string>> {
   );
 
   const scenarios: FastifyRequest[] = [
-    requestWith({}),
-    requestWith({ "x-yt-user-id": "plain-user" }),
-    requestWith({
-      "x-yt-user-id": "owner-1",
-      "x-yt-business-roles": JSON.stringify({ [BUSINESS_ID]: "owner" }),
-    }),
-    requestWith({ "x-yt-user-id": "suspended-user", "x-yt-suspended": "true" }),
-    requestWith({ "x-yt-user-id": FROZEN_USER }),
+    requestForUser(undefined),
+    requestForUser("plain-user"),
+    requestForUser(FROZEN_USER),
   ];
 
   const keys = new Set<string>();

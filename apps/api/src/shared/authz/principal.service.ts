@@ -1,121 +1,94 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { anonymousPrincipal, principalSchema } from "@yourtal/authz/principal";
 import type { Principal } from "@yourtal/authz/principal";
-import { businessRoleSchema } from "@yourtal/authz/roles";
-import { z } from "zod";
 import type { FastifyRequest } from "fastify";
-import { APP_CONFIG } from "../../config/app-config.module";
-import type { AppConfig } from "../../config/app-config";
+import { bearerToken } from "../../modules/auth/bearer-token";
+import { SESSION_VALIDATOR } from "./session-validator";
+import type { SessionValidator } from "./session-validator";
+import type { PrincipalResolver } from "./principal-resolver";
 
 /**
  * THE one place a `Principal` is assembled (docs/17 sections 2.1, 4.6). Every
  * controller in this app calls `resolve()` exactly once and passes the
  * result to `pdpClient.requireAction` — never builds a principal itself.
  *
- * INTERIM, by design, pending YT-0500 and the Zitadel integration (YT-0032):
- * there is no session or verified JWT to read yet, so this trusts a small
- * set of headers instead of a cookie/token. That is a placeholder for WHERE
- * identity comes from, not for HOW authorization is asked — the PDP call
- * downstream of this is the real thing and does not change when YT-0500
- * lands. When it does, only the body of `resolve()` changes (header reads
- * become session/JWT reads); every call site stays identical, which is the
- * property the coordinator asked this seam to have.
+ * 1.5.a: reads the REAL session, not a header a caller could name itself
+ * through. A presented credential is a `yt_session` cookie or an
+ * `Authorization: Bearer` token (either travels the same opaque token
+ * `SessionService.issue` mints at login); `SessionService.validateAndTouch`
+ * is the only thing that turns one into a user id. `PrincipalService` no
+ * longer decides `jurisdiction`, `businessRoles` or `isSuspended` at all —
+ * every real account has an `identity.user_profile` row from the moment it
+ * registers (1.4.c), and `AsyncPrincipalResolver` (this same directory)
+ * overlays the true values from it. What is set here is a safe placeholder
+ * for the rare principal `AsyncPrincipalResolver` finds no profile row for.
  *
- * Not safe past local development and tests: these headers are trusted
- * verbatim, so a deployment that exposes this app before YT-0500 replaces
- * this method is a spoofable-identity bug, not a hardening gap.
+ * No credential presented at all is `anonymous` — the same outcome an
+ * absent `x-yt-user-id` header used to produce. A credential that IS
+ * presented but does not validate (expired, revoked, unknown) is refused
+ * outright rather than quietly treated as anonymous: a client that thinks
+ * it is signed in should be told its session died, not silently
+ * downgraded.
  *
- * Which is why the constructor REFUSES TO BOOT in production rather than
- * relying on the paragraph above being read. docs/14 section 8 (A10) is
- * categorical that value operations fail closed, and an identity layer that
- * trusts `x-yt-user-id` is the most fail-open thing that could exist here:
- * anyone could name themselves the owner of any business. A comment is
- * documentation, not a control, and the failure mode it guards against is
- * someone deploying this without reading it.
- *
- * ## This class's shape is deliberately untouched by YT-0582
- *
- * `resolve()` is synchronous and reads only the request — it cannot ask
- * anything of stored state, which is why `valueFrozenUntil` and three other
- * `policies/_schemas/principal.json` attributes were never populatable
- * (`principal-attribute-coverage.test.ts` proves that generically). The fix
- * is `AsyncPrincipalResolver` (this same directory), a SEPARATE class that
- * composes this one with a database read, rather than a new method added
- * here. That is deliberate, not a style choice: `apps/api/src/modules/store/**`
- * and `apps/api/src/modules/watch/**` (other work in flight, out of this
- * ticket's reach) duck-type `PrincipalService` directly in their own tests —
- * `{ resolve: vi.fn() }` passed where a `PrincipalService` is expected, with
- * no cast — so any new public member on this class breaks their structural
- * typing without a line of theirs being touched. Composing instead of
- * widening keeps this class's type exactly as it was.
+ * No production boot guard any more, either — the fail-open surface that
+ * guard existed for (anyone naming themselves the owner of any business
+ * via a header) is exactly what this ticket removes.
  */
 @Injectable()
-export class PrincipalService {
-  constructor(@Inject(APP_CONFIG) config: AppConfig) {
-    if (config.nodeEnv === "production") {
-      throw new Error(
-        "PrincipalService trusts x-yt-* headers verbatim and cannot run in production. " +
-          "It is an interim seam pending YT-0500 (PDP enforcement) and YT-0032 (Zitadel). " +
-          "Replace the body of resolve() with a verified session or JWT read before deploying.",
-      );
+export class PrincipalService implements PrincipalResolver {
+  constructor(@Inject(SESSION_VALIDATOR) private readonly sessions: SessionValidator) {}
+
+  async resolve(request: FastifyRequest): Promise<Principal> {
+    const token = sessionCookie(request) ?? bearerToken(request);
+    if (token.length === 0) {
+      return anonymousPrincipal(DEFAULT_JURISDICTION);
     }
-  }
 
-  resolve(request: FastifyRequest): Principal {
-    // A malformed interim header is a client mistake in a dev-only path, not
-    // an expected domain failure — throwing matches docs/13b section 4. One
-    // try/catch covers every parse below (JSON.parse throws a bare
-    // SyntaxError, Zod throws ZodError; both collapse to the same 401).
-    try {
-      const userId = firstHeaderValue(request.headers["x-yt-user-id"]);
-      const jurisdiction = jurisdictionSchema.parse(
-        firstHeaderValue(request.headers["x-yt-jurisdiction"]) ?? "ID",
-      );
-
-      if (userId === undefined) {
-        return anonymousPrincipal(jurisdiction);
-      }
-
-      const businessRoles = parseBusinessRolesHeader(
-        firstHeaderValue(request.headers["x-yt-business-roles"]),
-      );
-      const isSuspended = firstHeaderValue(request.headers["x-yt-suspended"]) === "true";
-      const roles =
-        Object.keys(businessRoles).length > 0
-          ? (["user", "business_user"] as const)
-          : (["user"] as const);
-
-      return principalSchema.parse({
-        id: userId,
-        roles,
-        attr: { jurisdiction, businessRoles, isSuspended },
-      });
-    } catch {
-      throw invalidPrincipalHeaders();
+    const validation = await this.sessions.validateAndTouch(token, new Date());
+    if (!validation.valid) {
+      throw invalidSession();
     }
+
+    return principalSchema.parse({
+      id: validation.userId,
+      roles: ["user"],
+      // Placeholders: AsyncPrincipalResolver overlays the real values from
+      // identity.user_profile / business.business_members / identity.staff_role
+      // for every principal that has a profile row — see this class's own
+      // doc comment.
+      attr: { jurisdiction: DEFAULT_JURISDICTION, businessRoles: {}, isSuspended: false },
+    });
   }
 }
 
-function invalidPrincipalHeaders(): UnauthorizedException {
+/**
+ * No geo-IP or Accept-Language lookup exists yet, so an anonymous visitor's
+ * region is unknowable — this is the same fixed default the old
+ * `x-yt-jurisdiction` header fell back to, now the only value there is.
+ * `policies/_schemas/principal.json`'s own note that "the jurisdiction
+ * policy service (YT-0037) owns feature switches" already named this a
+ * later concern, not one this ticket introduces.
+ */
+const DEFAULT_JURISDICTION = "ID";
+
+const SESSION_COOKIE_NAME = "yt_session";
+
+/** A minimal, single-purpose read, the same shape `auth.controller.ts`'s own cookie check uses. */
+function sessionCookie(request: FastifyRequest): string | undefined {
+  const raw = request.headers.cookie;
+  if (raw === undefined) return undefined;
+  for (const part of raw.split(";")) {
+    const separator = part.indexOf("=");
+    if (separator === -1) continue;
+    const key = part.slice(0, separator).trim();
+    if (key === SESSION_COOKIE_NAME) return part.slice(separator + 1).trim();
+  }
+  return undefined;
+}
+
+function invalidSession(): UnauthorizedException {
   return new UnauthorizedException({
-    code: "invalid_principal_headers",
-    message: "could not assemble a principal from the request",
+    code: "invalid_session",
+    message: "this session is no longer valid",
   });
-}
-
-const jurisdictionSchema = z.enum(["ID", "AU"]);
-const businessRolesHeaderSchema = z.record(z.string().min(1), businessRoleSchema);
-
-function parseBusinessRolesHeader(
-  raw: string | undefined,
-): Record<string, z.infer<typeof businessRoleSchema>> {
-  if (raw === undefined) {
-    return {};
-  }
-  const candidate: unknown = JSON.parse(raw);
-  return businessRolesHeaderSchema.parse(candidate);
-}
-
-function firstHeaderValue(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
 }

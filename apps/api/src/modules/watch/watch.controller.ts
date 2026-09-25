@@ -24,6 +24,7 @@ import { describeCompletionRefusal, judgeCompletion } from "@yourtal/contracts/w
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import { CAMPAIGN_REPOSITORY } from "../campaign/persistence/campaign.repository";
 import type { CampaignRepository } from "../campaign/persistence/campaign.repository";
 import { WATCH_SESSION_REPOSITORY } from "./persistence/drizzle-watch-session.repository";
@@ -58,7 +59,7 @@ const SESSION_START_RETENTION_MS = 24 * 60 * 60 * 1_000;
 @Controller("api/watch/sessions")
 export class WatchController {
   constructor(
-    private readonly principals: PrincipalService,
+    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
     @Inject(WATCH_SESSION_REPOSITORY) private readonly sessions: WatchSessionRepository,
     @Inject(CAMPAIGN_REPOSITORY) private readonly campaigns: CampaignRepository,
   ) {}
@@ -91,7 +92,7 @@ export class WatchController {
     }
 
     const session = await this.sessions.start(
-      this.principals.resolve(request).id,
+      (await this.principals.resolve(request)).id,
       parsed.data.campaignId,
       termsVersion,
     );
@@ -212,7 +213,7 @@ export class WatchController {
     sessionId: string,
   ): Promise<{ session: WatchSession; durationSeconds: number }> {
     const session = await this.sessions.findById(sessionId);
-    if (session === null || session.userId !== this.principals.resolve(request).id) {
+    if (session === null || session.userId !== (await this.principals.resolve(request)).id) {
       throw new NotFoundException("No such watch session.");
     }
 

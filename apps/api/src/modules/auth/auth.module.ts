@@ -10,6 +10,7 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { DevTokenAccess } from "./dev-token-access";
 import { SessionService } from "./session/session.service";
+import { SESSION_VALIDATOR } from "../../shared/authz/session-validator";
 import { ThrottleService } from "./throttle/throttle.service";
 import { CREDENTIAL_REPOSITORY } from "./persistence/credential.repository";
 import { DrizzleCredentialRepository } from "./persistence/drizzle-credential.repository";
@@ -48,6 +49,7 @@ export const AUTH_DB = Symbol("AUTH_DB");
   providers: [
     AuthService,
     SessionService,
+    { provide: SESSION_VALIDATOR, useExisting: SessionService },
     ThrottleService,
     DevTokenAccess,
     {
@@ -71,6 +73,11 @@ export const AUTH_DB = Symbol("AUTH_DB");
       inject: [AUTH_DB],
     },
   ],
+  // SESSION_VALIDATOR is exported so AuthzModule (1.5.a) can inject it into
+  // PrincipalService — the real session read that replaced x-yt-user-id.
+  // SessionService itself stays exported too, for anything that legitimately
+  // needs the full class (issue/revoke), not just validation.
+  exports: [SessionService, SESSION_VALIDATOR],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class AuthModule {}

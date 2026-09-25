@@ -5,6 +5,7 @@ import { Authorize } from "../../shared/authz/authorize.decorator";
 import { mapAuthzErrorToHttpException } from "../../shared/authz/authz-error.mapper";
 import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
 import { ProposeSettlementDecreaseDto } from "./dto/propose-settlement-decrease.schema";
 import { LISTING_REPOSITORY } from "./persistence/listing.repository";
@@ -27,7 +28,7 @@ import { proposeSettlementDecrease } from "./use-cases/propose-settlement-decrea
 @Controller("api/:tenantId/store/listings")
 export class SettlementDecreaseController {
   constructor(
-    private readonly principals: PrincipalService,
+    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
     @Inject(LISTING_REPOSITORY) private readonly listings: ListingRepository,
     @Inject(SETTLEMENT_DECREASE_REQUEST_REPOSITORY)
     private readonly decreaseRequests: SettlementDecreaseRequestRepository,
@@ -53,7 +54,7 @@ export class SettlementDecreaseController {
     @Body() body: ProposeSettlementDecreaseDto,
     @Req() request: FastifyRequest,
   ) {
-    const principal = this.principals.resolve(request);
+    const principal = await this.principals.resolve(request);
     const result = await proposeSettlementDecrease(
       this.listings,
       this.decreaseRequests,
@@ -90,7 +91,7 @@ export class SettlementDecreaseController {
     @Param("requestId") requestId: string,
     @Req() request: FastifyRequest,
   ) {
-    const principal = this.principals.resolve(request);
+    const principal = await this.principals.resolve(request);
 
     const pending = await this.decreaseRequests.findById(listingId, requestId);
     if (pending === null) {

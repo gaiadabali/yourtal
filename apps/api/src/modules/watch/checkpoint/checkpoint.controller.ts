@@ -13,6 +13,7 @@ import { CHECKPOINT_TOKEN_TTL_MS } from "@yourtal/contracts/watch/checkpoint-tok
 import { Authorize } from "../../../shared/authz/authorize.decorator";
 import { Idempotent } from "../../../shared/idempotency/idempotent.decorator";
 import { PrincipalService } from "../../../shared/authz/principal.service";
+import type { PrincipalResolver } from "../../../shared/authz/principal-resolver";
 import { CAMPAIGN_REPOSITORY } from "../../campaign/persistence/campaign.repository";
 import type { CampaignRepository } from "../../campaign/persistence/campaign.repository";
 import { WATCH_SESSION_REPOSITORY } from "../persistence/drizzle-watch-session.repository";
@@ -46,7 +47,7 @@ import { CheckpointService } from "./checkpoint.service";
 @Controller("api/watch/sessions")
 export class CheckpointController {
   constructor(
-    private readonly principals: PrincipalService,
+    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
     private readonly checkpoints: CheckpointService,
     @Inject(WATCH_SESSION_REPOSITORY) private readonly sessions: WatchSessionRepository,
     @Inject(CAMPAIGN_REPOSITORY) private readonly campaigns: CampaignRepository,
@@ -69,7 +70,7 @@ export class CheckpointController {
     // Someone else's session is a 404, not a 403. A 403 confirms the id
     // exists, which is the same enumeration discipline `loadOwnSession`
     // applies in `watch.controller.ts` and YT-0153 applies to vouchers.
-    if (session === null || session.userId !== this.principals.resolve(request).id) {
+    if (session === null || session.userId !== (await this.principals.resolve(request)).id) {
       throw new NotFoundException("No such watch session.");
     }
     if (session.state !== "active") {

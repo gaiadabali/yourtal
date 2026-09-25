@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { FastifyRequest } from "fastify";
 import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { PrincipalService } from "./principal.service";
-import type { AppConfig } from "../../config/app-config";
+import { alwaysValidSessionValidator } from "../testing/fake-session-validator";
 import type {
   PrincipalSecurityState,
   PrincipalSecurityStateRepository,
@@ -18,27 +18,13 @@ import type {
 } from "../../modules/identity/persistence/business-membership-reader";
 import type { StaffRoleReader } from "../../modules/identity/persistence/staff-role-reader";
 import type { PrincipalRole } from "@yourtal/authz/roles";
+import type { SessionValidator } from "./session-validator";
 
-function configFor(nodeEnv: AppConfig["nodeEnv"]): AppConfig {
+/** `alwaysValidSessionValidator` treats the cookie's token as the user id directly. */
+function requestForUser(userId: string | undefined): FastifyRequest {
   return {
-    nodeEnv,
-    port: 3001,
-    pdp: { baseUrl: "http://127.0.0.1:3592", timeoutMs: 500 },
-    databaseUrl: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
-    redisUrl: "redis://127.0.0.1:26379",
-    ledger: {
-      mode: "fake" as const,
-      baseUrl: "http://127.0.0.1:26312",
-      voucherBaseUrl: "http://127.0.0.1:26313",
-      serviceSecret: "test-only-ledger-service-secret-not-real",
-    },
-    teenAccounts: false,
-    appEnv: "dev",
-  };
-}
-
-function requestWith(headers: Record<string, string>): FastifyRequest {
-  return { headers } as unknown as FastifyRequest;
+    headers: userId === undefined ? {} : { cookie: `yt_session=${userId}` },
+  } as unknown as FastifyRequest;
 }
 
 /** A fake `identity.principal_security_state` — no rows unless seeded. */
@@ -92,6 +78,7 @@ function profileFor(overrides: Partial<StoredUserProfile> = {}): StoredUserProfi
 }
 
 interface ResolverFixtures {
+  readonly sessions?: SessionValidator;
   readonly security?: Record<string, PrincipalSecurityState>;
   readonly profiles?: Record<string, StoredUserProfile>;
   readonly memberships?: Record<string, readonly BusinessMembershipSummary[]>;
@@ -100,7 +87,7 @@ interface ResolverFixtures {
 
 function resolverWith(fixtures: ResolverFixtures = {}): AsyncPrincipalResolver {
   return new AsyncPrincipalResolver(
-    new PrincipalService(configFor("test")),
+    new PrincipalService(fixtures.sessions ?? alwaysValidSessionValidator()),
     fakeSecurityStateRepo(fixtures.security),
     fakeProfileRepo(fixtures.profiles),
     fakeMembershipReader(fixtures.memberships),
@@ -115,20 +102,20 @@ describe("AsyncPrincipalResolver — YT-0582 (valueFrozenUntil)", () => {
   // seam directly, not only through a hand-built policy-test fixture.
   it("carries no valueFrozenUntil when the user has no security-state row", async () => {
     const resolver = resolverWith();
-    const principal = await resolver.resolve(requestWith({ "x-yt-user-id": "wina" }));
+    const principal = await resolver.resolve(requestForUser("wina"));
     expect(principal.attr.valueFrozenUntil).toBeUndefined();
   });
 
   it("carries no valueFrozenUntil when the row exists but is null", async () => {
     const resolver = resolverWith({ security: { wina: { valueFrozenUntil: null } } });
-    const principal = await resolver.resolve(requestWith({ "x-yt-user-id": "wina" }));
+    const principal = await resolver.resolve(requestForUser("wina"));
     expect(principal.attr.valueFrozenUntil).toBeUndefined();
   });
 
   it("carries valueFrozenUntil as an RFC3339 string when stored state has one", async () => {
     const frozenUntil = new Date("2026-09-24T10:00:00.000Z");
     const resolver = resolverWith({ security: { wina: { valueFrozenUntil: frozenUntil } } });
-    const principal = await resolver.resolve(requestWith({ "x-yt-user-id": "wina" }));
+    const principal = await resolver.resolve(requestForUser("wina"));
     expect(principal.attr.valueFrozenUntil).toBe("2026-09-24T10:00:00.000Z");
   });
 
@@ -141,60 +128,45 @@ describe("AsyncPrincipalResolver — YT-0582 (valueFrozenUntil)", () => {
       },
     };
     const resolver = new AsyncPrincipalResolver(
-      new PrincipalService(configFor("test")),
+      new PrincipalService(alwaysValidSessionValidator()),
       security,
       fakeProfileRepo(),
       fakeMembershipReader(),
       fakeStaffRoleReader(),
     );
-    const principal = await resolver.resolve(requestWith({}));
+    const principal = await resolver.resolve(requestForUser(undefined));
     expect(principal.id).toBe("anonymous");
     expect(called).toBe(false);
   });
 
-  it("still rejects a malformed header before ever reaching the database", async () => {
-    const resolver = resolverWith();
-    await expect(
-      resolver.resolve(
-        requestWith({ "x-yt-user-id": "owner-1", "x-yt-business-roles": "{not json" }),
-      ),
-    ).rejects.toThrow(UnauthorizedException);
+  it("still rejects an unknown/invalid session before ever reaching the database", async () => {
+    const resolver = resolverWith({
+      sessions: { validateAndTouch: () => Promise.resolve({ valid: false, reason: "not_found" }) },
+    });
+    await expect(resolver.resolve(requestForUser("owner-1"))).rejects.toThrow(
+      UnauthorizedException,
+    );
   });
 });
 
 describe("AsyncPrincipalResolver — 1.5.b (region, ageBand, suspension, business roles)", () => {
-  it("with no profile row, keeps the header-derived jurisdiction/isSuspended/businessRoles exactly as before", async () => {
+  it("with no profile row, uses safe placeholder defaults — no x-yt-* header can override them any more (1.5.a)", async () => {
     const resolver = resolverWith();
-    const principal = await resolver.resolve(
-      requestWith({
-        "x-yt-user-id": "wina",
-        "x-yt-jurisdiction": "ID",
-        "x-yt-suspended": "true",
-        "x-yt-business-roles": JSON.stringify({ "biz-kopi": "owner" }),
-      }),
-    );
+    const principal = await resolver.resolve(requestForUser("wina"));
     expect(principal.attr.jurisdiction).toBe("ID");
-    expect(principal.attr.isSuspended).toBe(true);
-    expect(principal.attr.businessRoles).toStrictEqual({ "biz-kopi": "owner" });
+    expect(principal.attr.isSuspended).toBe(false);
+    expect(principal.attr.businessRoles).toStrictEqual({});
     expect(principal.attr.ageBand).toBeUndefined();
   });
 
-  it("with a profile row, region/ageBand/isSuspended/businessRoles come from the database, not the header", async () => {
+  it("with a profile row, region/ageBand/isSuspended/businessRoles come from the database", async () => {
     const resolver = resolverWith({
       profiles: {
         wina: profileFor({ region: "AU", dateOfBirth: "1990-01-01", suspendedAt: null }),
       },
       memberships: { wina: [{ businessId: "biz-real", role: "analyst" }] },
     });
-    const principal = await resolver.resolve(
-      requestWith({
-        "x-yt-user-id": "wina",
-        // Headers say the opposite of the DB on every one of these — the DB must win.
-        "x-yt-jurisdiction": "ID",
-        "x-yt-suspended": "true",
-        "x-yt-business-roles": JSON.stringify({ "biz-fake": "owner" }),
-      }),
-    );
+    const principal = await resolver.resolve(requestForUser("wina"));
     expect(principal.attr.jurisdiction).toBe("AU");
     expect(principal.attr.isSuspended).toBe(false);
     expect(principal.attr.businessRoles).toStrictEqual({ "biz-real": "analyst" });
@@ -206,15 +178,15 @@ describe("AsyncPrincipalResolver — 1.5.b (region, ageBand, suspension, busines
     const resolver = resolverWith({
       profiles: { wina: profileFor({ suspendedAt: new Date("2026-01-01T00:00:00.000Z") }) },
     });
-    const principal = await resolver.resolve(requestWith({ "x-yt-user-id": "wina" }));
+    const principal = await resolver.resolve(requestForUser("wina"));
     expect(principal.attr.isSuspended).toBe(true);
   });
 
   it("ageBand is teen for a 15-year-old and adult for a 40-year-old", async () => {
     const teen = resolverWith({ profiles: { wina: profileFor({ dateOfBirth: "2010-06-01" }) } });
     const adult = resolverWith({ profiles: { wina: profileFor({ dateOfBirth: "1986-06-01" }) } });
-    const teenPrincipal = await teen.resolve(requestWith({ "x-yt-user-id": "wina" }));
-    const adultPrincipal = await adult.resolve(requestWith({ "x-yt-user-id": "wina" }));
+    const teenPrincipal = await teen.resolve(requestForUser("wina"));
+    const adultPrincipal = await adult.resolve(requestForUser("wina"));
     // ageBandFrom computes from `new Date()` internally; this asserts the
     // shape rather than the exact band, since a fixed "now" is not injected
     // — the two dates of birth are chosen far enough apart (16 years either
@@ -223,14 +195,9 @@ describe("AsyncPrincipalResolver — 1.5.b (region, ageBand, suspension, busines
     expect(adultPrincipal.attr.ageBand).toBe("adult");
   });
 
-  it("drops business_user when the profile shows no memberships, even if the header claimed one", async () => {
+  it("drops business_user when the profile shows no memberships at all", async () => {
     const resolver = resolverWith({ profiles: { wina: profileFor() }, memberships: { wina: [] } });
-    const principal = await resolver.resolve(
-      requestWith({
-        "x-yt-user-id": "wina",
-        "x-yt-business-roles": JSON.stringify({ "biz-fake": "owner" }),
-      }),
-    );
+    const principal = await resolver.resolve(requestForUser("wina"));
     expect(principal.roles).not.toContain("business_user");
     expect(principal.attr.businessRoles).toStrictEqual({});
   });
@@ -242,10 +209,10 @@ describe("AsyncPrincipalResolver — 1.5.b (region, ageBand, suspension, busines
     });
     const withoutProfile = resolverWith({ staffRoles: { staffer: ["finance", "ops"] } });
 
-    const p1 = await withProfile.resolve(requestWith({ "x-yt-user-id": "wina" }));
+    const p1 = await withProfile.resolve(requestForUser("wina"));
     expect(p1.roles).toContain("moderator");
 
-    const p2 = await withoutProfile.resolve(requestWith({ "x-yt-user-id": "staffer" }));
+    const p2 = await withoutProfile.resolve(requestForUser("staffer"));
     expect(p2.roles).toContain("finance");
     expect(p2.roles).toContain("ops");
   });

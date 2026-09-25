@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PdpGuard } from "../../shared/authz/pdp.guard";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import { alwaysValidSessionValidator } from "../../shared/testing/fake-session-validator";
 import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
@@ -63,7 +64,7 @@ const profiles = new DrizzleUserProfileRepository(db);
 const businessMemberships = new DrizzleBusinessMembershipReader(db);
 const staffRoles = new DrizzleStaffRoleReader(db);
 const principals = new AsyncPrincipalResolver(
-  new PrincipalService(CONFIG),
+  new PrincipalService(alwaysValidSessionValidator()),
   securityState,
   profiles,
   businessMemberships,
@@ -86,7 +87,7 @@ function contextFor(
   userId: string,
 ): ExecutionContext {
   const request = {
-    headers: { "x-yt-user-id": userId },
+    headers: { cookie: `yt_session=${userId}` },
     params,
     body,
   } as unknown as FastifyRequest;

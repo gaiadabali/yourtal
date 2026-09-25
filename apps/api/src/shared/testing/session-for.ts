@@ -8,29 +8,23 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
  * caller" go through this rather than each inventing its own fixture.
  *
  * `token` is a real `SessionService`-issued opaque token: `AuthService`
- * already validates it (logout, change-password), so `cookie` is not a
- * placeholder — it will start working as an actual `yt_session` cookie the
- * moment `PrincipalService.resolve` reads one (1.5.a), with no change here.
+ * already validates it (logout, change-password), and as of 1.5.a
+ * `PrincipalService.resolve` validates it too — `cookie` is the real
+ * `yt_session` mechanism, not a placeholder.
  *
- * `headers` is the interim half: today `PrincipalService.resolve` still
- * builds the principal from `x-yt-*` headers (EW-02), which know nothing
- * about the session token above. 1.5.a deletes `headers` from this file, in
- * the same commit that deletes that header path, and every caller moves to
- * sending `cookie` instead — see that task's own note.
+ * 1.5.a deleted this interface's old `headers` field (`x-yt-user-id` and
+ * friends) along with the header path in `PrincipalService` it fed — every
+ * caller that used to spread `session.headers` into a request now sends
+ * `Cookie: session.cookie` (or `Authorization: Bearer ${session.token}`)
+ * instead.
  */
 export interface TestSession {
   readonly userId: string;
   readonly email: string;
   /** The raw session token `SessionService.issue` minted at login. */
   readonly token: string;
-  /** `Cookie` header value — real once 1.5.a reads `yt_session`, unused (but harmless) before it. */
+  /** `Cookie` header value, read by `PrincipalService.resolve` (1.5.a). */
   readonly cookie: string;
-  /**
-   * `x-yt-*` headers naming the same user, so a request authorizes
-   * identically whether it is read by `PrincipalService`'s header path or
-   * (once 1.5.a lands) the session cookie above. Removed by 1.5.a.
-   */
-  readonly headers: Readonly<Record<string, string>>;
 }
 
 export interface SessionForOptions {
@@ -38,12 +32,7 @@ export interface SessionForOptions {
   readonly email?: string;
   /** Defaults to a value that satisfies `registerSchema`'s `.min(12)` and is obviously not real. */
   readonly password?: string;
-  /**
-   * Both the account's real `region` (1.4.c, `identity.user_profile.region`)
-   * AND the `x-yt-jurisdiction` compatibility header's value — the two are
-   * the same fact told two ways until 1.5.a deletes the header path.
-   * Defaults to `"AU"`, matching 0.5.a.
-   */
+  /** The account's real `region` (1.4.c, `identity.user_profile.region`). Defaults to `"AU"`, matching 0.5.a. */
   readonly jurisdiction?: "AU" | "ID";
   /** Defaults to an obviously-adult date of birth — pass a recent one to test the age policy. */
   readonly dateOfBirth?: string;
@@ -120,7 +109,6 @@ export async function sessionFor(
     email,
     token,
     cookie: `${SESSION_COOKIE_NAME}=${token}`,
-    headers: { "x-yt-user-id": userId, "x-yt-jurisdiction": jurisdiction },
   };
 }
 

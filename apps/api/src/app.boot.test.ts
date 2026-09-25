@@ -3,6 +3,10 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "./app.module";
+import { sessionFor } from "./shared/testing/session-for";
+import { seedBusinessMembership } from "./shared/testing/seed-business-membership";
+import { createAppDb } from "./shared/persistence/drizzle-client";
+import type { AppDb } from "./shared/persistence/drizzle-client";
 
 /**
  * YT-0527 — the class of bug `policies/_schemas/resource/business.json`
@@ -28,39 +32,37 @@ import { AppModule } from "./app.module";
  * `BusinessModule` actually wires in that environment — the point is the
  * PDP round trip, not the persistence layer, and the assertions below never
  * depend on which one answered.
+ *
+ * 1.5.a: every principal is a real, registered account via `sessionFor` —
+ * the `x-yt-*` headers this file used to build by hand are gone, and
+ * `AsyncPrincipalResolver`'s 1.5.b overlay reads real business roles only
+ * for a principal with a real `identity.user_profile` row.
  */
 
 let app: NestFastifyApplication;
+let db: AppDb;
 
 beforeAll(async () => {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
+  db = createAppDb(process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!);
 });
 
 afterAll(async () => {
   await app.close();
 });
 
-const OWNER_ID = "11111111-1111-4111-8111-111111111111";
-const STRANGER_ID = "22222222-2222-4222-8222-222222222222";
-
-function principalHeaders(userId: string, businessRoles: Record<string, string>) {
-  return {
-    "x-yt-user-id": userId,
-    "x-yt-business-roles": JSON.stringify(businessRoles),
-  };
-}
-
 describe("business:view against a live PDP", () => {
-  const tenantId = "biz-boot-check";
-
   it("an owner of the tenant is not refused by Cerbos", async () => {
+    const session = await sessionFor(app);
+    const businessId = await seedBusinessMembership(db, { userId: session.userId, role: "owner" });
+
     const response = await app.inject({
       method: "GET",
-      url: `/api/${tenantId}/business`,
-      headers: principalHeaders(OWNER_ID, { [tenantId]: "owner" }),
+      url: `/api/${businessId}/business`,
+      headers: { cookie: session.cookie },
     });
     // Whether the business exists in whichever store answered is not this
     // test's concern — a 404 from the use-case is fine. Only authorization
@@ -72,16 +74,26 @@ describe("business:view against a live PDP", () => {
     // Cross-tenant denies structurally: the caller holds a role at a
     // DIFFERENT business, so no derived role in derived_roles/business.yaml
     // matches this resource, and Cerbos is deny-by-default.
+    const stranger = await sessionFor(app);
+    await seedBusinessMembership(db, { userId: stranger.userId, role: "owner" }); // stranger's OWN, different business
+
+    const otherOwner = await sessionFor(app);
+    const tenantId = await seedBusinessMembership(db, { userId: otherOwner.userId, role: "owner" });
+
     const response = await app.inject({
       method: "GET",
       url: `/api/${tenantId}/business`,
-      headers: principalHeaders(STRANGER_ID, { "biz-someone-else": "owner" }),
+      headers: { cookie: stranger.cookie },
     });
     expect(response.statusCode).toBe(403);
   });
 
   it("an anonymous caller is refused", async () => {
-    const response = await app.inject({ method: "GET", url: `/api/${tenantId}/business` });
+    const businessId = await seedBusinessMembership(db, {
+      userId: (await sessionFor(app)).userId,
+      role: "owner",
+    });
+    const response = await app.inject({ method: "GET", url: `/api/${businessId}/business` });
     expect(response.statusCode).toBe(403);
   });
 });
@@ -94,10 +106,11 @@ describe("business:create against a live PDP — the regression this ticket is f
     // Cerbos would reject on schema enforcement and this becomes a 403,
     // indistinguishable from `EFFECT_DENY` to anyone not reading the audit
     // log.
+    const session = await sessionFor(app);
     const response = await app.inject({
       method: "POST",
       url: "/api/businesses",
-      headers: principalHeaders(OWNER_ID, { "irrelevant-for-create": "owner" }),
+      headers: { cookie: session.cookie },
       payload: {},
     });
     // No Idempotency-Key on this request, so a signed-in, authorized caller

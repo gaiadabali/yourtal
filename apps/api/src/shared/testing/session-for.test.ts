@@ -8,10 +8,11 @@ import { sessionFor } from "./session-for";
 
 /**
  * 1.3.d — proves `sessionFor` is a real register+login round trip (not a
- * fixture), that its `headers` authorize a live PDP-guarded route exactly
- * like the raw headers `app.boot.test.ts` builds by hand, and that calling
- * it more than `REGISTER_RATE_LIMIT`'s 5-per-hour cap in the same test run
- * does not throttle — the whole reason it randomises `remoteAddress`.
+ * fixture), that its `cookie` authorizes a live PDP-guarded route (1.5.a:
+ * the real `yt_session` mechanism, not the `x-yt-*` headers this suite used
+ * to build by hand), and that calling it more than `REGISTER_RATE_LIMIT`'s
+ * 5-per-hour cap in the same test run does not throttle — the whole reason
+ * it randomises `remoteAddress`.
  */
 
 let app: NestFastifyApplication;
@@ -36,17 +37,15 @@ describe("sessionFor", () => {
     expect(a.email).not.toBe(b.email);
     expect(a.token).not.toBe(b.token);
     expect(a.cookie).toBe(`yt_session=${a.token}`);
-    expect(a.headers["x-yt-user-id"]).toBe(a.userId);
-    expect(a.headers["x-yt-jurisdiction"]).toBe("AU");
   });
 
-  it("its headers authorize a live PDP-guarded route, same as app.boot.test.ts's hand-built ones", async () => {
+  it("its cookie authorizes a live PDP-guarded route", async () => {
     const session = await sessionFor(app);
 
     const response = await app.inject({
       method: "POST",
       url: "/api/businesses",
-      headers: { ...session.headers, "idempotency-key": randomUUID() },
+      headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
       payload: {},
     });
     // Same assertion app.boot.test.ts makes for a signed-in caller: the PDP
@@ -55,9 +54,14 @@ describe("sessionFor", () => {
     expect(response.statusCode).not.toBe(403);
   });
 
-  it("a jurisdiction override reaches the compatibility header", async () => {
+  it("a jurisdiction override reaches the real profile row, read back through /api/me", async () => {
     const session = await sessionFor(app, { jurisdiction: "ID" });
-    expect(session.headers["x-yt-jurisdiction"]).toBe("ID");
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/me",
+      headers: { cookie: session.cookie },
+    });
+    expect(response.json()).toMatchObject({ profile: { region: "ID" } });
   });
 
   it("survives more calls than REGISTER_RATE_LIMIT's 5-per-IP-per-hour cap", async () => {

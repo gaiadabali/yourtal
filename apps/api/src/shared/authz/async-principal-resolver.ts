@@ -69,7 +69,7 @@ export class AsyncPrincipalResolver {
   ) {}
 
   async resolve(request: FastifyRequest): Promise<Principal> {
-    const base = this.principals.resolve(request);
+    const base = await this.principals.resolve(request);
     if (base.id === "anonymous") {
       return base;
     }

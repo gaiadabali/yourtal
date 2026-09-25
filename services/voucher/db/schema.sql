@@ -191,7 +191,14 @@ CREATE TABLE store.listings (
   -- Added by packages/db/migrations/20260922030000_currency_tagged_money.sql.
   -- 20260925063126 adds UNIQUE (id, currency) on top, not mirrored here: the
   -- drift guard above only compares column names, not constraints.
-  currency                  text        NOT NULL
+  currency                  text        NOT NULL,
+  -- Added by 20260925190000 (1.1.b), mirrored for the drift guard only.
+  region                    text        NOT NULL,
+  audience                  text        NOT NULL,
+  content_category          text        NOT NULL,
+  image_url                 text        NOT NULL,
+  channel                   text        NOT NULL,
+  partial_redemption        text        NOT NULL
 );
 
 CREATE TABLE store.listing_location (

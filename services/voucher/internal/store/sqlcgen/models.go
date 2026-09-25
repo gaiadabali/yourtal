@@ -39,6 +39,12 @@ type StoreListing struct {
 	LifecycleState          string
 	PerUserLimit            *int32
 	Currency                string
+	Region                  string
+	Audience                string
+	ContentCategory         string
+	ImageUrl                string
+	Channel                 string
+	PartialRedemption       string
 }
 
 type StoreListingLocation struct {

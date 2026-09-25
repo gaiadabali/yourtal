@@ -42,6 +42,7 @@ const CONFIG: AppConfig = {
     serviceSecret: "test-only-ledger-service-secret-not-real",
   },
   teenAccounts: false,
+  appEnv: "dev",
 };
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);

@@ -27,6 +27,8 @@ export interface AppConfig {
   };
   /** 1.4.b, F4 — default false everywhere; only 12.1 turns it on, for staging. */
   readonly teenAccounts: boolean;
+  /** 1.6.b — gates `/api/dev/inbox`. Default `"dev"`, same as `Env["APP_ENV"]`. */
+  readonly appEnv: Env["APP_ENV"];
 }
 
 /**
@@ -52,5 +54,6 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       voucherBaseUrl: env.VOUCHER_BASE_URL,
     },
     teenAccounts: env.TEEN_ACCOUNTS,
+    appEnv: env.APP_ENV,
   };
 }

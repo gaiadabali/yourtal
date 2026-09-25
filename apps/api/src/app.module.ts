@@ -7,6 +7,7 @@ import { CampaignModule } from "./modules/campaign/campaign.module";
 import { StoreModule } from "./modules/store/store.module";
 import { WatchModule } from "./modules/watch/watch.module";
 import { CheckpointModule } from "./modules/watch/checkpoint/checkpoint.module";
+import { DevModule } from "./modules/dev/dev.module";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
 import { RESOURCE_ATTRIBUTE_LOADERS } from "./shared/authz/resource-attribute-loader";
@@ -37,6 +38,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     StoreModule,
     WatchModule,
     CheckpointModule,
+    DevModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

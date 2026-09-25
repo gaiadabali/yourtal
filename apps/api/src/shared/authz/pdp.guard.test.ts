@@ -52,6 +52,7 @@ const CONFIG: AppConfig = {
     serviceSecret: "test-only-ledger-service-secret-not-real",
   },
   teenAccounts: false,
+  appEnv: "dev",
 };
 
 let requireAction: ReturnType<typeof vi.fn>;

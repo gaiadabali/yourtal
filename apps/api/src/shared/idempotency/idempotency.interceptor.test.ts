@@ -51,6 +51,7 @@ const CONFIG: AppConfig = {
     serviceSecret: "test-only-ledger-service-secret-not-real",
   },
   teenAccounts: false,
+  appEnv: "dev",
 };
 
 let store: InMemoryIdempotencyStore;

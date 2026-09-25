@@ -33,6 +33,7 @@ function configFor(nodeEnv: AppConfig["nodeEnv"]): AppConfig {
       serviceSecret: "test-only-ledger-service-secret-not-real",
     },
     teenAccounts: false,
+    appEnv: "dev",
   };
 }
 

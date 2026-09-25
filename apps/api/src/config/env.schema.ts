@@ -112,6 +112,16 @@ export const envSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
+
+  /**
+   * The deployment environment, distinct from `NODE_ENV` (the JS runtime
+   * mode) — `apps/web/features/shell/app-env.ts` already reads the same
+   * variable this way for the staging banner (3.1.f) and `2.3.a`'s boot
+   * checks. 1.6.b's `/api/dev/inbox` reads it too: enabled for `dev` and
+   * `staging`, refused in `production` — a reviewer's own inbox is not a
+   * page a real deployment serves.
+   */
+  APP_ENV: z.enum(["dev", "staging", "production"]).default("dev"),
 });
 
 export type Env = z.infer<typeof envSchema>;

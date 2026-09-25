@@ -1,0 +1,111 @@
+---
+name: PlatformSettingSuite
+description: |-
+  1.2.f (F12/F23): per-region economy settings share the `platform_setting`
+  resource with admin's role grants, feature flags and kill switches, but
+  are a DIFFERENT surface within it -- admin never gets the new actions, and
+  `finance` (the role docs/14 section 3 already uses for ledger adjustments)
+  is the one that can change them, under the same two-person rule
+  `two_person_approval_test.yaml` asserts for bulk issuance, settlement cuts
+  and credential rotation.
+tests:
+  - name: admin operates its three actions but never touches the economy
+    input:
+      principals: [admin_root]
+      resources: [kill_switch, region_setting_by_finance_yani]
+      actions:
+        [
+          view,
+          grant_role,
+          set_feature_flag,
+          trip_kill_switch,
+          view_setting,
+          propose_setting,
+          approve_setting,
+        ]
+    expected:
+      # `admin-operates-the-platform`'s own condition excludes any
+      # `region_setting.*` key, so admin keeps its named four actions on
+      # `kill_switch` (a `merchant.kill_switch` key) and loses all seven —
+      # including the four it would otherwise still hold by resource kind
+      # alone — on an economy-settings resource.
+      - principal: admin_root
+        resource: kill_switch
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            grant_role: EFFECT_ALLOW,
+            set_feature_flag: EFFECT_ALLOW,
+            trip_kill_switch: EFFECT_ALLOW,
+            view_setting: EFFECT_DENY,
+            propose_setting: EFFECT_DENY,
+            approve_setting: EFFECT_DENY,
+          }
+      - principal: admin_root
+        resource: region_setting_by_finance_yani
+        actions:
+          {
+            view: EFFECT_DENY,
+            grant_role: EFFECT_DENY,
+            set_feature_flag: EFFECT_DENY,
+            trip_kill_switch: EFFECT_DENY,
+            view_setting: EFFECT_DENY,
+            propose_setting: EFFECT_DENY,
+            approve_setting: EFFECT_DENY,
+          }
+
+  - name: no business role can move the economy, the same STRIDE-E shape as ledger_adjustment
+    input:
+      principals: [budi_owner, citra_admin, dewi_marketer]
+      resources: [region_setting_by_finance_yani]
+      actions: [view_setting, propose_setting, approve_setting]
+    expected:
+      - principal: budi_owner
+        resource: region_setting_by_finance_yani
+        actions:
+          { view_setting: EFFECT_DENY, propose_setting: EFFECT_DENY, approve_setting: EFFECT_DENY }
+      - principal: citra_admin
+        resource: region_setting_by_finance_yani
+        actions:
+          { view_setting: EFFECT_DENY, propose_setting: EFFECT_DENY, approve_setting: EFFECT_DENY }
+      - principal: dewi_marketer
+        resource: region_setting_by_finance_yani
+        actions:
+          { view_setting: EFFECT_DENY, propose_setting: EFFECT_DENY, approve_setting: EFFECT_DENY }
+
+  - name: finance changes the economy, but not their own proposal
+    input:
+      principals: [finance_yani, finance_zaki]
+      resources: [region_setting_by_finance_yani]
+      actions: [view_setting, propose_setting, approve_setting]
+    expected:
+      # yani proposed this change (proposedBy: "yani"), so yani cannot also
+      # approve it -- the two-person rule, enforced in CEL here and again by
+      # `region_setting_approval_rules()` at the database.
+      - principal: finance_yani
+        resource: region_setting_by_finance_yani
+        actions:
+          {
+            view_setting: EFFECT_ALLOW,
+            propose_setting: EFFECT_ALLOW,
+            approve_setting: EFFECT_DENY,
+          }
+      - principal: finance_zaki
+        resource: region_setting_by_finance_yani
+        actions:
+          {
+            view_setting: EFFECT_ALLOW,
+            propose_setting: EFFECT_ALLOW,
+            approve_setting: EFFECT_ALLOW,
+          }
+
+  - name: ops sees the economy for the staff console but cannot change it
+    input:
+      principals: [ops_zul]
+      resources: [region_setting_by_finance_yani]
+      actions: [view_setting, propose_setting, approve_setting]
+    expected:
+      - principal: ops_zul
+        resource: region_setting_by_finance_yani
+        actions:
+          { view_setting: EFFECT_ALLOW, propose_setting: EFFECT_DENY, approve_setting: EFFECT_DENY }

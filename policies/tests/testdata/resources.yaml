@@ -299,6 +299,16 @@ resources:
     attr:
       key: "merchant.kill_switch"
 
+  # 1.2.f: a still-pending region_setting proposal, `proposedBy` set so the
+  # separation-of-duties rule (nobody-approves-their-own-setting-proposal)
+  # has something to compare `P.id` against.
+  region_setting_by_finance_yani:
+    kind: platform_setting
+    id: set-daily-earn-cap-au
+    attr:
+      key: "region_setting.daily_earn_cap"
+      proposedBy: "yani"
+
   charity_settlement_1:
     kind: charity_settlement
     id: chs-1

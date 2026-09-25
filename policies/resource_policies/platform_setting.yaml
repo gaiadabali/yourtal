@@ -10,6 +10,20 @@ description: |-
   deny-by-default does the rest. policies/tests/admin_has_no_data_access_test.yaml
   asserts it, and packages/authz has a drift test that fails if `admin` is
   ever added to another policy without that test being updated.
+
+  1.2.f (F12/F23) adds the per-region economy settings ops here rather than a
+  new resource kind: `region_setting.*` keys and `platform.sim_outbox`-style
+  role grants are both "the platform's own config", one Cerbos resource, and
+  the JSON schema's `proposedBy` field only ever appears on the former. They
+  are DELIBERATELY NOT added to admin's rule above -- admin's surface is the
+  three actions docs/17 names, not "everything in this file" -- so a change
+  to F12's numbers goes through `finance`, the same role docs/14 section 3
+  names for ledger adjustments: "a business admin grants points into an
+  account they control -- Cerbos denies cross-tenant grants outright;
+  finance adjustment is a separate role no business user can hold." Economy
+  settings are that same blast radius (they set the caps and rates the
+  ledger enforces), so they get the same role and the same dual-approval
+  shape as `ledger_adjustment.yaml`, not admin's break-glass one.
 resourcePolicy:
   version: default
   resource: platform_setting
@@ -23,9 +37,55 @@ resourcePolicy:
       actions: ["view", "grant_role", "set_feature_flag", "trip_kill_switch"]
       effect: EFFECT_ALLOW
       roles: ["admin"]
+      # Scoped away from region_setting.* keys, not just left unmentioned:
+      # this is the SAME resource kind as the F12 economy settings below, and
+      # a rule with no key condition would otherwise ALLOW admin these four
+      # named actions on an economy-setting resource too, which is exactly
+      # the "convenience" this file's own header warns against. The economy
+      # settings' own actions (view_setting/propose_setting/approve_setting)
+      # are already absent from admin's list; this condition closes the
+      # remaining gap where a resource merely SHARING the kind would have
+      # let admin's unrelated four actions resolve on it regardless.
+      condition:
+        match:
+          expr: "!R.attr.key.startsWith('region_setting.')"
 
     - name: ops-trips-the-merchant-kill-switch
       # docs/14 section 6: "One click in the ops console, auditable."
       actions: ["view", "trip_kill_switch"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]
+
+    # -- 1.2.f / 9.5.d: per-region economy settings --------------------------
+
+    - name: no-business-role-ever-changes-the-economy
+      # Same STRIDE-E threat ledger_adjustment.yaml closes, one level up: a
+      # business role that could edit F12's caps or rates could indirectly
+      # buy itself a bigger reward ceiling.
+      actions: ["view_setting", "propose_setting", "approve_setting"]
+      effect: EFFECT_DENY
+      roles: ["business_user", "store_device", "user", "anonymous"]
+
+    - name: nobody-approves-their-own-setting-proposal
+      # F23's two-person rule -- the database's own copy of this lives in
+      # `region_setting_approval_rules()` (20260925193000); this is the
+      # surface a staff console must never even offer the button on.
+      actions: ["approve_setting"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: R.attr.proposedBy == P.id
+
+    - name: finance-changes-the-economy
+      actions: ["view_setting", "propose_setting", "approve_setting"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]
+
+    - name: ops-views-the-economy-without-changing-it
+      # Staff console visibility (9.5.d) for the role that already reads
+      # everything else operational, without handing it a second way to
+      # move money the way admin's exclusion above already refuses.
+      actions: ["view_setting"]
       effect: EFFECT_ALLOW
       roles: ["ops"]

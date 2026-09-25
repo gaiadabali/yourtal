@@ -134,7 +134,17 @@ export const RESOURCE_ACTIONS = {
 
   moderation_item: ["view", "approve", "reject"],
 
-  platform_setting: ["view", "grant_role", "set_feature_flag", "trip_kill_switch"],
+  platform_setting: [
+    "view",
+    "grant_role",
+    "set_feature_flag",
+    "trip_kill_switch",
+    // 1.2.f (F12/F23): per-region economy settings, same resource kind,
+    // deliberately absent from admin's rule -- see platform_setting.yaml.
+    "view_setting",
+    "propose_setting",
+    "approve_setting",
+  ],
 
   /** Phase 3 placeholder. */
   charity_settlement: ["view", "view_statement"],

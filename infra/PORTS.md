@@ -65,6 +65,7 @@ main checkout runs compose. The ports are set in each worktree's `.env`.
 | 2                                   | 26320 | 26321 | 26322  | 26323   | 26324      | 26326       | 26325                      |
 | 3                                   | 26330 | 26331 | 26332  | 26333   | 26334      | 26336       | 26335                      |
 | 3b (`yourtal-p1-b` helper worktree) | 26336 | 26337 | 26338  | 26339   | 26340      | 26342       | 26335 (shared with slot 3) |
+| 3c (`yourtal-p1-c` helper worktree) | 26343 | 26344 | 26345  | 26346   | 26347      | 26349       | 26335 (shared with slot 3) |
 
 - web and api read `WEB_PORT` and `PORT`; Playwright reads `PLAYWRIGHT_PORT`
   (the offline config adds 2).
@@ -78,6 +79,11 @@ main checkout runs compose. The ports are set in each worktree's `.env`.
   They do not collide in practice — offline e2e only binds that port for the
   duration of one Playwright run — but do not run slot 3's offline e2e suite
   and slot 3b's `next dev` at the exact same moment.
+- Slot 3c (agent C, F23: per-region settings, 1.2.f) is its own isolated
+  worktree, database (`yourtal_s3c`), Valkey index (`/5`) and MinIO bucket
+  (`yourtal-media-3c`), alongside slots 3 and 3b. It shares slot 3's Cerbos
+  container the same way 3b does, since its only policy work is one resource
+  file (`platform_setting.yaml`) shipped through the main checkout.
 - The media worker runs on the host, not in compose, and needs `ffmpeg` on
   PATH (the dev machine has ffmpeg 8.1.2 from winget). It takes no port.
 

@@ -48,11 +48,14 @@ function componentSchema(id: string): Record<string, unknown> {
 
 /**
  * Schemas deliberately kept out of the published contract, with the reason.
- * Empty today. Anything added here is a decision someone has to defend in
- * review, which is the point of making it explicit rather than allowing the
- * completeness check to be loosened.
+ * Anything added here is a decision someone has to defend in review, which
+ * is the point of making it explicit rather than allowing the completeness
+ * check to be loosened.
  */
-const NOT_PUBLISHED: Readonly<Record<string, string>> = {};
+const NOT_PUBLISHED: Readonly<Record<string, string>> = {
+  regionSettingSchema:
+    "1.2.f's ledger-internal settings row (getSettings/proposeSetting/approveSetting). Internal to the ledger and 9.5.d's staff console, not a public/business-facing HTTP contract -- same reason ledger-internal and voucher-internal's own operation types are not routed through this registry.",
+};
 
 function exportedSchemaNames(): string[] {
   const names: string[] = [];

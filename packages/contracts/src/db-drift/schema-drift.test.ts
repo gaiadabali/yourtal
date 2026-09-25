@@ -363,6 +363,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "ledger.grant": "Same ledger-internals note as ledger.account above.",
   "ledger.point_purchase": "Same ledger-internals note as ledger.account above.",
   "ledger.backing_rate": "Same ledger-internals note as ledger.account above.",
+  "ledger.backing_rate_approval":
+    "The two-person-approval append-only twin of ledger.backing_rate (20260925183000_rate_governance.sql) -- same ledger-internals note as ledger.account above: nothing outside the ledger reads an approval row directly.",
   "ledger.daily_proof": "Same ledger-internals note as ledger.account above.",
   // pg-boss's own schema, installed verbatim from its v40 construction plan by
   // 20260921234000_pgboss_schema.sql (YT-0040). These are a VENDOR's internal
@@ -392,6 +394,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "pgboss.bam": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
   "platform.idempotency":
     "The @yourtal/idempotency package's own dedupe store (packages/idempotency/src/postgres-store.ts) — infrastructure, not a domain contract.",
+  "platform.region_setting":
+    "1.2.f's per-region economy settings (F12/F23) -- a config store, not a domain entity. `regionSettingSchema` (ledger-internal/settings.ts) types the getSettings/proposeSetting/approveSetting operations, not a row-shaped public contract, and is listed in openapi.test.ts's NOT_PUBLISHED for the same reason.",
+  "platform.sim_outbox":
+    "1.6's shared simulated-driver outbox (red line 11) -- infrastructure a reviewer reads through /dev/inbox, not a domain contract any consumer parses.",
   "store.listing_location":
     "The join table behind listingSchema.locations, named in that mapping's fieldsWithNoColumn above. A pure many-to-many join on two foreign keys, with no field of its own to map.",
   "store.listing_price_revision":

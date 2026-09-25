@@ -1,8 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "platform_setting",
-  "description": "Role grants, feature flags and kill switches. docs/17 section 5: admin operates these and has NO direct data access -- enforced by admin appearing in no other resource policy in this repo.",
+  "description": "Role grants, feature flags and kill switches -- plus, since 1.2.f (F12/F23), the per-region economy settings table. `proposedBy` is only present on a `region_setting.*` key: it is what lets `approve_setting`'s separation-of-duties rule (the approver differs from the proposer) be expressed in CEL, the same shape `ledger_adjustment.yaml`'s `R.attr.createdBy == P.id` uses.",
   "type": "object",
   "additionalProperties": false,
-  "properties": { "key": { "type": "string" } }
+  "properties": {
+    "key": { "type": "string" },
+    "proposedBy": { "type": "string" }
+  }
 }

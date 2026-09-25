@@ -124,7 +124,7 @@ describe("password/change", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/auth/password/change",
-      headers: { authorization: `Bearer ${session.token}`, ...session.headers },
+      headers: { authorization: `Bearer ${session.token}` },
       payload: { currentPassword: password, newPassword: "a-brand-new-password-123" },
     });
 
@@ -140,7 +140,7 @@ describe("password/change", () => {
     const first = await app.inject({
       method: "POST",
       url: "/api/auth/password/change",
-      headers: { authorization: `Bearer ${session.token}`, ...session.headers },
+      headers: { authorization: `Bearer ${session.token}` },
       payload: { currentPassword: password, newPassword: "a-second-brand-new-password-456" },
     });
     expect(first.statusCode).toBeLessThan(300);
@@ -152,7 +152,7 @@ describe("password/change", () => {
     const retry = await app.inject({
       method: "POST",
       url: "/api/auth/password/change",
-      headers: { authorization: `Bearer ${session.token}`, ...session.headers },
+      headers: { authorization: `Bearer ${session.token}` },
       payload: { currentPassword: password, newPassword: "a-second-brand-new-password-456" },
     });
     expect(retry.statusCode).toBe(401);

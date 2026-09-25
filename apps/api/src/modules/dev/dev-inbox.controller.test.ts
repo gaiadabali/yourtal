@@ -36,7 +36,7 @@ describe("1.6.d's Check: register -> the verification email appears in /dev/inbo
     const requested = await app.inject({
       method: "POST",
       url: "/api/auth/email/verify/request",
-      headers: { authorization: `Bearer ${session.token}`, ...session.headers },
+      headers: { authorization: `Bearer ${session.token}` },
     });
     expect(requested.statusCode).toBeLessThan(300);
 

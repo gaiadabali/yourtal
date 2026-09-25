@@ -86,9 +86,10 @@ function sessionCookie(request: FastifyRequest): string | undefined {
   return undefined;
 }
 
+/** Same code and message `to-http-exception.ts`'s `session_invalid` case uses — one contract for "sign in again", not two. */
 function invalidSession(): UnauthorizedException {
   return new UnauthorizedException({
-    code: "invalid_session",
-    message: "this session is no longer valid",
+    code: "session_invalid",
+    message: "sign in again to continue",
   });
 }

@@ -31,12 +31,14 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/yourtal/services/voucher/internal/api"
 	"github.com/yourtal/services/voucher/internal/httpx"
 	"github.com/yourtal/services/voucher/internal/idempotency"
 	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/keyring"
 	"github.com/yourtal/services/voucher/internal/merchantauth"
 	"github.com/yourtal/services/voucher/internal/redeem"
+	"github.com/yourtal/services/voucher/internal/serviceauth"
 )
 
 const (
@@ -119,6 +121,31 @@ func run(logger *slog.Logger) error {
 		r.Mount("/", redeem.Routes(logger, network))
 	})
 
+	// 4.5: apps/api's own internal contract, on a SEPARATE route group from
+	// /v1/vouchers above — that one is merchantauth (a merchant's own HMAC
+	// key), this one is serviceauth (only apps/api and apps/worker, signing
+	// with VOUCHER_SERVICE_SECRET). No secret, or a short one, means
+	// /internal/v1 refuses everything: fail closed, never open.
+	serviceVerifier, authErr := serviceauth.New([]byte(os.Getenv("VOUCHER_SERVICE_SECRET")))
+	if authErr != nil {
+		logger.Warn("VOUCHER_SERVICE_SECRET is missing or too short: /internal/v1 refuses every call", "error", authErr)
+	}
+	internal := api.New(logger, pool, minter, network, keys)
+	router.Route("/internal/v1", func(r chi.Router) {
+		if serviceVerifier != nil {
+			r.Use(serviceVerifier.Middleware(logger))
+		} else {
+			r.Use(func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					httpx.WriteError(w, logger, http.StatusServiceUnavailable,
+						"api_error", "service_auth_not_configured",
+						"VOUCHER_SERVICE_SECRET is not set, so no caller can be authenticated")
+				})
+			})
+		}
+		r.Mount("/", internal.Routes())
+	})
+
 	go sweepHolds(ctx, logger, network, verifier)
 
 	router.NotFound(func(w http.ResponseWriter, _ *http.Request) {
@@ -175,11 +202,13 @@ func loadKeys() (*keyring.Keyring, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Both purposes are required at boot, not just voucher_code: a key
-	// directory missing the merchant-HMAC key would otherwise boot cleanly
-	// and fail every redemption call at first use — the exact failure mode
+	// All three are required at boot, not just voucher_code: a key directory
+	// missing the merchant-HMAC or QR key would otherwise boot cleanly and
+	// fail every redemption or QR call at first use — the exact failure mode
 	// this function exists to convert into a startup error.
-	if err := keys.RequirePurposes(keyring.PurposeVoucherCode, keyring.PurposeMerchantHMAC); err != nil {
+	if err := keys.RequirePurposes(
+		keyring.PurposeVoucherCode, keyring.PurposeMerchantHMAC, keyring.PurposeVoucherQR,
+	); err != nil {
 		return nil, err
 	}
 	return keys, nil

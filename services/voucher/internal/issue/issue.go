@@ -50,6 +50,11 @@ var (
 	ErrCodeCollision = errors.New("issue: a minted code already existed")
 	// ErrNotFound — no such voucher or batch.
 	ErrNotFound = errors.New("issue: not found")
+	// ErrWrongSupplier — D12: a batch's supplier must equal its listing's
+	// own merchant. Refused rather than silently corrected, because a
+	// mismatch here is either a caller bug or an attempt to mint a batch
+	// against inventory that is not this business's to sell.
+	ErrWrongSupplier = errors.New("issue: the batch's supplier does not match the listing's merchant")
 )
 
 // Minter issues vouchers.
@@ -74,10 +79,12 @@ func (m *Minter) WithClock(now func() time.Time) *Minter {
 
 // BatchRequest is a supplier asking for inventory to be minted.
 type BatchRequest struct {
-	ID                   uuid.UUID
-	ListingID            uuid.UUID
-	SupplierBusinessID   uuid.UUID
-	RequestedBy          uuid.UUID
+	ID                 uuid.UUID
+	ListingID          uuid.UUID
+	SupplierBusinessID uuid.UUID
+	// RequestedBy is a free-text staff identifier ("staff-1"), the same
+	// convention ledger.backing_rate_approval.approved_by uses — not a uuid.
+	RequestedBy          string
 	Quantity             int32
 	FaceValueMinor       int64
 	SettlementValueMinor int64
@@ -94,28 +101,48 @@ type BatchRequest struct {
 }
 
 // RequestBatch records the request. Nothing is minted yet.
+//
+// D12: `FaceValueMinor`, `SettlementValueMinor`, `Currency`,
+// `PartialPolicy`, `MinimumSpendMinor` and `ExpiresAt` on req are IGNORED —
+// the batch's terms are derived from the listing, not trusted from the
+// caller, and `SupplierBusinessID` must equal the listing's own merchant.
 func (m *Minter) RequestBatch(ctx context.Context, req BatchRequest) error {
-	return sqlcgen.New(m.pool).InsertBatch(ctx, sqlcgen.InsertBatchParams{
+	queries := sqlcgen.New(m.pool)
+
+	listing, err := queries.GetListingForBatch(ctx, pgUUID(req.ListingID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("%w: listing %s", ErrNotFound, req.ListingID)
+	}
+	if err != nil {
+		return fmt.Errorf("reading listing %s for a batch: %w", req.ListingID, err)
+	}
+	if asUUID(listing.MerchantID) != req.SupplierBusinessID {
+		return fmt.Errorf("%w: batch supplier %s, listing merchant %s",
+			ErrWrongSupplier, req.SupplierBusinessID, asUUID(listing.MerchantID))
+	}
+
+	return queries.InsertBatch(ctx, sqlcgen.InsertBatchParams{
 		ID:                      pgUUID(req.ID),
 		ListingID:               pgUUID(req.ListingID),
 		SupplierBusinessID:      pgUUID(req.SupplierBusinessID),
-		RequestedBy:             pgUUID(req.RequestedBy),
+		RequestedBy:             req.RequestedBy,
 		Quantity:                req.Quantity,
-		FaceValueMinor:          req.FaceValueMinor,
-		SettlementValueMinor:    req.SettlementValueMinor,
-		Currency:                req.Currency,
+		FaceValueMinor:          listing.FaceValueMinor,
+		SettlementValueMinor:    listing.SettlementValueMinor,
+		Currency:                listing.Currency,
 		Transferable:            req.Transferable,
-		PartialRedemptionPolicy: req.PartialPolicy,
-		MinimumSpendMinor:       req.MinimumSpendMinor,
-		ExpiresAt:               pgTime(req.ExpiresAt),
+		PartialRedemptionPolicy: listing.PartialRedemptionPolicy,
+		MinimumSpendMinor:       listing.MinimumSpendMinor,
+		ExpiresAt:               listing.ExpiresAt,
 		FundingReference:        req.FundingReference,
 	})
 }
 
-// Approve is the second person. A self-approval matches no row.
-func (m *Minter) Approve(ctx context.Context, batchID, approver uuid.UUID) error {
+// Approve is the second person. A self-approval matches no row. approver is
+// a free-text staff identifier, same as BatchRequest.RequestedBy.
+func (m *Minter) Approve(ctx context.Context, batchID uuid.UUID, approver string) error {
 	_, err := sqlcgen.New(m.pool).ApproveBatch(ctx, sqlcgen.ApproveBatchParams{
-		ID: pgUUID(batchID), ApprovedBy: pgUUID(approver),
+		ID: pgUUID(batchID), ApprovedBy: &approver,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		// Deliberately one error for two causes. Distinguishing "you cannot
@@ -238,6 +265,9 @@ func (m *Minter) mintOne(
 		// voucher is denominated in whatever its batch was, not re-derived
 		// from the listing again at mint time.
 		Currency: batch.Currency,
+		// region (4.5.e): the listing's own, read fresh here since batch
+		// carries no region column of its own.
+		Region: listing.region,
 	}); err != nil {
 		return "", fmt.Errorf("inserting voucher %s: %w", voucherID, err)
 	}
@@ -293,6 +323,10 @@ func manifest(ids []uuid.UUID, hashes []string) string {
 }
 
 func pgUUID(id uuid.UUID) pgtype.UUID { return pgtype.UUID{Bytes: id, Valid: true} }
+
+// asUUID narrows a pgtype.UUID to a uuid.UUID. Safe for every column this
+// package reads, all of which are NOT NULL.
+func asUUID(value pgtype.UUID) uuid.UUID { return value.Bytes }
 
 // noUUID is SQL NULL for a uuid parameter. pgtype.UUID carries its own
 // Valid flag, so a null is an invalid value rather than a nil pointer —

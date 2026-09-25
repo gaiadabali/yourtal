@@ -35,6 +35,7 @@ func TestEveryPair(t *testing.T) {
 		{allocated, active}:  true,
 		{allocated, voided}:  true,
 		{allocated, expired}: true,
+		{allocated, minted}:  true,
 
 		{active, held}:     true,
 		{active, redeemed}: true,

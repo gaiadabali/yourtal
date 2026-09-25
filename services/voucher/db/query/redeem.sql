@@ -4,12 +4,16 @@
 -- order. Both surface as unique violations, which the caller maps to
 -- distinct refusals — "that voucher is busy" and "you already authorized
 -- this order" need different answers at a till.
+--
+-- `device_id` ($9, 4.5.c) is NULL for a legacy merchant-wide credential and
+-- set for a device-scoped one (4.5.d) or `authorizeAsDevice` (4.5's internal
+-- path) — recorded so void/refund can refuse a device principal.
 INSERT INTO voucher.authorization
   (id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref, state, expires_at,
-   order_total_minor)
-VALUES ($1, $2, $3, $4, $5, $6, 'held', $7, $8)
+   order_total_minor, device_id)
+VALUES ($1, $2, $3, $4, $5, $6, 'held', $7, $8, $9)
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-          state, expires_at, created_at, resolved_at, order_total_minor;
+          state, expires_at, created_at, resolved_at, order_total_minor, device_id;
 
 -- name: GetAuthorization :one
 -- YT-0571 audit: no merchant predicate, by consideration rather than by
@@ -24,7 +28,7 @@ RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_re
 -- check already does the comparison it exists to do, and the other caller
 -- never had an unscoped id in the first place.
 SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-       state, expires_at, created_at, resolved_at, order_total_minor
+       state, expires_at, created_at, resolved_at, order_total_minor, device_id
 FROM voucher.authorization WHERE id = $1;
 
 -- name: GetAuthorizationForOrder :one
@@ -32,7 +36,7 @@ FROM voucher.authorization WHERE id = $1;
 -- back the hold it already has, rather than a duplicate-key error it would
 -- have to interpret.
 SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-       state, expires_at, created_at, resolved_at, order_total_minor
+       state, expires_at, created_at, resolved_at, order_total_minor, device_id
 FROM voucher.authorization WHERE merchant_id = $1 AND merchant_order_ref = $2;
 
 -- name: ResolveAuthorization :one
@@ -57,7 +61,7 @@ UPDATE voucher.authorization
    SET state = $2, resolved_at = now()
  WHERE id = $1 AND merchant_id = $3 AND state = 'held' AND expires_at > now()
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-          state, expires_at, created_at, resolved_at, order_total_minor;
+          state, expires_at, created_at, resolved_at, order_total_minor, device_id;
 
 -- name: ExpireStaleHolds :many
 -- The sweeper. Idempotent by construction: it only matches rows still
@@ -174,17 +178,46 @@ VALUES ($1, $2, $3, $4, $5);
 UPDATE voucher.kill_switch SET lifted_by = $2, lifted_at = now()
  WHERE id = $1 AND lifted_at IS NULL;
 
+-- name: ListActiveKillSwitches :many
+-- 4.5.d's HTTP route: everything currently in force, newest first.
+SELECT id, scope, scope_id, reason, enabled_by, enabled_at, lifted_by, lifted_at
+FROM voucher.kill_switch WHERE lifted_at IS NULL
+ORDER BY enabled_at DESC;
+
+-- name: SumMerchantCaptures :one
+-- 4.5's merchant stats. `amount_minor` and currency come off the
+-- authorization the capture settled, not the capture row (which has no
+-- currency of its own) — the same join GetCaptureByReceipt uses.
+SELECT COUNT(*)::bigint AS capture_count,
+       COALESCE(SUM(c.amount_minor), 0)::bigint AS captured_minor,
+       COALESCE(MIN(a.currency), '')::text AS currency
+FROM voucher.capture c
+JOIN voucher.authorization a ON a.id = c.authorization_id
+WHERE a.merchant_id = $1 AND c.created_at >= $2 AND c.created_at < $3;
+
 -- name: GetActiveCredential :one
 SELECT key_id, merchant_id, wrapped_data_key, nonce, ciphertext, key_purpose,
-       key_version, state, created_at, not_after, revoked_at
+       key_version, state, created_at, not_after, revoked_at, device_id
 FROM voucher.merchant_credential
 WHERE key_id = $1 AND state <> 'revoked'
   AND (not_after IS NULL OR not_after > now());
 
+-- name: GetCredential :one
+-- Unlike GetActiveCredential, returns a row in any state — 4.5.d's rotate
+-- and revoke need to read a credential's merchant/device even after it has
+-- been superseded or revoked (rotating a key twice, or revoking one already
+-- rotated, must not 404).
+SELECT key_id, merchant_id, wrapped_data_key, nonce, ciphertext, key_purpose,
+       key_version, state, created_at, not_after, revoked_at, device_id
+FROM voucher.merchant_credential WHERE key_id = $1;
+
 -- name: InsertCredential :exec
+-- `device_id` (4.5.d): every credential this API issues is device-scoped.
+-- NULL is reserved for a legacy merchant-wide key, which nothing here
+-- creates but void/refund still has to recognise (4.5.c).
 INSERT INTO voucher.merchant_credential
-  (key_id, merchant_id, wrapped_data_key, nonce, ciphertext, key_purpose, key_version, state)
-VALUES ($1, $2, $3, $4, $5, $6, $7, 'active');
+  (key_id, merchant_id, wrapped_data_key, nonce, ciphertext, key_purpose, key_version, state, device_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8);
 
 -- name: SupersedeCredential :exec
 -- Rotation with overlap: the old key keeps working until `not_after`,

@@ -108,6 +108,13 @@ export const envSchema = z.object({
     .default("local-only-reward-attestation-secret-not-real"),
   /** Only read when `LEDGER_MODE=live` (`VoucherInternalClient` shares the same switch). */
   VOUCHER_BASE_URL: z.url().default("http://voucher:8080"),
+  /**
+   * The HMAC secret api and worker sign voucher-internal calls with
+   * (services/voucher/internal/serviceauth, 4.5). At least 32 bytes, the
+   * voucher service's own minimum. The default is the local stack's, never a
+   * real one.
+   */
+  VOUCHER_SERVICE_SECRET: z.string().min(32).default("local-only-voucher-service-secret-not-real"),
 
   /**
    * Feature flag: whether a 13-17-year-old may register at all, with

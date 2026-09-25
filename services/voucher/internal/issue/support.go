@@ -36,6 +36,9 @@ type listingTerms struct {
 	merchantName string
 	title        string
 	locationID   pgtype.UUID
+	// region (4.5.e): AU is AU and ID is ID (F2). Carried onto the voucher
+	// at mint time, same as merchantName and title.
+	region string
 }
 
 // listingFor reads the terms and picks the branch this batch's vouchers are
@@ -66,6 +69,7 @@ func (m *Minter) listingFor(
 		merchantName: row.MerchantName,
 		title:        row.Title,
 		locationID:   row.LocationID,
+		region:       row.Region,
 	}, nil
 }
 
@@ -122,11 +126,17 @@ type MoveRequest struct {
 	ValueAdjustment bool
 	Reason          lifecycle.VoidReason
 	Owner           *uuid.UUID
-	RemainingMinor  int64
-	Version         int32
-	EventType       string
-	Detail          map[string]string
-	At              time.Time
+	// SagaID and ReservedUntil are 4.5.a's reservation fields. Nil leaves the
+	// column as it was (COALESCE in the query), same as Owner — only
+	// `Reserve` sets them; `release`/`activate` leave the stale value in
+	// place, which is harmless since `state` governs availability.
+	SagaID         *string
+	ReservedUntil  *time.Time
+	RemainingMinor int64
+	Version        int32
+	EventType      string
+	Detail         map[string]string
+	At             time.Time
 }
 
 // Move applies a transition inside a caller's transaction.
@@ -161,6 +171,11 @@ func Move(
 		owner = pgUUID(*req.Owner)
 	}
 
+	var reservedUntil pgtype.Timestamptz
+	if req.ReservedUntil != nil {
+		reservedUntil = pgtype.Timestamptz{Time: *req.ReservedUntil, Valid: true}
+	}
+
 	moved, err := queries.TransitionVoucher(ctx, sqlcgen.TransitionVoucherParams{
 		ID:                  pgUUID(req.VoucherID),
 		State:               string(req.To),
@@ -168,6 +183,8 @@ func Move(
 		Version:             req.Version,
 		RemainingValueMinor: req.RemainingMinor,
 		OwnerID:             owner,
+		SagaID:              req.SagaID,
+		ReservedUntil:       reservedUntil,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return sqlcgen.TransitionVoucherRow{}, fmt.Errorf("%w: voucher %s at version %d",

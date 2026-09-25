@@ -114,8 +114,8 @@ async function seedVouchers(pool: pg.Pool, listings: readonly Listing[]): Promis
            (id, listing_id, owner_id, merchant_id, merchant_name, title,
             face_value_minor, remaining_value_minor, partial_redemption_policy,
             minimum_spend_minor, transferable, state, void_reason, issued_at,
-            expires_at, location_id, currency)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+            expires_at, location_id, currency, region)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
          ON CONFLICT (id) DO NOTHING`,
         [
           coherent.id,
@@ -135,6 +135,9 @@ async function seedVouchers(pool: pg.Pool, listings: readonly Listing[]): Promis
           coherent.expiresAt,
           coherent.location.id,
           coherent.currency,
+          // 4.5.e: a voucher carries its own region, denormalised from the
+          // listing at mint time in the real engine — the seed mirrors that.
+          listing.region,
         ],
       );
       written += result.rowCount ?? 0;

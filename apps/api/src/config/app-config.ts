@@ -27,6 +27,8 @@ export interface AppConfig {
     /** Signs reward completions (4.4.c); optional so fake-mode test configs need not name it. */
     readonly rewardAttestationSecret?: string;
     readonly voucherBaseUrl: string;
+    /** services/voucher/internal/serviceauth's secret — a separate service, a separate secret. */
+    readonly voucherServiceSecret: string;
   };
   /** 1.4.b, F4 — default false everywhere; only 12.1 turns it on, for staging. */
   readonly teenAccounts: boolean;
@@ -57,6 +59,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       serviceSecret: env.LEDGER_SERVICE_SECRET,
       rewardAttestationSecret: env.REWARD_ATTESTATION_SECRET,
       voucherBaseUrl: env.VOUCHER_BASE_URL,
+      voucherServiceSecret: env.VOUCHER_SERVICE_SECRET,
     },
     teenAccounts: env.TEEN_ACCOUNTS,
     appEnv: env.APP_ENV,

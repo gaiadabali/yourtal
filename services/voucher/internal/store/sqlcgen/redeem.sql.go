@@ -105,7 +105,7 @@ func (q *Queries) ExpireStaleHolds(ctx context.Context) ([]ExpireStaleHoldsRow, 
 
 const getActiveCredential = `-- name: GetActiveCredential :one
 SELECT key_id, merchant_id, wrapped_data_key, nonce, ciphertext, key_purpose,
-       key_version, state, created_at, not_after, revoked_at
+       key_version, state, created_at, not_after, revoked_at, device_id
 FROM voucher.merchant_credential
 WHERE key_id = $1 AND state <> 'revoked'
   AND (not_after IS NULL OR not_after > now())
@@ -126,13 +126,14 @@ func (q *Queries) GetActiveCredential(ctx context.Context, keyID string) (Vouche
 		&i.CreatedAt,
 		&i.NotAfter,
 		&i.RevokedAt,
+		&i.DeviceID,
 	)
 	return i, err
 }
 
 const getAuthorization = `-- name: GetAuthorization :one
 SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-       state, expires_at, created_at, resolved_at, order_total_minor
+       state, expires_at, created_at, resolved_at, order_total_minor, device_id
 FROM voucher.authorization WHERE id = $1
 `
 
@@ -162,13 +163,14 @@ func (q *Queries) GetAuthorization(ctx context.Context, id pgtype.UUID) (Voucher
 		&i.CreatedAt,
 		&i.ResolvedAt,
 		&i.OrderTotalMinor,
+		&i.DeviceID,
 	)
 	return i, err
 }
 
 const getAuthorizationForOrder = `-- name: GetAuthorizationForOrder :one
 SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-       state, expires_at, created_at, resolved_at, order_total_minor
+       state, expires_at, created_at, resolved_at, order_total_minor, device_id
 FROM voucher.authorization WHERE merchant_id = $1 AND merchant_order_ref = $2
 `
 
@@ -195,6 +197,7 @@ func (q *Queries) GetAuthorizationForOrder(ctx context.Context, arg GetAuthoriza
 		&i.CreatedAt,
 		&i.ResolvedAt,
 		&i.OrderTotalMinor,
+		&i.DeviceID,
 	)
 	return i, err
 }
@@ -262,6 +265,36 @@ func (q *Queries) GetCaptureByReceipt(ctx context.Context, arg GetCaptureByRecei
 	return i, err
 }
 
+const getCredential = `-- name: GetCredential :one
+SELECT key_id, merchant_id, wrapped_data_key, nonce, ciphertext, key_purpose,
+       key_version, state, created_at, not_after, revoked_at, device_id
+FROM voucher.merchant_credential WHERE key_id = $1
+`
+
+// Unlike GetActiveCredential, returns a row in any state — 4.5.d's rotate
+// and revoke need to read a credential's merchant/device even after it has
+// been superseded or revoked (rotating a key twice, or revoking one already
+// rotated, must not 404).
+func (q *Queries) GetCredential(ctx context.Context, keyID string) (VoucherMerchantCredential, error) {
+	row := q.db.QueryRow(ctx, getCredential, keyID)
+	var i VoucherMerchantCredential
+	err := row.Scan(
+		&i.KeyID,
+		&i.MerchantID,
+		&i.WrappedDataKey,
+		&i.Nonce,
+		&i.Ciphertext,
+		&i.KeyPurpose,
+		&i.KeyVersion,
+		&i.State,
+		&i.CreatedAt,
+		&i.NotAfter,
+		&i.RevokedAt,
+		&i.DeviceID,
+	)
+	return i, err
+}
+
 const getRefundByRef = `-- name: GetRefundByRef :one
 SELECT id, capture_id, amount_minor, reason, created_at, refund_ref
 FROM voucher.refund WHERE capture_id = $1 AND refund_ref = $2
@@ -309,10 +342,10 @@ func (q *Queries) InsertAttempt(ctx context.Context, arg InsertAttemptParams) er
 const insertAuthorization = `-- name: InsertAuthorization :one
 INSERT INTO voucher.authorization
   (id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref, state, expires_at,
-   order_total_minor)
-VALUES ($1, $2, $3, $4, $5, $6, 'held', $7, $8)
+   order_total_minor, device_id)
+VALUES ($1, $2, $3, $4, $5, $6, 'held', $7, $8, $9)
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-          state, expires_at, created_at, resolved_at, order_total_minor
+          state, expires_at, created_at, resolved_at, order_total_minor, device_id
 `
 
 type InsertAuthorizationParams struct {
@@ -324,6 +357,7 @@ type InsertAuthorizationParams struct {
 	MerchantOrderRef string
 	ExpiresAt        pgtype.Timestamptz
 	OrderTotalMinor  *int64
+	DeviceID         *string
 }
 
 // Places the hold. Two unique indexes do the work that no service check
@@ -331,6 +365,10 @@ type InsertAuthorizationParams struct {
 // order. Both surface as unique violations, which the caller maps to
 // distinct refusals — "that voucher is busy" and "you already authorized
 // this order" need different answers at a till.
+//
+// `device_id` ($9, 4.5.c) is NULL for a legacy merchant-wide credential and
+// set for a device-scoped one (4.5.d) or `authorizeAsDevice` (4.5's internal
+// path) — recorded so void/refund can refuse a device principal.
 func (q *Queries) InsertAuthorization(ctx context.Context, arg InsertAuthorizationParams) (VoucherAuthorization, error) {
 	row := q.db.QueryRow(ctx, insertAuthorization,
 		arg.ID,
@@ -341,6 +379,7 @@ func (q *Queries) InsertAuthorization(ctx context.Context, arg InsertAuthorizati
 		arg.MerchantOrderRef,
 		arg.ExpiresAt,
 		arg.OrderTotalMinor,
+		arg.DeviceID,
 	)
 	var i VoucherAuthorization
 	err := row.Scan(
@@ -355,6 +394,7 @@ func (q *Queries) InsertAuthorization(ctx context.Context, arg InsertAuthorizati
 		&i.CreatedAt,
 		&i.ResolvedAt,
 		&i.OrderTotalMinor,
+		&i.DeviceID,
 	)
 	return i, err
 }
@@ -401,8 +441,8 @@ func (q *Queries) InsertCapture(ctx context.Context, arg InsertCaptureParams) (V
 
 const insertCredential = `-- name: InsertCredential :exec
 INSERT INTO voucher.merchant_credential
-  (key_id, merchant_id, wrapped_data_key, nonce, ciphertext, key_purpose, key_version, state)
-VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
+  (key_id, merchant_id, wrapped_data_key, nonce, ciphertext, key_purpose, key_version, state, device_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
 `
 
 type InsertCredentialParams struct {
@@ -413,8 +453,12 @@ type InsertCredentialParams struct {
 	Ciphertext     []byte
 	KeyPurpose     string
 	KeyVersion     int32
+	DeviceID       *string
 }
 
+// `device_id` (4.5.d): every credential this API issues is device-scoped.
+// NULL is reserved for a legacy merchant-wide key, which nothing here
+// creates but void/refund still has to recognise (4.5.c).
 func (q *Queries) InsertCredential(ctx context.Context, arg InsertCredentialParams) error {
 	_, err := q.db.Exec(ctx, insertCredential,
 		arg.KeyID,
@@ -424,6 +468,7 @@ func (q *Queries) InsertCredential(ctx context.Context, arg InsertCredentialPara
 		arg.Ciphertext,
 		arg.KeyPurpose,
 		arg.KeyVersion,
+		arg.DeviceID,
 	)
 	return err
 }
@@ -501,6 +546,42 @@ func (q *Queries) LiftKillSwitch(ctx context.Context, arg LiftKillSwitchParams) 
 	return err
 }
 
+const listActiveKillSwitches = `-- name: ListActiveKillSwitches :many
+SELECT id, scope, scope_id, reason, enabled_by, enabled_at, lifted_by, lifted_at
+FROM voucher.kill_switch WHERE lifted_at IS NULL
+ORDER BY enabled_at DESC
+`
+
+// 4.5.d's HTTP route: everything currently in force, newest first.
+func (q *Queries) ListActiveKillSwitches(ctx context.Context) ([]VoucherKillSwitch, error) {
+	rows, err := q.db.Query(ctx, listActiveKillSwitches)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []VoucherKillSwitch
+	for rows.Next() {
+		var i VoucherKillSwitch
+		if err := rows.Scan(
+			&i.ID,
+			&i.Scope,
+			&i.ScopeID,
+			&i.Reason,
+			&i.EnabledBy,
+			&i.EnabledAt,
+			&i.LiftedBy,
+			&i.LiftedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const pruneSeenSignatures = `-- name: PruneSeenSignatures :execrows
 DELETE FROM voucher.merchant_signature_seen WHERE seen_at < now() - interval '10 minutes'
 `
@@ -538,7 +619,7 @@ UPDATE voucher.authorization
    SET state = $2, resolved_at = now()
  WHERE id = $1 AND merchant_id = $3 AND state = 'held' AND expires_at > now()
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-          state, expires_at, created_at, resolved_at, order_total_minor
+          state, expires_at, created_at, resolved_at, order_total_minor, device_id
 `
 
 type ResolveAuthorizationParams struct {
@@ -579,6 +660,7 @@ func (q *Queries) ResolveAuthorization(ctx context.Context, arg ResolveAuthoriza
 		&i.CreatedAt,
 		&i.ResolvedAt,
 		&i.OrderTotalMinor,
+		&i.DeviceID,
 	)
 	return i, err
 }
@@ -592,6 +674,37 @@ UPDATE voucher.merchant_credential SET state = 'revoked', revoked_at = now()
 func (q *Queries) RevokeCredential(ctx context.Context, keyID string) error {
 	_, err := q.db.Exec(ctx, revokeCredential, keyID)
 	return err
+}
+
+const sumMerchantCaptures = `-- name: SumMerchantCaptures :one
+SELECT COUNT(*)::bigint AS capture_count,
+       COALESCE(SUM(c.amount_minor), 0)::bigint AS captured_minor,
+       COALESCE(MIN(a.currency), '')::text AS currency
+FROM voucher.capture c
+JOIN voucher.authorization a ON a.id = c.authorization_id
+WHERE a.merchant_id = $1 AND c.created_at >= $2 AND c.created_at < $3
+`
+
+type SumMerchantCapturesParams struct {
+	MerchantID  pgtype.UUID
+	CreatedAt   pgtype.Timestamptz
+	CreatedAt_2 pgtype.Timestamptz
+}
+
+type SumMerchantCapturesRow struct {
+	CaptureCount  int64
+	CapturedMinor int64
+	Currency      string
+}
+
+// 4.5's merchant stats. `amount_minor` and currency come off the
+// authorization the capture settled, not the capture row (which has no
+// currency of its own) — the same join GetCaptureByReceipt uses.
+func (q *Queries) SumMerchantCaptures(ctx context.Context, arg SumMerchantCapturesParams) (SumMerchantCapturesRow, error) {
+	row := q.db.QueryRow(ctx, sumMerchantCaptures, arg.MerchantID, arg.CreatedAt, arg.CreatedAt_2)
+	var i SumMerchantCapturesRow
+	err := row.Scan(&i.CaptureCount, &i.CapturedMinor, &i.Currency)
+	return i, err
 }
 
 const sumRefunds = `-- name: SumRefunds :one

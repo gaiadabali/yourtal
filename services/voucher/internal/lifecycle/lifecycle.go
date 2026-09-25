@@ -86,11 +86,12 @@ var Transitions = map[State][]State{
 	// A minted voucher is inventory. It can be claimed, killed, or reach
 	// its expiry sitting in the batch unsold.
 	Minted: {Allocated, Voided, Expired},
-	// Allocation is undone by voiding, not by returning to `minted`: the
-	// redemption it was allocated against happened, and a voucher that
-	// could silently rejoin inventory would be one the saga's compensation
-	// could hand to a second user.
-	Allocated: {Active, Voided, Expired},
+	// Allocated -> Minted is 4.5's `release`: the burn saga's compensation
+	// when the reservation never got a burn behind it (the caller checks
+	// `getBurn` first — this package only has to make the move legal). It is
+	// NOT the general "undo an allocation" — once an allocation has a burn,
+	// only Voided/Expired apply, same as before.
+	Allocated: {Active, Voided, Expired, Minted},
 	Active:    {Held, Redeemed, Expired, Voided},
 	// A hold ends in exactly three ways: captured (redeemed), released back
 	// to active (void or TTL expiry of the HOLD), or the voucher itself is

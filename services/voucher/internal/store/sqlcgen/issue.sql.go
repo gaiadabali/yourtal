@@ -23,7 +23,7 @@ RETURNING id, listing_id, supplier_business_id, requested_by, approved_by, quant
 
 type ApproveBatchParams struct {
 	ID         pgtype.UUID
-	ApprovedBy pgtype.UUID
+	ApprovedBy *string
 }
 
 // The two-person rule as a statement rather than as a check the caller runs
@@ -98,7 +98,8 @@ const findVoucherByCodeHash = `-- name: FindVoucherByCodeHash :one
 SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title,
        v.face_value_minor, v.remaining_value_minor, v.partial_redemption_policy,
        v.minimum_spend_minor, v.transferable, v.issued_at, v.expires_at,
-       v.location_id, v.state, v.void_reason, v.batch_id, v.version, v.currency
+       v.location_id, v.state, v.void_reason, v.batch_id, v.version, v.currency,
+       v.region, v.saga_id, v.reserved_until
 FROM voucher.vouchers v
 JOIN voucher.code_custody c ON c.voucher_id = v.id
 WHERE c.code_hash = $1
@@ -140,6 +141,9 @@ func (q *Queries) FindVoucherByCodeHash(ctx context.Context, codeHash string) (V
 		&i.BatchID,
 		&i.Version,
 		&i.Currency,
+		&i.Region,
+		&i.SagaID,
+		&i.ReservedUntil,
 	)
 	return i, err
 }
@@ -225,8 +229,45 @@ func (q *Queries) GetCodeCustody(ctx context.Context, voucherID pgtype.UUID) (Ge
 	return i, err
 }
 
+const getListingForBatch = `-- name: GetListingForBatch :one
+SELECT id, merchant_id, currency, face_value_minor, settlement_value_minor,
+       partial_redemption_policy, minimum_spend_minor, expires_at
+FROM store.listings WHERE id = $1
+`
+
+type GetListingForBatchRow struct {
+	ID                      pgtype.UUID
+	MerchantID              pgtype.UUID
+	Currency                string
+	FaceValueMinor          int64
+	SettlementValueMinor    int64
+	PartialRedemptionPolicy string
+	MinimumSpendMinor       *int64
+	ExpiresAt               pgtype.Timestamptz
+}
+
+// 4.5.a, D12: a batch's terms are DERIVED from the listing, not trusted from
+// the caller. `merchant_id` here is checked against the request's supplier
+// before a batch is ever inserted (D12's "a batch for listing L is
+// requested with face 500,000 and currency AUD" scenario).
+func (q *Queries) GetListingForBatch(ctx context.Context, id pgtype.UUID) (GetListingForBatchRow, error) {
+	row := q.db.QueryRow(ctx, getListingForBatch, id)
+	var i GetListingForBatchRow
+	err := row.Scan(
+		&i.ID,
+		&i.MerchantID,
+		&i.Currency,
+		&i.FaceValueMinor,
+		&i.SettlementValueMinor,
+		&i.PartialRedemptionPolicy,
+		&i.MinimumSpendMinor,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
 const getListingTerms = `-- name: GetListingTerms :one
-SELECT l.id, l.merchant_id, l.merchant_name, l.title, ll.location_id
+SELECT l.id, l.merchant_id, l.merchant_name, l.title, l.region, ll.location_id
 FROM store.listings l
 JOIN store.listing_location ll ON ll.listing_id = l.id
 WHERE l.id = $1
@@ -239,6 +280,7 @@ type GetListingTermsRow struct {
 	MerchantID   pgtype.UUID
 	MerchantName string
 	Title        string
+	Region       string
 	LocationID   pgtype.UUID
 }
 
@@ -260,7 +302,72 @@ func (q *Queries) GetListingTerms(ctx context.Context, id pgtype.UUID) (GetListi
 		&i.MerchantID,
 		&i.MerchantName,
 		&i.Title,
+		&i.Region,
 		&i.LocationID,
+	)
+	return i, err
+}
+
+const getOwnedVoucher = `-- name: GetOwnedVoucher :one
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency, saga_id
+FROM voucher.vouchers WHERE id = $1 AND owner_id = $2
+`
+
+type GetOwnedVoucherParams struct {
+	ID      pgtype.UUID
+	OwnerID pgtype.UUID
+}
+
+type GetOwnedVoucherRow struct {
+	ID                      pgtype.UUID
+	ListingID               pgtype.UUID
+	OwnerID                 pgtype.UUID
+	MerchantID              pgtype.UUID
+	MerchantName            string
+	Title                   string
+	FaceValueMinor          int64
+	RemainingValueMinor     int64
+	PartialRedemptionPolicy string
+	MinimumSpendMinor       *int64
+	Transferable            bool
+	IssuedAt                pgtype.Timestamptz
+	ExpiresAt               pgtype.Timestamptz
+	LocationID              pgtype.UUID
+	State                   string
+	VoidReason              *string
+	BatchID                 pgtype.UUID
+	Version                 int32
+	Currency                string
+	SagaID                  *string
+}
+
+func (q *Queries) GetOwnedVoucher(ctx context.Context, arg GetOwnedVoucherParams) (GetOwnedVoucherRow, error) {
+	row := q.db.QueryRow(ctx, getOwnedVoucher, arg.ID, arg.OwnerID)
+	var i GetOwnedVoucherRow
+	err := row.Scan(
+		&i.ID,
+		&i.ListingID,
+		&i.OwnerID,
+		&i.MerchantID,
+		&i.MerchantName,
+		&i.Title,
+		&i.FaceValueMinor,
+		&i.RemainingValueMinor,
+		&i.PartialRedemptionPolicy,
+		&i.MinimumSpendMinor,
+		&i.Transferable,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.LocationID,
+		&i.State,
+		&i.VoidReason,
+		&i.BatchID,
+		&i.Version,
+		&i.Currency,
+		&i.SagaID,
 	)
 	return i, err
 }
@@ -269,7 +376,7 @@ const getVoucher = `-- name: GetVoucher :one
 SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
        remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
        transferable, issued_at, expires_at, location_id, state, void_reason,
-       batch_id, version, currency
+       batch_id, version, currency, region, saga_id, reserved_until
 FROM voucher.vouchers WHERE id = $1
 `
 
@@ -285,6 +392,131 @@ FROM voucher.vouchers WHERE id = $1
 func (q *Queries) GetVoucher(ctx context.Context, id pgtype.UUID) (VoucherVoucher, error) {
 	row := q.db.QueryRow(ctx, getVoucher, id)
 	var i VoucherVoucher
+	err := row.Scan(
+		&i.ID,
+		&i.ListingID,
+		&i.OwnerID,
+		&i.MerchantID,
+		&i.MerchantName,
+		&i.Title,
+		&i.FaceValueMinor,
+		&i.RemainingValueMinor,
+		&i.PartialRedemptionPolicy,
+		&i.MinimumSpendMinor,
+		&i.Transferable,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.LocationID,
+		&i.State,
+		&i.VoidReason,
+		&i.BatchID,
+		&i.Version,
+		&i.Currency,
+		&i.Region,
+		&i.SagaID,
+		&i.ReservedUntil,
+	)
+	return i, err
+}
+
+const getVoucherBySaga = `-- name: GetVoucherBySaga :one
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency
+FROM voucher.vouchers WHERE saga_id = $1 AND state = 'allocated'
+`
+
+type GetVoucherBySagaRow struct {
+	ID                      pgtype.UUID
+	ListingID               pgtype.UUID
+	OwnerID                 pgtype.UUID
+	MerchantID              pgtype.UUID
+	MerchantName            string
+	Title                   string
+	FaceValueMinor          int64
+	RemainingValueMinor     int64
+	PartialRedemptionPolicy string
+	MinimumSpendMinor       *int64
+	Transferable            bool
+	IssuedAt                pgtype.Timestamptz
+	ExpiresAt               pgtype.Timestamptz
+	LocationID              pgtype.UUID
+	State                   string
+	VoidReason              *string
+	BatchID                 pgtype.UUID
+	Version                 int32
+	Currency                string
+}
+
+// `release` and `activate` resolve their voucher by the saga id the earlier
+// `reserve` recorded, not by a client-supplied voucher id — the saga is the
+// caller's own authority over this reservation.
+func (q *Queries) GetVoucherBySaga(ctx context.Context, sagaID *string) (GetVoucherBySagaRow, error) {
+	row := q.db.QueryRow(ctx, getVoucherBySaga, sagaID)
+	var i GetVoucherBySagaRow
+	err := row.Scan(
+		&i.ID,
+		&i.ListingID,
+		&i.OwnerID,
+		&i.MerchantID,
+		&i.MerchantName,
+		&i.Title,
+		&i.FaceValueMinor,
+		&i.RemainingValueMinor,
+		&i.PartialRedemptionPolicy,
+		&i.MinimumSpendMinor,
+		&i.Transferable,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.LocationID,
+		&i.State,
+		&i.VoidReason,
+		&i.BatchID,
+		&i.Version,
+		&i.Currency,
+	)
+	return i, err
+}
+
+const getVoucherBySagaAnyState = `-- name: GetVoucherBySagaAnyState :one
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency
+FROM voucher.vouchers WHERE saga_id = $1
+ORDER BY version DESC
+LIMIT 1
+`
+
+type GetVoucherBySagaAnyStateRow struct {
+	ID                      pgtype.UUID
+	ListingID               pgtype.UUID
+	OwnerID                 pgtype.UUID
+	MerchantID              pgtype.UUID
+	MerchantName            string
+	Title                   string
+	FaceValueMinor          int64
+	RemainingValueMinor     int64
+	PartialRedemptionPolicy string
+	MinimumSpendMinor       *int64
+	Transferable            bool
+	IssuedAt                pgtype.Timestamptz
+	ExpiresAt               pgtype.Timestamptz
+	LocationID              pgtype.UUID
+	State                   string
+	VoidReason              *string
+	BatchID                 pgtype.UUID
+	Version                 int32
+	Currency                string
+}
+
+// `activate`'s retry path: a saga's voucher after it has already moved past
+// `allocated` (activated by an earlier, lost-response call). Unscoped by
+// state, unlike GetVoucherBySaga above.
+func (q *Queries) GetVoucherBySagaAnyState(ctx context.Context, sagaID *string) (GetVoucherBySagaAnyStateRow, error) {
+	row := q.db.QueryRow(ctx, getVoucherBySagaAnyState, sagaID)
+	var i GetVoucherBySagaAnyStateRow
 	err := row.Scan(
 		&i.ID,
 		&i.ListingID,
@@ -321,7 +553,7 @@ type InsertBatchParams struct {
 	ID                      pgtype.UUID
 	ListingID               pgtype.UUID
 	SupplierBusinessID      pgtype.UUID
-	RequestedBy             pgtype.UUID
+	RequestedBy             string
 	Quantity                int32
 	FaceValueMinor          int64
 	SettlementValueMinor    int64
@@ -414,8 +646,8 @@ const insertVoucher = `-- name: InsertVoucher :exec
 INSERT INTO voucher.vouchers
   (id, listing_id, merchant_id, merchant_name, title, face_value_minor,
    remaining_value_minor, partial_redemption_policy, minimum_spend_minor, transferable,
-   issued_at, expires_at, location_id, state, batch_id, currency)
-VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', $12, $13)
+   issued_at, expires_at, location_id, state, batch_id, currency, region)
+VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', $12, $13, $14)
 `
 
 type InsertVoucherParams struct {
@@ -432,6 +664,7 @@ type InsertVoucherParams struct {
 	LocationID              pgtype.UUID
 	BatchID                 pgtype.UUID
 	Currency                string
+	Region                  string
 }
 
 // No `owner_id`: a minted voucher belongs to nobody, and the column is NULL
@@ -445,7 +678,8 @@ type InsertVoucherParams struct {
 //
 // `currency` ($13) is the batch's currency (batch.currency, itself carried
 // from the listing at RequestBatch time) — a voucher is denominated in
-// whatever its batch was, not re-derived at mint time.
+// whatever its batch was, not re-derived at mint time. `region` ($14, 4.5.e)
+// is carried the same way, from the listing at mint time.
 func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) error {
 	_, err := q.db.Exec(ctx, insertVoucher,
 		arg.ID,
@@ -461,6 +695,7 @@ func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) er
 		arg.LocationID,
 		arg.BatchID,
 		arg.Currency,
+		arg.Region,
 	)
 	return err
 }
@@ -581,6 +816,156 @@ func (q *Queries) ListExpirableVouchers(ctx context.Context, limit int32) ([]Lis
 	return items, nil
 }
 
+const listVouchersForOwner = `-- name: ListVouchersForOwner :many
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency, saga_id
+FROM voucher.vouchers
+WHERE owner_id = $1 AND ($2::uuid IS NULL OR id > $2)
+ORDER BY id
+LIMIT $3
+`
+
+type ListVouchersForOwnerParams struct {
+	OwnerID pgtype.UUID
+	Column2 pgtype.UUID
+	Limit   int32
+}
+
+type ListVouchersForOwnerRow struct {
+	ID                      pgtype.UUID
+	ListingID               pgtype.UUID
+	OwnerID                 pgtype.UUID
+	MerchantID              pgtype.UUID
+	MerchantName            string
+	Title                   string
+	FaceValueMinor          int64
+	RemainingValueMinor     int64
+	PartialRedemptionPolicy string
+	MinimumSpendMinor       *int64
+	Transferable            bool
+	IssuedAt                pgtype.Timestamptz
+	ExpiresAt               pgtype.Timestamptz
+	LocationID              pgtype.UUID
+	State                   string
+	VoidReason              *string
+	BatchID                 pgtype.UUID
+	Version                 int32
+	Currency                string
+	SagaID                  *string
+}
+
+// 4.5's wallet read. `id > $2` (not OFFSET) so paging is stable under
+// concurrent inserts — the same reasoning as every other keyset page in
+// this codebase.
+func (q *Queries) ListVouchersForOwner(ctx context.Context, arg ListVouchersForOwnerParams) ([]ListVouchersForOwnerRow, error) {
+	rows, err := q.db.Query(ctx, listVouchersForOwner, arg.OwnerID, arg.Column2, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListVouchersForOwnerRow
+	for rows.Next() {
+		var i ListVouchersForOwnerRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ListingID,
+			&i.OwnerID,
+			&i.MerchantID,
+			&i.MerchantName,
+			&i.Title,
+			&i.FaceValueMinor,
+			&i.RemainingValueMinor,
+			&i.PartialRedemptionPolicy,
+			&i.MinimumSpendMinor,
+			&i.Transferable,
+			&i.IssuedAt,
+			&i.ExpiresAt,
+			&i.LocationID,
+			&i.State,
+			&i.VoidReason,
+			&i.BatchID,
+			&i.Version,
+			&i.Currency,
+			&i.SagaID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const selectMintedForListing = `-- name: SelectMintedForListing :one
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency
+FROM voucher.vouchers
+WHERE listing_id = $1 AND state = 'minted'
+ORDER BY id
+LIMIT 1
+FOR UPDATE SKIP LOCKED
+`
+
+type SelectMintedForListingRow struct {
+	ID                      pgtype.UUID
+	ListingID               pgtype.UUID
+	OwnerID                 pgtype.UUID
+	MerchantID              pgtype.UUID
+	MerchantName            string
+	Title                   string
+	FaceValueMinor          int64
+	RemainingValueMinor     int64
+	PartialRedemptionPolicy string
+	MinimumSpendMinor       *int64
+	Transferable            bool
+	IssuedAt                pgtype.Timestamptz
+	ExpiresAt               pgtype.Timestamptz
+	LocationID              pgtype.UUID
+	State                   string
+	VoidReason              *string
+	BatchID                 pgtype.UUID
+	Version                 int32
+	Currency                string
+}
+
+// 4.5.a's `reserve`: the stock reservation IS picking one unallocated
+// (`minted`) voucher for this listing. `FOR UPDATE SKIP LOCKED` so two
+// concurrent sagas reserving against the same listing never contend for the
+// same row — each gets a different voucher, or `pgx.ErrNoRows` once the
+// listing is out of stock.
+func (q *Queries) SelectMintedForListing(ctx context.Context, listingID pgtype.UUID) (SelectMintedForListingRow, error) {
+	row := q.db.QueryRow(ctx, selectMintedForListing, listingID)
+	var i SelectMintedForListingRow
+	err := row.Scan(
+		&i.ID,
+		&i.ListingID,
+		&i.OwnerID,
+		&i.MerchantID,
+		&i.MerchantName,
+		&i.Title,
+		&i.FaceValueMinor,
+		&i.RemainingValueMinor,
+		&i.PartialRedemptionPolicy,
+		&i.MinimumSpendMinor,
+		&i.Transferable,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.LocationID,
+		&i.State,
+		&i.VoidReason,
+		&i.BatchID,
+		&i.Version,
+		&i.Currency,
+	)
+	return i, err
+}
+
 const transitionVoucher = `-- name: TransitionVoucher :one
 UPDATE voucher.vouchers
    SET state = $2,
@@ -590,9 +975,11 @@ UPDATE voucher.vouchers
        -- owner alone. Passing the current owner back in would make every
        -- caller responsible for not accidentally re-owning the voucher.
        owner_id = COALESCE($6, owner_id),
+       saga_id = COALESCE($7, saga_id),
+       reserved_until = COALESCE($8, reserved_until),
        version = version + 1
  WHERE id = $1 AND version = $4
-RETURNING id, state, void_reason, remaining_value_minor, owner_id, version
+RETURNING id, state, void_reason, remaining_value_minor, owner_id, saga_id, reserved_until, version
 `
 
 type TransitionVoucherParams struct {
@@ -602,6 +989,8 @@ type TransitionVoucherParams struct {
 	Version             int32
 	RemainingValueMinor int64
 	OwnerID             pgtype.UUID
+	SagaID              *string
+	ReservedUntil       pgtype.Timestamptz
 }
 
 type TransitionVoucherRow struct {
@@ -610,6 +999,8 @@ type TransitionVoucherRow struct {
 	VoidReason          *string
 	RemainingValueMinor int64
 	OwnerID             pgtype.UUID
+	SagaID              *string
+	ReservedUntil       pgtype.Timestamptz
 	Version             int32
 }
 
@@ -625,6 +1016,11 @@ type TransitionVoucherRow struct {
 // overwriting a transition it never saw. Without it, a capture and a
 // kill-switch void racing on one voucher both succeed and the last writer
 // decides whether the money moved.
+//
+// `saga_id`/`reserved_until` ($7/$8, 4.5.a): COALESCE like the owner, so
+// only `reserve` (which passes both) sets them. `release` and `activate`
+// pass NULL and leave whatever is there — harmless, since `state` is what
+// governs availability, not these two.
 func (q *Queries) TransitionVoucher(ctx context.Context, arg TransitionVoucherParams) (TransitionVoucherRow, error) {
 	row := q.db.QueryRow(ctx, transitionVoucher,
 		arg.ID,
@@ -633,6 +1029,8 @@ func (q *Queries) TransitionVoucher(ctx context.Context, arg TransitionVoucherPa
 		arg.Version,
 		arg.RemainingValueMinor,
 		arg.OwnerID,
+		arg.SagaID,
+		arg.ReservedUntil,
 	)
 	var i TransitionVoucherRow
 	err := row.Scan(
@@ -641,6 +1039,8 @@ func (q *Queries) TransitionVoucher(ctx context.Context, arg TransitionVoucherPa
 		&i.VoidReason,
 		&i.RemainingValueMinor,
 		&i.OwnerID,
+		&i.SagaID,
+		&i.ReservedUntil,
 		&i.Version,
 	)
 	return i, err

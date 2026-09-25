@@ -64,14 +64,15 @@ type VoucherAuthorization struct {
 	CreatedAt        pgtype.Timestamptz
 	ResolvedAt       pgtype.Timestamptz
 	OrderTotalMinor  *int64
+	DeviceID         *string
 }
 
 type VoucherBatch struct {
 	ID                      pgtype.UUID
 	ListingID               pgtype.UUID
 	SupplierBusinessID      pgtype.UUID
-	RequestedBy             pgtype.UUID
-	ApprovedBy              pgtype.UUID
+	RequestedBy             string
+	ApprovedBy              *string
 	Quantity                int32
 	FaceValueMinor          int64
 	SettlementValueMinor    int64
@@ -142,6 +143,7 @@ type VoucherMerchantCredential struct {
 	CreatedAt      pgtype.Timestamptz
 	NotAfter       pgtype.Timestamptz
 	RevokedAt      pgtype.Timestamptz
+	DeviceID       *string
 }
 
 type VoucherMerchantSignatureSeen struct {
@@ -187,4 +189,7 @@ type VoucherVoucher struct {
 	BatchID                 pgtype.UUID
 	Version                 int32
 	Currency                string
+	Region                  string
+	SagaID                  *string
+	ReservedUntil           pgtype.Timestamptz
 }

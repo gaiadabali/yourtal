@@ -75,11 +75,16 @@ const (
 	TypeTransferred = "transferred"
 	// TypeHoldExpired — a hold timed out and the sweeper released the voucher.
 	TypeHoldExpired = "hold_expired"
+	// TypeReleased — 4.5.a's `release`: a reservation (Allocated) returned to
+	// inventory (Minted) because its saga never posted a burn. Distinct from
+	// TypeVoided: the voucher is not dead, it is available again.
+	TypeReleased = "released"
 )
 
 var Types = []string{
 	TypeMinted, TypeAllocated, TypeActivated, TypeAuthorized, TypeCaptured,
 	TypeVoided, TypeRefunded, TypeExpired, TypeRestored, TypeTransferred, TypeHoldExpired,
+	TypeReleased,
 }
 
 var (

@@ -33,10 +33,22 @@ type fixture struct {
 	minter  *issue.Minter
 	network *redeem.Network
 	pool    *pgxpool.Pool
+	// owner is DATABASE_OWNER_URL: yourtal_voucher (pool, above) has no
+	// grant to WRITE store.listings — correctly, since the real service
+	// only ever reads one (GetListingForBatch, D12) — so listingFor uses
+	// the superuser connection to seed one, the same way
+	// store-db.test-helper.ts's clearStoreTables needs the owner for
+	// cross-schema cleanup.
+	owner *pgxpool.Pool
 	// The seeded listing every batch is minted against, and the merchant
 	// that listing belongs to — which is who may redeem its vouchers.
 	listingID  uuid.UUID
 	merchantID uuid.UUID
+	// locationID lets mintOne's ad-hoc listings (below) satisfy
+	// store.listing_location's NOT NULL branch requirement without seeding
+	// a fresh one each time — nothing here checks that a location belongs
+	// to the listing's own merchant (no composite FK says so).
+	locationID uuid.UUID
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -55,6 +67,12 @@ func newFixture(t *testing.T) *fixture {
 	}
 	t.Cleanup(pool.Close)
 
+	owner, err := pgxpool.New(ctx, testdb.URL(t, "DATABASE_OWNER_URL"))
+	if err != nil {
+		t.Fatalf("connect as owner: %v", err)
+	}
+	t.Cleanup(owner.Close)
+
 	// A deterministic keyring. Real deployments load master keys from
 	// outside the repo; a test that needed a filesystem to exercise AES
 	// would be testing the loader instead of the redemption network.
@@ -65,11 +83,11 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatalf("keyring: %v", err)
 	}
 
-	var listingID, merchantID uuid.UUID
+	var listingID, merchantID, locationID uuid.UUID
 	err = pool.QueryRow(ctx,
-		`SELECT l.id, l.merchant_id FROM store.listings l
+		`SELECT l.id, l.merchant_id, ll.location_id FROM store.listings l
 		   JOIN store.listing_location ll ON ll.listing_id = l.id
-		  ORDER BY l.id LIMIT 1`).Scan(&listingID, &merchantID)
+		  ORDER BY l.id LIMIT 1`).Scan(&listingID, &merchantID, &locationID)
 	if err != nil {
 		t.Skipf("run `pnpm db:seed` first — this needs a listing with a branch: %v", err)
 	}
@@ -78,9 +96,45 @@ func newFixture(t *testing.T) *fixture {
 		minter:     issue.New(pool, keys),
 		network:    redeem.New(pool),
 		pool:       pool,
+		owner:      owner,
 		listingID:  listingID,
 		merchantID: merchantID,
+		locationID: locationID,
 	}
+}
+
+// listingFor inserts a throwaway listing with the exact terms a test wants
+// (4.5.a, D12: a batch's terms are now DERIVED from its listing, so a test
+// that wants a particular face value or policy needs a listing that carries
+// it, not a batch request that claims it). Always f.merchantID's, always
+// IDR — mintOne's callers rely on both (see TestIssuanceCopiesCurrency).
+func (f *fixture) listingFor(t *testing.T, policy string, faceMinor int64, minimum *int64) uuid.UUID {
+	t.Helper()
+	ctx := context.Background()
+
+	listingID := uuid.New()
+	_, err := f.owner.Exec(ctx, `
+		INSERT INTO store.listings
+		  (id, merchant_id, merchant_name, title, description, category,
+		   face_value_minor, settlement_value_minor, price_in_points,
+		   stock_remaining, stock_total, transferable, partial_redemption_policy,
+		   minimum_spend_minor, expires_at, status, currency, region, audience,
+		   content_category, image_url, channel, partial_redemption)
+		VALUES ($1, $2, 'Test Merchant', 'Test Listing', 'a listing minted for one test', 'food-and-drink',
+		        $3, $4, 1, 1, 1, false, $5,
+		        $6, $7, 'available', 'IDR', 'ID', 'all_ages',
+		        'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg', 'both', 'single_use')`,
+		listingID, f.merchantID, faceMinor, faceMinor/3, policy, minimum,
+		time.Now().UTC().Add(90*24*time.Hour))
+	if err != nil {
+		t.Fatalf("inserting a test listing: %v", err)
+	}
+	if _, err := f.owner.Exec(ctx,
+		`INSERT INTO store.listing_location (listing_id, location_id) VALUES ($1, $2)`,
+		listingID, f.locationID); err != nil {
+		t.Fatalf("inserting a test listing's location: %v", err)
+	}
+	return listingID
 }
 
 // mintOne runs the full issuance path and returns one active voucher plus
@@ -90,27 +144,21 @@ func (f *fixture) mintOne(t *testing.T, policy string, faceMinor int64, minimum 
 	ctx := context.Background()
 
 	batchID := uuid.New()
-	requester, approver := uuid.New(), uuid.New()
+	listingID := f.listingFor(t, policy, faceMinor, minimum)
 
 	if err := f.minter.RequestBatch(ctx, issue.BatchRequest{
-		ID:                   batchID,
-		ListingID:            f.listingID,
-		SupplierBusinessID:   uuid.New(),
-		RequestedBy:          requester,
-		Quantity:             1,
-		FaceValueMinor:       faceMinor,
-		SettlementValueMinor: faceMinor / 3,
-		Currency:             "IDR",
-		Transferable:         false,
-		PartialPolicy:        policy,
-		MinimumSpendMinor:    minimum,
-		ExpiresAt:            time.Now().UTC().Add(90 * 24 * time.Hour),
-		FundingReference:     "probe-funding",
+		ID:                 batchID,
+		ListingID:          listingID,
+		SupplierBusinessID: f.merchantID,
+		RequestedBy:        "test-requester",
+		Quantity:           1,
+		Transferable:       false,
+		FundingReference:   "probe-funding",
 	}); err != nil {
 		t.Fatalf("RequestBatch: %v", err)
 	}
 
-	if err := f.minter.Approve(ctx, batchID, approver); err != nil {
+	if err := f.minter.Approve(ctx, batchID, "test-approver"); err != nil {
 		t.Fatalf("Approve: %v", err)
 	}
 

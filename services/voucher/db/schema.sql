@@ -29,8 +29,12 @@ CREATE TABLE voucher.batch (
   id                        uuid        PRIMARY KEY,
   listing_id                uuid        NOT NULL,
   supplier_business_id      uuid        NOT NULL,
-  requested_by              uuid        NOT NULL,
-  approved_by               uuid,
+  -- text, not uuid: packages/db/migrations/20260925210000_voucher_internal_api.sql
+  -- brings this in line with ledger.backing_rate_approval.approved_by, since
+  -- the voucher-internal contract's requestedBy/approvedBy are free-text
+  -- staff identifiers ("staff-1"), not user ids.
+  requested_by              text        NOT NULL,
+  approved_by               text,
   quantity                  integer     NOT NULL,
   face_value_minor          bigint      NOT NULL,
   settlement_value_minor    bigint      NOT NULL,
@@ -65,7 +69,11 @@ CREATE TABLE voucher.vouchers (
   void_reason               text,
   batch_id                  uuid,
   version                   integer     NOT NULL DEFAULT 1,
-  currency                  text        NOT NULL
+  currency                  text        NOT NULL,
+  -- Added by packages/db/migrations/20260925210000_voucher_internal_api.sql.
+  region                    text        NOT NULL,
+  saga_id                   text,
+  reserved_until            timestamptz
 );
 
 CREATE TABLE voucher.code_custody (
@@ -102,7 +110,9 @@ CREATE TABLE voucher.authorization (
   expires_at         timestamptz NOT NULL,
   created_at         timestamptz NOT NULL DEFAULT now(),
   resolved_at        timestamptz,
-  order_total_minor  bigint
+  order_total_minor  bigint,
+  -- Added by packages/db/migrations/20260925210000_voucher_internal_api.sql.
+  device_id          text
 );
 
 CREATE TABLE voucher.capture (
@@ -142,7 +152,9 @@ CREATE TABLE voucher.merchant_credential (
   state            text        NOT NULL,
   created_at       timestamptz NOT NULL DEFAULT now(),
   not_after        timestamptz,
-  revoked_at       timestamptz
+  revoked_at       timestamptz,
+  -- Added by packages/db/migrations/20260925210000_voucher_internal_api.sql.
+  device_id        text
 );
 
 CREATE TABLE voucher.kill_switch (

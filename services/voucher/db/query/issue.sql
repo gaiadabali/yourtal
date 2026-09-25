@@ -58,12 +58,13 @@ UPDATE voucher.batch SET state = 'minted', manifest_sha256 = $2
 --
 -- `currency` ($13) is the batch's currency (batch.currency, itself carried
 -- from the listing at RequestBatch time) — a voucher is denominated in
--- whatever its batch was, not re-derived at mint time.
+-- whatever its batch was, not re-derived at mint time. `region` ($14, 4.5.e)
+-- is carried the same way, from the listing at mint time.
 INSERT INTO voucher.vouchers
   (id, listing_id, merchant_id, merchant_name, title, face_value_minor,
    remaining_value_minor, partial_redemption_policy, minimum_spend_minor, transferable,
-   issued_at, expires_at, location_id, state, batch_id, currency)
-VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', $12, $13);
+   issued_at, expires_at, location_id, state, batch_id, currency, region)
+VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', $12, $13, $14);
 
 -- name: InsertCodeCustody :exec
 INSERT INTO voucher.code_custody
@@ -100,7 +101,8 @@ FROM voucher.code_custody WHERE voucher_id = $1;
 SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title,
        v.face_value_minor, v.remaining_value_minor, v.partial_redemption_policy,
        v.minimum_spend_minor, v.transferable, v.issued_at, v.expires_at,
-       v.location_id, v.state, v.void_reason, v.batch_id, v.version, v.currency
+       v.location_id, v.state, v.void_reason, v.batch_id, v.version, v.currency,
+       v.region, v.saga_id, v.reserved_until
 FROM voucher.vouchers v
 JOIN voucher.code_custody c ON c.voucher_id = v.id
 WHERE c.code_hash = $1;
@@ -118,7 +120,7 @@ WHERE c.code_hash = $1;
 SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
        remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
        transferable, issued_at, expires_at, location_id, state, void_reason,
-       batch_id, version, currency
+       batch_id, version, currency, region, saga_id, reserved_until
 FROM voucher.vouchers WHERE id = $1;
 
 -- name: TransitionVoucher :one
@@ -134,6 +136,11 @@ FROM voucher.vouchers WHERE id = $1;
 -- overwriting a transition it never saw. Without it, a capture and a
 -- kill-switch void racing on one voucher both succeed and the last writer
 -- decides whether the money moved.
+--
+-- `saga_id`/`reserved_until` ($7/$8, 4.5.a): COALESCE like the owner, so
+-- only `reserve` (which passes both) sets them. `release` and `activate`
+-- pass NULL and leave whatever is there — harmless, since `state` is what
+-- governs availability, not these two.
 UPDATE voucher.vouchers
    SET state = $2,
        void_reason = $3,
@@ -142,9 +149,11 @@ UPDATE voucher.vouchers
        -- owner alone. Passing the current owner back in would make every
        -- caller responsible for not accidentally re-owning the voucher.
        owner_id = COALESCE($6, owner_id),
+       saga_id = COALESCE($7, saga_id),
+       reserved_until = COALESCE($8, reserved_until),
        version = version + 1
  WHERE id = $1 AND version = $4
-RETURNING id, state, void_reason, remaining_value_minor, owner_id, version;
+RETURNING id, state, void_reason, remaining_value_minor, owner_id, saga_id, reserved_until, version;
 
 -- name: InsertEvent :exec
 INSERT INTO voucher.event
@@ -186,12 +195,79 @@ FROM voucher.event WHERE voucher_id = $1 ORDER BY seq DESC LIMIT 1;
 -- listing alone because `voucher.vouchers` carries a COMPOSITE foreign key
 -- to (listing_id, location_id) — a branch the listing does not serve is
 -- unrepresentable, so it has to come from the join that proves it.
-SELECT l.id, l.merchant_id, l.merchant_name, l.title, ll.location_id
+SELECT l.id, l.merchant_id, l.merchant_name, l.title, l.region, ll.location_id
 FROM store.listings l
 JOIN store.listing_location ll ON ll.listing_id = l.id
 WHERE l.id = $1
 ORDER BY ll.location_id
 LIMIT 1;
+
+-- name: GetListingForBatch :one
+-- 4.5.a, D12: a batch's terms are DERIVED from the listing, not trusted from
+-- the caller. `merchant_id` here is checked against the request's supplier
+-- before a batch is ever inserted (D12's "a batch for listing L is
+-- requested with face 500,000 and currency AUD" scenario).
+SELECT id, merchant_id, currency, face_value_minor, settlement_value_minor,
+       partial_redemption_policy, minimum_spend_minor, expires_at
+FROM store.listings WHERE id = $1;
+
+-- name: SelectMintedForListing :one
+-- 4.5.a's `reserve`: the stock reservation IS picking one unallocated
+-- (`minted`) voucher for this listing. `FOR UPDATE SKIP LOCKED` so two
+-- concurrent sagas reserving against the same listing never contend for the
+-- same row — each gets a different voucher, or `pgx.ErrNoRows` once the
+-- listing is out of stock.
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency
+FROM voucher.vouchers
+WHERE listing_id = $1 AND state = 'minted'
+ORDER BY id
+LIMIT 1
+FOR UPDATE SKIP LOCKED;
+
+-- name: GetVoucherBySaga :one
+-- `release` and `activate` resolve their voucher by the saga id the earlier
+-- `reserve` recorded, not by a client-supplied voucher id — the saga is the
+-- caller's own authority over this reservation.
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency
+FROM voucher.vouchers WHERE saga_id = $1 AND state = 'allocated';
+
+-- name: GetVoucherBySagaAnyState :one
+-- `activate`'s retry path: a saga's voucher after it has already moved past
+-- `allocated` (activated by an earlier, lost-response call). Unscoped by
+-- state, unlike GetVoucherBySaga above.
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency
+FROM voucher.vouchers WHERE saga_id = $1
+ORDER BY version DESC
+LIMIT 1;
+
+-- name: ListVouchersForOwner :many
+-- 4.5's wallet read. `id > $2` (not OFFSET) so paging is stable under
+-- concurrent inserts — the same reasoning as every other keyset page in
+-- this codebase.
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency, saga_id
+FROM voucher.vouchers
+WHERE owner_id = $1 AND ($2::uuid IS NULL OR id > $2)
+ORDER BY id
+LIMIT $3;
+
+-- name: GetOwnedVoucher :one
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
+       transferable, issued_at, expires_at, location_id, state, void_reason,
+       batch_id, version, currency, saga_id
+FROM voucher.vouchers WHERE id = $1 AND owner_id = $2;
 
 -- name: ListExpirableVouchers :many
 -- YT-0573: the voucher-level counterpart to `ExpireStaleHolds` in

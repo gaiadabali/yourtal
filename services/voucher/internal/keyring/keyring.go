@@ -60,14 +60,18 @@ const (
 	PurposeMerchantHMAC Purpose = "merchant_hmac"
 	// PurposePII protects personal data at rest.
 	PurposePII Purpose = "pii"
-	// PurposeSigning protects private signing keys — the Ed25519 key behind
-	// the in-store QR (YT-0143), for one.
+	// PurposeSigning protects private signing keys.
 	PurposeSigning Purpose = "signing"
+	// PurposeVoucherQR seals the in-store QR tokens (4.5.b, YT-0143):
+	// `internal/qrtoken` uses this purpose's envelope encryption directly as
+	// the token's own signature, so a QR token sealed under this key can
+	// never be opened as anything else this keyring protects.
+	PurposeVoucherQR Purpose = "voucher_qr"
 )
 
 // Purposes is the closed set, so a caller cannot invent one that silently
 // has no key behind it.
-var Purposes = []Purpose{PurposeVoucherCode, PurposeMerchantHMAC, PurposePII, PurposeSigning}
+var Purposes = []Purpose{PurposeVoucherCode, PurposeMerchantHMAC, PurposePII, PurposeSigning, PurposeVoucherQR}
 
 const (
 	masterKeyLength = 32 // AES-256

@@ -20,6 +20,11 @@ import {
 
 const NOW = 1_800_000_000_000;
 
+// Every scenario below charges IDR, and since decision T-1 that has no
+// platform default (see payments.ts) — so every driver in this file declares
+// it explicitly, the way an honest Xendit driver would.
+const HONEST_IDR = { declaredMinorUnitExponent: { IDR: 0 } } as const;
+
 async function chargeAndDeliver(
   driver: ReturnType<typeof createSimulatedPayments>,
   key: string,
@@ -27,7 +32,7 @@ async function chargeAndDeliver(
 ) {
   const charge = await driver.charge({
     idempotencyKey: key,
-    amountMinor: 4_500_000,
+    amountMinor: 45_000,
     currency: "IDR",
     reference: `ref-${key}`,
   });
@@ -36,7 +41,7 @@ async function chargeAndDeliver(
 
 describe("a genuine callback", () => {
   it("verifies, and quotes the amount in the processor's own units", async () => {
-    const driver = createSimulatedPayments(undefined, { declaredMinorUnitExponent: { IDR: 0 } });
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const deliveries = await chargeAndDeliver(driver, "genuine");
 
     const first = deliveries[0];
@@ -51,9 +56,9 @@ describe("a genuine callback", () => {
     });
     expect(verified.isOk()).toBe(true);
 
-    // Rp 45.000 quoted as 45_000 whole Rupiah, not as 4_500_000 sen — a
-    // handler comparing this against our stored amount must convert, and
-    // quoting our own units here would have hidden that step.
+    // Rp 45.000 quoted as 45_000 whole Rupiah — storage and this processor
+    // now agree, but a handler still has to compare against our stored
+    // amount rather than assume the two are always the same unit.
     const payload: unknown = JSON.parse(first?.body ?? "{}");
     expect(payload).toMatchObject({ amount: 45_000, currency: "IDR", status: "pending" });
   });
@@ -61,12 +66,12 @@ describe("a genuine callback", () => {
 
 describe("a callback that should be refused", () => {
   it("rejects a tampered body", async () => {
-    const driver = createSimulatedPayments();
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const deliveries = await chargeAndDeliver(driver, "tamper");
     const genuine = deliveries[0];
 
     // The attack this exists for: take a real callback, raise the amount.
-    const tampered = (genuine?.body ?? "").replace('"amount":4500000', '"amount":450000000');
+    const tampered = (genuine?.body ?? "").replace('"amount":45000', '"amount":4500000');
     expect(tampered).not.toBe(genuine?.body);
 
     const verdict = verifyWebhookSignature({
@@ -80,7 +85,7 @@ describe("a callback that should be refused", () => {
   });
 
   it("rejects a signature made with the wrong secret", async () => {
-    const driver = createSimulatedPayments();
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const deliveries = await chargeAndDeliver(driver, "wrong-secret");
     const genuine = deliveries[0];
 
@@ -99,7 +104,7 @@ describe("a callback that should be refused", () => {
     { name: "empty signature header", signature: "", expected: "missing_signature" },
   ];
   it.each(missing)("rejects $name", async ({ signature, expected }) => {
-    const driver = createSimulatedPayments();
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const deliveries = await chargeAndDeliver(driver, `missing-${expected}${String(signature)}`);
 
     const verdict = verifyWebhookSignature({
@@ -113,7 +118,7 @@ describe("a callback that should be refused", () => {
   });
 
   it("rejects a missing timestamp", async () => {
-    const driver = createSimulatedPayments();
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const deliveries = await chargeAndDeliver(driver, "no-timestamp");
 
     const verdict = verifyWebhookSignature({
@@ -130,7 +135,7 @@ describe("a callback that should be refused", () => {
     // Signed correctly, an hour ago. This is a captured request being
     // resent — the signature is genuine, which is exactly why the timestamp
     // has to be inside it and checked.
-    const driver = createSimulatedPayments();
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const oldMs = NOW - REPLAY_TOLERANCE_MS - 1_000;
     const deliveries = await chargeAndDeliver(driver, "stale", oldMs);
 
@@ -147,7 +152,7 @@ describe("a callback that should be refused", () => {
   it("rejects a callback dated in the future", async () => {
     // The check has to be two-sided. A one-sided window lets an attacker
     // mint a callback that stays valid for as long as they like.
-    const driver = createSimulatedPayments();
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const aheadMs = NOW + REPLAY_TOLERANCE_MS + 1_000;
     const deliveries = await chargeAndDeliver(driver, "future", aheadMs);
 
@@ -162,7 +167,7 @@ describe("a callback that should be refused", () => {
   });
 
   it("rejects a non-numeric timestamp without throwing", async () => {
-    const driver = createSimulatedPayments();
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const deliveries = await chargeAndDeliver(driver, "garbage-timestamp");
 
     const verdict = verifyWebhookSignature({
@@ -195,7 +200,7 @@ describe("replay is a separate defence from the signature", () => {
     // At-least-once is the normal guarantee. Both copies are genuinely from
     // the provider and both signatures are valid — the signature cannot help
     // here, and a handler that credits on each arrival credits twice.
-    const driver = createSimulatedPayments({ kind: "duplicate_webhook" });
+    const driver = createSimulatedPayments({ kind: "duplicate_webhook" }, HONEST_IDR);
     const deliveries = await chargeAndDeliver(driver, "dupe");
     expect(deliveries).toHaveLength(4);
 
@@ -231,7 +236,7 @@ describe("replay is a separate defence from the signature", () => {
     // rejected an out-of-order callback would drop real traffic. Applying
     // them in the wrong ORDER is the bug, and that is the handler's problem
     // to solve with the sequence number — not the verifier's.
-    const driver = createSimulatedPayments({ kind: "out_of_order_webhook" });
+    const driver = createSimulatedPayments({ kind: "out_of_order_webhook" }, HONEST_IDR);
     const deliveries = await chargeAndDeliver(driver, "ooo");
 
     for (const delivery of deliveries) {
@@ -256,10 +261,10 @@ describe("charge idempotency", () => {
   it("returns the original charge for a replayed key, and charges once", async () => {
     // Paired with the `timeout` fault, which says the far side may have
     // succeeded: the only safe retry is one carrying the same key.
-    const driver = createSimulatedPayments();
+    const driver = createSimulatedPayments(undefined, HONEST_IDR);
     const request = {
       idempotencyKey: "same-key",
-      amountMinor: 4_500_000,
+      amountMinor: 45_000,
       currency: "IDR" as const,
       reference: "ref",
     };
@@ -268,6 +273,6 @@ describe("charge idempotency", () => {
     const second = await driver.charge(request);
 
     expect(second._unsafeUnwrap().providerReference).toBe(first._unsafeUnwrap().providerReference);
-    expect(driver.received(first._unsafeUnwrap().providerReference)?.amount).toBe(4_500_000);
+    expect(driver.received(first._unsafeUnwrap().providerReference)?.amount).toBe(45_000);
   });
 });

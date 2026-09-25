@@ -22,10 +22,10 @@ func TestAnotherMerchantCannotRedeemYourVoucher(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: uuid.New(), AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: uuid.New(), AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if !errors.Is(err, redeem.ErrRefused) {
@@ -36,7 +36,7 @@ func TestAnotherMerchantCannotRedeemYourVoucher(t *testing.T) {
 	// distinguishable answers here would tell a prober "this code is real,
 	// keep going" — the oracle docs/09 §8.1 refuses to provide.
 	_, unknownErr := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: mintedButUnknownCode(t), MerchantID: uuid.New(), AmountMinor: 10_000_00,
+		Code: mintedButUnknownCode(t), MerchantID: uuid.New(), AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err.Error() != unknownErr.Error() {
@@ -50,10 +50,10 @@ func TestOneVoucherCannotBeHeldTwice(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	if _, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	}); err != nil {
 		t.Fatalf("the first authorize failed: %v", err)
@@ -63,7 +63,7 @@ func TestOneVoucherCannotBeHeldTwice(t *testing.T) {
 	// than on the order — otherwise the test would pass while exercising the
 	// other index entirely.
 	_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 5_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 5_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if !errors.Is(err, redeem.ErrAlreadyHeld) {
@@ -79,11 +79,11 @@ func TestRetryingAnAuthorizeReturnsTheSameHold(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 	order := orderRef()
 
 	first, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: order,
 	})
 	if err != nil {
@@ -91,7 +91,7 @@ func TestRetryingAnAuthorizeReturnsTheSameHold(t *testing.T) {
 	}
 
 	second, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: order,
 	})
 	if err != nil {
@@ -112,24 +112,24 @@ func TestCaptureCannotExceedItsAuthorization(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
 
-	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_01, orderRef()); err == nil {
-		t.Fatal("a capture one sen above its authorization succeeded")
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_001, orderRef()); err == nil {
+		t.Fatal("a capture one Rupiah above its authorization succeeded")
 	}
 
 	// And the hold survives the refused capture, so the merchant can capture
 	// the correct amount. A failed capture that consumed the hold would
 	// strand a customer at the till.
-	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_00, orderRef()); err != nil {
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000, orderRef()); err != nil {
 		t.Errorf("the hold did not survive a refused capture: %v", err)
 	}
 }
@@ -141,10 +141,10 @@ func TestAuthorizeRefusesMoreThanTheVoucherHolds(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 50_000_01,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 50_001,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if !errors.Is(err, redeem.ErrRefused) {
@@ -191,10 +191,10 @@ func TestAnExpiredHoldBlocksANewAuthorizeUntilItIsSwept(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
@@ -211,7 +211,7 @@ func TestAnExpiredHoldBlocksANewAuthorizeUntilItIsSwept(t *testing.T) {
 
 	// Still blocked, even though the hold is dead. This is the gap.
 	_, err = f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if !errors.Is(err, redeem.ErrAlreadyHeld) {
@@ -228,7 +228,7 @@ func TestAnExpiredHoldBlocksANewAuthorizeUntilItIsSwept(t *testing.T) {
 	}
 
 	if _, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	}); err != nil {
 		t.Errorf("after sweeping, the voucher is still locked: %v", err)

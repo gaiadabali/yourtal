@@ -6,9 +6,9 @@
 // returns. It never needs to know what the integer MEANS in human terms, and
 // that ignorance is deliberate — it is the same principle as docs/18's
 // four intentionally-dumb engines. Nothing here converts, formats, prices or
-// settles, so nothing here depends on YT-0506 (whether an IDR minor unit is
-// a Rupiah or a sen). If a function would need to know that 100 sen make a
-// Rupiah, it belongs in pricing or settlement, not in this package.
+// settles, so nothing here depends on what an IDR minor unit denominates
+// (FOUNDER DECISION T-1: whole Rupiah). If a function would need to know the
+// exponent, it belongs in pricing or settlement, not in this package.
 //
 // # What enforces correctness is Postgres, not this code
 //

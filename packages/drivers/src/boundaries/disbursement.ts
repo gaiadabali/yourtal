@@ -44,7 +44,14 @@ export interface PayoutEvent {
 
 export interface DisbursementDriver {
   readonly mode: DriverMode;
-  readonly declaredMinorUnitExponent: Record<Currency, number>;
+  /**
+   * AUD is always present (its unit is unambiguous); IDR is present only
+   * once a caller has declared it explicitly — see `payments.ts`'s module
+   * doc for why there is no platform-wide IDR default. A payout in the
+   * wrong unit sends a merchant a hundred times what they are owed, which is
+   * why this is stricter than a bare `Record` here, not more lenient.
+   */
+  readonly declaredMinorUnitExponent: Partial<Record<Currency, number>>;
   payout(request: PayoutRequest): Promise<Result<PayoutAccepted, BoundaryFailure>>;
   deliveries(providerReference: string): readonly PayoutEvent[];
 }
@@ -65,9 +72,13 @@ export function createSimulatedDisbursement(
   const engine = new FaultEngine(faultPlan);
   const accepted = new Map<string, PayoutAccepted>();
   const sentToProvider = new Map<string, number>();
-  const exponents: Record<Currency, number> = {
-    IDR: options.declaredMinorUnitExponent?.IDR ?? 2,
+  const exponents: Partial<Record<Currency, number>> = {
+    // See payments.ts for why IDR has no default and why the key is left
+    // absent rather than set to `undefined` (`exactOptionalPropertyTypes`).
     AUD: options.declaredMinorUnitExponent?.AUD ?? 2,
+    ...(options.declaredMinorUnitExponent?.IDR !== undefined
+      ? { IDR: options.declaredMinorUnitExponent.IDR }
+      : {}),
   };
 
   return {
@@ -79,6 +90,23 @@ export function createSimulatedDisbursement(
       const replay = accepted.get(request.idempotencyKey);
       if (replay !== undefined) return Promise.resolve(ok(replay));
 
+      const providerExponent = exponents[request.currency];
+      if (providerExponent === undefined) {
+        // A payout in an undeclared unit is the direction that hides: nobody
+        // on the receiving end has a reason to mention it. Refused before
+        // any fault is even consulted, same as `payments.ts`.
+        return Promise.resolve(
+          err({
+            kind: "declined",
+            boundary: "disbursement",
+            detail:
+              `No declared minor-unit exponent for ${request.currency}: a driver must be told ` +
+              "explicitly what its processor speaks before it can pay out in that currency.",
+            mayHaveSucceeded: false,
+          }),
+        );
+      }
+
       const directive = engine.nextCall();
       if (directive !== "proceed") {
         return Promise.resolve(err(failureFor("disbursement", directive)));
@@ -87,7 +115,7 @@ export function createSimulatedDisbursement(
       const providerAmount = toProviderAmount(
         request.amountMinor,
         request.currency,
-        exponents[request.currency],
+        providerExponent,
       );
       if (providerAmount.isErr()) {
         return Promise.resolve(

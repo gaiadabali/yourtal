@@ -145,7 +145,7 @@ func TestABalanceCarryingVoucherSpendsDownAndStaysActive(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	// The code must survive the round trip through envelope encryption and
 	// still pass its own check symbol — otherwise nothing a cashier types
@@ -155,22 +155,22 @@ func TestABalanceCarryingVoucherSpendsDownAndStaysActive(t *testing.T) {
 	}
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
 
-	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000_00, orderRef())
+	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000, orderRef())
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
 
 	// docs/09 §8.2's gift-card behaviour: IDR 50,000 voucher on a IDR 30,000
 	// order leaves IDR 20,000.
-	if capture.RemainingMinor != 20_000_00 {
-		t.Errorf("remaining %d, want 2000000 (IDR 20,000 in sen)", capture.RemainingMinor)
+	if capture.RemainingMinor != 20_000 {
+		t.Errorf("remaining %d, want 20000 (IDR 20,000)", capture.RemainingMinor)
 	}
 	if state := f.stateOf(t, voucherID); state != "active" {
 		t.Errorf("a part-spent balance-carrying voucher is %q, want active", state)
@@ -190,16 +190,16 @@ func TestASingleUseVoucherIsConsumedWhatever1sSpent(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	voucherID, plaintext := f.mintOne(t, "single_use_forfeit", 50_000_00, nil)
+	voucherID, plaintext := f.mintOne(t, "single_use_forfeit", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_00, orderRef())
+	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000, orderRef())
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
@@ -216,11 +216,11 @@ func TestAMinimumSpendVoucherRefusesASmallOrder(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	minimum := int64(25_000_00)
-	_, plaintext := f.mintOne(t, "minimum_spend", 50_000_00, &minimum)
+	minimum := int64(25_000)
+	_, plaintext := f.mintOne(t, "minimum_spend", 50_000, &minimum)
 
 	_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if !errors.Is(err, redeem.ErrBelowMinimumSpend) {
@@ -229,13 +229,13 @@ func TestAMinimumSpendVoucherRefusesASmallOrder(t *testing.T) {
 
 	// The one refusal a cashier can act on, so it names the threshold. Every
 	// other refusal is deliberately opaque.
-	if err != nil && !contains(err.Error(), "2500000") {
+	if err != nil && !contains(err.Error(), "25000") {
 		t.Errorf("the refusal does not tell the till the threshold: %v", err)
 	}
 
 	// And above it, the same voucher works.
 	if _, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	}); err != nil {
 		t.Fatalf("an order above the minimum was refused: %v", err)

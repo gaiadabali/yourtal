@@ -78,7 +78,7 @@ async function seedListing(settlementValueMinor: number) {
     category: "retail",
     locationIds: [location.id],
     currency: "IDR" as const,
-    faceValueMinor: 10_000_000,
+    faceValueMinor: 100_000,
     settlementValueMinor,
     priceInPoints: 1_000,
     stockTotal: 5,
@@ -93,10 +93,10 @@ async function seedListing(settlementValueMinor: number) {
 
 describe("propose", () => {
   it("records a pending request and applies nothing", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const requester = ownerPrincipal(randomUUID());
     const body = proposeSettlementDecreaseSchema.parse({
-      proposedSettlementValueMinor: 500_000, // 50% cut, material
+      proposedSettlementValueMinor: 5_000, // 50% cut, material
       reason: "Big cut.",
     });
 
@@ -105,7 +105,7 @@ describe("propose", () => {
     expect(proposed.requestedBy).toBe(requester.id);
 
     const unchanged = await listings.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(10_000);
   });
 
   // YT-0576: the non-material case used to be "a 10% cut, below the 20%
@@ -113,10 +113,10 @@ describe("propose", () => {
   // decrease is an increase -- so that is what this now sends. A 10% cut
   // belongs to the accepted path and is covered above.
   it("REFUSES an increase -- that path is set_settlement_value, not this one", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const requester = ownerPrincipal(randomUUID());
     const body = proposeSettlementDecreaseSchema.parse({
-      proposedSettlementValueMinor: 1_100_000,
+      proposedSettlementValueMinor: 11_000,
       reason: "Rate went up, not down.",
     });
 
@@ -126,10 +126,10 @@ describe("propose", () => {
   });
 
   it("REFUSES a second proposal while one is already pending", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const requester = ownerPrincipal(randomUUID());
     const body = proposeSettlementDecreaseSchema.parse({
-      proposedSettlementValueMinor: 500_000,
+      proposedSettlementValueMinor: 5_000,
       reason: "First cut.",
     });
     await controllerFor(requester).propose(TENANT, listing.id, body, request);
@@ -139,7 +139,7 @@ describe("propose", () => {
         TENANT,
         listing.id,
         proposeSettlementDecreaseSchema.parse({
-          proposedSettlementValueMinor: 400_000,
+          proposedSettlementValueMinor: 4_000,
           reason: "Second cut.",
         }),
         request,
@@ -150,7 +150,7 @@ describe("propose", () => {
 
 describe("approve", () => {
   it("a second person applies the value change", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const requester = ownerPrincipal(randomUUID());
     const approver = adminPrincipal(randomUUID());
 
@@ -158,7 +158,7 @@ describe("approve", () => {
       TENANT,
       listing.id,
       proposeSettlementDecreaseSchema.parse({
-        proposedSettlementValueMinor: 500_000,
+        proposedSettlementValueMinor: 5_000,
         reason: "Big cut.",
       }),
       request,
@@ -170,21 +170,21 @@ describe("approve", () => {
       proposed.id,
       request,
     );
-    expect(approved.updated.settlementValueMinor).toBe(500_000);
+    expect(approved.updated.settlementValueMinor).toBe(5_000);
 
     const persisted = await listings.findOwnedById(TENANT, listing.id);
-    expect(persisted?.settlementValueMinor).toBe(500_000);
+    expect(persisted?.settlementValueMinor).toBe(5_000);
   });
 
   it("SELF-APPROVAL: the requester cannot approve their own request, even against a real PDP decision", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const requester = ownerPrincipal(randomUUID());
 
     const proposed = await controllerFor(requester).propose(
       TENANT,
       listing.id,
       proposeSettlementDecreaseSchema.parse({
-        proposedSettlementValueMinor: 500_000,
+        proposedSettlementValueMinor: 5_000,
         reason: "Self-approval attempt.",
       }),
       request,
@@ -198,11 +198,11 @@ describe("approve", () => {
 
     // Left no trace of having half-happened.
     const unchanged = await listings.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(10_000);
   });
 
   it("a non-owner/admin cannot approve at all", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const requester = ownerPrincipal(randomUUID());
     const merchandiser: Principal = {
       id: randomUUID(),
@@ -218,7 +218,7 @@ describe("approve", () => {
       TENANT,
       listing.id,
       proposeSettlementDecreaseSchema.parse({
-        proposedSettlementValueMinor: 500_000,
+        proposedSettlementValueMinor: 5_000,
         reason: "Big cut.",
       }),
       request,

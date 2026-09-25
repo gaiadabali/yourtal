@@ -69,11 +69,14 @@ describe("FaultEngine", () => {
 
 describe("webhook faults through a real boundary", () => {
   it("delivers a payment's events twice, with the same ids", async () => {
+    // AUD: the registry's default driver never declares an IDR unit (that is
+    // the point — see payments.ts), so a currency-agnostic fault-injection
+    // test uses the one currency the simulator can always charge.
     const drivers = createDrivers({}, { payments: { kind: "duplicate_webhook" } });
     const charge = await drivers.payments.charge({
       idempotencyKey: "dup-1",
-      amountMinor: 4_500_000,
-      currency: "IDR",
+      amountMinor: 4_500,
+      currency: "AUD",
       reference: "top-up",
     });
     expect(charge.isOk()).toBe(true);
@@ -90,8 +93,8 @@ describe("webhook faults through a real boundary", () => {
     const drivers = createDrivers({}, { payments: { kind: "out_of_order_webhook" } });
     const charge = await drivers.payments.charge({
       idempotencyKey: "ooo-1",
-      amountMinor: 4_500_000,
-      currency: "IDR",
+      amountMinor: 4_500,
+      currency: "AUD",
       reference: "top-up",
     });
 
@@ -111,14 +114,14 @@ describe("idempotency under the timeout fault", () => {
     const drivers = createDrivers({});
     const first = await drivers.payments.charge({
       idempotencyKey: "same-key",
-      amountMinor: 4_500_000,
-      currency: "IDR",
+      amountMinor: 4_500,
+      currency: "AUD",
       reference: "top-up",
     });
     const replay = await drivers.payments.charge({
       idempotencyKey: "same-key",
-      amountMinor: 4_500_000,
-      currency: "IDR",
+      amountMinor: 4_500,
+      currency: "AUD",
       reference: "top-up",
     });
 

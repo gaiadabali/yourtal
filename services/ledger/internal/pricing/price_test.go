@@ -8,13 +8,14 @@ import (
 	"github.com/yourtal/services/ledger/internal/pricing"
 )
 
-// IDR is stored in SEN (YT-0506, founder decision 2026-09-20), so docs/09's
-// worked example in Rupiah becomes these numbers here: IDR 6/point of
-// backing is 600 sen, and 600 sen expressed in micros is 600_000_000.
+// IDR is stored in whole Rupiah (FOUNDER DECISION T-1, 2026-09-22), so
+// docs/09's worked example in Rupiah is these numbers directly: IDR 6/point
+// of backing is 6 whole Rupiah, and 6 Rupiah expressed in micros is
+// 6_000_000. No sen-per-Rupiah scaling factor is needed anywhere below —
+// a settlement value in Rupiah IS the stored minor-unit amount.
 const (
-	backingIDR6PerPoint    = 6 * 100 * pricing.MicrosPerMinorUnit
-	issuePriceIDR8PerPoint = 8 * 100 * pricing.MicrosPerMinorUnit
-	rupiah                 = 100 // sen in one Rupiah
+	backingIDR6PerPoint    = 6 * pricing.MicrosPerMinorUnit
+	issuePriceIDR8PerPoint = 8 * pricing.MicrosPerMinorUnit
 )
 
 // The table from docs/09 §4.1, run as a test.
@@ -37,7 +38,7 @@ func TestTheWorkedExampleFromTheDoc(t *testing.T) {
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
 			points, err := pricing.PriceInPoints(
-				testCase.settlementRupiah*rupiah, backingIDR6PerPoint, pricing.NeutralDemandBps)
+				testCase.settlementRupiah, backingIDR6PerPoint, pricing.NeutralDemandBps)
 			if err != nil {
 				t.Fatalf("PriceInPoints: %v", err)
 			}
@@ -59,7 +60,7 @@ func TestTheWorkedExampleFromTheDoc(t *testing.T) {
 // two samples of it.
 func TestThePlatformNeverSettlesForMoreThanItCollected(t *testing.T) {
 	for settlementRupiah := int64(1); settlementRupiah <= 200_000; settlementRupiah += 37 {
-		settlement := settlementRupiah * rupiah
+		settlement := settlementRupiah
 
 		points, err := pricing.PriceInPoints(settlement, backingIDR6PerPoint, pricing.NeutralDemandBps)
 		if err != nil {
@@ -73,7 +74,7 @@ func TestThePlatformNeverSettlesForMoreThanItCollected(t *testing.T) {
 		}
 
 		if collected < settlement {
-			t.Fatalf("S=%d sen priced at %d points: collected %d < settled %d — the spread is gone",
+			t.Fatalf("S=%d Rupiah priced at %d points: collected %d < settled %d — the spread is gone",
 				settlement, points, collected, settlement)
 		}
 	}
@@ -83,7 +84,7 @@ func TestThePlatformNeverSettlesForMoreThanItCollected(t *testing.T) {
 // would sell the listing for less than B backs it, in the same direction
 // every time, so the shortfall accumulates rather than averaging out.
 func TestAFractionalPriceRoundsUp(t *testing.T) {
-	// S = 1 sen at B = 600_000_000 micros/point is 1/600 of a point.
+	// S = 1 Rupiah at B = 6_000_000 micros/point (IDR 6/point) is 1/6 of a point.
 	points, err := pricing.PriceInPoints(1, backingIDR6PerPoint, pricing.NeutralDemandBps)
 	if err != nil {
 		t.Fatalf("PriceInPoints: %v", err)
@@ -92,20 +93,21 @@ func TestAFractionalPriceRoundsUp(t *testing.T) {
 		t.Errorf("a sub-point settlement value should cost 1 point, got %d", points)
 	}
 
-	// 601 sen is 1.0016… points, which must not be sold as 1.
-	points, err = pricing.PriceInPoints(601, backingIDR6PerPoint, pricing.NeutralDemandBps)
+	// 7 Rupiah — one minor unit past an exact 1-point settlement (6) — is
+	// 1.166… points, which must not be sold as 1.
+	points, err = pricing.PriceInPoints(7, backingIDR6PerPoint, pricing.NeutralDemandBps)
 	if err != nil {
 		t.Fatalf("PriceInPoints: %v", err)
 	}
 	if points != 2 {
-		t.Errorf("601 sen at B=6 Rupiah/point should round up to 2 points, got %d", points)
+		t.Errorf("7 Rupiah at B=6 Rupiah/point should round up to 2 points, got %d", points)
 	}
 }
 
 // The multiplier moves the price in the direction you would expect, and
 // only within its bounds.
 func TestTheDemandMultiplierIsBounded(t *testing.T) {
-	settlement := int64(30_000 * rupiah)
+	settlement := int64(30_000)
 
 	cheap, err := pricing.PriceInPoints(settlement, backingIDR6PerPoint, pricing.MinDemandMultiplierBps)
 	if err != nil {
@@ -164,13 +166,13 @@ func TestAnAbsurdSettlementValueIsRefusedRatherThanWrapping(t *testing.T) {
 // liability is never understated — the flattering direction is the one that
 // hides insolvency.
 func TestLiabilityRoundsAgainstThePlatform(t *testing.T) {
-	// 1 point at B = 600_000_000 micros is exactly 600 sen.
+	// 1 point at B = 6_000_000 micros (IDR 6/point) is exactly 6 Rupiah.
 	exact, err := pricing.SettlementLiabilityMinor(1, backingIDR6PerPoint)
 	if err != nil {
 		t.Fatalf("SettlementLiabilityMinor: %v", err)
 	}
-	if exact != 600 {
-		t.Errorf("1 point at B=6 Rupiah should be 600 sen, got %d", exact)
+	if exact != 6 {
+		t.Errorf("1 point at B=6 Rupiah should be 6 Rupiah, got %d", exact)
 	}
 
 	// A B that does not divide evenly must round up, not down.

@@ -62,7 +62,7 @@ async function seedListing(settlementValueMinor: number) {
     category: "retail",
     locationIds: [location.id],
     currency: "IDR" as const,
-    faceValueMinor: 10_000_000,
+    faceValueMinor: 100_000,
     settlementValueMinor,
     priceInPoints: 1_000,
     stockTotal: 5,
@@ -77,13 +77,13 @@ async function seedListing(settlementValueMinor: number) {
 
 describe("setSettlementValue against a real PDP", () => {
   it("allows an INCREASE for an owner -- the only non-material change there is", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const body = setSettlementValueSchema.parse({
-      newSettlementValueMinor: 1_100_000,
+      newSettlementValueMinor: 11_000,
       reason: "Merchant agreed a better settlement rate.",
     });
     const change = await controller.setSettlementValue(TENANT, listing.id, body, request);
-    expect(change.updated.settlementValueMinor).toBe(1_100_000);
+    expect(change.updated.settlementValueMinor).toBe(11_000);
   });
 
   // YT-0576: this case used to assert the OPPOSITE -- a 10% cut applied
@@ -94,9 +94,9 @@ describe("setSettlementValue against a real PDP", () => {
   // is the whole point of testing the boundary at its minimum rather than at
   // a comfortable 50%.
   it("REFUSES a one-rupiah decrease -- there is no threshold to sit under", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const body = setSettlementValueSchema.parse({
-      newSettlementValueMinor: 999_999,
+      newSettlementValueMinor: 9_999,
       reason: "Rounding tidy-up.",
     });
     await expect(
@@ -104,15 +104,15 @@ describe("setSettlementValue against a real PDP", () => {
     ).rejects.toMatchObject({ status: 403 });
 
     const unchanged = await repo.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(10_000);
     expect(await revisions.listForListing(listing.id)).toHaveLength(0);
   });
 
   // The bypass the threshold created, kept as a regression: under a 20% band
   // these two calls together cut S by 27.75% with nobody approving anything.
   it("REFUSES repeated small cuts that would compound past any old threshold", async () => {
-    const listing = await seedListing(1_000_000);
-    for (const value of [850_000, 722_500]) {
+    const listing = await seedListing(10_000);
+    for (const value of [8_500, 7_225]) {
       const body = setSettlementValueSchema.parse({
         newSettlementValueMinor: value,
         reason: "Salami slice.",
@@ -122,13 +122,13 @@ describe("setSettlementValue against a real PDP", () => {
       ).rejects.toMatchObject({ status: 403 });
     }
     const unchanged = await repo.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(10_000);
   });
 
   it("REFUSES a material decrease outright, even for the owner", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const body = setSettlementValueSchema.parse({
-      newSettlementValueMinor: 500_000, // 50% cut
+      newSettlementValueMinor: 5_000, // 50% cut
       reason: "Big cut.",
     });
     await expect(
@@ -137,7 +137,7 @@ describe("setSettlementValue against a real PDP", () => {
 
     // And it did not apply, and left no audit trail for a change that never happened.
     const unchanged = await repo.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(10_000);
     expect(await revisions.listForListing(listing.id)).toHaveLength(0);
   });
 });

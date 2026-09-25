@@ -73,8 +73,8 @@ export function createSimulatedReceiptIngest(faultPlan?: FaultPlan): ReceiptInge
       return Promise.resolve(
         ok({
           merchantName: blurry ? "T0k0 Berk4h" : "Toko Berkah",
-          // Rp 45.000 in sen (YT-0506).
-          totalMinor: 4_500_000,
+          // Rp 45.000, stored in whole Rupiah (FOUNDER DECISION T-1).
+          totalMinor: 45_000,
           currency: "IDR",
           purchasedAtIso: "2026-09-20T03:15:00.000Z",
           // Deliberately above zero: a blurry read is a usable guess, and a

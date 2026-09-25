@@ -8,7 +8,7 @@
 // Every minor-unit amount (points, IDR, AUD) is a JSON STRING of a decimal
 // integer, never a JSON number. A JSON number is a float64 in every client
 // this API will ever have, and float64 loses precision above 2^53 — a value
-// this ledger can reach once points and IDR sen are in the same range. A
+// this ledger can reach once points and IDR amounts are in the same range. A
 // price quote of "1999.9999999999998" is not a rounding curiosity here, it
 // is a different amount of money than the database holds. Small bounded
 // integers that are never arithmetic (basis points, a rate row's id) stay
@@ -18,15 +18,15 @@
 //
 // # What unit these amounts are in
 //
-// This package does not know, and does not decide. YT-0506 settled that IDR
-// is stored in sen, but the 100x migration of already-stored values has not
-// run and packages/contracts' currency-tagged Money type is mid-flight,
-// so nothing here hardcodes a scale factor or converts anything. An amount
-// arriving over this API is passed to internal/ledger and internal/pricing
-// exactly as given, in whatever minor unit the caller and the current
-// contents of the database already agree on. That is the same ignorance
-// internal/ledger's own package comment describes ("it never needs to know
-// what the integer MEANS") extended one layer out, not a new assumption.
+// This package does not know, and does not decide. FOUNDER DECISION T-1
+// settled that IDR is stored in whole Rupiah (exponent 0), and the migration
+// dividing already-stored values by 100 has run — but nothing here hardcodes
+// that or any other scale factor. An amount arriving over this API is passed
+// to internal/ledger and internal/pricing exactly as given, in whatever
+// minor unit the caller and the current contents of the database already
+// agree on. That is the same ignorance internal/ledger's own package comment
+// describes ("it never needs to know what the integer MEANS") extended one
+// layer out, not a new assumption.
 package api
 
 import (

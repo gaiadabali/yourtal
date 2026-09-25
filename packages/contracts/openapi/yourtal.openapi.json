@@ -2519,7 +2519,7 @@
         "additionalProperties": false
       },
       "IdrMinorUnits": {
-        "description": "Indonesian Rupiah as an integer number of SEN — one hundredth of a Rupiah. Rp 45.000 is 4500000. Settled by YT-0506 on 2026-09-20: ISO 4217 gives IDR a sen minor unit, Indonesian banking uses it (amounts appear as Rp 1.000,26), and Stripe treats IDR as two-decimal. This settles what we STORE, not what a processor accepts: Xendit publishes no amount-unit spec and Adyen flags IDR as diverging from ISO, so conversion belongs in each PSP adapter. Prefer Money, which carries its own currency.",
+        "description": "Indonesian Rupiah as an integer number of whole Rupiah (exponent 0). Rp 45.000 is 45000. The stored unit follows the payment gateway (decision T-1, 2026-09-22), reversing the earlier sen decision. Prefer Money, which carries its own currency.",
         "type": "integer",
         "minimum": 0,
         "maximum": 10000000000,

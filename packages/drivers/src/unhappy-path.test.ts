@@ -44,11 +44,14 @@ const EXERCISES: readonly Exercise[] = [
   {
     boundary: "payments",
     describe: "charging a user",
+    // AUD: the registry's default driver never declares an IDR unit (that is
+    // the point — see payments.ts), so a currency-agnostic fault-injection
+    // test uses the one currency the simulator can always charge.
     call: (fault) =>
       driversWith("payments", fault).payments.charge({
         idempotencyKey: "key-1",
-        amountMinor: 4_500_000,
-        currency: "IDR",
+        amountMinor: 4_500,
+        currency: "AUD",
         reference: "points-top-up",
       }),
   },
@@ -59,8 +62,8 @@ const EXERCISES: readonly Exercise[] = [
       driversWith("disbursement", fault).disbursement.payout({
         idempotencyKey: "key-1",
         merchantId: "merchant-1",
-        amountMinor: 1_200_000,
-        currency: "IDR",
+        amountMinor: 1_200,
+        currency: "AUD",
       }),
   },
   {
@@ -190,11 +193,14 @@ function boundCall(
 
   switch (boundary) {
     case "payments":
+      // AUD: the registry's default driver never declares an IDR unit (see
+      // payments.ts), so retry behaviour is exercised on the currency the
+      // simulator can always charge.
       return () =>
         drivers.payments.charge({
           idempotencyKey: nextKey(),
-          amountMinor: 4_500_000,
-          currency: "IDR",
+          amountMinor: 4_500,
+          currency: "AUD",
           reference: "points-top-up",
         });
     case "disbursement":
@@ -202,8 +208,8 @@ function boundCall(
         drivers.disbursement.payout({
           idempotencyKey: nextKey(),
           merchantId: "merchant-1",
-          amountMinor: 1_200_000,
-          currency: "IDR",
+          amountMinor: 1_200,
+          currency: "AUD",
         });
     case "bot_check":
       return () => drivers.botCheck.verify("sim-bot-pass");

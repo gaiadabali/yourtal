@@ -18,10 +18,10 @@ func TestCurrencyMismatchOutcome(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "AUD", OrderRef: orderRef(),
 	})
 	if !errors.Is(err, redeem.ErrCurrencyMismatch) {
@@ -39,7 +39,7 @@ func TestCurrencyMismatchOutcome(t *testing.T) {
 
 	// The matching currency still works on the same voucher.
 	if _, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	}); err != nil {
 		t.Fatalf("the correct currency was refused: %v", err)
@@ -55,7 +55,7 @@ func TestCurrencyMismatchDoesNotThrottle(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	// Comfortably more than FailureThreshold, against the RIGHT merchant and
 	// a REAL, live code — the only thing wrong with every one of these
@@ -63,7 +63,7 @@ func TestCurrencyMismatchDoesNotThrottle(t *testing.T) {
 	// this loop alone would trip it.
 	for attempt := 0; attempt < redeem.FailureThreshold+5; attempt++ {
 		_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-			Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+			Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 			Currency: "AUD", OrderRef: orderRef(),
 		})
 		if !errors.Is(err, redeem.ErrCurrencyMismatch) {
@@ -74,7 +74,7 @@ func TestCurrencyMismatchDoesNotThrottle(t *testing.T) {
 	// The voucher still authorizes normally afterwards — proof the merchant
 	// was never throttled by the mismatches above.
 	if _, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	}); err != nil {
 		t.Fatalf("the merchant was throttled by currency mismatches alone: %v", err)
@@ -88,7 +88,7 @@ func TestIssuanceCopiesCurrency(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	voucherID, _ := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	voucherID, _ := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	var currency string
 	if err := f.pool.QueryRow(ctx,

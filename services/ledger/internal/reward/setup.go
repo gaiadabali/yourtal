@@ -40,9 +40,9 @@ func (e *Engine) EnsureChart(ctx context.Context) error {
 //
 // The CASH that backed a partner's purchase is recorded separately, when the
 // purchase happens (YT-0046) — not here, and not at issuance. That split is
-// what lets docs/16 K6's structural half be enforced now while its valuation
-// half waits on YT-0506: this counts points, and a block of N points is N
-// points whatever an IDR integer turns out to mean.
+// what let docs/16 K6's structural half be enforced before its valuation
+// half (the backing rate) existed: this counts points, and a block of N
+// points is N points whatever an IDR integer denominates.
 func (e *Engine) CreateAllocation(
 	ctx context.Context, id, funderType, funderID string, points int64,
 ) error {

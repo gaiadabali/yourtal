@@ -32,14 +32,14 @@ func TestWrongMerchantAndUnknownCodeAreIdenticalOverHTTP(t *testing.T) {
 	}
 	stranger := f.issueCredential(t, ctx, keys, uuid.New())
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	wrongMerchant := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": plaintext, "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
+		"code": plaintext, "amount": 10_000, "currency": "IDR", "merchant_order_ref": orderRef(),
 	}), stranger, uuid.NewString())
 
 	unknownCode := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": mintedButUnknownCode(t), "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
+		"code": mintedButUnknownCode(t), "amount": 10_000, "currency": "IDR", "merchant_order_ref": orderRef(),
 	}), stranger, uuid.NewString())
 
 	if wrongMerchant.Code != unknownCode.Code {
@@ -70,10 +70,10 @@ func TestAnotherMerchantCannotCaptureYourAuthorization(t *testing.T) {
 	}
 	stranger := f.issueCredential(t, ctx, keys, uuid.New())
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorize := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": plaintext, "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
+		"code": plaintext, "amount": 10_000, "currency": "IDR", "merchant_order_ref": orderRef(),
 	}), owner, uuid.NewString())
 	if authorize.Code != http.StatusOK {
 		t.Fatalf("the owning merchant's authorize failed: %d %s", authorize.Code, authorize.Body.String())
@@ -84,7 +84,7 @@ func TestAnotherMerchantCannotCaptureYourAuthorization(t *testing.T) {
 	decodeBody(t, authorize, &authorized)
 
 	capture := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/capture", mustJSON(t, map[string]any{
-		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000_00,
+		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000,
 	}), stranger, uuid.NewString())
 
 	if capture.Code != http.StatusNotFound {
@@ -95,7 +95,7 @@ func TestAnotherMerchantCannotCaptureYourAuthorization(t *testing.T) {
 	// And the real owner can still capture it — the check refused the
 	// stranger without damaging the hold.
 	retry := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/capture", mustJSON(t, map[string]any{
-		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000_00,
+		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000,
 	}), owner, uuid.NewString())
 	if retry.Code != http.StatusOK {
 		t.Fatalf("the owning merchant's capture failed after a stranger was refused: %d %s",
@@ -124,10 +124,10 @@ func TestAnotherMerchantCannotRefundYourReceipt(t *testing.T) {
 	}
 	stranger := f.issueCredential(t, ctx, keys, uuid.New())
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorize := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": plaintext, "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
+		"code": plaintext, "amount": 10_000, "currency": "IDR", "merchant_order_ref": orderRef(),
 	}), owner, uuid.NewString())
 	if authorize.Code != http.StatusOK {
 		t.Fatalf("the owning merchant's authorize failed: %d %s", authorize.Code, authorize.Body.String())
@@ -138,7 +138,7 @@ func TestAnotherMerchantCannotRefundYourReceipt(t *testing.T) {
 	decodeBody(t, authorize, &authorized)
 
 	capture := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/capture", mustJSON(t, map[string]any{
-		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000_00,
+		"authorization_id": authorized.AuthorizationID, "final_amount": 10_000,
 	}), owner, uuid.NewString())
 	if capture.Code != http.StatusOK {
 		t.Fatalf("the owning merchant's capture failed: %d %s", capture.Code, capture.Body.String())
@@ -149,7 +149,7 @@ func TestAnotherMerchantCannotRefundYourReceipt(t *testing.T) {
 	decodeBody(t, capture, &captured)
 
 	refund := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/refund", mustJSON(t, map[string]any{
-		"receipt_id": captured.ReceiptID, "amount": 5_000_00, "reason": "not yours",
+		"receipt_id": captured.ReceiptID, "amount": 5_000, "reason": "not yours",
 	}), stranger, uuid.NewString())
 	if refund.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404 — a stranger refunded another merchant's receipt: %s",
@@ -158,7 +158,7 @@ func TestAnotherMerchantCannotRefundYourReceipt(t *testing.T) {
 
 	// The real owner can still refund it.
 	retry := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/refund", mustJSON(t, map[string]any{
-		"receipt_id": captured.ReceiptID, "amount": 5_000_00, "reason": "customer returned an item",
+		"receipt_id": captured.ReceiptID, "amount": 5_000, "reason": "customer returned an item",
 	}), owner, uuid.NewString())
 	if retry.Code != http.StatusOK {
 		t.Fatalf("the owning merchant's refund failed after a stranger was refused: %d %s",

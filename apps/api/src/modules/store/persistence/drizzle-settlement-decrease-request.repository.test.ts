@@ -47,7 +47,7 @@ async function seedListing(settlementValueMinor: number) {
     category: "retail",
     locationIds: [location.id],
     currency: "IDR" as const,
-    faceValueMinor: 10_000_000,
+    faceValueMinor: 100_000,
     settlementValueMinor,
     priceInPoints: 1_000,
     stockTotal: 5,
@@ -62,13 +62,13 @@ async function seedListing(settlementValueMinor: number) {
 
 describe("create + findPendingForListing + findById", () => {
   it("round-trips a proposed request as pending", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const created = await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
       currency: "IDR" as const,
-      currentSettlementValueMinor: 1_000_000,
-      proposedSettlementValueMinor: 500_000,
+      currentSettlementValueMinor: 10_000,
+      proposedSettlementValueMinor: 5_000,
       reason: "Big cut.",
     });
 
@@ -80,24 +80,24 @@ describe("create + findPendingForListing + findById", () => {
     expect(pending?.id).toBe(created.id);
 
     const byId = await requests.findById(listing.id, created.id);
-    expect(byId?.proposedSettlementValueMinor).toBe(500_000);
+    expect(byId?.proposedSettlementValueMinor).toBe(5_000);
   });
 
   it("findPendingForListing is null once nothing is pending for that listing", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     expect(await requests.findPendingForListing(listing.id)).toBeNull();
   });
 });
 
 describe("a second pending request for the same listing is unrepresentable", () => {
   it("is refused by the partial unique index, not merely by a check that runs first", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
       currency: "IDR" as const,
-      currentSettlementValueMinor: 1_000_000,
-      proposedSettlementValueMinor: 500_000,
+      currentSettlementValueMinor: 10_000,
+      proposedSettlementValueMinor: 5_000,
       reason: "First cut.",
     });
 
@@ -109,8 +109,8 @@ describe("a second pending request for the same listing is unrepresentable", () 
         listingId: listing.id,
         requestedBy: REQUESTER,
         currency: "IDR" as const,
-        currentSettlementValueMinor: 1_000_000,
-        proposedSettlementValueMinor: 600_000,
+        currentSettlementValueMinor: 10_000,
+        proposedSettlementValueMinor: 6_000,
         reason: "Second cut, while the first is still pending.",
       }),
     ).rejects.toThrow();
@@ -119,19 +119,19 @@ describe("a second pending request for the same listing is unrepresentable", () 
 
 describe("approve", () => {
   it("claims the request, applies the value, and links the audit row to it", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const created = await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
       currency: "IDR" as const,
-      currentSettlementValueMinor: 1_000_000,
-      proposedSettlementValueMinor: 500_000,
+      currentSettlementValueMinor: 10_000,
+      proposedSettlementValueMinor: 5_000,
       reason: "Big cut.",
     });
 
     const change = await requests.approve(MERCHANT, listing.id, created.id, APPROVER);
-    expect(change?.updated.settlementValueMinor).toBe(500_000);
-    expect(change?.previous.settlementValueMinor).toBe(1_000_000);
+    expect(change?.updated.settlementValueMinor).toBe(5_000);
+    expect(change?.previous.settlementValueMinor).toBe(10_000);
 
     const resolved = await requests.findById(listing.id, created.id);
     expect(resolved?.state).toBe("approved");
@@ -139,18 +139,18 @@ describe("approve", () => {
     expect(resolved?.approvedAt).not.toBeNull();
 
     const revisions = await priceRevisions.listForListing(listing.id);
-    const linked = revisions.find((row) => row.newSettlementValueMinor === 500_000);
+    const linked = revisions.find((row) => row.newSettlementValueMinor === 5_000);
     expect(linked?.requestedBy).toBe(REQUESTER);
   });
 
   it("SELF-APPROVAL: the same person who requested it matches no row and nothing applies", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const created = await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
       currency: "IDR" as const,
-      currentSettlementValueMinor: 1_000_000,
-      proposedSettlementValueMinor: 500_000,
+      currentSettlementValueMinor: 10_000,
+      proposedSettlementValueMinor: 5_000,
       reason: "Self-approval attempt.",
     });
 
@@ -165,17 +165,17 @@ describe("approve", () => {
     expect(stillPending?.approvedBy).toBeNull();
 
     const unchanged = await listings.findOwnedById(MERCHANT, listing.id);
-    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(10_000);
   });
 
   it("a second approval attempt (already resolved) also matches no row", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const created = await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
       currency: "IDR" as const,
-      currentSettlementValueMinor: 1_000_000,
-      proposedSettlementValueMinor: 500_000,
+      currentSettlementValueMinor: 10_000,
+      proposedSettlementValueMinor: 5_000,
       reason: "First approval.",
     });
     const first = await requests.approve(MERCHANT, listing.id, created.id, APPROVER);
@@ -186,11 +186,11 @@ describe("approve", () => {
 
     // The value from the first approval is not double-applied or reverted.
     const listingNow = await listings.findOwnedById(MERCHANT, listing.id);
-    expect(listingNow?.settlementValueMinor).toBe(500_000);
+    expect(listingNow?.settlementValueMinor).toBe(5_000);
   });
 
   it("a nonexistent request matches no row", async () => {
-    const listing = await seedListing(1_000_000);
+    const listing = await seedListing(10_000);
     const result = await requests.approve(MERCHANT, listing.id, randomUUID(), APPROVER);
     expect(result).toBeNull();
   });

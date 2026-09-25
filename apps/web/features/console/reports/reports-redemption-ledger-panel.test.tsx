@@ -50,8 +50,9 @@ describe("ReportsRedemptionLedgerPanel", () => {
     render(<ReportsRedemptionLedgerPanel summary={summary("IDR")} />);
     expect(screen.getByRole("heading", { name: "Redemption ledger" })).toBeInTheDocument();
     expect(screen.getByText("Measured")).toBeInTheDocument();
-    // 80_000 minor units in IDR renders Rp 800 (IDR is exponent 0).
-    expect(screen.getByText(/^Rp\s?800$/)).toBeInTheDocument();
+    // 80_000 minor units in IDR renders Rp 80.000 (IDR is whole Rupiah,
+    // exponent 0 — FOUNDER DECISION T-1 — so the minor unit is the display unit).
+    expect(screen.getByText(/^Rp\s?80\.000$/)).toBeInTheDocument();
     expect(screen.queryByText("Expired")).not.toBeInTheDocument();
   });
 

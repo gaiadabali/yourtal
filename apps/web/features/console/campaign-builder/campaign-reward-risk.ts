@@ -17,25 +17,26 @@
  * The backing rates now come from `@yourtal/contracts/money/mock-backing-rate`
  * rather than being declared here. They used to be local copies, on the
  * reasoning that every other mock module carried its own — which was true,
- * and was the problem. YT-0506 moved IDR from Rupiah to sen, and a rate
- * copied into four files is a rate that gets updated in three: the fourth
- * would have priced every campaign 100x wrong with nothing failing, because
- * each copy is only ever compared against values that agree with it.
+ * and was the problem. A rate copied into four files is a rate that gets
+ * updated in three: the fourth would have priced every campaign wrong with
+ * nothing failing, because each copy is only ever compared against values
+ * that agree with it. That is exactly what would have happened here after
+ * decision T-1 moved IDR to whole Rupiah, had this constant stayed local.
  *
- * `MOCK_DATA_COST_IDR_PER_MB` moved with it, from 4 Rupiah to 400 sen. The
- * RATIO is unaffected — both sides scale — but `dataCostMinorUnits` and
- * `rewardValueMinorUnits` are named for the stored minor unit and are
- * rendered as money by the builder, so leaving them in Rupiah would have
- * made the banner understate both figures by 100x while still quoting a
- * correct ratio. A wrong number beside a right one is the harder bug.
+ * `MOCK_DATA_COST_IDR_PER_MB` is in the same minor unit as
+ * `MOCK_BACKING_RATE_IDR_PER_POINT` for the same reason: `dataCostMinorUnits`
+ * and `rewardValueMinorUnits` are named for the stored minor unit and are
+ * rendered as money by the builder, so a mismatch between the two would make
+ * the banner quote a wrong figure beside a correct-looking ratio — the
+ * harder bug, because the ratio alone would not catch it.
  */
 import {
   MOCK_BACKING_RATE_AUD_CENTS_PER_POINT,
   MOCK_BACKING_RATE_IDR_PER_POINT,
 } from "@yourtal/contracts/money/mock-backing-rate";
 
-/** IDR 720 for 180 MB in docs/06's own table (30 min at 480p) is almost exactly 4 Rupiah/MB, i.e. 400 sen/MB since YT-0506. */
-const MOCK_DATA_COST_IDR_PER_MB = 400;
+/** IDR 720 for 180 MB in docs/06's own table (30 min at 480p) is almost exactly 4 Rupiah/MB. */
+const MOCK_DATA_COST_IDR_PER_MB = 4;
 /**
  * Illustrative only: Australian mobile data is comparatively cheap and
  * plans are commonly near-unlimited, so this rule is written for the

@@ -8,9 +8,9 @@
 // halves, and only one of them is about cash: the cash is recorded when a
 // partner pre-purchases a block (YT-0046), not when a point is issued. What
 // issuance has to enforce is that a point came out of a funded block at all,
-// and a block of N points is N points whether an IDR integer is a rupiah or
-// a sen. So the gate is buildable now and the valuation (the coverage ratio,
-// the backing rate B) waits for YT-0506.
+// and a block of N points is N points whatever an IDR integer denominates
+// (FOUNDER DECISION T-1: whole Rupiah). The gate never needed to know that to
+// be buildable, which is why it shipped before the unit did.
 //
 // docs/18 §9 also fixes the shape: the engine "gets smarter only in its
 // INPUTS (risk score, trust tier), never in its arithmetic". Nothing here

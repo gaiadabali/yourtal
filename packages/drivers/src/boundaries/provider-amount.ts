@@ -7,11 +7,11 @@ import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
  *
  * ## The whole point of the ticket
  *
- * YT-0506 settled what this platform **stores** — IDR in sen, exponent 2 —
- * and deliberately did not settle what a processor **accepts**. Adyen
- * publicly flags IDR as diverging from ISO, and Xendit publishes no
- * amount-unit spec at all, so two processors in our own stack may genuinely
- * want different integers for the same money.
+ * FOUNDER DECISION T-1 settled what this platform **stores** — IDR in whole
+ * Rupiah, exponent 0 — and that happens to now agree with Xendit, but it
+ * never settled what a processor **accepts** in general. Adyen publicly
+ * flags IDR as diverging from ISO, so a different processor in our own stack
+ * may genuinely want a different integer for the same money.
  *
  * A driver that assumed the stored unit would be right by luck. This module
  * makes the processor's unit a **declared property of the driver**, and
@@ -22,24 +22,25 @@ import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
  * ## Why the parity property is value preservation, not exponent equality
  *
  * The obvious test is "the driver's exponent equals `MINOR_UNIT`'s". That
- * would be wrong: a processor legitimately wanting whole Rupiah is not a
+ * would be wrong: a processor legitimately wanting a different unit is not a
  * bug, it is the case this design exists for. Asserting equality would
  * forbid the very thing we are building.
  *
  * What must hold is that **the same real-world amount comes out the other
- * side**. Rp 45.000 is 4_500_000 stored sen and 45_000 provider Rupiah, and
- * both denote Rp 45.000. That is the property `payments-parity.test.ts`
+ * side**. A stored amount of 45_000 at exponent 0 and 4_500_000 at exponent 2
+ * both denote the same 45,000 whole units — whichever exponent a specific
+ * processor happens to want. That is the property `payments-parity.test.ts`
  * checks, and it is the one that catches a 100x error whichever direction
  * the mistake runs.
  *
  * ## Integer-only, and a refusal rather than a rounding
  *
- * Converting down a scale (sen to Rupiah) can lose money. `4_500_050` sen is
- * Rp 45.000,50 and there is no such thing as half a Rupiah to send. Rounding
- * would silently discard 50 sen per transaction, which is the kind of loss
- * that is invisible per-item and material per-million — so this returns an
- * error instead. A caller has to decide what to do about a remainder; the
- * adapter must not decide for them.
+ * Converting down a scale can lose money. `4_500_050` at exponent 2 has no
+ * exact representation at exponent 0 — there is no such thing as half a
+ * whole unit to send. Rounding would silently discard the remainder, which
+ * is the kind of loss that is invisible per-item and material per-million —
+ * so this returns an error instead. A caller has to decide what to do about
+ * a remainder; the adapter must not decide for them.
  *
  * No floating point anywhere. `4_500_000 / 100` happens to be exact, but
  * `0.1 + 0.2` is the reason nobody should be asked to check which values are.

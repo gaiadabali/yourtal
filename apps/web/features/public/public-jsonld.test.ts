@@ -29,11 +29,11 @@ describe("buildOfferProductJsonLd", () => {
       locale: publicLocaleConfig("id"),
     }) as { offers: { price: string; priceCurrency: string; availability: string } };
 
-    // Rp 30.000, as a decimal major-unit amount. It was "30000" while the IDR
-    // minor unit was one Rupiah; YT-0506 made it two-decimal, so the builder
-    // now scales by MINOR_UNIT and emits "30000.00" — the same shape AUD has
-    // always had, rather than a second rule for one currency.
-    expect(jsonLd.offers.price).toBe("30000.00");
+    // Rp 30.000, as a decimal major-unit amount. IDR's minor unit is the
+    // whole Rupiah (FOUNDER DECISION T-1, exponent 0), so the builder's
+    // MINOR_UNIT-driven scaling emits "30000" with no decimal places —
+    // the same mechanism AUD uses at its own exponent, not a special case.
+    expect(jsonLd.offers.price).toBe("30000");
     expect(jsonLd.offers.priceCurrency).toBe("IDR");
     expect(jsonLd.offers.availability).toBe("https://schema.org/OutOfStock");
   });

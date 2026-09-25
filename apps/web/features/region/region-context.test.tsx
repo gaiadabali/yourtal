@@ -17,9 +17,10 @@ import { useRegion } from "./use-region";
 // independently.
 // A raw minor-unit integer, deliberately NOT tied to a currency: the whole
 // point of this test is that the same stored value renders as $45.50 under
-// AU and Rp 45,5 under ID, decided only by what `useRegion()` returns. Since
-// YT-0506 made IDR two-decimal as well, both sides now scale by 100 — which
-// is why the digits agree and only the symbol and separators differ.
+// AU and Rp 4.550 under ID, decided only by what `useRegion()` returns. AUD
+// is two-decimal and IDR is whole Rupiah (FOUNDER DECISION T-1, exponent 0),
+// so the same 4_550 minor units means two different real amounts — that is
+// the point: the amount is only ever meaningful together with its currency.
 const SAMPLE_PRICE = asDisplayIdr(4_550);
 const SAMPLE_POINTS = asDisplayPoints(2_400);
 
@@ -60,7 +61,7 @@ describe("region wiring: currency, number formatting and copy cannot drift apart
   it("ID renders IDR currency and the Indonesian points word together", () => {
     renderPriceCard("ID");
     expect(screen.getByTestId("price").textContent).toContain("Rp");
-    expect(screen.getByTestId("price").textContent).toContain("45,5");
+    expect(screen.getByTestId("price").textContent).toContain("4.550");
     expect(screen.getByTestId("points").textContent).toBe("2.400 poin");
   });
 

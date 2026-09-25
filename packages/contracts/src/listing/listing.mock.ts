@@ -8,8 +8,9 @@ import { MOCK_BACKING_RATE_IDR_PER_POINT } from "../money/mock-backing-rate";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 
 /** Illustrative mock backing rate (IDR per point), see docs/09 section 4.1. Not the real pricing engine. */
-// Rupiah per point. If YT-0506 settles on sen, this becomes sen-per-point
-// and must move with the settlement values, or prices go 100x wrong.
+// Rupiah per point (FOUNDER DECISION T-1: IDR is whole Rupiah, exponent 0).
+// Must move with the settlement values below if the unit ever changes again,
+// or prices go 100x wrong.
 
 export interface GenerateListingParams {
   seed: number;

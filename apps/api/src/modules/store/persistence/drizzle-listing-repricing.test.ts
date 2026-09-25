@@ -43,8 +43,8 @@ async function createListing(overrides: Partial<CreateListingInput> = {}) {
     category: "retail",
     locationIds: [location.id],
     currency: "IDR" as const,
-    faceValueMinor: 10_000_000,
-    settlementValueMinor: 3_000_000,
+    faceValueMinor: 100_000,
+    settlementValueMinor: 30_000,
     priceInPoints: 5_000,
     stockTotal: 5,
     transferable: false,
@@ -65,14 +65,14 @@ describe("updateSettlementValue", () => {
     const change = await repo.updateSettlementValue(
       MERCHANT,
       listing.id,
-      2_000_000,
+      20_000,
       requestedBy,
       "Merchant requested a lower settlement rate for the holiday promo.",
     );
 
     expect(change).not.toBeNull();
-    expect(change?.previous.settlementValueMinor).toBe(3_000_000);
-    expect(change?.updated.settlementValueMinor).toBe(2_000_000);
+    expect(change?.previous.settlementValueMinor).toBe(30_000);
+    expect(change?.updated.settlementValueMinor).toBe(20_000);
     // THE invariant: this module cannot compute a real points price, so it
     // must not silently invent one.
     expect(change?.updated.priceInPoints).toBe(listing.priceInPoints);
@@ -82,8 +82,8 @@ describe("updateSettlementValue", () => {
     const listing = await createListing();
     const requestedBy = "00000000-0000-4000-8000-0000000c0002";
 
-    await repo.updateSettlementValue(MERCHANT, listing.id, 1_000_000, requestedBy, "First cut.");
-    await repo.updateSettlementValue(MERCHANT, listing.id, 500_000, requestedBy, "Second cut.");
+    await repo.updateSettlementValue(MERCHANT, listing.id, 10_000, requestedBy, "First cut.");
+    await repo.updateSettlementValue(MERCHANT, listing.id, 5_000, requestedBy, "Second cut.");
 
     const trail = await revisions.listForListing(listing.id);
     expect(trail).toHaveLength(2);
@@ -92,10 +92,10 @@ describe("updateSettlementValue", () => {
       expect(entry.requestedBy).toBe(requestedBy);
     }
     const [latest, earliest] = trail;
-    expect(latest?.newSettlementValueMinor).toBe(500_000);
-    expect(latest?.previousSettlementValueMinor).toBe(1_000_000);
-    expect(earliest?.newSettlementValueMinor).toBe(1_000_000);
-    expect(earliest?.previousSettlementValueMinor).toBe(3_000_000);
+    expect(latest?.newSettlementValueMinor).toBe(5_000);
+    expect(latest?.previousSettlementValueMinor).toBe(10_000);
+    expect(earliest?.newSettlementValueMinor).toBe(10_000);
+    expect(earliest?.previousSettlementValueMinor).toBe(30_000);
   });
 
   it("returns null and writes nothing for a listing outside the caller's tenant", async () => {
@@ -113,7 +113,7 @@ describe("updateSettlementValue", () => {
     expect(change).toBeNull();
     expect(await revisions.listForListing(listing.id)).toHaveLength(0);
     const unchanged = await repo.findOwnedById(MERCHANT, listing.id);
-    expect(unchanged?.settlementValueMinor).toBe(3_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(30_000);
   });
 });
 

@@ -34,10 +34,10 @@ func TestCaptureRefusesAnotherMerchantAtTheQueryLevel(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
@@ -45,7 +45,7 @@ func TestCaptureRefusesAnotherMerchantAtTheQueryLevel(t *testing.T) {
 	}
 
 	stranger := uuid.New()
-	if _, err := f.network.Capture(ctx, authorization.ID, stranger, 10_000_00, orderRef()); !errors.Is(
+	if _, err := f.network.Capture(ctx, authorization.ID, stranger, 10_000, orderRef()); !errors.Is(
 		err, redeem.ErrNoLiveHold,
 	) {
 		t.Fatalf("a stranger captured another merchant's authorization at the domain layer: %v", err)
@@ -54,7 +54,7 @@ func TestCaptureRefusesAnotherMerchantAtTheQueryLevel(t *testing.T) {
 	// The hold survives: a refused stranger's capture must not have
 	// consumed it, or a wrong-merchant guess becomes a denial-of-service
 	// against the real owner.
-	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_00, orderRef()); err != nil {
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000, orderRef()); err != nil {
 		t.Errorf("the owning merchant's capture failed after a stranger was refused: %v", err)
 	}
 }
@@ -64,10 +64,10 @@ func TestVoidRefusesAnotherMerchantAtTheQueryLevel(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {

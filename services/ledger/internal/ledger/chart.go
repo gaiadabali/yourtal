@@ -7,11 +7,11 @@ import "fmt"
 // # Classification, not valuation
 //
 // This file says what an account IS. It never says what one is worth. Points
-// liability is points liability whether an IDR integer turns out to be a
-// rupiah or a sen (YT-0506) — but the moment anything here multiplied by a
-// backing rate, it would be pricing, and pricing is where that open question
-// actually bites. There is no rate, no coverage ratio and no currency-per-
-// point arithmetic anywhere in this package, and that is deliberate.
+// liability is points liability whatever an IDR integer is denominated in
+// (FOUNDER DECISION T-1: whole Rupiah) — but the moment anything here
+// multiplied by a backing rate, it would be pricing, and pricing is where the
+// unit actually bites. There is no rate, no coverage ratio and no currency-
+// per-point arithmetic anywhere in this package, and that is deliberate.
 //
 // # Why points are a currency
 //

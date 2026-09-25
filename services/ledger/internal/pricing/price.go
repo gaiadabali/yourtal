@@ -37,9 +37,10 @@ import (
 // unit of currency, per point.
 //
 // The alternative — minor units per point as a plain integer — works for IDR
-// (B of IDR 6/point is 600 sen, whole) and breaks for AUD (B of 0.6 cents is
-// not). The moment one currency needs a fraction every currency does, or the
-// same formula silently means two things depending on where it runs.
+// (B of IDR 6/point is exactly 6, since IDR's minor unit is the whole Rupiah)
+// and breaks for AUD (B of 0.6 cents is not a whole integer). The moment one
+// currency needs a fraction every currency does, or the same formula
+// silently means two things depending on where it runs.
 const MicrosPerMinorUnit = 1_000_000
 
 // The demand multiplier's bounds, in basis points. docs/09 §4.2 calls these

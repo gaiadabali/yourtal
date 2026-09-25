@@ -48,8 +48,8 @@ async function seedListing() {
     category: "services",
     locationIds: [location.id],
     currency: "IDR" as const,
-    faceValueMinor: 1_000_000,
-    settlementValueMinor: 300_000,
+    faceValueMinor: 10_000,
+    settlementValueMinor: 3_000,
     priceInPoints: 500,
     stockTotal: 5,
     transferable: false,
@@ -172,20 +172,20 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
   // database and the non-uuid surfaced as persistence_failed. A test that
   // never reaches the write cannot tell you its arguments are wrong.
   it("accepts a ~3% cut -- there is no threshold below which a decrease is immaterial", async () => {
-    const listing = await seedListing(); // settlementValueMinor: 300_000
+    const listing = await seedListing(); // settlementValueMinor: 3_000
     const result = await proposeSettlementDecrease(
       repo,
       decreaseRequests,
       MERCHANT,
       listing.id,
-      290_000,
+      2_900,
       "00000000-0000-4000-8000-0000000e0009",
       "reason",
     );
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toMatchObject({
       listingId: listing.id,
-      proposedSettlementValueMinor: 290_000,
+      proposedSettlementValueMinor: 2_900,
     });
   });
 
@@ -196,7 +196,7 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
       decreaseRequests,
       MERCHANT,
       listing.id,
-      400_000,
+      4_000,
       "actor",
       "reason",
     );
@@ -215,7 +215,7 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
       decreaseRequests,
       MERCHANT,
       listing.id,
-      100_000,
+      1_000,
       requester,
       "first",
     );
@@ -226,7 +226,7 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
       decreaseRequests,
       MERCHANT,
       listing.id,
-      50_000,
+      500,
       requester,
       "second",
     );
@@ -259,7 +259,7 @@ describe("approveSettlementDecrease (YT-0575)", () => {
       decreaseRequests,
       MERCHANT,
       listing.id,
-      100_000,
+      1_000,
       requester,
       "reason",
     );

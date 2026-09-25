@@ -61,9 +61,10 @@ export const BOUNDARIES: Record<BoundaryName, BoundaryDefinition> = {
     modeEnvVar: "PAYMENTS_DRIVER",
     liveCredentialEnvVars: ["PAYMENTS_API_KEY", "PAYMENTS_WEBHOOK_SECRET"],
     liveVendor:
-      "Xendit in Indonesia, Stripe in Australia. The two may disagree about the IDR amount unit: " +
-      "YT-0506 settled what we STORE (sen), not what a processor accepts, and Adyen publicly flags " +
-      "IDR as diverging from ISO. The unit is therefore a declared property of the driver (YT-0537).",
+      "Xendit in Indonesia, Stripe in Australia. Processors may disagree about the IDR amount unit: " +
+      "FOUNDER DECISION T-1 settled what we STORE (whole Rupiah), not what every processor accepts, " +
+      "and Adyen publicly flags IDR as diverging from ISO. The unit is therefore a declared property " +
+      "of the driver, with no platform-wide default (YT-0537).",
     liveTicket: "YT-0537",
   },
   disbursement: {

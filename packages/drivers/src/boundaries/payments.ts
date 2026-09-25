@@ -12,21 +12,26 @@ import { SIGNATURE_HEADER, TIMESTAMP_HEADER, signWebhook } from "./webhook-signa
  *
  * ## The money unit is a property of the driver, not a constant
  *
- * `declaredMinorUnitExponent` is on the interface deliberately. YT-0506
- * settled what this platform **stores** — IDR in sen, exponent 2 — and
- * explicitly did not settle what a processor **accepts**: Xendit publishes
- * no amount-unit spec and Adyen flags IDR as diverging from ISO, so two
- * processors in one stack may genuinely want different integers for the same
- * money.
+ * `declaredMinorUnitExponent` is on the interface deliberately. FOUNDER
+ * DECISION T-1 settled what this platform **stores** — IDR in whole Rupiah,
+ * exponent 0 — and that happens to now agree with Xendit, but it never
+ * settled what a processor **accepts** in general: Adyen flags IDR as
+ * diverging from ISO, so a different processor in the same stack may
+ * genuinely want a different integer for the same money.
  *
- * A driver that inherited the storage unit would be assuming the answer.
- * Declaring it, and converting through `provider-amount.ts`, turns the open
- * question into a per-adapter conversion — which is the shape the money
- * question has pointed at from the start.
+ * A driver that inherited the storage unit would be assuming the answer, so
+ * IDR gets **no default** here — AUD's two-decimal unit is unambiguous
+ * (Stripe, ISO 4217, cents as legal tender all agree) and keeps one, but a
+ * caller must tell this driver what its IDR processor speaks. Declaring it,
+ * and converting through `provider-amount.ts`, turns the open question into
+ * a per-adapter conversion — which is the shape the money question has
+ * pointed at from the start.
  *
  * **A mis-declared unit fails `payments-parity.test.ts`** rather than
  * settling a merchant 100x wrong. That is what makes deferring the vendor
- * question safe instead of a guess.
+ * question safe instead of a guess. An UNDECLARED IDR unit is refused
+ * outright at `charge()` — silently defaulting it was itself a 100x hazard
+ * once storage stopped being sen (docs/16-decisions.md, docs/25).
  *
  * ## Xendit-shaped
  *
@@ -75,9 +80,11 @@ export interface PaymentsDriver {
   /**
    * The exponent this PROCESSOR speaks, which may differ from the exponent
    * we store. Never derived from `MINOR_UNIT` — that separation is the only
-   * reason comparing them means anything.
+   * reason comparing them means anything. AUD is always present (its unit is
+   * unambiguous); IDR is present only once a caller has declared it — see
+   * the module doc for why there is no platform-wide IDR default.
    */
-  readonly declaredMinorUnitExponent: Record<Currency, number>;
+  readonly declaredMinorUnitExponent: Partial<Record<Currency, number>>;
   charge(request: ChargeRequest): Promise<Result<ChargeAccepted, BoundaryFailure>>;
   deliveries(providerReference: string): readonly PaymentEvent[];
 }
@@ -117,10 +124,16 @@ export function createSimulatedPayments(
   const accepted = new Map<string, ChargeAccepted>();
   const receivedByProvider = new Map<string, ProviderCharge>();
 
-  const exponents: Record<Currency, number> = {
-    // Sen and cents. Stated, not inherited.
-    IDR: options.declaredMinorUnitExponent?.IDR ?? 2,
+  const exponents: Partial<Record<Currency, number>> = {
+    // AUD's cents are unambiguous, so it keeps a default. IDR does not get
+    // one: whether the declared value came from the caller or from guessing
+    // is exactly the distinction that makes the parity suite meaningful. The
+    // key is left absent rather than set to `undefined` — under
+    // `exactOptionalPropertyTypes`, those are different types.
     AUD: options.declaredMinorUnitExponent?.AUD ?? 2,
+    ...(options.declaredMinorUnitExponent?.IDR !== undefined
+      ? { IDR: options.declaredMinorUnitExponent.IDR }
+      : {}),
   };
   const convert = options.convertAmounts ?? true;
   const webhookSecret = options.webhookSecret ?? DEFAULT_SECRET;
@@ -136,6 +149,23 @@ export function createSimulatedPayments(
         return Promise.resolve(ok(replay));
       }
 
+      const providerExponent = exponents[request.currency];
+      if (providerExponent === undefined) {
+        // Not a fault-engine outcome — a construction-time mistake. Guessing
+        // here is exactly the 100x hazard removing the IDR default exists to
+        // stop, so this is refused before any fault is even consulted.
+        return Promise.resolve(
+          err({
+            kind: "declined",
+            boundary: "payments",
+            detail:
+              `No declared minor-unit exponent for ${request.currency}: a driver must be told ` +
+              "explicitly what its processor speaks before it can charge in that currency.",
+            mayHaveSucceeded: false,
+          }),
+        );
+      }
+
       const directive = engine.nextCall();
       if (directive !== "proceed") {
         return Promise.resolve(err(failureFor("payments", directive)));
@@ -145,7 +175,7 @@ export function createSimulatedPayments(
       // into a coarser processor unit would have to be rounded, and rounding
       // here discards money silently. Refusing is the only honest answer.
       const providerAmount = convert
-        ? toProviderAmount(request.amountMinor, request.currency, exponents[request.currency])
+        ? toProviderAmount(request.amountMinor, request.currency, providerExponent)
         : ok(request.amountMinor);
 
       if (providerAmount.isErr()) {
@@ -181,6 +211,13 @@ export function createSimulatedPayments(
 
     signedDeliveries(providerReference: string, nowMs: number): readonly SignedDelivery[] {
       const charge = receivedByProvider.get(providerReference);
+      if (charge === undefined) {
+        // No currency or amount to quote — inventing one (IDR, say) would be
+        // the same silent guess removing the IDR default exists to prevent.
+        throw new Error(
+          `signedDeliveries called for "${providerReference}", which was never charged.`,
+        );
+      }
       return engine.shapeDeliveries(paymentEventsFor(providerReference)).map((event) => {
         // The amount is quoted in PROVIDER units, as a real callback would —
         // so a handler comparing it against our stored amount has to convert
@@ -188,10 +225,10 @@ export function createSimulatedPayments(
         // comparison pass for the wrong money.
         const body = JSON.stringify({
           id: event.id,
-          external_id: charge?.externalId ?? providerReference,
+          external_id: charge.externalId,
           status: event.status,
-          amount: charge?.amount ?? 0,
-          currency: charge?.currency ?? "IDR",
+          amount: charge.amount,
+          currency: charge.currency,
         });
         return {
           body,

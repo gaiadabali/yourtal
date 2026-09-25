@@ -19,16 +19,16 @@ func TestEditingAStoredEventBreaksVerification(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000_00, orderRef()); err != nil {
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000, orderRef()); err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
 
@@ -77,9 +77,9 @@ func TestDeletingAStoredEventBreaksVerification(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 	if _, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	}); err != nil {
 		t.Fatalf("Authorize: %v", err)
@@ -116,7 +116,7 @@ func TestTheVoucherServiceCannotRewriteItsOwnAuditLog(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	voucherID, _ := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	voucherID, _ := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	if _, err := f.pool.Exec(ctx,
 		`DELETE FROM voucher.event WHERE voucher_id = $1`, voucherID); err == nil {

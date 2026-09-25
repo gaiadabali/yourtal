@@ -20,10 +20,10 @@ func TestVoidingReleasesTheHoldWithTheValueIntact(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
@@ -39,7 +39,7 @@ func TestVoidingReleasesTheHoldWithTheValueIntact(t *testing.T) {
 
 	// The whole value is still there, and the voucher is spendable again.
 	if _, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 50_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 50_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	}); err != nil {
 		t.Errorf("a voided hold did not release the value: %v", err)
@@ -58,16 +58,16 @@ func TestACapturedAuthorizationCannotBeVoided(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000_00, orderRef()); err != nil {
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000, orderRef()); err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
 
@@ -81,31 +81,31 @@ func TestARefundRestoresValueToAPartlySpentVoucher(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	voucherID, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 30_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000_00, orderRef())
+	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 30_000, orderRef())
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
 
-	if err := f.network.Refund(ctx, capture.ID, 10_000_00, "customer returned an item"); err != nil {
+	if err := f.network.Refund(ctx, capture.ID, 10_000, "customer returned an item"); err != nil {
 		t.Fatalf("Refund: %v", err)
 	}
 
-	if remaining := f.remainingOf(t, voucherID); remaining != 30_000_00 {
-		t.Errorf("after refunding IDR 10,000 the voucher holds %d, want 3000000", remaining)
+	if remaining := f.remainingOf(t, voucherID); remaining != 30_000 {
+		t.Errorf("after refunding IDR 10,000 the voucher holds %d, want 30000", remaining)
 	}
 
 	// And it cannot be refunded past what was captured — the deferred
 	// trigger fires at COMMIT.
-	if err := f.network.Refund(ctx, capture.ID, 25_000_00, "too much"); err == nil {
+	if err := f.network.Refund(ctx, capture.ID, 25_000, "too much"); err == nil {
 		t.Error("refunds exceeding the capture succeeded")
 	}
 }
@@ -116,21 +116,21 @@ func TestRefundingAFullyRedeemedVoucherRefusesRatherThanGuessing(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "single_use_forfeit", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "single_use_forfeit", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 50_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 50_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
 		t.Fatalf("Authorize: %v", err)
 	}
-	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 50_000_00, orderRef())
+	capture, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 50_000, orderRef())
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
 
-	err = f.network.Refund(ctx, capture.ID, 10_000_00, "customer returned an item")
+	err = f.network.Refund(ctx, capture.ID, 10_000, "customer returned an item")
 	if !errors.Is(err, redeem.ErrRefundNeedsReplacement) {
 		t.Fatalf("a spent voucher was quietly revived or silently failed: %v", err)
 	}
@@ -147,7 +147,7 @@ func TestTheKillSwitchStopsRedemption(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 	switchID := uuid.New()
 
 	if _, err := f.pool.Exec(ctx,
@@ -162,7 +162,7 @@ func TestTheKillSwitchStopsRedemption(t *testing.T) {
 	})
 
 	_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if !errors.Is(err, redeem.ErrKilled) {
@@ -177,7 +177,7 @@ func TestTheKillSwitchStopsRedemption(t *testing.T) {
 		t.Fatalf("lifting: %v", err)
 	}
 	if _, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	}); err != nil {
 		t.Errorf("lifting the kill switch did not restore redemption: %v", err)
@@ -195,7 +195,7 @@ func TestEnumerationIsThrottled(t *testing.T) {
 
 	for attempt := 0; attempt < redeem.FailureThreshold; attempt++ {
 		_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-			Code: mintedButUnknownCode(t), MerchantID: prober, AmountMinor: 1_000_00,
+			Code: mintedButUnknownCode(t), MerchantID: prober, AmountMinor: 1_000,
 			Currency: "IDR", OrderRef: orderRef(),
 		})
 		if !errors.Is(err, redeem.ErrRefused) {
@@ -211,7 +211,7 @@ func TestEnumerationIsThrottled(t *testing.T) {
 	// difference matters: a refusal is per-code, a throttle is per-merchant
 	// and is what actually stops a walk of the code space.
 	_, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: mintedButUnknownCode(t), MerchantID: prober, AmountMinor: 1_000_00,
+		Code: mintedButUnknownCode(t), MerchantID: prober, AmountMinor: 1_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if !errors.Is(err, redeem.ErrThrottled) {
@@ -227,10 +227,10 @@ func TestAnExpiredHoldCannotBeCaptured(t *testing.T) {
 	f := newFixture(t)
 	ctx := context.Background()
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorization, err := f.network.Authorize(ctx, redeem.AuthorizeRequest{
-		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000_00,
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000,
 		Currency: "IDR", OrderRef: orderRef(),
 	})
 	if err != nil {
@@ -256,7 +256,7 @@ func TestAnExpiredHoldCannotBeCaptured(t *testing.T) {
 		t.Fatalf("ageing the hold: %v", err)
 	}
 
-	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000_00, orderRef()); !errors.Is(
+	if _, err := f.network.Capture(ctx, authorization.ID, f.merchantID, 10_000, orderRef()); !errors.Is(
 		err, redeem.ErrNoLiveHold,
 	) {
 		t.Fatalf("an expired hold was captured: %v", err)

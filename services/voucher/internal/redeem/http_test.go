@@ -141,10 +141,10 @@ func TestAuthorizeAndCaptureOverHTTP(t *testing.T) {
 	f := newFixture(t)
 	handler, cred := f.httpFixture(t)
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	authorizeBody, _ := json.Marshal(map[string]any{
-		"code": plaintext, "amount": 30_000_00, "currency": "IDR",
+		"code": plaintext, "amount": 30_000, "currency": "IDR",
 		"merchant_order_ref": orderRef(),
 	})
 	rec := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize",
@@ -161,12 +161,12 @@ func TestAuthorizeAndCaptureOverHTTP(t *testing.T) {
 	if authorized.AuthorizationID == "" {
 		t.Fatal("authorize did not return an authorization_id")
 	}
-	if authorized.RemainingBalance != 50_000_00 {
+	if authorized.RemainingBalance != 50_000 {
 		t.Errorf("remaining_balance = %d before capture, want the full face value", authorized.RemainingBalance)
 	}
 
 	captureBody, _ := json.Marshal(map[string]any{
-		"authorization_id": authorized.AuthorizationID, "final_amount": 30_000_00,
+		"authorization_id": authorized.AuthorizationID, "final_amount": 30_000,
 	})
 	rec = signedRequest(t, handler, http.MethodPost, "/v1/vouchers/capture",
 		captureBody, cred, uuid.NewString())
@@ -182,7 +182,7 @@ func TestAuthorizeAndCaptureOverHTTP(t *testing.T) {
 	if captured.ReceiptID == "" {
 		t.Fatal("capture did not return a receipt_id")
 	}
-	if captured.RemainingBalance != 20_000_00 {
+	if captured.RemainingBalance != 20_000 {
 		t.Errorf("remaining_balance = %d after a 30,000 capture on a 50,000 voucher, want 20,000",
 			captured.RemainingBalance)
 	}
@@ -196,12 +196,12 @@ func TestTheSameIdempotencyKeyReplaysRatherThanCreatingASecondHold(t *testing.T)
 	f := newFixture(t)
 	handler, cred := f.httpFixture(t)
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 	order := orderRef()
 	key := uuid.NewString()
 
 	authorizeBody, _ := json.Marshal(map[string]any{
-		"code": plaintext, "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": order,
+		"code": plaintext, "amount": 10_000, "currency": "IDR", "merchant_order_ref": order,
 	})
 
 	first := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", authorizeBody, cred, key)
@@ -239,17 +239,17 @@ func TestDifferentIdempotencyKeysAreCaughtByTheVoucherIndexNotByIdempotency(t *t
 	f := newFixture(t)
 	handler, cred := f.httpFixture(t)
 
-	_, plaintext := f.mintOne(t, "balance_carrying", 50_000_00, nil)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
 
 	first := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": plaintext, "amount": 10_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
+		"code": plaintext, "amount": 10_000, "currency": "IDR", "merchant_order_ref": orderRef(),
 	}), cred, uuid.NewString())
 	if first.Code != http.StatusOK {
 		t.Fatalf("the first authorize failed: %d %s", first.Code, first.Body.String())
 	}
 
 	second := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/authorize", mustJSON(t, map[string]any{
-		"code": plaintext, "amount": 5_000_00, "currency": "IDR", "merchant_order_ref": orderRef(),
+		"code": plaintext, "amount": 5_000, "currency": "IDR", "merchant_order_ref": orderRef(),
 	}), cred, uuid.NewString())
 
 	if second.Code != http.StatusConflict {

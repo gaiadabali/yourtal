@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ⛔ blocked | 7/8 | 46/47 | `██████████`  98% |
-| **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
 | **Phase 4** The bank is correct | A | · not started | 0/9 | 0/49 | `░░░░░░░░░░`   0% |
@@ -78,9 +78,9 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | — free | — | Phase 0 done 2026-09-25 (0.4.h waits for 3.1.d). Next: Phase 1 |
+| 1 | `yourtal-1` | — free | — | Phase 0 done 2026-09-25 (0.4.h waits for 3.1.d). Phase 1 runs in slot 3 |
 | 2 | `yourtal-2` | — free | — | Phase 3 can start now (0.2.b ✅); worktree, `.env` and deps are ready |
-| 3 | `yourtal-3` | — free | — | Phase 1 can start now (Phase 0 ✅) |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); 1.3 on helper `yourtal-p1-b` (`phase/1-b`), then 1.4 and 1.6; 1.5 and 1.7 last |
 
 ## Decisions for the founder
 
@@ -399,7 +399,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
 
 Everything else depends on knowing who is calling, and on a shared shape everyone builds against. Today the API builds identity from `x-yt-user-id` / `x-yt-business-roles` headers that anyone can send (`principal.service.ts:70-85`, EW-02), and the web app has no login. **Do 1.1 to 1.3 first:** they publish the contracts, columns and fakes that let B and C build before Phase 4 lands.
 
-- [ ] **1.1 Shared contracts and columns** · needs: 0.7
+- [ ] **1.1 Shared contracts and columns** · needs: 0.7 — 🔄 slot 3
   - [ ] 1.1.a Campaign contract: `businessId`, `region`, `audience`, `contentCategory`, `posterUrl`, `teaserUrl` (a progressive MP4), `hlsUrl`, `captionsUrl`, `durationSeconds`, `aspect`, `estimatedBytes`, `startsAt`, `endsAt`, `openViewing` (default false), `teaserStartSeconds`. Listing contract: `region`, `audience`, `contentCategory`, `imageUrl`, `channel` (`in_store` | `online` | `both`), `partialRedemption` (`single_use` | `balance_carries`). Business contract: `region` (immutable), `currency`, `handle`, `logoUrl`, `coverUrl`.
   - [ ] 1.1.b **In the same commit**, a migration adds every one of those columns (campaign `business_id` etc.; listing; business), updates the Drizzle tables and the seed, and keeps `schema-drift.test.ts` green. Today no contract has an image field, which is why every card is text-only.
   - [ ] 1.1.c **Audience rules**, the one definition everyone uses:
@@ -455,7 +455,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - the ledger reads its own keys (caps, holdback, coverage thresholds, marketing limits) through a view granted to `yourtal_ledger`;
     - `ledger-internal` gains `getSettings(region)`, `proposeSetting` and `approveSetting` (two-person) for 9.5.d.
   - [ ] 1.2.g **Check:** B and C can call every operation above against the fake from a test, and `getSetting('AU', 'daily_earn_cap')` returns 500.
-- [ ] **1.3 Plumbing for parallel phase sessions** · needs: 1.1
+- [ ] **1.3 Plumbing for parallel phase sessions** · needs: 1.1 — 🔄 slot 3
   - [ ] 1.3.a Add `"./*": "./src/*.ts"` to the contracts package's exports, so nobody edits the exports map again. Split `openapi/route-registry.ts` into `route-registry.{a,b,c}.ts`, concatenated. Make `route-drift.test.ts` discover the modules and assert registry ⇔ live equality, instead of hard-coded route counts.
   - [ ] 1.3.b Split `packages/db/src/seed.ts` into `seed/{identity,ledger,watch,studio,store}.ts`, with `seed.ts` importing them.
   - [ ] 1.3.c Create `apps/worker`: a pg-boss runner (`packages/queue`) that **auto-loads** every `src/jobs/*.ts` exporting `job`, with no central list. Add ffmpeg to the Helios host prerequisites (`infra/HELIOS.md`).

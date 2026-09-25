@@ -138,7 +138,8 @@ func (f *fixture) mintOne(t *testing.T, policy string, faceMinor int64, minimum 
 	return voucherID, plaintext
 }
 
-func orderRef() string { return fmt.Sprintf("probe-%d", time.Now().UnixNano()) }
+// A uuid, not only the clock: concurrent goroutines on Windows share UnixNano.
+func orderRef() string { return fmt.Sprintf("probe-%d-%s", time.Now().UnixNano(), uuid.NewString()) }
 
 // The whole loop: mint, hand it to a user, spend part of it at a till.
 func TestABalanceCarryingVoucherSpendsDownAndStaysActive(t *testing.T) {

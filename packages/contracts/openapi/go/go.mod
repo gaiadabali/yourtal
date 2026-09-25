@@ -9,6 +9,8 @@
 // struct tags for string formats, which need this validator at runtime.
 module github.com/yourtal/contracts
 
-go 1.25
+go 1.26
+
+toolchain go1.26.8
 
 require gopkg.in/validator.v2 v2.0.1

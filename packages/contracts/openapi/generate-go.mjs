@@ -41,7 +41,7 @@ const scratchDir = path.join(openapiDir, ".gotmp");
 const checkOnly = process.argv.includes("--check");
 const verifyOnly = process.argv.includes("--verify");
 
-const GO_IMAGE = "golang:1.25-alpine";
+const GO_IMAGE = "golang:1.26.8-alpine3.24";
 
 if (verifyOnly) {
   // Copied out of the read-only mount because `go mod tidy` writes go.sum.

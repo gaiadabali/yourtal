@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:e2e:offline": "playwright test --config=playwright.offline.config.ts",
     "test:rendered": "playwright test --config=playwright.rendered.config.ts",
+    "test:visual": "node scripts/visual.mjs",
     "analyze": "ANALYZE=true next build",
     "typegen": "next typegen",
     "build:sw": "node scripts/build-service-worker.mjs"

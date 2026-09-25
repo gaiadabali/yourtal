@@ -44,7 +44,10 @@ export function Gallery({ initialSurface, initialTheme }: GalleryProps) {
 
   return (
     <div data-surface={surface} data-theme={theme} className="min-h-dvh bg-canvas text-fg">
-      <header className="sticky top-0 z-(--z-nav) flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle bg-surface px-gutter-md py-3">
+      <header
+        data-gallery-chrome
+        className="sticky top-0 z-(--z-nav) flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle bg-surface px-gutter-md py-3"
+      >
         <div>
           <p className="text-title font-sans font-semibold text-fg">YourTal primitives</p>
           <p className="text-caption text-fg-muted">Every @yourtal/ui export, one page.</p>

@@ -39,7 +39,9 @@ export function createWorkerLedgerClient(ledger: WorkerConfig["ledger"]): Worker
       body: payload,
     });
     if (!response.ok) {
-      throw new Error(`ledger ${path} answered ${String(response.status)}: ${await response.text()}`);
+      throw new Error(
+        `ledger ${path} answered ${String(response.status)}: ${await response.text()}`,
+      );
     }
     return response.json();
   }

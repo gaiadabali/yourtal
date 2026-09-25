@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | · not started | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/6 | 0/18 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
-| **Phase 11** Public site | B | 🔄 in progress | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
+| **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **20/82** | **146/366** | `████░░░░░░`  40% |
+| **All** | | | **20/82** | **147/366** | `████░░░░░░`  40% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -802,6 +802,9 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token.
 - [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22; 4.9.c, F24) — 🔄 slot 1
   - [ ] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view. — 🔄 slot 1 (agent C)
+    - [x] the table and the `priceListing` upsert, with the rate each listing was priced at (4.1.b)
+    - [x] a one-minute ledger loop reprices every listing on a superseded rate once the new one takes effect, with a test before and after `effective_from` (d8df44d)
+    - [x] `platform.listing_points` (listing_id, points, region, currency) for `yourtal_app`, which gets permission denied on `ledger.listing_price` (d8df44d)
   - [x] 4.9.b Rate governance inside the ledger:
     - `proposeRate` / `approveRate`, with `approved_by ≠ set_by` (CHECK);
     - `effective_from ≥ created_at`;
@@ -1136,7 +1139,7 @@ The internal team runs the economy and the review queues. Today none of it exist
   - [ ] 11.2.b Open Viewing (F8): only campaigns with `openViewing` that are rated all_ages play logged-out through a **non-earning anonymous watch session**, which returns the same per-session signed manifest URL as 5.1.d and counts against the F12 per-IP limit. `/media/hls/` never becomes public. Other campaigns show their poster and terms with "Sign in to watch". Sign-up returns to **the same campaign**; today it lands on a different, synthesised one.
   - [ ] 11.2.c **Check:** a campaign created in Studio appears on the public page without a rebuild, and an adult-rated campaign cannot be played logged-out.
 - [ ] **11.3 SEO and trust pages** · needs: 11.2 — 🔄 slot 2b (early slice F26: a and b without JSON-LD)
-  - [ ] 11.3.a Help / FAQ, how points work, for business, and terms and privacy (marked draft on staging). A branded 404 and branded OG cards.
+  - [x] 11.3.a Help / FAQ, how points work, for business, and terms and privacy (marked draft on staging). A branded 404 and branded OG cards.
   - [ ] 11.3.b `VideoObject` JSON-LD, sitemap and robots fixes (`/id/` rather than a bare `/id` prefix, and a configurable site URL), and `llms.txt`. Everything is `noindex` while `APP_ENV=staging`.
   - [ ] 11.3.c (requested by A) `/[locale]/transparency`, listing each day's root from `GET /api/proof/roots` (10.3.b).
   - [ ] 11.3.d **Check:** a crawl of staging finds no broken links and no page without a title or description.

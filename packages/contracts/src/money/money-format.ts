@@ -99,12 +99,31 @@ const POINTS_WORD: Record<SupportedLocale, string> = {
  * and are never converted between regions, so this only changes the number
  * grouping and the word, never the quantity.
  *
- * Defaults to `id-ID` so call sites not yet updated to pass the active
- * region's locale keep rendering exactly what they render today, rather than
- * silently breaking — see `apps/web/features/region` for how a screen gets
- * its locale without prop-drilling.
+ * Deprecated (1.7.d) — prose only, deliberately NOT a `@deprecated` JSDoc
+ * tag: `@typescript-eslint/no-deprecated` is type-aware and repo-wide, and
+ * B's and C's call sites are only scheduled to move off this function in
+ * 6.1.c, 7.8.c and 8.2.d — a real tag would fail `pnpm check` on `main` for
+ * every session until then, over a call this ticket does not own. Call
+ * `formatPointsIn(locale, amount)` instead, which takes no default.
+ * Defaulting a locale is exactly the AU-first bug F2 exists to prevent — a
+ * screen that forgets to pass one silently renders the other region's
+ * language. Kept only for call sites not yet moved; its default is `en-AU`
+ * (0.5.a: AU, not ID, is the platform default) rather than the old `id-ID`,
+ * so an un-migrated call site now fails towards the current default region
+ * instead of the old one.
  */
-export function formatPoints(amount: Points, locale: SupportedLocale = "id-ID"): string {
+export function formatPoints(amount: Points, locale: SupportedLocale = "en-AU"): string {
+  return formatPointsIn(locale, amount);
+}
+
+/**
+ * Formats a points amount for display with an explicit locale — the
+ * replacement for the deprecated `formatPoints`. No default: a caller that
+ * does not know its locale must get it from `apps/web/features/region`
+ * (or an equivalent per area) rather than silently rendering the wrong
+ * region's language (1.7.d).
+ */
+export function formatPointsIn(locale: SupportedLocale, amount: Points): string {
   return `${new Intl.NumberFormat(locale).format(amount)} ${POINTS_WORD[locale]}`;
 }
 

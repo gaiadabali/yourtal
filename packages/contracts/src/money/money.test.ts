@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 // Formatting lives in money-format.ts (dependency-free, one implementation).
-import { formatIdr, formatPoints } from "./money-format";
+import { formatIdr, formatPoints, formatPointsIn } from "./money-format";
 import {
   addIdr,
   rupiah,
@@ -123,7 +123,11 @@ describe("formatting", () => {
   });
 
   it("formats points with the Indonesian word for points", () => {
-    expect(formatPoints(toPoints(2_400))).toBe("2.400 poin");
+    expect(formatPointsIn("id-ID", toPoints(2_400))).toBe("2.400 poin");
+  });
+
+  it("formatPoints (deprecated) defaults to en-AU (0.5.a, 1.7.d)", () => {
+    expect(formatPoints(toPoints(2_400))).toBe("2,400 points");
   });
 });
 

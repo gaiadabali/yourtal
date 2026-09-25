@@ -59,12 +59,12 @@ Parallel sessions each run in a slot worktree with its own database
 (`yourtal-media-1|2|3`), all on the shared compose stack above. Only the
 main checkout runs compose. The ports are set in each worktree's `.env`.
 
-| Slot | web   | api   | ledger | voucher | Playwright | offline e2e | Cerbos |
-| ---- | ----- | ----- | ------ | ------- | ---------- | ----------- | ------ |
-| 1    | 26310 | 26311 | 26312  | 26313   | 26314      | 26316       | 26315  |
-| 2    | 26320 | 26321 | 26322  | 26323   | 26324      | 26326       | 26325  |
-| 3    | 26330 | 26331 | 26332  | 26333   | 26334      | 26336       | 26335  |
-| 3b (`yourtal-p1-b` helper worktree) | 26336 | 26337 | 26338 | 26339 | 26340 | 26342 | 26335 (shared with slot 3) |
+| Slot                                | web   | api   | ledger | voucher | Playwright | offline e2e | Cerbos                     |
+| ----------------------------------- | ----- | ----- | ------ | ------- | ---------- | ----------- | -------------------------- |
+| 1                                   | 26310 | 26311 | 26312  | 26313   | 26314      | 26316       | 26315                      |
+| 2                                   | 26320 | 26321 | 26322  | 26323   | 26324      | 26326       | 26325                      |
+| 3                                   | 26330 | 26331 | 26332  | 26333   | 26334      | 26336       | 26335                      |
+| 3b (`yourtal-p1-b` helper worktree) | 26336 | 26337 | 26338  | 26339   | 26340      | 26342       | 26335 (shared with slot 3) |
 
 - web and api read `WEB_PORT` and `PORT`; Playwright reads `PLAYWRIGHT_PORT`
   (the offline config adds 2).

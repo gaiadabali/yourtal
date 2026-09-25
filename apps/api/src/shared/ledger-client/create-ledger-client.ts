@@ -10,7 +10,14 @@ export function createLedgerClient(
   db: AppDb,
   caller: LedgerCaller = "api",
 ): LedgerInternalClient {
-  return config.ledger.mode === "live"
-    ? new HttpLedgerClient(config.ledger.baseUrl, config.ledger.serviceSecret, db, caller)
-    : new FakeLedgerClient(db);
+  if (config.ledger.mode !== "live") {
+    return new FakeLedgerClient(db);
+  }
+  const secret = config.ledger.serviceSecret;
+  if (secret === undefined || secret.length < 32) {
+    throw new Error(
+      "LEDGER_MODE=live needs LEDGER_SERVICE_SECRET (at least 32 bytes) to sign ledger calls",
+    );
+  }
+  return new HttpLedgerClient(config.ledger.baseUrl, secret, db, caller);
 }

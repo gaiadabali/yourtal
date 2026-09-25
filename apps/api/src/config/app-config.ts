@@ -21,7 +21,8 @@ export interface AppConfig {
   readonly ledger: {
     readonly mode: Env["LEDGER_MODE"];
     readonly baseUrl: string;
-    readonly serviceSecret: string;
+    /** Signs live ledger calls; optional so test configs in fake mode need not name it. */
+    readonly serviceSecret?: string;
     readonly voucherBaseUrl: string;
   };
   /** 1.4.b, F4 — default false everywhere; only 12.1 turns it on, for staging. */

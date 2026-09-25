@@ -28,6 +28,22 @@ export interface IdempotentOptions {
    * and the replay would become a second issuance.
    */
   readonly retentionMs: number;
+
+  /**
+   * 1.5.f: transforms the response before `IdempotencyInterceptor` persists
+   * it — and thus before anything a REPLAY could ever return — never the
+   * response the ORIGINAL caller receives. For a route whose success reply
+   * carries a live credential (`register`'s session token), this is how the
+   * credential still reaches the caller who just earned it without ever
+   * sitting in `platform.idempotency`, a table with a wider readership than
+   * this one route (docs/audit/2026-09-25/api-backend.md section 8).
+   *
+   * Absent by default: most `@Idempotent` routes' replies carry nothing
+   * sensitive, and a replay SHOULD be byte-identical to the original for
+   * them — this is an exception for the routes that need one, not a second
+   * general-purpose transform.
+   */
+  readonly redact?: (value: unknown) => unknown;
 }
 
 export const Idempotent = (options: IdempotentOptions) => SetMetadata(IDEMPOTENT_METADATA, options);

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
@@ -8,14 +9,25 @@ import { sessionFor } from "../../shared/testing/session-for";
 import { DevTokenAccess } from "./dev-token-access";
 
 /**
- * 1.5.f: `password/change` and `password/reset/confirm` used to be
- * `@Idempotent`, which stored their `{token}` reply — a live, directly
- * usable session credential — in plaintext in `platform.idempotency`
- * (docs/audit/2026-09-25/api-backend.md section 8). They are `@NotValueMoving`
- * now instead: these tests prove, against the real app and Postgres, both
- * that no row is written AND that a retry still cannot double-apply
- * anything (the property `@Idempotent` existed to protect in the first
- * place).
+ * 1.5.f: three `@Idempotent` routes in this controller used to store a
+ * `{token}` reply — a live, directly usable session credential — in
+ * plaintext in `platform.idempotency` (docs/audit/2026-09-25/api-backend.md
+ * section 8, and the follow-up finding that `register` was the fourth: the
+ * audit's own line numbers predated 1.4.c, which is what gave `register`
+ * its `{userId, token}` reply and its `@Idempotent`).
+ *
+ * `password/change` and `password/reset/confirm` are `@NotValueMoving` now
+ * instead — neither can double-apply on a bare retry regardless (see each
+ * route's own comment), so they need no idempotency protection at all.
+ * `register` is different: a REPLAY has to keep meaning "yes, this email is
+ * already registered, here is its userId" without ever handing out a
+ * session, so it stays `@Idempotent` with `redact: withoutToken` — the
+ * response the caller who actually registered receives is untouched; only
+ * the copy persisted for a future replay has `token` stripped.
+ *
+ * These tests prove, against the real app and Postgres, that no row
+ * anywhere in `platform.idempotency` ever contains a token, and that a
+ * genuine replay of `register` gets `userId` back but never `token`.
  */
 
 let app: NestFastifyApplication;
@@ -46,6 +58,63 @@ async function idempotencyRowCountFor(userId: string): Promise<number> {
   );
   return Number(rows[0]?.n ?? "0");
 }
+
+describe("register", () => {
+  it("the caller who registers gets a token; the stored (and replayed) copy never does", async () => {
+    const idempotencyKey = randomUUID();
+    const email = `auth-controller-register-test-${randomUUID()}@example.test`;
+    const payload = {
+      email,
+      password: "auth-controller-register-not-a-real-secret-1",
+      region: "AU",
+      locale: "en-AU",
+      displayName: "Register Redact Test",
+      dateOfBirth: "1990-01-01",
+      timezone: "Australia/Sydney",
+    };
+
+    const registered = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      remoteAddress: `auth-controller-register-test-${randomUUID()}`,
+      headers: { "idempotency-key": idempotencyKey },
+      payload,
+    });
+    expect(registered.statusCode).toBeLessThan(300);
+    const registeredBody: { userId: string; token: string } = registered.json();
+    expect(registeredBody).toHaveProperty("userId");
+    expect(registeredBody).toHaveProperty("token");
+
+    // `register` is called with no session, so `AsyncPrincipalResolver`
+    // resolves the anonymous principal — every anonymous register shares
+    // that ONE scope, distinguished from each other only by their own
+    // idempotency key, which is why this reads by BOTH.
+    const stored = await pool.query<{ body: string }>(
+      `SELECT body FROM platform.idempotency WHERE scope = 'principal:anonymous' AND key = $1`,
+      [idempotencyKey],
+    );
+    expect(stored.rows).toHaveLength(1);
+    const storedBody: unknown = JSON.parse(stored.rows[0]?.body ?? "{}");
+    expect(storedBody).not.toHaveProperty("token");
+    expect(storedBody).toMatchObject({ userId: registeredBody.userId });
+    expect(JSON.stringify(storedBody)).not.toContain(registeredBody.token);
+
+    // A genuine replay — the SAME idempotency key — proves the point end to
+    // end: it confirms the registration (userId comes back) without ever
+    // handing out a session for it.
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      remoteAddress: `auth-controller-register-test-${randomUUID()}`,
+      headers: { "idempotency-key": idempotencyKey },
+      payload,
+    });
+    expect(replay.statusCode).toBe(registered.statusCode);
+    const replayBody: unknown = replay.json();
+    expect(replayBody).toMatchObject({ userId: registeredBody.userId });
+    expect(replayBody).not.toHaveProperty("token");
+  });
+});
 
 describe("password/change", () => {
   it("succeeds, hands back a token, and writes no platform.idempotency row", async () => {
@@ -98,6 +167,13 @@ describe("password/reset/confirm", () => {
     const requested = await app.inject({
       method: "POST",
       url: "/api/auth/password/reset/request",
+      // PASSWORD_RESET_REQUEST_RATE_LIMIT is 3/hour per source — the
+      // default `remoteAddress` `app.inject` uses when none is given is
+      // the SAME address on every call, which every earlier run of this
+      // very test in the same hour already spent against a real (not
+      // per-test-run) Redis. Same fix as auth.service.test.ts's own
+      // `randomIp()`, for the identical reason.
+      remoteAddress: `auth-controller-reset-request-test-${randomUUID()}`,
       payload: { email: session.email },
     });
     expect(requested.statusCode).toBeLessThan(300);

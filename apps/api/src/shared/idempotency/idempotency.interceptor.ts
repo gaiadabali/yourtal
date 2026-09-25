@@ -79,7 +79,11 @@ export class IdempotencyInterceptor implements NestInterceptor {
             startedAt: new Date(),
             retentionMs: options.retentionMs,
           }),
-        ).pipe(switchMap((outcome) => this.handleOutcome(outcome, scope, key, reply, next))),
+        ).pipe(
+          switchMap((outcome) =>
+            this.handleOutcome(outcome, scope, key, reply, next, options.redact),
+          ),
+        ),
       ),
     );
   }
@@ -95,6 +99,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
     key: string,
     reply: FastifyReply,
     next: CallHandler,
+    redact: ((value: unknown) => unknown) | undefined,
   ): Observable<unknown> {
     if (outcome.kind === "fingerprint_mismatch") {
       throw new ConflictException({
@@ -122,9 +127,14 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((value: unknown) => {
+        // `redact` runs only on what gets PERSISTED — `value` itself, the
+        // response this exact call sends the client, is untouched. A
+        // replay later reads back whatever was stored here, so this is the
+        // one place that decides what a replay can ever return.
+        const stored = redact === undefined ? value : redact(value);
         void complete(this.store, scope, key, {
           status: reply.statusCode,
-          body: JSON.stringify(value),
+          body: JSON.stringify(stored),
         });
       }),
       catchError((error: unknown) => {

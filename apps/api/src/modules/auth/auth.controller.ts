@@ -63,7 +63,7 @@ export class AuthController {
    * is a separate mechanism with its own signing/expiry story.
    */
   @RateLimit(REGISTER_RATE_LIMIT)
-  @Idempotent({ retentionMs: REGISTER_RETENTION_MS })
+  @Idempotent({ retentionMs: REGISTER_RETENTION_MS, redact: withoutToken })
   @Authorize({ kind: "session", action: "register" })
   @Post("register")
   async register(
@@ -236,4 +236,22 @@ function isSignupBlocked(request: FastifyRequest): boolean {
 /** Same neutral shape `mapAuthErrorToHttpException` builds for a fresh `too_young` refusal. */
 function tooYoungException(): ForbiddenException {
   return new ForbiddenException({ code: "too_young", message: "You can't create an account yet." });
+}
+
+/**
+ * 1.5.f: `register`'s `IdempotentOptions.redact` — strips `token` from what
+ * `platform.idempotency` ever stores (and so from what a REPLAY can ever
+ * return), while the caller who actually just registered still gets the
+ * full `{ userId, token }` reply unchanged (`redact` never runs on that
+ * response, only on the copy persisted for a future replay). A replay
+ * therefore proves "this email is already registered, here is its
+ * userId" — enough to confirm success without re-issuing a live session
+ * for a caller who never proved they still hold the original request.
+ */
+function withoutToken(value: unknown): unknown {
+  if (typeof value === "object" && value !== null && "token" in value) {
+    const { token: _token, ...rest } = value as Record<string, unknown>;
+    return rest;
+  }
+  return value;
 }

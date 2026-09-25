@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 4/7 | 31/44 | `███████░░░`  70% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 4/7 | 32/44 | `███████░░░`  73% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 24/52 | `█████░░░░░`  46% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **17/82** | **131/366** | `████░░░░░░`  36% |
+| **All** | | | **17/82** | **132/366** | `████░░░░░░`  36% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -509,7 +509,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - an ID principal reading an AU campaign is denied;
     - the route suites pass against real Cerbos.
 - [ ] **1.6 Simulated email you can read** · needs: 1.4 — 🔄 slot 3
-  - [ ] 1.6.a Add an `email` boundary to `packages/drivers`. The simulated driver stores messages in `platform.sim_outbox`. `AuthService.deliver` uses it for verification, reset and invitation emails. — driver half merged (a953bf3): the `email` boundary and its simulated driver exist, backed by the `platform.sim_outbox` migration; `AuthService.deliver` is not wired yet — that and the rest wait on 1.4.
+  - [x] 1.6.a Add an `email` boundary to `packages/drivers`. The simulated driver stores messages in `platform.sim_outbox`. `AuthService.deliver` uses it for verification, reset and invitation emails. — driver half merged (a953bf3). `AuthService.deliver` now sends through it too (f092f5d): `EmailDriverModule` provides `EMAIL_DRIVER` (factory-provider, mirrors `IdempotencyModule`), `deliver` looks up the recipient and region itself and calls `EmailDriver.send`. Invitation emails are 7.1.c's `InvitationMailer` port, not `AuthService`'s. Verified against real Postgres: a requested verification writes a `platform.sim_outbox` row with the right recipient/category/region and the same token `DevTokenAccess` has.
   - [ ] 1.6.b `GET /api/dev/inbox` and a plain `/dev/inbox` page. They are enabled only when `APP_ENV` is `dev` or `staging`.
   - [x] 1.6.c (requested by B and C) `push` and `webhook` boundaries in `packages/drivers`, with simulated drivers that store to `platform.sim_outbox`.
   - [ ] 1.6.d **Check:** register → the verification email appears in `/dev/inbox` → its link verifies the account.

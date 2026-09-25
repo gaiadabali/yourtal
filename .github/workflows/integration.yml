@@ -342,12 +342,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # One lab build serves both gates. The step starts each server itself:
+      # a server started by Playwright's webServer outlived its teardown here.
+      - name: Build the web app with the lab gallery
+        run: pnpm --filter @yourtal/web build
+        env:
+          YOURTAL_LAB: "1"
+
       # Overlays in the viewport, axe in both themes, no packages/ui class
-      # missing from the built CSS.
+      # missing from the built CSS. Port: PLAYWRIGHT_PORT (3100) + 4.
       - name: Rendered UI gate
-        run: pnpm --filter @yourtal/web test:rendered
+        working-directory: apps/web
+        env:
+          UI_SERVER_EXTERNAL: "1"
+        run: |
+          pnpm start --port 3104 -H 127.0.0.1 > /tmp/web-rendered.log 2>&1 &
+          timeout 90 bash -c 'until curl -sf http://127.0.0.1:3104/lab/ui > /dev/null; do sleep 1; done'
+          pnpm test:rendered
 
       # Gallery baselines, drawn by the Linux browser in the Playwright image
-      # so they match baselines made on any machine.
+      # so they match baselines made on any machine. The container reaches the
+      # host through host.docker.internal, so this server binds 0.0.0.0 (+5).
       - name: Visual baselines
-        run: pnpm --filter @yourtal/web test:visual
+        working-directory: apps/web
+        env:
+          UI_SERVER_EXTERNAL: "1"
+        run: |
+          pnpm start --port 3105 -H 0.0.0.0 > /tmp/web-visual.log 2>&1 &
+          timeout 90 bash -c 'until curl -sf http://127.0.0.1:3105/lab/ui > /dev/null; do sleep 1; done'
+          pnpm test:visual

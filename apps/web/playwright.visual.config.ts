@@ -77,11 +77,15 @@ export default defineConfig({
   // offers Playwright's own bundled Chromium.
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 
-  webServer: {
-    command: `pnpm build && pnpm start --port ${port} -H 0.0.0.0`,
-    url: `http://127.0.0.1:${port}/lab/ui`,
-    env: { YOURTAL_LAB: "1" },
-    reuseExistingServer: !process.env["CI"],
-    timeout: 300_000,
-  },
+  // CI builds once and starts the server itself (UI_SERVER_EXTERNAL=1): on
+  // Linux a server started here outlived Playwright's teardown and hung the job.
+  webServer: process.env["UI_SERVER_EXTERNAL"]
+    ? []
+    : {
+        command: `pnpm build && pnpm start --port ${port} -H 0.0.0.0`,
+        url: `http://127.0.0.1:${port}/lab/ui`,
+        env: { YOURTAL_LAB: "1" },
+        reuseExistingServer: !process.env["CI"],
+        timeout: 300_000,
+      },
 });

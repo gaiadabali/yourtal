@@ -4,6 +4,7 @@ import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { RedisClientModule } from "../../shared/redis/redis-client.module";
+import { IdentityModule } from "../identity/identity.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { DevTokenAccess } from "./dev-token-access";
@@ -19,15 +20,20 @@ import { DrizzleVerificationTokenRepository } from "./persistence/drizzle-verifi
 export const AUTH_DB = Symbol("AUTH_DB");
 
 /**
- * Email and password authentication (YT-0540). Owns
- * `identity.credential`, `identity.session` and
- * `identity.verification_token` — NOT `identity.principal_security_state`,
- * which is `IdentityModule`'s (YT-0582, `apps/api/src/modules/identity/**`,
- * out of this ticket's reach). A separate `AUTH_DB` connection rather than
- * reusing `IDENTITY_DB` for the same reason `CheckpointModule` opens its
- * own pool instead of importing `IdentityModule`: that module's write set
- * belongs to a different, concurrently-in-flight ticket, and importing it
- * would couple this module's boot to a class this ticket must not modify.
+ * Email and password authentication (YT-0540). Owns `identity.credential`,
+ * `identity.session` and `identity.verification_token` — NOT
+ * `identity.principal_security_state` or `identity.user_profile`, both
+ * `IdentityModule`'s. A separate `AUTH_DB` connection rather than reusing
+ * `IDENTITY_DB`: this module's own three tables stay on their own pool, the
+ * same reason `CheckpointModule` opens its own instead of sharing one.
+ *
+ * `IdentityModule` IS imported here, though, as of 1.4: `AuthService.register`
+ * writes a profile row (`USER_PROFILE_REPOSITORY`) right after it writes a
+ * credential — two separate pools, so NOT one atomic transaction; see that
+ * method's own comment for the known gap that leaves. (The older version of
+ * this comment said importing `IdentityModule` here was out of reach because
+ * its write set belonged to a different, concurrently-in-flight ticket —
+ * true when written, and no longer true once one task owns both sides.)
  *
  * Imports `RedisClientModule` for `ThrottleService`'s Valkey client, even
  * though that module is `@Global` and would already be visible — spelled
@@ -36,7 +42,7 @@ export const AUTH_DB = Symbol("AUTH_DB");
  * `AuthzModule`/`PdpClientModule` despite the same global availability.
  */
 @Module({
-  imports: [RedisClientModule],
+  imports: [RedisClientModule, IdentityModule],
   controllers: [AuthController],
   providers: [
     AuthService,

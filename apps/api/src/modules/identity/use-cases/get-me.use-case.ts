@@ -2,7 +2,10 @@ import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import type { UserProfile } from "@yourtal/contracts/identity/user-profile";
-import type { BusinessMembershipReader, BusinessMembershipSummary } from "../persistence/business-membership-reader";
+import type {
+  BusinessMembershipReader,
+  BusinessMembershipSummary,
+} from "../persistence/business-membership-reader";
 import type { UserProfileRepository } from "../persistence/user-profile.repository";
 import type { GetMeError } from "../me.errors";
 

@@ -15,52 +15,52 @@ import (
 	"fmt"
 )
 
-// PartialRedemption The counter-facing, two-value framing of partial redemption (TASKS.md 1.1.a) — see listing.ts's own comment for why this sits alongside PartialRedemptionPolicy rather than replacing it.
-type PartialRedemption string
+// DisplayLocale en-AU or id-ID — a display-language choice, independent of Region (1.4.a). Defaults to en-AU at registration (0.5.a).
+type DisplayLocale string
 
-// List of PartialRedemption
+// List of DisplayLocale
 const (
-	PARTIALREDEMPTION_SINGLE_USE PartialRedemption = "single_use"
-	PARTIALREDEMPTION_BALANCE_CARRIES PartialRedemption = "balance_carries"
+	DISPLAYLOCALE_EN_AU DisplayLocale = "en-AU"
+	DISPLAYLOCALE_ID_ID DisplayLocale = "id-ID"
 )
 
-// All allowed values of PartialRedemption enum
-var AllowedPartialRedemptionEnumValues = []PartialRedemption{
-	"single_use",
-	"balance_carries",
+// All allowed values of DisplayLocale enum
+var AllowedDisplayLocaleEnumValues = []DisplayLocale{
+	"en-AU",
+	"id-ID",
 }
 
-func (v *PartialRedemption) UnmarshalJSON(src []byte) error {
+func (v *DisplayLocale) UnmarshalJSON(src []byte) error {
 	var value string
 	err := json.Unmarshal(src, &value)
 	if err != nil {
 		return err
 	}
-	enumTypeValue := PartialRedemption(value)
-	for _, existing := range AllowedPartialRedemptionEnumValues {
+	enumTypeValue := DisplayLocale(value)
+	for _, existing := range AllowedDisplayLocaleEnumValues {
 		if existing == enumTypeValue {
 			*v = enumTypeValue
 			return nil
 		}
 	}
 
-	return fmt.Errorf("%+v is not a valid PartialRedemption", value)
+	return fmt.Errorf("%+v is not a valid DisplayLocale", value)
 }
 
-// NewPartialRedemptionFromValue returns a pointer to a valid PartialRedemption
+// NewDisplayLocaleFromValue returns a pointer to a valid DisplayLocale
 // for the value passed as argument, or an error if the value passed is not allowed by the enum
-func NewPartialRedemptionFromValue(v string) (*PartialRedemption, error) {
-	ev := PartialRedemption(v)
+func NewDisplayLocaleFromValue(v string) (*DisplayLocale, error) {
+	ev := DisplayLocale(v)
 	if ev.IsValid() {
 		return &ev, nil
 	} else {
-		return nil, fmt.Errorf("invalid value '%v' for PartialRedemption: valid values are %v", v, AllowedPartialRedemptionEnumValues)
+		return nil, fmt.Errorf("invalid value '%v' for DisplayLocale: valid values are %v", v, AllowedDisplayLocaleEnumValues)
 	}
 }
 
 // IsValid return true if the value is valid for the enum, false otherwise
-func (v PartialRedemption) IsValid() bool {
-	for _, existing := range AllowedPartialRedemptionEnumValues {
+func (v DisplayLocale) IsValid() bool {
+	for _, existing := range AllowedDisplayLocaleEnumValues {
 		if existing == v {
 			return true
 		}
@@ -68,43 +68,43 @@ func (v PartialRedemption) IsValid() bool {
 	return false
 }
 
-// Ptr returns reference to PartialRedemption value
-func (v PartialRedemption) Ptr() *PartialRedemption {
+// Ptr returns reference to DisplayLocale value
+func (v DisplayLocale) Ptr() *DisplayLocale {
 	return &v
 }
 
-type NullablePartialRedemption struct {
-	value *PartialRedemption
+type NullableDisplayLocale struct {
+	value *DisplayLocale
 	isSet bool
 }
 
-func (v NullablePartialRedemption) Get() *PartialRedemption {
+func (v NullableDisplayLocale) Get() *DisplayLocale {
 	return v.value
 }
 
-func (v *NullablePartialRedemption) Set(val *PartialRedemption) {
+func (v *NullableDisplayLocale) Set(val *DisplayLocale) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullablePartialRedemption) IsSet() bool {
+func (v NullableDisplayLocale) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullablePartialRedemption) Unset() {
+func (v *NullableDisplayLocale) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullablePartialRedemption(val *PartialRedemption) *NullablePartialRedemption {
-	return &NullablePartialRedemption{value: val, isSet: true}
+func NewNullableDisplayLocale(val *DisplayLocale) *NullableDisplayLocale {
+	return &NullableDisplayLocale{value: val, isSet: true}
 }
 
-func (v NullablePartialRedemption) MarshalJSON() ([]byte, error) {
+func (v NullableDisplayLocale) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullablePartialRedemption) UnmarshalJSON(src []byte) error {
+func (v *NullableDisplayLocale) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

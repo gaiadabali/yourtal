@@ -39,6 +39,11 @@ import { voucherSchema, voucherStatusSchema } from "../voucher/voucher";
 import { voucherLifecycleStateSchema, voucherVoidReasonSchema } from "../voucher/voucher-lifecycle";
 import { balanceSchema } from "../balance/balance";
 import { walletHistoryEntryKindSchema, walletHistoryEntrySchema } from "../wallet/wallet-history";
+import {
+  ageBandSchema as identityAgeBandSchema,
+  displayLocaleSchema,
+  userProfileSchema,
+} from "../identity/user-profile";
 import { BUSINESS_CONTRACT_COMPONENTS } from "./schema-registry-business";
 
 /**
@@ -398,6 +403,29 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       "a burn entry is always a debit.",
       "an expiry entry is always a debit.",
     ],
+  },
+
+  // --- identity ---
+  {
+    id: "DisplayLocale",
+    schema: displayLocaleSchema,
+    description:
+      "en-AU or id-ID — a display-language choice, independent of Region (1.4.a). Defaults to en-AU at registration (0.5.a).",
+    crossFieldRules: [],
+  },
+  {
+    id: "AgeBand",
+    schema: identityAgeBandSchema,
+    description:
+      "Computed from date of birth when a profile is read, never stored (1.4.a). Under-13 never reaches here — that age has no account at all (1.4.b) — so this is a closed teen/adult union.",
+    crossFieldRules: [],
+  },
+  {
+    id: "UserProfile",
+    schema: userProfileSchema,
+    description:
+      'The account\'s own profile, GET /api/me (1.4.d). trustTier, guardianEmail and parentConsentStatus are deliberately absent — F12: "the tier is never shown to users".',
+    crossFieldRules: [],
   },
 
   // --- business, questions: see schema-registry-business.ts. Split out to

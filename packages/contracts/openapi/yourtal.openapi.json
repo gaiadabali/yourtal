@@ -261,6 +261,191 @@
         }
       }
     },
+    "/api/me": {
+      "get": {
+        "summary": "Get the caller's own account profile",
+        "tags": [
+          "me"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The caller's own profile, business memberships and staff roles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "profile is UserProfile. businessMemberships lists only memberships where joined_at is set — the full roster is C's /api/me/businesses. staffRoles is always empty until 1.5.b adds identity.staff_role.",
+                  "properties": {
+                    "profile": {
+                      "$ref": "#/components/schemas/UserProfile"
+                    },
+                    "businessMemberships": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "businessId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "businessId",
+                          "role"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "staffRoles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "profile",
+                    "businessMemberships",
+                    "staffRoles"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No profile exists for this account (me.errors.ts's profile_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Change the caller's own display name and/or locale",
+        "tags": [
+          "me"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Display name and/or locale to change. Never region, which is immutable.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "displayLocale": {
+                    "type": "string",
+                    "enum": [
+                      "en-AU",
+                      "id-ID"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The profile as stored after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "profile is UserProfile. businessMemberships lists only memberships where joined_at is set — the full roster is C's /api/me/businesses. staffRoles is always empty until 1.5.b adds identity.staff_role.",
+                  "properties": {
+                    "profile": {
+                      "$ref": "#/components/schemas/UserProfile"
+                    },
+                    "businessMemberships": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "businessId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "businessId",
+                          "role"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "staffRoles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "profile",
+                    "businessMemberships",
+                    "staffRoles"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No profile exists for this account (me.errors.ts's profile_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/campaigns": {
       "get": {
         "summary": "List visible campaigns for the Earn board",
@@ -1936,6 +2121,14 @@
   },
   "components": {
     "schemas": {
+      "AgeBand": {
+        "description": "Computed from date of birth when a profile is read, never stored (1.4.a). Under-13 never reaches here — that age has no account at all (1.4.b) — so this is a closed teen/adult union.",
+        "type": "string",
+        "enum": [
+          "teen",
+          "adult"
+        ]
+      },
       "Audience": {
         "description": "Who a campaign or listing may reach (TASKS.md 1.1.c): all_ages reaches everyone; teen and adult are age-gated; parents reaches 18+ and is boosted, never gated further, for accounts that declared the parent-of-young-children interest with ad-targeting consent.",
         "type": "string",
@@ -2655,6 +2848,14 @@
         "enum": [
           "AUD",
           "IDR"
+        ]
+      },
+      "DisplayLocale": {
+        "description": "en-AU or id-ID — a display-language choice, independent of Region (1.4.a). Defaults to en-AU at registration (0.5.a).",
+        "type": "string",
+        "enum": [
+          "en-AU",
+          "id-ID"
         ]
       },
       "ErrorResponse": {
@@ -3800,6 +4001,43 @@
           "AU",
           "ID"
         ]
+      },
+      "UserProfile": {
+        "description": "The account's own profile, GET /api/me (1.4.d). trustTier, guardianEmail and parentConsentStatus are deliberately absent — F12: \"the tier is never shown to users\".",
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "displayLocale": {
+            "$ref": "#/components/schemas/DisplayLocale"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "ageBand": {
+            "$ref": "#/components/schemas/AgeBand"
+          },
+          "timezone": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "userId",
+          "region",
+          "displayLocale",
+          "displayName",
+          "ageBand",
+          "timezone"
+        ],
+        "additionalProperties": false
       },
       "Voucher": {
         "description": "An issued voucher held by a user, with its remaining value and expiry.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - remainingValueMinor cannot exceed faceValueMinor.\n  - expiresAt must be after issuedAt.\n  - minimumSpendMinor is set if and only if the policy is minimum_spend.",

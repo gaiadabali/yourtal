@@ -47,7 +47,31 @@ export interface TokenInvalidError {
   readonly type: "token_invalid";
 }
 
-export type RegisterError = EmailAlreadyRegisteredError | PersistenceFailedError;
+/**
+ * Under 13, regardless of `TEEN_ACCOUNTS` — 1.4.b. Deliberately carries no
+ * age, so the neutral refusal `to-http-exception.ts` builds from it cannot
+ * be used to narrow down exactly how old the caller said they were.
+ */
+export interface TooYoungError {
+  readonly type: "too_young";
+}
+
+/** `TEEN_ACCOUNTS` is off and the caller is under the jurisdiction's adult minimum — 1.4.b. */
+export interface BelowMinimumAgeError {
+  readonly type: "below_minimum_age";
+}
+
+/** `TEEN_ACCOUNTS` is on, the caller is 13-17, and no `guardianEmail` was given — 1.4.b/1.4.c. */
+export interface GuardianEmailRequiredError {
+  readonly type: "guardian_email_required";
+}
+
+export type RegisterError =
+  | EmailAlreadyRegisteredError
+  | TooYoungError
+  | BelowMinimumAgeError
+  | GuardianEmailRequiredError
+  | PersistenceFailedError;
 
 export type LoginError = InvalidCredentialsError | ThrottledError | PersistenceFailedError;
 

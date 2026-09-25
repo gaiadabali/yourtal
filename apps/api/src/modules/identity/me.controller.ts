@@ -30,7 +30,8 @@ export class MeController {
   constructor(
     private readonly principals: PrincipalService,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
-    @Inject(BUSINESS_MEMBERSHIP_READER) private readonly businessMemberships: BusinessMembershipReader,
+    @Inject(BUSINESS_MEMBERSHIP_READER)
+    private readonly businessMemberships: BusinessMembershipReader,
   ) {}
 
   @Authorize({ kind: "session", action: "view_profile" })

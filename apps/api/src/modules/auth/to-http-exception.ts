@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   Logger,
   ServiceUnavailableException,
@@ -39,6 +41,24 @@ export function mapAuthErrorToHttpException(error: AuthDomainError): HttpExcepti
       return new ConflictException({
         code: "email_already_registered",
         message: "an account with this email already exists",
+      });
+    case "too_young":
+      // 1.4.b: deliberately neutral — no age stated anywhere, so this
+      // response cannot be used to find the exact under-13 boundary by
+      // trying different dates of birth.
+      return new ForbiddenException({
+        code: "too_young",
+        message: "You can't create an account yet.",
+      });
+    case "below_minimum_age":
+      return new ForbiddenException({
+        code: "below_minimum_age",
+        message: "you do not meet the minimum age to create an account",
+      });
+    case "guardian_email_required":
+      return new BadRequestException({
+        code: "guardian_email_required",
+        message: "a parent or guardian's email is required for this age",
       });
     case "invalid_credentials":
       // Deliberately the exact same status, code and message whether the

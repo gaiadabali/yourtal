@@ -27,10 +27,7 @@ export class DrizzleUserProfileRepository implements UserProfileRepository {
   }
 
   async findByUserId(userId: string): Promise<StoredUserProfile | null> {
-    const [row] = await this.db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, userId));
+    const [row] = await this.db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
     if (row === undefined) return null;
     return {
       userId: row.userId,

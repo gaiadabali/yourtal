@@ -2,8 +2,15 @@ import { createHash, randomUUID } from "node:crypto";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
+import { ageYearsFrom } from "@yourtal/jurisdiction/age";
+import {
+  meetsMinimumAge,
+  meetsMinimumAgeWithParentalConsent,
+} from "@yourtal/jurisdiction/policy-query";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
+import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
+import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { hashPassword, verifyPassword } from "./crypto/password-hash";
 import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
 import { DevTokenAccess } from "./dev-token-access";
@@ -32,6 +39,17 @@ import type {
   RequestEmailVerificationError,
   RequestPasswordResetError,
 } from "./auth.errors";
+
+/** What `POST /api/auth/register` (1.4.c) takes beyond email and password. */
+export interface RegisterProfile {
+  readonly region: "AU" | "ID";
+  readonly locale: "en-AU" | "id-ID";
+  readonly displayName: string;
+  /** `YYYY-MM-DD`. */
+  readonly dateOfBirth: string;
+  readonly timezone: string;
+  readonly guardianEmail?: string;
+}
 
 /**
  * A fixed, precomputed Argon2id hash of a value that is not, and will
@@ -64,16 +82,57 @@ export class AuthService {
     @Inject(CREDENTIAL_REPOSITORY) private readonly credentials: CredentialRepository,
     @Inject(VERIFICATION_TOKEN_REPOSITORY)
     private readonly verificationTokens: VerificationTokenRepository,
+    @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     private readonly sessions: SessionService,
     private readonly throttle: ThrottleService,
     private readonly devTokenAccess: DevTokenAccess,
   ) {}
 
+  /**
+   * 1.4.b/1.4.c's age policy, applied before anything is written. Three
+   * outcomes, checked in order from most to least restrictive:
+   *
+   *   1. Under 13, in EITHER region, regardless of `TEEN_ACCOUNTS`: refused,
+   *      with no age disclosed anywhere in the response — `too_young`
+   *      carries no fields for `to-http-exception.ts` to expose.
+   *   2. `TEEN_ACCOUNTS` off (the default everywhere except staging, F4):
+   *      the jurisdiction's ordinary adult minimum applies, full stop.
+   *   3. `TEEN_ACCOUNTS` on and the caller is 13-17: allowed, but only with
+   *      a `guardianEmail` — the account is created `pending` consent
+   *      (`identity.user_profile.parent_consent_status`).
+   *
+   * A profile is created for every outcome that returns `ok` here, never
+   * for `too_young`: the caller's date of birth is used to compute this
+   * decision and then discarded, exactly as 1.4.b asks — there is no path
+   * from here into `identity.user_profile` for an under-13 date of birth.
+   */
   async register(
     email: string,
     password: string,
-  ): Promise<Result<{ userId: string }, RegisterError>> {
+    profile: RegisterProfile,
+    now: Date,
+  ): Promise<Result<{ userId: string; token: string }, RegisterError>> {
     const identifier = normalizeEmail(email);
+    const ageYears = ageYearsFrom(profile.dateOfBirth, now);
+
+    if (!meetsMinimumAgeWithParentalConsent(profile.region, ageYears).allowed) {
+      // Below even the WITH-CONSENT floor (13) in every region today — see
+      // packages/jurisdiction/src/policy-data.ts. Refused before the adult
+      // check below runs, so the response never distinguishes "under 13"
+      // from "under 18 with the flag off" by timing or by branch.
+      return err({ type: "too_young" });
+    }
+
+    const isAdult = meetsMinimumAge(profile.region, ageYears).allowed;
+    if (!isAdult) {
+      if (!this.config.teenAccounts) {
+        return err({ type: "below_minimum_age" });
+      }
+      if (profile.guardianEmail === undefined) {
+        return err({ type: "guardian_email_required" });
+      }
+    }
+
     return this.guarded(async () => {
       // Opaque, minted here — never derived from `identifier` — see the
       // migration header for why `user_id` cannot be the email itself.
@@ -89,7 +148,26 @@ export class AuthService {
         const conflict: EmailAlreadyRegisteredError = { type: "email_already_registered" };
         return err(conflict);
       }
-      return ok({ userId });
+
+      // A SEPARATE store from identity.credential above (AUTH_DB vs
+      // IDENTITY_DB — see auth.module.ts's header), so this is not one
+      // atomic transaction. A failure here after the credential already
+      // committed leaves a credential with no profile — a real, known gap,
+      // recorded rather than silently assumed away; `guarded()` still turns
+      // it into `persistence_failed` rather than a crash.
+      await this.profiles.create({
+        userId,
+        region: profile.region,
+        displayLocale: profile.locale,
+        displayName: profile.displayName,
+        dateOfBirth: profile.dateOfBirth,
+        timezone: profile.timezone,
+        guardianEmail: isAdult ? null : (profile.guardianEmail ?? null),
+        parentConsentStatus: isAdult ? "not_required" : "pending",
+      });
+
+      const token = await this.sessions.issue(userId, now);
+      return ok({ userId, token });
     });
   }
 

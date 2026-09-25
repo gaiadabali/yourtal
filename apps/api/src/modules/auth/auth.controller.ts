@@ -1,5 +1,5 @@
-import { Body, Controller, Post, Req } from "@nestjs/common";
-import type { FastifyRequest } from "fastify";
+import { Body, Controller, ForbiddenException, Post, Req, Res } from "@nestjs/common";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import {
@@ -53,14 +53,54 @@ import { ConfirmEmailVerificationDto } from "./dto/confirm-email-verification.sc
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  /**
+   * 1.4.b's under-13 refusal has to be neutral even under retry: a caller
+   * that resubmits with a slightly different date of birth must not be able
+   * to bisect its way to the exact boundary by watching the response change.
+   * `yt_signup_blocked` is set for 24h the first time this refusal fires and
+   * checked before `AuthService` (or the idempotency store, or the rate
+   * limiter's Argon2id-adjacent cost) ever sees a submitted date of birth
+   * again — a plain header, not `@fastify/cookie`: this is the one place in
+   * the app that needs a cookie today, and the real session cookie (1.5.a)
+   * is a separate mechanism with its own signing/expiry story.
+   */
   @RateLimit(REGISTER_RATE_LIMIT)
   @Idempotent({ retentionMs: REGISTER_RETENTION_MS })
   @Authorize({ kind: "session", action: "register" })
   @Post("register")
-  async register(@Body() body: RegisterDto) {
-    const result = await this.auth.register(body.email, body.password);
-    if (result.isErr()) throw mapAuthErrorToHttpException(result.error);
-    return { userId: result.value.userId };
+  async register(
+    @Body() body: RegisterDto,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    if (isSignupBlocked(request)) {
+      throw tooYoungException();
+    }
+
+    const result = await this.auth.register(
+      body.email,
+      body.password,
+      {
+        region: body.region,
+        locale: body.locale,
+        displayName: body.displayName,
+        dateOfBirth: body.dateOfBirth,
+        timezone: body.timezone,
+        ...(body.guardianEmail === undefined ? {} : { guardianEmail: body.guardianEmail }),
+      },
+      new Date(),
+    );
+
+    if (result.isErr()) {
+      if (result.error.type === "too_young") {
+        reply.header(
+          "set-cookie",
+          `${SIGNUP_BLOCKED_COOKIE}=1; Max-Age=86400; Path=/; HttpOnly; SameSite=Lax`,
+        );
+      }
+      throw mapAuthErrorToHttpException(result.error);
+    }
+    return { userId: result.value.userId, token: result.value.token };
   }
 
   @NotValueMoving(
@@ -155,4 +195,26 @@ export class AuthController {
     if (result.isErr()) throw mapAuthErrorToHttpException(result.error);
     return { verified: true };
   }
+}
+
+const SIGNUP_BLOCKED_COOKIE = "yt_signup_blocked";
+
+/**
+ * A minimal, single-purpose read — not a general cookie parser. Looks for
+ * exactly `yt_signup_blocked=1` in the raw `Cookie` header, which is all
+ * this one check needs; a real cookie-jar (1.5.a's `yt_session`) is a
+ * separate, later mechanism with its own signing and expiry.
+ */
+function isSignupBlocked(request: FastifyRequest): boolean {
+  const raw = request.headers.cookie;
+  if (raw === undefined) return false;
+  return raw
+    .split(";")
+    .map((part) => part.trim())
+    .includes(`${SIGNUP_BLOCKED_COOKIE}=1`);
+}
+
+/** Same neutral shape `mapAuthErrorToHttpException` builds for a fresh `too_young` refusal. */
+function tooYoungException(): ForbiddenException {
+  return new ForbiddenException({ code: "too_young", message: "You can't create an account yet." });
 }

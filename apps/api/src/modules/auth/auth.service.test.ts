@@ -7,6 +7,8 @@ import { Redis } from "ioredis";
 import { eq } from "drizzle-orm";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppConfig } from "../../config/app-config";
+import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-user-profile.repository";
+import type { RegisterProfile } from "./auth.service";
 import { AuthService } from "./auth.service";
 import { DevTokenAccess } from "./dev-token-access";
 import { SessionService } from "./session/session.service";
@@ -47,7 +49,7 @@ import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
 const DATABASE_URL = process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!;
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://127.0.0.1:26379";
 
-const CONFIG = { nodeEnv: "test" } as unknown as AppConfig;
+const CONFIG = { nodeEnv: "test", teenAccounts: false } as unknown as AppConfig;
 
 const db = createAppDb(DATABASE_URL);
 const redis = new Redis(REDIS_URL);
@@ -55,6 +57,7 @@ const redis = new Redis(REDIS_URL);
 const credentials = new DrizzleCredentialRepository(db);
 const sessionRepo = new DrizzleSessionRepository(db);
 const verificationTokens = new DrizzleVerificationTokenRepository(db);
+const profiles = new DrizzleUserProfileRepository(db);
 const sessionService = new SessionService(sessionRepo);
 const throttle = new ThrottleService(redis);
 const devTokenAccess = new DevTokenAccess();
@@ -62,10 +65,20 @@ const auth = new AuthService(
   CONFIG,
   credentials,
   verificationTokens,
+  profiles,
   sessionService,
   throttle,
   devTokenAccess,
 );
+
+/** An ordinary adult registration profile — 1.4.c's required fields, with sane defaults. */
+const ADULT_PROFILE: RegisterProfile = {
+  region: "AU",
+  locale: "en-AU",
+  displayName: "Auth Test",
+  dateOfBirth: "1990-01-01",
+  timezone: "Australia/Sydney",
+};
 
 function freshEmail(): string {
   return `auth-test-${randomUUID()}@example.com`;
@@ -90,7 +103,7 @@ function sha256(value: string): string {
 /** Registers an account and asserts it actually succeeded — a fixture
  * helper failing silently would make every test built on it meaningless. */
 async function registerOk(email: string, password: string): Promise<void> {
-  const result = await auth.register(email, password);
+  const result = await auth.register(email, password, ADULT_PROFILE, new Date());
   expect(result.isOk()).toBe(true);
 }
 
@@ -110,10 +123,20 @@ afterAll(() => {
 describe("register", () => {
   it("creates a credential and refuses a second registration for the same email", async () => {
     const email = freshEmail();
-    const first = await auth.register(email, "correct-horse-battery-staple");
+    const first = await auth.register(
+      email,
+      "correct-horse-battery-staple",
+      ADULT_PROFILE,
+      new Date(),
+    );
     expect(first.isOk()).toBe(true);
 
-    const second = await auth.register(email, "a-totally-different-password");
+    const second = await auth.register(
+      email,
+      "a-totally-different-password",
+      ADULT_PROFILE,
+      new Date(),
+    );
     expect(second.isErr()).toBe(true);
     expect(second.isErr() && second.error.type).toBe("email_already_registered");
   });

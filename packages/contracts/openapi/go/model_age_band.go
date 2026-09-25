@@ -15,52 +15,52 @@ import (
 	"fmt"
 )
 
-// PartialRedemption The counter-facing, two-value framing of partial redemption (TASKS.md 1.1.a) — see listing.ts's own comment for why this sits alongside PartialRedemptionPolicy rather than replacing it.
-type PartialRedemption string
+// AgeBand Computed from date of birth when a profile is read, never stored (1.4.a). Under-13 never reaches here — that age has no account at all (1.4.b) — so this is a closed teen/adult union.
+type AgeBand string
 
-// List of PartialRedemption
+// List of AgeBand
 const (
-	PARTIALREDEMPTION_SINGLE_USE PartialRedemption = "single_use"
-	PARTIALREDEMPTION_BALANCE_CARRIES PartialRedemption = "balance_carries"
+	AGEBAND_TEEN AgeBand = "teen"
+	AGEBAND_ADULT AgeBand = "adult"
 )
 
-// All allowed values of PartialRedemption enum
-var AllowedPartialRedemptionEnumValues = []PartialRedemption{
-	"single_use",
-	"balance_carries",
+// All allowed values of AgeBand enum
+var AllowedAgeBandEnumValues = []AgeBand{
+	"teen",
+	"adult",
 }
 
-func (v *PartialRedemption) UnmarshalJSON(src []byte) error {
+func (v *AgeBand) UnmarshalJSON(src []byte) error {
 	var value string
 	err := json.Unmarshal(src, &value)
 	if err != nil {
 		return err
 	}
-	enumTypeValue := PartialRedemption(value)
-	for _, existing := range AllowedPartialRedemptionEnumValues {
+	enumTypeValue := AgeBand(value)
+	for _, existing := range AllowedAgeBandEnumValues {
 		if existing == enumTypeValue {
 			*v = enumTypeValue
 			return nil
 		}
 	}
 
-	return fmt.Errorf("%+v is not a valid PartialRedemption", value)
+	return fmt.Errorf("%+v is not a valid AgeBand", value)
 }
 
-// NewPartialRedemptionFromValue returns a pointer to a valid PartialRedemption
+// NewAgeBandFromValue returns a pointer to a valid AgeBand
 // for the value passed as argument, or an error if the value passed is not allowed by the enum
-func NewPartialRedemptionFromValue(v string) (*PartialRedemption, error) {
-	ev := PartialRedemption(v)
+func NewAgeBandFromValue(v string) (*AgeBand, error) {
+	ev := AgeBand(v)
 	if ev.IsValid() {
 		return &ev, nil
 	} else {
-		return nil, fmt.Errorf("invalid value '%v' for PartialRedemption: valid values are %v", v, AllowedPartialRedemptionEnumValues)
+		return nil, fmt.Errorf("invalid value '%v' for AgeBand: valid values are %v", v, AllowedAgeBandEnumValues)
 	}
 }
 
 // IsValid return true if the value is valid for the enum, false otherwise
-func (v PartialRedemption) IsValid() bool {
-	for _, existing := range AllowedPartialRedemptionEnumValues {
+func (v AgeBand) IsValid() bool {
+	for _, existing := range AllowedAgeBandEnumValues {
 		if existing == v {
 			return true
 		}
@@ -68,43 +68,43 @@ func (v PartialRedemption) IsValid() bool {
 	return false
 }
 
-// Ptr returns reference to PartialRedemption value
-func (v PartialRedemption) Ptr() *PartialRedemption {
+// Ptr returns reference to AgeBand value
+func (v AgeBand) Ptr() *AgeBand {
 	return &v
 }
 
-type NullablePartialRedemption struct {
-	value *PartialRedemption
+type NullableAgeBand struct {
+	value *AgeBand
 	isSet bool
 }
 
-func (v NullablePartialRedemption) Get() *PartialRedemption {
+func (v NullableAgeBand) Get() *AgeBand {
 	return v.value
 }
 
-func (v *NullablePartialRedemption) Set(val *PartialRedemption) {
+func (v *NullableAgeBand) Set(val *AgeBand) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullablePartialRedemption) IsSet() bool {
+func (v NullableAgeBand) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullablePartialRedemption) Unset() {
+func (v *NullableAgeBand) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullablePartialRedemption(val *PartialRedemption) *NullablePartialRedemption {
-	return &NullablePartialRedemption{value: val, isSet: true}
+func NewNullableAgeBand(val *AgeBand) *NullableAgeBand {
+	return &NullableAgeBand{value: val, isSet: true}
 }
 
-func (v NullablePartialRedemption) MarshalJSON() ([]byte, error) {
+func (v NullableAgeBand) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullablePartialRedemption) UnmarshalJSON(src []byte) error {
+func (v *NullableAgeBand) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

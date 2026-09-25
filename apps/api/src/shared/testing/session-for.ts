@@ -39,12 +39,19 @@ export interface SessionForOptions {
   /** Defaults to a value that satisfies `registerSchema`'s `.min(12)` and is obviously not real. */
   readonly password?: string;
   /**
-   * The `x-yt-jurisdiction` compatibility header's value (default `"AU"`,
-   * matching 0.5.a). `POST /api/auth/register` does not collect a region
-   * yet — that is 1.4.c on the real `identity.user_profile` row — so this
-   * only affects requests still on the header path, not the account itself.
+   * Both the account's real `region` (1.4.c, `identity.user_profile.region`)
+   * AND the `x-yt-jurisdiction` compatibility header's value — the two are
+   * the same fact told two ways until 1.5.a deletes the header path.
+   * Defaults to `"AU"`, matching 0.5.a.
    */
   readonly jurisdiction?: "AU" | "ID";
+  /** Defaults to an obviously-adult date of birth — pass a recent one to test the age policy. */
+  readonly dateOfBirth?: string;
+}
+
+/** en-AU for AU, id-ID for ID — same pairing `RegionConfig` in `@yourtal/contracts/region` uses. */
+function localeFor(jurisdiction: "AU" | "ID"): "en-AU" | "id-ID" {
+  return jurisdiction === "AU" ? "en-AU" : "id-ID";
 }
 
 const SESSION_COOKIE_NAME = "yt_session";
@@ -68,6 +75,9 @@ export async function sessionFor(
   const email = options.email ?? `session-for+${randomUUID()}@example.test`;
   const password = options.password ?? "session-for-not-a-real-secret-1";
   const jurisdiction = options.jurisdiction ?? "AU";
+  // Comfortably 18+ by default (1.4.b's minimum) so ordinary tests never
+  // brush against the age policy by accident; pass `dateOfBirth` to test it.
+  const dateOfBirth = options.dateOfBirth ?? "1990-01-01";
   const remoteAddress = randomTestIp();
 
   const registered = await app.inject({
@@ -75,7 +85,15 @@ export async function sessionFor(
     url: "/api/auth/register",
     remoteAddress,
     headers: { "idempotency-key": randomUUID() },
-    payload: { email, password },
+    payload: {
+      email,
+      password,
+      region: jurisdiction,
+      locale: localeFor(jurisdiction),
+      displayName: "Session For",
+      dateOfBirth,
+      timezone: "Australia/Sydney",
+    },
   });
   if (registered.statusCode >= 400) {
     throw new Error(

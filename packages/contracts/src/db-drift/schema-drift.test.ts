@@ -14,6 +14,7 @@ import { businessSchema } from "../business/business";
 import { businessMemberSchema } from "../business/business-member";
 import { billingContactSchema } from "../business/billing-contact";
 import { kybDocumentSchema } from "../business/kyb-document";
+import { userProfileSchema } from "../identity/user-profile";
 
 /**
  * The contracts ↔ migrations drift gate.
@@ -331,6 +332,29 @@ const MAPPINGS: readonly Mapping[] = [
     fieldsAwaitingStorage: {},
     fieldsWithNoColumn: {},
     columnsWithNoField: {},
+  },
+  {
+    name: "userProfileSchema",
+    schema: userProfileSchema,
+    table: "identity.user_profile",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {
+      ageBand:
+        "DERIVED, deliberately (1.4.a). Computed from date_of_birth when the profile is read, never stored — the same call campaignSchema.status and voucherSchema.status make for their own derived fields, and for the same reason: a stored age band is a fact that goes stale the day a birthday passes with no write to refresh it.",
+    },
+    columnsWithNoField: {
+      date_of_birth: "Holds the `ageBand` field's source. See the note on that field.",
+      guardian_email:
+        "Internal only (1.4.b/1.4.f) — never returned to any client. A teen account's guardian has no login of their own yet, so there is nothing this field would even be serialised TO.",
+      parent_consent_status:
+        "Internal only, same reason as guardian_email — no guardian-facing surface exists yet to show it to.",
+      trust_tier:
+        'F12: "the tier is never shown to users" — deliberately absent from every public contract, not merely unmapped.',
+      suspended_at:
+        "Enforced through the PDP's ALLOW/DENY (policies/resource_policies/user_account.yaml), never returned to any client as a field of its own — the same call identity.principal_security_state's freeze makes for itself.",
+      created_at: "Audit-only. No contract exposes when an account was created.",
+      updated_at: "Audit-only. No contract exposes when a profile was last changed.",
+    },
   },
 ];
 

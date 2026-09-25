@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { inlineSchema, type RouteDefinition } from "./route-registry-shared";
+import { displayLocaleSchema } from "../identity/user-profile";
+import {
+  FORBIDDEN,
+  VALIDATION_400,
+  inlineSchema,
+  ref,
+  type RouteDefinition,
+  type RouteErrorResponse,
+} from "./route-registry-shared";
 
 /**
  * Area A's routes (platform/shared — `apps/api/src/{main.ts,config,shared}/**`
@@ -61,5 +69,83 @@ export const HEALTH_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
         schema: healthResponseSchema,
       },
     ],
+  },
+];
+
+// --- me.controller.ts ---
+//
+// `session` kind, not a new resource kind — there is no `:userId` in either
+// route, so the PDP question is the same coarse "does a principal of this
+// SHAPE reach this action at all" every other session.yaml action answers.
+// Neither route has a domain-thrown refusal of its own the way watch's do:
+// a caller who reached the PDP either has a profile (AuthService.register
+// always creates one) or gets FORBIDDEN from the guard itself.
+
+const businessMembershipSchema: Record<string, unknown> = {
+  type: "object",
+  properties: { businessId: { type: "string", format: "uuid" }, role: { type: "string" } },
+  required: ["businessId", "role"],
+  additionalProperties: false,
+};
+
+const meResponseSchema: Record<string, unknown> = {
+  type: "object",
+  description:
+    "profile is UserProfile. businessMemberships lists only memberships where joined_at is " +
+    "set — the full roster is C's /api/me/businesses. staffRoles is always empty until 1.5.b " +
+    "adds identity.staff_role.",
+  properties: {
+    profile: ref("UserProfile"),
+    businessMemberships: { type: "array", items: businessMembershipSchema },
+    staffRoles: { type: "array", items: { type: "string" } },
+  },
+  required: ["profile", "businessMemberships", "staffRoles"],
+  additionalProperties: false,
+};
+
+const updateMeRequestSchema = inlineSchema(
+  z.object({
+    displayName: z.string().min(1).max(120).optional(),
+    displayLocale: displayLocaleSchema.optional(),
+  }),
+);
+
+/**
+ * `to-http-exception.ts`'s only case today: no `identity.user_profile` row
+ * for an otherwise-valid session. Should not be reachable in practice —
+ * `AuthService.register` always creates one — see that mapper's own comment.
+ */
+const PROFILE_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description: "No profile exists for this account (me.errors.ts's profile_not_found).",
+  documented: true,
+};
+
+export const ME_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "get",
+    path: "/api/me",
+    summary: "Get the caller's own account profile",
+    tags: ["me"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription: "The caller's own profile, business memberships and staff roles.",
+    successSchema: meResponseSchema,
+    errors: [FORBIDDEN, PROFILE_NOT_FOUND],
+  },
+  {
+    method: "patch",
+    path: "/api/me",
+    summary: "Change the caller's own display name and/or locale",
+    tags: ["me"],
+    pathParams: [],
+    requestBody: {
+      description: "Display name and/or locale to change. Never region, which is immutable.",
+      schema: updateMeRequestSchema,
+    },
+    successStatus: 200,
+    successDescription: "The profile as stored after the change.",
+    successSchema: meResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, PROFILE_NOT_FOUND],
   },
 ];

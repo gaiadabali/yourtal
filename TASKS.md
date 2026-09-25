@@ -662,7 +662,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 3.4.a Rework: Button (primary / secondary / ghost / danger / link; sm / md / lg / counter; loading; icon), Input, Textarea, NativeSelect, Card, StatusBadge, Dialog, BottomSheet, Toast with its provider, Tabs, Skeleton, Progress. **Keep every existing export name and prop.** New variants are additive; old ones stay as aliases until C finishes 7.8 and 8.2.
   - [x] 3.4.b New: Heading, Text, PageContainer, PageHeader, Section, **PointsChip**, MoneyAmount (the currency comes from the data, never the viewer), KeyValue, DataTable (becomes a card list below `md`), EmptyState, ErrorState, Notice, Switch, Chip, SegmentedControl, ChoiceCard, ChannelAvatar (with an initials fallback), **MediaCard** (16:9 and 9:16, with poster, duration and progress), QRPanel, Stepper, FilterBar, ListRow.
   - [x] 3.4.c **Check:** the console and merchant screens still compile and render, and every primitive is in the gallery (3.6).
-- [ ] **3.5 Video primitives and shells** · needs: 3.4 — ⛔ only 3.5.d is left, waiting for 1.7.c (a–c, e ✅ 0052a63)
+- [ ] **3.5 Video primitives and shells** · needs: 3.4 — 🔄 slot 2 (a–c, e ✅ 0052a63; 3.5.d unblocked by 1.7.c)
   - [x] 3.5.a **VerticalFeed**, with `mode: "teaser" | "inline-session"`:
     - native `<video>` for the MP4 teasers;
     - at most 3 video elements mounted; the rest are posters;
@@ -679,7 +679,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - the public header and footer.
     
     (requested by C) Remove the business tab from the viewer shell.
-  - [ ] 3.5.d Move `(app)/page.tsx` to `(app)/home/page.tsx`. In the same merge, add these to `route-redirects.ts`: `/` → `/home` when signed in, and `/` → `/au` when signed out, until 11.1.a. — ⛔ 1.7.c (`route-redirects.ts` and the `yt_session` check do not exist yet; moving the page first would 404 `/`)
+  - [ ] 3.5.d Move `(app)/page.tsx` to `(app)/home/page.tsx`. In the same merge, add these to `route-redirects.ts`: `/` → `/home` when signed in, and `/` → `/au` when signed out, until 11.1.a. — 🔄 slot 2 (1.7.c landed in 54835a8)
   - [x] 3.5.e **Check:** the feed holds at most 3 `<video>` elements after scrolling 20 items, and nothing links to `/business` from the viewer shell.
 - [ ] **3.6 Brand, gallery and visual tests** · needs: 3.4 — 🔄 slot 2
   - [x] 3.6.a Brand: the wordmark "YourTal" in Bricolage Grotesque 800, with the points coin glyph as the mark. Favicon, maskable icons and the web manifest. Today `/favicon.ico` returns 404.

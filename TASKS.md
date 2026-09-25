@@ -33,10 +33,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 8/43 | `██░░░░░░░░`  19% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 9/43 | `██░░░░░░░░`  21% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 3/6 | 19/32 | `██████░░░░`  59% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 13/50 | `███░░░░░░░`  26% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 14/50 | `███░░░░░░░`  28% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **12/82** | **86/363** | `██░░░░░░░░`  24% |
+| **All** | | | **12/82** | **88/363** | `██░░░░░░░░`  24% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`, F21/F22): 4.1.a ✅, 4.2 ✅, 4.3.a–d ✅ (0f18df1); 4.4.f, 4.4.i, 4.9.b ✅ (abc7ade); now 4.6.a–e. Routes and TS clients wait for 1.2 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.3 ✅ (tokens v2 from After Dark). Now 3.4 primitives |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); agent B on helper `yourtal-p1-b` (`phase/1-b`) merged 1.3.a/c/d, stopped ⛔ waiting on 1.1 ✅ for 1.3.b and 1.3's Check, then 1.4 and 1.6; 1.5 and 1.7 last |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); agent B on helper `yourtal-p1-b` (`phase/1-b`) merged 1.3.a/c/d and 1.6.c + 1.6.a's driver half (a953bf3), still ⛔ waiting on 1.1 ✅ for 1.3.b and 1.3's Check; 1.5 and 1.7 last |
 
 ## Decisions for the founder
 
@@ -505,10 +505,10 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - a call with `x-yt-user-id` and no session gets 401;
     - an ID principal reading an AU campaign is denied;
     - the route suites pass against real Cerbos.
-- [ ] **1.6 Simulated email you can read** · needs: 1.4
-  - [ ] 1.6.a Add an `email` boundary to `packages/drivers`. The simulated driver stores messages in `platform.sim_outbox`. `AuthService.deliver` uses it for verification, reset and invitation emails.
+- [ ] **1.6 Simulated email you can read** · needs: 1.4 — 🔄 slot 3
+  - [ ] 1.6.a Add an `email` boundary to `packages/drivers`. The simulated driver stores messages in `platform.sim_outbox`. `AuthService.deliver` uses it for verification, reset and invitation emails. — driver half merged (a953bf3): the `email` boundary and its simulated driver exist, backed by the `platform.sim_outbox` migration; `AuthService.deliver` is not wired yet — that and the rest wait on 1.4.
   - [ ] 1.6.b `GET /api/dev/inbox` and a plain `/dev/inbox` page. They are enabled only when `APP_ENV` is `dev` or `staging`.
-  - [ ] 1.6.c (requested by B and C) `push` and `webhook` boundaries in `packages/drivers`, with simulated drivers that store to `platform.sim_outbox`.
+  - [x] 1.6.c (requested by B and C) `push` and `webhook` boundaries in `packages/drivers`, with simulated drivers that store to `platform.sim_outbox`.
   - [ ] 1.6.d **Check:** register → the verification email appears in `/dev/inbox` → its link verifies the account.
 - [ ] **1.7 Web ↔ API plumbing** · needs: 1.5
   - [ ] 1.7.a `apps/web/lib/api/`: a server-only `apiFetch(path, zodSchema)` that calls `API_INTERNAL_URL`, forwards `yt_session` and returns typed errors. Per-domain calls live in each area's `features/<x>/<x>-api.ts`.
@@ -761,7 +761,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.5.e Region: vouchers carry their region and currency, and authorize refuses a merchant from the other region.
   - [ ] 4.5.f **Check:** `voucher-client.contract.spec.ts` passes against live, and an AUD voucher reserves, activates, shows a QR token, authorizes and captures.
 - [ ] **4.6 Voucher hardening** · needs: 4.5 (4.6.a–e early, F22) — 🔄 slot 1
-  - [ ] 4.6.a Enforce the lifecycle inside `issue.Move` and with a database transition trigger. Capture and void require `held` (D3). A swept stale hold returns the voucher to active (D15).
+  - [x] 4.6.a Enforce the lifecycle inside `issue.Move` and with a database transition trigger. Capture and void require `held` (D3). A swept stale hold returns the voucher to active (D15).
   - [ ] 4.6.b Kill switch: check it after the code lookup (batch, merchant and global scopes) and again inside Capture (D4). The throttle counts only probes (D13). `ErrStaleVersion` returns 409 (D14).
   - [ ] 4.6.c Authorize takes `order_total_minor`. Minimum spend is checked against it and re-checked at capture (D5). An authorize replay compares code hash, amount and currency (D7).
   - [ ] 4.6.d Idempotency:

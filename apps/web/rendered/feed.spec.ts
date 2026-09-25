@@ -10,9 +10,13 @@ test("VerticalFeed keeps at most 3 <video> elements mounted after scrolling thro
   page,
 }) => {
   await page.goto("/lab/ui");
+  await page.waitForLoadState("networkidle");
 
   const section = page.getByTestId("gallery-vertical-feed");
-  await section.scrollIntoViewIfNeeded();
+  // The gallery can swap this section once while it hydrates; retry until it holds.
+  await expect(async () => {
+    await section.scrollIntoViewIfNeeded({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
   const scroller = section.getByTestId("vertical-feed-scroller");
   await expect(scroller).toBeVisible();
 

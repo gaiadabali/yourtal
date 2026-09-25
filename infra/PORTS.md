@@ -66,6 +66,7 @@ main checkout runs compose. The ports are set in each worktree's `.env`.
 | 3                                   | 26330 | 26331 | 26332  | 26333   | 26334      | 26336       | 26335                      |
 | 3b (`yourtal-p1-b` helper worktree) | 26336 | 26337 | 26338  | 26339   | 26340      | 26342       | 26335 (shared with slot 3) |
 | 3c (`yourtal-p1-c` helper worktree) | 26343 | 26344 | 26345  | 26346   | 26347      | 26349       | 26335 (shared with slot 3) |
+| 1b (`yourtal-p4-b` helper worktree) | 26350 | 26351 | 26352  | 26353   | 26354      | 26356       | 26315 (shared with slot 1) |
 
 - web and api read `WEB_PORT` and `PORT`; Playwright reads `PLAYWRIGHT_PORT`
   (the offline config adds 2).

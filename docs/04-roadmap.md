@@ -1,5 +1,7 @@
 # YourTal — Phased Roadmap
 
+> **Superseded by [TASKS.md](../TASKS.md) (2026-09-25).** The phases, gates and sequencing below are history. The plan is TASKS.md; where they disagree, TASKS.md wins.
+
 **Date:** 2026-09-18
 **Sequencing principle:** regulatory-heavy features go last; the ledger goes first; each phase has a **gate** that must pass before the next starts.
 

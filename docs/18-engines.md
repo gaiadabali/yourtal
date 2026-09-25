@@ -22,7 +22,7 @@ These decide whether money is real. Every one is auditable by a human with a spr
 ### 1. Ledger ▪
 
 **Covers:** every point and cash balance in both countries. Sole writer.
-Append-only double-entry, integer minor units (IDR in **sen**), DB-enforced balance-to-zero, unique idempotency keys, hash-chained entries, daily Merkle root.
+Append-only double-entry, integer minor units (IDR in whole Rupiah since 2026-09-25, [docs/16 U-5](16-decisions.md); this line once said sen), DB-enforced balance-to-zero, unique idempotency keys, hash-chained entries, daily Merkle root.
 **Why dumb:** the moment a balance depends on a model, no one can prove the books. There is no scenario in which a clever ledger is better than a boring one.
 
 ### 2. Solvency Monitor ▪

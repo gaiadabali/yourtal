@@ -7,6 +7,8 @@
 
 ## 1. What the platform looks like — neither YouTube nor Netflix
 
+> **Superseded 2026-09-25** by the video-first social UI ([docs/16 U-1](16-decisions.md)). §1.2's "do not copy" rules still hold.
+
 Both analogues are wrong, and taking either would produce the wrong product.
 
 |                      | Netflix                    | YouTube                                       | **YourTal**                                      |

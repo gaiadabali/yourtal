@@ -34,7 +34,7 @@ on:
 
 concurrency:
   group: authz-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -42,13 +42,13 @@ permissions:
 jobs:
   policies:
     name: Cerbos policy suite
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
-
-      # The pinned image in scripts/policy-test.mjs is the same one the
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # sidecar runs. A policy repo that compiles under one Cerbos version
       # and not another is an incident waiting for an upgrade.
       - name: Compile policies and run the test suites
@@ -56,21 +56,22 @@ jobs:
 
   authz-package:
     name: "@yourtal/authz"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4.0.0
-        # No explicit version — reads "packageManager" from the root
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         # package.json, so CI and local toolchains cannot drift.
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: "pnpm"
 
       - name: Install dependencies

@@ -10,7 +10,7 @@
 #     cannot measure INP itself — see apps/web/lighthouserc.cjs for why).
 # and posts a bundle-size report as a single, updated PR comment.
 #
-# Runs on PRs only, not on every push to every branch.
+# Runs on PRs, and on pushes to main that touch the web app or the UI kit.
 name: Performance budget
 
 on:
@@ -26,11 +26,17 @@ on:
       - "turbo.json"
       - "package.json"
       - ".github/workflows/perf-budget.yml"
+  # A budget regression that lands on main without a PR still gets caught.
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "packages/ui/**"
 
 # Superseded runs on the same PR are pointless — cancel them to free runners.
 concurrency:
-  group: perf-budget-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: perf-budget-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -39,22 +45,23 @@ permissions:
 jobs:
   perf-budget:
     name: Lighthouse CI + bundle budget
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4.0.0
-        # No explicit version — reads the root package.json "packageManager"
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         # field (pnpm@11.3.0), so this action and the local dev toolchain
         # can never drift apart.
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: "pnpm"
 
       - name: Install dependencies
@@ -62,7 +69,7 @@ jobs:
 
       - name: Set up Chrome for Lighthouse
         id: setup-chrome
-        uses: browser-actions/setup-chrome@v1.7.2
+        uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2.2.0
         with:
           # "stable" rather than a pinned build number: Google periodically
           # deprecates old chrome-for-testing binaries out from under a
@@ -83,8 +90,10 @@ jobs:
       - name: Generate bundle-size report
         run: node scripts/perf-bundle-report.mjs apps/web bundle-report.md
 
+      # Pushes have no PR, and a fork's token cannot comment.
       - name: Post bundle-size report on PR
-        uses: actions/github-script@v7.0.1
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require("fs");

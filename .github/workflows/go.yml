@@ -25,18 +25,20 @@ on:
   pull_request:
     paths:
       - "services/**"
+      - "infra/healthcheck/**"
       - "packages/contracts/openapi/go/**"
       - ".github/workflows/go.yml"
   push:
     branches: [main]
     paths:
       - "services/**"
+      - "infra/healthcheck/**"
       - "packages/contracts/openapi/go/**"
       - ".github/workflows/go.yml"
 
 concurrency:
   group: go-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -44,7 +46,7 @@ permissions:
 jobs:
   build:
     name: ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
@@ -56,19 +58,23 @@ jobs:
             module: services/voucher
           - name: contracts (generated)
             module: packages/contracts/openapi/go
+          - name: healthcheck
+            module: infra/healthcheck
     defaults:
       run:
         working-directory: ${{ matrix.module }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v5.2.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           # Matches the toolchain in each module's go.mod.
-          go-version: "1.26"
-          cache-dependency-path: ${{ matrix.module }}/go.sum
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/go.*
 
       - name: Verify go.mod is tidy
         # A go.mod that drifts from its imports makes a build reproducible
@@ -76,7 +82,7 @@ jobs:
         # regenerate that introduced a new import without its checksum.
         run: |
           go mod tidy
-          git diff --exit-code go.mod go.sum
+          git diff --exit-code -- go.mod go.sum
 
       - name: Vet
         run: go vet ./...
@@ -96,5 +102,11 @@ jobs:
       # services/*/package.json. The YT-0567 race needs a shared Postgres to
       # happen, and this job has none — the DB-backed suites skip here by
       # design, which is what the note above explains.
+      - name: Known vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+
+      # The service suites need Postgres, so they run in integration.yml
+      # against a throwaway test database; their guard refuses anything else.
       - name: Test
+        if: matrix.name != 'ledger' && matrix.name != 'voucher'
         run: go test -count=1 ./...

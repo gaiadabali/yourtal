@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 4/8 | 32/46 | `███████░░░`  70% |
+| **Phase 0** Reset | A | 🔄 in progress | 5/8 | 36/47 | `████████░░`  77% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/3 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **4/81** | **32/352** | `█░░░░░░░░░`   9% |
+| **All** | | | **5/81** | **36/353** | `█░░░░░░░░░`  10% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **0** Reset | 2026-09-25 | 0.2 ✅, 0.3 ✅, 0.6.a–c ✅. Now: 0.4 (gate) and 0.5 (helper agent); then 0.6.d, 0.7, 0.8.f–j (session yourtal-74) |
+| 1 | `yourtal-1` | **0** Reset | 2026-09-25 | 0.2, 0.3, 0.5, 0.6 ✅; 0.4.a–e ✅. Now: 0.4.g (CI green on main), then 0.7, 0.4.f, 0.8.f–j (session yourtal-74) |
 | 2 | `yourtal-2` | — free | — | Phase 3 can start now (0.2.b ✅); worktree, `.env` and deps are ready |
 | 3 | `yourtal-3` | — free | — | Next: Phase 1, once Phase 0 ✅ |
 
@@ -299,17 +299,17 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - After the fast-forward, from the main checkout: `pnpm db:migrate && docker compose up -d --build --force-recreate --wait voucher-keygen voucher`, then voucher `/healthz` returns 200.
 - [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3 — 🔄 slot 1
   - [x] 0.4.a Add `pnpm check`: line endings, format, typecheck, lint, and the unit tests that need no services. It should finish in under 3 minutes. `pnpm verify` becomes `check` plus the database, Go and Cerbos suites.
-  - [ ] 0.4.b Every Go and TypeScript database suite runs against a `yourtal_test_*` database. A guard fails any test helper whose URL names a dev database; `engine_test.go:26` hard-codes one today. Once this is in, the Go tests stop writing fake AUD rates and coverage fixtures into dev data.
+  - [x] 0.4.b Every Go and TypeScript database suite runs against a `yourtal_test_*` database. A guard fails any test helper whose URL names a dev database; `engine_test.go:26` hard-codes one today. Once this is in, the Go tests stop writing fake AUD rates and coverage fixtures into dev data.
   - [x] 0.4.c Fix what is red today:
     - CRLF in 4 files, with `.gitattributes` `eol=lf` rules so it cannot come back;
     - the 2 files failing Format in CI;
     - the `packages/db` `seed.test.ts` idempotency failure that keeps Integration red.
-  - [ ] 0.4.d CI:
+  - [x] 0.4.d CI:
     - `quality.yml` runs `pnpm check`, and `integration.yml` runs the service suites;
     - remove `cancel-in-progress` for pushes to `main`;
     - `perf-budget.yml` runs on pushes to `main` that touch `apps/web/**` or `packages/ui/**`. Its comment step runs only on same-repo pull requests, and its concurrency group falls back to `github.ref`;
     - `pnpm --filter @yourtal/web test:rendered` (3.1.d) runs in `pnpm verify` and in CI, not in `pnpm check`.
-  - [ ] 0.4.e CI supply chain:
+  - [x] 0.4.e CI supply chain:
     - move every action to its current Node 24 major **pinned by full SHA** with a version comment: checkout v6, setup-node v6, setup-go v6, pnpm/action-setup v6, github-script v8, browser-actions/setup-chrome v2. Look up each SHA with `gh api repos/<owner>/<action>/git/ref/tags/<tag>`. The Node 20 majors also break caching ("Cache service responded with 400").
     - Set `persist-credentials: false` on every checkout.
     - Split `release.yml` into a **build** job (`contents: read`) that uploads the tarball and its checksum as an artifact, and a **publish** job (`contents: write`, `needs: build`) that only creates the release. Today a compromised dependency in `pnpm install` could publish a release that Helios installs.
@@ -317,6 +317,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - Pin `runs-on: ubuntu-24.04`, because `ubuntu-latest` moves to 26.04 on 2026-10-19.
     - CI and dev use Node 24 LTS: add `.nvmrc`, set `engines` to `>=24`, and use `node-version-file`. Check the Helios Node major in 2.1.
   - [ ] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-1`, merge them; otherwise record them here as ✂️ with the reason.
+  - [ ] 0.4.h Once 3.1.d adds `pnpm --filter @yourtal/web test:rendered`, run it in `pnpm verify` and in `integration.yml` (split from 0.4.d) — ⛔ 3.1.d
   - [ ] 0.4.g **Check:** every workflow is green on `main`, `pnpm check` is green in all three worktrees, and no workflow log shows a Node 20 deprecation warning.
 - [x] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3 — ✅ 2026-09-25 3d166a2
   - [x] 0.5.a Set `DEFAULT_REGION = "AU"` in `apps/web/features/region/get-region.ts:11`, and update `region-cookie-roundtrip.test.ts`.
@@ -324,7 +325,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
   - [x] 0.5.c Make the player pass `locale` to `AccrualIndicator` and `CompletionHandoff` (`video-player.tsx:76,108`), so English sentences stop saying "1.250 poin" (EW-22).
   - [x] 0.5.d Pin a region cookie in every e2e spec that assumes ID: `earn-journey`, `redeem-journey`, `spend-journey`, `open-view-journey`, `overflow-320` (have it read the pinned locale's catalogue), `keyboard-seek`, `find-bonus-accuracy-campaign`. Afterwards `grep -l "id-ID\|DEFAULT_REGION" apps/web/e2e` lists only pinned specs.
   - [x] 0.5.e **Check:** a fresh browser with no cookies sees English and AUD at `/`, and `/id` is still Indonesian. Verified 2026-09-25: `/` is `lang=en-AU` and all English (it shows no amounts), `/id` is Indonesian. `/store` still lists the ID-only mock catalogue in Rupiah to an AU visitor; that is 6.6.a (region-scoped store).
-- [ ] **0.6 Retire the old story in the docs** · needs: 0.1 — 🔄 slot 1
+- [x] **0.6 Retire the old story in the docs** · needs: 0.1 — ✅ 2026-09-25 3a097c2
   - [x] 0.6.a `README.md`: remove the remaining false claims ("under 300 lines, enforced in CI"; the "six things" section's "Run the pilot before writing any code").
   - [x] 0.6.b Add a "Superseded by TASKS.md (2026-09-25)" banner to `docs/04-roadmap.md`. Add rows to `docs/16` for every **F** answer above and for each of these:
     - video-first social UI (it supersedes the board layout in docs/17 §1, while docs/17 §1.2's "do not copy" rules still hold);
@@ -332,7 +333,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - no user-to-user interaction anywhere on the platform (see Phase 3);
     - B4 (24 → no expiry by default), K2 (IDR 8 → 9) and docs/18 §1 ("IDR in sen") superseded.
   - [x] 0.6.c Bring `docs/24` and `docs/25` from `wip/leftovers-2026-09-22` onto `main`, and amend them to match F2: no expiry by default, Helios acceptable for production.
-  - [ ] 0.6.d **Check:** no document still describes Indonesia-first, Zitadel, phone OTP, 24-month expiry or IDR-in-sen as current.
+  - [x] 0.6.d **Check:** no document still describes Indonesia-first, Zitadel, phone OTP, 24-month expiry or IDR-in-sen as current.
 - [ ] **0.7 IDR in whole Rupiah (decision T-1): a data migration, not a constant** · needs: 0.3
   - [ ] 0.7.a Add a migration that divides IDR amounts by 100 where `currency = 'IDR'`. It covers `store.listings`, `voucher.vouchers`, `store.listing_price_revision`, `store.settlement_decrease_request`, and every ledger entry, allocation, purchase and pricing-rate row. The ID rates become micros per point: B = 6_000_000, P_issue = 9_000_000.
   - [ ] 0.7.b `MINOR_UNIT.IDR` becomes exponent 0.
@@ -1236,6 +1237,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · A · 0.6 The docs tell the current story: README, docs/16 section U, docs/24–25 on main and amended, and a sweep of 11 docs · 3a097c2
 - 2026-09-25 · A · 0.5 A first visit is English: AU by default, merchant `lang` from the device, player and earn-board copy from the catalogues · 3d166a2
 - 2026-09-25 · A · 0.2 Three slot worktrees run web, api and Cerbos side by side on their own databases; a migration in one leaves the others alone · efffeda
 - 2026-09-25 · A · 0.3 HEAD compiles: store, web, seed and voucher service on `*_minor` + currency; migrations apply again; voucher `/healthz` 200 · d9762ae

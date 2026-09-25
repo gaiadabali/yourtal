@@ -43,7 +43,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | · not started | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/6 | 0/18 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
-| **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
+| **Phase 11** Public site | B | 🔄 in progress | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
 | **All** | | | **20/82** | **145/366** | `████░░░░░░`  40% |
@@ -81,6 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Two agents. A (`yourtal-1`, `phase/4`): 4.1.b/c/d done on the branch (86de46c), next 4.4.a–d, 4.7, 4.8, 4.9. B (helper `yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5 voucher core API, then 4.6.f/h |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
+| 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | Helper on `phase/11`, no slot of its own. 11.3.a, then 11.3.b without JSON-LD. 11.1 and 11.2 ⛔ Phase 7 |
 
 ## Decisions for the founder
 
@@ -126,6 +127,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F24** | F22's list was done and 1.2 had still not started | **The Go-only four next** in slot 1: K6 marketing grants backed by cash in the same transaction (4.4.h), allocation holds (4.4.e), the solvency monitor (4.9.c) and the burn engine half of 4.3.e without its route. |
 | **F23** | Should Phase 1 get more agents? | **Add one when 1.1 merges.** A third agent takes 1.2.f (per-region settings) in its own helper worktree; agent A does the rest of 1.2, agent B does 1.3.b then 1.4. Not before 1.1, since everything waits on it. |
 | **F25** | Add another Phase 1 agent to speed things up | **Yes: agent D takes 1.7** (web ↔ API plumbing) in helper `yourtal-p1-c` now. Its 1.7.a–d need only the session cookie from 1.4; the 1.7.e Check waits for 1.5. Agent B keeps only 1.6. |
+| **F26** | Phase 11 was asked to start while Phase 7 (its gate) had not begun and all 3 slots were busy | **Start its early slice now**, like F21, in helper `yourtal-p11` (`phase/11`): only what needs no Phase 7. That is 11.3.a (trust pages, 404, OG cards) and the 11.3.b robots/sitemap fixes, `llms.txt` and staging `noindex`. `VideoObject` JSON-LD, 11.1 and 11.2 wait for 7.7. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -1121,7 +1123,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 
 ## Phase 11 — Public site · Area B · ~3d
 
-- [ ] **11.1 Landing page and chooser** · needs: 3.5, 7.2.e, 7.7
+- [ ] **11.1 Landing page and chooser** · needs: 3.5, 7.2.e, 7.7 — ⛔ 7.7
   - [ ] 11.1.a `/` becomes a public landing page, with logged-in visitors sent to `/home`:
     - a hero with real campaign video;
     - how it works in three steps;
@@ -1129,11 +1131,11 @@ The internal team runs the economy and the review queues. Today none of it exist
     - a crawlable region and language chooser with no IP redirect, AU first, plus `x-default`.
   - [ ] 11.1.b A logged-out For You feed of Open Viewing teasers on `/au` and `/id`.
   - [ ] 11.1.c **Check:** a logged-out visitor sees the landing page in English; a logged-in one lands on the feed.
-- [ ] **11.2 Real data** · needs: 7.7
+- [ ] **11.2 Real data** · needs: 7.7 — ⛔ 7.7
   - [ ] 11.2.a `/au` and `/id` read the API with revalidation. **Channel pages live at the existing `/[locale]/m/[handle]` route** (keyed by business handle), and campaign pages stay at `/[locale]/c/[campaignId]`.
   - [ ] 11.2.b Open Viewing (F8): only campaigns with `openViewing` that are rated all_ages play logged-out through a **non-earning anonymous watch session**, which returns the same per-session signed manifest URL as 5.1.d and counts against the F12 per-IP limit. `/media/hls/` never becomes public. Other campaigns show their poster and terms with "Sign in to watch". Sign-up returns to **the same campaign**; today it lands on a different, synthesised one.
   - [ ] 11.2.c **Check:** a campaign created in Studio appears on the public page without a rebuild, and an adult-rated campaign cannot be played logged-out.
-- [ ] **11.3 SEO and trust pages** · needs: 11.2
+- [ ] **11.3 SEO and trust pages** · needs: 11.2 — 🔄 slot 2b (early slice F26: a and b without JSON-LD)
   - [ ] 11.3.a Help / FAQ, how points work, for business, and terms and privacy (marked draft on staging). A branded 404 and branded OG cards.
   - [ ] 11.3.b `VideoObject` JSON-LD, sitemap and robots fixes (`/id/` rather than a bare `/id` prefix, and a configurable site URL), and `llms.txt`. Everything is `noindex` while `APP_ENV=staging`.
   - [ ] 11.3.c (requested by A) `/[locale]/transparency`, listing each day's root from `GET /api/proof/roots` (10.3.b).

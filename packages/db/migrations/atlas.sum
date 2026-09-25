@@ -1,4 +1,4 @@
-h1:UojUKM97A6+M6cDYOtixrnBrPFTT4R0jKGgJVXLZnic=
+h1:H/8EWjHr1dAmu4/ocX/p+N0s/rwDN61S4WiQJU/emjw=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -52,5 +52,5 @@ h1:UojUKM97A6+M6cDYOtixrnBrPFTT4R0jKGgJVXLZnic=
 20260925200000_credential_verified_at.sql h1:r3gCizHnV++uaMvVnhbo2p1bcMIHISGwSCxLqgpkIGI=
 20260925200100_credential_delete_grant.sql h1:qPQcFxXfqVd0fy0ze/x7GlgxUb2jlmyMbX7nYGnPODk=
 20260925201000_ledger_live_api.sql h1:EYHW2ck+AA3WHmpset792CzbABvy7Km8n+55UqOMc08=
-20260925210000_campaign_terms_for_ledger.sql h1:01xgGF6pxHPG9758enTDrCOcBOboqyYGxrkbmqMtKGw=
-20260926000000_identity_staff_role.sql h1:ok1yp+9FLP8OTPtUnm3GQD+hWtZkhi97r5yzzDUHiLg=
+20260926000000_identity_staff_role.sql h1:YT42y7k/1KAgD3rTDtiZ11NKiRZjTluo5eMXK85EyBE=
+20260926001000_campaign_terms_for_ledger.sql h1:oCJltZ2ZbQwpGVXEQGPl67vpYiQCUq7yk61vIBH5n3o=

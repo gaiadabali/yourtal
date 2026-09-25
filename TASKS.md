@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 3/43 | `█░░░░░░░░░`   7% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 1/6 | 8/32 | `███░░░░░░░`  25% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 5/49 | `█░░░░░░░░░`  10% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **10/82** | **59/362** | `██░░░░░░░░`  16% |
+| **All** | | | **10/82** | **62/362** | `██░░░░░░░░`  17% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -457,10 +457,10 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - `ledger-internal` gains `getSettings(region)`, `proposeSetting` and `approveSetting` (two-person) for 9.5.d.
   - [ ] 1.2.g **Check:** B and C can call every operation above against the fake from a test, and `getSetting('AU', 'daily_earn_cap')` returns 500.
 - [ ] **1.3 Plumbing for parallel phase sessions** · needs: 1.1 — 🔄 slot 3
-  - [ ] 1.3.a Add `"./*": "./src/*.ts"` to the contracts package's exports, so nobody edits the exports map again. Split `openapi/route-registry.ts` into `route-registry.{a,b,c}.ts`, concatenated. Make `route-drift.test.ts` discover the modules and assert registry ⇔ live equality, instead of hard-coded route counts.
+  - [x] 1.3.a Add `"./*": "./src/*.ts"` to the contracts package's exports, so nobody edits the exports map again. Split `openapi/route-registry.ts` into `route-registry.{a,b,c}.ts`, concatenated. Make `route-drift.test.ts` discover the modules and assert registry ⇔ live equality, instead of hard-coded route counts.
   - [ ] 1.3.b Split `packages/db/src/seed.ts` into `seed/{identity,ledger,watch,studio,store}.ts`, with `seed.ts` importing them.
-  - [ ] 1.3.c Create `apps/worker`: a pg-boss runner (`packages/queue`) that **auto-loads** every `src/jobs/*.ts` exporting `job`, with no central list. Add ffmpeg to the Helios host prerequisites (`infra/HELIOS.md`).
-  - [ ] 1.3.d `apps/api/src/shared/testing/session-for.ts` (register + login → cookie) for everyone's tests. Until 1.5.a lands it **also returns the matching `x-yt-*` headers**, so a test passes both before and after 1.5.a. The boot tests move onto it in 1.5.a.
+  - [x] 1.3.c Create `apps/worker`: a pg-boss runner (`packages/queue`) that **auto-loads** every `src/jobs/*.ts` exporting `job`, with no central list. Add ffmpeg to the Helios host prerequisites (`infra/HELIOS.md`).
+  - [x] 1.3.d `apps/api/src/shared/testing/session-for.ts` (register + login → cookie) for everyone's tests. Until 1.5.a lands it **also returns the matching `x-yt-*` headers**, so a test passes both before and after 1.5.a. The boot tests move onto it in 1.5.a.
   - [ ] 1.3.e **Check:** a new job file is picked up without editing any other file, and a new route passes route-drift once it is added to its area's registry.
 - [ ] **1.4 Accounts and profile** · needs: 1.1
   - [ ] 1.4.a Add a migration for `identity.user_profile` with these fields:
@@ -712,7 +712,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     | Suspend | Dr user.available + pending / Cr user.escrow; release reverses it |
     | Reversal | the exact inverse, referencing the original transfer |
   - [x] 4.2.d **Check:** a trial balance by account kind passes. After a 100-pt grant, points outstanding = +100, and coverage is not reported as "no points outstanding".
-- [ ] **4.3 Ledger guards** · needs: 4.2
+- [ ] **4.3 Ledger guards** · needs: 4.2 (4.3.a–d early, F21; 4.3.e waits for 1.2) — 🔄 slot 1
   - [ ] 4.3.a Overdraft guard: a per-account `pg_advisory_xact_lock`, and no debit below zero, for user available, pending and escrow, marketing cash and merchant payable. Test: two concurrent burns of 400 and 400 on a balance of 500 → exactly one succeeds (EM-04).
   - [ ] 4.3.b A trigger enforces `entry.currency = account.currency`, and balance queries filter by currency (EM-09).
   - [ ] 4.3.c Idempotency: store a request hash, so the same key with a different payload returns `idempotency_conflict` and a replay returns the original result (EM-14). Transfer and grant IDs include the user ID (EM-17, EW-13).

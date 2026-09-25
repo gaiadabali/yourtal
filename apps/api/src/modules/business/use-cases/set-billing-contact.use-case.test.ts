@@ -47,14 +47,14 @@ describe("setBillingContact", () => {
       await setBillingContact(businesses, billingContacts, {
         businessId,
         name: "First",
-        email: "first@kopikenangan.id",
+        email: "first@kopikenangan.example",
         phone: "+6281234567890",
       })
     )._unsafeUnwrap();
     const second = await setBillingContact(businesses, billingContacts, {
       businessId,
       name: "Second",
-      email: "second@kopikenangan.id",
+      email: "second@kopikenangan.example",
       phone: "+6281234567891",
     });
 

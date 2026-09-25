@@ -71,7 +71,7 @@ describe("getBillingContact", () => {
       await setBillingContact(businesses, billingContacts, {
         businessId,
         name: "Finance",
-        email: "finance@kopikenangan.id",
+        email: "finance@kopikenangan.example",
         phone: "+6281234567890",
       })
     )._unsafeUnwrap();

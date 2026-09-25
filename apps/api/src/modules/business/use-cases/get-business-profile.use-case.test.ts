@@ -53,7 +53,7 @@ describe("getBusinessProfile", () => {
       await setBillingContact(businesses, billingContacts, {
         businessId,
         name: "Finance Team",
-        email: "finance@kopikenangan.id",
+        email: "finance@kopikenangan.example",
         phone: "+6281234567890",
       })
     )._unsafeUnwrap();
@@ -77,7 +77,7 @@ describe("getBusinessProfile", () => {
     expect(result.isOk()).toBe(true);
     const profile = result._unsafeUnwrap();
     expect(profile.business.displayName).toBe("Kopi Kenangan");
-    expect(profile.billingContact?.email).toBe("finance@kopikenangan.id");
+    expect(profile.billingContact?.email).toBe("finance@kopikenangan.example");
     expect(profile.kybDocumentCount).toBe(1);
     expect(profile.memberCount).toBe(1);
   });

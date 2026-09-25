@@ -9,7 +9,7 @@ import {
 const valid = {
   businessId: "11111111-1111-4111-8111-111111111111",
   name: "Finance Team",
-  email: "finance@kopikenangan.id",
+  email: "finance@kopikenangan.example",
   phone: "+6281234567890",
   updatedAt: "2026-01-01T00:00:00Z",
 };

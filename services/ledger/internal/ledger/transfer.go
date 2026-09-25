@@ -78,6 +78,10 @@ var (
 	ErrMixedCurrency = errors.New("ledger: a transfer cannot mix currencies")
 	// ErrZeroAmount — a zero entry moves nothing and hides intent.
 	ErrZeroAmount = errors.New("ledger: an entry cannot be zero")
+	// ErrNotInverse — a reversal must be the exact inverse of the transfer it names.
+	ErrNotInverse = errors.New("ledger: a reversal must exactly invert its original")
+	// ErrUnbalancedBooks — a trial balance did not balance.
+	ErrUnbalancedBooks = errors.New("ledger: trial balance does not balance")
 )
 
 // Entry is one side of a transfer. Debits are negative, credits positive;
@@ -95,6 +99,9 @@ type TransferRequest struct {
 	IdempotencyKey string
 	ReasonCode     string
 	Entries        []Entry
+	// Reverses names the transfer this one undoes; Entries must be its exact
+	// inverse (see Reverse), and a transfer can be reversed once.
+	Reverses string
 }
 
 // TransferResult reports what happened. Replayed distinguishes "we wrote
@@ -164,10 +171,21 @@ func (l *Ledger) postInTx(ctx context.Context, tx pgx.Tx, req TransferRequest) (
 	queries := sqlcgen.New(tx)
 
 	{
+		if req.Reverses != "" {
+			if err := checkInverse(ctx, queries, req); err != nil {
+				return TransferResult{}, err
+			}
+		}
+
+		var reverses *string
+		if req.Reverses != "" {
+			reverses = &req.Reverses
+		}
 		created, err := queries.InsertTransfer(ctx, sqlcgen.InsertTransferParams{
 			ID:             req.ID,
 			IdempotencyKey: req.IdempotencyKey,
 			ReasonCode:     req.ReasonCode,
+			Reverses:       reverses,
 		})
 		if errors.Is(err, pgx.ErrNoRows) {
 			existing, lookupErr := queries.GetTransferByIdempotencyKey(ctx, req.IdempotencyKey)
@@ -205,12 +223,84 @@ func (l *Ledger) postInTx(ctx context.Context, tx pgx.Tx, req TransferRequest) (
 // can disagree with the entries it summarises, and when it does, the entries
 // are right and the balance is the bug. Projecting costs an aggregate and
 // removes a whole class of reconciliation incident (docs/18).
+//
+// It is the natural balance (see chart.go): positive means the account holds
+// value in its normal direction. An account that does not exist reads zero.
 func (l *Ledger) Balance(ctx context.Context, accountID string) (int64, error) {
 	balance, err := sqlcgen.New(l.pool).GetAccountBalance(ctx, accountID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, nil
+	}
 	if err != nil {
 		return 0, fmt.Errorf("projecting balance for %s: %w", accountID, err)
 	}
 	return balance, nil
+}
+
+// checkInverse refuses a reversal whose entries are not the negation of the
+// original's, account by account.
+func checkInverse(ctx context.Context, q *sqlcgen.Queries, req TransferRequest) error {
+	original, err := q.ListEntriesByTransfer(ctx, req.Reverses)
+	if err != nil {
+		return fmt.Errorf("reading the transfer being reversed: %w", err)
+	}
+	if len(original) == 0 {
+		return fmt.Errorf("%w: %s has no entries", ErrNotInverse, req.Reverses)
+	}
+	net := map[[2]string]int64{}
+	for _, e := range original {
+		net[[2]string{e.AccountID, e.Currency}] += e.AmountMinor
+	}
+	for _, e := range req.Entries {
+		net[[2]string{e.AccountID, e.Currency}] += e.AmountMinor
+	}
+	for key, left := range net {
+		if left != 0 {
+			return fmt.Errorf("%w: %s is off by %d on %s", ErrNotInverse, req.Reverses, left, key[0])
+		}
+	}
+	if len(original) != len(req.Entries) {
+		return fmt.Errorf("%w: %d entries against %d", ErrNotInverse, len(req.Entries), len(original))
+	}
+	return nil
+}
+
+// TrialBalance is one region's natural balances by kind, per currency.
+type TrialBalance map[Currency]map[AccountKind]int64
+
+// TrialBalance projects a region's books. Raw entries are credit-positive, so
+// the natural balance is -SUM for assets and expenses and +SUM otherwise.
+func (l *Ledger) TrialBalance(ctx context.Context, region Region) (TrialBalance, error) {
+	rows, err := sqlcgen.New(l.pool).TrialBalance(ctx, string(region))
+	if err != nil {
+		return nil, fmt.Errorf("trial balance for %s: %w", region, err)
+	}
+	tb := TrialBalance{}
+	for _, row := range rows {
+		currency, kind := Currency(row.Currency), AccountKind(row.Kind)
+		if tb[currency] == nil {
+			tb[currency] = map[AccountKind]int64{}
+		}
+		natural := row.CreditMinusDebit
+		if kind == KindAsset || kind == KindExpense {
+			natural = -natural
+		}
+		tb[currency][kind] = natural
+	}
+	return tb, nil
+}
+
+// Check asserts assets + expenses = liabilities + equity + revenue in every
+// currency.
+func (tb TrialBalance) Check() error {
+	for currency, k := range tb {
+		debits := k[KindAsset] + k[KindExpense]
+		credits := k[KindLiability] + k[KindEquity] + k[KindRevenue]
+		if debits != credits {
+			return fmt.Errorf("%w: %s debits %d, credits %d", ErrUnbalancedBooks, currency, debits, credits)
+		}
+	}
+	return nil
 }
 
 // Imbalance is one transfer whose entries do not sum to zero.

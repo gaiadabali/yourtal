@@ -2,43 +2,31 @@ package ledger
 
 import "fmt"
 
-// The chart of accounts. YT-0043.
+// The chart of accounts and its posting rules (4.2).
 //
-// # Classification, not valuation
+// # Sign convention
 //
-// This file says what an account IS. It never says what one is worth. Points
-// liability is points liability whatever an IDR integer is denominated in
-// (FOUNDER DECISION T-1: whole Rupiah) — but the moment anything here
-// multiplied by a backing rate, it would be pricing, and pricing is where the
-// unit actually bites. There is no rate, no coverage ratio and no currency-
-// per-point arithmetic anywhere in this package, and that is deliberate.
+// Entries are credit-positive: a debit is negative, a credit positive, and
+// every transfer sums to zero. Liability, equity and revenue accounts are
+// credit-normal (natural balance = +SUM); asset and expense accounts are
+// debit-normal (natural balance = -SUM). GetAccountBalance applies that, so
+// every reader sees natural balances and none re-derives the sign.
 //
-// # Why points are a currency
+// # Regions
 //
-// docs/02 §6 gives the ledger three currencies: YTP, IDR, AUD. Points being
-// a first-class currency rather than a number in a different table is what
-// makes "a transfer may not mix currencies" meaningful — an entry that moves
-// points and an entry that moves Rupiah cannot accidentally sum together,
-// because the trigger refuses the transfer outright.
+// AU and ID are separate economies. Every platform account exists once per
+// region and its id carries the region; cash accounts hold that region's
+// currency only. The balance trigger refuses a transfer touching two regions.
 
 // AccountKind is the accounting classification (docs/02 §6).
 type AccountKind string
 
 const (
-	// KindAsset — something the platform holds. Advertiser pre-purchase cash
-	// sits here until it is drawn down.
-	KindAsset AccountKind = "asset"
-	// KindLiability — something the platform owes. A user's points balance
-	// is the central one: points are a claim on us, not our property.
+	KindAsset     AccountKind = "asset"
 	KindLiability AccountKind = "liability"
-	// KindRevenue — income. Breakage lands here when points expire unspent.
-	KindRevenue AccountKind = "revenue"
-	// KindExpense — cost. Points the platform issues without an advertiser
-	// funding them are marketing spend, and calling them anything else is
-	// how a marketing budget hides inside a liability.
-	KindExpense AccountKind = "expense"
-	// KindEquity — the residual.
-	KindEquity AccountKind = "equity"
+	KindRevenue   AccountKind = "revenue"
+	KindExpense   AccountKind = "expense"
+	KindEquity    AccountKind = "equity"
 )
 
 // OwnerType is who an account belongs to (docs/02 §6).
@@ -50,17 +38,14 @@ const (
 	OwnerPlatform OwnerType = "platform"
 	OwnerEscrow   OwnerType = "escrow"
 	OwnerCharity  OwnerType = "charity"
-	// OwnerSuspense holds a leg whose real counterparty is not yet known.
-	// It has to exist: the alternative is a transfer that does not balance,
-	// and an unbalanced transfer cannot be written at all. A suspense
-	// balance is therefore a work queue, not an error state — but a
-	// non-zero one at close of day is something finance must resolve.
+	// OwnerSuspense holds a leg whose counterparty is not yet known; a
+	// non-zero balance at close of day is a work queue for finance.
 	OwnerSuspense OwnerType = "suspense"
-	// OwnerReserve holds funds backing points in circulation.
-	OwnerReserve OwnerType = "reserve"
+	OwnerReserve  OwnerType = "reserve"
 )
 
-// Currency in the ledger sense. Points are one.
+// Currency in the ledger sense. Points are one, so a points entry and a cash
+// entry can never sum together: a transfer may not mix currencies.
 type Currency string
 
 const (
@@ -69,35 +54,91 @@ const (
 	CurrencyAUD    Currency = "AUD"
 )
 
-// Canonical platform account ids. Fixed strings rather than lookups, because
-// a posting rule that has to search for its own account is a posting rule
-// that can silently post to the wrong one.
+// Region is one economy. Its cash currency is fixed.
+type Region string
+
 const (
-	// AccountPointsIssued is the contra account for every point that enters
-	// circulation. Its balance mirrors the sum of all user balances with the
-	// opposite sign — which is not a coincidence to be maintained but an
-	// arithmetic consequence of double entry.
-	AccountPointsIssued = "plat_points_issued"
-	// AccountPointsRedeemed absorbs points burned in the store.
-	AccountPointsRedeemed = "plat_points_redeemed"
-	// AccountBreakageRevenue absorbs points that expired unspent.
-	AccountBreakageRevenue = "plat_breakage_revenue"
-	// AccountMarketingExpense funds points the platform issues itself.
-	AccountMarketingExpense = "plat_marketing_expense"
-	// AccountSuspense is the landing place described on OwnerSuspense.
-	AccountSuspense = "plat_suspense"
+	RegionAU Region = "AU"
+	RegionID Region = "ID"
 )
 
-// Cash accounts are per-currency, so their ids carry it. A single
-// `plat_reserve` holding two currencies would be an account whose balance
-// is a number with no unit — and the ledger already refuses to mix
-// currencies inside a transfer for the same reason.
-func ReserveAccountID(currency string) string { return fmt.Sprintf("plat_reserve_%s", currency) }
+// Currency is the region's cash currency, or "" for an unknown region.
+func (r Region) Currency() Currency {
+	switch r {
+	case RegionAU:
+		return CurrencyAUD
+	case RegionID:
+		return CurrencyIDR
+	}
+	return ""
+}
 
-// PartnerFundingAccountID is the source side of a pre-purchase: the claim
-// a partner has paid in, against which points are later issued.
-func PartnerFundingAccountID(currency string) string {
-	return fmt.Sprintf("plat_partner_funding_%s", currency)
+// Purpose separates a user's spendable, held-back and frozen points, and marks
+// a merchant's payable. Platform accounts are `main`.
+type Purpose string
+
+const (
+	PurposeMain      Purpose = "main"
+	PurposeAvailable Purpose = "available"
+	PurposePending   Purpose = "pending"
+	PurposeEscrow    Purpose = "escrow"
+	PurposePayable   Purpose = "payable"
+)
+
+// Role names a platform account within a region.
+type Role string
+
+const (
+	// Cash side, in the region currency.
+	RoleReserve            Role = "reserve"             // asset: segregated cash backing points and vouchers
+	RolePartnerFunding     Role = "partner_funding"     // liability: partner cash received for points
+	RoleMarketingCash      Role = "marketing_cash"      // asset: cash earmarked to back marketing points
+	RolePlatformEquity     Role = "platform_equity"     // equity: the platform's own money put in
+	RoleRedemptionClearing Role = "redemption_clearing" // equity: contra to voucher liability created by burns
+	RoleVoucherLiability   Role = "voucher_liability"   // liability: face value owed on live vouchers
+
+	// Points side, in YTP.
+	RolePointsIssued     Role = "points_issued"     // equity: contra to partner-funded points
+	RolePointsRedeemed   Role = "points_redeemed"   // equity: points burned for vouchers
+	RoleBreakageRevenue  Role = "breakage_revenue"  // revenue: points expired unspent
+	RoleMarketingExpense Role = "marketing_expense" // expense: points the platform pays for
+	RoleSuspense         Role = "suspense"
+)
+
+type roleSpec struct {
+	kind  AccountKind
+	cash  bool
+	owner OwnerType
+}
+
+var roles = map[Role]roleSpec{
+	RoleReserve:            {KindAsset, true, OwnerReserve},
+	RolePartnerFunding:     {KindLiability, true, OwnerPlatform},
+	RoleMarketingCash:      {KindAsset, true, OwnerPlatform},
+	RolePlatformEquity:     {KindEquity, true, OwnerPlatform},
+	RoleRedemptionClearing: {KindEquity, true, OwnerPlatform},
+	RoleVoucherLiability:   {KindLiability, true, OwnerPlatform},
+	RolePointsIssued:       {KindEquity, false, OwnerPlatform},
+	RolePointsRedeemed:     {KindEquity, false, OwnerPlatform},
+	RoleBreakageRevenue:    {KindRevenue, false, OwnerPlatform},
+	RoleMarketingExpense:   {KindExpense, false, OwnerPlatform},
+	RoleSuspense:           {KindEquity, false, OwnerSuspense},
+}
+
+// PlatformAccountID is a platform account's fixed id, e.g. `plat_AU_reserve`.
+// Fixed strings, so a posting rule can never look up the wrong account.
+func PlatformAccountID(region Region, role Role) string {
+	return fmt.Sprintf("plat_%s_%s", region, role)
+}
+
+// UserAccountID is one of a user's points accounts, e.g. `usr_42_pts_pending`.
+func UserAccountID(userID string, purpose Purpose) string {
+	return fmt.Sprintf("usr_%s_pts_%s", userID, purpose)
+}
+
+// MerchantPayableID is what the platform owes a merchant for captured vouchers.
+func MerchantPayableID(merchantID string, region Region) string {
+	return fmt.Sprintf("mer_%s_payable_%s", merchantID, region.Currency())
 }
 
 // Account is one row of the chart.
@@ -108,158 +149,167 @@ type Account struct {
 	Kind      AccountKind
 	Currency  Currency
 	Country   string
+	Purpose   Purpose
 }
 
-// PlatformChart is every platform-owned account the posting rules below
-// reference. A deployment creates these once; the rules assume they exist,
-// and `TestPostingRulesOnlyReferenceTheChart` asserts none references an
-// account that is not here.
-func PlatformChart(country string) []Account {
-	platform := func(id string, kind AccountKind) Account {
-		return Account{
-			ID: id, OwnerType: OwnerPlatform, OwnerID: "platform",
-			Kind: kind, Currency: CurrencyPoints, Country: country,
+// PlatformChart is every platform account in a region, points and cash.
+func PlatformChart(region Region) []Account {
+	accounts := make([]Account, 0, len(roles))
+	for _, role := range []Role{
+		RoleReserve, RolePartnerFunding, RoleMarketingCash, RolePlatformEquity,
+		RoleRedemptionClearing, RoleVoucherLiability, RolePointsIssued,
+		RolePointsRedeemed, RoleBreakageRevenue, RoleMarketingExpense, RoleSuspense,
+	} {
+		spec := roles[role]
+		currency := CurrencyPoints
+		if spec.cash {
+			currency = region.Currency()
 		}
+		accounts = append(accounts, Account{
+			ID: PlatformAccountID(region, role), OwnerType: spec.owner, OwnerID: "platform",
+			Kind: spec.kind, Currency: currency, Country: string(region), Purpose: PurposeMain,
+		})
 	}
-
-	return []Account{
-		platform(AccountPointsIssued, KindEquity),
-		platform(AccountPointsRedeemed, KindEquity),
-		platform(AccountBreakageRevenue, KindRevenue),
-		platform(AccountMarketingExpense, KindExpense),
-		{
-			ID: AccountSuspense, OwnerType: OwnerSuspense, OwnerID: "platform",
-			Kind: KindEquity, Currency: CurrencyPoints, Country: country,
-		},
-	}
+	return accounts
 }
 
-// UserPointsAccount is a user's points balance — a LIABILITY, because points
-// are a claim the user holds on the platform and not the platform's own
-// money. Classifying them as anything else is how a growing obligation reads
-// as a growing asset.
-func UserPointsAccount(userID, country string) Account {
+// UserAccounts are a user's three points accounts, all liabilities: points are
+// a claim the user holds on the platform.
+func UserAccounts(userID string, region Region) []Account {
+	accounts := make([]Account, 0, 3)
+	for _, purpose := range []Purpose{PurposeAvailable, PurposePending, PurposeEscrow} {
+		accounts = append(accounts, Account{
+			ID: UserAccountID(userID, purpose), OwnerType: OwnerUser, OwnerID: userID,
+			Kind: KindLiability, Currency: CurrencyPoints, Country: string(region), Purpose: purpose,
+		})
+	}
+	return accounts
+}
+
+// MerchantPayable is the platform's liability to one merchant in one region.
+func MerchantPayable(merchantID string, region Region) Account {
 	return Account{
-		ID:        UserPointsAccountID(userID),
-		OwnerType: OwnerUser,
-		OwnerID:   userID,
-		Kind:      KindLiability,
-		Currency:  CurrencyPoints,
-		Country:   country,
+		ID: MerchantPayableID(merchantID, region), OwnerType: OwnerMerchant, OwnerID: merchantID,
+		Kind: KindLiability, Currency: region.Currency(), Country: string(region), Purpose: PurposePayable,
 	}
 }
 
-func UserPointsAccountID(userID string) string {
-	return fmt.Sprintf("usr_pts_%s", userID)
-}
+// --- posting rules ----------------------------------------------------------
+//
+// One function per row of the 4.2.c table. Each returns entries summing to
+// zero in one currency; Postgres re-checks both at COMMIT.
 
-// --- posting rules -------------------------------------------------------
-//
-// Each returns the entries for one flow. They are functions rather than
-// documentation because a posting pattern written in prose is one every
-// caller re-derives, and re-derivation is where a sign flips.
-//
-// Convention: a POSITIVE amount increases the account's balance. For a user
-// points account (a liability) positive means the user holds more; for the
-// contra accounts, the mirror. Every rule returns entries summing to zero,
-// which the database then re-checks at COMMIT — belt and braces, in the one
-// place where being wrong is money.
-
-// EarnPoints — a user completed a campaign and is credited.
-//
-// The user's liability grows; the issued-points contra account moves the
-// other way. Whether an advertiser funded this is NOT recorded here: the
-// funding is a separate cash-side transfer, and conflating them is how you
-// get a points ledger that cannot be reconciled against a bank statement.
-func EarnPoints(userID string, points int64) []Entry {
+// debitCredit is `Dr debit / Cr credit` for amount.
+func debitCredit(debit, credit string, currency Currency, amount int64) []Entry {
 	return []Entry{
-		{AccountID: UserPointsAccountID(userID), AmountMinor: points, Currency: string(CurrencyPoints)},
-		{AccountID: AccountPointsIssued, AmountMinor: -points, Currency: string(CurrencyPoints)},
+		{AccountID: debit, AmountMinor: -amount, Currency: string(currency)},
+		{AccountID: credit, AmountMinor: amount, Currency: string(currency)},
 	}
 }
 
-// BurnPoints — a user spent points in the store.
-//
-// The liability shrinks. Note what does NOT happen here: no revenue is
-// recognised. The platform owes a voucher now instead of owing points; the
-// obligation changed shape, it did not disappear.
-func BurnPoints(userID string, points int64) []Entry {
-	return []Entry{
-		{AccountID: UserPointsAccountID(userID), AmountMinor: -points, Currency: string(CurrencyPoints)},
-		{AccountID: AccountPointsRedeemed, AmountMinor: points, Currency: string(CurrencyPoints)},
-	}
+func cash(region Region, debit, credit Role, amount int64) []Entry {
+	return debitCredit(PlatformAccountID(region, debit), PlatformAccountID(region, credit), region.Currency(), amount)
 }
 
-// ExpirePoints — breakage. Points expired unspent, so the liability is
-// extinguished and the platform recognises revenue.
-//
-// This is the one flow that turns an obligation into income, which is
-// exactly why it is a named posting rule and not an ad-hoc adjustment
-// somebody writes at month end.
-func ExpirePoints(userID string, points int64) []Entry {
-	return []Entry{
-		{AccountID: UserPointsAccountID(userID), AmountMinor: -points, Currency: string(CurrencyPoints)},
-		{AccountID: AccountBreakageRevenue, AmountMinor: points, Currency: string(CurrencyPoints)},
-	}
+// Purchase: a partner's cash enters the reserve. Dr reserve / Cr partner_funding.
+// No spread revenue is posted; the spread is reported only.
+func Purchase(region Region, amountMinor int64) []Entry {
+	return cash(region, RoleReserve, RolePartnerFunding, amountMinor)
 }
 
-// IssueMarketingPoints — points the platform grants itself, with no
-// advertiser funding them: a signup bonus, a goodwill credit, a promotion.
-//
-// Separate from EarnPoints on purpose. Both credit the user identically, but
-// one is a cost the platform chose to incur and the other is a cost an
-// advertiser paid for. Posting both to the same contra account would make
-// marketing spend indistinguishable from funded issuance in every report
-// that matters.
-func IssueMarketingPoints(userID string, points int64) []Entry {
-	return []Entry{
-		{AccountID: UserPointsAccountID(userID), AmountMinor: points, Currency: string(CurrencyPoints)},
-		{AccountID: AccountMarketingExpense, AmountMinor: -points, Currency: string(CurrencyPoints)},
-	}
+// FundMarketing: the platform puts its own cash behind marketing points.
+// Dr marketing_cash / Cr platform_equity.
+func FundMarketing(region Region, amountMinor int64) []Entry {
+	return cash(region, RoleMarketingCash, RolePlatformEquity, amountMinor)
 }
 
-// ToSuspense parks a leg whose counterparty is not yet known, so the
-// transfer can balance and be written now rather than held in memory.
-func ToSuspense(accountID string, points int64) []Entry {
-	return []Entry{
-		{AccountID: accountID, AmountMinor: points, Currency: string(CurrencyPoints)},
-		{AccountID: AccountSuspense, AmountMinor: -points, Currency: string(CurrencyPoints)},
-	}
+// MarketingBacking moves marketing cash into the reserve to back a marketing
+// grant (K6). Dr reserve / Cr marketing_cash.
+func MarketingBacking(region Region, amountMinor int64) []Entry {
+	return cash(region, RoleReserve, RoleMarketingCash, amountMinor)
 }
 
-// CashChart is the pair of accounts a currency needs before cash can move.
-//
-// The reserve is an ASSET — cash the platform holds. Partner funding is a
-// LIABILITY: money received for points not yet issued is owed, not earned,
-// and classifying it as revenue at the moment it arrives is how a deferred
-// obligation turns into a profit that was never made.
-//
-// docs/03 requires the reserve to be segregated; this is the account that
-// segregation is expressed against, and keeping it separate per currency is
-// what lets a regulator ask "how much IDR is held" and get an answer.
-func CashChart(currency, country string) []Account {
-	return []Account{
-		{
-			ID: ReserveAccountID(currency), OwnerType: OwnerReserve, OwnerID: "platform",
-			Kind: KindAsset, Currency: Currency(currency), Country: country,
-		},
-		{
-			ID: PartnerFundingAccountID(currency), OwnerType: OwnerPlatform, OwnerID: "platform",
-			Kind: KindLiability, Currency: Currency(currency), Country: country,
-		},
-	}
+// GrantPartner: partner-funded points, held back. Dr points_issued / Cr user.pending.
+func GrantPartner(region Region, userID string, points int64) []Entry {
+	return debitCredit(PlatformAccountID(region, RolePointsIssued), UserAccountID(userID, PurposePending), CurrencyPoints, points)
 }
 
-// FundReserve moves a partner's payment into the segregated reserve.
-//
-// Same flow shape as every other posting here: OUT of the source account,
-// INTO the destination. Nothing in it converts — the amount is whatever was
-// actually received, in the currency it was received in, and the points that
-// purchase allocated are recorded separately because they are a different
-// currency and a transfer may not mix them.
-func FundReserve(currency string, amountMinor int64) []Entry {
-	return []Entry{
-		{AccountID: PartnerFundingAccountID(currency), AmountMinor: -amountMinor, Currency: currency},
-		{AccountID: ReserveAccountID(currency), AmountMinor: amountMinor, Currency: currency},
+// GrantMarketing: platform-funded points, held back. Dr marketing_expense / Cr user.pending.
+func GrantMarketing(region Region, userID string, points int64) []Entry {
+	return debitCredit(PlatformAccountID(region, RoleMarketingExpense), UserAccountID(userID, PurposePending), CurrencyPoints, points)
+}
+
+// Release: holdback ends. Dr user.pending / Cr user.available.
+func Release(userID string, points int64) []Entry {
+	return debitCredit(UserAccountID(userID, PurposePending), UserAccountID(userID, PurposeAvailable), CurrencyPoints, points)
+}
+
+// BurnPoints: the points half of a burn. Dr user.available / Cr points_redeemed.
+func BurnPoints(region Region, userID string, points int64) []Entry {
+	return debitCredit(UserAccountID(userID, PurposeAvailable), PlatformAccountID(region, RolePointsRedeemed), CurrencyPoints, points)
+}
+
+// BurnLiability: the cash half of a burn, at the voucher's settlement value S.
+// Dr redemption_clearing / Cr voucher_liability. Posted in the same database
+// transaction as BurnPoints, as its own transfer (another currency).
+func BurnLiability(region Region, settlementMinor int64) []Entry {
+	return cash(region, RoleRedemptionClearing, RoleVoucherLiability, settlementMinor)
+}
+
+// Capture: a merchant honoured a voucher. Dr voucher_liability / Cr merchant_payable.
+func Capture(region Region, merchantID string, amountMinor int64) []Entry {
+	return debitCredit(PlatformAccountID(region, RoleVoucherLiability), MerchantPayableID(merchantID, region), region.Currency(), amountMinor)
+}
+
+// RefundCapture reverses a share of a capture.
+func RefundCapture(region Region, merchantID string, amountMinor int64) []Entry {
+	return Reverse(Capture(region, merchantID, amountMinor))
+}
+
+// Payout: the merchant is paid from the reserve. Dr merchant_payable / Cr reserve.
+func Payout(region Region, merchantID string, amountMinor int64) []Entry {
+	return debitCredit(MerchantPayableID(merchantID, region), PlatformAccountID(region, RoleReserve), region.Currency(), amountMinor)
+}
+
+// VoucherExpiry: an unredeemed voucher or forfeited remainder is no longer owed.
+// Dr voucher_liability / Cr redemption_clearing.
+func VoucherExpiry(region Region, amountMinor int64) []Entry {
+	return cash(region, RoleVoucherLiability, RoleRedemptionClearing, amountMinor)
+}
+
+// ExpirePoints (when enabled): Dr user.available / Cr breakage_revenue.
+func ExpirePoints(region Region, userID string, points int64) []Entry {
+	return debitCredit(UserAccountID(userID, PurposeAvailable), PlatformAccountID(region, RoleBreakageRevenue), CurrencyPoints, points)
+}
+
+// Suspend freezes a user's points: Dr available + pending / Cr escrow. Zero
+// legs are left out, since the ledger refuses a zero entry; nil when both are
+// zero. Undo it with Reverse.
+func Suspend(userID string, available, pending int64) []Entry {
+	var entries []Entry
+	if available != 0 {
+		entries = append(entries, Entry{AccountID: UserAccountID(userID, PurposeAvailable), AmountMinor: -available, Currency: string(CurrencyPoints)})
 	}
+	if pending != 0 {
+		entries = append(entries, Entry{AccountID: UserAccountID(userID, PurposePending), AmountMinor: -pending, Currency: string(CurrencyPoints)})
+	}
+	if len(entries) == 0 {
+		return nil
+	}
+	return append(entries, Entry{AccountID: UserAccountID(userID, PurposeEscrow), AmountMinor: available + pending, Currency: string(CurrencyPoints)})
+}
+
+// ToSuspense parks a points leg whose counterparty is not yet known.
+func ToSuspense(region Region, accountID string, points int64) []Entry {
+	return debitCredit(PlatformAccountID(region, RoleSuspense), accountID, CurrencyPoints, points)
+}
+
+// Reverse is the exact inverse of entries. Post it with TransferRequest.Reverses
+// naming the original, which the ledger checks.
+func Reverse(entries []Entry) []Entry {
+	out := make([]Entry, len(entries))
+	for i, e := range entries {
+		out[i] = Entry{AccountID: e.AccountID, AmountMinor: -e.AmountMinor, Currency: e.Currency}
+	}
+	return out
 }

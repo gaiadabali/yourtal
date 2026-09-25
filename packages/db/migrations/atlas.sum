@@ -1,4 +1,4 @@
-h1:Y3ycKv7rCDD4JCYr3Fd+IRY+6alYBGsLpFK0Qxm94Rs=
+h1:AqZ67vKSttVrqWyc690bh9Y71r6uhAM5eIfq7Y9qmyQ=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -34,3 +34,4 @@ h1:Y3ycKv7rCDD4JCYr3Fd+IRY+6alYBGsLpFK0Qxm94Rs=
 20260925065820_redemption_attempt_currency_mismatch.sql h1:YqGWPrT/4kxxK6N5CVaWrODM5bfmuTFHrJtI55Bg7H4=
 20260925074421_idr_whole_rupiah.sql h1:4QtG61CMWxImPavSd+CHWQhaWTUdclRAFi4+bWlQrow=
 20260925180000_pgboss_schema_v42.sql h1:3OC+uFUYDUbwiH4ib4ywQJVppuXM7L/nTJnpsHoXRJo=
+20260925180500_ledger_chart_per_region.sql h1:I4kzw49N4nbLp2J+X6SyQzwZd+4II6+fy+5gNTzCgpY=

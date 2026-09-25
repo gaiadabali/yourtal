@@ -2,9 +2,12 @@ package pricing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
@@ -72,9 +75,13 @@ func (c Coverage) ShouldAlert() bool {
 // stored coverage figure is a second source of truth about solvency, and the
 // one thing worse than not measuring solvency is measuring a copy of it that
 // stopped updating.
+//
+// One region at a time: its currency is fixed, so an AU reserve can never
+// mask an ID shortfall.
 func (e *Engine) Coverage(
-	ctx context.Context, country, currency string, at time.Time,
+	ctx context.Context, region ledger.Region, at time.Time,
 ) (Coverage, error) {
+	country, currency := string(region), string(region.Currency())
 	rate, err := e.RateAt(ctx, currency, at)
 	if err != nil {
 		return Coverage{}, err
@@ -87,7 +94,11 @@ func (e *Engine) Coverage(
 		return Coverage{}, fmt.Errorf("summing points outstanding: %w", err)
 	}
 
-	reserve, err := queries.SumAccountBalance(ctx, ledger.ReserveAccountID(currency))
+	// Natural balance: the reserve is an asset, so its entries are debits.
+	reserve, err := queries.GetAccountBalance(ctx, ledger.PlatformAccountID(region, ledger.RoleReserve))
+	if errors.Is(err, pgx.ErrNoRows) {
+		reserve, err = 0, nil
+	}
 	if err != nil {
 		return Coverage{}, fmt.Errorf("reading the reserve balance: %w", err)
 	}

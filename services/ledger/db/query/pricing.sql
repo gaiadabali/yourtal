@@ -29,11 +29,11 @@ WHERE currency = $1
 ORDER BY effective_from;
 
 -- name: SumPointsOutstanding :one
--- Points held by users, which is the platform's points liability.
+-- Points held by users in one region (available + pending + escrow), which
+-- is the platform's points liability. User accounts are credit-normal, so +SUM.
 --
--- Summed over USER accounts rather than read off the `plat_points_issued`
--- contra account, because marketing-funded grants post to a different contra
--- account (see ledger.IssueMarketingPoints). Reading one contra account
+-- Summed over USER accounts rather than read off `points_issued`, because
+-- marketing grants debit `marketing_expense` instead. Reading one contra account
 -- would undercount outstanding points by exactly the promotional issuance —
 -- which is the half docs/09 §5 names as the trap, so measuring solvency in
 -- a way that cannot see it would be a solvency check that is blind to its
@@ -41,10 +41,5 @@ ORDER BY effective_from;
 SELECT COALESCE(SUM(e.amount_minor), 0)::bigint AS points
 FROM ledger.entry e
 JOIN ledger.account a ON a.id = e.account_id
-WHERE a.owner_type = 'user' AND a.currency = 'YTP' AND a.country = $1;
-
--- name: SumAccountBalance :one
--- One account's balance, as a projection over its entries. Used for the
--- reserve; never stored.
-SELECT COALESCE(SUM(amount_minor), 0)::bigint AS balance_minor
-FROM ledger.entry WHERE account_id = $1;
+WHERE a.owner_type = 'user' AND a.currency = 'YTP' AND a.country = $1
+  AND a.purpose IN ('available', 'pending', 'escrow');

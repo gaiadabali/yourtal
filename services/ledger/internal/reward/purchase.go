@@ -84,6 +84,10 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 	if req.Currency != string(ledger.CurrencyIDR) && req.Currency != string(ledger.CurrencyAUD) {
 		return PurchaseResult{}, fmt.Errorf("%w: %q", ErrPurchaseCurrencyUnknown, req.Currency)
 	}
+	if req.Currency != string(e.region.Currency()) {
+		return PurchaseResult{}, fmt.Errorf("%w: %s money cannot buy %s points",
+			ErrRegionMismatch, req.Currency, e.region)
+	}
 
 	allocationID := fmt.Sprintf("alloc_%s", req.ID)
 	transferID := fmt.Sprintf("led_txn_purchase_%s", req.ID)
@@ -92,7 +96,7 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 	err := ledger.WithSerializableRetry(ctx, e.pool, func(tx pgx.Tx) error {
 		queries := sqlcgen.New(tx)
 
-		if err := e.ensureCashAccounts(ctx, queries, req.Currency); err != nil {
+		if err := ensureChart(ctx, queries, e.region); err != nil {
 			return err
 		}
 
@@ -107,16 +111,13 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 			return fmt.Errorf("creating allocation: %w", err)
 		}
 
-		// Fact two: the cash, into the segregated reserve. Money flows out
-		// of the partner-funding account and into the reserve — the same
-		// flow shape as every other posting in this ledger.
+		// Fact two: the cash, into the segregated reserve.
+		// Dr reserve / Cr partner_funding.
 		transfer, err := e.ledger.TransferInTx(ctx, tx, ledger.TransferRequest{
 			ID:             transferID,
 			IdempotencyKey: fmt.Sprintf("purchase_%s", req.ID),
 			ReasonCode:     "partner_point_purchase",
-			Entries: ledger.FundReserve(
-				req.Currency, req.AmountMinor,
-			),
+			Entries:        ledger.Purchase(e.region, req.AmountMinor),
 		})
 		if err != nil {
 			return err
@@ -158,23 +159,4 @@ func (e *Engine) PartnerPurchases(
 		return nil, fmt.Errorf("listing purchases for %s: %w", partnerID, err)
 	}
 	return rows, nil
-}
-
-// ensureCashAccounts creates the reserve and partner-funding accounts for a
-// currency on first use. Separate from EnsureChart because that one covers
-// the points side; cash accounts are per-currency and a deployment may never
-// see AUD.
-func (e *Engine) ensureCashAccounts(
-	ctx context.Context, q *sqlcgen.Queries, currency string,
-) error {
-	for _, account := range ledger.CashChart(currency, e.country) {
-		if err := q.InsertAccount(ctx, sqlcgen.InsertAccountParams{
-			ID: account.ID, OwnerType: string(account.OwnerType), OwnerID: account.OwnerID,
-			Currency: string(account.Currency), Kind: string(account.Kind),
-			Country: account.Country,
-		}); err != nil {
-			return fmt.Errorf("ensuring %s: %w", account.ID, err)
-		}
-	}
-	return nil
 }

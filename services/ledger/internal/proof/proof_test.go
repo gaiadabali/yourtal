@@ -293,7 +293,7 @@ func writeTransfer(t *testing.T, pool *pgxpool.Pool, amount int64) string {
 	for _, id := range []string{from, to} {
 		if err := queries.InsertAccount(ctx, sqlcgen.InsertAccountParams{
 			ID: id, OwnerType: "platform", OwnerID: id, Currency: "IDR",
-			Kind: "equity", Country: "ID",
+			Kind: "equity", Country: "ID", Purpose: "main",
 		}); err != nil {
 			t.Fatalf("account: %v", err)
 		}

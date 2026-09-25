@@ -63,13 +63,18 @@ func makeAccounts(t *testing.T, pool *pgxpool.Pool, currency string) (string, st
 	ctx := context.Background()
 	queries := sqlcgen.New(pool)
 
+	// Cash lives in its own region; points may be in either.
+	country := "ID"
+	if currency == "AUD" {
+		country = "AU"
+	}
 	from, to := unique("acc_from"), unique("acc_to")
 	for _, id := range []string{from, to} {
 		if err := queries.InsertAccount(ctx, sqlcgen.InsertAccountParams{
 			ID: id, OwnerType: "platform", OwnerID: id, Currency: currency,
 			// YT-0043: every account carries a classification. Equity is the
 			// neutral choice for a test account with no external claim on it.
-			Kind: "equity", Country: "ID",
+			Kind: "equity", Country: country, Purpose: "main",
 		}); err != nil {
 			t.Fatalf("seed account: %v", err)
 		}

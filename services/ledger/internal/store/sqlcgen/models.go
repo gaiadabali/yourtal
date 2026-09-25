@@ -16,6 +16,7 @@ type LedgerAccount struct {
 	Kind      string
 	Country   string
 	CreatedAt pgtype.Timestamptz
+	Purpose   string
 }
 
 type LedgerAllocation struct {
@@ -87,4 +88,5 @@ type LedgerTransfer struct {
 	IdempotencyKey string
 	ReasonCode     string
 	CreatedAt      pgtype.Timestamptz
+	Reverses       *string
 }

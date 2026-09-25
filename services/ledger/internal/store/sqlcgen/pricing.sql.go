@@ -117,32 +117,19 @@ func (q *Queries) ListBackingRates(ctx context.Context, currency string) ([]Ledg
 	return items, nil
 }
 
-const sumAccountBalance = `-- name: SumAccountBalance :one
-SELECT COALESCE(SUM(amount_minor), 0)::bigint AS balance_minor
-FROM ledger.entry WHERE account_id = $1
-`
-
-// One account's balance, as a projection over its entries. Used for the
-// reserve; never stored.
-func (q *Queries) SumAccountBalance(ctx context.Context, accountID string) (int64, error) {
-	row := q.db.QueryRow(ctx, sumAccountBalance, accountID)
-	var balance_minor int64
-	err := row.Scan(&balance_minor)
-	return balance_minor, err
-}
-
 const sumPointsOutstanding = `-- name: SumPointsOutstanding :one
 SELECT COALESCE(SUM(e.amount_minor), 0)::bigint AS points
 FROM ledger.entry e
 JOIN ledger.account a ON a.id = e.account_id
 WHERE a.owner_type = 'user' AND a.currency = 'YTP' AND a.country = $1
+  AND a.purpose IN ('available', 'pending', 'escrow')
 `
 
-// Points held by users, which is the platform's points liability.
+// Points held by users in one region (available + pending + escrow), which
+// is the platform's points liability. User accounts are credit-normal, so +SUM.
 //
-// Summed over USER accounts rather than read off the `plat_points_issued`
-// contra account, because marketing-funded grants post to a different contra
-// account (see ledger.IssueMarketingPoints). Reading one contra account
+// Summed over USER accounts rather than read off `points_issued`, because
+// marketing grants debit `marketing_expense` instead. Reading one contra account
 // would undercount outstanding points by exactly the promotional issuance —
 // which is the half docs/09 §5 names as the trap, so measuring solvency in
 // a way that cannot see it would be a solvency check that is blind to its

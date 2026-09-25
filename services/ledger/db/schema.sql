@@ -13,14 +13,16 @@ CREATE TABLE ledger.account (
   currency    char(3)     NOT NULL,
   kind        text        NOT NULL,
   country     text        NOT NULL,
-  created_at  timestamptz NOT NULL DEFAULT now()
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  purpose     text        NOT NULL DEFAULT 'main'
 );
 
 CREATE TABLE ledger.transfer (
   id               text        PRIMARY KEY,
   idempotency_key  text        NOT NULL UNIQUE,
   reason_code      text        NOT NULL,
-  created_at       timestamptz NOT NULL DEFAULT now()
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  reverses         text        UNIQUE REFERENCES ledger.transfer (id)
 );
 
 CREATE TABLE ledger.entry (

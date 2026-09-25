@@ -95,7 +95,7 @@ func TestGrantCreditsTheUserAndDrawsDownTheAllocation(t *testing.T) {
 		t.Errorf("paid %d, want the taxonomy's 2400", result.Points)
 	}
 
-	balance, err := ledger.New(pool).Balance(ctx, ledger.UserPointsAccountID(user))
+	balance, err := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending))
 	if err != nil {
 		t.Fatalf("balance: %v", err)
 	}
@@ -132,7 +132,7 @@ func TestCannotIssueBeyondTheAllocation(t *testing.T) {
 	}
 
 	// And nothing was credited for the refused attempt.
-	balance, err := ledger.New(pool).Balance(ctx, ledger.UserPointsAccountID(user))
+	balance, err := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending))
 	if err != nil {
 		t.Fatalf("balance: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestConcurrentGrantsCannotOverdrawAnAllocation(t *testing.T) {
 		t.Errorf("allocation remaining = %d, want 0", remaining)
 	}
 
-	balance, err := ledger.New(pool).Balance(ctx, ledger.UserPointsAccountID(user))
+	balance, err := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending))
 	if err != nil {
 		t.Fatalf("balance: %v", err)
 	}
@@ -208,7 +208,7 @@ func TestVelocityCapIsEnforcedBeforeTheLedger(t *testing.T) {
 
 	// "Before the ledger" is the part worth asserting: a cap that refuses
 	// after posting would leave the credit in place and the refusal in a log.
-	balance, err := ledger.New(pool).Balance(ctx, ledger.UserPointsAccountID(user))
+	balance, err := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending))
 	if err != nil {
 		t.Fatalf("balance: %v", err)
 	}
@@ -289,7 +289,7 @@ func TestRefusalsLeaveNoTrace(t *testing.T) {
 
 			// A refusal must not move money or funding. Anything that got as
 			// far as drawing down would be funding destroyed for nothing.
-			balance, err := ledger.New(pool).Balance(ctx, ledger.UserPointsAccountID(user))
+			balance, err := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending))
 			if err != nil {
 				t.Fatalf("balance: %v", err)
 			}
@@ -324,8 +324,8 @@ func TestTheTaxonomyPricesEveryoneIdentically(t *testing.T) {
 	}
 
 	book := ledger.New(pool)
-	aliceBalance, _ := book.Balance(ctx, ledger.UserPointsAccountID(alice))
-	bobBalance, _ := book.Balance(ctx, ledger.UserPointsAccountID(bob))
+	aliceBalance, _ := book.Balance(ctx, ledger.UserAccountID(alice, ledger.PurposePending))
+	bobBalance, _ := book.Balance(ctx, ledger.UserAccountID(bob, ledger.PurposePending))
 
 	if aliceBalance != bobBalance {
 		t.Errorf("same action paid %d and %d", aliceBalance, bobBalance)
@@ -339,7 +339,8 @@ func TestMarketingGrantsPostToTheMarketingAccount(t *testing.T) {
 	ctx := context.Background()
 
 	book := ledger.New(pool)
-	before, err := book.Balance(ctx, ledger.AccountMarketingExpense)
+	expense := ledger.PlatformAccountID(ledger.RegionID, ledger.RoleMarketingExpense)
+	before, err := book.Balance(ctx, expense)
 	if err != nil {
 		t.Fatalf("balance: %v", err)
 	}
@@ -351,12 +352,13 @@ func TestMarketingGrantsPostToTheMarketingAccount(t *testing.T) {
 		t.Fatalf("grant: %v", err)
 	}
 
-	after, err := book.Balance(ctx, ledger.AccountMarketingExpense)
+	after, err := book.Balance(ctx, expense)
 	if err != nil {
 		t.Fatalf("balance: %v", err)
 	}
-	if after != before-500 {
-		t.Errorf("marketing account moved by %d, want -500", after-before)
+	// An expense is debit-normal: its natural balance grows with the spend.
+	if after != before+500 {
+		t.Errorf("marketing expense moved by %d, want +500", after-before)
 	}
 }
 

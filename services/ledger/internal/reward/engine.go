@@ -40,6 +40,8 @@ var (
 	ErrAllocationExhausted = errors.New("reward: funding allocation is exhausted")
 	// ErrAlreadyGranted — this external reference was already paid.
 	ErrAlreadyGranted = errors.New("reward: this action was already granted")
+	// ErrRegionMismatch — the user, money or accounts belong to the other region.
+	ErrRegionMismatch = errors.New("reward: region mismatch")
 )
 
 // RiskGate decides whether a principal may earn at all.
@@ -93,13 +95,13 @@ type Engine struct {
 	pool   *pgxpool.Pool
 	ledger *ledger.Ledger
 	risk   RiskGate
-	// country tags the accounts this engine creates. One engine per data
-	// plane; docs/03 keeps the two countries isolated.
-	country string
+	// region scopes every account this engine touches. One engine per
+	// economy; AU and ID never share an account or a transfer.
+	region ledger.Region
 }
 
-func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, country string) *Engine {
-	return &Engine{pool: pool, ledger: book, risk: risk, country: country}
+func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, region ledger.Region) *Engine {
+	return &Engine{pool: pool, ledger: book, risk: risk, region: region}
 }
 
 // Grant evaluates an action and, if everything passes, credits the user.
@@ -235,7 +237,7 @@ func (e *Engine) issue(
 				return fmt.Errorf("drawing down allocation: %w", err)
 			}
 
-			entries := postingFor(def, allocation.FunderType, req.UserID)
+			entries := e.postingFor(def, allocation.FunderType, req.UserID)
 			transferID := fmt.Sprintf("led_txn_%s_%s", req.Action, req.ExternalRef)
 
 			if err := e.ensureUserAccount(ctx, queries, req.UserID); err != nil {
@@ -283,30 +285,30 @@ func (e *Engine) issue(
 	return result, nil
 }
 
-// postingFor picks the ledger pattern. Marketing-funded actions post to the
-// marketing expense account; everything else to funded issuance. Both credit
-// the user identically — the difference is entirely in what the platform is
-// telling itself about the cost.
-func postingFor(def ActionDefinition, funderType, userID string) []ledger.Entry {
+// postingFor picks the ledger pattern. Both credit the user's pending
+// account identically; the debit says who paid: the partner (points_issued)
+// or the platform (marketing_expense).
+func (e *Engine) postingFor(def ActionDefinition, funderType, userID string) []ledger.Entry {
 	if def.MarketingFunded || funderType == "marketing" {
-		return ledger.IssueMarketingPoints(userID, def.Points)
+		return ledger.GrantMarketing(e.region, userID, def.Points)
 	}
-	return ledger.EarnPoints(userID, def.Points)
+	return ledger.GrantPartner(e.region, userID, def.Points)
 }
 
-// ensureUserAccount creates the user's points account on first earn. A
-// liability account (docs/02 §6): points are a claim on the platform.
+// ensureUserAccount creates the user's points accounts on first earn, and
+// refuses a user whose accounts already live in the other region.
 func (e *Engine) ensureUserAccount(ctx context.Context, q *sqlcgen.Queries, userID string) error {
-	account := ledger.UserPointsAccount(userID, e.country)
-	if err := q.InsertAccount(ctx, sqlcgen.InsertAccountParams{
-		ID:        account.ID,
-		OwnerType: string(account.OwnerType),
-		OwnerID:   account.OwnerID,
-		Currency:  string(account.Currency),
-		Kind:      string(account.Kind),
-		Country:   account.Country,
-	}); err != nil {
-		return fmt.Errorf("ensuring user points account: %w", err)
+	for _, account := range ledger.UserAccounts(userID, e.region) {
+		if err := insertAccount(ctx, q, account); err != nil {
+			return err
+		}
+	}
+	existing, err := q.GetAccount(ctx, ledger.UserAccountID(userID, ledger.PurposeAvailable))
+	if err != nil {
+		return fmt.Errorf("reading user points account: %w", err)
+	}
+	if existing.Country != string(e.region) {
+		return fmt.Errorf("%w: user %s is in %s, not %s", ErrRegionMismatch, userID, existing.Country, e.region)
 	}
 	return nil
 }

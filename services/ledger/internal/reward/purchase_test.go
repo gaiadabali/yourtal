@@ -43,7 +43,7 @@ func TestPurchaseRecordsBothFactsAndFundsTheReserve(t *testing.T) {
 	// Fact two: the cash reached the segregated reserve, in the currency it
 	// was paid in.
 	book := ledger.New(pool)
-	reserve, err := book.Balance(ctx, ledger.ReserveAccountID("IDR"))
+	reserve, err := book.Balance(ctx, ledger.PlatformAccountID(ledger.RegionID, ledger.RoleReserve))
 	if err != nil {
 		t.Fatalf("reserve: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestPurchaseAndAllocationAreAtomic(t *testing.T) {
 	ctx := context.Background()
 
 	book := ledger.New(pool)
-	before, err := book.Balance(ctx, ledger.ReserveAccountID("IDR"))
+	before, err := book.Balance(ctx, ledger.PlatformAccountID(ledger.RegionID, ledger.RoleReserve))
 	if err != nil {
 		t.Fatalf("reserve: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestPurchaseAndAllocationAreAtomic(t *testing.T) {
 		t.Fatal("a repeated purchase id created a second allocation")
 	}
 
-	after, err := book.Balance(ctx, ledger.ReserveAccountID("IDR"))
+	after, err := book.Balance(ctx, ledger.PlatformAccountID(ledger.RegionID, ledger.RoleReserve))
 	if err != nil {
 		t.Fatalf("reserve: %v", err)
 	}
@@ -205,32 +205,32 @@ func TestPurchaseRejectsNonsense(t *testing.T) {
 	}
 }
 
-func TestReserveIsSegregatedPerCurrency(t *testing.T) {
-	// docs/03 requires a segregated reserve, and a single account holding two
-	// currencies would have a balance that is a number with no unit. Keeping
-	// them separate is what lets anyone ask "how much IDR is held".
-	engine, pool := newEngine(t, reward.AlwaysAllow{})
+// AU and ID are separate economies: each region's reserve holds its own
+// currency, and money from one region cannot buy points in the other.
+func TestReservesAreSeparatePerRegion(t *testing.T) {
+	idEngine, pool := newEngine(t, reward.AlwaysAllow{})
+	auEngine := reward.New(pool, ledger.New(pool), reward.AlwaysAllow{}, ledger.RegionAU)
 	ctx := context.Background()
 
-	if _, err := engine.RecordPurchase(ctx, purchase(unique("pur"), unique("adv"), 100, 900)); err != nil {
+	if _, err := idEngine.RecordPurchase(ctx, purchase(unique("pur"), unique("adv"), 100, 900)); err != nil {
 		t.Fatalf("idr purchase: %v", err)
 	}
-
 	aud := reward.PurchaseRequest{
 		ID: unique("pur"), PartnerID: unique("adv"), Points: 100, AmountMinor: 700, Currency: "AUD",
 	}
-	if _, err := engine.RecordPurchase(ctx, aud); err != nil {
+	if _, err := auEngine.RecordPurchase(ctx, aud); err != nil {
 		t.Fatalf("aud purchase: %v", err)
 	}
 
-	book := ledger.New(pool)
-	idr, _ := book.Balance(ctx, ledger.ReserveAccountID("IDR"))
-	audBalance, _ := book.Balance(ctx, ledger.ReserveAccountID("AUD"))
-
-	if idr == 0 || audBalance == 0 {
-		t.Fatal("both reserves should hold something")
+	aud.ID = unique("pur")
+	if _, err := idEngine.RecordPurchase(ctx, aud); !errors.Is(err, reward.ErrRegionMismatch) {
+		t.Fatalf("AUD bought ID points: err = %v, want ErrRegionMismatch", err)
 	}
-	if ledger.ReserveAccountID("IDR") == ledger.ReserveAccountID("AUD") {
-		t.Error("the two currencies share one reserve account")
+
+	book := ledger.New(pool)
+	idr, _ := book.Balance(ctx, ledger.PlatformAccountID(ledger.RegionID, ledger.RoleReserve))
+	audBalance, _ := book.Balance(ctx, ledger.PlatformAccountID(ledger.RegionAU, ledger.RoleReserve))
+	if idr < 900 || audBalance < 700 {
+		t.Fatalf("reserves hold IDR %d and AUD %d, want at least 900 and 700", idr, audBalance)
 	}
 }

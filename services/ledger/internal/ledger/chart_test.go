@@ -2,6 +2,7 @@ package ledger_test
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -11,250 +12,248 @@ import (
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
 
-// YT-0043. The posting rules are the part worth testing: a pattern written
-// in prose is one every caller re-derives, and re-derivation is where a sign
-// flips.
+// 4.2: the posting rules, one per row of the table in TASKS.md. A pattern
+// written in prose is one every caller re-derives, and re-derivation is where
+// a sign flips, so each rule's debit and credit are asserted here.
 
-func sum(entries []ledger.Entry) int64 {
-	var total int64
-	for _, entry := range entries {
-		total += entry.AmountMinor
+const au, id = ledger.RegionAU, ledger.RegionID
+
+func plat(r ledger.Region, role ledger.Role) string { return ledger.PlatformAccountID(r, role) }
+
+func usr(p ledger.Purpose) string { return ledger.UserAccountID("u1", p) }
+
+func TestEveryPostingRuleDebitsAndCreditsTheRightAccounts(t *testing.T) {
+	cases := []struct {
+		name          string
+		entries       []ledger.Entry
+		debit, credit string
+		currency      ledger.Currency
+	}{
+		{"purchase", ledger.Purchase(au, 700), plat(au, ledger.RoleReserve), plat(au, ledger.RolePartnerFunding), ledger.CurrencyAUD},
+		{"fund marketing", ledger.FundMarketing(id, 900), plat(id, ledger.RoleMarketingCash), plat(id, ledger.RolePlatformEquity), ledger.CurrencyIDR},
+		{"marketing backing", ledger.MarketingBacking(au, 15), plat(au, ledger.RoleReserve), plat(au, ledger.RoleMarketingCash), ledger.CurrencyAUD},
+		{"partner grant", ledger.GrantPartner(au, "u1", 100), plat(au, ledger.RolePointsIssued), usr(ledger.PurposePending), ledger.CurrencyPoints},
+		{"marketing grant", ledger.GrantMarketing(au, "u1", 5), plat(au, ledger.RoleMarketingExpense), usr(ledger.PurposePending), ledger.CurrencyPoints},
+		{"release", ledger.Release("u1", 100), usr(ledger.PurposePending), usr(ledger.PurposeAvailable), ledger.CurrencyPoints},
+		{"burn points", ledger.BurnPoints(au, "u1", 400), usr(ledger.PurposeAvailable), plat(au, ledger.RolePointsRedeemed), ledger.CurrencyPoints},
+		{"burn liability", ledger.BurnLiability(au, 1_200), plat(au, ledger.RoleRedemptionClearing), plat(au, ledger.RoleVoucherLiability), ledger.CurrencyAUD},
+		{"capture", ledger.Capture(au, "m1", 1_200), plat(au, ledger.RoleVoucherLiability), ledger.MerchantPayableID("m1", au), ledger.CurrencyAUD},
+		{"refund", ledger.RefundCapture(au, "m1", 200), ledger.MerchantPayableID("m1", au), plat(au, ledger.RoleVoucherLiability), ledger.CurrencyAUD},
+		{"payout", ledger.Payout(id, "m1", 30_000), ledger.MerchantPayableID("m1", id), plat(id, ledger.RoleReserve), ledger.CurrencyIDR},
+		{"voucher expiry", ledger.VoucherExpiry(au, 300), plat(au, ledger.RoleVoucherLiability), plat(au, ledger.RoleRedemptionClearing), ledger.CurrencyAUD},
+		{"points expiry", ledger.ExpirePoints(id, "u1", 50), usr(ledger.PurposeAvailable), plat(id, ledger.RoleBreakageRevenue), ledger.CurrencyPoints},
 	}
-	return total
-}
-
-func TestEveryPostingRuleBalances(t *testing.T) {
-	rules := map[string][]ledger.Entry{
-		"earn":      ledger.EarnPoints("u1", 2_400),
-		"burn":      ledger.BurnPoints("u1", 500),
-		"expire":    ledger.ExpirePoints("u1", 120),
-		"marketing": ledger.IssueMarketingPoints("u1", 1_000),
-		"suspense":  ledger.ToSuspense("usr_pts_u1", 75),
-	}
-
-	for name, entries := range rules {
-		t.Run(name, func(t *testing.T) {
-			if len(entries) < 2 {
-				t.Fatalf("%s produced %d entries; double-entry needs two sides", name, len(entries))
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if len(c.entries) != 2 {
+				t.Fatalf("%d entries, want 2", len(c.entries))
 			}
-			if got := sum(entries); got != 0 {
-				t.Errorf("%s sums to %d, want 0", name, got)
+			if amountOn(c.entries, c.debit) >= 0 {
+				t.Errorf("%+v: want a debit (negative) on %s", c.entries, c.debit)
+			}
+			if amountOn(c.entries, c.credit) <= 0 {
+				t.Errorf("%+v: want a credit (positive) on %s", c.entries, c.credit)
+			}
+			for _, e := range c.entries {
+				if e.Currency != string(c.currency) {
+					t.Errorf("entry on %s is %s, want %s", e.AccountID, e.Currency, c.currency)
+				}
+			}
+			if sum(c.entries) != 0 {
+				t.Errorf("sums to %d", sum(c.entries))
 			}
 		})
 	}
 }
 
-func TestEveryPostingRuleUsesPoints(t *testing.T) {
-	// A transfer may not mix currencies (the YT-0518 trigger). These rules
-	// all move points, so an entry tagged IDR here would be refused at
-	// COMMIT — better to catch it as a unit test than as a 3am constraint
-	// violation.
-	for _, entries := range [][]ledger.Entry{
-		ledger.EarnPoints("u1", 10),
-		ledger.BurnPoints("u1", 10),
-		ledger.ExpirePoints("u1", 10),
-		ledger.IssueMarketingPoints("u1", 10),
-	} {
-		for _, entry := range entries {
-			if entry.Currency != string(ledger.CurrencyPoints) {
-				t.Errorf("entry on %s is %s, want YTP", entry.AccountID, entry.Currency)
-			}
+func TestSuspendMovesBothBalancesToEscrowAndSkipsZeroLegs(t *testing.T) {
+	both := ledger.Suspend("u1", 300, 200)
+	if amountOn(both, usr(ledger.PurposeEscrow)) != 500 || sum(both) != 0 || len(both) != 3 {
+		t.Errorf("suspend(300, 200) = %+v", both)
+	}
+	if onlyPending := ledger.Suspend("u1", 0, 200); len(onlyPending) != 2 {
+		t.Errorf("a zero leg was kept: %+v", onlyPending)
+	}
+	if none := ledger.Suspend("u1", 0, 0); none != nil {
+		t.Errorf("nothing to suspend produced %+v", none)
+	}
+}
+
+func TestReverseIsTheExactInverse(t *testing.T) {
+	original := ledger.Suspend("u1", 300, 200)
+	back := ledger.Reverse(original)
+	for i := range original {
+		if back[i].AccountID != original[i].AccountID || back[i].AmountMinor != -original[i].AmountMinor {
+			t.Errorf("entry %d: %+v does not invert %+v", i, back[i], original[i])
 		}
 	}
 }
 
-func TestEarningIncreasesTheUserAndBurningDecreasesIt(t *testing.T) {
-	// The direction matters more than the balance: a rule that balanced but
-	// moved value the wrong way would pass every structural check and steal
-	// from the user.
-	userAccount := ledger.UserPointsAccountID("u1")
-
-	earn := ledger.EarnPoints("u1", 300)
-	if amountOn(earn, userAccount) != 300 {
-		t.Errorf("earn credited %d to the user, want +300", amountOn(earn, userAccount))
-	}
-
-	burn := ledger.BurnPoints("u1", 300)
-	if amountOn(burn, userAccount) != -300 {
-		t.Errorf("burn moved %d on the user, want -300", amountOn(burn, userAccount))
-	}
-}
-
-func TestFundedAndMarketingIssuanceAreDistinguishable(t *testing.T) {
-	// Both credit the user identically. If they also debited the same
-	// account, marketing spend would be indistinguishable from
-	// advertiser-funded issuance in every report that matters — which is the
-	// whole reason these are two rules.
-	funded := ledger.EarnPoints("u1", 500)
-	marketing := ledger.IssueMarketingPoints("u1", 500)
-
-	if amountOn(funded, ledger.AccountPointsIssued) == 0 {
-		t.Error("funded issuance should touch the issued-points contra account")
-	}
-	if amountOn(marketing, ledger.AccountMarketingExpense) == 0 {
-		t.Error("marketing issuance should touch the marketing expense account")
-	}
-	if amountOn(marketing, ledger.AccountPointsIssued) != 0 {
-		t.Error("marketing issuance must not post to the funded-issuance account")
-	}
-}
-
-func TestBurningRecognisesNoRevenue(t *testing.T) {
-	// Spending points does not earn the platform anything: the obligation
-	// changed shape (points owed becomes a voucher owed), it did not vanish.
-	// Only expiry turns an obligation into income.
-	burn := ledger.BurnPoints("u1", 400)
-	if amountOn(burn, ledger.AccountBreakageRevenue) != 0 {
-		t.Error("a burn posted to breakage revenue; only expiry recognises revenue")
-	}
-
-	expire := ledger.ExpirePoints("u1", 400)
-	if amountOn(expire, ledger.AccountBreakageRevenue) != 400 {
-		t.Error("expiry should recognise breakage revenue")
-	}
-}
-
+// Every account a rule names is one the chart creates, in the same region.
 func TestPostingRulesOnlyReferenceTheChart(t *testing.T) {
-	known := map[string]bool{}
-	for _, account := range ledger.PlatformChart("ID") {
-		known[account.ID] = true
-	}
-
-	for _, entries := range [][]ledger.Entry{
-		ledger.EarnPoints("u1", 1),
-		ledger.BurnPoints("u1", 1),
-		ledger.ExpirePoints("u1", 1),
-		ledger.IssueMarketingPoints("u1", 1),
-		ledger.ToSuspense(ledger.UserPointsAccountID("u1"), 1),
-	} {
-		for _, entry := range entries {
-			if strings.HasPrefix(entry.AccountID, "usr_pts_") {
-				continue
-			}
-			if !known[entry.AccountID] {
-				t.Errorf("posting rule references %q, which PlatformChart does not create",
-					entry.AccountID)
+	for _, region := range []ledger.Region{au, id} {
+		known := map[string]string{}
+		accounts := append(ledger.PlatformChart(region), ledger.UserAccounts("u1", region)...)
+		accounts = append(accounts, ledger.MerchantPayable("m1", region))
+		for _, a := range accounts {
+			known[a.ID] = string(a.Currency)
+		}
+		for _, entries := range [][]ledger.Entry{
+			ledger.Purchase(region, 1), ledger.FundMarketing(region, 1), ledger.MarketingBacking(region, 1),
+			ledger.GrantPartner(region, "u1", 1), ledger.GrantMarketing(region, "u1", 1), ledger.Release("u1", 1),
+			ledger.BurnPoints(region, "u1", 1), ledger.BurnLiability(region, 1), ledger.Capture(region, "m1", 1),
+			ledger.Payout(region, "m1", 1), ledger.VoucherExpiry(region, 1), ledger.ExpirePoints(region, "u1", 1),
+			ledger.Suspend("u1", 1, 1), ledger.ToSuspense(region, usr(ledger.PurposeAvailable), 1),
+		} {
+			for _, e := range entries {
+				currency, ok := known[e.AccountID]
+				if !ok {
+					t.Errorf("%s: a rule references %q, which the chart does not create", region, e.AccountID)
+				} else if currency != e.Currency {
+					t.Errorf("%s: entry on %s is %s but the account holds %s", region, e.AccountID, e.Currency, currency)
+				}
 			}
 		}
 	}
 }
 
-// The chart has to be creatable in the real database, with the constraints
-// the YT-0043 migration added. A taxonomy the schema rejects is a taxonomy
-// that does not exist.
-func TestPlatformChartIsAcceptedByPostgres(t *testing.T) {
-	_, pool := newLedger(t)
-	ctx := context.Background()
-	queries := sqlcgen.New(pool)
-
-	for _, account := range ledger.PlatformChart("ID") {
-		if err := queries.InsertAccount(ctx, sqlcgen.InsertAccountParams{
-			ID:        account.ID,
-			OwnerType: string(account.OwnerType),
-			OwnerID:   account.OwnerID,
-			Currency:  string(account.Currency),
-			Kind:      string(account.Kind),
-			Country:   account.Country,
-		}); err != nil {
-			t.Errorf("Postgres rejected %s: %v", account.ID, err)
+func TestPlatformChartIsPerRegion(t *testing.T) {
+	for _, a := range ledger.PlatformChart(au) {
+		if !strings.HasPrefix(a.ID, "plat_AU_") || a.Country != "AU" {
+			t.Errorf("AU chart holds %s in %s", a.ID, a.Country)
+		}
+		if a.Currency != ledger.CurrencyPoints && a.Currency != ledger.CurrencyAUD {
+			t.Errorf("AU chart holds %s in %s", a.ID, a.Currency)
 		}
 	}
 }
 
-func TestPostgresRejectsAnUnknownAccountKind(t *testing.T) {
+// The chart has to be creatable in the real database, under its constraints.
+func TestBothChartsAreAcceptedByPostgres(t *testing.T) {
 	_, pool := newLedger(t)
-
-	_, err := pool.Exec(context.Background(),
-		`INSERT INTO ledger.account (id, owner_type, owner_id, currency, kind, country)
-		 VALUES ($1,'platform','platform','YTP','goodwill','ID')`, unique("acc_bad_kind"))
-
-	if err == nil {
-		t.Fatal("Postgres accepted an account kind outside docs/02 §6's five")
-	}
-	if !strings.Contains(err.Error(), "account_kind_known") {
-		t.Errorf("rejected for the wrong reason: %v", err)
+	for _, region := range []ledger.Region{au, id} {
+		for _, a := range append(ledger.PlatformChart(region), ledger.UserAccounts(unique("u"), region)...) {
+			insert(t, pool, a)
+		}
+		insert(t, pool, ledger.MerchantPayable(unique("m"), region))
 	}
 }
 
-func TestPostgresRejectsAnUnknownCurrency(t *testing.T) {
+func TestPostgresRejectsAccountsOutsideTheChart(t *testing.T) {
 	_, pool := newLedger(t)
-
-	_, err := pool.Exec(context.Background(),
-		`INSERT INTO ledger.account (id, owner_type, owner_id, currency, kind, country)
-		 VALUES ($1,'platform','platform','USD','equity','ID')`, unique("acc_bad_ccy"))
-
-	if err == nil {
-		t.Fatal("Postgres accepted a currency outside YTP/IDR/AUD")
+	cases := []struct{ name, sql, constraint string }{
+		{"unknown kind", `VALUES ($1,'platform','platform','YTP','goodwill','ID','main')`, "account_kind_known"},
+		{"unknown currency", `VALUES ($1,'platform','platform','USD','equity','ID','main')`, "check constraint"},
+		{"AUD in ID", `VALUES ($1,'platform','platform','AUD','asset','ID','main')`, "account_cash_in_its_region"},
+		{"IDR in AU", `VALUES ($1,'platform','platform','IDR','asset','AU','main')`, "account_cash_in_its_region"},
+		{"user without a points purpose", `VALUES ($1,'user','u9','YTP','liability','AU','main')`, "account_user_purpose"},
+		{"platform with a user purpose", `VALUES ($1,'platform','platform','YTP','equity','AU','pending')`, "account_user_purpose"},
+		{"payable not a merchant", `VALUES ($1,'platform','platform','AUD','liability','AU','payable')`, "account_payable_is_merchant"},
 	}
-	if !strings.Contains(err.Error(), "account_currency_known") {
-		t.Errorf("rejected for the wrong reason: %v", err)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, err := pool.Exec(context.Background(),
+				`INSERT INTO ledger.account (id, owner_type, owner_id, currency, kind, country, purpose) `+c.sql,
+				unique("acc"))
+			if err == nil || !strings.Contains(err.Error(), c.constraint) {
+				t.Errorf("want a %s violation, got %v", c.constraint, err)
+			}
+		})
 	}
 }
 
-// YT-0518 made uniqueness (owner_type, owner_id, currency), which is right
-// for a user and wrong for the platform. Both halves are asserted, because a
-// correction that over-corrects is as bad as the original.
-func TestOneAccountPerUserPerCurrency(t *testing.T) {
+// One account per user per purpose: three points accounts, never two pending.
+func TestOneAccountPerUserPerPurpose(t *testing.T) {
 	_, pool := newLedger(t)
+	user := unique("usr")
+	for _, a := range ledger.UserAccounts(user, au) {
+		insert(t, pool, a)
+	}
+	_, err := pool.Exec(context.Background(),
+		`INSERT INTO ledger.account (id, owner_type, owner_id, currency, kind, country, purpose)
+		 VALUES ($1,'user',$2,'YTP','liability','AU','pending')`, unique("dup"), user)
+	if err == nil {
+		t.Error("Postgres allowed a second pending account for one user")
+	}
+}
+
+func TestATransferCannotCrossRegions(t *testing.T) {
+	book, pool := newLedger(t)
 	ctx := context.Background()
-	queries := sqlcgen.New(pool)
+	auUser, idUser := unique("u"), unique("u")
+	for _, a := range append(ledger.UserAccounts(auUser, au), ledger.UserAccounts(idUser, id)...) {
+		insert(t, pool, a)
+	}
+	_, err := book.Transfer(ctx, ledger.TransferRequest{
+		ID: unique("t"), IdempotencyKey: unique("k"), ReasonCode: "test",
+		Entries: []ledger.Entry{
+			{AccountID: ledger.UserAccountID(auUser, ledger.PurposeAvailable), AmountMinor: -10, Currency: "YTP"},
+			{AccountID: ledger.UserAccountID(idUser, ledger.PurposeAvailable), AmountMinor: 10, Currency: "YTP"},
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "crosses regions") {
+		t.Fatalf("an AU-to-ID transfer was not refused: %v", err)
+	}
+}
 
-	userID := unique("usr")
-	first := ledger.UserPointsAccount(userID, "ID")
-	if err := queries.InsertAccount(ctx, sqlcgen.InsertAccountParams{
-		ID: first.ID, OwnerType: string(first.OwnerType), OwnerID: first.OwnerID,
-		Currency: string(first.Currency), Kind: string(first.Kind), Country: first.Country,
+func TestAReversalMustInvertItsOriginalAndHappensOnce(t *testing.T) {
+	book, pool := newLedger(t)
+	ctx := context.Background()
+	user := unique("u")
+	for _, a := range append(ledger.PlatformChart(au), ledger.UserAccounts(user, au)...) {
+		insert(t, pool, a)
+	}
+	grant := ledger.GrantPartner(au, user, 100)
+	original, err := book.Transfer(ctx, ledger.TransferRequest{
+		ID: unique("t"), IdempotencyKey: unique("k"), ReasonCode: "grant", Entries: grant,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	reverse := func(entries []ledger.Entry) error {
+		_, err := book.Transfer(ctx, ledger.TransferRequest{
+			ID: unique("t"), IdempotencyKey: unique("k"), ReasonCode: "reversal",
+			Entries: entries, Reverses: original.TransferID,
+		})
+		return err
+	}
+	if err := reverse(ledger.GrantPartner(au, user, 60)); !errors.Is(err, ledger.ErrNotInverse) {
+		t.Fatalf("a partial reversal: err = %v, want ErrNotInverse", err)
+	}
+	if err := reverse(ledger.Reverse(grant)); err != nil {
+		t.Fatalf("the exact inverse: %v", err)
+	}
+	if err := reverse(ledger.Reverse(grant)); err == nil {
+		t.Fatal("a transfer was reversed twice")
+	}
+	if b, _ := book.Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending)); b != 0 {
+		t.Errorf("pending = %d after the reversal, want 0", b)
+	}
+}
+
+func insert(t *testing.T, pool *pgxpool.Pool, a ledger.Account) {
+	t.Helper()
+	if err := sqlcgen.New(pool).InsertAccount(context.Background(), sqlcgen.InsertAccountParams{
+		ID: a.ID, OwnerType: string(a.OwnerType), OwnerID: a.OwnerID, Currency: string(a.Currency),
+		Kind: string(a.Kind), Country: a.Country, Purpose: string(a.Purpose),
 	}); err != nil {
-		t.Fatalf("first user account: %v", err)
-	}
-
-	// A second points account for the same person would make "their balance"
-	// an ambiguous question.
-	_, err := pool.Exec(ctx,
-		`INSERT INTO ledger.account (id, owner_type, owner_id, currency, kind, country)
-		 VALUES ($1,'user',$2,'YTP','liability','ID')`, unique("usr_pts_dup"), userID)
-
-	if err == nil {
-		t.Error("Postgres allowed a second points account for one user")
+		t.Fatalf("Postgres rejected %s: %v", a.ID, err)
 	}
 }
 
-func TestThePlatformMayHoldManyPointsAccounts(t *testing.T) {
-	// The half YT-0518 got wrong. A chart of accounts IS several accounts
-	// for one owner in one currency; a rule forbidding that forbids the
-	// chart.
-	_, pool := newLedger(t)
-	ctx := context.Background()
-	queries := sqlcgen.New(pool)
-
-	for _, account := range ledger.PlatformChart("ID") {
-		if err := queries.InsertAccount(ctx, sqlcgen.InsertAccountParams{
-			ID: account.ID, OwnerType: string(account.OwnerType), OwnerID: account.OwnerID,
-			Currency: string(account.Currency), Kind: string(account.Kind),
-			Country: account.Country,
-		}); err != nil {
-			t.Fatalf("%s: %v", account.ID, err)
-		}
+func sum(entries []ledger.Entry) int64 {
+	var total int64
+	for _, e := range entries {
+		total += e.AmountMinor
 	}
-
-	var platformPointsAccounts int
-	if err := pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM ledger.account
-		  WHERE owner_id = 'platform' AND currency = 'YTP'`).Scan(&platformPointsAccounts); err != nil {
-		t.Fatalf("count: %v", err)
-	}
-	if platformPointsAccounts < 4 {
-		t.Errorf("platform holds %d points accounts, want the whole chart", platformPointsAccounts)
-	}
+	return total
 }
 
 func amountOn(entries []ledger.Entry, accountID string) int64 {
-	for _, entry := range entries {
-		if entry.AccountID == accountID {
-			return entry.AmountMinor
+	for _, e := range entries {
+		if e.AccountID == accountID {
+			return e.AmountMinor
 		}
 	}
 	return 0
 }
-
-var _ = pgxpool.Pool{}

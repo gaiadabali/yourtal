@@ -1,13 +1,13 @@
 -- name: InsertTransfer :one
 -- Returns nothing on a key that already exists, which is how the caller
 -- learns a replay happened without a second round trip or a race.
-INSERT INTO ledger.transfer (id, idempotency_key, reason_code)
-VALUES ($1, $2, $3)
+INSERT INTO ledger.transfer (id, idempotency_key, reason_code, reverses)
+VALUES ($1, $2, $3, $4)
 ON CONFLICT (idempotency_key) DO NOTHING
-RETURNING id, idempotency_key, reason_code, created_at;
+RETURNING id, idempotency_key, reason_code, created_at, reverses;
 
 -- name: GetTransferByIdempotencyKey :one
-SELECT id, idempotency_key, reason_code, created_at
+SELECT id, idempotency_key, reason_code, created_at, reverses
 FROM ledger.transfer
 WHERE idempotency_key = $1;
 
@@ -22,24 +22,38 @@ WHERE transfer_id = $1
 ORDER BY id;
 
 -- name: GetAccount :one
-SELECT id, owner_type, owner_id, currency, kind, country, created_at
+SELECT id, owner_type, owner_id, currency, kind, country, purpose, created_at
 FROM ledger.account
 WHERE id = $1;
 
 -- name: InsertAccount :exec
 -- kind and country are not optional (YT-0043): an account with no
 -- classification is one no report can categorise, and the schema refuses it.
-INSERT INTO ledger.account (id, owner_type, owner_id, currency, kind, country)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO ledger.account (id, owner_type, owner_id, currency, kind, country, purpose)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT (id) DO NOTHING;
 
 -- name: GetAccountBalance :one
--- The balance is a PROJECTION, never a stored column. A stored balance is a
--- second source of truth that can disagree with the entries, and when it
--- does the entries are right and the balance is the bug (docs/18).
-SELECT COALESCE(SUM(amount_minor), 0)::bigint AS balance_minor
-FROM ledger.entry
-WHERE account_id = $1;
+-- The balance is a PROJECTION, never a stored column (docs/18). It is the
+-- NATURAL balance: entries are credit-positive, so asset and expense
+-- accounts read as -SUM and everything else as +SUM. No row: no account.
+SELECT (CASE WHEN a.kind IN ('asset', 'expense') THEN -1 ELSE 1 END
+        * COALESCE(SUM(e.amount_minor), 0))::bigint AS balance_minor
+FROM ledger.account a
+LEFT JOIN ledger.entry e ON e.account_id = a.id
+WHERE a.id = $1
+GROUP BY a.kind;
+
+-- name: TrialBalance :many
+-- Credits minus debits per kind and currency for one region. Double entry
+-- makes the raw sums total zero; the natural balances then satisfy
+-- assets + expenses = liabilities + equity + revenue.
+SELECT a.kind, a.currency, COALESCE(SUM(e.amount_minor), 0)::bigint AS credit_minus_debit
+FROM ledger.account a
+LEFT JOIN ledger.entry e ON e.account_id = a.id
+WHERE a.country = $1
+GROUP BY a.kind, a.currency
+ORDER BY a.currency, a.kind;
 
 -- name: FindImbalancedTransfers :many
 -- The invariant checker. Should always return nothing; if it ever does not,

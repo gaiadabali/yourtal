@@ -19,19 +19,26 @@ import (
 // have" a question you answer by reading the grant code. An explicit step is
 // also the thing an operator can run and check.
 func (e *Engine) EnsureChart(ctx context.Context) error {
-	queries := sqlcgen.New(e.pool)
+	return ensureChart(ctx, sqlcgen.New(e.pool), e.region)
+}
 
-	for _, account := range ledger.PlatformChart(e.country) {
-		if err := queries.InsertAccount(ctx, sqlcgen.InsertAccountParams{
-			ID:        account.ID,
-			OwnerType: string(account.OwnerType),
-			OwnerID:   account.OwnerID,
-			Currency:  string(account.Currency),
-			Kind:      string(account.Kind),
-			Country:   account.Country,
-		}); err != nil {
-			return fmt.Errorf("creating %s: %w", account.ID, err)
+func ensureChart(ctx context.Context, q *sqlcgen.Queries, region ledger.Region) error {
+	for _, account := range ledger.PlatformChart(region) {
+		if err := insertAccount(ctx, q, account); err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+// insertAccount is idempotent: an existing id is left as it is.
+func insertAccount(ctx context.Context, q *sqlcgen.Queries, a ledger.Account) error {
+	if err := q.InsertAccount(ctx, sqlcgen.InsertAccountParams{
+		ID: a.ID, OwnerType: string(a.OwnerType), OwnerID: a.OwnerID,
+		Currency: string(a.Currency), Kind: string(a.Kind), Country: a.Country,
+		Purpose: string(a.Purpose),
+	}); err != nil {
+		return fmt.Errorf("creating %s: %w", a.ID, err)
 	}
 	return nil
 }

@@ -56,7 +56,7 @@ func TestAnUnfundedFaucetDrivesCoverageDown(t *testing.T) {
 		t.Fatalf("funded grant: %v", err)
 	}
 
-	funded, err := engine.Coverage(ctx, testCountry, testCurrency, at)
+	funded, err := engine.Coverage(ctx, testCountry, at)
 	if err != nil {
 		t.Fatalf("Coverage (funded): %v", err)
 	}
@@ -83,7 +83,7 @@ func TestAnUnfundedFaucetDrivesCoverageDown(t *testing.T) {
 		}
 	}
 
-	unfunded, err := engine.Coverage(ctx, testCountry, testCurrency, at)
+	unfunded, err := engine.Coverage(ctx, testCountry, at)
 	if err != nil {
 		t.Fatalf("Coverage (unfunded): %v", err)
 	}

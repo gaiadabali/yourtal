@@ -60,4 +60,11 @@ describe("startWorker", () => {
     await waitUntil(() => realFixture.executionCount > before);
     expect(realFixture.executionCount).toBe(before + 1);
   }, 20_000);
+
+  it("schedules a job that names a cron, and only that one", async () => {
+    const schedules = await worker.boss.getSchedules();
+    expect(schedules.map((schedule) => [schedule.name, schedule.cron])).toEqual([
+      ["test.fixture.second", "0 3 * * *"],
+    ]);
+  });
 });

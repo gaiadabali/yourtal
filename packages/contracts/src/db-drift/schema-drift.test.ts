@@ -401,6 +401,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
   "ledger.grant_release":
     "Holdback releases (4.4.g), ledger-internal. The wallet's pending buckets are the public view, computed by the ledger, not a row mirror.",
+  "ledger.release_notice":
+    "Which holdback releases the worker has announced as ledger.points_unlocked (4.4.g). ledger-internal's releaseSchema is built from ledger.grant_release, not a row mirror of this table.",
   "ledger.quote":
     "Stored quotes (4.1.b), ledger-internal. ledger-internal's quoteSchema is what callers see, built by the ledger route, not a row mirror.",
   "ledger.quote_lock": "Same as ledger.quote: an append-only lock record for a stored quote.",

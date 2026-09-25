@@ -1,4 +1,3 @@
-import { createHash, createHmac, randomUUID } from "node:crypto";
 import type { ResultAsync } from "neverthrow";
 import { ResultAsync as ResultAsyncCtor, err, ok } from "neverthrow";
 import {
@@ -54,12 +53,17 @@ import type {
   ProposeSettingInput,
   RegionSetting,
 } from "@yourtal/contracts/ledger-internal/settings";
+import {
+  SERVICE_SIGNATURE_HEADER,
+  signServiceRequest,
+} from "@yourtal/contracts/ledger-internal/service-signature";
+import type { ServiceCaller } from "@yourtal/contracts/ledger-internal/service-signature";
 import type { AppDb } from "../persistence/drizzle-client";
 import * as settings from "./fake/fake-ledger-settings";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 
 /** The services allowed to sign a ledger call (services/ledger/internal/serviceauth). */
-export type LedgerCaller = "api" | "worker";
+export type LedgerCaller = ServiceCaller;
 
 /**
  * The live ledger client (1.2.d, 4.1.c). Every call is a POST signed the way
@@ -83,13 +87,13 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   /** The X-YourTal-Service-Signature header for one request. */
   private sign(path: string, body: string): string {
-    const t = Math.floor(Date.now() / 1000);
-    const nonce = randomUUID();
-    const digest = createHash("sha256").update(body).digest("base64");
-    const mac = createHmac("sha256", this.secret)
-      .update([t, this.caller, nonce, "POST", path, digest].join("\n"))
-      .digest("hex");
-    return `t=${String(t)},c=${this.caller},n=${nonce},v1=${mac}`;
+    return signServiceRequest({
+      secret: this.secret,
+      caller: this.caller,
+      method: "POST",
+      pathAndQuery: path,
+      body,
+    });
   }
 
   private async send(path: string, body: unknown): Promise<Response> {
@@ -98,7 +102,7 @@ export class HttpLedgerClient implements LedgerInternalClient {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-yourtal-service-signature": this.sign(path, payload),
+        [SERVICE_SIGNATURE_HEADER]: this.sign(path, payload),
       },
       body: payload,
     });

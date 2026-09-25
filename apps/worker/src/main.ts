@@ -20,7 +20,7 @@ const jobsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "jobs");
 
 async function bootstrap(): Promise<void> {
   const config = loadWorkerConfig();
-  const worker = await startWorker({ databaseUrl: config.databaseUrl, jobsDir });
+  const worker = await startWorker({ databaseUrl: config.databaseUrl, jobsDir, config });
   installShutdownHandlers(worker);
 }
 

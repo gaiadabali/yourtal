@@ -9,6 +9,8 @@ export let executionCount = 0;
 
 export const job = defineJob({
   queue: "test.fixture.second",
+  // Proves the runner schedules a job that asks for it (worker.test.ts).
+  schedule: "0 3 * * *",
   async handle() {
     executionCount += 1;
     return Promise.resolve();

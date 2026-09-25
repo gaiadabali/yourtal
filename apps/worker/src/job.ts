@@ -1,5 +1,13 @@
-import type { Job, WorkOptions } from "pg-boss";
+import type { Job, PgBoss, WorkOptions } from "pg-boss";
 import type { DefineQueueOptions } from "@yourtal/queue/define-queue";
+import type { WorkerConfig } from "./config";
+
+/** What the runner hands every `handle` call besides the job itself. */
+export interface JobContext {
+  /** For jobs that send jobs of their own. */
+  readonly boss: PgBoss;
+  readonly config: WorkerConfig;
+}
 
 /**
  * The shape every file under `src/jobs/*.ts` exports as `job`. 1.3.c
@@ -12,7 +20,12 @@ export interface WorkerJob<TData = unknown> {
   readonly queue: string;
   readonly queueOptions?: DefineQueueOptions;
   readonly workOptions?: WorkOptions;
-  handle(job: Job<TData>): Promise<void>;
+  /**
+   * A cron expression (UTC). The runner schedules an empty job on `queue`
+   * at each tick, so a periodic job is still just a job file.
+   */
+  readonly schedule?: string;
+  handle(job: Job<TData>, context: JobContext): Promise<void>;
 }
 
 /**

@@ -1,21 +1,13 @@
 // Command ledger is the ledger service. docs/15 makes it one of the six
 // Phase 1 deployables and the sole writer of every point and cash balance.
 //
-// # What is live and what is not
+// # What is live
 //
-// internal/ledger, internal/reward and internal/pricing are real,
-// Postgres-backed implementations, proved by their own tests against a live
-// database. What was missing until now was an HTTP caller — see
-// internal/api. Every one of its four routes currently returns an honest
-// 501: not just the two that write (transfers, reward grants), but also the
-// balance read and the price quote, because an unauthenticated,
-// account-id-keyed balance read is an enumeration surface (the voucher
-// service's YT-0150 draws this exact line: "no bare balance endpoint") and
-// the price quote's inputs touch the backing rate B, which YT-0130 revokes
-// schema access to specifically so no caller outside the ledger can derive
-// a points price. Nothing here is exposed until authentication exists. See
-// internal/api's notYetExposed for the reasoning, which mirrors the
-// pattern services/voucher/cmd/voucher/main.go already set.
+// internal/api serves packages/contracts' ledger-internal contract on /v1,
+// behind internal/serviceauth: only apps/api and apps/worker, signing with
+// LEDGER_SERVICE_SECRET, can call it. The operations whose tasks are still
+// open (escrow, statements, payouts, economyDaily, and the settings apps/api
+// serves itself) answer 501.
 //
 // The shape below is docs/13a section 7's: chi, one httpx pair for every
 // response, slog injected rather than global, and the middleware order
@@ -170,7 +162,7 @@ func run(logger *slog.Logger) error {
 	}
 
 	if pool != nil && auth != nil {
-		module := api.New(logger, ledger.New(pool), pricing.New(pool))
+		module := api.New(logger, pool)
 		router.Route("/v1", func(r chi.Router) {
 			r.Use(auth.Middleware(logger))
 			r.Mount("/", module.Routes())

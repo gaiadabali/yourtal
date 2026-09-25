@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
@@ -33,10 +34,12 @@ type Request struct {
 	Region          ledger.Region
 	Points          int64
 	SettlementMinor int64
+	ListingID       string
 }
 
 // Burn is what a saga burned, and whether it was reinstated.
 type Burn struct {
+	ListingID       string
 	SagaID          string
 	UserID          string
 	Region          ledger.Region
@@ -104,7 +107,7 @@ func (e *Engine) Burn(ctx context.Context, req Request) (Burn, error) {
 		return queries.InsertBurn(ctx, sqlcgen.InsertBurnParams{
 			SagaID: req.SagaID, UserID: req.UserID, Region: string(req.Region), Points: req.Points,
 			SettlementMinor: req.SettlementMinor, PointsTransferID: pointsHalf.TransferID,
-			LiabilityTransferID: liabilityHalf.TransferID,
+			LiabilityTransferID: liabilityHalf.TransferID, ListingID: parseUUID(req.ListingID),
 		})
 	})
 	if err != nil {
@@ -132,6 +135,7 @@ func (e *Engine) Get(ctx context.Context, sagaID string) (Burn, error) {
 	return Burn{
 		SagaID: row.SagaID, UserID: row.UserID, Region: ledger.Region(row.Region), Points: row.Points,
 		SettlementMinor: row.SettlementMinor, At: row.CreatedAt.Time, Reinstated: row.ReinstatedAt.Valid,
+		ListingID: uuidString(row.ListingID),
 	}, nil
 }
 
@@ -173,4 +177,38 @@ func (e *Engine) Reinstate(ctx context.Context, sagaID, reason string) (Burn, er
 		return Burn{}, err
 	}
 	return e.Get(ctx, sagaID)
+}
+
+// ErrListingNotPriced — the ledger has no price for the listing, so it
+// cannot know the voucher's S or region.
+var ErrListingNotPriced = errors.New("burn: the listing has no ledger price")
+
+// ForListing is burnForVoucher: the listing's region and S come from the
+// ledger's own listing price (4.9.a), never from the caller.
+func (e *Engine) ForListing(ctx context.Context, sagaID, userID, listingID string, points int64) (Burn, error) {
+	price, err := sqlcgen.New(e.pool).GetListingPrice(ctx, parseUUID(listingID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Burn{}, fmt.Errorf("%w: %s", ErrListingNotPriced, listingID)
+	}
+	if err != nil {
+		return Burn{}, fmt.Errorf("reading the listing price: %w", err)
+	}
+	return e.Burn(ctx, Request{SagaID: sagaID, UserID: userID, Region: ledger.Region(price.Region),
+		Points: points, SettlementMinor: price.SettlementMinor, ListingID: listingID})
+}
+
+func parseUUID(value string) pgtype.UUID {
+	var id pgtype.UUID
+	if id.Scan(value) != nil {
+		return pgtype.UUID{}
+	}
+	return id
+}
+
+func uuidString(id pgtype.UUID) string {
+	if !id.Valid {
+		return ""
+	}
+	b := id.Bytes
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }

@@ -51,13 +51,15 @@ export function coverage(db: AppDb, region: string): ResultAsync<Coverage, Ledge
       const pointsOutstanding = Number(outstandingRows.rows[0]?.outstanding ?? 0);
       const backingRateMicros = Number(rate.backing_rate_micros_per_pt);
       const outstandingValueMinor = (pointsOutstanding * backingRateMicros) / 1_000_000;
-      const ratio = outstandingValueMinor === 0 ? 1 : reserveMinor / outstandingValueMinor;
+      const nothingOwed = outstandingValueMinor === 0;
+      const ratio = nothingOwed ? 0 : reserveMinor / outstandingValueMinor;
       return ok({
         region: region as Coverage["region"],
         ratio,
         reserveMinor: toMinorUnits(reserveMinor),
         pointsOutstanding: toPoints(pointsOutstanding),
         asOf: new Date().toISOString(),
+        nothingOwed,
       });
     })(),
   );

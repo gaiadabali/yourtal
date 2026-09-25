@@ -33,6 +33,8 @@ export const holdRequestSchema = z.object({
   allocationId: z.string().min(1),
   points: pointsSchema,
   sagaId: z.string().min(1),
+  /** How long the session may run: 2 x the video's duration + 1 h (4.4.e). Default 3 h. */
+  ttlSeconds: z.number().int().positive().optional(),
 });
 export type HoldRequest = z.infer<typeof holdRequestSchema>;
 

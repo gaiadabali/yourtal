@@ -47,7 +47,6 @@ func campaignPaidBy(t *testing.T, allocation string, perCompletion, bonus int64)
 	return campaign
 }
 
-
 func freshUser() string {
 	// A fresh uuid per test: the contract's userId is a uuid.
 	n := time.Now().UnixNano()

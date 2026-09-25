@@ -31,6 +31,8 @@ export const grantRewardRequestSchema = z.object({
   points: pointsSchema,
   trustTier: trustTierSchema,
   idempotencyKey: z.string().min(1),
+  /** The reward session's hold (`hold` at session start), which this grant consumes (4.4.e). */
+  holdId: z.string().min(1).optional(),
 });
 export type GrantRewardRequest = z.infer<typeof grantRewardRequestSchema>;
 

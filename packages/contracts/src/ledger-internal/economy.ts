@@ -12,6 +12,8 @@ export const coverageSchema = z.object({
   reserveMinor: minorUnitsSchema,
   pointsOutstanding: pointsSchema,
   asOf: z.iso.datetime(),
+  /** Nothing is owed at all, which is not a ratio; `ratio` is 0 then. */
+  nothingOwed: z.boolean().default(false),
 });
 export type Coverage = z.infer<typeof coverageSchema>;
 

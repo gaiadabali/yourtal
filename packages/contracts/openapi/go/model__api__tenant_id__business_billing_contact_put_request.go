@@ -21,8 +21,8 @@ var _ MappedNullable = &ApiTenantIdBusinessBillingContactPutRequest{}
 // ApiTenantIdBusinessBillingContactPutRequest struct for ApiTenantIdBusinessBillingContactPutRequest
 type ApiTenantIdBusinessBillingContactPutRequest struct {
 	Name string `json:"name"`
-	Email string `json:"email" validate:"regexp=^(?:[A-Za-z0-9_'+\\\\-]+\\\\.)*[A-Za-z0-9_'+\\\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\\\-]*\\\\.)+[A-Za-z]{2,}$"`
-	Phone string `json:"phone" validate:"regexp=^\\\\+[1-9]\\\\d{6,14}$"`
+	Email string `json:"email" validate:"regexp=^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2\\,}$"`
+	Phone string `json:"phone" validate:"regexp=^\\+[1-9]\\d{6\\,14}$"`
 	AdditionalProperties map[string]interface{}
 }
 

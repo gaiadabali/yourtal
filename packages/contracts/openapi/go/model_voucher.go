@@ -35,11 +35,12 @@ type Voucher struct {
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
 	RemainingValueMinor int64 `json:"remainingValueMinor"`
 	PartialRedemptionPolicy PartialRedemptionPolicy `json:"partialRedemptionPolicy"`
-	MinimumSpendMinor ListingMinimumSpendMinor `json:"minimumSpendMinor"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	MinimumSpendMinor NullableInt64 `json:"minimumSpendMinor"`
 	Transferable bool `json:"transferable"`
 	Status VoucherStatus `json:"status"`
-	IssuedAt time.Time `json:"issuedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
-	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
+	IssuedAt time.Time `json:"issuedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -49,7 +50,7 @@ type _Voucher Voucher
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName string, location MerchantLocation, title string, currency Currency, faceValueMinor int64, remainingValueMinor int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor ListingMinimumSpendMinor, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
+func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName string, location MerchantLocation, title string, currency Currency, faceValueMinor int64, remainingValueMinor int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
 	this := Voucher{}
 	this.Id = id
 	this.ListingId = listingId
@@ -368,27 +369,29 @@ func (o *Voucher) SetPartialRedemptionPolicy(v PartialRedemptionPolicy) {
 }
 
 // GetMinimumSpendMinor returns the MinimumSpendMinor field value
-func (o *Voucher) GetMinimumSpendMinor() ListingMinimumSpendMinor {
-	if o == nil {
-		var ret ListingMinimumSpendMinor
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *Voucher) GetMinimumSpendMinor() int64 {
+	if o == nil || o.MinimumSpendMinor.Get() == nil {
+		var ret int64
 		return ret
 	}
 
-	return o.MinimumSpendMinor
+	return *o.MinimumSpendMinor.Get()
 }
 
 // GetMinimumSpendMinorOk returns a tuple with the MinimumSpendMinor field value
 // and a boolean to check if the value has been set.
-func (o *Voucher) GetMinimumSpendMinorOk() (*ListingMinimumSpendMinor, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Voucher) GetMinimumSpendMinorOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MinimumSpendMinor, true
+	return o.MinimumSpendMinor.Get(), o.MinimumSpendMinor.IsSet()
 }
 
 // SetMinimumSpendMinor sets field value
-func (o *Voucher) SetMinimumSpendMinor(v ListingMinimumSpendMinor) {
-	o.MinimumSpendMinor = v
+func (o *Voucher) SetMinimumSpendMinor(v int64) {
+	o.MinimumSpendMinor.Set(&v)
 }
 
 // GetTransferable returns the Transferable field value
@@ -509,7 +512,7 @@ func (o Voucher) ToMap() (map[string]interface{}, error) {
 	toSerialize["faceValueMinor"] = o.FaceValueMinor
 	toSerialize["remainingValueMinor"] = o.RemainingValueMinor
 	toSerialize["partialRedemptionPolicy"] = o.PartialRedemptionPolicy
-	toSerialize["minimumSpendMinor"] = o.MinimumSpendMinor
+	toSerialize["minimumSpendMinor"] = o.MinimumSpendMinor.Get()
 	toSerialize["transferable"] = o.Transferable
 	toSerialize["status"] = o.Status
 	toSerialize["issuedAt"] = o.IssuedAt

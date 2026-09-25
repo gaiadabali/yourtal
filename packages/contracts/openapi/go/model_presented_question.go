@@ -12,8 +12,8 @@ package contracts
 
 import (
 	"encoding/json"
-	"gopkg.in/validator.v2"
 	"fmt"
+	"gopkg.in/validator.v2"
 )
 
 // PresentedQuestion - A question as a VIEWER sees it (YT-0102). Has no field capable of holding an answer — the key is unrepresentable here rather than stripped per route. `Question` is the authoring and scoring form and must never be served: it carries correctOptionId and correctAnswer, and a client that holds the key can score itself, which under decision O-1 means deciding its own reward.
@@ -162,6 +162,10 @@ func (dst *PresentedQuestion) UnmarshalJSON(data []byte) error {
 	} else if match == 1 {
 		return nil // exactly one match
 	} else { // no match
+		if err != nil {
+			return fmt.Errorf("data failed to match schemas in oneOf(PresentedQuestion): %v", err)
+		}
+
 		return fmt.Errorf("data failed to match schemas in oneOf(PresentedQuestion)")
 	}
 }
@@ -214,6 +218,32 @@ func (obj *PresentedQuestion) GetActualInstance() (interface{}) {
 
 	if obj.PresentedQuestionOneOf4 != nil {
 		return obj.PresentedQuestionOneOf4
+	}
+
+	// all schemas are nil
+	return nil
+}
+
+// Get the actual instance value
+func (obj PresentedQuestion) GetActualInstanceValue() (interface{}) {
+	if obj.PresentedQuestionOneOf != nil {
+		return *obj.PresentedQuestionOneOf
+	}
+
+	if obj.PresentedQuestionOneOf1 != nil {
+		return *obj.PresentedQuestionOneOf1
+	}
+
+	if obj.PresentedQuestionOneOf2 != nil {
+		return *obj.PresentedQuestionOneOf2
+	}
+
+	if obj.PresentedQuestionOneOf3 != nil {
+		return *obj.PresentedQuestionOneOf3
+	}
+
+	if obj.PresentedQuestionOneOf4 != nil {
+		return *obj.PresentedQuestionOneOf4
 	}
 
 	// all schemas are nil

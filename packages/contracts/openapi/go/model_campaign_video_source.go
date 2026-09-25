@@ -12,76 +12,139 @@ package contracts
 
 import (
 	"encoding/json"
-	"gopkg.in/validator.v2"
+	"bytes"
 	"fmt"
 )
 
-// CampaignVideoSource - Where the player resolves a campaign's video from, without guessing (YT-0503).
+// checks if the CampaignVideoSource type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CampaignVideoSource{}
+
+// CampaignVideoSource Where the player resolves a campaign's video from, without guessing (YT-0503).
 type CampaignVideoSource struct {
-	CampaignVideoSourceOneOf *CampaignVideoSourceOneOf
+	Kind string `json:"kind"`
+	ManifestUrl string `json:"manifestUrl"`
 }
 
-// CampaignVideoSourceOneOfAsCampaignVideoSource is a convenience function that returns CampaignVideoSourceOneOf wrapped in CampaignVideoSource
-func CampaignVideoSourceOneOfAsCampaignVideoSource(v *CampaignVideoSourceOneOf) CampaignVideoSource {
-	return CampaignVideoSource{
-		CampaignVideoSourceOneOf: v,
+type _CampaignVideoSource CampaignVideoSource
+
+// NewCampaignVideoSource instantiates a new CampaignVideoSource object
+// This constructor will assign default values to properties that have it defined,
+// and makes sure properties required by API are set, but the set of arguments
+// will change when the set of required properties is changed
+func NewCampaignVideoSource(kind string, manifestUrl string) *CampaignVideoSource {
+	this := CampaignVideoSource{}
+	this.Kind = kind
+	this.ManifestUrl = manifestUrl
+	return &this
+}
+
+// NewCampaignVideoSourceWithDefaults instantiates a new CampaignVideoSource object
+// This constructor will only assign default values to properties that have it defined,
+// but it doesn't guarantee that properties required by API are set
+func NewCampaignVideoSourceWithDefaults() *CampaignVideoSource {
+	this := CampaignVideoSource{}
+	return &this
+}
+
+// GetKind returns the Kind field value
+func (o *CampaignVideoSource) GetKind() string {
+	if o == nil {
+		var ret string
+		return ret
 	}
+
+	return o.Kind
 }
 
+// GetKindOk returns a tuple with the Kind field value
+// and a boolean to check if the value has been set.
+func (o *CampaignVideoSource) GetKindOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Kind, true
+}
 
-// Unmarshal JSON data into one of the pointers in the struct
-func (dst *CampaignVideoSource) UnmarshalJSON(data []byte) error {
-	var err error
-	match := 0
-	// try to unmarshal data into CampaignVideoSourceOneOf
-	err = newStrictDecoder(data).Decode(&dst.CampaignVideoSourceOneOf)
-	if err == nil {
-		jsonCampaignVideoSourceOneOf, _ := json.Marshal(dst.CampaignVideoSourceOneOf)
-		if string(jsonCampaignVideoSourceOneOf) == "{}" { // empty struct
-			dst.CampaignVideoSourceOneOf = nil
-		} else {
-			if err = validator.Validate(dst.CampaignVideoSourceOneOf); err != nil {
-				dst.CampaignVideoSourceOneOf = nil
-			} else {
-				match++
-			}
+// SetKind sets field value
+func (o *CampaignVideoSource) SetKind(v string) {
+	o.Kind = v
+}
+
+// GetManifestUrl returns the ManifestUrl field value
+func (o *CampaignVideoSource) GetManifestUrl() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ManifestUrl
+}
+
+// GetManifestUrlOk returns a tuple with the ManifestUrl field value
+// and a boolean to check if the value has been set.
+func (o *CampaignVideoSource) GetManifestUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ManifestUrl, true
+}
+
+// SetManifestUrl sets field value
+func (o *CampaignVideoSource) SetManifestUrl(v string) {
+	o.ManifestUrl = v
+}
+
+func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
+	}
+	return json.Marshal(toSerialize)
+}
+
+func (o CampaignVideoSource) ToMap() (map[string]interface{}, error) {
+	toSerialize := map[string]interface{}{}
+	toSerialize["kind"] = o.Kind
+	toSerialize["manifestUrl"] = o.ManifestUrl
+	return toSerialize, nil
+}
+
+func (o *CampaignVideoSource) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"kind",
+		"manifestUrl",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
-	} else {
-		dst.CampaignVideoSourceOneOf = nil
 	}
 
-	if match > 1 { // more than 1 match
-		// reset to nil
-		dst.CampaignVideoSourceOneOf = nil
+	varCampaignVideoSource := _CampaignVideoSource{}
 
-		return fmt.Errorf("data matches more than one schema in oneOf(CampaignVideoSource)")
-	} else if match == 1 {
-		return nil // exactly one match
-	} else { // no match
-		return fmt.Errorf("data failed to match schemas in oneOf(CampaignVideoSource)")
-	}
-}
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varCampaignVideoSource)
 
-// Marshal data from the first non-nil pointers in the struct to JSON
-func (src CampaignVideoSource) MarshalJSON() ([]byte, error) {
-	if src.CampaignVideoSourceOneOf != nil {
-		return json.Marshal(&src.CampaignVideoSourceOneOf)
+	if err != nil {
+		return err
 	}
 
-	return nil, nil // no data in oneOf schemas
-}
+	*o = CampaignVideoSource(varCampaignVideoSource)
 
-// Get the actual instance
-func (obj *CampaignVideoSource) GetActualInstance() (interface{}) {
-	if obj == nil {
-		return nil
-	}
-	if obj.CampaignVideoSourceOneOf != nil {
-		return obj.CampaignVideoSourceOneOf
-	}
-
-	// all schemas are nil
-	return nil
+	return err
 }
 
 type NullableCampaignVideoSource struct {

@@ -25,7 +25,7 @@ type ApiWatchSessionsSessionIdGet200Response struct {
 	Coverage []ApiWatchSessionsSessionIdGet200ResponseCoverageInner `json:"coverage"`
 	CoveredSeconds int32 `json:"coveredSeconds"`
 	Fraction float32 `json:"fraction"`
-	Gaps []ApiWatchSessionsSessionIdGet200ResponseCoverageInner `json:"gaps"`
+	Gaps []ApiWatchSessionsSessionIdGet200ResponseGapsInner `json:"gaps"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -35,7 +35,7 @@ type _ApiWatchSessionsSessionIdGet200Response ApiWatchSessionsSessionIdGet200Res
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsSessionIdGet200Response(session WatchSession, durationSeconds int32, coverage []ApiWatchSessionsSessionIdGet200ResponseCoverageInner, coveredSeconds int32, fraction float32, gaps []ApiWatchSessionsSessionIdGet200ResponseCoverageInner) *ApiWatchSessionsSessionIdGet200Response {
+func NewApiWatchSessionsSessionIdGet200Response(session WatchSession, durationSeconds int32, coverage []ApiWatchSessionsSessionIdGet200ResponseCoverageInner, coveredSeconds int32, fraction float32, gaps []ApiWatchSessionsSessionIdGet200ResponseGapsInner) *ApiWatchSessionsSessionIdGet200Response {
 	this := ApiWatchSessionsSessionIdGet200Response{}
 	this.Session = session
 	this.DurationSeconds = durationSeconds
@@ -175,9 +175,9 @@ func (o *ApiWatchSessionsSessionIdGet200Response) SetFraction(v float32) {
 }
 
 // GetGaps returns the Gaps field value
-func (o *ApiWatchSessionsSessionIdGet200Response) GetGaps() []ApiWatchSessionsSessionIdGet200ResponseCoverageInner {
+func (o *ApiWatchSessionsSessionIdGet200Response) GetGaps() []ApiWatchSessionsSessionIdGet200ResponseGapsInner {
 	if o == nil {
-		var ret []ApiWatchSessionsSessionIdGet200ResponseCoverageInner
+		var ret []ApiWatchSessionsSessionIdGet200ResponseGapsInner
 		return ret
 	}
 
@@ -186,7 +186,7 @@ func (o *ApiWatchSessionsSessionIdGet200Response) GetGaps() []ApiWatchSessionsSe
 
 // GetGapsOk returns a tuple with the Gaps field value
 // and a boolean to check if the value has been set.
-func (o *ApiWatchSessionsSessionIdGet200Response) GetGapsOk() ([]ApiWatchSessionsSessionIdGet200ResponseCoverageInner, bool) {
+func (o *ApiWatchSessionsSessionIdGet200Response) GetGapsOk() ([]ApiWatchSessionsSessionIdGet200ResponseGapsInner, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -194,7 +194,7 @@ func (o *ApiWatchSessionsSessionIdGet200Response) GetGapsOk() ([]ApiWatchSession
 }
 
 // SetGaps sets field value
-func (o *ApiWatchSessionsSessionIdGet200Response) SetGaps(v []ApiWatchSessionsSessionIdGet200ResponseCoverageInner) {
+func (o *ApiWatchSessionsSessionIdGet200Response) SetGaps(v []ApiWatchSessionsSessionIdGet200ResponseGapsInner) {
 	o.Gaps = v
 }
 

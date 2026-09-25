@@ -26,11 +26,11 @@ type Balance struct {
 	AvailablePoints int64 `json:"availablePoints"`
 	// Platform points. Always a whole number; there is no fractional point.
 	PendingPoints int64 `json:"pendingPoints"`
-	PendingUnlockAt BalancePendingUnlockAt `json:"pendingUnlockAt"`
+	PendingUnlockAt NullableTime `json:"pendingUnlockAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	// Platform points. Always a whole number; there is no fractional point.
 	ExpiringPoints int64 `json:"expiringPoints"`
-	ExpiringAt BalancePendingUnlockAt `json:"expiringAt"`
-	UpdatedAt time.Time `json:"updatedAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
+	ExpiringAt NullableTime `json:"expiringAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	UpdatedAt time.Time `json:"updatedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -40,7 +40,7 @@ type _Balance Balance
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBalance(userId string, availablePoints int64, pendingPoints int64, pendingUnlockAt BalancePendingUnlockAt, expiringPoints int64, expiringAt BalancePendingUnlockAt, updatedAt time.Time) *Balance {
+func NewBalance(userId string, availablePoints int64, pendingPoints int64, pendingUnlockAt NullableTime, expiringPoints int64, expiringAt NullableTime, updatedAt time.Time) *Balance {
 	this := Balance{}
 	this.UserId = userId
 	this.AvailablePoints = availablePoints
@@ -133,27 +133,29 @@ func (o *Balance) SetPendingPoints(v int64) {
 }
 
 // GetPendingUnlockAt returns the PendingUnlockAt field value
-func (o *Balance) GetPendingUnlockAt() BalancePendingUnlockAt {
-	if o == nil {
-		var ret BalancePendingUnlockAt
+// If the value is explicit nil, the zero value for time.Time will be returned
+func (o *Balance) GetPendingUnlockAt() time.Time {
+	if o == nil || o.PendingUnlockAt.Get() == nil {
+		var ret time.Time
 		return ret
 	}
 
-	return o.PendingUnlockAt
+	return *o.PendingUnlockAt.Get()
 }
 
 // GetPendingUnlockAtOk returns a tuple with the PendingUnlockAt field value
 // and a boolean to check if the value has been set.
-func (o *Balance) GetPendingUnlockAtOk() (*BalancePendingUnlockAt, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Balance) GetPendingUnlockAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PendingUnlockAt, true
+	return o.PendingUnlockAt.Get(), o.PendingUnlockAt.IsSet()
 }
 
 // SetPendingUnlockAt sets field value
-func (o *Balance) SetPendingUnlockAt(v BalancePendingUnlockAt) {
-	o.PendingUnlockAt = v
+func (o *Balance) SetPendingUnlockAt(v time.Time) {
+	o.PendingUnlockAt.Set(&v)
 }
 
 // GetExpiringPoints returns the ExpiringPoints field value
@@ -181,27 +183,29 @@ func (o *Balance) SetExpiringPoints(v int64) {
 }
 
 // GetExpiringAt returns the ExpiringAt field value
-func (o *Balance) GetExpiringAt() BalancePendingUnlockAt {
-	if o == nil {
-		var ret BalancePendingUnlockAt
+// If the value is explicit nil, the zero value for time.Time will be returned
+func (o *Balance) GetExpiringAt() time.Time {
+	if o == nil || o.ExpiringAt.Get() == nil {
+		var ret time.Time
 		return ret
 	}
 
-	return o.ExpiringAt
+	return *o.ExpiringAt.Get()
 }
 
 // GetExpiringAtOk returns a tuple with the ExpiringAt field value
 // and a boolean to check if the value has been set.
-func (o *Balance) GetExpiringAtOk() (*BalancePendingUnlockAt, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Balance) GetExpiringAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ExpiringAt, true
+	return o.ExpiringAt.Get(), o.ExpiringAt.IsSet()
 }
 
 // SetExpiringAt sets field value
-func (o *Balance) SetExpiringAt(v BalancePendingUnlockAt) {
-	o.ExpiringAt = v
+func (o *Balance) SetExpiringAt(v time.Time) {
+	o.ExpiringAt.Set(&v)
 }
 
 // GetUpdatedAt returns the UpdatedAt field value
@@ -241,9 +245,9 @@ func (o Balance) ToMap() (map[string]interface{}, error) {
 	toSerialize["userId"] = o.UserId
 	toSerialize["availablePoints"] = o.AvailablePoints
 	toSerialize["pendingPoints"] = o.PendingPoints
-	toSerialize["pendingUnlockAt"] = o.PendingUnlockAt
+	toSerialize["pendingUnlockAt"] = o.PendingUnlockAt.Get()
 	toSerialize["expiringPoints"] = o.ExpiringPoints
-	toSerialize["expiringAt"] = o.ExpiringAt
+	toSerialize["expiringAt"] = o.ExpiringAt.Get()
 	toSerialize["updatedAt"] = o.UpdatedAt
 
 	for key, value := range o.AdditionalProperties {

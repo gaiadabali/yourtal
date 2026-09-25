@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -24,7 +25,6 @@ type MerchantLocation struct {
 	Name string `json:"name"`
 	Address string `json:"address"`
 	District string `json:"district"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _MerchantLocation MerchantLocation
@@ -160,11 +160,6 @@ func (o MerchantLocation) ToMap() (map[string]interface{}, error) {
 	toSerialize["name"] = o.Name
 	toSerialize["address"] = o.Address
 	toSerialize["district"] = o.District
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -195,23 +190,15 @@ func (o *MerchantLocation) UnmarshalJSON(data []byte) (err error) {
 
 	varMerchantLocation := _MerchantLocation{}
 
-	err = json.Unmarshal(data, &varMerchantLocation)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varMerchantLocation)
 
 	if err != nil {
 		return err
 	}
 
 	*o = MerchantLocation(varMerchantLocation)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "name")
-		delete(additionalProperties, "address")
-		delete(additionalProperties, "district")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

@@ -12,8 +12,8 @@ package contracts
 
 import (
 	"encoding/json"
-	"gopkg.in/validator.v2"
 	"fmt"
+	"gopkg.in/validator.v2"
 )
 
 // ApiHealthGet200ResponseChecksPostgres - struct for ApiHealthGet200ResponseChecksPostgres
@@ -84,6 +84,10 @@ func (dst *ApiHealthGet200ResponseChecksPostgres) UnmarshalJSON(data []byte) err
 	} else if match == 1 {
 		return nil // exactly one match
 	} else { // no match
+		if err != nil {
+			return fmt.Errorf("data failed to match schemas in oneOf(ApiHealthGet200ResponseChecksPostgres): %v", err)
+		}
+
 		return fmt.Errorf("data failed to match schemas in oneOf(ApiHealthGet200ResponseChecksPostgres)")
 	}
 }
@@ -112,6 +116,20 @@ func (obj *ApiHealthGet200ResponseChecksPostgres) GetActualInstance() (interface
 
 	if obj.ApiHealthGet200ResponseChecksPostgresOneOf1 != nil {
 		return obj.ApiHealthGet200ResponseChecksPostgresOneOf1
+	}
+
+	// all schemas are nil
+	return nil
+}
+
+// Get the actual instance value
+func (obj ApiHealthGet200ResponseChecksPostgres) GetActualInstanceValue() (interface{}) {
+	if obj.ApiHealthGet200ResponseChecksPostgresOneOf != nil {
+		return *obj.ApiHealthGet200ResponseChecksPostgresOneOf
+	}
+
+	if obj.ApiHealthGet200ResponseChecksPostgresOneOf1 != nil {
+		return *obj.ApiHealthGet200ResponseChecksPostgresOneOf1
 	}
 
 	// all schemas are nil

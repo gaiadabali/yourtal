@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"time"
 	"fmt"
 )
 
@@ -22,7 +23,7 @@ var _ MappedNullable = &ApiTenantIdBusinessKybDocumentsPostRequest{}
 type ApiTenantIdBusinessKybDocumentsPostRequest struct {
 	DocumentType string `json:"documentType"`
 	StorageRef string `json:"storageRef"`
-	ExpiresAt *ApiTenantIdBusinessKybDocumentsPostRequestExpiresAt `json:"expiresAt,omitempty"`
+	ExpiresAt NullableTime `json:"expiresAt,omitempty" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -95,36 +96,46 @@ func (o *ApiTenantIdBusinessKybDocumentsPostRequest) SetStorageRef(v string) {
 	o.StorageRef = v
 }
 
-// GetExpiresAt returns the ExpiresAt field value if set, zero value otherwise.
-func (o *ApiTenantIdBusinessKybDocumentsPostRequest) GetExpiresAt() ApiTenantIdBusinessKybDocumentsPostRequestExpiresAt {
-	if o == nil || IsNil(o.ExpiresAt) {
-		var ret ApiTenantIdBusinessKybDocumentsPostRequestExpiresAt
+// GetExpiresAt returns the ExpiresAt field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ApiTenantIdBusinessKybDocumentsPostRequest) GetExpiresAt() time.Time {
+	if o == nil || IsNil(o.ExpiresAt.Get()) {
+		var ret time.Time
 		return ret
 	}
-	return *o.ExpiresAt
+	return *o.ExpiresAt.Get()
 }
 
 // GetExpiresAtOk returns a tuple with the ExpiresAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ApiTenantIdBusinessKybDocumentsPostRequest) GetExpiresAtOk() (*ApiTenantIdBusinessKybDocumentsPostRequestExpiresAt, bool) {
-	if o == nil || IsNil(o.ExpiresAt) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiTenantIdBusinessKybDocumentsPostRequest) GetExpiresAtOk() (*time.Time, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ExpiresAt, true
+	return o.ExpiresAt.Get(), o.ExpiresAt.IsSet()
 }
 
 // HasExpiresAt returns a boolean if a field has been set.
 func (o *ApiTenantIdBusinessKybDocumentsPostRequest) HasExpiresAt() bool {
-	if o != nil && !IsNil(o.ExpiresAt) {
+	if o != nil && o.ExpiresAt.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetExpiresAt gets a reference to the given ApiTenantIdBusinessKybDocumentsPostRequestExpiresAt and assigns it to the ExpiresAt field.
-func (o *ApiTenantIdBusinessKybDocumentsPostRequest) SetExpiresAt(v ApiTenantIdBusinessKybDocumentsPostRequestExpiresAt) {
-	o.ExpiresAt = &v
+// SetExpiresAt gets a reference to the given NullableTime and assigns it to the ExpiresAt field.
+func (o *ApiTenantIdBusinessKybDocumentsPostRequest) SetExpiresAt(v time.Time) {
+	o.ExpiresAt.Set(&v)
+}
+// SetExpiresAtNil sets the value for ExpiresAt to be an explicit nil
+func (o *ApiTenantIdBusinessKybDocumentsPostRequest) SetExpiresAtNil() {
+	o.ExpiresAt.Set(nil)
+}
+
+// UnsetExpiresAt ensures that no value is present for ExpiresAt, not even an explicit nil
+func (o *ApiTenantIdBusinessKybDocumentsPostRequest) UnsetExpiresAt() {
+	o.ExpiresAt.Unset()
 }
 
 func (o ApiTenantIdBusinessKybDocumentsPostRequest) MarshalJSON() ([]byte, error) {
@@ -139,8 +150,8 @@ func (o ApiTenantIdBusinessKybDocumentsPostRequest) ToMap() (map[string]interfac
 	toSerialize := map[string]interface{}{}
 	toSerialize["documentType"] = o.DocumentType
 	toSerialize["storageRef"] = o.StorageRef
-	if !IsNil(o.ExpiresAt) {
-		toSerialize["expiresAt"] = o.ExpiresAt
+	if o.ExpiresAt.IsSet() {
+		toSerialize["expiresAt"] = o.ExpiresAt.Get()
 	}
 
 	for key, value := range o.AdditionalProperties {

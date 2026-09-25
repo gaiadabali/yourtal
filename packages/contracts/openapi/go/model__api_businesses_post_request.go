@@ -24,7 +24,7 @@ type ApiBusinessesPostRequest struct {
 	DisplayName string `json:"displayName"`
 	District string `json:"district"`
 	Roles []string `json:"roles"`
-	LogoUrl *ApiBusinessesPostRequestLogoUrl `json:"logoUrl,omitempty"`
+	LogoUrl NullableString `json:"logoUrl,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -147,36 +147,46 @@ func (o *ApiBusinessesPostRequest) SetRoles(v []string) {
 	o.Roles = v
 }
 
-// GetLogoUrl returns the LogoUrl field value if set, zero value otherwise.
-func (o *ApiBusinessesPostRequest) GetLogoUrl() ApiBusinessesPostRequestLogoUrl {
-	if o == nil || IsNil(o.LogoUrl) {
-		var ret ApiBusinessesPostRequestLogoUrl
+// GetLogoUrl returns the LogoUrl field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ApiBusinessesPostRequest) GetLogoUrl() string {
+	if o == nil || IsNil(o.LogoUrl.Get()) {
+		var ret string
 		return ret
 	}
-	return *o.LogoUrl
+	return *o.LogoUrl.Get()
 }
 
 // GetLogoUrlOk returns a tuple with the LogoUrl field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ApiBusinessesPostRequest) GetLogoUrlOk() (*ApiBusinessesPostRequestLogoUrl, bool) {
-	if o == nil || IsNil(o.LogoUrl) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiBusinessesPostRequest) GetLogoUrlOk() (*string, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.LogoUrl, true
+	return o.LogoUrl.Get(), o.LogoUrl.IsSet()
 }
 
 // HasLogoUrl returns a boolean if a field has been set.
 func (o *ApiBusinessesPostRequest) HasLogoUrl() bool {
-	if o != nil && !IsNil(o.LogoUrl) {
+	if o != nil && o.LogoUrl.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetLogoUrl gets a reference to the given ApiBusinessesPostRequestLogoUrl and assigns it to the LogoUrl field.
-func (o *ApiBusinessesPostRequest) SetLogoUrl(v ApiBusinessesPostRequestLogoUrl) {
-	o.LogoUrl = &v
+// SetLogoUrl gets a reference to the given NullableString and assigns it to the LogoUrl field.
+func (o *ApiBusinessesPostRequest) SetLogoUrl(v string) {
+	o.LogoUrl.Set(&v)
+}
+// SetLogoUrlNil sets the value for LogoUrl to be an explicit nil
+func (o *ApiBusinessesPostRequest) SetLogoUrlNil() {
+	o.LogoUrl.Set(nil)
+}
+
+// UnsetLogoUrl ensures that no value is present for LogoUrl, not even an explicit nil
+func (o *ApiBusinessesPostRequest) UnsetLogoUrl() {
+	o.LogoUrl.Unset()
 }
 
 func (o ApiBusinessesPostRequest) MarshalJSON() ([]byte, error) {
@@ -193,8 +203,8 @@ func (o ApiBusinessesPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize["displayName"] = o.DisplayName
 	toSerialize["district"] = o.District
 	toSerialize["roles"] = o.Roles
-	if !IsNil(o.LogoUrl) {
-		toSerialize["logoUrl"] = o.LogoUrl
+	if o.LogoUrl.IsSet() {
+		toSerialize["logoUrl"] = o.LogoUrl.Get()
 	}
 
 	for key, value := range o.AdditionalProperties {

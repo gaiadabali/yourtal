@@ -23,10 +23,10 @@ type BankQuestion struct {
 	QuestionId string `json:"questionId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Status QuestionStatus `json:"status"`
-	PiiScreen BankQuestionPiiScreen `json:"piiScreen"`
+	PiiScreen NullablePiiScreenVerdict `json:"piiScreen"`
 	TimesAsked int64 `json:"timesAsked"`
 	TimesCorrect int64 `json:"timesCorrect"`
-	RetiredReason BankQuestionRetiredReason `json:"retiredReason"`
+	RetiredReason NullableString `json:"retiredReason"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -36,7 +36,7 @@ type _BankQuestion BankQuestion
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBankQuestion(questionId string, campaignId string, status QuestionStatus, piiScreen BankQuestionPiiScreen, timesAsked int64, timesCorrect int64, retiredReason BankQuestionRetiredReason) *BankQuestion {
+func NewBankQuestion(questionId string, campaignId string, status QuestionStatus, piiScreen NullablePiiScreenVerdict, timesAsked int64, timesCorrect int64, retiredReason NullableString) *BankQuestion {
 	this := BankQuestion{}
 	this.QuestionId = questionId
 	this.CampaignId = campaignId
@@ -129,27 +129,29 @@ func (o *BankQuestion) SetStatus(v QuestionStatus) {
 }
 
 // GetPiiScreen returns the PiiScreen field value
-func (o *BankQuestion) GetPiiScreen() BankQuestionPiiScreen {
-	if o == nil {
-		var ret BankQuestionPiiScreen
+// If the value is explicit nil, the zero value for PiiScreenVerdict will be returned
+func (o *BankQuestion) GetPiiScreen() PiiScreenVerdict {
+	if o == nil || o.PiiScreen.Get() == nil {
+		var ret PiiScreenVerdict
 		return ret
 	}
 
-	return o.PiiScreen
+	return *o.PiiScreen.Get()
 }
 
 // GetPiiScreenOk returns a tuple with the PiiScreen field value
 // and a boolean to check if the value has been set.
-func (o *BankQuestion) GetPiiScreenOk() (*BankQuestionPiiScreen, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *BankQuestion) GetPiiScreenOk() (*PiiScreenVerdict, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PiiScreen, true
+	return o.PiiScreen.Get(), o.PiiScreen.IsSet()
 }
 
 // SetPiiScreen sets field value
-func (o *BankQuestion) SetPiiScreen(v BankQuestionPiiScreen) {
-	o.PiiScreen = v
+func (o *BankQuestion) SetPiiScreen(v PiiScreenVerdict) {
+	o.PiiScreen.Set(&v)
 }
 
 // GetTimesAsked returns the TimesAsked field value
@@ -201,27 +203,29 @@ func (o *BankQuestion) SetTimesCorrect(v int64) {
 }
 
 // GetRetiredReason returns the RetiredReason field value
-func (o *BankQuestion) GetRetiredReason() BankQuestionRetiredReason {
-	if o == nil {
-		var ret BankQuestionRetiredReason
+// If the value is explicit nil, the zero value for string will be returned
+func (o *BankQuestion) GetRetiredReason() string {
+	if o == nil || o.RetiredReason.Get() == nil {
+		var ret string
 		return ret
 	}
 
-	return o.RetiredReason
+	return *o.RetiredReason.Get()
 }
 
 // GetRetiredReasonOk returns a tuple with the RetiredReason field value
 // and a boolean to check if the value has been set.
-func (o *BankQuestion) GetRetiredReasonOk() (*BankQuestionRetiredReason, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *BankQuestion) GetRetiredReasonOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.RetiredReason, true
+	return o.RetiredReason.Get(), o.RetiredReason.IsSet()
 }
 
 // SetRetiredReason sets field value
-func (o *BankQuestion) SetRetiredReason(v BankQuestionRetiredReason) {
-	o.RetiredReason = v
+func (o *BankQuestion) SetRetiredReason(v string) {
+	o.RetiredReason.Set(&v)
 }
 
 func (o BankQuestion) MarshalJSON() ([]byte, error) {
@@ -237,10 +241,10 @@ func (o BankQuestion) ToMap() (map[string]interface{}, error) {
 	toSerialize["questionId"] = o.QuestionId
 	toSerialize["campaignId"] = o.CampaignId
 	toSerialize["status"] = o.Status
-	toSerialize["piiScreen"] = o.PiiScreen
+	toSerialize["piiScreen"] = o.PiiScreen.Get()
 	toSerialize["timesAsked"] = o.TimesAsked
 	toSerialize["timesCorrect"] = o.TimesCorrect
-	toSerialize["retiredReason"] = o.RetiredReason
+	toSerialize["retiredReason"] = o.RetiredReason.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

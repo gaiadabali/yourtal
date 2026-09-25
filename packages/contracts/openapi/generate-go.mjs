@@ -32,7 +32,8 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-const GENERATOR_IMAGE = "openapitools/openapi-generator-cli:v7.11.0";
+const GENERATOR_IMAGE =
+  "openapitools/openapi-generator-cli:v7.25.0@sha256:2ab0a9680222de65dc9d3baf861aa02b99e1b80c211d8221ebf3ae8f8a102524";
 
 const openapiDir = path.dirname(fileURLToPath(import.meta.url));
 const goDir = path.join(openapiDir, "go");
@@ -41,7 +42,8 @@ const scratchDir = path.join(openapiDir, ".gotmp");
 const checkOnly = process.argv.includes("--check");
 const verifyOnly = process.argv.includes("--verify");
 
-const GO_IMAGE = "golang:1.26.8-alpine3.24";
+const GO_IMAGE =
+  "golang:1.26.8-alpine3.24@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c";
 
 if (verifyOnly) {
   // Copied out of the read-only mount because `go mod tidy` writes go.sum.

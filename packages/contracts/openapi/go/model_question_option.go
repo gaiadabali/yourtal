@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -22,7 +23,6 @@ var _ MappedNullable = &QuestionOption{}
 type QuestionOption struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Label string `json:"label"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _QuestionOption QuestionOption
@@ -106,11 +106,6 @@ func (o QuestionOption) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id
 	toSerialize["label"] = o.Label
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -139,21 +134,15 @@ func (o *QuestionOption) UnmarshalJSON(data []byte) (err error) {
 
 	varQuestionOption := _QuestionOption{}
 
-	err = json.Unmarshal(data, &varQuestionOption)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varQuestionOption)
 
 	if err != nil {
 		return err
 	}
 
 	*o = QuestionOption(varQuestionOption)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "label")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

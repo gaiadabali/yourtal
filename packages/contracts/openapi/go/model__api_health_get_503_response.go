@@ -15,86 +15,86 @@ import (
 	"fmt"
 )
 
-// checks if the ApiHealthGet200ResponseChecks type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ApiHealthGet200ResponseChecks{}
+// checks if the ApiHealthGet503Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiHealthGet503Response{}
 
-// ApiHealthGet200ResponseChecks struct for ApiHealthGet200ResponseChecks
-type ApiHealthGet200ResponseChecks struct {
-	Postgres ApiHealthGet200ResponseChecksPostgres `json:"postgres"`
-	Pdp ApiHealthGet200ResponseChecksPdp `json:"pdp"`
+// ApiHealthGet503Response struct for ApiHealthGet503Response
+type ApiHealthGet503Response struct {
+	Status string `json:"status"`
+	Checks ApiHealthGet503ResponseChecks `json:"checks"`
 	AdditionalProperties map[string]interface{}
 }
 
-type _ApiHealthGet200ResponseChecks ApiHealthGet200ResponseChecks
+type _ApiHealthGet503Response ApiHealthGet503Response
 
-// NewApiHealthGet200ResponseChecks instantiates a new ApiHealthGet200ResponseChecks object
+// NewApiHealthGet503Response instantiates a new ApiHealthGet503Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiHealthGet200ResponseChecks(postgres ApiHealthGet200ResponseChecksPostgres, pdp ApiHealthGet200ResponseChecksPdp) *ApiHealthGet200ResponseChecks {
-	this := ApiHealthGet200ResponseChecks{}
-	this.Postgres = postgres
-	this.Pdp = pdp
+func NewApiHealthGet503Response(status string, checks ApiHealthGet503ResponseChecks) *ApiHealthGet503Response {
+	this := ApiHealthGet503Response{}
+	this.Status = status
+	this.Checks = checks
 	return &this
 }
 
-// NewApiHealthGet200ResponseChecksWithDefaults instantiates a new ApiHealthGet200ResponseChecks object
+// NewApiHealthGet503ResponseWithDefaults instantiates a new ApiHealthGet503Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewApiHealthGet200ResponseChecksWithDefaults() *ApiHealthGet200ResponseChecks {
-	this := ApiHealthGet200ResponseChecks{}
+func NewApiHealthGet503ResponseWithDefaults() *ApiHealthGet503Response {
+	this := ApiHealthGet503Response{}
 	return &this
 }
 
-// GetPostgres returns the Postgres field value
-func (o *ApiHealthGet200ResponseChecks) GetPostgres() ApiHealthGet200ResponseChecksPostgres {
+// GetStatus returns the Status field value
+func (o *ApiHealthGet503Response) GetStatus() string {
 	if o == nil {
-		var ret ApiHealthGet200ResponseChecksPostgres
+		var ret string
 		return ret
 	}
 
-	return o.Postgres
+	return o.Status
 }
 
-// GetPostgresOk returns a tuple with the Postgres field value
+// GetStatusOk returns a tuple with the Status field value
 // and a boolean to check if the value has been set.
-func (o *ApiHealthGet200ResponseChecks) GetPostgresOk() (*ApiHealthGet200ResponseChecksPostgres, bool) {
+func (o *ApiHealthGet503Response) GetStatusOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Postgres, true
+	return &o.Status, true
 }
 
-// SetPostgres sets field value
-func (o *ApiHealthGet200ResponseChecks) SetPostgres(v ApiHealthGet200ResponseChecksPostgres) {
-	o.Postgres = v
+// SetStatus sets field value
+func (o *ApiHealthGet503Response) SetStatus(v string) {
+	o.Status = v
 }
 
-// GetPdp returns the Pdp field value
-func (o *ApiHealthGet200ResponseChecks) GetPdp() ApiHealthGet200ResponseChecksPdp {
+// GetChecks returns the Checks field value
+func (o *ApiHealthGet503Response) GetChecks() ApiHealthGet503ResponseChecks {
 	if o == nil {
-		var ret ApiHealthGet200ResponseChecksPdp
+		var ret ApiHealthGet503ResponseChecks
 		return ret
 	}
 
-	return o.Pdp
+	return o.Checks
 }
 
-// GetPdpOk returns a tuple with the Pdp field value
+// GetChecksOk returns a tuple with the Checks field value
 // and a boolean to check if the value has been set.
-func (o *ApiHealthGet200ResponseChecks) GetPdpOk() (*ApiHealthGet200ResponseChecksPdp, bool) {
+func (o *ApiHealthGet503Response) GetChecksOk() (*ApiHealthGet503ResponseChecks, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Pdp, true
+	return &o.Checks, true
 }
 
-// SetPdp sets field value
-func (o *ApiHealthGet200ResponseChecks) SetPdp(v ApiHealthGet200ResponseChecksPdp) {
-	o.Pdp = v
+// SetChecks sets field value
+func (o *ApiHealthGet503Response) SetChecks(v ApiHealthGet503ResponseChecks) {
+	o.Checks = v
 }
 
-func (o ApiHealthGet200ResponseChecks) MarshalJSON() ([]byte, error) {
+func (o ApiHealthGet503Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -102,10 +102,10 @@ func (o ApiHealthGet200ResponseChecks) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ApiHealthGet200ResponseChecks) ToMap() (map[string]interface{}, error) {
+func (o ApiHealthGet503Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["postgres"] = o.Postgres
-	toSerialize["pdp"] = o.Pdp
+	toSerialize["status"] = o.Status
+	toSerialize["checks"] = o.Checks
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -114,13 +114,13 @@ func (o ApiHealthGet200ResponseChecks) ToMap() (map[string]interface{}, error) {
 	return toSerialize, nil
 }
 
-func (o *ApiHealthGet200ResponseChecks) UnmarshalJSON(data []byte) (err error) {
+func (o *ApiHealthGet503Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"postgres",
-		"pdp",
+		"status",
+		"checks",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -137,59 +137,59 @@ func (o *ApiHealthGet200ResponseChecks) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varApiHealthGet200ResponseChecks := _ApiHealthGet200ResponseChecks{}
+	varApiHealthGet503Response := _ApiHealthGet503Response{}
 
-	err = json.Unmarshal(data, &varApiHealthGet200ResponseChecks)
+	err = json.Unmarshal(data, &varApiHealthGet503Response)
 
 	if err != nil {
 		return err
 	}
 
-	*o = ApiHealthGet200ResponseChecks(varApiHealthGet200ResponseChecks)
+	*o = ApiHealthGet503Response(varApiHealthGet503Response)
 
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "postgres")
-		delete(additionalProperties, "pdp")
+		delete(additionalProperties, "status")
+		delete(additionalProperties, "checks")
 		o.AdditionalProperties = additionalProperties
 	}
 
 	return err
 }
 
-type NullableApiHealthGet200ResponseChecks struct {
-	value *ApiHealthGet200ResponseChecks
+type NullableApiHealthGet503Response struct {
+	value *ApiHealthGet503Response
 	isSet bool
 }
 
-func (v NullableApiHealthGet200ResponseChecks) Get() *ApiHealthGet200ResponseChecks {
+func (v NullableApiHealthGet503Response) Get() *ApiHealthGet503Response {
 	return v.value
 }
 
-func (v *NullableApiHealthGet200ResponseChecks) Set(val *ApiHealthGet200ResponseChecks) {
+func (v *NullableApiHealthGet503Response) Set(val *ApiHealthGet503Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableApiHealthGet200ResponseChecks) IsSet() bool {
+func (v NullableApiHealthGet503Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableApiHealthGet200ResponseChecks) Unset() {
+func (v *NullableApiHealthGet503Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableApiHealthGet200ResponseChecks(val *ApiHealthGet200ResponseChecks) *NullableApiHealthGet200ResponseChecks {
-	return &NullableApiHealthGet200ResponseChecks{value: val, isSet: true}
+func NewNullableApiHealthGet503Response(val *ApiHealthGet503Response) *NullableApiHealthGet503Response {
+	return &NullableApiHealthGet503Response{value: val, isSet: true}
 }
 
-func (v NullableApiHealthGet200ResponseChecks) MarshalJSON() ([]byte, error) {
+func (v NullableApiHealthGet503Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableApiHealthGet200ResponseChecks) UnmarshalJSON(src []byte) error {
+func (v *NullableApiHealthGet503Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

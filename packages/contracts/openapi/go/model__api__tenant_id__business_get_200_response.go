@@ -21,7 +21,7 @@ var _ MappedNullable = &ApiTenantIdBusinessGet200Response{}
 // ApiTenantIdBusinessGet200Response The business plus onboarding counts. kybDocumentCount/memberCount are counts, not the lists themselves — those are separate endpoints (GET .../team, GET .../kyb-documents).
 type ApiTenantIdBusinessGet200Response struct {
 	Business Business `json:"business"`
-	BillingContact ApiTenantIdBusinessGet200ResponseBillingContact `json:"billingContact"`
+	BillingContact NullableBillingContact `json:"billingContact"`
 	KybDocumentCount int32 `json:"kybDocumentCount"`
 	MemberCount int32 `json:"memberCount"`
 	AdditionalProperties map[string]interface{}
@@ -33,7 +33,7 @@ type _ApiTenantIdBusinessGet200Response ApiTenantIdBusinessGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdBusinessGet200Response(business Business, billingContact ApiTenantIdBusinessGet200ResponseBillingContact, kybDocumentCount int32, memberCount int32) *ApiTenantIdBusinessGet200Response {
+func NewApiTenantIdBusinessGet200Response(business Business, billingContact NullableBillingContact, kybDocumentCount int32, memberCount int32) *ApiTenantIdBusinessGet200Response {
 	this := ApiTenantIdBusinessGet200Response{}
 	this.Business = business
 	this.BillingContact = billingContact
@@ -75,27 +75,29 @@ func (o *ApiTenantIdBusinessGet200Response) SetBusiness(v Business) {
 }
 
 // GetBillingContact returns the BillingContact field value
-func (o *ApiTenantIdBusinessGet200Response) GetBillingContact() ApiTenantIdBusinessGet200ResponseBillingContact {
-	if o == nil {
-		var ret ApiTenantIdBusinessGet200ResponseBillingContact
+// If the value is explicit nil, the zero value for BillingContact will be returned
+func (o *ApiTenantIdBusinessGet200Response) GetBillingContact() BillingContact {
+	if o == nil || o.BillingContact.Get() == nil {
+		var ret BillingContact
 		return ret
 	}
 
-	return o.BillingContact
+	return *o.BillingContact.Get()
 }
 
 // GetBillingContactOk returns a tuple with the BillingContact field value
 // and a boolean to check if the value has been set.
-func (o *ApiTenantIdBusinessGet200Response) GetBillingContactOk() (*ApiTenantIdBusinessGet200ResponseBillingContact, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiTenantIdBusinessGet200Response) GetBillingContactOk() (*BillingContact, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.BillingContact, true
+	return o.BillingContact.Get(), o.BillingContact.IsSet()
 }
 
 // SetBillingContact sets field value
-func (o *ApiTenantIdBusinessGet200Response) SetBillingContact(v ApiTenantIdBusinessGet200ResponseBillingContact) {
-	o.BillingContact = v
+func (o *ApiTenantIdBusinessGet200Response) SetBillingContact(v BillingContact) {
+	o.BillingContact.Set(&v)
 }
 
 // GetKybDocumentCount returns the KybDocumentCount field value
@@ -157,7 +159,7 @@ func (o ApiTenantIdBusinessGet200Response) MarshalJSON() ([]byte, error) {
 func (o ApiTenantIdBusinessGet200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["business"] = o.Business
-	toSerialize["billingContact"] = o.BillingContact
+	toSerialize["billingContact"] = o.BillingContact.Get()
 	toSerialize["kybDocumentCount"] = o.KybDocumentCount
 	toSerialize["memberCount"] = o.MemberCount
 

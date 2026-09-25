@@ -39,8 +39,9 @@ type Listing struct {
 	StockTotal int64 `json:"stockTotal"`
 	Transferable bool `json:"transferable"`
 	PartialRedemptionPolicy PartialRedemptionPolicy `json:"partialRedemptionPolicy"`
-	MinimumSpendMinor ListingMinimumSpendMinor `json:"minimumSpendMinor"`
-	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z))$"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	MinimumSpendMinor NullableInt64 `json:"minimumSpendMinor"`
+	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	Status ListingStatus `json:"status"`
 	PerUserLimit *int64 `json:"perUserLimit,omitempty"`
 	AdditionalProperties map[string]interface{}
@@ -52,7 +53,7 @@ type _Listing Listing
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, settlementValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor ListingMinimumSpendMinor, expiresAt time.Time, status ListingStatus) *Listing {
+func NewListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, settlementValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus) *Listing {
 	this := Listing{}
 	this.Id = id
 	this.MerchantId = merchantId
@@ -444,27 +445,29 @@ func (o *Listing) SetPartialRedemptionPolicy(v PartialRedemptionPolicy) {
 }
 
 // GetMinimumSpendMinor returns the MinimumSpendMinor field value
-func (o *Listing) GetMinimumSpendMinor() ListingMinimumSpendMinor {
-	if o == nil {
-		var ret ListingMinimumSpendMinor
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *Listing) GetMinimumSpendMinor() int64 {
+	if o == nil || o.MinimumSpendMinor.Get() == nil {
+		var ret int64
 		return ret
 	}
 
-	return o.MinimumSpendMinor
+	return *o.MinimumSpendMinor.Get()
 }
 
 // GetMinimumSpendMinorOk returns a tuple with the MinimumSpendMinor field value
 // and a boolean to check if the value has been set.
-func (o *Listing) GetMinimumSpendMinorOk() (*ListingMinimumSpendMinor, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Listing) GetMinimumSpendMinorOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MinimumSpendMinor, true
+	return o.MinimumSpendMinor.Get(), o.MinimumSpendMinor.IsSet()
 }
 
 // SetMinimumSpendMinor sets field value
-func (o *Listing) SetMinimumSpendMinor(v ListingMinimumSpendMinor) {
-	o.MinimumSpendMinor = v
+func (o *Listing) SetMinimumSpendMinor(v int64) {
+	o.MinimumSpendMinor.Set(&v)
 }
 
 // GetExpiresAt returns the ExpiresAt field value
@@ -572,7 +575,7 @@ func (o Listing) ToMap() (map[string]interface{}, error) {
 	toSerialize["stockTotal"] = o.StockTotal
 	toSerialize["transferable"] = o.Transferable
 	toSerialize["partialRedemptionPolicy"] = o.PartialRedemptionPolicy
-	toSerialize["minimumSpendMinor"] = o.MinimumSpendMinor
+	toSerialize["minimumSpendMinor"] = o.MinimumSpendMinor.Get()
 	toSerialize["expiresAt"] = o.ExpiresAt
 	toSerialize["status"] = o.Status
 	if !IsNil(o.PerUserLimit) {

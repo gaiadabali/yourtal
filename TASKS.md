@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 31/52 | `██████░░░░`  60% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 32/52 | `██████░░░░`  62% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **20/82** | **147/366** | `████░░░░░░`  40% |
+| **All** | | | **20/82** | **148/366** | `████░░░░░░`  40% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -801,10 +801,10 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.8.a `apps/api/src/modules/wallet`: `GET /api/wallet` (available, pending with unlock dates, expiring), `/api/wallet/history` (plain-language entries built from the ledger's references), `/api/wallet/vouchers`, `/api/wallet/vouchers/:id` and `/api/wallet/vouchers/:id/qr`.
   - [ ] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token.
 - [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22; 4.9.c, F24) — 🔄 slot 1
-  - [ ] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view. — 🔄 slot 1 (agent C)
+  - [x] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view. — ✅ 2026-09-26 32f221a
     - [x] the table and the `priceListing` upsert, with the rate each listing was priced at (4.1.b)
-    - [x] a one-minute ledger loop reprices every listing on a superseded rate once the new one takes effect, with a test before and after `effective_from` (d8df44d)
-    - [x] `platform.listing_points` (listing_id, points, region, currency) for `yourtal_app`, which gets permission denied on `ledger.listing_price` (d8df44d)
+    - [x] a one-minute ledger loop reprices every listing on a superseded rate once the new one takes effect, with a test before and after `effective_from` (32f221a)
+    - [x] `platform.listing_points` (listing_id, points, region, currency) for `yourtal_app`, which gets permission denied on `ledger.listing_price` (32f221a)
   - [x] 4.9.b Rate governance inside the ledger:
     - `proposeRate` / `approveRate`, with `approved_by ≠ set_by` (CHECK);
     - `effective_from ≥ created_at`;

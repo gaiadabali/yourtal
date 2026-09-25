@@ -35,8 +35,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 15/44 | `███░░░░░░░`  34% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 3/6 | 21/32 | `███████░░░`  66% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 18/52 | `████░░░░░░`  35% |
+| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 22/32 | `███████░░░`  69% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 19/52 | `████░░░░░░`  37% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **14/82** | **100/366** | `███░░░░░░░`  27% |
+| **All** | | | **15/82** | **102/366** | `███░░░░░░░`  28% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -79,7 +79,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct (early, F21/F22/F24) | 2026-09-25 | Go-only ahead of Phase 1 (`phase/4`): 4.1.a, 4.2, 4.3.a–d, 4.4.f, 4.4.i, 4.9.b, 4.6.a–e ✅ (e8dd34c). Now 4.4.k, 4.4.h, 4.4.e, 4.9.c, 4.3.e engine. Routes and TS clients wait for 1.2.a/b |
-| 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.3 ✅ (tokens v2 from After Dark). Now 3.4 primitives |
+| 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅. Now 3.5 video primitives and shells, then 3.6 |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) on 1.2.a–e, then 1.5; B (`yourtal-p1-b`, `phase/1-b`) now on 1.4 → rest of 1.6 (AuthService wiring, dev inbox) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) on 1.2.f (F23) |
 
 ## Decisions for the founder
@@ -655,11 +655,11 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 3.3.c Rewrite `contrast.test.ts` for the new pairs. Lint bans `text-[Npx]` and raw hex colours, **in B's `features/**` directories only**; C turns the same rules on for its own in 7.8.
   - [x] 3.3.d Delete `(lab)` except the gallery (3.6).
   - [x] 3.3.e **Check:** the contrast suite passes in both themes, and a raw hex colour in `features/player` fails lint.
-- [ ] **3.4 Primitives, without breaking C** · needs: 3.3 — 🔄 slot 2
+- [x] **3.4 Primitives, without breaking C** · needs: 3.3 — ✅ 2026-09-25 ec58a47
   - [x] 3.4.a Rework: Button (primary / secondary / ghost / danger / link; sm / md / lg / counter; loading; icon), Input, Textarea, NativeSelect, Card, StatusBadge, Dialog, BottomSheet, Toast with its provider, Tabs, Skeleton, Progress. **Keep every existing export name and prop.** New variants are additive; old ones stay as aliases until C finishes 7.8 and 8.2.
   - [x] 3.4.b New: Heading, Text, PageContainer, PageHeader, Section, **PointsChip**, MoneyAmount (the currency comes from the data, never the viewer), KeyValue, DataTable (becomes a card list below `md`), EmptyState, ErrorState, Notice, Switch, Chip, SegmentedControl, ChoiceCard, ChannelAvatar (with an initials fallback), **MediaCard** (16:9 and 9:16, with poster, duration and progress), QRPanel, Stepper, FilterBar, ListRow.
-  - [ ] 3.4.c **Check:** the console and merchant screens still compile and render, and every primitive is in the gallery (3.6).
-- [ ] **3.5 Video primitives and shells** · needs: 3.4
+  - [x] 3.4.c **Check:** the console and merchant screens still compile and render, and every primitive is in the gallery (3.6).
+- [ ] **3.5 Video primitives and shells** · needs: 3.4 — 🔄 slot 2
   - [ ] 3.5.a **VerticalFeed**, with `mode: "teaser" | "inline-session"`:
     - native `<video>` for the MP4 teasers;
     - at most 3 video elements mounted; the rest are posters;
@@ -746,7 +746,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - the server computes the charge with `quotePurchase` (packs per F12);
     - add `CHECK B × 1.25 ≤ P_issue`;
     - pin the multiplier at 1.00 (EM-11).
-  - [ ] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
+  - [x] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
   - [ ] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h
   - [ ] 4.4.j **Check:**
     - five concurrent grants at a cap of 19/20 → exactly one succeeds;
@@ -1259,6 +1259,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · B · 3.4 Primitives: 11 reworked onto tokens v2 with every v1 export and variant kept, 26 new ones, all in the `/lab/ui` gallery; console and merchant screens still render · ec58a47
 - 2026-09-25 · A · 1.3 Parallel-phase plumbing: route-registry split one file per area with a module-agnostic drift test, `apps/worker` auto-loading `src/jobs/*.ts`, `session-for.ts` for real register+login in tests, `packages/db/src/seed.ts` split one file per domain · 199958e
 
 - 2026-09-25 · A · 1.1 Shared contracts and columns: campaign/listing/business gain region, audience, contentCategory, media and scheduling fields; the migration lands with them; audience rules, category policy (packages/jurisdiction), interest taxonomy v2, F10's questionsAskedFor and the accuracy-bonus/question-count columns; a listing's region and currency now come from its business server-side (BusinessRegionLookup), never the body · 98d7aa1

@@ -54,10 +54,6 @@ export class DrizzleUserProfileRepository implements UserProfileRepository {
       })
       .where(eq(userProfiles.userId, userId));
   }
-
-  async deleteByUserId(userId: string): Promise<void> {
-    await this.db.delete(userProfiles).where(eq(userProfiles.userId, userId));
-  }
 }
 
 // The columns below are CHECK-constrained by the migration to exactly these

@@ -113,7 +113,6 @@ async function populatableAttributes(): Promise<Set<string>> {
       create: () => Promise.reject(new Error("unused")),
       findByUserId: () => Promise.resolve(null),
       update: () => Promise.reject(new Error("unused")),
-      deleteByUserId: () => Promise.reject(new Error("unused")),
     },
     { listForUser: () => Promise.resolve([]) },
     { listForUser: () => Promise.resolve([]) },

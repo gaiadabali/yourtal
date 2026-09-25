@@ -56,7 +56,6 @@ function fakeProfileRepo(rows: Record<string, StoredUserProfile> = {}): UserProf
     create: () => Promise.reject(new Error("not used by this fake")),
     findByUserId: (userId) => Promise.resolve(rows[userId] ?? null),
     update: () => Promise.reject(new Error("not used by this fake")),
-    deleteByUserId: () => Promise.reject(new Error("not used by this fake")),
   };
 }
 

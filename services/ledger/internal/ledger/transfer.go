@@ -121,6 +121,11 @@ type TransferResult struct {
 	Replayed   bool
 }
 
+// TxBeginner is a pool or a single connection.
+type TxBeginner interface {
+	BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error)
+}
+
 // Ledger owns the pool. Constructed once at startup and injected; nothing
 // below main reaches for a global.
 type Ledger struct {
@@ -371,11 +376,13 @@ func (l *Ledger) withSerializableRetry(ctx context.Context, fn func(pgx.Tx) erro
 // own transaction so the funding drawdown and the ledger post commit
 // together, and a second copy of this retry logic would be a second place
 // to get the backoff subtly wrong. One policy, one explanation.
-func WithSerializableRetry(ctx context.Context, pool *pgxpool.Pool, fn func(pgx.Tx) error) error {
+//
+// db is a pool, or one connection when the caller holds a session lock on it.
+func WithSerializableRetry(ctx context.Context, db TxBeginner, fn func(pgx.Tx) error) error {
 	var lastErr error
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, fn)
+		err := pgx.BeginTxFunc(ctx, db, pgx.TxOptions{IsoLevel: pgx.Serializable}, fn)
 		if err == nil {
 			return nil
 		}

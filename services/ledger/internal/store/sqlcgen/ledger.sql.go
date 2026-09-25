@@ -11,64 +11,48 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const countGrantsForDeviceSince = `-- name: CountGrantsForDeviceSince :one
+const countRecentGrantsForDevice = `-- name: CountRecentGrantsForDevice :one
 SELECT COUNT(*)::bigint AS grants
 FROM ledger.grant
-WHERE device_id = $1 AND created_at >= $2
+WHERE device_id = $1 AND created_at >= now() - interval '24 hours'
 `
 
-type CountGrantsForDeviceSinceParams struct {
-	DeviceID  *string
-	CreatedAt pgtype.Timestamptz
-}
-
-func (q *Queries) CountGrantsForDeviceSince(ctx context.Context, arg CountGrantsForDeviceSinceParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countGrantsForDeviceSince, arg.DeviceID, arg.CreatedAt)
+func (q *Queries) CountRecentGrantsForDevice(ctx context.Context, deviceID *string) (int64, error) {
+	row := q.db.QueryRow(ctx, countRecentGrantsForDevice, deviceID)
 	var grants int64
 	err := row.Scan(&grants)
 	return grants, err
 }
 
-const countGrantsForIpSince = `-- name: CountGrantsForIpSince :one
+const countRecentGrantsForIp = `-- name: CountRecentGrantsForIp :one
 SELECT COUNT(*)::bigint AS grants
 FROM ledger.grant
-WHERE ip_address = $1 AND created_at >= $2
+WHERE ip_address = $1 AND created_at >= now() - interval '24 hours'
 `
 
-type CountGrantsForIpSinceParams struct {
-	IpAddress *string
-	CreatedAt pgtype.Timestamptz
-}
-
-func (q *Queries) CountGrantsForIpSince(ctx context.Context, arg CountGrantsForIpSinceParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countGrantsForIpSince, arg.IpAddress, arg.CreatedAt)
+func (q *Queries) CountRecentGrantsForIp(ctx context.Context, ipAddress *string) (int64, error) {
+	row := q.db.QueryRow(ctx, countRecentGrantsForIp, ipAddress)
 	var grants int64
 	err := row.Scan(&grants)
 	return grants, err
 }
 
-const countGrantsForUserSince = `-- name: CountGrantsForUserSince :one
-SELECT COUNT(*)::bigint AS grants, COALESCE(SUM(points), 0)::bigint AS points
+const countRecentGrantsForUser = `-- name: CountRecentGrantsForUser :one
+SELECT COUNT(*)::bigint AS grants
 FROM ledger.grant
-WHERE user_id = $1 AND action_type = $2 AND created_at >= $3
+WHERE user_id = $1 AND action_type = $2 AND created_at >= now() - interval '24 hours'
 `
 
-type CountGrantsForUserSinceParams struct {
+type CountRecentGrantsForUserParams struct {
 	UserID     string
 	ActionType string
-	CreatedAt  pgtype.Timestamptz
 }
 
-type CountGrantsForUserSinceRow struct {
-	Grants int64
-	Points int64
-}
-
-func (q *Queries) CountGrantsForUserSince(ctx context.Context, arg CountGrantsForUserSinceParams) (CountGrantsForUserSinceRow, error) {
-	row := q.db.QueryRow(ctx, countGrantsForUserSince, arg.UserID, arg.ActionType, arg.CreatedAt)
-	var i CountGrantsForUserSinceRow
-	err := row.Scan(&i.Grants, &i.Points)
-	return i, err
+func (q *Queries) CountRecentGrantsForUser(ctx context.Context, arg CountRecentGrantsForUserParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countRecentGrantsForUser, arg.UserID, arg.ActionType)
+	var grants int64
+	err := row.Scan(&grants)
+	return grants, err
 }
 
 const drawDownAllocation = `-- name: DrawDownAllocation :one
@@ -634,6 +618,54 @@ func (q *Queries) LockAccount(ctx context.Context, accountID string) error {
 	return err
 }
 
+const lockUserGrants = `-- name: LockUserGrants :exec
+
+SELECT pg_advisory_xact_lock(hashtextextended('ledger.grant:' || $1::text, 0))
+`
+
+// Velocity counts run inside the grant's transaction on the database's
+// clock; a caller-supplied time let a future `now` skip every cap (EM-06).
+// One grant decision per user at a time, so a count and the grant it
+// allows cannot interleave with another grant's (EW-11).
+func (q *Queries) LockUserGrants(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, lockUserGrants, userID)
+	return err
+}
+
+const lockUserGrantsSession = `-- name: LockUserGrantsSession :exec
+SELECT pg_advisory_lock(hashtextextended('ledger.grant:' || $1::text, 0))
+`
+
+// The session-level twin of LockUserGrants, taken before the grant's
+// transaction begins; see reward.Engine.issue.
+func (q *Queries) LockUserGrantsSession(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, lockUserGrantsSession, userID)
+	return err
+}
+
+const sumPointsEarnedThisPeriod = `-- name: SumPointsEarnedThisPeriod :one
+SELECT COALESCE(SUM(points), 0)::bigint AS points
+FROM ledger.grant
+WHERE user_id = $1
+  AND created_at >= (date_trunc($3::text, now() AT TIME ZONE $2::text)
+                     AT TIME ZONE $2::text)
+`
+
+type SumPointsEarnedThisPeriodParams struct {
+	UserID string
+	Tz     string
+	Period string
+}
+
+// Points granted since the start of the current day or month on the
+// region's clock (F16): `period` is 'day' or 'month', `tz` an IANA zone.
+func (q *Queries) SumPointsEarnedThisPeriod(ctx context.Context, arg SumPointsEarnedThisPeriodParams) (int64, error) {
+	row := q.db.QueryRow(ctx, sumPointsEarnedThisPeriod, arg.UserID, arg.Tz, arg.Period)
+	var points int64
+	err := row.Scan(&points)
+	return points, err
+}
+
 const trialBalance = `-- name: TrialBalance :many
 SELECT a.kind, a.currency, COALESCE(SUM(e.amount_minor), 0)::bigint AS credit_minus_debit
 FROM ledger.account a
@@ -670,4 +702,13 @@ func (q *Queries) TrialBalance(ctx context.Context, country string) ([]TrialBala
 		return nil, err
 	}
 	return items, nil
+}
+
+const unlockUserGrantsSession = `-- name: UnlockUserGrantsSession :exec
+SELECT pg_advisory_unlock(hashtextextended('ledger.grant:' || $1::text, 0))
+`
+
+func (q *Queries) UnlockUserGrantsSession(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, unlockUserGrantsSession, userID)
+	return err
 }

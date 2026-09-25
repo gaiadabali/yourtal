@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
@@ -80,7 +78,6 @@ type GrantRequest struct {
 	AllocationID string
 	DeviceID     string
 	IPAddress    string
-	Now          time.Time
 }
 
 // GrantResult is what was paid, and from where.
@@ -98,10 +95,11 @@ type Engine struct {
 	// region scopes every account this engine touches. One engine per
 	// economy; AU and ID never share an account or a transfer.
 	region ledger.Region
+	caps   Caps
 }
 
 func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, region ledger.Region) *Engine {
-	return &Engine{pool: pool, ledger: book, risk: risk, region: region}
+	return &Engine{pool: pool, ledger: book, risk: risk, region: region, caps: DefaultCaps(region)}
 }
 
 // Grant evaluates an action and, if everything passes, credits the user.
@@ -115,12 +113,13 @@ func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, region ledger.R
 //  1. taxonomy — is this an action we pay for at all?
 //  2. evidence — was the thing it requires presented?
 //  3. risk gate — is this principal allowed to earn?
-//  4. velocity — user, device and IP caps, counted from the grant log
+//  4. caps — per-action, device, IP, daily and monthly, counted from the
+//     grant log under a per-user lock on the database's clock
 //  5. drawdown — atomically take the points out of a funded allocation
 //  6. ledger — post the transfer
 //  7. grant log — record it, which is what step 4 counts next time
 //
-// Steps 5 to 7 share one transaction. If the ledger post fails, the drawdown
+// Steps 4 to 7 share one transaction. If the ledger post fails, the drawdown
 // rolls back with it: an allocation must never be decremented for points
 // that were not issued, because that quietly destroys funding nobody can
 // account for.
@@ -143,64 +142,7 @@ func (e *Engine) Grant(ctx context.Context, req GrantRequest) (GrantResult, erro
 		return GrantResult{}, ErrRiskRefused
 	}
 
-	if err := e.checkVelocity(ctx, req, definition); err != nil {
-		return GrantResult{}, err
-	}
-
 	return e.issue(ctx, req, definition)
-}
-
-// checkVelocity enforces the three caps against the grant log.
-//
-// Counted from the log rather than from a counter, because a cap enforced
-// against something lossy is not a cap — a dropped metric or an evicted
-// cache key becomes free points, and the attacker who notices first is the
-// one it was meant to stop.
-func (e *Engine) checkVelocity(ctx context.Context, req GrantRequest, def ActionDefinition) error {
-	queries := sqlcgen.New(e.pool)
-	// pgtype.Timestamptz, not time.Time: sqlc types a nullable timestamptz
-	// column this way, and going through it keeps the zero value explicit
-	// rather than silently sending 0001-01-01.
-	since := pgtype.Timestamptz{Time: req.Now.Add(-VelocityWindow), Valid: true}
-
-	perUser, err := queries.CountGrantsForUserSince(ctx, sqlcgen.CountGrantsForUserSinceParams{
-		UserID: req.UserID, ActionType: string(req.Action), CreatedAt: since,
-	})
-	if err != nil {
-		return fmt.Errorf("counting user grants: %w", err)
-	}
-	if perUser.Grants >= int64(def.MaxPerUserPerDay) {
-		return fmt.Errorf("%w: %d of %d for %s",
-			ErrUserCapReached, perUser.Grants, def.MaxPerUserPerDay, req.Action)
-	}
-
-	// Device and IP caps span ALL actions. A per-action cap alone is defeated
-	// by doing several different actions from one farm (docs/14 §3).
-	if req.DeviceID != "" {
-		count, err := queries.CountGrantsForDeviceSince(ctx, sqlcgen.CountGrantsForDeviceSinceParams{
-			DeviceID: &req.DeviceID, CreatedAt: since,
-		})
-		if err != nil {
-			return fmt.Errorf("counting device grants: %w", err)
-		}
-		if count >= DeviceGrantsPerDay {
-			return fmt.Errorf("%w: %d today", ErrDeviceCapReached, count)
-		}
-	}
-
-	if req.IPAddress != "" {
-		count, err := queries.CountGrantsForIpSince(ctx, sqlcgen.CountGrantsForIpSinceParams{
-			IpAddress: &req.IPAddress, CreatedAt: since,
-		})
-		if err != nil {
-			return fmt.Errorf("counting ip grants: %w", err)
-		}
-		if count >= IPGrantsPerDay {
-			return fmt.Errorf("%w: %d today", ErrIPCapReached, count)
-		}
-	}
-
-	return nil
 }
 
 // issue draws down the allocation, posts to the ledger and records the
@@ -217,9 +159,31 @@ func (e *Engine) issue(
 	// Without it, contention would look exactly like an exhausted
 	// allocation to a caller, which is the one confusion this gate cannot
 	// afford: "we are out of funding" and "try again" need different answers.
-	err := ledger.WithSerializableRetry(ctx, e.pool,
+	// The per-user lock is taken on the session BEFORE the transaction, so
+	// the transaction's snapshot already includes the previous grant. Taken
+	// inside it, a waiter would wake on a stale snapshot, be aborted by SSI
+	// and retry with backoff: correct, but slow under contention.
+	conn, err := e.pool.Acquire(ctx)
+	if err != nil {
+		return GrantResult{}, fmt.Errorf("acquiring a connection: %w", err)
+	}
+	defer conn.Release()
+	session := sqlcgen.New(conn)
+	if err := session.LockUserGrantsSession(ctx, req.UserID); err != nil {
+		return GrantResult{}, fmt.Errorf("locking the user's grants: %w", err)
+	}
+	defer func() { _ = session.UnlockUserGrantsSession(context.WithoutCancel(ctx), req.UserID) }()
+
+	err = ledger.WithSerializableRetry(ctx, conn,
 		func(tx pgx.Tx) error {
 			queries := sqlcgen.New(tx)
+
+			if err := queries.LockUserGrants(ctx, req.UserID); err != nil {
+				return fmt.Errorf("locking the user's grants: %w", err)
+			}
+			if err := e.checkCaps(ctx, queries, req, def); err != nil {
+				return err
+			}
 
 			// K6, structurally. The statement is
 			// `UPDATE ... WHERE remaining_points >= $n`, so an exhausted

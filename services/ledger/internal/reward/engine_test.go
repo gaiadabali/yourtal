@@ -33,6 +33,9 @@ func unique(prefix string) string {
 	return fmt.Sprintf("%s_%d_%d", prefix, time.Now().UnixNano(), counter.Add(1))
 }
 
+// uncapped lifts the F12 earn caps for tests whose subject is something else.
+var uncapped = reward.Caps{DailyPoints: 1 << 40, MonthlyPoints: 1 << 40}
+
 type refuseAll struct{}
 
 func (refuseAll) Allow(context.Context, string, reward.ActionType) (bool, error) {
@@ -76,7 +79,6 @@ func request(userID, allocationID string, action reward.ActionType) reward.Grant
 		ExternalRef:  unique("ref"),
 		Evidence:     "checkpoint-token",
 		AllocationID: allocationID,
-		Now:          time.Now(),
 	}
 }
 
@@ -144,6 +146,7 @@ func TestCannotIssueBeyondTheAllocation(t *testing.T) {
 // The concurrent version, which is the one a read-then-write would fail.
 func TestConcurrentGrantsCannotOverdrawAnAllocation(t *testing.T) {
 	engine, pool := newEngine(t, reward.AlwaysAllow{})
+	engine = engine.WithCaps(uncapped)
 	ctx := context.Background()
 
 	// Exactly four completions' worth, with twelve callers racing for them.

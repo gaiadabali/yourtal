@@ -96,20 +96,37 @@ INSERT INTO ledger.grant
    device_id, ip_address, external_ref)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 
--- name: CountGrantsForUserSince :one
-SELECT COUNT(*)::bigint AS grants, COALESCE(SUM(points), 0)::bigint AS points
-FROM ledger.grant
-WHERE user_id = $1 AND action_type = $2 AND created_at >= $3;
+-- Velocity counts run inside the grant's transaction on the database's
+-- clock; a caller-supplied time let a future `now` skip every cap (EM-06).
 
--- name: CountGrantsForDeviceSince :one
+-- name: LockUserGrants :exec
+-- One grant decision per user at a time, so a count and the grant it
+-- allows cannot interleave with another grant's (EW-11).
+SELECT pg_advisory_xact_lock(hashtextextended('ledger.grant:' || sqlc.arg(user_id)::text, 0));
+
+-- name: CountRecentGrantsForUser :one
 SELECT COUNT(*)::bigint AS grants
 FROM ledger.grant
-WHERE device_id = $1 AND created_at >= $2;
+WHERE user_id = $1 AND action_type = $2 AND created_at >= now() - interval '24 hours';
 
--- name: CountGrantsForIpSince :one
+-- name: CountRecentGrantsForDevice :one
 SELECT COUNT(*)::bigint AS grants
 FROM ledger.grant
-WHERE ip_address = $1 AND created_at >= $2;
+WHERE device_id = $1 AND created_at >= now() - interval '24 hours';
+
+-- name: CountRecentGrantsForIp :one
+SELECT COUNT(*)::bigint AS grants
+FROM ledger.grant
+WHERE ip_address = $1 AND created_at >= now() - interval '24 hours';
+
+-- name: SumPointsEarnedThisPeriod :one
+-- Points granted since the start of the current day or month on the
+-- region's clock (F16): `period` is 'day' or 'month', `tz` an IANA zone.
+SELECT COALESCE(SUM(points), 0)::bigint AS points
+FROM ledger.grant
+WHERE user_id = sqlc.arg(user_id)
+  AND created_at >= (date_trunc(sqlc.arg(period)::text, now() AT TIME ZONE sqlc.arg(tz)::text)
+                     AT TIME ZONE sqlc.arg(tz)::text);
 
 -- name: InsertPointPurchase :exec
 INSERT INTO ledger.point_purchase
@@ -152,3 +169,11 @@ FROM ledger.daily_proof WHERE proof_date = $1;
 -- name: ListDailyProofs :many
 SELECT proof_date, merkle_root, entry_count, first_entry_id, last_entry_id, computed_at
 FROM ledger.daily_proof ORDER BY proof_date;
+
+-- name: LockUserGrantsSession :exec
+-- The session-level twin of LockUserGrants, taken before the grant's
+-- transaction begins; see reward.Engine.issue.
+SELECT pg_advisory_lock(hashtextextended('ledger.grant:' || sqlc.arg(user_id)::text, 0));
+
+-- name: UnlockUserGrantsSession :exec
+SELECT pg_advisory_unlock(hashtextextended('ledger.grant:' || sqlc.arg(user_id)::text, 0));

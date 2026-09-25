@@ -3,7 +3,6 @@ package pricing_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
@@ -28,7 +27,10 @@ func TestAnUnfundedFaucetDrivesCoverageDown(t *testing.T) {
 	ctx := context.Background()
 	at := withRate(t, engine)
 
-	rewards := reward.New(pool, ledger.New(pool), reward.AlwaysAllow{}, testCountry)
+	// Uncapped: the subject is coverage, and the taxonomy's 2,400-point watch
+	// (removed in 4.4.a) is over the F12 daily cap.
+	rewards := reward.New(pool, ledger.New(pool), reward.AlwaysAllow{}, testCountry).
+		WithCaps(reward.Caps{DailyPoints: 1 << 40, MonthlyPoints: 1 << 40})
 	if err := rewards.EnsureChart(ctx); err != nil {
 		t.Fatalf("EnsureChart: %v", err)
 	}
@@ -51,7 +53,7 @@ func TestAnUnfundedFaucetDrivesCoverageDown(t *testing.T) {
 	user := unique("usr")
 	if _, err := rewards.Grant(ctx, reward.GrantRequest{
 		UserID: user, Action: reward.ActionWatchCompleted, ExternalRef: unique("watch"),
-		Evidence: "checkpoint-token", AllocationID: purchase.AllocationID, Now: time.Now(),
+		Evidence: "checkpoint-token", AllocationID: purchase.AllocationID,
 	}); err != nil {
 		t.Fatalf("funded grant: %v", err)
 	}
@@ -77,7 +79,7 @@ func TestAnUnfundedFaucetDrivesCoverageDown(t *testing.T) {
 		if _, err := rewards.Grant(ctx, reward.GrantRequest{
 			UserID: unique("usr"), Action: reward.ActionReferralConfirmed,
 			ExternalRef: unique("ref"), Evidence: "referral-code",
-			AllocationID: marketing, Now: time.Now(),
+			AllocationID: marketing,
 		}); err != nil {
 			t.Fatalf("marketing grant %d: %v", index, err)
 		}

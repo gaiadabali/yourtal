@@ -73,6 +73,14 @@ func (r Region) Currency() Currency {
 	return ""
 }
 
+// TimeZone is the region's clock for calendar days and months (F16).
+func (r Region) TimeZone() string {
+	if r == RegionID {
+		return "Asia/Jakarta"
+	}
+	return "Australia/Sydney"
+}
+
 // Purpose separates a user's spendable, held-back and frozen points, and marks
 // a merchant's payable. Platform accounts are `main`.
 type Purpose string

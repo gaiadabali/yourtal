@@ -138,6 +138,7 @@ func TestPurchaseAndAllocationAreAtomic(t *testing.T) {
 // purchase created, and hard-stops at zero.
 func TestAPurchaseFundsGrantsUntilItIsExhausted(t *testing.T) {
 	engine, _ := newEngine(t, reward.AlwaysAllow{})
+	engine = engine.WithCaps(uncapped)
 	ctx := context.Background()
 
 	// Exactly two completions' worth.

@@ -23,7 +23,10 @@ if (!/yourtal_test_/.test(process.env.LEDGER_DATABASE_URL ?? "")) {
 const scratch = mkdtempSync(path.join(tmpdir(), "ledger-live-"));
 const binary = path.join(scratch, process.platform === "win32" ? "ledger.exe" : "ledger");
 const logPath = path.join(scratch, "ledger.log");
-const build = spawnSync("go", ["build", "-o", binary, "./cmd/ledger"], { cwd: path.join(root, "services/ledger"), stdio: "inherit" });
+const build = spawnSync("go", ["build", "-o", binary, "./cmd/ledger"], {
+  cwd: path.join(root, "services/ledger"),
+  stdio: "inherit",
+});
 if (build.status !== 0) process.exit(build.status ?? 1);
 
 const port = await new Promise((resolve) => {
@@ -40,7 +43,10 @@ const ledger = spawn(binary, [], {
 
 let ready = false;
 for (let attempt = 0; attempt < 100 && !ready; attempt++) {
-  ready = await fetch(`${url}/readyz`).then((r) => r.ok, () => false);
+  ready = await fetch(`${url}/readyz`).then(
+    (r) => r.ok,
+    () => false,
+  );
   if (!ready) await new Promise((r) => setTimeout(r, 100));
 }
 if (!ready) {
@@ -51,8 +57,20 @@ if (!ready) {
 
 const spec = spawnSync(
   "pnpm",
-  ["--filter", "@yourtal/api", "exec", "vitest", "run", "src/shared/ledger-client/ledger-client.contract.spec.ts"],
-  { cwd: root, stdio: "inherit", shell: true, env: { ...process.env, LEDGER_CONTRACT_LIVE_URL: url, LEDGER_SERVICE_SECRET: secret } },
+  [
+    "--filter",
+    "@yourtal/api",
+    "exec",
+    "vitest",
+    "run",
+    "src/shared/ledger-client/ledger-client.contract.spec.ts",
+  ],
+  {
+    cwd: root,
+    stdio: "inherit",
+    shell: true,
+    env: { ...process.env, LEDGER_CONTRACT_LIVE_URL: url, LEDGER_SERVICE_SECRET: secret },
+  },
 );
 ledger.kill();
 if (spec.status !== 0) {

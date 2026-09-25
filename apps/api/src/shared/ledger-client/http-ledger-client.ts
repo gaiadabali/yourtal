@@ -1,7 +1,10 @@
 import { createHash, createHmac, randomUUID } from "node:crypto";
 import type { ResultAsync } from "neverthrow";
 import { ResultAsync as ResultAsyncCtor, err, ok } from "neverthrow";
-import { ledgerError, ledgerErrorCodeSchema } from "@yourtal/contracts/ledger-internal/ledger-error";
+import {
+  ledgerError,
+  ledgerErrorCodeSchema,
+} from "@yourtal/contracts/ledger-internal/ledger-error";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type {
   LockQuoteRequest,
@@ -93,7 +96,10 @@ export class HttpLedgerClient implements LedgerInternalClient {
     const payload = JSON.stringify(body);
     return fetch(`${this.baseUrl}${path}`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-yourtal-service-signature": this.sign(path, payload) },
+      headers: {
+        "content-type": "application/json",
+        "x-yourtal-service-signature": this.sign(path, payload),
+      },
       body: payload,
     });
   }
@@ -107,12 +113,16 @@ export class HttpLedgerClient implements LedgerInternalClient {
         }
         const problem: unknown = await response.json().catch(() => null);
         const refusal =
-          problem !== null && typeof problem === "object" ? (problem as Record<string, unknown>) : {};
+          problem !== null && typeof problem === "object"
+            ? (problem as Record<string, unknown>)
+            : {};
         const code = ledgerErrorCodeSchema.safeParse(refusal["code"]);
         if (code.success) {
           return err(ledgerError(code.data, String(refusal["message"] ?? code.data)));
         }
-        throw new Error(`ledger ${path} answered ${String(response.status)}: ${JSON.stringify(problem)}`);
+        throw new Error(
+          `ledger ${path} answered ${String(response.status)}: ${JSON.stringify(problem)}`,
+        );
       })(),
     );
   }

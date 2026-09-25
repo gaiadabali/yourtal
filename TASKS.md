@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 20/44 | `█████░░░░░`  45% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 22/32 | `███████░░░`  69% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 21/52 | `████░░░░░░`  40% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 22/52 | `████░░░░░░`  42% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **15/82** | **109/366** | `███░░░░░░░`  30% |
+| **All** | | | **15/82** | **110/366** | `███░░░░░░░`  30% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct (early, F21/F22/F24) | 2026-09-25 | Go-only ahead of Phase 1 (`phase/4`): 4.1.a, 4.2, 4.3.a–d, 4.4.f, 4.4.i, 4.9.b, 4.6.a–e ✅ (e8dd34c). 4.4.k, 4.4.h, 4.4.e ✅ (8ebc5d3). Now 4.9.c, then the 4.3.e burn engine. Routes and TS clients wait for 1.2.a/b |
+| 1 | `yourtal-1` | **4** The bank is correct — ⏸ waits for 1.2 on `main` | 2026-09-25 | Done early (F21/F22/F24, all merged by a35cf23): 4.1.a, 4.2, 4.3.a–d, 4.4.e/f/h/i/k, 4.9.b/c, 4.6.a–e, the burn engine for 4.3.e. Everything left needs the 1.2.a/b contracts on `main` (ticked on `phase/1`, not merged yet); resume with 4.1.b then |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅. Now 3.5 video primitives and shells, then 3.6 |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) on 1.2.a–e, then 1.5; B (`yourtal-p1-b`, `phase/1-b`) now on 1.4 → rest of 1.6 (AuthService wiring, dev inbox) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) on 1.2.f (F23) |
 
@@ -723,7 +723,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.3.d Seal transfers:
     - a trigger forces `created_at = now()`, and entries cannot be added to a transfer from an earlier transaction (EM-18);
     - `validate` uses checked int64 addition, and the checker sums as numeric (EM-23).
-  - [ ] 4.3.e Add `/v1/burns` (`burnForVoucher`, `getBurn`, `reinstateBurn`) on these guards, where `reinstateBurn` is K13.
+  - [ ] 4.3.e Add `/v1/burns` (`burnForVoucher`, `getBurn`, `reinstateBurn`) on these guards, where `reinstateBurn` is K13. — ⛔ the engine is done (`internal/burn`: Burn, Get, Reinstate); only the route waits for the 1.2.a contract
   - [x] 4.3.f **Check:** each of EM-04/09/14/17/18/23 has a test that failed before the fix and passes after.
 - [ ] **4.4 The Reward Engine pays what the partner set, once** · needs: 4.3 (4.4.f and 4.4.i early, F22) — 🔄 slot 1
   - [ ] 4.4.a The amount comes from the **frozen terms version**, never from the editable `reward_config`, so viewers are paid the terms they entered under (EM-05, EM-16, EW-05).
@@ -805,7 +805,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - a cut to B takes effect no sooner than now + 15 min, so locked quotes are honoured.
     
     Seed ID B 6_000_000 / P_issue 9_000_000 micros and AU B 3_000_000 / P_issue 4_500_000 micros (F1). Remove the test rates with a one-off superuser script. Done instead by approval gating: unapproved legacy test rates are inert proposals, so append-only history is kept.
-  - [ ] 4.9.c Solvency monitor: every 15 minutes, per region, coverage = reserve ÷ ((available + pending + escrow points) × B + voucher liability + unpaid merchant payable).
+  - [x] 4.9.c Solvency monitor: every 15 minutes, per region, coverage = reserve ÷ ((available + pending + escrow points) × B + voucher liability + unpaid merchant payable).
     - Below **1.2**: alert.
     - Below **1.1**: stop marketing-funded grants.
     - Below **1.0**: block all unfunded issuance, checked inside `Grant` (EM-10).

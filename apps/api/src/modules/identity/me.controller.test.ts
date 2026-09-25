@@ -17,6 +17,19 @@ import { sessionFor } from "../../shared/testing/session-for";
  * not a fixture.
  */
 
+/**
+ * A distinct throttle-bucket key per call, never a literal reused across
+ * runs. `ThrottleService` treats this as an opaque string, not a real IPv4
+ * (see `auth.service.test.ts`'s own `randomIp()`) — this file used to reuse
+ * five fixed `"10.9.9.x"` addresses, which worked once but collided with
+ * ITSELF on every re-run against the same (real, not per-test) Redis: the
+ * account/source counters those literals had already tripped in an earlier
+ * run never reset, so a later run got 429 where it expected 403.
+ */
+function randomIp(): string {
+  return `me-controller-test-${randomUUID()}`;
+}
+
 let app: NestFastifyApplication;
 
 beforeAll(async () => {
@@ -138,7 +151,7 @@ describe("1.4.g's Check: the age policy at registration, TEEN_ACCOUNTS off (the 
     const response = await app.inject({
       method: "POST",
       url: "/api/auth/register",
-      remoteAddress: "10.9.9.1",
+      remoteAddress: randomIp(),
       headers: { "idempotency-key": randomUUID() },
       payload: {
         email: `teen-${randomUUID()}@example.test`,
@@ -156,7 +169,7 @@ describe("1.4.g's Check: the age policy at registration, TEEN_ACCOUNTS off (the 
   });
 
   it("refuses under-13 neutrally, with no age disclosed, and blocks a retry for 24h", async () => {
-    const remoteAddress = "10.9.9.2";
+    const remoteAddress = randomIp();
     const attempt = () =>
       app.inject({
         method: "POST",
@@ -238,7 +251,7 @@ describe("1.4.b: TEEN_ACCOUNTS on", () => {
     const response = await teenApp.inject({
       method: "POST",
       url: "/api/auth/register",
-      remoteAddress: "10.9.9.3",
+      remoteAddress: randomIp(),
       headers: { "idempotency-key": randomUUID() },
       payload: {
         email: `teen-noconsent-${randomUUID()}@example.test`,
@@ -259,7 +272,7 @@ describe("1.4.b: TEEN_ACCOUNTS on", () => {
     const registered = await teenApp.inject({
       method: "POST",
       url: "/api/auth/register",
-      remoteAddress: "10.9.9.4",
+      remoteAddress: randomIp(),
       headers: { "idempotency-key": randomUUID() },
       payload: {
         email,
@@ -290,7 +303,7 @@ describe("1.4.b: TEEN_ACCOUNTS on", () => {
     const response = await teenApp.inject({
       method: "POST",
       url: "/api/auth/register",
-      remoteAddress: "10.9.9.5",
+      remoteAddress: randomIp(),
       headers: { "idempotency-key": randomUUID() },
       payload: {
         email: `child-teenflag-${randomUUID()}@example.test`,

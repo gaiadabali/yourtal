@@ -46,7 +46,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v7.0.1
 
       # The pinned image in scripts/policy-test.mjs is the same one the
       # sidecar runs. A policy repo that compiles under one Cerbos version
@@ -60,15 +60,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v7.0.1
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4.0.0
+        uses: pnpm/action-setup@v6.1.0
         # No explicit version — reads "packageManager" from the root
         # package.json, so CI and local toolchains cannot drift.
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: "22"
           cache: "pnpm"

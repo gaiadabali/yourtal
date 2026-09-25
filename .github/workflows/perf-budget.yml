@@ -43,16 +43,16 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v7.0.1
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4.0.0
+        uses: pnpm/action-setup@v6.1.0
         # No explicit version — reads the root package.json "packageManager"
         # field (pnpm@11.3.0), so this action and the local dev toolchain
         # can never drift apart.
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: "22"
           cache: "pnpm"
@@ -62,7 +62,7 @@ jobs:
 
       - name: Set up Chrome for Lighthouse
         id: setup-chrome
-        uses: browser-actions/setup-chrome@v1.7.2
+        uses: browser-actions/setup-chrome@v2.2.0
         with:
           # "stable" rather than a pinned build number: Google periodically
           # deprecates old chrome-for-testing binaries out from under a
@@ -84,7 +84,7 @@ jobs:
         run: node scripts/perf-bundle-report.mjs apps/web bundle-report.md
 
       - name: Post bundle-size report on PR
-        uses: actions/github-script@v7.0.1
+        uses: actions/github-script@v9.0.0
         with:
           script: |
             const fs = require("fs");

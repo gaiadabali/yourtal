@@ -87,7 +87,7 @@ async function rewardedCampaign(): Promise<PayingCampaign> {
       idempotencyKey: randomUUID(),
     })
   )._unsafeUnwrap();
-  const versions = await db.execute<{ next: number }>(sql`
+  const versions = await db.execute<{ next: number | string }>(sql`
     SELECT COALESCE(max(version), 0) + 1 AS next FROM campaign.terms_version WHERE campaign_id = ${campaignId}::uuid
   `);
   const termsVersion = Number(versions.rows[0]?.next ?? 1);

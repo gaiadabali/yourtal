@@ -22,6 +22,8 @@ export const credentials = authIdentityPgSchema.table(
     identifier: text("identifier").notNull(),
     secretHash: text("secret_hash").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    /** NULL until `confirmEmailVerification` succeeds (1.4.e). Per-credential, not per-account. */
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.kind] }),

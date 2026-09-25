@@ -9,6 +9,8 @@ export interface Credential {
   readonly identifier: string;
   readonly secretHash: string;
   readonly updatedAt: Date;
+  /** NULL until `confirmEmailVerification` succeeds (1.4.e). */
+  readonly verifiedAt: Date | null;
 }
 
 export interface CredentialRepository {
@@ -49,4 +51,13 @@ export interface CredentialRepository {
    * a silent no-op if it ever does.
    */
   updateSecret(userId: string, kind: string, secretHash: string): Promise<boolean>;
+
+  /**
+   * Records that this credential's identifier (the email, for `kind =
+   * 'password'`) has been proven reachable — 1.4.e. Returns `false` if no
+   * such credential exists, the same shape `updateSecret` uses: it should
+   * never happen for a caller who just consumed a real verification token,
+   * and is worth distinguishing from a silent no-op if it ever does.
+   */
+  markVerified(userId: string, kind: string, verifiedAt: Date): Promise<boolean>;
 }

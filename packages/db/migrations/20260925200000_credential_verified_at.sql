@@ -1,0 +1,11 @@
+-- 1.4.e: email verification actually stores something. Before this,
+-- AuthService.confirmEmailVerification consumed the token and threw the
+-- fact away -- there was nowhere in the schema to record "this address is
+-- verified" durably (see that method's own comment, now stale).
+--
+-- Lives on identity.credential, not identity.user_profile: verification is
+-- a fact about ONE credential (kind = 'password' today; a future phone_otp
+-- or OIDC kind, YT-0541, would carry its own), not about the account as a
+-- whole -- an account with two credential kinds could have one verified and
+-- the other not.
+ALTER TABLE identity.credential ADD COLUMN verified_at timestamptz;

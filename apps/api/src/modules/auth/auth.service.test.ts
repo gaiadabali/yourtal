@@ -482,6 +482,48 @@ describe("password reset — single-use, and a replay is refused", () => {
   });
 });
 
+describe("email verification — 1.4.e stores verified_at, not just a consumed timestamp", () => {
+  it("confirming a real verification token sets identity.credential.verified_at for that credential", async () => {
+    const email = freshEmail();
+    await registerOk(email, "the-original-password");
+
+    const credential = await credentials.findByKindAndIdentifier(PASSWORD_CREDENTIAL_KIND, email);
+    expect(credential).not.toBeNull();
+    const userId = credential?.userId ?? "";
+    // Freshly registered, unverified: the column this test exists to prove
+    // gets set must start out NULL, or a pass here would prove nothing.
+    expect(credential?.verifiedAt).toBeNull();
+
+    const loggedIn = await auth.login(email, "the-original-password", randomIp(), new Date());
+    expect(loggedIn.isOk()).toBe(true);
+    const sessionToken = loggedIn.isOk() ? loggedIn.value.token : "";
+
+    const requested = await auth.requestEmailVerification(sessionToken, new Date());
+    expect(requested.isOk()).toBe(true);
+
+    // Same seam as the password-reset test above: the IDENTICAL real token
+    // `deliver()` minted, not a fabricated stand-in.
+    const realToken = devTokenAccess.peekToken("email_verification", userId, Date.now()) ?? "";
+    expect(realToken.length).toBeGreaterThan(0);
+
+    const confirmed = await auth.confirmEmailVerification(realToken, new Date());
+    expect(confirmed.isOk()).toBe(true);
+
+    // The actual DB round trip 1.4.e is about: re-read the row, do not trust
+    // the service call's success alone.
+    const verified = await credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);
+    expect(verified?.verifiedAt).toBeInstanceOf(Date);
+
+    // A replay of the same (now-consumed) token is refused, same as password
+    // reset — and does not disturb the `verified_at` the first confirmation
+    // already set.
+    const replay = await auth.confirmEmailVerification(realToken, new Date());
+    expect(replay.isErr() && replay.error.type).toBe("token_invalid");
+    const stillVerified = await credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);
+    expect(stillVerified?.verifiedAt).toEqual(verified?.verifiedAt);
+  });
+});
+
 describe("the raw token never reaches a logger", () => {
   it("issue -> wrong-verify -> right-verify -> replay never prints the token, on console or the Nest logger", async () => {
     // All five `console.*` methods AND every level `Logger` exposes —

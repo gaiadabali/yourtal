@@ -360,15 +360,14 @@ export class AuthService {
   }
 
   /**
-   * Consumes the token and nothing else. There is nowhere in the decided
-   * schema to record "this address is verified" durably — no such column
-   * exists on any of the four tables, and `principal.ts` has no
-   * `isEmailVerified` attribute for Cerbos to read either. What this
-   * proves is that, at this moment, whoever holds the token controls the
-   * inbox `identity.verification_token.user_id` names; that fact is
-   * auditable later only via `consumed_at` on this row. Recorded in this
-   * ticket's report as a real gap, not silently worked around with an
-   * invented column.
+   * 1.4.e: this now actually stores something. Before this, consuming the
+   * token proved a point in time — whoever presented it controlled the
+   * inbox — and then threw the fact away, because no column on any of the
+   * four tables in this module ever recorded it. `identity.credential
+   * .verified_at` is that column, set on the `password` credential rather
+   * than on `identity.user_profile`: verification is a fact about ONE
+   * credential (a future phone_otp or OIDC kind, YT-0541, would carry its
+   * own), not about the account as a whole.
    */
   async confirmEmailVerification(
     rawToken: string,
@@ -383,7 +382,10 @@ export class AuthService {
       this.logger.warn(`email verification token refused: ${consumed.refusal}`);
       return err({ type: "token_invalid" });
     }
-    return ok(undefined);
+    return this.guarded(async () => {
+      await this.credentials.markVerified(consumed.userId, PASSWORD_CREDENTIAL_KIND, now);
+      return ok(undefined);
+    });
   }
 
   /**

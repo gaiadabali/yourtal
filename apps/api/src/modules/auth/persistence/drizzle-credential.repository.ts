@@ -60,4 +60,13 @@ export class DrizzleCredentialRepository implements CredentialRepository {
       .returning({ userId: credentials.userId });
     return updated.length > 0;
   }
+
+  async markVerified(userId: string, kind: string, verifiedAt: Date): Promise<boolean> {
+    const updated = await this.db
+      .update(credentials)
+      .set({ verifiedAt })
+      .where(and(eq(credentials.userId, userId), eq(credentials.kind, kind)))
+      .returning({ userId: credentials.userId });
+    return updated.length > 0;
+  }
 }

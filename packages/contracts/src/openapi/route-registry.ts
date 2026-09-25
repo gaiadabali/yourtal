@@ -698,7 +698,8 @@ const progressReportResponseSchema: Record<string, unknown> = {
 
 const completeSessionResponseSchema: Record<string, unknown> = {
   type: "object",
-  description: "Always `{ completed: true }` on success — a refusal throws instead (see the 403 below).",
+  description:
+    "Always `{ completed: true }` on success — a refusal throws instead (see the 403 below).",
   properties: { completed: { const: true } },
   required: ["completed"],
   additionalProperties: false,
@@ -864,7 +865,7 @@ export const HEALTH_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
         status: 503,
         description:
           "Postgres or the PDP (or both) failed its check within the 2s timeout " +
-          "(health.service.ts) — the same HealthResponse body as 200, with status: \"degraded\".",
+          '(health.service.ts) — the same HealthResponse body as 200, with status: "degraded".',
         documented: true,
         schema: healthResponseSchema,
       },

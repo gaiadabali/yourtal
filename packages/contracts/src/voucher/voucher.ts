@@ -101,7 +101,8 @@ export const voucherSchema = z
   )
   .refine(
     (voucher) =>
-      (voucher.partialRedemptionPolicy === "minimum_spend") === (voucher.minimumSpendMinor !== null),
+      (voucher.partialRedemptionPolicy === "minimum_spend") ===
+      (voucher.minimumSpendMinor !== null),
     {
       // The same invariant listingSchema enforces. A minimum_spend voucher
       // with no threshold cannot be honoured; a threshold on any other policy

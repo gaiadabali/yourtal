@@ -42,7 +42,10 @@ export function generateWalletHistory(
       kind: "burn",
       occurredAt: voucher.issuedAt,
       description: `Menukar poin untuk voucher ${voucher.merchantName}`,
-      points: pointsPriceFromSettlement(voucher.faceValueMinor, MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
+      points: pointsPriceFromSettlement(
+        voucher.faceValueMinor,
+        MOCK_BACKING_RATE_IDR_SEN_PER_POINT,
+      ),
       direction: "debit",
       relatedId: voucher.id,
     }),

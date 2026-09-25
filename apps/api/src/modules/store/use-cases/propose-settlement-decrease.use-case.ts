@@ -12,7 +12,7 @@ import { wrapPersistence } from "../wrap-persistence";
 /**
  * Records a proposed material settlement-value decrease as PENDING. Applies
  * nothing (YT-0575) — a second person's `approveSettlementDecrease` is what
- * writes `store.listings.settlement_value_idr`.
+ * writes `store.listings.settlement_value_minor`.
  *
  * Rejects a change that is not a decrease, or not a MATERIAL one, so this
  * table only ever holds what `policies/resource_policies/listing.yaml`
@@ -27,7 +27,7 @@ export function proposeSettlementDecrease(
   requests: SettlementDecreaseRequestRepository,
   merchantId: string,
   listingId: string,
-  proposedSettlementValueIdr: number,
+  proposedSettlementValueMinor: number,
   requestedBy: string,
   reason: string,
 ): ResultAsync<SettlementDecreaseRequest, ProposeSettlementDecreaseError> {
@@ -38,7 +38,7 @@ export function proposeSettlementDecrease(
         listingId,
       });
     }
-    if (!isMaterialSettlementDecrease(listing.settlementValueIdr, proposedSettlementValueIdr)) {
+    if (!isMaterialSettlementDecrease(listing.settlementValueMinor, proposedSettlementValueMinor)) {
       return errAsync<SettlementDecreaseRequest, ProposeSettlementDecreaseError>({
         type: "not_a_material_decrease",
         listingId,
@@ -55,8 +55,9 @@ export function proposeSettlementDecrease(
         requests.create({
           listingId,
           requestedBy,
-          currentSettlementValueIdr: listing.settlementValueIdr,
-          proposedSettlementValueIdr,
+          currency: listing.currency,
+          currentSettlementValueMinor: listing.settlementValueMinor,
+          proposedSettlementValueMinor,
           reason,
         }),
       );

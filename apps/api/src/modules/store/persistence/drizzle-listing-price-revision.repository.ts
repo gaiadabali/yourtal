@@ -23,8 +23,8 @@ function toRecord(row: typeof listingPriceRevisions.$inferSelect): ListingPriceR
   return {
     id: row.id,
     listingId: row.listingId,
-    previousSettlementValueIdr: row.previousSettlementValueIdr,
-    newSettlementValueIdr: row.newSettlementValueIdr,
+    previousSettlementValueMinor: row.previousSettlementValueMinor,
+    newSettlementValueMinor: row.newSettlementValueMinor,
     previousPriceInPoints: row.previousPriceInPoints,
     newPriceInPoints: row.newPriceInPoints,
     requestedBy: row.requestedBy,

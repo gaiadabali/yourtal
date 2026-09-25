@@ -19,7 +19,6 @@
 -- rows are exactly the ones that would be wrong. The backfill below names
 -- what it is doing; anything it does not name fails loudly on the NOT NULL.
 
-BEGIN;
 
 -- ---------------------------------------------------------------------------
 -- Re-assert the precondition rather than inheriting it.
@@ -83,4 +82,3 @@ ALTER TABLE voucher.vouchers ALTER COLUMN currency SET NOT NULL;
 ALTER TABLE voucher.vouchers
   ADD CONSTRAINT vouchers_currency_known CHECK (currency IN ('IDR', 'AUD'));
 
-COMMIT;

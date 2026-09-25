@@ -47,13 +47,14 @@ async function seedListing() {
     description: "Description.",
     category: "services",
     locationIds: [location.id],
-    faceValueIdr: 1_000_000,
-    settlementValueIdr: 300_000,
+    currency: "IDR" as const,
+    faceValueMinor: 1_000_000,
+    settlementValueMinor: 300_000,
     priceInPoints: 500,
     stockTotal: 5,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
-    minimumSpendIdr: null,
+    minimumSpendMinor: null,
     expiresAt: "2027-01-01T00:00:00.000Z",
     status: "available",
     perUserLimit: undefined,
@@ -70,13 +71,14 @@ describe("createListing", () => {
       description: "D",
       category: "services",
       locationIds: [randomUUID()],
-      faceValueIdr: 1,
-      settlementValueIdr: 1,
+      currency: "IDR" as const,
+      faceValueMinor: 1,
+      settlementValueMinor: 1,
       priceInPoints: 1,
       stockTotal: 1,
       transferable: false,
       partialRedemptionPolicy: "single_use_forfeit",
-      minimumSpendIdr: null,
+      minimumSpendMinor: null,
       expiresAt: "2027-01-01T00:00:00.000Z",
       status: "available",
       perUserLimit: undefined,
@@ -170,7 +172,7 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
   // database and the non-uuid surfaced as persistence_failed. A test that
   // never reaches the write cannot tell you its arguments are wrong.
   it("accepts a ~3% cut -- there is no threshold below which a decrease is immaterial", async () => {
-    const listing = await seedListing(); // settlementValueIdr: 300_000
+    const listing = await seedListing(); // settlementValueMinor: 300_000
     const result = await proposeSettlementDecrease(
       repo,
       decreaseRequests,
@@ -183,7 +185,7 @@ describe("proposeSettlementDecrease (YT-0575)", () => {
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toMatchObject({
       listingId: listing.id,
-      proposedSettlementValueIdr: 290_000,
+      proposedSettlementValueMinor: 290_000,
     });
   });
 

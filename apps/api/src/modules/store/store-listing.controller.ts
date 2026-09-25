@@ -53,13 +53,14 @@ export class StoreListingController {
       description: body.description,
       category: body.category,
       locationIds: body.locationIds,
-      faceValueIdr: body.faceValueIdr,
-      settlementValueIdr: body.settlementValueIdr,
+      currency: body.currency,
+      faceValueMinor: body.faceValueMinor,
+      settlementValueMinor: body.settlementValueMinor,
       priceInPoints: body.priceInPoints,
       stockTotal: body.stockTotal,
       transferable: body.transferable,
       partialRedemptionPolicy: body.partialRedemptionPolicy,
-      minimumSpendIdr: body.minimumSpendIdr,
+      minimumSpendMinor: body.minimumSpendMinor,
       expiresAt: body.expiresAt,
       status: body.status,
       perUserLimit: body.perUserLimit,
@@ -127,8 +128,8 @@ export class StoreListingController {
     if (current.isErr()) throw mapStoreErrorToHttpException(current.error);
 
     const material = isMaterialSettlementDecrease(
-      current.value.settlementValueIdr,
-      body.newSettlementValueIdr,
+      current.value.settlementValueMinor,
+      body.newSettlementValueMinor,
     );
     const authz = await this.pdp.requireAction(
       principal,
@@ -145,7 +146,7 @@ export class StoreListingController {
       this.listings,
       tenantId,
       listingId,
-      body.newSettlementValueIdr,
+      body.newSettlementValueMinor,
       principal.id,
       body.reason,
     );

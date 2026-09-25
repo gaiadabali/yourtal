@@ -12,7 +12,7 @@
  * alone (docs/17 section 2.1's other `attrsFrom` uses --
  * `targetRole`/`targetPrincipalId` on `team-member.controller.ts` -- are both
  * already-known request data for exactly this reason). Materiality needs the
- * listing's CURRENT `settlementValueIdr`, which is only known after a
+ * listing's CURRENT `settlementValueMinor`, which is only known after a
  * repository read, so it cannot be produced there without either an async
  * `attrsFrom` (a change to `authorize.decorator.ts`/`pdp.guard.ts`, both
  * outside this module's path) or a second, explicit PDP call once the read
@@ -47,8 +47,8 @@
  * Renaming it here would be a policy change wearing a refactor's clothes.
  */
 export function isMaterialSettlementDecrease(
-  currentSettlementValueIdr: number,
-  proposedSettlementValueIdr: number,
+  currentSettlementValueMinor: number,
+  proposedSettlementValueMinor: number,
 ): boolean {
-  return proposedSettlementValueIdr < currentSettlementValueIdr;
+  return proposedSettlementValueMinor < currentSettlementValueMinor;
 }

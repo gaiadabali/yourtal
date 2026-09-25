@@ -1,4 +1,4 @@
-h1:GMytT2HXCDIvq2K0egBjgD4UGe6xZVN/PdYgjeo/cuk=
+h1:vlydzE3ZY5OmdfaIL1j4YXTXkJFEjZiJXq4D9h4fHFM=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -29,3 +29,5 @@ h1:GMytT2HXCDIvq2K0egBjgD4UGe6xZVN/PdYgjeo/cuk=
 20260921234000_pgboss_schema.sql h1:WzhXnpXejMQP7j2cIFrdDU2kPwgaTgc94YdDngWPcz8=
 20260922010000_question_analysis_role.sql h1:sCXiN6lF5phlKuks3IlI3AjO1TOmGAT9yhHj/jqlYck=
 20260922020000_ledger_reads_campaign_reward_config.sql h1:83vHUc7fpd+zHDkVAT5Xvk3X+MIVReaYxkpU6z8IsKk=
+20260922030000_currency_tagged_money.sql h1:nymiCguXuRB9570hsMKKNs9gXkms8aWUjzeGGAFFA6g=
+20260925063126_store_audit_currency_tagged.sql h1:Ff7oz/gaCxX1jZIvYjWM+LHy2581I9/RUDUcKJY8xK8=

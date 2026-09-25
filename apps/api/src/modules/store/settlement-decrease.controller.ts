@@ -59,7 +59,7 @@ export class SettlementDecreaseController {
       this.decreaseRequests,
       tenantId,
       listingId,
-      body.proposedSettlementValueIdr,
+      body.proposedSettlementValueMinor,
       principal.id,
       body.reason,
     );

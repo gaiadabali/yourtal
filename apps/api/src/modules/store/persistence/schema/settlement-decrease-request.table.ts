@@ -16,9 +16,12 @@ import { storePgSchema } from "./store-schema";
 export const settlementDecreaseRequests = storePgSchema.table("settlement_decrease_request", {
   id: uuid("id").primaryKey().defaultRandom(),
   listingId: uuid("listing_id").notNull(),
+  currency: text("currency").notNull(),
   requestedBy: uuid("requested_by").notNull(),
-  currentSettlementValueIdr: bigint("current_settlement_value_idr", { mode: "number" }).notNull(),
-  proposedSettlementValueIdr: bigint("proposed_settlement_value_idr", {
+  currentSettlementValueMinor: bigint("current_settlement_value_minor", {
+    mode: "number",
+  }).notNull(),
+  proposedSettlementValueMinor: bigint("proposed_settlement_value_minor", {
     mode: "number",
   }).notNull(),
   reason: text("reason"),

@@ -105,14 +105,15 @@ export class DrizzleListingRepository implements ListingRepository {
           title: input.title,
           description: input.description,
           category: input.category,
-          faceValueIdr: input.faceValueIdr,
-          settlementValueIdr: input.settlementValueIdr,
+          currency: input.currency,
+          faceValueMinor: input.faceValueMinor,
+          settlementValueMinor: input.settlementValueMinor,
           priceInPoints: input.priceInPoints,
           stockRemaining: input.stockTotal,
           stockTotal: input.stockTotal,
           transferable: input.transferable,
           partialRedemptionPolicy: input.partialRedemptionPolicy,
-          minimumSpendIdr: input.minimumSpendIdr,
+          minimumSpendMinor: input.minimumSpendMinor,
           expiresAt: new Date(input.expiresAt),
           status: input.status,
           lifecycleState: "active",
@@ -150,7 +151,7 @@ export class DrizzleListingRepository implements ListingRepository {
     if (patch.partialRedemptionPolicy !== undefined) {
       values.partialRedemptionPolicy = patch.partialRedemptionPolicy;
     }
-    if (patch.minimumSpendIdr !== undefined) values.minimumSpendIdr = patch.minimumSpendIdr;
+    if (patch.minimumSpendMinor !== undefined) values.minimumSpendMinor = patch.minimumSpendMinor;
     if (patch.expiresAt !== undefined) values.expiresAt = new Date(patch.expiresAt);
     if (patch.status !== undefined) values.status = patch.status;
     if (patch.perUserLimit !== undefined) values.perUserLimit = patch.perUserLimit;
@@ -170,7 +171,7 @@ export class DrizzleListingRepository implements ListingRepository {
   async updateSettlementValue(
     merchantId: string,
     listingId: string,
-    newSettlementValueIdr: number,
+    newSettlementValueMinor: number,
     requestedBy: string,
     reason: string,
   ): Promise<SettlementValueChange | null> {
@@ -185,7 +186,7 @@ export class DrizzleListingRepository implements ListingRepository {
         tx,
         merchantId,
         listingId,
-        newSettlementValueIdr,
+        newSettlementValueMinor,
         requestedBy,
         reason,
         null,

@@ -17,7 +17,7 @@ export function setSettlementValue(
   listings: ListingRepository,
   merchantId: string,
   listingId: string,
-  newSettlementValueIdr: number,
+  newSettlementValueMinor: number,
   requestedBy: string,
   reason: string,
 ): ResultAsync<SettlementValueChange, SetSettlementValueError> {
@@ -25,7 +25,7 @@ export function setSettlementValue(
     listings.updateSettlementValue(
       merchantId,
       listingId,
-      newSettlementValueIdr,
+      newSettlementValueMinor,
       requestedBy,
       reason,
     ),

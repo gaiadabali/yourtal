@@ -42,7 +42,7 @@ beforeAll(async () => {
   await clearStoreTables(db);
 });
 
-async function seedListing(settlementValueIdr: number) {
+async function seedListing(settlementValueMinor: number) {
   const [location] = await db
     .insert(merchantLocations)
     .values({
@@ -61,13 +61,14 @@ async function seedListing(settlementValueIdr: number) {
     description: "Description.",
     category: "retail",
     locationIds: [location.id],
-    faceValueIdr: 10_000_000,
-    settlementValueIdr,
+    currency: "IDR" as const,
+    faceValueMinor: 10_000_000,
+    settlementValueMinor,
     priceInPoints: 1_000,
     stockTotal: 5,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
-    minimumSpendIdr: null,
+    minimumSpendMinor: null,
     expiresAt: "2027-01-01T00:00:00.000Z",
     status: "available",
     perUserLimit: undefined,
@@ -78,11 +79,11 @@ describe("setSettlementValue against a real PDP", () => {
   it("allows an INCREASE for an owner -- the only non-material change there is", async () => {
     const listing = await seedListing(1_000_000);
     const body = setSettlementValueSchema.parse({
-      newSettlementValueIdr: 1_100_000,
+      newSettlementValueMinor: 1_100_000,
       reason: "Merchant agreed a better settlement rate.",
     });
     const change = await controller.setSettlementValue(TENANT, listing.id, body, request);
-    expect(change.updated.settlementValueIdr).toBe(1_100_000);
+    expect(change.updated.settlementValueMinor).toBe(1_100_000);
   });
 
   // YT-0576: this case used to assert the OPPOSITE -- a 10% cut applied
@@ -95,7 +96,7 @@ describe("setSettlementValue against a real PDP", () => {
   it("REFUSES a one-rupiah decrease -- there is no threshold to sit under", async () => {
     const listing = await seedListing(1_000_000);
     const body = setSettlementValueSchema.parse({
-      newSettlementValueIdr: 999_999,
+      newSettlementValueMinor: 999_999,
       reason: "Rounding tidy-up.",
     });
     await expect(
@@ -103,7 +104,7 @@ describe("setSettlementValue against a real PDP", () => {
     ).rejects.toMatchObject({ status: 403 });
 
     const unchanged = await repo.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueIdr).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
     expect(await revisions.listForListing(listing.id)).toHaveLength(0);
   });
 
@@ -113,7 +114,7 @@ describe("setSettlementValue against a real PDP", () => {
     const listing = await seedListing(1_000_000);
     for (const value of [850_000, 722_500]) {
       const body = setSettlementValueSchema.parse({
-        newSettlementValueIdr: value,
+        newSettlementValueMinor: value,
         reason: "Salami slice.",
       });
       await expect(
@@ -121,13 +122,13 @@ describe("setSettlementValue against a real PDP", () => {
       ).rejects.toMatchObject({ status: 403 });
     }
     const unchanged = await repo.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueIdr).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
   });
 
   it("REFUSES a material decrease outright, even for the owner", async () => {
     const listing = await seedListing(1_000_000);
     const body = setSettlementValueSchema.parse({
-      newSettlementValueIdr: 500_000, // 50% cut
+      newSettlementValueMinor: 500_000, // 50% cut
       reason: "Big cut.",
     });
     await expect(
@@ -136,7 +137,7 @@ describe("setSettlementValue against a real PDP", () => {
 
     // And it did not apply, and left no audit trail for a change that never happened.
     const unchanged = await repo.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueIdr).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
     expect(await revisions.listForListing(listing.id)).toHaveLength(0);
   });
 });

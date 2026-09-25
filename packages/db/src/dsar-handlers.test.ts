@@ -68,9 +68,9 @@ describe("anonymising vouchers", () => {
     const { rows: before } = await pool.query<{
       id: string;
       merchant_id: string;
-      face_value_idr: string;
+      face_value_minor: string;
     }>(
-      `SELECT id, merchant_id, face_value_idr FROM voucher.vouchers
+      `SELECT id, merchant_id, face_value_minor FROM voucher.vouchers
         WHERE owner_id = $1 ORDER BY id LIMIT 1`,
       [SEEDED_OWNER],
     );
@@ -94,14 +94,14 @@ describe("anonymising vouchers", () => {
     // a deletion wearing a different name.
     const { rows: after } = await pool.query<{
       merchant_id: string;
-      face_value_idr: string;
+      face_value_minor: string;
       owner_id: string;
-    }>(`SELECT merchant_id, face_value_idr, owner_id FROM voucher.vouchers WHERE id = $1`, [
+    }>(`SELECT merchant_id, face_value_minor, owner_id FROM voucher.vouchers WHERE id = $1`, [
       sample?.id,
     ]);
 
     expect(after[0]?.merchant_id).toBe(sample?.merchant_id);
-    expect(after[0]?.face_value_idr).toBe(sample?.face_value_idr);
+    expect(after[0]?.face_value_minor).toBe(sample?.face_value_minor);
     expect(after[0]?.owner_id).toBe(TOMBSTONE);
   });
 
@@ -140,7 +140,7 @@ describe("what the application role can and cannot do to a voucher", () => {
 
   it("cannot change what a voucher is worth", async () => {
     await expect(
-      pool.query(`UPDATE voucher.vouchers SET remaining_value_idr = 999999999`),
+      pool.query(`UPDATE voucher.vouchers SET remaining_value_minor = 999999999`),
     ).rejects.toThrow(/permission denied/i);
   });
 
@@ -148,11 +148,11 @@ describe("what the application role can and cannot do to a voucher", () => {
     await expect(
       pool.query(
         `INSERT INTO voucher.vouchers (id, listing_id, owner_id, merchant_id, merchant_name,
-           title, face_value_idr, remaining_value_idr, partial_redemption_policy,
-           minimum_spend_idr, transferable, state, issued_at, expires_at, location_id)
+           title, face_value_minor, remaining_value_minor, partial_redemption_policy,
+           minimum_spend_minor, transferable, state, issued_at, expires_at, location_id, currency)
          SELECT gen_random_uuid(), listing_id, gen_random_uuid(), gen_random_uuid(), 'M', 'T',
                 1000, 1000, 'single_use_forfeit', NULL, false, 'active', now(),
-                now() + interval '30 days', location_id
+                now() + interval '30 days', location_id, 'IDR'
            FROM store.listing_location LIMIT 1`,
       ),
     ).rejects.toThrow(/permission denied/i);

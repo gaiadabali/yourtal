@@ -12,10 +12,11 @@ import { storePgSchema } from "./store-schema";
 export const listingPriceRevisions = storePgSchema.table("listing_price_revision", {
   id: uuid("id").primaryKey().defaultRandom(),
   listingId: uuid("listing_id").notNull(),
-  previousSettlementValueIdr: bigint("previous_settlement_value_idr", {
+  currency: text("currency").notNull(),
+  previousSettlementValueMinor: bigint("previous_settlement_value_minor", {
     mode: "number",
   }).notNull(),
-  newSettlementValueIdr: bigint("new_settlement_value_idr", { mode: "number" }).notNull(),
+  newSettlementValueMinor: bigint("new_settlement_value_minor", { mode: "number" }).notNull(),
   previousPriceInPoints: bigint("previous_price_in_points", { mode: "number" }).notNull(),
   /** NULL until the ledger's pricing engine closes this seam. Never set by this module. */
   newPriceInPoints: bigint("new_price_in_points", { mode: "number" }),

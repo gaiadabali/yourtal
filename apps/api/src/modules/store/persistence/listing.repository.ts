@@ -1,3 +1,4 @@
+import type { Currency } from "@yourtal/contracts/money/currency";
 import type {
   Listing,
   PublicListing,
@@ -20,13 +21,14 @@ export interface CreateListingInput {
    * branch management stayed out of scope.
    */
   readonly locationIds: readonly string[];
-  readonly faceValueIdr: number;
-  readonly settlementValueIdr: number;
+  readonly currency: Currency;
+  readonly faceValueMinor: number;
+  readonly settlementValueMinor: number;
   readonly priceInPoints: number;
   readonly stockTotal: number;
   readonly transferable: boolean;
   readonly partialRedemptionPolicy: PartialRedemptionPolicy;
-  readonly minimumSpendIdr: number | null;
+  readonly minimumSpendMinor: number | null;
   readonly expiresAt: string;
   readonly status: ListingStatus;
   readonly perUserLimit: number | undefined;
@@ -46,7 +48,7 @@ export interface EditListingInput {
   readonly stockRemaining?: number | undefined;
   readonly transferable?: boolean | undefined;
   readonly partialRedemptionPolicy?: PartialRedemptionPolicy | undefined;
-  readonly minimumSpendIdr?: number | null | undefined;
+  readonly minimumSpendMinor?: number | null | undefined;
   readonly expiresAt?: string | undefined;
   readonly status?: ListingStatus | undefined;
   readonly perUserLimit?: number | null | undefined;
@@ -94,7 +96,7 @@ export interface ListingRepository {
   /** One of a merchant's own listings, any lifecycle state, or `null`. */
   findOwnedById(merchantId: string, listingId: string): Promise<Listing | null>;
   /** The public catalogue: `active` listings only. */
-  /** PUBLIC shape -- no `settlementValueIdr`. See `publicListingSchema`. */
+  /** PUBLIC shape -- no `settlementValueMinor`. See `publicListingSchema`. */
   findPublicById(listingId: string): Promise<PublicListing | null>;
   browsePublic(filter: BrowseListingsFilter): Promise<BrowseListingsPage>;
 
@@ -106,7 +108,7 @@ export interface ListingRepository {
     patch: EditListingInput,
   ): Promise<Listing | null>;
   /**
-   * Updates `settlement_value_idr` and writes its audit row, in one
+   * Updates `settlement_value_minor` and writes its audit row, in one
    * transaction — a repricing that "succeeded" with no audit trail is a
    * silent partial completion, the exact shape docs/13c warns against.
    * `price_in_points` is left exactly as it was — see this module's
@@ -115,7 +117,7 @@ export interface ListingRepository {
   updateSettlementValue(
     merchantId: string,
     listingId: string,
-    newSettlementValueIdr: number,
+    newSettlementValueMinor: number,
     requestedBy: string,
     reason: string,
   ): Promise<SettlementValueChange | null>;

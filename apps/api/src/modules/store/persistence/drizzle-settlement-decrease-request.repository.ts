@@ -1,3 +1,4 @@
+import type { Currency } from "@yourtal/contracts/money/currency";
 import { and, desc, eq, ne } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { applySettlementValueChange } from "./apply-settlement-value-change";
@@ -55,8 +56,9 @@ export class DrizzleSettlementDecreaseRequestRepository implements SettlementDec
       .values({
         listingId: input.listingId,
         requestedBy: input.requestedBy,
-        currentSettlementValueIdr: input.currentSettlementValueIdr,
-        proposedSettlementValueIdr: input.proposedSettlementValueIdr,
+        currency: input.currency,
+        currentSettlementValueMinor: input.currentSettlementValueMinor,
+        proposedSettlementValueMinor: input.proposedSettlementValueMinor,
         reason: input.reason,
       })
       .returning();
@@ -106,7 +108,7 @@ export class DrizzleSettlementDecreaseRequestRepository implements SettlementDec
           tx,
           merchantId,
           listingId,
-          claimed.proposedSettlementValueIdr,
+          claimed.proposedSettlementValueMinor,
           claimed.requestedBy,
           claimed.reason ?? "",
           claimed.id,
@@ -128,8 +130,9 @@ function toRecord(row: typeof settlementDecreaseRequests.$inferSelect): Settleme
     id: row.id,
     listingId: row.listingId,
     requestedBy: row.requestedBy,
-    currentSettlementValueIdr: row.currentSettlementValueIdr,
-    proposedSettlementValueIdr: row.proposedSettlementValueIdr,
+    currency: row.currency as Currency,
+    currentSettlementValueMinor: row.currentSettlementValueMinor,
+    proposedSettlementValueMinor: row.proposedSettlementValueMinor,
     reason: row.reason,
     // The migration's CHECK constraint is the actual enforcement of this
     // union; the cast just names it here rather than widening to `string`.

@@ -10,7 +10,7 @@ import { generateVouchers } from "@yourtal/contracts/voucher/mock";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Listing } from "@yourtal/contracts/listing";
 import type { Voucher } from "@yourtal/contracts/voucher";
-import { toIdrMinorUnits } from "@yourtal/contracts/money";
+import { toMinorUnits } from "@yourtal/contracts/money";
 
 /**
  * Seeds the local database from the same mock generators Phase U renders.
@@ -340,10 +340,10 @@ async function seedListings(pool: pg.Pool): Promise<number> {
     const result = await pool.query(
       `INSERT INTO store.listings
          (id, merchant_id, merchant_name, title, description, category,
-          face_value_idr, settlement_value_idr, price_in_points, stock_remaining,
-          stock_total, transferable, partial_redemption_policy, minimum_spend_idr,
-          expires_at, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+          face_value_minor, settlement_value_minor, price_in_points, stock_remaining,
+          stock_total, transferable, partial_redemption_policy, minimum_spend_minor,
+          expires_at, status, currency)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
        ON CONFLICT (id) DO NOTHING`,
       [
         listing.id,
@@ -352,16 +352,17 @@ async function seedListings(pool: pg.Pool): Promise<number> {
         listing.title,
         listing.description,
         listing.category,
-        listing.faceValueIdr,
-        listing.settlementValueIdr,
+        listing.faceValueMinor,
+        listing.settlementValueMinor,
         listing.priceInPoints,
         listing.stockRemaining,
         listing.stockTotal,
         listing.transferable,
         listing.partialRedemptionPolicy,
-        listing.minimumSpendIdr,
+        listing.minimumSpendMinor,
         listing.expiresAt,
         listing.status,
+        listing.currency,
       ],
     );
     written += result.rowCount ?? 0;
@@ -407,10 +408,10 @@ async function seedVouchers(pool: pg.Pool, listings: readonly Listing[]): Promis
       const result = await pool.query(
         `INSERT INTO voucher.vouchers
            (id, listing_id, owner_id, merchant_id, merchant_name, title,
-            face_value_idr, remaining_value_idr, partial_redemption_policy,
-            minimum_spend_idr, transferable, state, void_reason, issued_at,
-            expires_at, location_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+            face_value_minor, remaining_value_minor, partial_redemption_policy,
+            minimum_spend_minor, transferable, state, void_reason, issued_at,
+            expires_at, location_id, currency)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
          ON CONFLICT (id) DO NOTHING`,
         [
           coherent.id,
@@ -419,16 +420,17 @@ async function seedVouchers(pool: pg.Pool, listings: readonly Listing[]): Promis
           coherent.merchantId,
           coherent.merchantName,
           coherent.title,
-          coherent.faceValueIdr,
-          coherent.remainingValueIdr,
+          coherent.faceValueMinor,
+          coherent.remainingValueMinor,
           coherent.partialRedemptionPolicy,
-          coherent.minimumSpendIdr,
+          coherent.minimumSpendMinor,
           coherent.transferable,
           state,
           voidReason,
           coherent.issuedAt,
           coherent.expiresAt,
           coherent.location.id,
+          coherent.currency,
         ],
       );
       written += result.rowCount ?? 0;
@@ -477,16 +479,16 @@ function internalStateOf(status: Voucher["status"]): [string, string | null] {
  * produced. Everything the listing decides comes from the listing; only the
  * voucher's own identity and lifecycle stay generated.
  *
- * `remainingValueIdr` is clamped to the listing's face value because the
+ * `remainingValueMinor` is clamped to the listing's face value because the
  * generator picked its remainder against a face value that no longer
  * applies, and `vouchers_remaining_within_face` would reject it — correctly.
  */
 function againstListing(voucher: Voucher, listing: Listing): Voucher {
-  // Through toIdrMinorUnits, not a bare Math.min: IdrMinorUnits is a Zod
+  // Through toMinorUnits, not a bare Math.min: MinorUnits is a Zod
   // branded type precisely so an arbitrary number cannot become a money
   // value without being parsed. The brand catching this is the brand
   // working, not an inconvenience to cast away.
-  const remaining = toIdrMinorUnits(Math.min(voucher.remainingValueIdr, listing.faceValueIdr));
+  const remaining = toMinorUnits(Math.min(voucher.remainingValueMinor, listing.faceValueMinor));
 
   // The listing's first branch. Any of them would satisfy the composite
   // foreign key; taking the first keeps the seed deterministic.
@@ -503,11 +505,12 @@ function againstListing(voucher: Voucher, listing: Listing): Voucher {
     merchantId: listing.merchantId,
     merchantName: listing.merchantName,
     title: listing.title,
-    faceValueIdr: listing.faceValueIdr,
-    remainingValueIdr:
-      listing.partialRedemptionPolicy === "balance_carrying" ? remaining : listing.faceValueIdr,
+    currency: listing.currency,
+    faceValueMinor: listing.faceValueMinor,
+    remainingValueMinor:
+      listing.partialRedemptionPolicy === "balance_carrying" ? remaining : listing.faceValueMinor,
     partialRedemptionPolicy: listing.partialRedemptionPolicy,
-    minimumSpendIdr: listing.minimumSpendIdr,
+    minimumSpendMinor: listing.minimumSpendMinor,
     transferable: listing.transferable,
   };
 }

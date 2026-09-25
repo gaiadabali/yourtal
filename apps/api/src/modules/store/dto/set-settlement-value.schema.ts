@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createZodDto } from "nestjs-zod";
-import { idrMinorUnitsSchema } from "@yourtal/contracts/money";
+import { minorUnitsSchema } from "@yourtal/contracts/money";
 
 /**
  * Reprices a listing (docs/17 section 2.1). `reason` is required, not
@@ -8,7 +8,7 @@ import { idrMinorUnitsSchema } from "@yourtal/contracts/money";
  * later read and understand, not a bare number change.
  */
 export const setSettlementValueSchema = z.object({
-  newSettlementValueIdr: idrMinorUnitsSchema,
+  newSettlementValueMinor: minorUnitsSchema,
   reason: z.string().min(1).max(500),
 });
 

@@ -5,7 +5,8 @@ import {
   listingStatusSchema,
   partialRedemptionPolicySchema,
 } from "@yourtal/contracts/listing";
-import { idrMinorUnitsSchema, pointsSchema } from "@yourtal/contracts/money";
+import { minorUnitsSchema, pointsSchema } from "@yourtal/contracts/money";
+import { currencySchema } from "@yourtal/contracts/money/value";
 
 /**
  * `merchantId` is the route's `:tenantId`, never a body field — same rule
@@ -27,27 +28,29 @@ export const createListingSchema = z
     description: z.string().min(1).max(500),
     category: listingCategorySchema,
     locationIds: z.array(z.uuid()).min(1),
-    faceValueIdr: idrMinorUnitsSchema,
-    settlementValueIdr: idrMinorUnitsSchema,
+    // Until businesses carry a region, the caller names it; see TASKS.md 1.1.
+    currency: currencySchema,
+    faceValueMinor: minorUnitsSchema,
+    settlementValueMinor: minorUnitsSchema,
     priceInPoints: pointsSchema,
     stockTotal: z.number().int().positive(),
     transferable: z.boolean(),
     partialRedemptionPolicy: partialRedemptionPolicySchema,
-    minimumSpendIdr: idrMinorUnitsSchema.nullable().default(null),
+    minimumSpendMinor: minorUnitsSchema.nullable().default(null),
     expiresAt: z.iso.datetime(),
     status: listingStatusSchema,
     perUserLimit: z.number().int().positive().optional(),
   })
-  .refine((value) => value.settlementValueIdr <= value.faceValueIdr, {
-    message: "settlementValueIdr cannot exceed faceValueIdr",
-    path: ["settlementValueIdr"],
+  .refine((value) => value.settlementValueMinor <= value.faceValueMinor, {
+    message: "settlementValueMinor cannot exceed faceValueMinor",
+    path: ["settlementValueMinor"],
   })
   .refine(
     (value) =>
-      (value.partialRedemptionPolicy === "minimum_spend") === (value.minimumSpendIdr !== null),
+      (value.partialRedemptionPolicy === "minimum_spend") === (value.minimumSpendMinor !== null),
     {
-      message: "minimumSpendIdr must be set if and only if the policy is minimum_spend",
-      path: ["minimumSpendIdr"],
+      message: "minimumSpendMinor must be set if and only if the policy is minimum_spend",
+      path: ["minimumSpendMinor"],
     },
   );
 

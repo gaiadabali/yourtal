@@ -101,7 +101,7 @@ describe("the seed", () => {
         JOIN store.listings l ON l.id = v.listing_id
        WHERE v.batch_id IS NULL
          AND (v.merchant_id <> l.merchant_id
-          OR v.face_value_idr <> l.face_value_idr
+          OR v.face_value_minor <> l.face_value_minor
           OR v.partial_redemption_policy <> l.partial_redemption_policy)`);
 
     expect(incoherent).toBe(0);
@@ -183,14 +183,15 @@ describe("the catalogue constraints hold in Postgres", () => {
     title: "T",
     description: "D",
     category: "food_beverage",
-    face_value_idr: 50_000,
-    settlement_value_idr: 30_000,
+    currency: "IDR",
+    face_value_minor: 50_000,
+    settlement_value_minor: 30_000,
     price_in_points: 5_000,
     stock_remaining: 5,
     stock_total: 10,
     transferable: false,
     partial_redemption_policy: "single_use_forfeit",
-    minimum_spend_idr: null,
+    minimum_spend_minor: null,
     expires_at: "2027-01-01T00:00:00Z",
     status: "available",
     ...over,
@@ -209,7 +210,7 @@ describe("the catalogue constraints hold in Postgres", () => {
     // An economic invariant: settlement above face means the platform pays
     // out more than the voucher was ever worth, on every redemption,
     // silently. docs/09 §3.
-    await expect(insertListing(listing({ settlement_value_idr: 60_000 }))).rejects.toThrow(
+    await expect(insertListing(listing({ settlement_value_minor: 60_000 }))).rejects.toThrow(
       /listings_settlement_within_face/,
     );
   });
@@ -302,11 +303,11 @@ describe("a voucher's branch must be one its listing offers (YT-0502)", () => {
       owner.query(
         `INSERT INTO voucher.vouchers
            (id, listing_id, owner_id, merchant_id, merchant_name, title,
-            face_value_idr, remaining_value_idr, partial_redemption_policy,
-            minimum_spend_idr, transferable, state, issued_at, expires_at, location_id)
+            face_value_minor, remaining_value_minor, partial_redemption_policy,
+            minimum_spend_minor, transferable, state, issued_at, expires_at, location_id, currency)
          VALUES (gen_random_uuid(), $1, gen_random_uuid(),
                  gen_random_uuid(), 'M', 'T', 1000, 1000, 'single_use_forfeit',
-                 NULL, false, 'active', now(), now() + interval '30 days', $2)`,
+                 NULL, false, 'active', now(), now() + interval '30 days', $2, 'IDR')`,
         [mine?.listing_id, someoneElses?.location_id],
       ),
     ).rejects.toThrow(/vouchers_location_is_offered_by_its_listing/);
@@ -331,11 +332,11 @@ describe("a voucher's branch must be one its listing offers (YT-0502)", () => {
       owner.query(
         `INSERT INTO voucher.vouchers
            (id, listing_id, owner_id, merchant_id, merchant_name, title,
-            face_value_idr, remaining_value_idr, partial_redemption_policy,
-            minimum_spend_idr, transferable, state, issued_at, expires_at, location_id)
+            face_value_minor, remaining_value_minor, partial_redemption_policy,
+            minimum_spend_minor, transferable, state, issued_at, expires_at, location_id, currency)
          VALUES ($3, $1, gen_random_uuid(),
                  gen_random_uuid(), 'M', 'T', 1000, 1000, 'single_use_forfeit',
-                 NULL, false, 'active', now(), now() + interval '30 days', $2)
+                 NULL, false, 'active', now(), now() + interval '30 days', $2, 'IDR')
          ON CONFLICT (id) DO NOTHING`,
         [pair?.listing_id, pair?.location_id, probeId],
       ),

@@ -41,13 +41,14 @@ function baseInput(overrides: Partial<CreateListingInput> = {}): CreateListingIn
     description: "A test voucher for the store module's own test suite.",
     category: "food_beverage",
     locationIds: [],
-    faceValueIdr: 5_000_000,
-    settlementValueIdr: 1_500_000,
+    currency: "IDR" as const,
+    faceValueMinor: 5_000_000,
+    settlementValueMinor: 1_500_000,
     priceInPoints: 2_500,
     stockTotal: 10,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
-    minimumSpendIdr: null,
+    minimumSpendMinor: null,
     expiresAt: "2027-01-01T00:00:00.000Z",
     status: "available",
     perUserLimit: undefined,
@@ -113,14 +114,14 @@ describe("public visibility follows lifecycle_state, not existence", () => {
     const locationId = await seedLocation(MERCHANT_A);
     const created = await repo.create(MERCHANT_A, baseInput({ locationIds: [locationId] }));
 
-    // The public view is the merchant view MINUS settlementValueIdr, and this
+    // The public view is the merchant view MINUS settlementValueMinor, and this
     // used to read `toStrictEqual(created)` -- which passed precisely because
     // S was being served to anonymous callers (docs/24 ID-1: S beside
     // priceInPoints publishes the backing rate B by arithmetic).
-    const { settlementValueIdr: _merchantOnly, ...publicView } = created;
+    const { settlementValueMinor: _merchantOnly, ...publicView } = created;
     const found = await repo.findPublicById(created.id);
     expect(found).toStrictEqual(publicView);
-    expect(found).not.toHaveProperty("settlementValueIdr");
+    expect(found).not.toHaveProperty("settlementValueMinor");
   });
 
   it("a paused listing disappears from the public catalogue but stays visible to its owner", async () => {

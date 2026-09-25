@@ -58,7 +58,7 @@ beforeAll(async () => {
   await clearStoreTables(db);
 });
 
-async function seedListing(settlementValueIdr: number) {
+async function seedListing(settlementValueMinor: number) {
   const [location] = await db
     .insert(merchantLocations)
     .values({
@@ -77,13 +77,14 @@ async function seedListing(settlementValueIdr: number) {
     description: "Description.",
     category: "retail",
     locationIds: [location.id],
-    faceValueIdr: 10_000_000,
-    settlementValueIdr,
+    currency: "IDR" as const,
+    faceValueMinor: 10_000_000,
+    settlementValueMinor,
     priceInPoints: 1_000,
     stockTotal: 5,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
-    minimumSpendIdr: null,
+    minimumSpendMinor: null,
     expiresAt: "2027-01-01T00:00:00.000Z",
     status: "available",
     perUserLimit: undefined,
@@ -95,7 +96,7 @@ describe("propose", () => {
     const listing = await seedListing(1_000_000);
     const requester = ownerPrincipal(randomUUID());
     const body = proposeSettlementDecreaseSchema.parse({
-      proposedSettlementValueIdr: 500_000, // 50% cut, material
+      proposedSettlementValueMinor: 500_000, // 50% cut, material
       reason: "Big cut.",
     });
 
@@ -104,7 +105,7 @@ describe("propose", () => {
     expect(proposed.requestedBy).toBe(requester.id);
 
     const unchanged = await listings.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueIdr).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
   });
 
   // YT-0576: the non-material case used to be "a 10% cut, below the 20%
@@ -115,7 +116,7 @@ describe("propose", () => {
     const listing = await seedListing(1_000_000);
     const requester = ownerPrincipal(randomUUID());
     const body = proposeSettlementDecreaseSchema.parse({
-      proposedSettlementValueIdr: 1_100_000,
+      proposedSettlementValueMinor: 1_100_000,
       reason: "Rate went up, not down.",
     });
 
@@ -128,7 +129,7 @@ describe("propose", () => {
     const listing = await seedListing(1_000_000);
     const requester = ownerPrincipal(randomUUID());
     const body = proposeSettlementDecreaseSchema.parse({
-      proposedSettlementValueIdr: 500_000,
+      proposedSettlementValueMinor: 500_000,
       reason: "First cut.",
     });
     await controllerFor(requester).propose(TENANT, listing.id, body, request);
@@ -138,7 +139,7 @@ describe("propose", () => {
         TENANT,
         listing.id,
         proposeSettlementDecreaseSchema.parse({
-          proposedSettlementValueIdr: 400_000,
+          proposedSettlementValueMinor: 400_000,
           reason: "Second cut.",
         }),
         request,
@@ -157,7 +158,7 @@ describe("approve", () => {
       TENANT,
       listing.id,
       proposeSettlementDecreaseSchema.parse({
-        proposedSettlementValueIdr: 500_000,
+        proposedSettlementValueMinor: 500_000,
         reason: "Big cut.",
       }),
       request,
@@ -169,10 +170,10 @@ describe("approve", () => {
       proposed.id,
       request,
     );
-    expect(approved.updated.settlementValueIdr).toBe(500_000);
+    expect(approved.updated.settlementValueMinor).toBe(500_000);
 
     const persisted = await listings.findOwnedById(TENANT, listing.id);
-    expect(persisted?.settlementValueIdr).toBe(500_000);
+    expect(persisted?.settlementValueMinor).toBe(500_000);
   });
 
   it("SELF-APPROVAL: the requester cannot approve their own request, even against a real PDP decision", async () => {
@@ -183,7 +184,7 @@ describe("approve", () => {
       TENANT,
       listing.id,
       proposeSettlementDecreaseSchema.parse({
-        proposedSettlementValueIdr: 500_000,
+        proposedSettlementValueMinor: 500_000,
         reason: "Self-approval attempt.",
       }),
       request,
@@ -197,7 +198,7 @@ describe("approve", () => {
 
     // Left no trace of having half-happened.
     const unchanged = await listings.findOwnedById(TENANT, listing.id);
-    expect(unchanged?.settlementValueIdr).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
   });
 
   it("a non-owner/admin cannot approve at all", async () => {
@@ -217,7 +218,7 @@ describe("approve", () => {
       TENANT,
       listing.id,
       proposeSettlementDecreaseSchema.parse({
-        proposedSettlementValueIdr: 500_000,
+        proposedSettlementValueMinor: 500_000,
         reason: "Big cut.",
       }),
       request,

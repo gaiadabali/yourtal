@@ -1,3 +1,4 @@
+import type { Currency } from "@yourtal/contracts/money/currency";
 import type { SettlementValueChange } from "./listing.repository";
 
 export type SettlementDecreaseRequestState = "pending" | "approved";
@@ -6,8 +7,9 @@ export interface SettlementDecreaseRequest {
   readonly id: string;
   readonly listingId: string;
   readonly requestedBy: string;
-  readonly currentSettlementValueIdr: number;
-  readonly proposedSettlementValueIdr: number;
+  readonly currency: Currency;
+  readonly currentSettlementValueMinor: number;
+  readonly proposedSettlementValueMinor: number;
   readonly reason: string | null;
   readonly state: SettlementDecreaseRequestState;
   readonly approvedBy: string | null;
@@ -18,8 +20,10 @@ export interface SettlementDecreaseRequest {
 export interface CreateSettlementDecreaseRequestInput {
   readonly listingId: string;
   readonly requestedBy: string;
-  readonly currentSettlementValueIdr: number;
-  readonly proposedSettlementValueIdr: number;
+  /** The listing's own currency; the table's foreign key refuses any other. */
+  readonly currency: Currency;
+  readonly currentSettlementValueMinor: number;
+  readonly proposedSettlementValueMinor: number;
   readonly reason: string;
 }
 

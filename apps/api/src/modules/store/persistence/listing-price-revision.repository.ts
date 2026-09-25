@@ -1,8 +1,8 @@
 export interface ListingPriceRevisionRecord {
   readonly id: string;
   readonly listingId: string;
-  readonly previousSettlementValueIdr: number;
-  readonly newSettlementValueIdr: number;
+  readonly previousSettlementValueMinor: number;
+  readonly newSettlementValueMinor: number;
   readonly previousPriceInPoints: number;
   readonly newPriceInPoints: number | null;
   readonly requestedBy: string;

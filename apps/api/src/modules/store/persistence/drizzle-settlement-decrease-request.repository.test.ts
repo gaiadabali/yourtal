@@ -27,7 +27,7 @@ beforeAll(async () => {
   await clearStoreTables(db);
 });
 
-async function seedListing(settlementValueIdr: number) {
+async function seedListing(settlementValueMinor: number) {
   const [location] = await db
     .insert(merchantLocations)
     .values({
@@ -46,13 +46,14 @@ async function seedListing(settlementValueIdr: number) {
     description: "Description.",
     category: "retail",
     locationIds: [location.id],
-    faceValueIdr: 10_000_000,
-    settlementValueIdr,
+    currency: "IDR" as const,
+    faceValueMinor: 10_000_000,
+    settlementValueMinor,
     priceInPoints: 1_000,
     stockTotal: 5,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
-    minimumSpendIdr: null,
+    minimumSpendMinor: null,
     expiresAt: "2027-01-01T00:00:00.000Z",
     status: "available",
     perUserLimit: undefined,
@@ -65,8 +66,9 @@ describe("create + findPendingForListing + findById", () => {
     const created = await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
-      currentSettlementValueIdr: 1_000_000,
-      proposedSettlementValueIdr: 500_000,
+      currency: "IDR" as const,
+      currentSettlementValueMinor: 1_000_000,
+      proposedSettlementValueMinor: 500_000,
       reason: "Big cut.",
     });
 
@@ -78,7 +80,7 @@ describe("create + findPendingForListing + findById", () => {
     expect(pending?.id).toBe(created.id);
 
     const byId = await requests.findById(listing.id, created.id);
-    expect(byId?.proposedSettlementValueIdr).toBe(500_000);
+    expect(byId?.proposedSettlementValueMinor).toBe(500_000);
   });
 
   it("findPendingForListing is null once nothing is pending for that listing", async () => {
@@ -93,8 +95,9 @@ describe("a second pending request for the same listing is unrepresentable", () 
     await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
-      currentSettlementValueIdr: 1_000_000,
-      proposedSettlementValueIdr: 500_000,
+      currency: "IDR" as const,
+      currentSettlementValueMinor: 1_000_000,
+      proposedSettlementValueMinor: 500_000,
       reason: "First cut.",
     });
 
@@ -105,8 +108,9 @@ describe("a second pending request for the same listing is unrepresentable", () 
       requests.create({
         listingId: listing.id,
         requestedBy: REQUESTER,
-        currentSettlementValueIdr: 1_000_000,
-        proposedSettlementValueIdr: 600_000,
+        currency: "IDR" as const,
+        currentSettlementValueMinor: 1_000_000,
+        proposedSettlementValueMinor: 600_000,
         reason: "Second cut, while the first is still pending.",
       }),
     ).rejects.toThrow();
@@ -119,14 +123,15 @@ describe("approve", () => {
     const created = await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
-      currentSettlementValueIdr: 1_000_000,
-      proposedSettlementValueIdr: 500_000,
+      currency: "IDR" as const,
+      currentSettlementValueMinor: 1_000_000,
+      proposedSettlementValueMinor: 500_000,
       reason: "Big cut.",
     });
 
     const change = await requests.approve(MERCHANT, listing.id, created.id, APPROVER);
-    expect(change?.updated.settlementValueIdr).toBe(500_000);
-    expect(change?.previous.settlementValueIdr).toBe(1_000_000);
+    expect(change?.updated.settlementValueMinor).toBe(500_000);
+    expect(change?.previous.settlementValueMinor).toBe(1_000_000);
 
     const resolved = await requests.findById(listing.id, created.id);
     expect(resolved?.state).toBe("approved");
@@ -134,7 +139,7 @@ describe("approve", () => {
     expect(resolved?.approvedAt).not.toBeNull();
 
     const revisions = await priceRevisions.listForListing(listing.id);
-    const linked = revisions.find((row) => row.newSettlementValueIdr === 500_000);
+    const linked = revisions.find((row) => row.newSettlementValueMinor === 500_000);
     expect(linked?.requestedBy).toBe(REQUESTER);
   });
 
@@ -143,8 +148,9 @@ describe("approve", () => {
     const created = await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
-      currentSettlementValueIdr: 1_000_000,
-      proposedSettlementValueIdr: 500_000,
+      currency: "IDR" as const,
+      currentSettlementValueMinor: 1_000_000,
+      proposedSettlementValueMinor: 500_000,
       reason: "Self-approval attempt.",
     });
 
@@ -159,7 +165,7 @@ describe("approve", () => {
     expect(stillPending?.approvedBy).toBeNull();
 
     const unchanged = await listings.findOwnedById(MERCHANT, listing.id);
-    expect(unchanged?.settlementValueIdr).toBe(1_000_000);
+    expect(unchanged?.settlementValueMinor).toBe(1_000_000);
   });
 
   it("a second approval attempt (already resolved) also matches no row", async () => {
@@ -167,8 +173,9 @@ describe("approve", () => {
     const created = await requests.create({
       listingId: listing.id,
       requestedBy: REQUESTER,
-      currentSettlementValueIdr: 1_000_000,
-      proposedSettlementValueIdr: 500_000,
+      currency: "IDR" as const,
+      currentSettlementValueMinor: 1_000_000,
+      proposedSettlementValueMinor: 500_000,
       reason: "First approval.",
     });
     const first = await requests.approve(MERCHANT, listing.id, created.id, APPROVER);
@@ -179,7 +186,7 @@ describe("approve", () => {
 
     // The value from the first approval is not double-applied or reverted.
     const listingNow = await listings.findOwnedById(MERCHANT, listing.id);
-    expect(listingNow?.settlementValueIdr).toBe(500_000);
+    expect(listingNow?.settlementValueMinor).toBe(500_000);
   });
 
   it("a nonexistent request matches no row", async () => {

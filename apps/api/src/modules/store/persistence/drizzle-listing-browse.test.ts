@@ -33,13 +33,14 @@ async function seededListing(
     description: "Default description.",
     category: "food_beverage",
     locationIds: [location.id],
-    faceValueIdr: 1_000_000,
-    settlementValueIdr: 300_000,
+    currency: "IDR" as const,
+    faceValueMinor: 1_000_000,
+    settlementValueMinor: 300_000,
     priceInPoints: 500,
     stockTotal: 10,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
-    minimumSpendIdr: null,
+    minimumSpendMinor: null,
     expiresAt: "2027-01-01T00:00:00.000Z",
     status: "available",
     perUserLimit: undefined,
@@ -107,21 +108,21 @@ describe("browsePublic filters", () => {
   // unauthenticated.
   //
   // priceInPoints MUST be public -- it is what the user pays. So publishing
-  // settlementValueIdr next to it publishes the backing rate by arithmetic:
+  // settlementValueMinor next to it publishes the backing rate by arithmetic:
   // points_price = (S / B) x demand_multiplier, and the multiplier is pinned
   // at 1.0 for launch (YT-0130), so B = S / priceInPoints exactly. Not an
   // approximation, and not recoverable only in aggregate -- one row is enough.
   //
-  // faceValueIdr stays public deliberately: it is the voucher's retail value,
+  // faceValueMinor stays public deliberately: it is the voucher's retail value,
   // the thing a shopper is entitled to compare against, and it reveals a
   // discount rather than what the platform holds per point.
-  it("never exposes settlementValueIdr -- S with priceInPoints publishes B (ID-1)", async () => {
+  it("never exposes settlementValueMinor -- S with priceInPoints publishes B (ID-1)", async () => {
     await seededListing(MERCHANT_COFFEE, { title: "Rate leak probe" });
 
     const page = await repo.browsePublic({ limit: 100 });
     expect(page.listings.length).toBeGreaterThan(0);
     for (const listing of page.listings) {
-      expect(listing).not.toHaveProperty("settlementValueIdr");
+      expect(listing).not.toHaveProperty("settlementValueMinor");
     }
   });
 

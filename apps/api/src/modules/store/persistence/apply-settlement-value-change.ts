@@ -9,7 +9,7 @@ import type { SettlementValueChange } from "./listing.repository";
 type Db = Pick<AppDb, "select" | "update" | "insert">;
 
 /**
- * The one place `store.listings.settlement_value_idr` is written and its
+ * The one place `store.listings.settlement_value_minor` is written and its
  * `store.listing_price_revision` audit row recorded, in the SAME
  * transaction. Shared by two callers:
  *
@@ -34,7 +34,7 @@ export async function applySettlementValueChange(
   db: Db,
   merchantId: string,
   listingId: string,
-  newSettlementValueIdr: number,
+  newSettlementValueMinor: number,
   requestedBy: string,
   reason: string,
   settlementDecreaseRequestId: string | null,
@@ -50,10 +50,10 @@ export async function applySettlementValueChange(
   if (previous === null) return null;
 
   // price_in_points is deliberately untouched -- see this module's
-  // migration header. Only settlement_value_idr moves here.
+  // migration header. Only settlement_value_minor moves here.
   const [updatedRow] = await db
     .update(listings)
-    .set({ settlementValueIdr: newSettlementValueIdr })
+    .set({ settlementValueMinor: newSettlementValueMinor })
     .where(and(eq(listings.id, listingId), eq(listings.merchantId, merchantId)))
     .returning();
   if (updatedRow === undefined) return null;
@@ -63,8 +63,9 @@ export async function applySettlementValueChange(
 
   await db.insert(listingPriceRevisions).values({
     listingId,
-    previousSettlementValueIdr: existing.settlementValueIdr,
-    newSettlementValueIdr,
+    currency: existing.currency,
+    previousSettlementValueMinor: existing.settlementValueMinor,
+    newSettlementValueMinor,
     previousPriceInPoints: existing.priceInPoints,
     newPriceInPoints: null,
     requestedBy,

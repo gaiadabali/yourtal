@@ -82,6 +82,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
+| 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Setting up; then 8.1.a server side, 8.2.d, 8.3.b |
 
 ## Decisions for the founder
 
@@ -128,6 +129,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F23** | Should Phase 1 get more agents? | **Add one when 1.1 merges.** A third agent takes 1.2.f (per-region settings) in its own helper worktree; agent A does the rest of 1.2, agent B does 1.3.b then 1.4. Not before 1.1, since everything waits on it. |
 | **F25** | Add another Phase 1 agent to speed things up | **Yes: agent D takes 1.7** (web ↔ API plumbing) in helper `yourtal-p1-c` now. Its 1.7.a–d need only the session cookie from 1.4; the 1.7.e Check waits for 1.5. Agent B keeps only 1.6. |
 | **F26** | Phase 11 was asked to start while Phase 7 (its gate) had not begun and all 3 slots were busy | **Start its early slice now**, like F21, in helper `yourtal-p11` (`phase/11`): only what needs no Phase 7. That is 11.3.a (trust pages, 404, OG cards) and the 11.3.b robots/sitemap fixes, `llms.txt` and staging `noindex`. `VideoObject` JSON-LD, 11.1 and 11.2 wait for 7.7. |
+| **F27** | Phase 8 was asked to start while its gates (Phases 4 and 5) were unfinished | **Start an early slice now** in helper `yourtal-p8` (`phase/8`, slot 8): 8.3.b the merchant SDK against the 4.6.d signing spec, 8.2.d the merchant copy into `messages/*/merchant.json`, and 8.1.a's server side (device record, pairing code, hashed credential, argon2id PIN in `apps/api` devices). The Studio screen, the device principal (8.1.b, needs 1.5) and everything else wait. |
 
 **F12 defaults**, per region (AU / ID):
 

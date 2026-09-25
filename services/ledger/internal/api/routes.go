@@ -75,6 +75,8 @@ func (a *API) Routes() chi.Router {
 	r.Post("/burns", a.burnForVoucher)
 	r.Post("/burns/get", a.getBurn)
 	r.Post("/burns/reinstate", a.reinstateBurn)
+	r.Post("/releases/unnotified", a.unnotifiedReleases)
+	r.Post("/releases/notified", a.releasesNotified)
 
 	r.Post("/wallet/balance", a.balance)
 	r.Post("/wallet/history", a.history)

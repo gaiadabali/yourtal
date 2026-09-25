@@ -172,6 +172,11 @@ CREATE TABLE ledger.grant_release (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE ledger.release_notice (
+  grant_id   text        PRIMARY KEY REFERENCES ledger.grant_release (grant_id),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE ledger.quote (
   id               uuid        PRIMARY KEY,
   region           text        NOT NULL,

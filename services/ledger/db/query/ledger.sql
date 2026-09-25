@@ -370,3 +370,21 @@ UPDATE ledger.listing_price
 SET price_points = sqlc.arg(price_points), backing_rate_id = sqlc.arg(rate_id), computed_at = now()
 WHERE listing_id = sqlc.arg(listing_id) AND settlement_minor = sqlc.arg(settlement_minor)
   AND backing_rate_id = sqlc.arg(priced_rate_id);
+
+-- name: ListUnnotifiedReleases :many
+-- 4.4.g: held releases the worker has not yet announced. A release in the
+-- grant's own transaction (tier 3, no holdback) was never locked, so it is
+-- not an unlock: same now(), same created_at.
+SELECT g.id, g.user_id, g.region::text AS region, g.points, r.created_at AS unlocked_at
+FROM ledger.grant_release r
+JOIN ledger.grant g ON g.id = r.grant_id
+LEFT JOIN ledger.release_notice n ON n.grant_id = r.grant_id
+WHERE n.grant_id IS NULL AND r.created_at > g.created_at AND g.region IS NOT NULL
+ORDER BY r.created_at, r.grant_id
+LIMIT $1;
+
+-- name: InsertReleaseNotices :execrows
+-- Unknown grant ids are ignored, and a repeat is a no-op.
+INSERT INTO ledger.release_notice (grant_id)
+SELECT r.grant_id FROM ledger.grant_release r WHERE r.grant_id = ANY(sqlc.arg(grant_ids)::text[])
+ON CONFLICT DO NOTHING;

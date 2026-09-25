@@ -1005,6 +1005,21 @@ func (q *Queries) InsertQuote(ctx context.Context, arg InsertQuoteParams) (Ledge
 	return i, err
 }
 
+const insertReleaseNotices = `-- name: InsertReleaseNotices :execrows
+INSERT INTO ledger.release_notice (grant_id)
+SELECT r.grant_id FROM ledger.grant_release r WHERE r.grant_id = ANY($1::text[])
+ON CONFLICT DO NOTHING
+`
+
+// Unknown grant ids are ignored, and a repeat is a no-op.
+func (q *Queries) InsertReleaseNotices(ctx context.Context, grantIds []string) (int64, error) {
+	result, err := q.db.Exec(ctx, insertReleaseNotices, grantIds)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const insertTransfer = `-- name: InsertTransfer :one
 INSERT INTO ledger.transfer (id, idempotency_key, reason_code, reverses, request_hash)
 VALUES ($1, $2, $3, $4, $5)
@@ -1307,6 +1322,53 @@ func (q *Queries) ListUnlockedGrants(ctx context.Context, limit int32) ([]ListUn
 	for rows.Next() {
 		var i ListUnlockedGrantsRow
 		if err := rows.Scan(&i.ID, &i.UserID, &i.Points); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUnnotifiedReleases = `-- name: ListUnnotifiedReleases :many
+SELECT g.id, g.user_id, g.region::text AS region, g.points, r.created_at AS unlocked_at
+FROM ledger.grant_release r
+JOIN ledger.grant g ON g.id = r.grant_id
+LEFT JOIN ledger.release_notice n ON n.grant_id = r.grant_id
+WHERE n.grant_id IS NULL AND r.created_at > g.created_at AND g.region IS NOT NULL
+ORDER BY r.created_at, r.grant_id
+LIMIT $1
+`
+
+type ListUnnotifiedReleasesRow struct {
+	ID         string
+	UserID     string
+	Region     string
+	Points     int64
+	UnlockedAt pgtype.Timestamptz
+}
+
+// 4.4.g: held releases the worker has not yet announced. A release in the
+// grant's own transaction (tier 3, no holdback) was never locked, so it is
+// not an unlock: same now(), same created_at.
+func (q *Queries) ListUnnotifiedReleases(ctx context.Context, limit int32) ([]ListUnnotifiedReleasesRow, error) {
+	rows, err := q.db.Query(ctx, listUnnotifiedReleases, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUnnotifiedReleasesRow
+	for rows.Next() {
+		var i ListUnnotifiedReleasesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Region,
+			&i.Points,
+			&i.UnlockedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -203,6 +203,11 @@ type LedgerQuoteLock struct {
 	LockedAt pgtype.Timestamptz
 }
 
+type LedgerReleaseNotice struct {
+	GrantID   string
+	CreatedAt pgtype.Timestamptz
+}
+
 type LedgerTransfer struct {
 	ID             string
 	IdempotencyKey string

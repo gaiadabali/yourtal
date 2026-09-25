@@ -132,3 +132,14 @@ func TestMiddleware(t *testing.T) {
 		t.Fatalf("signed: code %d caller %q body %q", signed.Code, gotCaller, gotBody)
 	}
 }
+
+// The same vector is in packages/contracts' service-signature test, so the
+// TypeScript signer and this verifier cannot drift apart.
+func TestSharedVector(t *testing.T) {
+	got := Sign([]byte("test-only-ledger-service-secret-32b"), "worker", "n-1", "POST",
+		"/v1/releases/unnotified", []byte(`{"limit":100}`), t0)
+	want := "t=1790000000,c=worker,n=n-1,v1=00b1d876b40f2a0b6df76f9a84d1c5a5232e2305c8458db7b6d010e2fc117a2b"
+	if got != want {
+		t.Fatalf("Sign = %s, want %s", got, want)
+	}
+}

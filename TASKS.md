@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 6/8 | 43/47 | `█████████░`  91% |
+| **Phase 0** Reset | A | ⛔ blocked | 7/8 | 46/47 | `██████████`  98% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **6/82** | **43/361** | `█░░░░░░░░░`  12% |
+| **All** | | | **7/82** | **46/361** | `█░░░░░░░░░`  13% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -55,7 +55,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 
 | Wave | Phase (one session each) | Starts when | Size |
 | --- | --- | --- | --- |
-| 1 | **0** Reset | now (in progress) | ~2.5d |
+| 1 | **0** Reset | ✅ done 2026-09-25 (only 0.4.h is left, waiting for 3.1.d) | ~2.5d |
 | 1 | **3** Design language | 0.2.b ✅. It needs no database. Until 0.3, 0.5 and 0.7 are merged it stays out of `apps/web/features/**`, `app/(app)/**`, `app/(merchant)/**` and the existing e2e specs, and its first merge waits for 0.4. | ~6d, plus your F3 pick |
 | 2 | **1** Identity, contracts & plumbing | Phase 0 ✅ | ~4d |
 | 3 | **4** The bank is correct | Phase 1 ✅ | ~9d |
@@ -78,9 +78,9 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **0** Reset | 2026-09-25 | 0.2, 0.3, 0.5, 0.6, 0.7 ✅. Now: 0.4.f, 0.8.f, 0.8.i on three helper worktrees (`yourtal-p0-biz`, `-deps`, `-hyg`); then 0.4.g, 0.8.g, 0.8.j (session yourtal-74) |
+| 1 | `yourtal-1` | — free | — | Phase 0 done 2026-09-25 (0.4.h waits for 3.1.d). Next: Phase 1 |
 | 2 | `yourtal-2` | — free | — | Phase 3 can start now (0.2.b ✅); worktree, `.env` and deps are ready |
-| 3 | `yourtal-3` | — free | — | Next: Phase 1, once Phase 0 ✅ |
+| 3 | `yourtal-3` | — free | — | Phase 1 can start now (Phase 0 ✅) |
 
 ## Decisions for the founder
 
@@ -299,7 +299,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - `tsc` is clean in web and api.
     - In `yourtal-1`: `set -a; . ./.env; set +a; (cd services/voucher && go test -count=1 -p 1 ./...) && (cd services/ledger && go test -count=1 -p 1 ./...)` passes. Go does not read `.env`; without this the tests use the unmigrated shared database. The pricing and reward `engine_test.go` still write to `yourtal` until 0.4.b, and that is accepted.
     - After the fast-forward, from the main checkout: `pnpm db:migrate && docker compose up -d --build --force-recreate --wait voucher-keygen voucher`, then voucher `/healthz` returns 200.
-- [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3 — 🔄 slot 1
+- [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3 — ⛔ 0.4.a–g ✅ 2026-09-25 0758d48; only 0.4.h is left, and it waits for 3.1.d
   - [x] 0.4.a Add `pnpm check`: line endings, format, typecheck, lint, and the unit tests that need no services. It should finish in under 3 minutes. `pnpm verify` becomes `check` plus the database, Go and Cerbos suites.
   - [x] 0.4.b Every Go and TypeScript database suite runs against a `yourtal_test_*` database. A guard fails any test helper whose URL names a dev database; `engine_test.go:26` hard-codes one today. Once this is in, the Go tests stop writing fake AUD rates and coverage fixtures into dev data.
   - [x] 0.4.c Fix what is red today:
@@ -320,7 +320,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - CI and dev use Node 24 LTS: add `.nvmrc`, set `engines` to `>=24`, and use `node-version-file`. Check the Helios Node major in 2.1.
   - [x] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-1`, merge them; otherwise record them here as ✂️ with the reason.
   - [ ] 0.4.h Once 3.1.d adds `pnpm --filter @yourtal/web test:rendered`, run it in `pnpm verify` and in `integration.yml` (split from 0.4.d) — ⛔ 3.1.d
-  - [ ] 0.4.g **Check:** every workflow is green on `main`, `pnpm check` is green in all three worktrees, and no workflow log shows a Node 20 deprecation warning.
+  - [x] 0.4.g **Check:** every workflow is green on `main`, `pnpm check` is green in all three worktrees, and no workflow log shows a Node 20 deprecation warning.
 - [x] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3 — ✅ 2026-09-25 3d166a2
   - [x] 0.5.a Set `DEFAULT_REGION = "AU"` in `apps/web/features/region/get-region.ts:11`, and update `region-cookie-roundtrip.test.ts`.
   - [x] 0.5.b The merchant layout's `lang` comes from the device binding's locale, defaulting to `en-AU`, instead of the hard-coded `id-ID` at `app/(merchant)/layout.tsx:44`.
@@ -345,7 +345,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - Unify `MAX_SAFE_AMOUNT_MINOR` into one constant.
   - [x] 0.7.c Convert every IDR literal from sen to Rupiah across contracts mocks, `apps/web` fixtures, the seed, and Go ledger and voucher tests (and the `price_test.go` comments). Remove the IDR defaults and fallbacks from `packages/drivers` (`payments.ts:122,194`, `disbursement.ts:69`, `declaredMinorUnitExponent`).
   - [x] 0.7.d **Check:** a seeded listing with S = Rp 54,000 stores 54000, shows face value "Rp54.000", and costs 9,000 pts.
-- [ ] **0.8 Clean stack: security fixes now, latest versions once the gate is green** · needs: 0.1 (0.8.f needs 0.4) — 🔄 A
+- [x] **0.8 Clean stack: security fixes now, latest versions once the gate is green** · needs: 0.1 (0.8.f needs 0.4) — ✅ 2026-09-25 0758d48
   - [x] 0.8.a npm advisories (GitHub dependency graph and `pnpm audit`, 7 found):
     - remove the stale `@lhci/cli` devDependency, which carries 6 of them (extract-zip, tmp, uuid), and run it through `pnpm dlx @lhci/cli@0.15.1` in `perf-budget.yml`;
     - override `browserslist@<4.28.7` → 4.29.0, since `@serwist/next` pins the vulnerable 4.28.6 (prod);
@@ -362,7 +362,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - Remove Zitadel (critical CVE, unused).
     - Tag the distroless runtime (`static-debian12:nonroot@…`) so Dependabot can track it.
   - [x] 0.8.e `.github/dependabot.yml`: npm, gomod (both services and the contracts Go module), docker, docker-compose and github-actions. Weekly and grouped, with a 7-day cooldown so it never proposes what `minimumReleaseAge` refuses.
-  - [ ] 0.8.f Latest versions, after 0.4 is green:
+  - [x] 0.8.f Latest versions, after 0.4 is green:
     - next and `@next/*` 16.3.6; next-intl 4.14.6 or later; `@nestjs/*` 12.1.0; drizzle-orm 0.45.3; pg-boss 12.34.0; `@aws-sdk/client-s3`; lucide-react 1.48.0; jsdom 30.1.1; turbo 2.11.3 or later; typescript-eslint 8.70.1; prettier 3.9.9 (then run format); knip 6.38.0;
     - pin `postgres:17.11`, `valkey:8.1.10`, cerbos 0.55.0 and alpine 3.24 by digest;
     - atlas: pin `1.3.3`, the real version (the current pin is a mislabelled canary);
@@ -387,7 +387,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - add `services/{ledger,voucher}/.dockerignore`;
     - add a `sqlc diff` step to CI;
     - delete the dead `.npmrc` keys that pnpm 11 ignores.
-  - [ ] 0.8.j **Check:**
+  - [x] 0.8.j **Check:**
     - `pnpm audit` and `govulncheck` report nothing;
     - GitHub's dependency graph shows none of the versions with advisories;
     - `docker compose pull` succeeds;
@@ -1249,6 +1249,8 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · A · Phase 0 done: every workflow green on `main`, 0 open GitHub alerts, `pnpm verify` green; only 0.4.h is left, waiting for 3.1.d · 0758d48
+- 2026-09-25 · A · 0.8 Clean stack: latest secure versions, images pinned by digest, atlas 1.3.3, openapi-generator 7.25.0, 0 advisories · 0758d48
 - 2026-09-25 · A · 0.7 IDR is whole Rupiah: exact data migration (refuses to round), exponent 0, literals converted, drivers declare their unit · 76ac899
 - 2026-09-25 · A · 0.6 The docs tell the current story: README, docs/16 section U, docs/24–25 on main and amended, and a sweep of 11 docs · 3a097c2
 - 2026-09-25 · A · 0.5 A first visit is English: AU by default, merchant `lang` from the device, player and earn-board copy from the catalogues · 3d166a2

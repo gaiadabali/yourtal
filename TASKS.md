@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 21/44 | `█████░░░░░`  48% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 23/44 | `█████░░░░░`  52% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 22/32 | `███████░░░`  69% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 22/52 | `████░░░░░░`  42% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **16/82** | **111/366** | `███░░░░░░░`  30% |
+| **All** | | | **16/82** | **113/366** | `███░░░░░░░`  31% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -466,7 +466,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.3.d `apps/api/src/shared/testing/session-for.ts` (register + login → cookie) for everyone's tests. Until 1.5.a lands it **also returns the matching `x-yt-*` headers**, so a test passes both before and after 1.5.a. The boot tests move onto it in 1.5.a.
   - [x] 1.3.e **Check:** a new job file is picked up without editing any other file, and a new route passes route-drift once it is added to its area's registry. Verified: `apps/worker/src/job-loader.test.ts` adds `second.job.ts` next to `real.job.ts` with no other file touched; `packages/contracts/src/openapi/route-drift.test.ts` passes for the whole `apps/api` route set against the concatenated `route-registry.{a,b,c}.ts`.
   - [ ] 1.3.f (requested by 4) `pnpm --filter @yourtal/db test` is red on `main` since 199958e: `seed.test.ts` fails 3 tests ("is idempotent" hits `question_option_question_id_fkey` in `seed/studio.ts:244`, plus the question-bank 3x and chapter checks). `pnpm check` does not run this suite, so the merge gate stayed green.
-- [ ] **1.4 Accounts and profile** · needs: 1.1 — 🔄 slot 3
+- [ ] **1.4 Accounts and profile** · needs: 1.1 — 🔄 slot 3 — b, c merged (beea3ce, b1bb6fd); a, d merged as a WIP checkpoint (8196a94), still being verified; e, f open
   - [ ] 1.4.a Add a migration for `identity.user_profile` with these fields:
     - `region` AU | ID, immutable after signup;
     - `display_locale`, defaulting to `en-AU` and independent of region;
@@ -475,13 +475,13 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - `trust_tier` 0–3, `suspended_at`.
     
     `age_band` is **computed when read** from the date of birth, never stored.
-  - [ ] 1.4.b Age policy in `packages/jurisdiction`: add `minimumAgeWithParentalConsentYears: 13` beside `minimumAgeYears: 18`, keeping the strict schema defaults (21 / 21). Add a `TEEN_ACCOUNTS` flag to `apps/api/src/config`, **default false everywhere**; only 12.1 switches it on for staging.
+  - [x] 1.4.b Age policy in `packages/jurisdiction`: add `minimumAgeWithParentalConsentYears: 13` beside `minimumAgeYears: 18`, keeping the strict schema defaults (21 / 21). Add a `TEEN_ACCOUNTS` flag to `apps/api/src/config`, **default false everywhere**; only 12.1 switches it on for staging.
     - Flag off: refuse under 18.
     - Flag on: 13–17 require `guardianEmail` and get `pending`.
     - Under 13: a neutral "You can't create an account yet", with no age stated, the date of birth discarded, and a 24 h cookie blocking retry.
     
     Update `policy-query.test.ts`.
-  - [ ] 1.4.c `POST /api/auth/register` takes region, locale, display name, date of birth, timezone and, when needed, guardian email. It returns a session.
+  - [x] 1.4.c `POST /api/auth/register` takes region, locale, display name, date of birth, timezone and, when needed, guardian email. It returns a session.
   - [ ] 1.4.d `apps/api/src/modules/identity/me.controller.ts` provides `GET /api/me` (profile, age band, business memberships, staff roles) and `PATCH /api/me` (display name, locale). These are root routes only; B's `me` module owns the sub-routes and C's `business` module owns `/api/me/businesses`.
   - [ ] 1.4.e Email verification actually stores `verified_at`. Today it stores nothing (`auth.service.ts:284-308`).
   - [ ] 1.4.f (requested by B for 5.4.b) DSAR handlers for `identity.user_profile`, credentials and sessions, registered with `dsar-orchestrator`.

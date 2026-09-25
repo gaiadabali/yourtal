@@ -20,9 +20,8 @@
 // The shape below is docs/13a section 7's: chi, one httpx pair for every
 // response, slog injected rather than global, and the middleware order
 // `RequestID -> ClientIP -> ... -> recover -> timeout -> auth -> Cerbos ->
-// idempotency -> module`. The last three are not here yet; auth and Cerbos
-// arrive with the service's first authenticated route, and idempotency has
-// a shared table waiting for it (platform.idempotency).
+// idempotency -> module`. Auth is internal/serviceauth on /v1: only apps/api
+// and apps/worker, signing with LEDGER_SERVICE_SECRET, may call it.
 package main
 
 import (
@@ -46,6 +45,7 @@ import (
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/proof"
+	"github.com/yourtal/services/ledger/internal/serviceauth"
 )
 
 const (
@@ -161,9 +161,27 @@ func run(logger *slog.Logger) error {
 		httpx.WriteJSON(w, logger, http.StatusOK, map[string]string{"status": "ready"})
 	})
 
-	if pool != nil {
+	// Every /v1 route is behind service auth. No secret, or a short one, means
+	// /v1 refuses everything: fail closed, never open.
+	auth, authErr := serviceauth.New([]byte(os.Getenv("LEDGER_SERVICE_SECRET")))
+	if authErr != nil {
+		logger.Warn("LEDGER_SERVICE_SECRET is missing or too short: /v1 refuses every call", "error", authErr)
+	}
+
+	if pool != nil && auth != nil {
 		module := api.New(logger, ledger.New(pool), pricing.New(pool))
-		router.Mount("/v1", module.Routes())
+		router.Route("/v1", func(r chi.Router) {
+			r.Use(auth.Middleware(logger))
+			r.Mount("/", module.Routes())
+		})
+	} else if pool != nil {
+		router.Route("/v1", func(r chi.Router) {
+			r.HandleFunc("/*", func(w http.ResponseWriter, _ *http.Request) {
+				httpx.WriteError(w, logger, http.StatusServiceUnavailable,
+					"api_error", "service_auth_not_configured",
+					"LEDGER_SERVICE_SECRET is not set, so no caller can be authenticated")
+			})
+		})
 	} else {
 		router.Route("/v1", func(r chi.Router) {
 			r.HandleFunc("/*", func(w http.ResponseWriter, _ *http.Request) {

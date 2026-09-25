@@ -2,6 +2,7 @@ package merchantauth
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"log/slog"
@@ -16,6 +17,10 @@ import (
 	"github.com/yourtal/services/voucher/internal/keyring"
 	"github.com/yourtal/services/voucher/internal/store/sqlcgen"
 )
+
+// IdempotencyHeader is signed with the request, so a replay cannot swap it.
+// The same header internal/idempotency reads.
+const IdempotencyHeader = "Idempotency-Key"
 
 // maxBodyBytes bounds what Middleware will read before hashing it into a
 // signature check. Verify's canonical string is built from a full read of
@@ -119,9 +124,28 @@ func (v *Verifier) Middleware(logger *slog.Logger) func(http.Handler) http.Handl
 				return
 			}
 
-			if err := Verify(secret, header, r.Method, r.URL.Path, body, v.now()); err != nil {
+			if err := Verify(secret, header, r.Method, r.URL.RequestURI(), r.Header.Get(IdempotencyHeader), body, v.now()); err != nil {
 				v.refuse(w, logger, "signature verification failed: "+err.Error())
 				return
+			}
+			// D9. The idempotency key is signed, so a replay cannot swap it,
+			// and a replay that keeps it only gets the stored answer back.
+			// A request with no key has no such guard: its signature is
+			// accepted once.
+			if r.Header.Get(IdempotencyHeader) == "" {
+				seen, err := v.queries.RememberSignature(r.Context(), sqlcgen.RememberSignatureParams{
+					KeyID: parsed.KeyID, Mac: parsed.MAC,
+				})
+				if err != nil {
+					logger.Error("recording a merchant signature failed", "error", err)
+					httpx.WriteError(w, logger, http.StatusInternalServerError,
+						"api_error", "internal_error", "something went wrong")
+					return
+				}
+				if seen == 0 {
+					v.refuse(w, logger, "signature already used")
+					return
+				}
 			}
 
 			merchantID := uuid.UUID(credential.MerchantID.Bytes)
@@ -149,4 +173,11 @@ func (v *Verifier) refuse(w http.ResponseWriter, logger *slog.Logger, reason str
 	logger.Warn("merchant signature refused", "reason", reason)
 	httpx.WriteError(w, logger, http.StatusUnauthorized,
 		"authentication_error", "invalid_signature", "invalid or missing merchant signature")
+}
+
+// PruneSeen forgets signatures older than twice the replay window, which can
+// never verify again.
+func (v *Verifier) PruneSeen(ctx context.Context) error {
+	_, err := v.queries.PruneSeenSignatures(ctx)
+	return err
 }

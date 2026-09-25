@@ -57,6 +57,8 @@ type refundBody struct {
 	ReceiptID string `json:"receipt_id"`
 	Amount    int64  `json:"amount"`
 	Reason    string `json:"reason"`
+	// RefundRef is the merchant's reference for this refund, once per receipt.
+	RefundRef string `json:"refund_ref"`
 }
 
 type refundResponse struct {
@@ -81,7 +83,7 @@ func refundHandler(logger *slog.Logger, network *Network) http.HandlerFunc {
 			return
 		}
 
-		if err := network.Refund(r.Context(), captureID, body.Amount, body.Reason); err != nil {
+		if err := network.Refund(r.Context(), captureID, body.Amount, body.Reason, body.RefundRef); err != nil {
 			writeRefundError(w, logger, err)
 			return
 		}

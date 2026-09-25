@@ -115,7 +115,7 @@ func (h *harness) request(payload []byte, header string) *httptest.ResponseRecor
 }
 
 func (h *harness) sign(secret []byte, keyID string, at time.Time) string {
-	return merchantauth.Sign(secret, keyID, http.MethodPost, "/v1/vouchers/authorize", body, at)
+	return merchantauth.Sign(secret, keyID, http.MethodPost, "/v1/vouchers/authorize", "", body, at)
 }
 
 // TestNoSignatureIsRefused is break-it proof #1: a request carrying no
@@ -215,5 +215,37 @@ func TestEveryRefusalIsTheSame401(t *testing.T) {
 	if unknownKey.Code != badMAC.Code || unknownKey.Body.String() != badMAC.Body.String() {
 		t.Errorf("an unknown key id and a bad MAC are distinguishable:\n  %d %q\n  %d %q",
 			unknownKey.Code, unknownKey.Body.String(), badMAC.Code, badMAC.Body.String())
+	}
+}
+
+// D9: a request with no idempotency key has nothing else stopping a replay,
+// so its signature is accepted once.
+func TestAnUnkeyedSignatureIsAcceptedOnce(t *testing.T) {
+	h := newHarness(t)
+	header := h.sign(h.secret, h.keyID, time.Now().UTC())
+
+	if rec := h.request(body, header); rec.Code != http.StatusOK {
+		t.Fatalf("first use: %d", rec.Code)
+	}
+	if rec := h.request(body, header); rec.Code != http.StatusUnauthorized || h.called {
+		t.Fatalf("a replayed unkeyed signature answered %d", rec.Code)
+	}
+}
+
+// D9: the idempotency key and the query string are part of what is signed.
+func TestTheKeyAndQueryAreSigned(t *testing.T) {
+	secret, at := []byte("0123456789abcdef0123456789abcdef"), time.Now().UTC()
+	header := merchantauth.Sign(secret, "k", http.MethodPost, "/v1/x?a=1", "key-1", body, at)
+	for name, err := range map[string]error{
+		"another key":   merchantauth.Verify(secret, header, http.MethodPost, "/v1/x?a=1", "key-2", body, at),
+		"another query": merchantauth.Verify(secret, header, http.MethodPost, "/v1/x?a=2", "key-1", body, at),
+		"no key":        merchantauth.Verify(secret, header, http.MethodPost, "/v1/x?a=1", "", body, at),
+	} {
+		if err == nil {
+			t.Errorf("%s verified", name)
+		}
+	}
+	if err := merchantauth.Verify(secret, header, http.MethodPost, "/v1/x?a=1", "key-1", body, at); err != nil {
+		t.Errorf("the genuine request: %v", err)
 	}
 }

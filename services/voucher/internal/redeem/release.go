@@ -75,11 +75,18 @@ func (n *Network) Void(ctx context.Context, authorizationID, merchantID uuid.UUI
 }
 
 // Refund restores value after a capture. YT-0151.
+//
+// refundRef is the merchant's own reference for this refund, applied once per
+// capture: retrying it under a new idempotency key is a no-op, and reusing it
+// for a different amount is refused (D8).
 func (n *Network) Refund(
-	ctx context.Context, captureID uuid.UUID, amountMinor int64, reason string,
+	ctx context.Context, captureID uuid.UUID, amountMinor int64, reason, refundRef string,
 ) error {
 	if amountMinor <= 0 {
 		return fmt.Errorf("%w: a refund needs a positive amount", ErrRefused)
+	}
+	if refundRef == "" {
+		return fmt.Errorf("%w: a refund needs the merchant's refund reference", ErrRefused)
 	}
 
 	err := pgx.BeginTxFunc(ctx, n.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
@@ -112,11 +119,24 @@ func (n *Network) Refund(
 		// The total is bounded by a deferred constraint trigger, which fires
 		// at COMMIT — so this insert can succeed and the transaction still
 		// fail, correctly, if the refunds together exceed the capture.
-		if err := queries.InsertRefund(ctx, sqlcgen.InsertRefundParams{
+		inserted, err := queries.InsertRefund(ctx, sqlcgen.InsertRefundParams{
 			ID: pgUUID(uuid.New()), CaptureID: capture.ID,
-			AmountMinor: amountMinor, Reason: reason,
-		}); err != nil {
+			AmountMinor: amountMinor, Reason: reason, RefundRef: &refundRef,
+		})
+		if err != nil {
 			return fmt.Errorf("recording the refund: %w", err)
+		}
+		if inserted == 0 {
+			prior, err := queries.GetRefundByRef(ctx, sqlcgen.GetRefundByRefParams{
+				CaptureID: capture.ID, RefundRef: &refundRef,
+			})
+			if err != nil {
+				return fmt.Errorf("reading the earlier refund: %w", err)
+			}
+			if prior.AmountMinor != amountMinor {
+				return fmt.Errorf("%w: refund %s was already applied for %d", ErrRefused, refundRef, prior.AmountMinor)
+			}
+			return nil // already applied
 		}
 
 		restored := voucher.RemainingValueMinor + amountMinor

@@ -262,6 +262,30 @@ func (q *Queries) GetCaptureByReceipt(ctx context.Context, arg GetCaptureByRecei
 	return i, err
 }
 
+const getRefundByRef = `-- name: GetRefundByRef :one
+SELECT id, capture_id, amount_minor, reason, created_at, refund_ref
+FROM voucher.refund WHERE capture_id = $1 AND refund_ref = $2
+`
+
+type GetRefundByRefParams struct {
+	CaptureID pgtype.UUID
+	RefundRef *string
+}
+
+func (q *Queries) GetRefundByRef(ctx context.Context, arg GetRefundByRefParams) (VoucherRefund, error) {
+	row := q.db.QueryRow(ctx, getRefundByRef, arg.CaptureID, arg.RefundRef)
+	var i VoucherRefund
+	err := row.Scan(
+		&i.ID,
+		&i.CaptureID,
+		&i.AmountMinor,
+		&i.Reason,
+		&i.CreatedAt,
+		&i.RefundRef,
+	)
+	return i, err
+}
+
 const insertAttempt = `-- name: InsertAttempt :exec
 INSERT INTO voucher.redemption_attempt (merchant_id, outcome, amount_minor)
 VALUES ($1, $2, $3)
@@ -404,9 +428,10 @@ func (q *Queries) InsertCredential(ctx context.Context, arg InsertCredentialPara
 	return err
 }
 
-const insertRefund = `-- name: InsertRefund :exec
-INSERT INTO voucher.refund (id, capture_id, amount_minor, reason)
-VALUES ($1, $2, $3, $4)
+const insertRefund = `-- name: InsertRefund :execrows
+INSERT INTO voucher.refund (id, capture_id, amount_minor, reason, refund_ref)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (capture_id, refund_ref) DO NOTHING
 `
 
 type InsertRefundParams struct {
@@ -414,19 +439,24 @@ type InsertRefundParams struct {
 	CaptureID   pgtype.UUID
 	AmountMinor int64
 	Reason      string
+	RefundRef   *string
 }
 
 // The total is bounded by a deferred constraint trigger, not by this
 // statement: "refunds must not exceed the capture" is a claim about a SET of
 // rows, and a per-row check cannot make it.
-func (q *Queries) InsertRefund(ctx context.Context, arg InsertRefundParams) error {
-	_, err := q.db.Exec(ctx, insertRefund,
+func (q *Queries) InsertRefund(ctx context.Context, arg InsertRefundParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertRefund,
 		arg.ID,
 		arg.CaptureID,
 		arg.AmountMinor,
 		arg.Reason,
+		arg.RefundRef,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const isKilled = `-- name: IsKilled :one
@@ -469,6 +499,38 @@ type LiftKillSwitchParams struct {
 func (q *Queries) LiftKillSwitch(ctx context.Context, arg LiftKillSwitchParams) error {
 	_, err := q.db.Exec(ctx, liftKillSwitch, arg.ID, arg.LiftedBy)
 	return err
+}
+
+const pruneSeenSignatures = `-- name: PruneSeenSignatures :execrows
+DELETE FROM voucher.merchant_signature_seen WHERE seen_at < now() - interval '10 minutes'
+`
+
+// Older than twice the replay window: those can never verify again.
+func (q *Queries) PruneSeenSignatures(ctx context.Context) (int64, error) {
+	result, err := q.db.Exec(ctx, pruneSeenSignatures)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const rememberSignature = `-- name: RememberSignature :execrows
+INSERT INTO voucher.merchant_signature_seen (key_id, mac) VALUES ($1, $2)
+ON CONFLICT DO NOTHING
+`
+
+type RememberSignatureParams struct {
+	KeyID string
+	Mac   []byte
+}
+
+// 1 the first time a signature is seen, 0 on a replay (D9).
+func (q *Queries) RememberSignature(ctx context.Context, arg RememberSignatureParams) (int64, error) {
+	result, err := q.db.Exec(ctx, rememberSignature, arg.KeyID, arg.Mac)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const resolveAuthorization = `-- name: ResolveAuthorization :one

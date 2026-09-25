@@ -16,11 +16,11 @@ var (
 
 func signed(t *testing.T, at time.Time) string {
 	t.Helper()
-	return merchantauth.Sign(secret, "key_live_1", "POST", "/v1/vouchers/authorize", body, at)
+	return merchantauth.Sign(secret, "key_live_1", "POST", "/v1/vouchers/authorize", "", body, at)
 }
 
 func verify(header, method, path string, payload []byte, at time.Time) error {
-	return merchantauth.Verify(secret, header, method, path, payload, at)
+	return merchantauth.Verify(secret, header, method, path, "", payload, at)
 }
 
 func TestAGenuineRequestVerifies(t *testing.T) {

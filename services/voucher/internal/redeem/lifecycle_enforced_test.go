@@ -111,7 +111,7 @@ func TestARefundCannotReviveAVoidedVoucher(t *testing.T) {
 	if err := f.minter.Void(ctx, voucherID, lifecycle.ReasonFraud); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.network.Refund(ctx, captured.ID, 5_000, "probe"); err == nil {
+	if err := f.network.Refund(ctx, captured.ID, 5_000, "probe", "ref-probe"); err == nil {
 		t.Fatal("a refund restored value to a voided voucher")
 	}
 	if f.remainingOf(t, voucherID) != 40_000 {

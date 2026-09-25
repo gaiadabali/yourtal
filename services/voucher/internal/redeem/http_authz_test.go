@@ -149,7 +149,7 @@ func TestAnotherMerchantCannotRefundYourReceipt(t *testing.T) {
 	decodeBody(t, capture, &captured)
 
 	refund := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/refund", mustJSON(t, map[string]any{
-		"receipt_id": captured.ReceiptID, "amount": 5_000, "reason": "not yours",
+		"receipt_id": captured.ReceiptID, "amount": 5_000, "reason": "not yours", "refund_ref": "stranger-1",
 	}), stranger, uuid.NewString())
 	if refund.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404 — a stranger refunded another merchant's receipt: %s",
@@ -158,7 +158,7 @@ func TestAnotherMerchantCannotRefundYourReceipt(t *testing.T) {
 
 	// The real owner can still refund it.
 	retry := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/refund", mustJSON(t, map[string]any{
-		"receipt_id": captured.ReceiptID, "amount": 5_000, "reason": "customer returned an item",
+		"receipt_id": captured.ReceiptID, "amount": 5_000, "reason": "customer returned an item", "refund_ref": "owner-1",
 	}), owner, uuid.NewString())
 	if retry.Code != http.StatusOK {
 		t.Fatalf("the owning merchant's refund failed after a stranger was refused: %d %s",

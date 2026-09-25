@@ -138,6 +138,12 @@ type VoucherMerchantCredential struct {
 	RevokedAt      pgtype.Timestamptz
 }
 
+type VoucherMerchantSignatureSeen struct {
+	KeyID  string
+	Mac    []byte
+	SeenAt pgtype.Timestamptz
+}
+
 type VoucherRedemptionAttempt struct {
 	ID          int64
 	MerchantID  pgtype.UUID
@@ -152,6 +158,7 @@ type VoucherRefund struct {
 	AmountMinor int64
 	Reason      string
 	CreatedAt   pgtype.Timestamptz
+	RefundRef   *string
 }
 
 type VoucherVoucher struct {

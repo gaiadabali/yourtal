@@ -95,7 +95,7 @@ func TestARefundRestoresValueToAPartlySpentVoucher(t *testing.T) {
 		t.Fatalf("Capture: %v", err)
 	}
 
-	if err := f.network.Refund(ctx, capture.ID, 10_000, "customer returned an item"); err != nil {
+	if err := f.network.Refund(ctx, capture.ID, 10_000, "customer returned an item", "ref-1"); err != nil {
 		t.Fatalf("Refund: %v", err)
 	}
 
@@ -105,7 +105,7 @@ func TestARefundRestoresValueToAPartlySpentVoucher(t *testing.T) {
 
 	// And it cannot be refunded past what was captured — the deferred
 	// trigger fires at COMMIT.
-	if err := f.network.Refund(ctx, capture.ID, 25_000, "too much"); err == nil {
+	if err := f.network.Refund(ctx, capture.ID, 25_000, "too much", "ref-2"); err == nil {
 		t.Error("refunds exceeding the capture succeeded")
 	}
 }
@@ -130,7 +130,7 @@ func TestRefundingAFullyRedeemedVoucherRefusesRatherThanGuessing(t *testing.T) {
 		t.Fatalf("Capture: %v", err)
 	}
 
-	err = f.network.Refund(ctx, capture.ID, 10_000, "customer returned an item")
+	err = f.network.Refund(ctx, capture.ID, 10_000, "customer returned an item", "ref-3")
 	if !errors.Is(err, redeem.ErrRefundNeedsReplacement) {
 		t.Fatalf("a spent voucher was quietly revived or silently failed: %v", err)
 	}

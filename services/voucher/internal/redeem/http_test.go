@@ -107,7 +107,7 @@ func signedRequest(t *testing.T, handler http.Handler, method, path string, body
 	t.Helper()
 
 	req := httptest.NewRequest(method, path, bytes.NewReader(body))
-	header := merchantauth.Sign(cred.secret, cred.keyID, method, path, body, time.Now().UTC())
+	header := signFor(cred, method, path, idempotencyKey, body, time.Now().UTC())
 	req.Header.Set(merchantauth.SignatureHeader, header)
 	if idempotencyKey != "" {
 		req.Header.Set(idempotency.HeaderKey, idempotencyKey)
@@ -264,4 +264,10 @@ func TestDifferentIdempotencyKeysAreCaughtByTheVoucherIndexNotByIdempotency(t *t
 	if envelope.Error.Code != "voucher_already_held" {
 		t.Errorf("error code = %q, want voucher_already_held", envelope.Error.Code)
 	}
+}
+
+// signFor is the one place these tests sign, so the canonical string lives
+// in merchantauth alone.
+func signFor(cred credential, method, path, idempotencyKey string, body []byte, at time.Time) string {
+	return merchantauth.Sign(cred.secret, cred.keyID, method, path, idempotencyKey, body, at)
 }

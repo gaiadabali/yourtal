@@ -30,7 +30,9 @@ func (i *Interceptor) runAndRecord(
 
 	body := rec.body.String()
 	status := int16(rec.status)
-	if err := i.queries.CompleteIdempotency(r.Context(), sqlcgen.CompleteIdempotencyParams{
+	// Not r.Context(): a client that hangs up as the work commits must not
+	// leave its key in_progress (D8).
+	if err := i.queries.CompleteIdempotency(context.WithoutCancel(r.Context()), sqlcgen.CompleteIdempotencyParams{
 		Scope: scope, Key: key, Status: &status, Body: &body,
 	}); err != nil {
 		// The caller's request already succeeded or failed for real — a

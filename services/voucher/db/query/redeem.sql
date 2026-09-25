@@ -104,12 +104,17 @@ FROM voucher.capture c
 JOIN voucher.authorization a ON a.id = c.authorization_id
 WHERE c.receipt_id = $1 AND a.merchant_id = $2;
 
--- name: InsertRefund :exec
+-- name: InsertRefund :execrows
 -- The total is bounded by a deferred constraint trigger, not by this
 -- statement: "refunds must not exceed the capture" is a claim about a SET of
 -- rows, and a per-row check cannot make it.
-INSERT INTO voucher.refund (id, capture_id, amount_minor, reason)
-VALUES ($1, $2, $3, $4);
+INSERT INTO voucher.refund (id, capture_id, amount_minor, reason, refund_ref)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (capture_id, refund_ref) DO NOTHING;
+
+-- name: GetRefundByRef :one
+SELECT id, capture_id, amount_minor, reason, created_at, refund_ref
+FROM voucher.refund WHERE capture_id = $1 AND refund_ref = $2;
 
 -- name: SumRefunds :one
 -- YT-0571 audit: not called from any Go code yet — no caller to audit. When
@@ -192,3 +197,12 @@ UPDATE voucher.merchant_credential SET state = 'superseded', not_after = $2
 -- Revocation is immediate — the half that matters in an incident.
 UPDATE voucher.merchant_credential SET state = 'revoked', revoked_at = now()
  WHERE key_id = $1;
+
+-- name: RememberSignature :execrows
+-- 1 the first time a signature is seen, 0 on a replay (D9).
+INSERT INTO voucher.merchant_signature_seen (key_id, mac) VALUES ($1, $2)
+ON CONFLICT DO NOTHING;
+
+-- name: PruneSeenSignatures :execrows
+-- Older than twice the replay window: those can never verify again.
+DELETE FROM voucher.merchant_signature_seen WHERE seen_at < now() - interval '10 minutes';

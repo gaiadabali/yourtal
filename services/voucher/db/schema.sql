@@ -120,7 +120,15 @@ CREATE TABLE voucher.refund (
   capture_id   uuid        NOT NULL,
   amount_minor bigint      NOT NULL,
   reason       text        NOT NULL,
-  created_at   timestamptz NOT NULL DEFAULT now()
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  refund_ref   text
+);
+
+CREATE TABLE voucher.merchant_signature_seen (
+  key_id  text        NOT NULL,
+  mac     bytea       NOT NULL,
+  seen_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (key_id, mac)
 );
 
 CREATE TABLE voucher.merchant_credential (

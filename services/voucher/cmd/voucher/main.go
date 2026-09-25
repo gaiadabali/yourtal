@@ -119,7 +119,7 @@ func run(logger *slog.Logger) error {
 		r.Mount("/", redeem.Routes(logger, network))
 	})
 
-	go sweepHolds(ctx, logger, network)
+	go sweepHolds(ctx, logger, network, verifier)
 
 	router.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		httpx.WriteError(w, logger, http.StatusNotFound,
@@ -190,7 +190,9 @@ func loadKeys() (*keyring.Keyring, error) {
 // Errors are logged and the loop continues, for the reason the ledger's
 // invariant checker does the same: a job that exits on its first transient
 // error stops silently, and everyone keeps believing it is running.
-func sweepHolds(ctx context.Context, logger *slog.Logger, network *redeem.Network) {
+//
+// It also forgets merchant signatures too old to verify again (D9).
+func sweepHolds(ctx context.Context, logger *slog.Logger, network *redeem.Network, verifier *merchantauth.Verifier) {
 	ticker := time.NewTicker(sweepInterval)
 	defer ticker.Stop()
 
@@ -200,6 +202,9 @@ func sweepHolds(ctx context.Context, logger *slog.Logger, network *redeem.Networ
 			logger.Error("sweeping expired holds failed", "error", err)
 		} else if expired > 0 {
 			logger.Info("released abandoned holds", "count", expired)
+		}
+		if err := verifier.PruneSeen(ctx); err != nil {
+			logger.Error("pruning seen merchant signatures failed", "error", err)
 		}
 
 		select {

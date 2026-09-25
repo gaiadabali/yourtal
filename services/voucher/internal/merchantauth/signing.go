@@ -15,6 +15,9 @@
 //   - **no path** — a capture is replayed as a refund
 //   - **no method** — likewise
 //   - **no timestamp** — every request is replayable forever
+//   - **no idempotency key** — a logged request is replayed under a fresh key
+//     and the interceptor treats it as new (D9)
+//   - **no query string** — a signed GET is replayed with other parameters
 //   - **no key id** — a merchant with two live keys during a rotation has an
 //     ambiguous signature, and the resolution would be "try both", which
 //     doubles the attacker's chances rather than halving them
@@ -74,8 +77,12 @@ type Signature struct {
 
 // Sign produces the header value. Used by our own SDK and by the tests; a
 // merchant implements the same three lines in their language.
-func Sign(secret []byte, keyID, method, path string, body []byte, at time.Time) string {
-	mac := compute(secret, keyID, method, path, body, at)
+//
+// pathAndQuery is the request URI as sent (path plus any query string), and
+// idempotencyKey the Idempotency-Key header ("" when there is none). Sign
+// every attempt afresh: each signature is accepted once.
+func Sign(secret []byte, keyID, method, pathAndQuery, idempotencyKey string, body []byte, at time.Time) string {
+	mac := compute(secret, keyID, method, pathAndQuery, idempotencyKey, body, at)
 	return fmt.Sprintf("t=%d,k=%s,v1=%s", at.Unix(), keyID, hex.EncodeToString(mac))
 }
 
@@ -125,7 +132,7 @@ func Parse(header string) (Signature, error) {
 // importantly, a caller that verified the MAC first and then forgot the
 // window check would have a working signature scheme with no replay
 // protection at all, and nothing would look wrong.
-func Verify(secret []byte, header, method, path string, body []byte, now time.Time) error {
+func Verify(secret []byte, header, method, pathAndQuery, idempotencyKey string, body []byte, now time.Time) error {
 	parsed, err := Parse(header)
 	if err != nil {
 		return err
@@ -139,7 +146,7 @@ func Verify(secret []byte, header, method, path string, body []byte, now time.Ti
 		return fmt.Errorf("%w: %s off", ErrOutsideReplayWindow, drift.Round(time.Second))
 	}
 
-	expected := compute(secret, parsed.KeyID, method, path, body, parsed.Timestamp)
+	expected := compute(secret, parsed.KeyID, method, pathAndQuery, idempotencyKey, body, parsed.Timestamp)
 	if !hmac.Equal(expected, parsed.MAC) {
 		return ErrSignatureMismatch
 	}
@@ -153,14 +160,15 @@ func Verify(secret []byte, header, method, path string, body []byte, now time.Ti
 // request costs the same as signing an empty one — and so the canonical
 // string stays something a merchant's engineer can print and eyeball when
 // their integration does not work, which is most of the first week.
-func compute(secret []byte, keyID, method, path string, body []byte, at time.Time) []byte {
+func compute(secret []byte, keyID, method, pathAndQuery, idempotencyKey string, body []byte, at time.Time) []byte {
 	digest := sha256.Sum256(body)
 
 	canonical := strings.Join([]string{
 		strconv.FormatInt(at.Unix(), 10),
 		keyID,
 		strings.ToUpper(method),
-		path,
+		pathAndQuery,
+		idempotencyKey,
 		base64.StdEncoding.EncodeToString(digest[:]),
 	}, "\n")
 

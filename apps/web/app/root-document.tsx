@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import type { ReactNode } from "react";
+import { isStaging } from "@/features/shell/app-env";
+import { StagingBanner } from "@/features/shell/staging-banner";
 
 import "./globals.css";
 
@@ -75,7 +77,10 @@ export interface RootDocumentProps {
 export function RootDocument({ lang, children }: RootDocumentProps) {
   return (
     <html lang={lang} suppressHydrationWarning className={fontSans.variable}>
-      <body>{children}</body>
+      <body>
+        {isStaging() ? <StagingBanner lang={lang} /> : null}
+        {children}
+      </body>
     </html>
   );
 }

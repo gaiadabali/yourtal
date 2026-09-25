@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { GENERATED_PUBLIC_LOCALES, PUBLIC_SITE_URL } from "@/features/public/public-locale";
+import { isStaging } from "@/features/shell/app-env";
 
 /**
  * `/robots.txt` (YT-0180). Root of `app/`, same requirement as
@@ -21,6 +22,8 @@ import { GENERATED_PUBLIC_LOCALES, PUBLIC_SITE_URL } from "@/features/public/pub
  * exactly the case this guards against).
  */
 export default function robots(): MetadataRoute.Robots {
+  // Staging is open to reviewers but must never be indexed.
+  if (isStaging()) return { rules: { userAgent: "*", disallow: "/" } };
   return {
     rules: {
       userAgent: "*",

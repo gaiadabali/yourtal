@@ -155,7 +155,10 @@ describe("the boundary catalogue", () => {
       // configuration at all, which would make the boot rule unenforceable
       // for it — the one hole that cannot be spotted by reading the rule.
       expect(BOUNDARIES[name].liveCredentialEnvVars.length).toBeGreaterThan(0);
-      expect(BOUNDARIES[name].liveTicket).toMatch(/^YT-\d{4}$/);
+      // Either the archived board's ticket id, or TASKS.md's own numbering
+      // (e.g. "1.6") for anything named after the 2026-09-25 reset — see
+      // CLAUDE.md: the old board is archived, TASKS.md is the plan now.
+      expect(BOUNDARIES[name].liveTicket).toMatch(/^(YT-\d{4}|\d+\.\d+)$/);
     }
   });
 });

@@ -13,6 +13,9 @@ import {
   type DeviceReputationDriver,
   createDeviceReputationDriver,
 } from "./boundaries/device-reputation";
+import { type EmailDriver, createEmailDriver } from "./boundaries/email";
+import { type PushDriver, createPushDriver } from "./boundaries/push";
+import { type WebhookDriver, createWebhookDriver } from "./boundaries/webhook";
 
 /**
  * Every external boundary, constructed together. YT-0535.
@@ -48,6 +51,9 @@ export interface Drivers {
   readonly receiptIngest: ReceiptIngestDriver;
   readonly moderation: ModerationDriver;
   readonly deviceReputation: DeviceReputationDriver;
+  readonly email: EmailDriver;
+  readonly push: PushDriver;
+  readonly webhook: WebhookDriver;
 }
 
 export type FaultPlans = Partial<Record<BoundaryName, FaultPlan>>;
@@ -72,6 +78,16 @@ export function createDrivers(env: Environment, faults: FaultPlans = {}): Driver
       env,
       faults.device_reputation,
     ),
+    // Each defaults to its own in-memory SimOutboxStore (sim-outbox.ts) —
+    // fine for a driver set built with no other arguments, same as every
+    // other boundary here holding its own private state. A caller that
+    // wants every simulated send visible in the real platform.sim_outbox
+    // table (so /api/dev/inbox and another process can see it) constructs
+    // that boundary directly with a real store instead of through this
+    // factory — see postgres-sim-outbox-store.ts in apps/api.
+    email: createEmailDriver(modes.email, env, faults.email),
+    push: createPushDriver(modes.push, env, faults.push),
+    webhook: createWebhookDriver(modes.webhook, env, faults.webhook),
   };
 }
 
@@ -86,4 +102,7 @@ export const DRIVER_KEY_TO_BOUNDARY: Record<keyof Drivers, BoundaryName> = {
   receiptIngest: "receipt_ingest",
   moderation: "moderation",
   deviceReputation: "device_reputation",
+  email: "email",
+  push: "push",
+  webhook: "webhook",
 };

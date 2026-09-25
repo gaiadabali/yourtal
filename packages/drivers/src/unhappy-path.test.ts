@@ -115,6 +115,44 @@ const EXERCISES: readonly Exercise[] = [
         SIMULATED_REPUTATION_IPS.residential,
       ),
   },
+  {
+    boundary: "email",
+    describe: "sending an email",
+    call: (fault) =>
+      driversWith("email", fault).email.send({
+        idempotencyKey: "key-1",
+        to: "person@example.test",
+        region: "AU",
+        category: "email_verification",
+        subject: "Verify your email",
+        body: "Click the link.",
+      }),
+  },
+  {
+    boundary: "push",
+    describe: "sending a push notification",
+    call: (fault) =>
+      driversWith("push", fault).push.send({
+        idempotencyKey: "key-1",
+        to: "device-token-1",
+        region: "AU",
+        category: "points_unlocked",
+        title: "Points unlocked",
+        body: "Your points are now available.",
+      }),
+  },
+  {
+    boundary: "webhook",
+    describe: "delivering an outbound webhook",
+    call: (fault) =>
+      driversWith("webhook", fault).webhook.send({
+        idempotencyKey: "key-1",
+        url: "https://partner.example.test/webhooks/yourtal",
+        region: "AU",
+        event: "voucher.captured",
+        payload: { voucherId: "v_1" },
+      }),
+  },
 ];
 
 describe("every boundary is covered", () => {
@@ -237,6 +275,35 @@ function boundCall(
       return () => drivers.receiptIngest.extract("sim-receipt-clear");
     case "moderation":
       return () => drivers.moderation.classify("looks fine to me");
+    case "email":
+      return () =>
+        drivers.email.send({
+          idempotencyKey: nextKey(),
+          to: "person@example.test",
+          region: "AU",
+          category: "email_verification",
+          subject: "Verify your email",
+          body: "Click the link.",
+        });
+    case "push":
+      return () =>
+        drivers.push.send({
+          idempotencyKey: nextKey(),
+          to: "device-token-1",
+          region: "AU",
+          category: "points_unlocked",
+          title: "Points unlocked",
+          body: "Your points are now available.",
+        });
+    case "webhook":
+      return () =>
+        drivers.webhook.send({
+          idempotencyKey: nextKey(),
+          url: "https://partner.example.test/webhooks/yourtal",
+          region: "AU",
+          event: "voucher.captured",
+          payload: { voucherId: "v_1" },
+        });
   }
 }
 

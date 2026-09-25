@@ -20,7 +20,11 @@
     "./messaging": "./src/boundaries/messaging.ts",
     "./digital-goods": "./src/boundaries/digital-goods.ts",
     "./receipt-ingest": "./src/boundaries/receipt-ingest.ts",
-    "./moderation": "./src/boundaries/moderation.ts"
+    "./moderation": "./src/boundaries/moderation.ts",
+    "./sim-outbox": "./src/sim-outbox.ts",
+    "./email": "./src/boundaries/email.ts",
+    "./push": "./src/boundaries/push.ts",
+    "./webhook": "./src/boundaries/webhook.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

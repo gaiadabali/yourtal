@@ -62,6 +62,9 @@ importers:
       '@yourtal/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@yourtal/drivers':
+        specifier: workspace:*
+        version: link:../../packages/drivers
       '@yourtal/idempotency':
         specifier: workspace:*
         version: link:../../packages/idempotency

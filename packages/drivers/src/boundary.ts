@@ -36,6 +36,9 @@ export const BOUNDARY_NAMES = [
   "receipt_ingest",
   "moderation",
   "device_reputation",
+  "email",
+  "push",
+  "webhook",
 ] as const;
 
 export type BoundaryName = (typeof BOUNDARY_NAMES)[number];
@@ -139,6 +142,38 @@ export const BOUNDARIES: Record<BoundaryName, BoundaryDefinition> = {
     liveCredentialEnvVars: ["MODERATION_API_KEY"],
     liveVendor: "An LLM provider, not yet chosen.",
     liveTicket: "YT-0535",
+  },
+  email: {
+    name: "email",
+    purpose:
+      "Verification, password reset and invitation emails (1.6.a). Simulated calls record to " +
+      "platform.sim_outbox, so /api/dev/inbox (1.6.b) can show a reviewer exactly what would " +
+      "have gone out.",
+    modeEnvVar: "EMAIL_DRIVER",
+    liveCredentialEnvVars: ["EMAIL_API_KEY"],
+    liveVendor: "A transactional email provider, not yet chosen.",
+    liveTicket: "1.6",
+  },
+  push: {
+    name: "push",
+    purpose: "A mobile/web push notification to a device (points unlocked, a streak reminder).",
+    modeEnvVar: "PUSH_DRIVER",
+    liveCredentialEnvVars: ["PUSH_API_KEY"],
+    liveVendor: "Web Push / FCM / APNs, not yet chosen.",
+    liveTicket: "1.6",
+  },
+  webhook: {
+    name: "webhook",
+    purpose:
+      "Telling a PARTNER's own system that something happened here — the outbound half " +
+      "(snap-app is the first, docs/16). Not to be confused with webhook-inbox.ts/" +
+      "webhook-signature.ts, which handle a webhook WE receive.",
+    modeEnvVar: "WEBHOOK_DRIVER",
+    liveCredentialEnvVars: ["WEBHOOK_SIGNING_SECRET"],
+    liveVendor:
+      "No single vendor — generic delivery to a partner-registered URL, signed with a shared " +
+      "secret rather than a named provider's own SDK.",
+    liveTicket: "1.6",
   },
 };
 

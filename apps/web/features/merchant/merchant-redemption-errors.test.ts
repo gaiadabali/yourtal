@@ -32,13 +32,10 @@ function makeVoucher(overrides: Partial<Voucher> = {}): Voucher {
     status: "active",
     issuedAt: "2026-09-01T00:00:00.000Z",
     expiresAt: "2026-10-01T00:00:00.000Z",
+    // An override touching a branded money field must go through its real
+    // constructor: `Partial<Voucher>` is checked at the call site.
     ...overrides,
-    // The final cast covers the plain-number defaults above; any override
-    // touching a branded money field (see the `toIdrMinorUnits` calls at
-    // the call sites below) must go through the real constructor, since
-    // `Partial<Voucher>` is checked at the call site, before this cast
-    // ever applies.
-  } as Voucher;
+  };
 }
 
 describe("classifyRedemptionEligibility", () => {

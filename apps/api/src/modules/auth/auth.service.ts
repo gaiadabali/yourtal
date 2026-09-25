@@ -7,8 +7,10 @@ import {
   meetsMinimumAge,
   meetsMinimumAgeWithParentalConsent,
 } from "@yourtal/jurisdiction/policy-query";
+import type { EmailDriver } from "@yourtal/drivers/email";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
+import { EMAIL_DRIVER } from "../../shared/drivers/email-driver.module";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { hashPassword, verifyPassword } from "./crypto/password-hash";
@@ -86,6 +88,7 @@ export class AuthService {
     private readonly sessions: SessionService,
     private readonly throttle: ThrottleService,
     private readonly devTokenAccess: DevTokenAccess,
+    @Inject(EMAIL_DRIVER) private readonly email: EmailDriver,
   ) {}
 
   /**
@@ -303,7 +306,7 @@ export class AuthService {
           purpose: "password_reset",
           expiresAt: new Date(now.getTime() + PASSWORD_RESET_TTL_MS),
         });
-        this.deliver("password_reset", credential.userId, token);
+        await this.deliver("password_reset", credential.userId, token);
       }
       return ok(undefined);
     });
@@ -354,7 +357,7 @@ export class AuthService {
         purpose: "email_verification",
         expiresAt: new Date(now.getTime() + EMAIL_VERIFICATION_TTL_MS),
       });
-      this.deliver("email_verification", userId, token);
+      await this.deliver("email_verification", userId, token);
       return ok(undefined);
     });
   }
@@ -389,20 +392,24 @@ export class AuthService {
   }
 
   /**
-   * Stand-in for a real delivery channel. `YT-0538`'s own AC for its
-   * simulators states the pattern this now follows too: *"never printed
-   * into ordinary logs"*. See `dev-token-access.ts`'s own doc for why that
-   * used to be a `nodeEnv` branch and is not one any more — `token` is
-   * passed to `devTokenAccess.record`, never to `this.logger`. Wiring this
-   * to a real or simulated messaging boundary (the `messaging` boundary
-   * `packages/drivers` already catalogues) is explicitly NOT done here —
-   * see this ticket's report.
+   * 1.6.a: the rest of it. `YT-0538`'s own AC for its simulators — *"never
+   * printed into ordinary logs"* — still holds: `token` reaches
+   * `devTokenAccess.record` and the simulated `EmailDriver`, never
+   * `this.logger`. The driver is what makes the token visible to a human at
+   * all now — `/api/dev/inbox` (1.6.b) reads the same `platform.sim_outbox`
+   * row this writes — `devTokenAccess` remains for tests, which read the
+   * real token back directly rather than parsing an inbox.
+   *
+   * Best-effort: a failed send does not fail the request that triggered it.
+   * The token was already recorded (`devTokenAccess`) and consumable before
+   * this runs, so a delivery-channel outage should not retroactively make
+   * "request a reset" report failure for something that already succeeded.
    */
-  private deliver(
+  private async deliver(
     purpose: "password_reset" | "email_verification",
     userId: string,
     token: string,
-  ): void {
+  ): Promise<void> {
     // `userId` is already opaque (a minted UUID, not the email) — no
     // hashing needed here the way `hashForThrottleKey` needs it for the
     // ATTEMPTED identifier in `login`/throttle keys. Logged at both levels
@@ -410,6 +417,39 @@ export class AuthService {
     this.logger.log(`${purpose} token issued for ${userId}`);
     this.logger.debug(`${purpose} token issued for ${userId}`);
     this.devTokenAccess.record(purpose, userId, token);
+
+    const [credential, profile] = await Promise.all([
+      this.credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND),
+      this.profiles.findByUserId(userId),
+    ]);
+    // Should not happen for a token just minted for this exact user — both
+    // rows are created at registration and neither is deleted before this
+    // runs. Skip the send rather than throw: the token is already usable
+    // via `devTokenAccess` regardless.
+    if (credential === null || profile === null) return;
+
+    const subject = purpose === "email_verification" ? "Verify your email" : "Reset your password";
+    const body =
+      purpose === "email_verification"
+        ? `Use this token in the app to verify your YourTal account: ${token}`
+        : `Use this token in the app to reset your YourTal password: ${token}`;
+
+    const sent = await this.email.send({
+      // The token hash, not the token — a resend of the SAME token (there
+      // is never one; each call mints a fresh one) would upsert onto the
+      // same outbox row rather than duplicate it, the same shape
+      // `PostgresSimOutboxStore`'s own header documents for `idempotencyKey`.
+      idempotencyKey: hashOpaqueToken(token),
+      to: credential.identifier,
+      region: profile.region,
+      category: purpose,
+      subject,
+      body,
+      metadata: { token },
+    });
+    if (sent.isErr()) {
+      this.logger.warn(`${purpose} email not sent for ${userId}: ${sent.error.kind}`);
+    }
   }
 
   /** One place every method wraps an unexpected store failure. */

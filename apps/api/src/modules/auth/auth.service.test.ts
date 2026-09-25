@@ -5,7 +5,10 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import { Logger } from "@nestjs/common";
 import { Redis } from "ioredis";
 import { eq } from "drizzle-orm";
+import pg from "pg";
+import { createEmailDriver, createSimulatedEmail } from "@yourtal/drivers/email";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { PostgresSimOutboxStore } from "../../shared/drivers/postgres-sim-outbox-store";
 import type { AppConfig } from "../../config/app-config";
 import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-user-profile.repository";
 import type { RegisterProfile } from "./auth.service";
@@ -61,6 +64,11 @@ const profiles = new DrizzleUserProfileRepository(db);
 const sessionService = new SessionService(sessionRepo);
 const throttle = new ThrottleService(redis);
 const devTokenAccess = new DevTokenAccess();
+// The real simulated driver (1.6.a) against its default in-memory store —
+// fine for every test below except the one that checks `platform.sim_outbox`
+// itself, which needs the Postgres-backed one (`pgPool`/`authWithRealEmail`,
+// declared with that test).
+const emailDriver = createSimulatedEmail();
 const auth = new AuthService(
   CONFIG,
   credentials,
@@ -69,7 +77,10 @@ const auth = new AuthService(
   sessionService,
   throttle,
   devTokenAccess,
+  emailDriver,
 );
+
+const pgPool = new pg.Pool({ connectionString: DATABASE_URL, max: 2 });
 
 /** An ordinary adult registration profile — 1.4.c's required fields, with sane defaults. */
 const ADULT_PROFILE: RegisterProfile = {
@@ -116,8 +127,9 @@ async function attemptLogin(email: string, password: string, ip: string): Promis
   return result.isOk();
 }
 
-afterAll(() => {
+afterAll(async () => {
   redis.disconnect();
+  await pgPool.end();
 });
 
 describe("register", () => {
@@ -521,6 +533,68 @@ describe("email verification — 1.4.e stores verified_at, not just a consumed t
     expect(replay.isErr() && replay.error.type).toBe("token_invalid");
     const stillVerified = await credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);
     expect(stillVerified?.verifiedAt).toEqual(verified?.verifiedAt);
+  });
+});
+
+describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox", () => {
+  it("a requested email verification lands in the outbox with the recipient, category and token", async () => {
+    // A dedicated `AuthService` sharing every other real dependency, but
+    // with the Postgres-backed `EmailDriver` production actually uses —
+    // `emailDriver` above is real too, just against its in-memory store,
+    // which this specific assertion (a row in `platform.sim_outbox`) cannot
+    // see.
+    const outboxStore = new PostgresSimOutboxStore(pgPool);
+    const realEmailDriver = createEmailDriver("simulated", {}, undefined, outboxStore);
+    const authWithRealEmail = new AuthService(
+      CONFIG,
+      credentials,
+      verificationTokens,
+      profiles,
+      sessionService,
+      throttle,
+      devTokenAccess,
+      realEmailDriver,
+    );
+
+    const emailAddress = freshEmail();
+    const registered = await authWithRealEmail.register(
+      emailAddress,
+      "the-original-password",
+      ADULT_PROFILE,
+      new Date(),
+    );
+    expect(registered.isOk()).toBe(true);
+
+    const loggedIn = await authWithRealEmail.login(
+      emailAddress,
+      "the-original-password",
+      randomIp(),
+      new Date(),
+    );
+    expect(loggedIn.isOk()).toBe(true);
+    const sessionToken = loggedIn.isOk() ? loggedIn.value.token : "";
+    const userId = loggedIn.isOk() ? loggedIn.value.userId : "";
+
+    const requested = await authWithRealEmail.requestEmailVerification(sessionToken, new Date());
+    expect(requested.isOk()).toBe(true);
+
+    const realToken = devTokenAccess.peekToken("email_verification", userId, Date.now()) ?? "";
+    const { rows } = await pgPool.query<{
+      recipient: string;
+      category: string;
+      region: string;
+      metadata: { token?: string };
+    }>(
+      `SELECT recipient, category, region, metadata FROM platform.sim_outbox
+        WHERE boundary = 'email' AND recipient = $1`,
+      [emailAddress],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.category).toBe("email_verification");
+    expect(rows[0]?.region).toBe(ADULT_PROFILE.region);
+    // The token in the outbox is the SAME real token `devTokenAccess` has —
+    // one delivery, recorded to both seams, not two different values.
+    expect(rows[0]?.metadata.token).toBe(realToken);
   });
 });
 

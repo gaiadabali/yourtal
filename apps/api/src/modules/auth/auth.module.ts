@@ -4,6 +4,7 @@ import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { RedisClientModule } from "../../shared/redis/redis-client.module";
+import { EmailDriverModule } from "../../shared/drivers/email-driver.module";
 import { IdentityModule } from "../identity/identity.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
@@ -42,7 +43,7 @@ export const AUTH_DB = Symbol("AUTH_DB");
  * `AuthzModule`/`PdpClientModule` despite the same global availability.
  */
 @Module({
-  imports: [RedisClientModule, IdentityModule],
+  imports: [RedisClientModule, IdentityModule, EmailDriverModule],
   controllers: [AuthController],
   providers: [
     AuthService,

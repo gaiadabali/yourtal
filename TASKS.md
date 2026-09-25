@@ -35,7 +35,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 31/32 | `██████████`  97% |
+| **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 35/53 | `███████░░░`  66% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **20/82** | **152/368** | `████░░░░░░`  41% |
+| **All** | | | **22/82** | **153/368** | `████░░░░░░`  42% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -79,7 +79,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | A (`yourtal-1`, `phase/4`): 4.8.a ✅ (d448b73); 4.7.a/b and the burn-price fix merging; next 4.4.m, 4.7.c. B (`yourtal-p4-b`, `phase/4-b`): 4.5, then 4.6.f/h. C done (4.9.a, 4.9.d) and D done (4.4.l, 4.4.g event); their helper worktrees stay in place |
-| 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
+| 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Setting up; then 8.1.a server side, 8.2.d, 8.3.b |
@@ -666,7 +666,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 3.4.a Rework: Button (primary / secondary / ghost / danger / link; sm / md / lg / counter; loading; icon), Input, Textarea, NativeSelect, Card, StatusBadge, Dialog, BottomSheet, Toast with its provider, Tabs, Skeleton, Progress. **Keep every existing export name and prop.** New variants are additive; old ones stay as aliases until C finishes 7.8 and 8.2.
   - [x] 3.4.b New: Heading, Text, PageContainer, PageHeader, Section, **PointsChip**, MoneyAmount (the currency comes from the data, never the viewer), KeyValue, DataTable (becomes a card list below `md`), EmptyState, ErrorState, Notice, Switch, Chip, SegmentedControl, ChoiceCard, ChannelAvatar (with an initials fallback), **MediaCard** (16:9 and 9:16, with poster, duration and progress), QRPanel, Stepper, FilterBar, ListRow.
   - [x] 3.4.c **Check:** the console and merchant screens still compile and render, and every primitive is in the gallery (3.6).
-- [ ] **3.5 Video primitives and shells** · needs: 3.4 — 🔄 slot 2 (a–c, e ✅ 0052a63; 3.5.d unblocked by 1.7.c)
+- [x] **3.5 Video primitives and shells** · needs: 3.4 — ✅ 2026-09-26 cad8f7e
   - [x] 3.5.a **VerticalFeed**, with `mode: "teaser" | "inline-session"`:
     - native `<video>` for the MP4 teasers;
     - at most 3 video elements mounted; the rest are posters;
@@ -685,11 +685,11 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     (requested by C) Remove the business tab from the viewer shell.
   - [x] 3.5.d Move `(app)/page.tsx` to `(app)/home/page.tsx`. In the same merge, add these to `route-redirects.ts`: `/` → `/home` when signed in, and `/` → `/au` when signed out, until 11.1.a.
   - [x] 3.5.e **Check:** the feed holds at most 3 `<video>` elements after scrolling 20 items, and nothing links to `/business` from the viewer shell.
-- [ ] **3.6 Brand, gallery and visual tests** · needs: 3.4 — 🔄 slot 2
+- [x] **3.6 Brand, gallery and visual tests** · needs: 3.4 — ✅ 2026-09-26 1f00762
   - [x] 3.6.a Brand: the wordmark "YourTal" in Bricolage Grotesque 800, with the points coin glyph as the mark. Favicon, maskable icons and the web manifest. Today `/favicon.ico` returns 404.
   - [x] 3.6.b A gallery at `(lab)/lab/ui`, with Playwright `toHaveScreenshot` baselines for every primitive at 390 px and 1280 px, light and dark. `pnpm test:visual` runs inside `mcr.microsoft.com/playwright:<installed version>-noble` for both generating and comparing, and the snapshot path has no platform suffix, so baselines made on Windows match CI on Linux.
   - [x] 3.6.c Lint in B's `features/**`: ban raw `<button>`, `<select>`, `<table>` and `<input>`, and ban JSX string literals. Warn for now; it becomes an error in 6.1.
-  - [ ] 3.6.d **Check:** `pnpm test:visual` passes locally and in CI.
+  - [x] 3.6.d **Check:** `pnpm test:visual` passes locally and in CI.
 
 **Done when:** the founder has picked a variant from real motion captures, and every primitive, video component and shell exists in the gallery in light and dark at phone and desktop widths.
 
@@ -1270,6 +1270,9 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · B · Phase 3 done: After Dark picked from real captures (F3); tokens v2, every primitive, video component and shell in the `/lab/ui` gallery in light and dark at 390 and 1280 px, with visual baselines; both UI gates green in CI (run 36171537379) · 1f00762
+- 2026-09-26 · B · 3.6 Brand (coin mark, wordmark, favicon, icons, manifest), 124 visual baselines drawn by the Playwright image, lint warnings for raw elements and JSX copy, UI gates as their own Integration job · 1f00762
+- 2026-09-26 · B · 3.5 VerticalFeed (≤ 3 videos), VideoSurface, viewer/studio/counter shells, `/` → `/home` or `/au` by session. For A: 3.5.d changed one case in `apps/web/proxy.test.ts` (`/` left the "stays public" list and got its own test). The "Postgres-backed suites" job is red on the api authz e2e tests (store-device resolver, watch controller), not on B's changes · cad8f7e
 - 2026-09-26 · B · 1.6 Simulated email you can read done: `AuthService.deliver` sends through the real (simulated) email driver (1.6.a); `GET /api/dev/inbox` plus a plain `/dev/inbox` page read `platform.sim_outbox` directly, gated by a new `APP_ENV` config var (1.6.b); the Check verified end to end — register → verification email in the inbox → its token confirms the account · 63af281
 - 2026-09-26 · A · 4.3 Ledger guards: overdraft, currency, idempotency and sealing guards (each red first), and the burn engine with its /v1/burns routes · 360dfa6
 - 2026-09-26 · A · 4.1 Ledger internal API: HMAC service auth, the ledger-internal contract served live, a signed HttpLedgerClient, and the contract spec passing against a live ledger (22 pass, escrow todo) · 360dfa6

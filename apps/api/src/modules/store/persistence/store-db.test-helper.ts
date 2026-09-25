@@ -15,8 +15,12 @@ import { settlementDecreaseRequests } from "./schema/settlement-decrease-request
  * `vitest.config.ts` (which only sets `DATABASE_URL`) — this is what makes a
  * dead-host sabotage of this module's own database provable rather than
  * silently reverted. See this ticket's report for the actual proof run.
+ *
+ * No hard-coded dev URL fallback (YT-0571): `vitest.config.ts`'s
+ * `setupFiles` already refuses to run this suite unless `DATABASE_URL` names
+ * a `yourtal_test_*` database, so falling back to it is as safe as
+ * `TEST_DATABASE_URL`.
  */
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
 /**
  * `yourtal_app` lost INSERT/UPDATE/DELETE on `voucher.vouchers` in
  * `20260920000019_voucher_lifecycle.sql` — voucher issuance is value-path,
@@ -25,10 +29,18 @@ const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
  * does for `watch.session`; widening the app grant back to make cleanup
  * convenient would undo a control that exists on purpose.
  */
-const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal";
 
 export function testStoreDb(): AppDb {
-  return createAppDb(process.env["TEST_DATABASE_URL"] ?? APP_URL);
+  return createAppDb(process.env["TEST_DATABASE_URL"] ?? requiredEnv("DATABASE_URL"));
+}
+
+/** Not `!`: this file is not `*.test.ts`, so the strict lint config applies. */
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (value === undefined) {
+    throw new Error(`${name} is not set — see vitest.config.ts's setupFiles.`);
+  }
+  return value;
 }
 
 /**
@@ -59,7 +71,9 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   // on code_custody, and clearing custody then broke on batch. Fixing the
   // constraint a failure names, rather than reading the graph, turns one
   // defect into as many red runs as the graph has edges.
-  const owner = createAppDb(process.env["DATABASE_OWNER_URL"] ?? OWNER_URL);
+  // No literal fallback: `DATABASE_OWNER_URL` is required and guarded by
+  // `vitest.config.ts`'s `setupFiles`, same as `DATABASE_URL` above.
+  const owner = createAppDb(requiredEnv("DATABASE_OWNER_URL"));
   await owner.execute(sql`DELETE FROM voucher.refund`);
   await owner.execute(sql`DELETE FROM voucher.capture`);
   await owner.execute(sql`DELETE FROM voucher.authorization`);

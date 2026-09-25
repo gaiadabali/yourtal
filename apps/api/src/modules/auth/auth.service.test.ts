@@ -41,9 +41,10 @@ import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
  * "discarding is intended" about calls whose failure WOULD in fact be a
  * bug in the fixture. The helpers assert success once, centrally, instead.
  */
-const DATABASE_URL =
-  process.env["TEST_DATABASE_URL"] ??
-  "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
+// No literal fallback (YT-0571): `vitest.config.ts`'s `setupFiles` already
+// refuses to run this suite unless `DATABASE_URL` names a `yourtal_test_*`
+// database, so it is as safe a fallback here as `TEST_DATABASE_URL`.
+const DATABASE_URL = process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!;
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://127.0.0.1:26379";
 
 const CONFIG = { nodeEnv: "test" } as unknown as AppConfig;

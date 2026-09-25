@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/yourtal/services/voucher/internal/keyring"
 	"github.com/yourtal/services/voucher/internal/merchantauth"
 	"github.com/yourtal/services/voucher/internal/store/sqlcgen"
+	"github.com/yourtal/services/voucher/internal/testdb"
 )
 
 // The HTTP wiring for YT-0152: signing.go is well tested on its own, and
@@ -28,7 +28,6 @@ import (
 // version can look identical unless something drives the real
 // http.Handler behind the real middleware, against real Postgres, which is
 // what every test below does.
-const defaultURL = "postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal"
 
 // `body`, `secret` and `now` are signing_test.go's package-level fixtures,
 // reused here rather than redeclared.
@@ -47,10 +46,7 @@ func newHarness(t *testing.T) *harness {
 	t.Helper()
 	ctx := context.Background()
 
-	url := os.Getenv("VOUCHER_DATABASE_URL")
-	if url == "" {
-		url = defaultURL
-	}
+	url := testdb.URL(t, "VOUCHER_DATABASE_URL")
 	pool, err := pgxpool.New(ctx, url)
 	if err != nil {
 		t.Fatalf("connect: %v", err)

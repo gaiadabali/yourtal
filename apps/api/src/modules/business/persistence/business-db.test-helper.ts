@@ -34,11 +34,23 @@ import { kybDocuments } from "./schema/kyb-document.table";
  * genuinely should not have, the owner connection is used for that step
  * alone (see `packages/db/src/watch-session.test.ts`) rather than widening
  * the grant to make a test convenient.
+ *
+ * No hard-coded dev URL fallback (YT-0571): `vitest.config.ts`'s
+ * `setupFiles` already refuses to run this suite unless `DATABASE_URL`
+ * names a `yourtal_test_*` database, which `with-test-db.mjs` sets to the
+ * app role too — so falling back to it here is as safe as `TEST_DATABASE_URL`.
  */
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
-
 export function testBusinessDb(): BusinessDb {
-  return createBusinessDb(process.env["TEST_DATABASE_URL"] ?? APP_URL);
+  return createBusinessDb(process.env["TEST_DATABASE_URL"] ?? requiredEnv("DATABASE_URL"));
+}
+
+/** Not `!`: this file is not `*.test.ts`, so the strict lint config applies. */
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (value === undefined) {
+    throw new Error(`${name} is not set — see vitest.config.ts's setupFiles.`);
+  }
+  return value;
 }
 
 /**

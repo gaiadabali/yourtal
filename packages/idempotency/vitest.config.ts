@@ -5,6 +5,9 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     passWithNoTests: false,
+    // YT-0571: refuses to run this suite against anything but a
+    // yourtal_test_* database — see packages/db/scripts/assert-test-database.mjs.
+    setupFiles: ["../db/scripts/assert-test-database.mjs"],
     // postgres-store.test.ts talks to the real Postgres from `pnpm dev:up`.
     //
     // YT-0547: `fileParallelism: false` used to be set here against the

@@ -52,9 +52,6 @@ import { DrizzleCampaignRepository } from "./persistence/drizzle-campaign.reposi
  * as cover.
  */
 
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
-const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal";
-
 /**
  * `TEST_DATABASE_URL` first, for the reason `watch.controller.test.ts` gives
  * at length: `vitest.config.ts` sets `env.DATABASE_URL`, which OVERRIDES a
@@ -75,9 +72,14 @@ const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal
  * never happened — the controller correctly 404s a row it never received.
  * `DATABASE_OWNER_URL` is the same override `store-db.test-helper.ts` and
  * `with-test-db.mjs` already use for exactly this connection.
+ *
+ * YT-0571: no literal fallback for either anymore — `vitest.config.ts`'s
+ * `setupFiles` already refuses to run this suite unless both name a
+ * `yourtal_test_*` database, so `DATABASE_URL`/`DATABASE_OWNER_URL` are as
+ * safe a fallback as the literals used to be, without being a real dev URL.
  */
-const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? APP_URL);
-const owner = createAppDb(process.env["DATABASE_OWNER_URL"] ?? OWNER_URL);
+const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!);
+const owner = createAppDb(process.env["DATABASE_OWNER_URL"]!);
 const campaigns = new DrizzleCampaignRepository(db);
 const controller = new CampaignController(campaigns);
 

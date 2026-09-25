@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/yourtal/services/voucher/internal/idempotency"
 	"github.com/yourtal/services/voucher/internal/merchantauth"
+	"github.com/yourtal/services/voucher/internal/testdb"
 )
 
 // The Go-side interceptor against the shared platform.idempotency table
@@ -25,7 +25,6 @@ import (
 // `internal/redeem`'s fixture: the invariants here (one claim wins a race,
 // a replay never re-runs the handler, a mismatched body is refused) are
 // database behaviour, and a fake would only prove the code calls something.
-const defaultURL = "postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal"
 
 func discardLogger() *slog.Logger { return slog.New(slog.NewJSONHandler(io.Discard, nil)) }
 
@@ -38,10 +37,7 @@ func newHarness(t *testing.T) *harness {
 	t.Helper()
 	ctx := context.Background()
 
-	url := os.Getenv("VOUCHER_DATABASE_URL")
-	if url == "" {
-		url = defaultURL
-	}
+	url := testdb.URL(t, "VOUCHER_DATABASE_URL")
 	pool, err := pgxpool.New(ctx, url)
 	if err != nil {
 		t.Fatalf("connect: %v", err)

@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/yourtal/services/voucher/internal/testdb"
 )
 
 // `db/schema.sql` is a COPY. Atlas owns the real schema
@@ -27,7 +29,6 @@ import (
 // modules on purpose (docs/13, module boundaries enforced twice) — a shared
 // test helper would be the first thread of the dependency that separation
 // exists to prevent.
-const voucherURL = "postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal"
 
 // `[a-z_0-9]+`, and the digits matter. The ledger service's copy of this
 // pattern is `[a-z_]+`, which happens to work there because no ledger column
@@ -60,10 +61,7 @@ var tables = map[string]string{
 }
 
 func TestSqlcSchemaMatchesTheLiveDatabase(t *testing.T) {
-	url := os.Getenv("VOUCHER_DATABASE_URL")
-	if url == "" {
-		url = voucherURL
-	}
+	url := testdb.URL(t, "VOUCHER_DATABASE_URL")
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, url)

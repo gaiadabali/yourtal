@@ -145,12 +145,12 @@ func Move(
 	}
 
 	moved, err := queries.TransitionVoucher(ctx, sqlcgen.TransitionVoucherParams{
-		ID:                pgUUID(req.VoucherID),
-		State:             string(req.To),
-		VoidReason:        voidReason,
-		Version:           req.Version,
+		ID:                  pgUUID(req.VoucherID),
+		State:               string(req.To),
+		VoidReason:          voidReason,
+		Version:             req.Version,
 		RemainingValueMinor: req.RemainingMinor,
-		OwnerID:           owner,
+		OwnerID:             owner,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return sqlcgen.TransitionVoucherRow{}, fmt.Errorf("%w: voucher %s at version %d",

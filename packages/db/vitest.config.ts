@@ -5,6 +5,10 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     passWithNoTests: false,
+    // YT-0571: refuses to run this suite against anything but a
+    // yourtal_test_* database (assert-test-database.mjs's own header has
+    // why it is a setupFile and not globalSetup).
+    setupFiles: ["./scripts/assert-test-database.mjs"],
     // YT-0547. `fileParallelism: false` used to live here, with a comment
     // saying a parallel worker writing the same ledger rows would make
     // failures unreproducible. That was serialising files WITHIN this

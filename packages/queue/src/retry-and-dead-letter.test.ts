@@ -18,9 +18,10 @@ import { getDeadLetteredJobs, getQueueDepth, getRetriedJobs } from "./observabil
 
 const { Pool } = pg;
 
-const APP_URL =
-  process.env["TEST_DATABASE_URL"] ??
-  "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
+// No hard-coded dev URL (YT-0571): `vitest.config.ts`'s `setupFiles`
+// refuses to run this suite unless `DATABASE_URL` names a `yourtal_test_*`
+// database, so it is a safe fallback in place of a literal.
+const APP_URL = process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!;
 
 let pool: pg.Pool;
 let boss: PgBoss;

@@ -18,10 +18,16 @@
     "deliberately unbalances ledger.entry to prove tampering is detected, while",
     "internal/ledger asserts the whole ledger is balanced. Run in parallel they",
     "race. See YT-0567 for the real fix; this flag makes the gate deterministic",
-    "in the meantime."
+    "in the meantime.",
+    "",
+    "YT-0571: `go test` alone talks to whatever LEDGER_DATABASE_URL happens to",
+    "be (dev, if the worktree's .env is loaded) — and the tests now refuse to",
+    "run at all without it, via internal/testdb. with-test-db.mjs is what sets",
+    "it to a fresh yourtal_test_* database, the same convention the TS packages",
+    "already use."
   ],
   "scripts": {
-    "test": "go test -count=1 -p 1 ./...",
+    "test": "node ../../packages/db/scripts/with-test-db.mjs -- go test -count=1 -p 1 ./...",
     "typecheck": "go vet ./..."
   }
 }

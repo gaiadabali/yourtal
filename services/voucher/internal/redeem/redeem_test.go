@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/keyring"
 	"github.com/yourtal/services/voucher/internal/redeem"
+	"github.com/yourtal/services/voucher/internal/testdb"
 )
 
 // The whole redemption network, end to end, against the real Postgres from
@@ -28,10 +28,6 @@ import (
 // As `yourtal_voucher`: the service's own role. Running as the owner would
 // pass while proving nothing about whether the grants it actually deploys
 // with are sufficient.
-const (
-	defaultURL      = "postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal"
-	defaultOwnerURL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal"
-)
 
 type fixture struct {
 	minter  *issue.Minter
@@ -47,10 +43,7 @@ func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	ctx := context.Background()
 
-	url := os.Getenv("VOUCHER_DATABASE_URL")
-	if url == "" {
-		url = defaultURL
-	}
+	url := testdb.URL(t, "VOUCHER_DATABASE_URL")
 
 	pool, err := pgxpool.New(ctx, url)
 	if err != nil {
@@ -269,10 +262,7 @@ func (f *fixture) stateOf(t *testing.T, voucherID uuid.UUID) string {
 func (f *fixture) asOwner(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 
-	url := os.Getenv("DATABASE_OWNER_URL")
-	if url == "" {
-		url = defaultOwnerURL
-	}
+	url := testdb.URL(t, "DATABASE_OWNER_URL")
 	pool, err := pgxpool.New(context.Background(), url)
 	if err != nil {
 		t.Fatalf("connect as owner: %v", err)

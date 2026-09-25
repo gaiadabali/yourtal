@@ -3,7 +3,6 @@ package proof_test
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -14,9 +13,8 @@ import (
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/proof"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
+	"github.com/yourtal/services/ledger/internal/testdb"
 )
-
-const ledgerURL = "postgres://yourtal_ledger:ledger_local_only@127.0.0.1:26432/yourtal"
 
 var counter atomic.Uint64
 
@@ -44,10 +42,7 @@ func newChecker(t *testing.T, alerter proof.Alerter) (*proof.Checker, *pgxpool.P
 	t.Helper()
 	ctx := context.Background()
 
-	url := os.Getenv("LEDGER_DATABASE_URL")
-	if url == "" {
-		url = ledgerURL
-	}
+	url := testdb.URL(t, "LEDGER_DATABASE_URL")
 	pool, err := pgxpool.New(ctx, url)
 	if err != nil {
 		t.Fatalf("connect: %v", err)
@@ -229,7 +224,7 @@ func TestRunPagesRatherThanMerelyLogging(t *testing.T) {
 	checker, pool := newChecker(t, alerter)
 	ctx := context.Background()
 
-	super, err := pgxpool.New(ctx, superuserURL())
+	super, err := pgxpool.New(ctx, superuserURL(t))
 	if err != nil {
 		t.Fatalf("superuser connect: %v", err)
 	}
@@ -260,7 +255,7 @@ func TestAFailedPageIsItselfAnIncident(t *testing.T) {
 	checker, pool := newChecker(t, alerter)
 	ctx := context.Background()
 
-	super, err := pgxpool.New(ctx, superuserURL())
+	super, err := pgxpool.New(ctx, superuserURL(t))
 	if err != nil {
 		t.Fatalf("superuser connect: %v", err)
 	}
@@ -327,7 +322,7 @@ func writeTransfer(t *testing.T, pool *pgxpool.Pool, amount int64) string {
 func superuser(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	pool, err := pgxpool.New(context.Background(),
-		superuserURL())
+		superuserURL(t))
 	if err != nil {
 		t.Fatalf("superuser connect: %v", err)
 	}
@@ -453,10 +448,8 @@ func tamperBalance(t *testing.T, ctx context.Context, super *pgxpool.Pool, trans
 }
 
 // superuserURL follows DATABASE_OWNER_URL so the tampering happens in the
-// same database the checker reads (a slot or test database, not always yourtal).
-func superuserURL() string {
-	if url := os.Getenv("DATABASE_OWNER_URL"); url != "" {
-		return url
-	}
-	return "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal"
+// same (test) database the checker reads. No fallback — see testdb.URL.
+func superuserURL(t *testing.T) string {
+	t.Helper()
+	return testdb.URL(t, "DATABASE_OWNER_URL")
 }

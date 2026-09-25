@@ -9,6 +9,13 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     passWithNoTests: false,
+    // YT-0571: refuses to run this suite against anything but a
+    // yourtal_test_* database — see packages/db/scripts/assert-test-database.mjs.
+    // Runs AFTER `env` below is applied (setupFiles execute inside the
+    // worker, post `test.env`), so it sees the same DATABASE_URL the tests
+    // themselves get — including the literal fallback right below, which is
+    // exactly what it exists to catch when nothing set the real one.
+    setupFiles: ["../../packages/db/scripts/assert-test-database.mjs"],
 
     /**
      * The app role, not the owner — so a missing grant fails here rather

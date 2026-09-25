@@ -1,0 +1,7 @@
+# Allow-list: only what `go build` needs reaches the image, never a local
+# binary, an env file or node_modules.
+*
+!go.mod
+!go.sum
+!cmd/
+!internal/

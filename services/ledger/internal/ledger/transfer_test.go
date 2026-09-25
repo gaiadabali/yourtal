@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
+	"github.com/yourtal/services/ledger/internal/testdb"
 )
 
 // YT-0042, against the real Postgres from `pnpm dev:up`.
@@ -23,15 +23,10 @@ import (
 // key, Serializable isolation under concurrency — and none of those exist in
 // a fake.
 
-const ledgerURL = "postgres://yourtal_ledger:ledger_local_only@127.0.0.1:26432/yourtal"
-
 func newLedger(t *testing.T) (*ledger.Ledger, *pgxpool.Pool) {
 	t.Helper()
 
-	url := os.Getenv("LEDGER_DATABASE_URL")
-	if url == "" {
-		url = ledgerURL
-	}
+	url := testdb.URL(t, "LEDGER_DATABASE_URL")
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, url)

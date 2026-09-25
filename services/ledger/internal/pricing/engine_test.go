@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/pricing"
+	"github.com/yourtal/services/ledger/internal/testdb"
 )
 
 // Against the real Postgres from `pnpm dev:up`, for the same reason the
@@ -23,7 +24,6 @@ import (
 // suite is the only writer of the numbers it reads, and the coverage
 // assertions can be about a delta this test caused rather than about
 // whatever the database happened to be holding.
-const ledgerURL = "postgres://yourtal_ledger:ledger_local_only@127.0.0.1:26432/yourtal"
 
 const (
 	testCountry  = "AU"
@@ -45,7 +45,7 @@ func newEngine(t *testing.T) (*pricing.Engine, *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
 
-	pool, err := pgxpool.New(ctx, ledgerURL)
+	pool, err := pgxpool.New(ctx, testdb.URL(t, "LEDGER_DATABASE_URL"))
 	if err != nil {
 		t.Fatalf("connect: %v", err)
 	}

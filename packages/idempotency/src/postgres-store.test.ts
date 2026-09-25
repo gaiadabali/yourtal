@@ -20,16 +20,17 @@ const { Pool } = pg;
  * means it was immune to the standard sabotage of pointing `DATABASE_URL`
  * (or anything else) at a dead host — the suite would keep connecting to
  * whatever `pnpm dev:up` left running and call that proof. `TEST_DATABASE_URL`
- * read first, literal as the fallback, matches the pattern `apps/api`'s
+ * read first, `DATABASE_URL` as the fallback, matches the pattern `apps/api`'s
  * database-backed test files use for the same reason (`vitest.config.ts`
  * there sets `env.DATABASE_URL`, so `TEST_DATABASE_URL` is the name a
  * deliberate break can actually reach) — this package has no such config
- * override, but the fix is the same shape: environment first, config or
- * literal only as the fallback.
+ * override, but the fix is the same shape: environment first.
+ *
+ * No hard-coded dev URL anymore (YT-0571): `vitest.config.ts`'s
+ * `setupFiles` refuses to run this suite unless `DATABASE_URL` names a
+ * `yourtal_test_*` database, so it is a safe fallback in place of a literal.
  */
-const APP_URL =
-  process.env["TEST_DATABASE_URL"] ??
-  "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
+const APP_URL = process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!;
 const AT = new Date("2026-09-19T10:00:00Z");
 
 let pool: pg.Pool;

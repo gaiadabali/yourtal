@@ -13,6 +13,7 @@ import (
 
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/reward"
+	"github.com/yourtal/services/ledger/internal/testdb"
 )
 
 // YT-0045, against the real Postgres from `pnpm dev:up`.
@@ -21,8 +22,6 @@ import (
 // without a funded allocation behind it. It is enforced by a single UPDATE
 // whose WHERE clause fails to match when the allocation is short — so the
 // only way to know it holds is to run it, concurrently, against Postgres.
-
-const ledgerURL = "postgres://yourtal_ledger:ledger_local_only@127.0.0.1:26432/yourtal"
 
 var counter atomic.Uint64
 
@@ -44,7 +43,7 @@ func newEngine(t *testing.T, gate reward.RiskGate) (*reward.Engine, *pgxpool.Poo
 	t.Helper()
 	ctx := context.Background()
 
-	pool, err := pgxpool.New(ctx, ledgerURL)
+	pool, err := pgxpool.New(ctx, testdb.URL(t, "LEDGER_DATABASE_URL"))
 	if err != nil {
 		t.Fatalf("connect: %v", err)
 	}

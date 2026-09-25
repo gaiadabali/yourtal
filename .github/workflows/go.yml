@@ -102,6 +102,11 @@ jobs:
       # services/*/package.json. The YT-0567 race needs a shared Postgres to
       # happen, and this job has none — the DB-backed suites skip here by
       # design, which is what the note above explains.
+      # The generated queries must match db/query and db/schema.sql exactly.
+      - name: sqlc output is current
+        if: matrix.name == 'ledger' || matrix.name == 'voucher'
+        run: docker run --rm -v "$PWD":/src -w /src sqlc/sqlc:1.31.1 diff
+
       - name: Known vulnerabilities
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 

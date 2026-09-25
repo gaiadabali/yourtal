@@ -5,6 +5,9 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     passWithNoTests: false,
+    // YT-0571: refuses to run this suite against anything but a
+    // yourtal_test_* database — see packages/db/scripts/assert-test-database.mjs.
+    setupFiles: ["../db/scripts/assert-test-database.mjs"],
     // Every suite here talks to the real Postgres from `pnpm dev:up`, via
     // `../db/scripts/with-test-db.mjs` (YT-0547): a fresh, migrated database
     // per invocation, so there is nothing left for file parallelism to

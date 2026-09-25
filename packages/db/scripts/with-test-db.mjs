@@ -10,8 +10,10 @@
 //   1. derives that package's test database name from ITS OWN package.json
 //   2. creates it fresh (test-db.mjs: drop-if-exists, create, schema, migrate)
 //   3. points DATABASE_URL / DATABASE_OWNER_URL / TEST_DATABASE_URL /
-//      TEST_DATABASE_NAME at it for the child process only
-//   4. runs the given command (normally `vitest run`) as that child
+//      TEST_DATABASE_NAME / LEDGER_DATABASE_URL / VOUCHER_DATABASE_URL at it
+//      for the child process only
+//   4. runs the given command (normally `vitest run`, or `go test` for the
+//      ledger/voucher services — YT-0571) as that child
 //   5. drops the database again, whether the command passed or not
 //
 // ## Why the name comes from `package.json`, not a literal in this file
@@ -138,6 +140,13 @@ const childEnv = {
   // `packages/db/src/database-urls.ts` builds APP_URL/OWNER_URL/LEDGER_URL/
   // VOUCHER_URL from this instead of the literal "yourtal".
   TEST_DATABASE_NAME: dbName,
+  // YT-0571: the Go services' own test-only guard (internal/testdb, each
+  // service) reads these directly — they have no TEST_DATABASE_NAME
+  // fallback path to derive them from, unlike the TS side. Same roles as
+  // packages/db/src/database-urls.ts's LEDGER_URL/VOUCHER_URL, same
+  // cluster-wide passwords, pointed at THIS invocation's database.
+  LEDGER_DATABASE_URL: `postgres://yourtal_ledger:ledger_local_only@${host}/${dbName}`,
+  VOUCHER_DATABASE_URL: `postgres://yourtal_voucher:voucher_local_only@${host}/${dbName}`,
 };
 
 let exitCode = 1;

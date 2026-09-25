@@ -27,9 +27,10 @@ const CONFIG: AppConfig = {
   nodeEnv: "test",
   port: 3001,
   pdp: { baseUrl: "http://127.0.0.1:26592", timeoutMs: 500 },
-  databaseUrl:
-    process.env["TEST_DATABASE_URL"] ??
-    "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+  // No literal fallback (YT-0571): `vitest.config.ts`'s `setupFiles` already
+  // refuses to run this suite unless `DATABASE_URL` names a `yourtal_test_*`
+  // database, so it is as safe a fallback here as `TEST_DATABASE_URL`.
+  databaseUrl: process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!,
   redisUrl: "redis://127.0.0.1:26379",
 };
 

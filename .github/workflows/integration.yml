@@ -273,66 +273,37 @@ jobs:
             exit 1
           fi
 
-      # -p 1 and -count=1 for the same reasons as services/*/package.json:
-      # these packages share ONE Postgres and `go test` runs package binaries
-      # concurrently, so internal/proof's deliberate tamper window races
-      # internal/ledger's clean-ledger assertion (YT-0567). Without -p 1 this
-      # job fails intermittently for a reason that has nothing to do with the
-      # change being tested — the most expensive kind of red.
+      # Each Go service runs through its package script, which gives it a
+      # throwaway yourtal_test_* database (with-test-db.mjs); the tests refuse
+      # any other. A SKIP means a suite could not reach Postgres and proved
+      # nothing, so it fails the job.
       - name: Go ledger
-        run: go test -count=1 -p 1 ./...
-        working-directory: services/ledger
-
-      # The point of the whole workflow. `go test` prints "no test files" for
-      # packages without tests, which is fine — but a SKIP here means a suite
-      # could not reach the database and reported success anyway.
-      - name: Assert nothing skipped (ledger)
         run: |
-          go test -count=1 -p 1 ./... -v 2>&1 | tee /tmp/go-test.log
-          if grep -q -- "--- SKIP" /tmp/go-test.log; then
+          set -o pipefail
+          pnpm --filter @yourtal/ledger-service test -v 2>&1 | tee /tmp/go-ledger.log
+          if grep -q -- "--- SKIP" /tmp/go-ledger.log; then
             echo "::error::A Postgres-backed test skipped. It did not run, so its result means nothing."
-            grep -- "--- SKIP" /tmp/go-test.log
+            grep -- "--- SKIP" /tmp/go-ledger.log
             exit 1
           fi
-        working-directory: services/ledger
 
-      # The voucher service (YT-0140..0155). Almost everything it asserts is
-      # a database constraint — one live hold per voucher, a capture that
-      # cannot exceed its authorization, refunds bounded at COMMIT, an audit
-      # chain that breaks when a row is edited — so without Postgres this
-      # suite tests nothing at all and says so by skipping.
-      #
-      # It needs BOTH credentials: `yourtal_voucher` for the service's own
-      # work, and the owner for the tamper tests, which have to damage an
-      # event log the service itself is deliberately unable to damage.
       - name: Go voucher
-        run: go test -count=1 -p 1 ./...
-        working-directory: services/voucher
-        env:
-          VOUCHER_DATABASE_URL: postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal
-          OWNER_DATABASE_URL: ${{ env.DATABASE_OWNER_URL }}
-
-      - name: Assert nothing skipped (voucher)
         run: |
-          go test -count=1 -p 1 ./... -v 2>&1 | tee /tmp/go-voucher.log
+          set -o pipefail
+          pnpm --filter @yourtal/voucher-service test -v 2>&1 | tee /tmp/go-voucher.log
           if grep -q -- "--- SKIP" /tmp/go-voucher.log; then
             echo "::error::A Postgres-backed test skipped. It did not run, so its result means nothing."
             grep -- "--- SKIP" /tmp/go-voucher.log
             exit 1
           fi
-        working-directory: services/voucher
-        env:
-          VOUCHER_DATABASE_URL: postgres://yourtal_voucher:voucher_local_only@127.0.0.1:26432/yourtal
-          OWNER_DATABASE_URL: ${{ env.DATABASE_OWNER_URL }}
 
       # Everything else, now that Postgres and a live PDP are up. The
       # targeted steps above exist for their SKIP guards and their tee'd
-      # logs; this catches every suite that has neither — and it is the
-      # same command `pnpm verify` runs locally, so the two cannot drift.
+      # logs; this runs every suite they did not.
       - name: Every remaining suite
         run: |
           set -o pipefail
-          pnpm exec turbo run test --concurrency=1 2>&1 | tee /tmp/sweep.log
+          pnpm exec turbo run test --concurrency=1 --filter='!@yourtal/db' --filter='!@yourtal/idempotency' --filter='!@yourtal/api' --filter='!@yourtal/ledger-service' --filter='!@yourtal/voucher-service' 2>&1 | tee /tmp/sweep.log
 
       # This step was added without a skip guard, and the media suite
       # promptly reported `7 skipped` while failing on a missing MinIO —

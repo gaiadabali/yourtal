@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/yourtal/services/ledger/internal/testdb"
 )
 
 // `db/schema.sql` is a COPY. Atlas owns the real schema
@@ -22,8 +24,6 @@ import (
 // So the copy is checked against the live database here. If this fails after
 // a migration, the fix is to update db/schema.sql and re-run sqlc, not to
 // relax the test.
-
-const ledgerURL = "postgres://yourtal_ledger:ledger_local_only@127.0.0.1:26432/yourtal"
 
 // A column name: lowercase, may contain digits. The digits matter — see
 // `columnsDeclaredFor` for what the old `[a-z_]+` did to names containing
@@ -42,10 +42,7 @@ var tableLevelClauses = map[string]bool{
 }
 
 func TestSqlcSchemaMatchesTheLiveDatabase(t *testing.T) {
-	url := os.Getenv("LEDGER_DATABASE_URL")
-	if url == "" {
-		url = ledgerURL
-	}
+	url := testdb.URL(t, "LEDGER_DATABASE_URL")
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, url)

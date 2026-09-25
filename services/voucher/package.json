@@ -5,10 +5,14 @@
   "//": [
     "See services/ledger/package.json for why this file exists and why",
     "-count=1 and -p 1 are correctness flags rather than preferences.",
-    "This module shares the same Postgres instance."
+    "This module shares the same Postgres instance.",
+    "",
+    "YT-0571: with-test-db.mjs points VOUCHER_DATABASE_URL / DATABASE_OWNER_URL",
+    "at a fresh yourtal_test_* database; internal/testdb refuses to run these",
+    "tests against anything else."
   ],
   "scripts": {
-    "test": "go test -count=1 -p 1 ./...",
+    "test": "node ../../packages/db/scripts/with-test-db.mjs -- go test -count=1 -p 1 ./...",
     "typecheck": "go vet ./..."
   }
 }

@@ -17,9 +17,6 @@ import { WatchController } from "./watch.controller";
  * because Chrome declines to fire `ended` on a seek.
  */
 
-const APP_URL = "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal";
-const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal";
-
 /**
  * `TEST_DATABASE_URL` first, matching `business-db.test-helper.ts`.
  *
@@ -32,9 +29,17 @@ const OWNER_URL = "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal
  *
  * `TEST_DATABASE_URL` is not set by the config, so it is the handle a
  * deliberate break can actually reach.
+ *
+ * No literal fallback for either connection (YT-0571). `owner` used to be a
+ * BARE `OWNER_URL` literal with no env read at all — the one connection in
+ * this file that always hit the real dev `yourtal` regardless of which
+ * database `db` was pointed at, invisible only because `with-test-db.mjs`
+ * did not exist yet. `vitest.config.ts`'s `setupFiles` now refuses to run
+ * this suite unless `DATABASE_URL`/`DATABASE_OWNER_URL` both name a
+ * `yourtal_test_*` database, so reading them here is safe.
  */
-const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? APP_URL);
-const owner = createAppDb(OWNER_URL);
+const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!);
+const owner = createAppDb(process.env["DATABASE_OWNER_URL"]!);
 const campaigns = new DrizzleCampaignRepository(db);
 const sessions = new DrizzleWatchSessionRepository(db);
 

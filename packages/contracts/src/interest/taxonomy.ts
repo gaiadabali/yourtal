@@ -38,8 +38,10 @@
  * longer exists is not comparable to one against the current tree — and
  * silently comparing them is how a taxonomy migration corrupts a year of
  * profile data.
+ *
+ * Bumped to 2 by TASKS.md 1.1.e: `family-young-children` added.
  */
-export const INTEREST_TAXONOMY_VERSION = 1;
+export const INTEREST_TAXONOMY_VERSION = 2;
 
 /**
  * Categories that may never become nodes, be scored, or be targeted.
@@ -78,6 +80,8 @@ export const BLOCKED_INTEREST_TERMS = [
   "immigration",
   "asylum",
   "union",
+  "expecting",
+  "baby-bump",
 ] as const;
 
 export interface InterestNode {
@@ -224,6 +228,11 @@ export const INTEREST_TAXONOMY = defineTaxonomy([
   { id: "family", label: "Family", parent: null },
   { id: "toys", label: "Toys", parent: "family" },
   { id: "pets", label: "Pets", parent: "family" },
+  // TASKS.md 1.1.e / F2's `parents` audience. Declared only — a user opts
+  // into it themselves — never derived from receipts or merchant category,
+  // which is exactly what would turn it into a pregnancy/child-health signal
+  // this file's blocklist exists to keep out.
+  { id: "family-young-children", label: "Parent of young children", parent: "family" },
 
   { id: "services", label: "Services", parent: null },
   { id: "laundry", label: "Laundry", parent: "services" },

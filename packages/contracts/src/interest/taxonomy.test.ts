@@ -20,7 +20,8 @@ import {
 
 describe("the taxonomy loads and is well formed", () => {
   it("has a version and nodes", () => {
-    expect(INTEREST_TAXONOMY_VERSION).toBe(1);
+    // Bumped to 2 by TASKS.md 1.1.e (`family-young-children` added).
+    expect(INTEREST_TAXONOMY_VERSION).toBe(2);
     expect(INTEREST_TAXONOMY.size).toBeGreaterThan(50);
   });
 

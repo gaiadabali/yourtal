@@ -180,6 +180,39 @@ func (q *Queries) GetAllocation(ctx context.Context, id string) (LedgerAllocatio
 	return i, err
 }
 
+const getBurn = `-- name: GetBurn :one
+SELECT b.saga_id, b.user_id, b.region, b.points, b.settlement_minor, b.created_at,
+       r.created_at AS reinstated_at
+FROM ledger.burn b
+LEFT JOIN ledger.burn_reinstatement r ON r.saga_id = b.saga_id
+WHERE b.saga_id = $1
+`
+
+type GetBurnRow struct {
+	SagaID          string
+	UserID          string
+	Region          string
+	Points          int64
+	SettlementMinor int64
+	CreatedAt       pgtype.Timestamptz
+	ReinstatedAt    pgtype.Timestamptz
+}
+
+func (q *Queries) GetBurn(ctx context.Context, sagaID string) (GetBurnRow, error) {
+	row := q.db.QueryRow(ctx, getBurn, sagaID)
+	var i GetBurnRow
+	err := row.Scan(
+		&i.SagaID,
+		&i.UserID,
+		&i.Region,
+		&i.Points,
+		&i.SettlementMinor,
+		&i.CreatedAt,
+		&i.ReinstatedAt,
+	)
+	return i, err
+}
+
 const getDailyProof = `-- name: GetDailyProof :one
 SELECT proof_date, merkle_root, entry_count, first_entry_id, last_entry_id, computed_at
 FROM ledger.daily_proof WHERE proof_date = $1
@@ -320,6 +353,56 @@ func (q *Queries) InsertAllocation(ctx context.Context, arg InsertAllocationPara
 		arg.FunderType,
 		arg.FunderID,
 		arg.TotalPoints,
+	)
+	return err
+}
+
+const insertBurn = `-- name: InsertBurn :exec
+INSERT INTO ledger.burn (saga_id, user_id, region, points, settlement_minor, points_transfer_id, liability_transfer_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+`
+
+type InsertBurnParams struct {
+	SagaID              string
+	UserID              string
+	Region              string
+	Points              int64
+	SettlementMinor     int64
+	PointsTransferID    string
+	LiabilityTransferID string
+}
+
+func (q *Queries) InsertBurn(ctx context.Context, arg InsertBurnParams) error {
+	_, err := q.db.Exec(ctx, insertBurn,
+		arg.SagaID,
+		arg.UserID,
+		arg.Region,
+		arg.Points,
+		arg.SettlementMinor,
+		arg.PointsTransferID,
+		arg.LiabilityTransferID,
+	)
+	return err
+}
+
+const insertBurnReinstatement = `-- name: InsertBurnReinstatement :exec
+INSERT INTO ledger.burn_reinstatement (saga_id, points_transfer_id, liability_transfer_id, reason)
+VALUES ($1, $2, $3, $4)
+`
+
+type InsertBurnReinstatementParams struct {
+	SagaID              string
+	PointsTransferID    string
+	LiabilityTransferID string
+	Reason              string
+}
+
+func (q *Queries) InsertBurnReinstatement(ctx context.Context, arg InsertBurnReinstatementParams) error {
+	_, err := q.db.Exec(ctx, insertBurnReinstatement,
+		arg.SagaID,
+		arg.PointsTransferID,
+		arg.LiabilityTransferID,
+		arg.Reason,
 	)
 	return err
 }

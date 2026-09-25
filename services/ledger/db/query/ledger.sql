@@ -194,3 +194,18 @@ SELECT pg_advisory_unlock(hashtextextended('ledger.grant:' || sqlc.arg(user_id):
 -- 20260925195000 checks for it at COMMIT). Two different people, by CHECK.
 INSERT INTO ledger.marketing_funding (id, region, amount_minor, proposed_by, approved_by, transfer_id)
 VALUES ($1, $2, $3, $4, $5, $6);
+
+-- name: InsertBurn :exec
+INSERT INTO ledger.burn (saga_id, user_id, region, points, settlement_minor, points_transfer_id, liability_transfer_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7);
+
+-- name: GetBurn :one
+SELECT b.saga_id, b.user_id, b.region, b.points, b.settlement_minor, b.created_at,
+       r.created_at AS reinstated_at
+FROM ledger.burn b
+LEFT JOIN ledger.burn_reinstatement r ON r.saga_id = b.saga_id
+WHERE b.saga_id = $1;
+
+-- name: InsertBurnReinstatement :exec
+INSERT INTO ledger.burn_reinstatement (saga_id, points_transfer_id, liability_transfer_id, reason)
+VALUES ($1, $2, $3, $4);

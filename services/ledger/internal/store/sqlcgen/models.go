@@ -64,6 +64,25 @@ type LedgerBackingRateApproval struct {
 	EffectiveFrom pgtype.Timestamptz
 }
 
+type LedgerBurn struct {
+	SagaID              string
+	UserID              string
+	Region              string
+	Points              int64
+	SettlementMinor     int64
+	PointsTransferID    string
+	LiabilityTransferID string
+	CreatedAt           pgtype.Timestamptz
+}
+
+type LedgerBurnReinstatement struct {
+	SagaID              string
+	PointsTransferID    string
+	LiabilityTransferID string
+	Reason              string
+	CreatedAt           pgtype.Timestamptz
+}
+
 type LedgerDailyProof struct {
 	ProofDate    pgtype.Date
 	MerkleRoot   string

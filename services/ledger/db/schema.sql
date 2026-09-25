@@ -136,3 +136,22 @@ CREATE FUNCTION ledger.allocation_release_expired()
   RETURNS integer LANGUAGE sql AS $$ SELECT 0 $$;
 CREATE FUNCTION ledger.allocation_return(p_grant_id text)
   RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
+
+CREATE TABLE ledger.burn (
+  saga_id               text        PRIMARY KEY,
+  user_id               text        NOT NULL,
+  region                text        NOT NULL,
+  points                bigint      NOT NULL,
+  settlement_minor      bigint      NOT NULL,
+  points_transfer_id    text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  liability_transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  created_at            timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ledger.burn_reinstatement (
+  saga_id               text        PRIMARY KEY REFERENCES ledger.burn (saga_id),
+  points_transfer_id    text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  liability_transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  reason                text        NOT NULL,
+  created_at            timestamptz NOT NULL DEFAULT now()
+);

@@ -80,12 +80,17 @@ func TestGuardedAccountsCannotGoNegative(t *testing.T) {
 	merchant := unique("m")
 	insert(t, pool, ledger.MerchantPayable(merchant, au))
 	user := fundedUser(t, book, pool, 50)
+	// The seed funds marketing (4.4.l), so draw one more than whatever is there.
+	marketingCash, err := book.Balance(context.Background(), ledger.PlatformAccountID(au, ledger.RoleMarketingCash))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for name, entries := range map[string][]ledger.Entry{
 		"user available":   ledger.BurnPoints(au, user, 51),
 		"user pending":     ledger.Release(user, 1),
 		"user escrow":      ledger.Reverse(ledger.Suspend(user, 1, 0)),
-		"marketing cash":   ledger.MarketingBacking(au, 1),
+		"marketing cash":   ledger.MarketingBacking(au, marketingCash+1),
 		"merchant payable": ledger.Payout(au, merchant, 1),
 	} {
 		if _, err := transfer(book, entries); !errors.Is(err, ledger.ErrInsufficientFunds) {

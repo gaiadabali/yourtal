@@ -25,7 +25,7 @@ export class WalletAttributeLoader implements ResourceAttributeLoader<"wallet"> 
   async resolve(
     request: FastifyRequest,
   ): Promise<{ readonly id: string; readonly attr: Readonly<Record<string, unknown>> } | null> {
-    const principal = this.principals.resolve(request);
+    const principal = await this.principals.resolve(request);
     if (!principal.roles.includes("user")) return { id: principal.id, attr: { ownerId: "" } };
 
     const voucherId = voucherIdOf(request);

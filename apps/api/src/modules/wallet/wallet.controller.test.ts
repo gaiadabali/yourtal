@@ -60,7 +60,7 @@ describe("GET /api/wallet", () => {
     });
     expect(granted.isOk()).toBe(true);
 
-    const response = await get("/api/wallet", session.headers);
+    const response = await get("/api/wallet", { cookie: session.cookie });
     expect(response.statusCode).toBe(200);
     const wallet = walletSummarySchema.parse(response.json());
     expect(wallet).toMatchObject({ region: "ID", availablePoints: 0, pendingPoints: 60 });
@@ -89,7 +89,7 @@ describe("GET /api/wallet/history", () => {
     });
     expect(granted.isOk()).toBe(true);
 
-    const response = await get("/api/wallet/history", session.headers);
+    const response = await get("/api/wallet/history", { cookie: session.cookie });
     expect(response.statusCode).toBe(200);
     const page = walletHistoryPageSchema.parse(response.json());
     expect(page.entries).toHaveLength(1);
@@ -110,22 +110,26 @@ describe("GET /api/wallet/vouchers", () => {
     expect((await vouchers.activate({ sagaId, ownerId: owner.userId })).isOk()).toBe(true);
     const voucherId = reserved._unsafeUnwrap().voucherId;
 
-    const list = await get("/api/wallet/vouchers", owner.headers);
+    const list = await get("/api/wallet/vouchers", { cookie: owner.cookie });
     expect(list.statusCode).toBe(200);
     expect(list.json()).toMatchObject({ vouchers: [{ voucherId, state: "activated" }] });
     expect(list.body).not.toContain(sagaId);
 
-    const one = await get(`/api/wallet/vouchers/${voucherId}`, owner.headers);
+    const one = await get(`/api/wallet/vouchers/${voucherId}`, { cookie: owner.cookie });
     expect(one.statusCode).toBe(200);
-    const qr = await get(`/api/wallet/vouchers/${voucherId}/qr`, owner.headers);
+    const qr = await get(`/api/wallet/vouchers/${voucherId}/qr`, { cookie: owner.cookie });
     expect(qr.statusCode).toBe(200);
     expect(qr.json()).toMatchObject({ voucherId, token: expect.any(String) as unknown });
 
     // Object-level: another viewer cannot learn the voucher exists.
-    expect((await get(`/api/wallet/vouchers/${voucherId}`, stranger.headers)).statusCode).toBe(404);
-    expect((await get(`/api/wallet/vouchers/${voucherId}/qr`, stranger.headers)).statusCode).toBe(
-      404,
-    );
-    expect((await get("/api/wallet/vouchers/not-a-uuid", owner.headers)).statusCode).toBe(404);
+    expect(
+      (await get(`/api/wallet/vouchers/${voucherId}`, { cookie: stranger.cookie })).statusCode,
+    ).toBe(404);
+    expect(
+      (await get(`/api/wallet/vouchers/${voucherId}/qr`, { cookie: stranger.cookie })).statusCode,
+    ).toBe(404);
+    expect(
+      (await get("/api/wallet/vouchers/not-a-uuid", { cookie: owner.cookie })).statusCode,
+    ).toBe(404);
   });
 });

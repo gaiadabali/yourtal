@@ -50,7 +50,7 @@ export class WalletController {
   @Authorize({ kind: "wallet", action: "view" })
   @Get()
   async summary(@Req() request: FastifyRequest): Promise<WalletSummary> {
-    const userId = this.principals.resolve(request).id;
+    const userId = (await this.principals.resolve(request)).id;
     const profile = await this.profiles.findByUserId(userId);
     if (profile === null) throw new NotFoundException("No such wallet.");
     return toWalletSummary(profile.region, await unwrap(this.ledger.balance(userId)));
@@ -62,7 +62,7 @@ export class WalletController {
     @Req() request: FastifyRequest,
     @Query("startingAfter") startingAfter?: string,
   ): Promise<WalletHistoryPage> {
-    const userId = this.principals.resolve(request).id;
+    const userId = (await this.principals.resolve(request)).id;
     // One extra row says whether there is a next page.
     const rows = await unwrap(
       this.ledger.history({
@@ -84,7 +84,7 @@ export class WalletController {
     @Req() request: FastifyRequest,
     @Query("startingAfter") startingAfter?: string,
   ): Promise<WalletVoucherPage> {
-    const userId = this.principals.resolve(request).id;
+    const userId = (await this.principals.resolve(request)).id;
     const page = await unwrap(
       this.vouchers.listForUser({
         userId,
@@ -101,7 +101,7 @@ export class WalletController {
     @Req() request: FastifyRequest,
     @Param("voucherId") voucherId: string,
   ): Promise<WalletVoucher> {
-    const ownerId = this.principals.resolve(request).id;
+    const ownerId = (await this.principals.resolve(request)).id;
     return toWalletVoucher(await unwrap(this.vouchers.get({ voucherId, ownerId })));
   }
 
@@ -111,7 +111,7 @@ export class WalletController {
     @Req() request: FastifyRequest,
     @Param("voucherId") voucherId: string,
   ): Promise<WalletQr> {
-    const ownerId = this.principals.resolve(request).id;
+    const ownerId = (await this.principals.resolve(request)).id;
     const qr = await unwrap(this.vouchers.qrToken({ voucherId, ownerId }));
     return { voucherId: qr.voucherId, token: qr.token, expiresAt: qr.expiresAt };
   }

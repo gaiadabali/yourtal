@@ -2,15 +2,21 @@ package reward
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/settings"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
 
-// ErrEarnCapReached — the user has earned the daily or monthly maximum (F12).
-var ErrEarnCapReached = errors.New("reward: earn cap reached")
+var (
+	// ErrEarnCapReached — the user has earned the daily or monthly maximum (F12).
+	ErrEarnCapReached = errors.New("reward: earn cap reached")
+	// ErrCapsNotConfigured — no approved earn cap for the region. Refused
+	// rather than defaulted: an economy number is a setting, never a constant.
+	ErrCapsNotConfigured = errors.New("reward: earn caps are not configured for this region")
+)
 
 // Caps are a region's earn caps in points (F12): per calendar day and per
 // calendar month on the region's clock.
@@ -19,26 +25,39 @@ type Caps struct {
 	MonthlyPoints int64
 }
 
-// DefaultCaps are the F12 staging defaults. They move to the 1.2.f settings
-// view (4.4.k) once it exists, so staff can change them without a deploy.
-func DefaultCaps(region ledger.Region) Caps {
-	daily := int64(500)
-	if region == ledger.RegionID {
-		daily = 5_000
+// Caps reads the region's approved earn caps from platform.ledger_setting
+// (1.2.f), so staff change them without a deploy (4.4.k).
+func (e *Engine) Caps(ctx context.Context) (Caps, error) {
+	if e.capsOverride != nil {
+		return *e.capsOverride, nil
 	}
-	return Caps{DailyPoints: daily, MonthlyPoints: 30 * daily}
+	reader := settings.New(e.pool)
+	var caps Caps
+	for key, dst := range map[string]*int64{"daily_earn_cap": &caps.DailyPoints, "monthly_earn_cap": &caps.MonthlyPoints} {
+		raw, err := reader.Get(ctx, string(e.region), key)
+		if err != nil {
+			return Caps{}, err
+		}
+		if raw == nil {
+			return Caps{}, fmt.Errorf("%w: %s %s", ErrCapsNotConfigured, e.region, key)
+		}
+		if err := json.Unmarshal(raw, dst); err != nil {
+			return Caps{}, fmt.Errorf("%w: %s %s is %s", ErrCapsNotConfigured, e.region, key, raw)
+		}
+	}
+	return caps, nil
 }
 
-// WithCaps replaces the engine's caps.
+// WithCaps fixes the engine's caps instead of reading them. Tests only.
 func (e *Engine) WithCaps(caps Caps) *Engine {
-	e.caps = caps
+	e.capsOverride = &caps
 	return e
 }
 
 // checkCaps runs inside the grant's transaction, after LockUserGrants, so
 // the counts it reads cannot change before the grant is written (EM-06,
 // EW-11). Every count uses the database's now(), never the caller's.
-func (e *Engine) checkCaps(ctx context.Context, q *sqlcgen.Queries, req GrantRequest, def ActionDefinition) error {
+func (e *Engine) checkCaps(ctx context.Context, q *sqlcgen.Queries, req GrantRequest, def ActionDefinition, caps Caps) error {
 	perUser, err := q.CountRecentGrantsForUser(ctx, sqlcgen.CountRecentGrantsForUserParams{
 		UserID: req.UserID, ActionType: string(req.Action),
 	})
@@ -73,7 +92,7 @@ func (e *Engine) checkCaps(ctx context.Context, q *sqlcgen.Queries, req GrantReq
 	for _, period := range []struct {
 		name  string
 		limit int64
-	}{{"day", e.caps.DailyPoints}, {"month", e.caps.MonthlyPoints}} {
+	}{{"day", caps.DailyPoints}, {"month", caps.MonthlyPoints}} {
 		earned, err := q.SumPointsEarnedThisPeriod(ctx, sqlcgen.SumPointsEarnedThisPeriodParams{
 			UserID: req.UserID, Period: period.name, Tz: e.region.TimeZone(),
 		})

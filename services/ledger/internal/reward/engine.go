@@ -95,11 +95,12 @@ type Engine struct {
 	// region scopes every account this engine touches. One engine per
 	// economy; AU and ID never share an account or a transfer.
 	region ledger.Region
-	caps   Caps
+	// capsOverride replaces the settings read; tests only (WithCaps).
+	capsOverride *Caps
 }
 
 func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, region ledger.Region) *Engine {
-	return &Engine{pool: pool, ledger: book, risk: risk, region: region, caps: DefaultCaps(region)}
+	return &Engine{pool: pool, ledger: book, risk: risk, region: region}
 }
 
 // Grant evaluates an action and, if everything passes, credits the user.
@@ -153,6 +154,11 @@ func (e *Engine) issue(
 ) (GrantResult, error) {
 	var result GrantResult
 
+	caps, err := e.Caps(ctx)
+	if err != nil {
+		return GrantResult{}, err
+	}
+
 	// The ledger's retry policy, not a second copy of it. Concurrent grants
 	// against one allocation conflict heavily under SERIALIZABLE — see
 	// ledger.WithSerializableRetry for why the backoff and jitter matter.
@@ -181,7 +187,7 @@ func (e *Engine) issue(
 			if err := queries.LockUserGrants(ctx, req.UserID); err != nil {
 				return fmt.Errorf("locking the user's grants: %w", err)
 			}
-			if err := e.checkCaps(ctx, queries, req, def); err != nil {
+			if err := e.checkCaps(ctx, queries, req, def, caps); err != nil {
 				return err
 			}
 

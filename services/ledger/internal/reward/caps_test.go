@@ -86,8 +86,18 @@ func TestTheMonthlyEarnCapStopsEarning(t *testing.T) {
 	}
 }
 
-func TestDefaultCapsAreF12(t *testing.T) {
-	au, id := reward.DefaultCaps(ledger.RegionAU), reward.DefaultCaps(ledger.RegionID)
+// 4.4.k: the caps are the approved F12 settings, read per region.
+func TestCapsComeFromTheRegionSettings(t *testing.T) {
+	idEngine, pool := newEngine(t, reward.AlwaysAllow{})
+	auEngine := reward.New(pool, ledger.New(pool), reward.AlwaysAllow{}, ledger.RegionAU)
+	au, err := auEngine.Caps(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := idEngine.Caps(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if au.DailyPoints != 500 || au.MonthlyPoints != 15_000 || id.DailyPoints != 5_000 || id.MonthlyPoints != 150_000 {
 		t.Errorf("AU %+v, ID %+v; want 500/15000 and 5000/150000", au, id)
 	}

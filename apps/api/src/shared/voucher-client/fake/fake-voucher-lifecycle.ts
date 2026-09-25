@@ -42,7 +42,10 @@ function toReservation(row: VoucherRow): Reservation {
   };
 }
 
-export function reserve(db: AppDb, request: ReserveRequest): ResultAsync<Reservation, VoucherError> {
+export function reserve(
+  db: AppDb,
+  request: ReserveRequest,
+): ResultAsync<Reservation, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<Reservation, VoucherError>> => {
       const existing = await db.execute<VoucherRow>(sql`
@@ -67,7 +70,12 @@ export function reserve(db: AppDb, request: ReserveRequest): ResultAsync<Reserva
         INSERT INTO platform.voucher_fake_voucher (id, listing_id, saga_id, code, code_hash)
         VALUES (${id}, ${request.listingId}, ${request.sagaId}, ${code}, ${sha256(code)})
       `);
-      return ok({ voucherId: id, listingId: request.listingId, sagaId: request.sagaId, state: "reserved" });
+      return ok({
+        voucherId: id,
+        listingId: request.listingId,
+        sagaId: request.sagaId,
+        state: "reserved",
+      });
     })(),
   );
 }
@@ -87,7 +95,9 @@ export function release(db: AppDb, request: ReleaseRequest): ResultAsync<void, V
     (async (): Promise<Result<void, VoucherError>> => {
       const row = await loadVoucherBySaga(db, request.sagaId);
       if (row.state === "activated") {
-        throw new Error(`voucher for saga ${request.sagaId} is already activated and cannot be released`);
+        throw new Error(
+          `voucher for saga ${request.sagaId} is already activated and cannot be released`,
+        );
       }
       await db.execute(
         sql`UPDATE platform.voucher_fake_voucher SET state = 'released' WHERE saga_id = ${request.sagaId}`,
@@ -97,7 +107,10 @@ export function release(db: AppDb, request: ReleaseRequest): ResultAsync<void, V
   );
 }
 
-export function activate(db: AppDb, request: ActivateRequest): ResultAsync<Reservation, VoucherError> {
+export function activate(
+  db: AppDb,
+  request: ActivateRequest,
+): ResultAsync<Reservation, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<Reservation, VoucherError>> => {
       const row = await loadVoucherBySaga(db, request.sagaId);
@@ -125,7 +138,10 @@ export function reveal(db: AppDb, request: RevealRequest): ResultAsync<RevealedC
       if (row === undefined) throw new Error(`no voucher ${request.voucherId} exists`);
       if (row.owner_id !== request.ownerId) {
         return err(
-          ledgerError("audience_blocked", `voucher ${request.voucherId} does not belong to this caller`),
+          ledgerError(
+            "audience_blocked",
+            `voucher ${request.voucherId} does not belong to this caller`,
+          ),
         );
       }
       return ok({ voucherId: row.id, code: row.code });
@@ -144,7 +160,10 @@ export function qrToken(db: AppDb, request: QrTokenRequest): ResultAsync<QrToken
       if (row === undefined) throw new Error(`no voucher ${request.voucherId} exists`);
       if (row.owner_id !== request.ownerId) {
         return err(
-          ledgerError("audience_blocked", `voucher ${request.voucherId} does not belong to this caller`),
+          ledgerError(
+            "audience_blocked",
+            `voucher ${request.voucherId} does not belong to this caller`,
+          ),
         );
       }
       const token = `${row.id}.${randomUUID()}`;

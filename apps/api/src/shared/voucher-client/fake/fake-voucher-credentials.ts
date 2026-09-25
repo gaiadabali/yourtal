@@ -85,7 +85,10 @@ export function rotate(
   );
 }
 
-export function revoke(db: AppDb, request: RevokeCredentialRequest): ResultAsync<void, VoucherError> {
+export function revoke(
+  db: AppDb,
+  request: RevokeCredentialRequest,
+): ResultAsync<void, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<void, VoucherError>> => {
       await db.execute(

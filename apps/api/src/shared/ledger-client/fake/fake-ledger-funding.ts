@@ -35,7 +35,7 @@ type AllocationRow = {
   readonly total_points: string;
   readonly remaining_points: string;
   readonly created_at: string;
-}
+};
 
 function toAllocation(row: AllocationRow): Allocation {
   return {
@@ -133,7 +133,10 @@ export function listAllocations(
   );
 }
 
-export function getAllocation(db: AppDb, allocationId: string): ResultAsync<Allocation, LedgerError> {
+export function getAllocation(
+  db: AppDb,
+  allocationId: string,
+): ResultAsync<Allocation, LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<Allocation, LedgerError>> => {
       const result = await db.execute<AllocationRow>(sql`
@@ -153,7 +156,7 @@ type HoldRow = {
   readonly points: string;
   readonly saga_id: string;
   readonly state: string;
-}
+};
 
 function toHold(row: HoldRow): Hold {
   return {
@@ -174,7 +177,10 @@ export function hold(db: AppDb, request: HoldRequest): ResultAsync<Hold, LedgerE
       `);
       const priorHold = existing.rows[0];
       if (priorHold !== undefined) {
-        if (priorHold.allocation_id !== request.allocationId || Number(priorHold.points) !== request.points) {
+        if (
+          priorHold.allocation_id !== request.allocationId ||
+          Number(priorHold.points) !== request.points
+        ) {
           return err(
             ledgerError(
               "idempotency_conflict",
@@ -204,7 +210,13 @@ export function hold(db: AppDb, request: HoldRequest): ResultAsync<Hold, LedgerE
         INSERT INTO platform.ledger_fake_hold (id, allocation_id, points, saga_id, state)
         VALUES (${id}, ${request.allocationId}, ${request.points}, ${request.sagaId}, 'held')
       `);
-      return ok({ holdId: id, allocationId: request.allocationId, points: request.points, sagaId: request.sagaId, state: "held" });
+      return ok({
+        holdId: id,
+        allocationId: request.allocationId,
+        points: request.points,
+        sagaId: request.sagaId,
+        state: "held",
+      });
     })(),
   );
 }
@@ -227,7 +239,9 @@ export function consume(db: AppDb, holdId: string): ResultAsync<Hold, LedgerErro
       if (row.state === "released") {
         throw new Error(`hold ${holdId} was already released and cannot be consumed`);
       }
-      await db.execute(sql`UPDATE platform.ledger_fake_hold SET state = 'consumed' WHERE id = ${holdId}`);
+      await db.execute(
+        sql`UPDATE platform.ledger_fake_hold SET state = 'consumed' WHERE id = ${holdId}`,
+      );
       return ok(toHold({ ...row, state: "consumed" }));
     })(),
   );
@@ -245,13 +259,18 @@ export function release(db: AppDb, holdId: string): ResultAsync<Hold, LedgerErro
         UPDATE platform.ledger_fake_allocation SET remaining_points = remaining_points + ${row.points}
          WHERE id = ${row.allocation_id}
       `);
-      await db.execute(sql`UPDATE platform.ledger_fake_hold SET state = 'released' WHERE id = ${holdId}`);
+      await db.execute(
+        sql`UPDATE platform.ledger_fake_hold SET state = 'released' WHERE id = ${holdId}`,
+      );
       return ok(toHold({ ...row, state: "released" }));
     })(),
   );
 }
 
-export function returnGrant(db: AppDb, request: ReturnGrantRequest): ResultAsync<void, LedgerError> {
+export function returnGrant(
+  db: AppDb,
+  request: ReturnGrantRequest,
+): ResultAsync<void, LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<void, LedgerError>> => {
       await db.execute(sql`
@@ -262,7 +281,10 @@ export function returnGrant(db: AppDb, request: ReturnGrantRequest): ResultAsync
   );
 }
 
-export function campaignSpend(db: AppDb, campaignId: string): ResultAsync<CampaignSpend, LedgerError> {
+export function campaignSpend(
+  db: AppDb,
+  campaignId: string,
+): ResultAsync<CampaignSpend, LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<CampaignSpend, LedgerError>> => {
       const result = await db.execute<{

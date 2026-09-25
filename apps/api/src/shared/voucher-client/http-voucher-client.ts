@@ -28,7 +28,10 @@ import type {
   Capture,
   CaptureAsDeviceRequest,
 } from "@yourtal/contracts/voucher-internal/redemption";
-import type { KillSwitch, SetKillSwitchRequest } from "@yourtal/contracts/voucher-internal/kill-switch";
+import type {
+  KillSwitch,
+  SetKillSwitchRequest,
+} from "@yourtal/contracts/voucher-internal/kill-switch";
 import type {
   IssueMerchantCredentialRequest,
   MerchantCredential,

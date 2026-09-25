@@ -396,6 +396,40 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "The @yourtal/idempotency package's own dedupe store (packages/idempotency/src/postgres-store.ts) — infrastructure, not a domain contract.",
   "platform.region_setting":
     "1.2.f's per-region economy settings (F12/F23) -- a config store, not a domain entity. `regionSettingSchema` (ledger-internal/settings.ts) types the getSettings/proposeSetting/approveSetting operations, not a row-shaped public contract, and is listed in openapi.test.ts's NOT_PUBLISHED for the same reason.",
+  "platform.ledger_fake_allocation":
+    "1.2.d's FakeLedgerClient backing store (platform.ledger_fake_*), shared by api and worker so `LEDGER_MODE=fake` behaves like the real service. It exists only to give the ledger-internal operations (1.2.a, themselves listed in openapi.test.ts's NOT_PUBLISHED) real semantics before 4.1 lands; nothing reads a row of it directly the way a domain contract would, and 4.9.e retires the whole fake once every live route exists.",
+  "platform.ledger_fake_hold":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.ledger_fake_grant":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.ledger_fake_burn":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.ledger_fake_escrow":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.ledger_fake_backing_rate":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.ledger_fake_quote":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.ledger_fake_rate_proposal":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.ledger_fake_marketing_fund":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.ledger_fake_point_purchase":
+    "Same FakeLedgerClient note as platform.ledger_fake_allocation above.",
+  "platform.voucher_fake_batch":
+    "1.2.d's FakeVoucherClient backing store (platform.voucher_fake_*) -- same reason as platform.ledger_fake_allocation above, for voucher-internal (1.2.b) instead of ledger-internal.",
+  "platform.voucher_fake_voucher":
+    "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
+  "platform.voucher_fake_authorization":
+    "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
+  "platform.voucher_fake_capture":
+    "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
+  "platform.voucher_fake_kill_switch":
+    "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
+  "platform.voucher_fake_credential":
+    "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
+  "voucher.merchant_signature_seen":
+    "Same redemption-network note as voucher.authorization below -- a merchant-terminal signature replay-protection table (20260925194200), not a row a holder or merchant ever reads directly.",
   "platform.sim_outbox":
     "1.6's shared simulated-driver outbox (red line 11) -- infrastructure a reviewer reads through /dev/inbox, not a domain contract any consumer parses.",
   "store.listing_location":

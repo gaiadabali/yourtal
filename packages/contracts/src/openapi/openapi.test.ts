@@ -52,9 +52,118 @@ function componentSchema(id: string): Record<string, unknown> {
  * is the point of making it explicit rather than allowing the completeness
  * check to be loosened.
  */
+/**
+ * 1.2.a/1.2.b: every `ledger-internal` and `voucher-internal` operation type
+ * (pricing, funding, rewards, wallet, economy, batches, lifecycle, redemption,
+ * credentials, kill-switch, stats) plus the closed error enum they share
+ * (1.2.c). These are the shape `FakeLedgerClient`/`HttpLedgerClient` and
+ * their voucher twins speak to `services/ledger`/`services/voucher` over a
+ * service-to-service boundary (4.1/4.5's HMAC-signed calls) -- never a
+ * `/api/:tenantId/*` route a browser calls, so there is nothing here for
+ * this registry (which documents the public/business-facing HTTP contract)
+ * to publish. Same reasoning as `regionSettingSchema` below, which is why
+ * that one lives in this same object rather than its own case.
+ */
+const LEDGER_AND_VOUCHER_INTERNAL_REASON =
+  "ledger-internal/voucher-internal (1.2.a-c): an internal service-to-service operation type, not a public/business-facing HTTP contract -- see this file's comment above NOT_PUBLISHED.";
+
 const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   regionSettingSchema:
     "1.2.f's ledger-internal settings row (getSettings/proposeSetting/approveSetting). Internal to the ledger and 9.5.d's staff console, not a public/business-facing HTTP contract -- same reason ledger-internal and voucher-internal's own operation types are not routed through this registry.",
+
+  // --- ledger-internal (1.2.a): pricing ---
+  quoteRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  quoteSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  lockQuoteRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  priceListingRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  priceListingResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  quotePurchaseRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  quotePurchaseResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- ledger-internal: funding and allocations ---
+  funderTypeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  purchasePointsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  allocationSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  holdRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  holdSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  returnGrantRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  campaignSpendSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- ledger-internal: earning and spending ---
+  trustTierSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  grantKindSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  grantRewardRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  grantActionRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  grantSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  burnForVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  burnSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- ledger-internal: users (wallet) ---
+  escrowRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  escrowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  pendingBucketSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  ledgerBalanceSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  historyEntryKindSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  historyEntrySchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  historyRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- ledger-internal: economy ---
+  coverageSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  economyDailyRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  economyDayRowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  proposeRateRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  rateProposalSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  approveRateRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  fundMarketingRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  statementsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  approvePayoutRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- ledger-internal/voucher-internal (1.2.c): the shared closed error enum ---
+  ledgerErrorCodeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  ledgerErrorSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- voucher-internal (1.2.b): batches ---
+  requestBatchRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  batchSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  approveBatchRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- voucher-internal: lifecycle ---
+  reserveRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  reservationSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  releaseRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  activateRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  revealRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  revealedCodeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  qrTokenRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  qrTokenSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  verifyQrTokenRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  verifyQrTokenResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- voucher-internal: wallet ---
+  listForUserRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  listForUserResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  getVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- voucher-internal: device-authorized redemption ---
+  authorizeAsDeviceRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  authorizationSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  captureAsDeviceRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  captureSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- voucher-internal: kill switches ---
+  killSwitchScopeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  setKillSwitchRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  killSwitchSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- voucher-internal: merchant credentials ---
+  issueMerchantCredentialRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  merchantCredentialSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  rotateCredentialRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  revokeCredentialRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- voucher-internal: merchant stats ---
+  merchantCaptureStatsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  merchantCaptureStatsSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 };
 
 function exportedSchemaNames(): string[] {

@@ -15,7 +15,11 @@ export function merchantCaptureStats(
 ): ResultAsync<MerchantCaptureStats, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<MerchantCaptureStats, VoucherError>> => {
-      const result = await db.execute<{ currency: string | null; count: string; total: string }>(sql`
+      const result = await db.execute<{
+        currency: string | null;
+        count: string;
+        total: string;
+      }>(sql`
         SELECT currency, COUNT(*) AS count, COALESCE(SUM(amount_minor), 0) AS total
           FROM platform.voucher_fake_capture
          WHERE merchant_id = ${request.merchantId}

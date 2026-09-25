@@ -35,7 +35,9 @@ export function coverage(db: AppDb, region: string): ResultAsync<Coverage, Ledge
       `);
       const rate = rateRows.rows[0];
       if (rate === undefined) {
-        return err(ledgerError("region_mismatch", `no backing rate is in force for region ${region}`));
+        return err(
+          ledgerError("region_mismatch", `no backing rate is in force for region ${region}`),
+        );
       }
       const reserveRows = await db.execute<{ reserve: string }>(sql`
         SELECT COALESCE(SUM(paid_minor), 0) AS reserve FROM platform.ledger_fake_point_purchase
@@ -80,16 +82,14 @@ export function economyDaily(
       `);
       const reserveMinor = Number(reserveRows.rows[0]?.reserve ?? 0);
       return ok(
-        issuedRows.rows.map(
-          (row): EconomyDayRow => ({
-            date: row.day,
-            region: request.region as EconomyDayRow["region"],
-            pointsIssued: toPoints(Number(row.issued)),
-            // Burns are not region-tagged in this fake (see the module comment).
-            pointsRedeemed: toPoints(0),
-            reserveMinor: toMinorUnits(reserveMinor),
-          }),
-        ),
+        issuedRows.rows.map((row): EconomyDayRow => ({
+          date: row.day,
+          region: request.region,
+          pointsIssued: toPoints(Number(row.issued)),
+          // Burns are not region-tagged in this fake (see the module comment).
+          pointsRedeemed: toPoints(0),
+          reserveMinor: toMinorUnits(reserveMinor),
+        })),
       );
     })(),
   );
@@ -102,7 +102,7 @@ type RateProposalRow = {
   readonly proposed_by: string;
   readonly approved_by: string | null;
   readonly state: string;
-}
+};
 
 function toRateProposal(row: RateProposalRow): RateProposal {
   return {
@@ -181,7 +181,10 @@ export function fundMarketing(
     (async (): Promise<Result<void, LedgerError>> => {
       if (request.proposedBy === request.approvedBy) {
         return err(
-          ledgerError("already_granted", "marketing funding cannot be approved by its own proposer"),
+          ledgerError(
+            "already_granted",
+            "marketing funding cannot be approved by its own proposer",
+          ),
         );
       }
       await db.execute(sql`
@@ -206,5 +209,7 @@ export function statements(_request: StatementsRequest): ResultAsync<never, Ledg
 
 /** Until 10.1. Same reasoning as `statements` above. */
 export function approvePayout(_request: ApprovePayoutRequest): ResultAsync<never, LedgerError> {
-  return new ResultAsync(Promise.reject(new Error("payout approval is not implemented until 10.1")));
+  return new ResultAsync(
+    Promise.reject(new Error("payout approval is not implemented until 10.1")),
+  );
 }

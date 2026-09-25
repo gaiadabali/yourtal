@@ -22,7 +22,7 @@ type BatchRow = {
   readonly requested_by: string;
   readonly approved_by: string | null;
   readonly state: string;
-}
+};
 
 function toBatch(row: BatchRow): Batch {
   return {
@@ -38,7 +38,10 @@ function toBatch(row: BatchRow): Batch {
   };
 }
 
-export function requestBatch(db: AppDb, request: RequestBatchRequest): ResultAsync<Batch, VoucherError> {
+export function requestBatch(
+  db: AppDb,
+  request: RequestBatchRequest,
+): ResultAsync<Batch, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<Batch, VoucherError>> => {
       const id = randomUUID();
@@ -64,7 +67,10 @@ export function requestBatch(db: AppDb, request: RequestBatchRequest): ResultAsy
 }
 
 /** Two-person approval (YT-0141): `approvedBy` must differ from `requestedBy`, enforced by a CHECK too. */
-export function approveBatch(db: AppDb, request: ApproveBatchRequest): ResultAsync<Batch, VoucherError> {
+export function approveBatch(
+  db: AppDb,
+  request: ApproveBatchRequest,
+): ResultAsync<Batch, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<Batch, VoucherError>> => {
       const rows = await db.execute<BatchRow>(sql`
@@ -74,7 +80,9 @@ export function approveBatch(db: AppDb, request: ApproveBatchRequest): ResultAsy
       const row = rows.rows[0];
       if (row === undefined) throw new Error(`no batch ${request.batchId} exists`);
       if (row.requested_by === request.approvedBy) {
-        return err(ledgerError("already_granted", "a batch cannot be approved by its own requester"));
+        return err(
+          ledgerError("already_granted", "a batch cannot be approved by its own requester"),
+        );
       }
       if (row.state === "approved") return ok(toBatch(row));
       await db.execute(sql`

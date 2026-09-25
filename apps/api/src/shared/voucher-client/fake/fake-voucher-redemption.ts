@@ -84,11 +84,16 @@ export function captureAsDevice(
         );
       }
       if (new Date(row.expires_at).getTime() < Date.now()) {
-        return err(ledgerError("quote_expired", `authorization ${request.authorizationId} has expired`));
+        return err(
+          ledgerError("quote_expired", `authorization ${request.authorizationId} has expired`),
+        );
       }
       if (row.captured) {
         return err(
-          ledgerError("already_granted", `authorization ${request.authorizationId} was already captured`),
+          ledgerError(
+            "already_granted",
+            `authorization ${request.authorizationId} was already captured`,
+          ),
         );
       }
       const captureId = randomUUID();

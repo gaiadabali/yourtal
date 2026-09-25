@@ -26,7 +26,7 @@ type GrantRow = {
   readonly unlock_at: string;
   readonly granted_at: string;
   readonly idempotency_key: string;
-}
+};
 
 function toGrant(row: GrantRow): Grant {
   return {
@@ -44,7 +44,13 @@ async function insertGrant(
   db: AppDb,
   kind: Grant["kind"],
   campaignId: string | null,
-  request: { userId: string; region: string; points: Points; trustTier: 0 | 1 | 2 | 3; idempotencyKey: string },
+  request: {
+    userId: string;
+    region: string;
+    points: Points;
+    trustTier: 0 | 1 | 2 | 3;
+    idempotencyKey: string;
+  },
 ): Promise<Result<Grant, LedgerError>> {
   const existing = await db.execute<GrantRow>(sql`
     SELECT id, kind, user_id, region, points, unlock_at, granted_at, idempotency_key
@@ -53,7 +59,9 @@ async function insertGrant(
   const prior = existing.rows[0];
   if (prior !== undefined) {
     const matches =
-      prior.kind === kind && prior.user_id === request.userId && Number(prior.points) === request.points;
+      prior.kind === kind &&
+      prior.user_id === request.userId &&
+      Number(prior.points) === request.points;
     if (!matches) {
       return err(
         ledgerError(
@@ -86,11 +94,17 @@ async function insertGrant(
   });
 }
 
-export function grantReward(db: AppDb, request: GrantRewardRequest): ResultAsync<Grant, LedgerError> {
+export function grantReward(
+  db: AppDb,
+  request: GrantRewardRequest,
+): ResultAsync<Grant, LedgerError> {
   return new ResultAsync(insertGrant(db, "campaign", request.campaignId, request));
 }
 
-export function grantAction(db: AppDb, request: GrantActionRequest): ResultAsync<Grant, LedgerError> {
+export function grantAction(
+  db: AppDb,
+  request: GrantActionRequest,
+): ResultAsync<Grant, LedgerError> {
   return new ResultAsync(insertGrant(db, request.kind, null, request));
 }
 
@@ -101,7 +115,7 @@ type BurnRow = {
   readonly points: string;
   readonly state: string;
   readonly burned_at: string;
-}
+};
 
 function toBurn(row: BurnRow): Burn {
   return {

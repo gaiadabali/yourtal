@@ -32,7 +32,11 @@ const CONFIG: AppConfig = {
   // database, so it is as safe a fallback here as `TEST_DATABASE_URL`.
   databaseUrl: process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!,
   redisUrl: "redis://127.0.0.1:26379",
-    ledger: { mode: "fake" as const, baseUrl: "http://127.0.0.1:26312", voucherBaseUrl: "http://127.0.0.1:26313" },
+  ledger: {
+    mode: "fake" as const,
+    baseUrl: "http://127.0.0.1:26312",
+    voucherBaseUrl: "http://127.0.0.1:26313",
+  },
 };
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);

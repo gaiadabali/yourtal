@@ -18,7 +18,12 @@ type VoucherRow = {
 };
 
 function toReservation(row: VoucherRow): Reservation {
-  return { voucherId: row.id, listingId: row.listing_id, sagaId: row.saga_id, state: row.state as Reservation["state"] };
+  return {
+    voucherId: row.id,
+    listingId: row.listing_id,
+    sagaId: row.saga_id,
+    state: row.state as Reservation["state"],
+  };
 }
 
 export function listForUser(
@@ -49,7 +54,8 @@ export function get(db: AppDb, request: GetVoucherRequest): ResultAsync<Reservat
          WHERE id = ${request.voucherId} AND owner_id = ${request.ownerId}
       `);
       const row = result.rows[0];
-      if (row === undefined) throw new Error(`no voucher ${request.voucherId} owned by ${request.ownerId} exists`);
+      if (row === undefined)
+        throw new Error(`no voucher ${request.voucherId} owned by ${request.ownerId} exists`);
       return ok(toReservation(row));
     })(),
   );

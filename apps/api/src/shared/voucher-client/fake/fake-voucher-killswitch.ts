@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { ResultAsync, ok } from "neverthrow";
 import type { Result } from "neverthrow";
-import type { KillSwitch, SetKillSwitchRequest } from "@yourtal/contracts/voucher-internal/kill-switch";
+import type {
+  KillSwitch,
+  SetKillSwitchRequest,
+} from "@yourtal/contracts/voucher-internal/kill-switch";
 import type { VoucherError } from "../voucher-internal-client";
 import type { AppDb } from "../../persistence/drizzle-client";
 

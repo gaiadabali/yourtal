@@ -35,7 +35,7 @@ type BackingRateRow = {
   readonly region: string;
   readonly currency: string;
   readonly backing_rate_micros_per_pt: string;
-}
+};
 
 async function currentBackingRate(db: AppDb, region: string, at: Date): Promise<BackingRateRow> {
   const result = await db.execute<BackingRateRow>(sql`
@@ -109,7 +109,7 @@ type QuoteRow = {
   readonly demand_multiplier_bps: number;
   readonly expires_at: string;
   readonly locked: boolean;
-}
+};
 
 function toQuote(row: QuoteRow): Quote {
   return {

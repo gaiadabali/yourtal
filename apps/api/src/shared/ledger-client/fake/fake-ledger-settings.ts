@@ -53,7 +53,10 @@ export async function getSettings(db: AppDb, region: Region): Promise<readonly R
 }
 
 /** Starts a pending change. Never itself in effect — see `approveSetting`. */
-export async function proposeSetting(db: AppDb, input: ProposeSettingInput): Promise<RegionSetting> {
+export async function proposeSetting(
+  db: AppDb,
+  input: ProposeSettingInput,
+): Promise<RegionSetting> {
   const rows = await db.execute<RegionSettingRow>(sql`
     INSERT INTO platform.region_setting (region, key, value, set_by)
     VALUES (${input.region}, ${input.key}, ${JSON.stringify(input.value)}::jsonb, ${input.proposedBy})
@@ -69,7 +72,10 @@ export async function proposeSetting(db: AppDb, input: ProposeSettingInput): Pro
  * here; a self-approval, or approving an already-decided row, reaches the
  * caller as a rejected promise from the trigger's `RAISE EXCEPTION`.
  */
-export async function approveSetting(db: AppDb, input: ApproveSettingInput): Promise<RegionSetting> {
+export async function approveSetting(
+  db: AppDb,
+  input: ApproveSettingInput,
+): Promise<RegionSetting> {
   const rows = await db.execute<RegionSettingRow>(sql`
     UPDATE platform.region_setting SET approved_by = ${input.approvedBy}
      WHERE id = ${input.id}

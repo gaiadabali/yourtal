@@ -32,7 +32,13 @@ export function escrow(db: AppDb, request: EscrowRequest): ResultAsync<Escrow, L
         INSERT INTO platform.ledger_fake_escrow (id, user_id, points, reason)
         VALUES (${id}, ${request.userId}, ${request.points}, ${request.reason})
       `);
-      return ok({ escrowId: id, userId: request.userId, points: request.points, reason: request.reason, state: "held" });
+      return ok({
+        escrowId: id,
+        userId: request.userId,
+        points: request.points,
+        reason: request.reason,
+        state: "held",
+      });
     })(),
   );
 }
@@ -43,7 +49,7 @@ type EscrowRow = {
   readonly points: string;
   readonly reason: string;
   readonly state: string;
-}
+};
 
 export function releaseEscrow(db: AppDb, escrowId: string): ResultAsync<Escrow, LedgerError> {
   return new ResultAsync(
@@ -54,7 +60,9 @@ export function releaseEscrow(db: AppDb, escrowId: string): ResultAsync<Escrow, 
       const row = result.rows[0];
       if (row === undefined) throw new Error(`no escrow ${escrowId} exists`);
       if (row.state === "held") {
-        await db.execute(sql`UPDATE platform.ledger_fake_escrow SET state = 'released' WHERE id = ${escrowId}`);
+        await db.execute(
+          sql`UPDATE platform.ledger_fake_escrow SET state = 'released' WHERE id = ${escrowId}`,
+        );
       }
       return ok({
         escrowId: row.id,
@@ -121,34 +129,31 @@ export function history(
       `);
 
       const combined: CombinedEntry[] = [
-        ...grants.rows.map(
-          (row): CombinedEntry => ({
-            id: row.id,
-            kind: "grant",
-            points: Number(row.points),
-            externalRef: row.idempotency_key,
-            campaignId: row.campaign_id,
-            at: new Date(row.granted_at),
-          }),
-        ),
-        ...burns.rows.map(
-          (row): CombinedEntry => ({
-            id: row.saga_id,
-            kind: "burn",
-            points: Number(row.points),
-            externalRef: row.saga_id,
-            campaignId: null,
-            at: new Date(row.burned_at),
-          }),
-        ),
+        ...grants.rows.map((row): CombinedEntry => ({
+          id: row.id,
+          kind: "grant",
+          points: Number(row.points),
+          externalRef: row.idempotency_key,
+          campaignId: row.campaign_id,
+          at: new Date(row.granted_at),
+        })),
+        ...burns.rows.map((row): CombinedEntry => ({
+          id: row.saga_id,
+          kind: "burn",
+          points: Number(row.points),
+          externalRef: row.saga_id,
+          campaignId: null,
+          at: new Date(row.burned_at),
+        })),
       ].sort((a, b) => b.at.getTime() - a.at.getTime());
 
       const startIndex =
         request.startingAfter === undefined
           ? 0
           : combined.findIndex((entry) => entry.id === request.startingAfter) + 1;
-      const page = combined.slice(startIndex, startIndex + request.limit).map(
-        (entry): LedgerHistoryEntry => ({
+      const page = combined
+        .slice(startIndex, startIndex + request.limit)
+        .map((entry): LedgerHistoryEntry => ({
           id: entry.id,
           kind: entry.kind,
           points: toPoints(entry.points),
@@ -157,8 +162,7 @@ export function history(
           listingId: null,
           voucherId: null,
           at: entry.at.toISOString(),
-        }),
-      );
+        }));
       return ok(page);
     })(),
   );

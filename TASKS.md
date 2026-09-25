@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 15/44 | `███░░░░░░░`  34% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 20/44 | `█████░░░░░`  45% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 22/32 | `███████░░░`  69% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 21/52 | `████░░░░░░`  40% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **15/82** | **104/366** | `███░░░░░░░`  28% |
+| **All** | | | **15/82** | **109/366** | `███░░░░░░░`  30% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -428,13 +428,13 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.1.h A listing's `region` and `currency` come from its business on the server (`BusinessRegionLookup`, a cross-schema read `yourtal_app` already has SELECT for) — `createListingSchema` no longer takes either in the body; a business that does not exist refuses with `business_not_found`.
   - [x] 1.1.g **Check:** contracts and migrations land together and `pnpm check` is green. Verified 2026-09-25: `pnpm check` green (contracts 35/35, web 190/190, ui/authz/jurisdiction/consent/drivers all pass); `packages/db` (10/10) and `apps/api` (44/44, incl. a real-Postgres `DrizzleBusinessRegionLookup` round trip) also pass under `pnpm verify`; `openapi:go:verify` (Go build + vet) clean.
 - [ ] **1.2 Internal ledger and voucher contracts, with fakes that behave like the real thing** · needs: 1.1 — 🔄 slot 3 — a–e here; f (per-region settings) is a third agent's, per F23
-  - [ ] 1.2.a `ledger-internal` covers:
+  - [x] 1.2.a `ledger-internal` covers:
     - **pricing:** `quote` and `lockQuote`; `priceListing(listingId, S, currency)`; `quotePurchase(points, region)`;
     - **funding and allocations:** `purchasePoints`; `listAllocations(businessId)` and `getAllocation`; allocation `hold` / `consume` / `release` / `returnGrant`; `campaignSpend(campaignId)`;
     - **earning and spending:** `grantReward` (campaign); `grantAction` (streak, receipt or goodwill, marketing-funded); `burnForVoucher` and `getBurn(sagaId)`; `reinstateBurn(sagaId)` (K13);
     - **users:** `escrow` and `releaseEscrow`; `balance` (available, pending with unlock dates, expiring) and `history` (each entry carries kind, externalRef and the campaign, listing or voucher it belongs to);
     - **economy:** `coverage(region)` and `economyDaily(region, from, to)`; `proposeRate` and `approveRate`; `fundMarketing`; `statements` and `approvePayout`.
-  - [ ] 1.2.b `voucher-internal` covers:
+  - [x] 1.2.b `voucher-internal` covers:
     - `requestBatch` and `approveBatch`;
     - `reserve(listing, sagaId)`, `release(sagaId)` and `activate(sagaId)`;
     - `reveal` (owner only) and `qrToken` / `verifyQrToken`;
@@ -443,8 +443,8 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - `setKillSwitch` and `listKillSwitches`;
     - `issueMerchantCredential`, `rotate` and `revoke`;
     - `merchantCaptureStats(merchantId, from, to)`.
-  - [ ] 1.2.c A **closed error enum** shared by both contracts: `insufficient_available`, `quote_expired`, `allocation_exhausted`, `campaign_cap_reached`, `velocity_capped`, `solvency_blocked`, `region_mismatch`, `audience_blocked`, `already_granted`, `idempotency_conflict`, `kill_switch`, `currency_mismatch`.
-  - [ ] 1.2.d `apps/api/src/shared/{ledger,voucher}-client`: an **HTTP** implementation plus a **fake** that implements the *semantics*, stored in `platform.ledger_fake_*` tables so api and worker share state:
+  - [x] 1.2.c A **closed error enum** shared by both contracts: `insufficient_available`, `quote_expired`, `allocation_exhausted`, `campaign_cap_reached`, `velocity_capped`, `solvency_blocked`, `region_mismatch`, `audience_blocked`, `already_granted`, `idempotency_conflict`, `kill_switch`, `currency_mismatch`.
+  - [x] 1.2.d `apps/api/src/shared/{ledger,voucher}-client`: an **HTTP** implementation plus a **fake** that implements the *semantics*, stored in `platform.ledger_fake_*` tables so api and worker share state:
     - grants go to pending with an unlock time by tier;
     - burns draw from available only;
     - the same idempotency key with a different body returns 409;
@@ -452,7 +452,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - allocations and campaign caps run out.
     
     `LEDGER_MODE=fake|live` switches between them. `fake` is refused when `APP_ENV=staging` once 4.9 is merged. Until 10.1, `statements` and `approvePayout` return `not_implemented`.
-  - [ ] 1.2.e `ledger-client.contract.spec.ts` and `voucher-client.contract.spec.ts` run against the fake in `pnpm check` and against the live services in 4.1 and 4.5.
+  - [x] 1.2.e `ledger-client.contract.spec.ts` and `voucher-client.contract.spec.ts` run against the fake in `pnpm check` and against the live services in 4.1 and 4.5. (Actual gate: `pnpm verify`/`apps/api`'s own `pnpm test` — `pnpm check`'s test step excludes `@yourtal/api` per 0.4.a, so these DB-backed specs cannot run inside it; 48 files/303 tests pass under `pnpm --filter @yourtal/api test`.)
   - [x] 1.2.f **Per-region settings (F12)**, owned by A together with the `platform_setting` policy: — ✅ 2026-09-25 c59b7b9
     - the table `platform.region_setting(region, key, value, set_by, approved_by, effective_from)`, seeded with every F12 default plus `points_expiry` = off (`inactivity_months` = 12 when on);
     - apps/api reads it through `apps/api/src/shared/settings` (`getSetting(region, key)`, cached for at most 60 s);

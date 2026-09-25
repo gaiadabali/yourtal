@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 31/32 | `██████████`  97% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 34/52 | `███████░░░`  65% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 35/53 | `███████░░░`  66% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **20/82** | **151/367** | `████░░░░░░`  41% |
+| **All** | | | **20/82** | **152/368** | `████░░░░░░`  41% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -739,7 +739,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.4.d **One reward per user per campaign:** `UNIQUE (user_id, campaign_id)` for watch-completed grants, returning `already_granted`.
   - [x] 4.4.e Allocation holds. At reward-session start, `hold` base + maximum bonus with a TTL of 2 × duration + 1 h. The grant consumes the hold; abandonment or expiry releases it through a job. This way a viewer is never refused at the end for `allocation_exhausted`. The decrement-only `SECURITY DEFINER` function has four verbs: hold, consume, release and return. Revoke the ledger role's UPDATE on allocations (EM-08).
   - [x] 4.4.f Velocity caps and the daily and monthly caps (F12) are counted inside the transaction, under a per-user advisory lock, using the database's `now()` (EM-06, EW-11).
-  - [ ] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13). — 🔄 slot 1 (agent D)
+  - [ ] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13). — event emitted (2b35a27); skipping escrowed users waits for escrow
   - [x] 4.4.h K6: every point not paid for by a business is backed by cash.
     - `grantAction` (streak, receipt, goodwill) draws only from a marketing allocation funded by marketing cash → reserve in the same transaction.
     - Marketing cash is increased only by `fundMarketing` (two-person, staff) and by the seed.
@@ -751,7 +751,8 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - add `CHECK B × 1.25 ≤ P_issue`;
     - pin the multiplier at 1.00 (EM-11).
   - [x] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
-  - [ ] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h — 🔄 slot 1 (agent D)
+  - [x] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h — 8b75a69
+  - [ ] 4.4.m Marketing points are backed at exactly B, so a region with no partner purchases sits at coverage 1.0, under the 1.1 pause: its second streak or receipt is refused `solvency_blocked`. Decide whether unspent marketing cash counts toward coverage, or partner purchases must come first in staging
   - [x] 4.4.j **Check:** passed on main 4331d78 (`caps_test`, `contract_test`, `k6_test`; live spec 22/22)
     - five concurrent grants at a cap of 19/20 → exactly one succeeds;
     - a campaign pointed at another business's allocation is refused;

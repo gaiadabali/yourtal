@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { setBillingContactSchema } from "./set-billing-contact.schema";
 
-const valid = { name: "Finance Team", email: "finance@kopikenangan.example", phone: "+6281234567890" };
+const valid = {
+  name: "Finance Team",
+  email: "finance@kopikenangan.example",
+  phone: "+6281234567890",
+};
 
 describe("setBillingContactSchema", () => {
   it("round-trips a valid billing contact", () => {

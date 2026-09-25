@@ -35,7 +35,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 8/43 | `██░░░░░░░░`  19% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 2/6 | 18/32 | `██████░░░░`  56% |
+| **Phase 3** Design language | B | 🔄 in progress | 3/6 | 19/32 | `██████░░░░`  59% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 13/50 | `███░░░░░░░`  26% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **11/82** | **85/363** | `██░░░░░░░░`  23% |
+| **All** | | | **12/82** | **86/363** | `██░░░░░░░░`  24% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -79,7 +79,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`, F21/F22): 4.1.a ✅, 4.2 ✅, 4.3.a–d ✅ (0f18df1); 4.4.f, 4.4.i, 4.9.b ✅ (abc7ade); now 4.6.a–e. Routes and TS clients wait for 1.2 |
-| 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1 ✅ 3.2 ✅ (F3: After Dark). Now 3.3 tokens v2 |
+| 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.3 ✅ (tokens v2 from After Dark). Now 3.4 primitives |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); agent B on helper `yourtal-p1-b` (`phase/1-b`) merged 1.3.a/c/d, stopped ⛔ waiting on 1.1 ✅ for 1.3.b and 1.3's Check, then 1.4 and 1.6; 1.5 and 1.7 last |
 
 ## Decisions for the founder
@@ -636,7 +636,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - Playwright `recordVideo` captures at 390×844 of a scripted 30 s run for each variant (swipe 3 items, in-feed earn, open a campaign, a question appears, the earn moment, the store, the wallet pass), saved to `docs/audit/2026-09-25/lab/`;
     - F3 asked with options.
   - [x] 3.2.g **Check:** F3 is answered, or it defaults to After Dark 24 h after 3.2.f.
-- [ ] **3.3 Tokens v2** · needs: F3 — 🔄 slot 2
+- [x] **3.3 Tokens v2** · needs: F3 — ✅ 2026-09-25 3f090ad
   - [x] 3.3.a Rewrite `packages/ui/src/styles/tokens.css` in three tiers (raw → semantic → component), using the token names in `ui-design.md` §5 D1:
     - surfaces: `canvas`, `surface`, `surface-sunken`, `overlay`;
     - text: `fg`, `fg-muted`, `fg-subtle`, `fg-on-accent`, `fg-on-points`;
@@ -652,8 +652,8 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 3.3.b Three themes from one token set: **viewer** (the picked variant), **studio** (desaturated and dense) and **counter** (maximum contrast, 56 px targets).
   - [x] 3.3.c Rewrite `contrast.test.ts` for the new pairs. Lint bans `text-[Npx]` and raw hex colours, **in B's `features/**` directories only**; C turns the same rules on for its own in 7.8.
   - [x] 3.3.d Delete `(lab)` except the gallery (3.6).
-  - [ ] 3.3.e **Check:** the contrast suite passes in both themes, and a raw hex colour in `features/player` fails lint.
-- [ ] **3.4 Primitives, without breaking C** · needs: 3.3
+  - [x] 3.3.e **Check:** the contrast suite passes in both themes, and a raw hex colour in `features/player` fails lint.
+- [ ] **3.4 Primitives, without breaking C** · needs: 3.3 — 🔄 slot 2
   - [ ] 3.4.a Rework: Button (primary / secondary / ghost / danger / link; sm / md / lg / counter; loading; icon), Input, Textarea, NativeSelect, Card, StatusBadge, Dialog, BottomSheet, Toast with its provider, Tabs, Skeleton, Progress. **Keep every existing export name and prop.** New variants are additive; old ones stay as aliases until C finishes 7.8 and 8.2.
   - [ ] 3.4.b New: Heading, Text, PageContainer, PageHeader, Section, **PointsChip**, MoneyAmount (the currency comes from the data, never the viewer), KeyValue, DataTable (becomes a card list below `md`), EmptyState, ErrorState, Notice, Switch, Chip, SegmentedControl, ChoiceCard, ChannelAvatar (with an initials fallback), **MediaCard** (16:9 and 9:16, with poster, duration and progress), QRPanel, Stepper, FilterBar, ListRow.
   - [ ] 3.4.c **Check:** the console and merchant screens still compile and render, and every primitive is in the gallery (3.6).
@@ -1255,6 +1255,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · B · 3.3 Tokens v2 from After Dark: raw → semantic → component, viewer/studio/counter surfaces as light-dark() pairs, v1 names kept as aliases, contrast checked on every surface in both themes, hex and px lint in B's features, prototypes removed · 3f090ad
 - 2026-09-25 · B · 3.2 Two prototypes of the same flow, captured at 390×844; the founder picked After Dark (F3) · 4b28ec2
 - 2026-09-25 · A · 4.2 Chart of accounts per region: natural balances (FundReserve sign fixed), account purposes, the full posting table, one region per transfer in the DB trigger, exact-inverse reversals, trial balance · 8dcfe2c
 - 2026-09-25 · B · 3.1 CSS pipeline: packages/ui compiled, base layer, catalogues auto-loaded, staging banner, `test:rendered` gate (verified red without `@source`) · 4562a65

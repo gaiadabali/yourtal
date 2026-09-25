@@ -35,8 +35,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 3/43 | `█░░░░░░░░░`   7% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 1/6 | 8/32 | `███░░░░░░░`  25% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 10/49 | `██░░░░░░░░`  20% |
+| **Phase 3** Design language | B | 🔄 in progress | 2/6 | 14/32 | `████░░░░░░`  44% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 11/50 | `██░░░░░░░░`  22% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **10/82** | **67/362** | `██░░░░░░░░`  19% |
+| **All** | | | **11/82** | **74/363** | `██░░░░░░░░`  20% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -79,7 +79,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`, F21/F22): 4.1.a ✅, 4.2 ✅, 4.3.a–d ✅ (0f18df1); now 4.4.f, 4.4.i, 4.9.b, 4.6.a–e. Routes and TS clients wait for 1.2 |
-| 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1 ✅ (0.4.h can go now: `test:rendered` exists). Now 3.2 prototypes |
+| 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1 ✅ 3.2 ✅ (F3: After Dark). Now 3.3 tokens v2 |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); agent B on helper `yourtal-p1-b` (`phase/1-b`) merged 1.3.a/c/d, stopped ⛔ waiting on 1.1 ✅ for 1.3.b and 1.3's Check, then 1.4 and 1.6; 1.5 and 1.7 last |
 
 ## Decisions for the founder
@@ -90,7 +90,6 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | # | Question | Options (recommended first) | Needed by |
 | --- | --- | --- | --- |
-| **F3** | Which design variant? Asked with the prototype videos from 3.2. | **After Dark** (used if there is no answer 24 h after 3.2.f) · Daylight | 3.3 |
 | **F9** | Who owns the economy numbers? | **The founder, for now** · Name a person | First real user; not needed for staging |
 
 ### Founder actions (not questions)
@@ -120,6 +119,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F17** | Migration `20260922030000` opened its own transaction inside Atlas's, so it could never apply | **Fix it in place.** It had never been pushed or applied anywhere (no `atlas.sum` line; dev stopped at `20260922020000`). "Never edit a migration" protects applied history; an unapplied, unpushed one may be fixed. |
 | **F18** | F2's no-expiry weakens `docs/24` ID-1, which cited expiry as one of its four legs | **Off in both regions, for good.** Keep expiry built and switchable per region in the staff console. `docs/24` and `docs/25` now record ID-1 as resting on three legs. |
 | **F19** | Only `web-gaiada` can push to `gaiadabali/yourtal`; the active gh account cannot | **Push as web-gaiada** through a one-off credential helper, without switching the active account. Until FA1 gives `hansel-gaiada` write access. |
+| **F3** | Design variant, picked from the 3.2 captures (`docs/audit/2026-09-25/lab/`) | **After Dark**: immersive, UI over full-bleed video with a right rail, dark first; its light theme is defined too. 3.3 builds tokens v2 from it. |
 | **F20** | The shared `yourtal` dev database was full of Go-test leftovers, some not whole Rupiah, so 0.7's migration refused it | **Recreate it clean** (migrations + seed), done 2026-09-25. Slot databases untouched. |
 | **F21** | Phase 4 is gated on Phase 1, which had just started | **Start Phase 4's Go-only parts early** in slot 1: 4.1.a, 4.2 and 4.3.a–d touch only `services/**` and add-only migrations, not 1.2's contracts. Everything that needs 1.2 still waits for it. |
 | **F22** | F21's early scope was done and 1.2 had not started | **More Go-only fixes** in slot 1, inside `services/**` only: 4.4.f, 4.4.i, 4.9.b, then the voucher defects 4.6.a–e. HTTP routes, TS clients and anything needing 1.2's contracts still wait for 1.2. |
@@ -604,25 +604,25 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 3.1.f (requested by A for 2.3.a) `RootDocument` renders `<StagingBanner/>` when `APP_ENV=staging`, and `robots.ts` disallows everything there.
   - [ ] 3.1.h (requested by A, moved from 0.4.h) Add `pnpm --filter @yourtal/web test:rendered` to root `pnpm verify` and as a step in `.github/workflows/integration.yml`; this one line in each file is yours to edit.
   - [x] 3.1.g **Check:** the team invite dialog is visible and usable, axe is clean on the gate's routes, and the banner shows with `APP_ENV=staging`.
-- [ ] **3.2 Two prototypes, and the founder picks one (F3)** · needs: 0.2.b — 🔄 slot 2
+- [x] **3.2 Two prototypes, and the founder picks one (F3)** · needs: 0.2.b — ✅ 2026-09-25 4b28ec2
   - [x] 3.2.a Media: `apps/web/app/(lab)/lab/fetch-media.mjs` downloads 6 vertical and 2 horizontal Pexels clips into `apps/web/public/lab-media/` (gitignored), with each clip's URL and licence in `CREDITS.txt`.
-  - [ ] 3.2.b Build the same flow in `(lab)/lab/` with mock data, excluded from the production build:
+  - [x] 3.2.b Build the same flow in `(lab)/lab/` with mock data, excluded from the production build:
     - the For You feed: vertical teasers autoplaying, a swipe;
     - a Quick campaign earning inside the feed;
     - the long-form player, with a question appearing mid-video and the earn moment;
     - the store as a shoppable grid;
     - the wallet, with each voucher as a pass with a QR code.
-  - [ ] 3.2.c **Variant "After Dark"**: immersive, like TikTok.
+  - [x] 3.2.c **Variant "After Dark"**: immersive, like TikTok.
     - The UI is overlaid on full-bleed video, with a right-rail of actions.
     - Dark-first: canvas `#0B0B0F`, surface `#17171F`, text `#F5F5F7`, accent `#FF3D6E`.
     - Its light theme is defined too.
     - Type: Bricolage Grotesque 700–800 for display, Figtree for body, JetBrains Mono for codes.
-  - [ ] 3.2.d **Variant "Daylight"**: framed, like Instagram and YouTube.
+  - [x] 3.2.d **Variant "Daylight"**: framed, like Instagram and YouTube.
     - The UI sits below the media, on cards.
     - Light-first: canvas `#FFFFFF`, surface `#F4F4F7`, text `#0E0E12`, accent `#5B2EFF`, streak `#FF7A59`.
     - Its dark theme is defined too.
     - Same fonts as After Dark.
-  - [ ] 3.2.e Shared by both variants:
+  - [x] 3.2.e Shared by both variants:
     - **one PointsChip**: a gold fill (`#FFC53D` / `#FFB400`) with dark text, and gold is never used as text colour on a light surface;
     - the **earn moment**: a coin burst lands on a "+N pending · unlocks <date>" badge beside the balance chip, and the chip counts **available** points only;
     - a streak flame (there is no level ring, because the trust tier is never shown);
@@ -631,10 +631,10 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - a scrim behind any text laid over video;
     - tap pauses; under reduced motion there is no autoplay;
     - fonts through `next/font`.
-  - [ ] 3.2.f Deliver to the founder:
+  - [x] 3.2.f Deliver to the founder:
     - Playwright `recordVideo` captures at 390×844 of a scripted 30 s run for each variant (swipe 3 items, in-feed earn, open a campaign, a question appears, the earn moment, the store, the wallet pass), saved to `docs/audit/2026-09-25/lab/`;
     - F3 asked with options.
-  - [ ] 3.2.g **Check:** F3 is answered, or it defaults to After Dark 24 h after 3.2.f.
+  - [x] 3.2.g **Check:** F3 is answered, or it defaults to After Dark 24 h after 3.2.f.
 - [ ] **3.3 Tokens v2** · needs: F3
   - [ ] 3.3.a Rewrite `packages/ui/src/styles/tokens.css` in three tiers (raw → semantic → component), using the token names in `ui-design.md` §5 D1:
     - surfaces: `canvas`, `surface`, `surface-sunken`, `overlay`;
@@ -722,7 +722,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - `validate` uses checked int64 addition, and the checker sums as numeric (EM-23).
   - [ ] 4.3.e Add `/v1/burns` (`burnForVoucher`, `getBurn`, `reinstateBurn`) on these guards, where `reinstateBurn` is K13.
   - [x] 4.3.f **Check:** each of EM-04/09/14/17/18/23 has a test that failed before the fix and passes after.
-- [ ] **4.4 The Reward Engine pays what the partner set, once** · needs: 4.3
+- [ ] **4.4 The Reward Engine pays what the partner set, once** · needs: 4.3 (4.4.f and 4.4.i early, F22) — 🔄 slot 1
   - [ ] 4.4.a The amount comes from the **frozen terms version**, never from the editable `reward_config`, so viewers are paid the terms they entered under (EM-05, EM-16, EW-05).
     - A migration creates the view `campaign.campaign_owner(id, business_id, region, state)`, with SELECT granted to `yourtal_ledger`.
     - A grant is refused unless all of these hold: the allocation's funder type is partner; the funder is the campaign's owner; the allocation's country is the campaign's region; and the campaign is live.
@@ -731,7 +731,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.4.c Evidence: apps/api signs a completion attestation with HMAC over session, user, campaign, terms version, completion time, **asked and correct** (EW-12).
   - [ ] 4.4.d **One reward per user per campaign:** `UNIQUE (user_id, campaign_id)` for watch-completed grants, returning `already_granted`.
   - [ ] 4.4.e Allocation holds. At reward-session start, `hold` base + maximum bonus with a TTL of 2 × duration + 1 h. The grant consumes the hold; abandonment or expiry releases it through a job. This way a viewer is never refused at the end for `allocation_exhausted`. The decrement-only `SECURITY DEFINER` function has four verbs: hold, consume, release and return. Revoke the ledger role's UPDATE on allocations (EM-08).
-  - [ ] 4.4.f Velocity caps and the daily and monthly caps (F12) are counted inside the transaction, under a per-user advisory lock, using the database's `now()` (EM-06, EW-11).
+  - [x] 4.4.f Velocity caps and the daily and monthly caps (F12) are counted inside the transaction, under a per-user advisory lock, using the database's `now()` (EM-06, EW-11).
   - [ ] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13).
   - [ ] 4.4.h K6: every point not paid for by a business is backed by cash.
     - `grantAction` (streak, receipt, goodwill) draws only from a marketing allocation funded by marketing cash → reserve in the same transaction.
@@ -743,6 +743,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - the server computes the charge with `quotePurchase` (packs per F12);
     - add `CHECK B × 1.25 ≤ P_issue`;
     - pin the multiplier at 1.00 (EM-11).
+  - [ ] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
   - [ ] 4.4.j **Check:**
     - five concurrent grants at a cap of 19/20 → exactly one succeeds;
     - a campaign pointed at another business's allocation is refused;
@@ -1253,6 +1254,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · B · 3.2 Two prototypes of the same flow, captured at 390×844; the founder picked After Dark (F3) · 4b28ec2
 - 2026-09-25 · A · 4.2 Chart of accounts per region: natural balances (FundReserve sign fixed), account purposes, the full posting table, one region per transfer in the DB trigger, exact-inverse reversals, trial balance · 8dcfe2c
 - 2026-09-25 · B · 3.1 CSS pipeline: packages/ui compiled, base layer, catalogues auto-loaded, staging banner, `test:rendered` gate (verified red without `@source`) · 4562a65
 - 2026-09-25 · A · Phase 0 done: every workflow green on `main`, 0 open GitHub alerts, `pnpm verify` green; 0.4.h moved to 3.1.h · 0758d48

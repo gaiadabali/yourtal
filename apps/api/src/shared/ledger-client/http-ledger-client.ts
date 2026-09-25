@@ -118,7 +118,13 @@ export class HttpLedgerClient implements LedgerInternalClient {
             : {};
         const code = ledgerErrorCodeSchema.safeParse(refusal["code"]);
         if (code.success) {
-          return err(ledgerError(code.data, String(refusal["message"] ?? code.data)));
+          const message = refusal["message"];
+          return err(
+            ledgerError(
+              code.data,
+              typeof message === "string" && message !== "" ? message : code.data,
+            ),
+          );
         }
         throw new Error(
           `ledger ${path} answered ${String(response.status)}: ${JSON.stringify(problem)}`,

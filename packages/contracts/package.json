@@ -74,7 +74,7 @@
     "@faker-js/faker": "10.6.0",
     "@yourtal/media": "workspace:*",
     "@yourtal/tsconfig": "workspace:*",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "vitest": "5.0.1"
   }
 }

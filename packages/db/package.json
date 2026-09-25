@@ -22,7 +22,7 @@
     "@swc/core": "^1.15.2",
     "@types/pg": "8.23.1",
     "@yourtal/tsconfig": "workspace:*",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "vitest": "5.0.1"
   }
 }

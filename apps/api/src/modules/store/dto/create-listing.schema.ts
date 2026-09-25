@@ -8,9 +8,7 @@ import {
   partialRedemptionSchema,
 } from "@yourtal/contracts/listing";
 import { minorUnitsSchema, pointsSchema } from "@yourtal/contracts/money";
-import { currencySchema } from "@yourtal/contracts/money/value";
 import { audienceSchema } from "@yourtal/contracts/campaign";
-import { regionSchema } from "@yourtal/contracts/region";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 
 /**
@@ -18,6 +16,13 @@ import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
  * `create-business.schema.ts` follows for the caller becoming the owner: a
  * tenant a client can choose in the body is a tenant a client can choose to
  * be.
+ *
+ * `region` and `currency` are ALSO never body fields, as of TASKS.md 1.1.h —
+ * both are resolved from the business the tenant id names
+ * (`create-listing.use-case.ts`), never accepted from the caller. Before
+ * 1.1.a gave businesses a region this file took both in the body; now that a
+ * business has one, asking the caller to name it too would just be a second,
+ * potentially-mismatched copy of a fact the business row already states.
  *
  * `priceInPoints` IS a body field, not computed here. The store module
  * cannot derive it (see `store.module.ts`'s doc comment and the ticket
@@ -33,8 +38,6 @@ export const createListingSchema = z
     description: z.string().min(1).max(500),
     category: listingCategorySchema,
     locationIds: z.array(z.uuid()).min(1),
-    // Until businesses carry a region, the caller names it; see TASKS.md 1.1.
-    currency: currencySchema,
     faceValueMinor: minorUnitsSchema,
     settlementValueMinor: minorUnitsSchema,
     priceInPoints: pointsSchema,
@@ -45,8 +48,6 @@ export const createListingSchema = z
     expiresAt: z.iso.datetime(),
     status: listingStatusSchema,
     perUserLimit: z.number().int().positive().optional(),
-    // Until businesses carry a region, the caller names it too; see TASKS.md 1.1.
-    region: regionSchema,
     audience: audienceSchema,
     contentCategory: contentCategorySchema,
     imageUrl: z.url(),

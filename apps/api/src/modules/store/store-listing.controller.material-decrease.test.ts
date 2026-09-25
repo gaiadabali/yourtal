@@ -8,6 +8,7 @@ import { DrizzleListingPriceRevisionRepository } from "./persistence/drizzle-lis
 import { DrizzleListingRepository } from "./persistence/drizzle-listing.repository";
 import { clearStoreTables, testStoreDb } from "./persistence/store-db.test-helper";
 import { merchantLocations } from "./persistence/schema/listing.table";
+import type { BusinessRegionLookup } from "./persistence/business-region-lookup";
 import { StoreListingController } from "./store-listing.controller";
 
 /**
@@ -35,7 +36,16 @@ function ownerPrincipal(): Principal {
 }
 
 const principals = { resolve: vi.fn().mockReturnValue(ownerPrincipal()) };
-const controller = new StoreListingController(principals, repo, revisions, pdp);
+const businessRegionLookup: BusinessRegionLookup = {
+  findRegionAndCurrency: () => Promise.resolve({ region: "ID", currency: "IDR" }),
+};
+const controller = new StoreListingController(
+  principals,
+  repo,
+  revisions,
+  pdp,
+  businessRegionLookup,
+);
 const request = {} as FastifyRequest;
 
 beforeAll(async () => {

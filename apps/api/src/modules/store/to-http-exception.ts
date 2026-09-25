@@ -9,6 +9,7 @@ import {
 import type { HttpException } from "@nestjs/common";
 import type {
   ApprovalRefusedError,
+  BusinessNotFoundError,
   DecreaseAlreadyPendingError,
   InvalidLifecycleTransitionError,
   InvalidLocationsError,
@@ -27,6 +28,7 @@ const logger = new Logger("StoreErrorMapper");
 export type StoreDomainError =
   | ListingNotFoundError
   | InvalidLocationsError
+  | BusinessNotFoundError
   | InvalidLifecycleTransitionError
   | NotAMaterialDecreaseError
   | DecreaseAlreadyPendingError
@@ -45,6 +47,11 @@ export function mapStoreErrorToHttpException(error: StoreDomainError): HttpExcep
       return new BadRequestException({
         code: "invalid_locations",
         message: `one or more locations do not belong to this business: ${error.locationIds.join(", ")}`,
+      });
+    case "business_not_found":
+      return new NotFoundException({
+        code: "business_not_found",
+        message: `business ${error.businessId} was not found`,
       });
     case "invalid_lifecycle_transition":
       return new BadRequestException({

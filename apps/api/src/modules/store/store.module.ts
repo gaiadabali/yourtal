@@ -11,6 +11,8 @@ import { StoreListingController } from "./store-listing.controller";
 import { DrizzleListingPriceRevisionRepository } from "./persistence/drizzle-listing-price-revision.repository";
 import { DrizzleListingRepository } from "./persistence/drizzle-listing.repository";
 import { DrizzleSettlementDecreaseRequestRepository } from "./persistence/drizzle-settlement-decrease-request.repository";
+import { DrizzleBusinessRegionLookup } from "./persistence/drizzle-business-region-lookup";
+import { BUSINESS_REGION_LOOKUP } from "./persistence/business-region-lookup";
 import { LISTING_PRICE_REVISION_REPOSITORY } from "./persistence/listing-price-revision.repository";
 import { LISTING_REPOSITORY } from "./persistence/listing.repository";
 import { SETTLEMENT_DECREASE_REQUEST_REPOSITORY } from "./persistence/settlement-decrease-request.repository";
@@ -68,6 +70,11 @@ export const STORE_DB = Symbol("STORE_DB");
     {
       provide: SETTLEMENT_DECREASE_REQUEST_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleSettlementDecreaseRequestRepository(db),
+      inject: [STORE_DB],
+    },
+    {
+      provide: BUSINESS_REGION_LOOKUP,
+      useFactory: (db: AppDb) => new DrizzleBusinessRegionLookup(db),
       inject: [STORE_DB],
     },
   ],

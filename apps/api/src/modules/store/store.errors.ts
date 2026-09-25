@@ -14,6 +14,16 @@ export interface InvalidLocationsError {
   readonly locationIds: readonly string[];
 }
 
+/**
+ * TASKS.md 1.1.h: a listing's region and currency come from its business, so
+ * creating one against a business id nothing has onboarded yet is refused
+ * rather than falling back to a guess.
+ */
+export interface BusinessNotFoundError {
+  readonly type: "business_not_found";
+  readonly businessId: string;
+}
+
 export interface InvalidLifecycleTransitionError {
   readonly type: "invalid_lifecycle_transition";
   readonly from: string;
@@ -54,7 +64,10 @@ export interface ApprovalRefusedError {
   readonly requestId: string;
 }
 
-export type CreateListingError = InvalidLocationsError | PersistenceFailedError;
+export type CreateListingError =
+  | InvalidLocationsError
+  | BusinessNotFoundError
+  | PersistenceFailedError;
 
 export type EditListingError = ListingNotFoundError | PersistenceFailedError;
 

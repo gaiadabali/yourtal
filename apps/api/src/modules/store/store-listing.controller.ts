@@ -14,6 +14,8 @@ import { LISTING_PRICE_REVISION_REPOSITORY } from "./persistence/listing-price-r
 import type { ListingPriceRevisionRepository } from "./persistence/listing-price-revision.repository";
 import { LISTING_REPOSITORY } from "./persistence/listing.repository";
 import type { ListingRepository } from "./persistence/listing.repository";
+import { BUSINESS_REGION_LOOKUP } from "./persistence/business-region-lookup";
+import type { BusinessRegionLookup } from "./persistence/business-region-lookup";
 import { LISTING_WRITE_RETENTION_MS } from "./retention";
 import { mapStoreErrorToHttpException } from "./to-http-exception";
 import { createListing } from "./use-cases/create-listing.use-case";
@@ -41,19 +43,21 @@ export class StoreListingController {
     @Inject(LISTING_PRICE_REVISION_REPOSITORY)
     private readonly priceRevisions: ListingPriceRevisionRepository,
     @Inject(PDP_CLIENT) private readonly pdp: PdpClient,
+    @Inject(BUSINESS_REGION_LOOKUP) private readonly businessRegionLookup: BusinessRegionLookup,
   ) {}
 
   @Authorize({ kind: "listing", action: "create" })
   @Idempotent({ retentionMs: LISTING_WRITE_RETENTION_MS })
   @Post()
   async create(@Param("tenantId") tenantId: string, @Body() body: CreateListingDto) {
-    const result = await createListing(this.listings, tenantId, {
+    // region and currency come from the business (TASKS.md 1.1.h), never
+    // from the body — see create-listing.use-case.ts's own comment.
+    const result = await createListing(this.listings, this.businessRegionLookup, tenantId, {
       merchantName: body.merchantName,
       title: body.title,
       description: body.description,
       category: body.category,
       locationIds: body.locationIds,
-      currency: body.currency,
       faceValueMinor: body.faceValueMinor,
       settlementValueMinor: body.settlementValueMinor,
       priceInPoints: body.priceInPoints,
@@ -64,7 +68,6 @@ export class StoreListingController {
       expiresAt: body.expiresAt,
       status: body.status,
       perUserLimit: body.perUserLimit,
-      region: body.region,
       audience: body.audience,
       contentCategory: body.contentCategory,
       imageUrl: body.imageUrl,

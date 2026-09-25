@@ -4,6 +4,7 @@ import { DrizzleListingRepository } from "../persistence/drizzle-listing.reposit
 import { DrizzleSettlementDecreaseRequestRepository } from "../persistence/drizzle-settlement-decrease-request.repository";
 import { clearStoreTables, testStoreDb } from "../persistence/store-db.test-helper";
 import { merchantLocations } from "../persistence/schema/listing.table";
+import type { BusinessRegionLookup } from "../persistence/business-region-lookup";
 import { approveSettlementDecrease } from "./approve-settlement-decrease.use-case";
 import { createListing } from "./create-listing.use-case";
 import { editListing } from "./edit-listing.use-case";
@@ -24,6 +25,11 @@ const repo = new DrizzleListingRepository(db);
 const decreaseRequests = new DrizzleSettlementDecreaseRequestRepository(db);
 const MERCHANT = "00000000-0000-4000-8000-0000000e0001";
 
+/** A fixed ID business — this suite is about location and lifecycle errors, not the lookup itself. */
+const businessRegionLookup: BusinessRegionLookup = {
+  findRegionAndCurrency: () => Promise.resolve({ region: "ID", currency: "IDR" }),
+};
+
 beforeAll(async () => {
   await clearStoreTables(db);
 });
@@ -41,20 +47,18 @@ async function seedListing() {
     .returning();
   if (location === undefined) throw new Error("failed to seed a merchant_location row");
 
-  const result = await createListing(repo, MERCHANT, {
+  const result = await createListing(repo, businessRegionLookup, MERCHANT, {
     merchantName: "Error Path Merchant",
     title: "Voucher",
     description: "Description.",
     category: "services",
     locationIds: [location.id],
-    currency: "IDR" as const,
     faceValueMinor: 10_000,
     settlementValueMinor: 3_000,
     priceInPoints: 500,
     stockTotal: 5,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
-    region: "ID" as const,
     audience: "all_ages" as const,
     contentCategory: "food-and-drink" as const,
     imageUrl: "https://cdn.example.com/listing.jpg",
@@ -71,20 +75,18 @@ async function seedListing() {
 
 describe("createListing", () => {
   it("refuses a location that belongs to nobody", async () => {
-    const result = await createListing(repo, MERCHANT, {
+    const result = await createListing(repo, businessRegionLookup, MERCHANT, {
       merchantName: "M",
       title: "T",
       description: "D",
       category: "services",
       locationIds: [randomUUID()],
-      currency: "IDR" as const,
       faceValueMinor: 1,
       settlementValueMinor: 1,
       priceInPoints: 1,
       stockTotal: 1,
       transferable: false,
       partialRedemptionPolicy: "single_use_forfeit",
-      region: "ID" as const,
       audience: "all_ages" as const,
       contentCategory: "food-and-drink" as const,
       imageUrl: "https://cdn.example.com/listing.jpg",

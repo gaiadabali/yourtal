@@ -1,55 +1,45 @@
+import { readdir, readFile } from "node:fs/promises";
+import path from "node:path";
 import { getRequestConfig } from "next-intl/server";
 import { getRegionDisplayConfig } from "@/features/region/get-region";
 
-/**
- * next-intl's server-side request configuration (docs/15-stack-locked.md
- * line 28 locks next-intl for `id-ID`/`en-AU`; YT-0405's fourth acceptance
- * criterion is the actual copy pass this file is part of wiring up).
- *
- * The active locale is NOT derived from a URL segment (this app has no
- * `[locale]` route param — region is chosen once, via a cookie, per
- * `apps/web/features/region`) so this deliberately ignores next-intl's own
- * `requestLocale` and instead calls the region feature's own
- * `getRegionDisplayConfig()` — the exact same ambient, cookie-backed
- * resolution `app/(app)/layout.tsx` already uses for `RegionProvider`. That
- * keeps "which locale is active" a single source of truth: this file never
- * re-parses the `yourtal-region` cookie itself.
- *
- * Message catalogues are namespaced by feature (`campaign`, `quick`,
- * `store`, `wallet`, `burn`, `checkpoint` — one JSON file per feature per
- * locale under `apps/web/messages/<locale>/`), imported with a template
- * dynamic import so only the ACTIVE locale's catalogues are ever pulled
- * into a request — the inactive locale's JSON is never fetched, let alone
- * shipped to the client (bundle budget, docs/13b-typescript-standards.md
- * §8).
- */
-type FeatureNamespace = "campaign" | "quick" | "store" | "wallet" | "burn" | "checkpoint";
+type Locale = "en-AU" | "id-ID";
+type Messages = Record<string, Record<string, unknown>>;
 
-/** A dynamic `import()` on a template-literal path resolves to `any` — this narrows it to the one shape every catalogue JSON file has. */
-async function loadCatalogue(
-  locale: "en-AU" | "id-ID",
-  feature: FeatureNamespace,
-): Promise<Record<string, unknown>> {
-  const loaded = (await import(`../messages/${locale}/${feature}.json`)) as {
-    default: Record<string, unknown>;
-  };
-  return loaded.default;
+// Every `messages/<locale>/<namespace>.json` that exists is loaded, so an area can add
+// its own catalogue without touching this file. The parity test globs the same folder.
+// Standalone builds ship the folder via `outputFileTracingIncludes` in next.config.ts.
+const MESSAGES_DIR = path.join(process.cwd(), "messages");
+
+const cache = new Map<Locale, Promise<Messages>>();
+
+async function readCatalogues(locale: Locale): Promise<Messages> {
+  const dir = path.join(MESSAGES_DIR, locale);
+  const files = (await readdir(dir)).filter((name) => name.endsWith(".json")).sort();
+  const entries = await Promise.all(
+    files.map(async (name) => {
+      const json = JSON.parse(await readFile(path.join(dir, name), "utf8")) as Record<
+        string,
+        unknown
+      >;
+      return [name.slice(0, -".json".length), json] as const;
+    }),
+  );
+  return Object.fromEntries(entries);
+}
+
+function loadMessages(locale: Locale): Promise<Messages> {
+  // Re-read in dev so catalogue edits show without a restart.
+  if (process.env.NODE_ENV === "development") return readCatalogues(locale);
+  let pending = cache.get(locale);
+  if (!pending) {
+    pending = readCatalogues(locale);
+    cache.set(locale, pending);
+  }
+  return pending;
 }
 
 export default getRequestConfig(async () => {
   const { locale } = await getRegionDisplayConfig();
-
-  const [campaign, quick, store, wallet, burn, checkpoint] = await Promise.all([
-    loadCatalogue(locale, "campaign"),
-    loadCatalogue(locale, "quick"),
-    loadCatalogue(locale, "store"),
-    loadCatalogue(locale, "wallet"),
-    loadCatalogue(locale, "burn"),
-    loadCatalogue(locale, "checkpoint"),
-  ]);
-
-  return {
-    locale,
-    messages: { campaign, quick, store, wallet, burn, checkpoint },
-  };
+  return { locale, messages: await loadMessages(locale) };
 });

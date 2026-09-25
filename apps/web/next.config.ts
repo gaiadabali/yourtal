@@ -23,6 +23,8 @@ const config: NextConfig = {
   // It also keeps the artifact small enough that the checksum-verified
   // download gaiada-deploy performs stays quick.
   output: "standalone",
+  // i18n/request.ts reads the catalogues from disk, which the tracer cannot see.
+  outputFileTracingIncludes: { "/**": ["./messages/**/*.json"] },
 };
 
 // Bundle-analyzer report for YT-0404 (perf budget harness). Opt-in only —

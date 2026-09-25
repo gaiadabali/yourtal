@@ -4,22 +4,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
- * YT-0058 AC3: "missing-translation check fails the build." Every feature
- * namespace ships one JSON catalogue per locale (`messages/<locale>/
- * <feature>.json`), each read directly by its own synchronous translator
- * (`features/<domain>/<domain>-i18n.ts`, per campaign-i18n.ts's doc
- * comment) — next-intl itself only ever sees the subset registered in
- * `i18n/request.ts`'s `FeatureNamespace` union, so it cannot catch a key
- * missing from the OTHER locale's file for an unregistered namespace, and
- * nothing else in this repo checked that either. A key present in one
- * locale and silently absent from the other renders as next-intl's raw
- * `{key}` fallback in production for whichever region hits it first —
- * exactly the "no hard-coded / no missing string" gap this ticket exists
- * to close, just discovered by a user instead of by CI.
- *
- * This is a plain Vitest test rather than a new root-level script so it
- * runs everywhere `vitest run` already does (CI gate 8, docs/13-engineering-
- * standards.md §7) with no separate wiring to forget.
+ * Every `messages/<locale>/*.json` must exist in every locale with the same keys.
+ * i18n/request.ts loads whatever this folder holds, so a missing key would render
+ * as a raw `{key}` for one region instead of failing CI.
  */
 
 const LOCALES = ["en-AU", "id-ID"] as const;
@@ -48,7 +35,7 @@ function readCatalogue(locale: string, filename: string): JsonValue {
   return JSON.parse(raw) as JsonValue;
 }
 
-describe("message catalogues stay in lockstep across locales (YT-0058 AC3)", () => {
+describe("message catalogues stay in lockstep across locales", () => {
   const [baseLocale, ...otherLocales] = LOCALES;
   const baseFiles = listCatalogueFiles(baseLocale);
 

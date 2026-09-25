@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { clickUntilVisible, gotoSettled } from "./settle";
 
 const VIEWPORTS = [
   { width: 390, height: 844 },
@@ -22,18 +23,16 @@ for (const viewport of VIEWPORTS) {
     test.use({ viewport });
 
     test("a dialog opens inside the viewport", async ({ page }) => {
-      await page.goto("/lab/ui");
-      await page.getByRole("button", { name: "Open dialog" }).click();
+      await gotoSettled(page, "/lab/ui");
       const dialog = page.getByRole("dialog");
-      await expect(dialog).toBeVisible();
+      await clickUntilVisible(page.getByRole("button", { name: "Open dialog" }), dialog);
       await expectInsideViewport(page, dialog);
     });
 
     test("a select's list opens inside the viewport", async ({ page }) => {
-      await page.goto("/lab/ui");
-      await page.getByRole("combobox", { name: "Role" }).click();
+      await gotoSettled(page, "/lab/ui");
       const list = page.getByRole("listbox");
-      await expect(list).toBeVisible();
+      await clickUntilVisible(page.getByRole("combobox", { name: "Role" }), list);
       await expectInsideViewport(page, list);
     });
   });

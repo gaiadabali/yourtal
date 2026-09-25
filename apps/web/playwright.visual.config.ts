@@ -50,6 +50,8 @@ export default defineConfig({
   snapshotPathTemplate: "{testDir}/__screenshots__/{testFilePath}/{arg}{ext}",
   fullyParallel: true,
   forbidOnly: !!process.env["CI"],
+  // Fail a stuck run within minutes instead of eating the whole CI job.
+  globalTimeout: 10 * 60_000,
   retries: process.env["CI"] ? 2 : 0,
   reporter: process.env["CI"] ? "github" : "list",
 

@@ -21,6 +21,7 @@ for (const theme of THEMES) {
 
       test(`every primitive section matches its baseline`, async ({ page }) => {
         await page.goto(`/lab/ui?theme=${theme}&surface=viewer`);
+        await page.waitForLoadState("networkidle");
         await page.evaluate(() => document.fonts.ready);
         // The sticky gallery header would sit over each section's heading in its shot.
         await page.addStyleTag({

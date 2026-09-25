@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { gotoSettled } from "./settle";
 
 /**
  * TASKS.md 3.5.e (first half): the mounted-video cap has to hold in a real
@@ -9,8 +10,7 @@ import { expect, test } from "@playwright/test";
 test("VerticalFeed keeps at most 3 <video> elements mounted after scrolling through all 20 items", async ({
   page,
 }) => {
-  await page.goto("/lab/ui");
-  await page.waitForLoadState("networkidle");
+  await gotoSettled(page, "/lab/ui");
 
   const section = page.getByTestId("gallery-vertical-feed");
   // The gallery can swap this section once while it hydrates; retry until it holds.

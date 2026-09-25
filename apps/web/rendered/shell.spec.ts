@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { gotoSettled } from "./settle";
 
 const VIEWPORTS = { mobile: { width: 390, height: 844 }, desktop: { width: 1280, height: 800 } };
 
@@ -15,7 +16,7 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
     test.use({ viewport });
 
     test("no shell link points at /business", async ({ page }) => {
-      await page.goto("/store");
+      await gotoSettled(page, "/store");
       const hrefs = await page
         .locator("nav a[href], header a[href]")
         .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
@@ -30,7 +31,7 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
 }
 
 test("the bottom nav is visible at 390px and the side nav at 1280px", async ({ page }) => {
-  await page.goto("/store");
+  await gotoSettled(page, "/store");
 
   await page.setViewportSize(VIEWPORTS.mobile);
   const primaryNavs = page.getByRole("navigation", { name: "Primary" });

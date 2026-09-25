@@ -133,7 +133,7 @@ type LedgerGrant struct {
 type LedgerGrantRelease struct {
 	GrantID    string
 	TransferID string
-	ReleasedAt pgtype.Timestamptz
+	CreatedAt  pgtype.Timestamptz
 }
 
 type LedgerListingPrice struct {

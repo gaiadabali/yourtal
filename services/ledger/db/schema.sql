@@ -165,7 +165,7 @@ CREATE TABLE ledger.burn_reinstatement (
 CREATE TABLE ledger.grant_release (
   grant_id    text        PRIMARY KEY REFERENCES ledger.grant (id),
   transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
-  released_at timestamptz NOT NULL DEFAULT now()
+  created_at  timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE ledger.quote (

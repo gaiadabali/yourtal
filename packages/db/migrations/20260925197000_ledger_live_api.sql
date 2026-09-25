@@ -19,7 +19,7 @@ CREATE INDEX grant_unlock_idx ON ledger.grant (unlock_at);
 CREATE TABLE ledger.grant_release (
   grant_id    text        PRIMARY KEY REFERENCES ledger.grant (id),
   transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
-  released_at timestamptz NOT NULL DEFAULT now()
+  created_at  timestamptz NOT NULL DEFAULT now()
 );
 
 -- A quote is priced at the database's now() and lives 15 minutes; locking

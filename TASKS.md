@@ -82,7 +82,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
-| 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Setting up; then 8.1.a server side, 8.2.d, 8.3.b |
+| 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Three agents: A (`yourtal-p8`, `phase/8`, db `yourtal_s8`) 8.1.a server side; B (`yourtal-p8-b`, `phase/8-b`) 8.2.d; C (`yourtal-p8-c`, `phase/8-c`) 8.3.b |
 
 ## Decisions for the founder
 
@@ -1039,7 +1039,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
 
 F11: vouchers must really work for YourTal, brands and users. That means generation (4.5), redemption at the counter and online, and a secure SDK brands can integrate. Tamper evidence is the voucher hash chain anchored in the daily proof, whose root is published (10.3). No blockchain for now.
 
-- [ ] **8.1 Counter devices** · needs: 1.5, 4.5
+- [ ] **8.1 Counter devices** · needs: 1.5, 4.5 — 🔄 slot 8 (8.1.a server side, F27)
   - [ ] 8.1.a Studio → Team → Devices provisions a counter device:
     - a server-side device record;
     - a one-time pairing code;
@@ -1049,13 +1049,13 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
     Devices are revoked from Studio only; today `/merchant/devices` revokes with no auth.
   - [ ] 8.1.b The `store_device` principal comes from the device credential (1.5.c), so the Cerbos `redemption.yaml` device rules take effect.
   - [ ] 8.1.c **Check:** a paired device gets a principal, and a revoked one gets 401.
-- [ ] **8.2 Redeeming at the counter** · needs: 8.1, 4.6
+- [ ] **8.2 Redeeming at the counter** · needs: 8.1, 4.6 — 🔄 slot 8 (8.2.d only, F27)
   - [ ] 8.2.a CounterShell flow: pair → PIN unlock → scan the QR (camera) or type the code → server-side lookup → authorize (amount, order ref, order total) → capture → receipt on both sides. Today's log stays.
   - [ ] 8.2.b **No offline redemption.** With no network the counter says "Can't redeem offline — try again when connected" and queues nothing; delete the pending queue. The BFF calls the voucher service in device mode (4.5.c). Delete the client-side catalogue of every merchant's vouchers and the unsigned device cookie (D16).
   - [ ] 8.2.c A counter device can never void or refund.
   - [ ] 8.2.d Move the merchant and provisioning copy into `messages/*/merchant.json`, and delete `merchant-copy.ts`, `merchant-error-copy.ts` and `provisioning-copy.ts`. One language per screen, from the device locale, with no bilingual stacking. The lint rules become errors for `features/merchant`.
   - [ ] 8.2.e **Check:** a voucher bought in 6.6 is redeemed at a counter on staging, and the user's wallet shows it as redeemed.
-- [ ] **8.3 Client SDK and developer page** · needs: 4.5, 4.6
+- [ ] **8.3 Client SDK and developer page** · needs: 4.5, 4.6 — 🔄 slot 8 (8.3.b only, F27)
   - [ ] 8.3.a Studio → Developers: issue, rotate and revoke merchant HMAC credentials (4.5.d), with a sandbox credential per business. A documentation page covers the signing spec, authorize / capture / void / refund, errors and idempotency.
   - [ ] 8.3.b `packages/sdk-merchant`: a small TypeScript SDK that signs requests and calls authorize / capture / void / refund, with retries and idempotency keys, plus an example script.
   - [ ] 8.3.c Webhooks: signed `voucher.captured`, `voucher.refunded` and `voucher.expired` events to a URL the business registers, delivered by a worker job with retries (simulated on staging).

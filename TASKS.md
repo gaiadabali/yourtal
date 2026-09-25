@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 20/44 | `█████░░░░░`  45% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 21/44 | `█████░░░░░`  48% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 22/32 | `███████░░░`  69% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 22/52 | `████░░░░░░`  42% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **15/82** | **110/366** | `███░░░░░░░`  30% |
+| **All** | | | **16/82** | **111/366** | `███░░░░░░░`  30% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct — ⏸ waits for 1.2 on `main` | 2026-09-25 | Done early (F21/F22/F24, all merged by a35cf23): 4.1.a, 4.2, 4.3.a–d, 4.4.e/f/h/i/k, 4.9.b/c, 4.6.a–e, the burn engine for 4.3.e. Everything left needs the 1.2.a/b contracts on `main` (ticked on `phase/1`, not merged yet); resume with 4.1.b then |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅. Now 3.5 video primitives and shells, then 3.6 |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) on 1.2.a–e, then 1.5; B (`yourtal-p1-b`, `phase/1-b`) now on 1.4 → rest of 1.6 (AuthService wiring, dev inbox) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) on 1.2.f (F23) |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.2 ✅ (bbf01bd); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) done with 1.2, waiting on B's 1.4 before 1.5 can start; B (`yourtal-p1-b`, `phase/1-b`) still on 1.4 → rest of 1.6 (AuthService wiring, dev inbox) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) done with 1.2.f |
 
 ## Decisions for the founder
 
@@ -427,7 +427,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.1.f `questionsAskedFor(d)` in `question-bank.ts` implements F10 (`d < 60` → 0, otherwise `max(1, min(5, floor(d/300)))`). The 1.1.b migration also adds `campaign.terms_version.accuracy_bonus_points`, a CHECK that questions asked ≤ 5, and a required `answerable_after_seconds` on questions.
   - [x] 1.1.h A listing's `region` and `currency` come from its business on the server (`BusinessRegionLookup`, a cross-schema read `yourtal_app` already has SELECT for) — `createListingSchema` no longer takes either in the body; a business that does not exist refuses with `business_not_found`.
   - [x] 1.1.g **Check:** contracts and migrations land together and `pnpm check` is green. Verified 2026-09-25: `pnpm check` green (contracts 35/35, web 190/190, ui/authz/jurisdiction/consent/drivers all pass); `packages/db` (10/10) and `apps/api` (44/44, incl. a real-Postgres `DrizzleBusinessRegionLookup` round trip) also pass under `pnpm verify`; `openapi:go:verify` (Go build + vet) clean.
-- [ ] **1.2 Internal ledger and voucher contracts, with fakes that behave like the real thing** · needs: 1.1 — 🔄 slot 3 — a–e here; f (per-region settings) is a third agent's, per F23
+- [x] **1.2 Internal ledger and voucher contracts, with fakes that behave like the real thing** · needs: 1.1 — ✅ 2026-09-25 bbf01bd — a–e by A; f (per-region settings) by C, per F23
   - [x] 1.2.a `ledger-internal` covers:
     - **pricing:** `quote` and `lockQuote`; `priceListing(listingId, S, currency)`; `quotePurchase(points, region)`;
     - **funding and allocations:** `purchasePoints`; `listAllocations(businessId)` and `getAllocation`; allocation `hold` / `consume` / `release` / `returnGrant`; `campaignSpend(campaignId)`;
@@ -458,7 +458,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - apps/api reads it through `apps/api/src/shared/settings` (`getSetting(region, key)`, cached for at most 60 s);
     - the ledger reads its own keys (caps, holdback, coverage thresholds, marketing limits) through a view granted to `yourtal_ledger`;
     - `ledger-internal` gains `getSettings(region)`, `proposeSetting` and `approveSetting` (two-person) for 9.5.d.
-  - [ ] 1.2.g **Check:** B and C can call every operation above against the fake from a test, and `getSetting('AU', 'daily_earn_cap')` returns 500.
+  - [x] 1.2.g **Check:** B and C can call every operation above against the fake from a test, and `getSetting('AU', 'daily_earn_cap')` returns 500. Verified 2026-09-25 on merged main (`bbf01bd`): `DrizzleRegionSettingsReader`'s own test reads AU `daily_earn_cap` as `500`; `ledger-client.contract.spec.ts`'s new settings block exercises `getSettings`/`proposeSetting`/`approveSetting` (self-approval rejected by the `region_setting` trigger) against `FakeLedgerClient`. `pnpm check` green; `apps/api` 48 files/303 tests green.
 - [x] **1.3 Plumbing for parallel phase sessions** · needs: 1.1 — ✅ 2026-09-25 199958e
   - [x] 1.3.a Add `"./*": "./src/*.ts"` to the contracts package's exports, so nobody edits the exports map again. Split `openapi/route-registry.ts` into `route-registry.{a,b,c}.ts`, concatenated. Make `route-drift.test.ts` discover the modules and assert registry ⇔ live equality, instead of hard-coded route counts.
   - [x] 1.3.b Split `packages/db/src/seed.ts` into `seed/{identity,ledger,watch,studio,store}.ts`, with `seed.ts` importing them.
@@ -1259,6 +1259,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · A · 1.2 Internal ledger and voucher contracts: `ledger-internal`/`voucher-internal` operation types (1.2.a-b), the shared closed error enum (1.2.c), `FakeLedgerClient`/`FakeVoucherClient` with real semantics against `platform.ledger_fake_*`/`voucher_fake_*` plus HTTP twins waiting on 4.1/4.5 (1.2.d), contract specs (1.2.e), and getSettings/proposeSetting/approveSetting wired onto C's `platform.region_setting` (1.2.g) · bbf01bd
 - 2026-09-25 · B · 3.4 Primitives: 11 reworked onto tokens v2 with every v1 export and variant kept, 26 new ones, all in the `/lab/ui` gallery; console and merchant screens still render · ec58a47
 - 2026-09-25 · A · 1.3 Parallel-phase plumbing: route-registry split one file per area with a module-agnostic drift test, `apps/worker` auto-loading `src/jobs/*.ts`, `session-for.ts` for real register+login in tests, `packages/db/src/seed.ts` split one file per domain · 199958e
 

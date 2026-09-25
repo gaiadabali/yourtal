@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 4/7 | 37/44 | `████████░░`  84% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 30/52 | `██████░░░░`  58% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **19/82** | **143/366** | `████░░░░░░`  39% |
+| **All** | | | **20/82** | **145/366** | `████░░░░░░`  40% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Two agents. A (`yourtal-1`, `phase/4`): 4.1.b/c/d done on the branch (86de46c), next 4.4.a–d, 4.7, 4.8, 4.9. B (helper `yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5 voucher core API, then 4.6.f/h |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged. Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) on 1.6; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
 
 ## Decisions for the founder
 
@@ -508,11 +508,11 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - a call with `x-yt-user-id` and no session gets 401;
     - an ID principal reading an AU campaign is denied;
     - the route suites pass against real Cerbos.
-- [ ] **1.6 Simulated email you can read** · needs: 1.4 — 🔄 slot 3
+- [x] **1.6 Simulated email you can read** · needs: 1.4 — ✅ 2026-09-26 63af281
   - [x] 1.6.a Add an `email` boundary to `packages/drivers`. The simulated driver stores messages in `platform.sim_outbox`. `AuthService.deliver` uses it for verification, reset and invitation emails. — driver half merged (a953bf3). `AuthService.deliver` now sends through it too (f092f5d): `EmailDriverModule` provides `EMAIL_DRIVER` (factory-provider, mirrors `IdempotencyModule`), `deliver` looks up the recipient and region itself and calls `EmailDriver.send`. Invitation emails are 7.1.c's `InvitationMailer` port, not `AuthService`'s. Verified against real Postgres: a requested verification writes a `platform.sim_outbox` row with the right recipient/category/region and the same token `DevTokenAccess` has.
-  - [ ] 1.6.b `GET /api/dev/inbox` and a plain `/dev/inbox` page. They are enabled only when `APP_ENV` is `dev` or `staging`.
+  - [x] 1.6.b `GET /api/dev/inbox` and a plain `/dev/inbox` page. They are enabled only when `APP_ENV` is `dev` or `staging`. — `PostgresSimOutboxReader` reads `platform.sim_outbox` directly (newest first, every boundary); the route is `@PublicRoute` (nothing behind it is real user data) and 404s when the new `APP_ENV` config var is `production`. The web page is its own root layout, a plain server-side fetch with no cache — 1.7's BFF plumbing is a separate task. `next build` confirms it renders dynamically.
   - [x] 1.6.c (requested by B and C) `push` and `webhook` boundaries in `packages/drivers`, with simulated drivers that store to `platform.sim_outbox`.
-  - [ ] 1.6.d **Check:** register → the verification email appears in `/dev/inbox` → its link verifies the account.
+  - [x] 1.6.d **Check:** register → the verification email appears in `/dev/inbox` → its link verifies the account. — Verified in `dev-inbox.controller.test.ts`: register → requestEmailVerification → the entry appears in `GET /api/dev/inbox` with the right recipient/category/region → its token confirms the account via the real confirm endpoint. A second test proves the production 404.
 - [ ] **1.7 Web ↔ API plumbing** · needs: 1.5 — 🔄 slot 3 (agent D)
   - [x] 1.7.a `apps/web/lib/api/`: a server-only `apiFetch(path, zodSchema)` that calls `API_INTERNAL_URL`, forwards `yt_session` and returns typed errors. Per-domain calls live in each area's `features/<x>/<x>-api.ts`.
   - [x] 1.7.b The login and `PATCH /api/me` Server Actions set the `yt_session`, `yt_locale` and `yt_region` cookies. `proxy.ts` reads only those cookies and defaults to AU / en-AU. (requested by A) B makes `i18n/request.ts` read only `yt_locale` and `yt_region`, defaulting to en-AU, under 6.1.b.
@@ -1260,6 +1260,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · B · 1.6 Simulated email you can read done: `AuthService.deliver` sends through the real (simulated) email driver (1.6.a); `GET /api/dev/inbox` plus a plain `/dev/inbox` page read `platform.sim_outbox` directly, gated by a new `APP_ENV` config var (1.6.b); the Check verified end to end — register → verification email in the inbox → its token confirms the account · 63af281
 - 2026-09-26 · A · 4.3 Ledger guards: overdraft, currency, idempotency and sealing guards (each red first), and the burn engine with its /v1/burns routes · 360dfa6
 - 2026-09-26 · A · 4.1 Ledger internal API: HMAC service auth, the ledger-internal contract served live, a signed HttpLedgerClient, and the contract spec passing against a live ledger (22 pass, escrow todo) · 360dfa6
 - 2026-09-26 · B · 1.4 Accounts and profile done: email verification stores `identity.credential.verified_at` (1.4.e), and DSAR erasure for `identity.user_profile`/`.credential`/`.session` plus business membership, one `identity` domain handler registered with `dsar-orchestrator` (1.4.f) · da67873

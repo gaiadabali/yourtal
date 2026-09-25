@@ -33,10 +33,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 14/43 | `███░░░░░░░`  33% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 15/43 | `████░░░░░░`  35% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 3/6 | 21/32 | `███████░░░`  66% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 17/50 | `███░░░░░░░`  34% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 18/51 | `████░░░░░░`  35% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **14/82** | **98/363** | `███░░░░░░░`  27% |
+| **All** | | | **14/82** | **100/364** | `███░░░░░░░`  27% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -123,6 +123,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F20** | The shared `yourtal` dev database was full of Go-test leftovers, some not whole Rupiah, so 0.7's migration refused it | **Recreate it clean** (migrations + seed), done 2026-09-25. Slot databases untouched. |
 | **F21** | Phase 4 is gated on Phase 1, which had just started | **Start Phase 4's Go-only parts early** in slot 1: 4.1.a, 4.2 and 4.3.a–d touch only `services/**` and add-only migrations, not 1.2's contracts. Everything that needs 1.2 still waits for it. |
 | **F22** | F21's early scope was done and 1.2 had not started | **More Go-only fixes** in slot 1, inside `services/**` only: 4.4.f, 4.4.i, 4.9.b, then the voucher defects 4.6.a–e. HTTP routes, TS clients and anything needing 1.2's contracts still wait for 1.2. |
+| **F24** | F22's list was done and 1.2 had still not started | **The Go-only four next** in slot 1: K6 marketing grants backed by cash in the same transaction (4.4.h), allocation holds (4.4.e), the solvency monitor (4.9.c) and the burn engine half of 4.3.e without its route. |
 | **F23** | Should Phase 1 get more agents? | **Add one when 1.1 merges.** A third agent takes 1.2.f (per-region settings) in its own helper worktree; agent A does the rest of 1.2, agent B does 1.3.b then 1.4. Not before 1.1, since everything waits on it. |
 
 **F12 defaults**, per region (AU / ID):
@@ -452,7 +453,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     
     `LEDGER_MODE=fake|live` switches between them. `fake` is refused when `APP_ENV=staging` once 4.9 is merged. Until 10.1, `statements` and `approvePayout` return `not_implemented`.
   - [ ] 1.2.e `ledger-client.contract.spec.ts` and `voucher-client.contract.spec.ts` run against the fake in `pnpm check` and against the live services in 4.1 and 4.5.
-  - [ ] 1.2.f **Per-region settings (F12)**, owned by A together with the `platform_setting` policy:
+  - [x] 1.2.f **Per-region settings (F12)**, owned by A together with the `platform_setting` policy: — ✅ 2026-09-25 c59b7b9
     - the table `platform.region_setting(region, key, value, set_by, approved_by, effective_from)`, seeded with every F12 default plus `points_expiry` = off (`inactivity_months` = 12 when on);
     - apps/api reads it through `apps/api/src/shared/settings` (`getSetting(region, key)`, cached for at most 60 s);
     - the ledger reads its own keys (caps, holdback, coverage thresholds, marketing limits) through a view granted to `yourtal_ledger`;
@@ -767,9 +768,10 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.6.d Idempotency (the signed string is now timestamp, key id, method, path with query, Idempotency-Key, body hash; refunds need `refund_ref`; the 8.3 SDK signs it this way):
     - record completion on `context.WithoutCancel`, reclaim stale rows, and make `refund_ref` unique per capture (D8);
     - put `Idempotency-Key` and the query string in the HMAC canonical string, and remember nonces (D9).
-  - [ ] 4.6.e Tamper evidence: assert `version == max(seq)`, replay the remaining value, and anchor each voucher's head in the ledger's daily proof (D6, F11).
+  - [x] 4.6.e Tamper evidence: assert `version == max(seq)`, replay the remaining value (D6). Anchoring moved to 4.6.h.
   - [ ] 4.6.f The capture transaction writes a `capture_outbox` row, which a worker job posts to the ledger with idempotency key = capture ID (feeds 10.1).
-  - [ ] 4.6.g **Check:**
+  - [ ] 4.6.h Anchor each voucher's chain head in the ledger's daily proof (D6, F11): a worker job posts the day's heads to a ledger route, and the root covers them · needs: 4.1.b — ⛔ the ledger's internal routes wait for 1.2
+  - [ ] 4.6.g **Check:** — ⛔ the three races pass (55200d9) and D1, D3–D10, D13–D15 have tests; D11 waits for 4.9.c, D12 for 4.5.a, D16 for the web counter (8.x), D2 is the compose keygen (fixed, no test)
     - goroutine concurrency tests on one voucher (authorize×authorize, capture×void, refund×authorize) pass;
     - every scenario from D1 to D16 has a test;
     - D17 was refuted and needs no work.

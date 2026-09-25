@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 1.2 ✅ on `main`, resumed (`phase/4`). Done early (F21/F22/F24): 4.1.a, 4.2, 4.3.a–d, 4.4.e/f/h/i/k, 4.9.b/c, 4.6.a–e, the 4.3.e burn engine. Now 4.1.b live routes, then 4.1.c client, 4.3.e route, 4.5 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1 ✅ (98d7aa1); 1.2 ✅ (bbf01bd); 1.3 ✅ (199958e); 1.4 ✅ (da67873) — A's 1.5.a/b/e/f are unblocked. A (`yourtal-3`, `phase/1`) done with 1.5.c/d, stopped before 1.5.a/b/e/f pending this; B (`yourtal-p1-b`, `phase/1-b`) now on the rest of 1.6 (AuthService email-driver wiring, `/dev/inbox`, 1.6.d Check) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) done with 1.2.f |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1–1.4 ✅; 1.5.c/d merged. Three agents: A (`yourtal-3`, `phase/1`) on the rest of 1.5; B (`yourtal-p1-b`, `phase/1-b`) on 1.6; D (`yourtal-p1-c`, `phase/1-c`) on 1.7 (F25) |
 
 ## Decisions for the founder
 
@@ -125,6 +125,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F22** | F21's early scope was done and 1.2 had not started | **More Go-only fixes** in slot 1, inside `services/**` only: 4.4.f, 4.4.i, 4.9.b, then the voucher defects 4.6.a–e. HTTP routes, TS clients and anything needing 1.2's contracts still wait for 1.2. |
 | **F24** | F22's list was done and 1.2 had still not started | **The Go-only four next** in slot 1: K6 marketing grants backed by cash in the same transaction (4.4.h), allocation holds (4.4.e), the solvency monitor (4.9.c) and the burn engine half of 4.3.e without its route. |
 | **F23** | Should Phase 1 get more agents? | **Add one when 1.1 merges.** A third agent takes 1.2.f (per-region settings) in its own helper worktree; agent A does the rest of 1.2, agent B does 1.3.b then 1.4. Not before 1.1, since everything waits on it. |
+| **F25** | Add another Phase 1 agent to speed things up | **Yes: agent D takes 1.7** (web ↔ API plumbing) in helper `yourtal-p1-c` now. Its 1.7.a–d need only the session cookie from 1.4; the 1.7.e Check waits for 1.5. Agent B keeps only 1.6. |
 
 **F12 defaults**, per region (AU / ID):
 

@@ -79,18 +79,25 @@ export class ThrottleService {
   /**
    * Called after a failed attempt, never after a successful one — a
    * counter that also counted successes would eventually lock out a user
-   * who does nothing wrong. `INCR` on a missing key creates it at 1 and is
-   * itself atomic; the `EXPIRE` immediately after is why the very first
-   * failure in a window is the one that sets how long the window lasts,
-   * and is a second round trip rather than one `SET ... EX` because `INCR`
-   * has to run first to know whether this was the first failure.
+   * who does nothing wrong.
+   *
+   * 1.5.f: this used to be `INCR` then, only on the first failure, a
+   * separate `EXPIRE` — two round trips, and a crash (or a dropped
+   * connection) between them left a key incremented but with no TTL,
+   * which never expires: a permanent lockout from a single unlucky
+   * failure at exactly the wrong moment. `SET key 1 EX windowSeconds NX`
+   * creates the counter and its expiry as ONE atomic command — there is
+   * no gap between them for anything to land in — and only the caller
+   * that actually created the key (an "OK" reply) skips the `INCR` below;
+   * every other caller's `NX` fails (the key already exists, with the TTL
+   * its creator already gave it) and falls through to a plain `INCR`,
+   * which needs no `EXPIRE` of its own because one is already running.
    */
   async recordFailure(scope: ThrottleScope, key: string, limits: ThrottleLimits): Promise<void> {
     const redisKey = this.keyFor(scope, key);
-    const count = await this.redis.incr(redisKey);
-    if (count === 1) {
-      await this.redis.expire(redisKey, limits.windowSeconds);
-    }
+    const created = await this.redis.set(redisKey, "1", "EX", limits.windowSeconds, "NX");
+    if (created !== null) return;
+    await this.redis.incr(redisKey);
   }
 
   /**

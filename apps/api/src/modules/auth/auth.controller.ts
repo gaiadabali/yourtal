@@ -10,9 +10,7 @@ import {
   RateLimit,
 } from "../../shared/rate-limit/rate-limit.decorator";
 import {
-  CHANGE_PASSWORD_RETENTION_MS,
   CONFIRM_EMAIL_VERIFICATION_RETENTION_MS,
-  CONFIRM_PASSWORD_RESET_RETENTION_MS,
   REGISTER_RETENTION_MS,
 } from "./idempotency-retention";
 import { AuthService } from "./auth.service";
@@ -133,7 +131,19 @@ export class AuthController {
     return { loggedOut: true };
   }
 
-  @Idempotent({ retentionMs: CHANGE_PASSWORD_RETENTION_MS })
+  @NotValueMoving(
+    "1.5.f: was @Idempotent, which stored this route's {token} reply — a " +
+      "live, directly-usable session credential — in plaintext in " +
+      "platform.idempotency, a table readable by more than this module " +
+      "(docs/audit/2026-09-25/api-backend.md section 8). changePassword " +
+      "revokes every session for this user, INCLUDING the one authenticating " +
+      "the call that is running right now, before issuing the replacement — " +
+      "so a retry that reuses the same (now-revoked) bearer token fails with " +
+      "session_invalid rather than re-applying the change or re-revoking " +
+      "anything a second time. The cost is a client that never saw its own " +
+      "success has to log in again instead of replaying the old response; " +
+      "the alternative was a working credential sitting in a shared table.",
+  )
   @Authorize({ kind: "session", action: "change_password" })
   @Post("password/change")
   async changePassword(@Body() body: ChangePasswordDto, @Req() request: FastifyRequest) {
@@ -163,7 +173,16 @@ export class AuthController {
     return { requested: true };
   }
 
-  @Idempotent({ retentionMs: CONFIRM_PASSWORD_RESET_RETENTION_MS })
+  @NotValueMoving(
+    "1.5.f: was @Idempotent, for the same reason changePassword's own note " +
+      "gives — this route's {token} reply is a live session credential, and " +
+      "@Idempotent stored it in plaintext in platform.idempotency " +
+      "(docs/audit/2026-09-25/api-backend.md section 8). The reset token " +
+      "itself is single-use (VerificationTokenRepository.consume marks it " +
+      "spent), so a retry with the SAME token after a successful confirm " +
+      "gets token_invalid rather than reapplying the reset or reissuing a " +
+      "second session for it.",
+  )
   @Authorize({ kind: "session", action: "confirm_password_reset" })
   @Post("password/reset/confirm")
   async confirmPasswordReset(@Body() body: ConfirmPasswordResetDto) {

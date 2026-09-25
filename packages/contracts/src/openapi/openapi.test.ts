@@ -93,6 +93,7 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   trustTierSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   grantKindSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   grantRewardRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  rewardAttestationSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   grantActionRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   grantSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   burnForVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

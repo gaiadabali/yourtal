@@ -33,11 +33,36 @@ beforeAll(async () => {
   pool = new Pool({ connectionString: APP_URL, max: 4 });
   owner = new Pool({ connectionString: OWNER_URL, max: 2 });
   await seed(owner);
-  const { rows } = await pool.query<{ id: string }>(
-    `SELECT id FROM campaign.campaigns WHERE lifecycle_state = 'live' LIMIT 1`,
+  // A CLONE of a seeded campaign, not the seeded row itself. `fileParallelism`
+  // is on for this package on the stated assumption that every file "clears
+  // and asserts on rows it scopes by a key it generated itself" — borrowing
+  // one of the seed's own campaign ids and clearing ITS `campaign.question`
+  // rows breaks that: `seed.test.ts`'s idempotency check runs concurrently
+  // against the same database and expects a second `seed()` call to write
+  // nothing, which does not hold while this file is deleting and
+  // regenerating a seeded campaign's own question bank underneath it. A
+  // freshly-cloned campaign id is one `seed()` never iterates (it only ever
+  // touches `@yourtal/contracts/campaign/mock`'s fixed list), so this file's
+  // deletes and inserts cannot collide with anything the seed itself owns.
+  const { rows } = await owner.query<{ id: string }>(
+    `INSERT INTO campaign.campaigns
+       (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+        estimated_data_mb, reward_points, question_count, scoring_rule,
+        lifecycle_state, published_at, business_id, region, audience, content_category,
+        poster_url, teaser_url, hls_url, captions_url, aspect, estimated_bytes,
+        starts_at, ends_at, open_viewing, teaser_start_seconds)
+     SELECT gen_random_uuid(), kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+            estimated_data_mb, reward_points, question_count, scoring_rule,
+            lifecycle_state, published_at, business_id, region, audience, content_category,
+            poster_url, teaser_url, hls_url, captions_url, aspect, estimated_bytes,
+            starts_at, ends_at, open_viewing, teaser_start_seconds
+       FROM campaign.campaigns
+      WHERE lifecycle_state = 'live'
+      LIMIT 1
+     RETURNING id`,
   );
   campaignId = rows[0]?.id ?? "";
-  expect(campaignId, "the seed should have produced a live campaign").not.toBe("");
+  expect(campaignId, "the seed should have produced a live campaign to clone").not.toBe("");
 });
 
 // A clean start, not only a clean finish — a run that fails part-way would
@@ -48,6 +73,9 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await pool.query(`DELETE FROM campaign.question WHERE campaign_id = $1`, [campaignId]);
+  // The clone this file made in beforeAll — as the owner, since yourtal_app
+  // has no DELETE grant on campaign.campaigns (only the seed writes it).
+  await owner.query(`DELETE FROM campaign.campaigns WHERE id = $1`, [campaignId]);
   await pool.end();
   await owner.end();
 });

@@ -25,7 +25,7 @@ function block(selector: string): Record<string, string> {
 }
 
 const raw = block(":root {");
-const aliases = block(':root,\n[data-surface] {');
+const aliases = block(":root,\n[data-surface] {");
 const SURFACES = {
   viewer: block(':root,\n[data-surface="viewer"] {'),
   studio: block('[data-surface="studio"] {'),

@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 6/8 | 41/47 | `█████████░`  87% |
+| **Phase 0** Reset | A | 🔄 in progress | 6/8 | 42/47 | `█████████░`  89% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **6/82** | **41/361** | `█░░░░░░░░░`  11% |
+| **All** | | | **6/82** | **42/361** | `█░░░░░░░░░`  12% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -318,7 +318,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - Add a `govulncheck` step to `go.yml` for each module, add `infra/healthcheck` to its matrix and paths, and use `go-version-file`.
     - Pin `runs-on: ubuntu-24.04`, because `ubuntu-latest` moves to 26.04 on 2026-10-19.
     - CI and dev use Node 24 LTS: add `.nvmrc`, set `engines` to `>=24`, and use `node-version-file`. Check the Helios Node major in 2.1.
-  - [ ] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-1`, merge them; otherwise record them here as ✂️ with the reason.
+  - [x] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-1`, merge them; otherwise record them here as ✂️ with the reason.
   - [ ] 0.4.h Once 3.1.d adds `pnpm --filter @yourtal/web test:rendered`, run it in `pnpm verify` and in `integration.yml` (split from 0.4.d) — ⛔ 3.1.d
   - [ ] 0.4.g **Check:** every workflow is green on `main`, `pnpm check` is green in all three worktrees, and no workflow log shows a Node 20 deprecation warning.
 - [x] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3 — ✅ 2026-09-25 3d166a2

@@ -53,7 +53,13 @@ func insertAccount(ctx context.Context, q *sqlcgen.Queries, a ledger.Account) er
 func (e *Engine) CreateAllocation(
 	ctx context.Context, id, funderType, funderID string, points int64,
 ) error {
-	if funderType != "partner" && funderType != "marketing" {
+	// K6: a partner allocation exists only because a partner paid for it,
+	// so it comes from RecordPurchase and never from here. A marketing
+	// allocation is only a budget: each grant from it is backed by cash.
+	if funderType == "partner" {
+		return fmt.Errorf("%w: %s", ErrPartnerNeedsPurchase, id)
+	}
+	if funderType != "marketing" {
 		return fmt.Errorf("reward: unknown funder type %q", funderType)
 	}
 

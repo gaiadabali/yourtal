@@ -96,3 +96,13 @@ CREATE TABLE ledger.backing_rate_approval (
   approved_at    timestamptz NOT NULL DEFAULT now(),
   effective_from timestamptz NOT NULL
 );
+
+CREATE TABLE ledger.marketing_funding (
+  id           text        PRIMARY KEY,
+  region       text        NOT NULL,
+  amount_minor bigint      NOT NULL,
+  proposed_by  text        NOT NULL,
+  approved_by  text        NOT NULL,
+  transfer_id  text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  created_at   timestamptz NOT NULL DEFAULT now()
+);

@@ -2,6 +2,7 @@ package pricing_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
@@ -14,15 +15,14 @@ import (
 //
 // Split from engine_test.go to stay under docs/15 rule 6's 300 lines.
 
-// docs/09 §5's trap, demonstrated end to end.
+// docs/09 §5's trap, and K6 closing it (4.4.h, EM-02).
 //
-// A funded purchase moves cash into the reserve AND creates the allocation
-// the points are issued from, so coverage holds. A marketing grant issues
-// points with no cash behind them — and coverage must FALL. That is the
-// whole reason the ratio is measured: the failure is silent, "discovered a
-// year later", and nothing else in the system objects at the moment it
-// happens.
-func TestAnUnfundedFaucetDrivesCoverageDown(t *testing.T) {
+// This test once asserted that a marketing grant with no cash behind it
+// succeeds and drags coverage down: the unfunded faucet, "discovered a year
+// later". K6 makes that grant impossible. With no marketing cash it is
+// refused; once the platform funds marketing, each grant moves its backing
+// into the reserve, so marketing points never dilute coverage.
+func TestMarketingPointsCannotDiluteCoverage(t *testing.T) {
 	engine, pool := newEngine(t)
 	ctx := context.Background()
 	at := withRate(t, engine)
@@ -34,77 +34,68 @@ func TestAnUnfundedFaucetDrivesCoverageDown(t *testing.T) {
 	if err := rewards.EnsureChart(ctx); err != nil {
 		t.Fatalf("EnsureChart: %v", err)
 	}
-
-	// A partner buys 1,000,000 points for AUD 10,000 — both facts recorded,
-	// cash into the reserve.
 	purchase, err := rewards.RecordPurchase(ctx, reward.PurchaseRequest{
-		ID:          unique("pur"),
-		PartnerID:   unique("partner"),
-		Points:      1_000_000,
+		ID: unique("pur"), PartnerID: unique("partner"), Points: 1_000_000,
 		AmountMinor: 4_500_000, // cents, at P_issue = 4.5 cents/point
 		Currency:    testCurrency,
 	})
 	if err != nil {
 		t.Fatalf("RecordPurchase: %v", err)
 	}
-
-	// A funded grant: points issued, drawn from the allocation the cash paid
-	// for. Coverage after this is the baseline.
-	user := unique("usr")
 	if _, err := rewards.Grant(ctx, reward.GrantRequest{
-		UserID: user, Action: reward.ActionWatchCompleted, ExternalRef: unique("watch"),
+		UserID: unique("usr"), Action: reward.ActionWatchCompleted, ExternalRef: unique("watch"),
 		Evidence: "checkpoint-token", AllocationID: purchase.AllocationID,
 	}); err != nil {
 		t.Fatalf("funded grant: %v", err)
 	}
-
-	funded, err := engine.Coverage(ctx, testCountry, at)
+	baseline, err := engine.Coverage(ctx, testCountry, at)
 	if err != nil {
-		t.Fatalf("Coverage (funded): %v", err)
-	}
-	if !funded.Healthy() {
-		t.Fatalf("a fully funded plane is not solvent: %+v", funded)
+		t.Fatal(err)
 	}
 
-	// Now the trap: a marketing allocation with NO cash transfer behind it.
-	// `CreateAllocation` deliberately has no money side — which is exactly
-	// what makes it the unfunded faucet docs/09 §5 warns about, and why K6
-	// requires a real transfer into the reserve at the moment of issuance.
 	marketing := unique("alloc_marketing")
 	if err := rewards.CreateAllocation(ctx, marketing, "marketing", "growth", 5_000_000); err != nil {
-		t.Fatalf("CreateAllocation: %v", err)
+		t.Fatal(err)
+	}
+	referral := func() error {
+		_, err := rewards.Grant(ctx, reward.GrantRequest{
+			UserID: unique("usr"), Action: reward.ActionReferralConfirmed,
+			ExternalRef: unique("ref"), Evidence: "referral-code", AllocationID: marketing,
+		})
+		return err
 	}
 
-	for index := 0; index < 5; index++ {
-		if _, err := rewards.Grant(ctx, reward.GrantRequest{
-			UserID: unique("usr"), Action: reward.ActionReferralConfirmed,
-			ExternalRef: unique("ref"), Evidence: "referral-code",
-			AllocationID: marketing,
-		}); err != nil {
-			t.Fatalf("marketing grant %d: %v", index, err)
+	// Drain any marketing cash earlier tests funded: the point is "none".
+	book := ledger.New(pool)
+	cashID := ledger.PlatformAccountID(testCountry, ledger.RoleMarketingCash)
+	if cash, _ := book.Balance(ctx, cashID); cash > 0 {
+		if _, err := book.Transfer(ctx, ledger.TransferRequest{ID: unique("t"), IdempotencyKey: unique("k"),
+			ReasonCode: "test_drain", Entries: ledger.Reverse(ledger.FundMarketing(testCountry, cash))}); err != nil {
+			t.Fatal(err)
 		}
 	}
+	if err := referral(); !errors.Is(err, ledger.ErrInsufficientFunds) {
+		t.Fatalf("an unbacked marketing grant: err = %v, want ErrInsufficientFunds", err)
+	}
 
-	unfunded, err := engine.Coverage(ctx, testCountry, at)
+	if _, err := rewards.FundMarketing(ctx, unique("fund"), 100_000, "alice", "bob"); err != nil {
+		t.Fatal(err)
+	}
+	for i := range 5 {
+		if err := referral(); err != nil {
+			t.Fatalf("backed marketing grant %d: %v", i, err)
+		}
+	}
+	after, err := engine.Coverage(ctx, testCountry, at)
 	if err != nil {
-		t.Fatalf("Coverage (unfunded): %v", err)
+		t.Fatal(err)
 	}
-
-	if unfunded.PointsOutstanding <= funded.PointsOutstanding {
-		t.Fatalf("points outstanding did not grow: %d then %d",
-			funded.PointsOutstanding, unfunded.PointsOutstanding)
+	// 5 × 5,000 points at B = 3¢ is AUD 750.00 of backing into the reserve.
+	if d := after.ReserveMinor - baseline.ReserveMinor; d != 75_000 {
+		t.Errorf("the reserve moved by %d, want 75000", d)
 	}
-	if unfunded.ReserveMinor != funded.ReserveMinor {
-		t.Fatalf("the reserve moved for an unfunded grant: %d then %d",
-			funded.ReserveMinor, unfunded.ReserveMinor)
-	}
-	if unfunded.RatioBps >= funded.RatioBps {
-		t.Errorf("coverage did not fall after unfunded issuance: %d bps then %d bps",
-			funded.RatioBps, unfunded.RatioBps)
-	}
-	if unfunded.LiabilityMinor <= funded.LiabilityMinor {
-		t.Errorf("the liability did not grow with the points: %d then %d",
-			funded.LiabilityMinor, unfunded.LiabilityMinor)
+	if !after.Healthy() {
+		t.Errorf("backed marketing points left the plane insolvent: %+v", after)
 	}
 }
 

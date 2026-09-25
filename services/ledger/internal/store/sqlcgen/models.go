@@ -79,6 +79,16 @@ type LedgerGrant struct {
 	CreatedAt    pgtype.Timestamptz
 }
 
+type LedgerMarketingFunding struct {
+	ID          string
+	Region      string
+	AmountMinor int64
+	ProposedBy  string
+	ApprovedBy  string
+	TransferID  string
+	CreatedAt   pgtype.Timestamptz
+}
+
 type LedgerPointPurchase struct {
 	ID             string
 	PartnerID      string

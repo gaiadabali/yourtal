@@ -393,6 +393,34 @@ func (q *Queries) InsertGrant(ctx context.Context, arg InsertGrantParams) error 
 	return err
 }
 
+const insertMarketingFunding = `-- name: InsertMarketingFunding :exec
+INSERT INTO ledger.marketing_funding (id, region, amount_minor, proposed_by, approved_by, transfer_id)
+VALUES ($1, $2, $3, $4, $5, $6)
+`
+
+type InsertMarketingFundingParams struct {
+	ID          string
+	Region      string
+	AmountMinor int64
+	ProposedBy  string
+	ApprovedBy  string
+	TransferID  string
+}
+
+// K6: the only record that lets marketing cash increase (the trigger in
+// 20260925195000 checks for it at COMMIT). Two different people, by CHECK.
+func (q *Queries) InsertMarketingFunding(ctx context.Context, arg InsertMarketingFundingParams) error {
+	_, err := q.db.Exec(ctx, insertMarketingFunding,
+		arg.ID,
+		arg.Region,
+		arg.AmountMinor,
+		arg.ProposedBy,
+		arg.ApprovedBy,
+		arg.TransferID,
+	)
+	return err
+}
+
 const insertPointPurchase = `-- name: InsertPointPurchase :exec
 INSERT INTO ledger.point_purchase
   (id, partner_id, points, amount_minor, currency, allocation_id, cash_transfer_id)

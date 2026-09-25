@@ -207,12 +207,21 @@ func (e *Engine) issue(
 				return fmt.Errorf("drawing down allocation: %w", err)
 			}
 
-			entries := e.postingFor(def, allocation.FunderType, req.UserID)
+			if err := checkFunder(def, allocation.FunderType); err != nil {
+				return err
+			}
+			entries := e.postingFor(def, req.UserID)
 			// Ids carry the user: two users may share an external ref (EM-17).
-			transferID := fmt.Sprintf("led_txn_%s_%s_%s", req.UserID, req.Action, req.ExternalRef)
+			ref := fmt.Sprintf("%s_%s_%s", req.UserID, req.Action, req.ExternalRef)
+			transferID := "led_txn_" + ref
 
 			if err := e.ensureUserAccount(ctx, queries, req.UserID); err != nil {
 				return err
+			}
+			if def.MarketingFunded {
+				if err := e.backMarketingGrant(ctx, tx, queries, ref, def.Points); err != nil {
+					return err
+				}
 			}
 
 			transfer, err := e.ledger.TransferInTx(ctx, tx, ledger.TransferRequest{
@@ -258,9 +267,10 @@ func (e *Engine) issue(
 
 // postingFor picks the ledger pattern. Both credit the user's pending
 // account identically; the debit says who paid: the partner (points_issued)
-// or the platform (marketing_expense).
-func (e *Engine) postingFor(def ActionDefinition, funderType, userID string) []ledger.Entry {
-	if def.MarketingFunded || funderType == "marketing" {
+// or the platform (marketing_expense). checkFunder has already matched the
+// allocation to the action.
+func (e *Engine) postingFor(def ActionDefinition, userID string) []ledger.Entry {
+	if def.MarketingFunded {
 		return ledger.GrantMarketing(e.region, userID, def.Points)
 	}
 	return ledger.GrantPartner(e.region, userID, def.Points)

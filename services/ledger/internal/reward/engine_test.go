@@ -84,11 +84,30 @@ func withF1Rates(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
+// fundedAllocation is a partner allocation the only way one exists (K6): a
+// purchase, in whole 1,000-point packs at the ID issue price of IDR 9.
 func fundedAllocation(t *testing.T, engine *reward.Engine, points int64) string {
 	t.Helper()
-	id := unique("alloc")
-	if err := engine.CreateAllocation(context.Background(), id, "partner", "adv_1", points); err != nil {
-		t.Fatalf("create allocation: %v", err)
+	packs := (points + 999) / 1_000
+	result, err := engine.RecordPurchase(context.Background(), reward.PurchaseRequest{
+		ID: unique("pur"), PartnerID: "adv_1", Points: packs * 1_000, AmountMinor: packs * 9_000, Currency: "IDR",
+	})
+	if err != nil {
+		t.Fatalf("purchase: %v", err)
+	}
+	return result.AllocationID
+}
+
+// fundedMarketing is a marketing budget with IDR cash behind it, for the
+// marketing-funded actions (streaks, referrals).
+func fundedMarketing(t *testing.T, engine *reward.Engine, points int64) string {
+	t.Helper()
+	if _, err := engine.FundMarketing(context.Background(), unique("fund"), points*6+1_000, "alice", "bob"); err != nil {
+		t.Fatalf("fund marketing: %v", err)
+	}
+	id := unique("alloc_mkt")
+	if err := engine.CreateAllocation(context.Background(), id, "marketing", "growth", points); err != nil {
+		t.Fatalf("marketing allocation: %v", err)
 	}
 	return id
 }
@@ -197,8 +216,8 @@ func TestConcurrentGrantsCannotOverdrawAnAllocation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("remaining: %v", err)
 	}
-	if remaining != 0 {
-		t.Errorf("allocation remaining = %d, want 0", remaining)
+	if remaining != 10_000-2_400*completions {
+		t.Errorf("allocation remaining = %d, want %d", remaining, 10_000-2_400*completions)
 	}
 
 	balance, err := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending))
@@ -215,7 +234,7 @@ func TestVelocityCapIsEnforcedBeforeTheLedger(t *testing.T) {
 	ctx := context.Background()
 
 	// A streak is capped at one per user per day.
-	allocation := fundedAllocation(t, engine, 100_000)
+	allocation := fundedMarketing(t, engine, 100_000)
 	user := unique("usr")
 
 	first := request(user, allocation, reward.ActionDailyStreak)
@@ -369,7 +388,7 @@ func TestMarketingGrantsPostToTheMarketingAccount(t *testing.T) {
 		t.Fatalf("balance: %v", err)
 	}
 
-	allocation := fundedAllocation(t, engine, 100_000)
+	allocation := fundedMarketing(t, engine, 100_000)
 	req := request(unique("usr"), allocation, reward.ActionDailyStreak)
 	req.Evidence = ""
 	if _, err := engine.Grant(ctx, req); err != nil {

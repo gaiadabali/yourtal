@@ -177,3 +177,9 @@ SELECT pg_advisory_lock(hashtextextended('ledger.grant:' || sqlc.arg(user_id)::t
 
 -- name: UnlockUserGrantsSession :exec
 SELECT pg_advisory_unlock(hashtextextended('ledger.grant:' || sqlc.arg(user_id)::text, 0));
+
+-- name: InsertMarketingFunding :exec
+-- K6: the only record that lets marketing cash increase (the trigger in
+-- 20260925195000 checks for it at COMMIT). Two different people, by CHECK.
+INSERT INTO ledger.marketing_funding (id, region, amount_minor, proposed_by, approved_by, transfer_id)
+VALUES ($1, $2, $3, $4, $5, $6);

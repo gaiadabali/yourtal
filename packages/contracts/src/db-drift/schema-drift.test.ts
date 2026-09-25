@@ -513,6 +513,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "YT-0540. The server-side session record behind AuthService/SessionService — id is a SHA-256 hash of an opaque bearer token, never readable back through any endpoint (see auth.service.test.ts's own proof of that). AuthController's own responses carry the raw token once, at issuance; this row is never serialised.",
   "identity.verification_token":
     "YT-0540. Password-reset and email-verification tokens, hashed at rest like identity.session.id above. Single-use via consumed_at (see the migration's own header); no public contract represents a row of it, only the confirm endpoints' generic ok/token_invalid outcome.",
+  "identity.staff_role":
+    "1.5.b (20260926000000_identity_staff_role.sql): who holds a staff role, written only by `pnpm staff:add <email> <role>`. GET /api/me's staffRoles is a derived list of role names (get-me.use-case.ts), not a row mirror, so there is no MAPPINGS entry — same convention as identity.credential/identity.session above for a table no endpoint returns a row of.",
 };
 
 const TABLES = replayMigrations();

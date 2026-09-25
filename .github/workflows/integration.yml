@@ -318,12 +318,36 @@ jobs:
             exit 1
           fi
 
-      # Area B's gates (3.1.h, 3.6.d). Rendered: overlays in the viewport,
-      # axe in both themes, no packages/ui class missing from the built CSS.
-      # Visual: gallery baselines, drawn by the Linux browser in the Playwright
-      # image so they match baselines made on any machine.
+  # Area B's UI gates (3.1.h, 3.6.d). They need no database or PDP, so they
+  # run as their own job: a red API suite must not hide them, nor they it.
+  ui-gates:
+    name: Rendered and visual UI gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Overlays in the viewport, axe in both themes, no packages/ui class
+      # missing from the built CSS.
       - name: Rendered UI gate
         run: pnpm --filter @yourtal/web test:rendered
 
+      # Gallery baselines, drawn by the Linux browser in the Playwright image
+      # so they match baselines made on any machine.
       - name: Visual baselines
         run: pnpm --filter @yourtal/web test:visual

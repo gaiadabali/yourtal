@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
-| **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
+| **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 31/32 | `██████████`  97% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 32/52 | `██████░░░░`  62% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **20/82** | **149/366** | `████░░░░░░`  41% |
+| **All** | | | **20/82** | **149/367** | `████░░░░░░`  41% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Four agents. A (`yourtal-1`, `phase/4`): 4.4.a–d and 4.4.j ✅ (4331d78); now 4.8, then 4.7. B (`yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5, then 4.6.f/h. C (`yourtal-p4-c`, `phase/4-c`, db `yourtal_s1c`): 4.9.a remainder, 4.9.d. D (`yourtal-p4-d`, `phase/4-d`, db `yourtal_s1d`): 4.4.g event, 4.4.l |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
-| 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | Helper on `phase/11`, no slot of its own. 11.3.a, then 11.3.b without JSON-LD. 11.1 and 11.2 ⛔ Phase 7 |
+| 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 
 ## Decisions for the founder
 
@@ -572,6 +572,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [ ] 2.3.e A minimal seed when the database is empty: snap-app in AU and in ID, 2 campaigns each using the 30 s fixture video, one demo login per role, and one tier-0 demo viewer seeded with a pending grant through the 1.2 fake. The full demo world is 13.1.
   - [ ] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points.
   - [ ] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`).
+  - [ ] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`).
 
 - [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`)
   - [ ] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint).
@@ -1140,9 +1141,9 @@ The internal team runs the economy and the review queues. Today none of it exist
   - [ ] 11.2.c **Check:** a campaign created in Studio appears on the public page without a rebuild, and an adult-rated campaign cannot be played logged-out.
 - [ ] **11.3 SEO and trust pages** · needs: 11.2 — 🔄 slot 2b (early slice F26: a and b without JSON-LD)
   - [x] 11.3.a Help / FAQ, how points work, for business, and terms and privacy (marked draft on staging). A branded 404 and branded OG cards.
-  - [ ] 11.3.b `VideoObject` JSON-LD, sitemap and robots fixes (`/id/` rather than a bare `/id` prefix, and a configurable site URL), and `llms.txt`. Everything is `noindex` while `APP_ENV=staging`.
+  - [ ] 11.3.b `VideoObject` JSON-LD, sitemap and robots fixes (`/id/` rather than a bare `/id` prefix, and a configurable site URL), and `llms.txt`. Everything is `noindex` while `APP_ENV=staging`. — everything except `VideoObject` is on main (11fc23d): `SITE_URL`, `/au/` and `/id/` robots rules, info pages in the sitemap, `llms.txt`, and staging `noindex` in meta and `X-Robots-Tag`. `VideoObject` is ⛔ 7.7 (needs real campaign media)
   - [ ] 11.3.c (requested by A) `/[locale]/transparency`, listing each day's root from `GET /api/proof/roots` (10.3.b).
-  - [ ] 11.3.d **Check:** a crawl of staging finds no broken links and no page without a title or description.
+  - [ ] 11.3.d **Check:** a crawl of staging finds no broken links and no page without a title or description. — dry run 2026-09-26 on a local staging build: 303 URLs, no page without a title or description; the only broken link is `/login`, which the 1.7.c gate redirects to and 6.2.a builds
 
 **Done when:** a logged-out visitor lands on a real, video-led page in English, can watch an opted-in campaign without earning, and signing up brings them back to that same campaign.
 

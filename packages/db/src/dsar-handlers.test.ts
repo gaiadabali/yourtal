@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import { APP_URL, OWNER_URL } from "./database-urls";
@@ -174,6 +175,80 @@ describe("what the application role can and cannot do to a voucher", () => {
     await expect(pool.query(`SELECT voucher.anonymise_owner($1)`, [TOMBSTONE])).rejects.toThrow(
       /not a subject/,
     );
+  });
+});
+
+describe("erasing identity: profile, credential, session and business membership", () => {
+  it("removes all four rows for the subject, and counts every one of them", async () => {
+    const subjectId = randomUUID();
+
+    // `packages/db/src/seed*` never creates a business.business_accounts
+    // row — that is `apps/api`'s business module's job — so this fixture
+    // makes its own rather than assume the seed did.
+    const { rows: businesses } = await pool.query<{ id: string }>(
+      `INSERT INTO business.business_accounts
+         (legal_name, display_name, district, roles, region, currency, handle)
+       VALUES ('DSAR Test Pty Ltd', 'DSAR Test', 'Testville', '["advertiser"]'::jsonb,
+               'AU', 'AUD', $1)
+       RETURNING id`,
+      [`dsar-test-${subjectId.slice(0, 8)}`],
+    );
+    const businessId = businesses[0]?.id;
+    expect(businessId, "the business fixture insert should have returned an id").toBeDefined();
+
+    await pool.query(
+      `INSERT INTO identity.user_profile
+         (user_id, region, display_name, date_of_birth, timezone)
+       VALUES ($1, 'AU', 'DSAR Test Subject', '1990-01-01', 'Australia/Sydney')`,
+      [subjectId],
+    );
+    await pool.query(
+      `INSERT INTO identity.credential (user_id, kind, identifier, secret_hash)
+       VALUES ($1, 'password', $2, 'not-a-real-hash')`,
+      [subjectId, `dsar-test-${subjectId}@example.test`],
+    );
+    await pool.query(
+      `INSERT INTO identity.session (id, user_id, absolute_expires_at)
+       VALUES ($1, $2, now() + interval '30 days')`,
+      [`dsar-test-session-${subjectId}`, subjectId],
+    );
+    await pool.query(
+      `INSERT INTO business.business_members
+         (business_id, user_id, role, invited_by_user_id)
+       VALUES ($1, $2, 'analyst', $2)`,
+      [businessId, subjectId],
+    );
+
+    const report = await executeDeletion(subjectId, postgresHandlers(pool));
+    const identity = report.results.find((result) => result.domain === "identity");
+    expect(identity?.outcome).toMatchObject({ status: "erased", records: 4 });
+
+    expect(
+      await count(`SELECT COUNT(*)::text AS n FROM identity.user_profile WHERE user_id = $1`, [
+        subjectId,
+      ]),
+    ).toBe(0);
+    expect(
+      await count(`SELECT COUNT(*)::text AS n FROM identity.credential WHERE user_id = $1`, [
+        subjectId,
+      ]),
+    ).toBe(0);
+    expect(
+      await count(`SELECT COUNT(*)::text AS n FROM identity.session WHERE user_id = $1`, [
+        subjectId,
+      ]),
+    ).toBe(0);
+    expect(
+      await count(`SELECT COUNT(*)::text AS n FROM business.business_members WHERE user_id = $1`, [
+        subjectId,
+      ]),
+    ).toBe(0);
+  });
+
+  it("reports zero, not an error, for a subject who never existed", async () => {
+    const report = await executeDeletion(randomUUID(), postgresHandlers(pool));
+    const identity = report.results.find((result) => result.domain === "identity");
+    expect(identity?.outcome).toMatchObject({ status: "erased", records: 0 });
   });
 });
 

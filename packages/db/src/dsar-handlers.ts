@@ -92,6 +92,71 @@ export function eraseBusinessMemberships(pool: pg.Pool): DomainHandler {
   };
 }
 
+/** The `identity.user_profile` row 1.4.a created — display name, date of
+ * birth, timezone and the rest of a person's own account record. */
+export function eraseUserProfile(pool: pg.Pool): DomainHandler {
+  return async (subjectId: string): Promise<number> => {
+    const result = await pool.query(`DELETE FROM identity.user_profile WHERE user_id = $1`, [
+      subjectId,
+    ]);
+    return result.rowCount ?? 0;
+  };
+}
+
+/**
+ * Every credential row this subject has, any `kind`. Needed its own
+ * migration first (20260925200100): the original grant
+ * (20260921180000) was SELECT, INSERT, UPDATE only, because until this
+ * ticket nothing ever deleted a credential row.
+ */
+export function eraseCredentials(pool: pg.Pool): DomainHandler {
+  return async (subjectId: string): Promise<number> => {
+    const result = await pool.query(`DELETE FROM identity.credential WHERE user_id = $1`, [
+      subjectId,
+    ]);
+    return result.rowCount ?? 0;
+  };
+}
+
+/** Every session this subject holds, active or not — a DSAR erasure is a
+ * stronger act than `revokeAllForUser` and removes the row entirely rather
+ * than setting `revoked_at`. */
+export function eraseSessions(pool: pg.Pool): DomainHandler {
+  return async (subjectId: string): Promise<number> => {
+    const result = await pool.query(`DELETE FROM identity.session WHERE user_id = $1`, [subjectId]);
+    return result.rowCount ?? 0;
+  };
+}
+
+/**
+ * The `identity` domain's full erasure, 1.4.f: business membership plus the
+ * three tables above. All four are `erase`, not `anonymise`, for the same
+ * reason membership already was: none of them records an obligation to
+ * anyone but the subject. There is no FK between them (every
+ * `identity.*`/`business.*` table's own header explains why `user_id` is a
+ * free-text opaque UUID, never a foreign key), so the four deletes can run
+ * in any order without a constraint violation.
+ *
+ * One handler, not four registry entries: `HandlerRegistry` is one function
+ * per `DATA_DOMAINS` id, and `dsar.ts` names a single "identity" domain for
+ * all of this, not one per table.
+ */
+export function eraseIdentity(pool: pg.Pool): DomainHandler {
+  const memberships = eraseBusinessMemberships(pool);
+  const profile = eraseUserProfile(pool);
+  const credentials = eraseCredentials(pool);
+  const sessions = eraseSessions(pool);
+  return async (subjectId: string): Promise<number> => {
+    const counts = await Promise.all([
+      memberships(subjectId),
+      profile(subjectId),
+      credentials(subjectId),
+      sessions(subjectId),
+    ]);
+    return counts.reduce((total, n) => total + n, 0);
+  };
+}
+
 /**
  * The handlers this database can supply today.
  *
@@ -107,8 +172,8 @@ export function eraseBusinessMemberships(pool: pg.Pool): DomainHandler {
 export function postgresHandlers(pool: pg.Pool): HandlerRegistry {
   return {
     vouchers: anonymiseVouchers(pool),
-    // The domain map calls this `support_cases` and `identity` elsewhere;
-    // business membership is part of the identity surface that exists now.
-    identity: eraseBusinessMemberships(pool),
+    // 1.4.f: business membership plus identity.user_profile, .credential
+    // and .session — see eraseIdentity's own doc comment.
+    identity: eraseIdentity(pool),
   };
 }

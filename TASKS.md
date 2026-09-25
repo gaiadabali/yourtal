@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 15/44 | `███░░░░░░░`  34% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 22/32 | `███████░░░`  69% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 19/52 | `████░░░░░░`  37% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 21/52 | `████░░░░░░`  40% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **15/82** | **102/366** | `███░░░░░░░`  28% |
+| **All** | | | **15/82** | **104/366** | `███░░░░░░░`  28% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct (early, F21/F22/F24) | 2026-09-25 | Go-only ahead of Phase 1 (`phase/4`): 4.1.a, 4.2, 4.3.a–d, 4.4.f, 4.4.i, 4.9.b, 4.6.a–e ✅ (e8dd34c). Now 4.4.k, 4.4.h, 4.4.e, 4.9.c, 4.3.e engine. Routes and TS clients wait for 1.2.a/b |
+| 1 | `yourtal-1` | **4** The bank is correct (early, F21/F22/F24) | 2026-09-25 | Go-only ahead of Phase 1 (`phase/4`): 4.1.a, 4.2, 4.3.a–d, 4.4.f, 4.4.i, 4.9.b, 4.6.a–e ✅ (e8dd34c). 4.4.k, 4.4.h, 4.4.e ✅ (8ebc5d3). Now 4.9.c, then the 4.3.e burn engine. Routes and TS clients wait for 1.2.a/b |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅. Now 3.5 video primitives and shells, then 3.6 |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) on 1.2.a–e, then 1.5; B (`yourtal-p1-b`, `phase/1-b`) now on 1.4 → rest of 1.6 (AuthService wiring, dev inbox) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) on 1.2.f (F23) |
 
@@ -733,10 +733,10 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.4.b Bonus = `floor(accuracy_bonus_points × correct ÷ asked)`, when the terms' scoring rule is base_plus_accuracy_bonus; the base requires every asked question answered. The bonus counts toward `max_points_for_campaign`.
   - [ ] 4.4.c Evidence: apps/api signs a completion attestation with HMAC over session, user, campaign, terms version, completion time, **asked and correct** (EW-12).
   - [ ] 4.4.d **One reward per user per campaign:** `UNIQUE (user_id, campaign_id)` for watch-completed grants, returning `already_granted`.
-  - [ ] 4.4.e Allocation holds. At reward-session start, `hold` base + maximum bonus with a TTL of 2 × duration + 1 h. The grant consumes the hold; abandonment or expiry releases it through a job. This way a viewer is never refused at the end for `allocation_exhausted`. The decrement-only `SECURITY DEFINER` function has four verbs: hold, consume, release and return. Revoke the ledger role's UPDATE on allocations (EM-08).
+  - [x] 4.4.e Allocation holds. At reward-session start, `hold` base + maximum bonus with a TTL of 2 × duration + 1 h. The grant consumes the hold; abandonment or expiry releases it through a job. This way a viewer is never refused at the end for `allocation_exhausted`. The decrement-only `SECURITY DEFINER` function has four verbs: hold, consume, release and return. Revoke the ledger role's UPDATE on allocations (EM-08).
   - [x] 4.4.f Velocity caps and the daily and monthly caps (F12) are counted inside the transaction, under a per-user advisory lock, using the database's `now()` (EM-06, EW-11).
   - [ ] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13).
-  - [ ] 4.4.h K6: every point not paid for by a business is backed by cash.
+  - [x] 4.4.h K6: every point not paid for by a business is backed by cash.
     - `grantAction` (streak, receipt, goodwill) draws only from a marketing allocation funded by marketing cash → reserve in the same transaction.
     - Marketing cash is increased only by `fundMarketing` (two-person, staff) and by the seed.
     - A partner allocation can only come from a `point_purchase`.
@@ -797,7 +797,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
 - [ ] **4.8 Wallet API** · needs: 4.7
   - [ ] 4.8.a `apps/api/src/modules/wallet`: `GET /api/wallet` (available, pending with unlock dates, expiring), `/api/wallet/history` (plain-language entries built from the ledger's references), `/api/wallet/vouchers`, `/api/wallet/vouchers/:id` and `/api/wallet/vouchers/:id/qr`.
   - [ ] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token.
-- [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22) — 🔄 slot 1
+- [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22; 4.9.c, F24) — 🔄 slot 1
   - [ ] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view.
   - [x] 4.9.b Rate governance inside the ledger:
     - `proposeRate` / `approveRate`, with `approved_by ≠ set_by` (CHECK);

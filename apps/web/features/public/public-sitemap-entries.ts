@@ -4,6 +4,7 @@ import { listPublicListings } from "./public-listing-data";
 import { listPublicMerchants } from "./public-merchant";
 import { GENERATED_PUBLIC_LOCALES, publicLanguageAlternates, publicUrl } from "./public-locale";
 import { slugify } from "./public-slug";
+import { PUBLIC_INFO_SLUGS } from "./public-info-pages";
 
 /**
  * Every indexable public URL (YT-0180), for `app/sitemap.ts`. Built from the
@@ -41,6 +42,13 @@ export function publicSitemapEntries(): MetadataRoute.Sitemap {
         alternates: { languages: publicLanguageAlternates("/rewards") },
       },
     );
+
+    for (const slug of PUBLIC_INFO_SLUGS) {
+      entries.push({
+        url: publicUrl(locale, `/${slug}`),
+        alternates: { languages: publicLanguageAlternates(`/${slug}`) },
+      });
+    }
 
     for (const campaign of listPublicCampaigns(locale)) {
       entries.push({

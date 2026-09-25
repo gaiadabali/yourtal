@@ -314,5 +314,9 @@
         }
       ]
     }
+  },
+  "llms": {
+    "summary": "YourTal is a video app where people earn points for watching videos from local businesses and answering a few questions about them, then spend the points on vouchers from those businesses.",
+    "regions": "Australia and Indonesia are separate regions, each with its own points, rewards and businesses. Points earned in one region can only be spent there."
   }
 }

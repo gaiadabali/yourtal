@@ -55,6 +55,8 @@ const fontVariables = `${fontBody.variable} ${fontDisplay.variable} ${fontMono.v
 export const baseMetadata: Metadata = {
   title: "YourTal",
   description: "Watch, learn, earn — and spend it where you live.",
+  // robots.txt already disallows staging; this covers crawlers that arrive by link.
+  ...(isStaging() ? { robots: { index: false, follow: false } } : {}),
 };
 
 // Safe-area insets for notched devices (YT-0402).

@@ -6,6 +6,7 @@ import {
   publicLocaleConfig,
   publicUrl,
   requirePublicLocale,
+  siteUrl,
 } from "./public-locale";
 
 describe("isPublicLocale", () => {
@@ -61,8 +62,8 @@ describe("GENERATED_PUBLIC_LOCALES", () => {
   // both locales generate. Asserting the full array, not just its length,
   // so a future locale added to `PUBLIC_LOCALES` without a matching
   // catalogue is caught here rather than discovered as a 404.
-  it("pre-renders both id and au now that a real AU catalogue exists", () => {
-    expect(GENERATED_PUBLIC_LOCALES).toEqual(["id", "au"]);
+  it("pre-renders au first (the primary region), then id", () => {
+    expect(GENERATED_PUBLIC_LOCALES).toEqual(["au", "id"]);
   });
 });
 
@@ -74,5 +75,19 @@ describe("publicLanguageAlternates", () => {
       "id-ID": "https://yourtal.com/id/rewards",
       "en-AU": "https://yourtal.com/au/rewards",
     });
+  });
+});
+
+describe("siteUrl", () => {
+  it("defaults to production and keeps only the origin", () => {
+    expect(siteUrl(undefined)).toBe("https://yourtal.com");
+    expect(siteUrl("")).toBe("https://yourtal.com");
+    expect(siteUrl("https://staging.example.test/")).toBe("https://staging.example.test");
+    expect(siteUrl("http://127.0.0.1:26357")).toBe("http://127.0.0.1:26357");
+  });
+
+  it("refuses a path or a malformed value rather than building broken links", () => {
+    expect(() => siteUrl("https://example.test/au")).toThrow(/bare origin/);
+    expect(() => siteUrl("not a url")).toThrow();
   });
 });

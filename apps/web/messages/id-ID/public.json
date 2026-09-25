@@ -314,5 +314,9 @@
         }
       ]
     }
+  },
+  "llms": {
+    "summary": "YourTal adalah aplikasi video tempat orang mengumpulkan poin dengan menonton video dari bisnis lokal dan menjawab beberapa pertanyaan tentangnya, lalu menukar poinnya dengan voucher dari bisnis tersebut.",
+    "regions": "Australia dan Indonesia adalah wilayah terpisah, masing-masing dengan poin, hadiah, dan bisnisnya sendiri. Poin yang dikumpulkan di satu wilayah hanya bisa dipakai di sana."
   }
 }

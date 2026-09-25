@@ -30,6 +30,11 @@ const config: NextConfig = {
   output: "standalone",
   // i18n/request.ts reads the catalogues from disk, which the tracer cannot see.
   outputFileTracingIncludes: { "/**": ["./messages/**/*.json"] },
+  // Staging is open to reviewers but never indexed, OG images and llms.txt included.
+  async headers() {
+    if (process.env["APP_ENV"] !== "staging") return [];
+    return [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }];
+  },
 };
 
 // Bundle-analyzer report for YT-0404 (perf budget harness). Opt-in only —

@@ -32,4 +32,13 @@ describe("staging posture", () => {
     vi.stubEnv("APP_ENV", "dev");
     expect(robots().rules).not.toStrictEqual({ userAgent: "*", disallow: "/" });
   });
+
+  it("allows only the locale roots and trees, never a bare prefix like /id", () => {
+    vi.stubEnv("APP_ENV", "dev");
+    expect(robots().rules).toStrictEqual({
+      userAgent: "*",
+      allow: ["/au$", "/au/", "/id$", "/id/", "/llms.txt"],
+      disallow: "/",
+    });
+  });
 });

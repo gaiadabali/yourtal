@@ -43,7 +43,7 @@ export const PUBLIC_LOCALES = ["id", "au"] as const;
 export type PublicLocale = (typeof PUBLIC_LOCALES)[number];
 
 /** Locales this feature pre-renders. Kept distinct from `PUBLIC_LOCALES` as a seam: a locale can be a real, typed value before it has a generated catalogue (see the module docstring for how "au" used that seam). */
-export const GENERATED_PUBLIC_LOCALES: readonly PublicLocale[] = ["id", "au"];
+export const GENERATED_PUBLIC_LOCALES: readonly PublicLocale[] = ["au", "id"];
 
 export function isPublicLocale(value: string): value is PublicLocale {
   return (PUBLIC_LOCALES as readonly string[]).includes(value);
@@ -82,14 +82,20 @@ export function publicLocaleConfig(locale: PublicLocale): PublicLocaleConfig {
 }
 
 /**
- * Production origin every canonical/OG/JSON-LD absolute URL on the public
- * surface is built from (`docs/11-seo-aeo-geo.md` §2.2: "Absolute URL, on
- * every public page"). `app/(app)/**`/`app/(merchant)/**` do not need this —
- * neither is indexed — so it is scoped to this feature rather than a
- * repo-wide `metadataBase` in the shared root `app/layout.tsx`, which this
- * ticket does not own.
+ * Origin for every canonical, OG, sitemap and JSON-LD URL on the public
+ * surface. `SITE_URL` is read at build time, so staging builds with its own
+ * host and its links never point at production.
  */
-export const PUBLIC_SITE_URL = "https://yourtal.com";
+export const PUBLIC_SITE_URL = siteUrl(process.env["SITE_URL"]);
+
+export function siteUrl(raw: string | undefined): string {
+  if (!raw) return "https://yourtal.com";
+  const url = new URL(raw); // throws on a malformed value, failing the build
+  if (url.pathname !== "/" || url.search || url.hash) {
+    throw new Error(`SITE_URL must be a bare origin, got ${raw}`);
+  }
+  return url.origin;
+}
 
 /** Builds an absolute, locale-prefixed URL under the public site origin, e.g. `publicUrl("id", "/c/abc")`. */
 export function publicUrl(locale: PublicLocale, path: string): string {

@@ -27,7 +27,11 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: GENERATED_PUBLIC_LOCALES.map((locale) => `/${locale}`),
+      // `/id/`, not `/id`: a bare prefix would also allow `/identity`, `/idea`...
+      allow: [
+        ...GENERATED_PUBLIC_LOCALES.flatMap((locale) => [`/${locale}$`, `/${locale}/`]),
+        "/llms.txt",
+      ],
       disallow: "/",
     },
     sitemap: `${PUBLIC_SITE_URL}/sitemap.xml`,

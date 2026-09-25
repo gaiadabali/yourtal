@@ -3,6 +3,7 @@ import { listPublicCampaigns } from "./public-campaign-data";
 import { listPublicListings } from "./public-listing-data";
 import { listPublicMerchants } from "./public-merchant";
 import { publicSitemapEntries } from "./public-sitemap-entries";
+import { PUBLIC_INFO_SLUGS } from "./public-info-pages";
 
 describe("publicSitemapEntries", () => {
   it("includes both generated locales' home and catalogue hub, with language alternates", () => {
@@ -67,12 +68,10 @@ describe("publicSitemapEntries", () => {
     const seen = new Map<string, number>();
     for (const path of paths) seen.set(path, (seen.get(path) ?? 0) + 1);
 
-    // `/` and `/rewards` are the two genuine per-locale pairs — the only
-    // pages that exist in both regions, which is why they are also the only
-    // two carrying hreflang alternates.
-    const duplicated = [...seen].filter(
-      ([path, count]) => count > 1 && path !== "/" && path !== "/rewards",
-    );
+    // `/`, `/rewards` and the info pages are the genuine per-locale pairs:
+    // the only pages in both regions, so the only ones with hreflang alternates.
+    const paired = new Set(["/", "/rewards", ...PUBLIC_INFO_SLUGS.map((slug) => `/${slug}`)]);
+    const duplicated = [...seen].filter(([path, count]) => count > 1 && !paired.has(path));
     expect(duplicated).toEqual([]);
   });
 
@@ -116,6 +115,19 @@ describe("publicSitemapEntries", () => {
         (candidate) => candidate.url === `https://yourtal.com/id/c/${firstCampaign.id}`,
       );
       expect(entry?.lastModified).toBe(firstCampaign.publishedAt);
+    }
+  });
+
+  it("lists every info page in both regions, with language alternates", () => {
+    const urls = new Map(publicSitemapEntries().map((entry) => [entry.url, entry]));
+    for (const slug of PUBLIC_INFO_SLUGS) {
+      for (const locale of ["au", "id"]) {
+        const entry = urls.get(`https://yourtal.com/${locale}/${slug}`);
+        expect(entry?.alternates?.languages, `${locale}/${slug}`).toEqual({
+          "id-ID": `https://yourtal.com/id/${slug}`,
+          "en-AU": `https://yourtal.com/au/${slug}`,
+        });
+      }
     }
   });
 });

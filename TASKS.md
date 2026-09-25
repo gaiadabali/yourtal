@@ -33,9 +33,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 23/44 | `█████░░░░░`  52% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 27/44 | `██████░░░░`  61% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 22/32 | `███████░░░`  69% |
+| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 25/32 | `████████░░`  78% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 22/52 | `████░░░░░░`  42% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **16/82** | **113/366** | `███░░░░░░░`  31% |
+| **All** | | | **16/82** | **120/366** | `███░░░░░░░`  33% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -465,9 +465,9 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.3.c Create `apps/worker`: a pg-boss runner (`packages/queue`) that **auto-loads** every `src/jobs/*.ts` exporting `job`, with no central list. Add ffmpeg to the Helios host prerequisites (`infra/HELIOS.md`).
   - [x] 1.3.d `apps/api/src/shared/testing/session-for.ts` (register + login → cookie) for everyone's tests. Until 1.5.a lands it **also returns the matching `x-yt-*` headers**, so a test passes both before and after 1.5.a. The boot tests move onto it in 1.5.a.
   - [x] 1.3.e **Check:** a new job file is picked up without editing any other file, and a new route passes route-drift once it is added to its area's registry. Verified: `apps/worker/src/job-loader.test.ts` adds `second.job.ts` next to `real.job.ts` with no other file touched; `packages/contracts/src/openapi/route-drift.test.ts` passes for the whole `apps/api` route set against the concatenated `route-registry.{a,b,c}.ts`.
-  - [ ] 1.3.f (requested by 4) `pnpm --filter @yourtal/db test` is red on `main` since 199958e: `seed.test.ts` fails 3 tests ("is idempotent" hits `question_option_question_id_fkey` in `seed/studio.ts:244`, plus the question-bank 3x and chapter checks). `pnpm check` does not run this suite, so the merge gate stayed green.
+  - [x] 1.3.f (requested by 4) `pnpm --filter @yourtal/db test` is red on `main` since 199958e: `seed.test.ts` fails 3 tests ("is idempotent" hits `question_option_question_id_fkey` in `seed/studio.ts:244`, plus the question-bank 3x and chapter checks). `pnpm check` does not run this suite, so the merge gate stayed green. — Fixed (cfd14af, merged f421695): the real bug was `question-bank.test.ts` borrowing a real seeded "live" campaign and deleting its `campaign.question` rows in `beforeEach`, racing `seed.test.ts`'s own concurrent idempotency check (`fileParallelism` is on for this package). It now clones a private campaign row in `beforeAll` instead, which `seed()` never iterates. Confirmed with three consecutive full runs (99/99) before merging, green again after every subsequent rebase.
 - [ ] **1.4 Accounts and profile** · needs: 1.1 — 🔄 slot 3 — b, c merged (beea3ce, b1bb6fd); a, d merged as a WIP checkpoint (8196a94), still being verified; e, f open
-  - [ ] 1.4.a Add a migration for `identity.user_profile` with these fields:
+  - [x] 1.4.a Add a migration for `identity.user_profile` with these fields:
     - `region` AU | ID, immutable after signup;
     - `display_locale`, defaulting to `en-AU` and independent of region;
     - `display_name`, `date_of_birth`, `timezone` (the browser's IANA zone);
@@ -482,10 +482,10 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     
     Update `policy-query.test.ts`.
   - [x] 1.4.c `POST /api/auth/register` takes region, locale, display name, date of birth, timezone and, when needed, guardian email. It returns a session.
-  - [ ] 1.4.d `apps/api/src/modules/identity/me.controller.ts` provides `GET /api/me` (profile, age band, business memberships, staff roles) and `PATCH /api/me` (display name, locale). These are root routes only; B's `me` module owns the sub-routes and C's `business` module owns `/api/me/businesses`.
+  - [x] 1.4.d `apps/api/src/modules/identity/me.controller.ts` provides `GET /api/me` (profile, age band, business memberships, staff roles) and `PATCH /api/me` (display name, locale). These are root routes only; B's `me` module owns the sub-routes and C's `business` module owns `/api/me/businesses`. — Verified: `me.controller.test.ts`, 12 tests against a real app/DB/PDP (register→GET, PATCH persists, region immutable, anonymous refused).
   - [ ] 1.4.e Email verification actually stores `verified_at`. Today it stores nothing (`auth.service.ts:284-308`).
   - [ ] 1.4.f (requested by B for 5.4.b) DSAR handlers for `identity.user_profile`, credentials and sessions, registered with `dsar-orchestrator`.
-  - [ ] 1.4.g **Check:** register → `GET /api/me` shows region AU, locale en-AU and age band adult. With the flag off, a 15-year-old is refused.
+  - [x] 1.4.g **Check:** register → `GET /api/me` shows region AU, locale en-AU and age band adult. With the flag off, a 15-year-old is refused. — Verified in `me.controller.test.ts`, including the under-13 neutral refusal and its 24h retry-block cookie, and the TEEN_ACCOUNTS-on path (guardian_email_required, a pending teen's ageBand reading "teen").
 - [ ] **1.5 The principal comes from the session, never from headers** · needs: 1.4 — 🔄 slot 3 — d and c start now (don't need 1.4); a/b/e/f wait for it
   - [ ] 1.5.a `PrincipalService.resolve` reads the `yt_session` httpOnly cookie (or Bearer token) through `SessionService.validateAndTouch`. **Delete every `x-yt-*` header path**, and remove the refusal to boot when `NODE_ENV=production`. **In the same commit** (exempt), remove the header fallback from `session-for.ts` and move every boot test in every area that still sends raw `x-yt-*` headers onto it.
   - [ ] 1.5.b The principal carries:
@@ -660,16 +660,16 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 3.4.b New: Heading, Text, PageContainer, PageHeader, Section, **PointsChip**, MoneyAmount (the currency comes from the data, never the viewer), KeyValue, DataTable (becomes a card list below `md`), EmptyState, ErrorState, Notice, Switch, Chip, SegmentedControl, ChoiceCard, ChannelAvatar (with an initials fallback), **MediaCard** (16:9 and 9:16, with poster, duration and progress), QRPanel, Stepper, FilterBar, ListRow.
   - [x] 3.4.c **Check:** the console and merchant screens still compile and render, and every primitive is in the gallery (3.6).
 - [ ] **3.5 Video primitives and shells** · needs: 3.4 — 🔄 slot 2
-  - [ ] 3.5.a **VerticalFeed**, with `mode: "teaser" | "inline-session"`:
+  - [x] 3.5.a **VerticalFeed**, with `mode: "teaser" | "inline-session"`:
     - native `<video>` for the MP4 teasers;
     - at most 3 video elements mounted; the rest are posters;
     - preload the next item's first 300 KB only when not on cellular and `saveData` is false;
     - it ends with "You're all caught up".
-  - [ ] 3.5.b **VideoSurface**:
+  - [x] 3.5.b **VideoSurface**:
     - hls.js is imported dynamically, only on the watch page;
     - starts at 360p on cellular and 540p otherwise, never above 720p unless the viewer chooses;
     - a real error state; a CC toggle.
-  - [ ] 3.5.c Shells:
+  - [x] 3.5.c Shells:
     - **ViewerShell**: top bar with logo, search field and the available-points chip; bottom nav on mobile (Home · Watch · Store · Wallet · Me); side nav from 1024 px; the staging banner slot;
     - **StudioShell**: desktop sidebar, used for business and staff;
     - **CounterShell** for the merchant;

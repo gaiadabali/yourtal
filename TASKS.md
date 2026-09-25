@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct — ⏸ waits for 1.2 on `main` | 2026-09-25 | Done early (F21/F22/F24, all merged by a35cf23): 4.1.a, 4.2, 4.3.a–d, 4.4.e/f/h/i/k, 4.9.b/c, 4.6.a–e, the burn engine for 4.3.e. Everything left needs the 1.2.a/b contracts on `main` (ticked on `phase/1`, not merged yet); resume with 4.1.b then |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅. Now 3.5 video primitives and shells, then 3.6 |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.2 ✅ (bbf01bd); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) done with 1.2, waiting on B's 1.4 before 1.5 can start; B (`yourtal-p1-b`, `phase/1-b`) still on 1.4 → rest of 1.6 (AuthService wiring, dev inbox) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) done with 1.2.f |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.2 ✅ (bbf01bd); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) now on 1.5.d (PdpGuard async resource-attribute loader, exempt from area ownership) then 1.5.c, stopping before 1.5.a/b/e/f until B's 1.4 merges; B (`yourtal-p1-b`, `phase/1-b`) still on 1.4 (editing auth.controller.ts/auth.service.ts) → rest of 1.6 → 1.7; C (`yourtal-p1-c`, `phase/1-c`) done with 1.2.f |
 
 ## Decisions for the founder
 
@@ -486,7 +486,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [ ] 1.4.e Email verification actually stores `verified_at`. Today it stores nothing (`auth.service.ts:284-308`).
   - [ ] 1.4.f (requested by B for 5.4.b) DSAR handlers for `identity.user_profile`, credentials and sessions, registered with `dsar-orchestrator`.
   - [ ] 1.4.g **Check:** register → `GET /api/me` shows region AU, locale en-AU and age band adult. With the flag off, a 15-year-old is refused.
-- [ ] **1.5 The principal comes from the session, never from headers** · needs: 1.4
+- [ ] **1.5 The principal comes from the session, never from headers** · needs: 1.4 — 🔄 slot 3 — d and c start now (don't need 1.4); a/b/e/f wait for it
   - [ ] 1.5.a `PrincipalService.resolve` reads the `yt_session` httpOnly cookie (or Bearer token) through `SessionService.validateAndTouch`. **Delete every `x-yt-*` header path**, and remove the refusal to boot when `NODE_ENV=production`. **In the same commit** (exempt), remove the header fallback from `session-for.ts` and move every boot test in every area that still sends raw `x-yt-*` headers onto it.
   - [ ] 1.5.b The principal carries:
     - business roles from `business.business_members`, only where `joined_at` is set;

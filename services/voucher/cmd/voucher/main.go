@@ -90,13 +90,15 @@ func run(logger *slog.Logger) error {
 	network := redeem.New(pool)
 
 	router := chi.NewRouter()
-	// docs/13a §7 fixes this order: RequestID -> RealIP -> Recoverer ->
+	// docs/13a §7 fixes this order: RequestID -> ClientIP -> Recoverer ->
 	// Timeout -> auth -> idempotency -> module. otelhttp slots in later; the
 	// sequence below is what matters, because idempotency must sit behind
 	// authentication or an unauthenticated caller can write to the shared
 	// idempotency table.
 	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
+	// Not RealIP: it trusts X-Forwarded-For / X-Real-IP from any caller
+	// (GHSA-3fxj-6jh8-hvhx). These services have no proxy in front.
+	router.Use(middleware.ClientIPFromRemoteAddr)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(requestTimeout))
 

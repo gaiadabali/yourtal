@@ -8,7 +8,7 @@
 # Pinned by tag (matches this repo's docker-compose.yml convention:
 # postgres:17-alpine, cerbos:0.55.0 — never :latest, per the Atlas lesson
 # recorded against docker-compose.yml's minio entry).
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26.8-alpine3.24 AS builder
 
 WORKDIR /src
 
@@ -31,7 +31,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
 # docker-compose.yml's `additional_contexts: healthcheck: ../../infra/healthcheck`)
 # rather than copied into this service's own tree — see infra/healthcheck's
 # package comment for why it lives there instead of here.
-FROM golang:1.26-alpine AS healthcheck-builder
+FROM golang:1.26.8-alpine3.24 AS healthcheck-builder
 WORKDIR /hc
 COPY --from=healthcheck . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/healthcheck .
@@ -40,7 +40,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/healthc
 # nothing in this image for a compromised process to do besides be the
 # ledger binary and the healthcheck probe. Pinned by digest rather than the
 # "nonroot" tag alone, because a tag can move under a name that looks fixed.
-FROM gcr.io/distroless/static-debian12@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 
 # The distroless "nonroot" variant already runs as uid/gid 65532 with no
 # root account to fall back to — nothing to add here.

@@ -10,7 +10,7 @@
 # why internal/keyring refuses to load a key that lives inside a git working
 # tree (baking one into a layer would be exactly that, plus distributed to
 # every pull).
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26.8-alpine3.24 AS builder
 
 WORKDIR /src
 
@@ -27,12 +27,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
 # another agent owns that tree's HTTP layer — so it is pulled in as a named
 # build context instead; see infra/healthcheck's package comment and
 # docker-compose.yml's `additional_contexts` for this service.
-FROM golang:1.26-alpine AS healthcheck-builder
+FROM golang:1.26.8-alpine3.24 AS healthcheck-builder
 WORKDIR /hc
 COPY --from=healthcheck . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/healthcheck .
 
-FROM gcr.io/distroless/static-debian12@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 
 COPY --from=builder /out/voucher /usr/local/bin/voucher
 COPY --from=healthcheck-builder /out/healthcheck /usr/local/bin/healthcheck

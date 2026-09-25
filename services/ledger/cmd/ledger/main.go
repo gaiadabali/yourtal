@@ -19,7 +19,7 @@
 //
 // The shape below is docs/13a section 7's: chi, one httpx pair for every
 // response, slog injected rather than global, and the middleware order
-// `RequestID -> RealIP -> ... -> recover -> timeout -> auth -> Cerbos ->
+// `RequestID -> ClientIP -> ... -> recover -> timeout -> auth -> Cerbos ->
 // idempotency -> module`. The last three are not here yet; auth and Cerbos
 // arrive with the service's first authenticated route, and idempotency has
 // a shared table waiting for it (platform.idempotency).
@@ -89,7 +89,9 @@ func run(logger *slog.Logger) error {
 	// because idempotency must sit behind auth or an unauthenticated caller
 	// can write to the idempotency table.
 	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
+	// Not RealIP: it trusts X-Forwarded-For / X-Real-IP from any caller
+	// (GHSA-3fxj-6jh8-hvhx). These services have no proxy in front.
+	router.Use(middleware.ClientIPFromRemoteAddr)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(requestTimeout))
 

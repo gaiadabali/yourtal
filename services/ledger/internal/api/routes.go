@@ -58,7 +58,7 @@ func New(logger *slog.Logger, book *ledger.Ledger, priced *pricing.Engine) *API 
 }
 
 // Routes returns the mountable router. main.go mounts it at /v1 after the
-// fixed middleware prefix (RequestID -> RealIP -> Recoverer -> Timeout);
+// fixed middleware prefix (RequestID -> ClientIP -> Recoverer -> Timeout);
 // auth, Cerbos and idempotency are not yet in that chain, so every route
 // below is a 501 naming that gap. None of the four is live.
 //

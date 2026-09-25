@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 4/7 | 32/44 | `███████░░░`  73% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 24/52 | `█████░░░░░`  46% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 26/52 | `█████░░░░░`  50% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **17/82** | **132/366** | `████░░░░░░`  36% |
+| **All** | | | **19/82** | **134/366** | `████░░░░░░`  37% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -691,11 +691,11 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
 
 The money engines are sound libraries with **confirmed defects and no callers**. Fix each defect with a regression test that fails on the audit's scenario first, then expose the engines. Defect IDs point into `docs/audit/2026-09-25/`: `engine-money.md` (EM-), `engine-voucher.md` (D) and `engine-watch.md` (EW-). The order below is chosen to replace B's and C's fakes as early as possible. **The regions are separate economies** (F2): every account, rate, allocation, reserve and voucher is region-scoped, and the ledger refuses anything that crosses.
 
-- [ ] **4.1 Ledger internal API (was YT-0593; EM-03)** · needs: 1.2 (4.1.a early, F21) — 🔄 slot 1
+- [x] **4.1 Ledger internal API (was YT-0593; EM-03)** · needs: 1.2 (4.1.a early, F21) — ✅ 2026-09-26 360dfa6
   - [x] 4.1.a Service authentication for loopback calls. Each caller (api, worker) signs method, path, body and timestamp with an HMAC shared secret. Reject more than 60 s of skew, and keep a replay cache. The canonical string (for the TS signer in 1.2.d / 4.1.c) is in `services/ledger/internal/serviceauth`; secret `LEDGER_SERVICE_SECRET`.
   - [x] 4.1.b Replace the four 501 routes (`services/ledger/internal/api/routes.go:80-106`) with the 1.2.a operations the existing engines already support: balance, history, quote (priced at server `now()` only, EM-19), purchases and grants. Add the rest as their tasks land.
   - [x] 4.1.c Implement the HTTP side of `ledger-client` for the 4.1.b operations. Staging stays on `LEDGER_MODE=fake` until every 1.2.a operation has a live route (4.9.e).
-  - [ ] 4.1.d **Check:** the contract-spec cases for the 4.1.b operations pass against live, the rest are `it.todo` until their task lands, and the ledger rejects an unsigned call.
+  - [x] 4.1.d **Check:** the contract-spec cases for the 4.1.b operations pass against live, the rest are `it.todo` until their task lands, and the ledger rejects an unsigned call.
 - [x] **4.2 Chart of accounts and posting rules: decide first, then code** · needs: 4.1 (early, F21) — ✅ 2026-09-25 8dcfe2c
   - [x] 4.2.a **Keep the credit-positive convention** from migration `20260919000002`. Fix `FundReserve` (`chart.go:260-264`) and read asset balances as −SUM. Every sign-dependent reader must agree: `EarnPoints`, `BurnPoints`, `ExpirePoints`, `IssueMarketingPoints`, `SumPointsOutstanding` (`pricing.sql:31-44`), the balance and history endpoints, and the overdraft guard (EM-15).
   - [x] 4.2.b Add `ledger.account.purpose` (`main`, `available`, `pending`, `escrow`, `payable`) and replace `account_one_per_owner_currency` with a unique index on (owner_type, owner_id, currency, purpose). Platform accounts are per region; a user's points accounts are in their region only (EM-12). `SumPointsOutstanding` sums available + pending + escrow.
@@ -717,14 +717,14 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     | Suspend | Dr user.available + pending / Cr user.escrow; release reverses it |
     | Reversal | the exact inverse, referencing the original transfer |
   - [x] 4.2.d **Check:** a trial balance by account kind passes. After a 100-pt grant, points outstanding = +100, and coverage is not reported as "no points outstanding".
-- [ ] **4.3 Ledger guards** · needs: 4.2 (4.3.a–d early, F21; 4.3.e waits for 1.2) — 🔄 slot 1
+- [x] **4.3 Ledger guards** · needs: 4.2 (4.3.a–d early, F21; 4.3.e waits for 1.2) — ✅ 2026-09-26 360dfa6
   - [x] 4.3.a Overdraft guard: a per-account `pg_advisory_xact_lock`, and no debit below zero, for user available, pending and escrow, marketing cash and merchant payable. Test: two concurrent burns of 400 and 400 on a balance of 500 → exactly one succeeds (EM-04).
   - [x] 4.3.b A trigger enforces `entry.currency = account.currency`, and balance queries filter by currency (EM-09).
   - [x] 4.3.c Idempotency: store a request hash, so the same key with a different payload returns `idempotency_conflict` and a replay returns the original result (EM-14). Transfer and grant IDs include the user ID (EM-17, EW-13).
   - [x] 4.3.d Seal transfers:
     - a trigger forces `created_at = now()`, and entries cannot be added to a transfer from an earlier transaction (EM-18);
     - `validate` uses checked int64 addition, and the checker sums as numeric (EM-23).
-  - [ ] 4.3.e Add `/v1/burns` (`burnForVoucher`, `getBurn`, `reinstateBurn`) on these guards, where `reinstateBurn` is K13. — ⛔ the engine is done (`internal/burn`: Burn, Get, Reinstate); only the route waits for the 1.2.a contract
+  - [x] 4.3.e Add `/v1/burns` (`burnForVoucher`, `getBurn`, `reinstateBurn`) on these guards, where `reinstateBurn` is K13.
   - [x] 4.3.f **Check:** each of EM-04/09/14/17/18/23 has a test that failed before the fix and passes after.
 - [ ] **4.4 The Reward Engine pays what the partner set, once** · needs: 4.3 (4.4.f and 4.4.i early, F22) — 🔄 slot 1
   - [ ] 4.4.a The amount comes from the **frozen terms version**, never from the editable `reward_config`, so viewers are paid the terms they entered under (EM-05, EM-16, EW-05).
@@ -1260,6 +1260,8 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · A · 4.3 Ledger guards: overdraft, currency, idempotency and sealing guards (each red first), and the burn engine with its /v1/burns routes · 360dfa6
+- 2026-09-26 · A · 4.1 Ledger internal API: HMAC service auth, the ledger-internal contract served live, a signed HttpLedgerClient, and the contract spec passing against a live ledger (22 pass, escrow todo) · 360dfa6
 - 2026-09-26 · B · 1.4 Accounts and profile done: email verification stores `identity.credential.verified_at` (1.4.e), and DSAR erasure for `identity.user_profile`/`.credential`/`.session` plus business membership, one `identity` domain handler registered with `dsar-orchestrator` (1.4.f) · da67873
 - 2026-09-26 · B · ⚠️ Slot 2 ran `git checkout -- TASKS.md` in the main checkout by mistake, discarding any tick made after b0519b7 that was not yet committed. If a tick of yours is missing, please re-tick it · b0519b7
 - 2026-09-25 · A · 1.2 Internal ledger and voucher contracts: `ledger-internal`/`voucher-internal` operation types (1.2.a-b), the shared closed error enum (1.2.c), `FakeLedgerClient`/`FakeVoucherClient` with real semantics against `platform.ledger_fake_*`/`voucher_fake_*` plus HTTP twins waiting on 4.1/4.5 (1.2.d), contract specs (1.2.e), and getSettings/proposeSetting/approveSetting wired onto C's `platform.region_setting` (1.2.g) · bbf01bd

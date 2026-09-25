@@ -1,81 +1,168 @@
 /*
- * YT-0400 — Design tokens.
+ * Design tokens v2, in three tiers. Every value is a plain custom property; the
+ * Tailwind bridge, colour-scheme wiring and motion reset are in theme.css.
  *
- * The single source of truth for colour, type, spacing, radius and
- * elevation. Every value here is a plain CSS custom property on :root —
- * no Tailwind-specific syntax lives in this file. Dark-mode overrides and
- * the Tailwind v4 `@theme` bridge live in `theme.css`, which is imported
- * after this file (see apps/web/app/globals.css).
+ * 1. Raw palette: named hues. Never used directly by components.
+ * 2. Semantic: what a colour is for (canvas, fg-muted, accent, danger-solid...),
+ *    one block per surface. Each is light-dark(light, dark), so the theme follows
+ *    `color-scheme`: the OS by default, or [data-theme] when set.
+ * 3. Component and compatibility: control sizes, radii, and the v1 names
+ *    (bg, primary, reward...) as aliases until every screen has moved over.
  *
- * Colour values below are the LIGHT theme (the default, unauthenticated
- * baseline before `theme.css`'s media query or [data-theme] attribute
- * apply). Every colour pair used as text-on-background or as a UI
- * boundary is verified against WCAG 2.1 AA in
- * packages/ui/src/styles/contrast.test.ts — see that file for the exact
- * pairs and measured ratios, in both themes.
+ * Surfaces: viewer (the default, After Dark), studio ([data-surface="studio"]:
+ * desaturated and dense) and counter ([data-surface="counter"]: maximum contrast).
+ * The viewer is dark-first: its shell sets data-theme="dark" unless the viewer
+ * chose light. Every pair is checked in contrast.test.ts.
  */
 
 :root {
-  /* ---- Colour: surfaces ---- */
-  --color-bg: #ffffff;
-  --color-surface: #f3f4f6;
-  --color-surface-raised: #ffffff;
-
-  /* ---- Colour: foreground (text/icon) ---- */
-  --color-fg: #101113;
-  --color-fg-muted: #494d57;
-  --color-fg-subtle: #5f636e;
-
-  /* ---- Colour: boundaries ---- */
-  --color-border: #888e94;
-  --color-border-strong: #6a7076;
-
-  /* ---- Colour: brand ---- */
-  --color-primary: #3548c4;
-  --color-primary-fg: #ffffff;
-
-  /* ---- Colour: domain-specific (reward points, IDR price) ----
-   * These double as text colour (e.g. "+50 pts" or "Rp 25.000" set
-   * directly in this colour on --color-bg / --color-surface) and as a
-   * filled-chip background with its paired *-fg foreground. Both usages
-   * are checked in contrast.test.ts.
-   */
-  --color-reward: #8a5b00;
-  --color-reward-fg: #ffffff;
-  --color-price: #0f6b4f;
-  --color-price-fg: #ffffff;
-
-  /* ---- Colour: semantic status ---- */
-  --color-success: #146c3d;
-  --color-success-fg: #ffffff;
-  --color-warning: #8a5000;
-  --color-warning-fg: #ffffff;
-  --color-danger: #b3261e;
-  --color-danger-fg: #ffffff;
-
-  /* ---- Colour: focus ---- */
-  --color-ring: #3548c4;
+  /* base */
+  --white: #ffffff;
+  --black: #000000;
+  /* ink */
+  --ink-25: #f5f5f7;
+  --ink-50: #f3f3f6;
+  --ink-100: #e9e9ef;
+  --ink-150: #e2e2e9;
+  --ink-300: #b0b0bf;
+  --ink-400: #9a9aac;
+  --ink-450: #9393a5;
+  --ink-500: #84849a;
+  --ink-600: #6f6f84;
+  --ink-650: #62627a;
+  --ink-700: #5c5c70;
+  --ink-750: #4f4f63;
+  --ink-800: #2a2a35;
+  --ink-900: #17171f;
+  --ink-950: #0b0b0f;
+  --ink-1000: #050507;
+  /* slate */
+  --slate-25: #f7f7f9;
+  --slate-75: #eeeef2;
+  --slate-100: #ececf0;
+  --slate-150: #e3e3e9;
+  --slate-300: #adadba;
+  --slate-400: #9696a6;
+  --slate-450: #9191a0;
+  --slate-500: #86869a;
+  --slate-600: #6e6e7e;
+  --slate-650: #646474;
+  --slate-700: #5c5c6c;
+  --slate-750: #50505e;
+  --slate-800: #2b2b33;
+  --slate-850: #1a1a20;
+  --slate-900: #16161c;
+  --slate-925: #111115;
+  --slate-950: #0b0b0e;
+  /* mono */
+  --mono-50: #f0f0f0;
+  --mono-150: #e0e0e6;
+  --mono-250: #c8c8d0;
+  --mono-500: #8a8a8a;
+  --mono-600: #6a6a6a;
+  --mono-750: #3a3a44;
+  --mono-850: #26262e;
+  --mono-950: #0d0d0d;
+  /* rose */
+  --rose-50: #fde7ee;
+  --rose-400: #ff6b8e;
+  --rose-500: #ff3d6e;
+  --rose-600: #c8174b;
+  --rose-700: #a80f3c;
+  --rose-900: #3a1320;
+  /* mauve */
+  --mauve-50: #f6e9ed;
+  --mauve-300: #eca3b6;
+  --mauve-400: #e38aa1;
+  --mauve-600: #a3304f;
+  --mauve-700: #87233f;
+  --mauve-900: #35202a;
+  /* crimson */
+  --crimson-300: #ffb8ca;
+  --crimson-400: #ff9ab4;
+  --crimson-700: #a3002f;
+  --crimson-800: #80001f;
+  /* gold */
+  --gold-50: #fff4d6;
+  --gold-400: #ffc53d;
+  --gold-900: #3a2e0a;
+  --gold-950: #1a1300;
+  /* green */
+  --green-50: #e3f6ea;
+  --green-200: #a3f0c6;
+  --green-300: #6ee7a8;
+  --green-400: #3dd68c;
+  --green-700: #13743f;
+  --green-800: #0e5a32;
+  --green-900: #063d20;
+  --green-950: #0f2a1c;
+  /* amber */
+  --amber-50: #fff1dc;
+  --amber-200: #ffe0a8;
+  --amber-300: #ffcf7a;
+  --amber-400: #ffb547;
+  --amber-700: #8a5000;
+  --amber-800: #6b3e00;
+  --amber-900: #4d2c00;
+  --amber-950: #33240a;
+  /* red */
+  --red-50: #fde8e8;
+  --red-200: #ffc2c0;
+  --red-300: #ff9a96;
+  --red-400: #ff6b66;
+  --red-700: #c4202a;
+  --red-800: #9b1520;
+  --red-900: #730f17;
+  --red-950: #3a1414;
+  /* blue */
+  --blue-50: #e6f0fd;
+  --blue-200: #c4e0ff;
+  --blue-300: #9ccbff;
+  --blue-400: #6cb6ff;
+  --blue-700: #1f5fbf;
+  --blue-800: #164a96;
+  --blue-900: #0e3570;
+  --blue-950: #0f2238;
 
   /* ---- Type ----
-   * --font-sans consumes the CSS variable next/font injects
-   * (--font-sans-app, wired in apps/web/app/layout.tsx) and falls back to
-   * the system sans stack so the token still resolves before the font
-   * loads, in tests, and in any consumer that isn't a Next.js page.
-   */
+   * The families are injected by next/font in apps/web/app/root-document.tsx;
+   * the fallbacks keep the tokens resolvable in tests and outside Next. */
   --font-sans: var(
-    --font-sans-app,
+    --font-body-app,
     ui-sans-serif,
     system-ui,
     -apple-system,
     "Segoe UI",
     Roboto,
-    "Helvetica Neue",
-    Arial,
     sans-serif
   );
+  --font-display: var(--font-display-app, var(--font-sans));
+  --font-mono: var(--font-mono-app, ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace);
 
-  /* Size scale, paired with line-height per Tailwind v4's --text-*--line-height
-   * convention (bridged in theme.css). */
+  /* Roles. Display roles pair with the display face; nothing is smaller than 12 px. */
+  --text-display-lg: 3.5rem;
+  --text-display-lg--line-height: 3.75rem;
+  --text-display-lg--font-weight: 800;
+  --text-display: 2.5rem;
+  --text-display--line-height: 2.75rem;
+  --text-display--font-weight: 800;
+  --text-headline: 1.75rem;
+  --text-headline--line-height: 2.125rem;
+  --text-headline--font-weight: 700;
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.75rem;
+  --text-title--font-weight: 600;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.25rem;
+  --text-label--font-weight: 600;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  /* v1 size scale, kept while screens still use it. */
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
   --text-sm: 0.875rem;
@@ -91,12 +178,15 @@
   --text-3xl: 1.875rem;
   --text-3xl--line-height: 2.25rem;
 
-  /* ---- Spacing ----
-   * A documented 4px-based scale for anything consuming raw tokens
-   * (inline styles, non-Tailwind contexts). Numerically aligned with
-   * Tailwind v4's own default --spacing (0.25rem) so p-4 and --space-4
-   * always agree.
-   */
+  /* ---- Layout ---- */
+  --container-page-narrow: 40rem;
+  --container-page: 60rem;
+  --container-page-wide: 75rem;
+  --gutter-sm: 1rem;
+  --gutter-md: 1.5rem;
+  --gutter-lg: 2rem;
+
+  /* ---- Spacing: a 4 px scale, aligned with Tailwind's own --spacing. ---- */
   --space-0: 0px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -111,20 +201,182 @@
   --space-20: 5rem;
   --space-24: 6rem;
 
+  /* ---- Controls ---- */
+  --size-control-default: 2.75rem;
+  --size-control-compact: 2.25rem;
+  --size-control-counter: 3.5rem;
+
   /* ---- Radius ---- */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --radius-pill: 9999px;
   --radius-full: 9999px;
 
-  /* ---- Elevation ----
-   * Light-theme shadow values (dark ink at low opacity, visible on a
-   * white/near-white surface). theme.css overrides these three
-   * variables for dark mode, where a low-opacity black shadow is
-   * invisible against a near-black page.
-   */
-  --shadow-sm: 0 1px 2px 0 rgb(16 17 19 / 0.06), 0 1px 1px 0 rgb(16 17 19 / 0.04);
-  --shadow-md: 0 4px 8px -2px rgb(16 17 19 / 0.1), 0 2px 4px -2px rgb(16 17 19 / 0.06);
-  --shadow-lg: 0 12px 24px -4px rgb(16 17 19 / 0.14), 0 4px 8px -4px rgb(16 17 19 / 0.08);
+  /* ---- Elevation: 1 raised, 2 floating, 3 modal. Dark needs deeper shadows. ---- */
+  --shadow-1: 0 1px 2px 0 light-dark(rgb(11 11 15 / 0.08), rgb(0 0 0 / 0.5));
+  --shadow-2:
+    0 4px 12px -2px light-dark(rgb(11 11 15 / 0.12), rgb(0 0 0 / 0.55)),
+    0 2px 4px -2px light-dark(rgb(11 11 15 / 0.08), rgb(0 0 0 / 0.4));
+  --shadow-3:
+    0 16px 32px -8px light-dark(rgb(11 11 15 / 0.2), rgb(0 0 0 / 0.7)),
+    0 4px 8px -4px light-dark(rgb(11 11 15 / 0.1), rgb(0 0 0 / 0.5));
+  --shadow-sm: var(--shadow-1);
+  --shadow-md: var(--shadow-2);
+  --shadow-lg: var(--shadow-3);
+
+  /* ---- Motion ---- */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1.2);
+
+  /* ---- Layers ---- */
+  --z-nav: 40;
+  --z-overlay: 50;
+  --z-toast: 60;
+}
+
+:root,
+[data-surface="viewer"] {
+  --color-canvas: light-dark(var(--white), var(--ink-950));
+  --color-surface: light-dark(var(--ink-50), var(--ink-900));
+  --color-surface-sunken: light-dark(var(--ink-100), var(--ink-1000));
+  --color-fg: light-dark(var(--ink-950), var(--ink-25));
+  --color-fg-muted: light-dark(var(--ink-750), var(--ink-300));
+  --color-fg-subtle: light-dark(var(--ink-650), var(--ink-450));
+  --color-fg-on-accent: light-dark(var(--white), var(--ink-950));
+  --color-fg-on-points: var(--gold-950);
+  --color-fg-on-status: light-dark(var(--white), var(--ink-950));
+  --color-border-subtle: light-dark(var(--ink-150), var(--ink-800));
+  --color-border-control: light-dark(var(--ink-500), var(--ink-600));
+  --color-border-strong: light-dark(var(--ink-700), var(--ink-400));
+  --color-accent: light-dark(var(--rose-600), var(--rose-500));
+  --color-accent-hover: light-dark(var(--rose-700), var(--rose-400));
+  --color-accent-subtle: light-dark(var(--rose-50), var(--rose-900));
+  --color-points: var(--gold-400);
+  --color-points-subtle: light-dark(var(--gold-50), var(--gold-900));
+  --color-focus: light-dark(var(--rose-600), var(--rose-400));
+  --color-success-solid: light-dark(var(--green-700), var(--green-400));
+  --color-success-subtle: light-dark(var(--green-50), var(--green-950));
+  --color-success-on-subtle: light-dark(var(--green-800), var(--green-300));
+  --color-warning-solid: light-dark(var(--amber-700), var(--amber-400));
+  --color-warning-subtle: light-dark(var(--amber-50), var(--amber-950));
+  --color-warning-on-subtle: light-dark(var(--amber-800), var(--amber-300));
+  --color-danger-solid: light-dark(var(--red-700), var(--red-400));
+  --color-danger-subtle: light-dark(var(--red-50), var(--red-950));
+  --color-danger-on-subtle: light-dark(var(--red-800), var(--red-300));
+  --color-info-solid: light-dark(var(--blue-700), var(--blue-400));
+  --color-info-subtle: light-dark(var(--blue-50), var(--blue-950));
+  --color-info-on-subtle: light-dark(var(--blue-800), var(--blue-300));
+  --color-overlay: rgb(5 5 7 / 0.72);
+
+  /* Components: roomy touch targets and soft corners. */
+  --size-control: var(--size-control-default);
+  --radius-control: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-sheet: 1.5rem;
+}
+
+[data-surface="studio"] {
+  --color-canvas: light-dark(var(--slate-25), var(--slate-925));
+  --color-surface: light-dark(var(--white), var(--slate-850));
+  --color-surface-sunken: light-dark(var(--slate-75), var(--slate-950));
+  --color-fg: light-dark(var(--slate-900), var(--slate-100));
+  --color-fg-muted: light-dark(var(--slate-750), var(--slate-300));
+  --color-fg-subtle: light-dark(var(--slate-650), var(--slate-450));
+  --color-fg-on-accent: light-dark(var(--white), var(--slate-925));
+  --color-fg-on-points: var(--gold-950);
+  --color-fg-on-status: light-dark(var(--white), var(--slate-925));
+  --color-border-subtle: light-dark(var(--slate-150), var(--slate-800));
+  --color-border-control: light-dark(var(--slate-500), var(--slate-600));
+  --color-border-strong: light-dark(var(--slate-700), var(--slate-400));
+  --color-accent: light-dark(var(--mauve-600), var(--mauve-400));
+  --color-accent-hover: light-dark(var(--mauve-700), var(--mauve-300));
+  --color-accent-subtle: light-dark(var(--mauve-50), var(--mauve-900));
+  --color-points: var(--gold-400);
+  --color-points-subtle: light-dark(var(--gold-50), var(--gold-900));
+  --color-focus: light-dark(var(--mauve-600), var(--mauve-400));
+  --color-success-solid: light-dark(var(--green-700), var(--green-400));
+  --color-success-subtle: light-dark(var(--green-50), var(--green-950));
+  --color-success-on-subtle: light-dark(var(--green-800), var(--green-300));
+  --color-warning-solid: light-dark(var(--amber-700), var(--amber-400));
+  --color-warning-subtle: light-dark(var(--amber-50), var(--amber-950));
+  --color-warning-on-subtle: light-dark(var(--amber-800), var(--amber-300));
+  --color-danger-solid: light-dark(var(--red-700), var(--red-400));
+  --color-danger-subtle: light-dark(var(--red-50), var(--red-950));
+  --color-danger-on-subtle: light-dark(var(--red-800), var(--red-300));
+  --color-info-solid: light-dark(var(--blue-700), var(--blue-400));
+  --color-info-subtle: light-dark(var(--blue-50), var(--blue-950));
+  --color-info-on-subtle: light-dark(var(--blue-800), var(--blue-300));
+  --color-overlay: rgb(11 11 14 / 0.6);
+
+  /* Components: dense desktop controls and tighter corners. */
+  --size-control: var(--size-control-compact);
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-sheet: 1rem;
+}
+
+[data-surface="counter"] {
+  --color-canvas: light-dark(var(--white), var(--black));
+  --color-surface: light-dark(var(--white), var(--mono-950));
+  --color-surface-sunken: light-dark(var(--mono-50), var(--black));
+  --color-fg: light-dark(var(--black), var(--white));
+  --color-fg-muted: light-dark(var(--mono-850), var(--mono-150));
+  --color-fg-subtle: light-dark(var(--mono-750), var(--mono-250));
+  --color-fg-on-accent: light-dark(var(--white), var(--black));
+  --color-fg-on-points: var(--black);
+  --color-fg-on-status: light-dark(var(--white), var(--black));
+  --color-border-subtle: light-dark(var(--mono-500), var(--mono-600));
+  --color-border-control: light-dark(var(--black), var(--white));
+  --color-border-strong: light-dark(var(--black), var(--white));
+  --color-accent: light-dark(var(--crimson-700), var(--crimson-400));
+  --color-accent-hover: light-dark(var(--crimson-800), var(--crimson-300));
+  --color-accent-subtle: light-dark(var(--rose-50), var(--rose-900));
+  --color-points: var(--gold-400);
+  --color-points-subtle: light-dark(var(--gold-50), var(--gold-900));
+  --color-focus: light-dark(var(--black), var(--white));
+  --color-success-solid: light-dark(var(--green-800), var(--green-300));
+  --color-success-subtle: light-dark(var(--green-50), var(--green-950));
+  --color-success-on-subtle: light-dark(var(--green-900), var(--green-200));
+  --color-warning-solid: light-dark(var(--amber-800), var(--amber-300));
+  --color-warning-subtle: light-dark(var(--amber-50), var(--amber-950));
+  --color-warning-on-subtle: light-dark(var(--amber-900), var(--amber-200));
+  --color-danger-solid: light-dark(var(--red-800), var(--red-300));
+  --color-danger-subtle: light-dark(var(--red-50), var(--red-950));
+  --color-danger-on-subtle: light-dark(var(--red-900), var(--red-200));
+  --color-info-solid: light-dark(var(--blue-800), var(--blue-300));
+  --color-info-subtle: light-dark(var(--blue-50), var(--blue-950));
+  --color-info-on-subtle: light-dark(var(--blue-900), var(--blue-200));
+  --color-overlay: rgb(0 0 0 / 0.8);
+
+  /* Components: 56 px targets for a shared counter device. */
+  --size-control: var(--size-control-counter);
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-sheet: 1.25rem;
+}
+
+/* Declared on every surface so each alias resolves against that surface's tokens. */
+:root,
+[data-surface] {
+  --color-bg: var(--color-canvas);
+  --color-surface-raised: light-dark(var(--white), var(--ink-800));
+  --color-border: var(--color-border-control);
+  --color-primary: var(--color-accent);
+  --color-primary-fg: var(--color-fg-on-accent);
+  --color-reward: light-dark(var(--amber-700), var(--gold-400));
+  --color-reward-fg: light-dark(var(--white), var(--gold-950));
+  --color-price: light-dark(var(--green-700), var(--green-400));
+  --color-price-fg: light-dark(var(--white), var(--ink-950));
+  --color-success: var(--color-success-solid);
+  --color-success-fg: var(--color-fg-on-status);
+  --color-warning: var(--color-warning-solid);
+  --color-warning-fg: var(--color-fg-on-status);
+  --color-danger: var(--color-danger-solid);
+  --color-danger-fg: var(--color-fg-on-status);
+  --color-ring: var(--color-focus);
 }

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Bricolage_Grotesque, Figtree, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { isStaging } from "@/features/shell/app-env";
 import { StagingBanner } from "@/features/shell/staging-banner";
@@ -31,25 +31,26 @@ import "./globals.css";
  * region cookie it already reads. This file is what they share, so the
  * font, metadata and viewport stay defined once.
  *
- * The font must be instantiated here rather than per group: calling
- * `Plus_Jakarta_Sans()` in three files would emit three separate
- * `--font-sans-app` faces and download the file more than once.
+ * The fonts must be instantiated here rather than per group: calling them
+ * in three files would emit three copies and download each more than once.
  */
 
-// YT-0400: one variable font (weight axis 200–800 in a single file),
-// subset to Latin. Indonesian is written with the plain 26-letter Latin
-// alphabet — no diacritics, no extended punctuation — so the standard
-// `latin` subset (Basic Latin + the small set of common Latin-1
-// punctuation/currency glyphs Google ships with it, verified against the
-// "Rp" price strings and "×"/"–" characters used in copy) fully covers
-// it. `latin-ext` adds accented forms (e.g. Ā, Ł, ő) for languages like
-// Vietnamese or Polish, which this product does not target, so it is
-// deliberately left out to keep the download small.
-const fontSans = Plus_Jakarta_Sans({
+// Figtree for body, Bricolage Grotesque for display, JetBrains Mono for codes.
+// Latin only: Indonesian needs no diacritics, so latin-ext would only add weight.
+const fontBody = Figtree({ subsets: ["latin"], display: "swap", variable: "--font-body-app" });
+const fontDisplay = Bricolage_Grotesque({
   subsets: ["latin"],
+  weight: ["700", "800"],
   display: "swap",
-  variable: "--font-sans-app",
+  variable: "--font-display-app",
 });
+const fontMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["500"],
+  display: "swap",
+  variable: "--font-mono-app",
+});
+const fontVariables = `${fontBody.variable} ${fontDisplay.variable} ${fontMono.variable}`;
 
 export const baseMetadata: Metadata = {
   title: "YourTal",
@@ -76,7 +77,7 @@ export interface RootDocumentProps {
 
 export function RootDocument({ lang, children }: RootDocumentProps) {
   return (
-    <html lang={lang} suppressHydrationWarning className={fontSans.variable}>
+    <html lang={lang} suppressHydrationWarning className={fontVariables}>
       <body>
         {isStaging() ? <StagingBanner lang={lang} /> : null}
         {children}

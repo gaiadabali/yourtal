@@ -8,17 +8,8 @@
 @import "@yourtal/ui/styles/theme.css";
 
 @layer base {
-  html {
-    color-scheme: light dark;
-  }
-  :root[data-theme="light"] {
-    color-scheme: light;
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-  }
   body {
-    background-color: var(--color-bg);
+    background-color: var(--color-canvas);
     color: var(--color-fg);
     font-family: var(--font-sans);
   }

@@ -5,239 +5,158 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
- * YT-0400 — proves the acceptance criterion "Contrast checked to WCAG AA
- * on both themes, including the reward and price colours" instead of
- * asserting it in a comment.
- *
- * This parses the *actual* :root (light) block in tokens.css and the two
- * dark-mode blocks in theme.css — the `@media (prefers-color-scheme:
- * dark)` block and the explicit `[data-theme="dark"]` override — then
- * computes WCAG 2.1 relative-luminance contrast ratios for every
- * foreground/background pair a real screen would render. A change to
- * either CSS file that drops a token below AA fails this test.
+ * WCAG 2.1 contrast for every token pair a screen can put together, on every
+ * surface, in both themes. Values are resolved from tokens.css itself, through
+ * light-dark() and var(), down to the raw palette.
  */
 
-const stylesDir = dirname(fileURLToPath(import.meta.url));
-const tokensCss = readFileSync(join(stylesDir, "tokens.css"), "utf-8");
-const themeCss = readFileSync(join(stylesDir, "theme.css"), "utf-8");
+const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "tokens.css"), "utf-8");
 
-/** Pulls `--name: value;` declarations out of one `{ ... }` block. */
-function parseDeclarations(block: string): Record<string, string> {
+function block(selector: string): Record<string, string> {
+  const start = css.indexOf(selector);
+  if (start === -1) throw new Error(`Selector not found: ${selector}`);
+  const open = css.indexOf("{", start);
+  const body = css.slice(open + 1, css.indexOf("}", open)).replace(/\/\*[\s\S]*?\*\//g, "");
   const vars: Record<string, string> = {};
-  const declRe = /--([\w-]+)\s*:\s*([^;]+);/g;
-  for (const match of block.matchAll(declRe)) {
-    const name = match[1];
-    const value = match[2];
-    if (name === undefined || value === undefined) continue;
-    vars[name] = value.trim();
+  for (const [, name, value] of body.matchAll(/--([\w-]+)\s*:\s*([^;]+);/g)) {
+    if (name && value) vars[name] = value.replace(/\s+/g, " ").trim();
   }
   return vars;
 }
 
-/** Extracts the first `{ ... }` block following a literal selector string. */
-function extractBlock(css: string, selector: string): string {
-  const start = css.indexOf(selector);
-  if (start === -1) {
-    throw new Error(`Selector not found: ${selector}`);
+const raw = block(":root {");
+const aliases = block(':root,\n[data-surface] {');
+const SURFACES = {
+  viewer: block(':root,\n[data-surface="viewer"] {'),
+  studio: block('[data-surface="studio"] {'),
+  counter: block('[data-surface="counter"] {'),
+} as const;
+type Surface = keyof typeof SURFACES;
+type Theme = "light" | "dark";
+
+function resolve(value: string, surface: Surface, theme: Theme, depth = 0): string {
+  if (depth > 8) throw new Error(`Reference loop at ${value}`);
+  const lightDark = /^light-dark\((.+),\s*(var\([^)]+\)|#[0-9a-f]{6})\)$/i.exec(value);
+  if (lightDark?.[1] && lightDark[2]) {
+    return resolve(theme === "light" ? lightDark[1] : lightDark[2], surface, theme, depth + 1);
   }
-  const braceStart = css.indexOf("{", start);
-  const braceEnd = css.indexOf("}", braceStart);
-  if (braceStart === -1 || braceEnd === -1) {
-    throw new Error(`Malformed block for selector: ${selector}`);
+  const ref = /^var\(--([\w-]+)\)$/.exec(value);
+  if (ref?.[1]) {
+    const name = ref[1];
+    const next = SURFACES[surface][name] ?? aliases[name] ?? raw[name];
+    if (next === undefined) throw new Error(`Unknown token --${name}`);
+    return resolve(next, surface, theme, depth + 1);
   }
-  return css.slice(braceStart + 1, braceEnd);
-}
-
-const lightVars = parseDeclarations(extractBlock(tokensCss, ":root {"));
-
-const mediaDarkVars = parseDeclarations(
-  extractBlock(themeCss, ':root:not([data-theme="light"]) {'),
-);
-const attrDarkVars = parseDeclarations(extractBlock(themeCss, ':root[data-theme="dark"] {'));
-
-// Colour tokens that must exist in both dark overrides, per the hard
-// interface contract (YT-0400 task brief).
-const requiredColorTokens = [
-  "color-bg",
-  "color-surface",
-  "color-surface-raised",
-  "color-fg",
-  "color-fg-muted",
-  "color-fg-subtle",
-  "color-border",
-  "color-border-strong",
-  "color-primary",
-  "color-primary-fg",
-  "color-reward",
-  "color-reward-fg",
-  "color-price",
-  "color-price-fg",
-  "color-success",
-  "color-success-fg",
-  "color-warning",
-  "color-warning-fg",
-  "color-danger",
-  "color-danger-fg",
-  "color-ring",
-];
-
-describe("dark mode is wired both ways", () => {
-  it("every required colour token resolves on :root (light default)", () => {
-    for (const token of requiredColorTokens) {
-      expect(lightVars[token], `--${token} missing from tokens.css :root`).toBeDefined();
-    }
-  });
-
-  it("prefers-color-scheme block overrides every required colour token", () => {
-    for (const token of requiredColorTokens) {
-      expect(
-        mediaDarkVars[token],
-        `--${token} missing from @media (prefers-color-scheme: dark) block`,
-      ).toBeDefined();
-    }
-  });
-
-  it('[data-theme="dark"] overrides every required colour token', () => {
-    for (const token of requiredColorTokens) {
-      expect(
-        attrDarkVars[token],
-        `--${token} missing from [data-theme="dark"] block`,
-      ).toBeDefined();
-    }
-  });
-
-  it("the media-query and explicit-attribute dark overrides agree", () => {
-    for (const token of requiredColorTokens) {
-      expect(attrDarkVars[token]).toBe(mediaDarkVars[token]);
-    }
-  });
-});
-
-// Dark theme = light defaults with the explicit [data-theme="dark"]
-// overrides layered on top (equivalent to what a browser resolves).
-const darkVars: Record<string, string> = { ...lightVars, ...attrDarkVars };
-
-interface Theme {
-  name: string;
-  vars: Record<string, string>;
-}
-
-const themes: Theme[] = [
-  { name: "light", vars: lightVars },
-  { name: "dark", vars: darkVars },
-];
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const normalized = hex.trim().replace("#", "");
-  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
-    throw new Error(`Expected a 6-digit hex colour, got: ${hex}`);
-  }
-  const value = Number.parseInt(normalized, 16);
-  return {
-    r: (value >> 16) & 255,
-    g: (value >> 8) & 255,
-    b: value & 255,
-  };
-}
-
-function channelLuminance(channel8bit: number): number {
-  const c = channel8bit / 255;
-  return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-}
-
-function relativeLuminance(hex: string): number {
-  const { r, g, b } = hexToRgb(hex);
-  return 0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
-}
-
-/** WCAG 2.1 contrast ratio, always >= 1. */
-function contrastRatio(hexA: string, hexB: string): number {
-  const lumA = relativeLuminance(hexA);
-  const lumB = relativeLuminance(hexB);
-  const lighter = Math.max(lumA, lumB);
-  const darker = Math.min(lumA, lumB);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-function resolve(vars: Record<string, string>, token: string): string {
-  const value = vars[token];
-  if (value === undefined) {
-    throw new Error(`--${token} is not defined`);
-  }
+  if (!/^#[0-9a-f]{6}$/i.test(value)) throw new Error(`Not a colour: ${value}`);
   return value;
 }
 
-const TEXT_MIN_RATIO = 4.5;
-const BOUNDARY_MIN_RATIO = 3.0;
+function color(token: string, surface: Surface, theme: Theme): string {
+  return resolve(`var(--color-${token})`, surface, theme);
+}
 
-/** [foreground token, background token] — real text-on-background pairs. */
-const textPairs: Array<[string, string]> = [
-  ["color-fg", "color-bg"],
-  ["color-fg-muted", "color-bg"],
-  ["color-fg-subtle", "color-bg"],
-  ["color-fg", "color-surface"],
-  ["color-fg-muted", "color-surface"],
-  ["color-fg-subtle", "color-surface"],
-  ["color-fg", "color-surface-raised"],
-  ["color-primary-fg", "color-primary"],
-  ["color-reward-fg", "color-reward"],
-  ["color-price-fg", "color-price"],
-  ["color-success-fg", "color-success"],
-  ["color-warning-fg", "color-warning"],
-  ["color-danger-fg", "color-danger"],
-  // Reward and price also render as coloured text directly on the page
-  // (e.g. "+50 pts", "Rp 25.000") — checked explicitly per the brief.
-  ["color-reward", "color-bg"],
-  ["color-reward", "color-surface"],
-  ["color-price", "color-bg"],
-  ["color-price", "color-surface"],
+function luminance(hex: string): number {
+  const channel = (i: number) => {
+    const c = Number.parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2);
+}
+
+function ratio(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+const SEMANTIC = [
+  "canvas",
+  "surface",
+  "surface-sunken",
+  "overlay",
+  "fg",
+  "fg-muted",
+  "fg-subtle",
+  "fg-on-accent",
+  "fg-on-points",
+  "fg-on-status",
+  "border-subtle",
+  "border-control",
+  "border-strong",
+  "accent",
+  "accent-hover",
+  "accent-subtle",
+  "points",
+  "points-subtle",
+  "focus",
+  ...["success", "warning", "danger", "info"].flatMap((s) => [
+    `${s}-solid`,
+    `${s}-subtle`,
+    `${s}-on-subtle`,
+  ]),
 ];
 
-/** [element token, adjacent-surface token] — non-text UI boundaries (WCAG 1.4.11). */
-const boundaryPairs: Array<[string, string]> = [
-  ["color-border", "color-bg"],
-  ["color-border", "color-surface"],
-  ["color-border", "color-surface-raised"],
-  ["color-border-strong", "color-bg"],
-  ["color-border-strong", "color-surface"],
-  ["color-border-strong", "color-surface-raised"],
-  ["color-primary", "color-bg"],
-  ["color-primary", "color-surface"],
-  ["color-primary", "color-surface-raised"],
-  ["color-ring", "color-bg"],
-  ["color-ring", "color-surface"],
-  ["color-ring", "color-surface-raised"],
-  ["color-danger", "color-bg"],
-  ["color-success", "color-bg"],
-  ["color-warning", "color-bg"],
-  ["color-reward", "color-bg"],
-  ["color-price", "color-bg"],
-];
+const BACKGROUNDS = ["canvas", "surface", "surface-sunken"];
+const STATUSES = ["success", "warning", "danger", "info"];
 
-describe.each(themes)("WCAG AA contrast — $name theme", ({ vars }) => {
-  it.each(textPairs)("text %s on %s >= 4.5:1", (fgToken, bgToken) => {
-    const ratio = contrastRatio(resolve(vars, fgToken), resolve(vars, bgToken));
-    expect(ratio).toBeGreaterThanOrEqual(TEXT_MIN_RATIO);
-  });
+/** [foreground, background, minimum] */
+function pairs(surface: Surface): [string, string, number][] {
+  const text = surface === "counter" ? 7 : 4.5; // the counter is read at arm's length
+  return [
+    ...BACKGROUNDS.flatMap((bg): [string, string, number][] => [
+      ["fg", bg, text],
+      ["fg-muted", bg, text],
+      ["fg-subtle", bg, text],
+      ["accent", bg, 4.5],
+      ["border-control", bg, 3],
+      ["focus", bg, 3],
+      ...STATUSES.map((s): [string, string, number] => [`${s}-solid`, bg, 4.5]),
+    ]),
+    ["fg-on-accent", "accent", 4.5],
+    ["fg-on-accent", "accent-hover", 4.5],
+    ["fg", "accent-subtle", 4.5],
+    ["fg-on-points", "points", 4.5],
+    ["fg", "points-subtle", 4.5],
+    ...STATUSES.flatMap((s): [string, string, number][] => [
+      ["fg-on-status", `${s}-solid`, 4.5],
+      [`${s}-on-subtle`, `${s}-subtle`, 4.5],
+    ]),
+    // v1 aliases, still used by screens that have not moved over.
+    ["fg", "surface-raised", text],
+    ["fg-muted", "surface-raised", 4.5],
+    ["reward", "canvas", 4.5],
+    ["reward-fg", "reward", 4.5],
+    ["price", "canvas", 4.5],
+    ["price-fg", "price", 4.5],
+  ];
+}
 
-  it.each(boundaryPairs)("boundary %s vs %s >= 3:1", (fgToken, bgToken) => {
-    const ratio = contrastRatio(resolve(vars, fgToken), resolve(vars, bgToken));
-    expect(ratio).toBeGreaterThanOrEqual(BOUNDARY_MIN_RATIO);
-  });
-});
+describe("tokens v2", () => {
+  for (const surface of Object.keys(SURFACES) as Surface[]) {
+    it(`${surface} defines every semantic token`, () => {
+      const missing = SEMANTIC.filter((t) => SURFACES[surface][`color-${t}`] === undefined);
+      expect(missing).toStrictEqual([]);
+    });
 
-describe("reward and price colours explicitly", () => {
-  it.each(themes)("$name: reward-fg on reward and reward-as-text meet AA", ({ name, vars }) => {
-    const chip = contrastRatio(resolve(vars, "color-reward-fg"), resolve(vars, "color-reward"));
-    const asTextOnBg = contrastRatio(resolve(vars, "color-reward"), resolve(vars, "color-bg"));
-    expect(chip, `${name}: reward-fg on reward`).toBeGreaterThanOrEqual(TEXT_MIN_RATIO);
-    expect(asTextOnBg, `${name}: reward as text on bg`).toBeGreaterThanOrEqual(TEXT_MIN_RATIO);
-  });
+    it(`${surface} semantics reference the palette, never a raw hex`, () => {
+      const hex = Object.entries(SURFACES[surface]).filter(([, v]) => /#[0-9a-f]{3,8}\b/i.test(v));
+      expect(hex).toStrictEqual([]);
+    });
 
-  it.each(themes)("$name: price-fg on price and price-as-text meet AA", ({ name, vars }) => {
-    const chip = contrastRatio(resolve(vars, "color-price-fg"), resolve(vars, "color-price"));
-    const asTextOnBg = contrastRatio(resolve(vars, "color-price"), resolve(vars, "color-bg"));
-    expect(chip, `${name}: price-fg on price`).toBeGreaterThanOrEqual(TEXT_MIN_RATIO);
-    expect(asTextOnBg, `${name}: price as text on bg`).toBeGreaterThanOrEqual(TEXT_MIN_RATIO);
+    for (const theme of ["light", "dark"] as const) {
+      it(`${surface} ${theme}: every pair meets its minimum`, () => {
+        const failures = pairs(surface).flatMap(([fg, bg, min]) => {
+          const r = ratio(color(fg, surface, theme), color(bg, surface, theme));
+          return r < min ? [`${fg} on ${bg}: ${r.toFixed(2)} < ${min}`] : [];
+        });
+        expect(failures).toStrictEqual([]);
+      });
+    }
+  }
+
+  it("points gold is never a text colour on a light surface", () => {
+    for (const surface of Object.keys(SURFACES) as Surface[]) {
+      const gold = color("points", surface, "light");
+      expect(ratio(gold, color("canvas", surface, "light"))).toBeLessThan(4.5);
+    }
   });
 });

@@ -1,103 +1,78 @@
 /*
- * YT-0400 — Theme: dark mode + the Tailwind v4 bridge.
+ * Theme wiring for tokens.css:
  *
- * Two jobs, kept separate:
- *
- * 1. Dark-mode overrides for the colour and elevation custom properties
- *    declared in tokens.css. System preference
- *    (`prefers-color-scheme: dark`) applies by default; an explicit
- *    `[data-theme="light"]` or `[data-theme="dark"]` attribute on <html>
- *    always wins, so a user's manual choice overrides the OS. All ratios
- *    are verified in contrast.test.ts.
- *
- * 2. The `@theme inline` block, which registers our custom properties as
- *    Tailwind v4 utility tokens (bg-bg, text-fg-muted, rounded-lg,
- *    shadow-md, text-sm, font-sans, ...). `inline` is required here
- *    because every value is itself `var(--…)` — Tailwind must keep
- *    referencing the runtime custom property rather than inlining a
- *    static value at build time, otherwise the dark-mode overrides above
- *    would never reach the generated utility classes.
+ * 1. colour-scheme, which drives every light-dark() token: the OS preference by
+ *    default, or an explicit [data-theme] on any element, which always wins.
+ * 2. A reduced-motion reset.
+ * 3. The Tailwind v4 bridge. `inline` keeps each utility pointing at the runtime
+ *    custom property, so surfaces and themes reach the generated classes.
  */
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --color-bg: #0b0c0f;
-    --color-surface: #17181c;
-    --color-surface-raised: #1f2126;
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+  [data-theme="light"] {
+    color-scheme: light;
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+  }
 
-    --color-fg: #f5f6f8;
-    --color-fg-muted: #c1c5cf;
-    --color-fg-subtle: #9da2ae;
-
-    --color-border: #676c71;
-    --color-border-strong: #7c8186;
-
-    --color-primary: #8c9aff;
-    --color-primary-fg: #0b0c0f;
-
-    --color-reward: #f2b33d;
-    --color-reward-fg: #0b0c0f;
-    --color-price: #3dd9a3;
-    --color-price-fg: #0b0c0f;
-
-    --color-success: #4ade80;
-    --color-success-fg: #0b0c0f;
-    --color-warning: #ffa94d;
-    --color-warning-fg: #0b0c0f;
-    --color-danger: #ff6b66;
-    --color-danger-fg: #0b0c0f;
-
-    --color-ring: #8c9aff;
-
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-    --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-    --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.6), 0 4px 8px -4px rgb(0 0 0 / 0.45);
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-:root[data-theme="dark"] {
-  --color-bg: #0b0c0f;
-  --color-surface: #17181c;
-  --color-surface-raised: #1f2126;
-
-  --color-fg: #f5f6f8;
-  --color-fg-muted: #c1c5cf;
-  --color-fg-subtle: #9da2ae;
-
-  --color-border: #676c71;
-  --color-border-strong: #7c8186;
-
-  --color-primary: #8c9aff;
-  --color-primary-fg: #0b0c0f;
-
-  --color-reward: #f2b33d;
-  --color-reward-fg: #0b0c0f;
-  --color-price: #3dd9a3;
-  --color-price-fg: #0b0c0f;
-
-  --color-success: #4ade80;
-  --color-success-fg: #0b0c0f;
-  --color-warning: #ffa94d;
-  --color-warning-fg: #0b0c0f;
-  --color-danger: #ff6b66;
-  --color-danger-fg: #0b0c0f;
-
-  --color-ring: #8c9aff;
-
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-  --shadow-md: 0 4px 8px -2px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.6), 0 4px 8px -4px rgb(0 0 0 / 0.45);
+/* Numbers that change in place (balances, timers) should not jiggle. */
+@utility text-numeric {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
 }
 
 @theme inline {
-  --color-bg: var(--color-bg);
+  /* Colours: semantic, then the v1 aliases. */
+  --color-canvas: var(--color-canvas);
   --color-surface: var(--color-surface);
-  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
   --color-fg: var(--color-fg);
   --color-fg-muted: var(--color-fg-muted);
   --color-fg-subtle: var(--color-fg-subtle);
-  --color-border: var(--color-border);
+  --color-fg-on-accent: var(--color-fg-on-accent);
+  --color-fg-on-points: var(--color-fg-on-points);
+  --color-fg-on-status: var(--color-fg-on-status);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-control: var(--color-border-control);
   --color-border-strong: var(--color-border-strong);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-subtle: var(--color-accent-subtle);
+  --color-points: var(--color-points);
+  --color-points-subtle: var(--color-points-subtle);
+  --color-focus: var(--color-focus);
+  --color-success-solid: var(--color-success-solid);
+  --color-success-subtle: var(--color-success-subtle);
+  --color-success-on-subtle: var(--color-success-on-subtle);
+  --color-warning-solid: var(--color-warning-solid);
+  --color-warning-subtle: var(--color-warning-subtle);
+  --color-warning-on-subtle: var(--color-warning-on-subtle);
+  --color-danger-solid: var(--color-danger-solid);
+  --color-danger-subtle: var(--color-danger-subtle);
+  --color-danger-on-subtle: var(--color-danger-on-subtle);
+  --color-info-solid: var(--color-info-solid);
+  --color-info-subtle: var(--color-info-subtle);
+  --color-info-on-subtle: var(--color-info-on-subtle);
+  --color-overlay: var(--color-overlay);
+  --color-bg: var(--color-bg);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-border: var(--color-border);
   --color-primary: var(--color-primary);
   --color-primary-fg: var(--color-primary-fg);
   --color-reward: var(--color-reward);
@@ -112,18 +87,31 @@
   --color-danger-fg: var(--color-danger-fg);
   --color-ring: var(--color-ring);
 
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
-  --radius-full: var(--radius-full);
-
-  --shadow-sm: var(--shadow-sm);
-  --shadow-md: var(--shadow-md);
-  --shadow-lg: var(--shadow-lg);
-
+  /* Type */
   --font-sans: var(--font-sans);
-
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --text-display-lg: var(--text-display-lg);
+  --text-display-lg--line-height: var(--text-display-lg--line-height);
+  --text-display-lg--font-weight: var(--text-display-lg--font-weight);
+  --text-display: var(--text-display);
+  --text-display--line-height: var(--text-display--line-height);
+  --text-display--font-weight: var(--text-display--font-weight);
+  --text-headline: var(--text-headline);
+  --text-headline--line-height: var(--text-headline--line-height);
+  --text-headline--font-weight: var(--text-headline--font-weight);
+  --text-title: var(--text-title);
+  --text-title--line-height: var(--text-title--line-height);
+  --text-title--font-weight: var(--text-title--font-weight);
+  --text-body: var(--text-body);
+  --text-body--line-height: var(--text-body--line-height);
+  --text-body-sm: var(--text-body-sm);
+  --text-body-sm--line-height: var(--text-body-sm--line-height);
+  --text-label: var(--text-label);
+  --text-label--line-height: var(--text-label--line-height);
+  --text-label--font-weight: var(--text-label--font-weight);
+  --text-caption: var(--text-caption);
+  --text-caption--line-height: var(--text-caption--line-height);
   --text-xs: var(--text-xs);
   --text-xs--line-height: var(--text-xs--line-height);
   --text-sm: var(--text-sm);
@@ -138,4 +126,41 @@
   --text-2xl--line-height: var(--text-2xl--line-height);
   --text-3xl: var(--text-3xl);
   --text-3xl--line-height: var(--text-3xl--line-height);
+
+  /* Layout: max-w-page, px-gutter-md ... */
+  --container-page-narrow: var(--container-page-narrow);
+  --container-page: var(--container-page);
+  --container-page-wide: var(--container-page-wide);
+  --spacing-gutter-sm: var(--gutter-sm);
+  --spacing-gutter-md: var(--gutter-md);
+  --spacing-gutter-lg: var(--gutter-lg);
+
+  /* Controls: h-control follows the surface; the fixed sizes are for exceptions. */
+  --spacing-control: var(--size-control);
+  --spacing-control-default: var(--size-control-default);
+  --spacing-control-compact: var(--size-control-compact);
+  --spacing-control-counter: var(--size-control-counter);
+
+  /* Radius */
+  --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
+  --radius-sheet: var(--radius-sheet);
+  --radius-pill: var(--radius-pill);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  /* Elevation */
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Motion */
+  --ease-standard: var(--ease-standard);
+  --ease-emphasized: var(--ease-emphasized);
 }

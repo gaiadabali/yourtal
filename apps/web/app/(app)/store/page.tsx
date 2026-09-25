@@ -33,7 +33,7 @@ export default async function StorePage(props: PageProps<"/store">) {
   const visibleListings = filterListings(listings, params);
   const locationOptions = listingLocations(listings);
   const merchantOptions = listingMerchants(listings);
-  const { locale, currency } = await getRegionDisplayConfig();
+  const { locale } = await getRegionDisplayConfig();
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -42,7 +42,7 @@ export default async function StorePage(props: PageProps<"/store">) {
       {visibleListings.length === 0 ? (
         <StoreEmptyState hasActiveFilters={hasActiveStoreFilters(params)} locale={locale} />
       ) : (
-        <StoreGrid listings={visibleListings} locale={locale} currency={currency} />
+        <StoreGrid listings={visibleListings} locale={locale} />
       )}
     </div>
   );

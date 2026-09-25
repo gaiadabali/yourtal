@@ -16,7 +16,7 @@ import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "@yourtal/contracts/money/mo
  * this; no client leaf imports it.
  *
  * Every field used below is real: `merchantName`, `rewardPoints` and
- * `publishedAt` come straight off `Campaign`; `merchantName`, `faceValueIdr`
+ * `publishedAt` come straight off `Campaign`; `merchantName`, `faceValueMinor`
  * and `issuedAt` off `Voucher`. Nothing is invented except the *points
  * cost* of a voucher redemption, which no contract carries yet (there is
  * no ledger/history schema in packages/contracts today) — that number is
@@ -49,7 +49,10 @@ function earnedEntry(campaign: Campaign, locale: SupportedLocale): WalletHistory
 }
 
 function spentEntry(voucher: Voucher, locale: SupportedLocale): WalletHistoryEntry {
-  const cost = pointsPriceFromSettlement(voucher.faceValueIdr, MOCK_BACKING_RATE_IDR_SEN_PER_POINT);
+  const cost = pointsPriceFromSettlement(
+    voucher.faceValueMinor,
+    MOCK_BACKING_RATE_IDR_SEN_PER_POINT,
+  );
   const t = getWalletTranslator(locale);
   // `cost` is the branded `Points` type; negating it directly through a
   // brand is what @typescript-eslint/no-unsafe-unary-minus objects to.

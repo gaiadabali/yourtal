@@ -78,7 +78,7 @@ export function useMerchantTodayLog(
             const effective = effectiveRemainingValue(
               working.filter((item) => item.id !== entry.id),
               voucher.id,
-              voucher.remainingValueIdr,
+              voucher.remainingValueMinor,
             );
             const result = attemptRedemption({
               voucher,

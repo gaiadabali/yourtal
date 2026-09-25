@@ -124,7 +124,15 @@ export interface RedemptionStatusRow {
   status: VoucherStatus;
   label: string;
   count: number;
-  totalFaceValueIdr: ReturnType<typeof asDisplayIdr>;
+  totalFaceValueMinor: ReturnType<typeof asDisplayIdr>;
+  /**
+   * The CURRENCY OF THE VOUCHERS THEMSELVES (YT-0513), never the viewer's
+   * region — read off the matching vouchers' own `currency` field. A
+   * business's vouchers are always one region's, so this is stable per
+   * row; a row with no vouchers carries whatever the ledger's own currency
+   * is, and is never rendered (the panel filters zero-count rows).
+   */
+  currency: Voucher["currency"];
   /** Always "measured" — read directly from the voucher ledger, not derived. See report-provenance.ts for what that does and does not claim. */
   provenance: "measured";
 }
@@ -143,14 +151,19 @@ export interface RedemptionLedgerSummary {
  * entry for that gap stated in full.
  */
 export function summarizeRedemptionLedger(vouchers: readonly Voucher[]): RedemptionLedgerSummary {
+  // A business's vouchers are always one region's (docs/12 §3 region
+  // isolation), so any voucher's currency stands in for the ledger's own
+  // when a status group is empty and there is nothing to read it from.
+  const ledgerCurrency = vouchers[0]?.currency ?? "IDR";
   const rows = VOUCHER_STATUS_ORDER.map((status) => {
     const matching = vouchers.filter((voucher) => voucher.status === status);
-    const totalFaceValueIdr = matching.reduce((sum, voucher) => sum + voucher.faceValueIdr, 0);
+    const totalFaceValueMinor = matching.reduce((sum, voucher) => sum + voucher.faceValueMinor, 0);
     return {
       status,
       label: VOUCHER_STATUS_LABEL[status],
       count: matching.length,
-      totalFaceValueIdr: asDisplayIdr(totalFaceValueIdr),
+      totalFaceValueMinor: asDisplayIdr(totalFaceValueMinor),
+      currency: matching[0]?.currency ?? ledgerCurrency,
       provenance: "measured" as const,
     };
   });

@@ -49,7 +49,7 @@ export interface VoucherDetailViewProps {
  * not the QR payload, not the redemption copy — depends on a network call.
  */
 export function VoucherDetailView({ voucherId, initialDetail }: VoucherDetailViewProps) {
-  const { locale, currency } = useRegion();
+  const { locale } = useRegion();
   const t = useTranslations("wallet");
   // Cache-first, not state: this component never mutates the voucher detail
   // itself (a route change unmounts and remounts it for a different id), so
@@ -128,7 +128,7 @@ export function VoucherDetailView({ voucherId, initialDetail }: VoucherDetailVie
             <div>
               <dt className="text-xs text-fg-subtle">{t("voucher.remainingValue")}</dt>
               <dd className="font-semibold text-price">
-                {formatMoney(asDisplayIdr(detail.remainingValueIdr), currency)}
+                {formatMoney(asDisplayIdr(detail.remainingValueMinor), detail.currency)}
               </dd>
             </div>
             <div>

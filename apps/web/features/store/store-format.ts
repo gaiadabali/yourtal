@@ -1,4 +1,4 @@
-import type { IdrMinorUnits, Points } from "@yourtal/contracts/money";
+import type { MinorUnits, Points } from "@yourtal/contracts/money";
 import { formatMoney, formatPoints } from "@yourtal/contracts/money/format";
 
 /**
@@ -6,12 +6,12 @@ import { formatMoney, formatPoints } from "@yourtal/contracts/money/format";
  * `@yourtal/contracts/money/format`, never `@yourtal/contracts/money`,
  * per docs/13b-typescript-standards.md §8's initial-JS budget — see that
  * module's own docstring for why the split exists. Type-only imports of
- * `IdrMinorUnits`/`Points` are free (`verbatimModuleSyntax` erases them).
+ * `MinorUnits`/`Points` are free (`verbatimModuleSyntax` erases them).
  *
- * YT-0405: every formatter here takes an optional locale/currency,
- * defaulting to `id-ID`/`IDR` so existing call sites keep rendering exactly
- * what they render today. A screen that has resolved the active region
- * (`apps/web/features/region`) passes its `locale`/`currency` through.
+ * YT-0405/YT-0513: `locale` is optional (defaults to `id-ID`), but
+ * `currency` is REQUIRED and never defaulted — an amount is only ever the
+ * listing's/voucher's own `currency` field, never a viewer's region, so
+ * there is no safe default to fall back to.
  */
 type SupportedLocale = "en-AU" | "id-ID";
 type SupportedCurrency = "AUD" | "IDR";
@@ -36,13 +36,13 @@ const WORTH_WORD: Record<SupportedLocale, string> = {
  */
 export function formatListingPrice(
   priceInPoints: Points,
-  faceValueIdr: IdrMinorUnits,
+  faceValueMinor: MinorUnits,
   locale: SupportedLocale = "id-ID",
-  currency: SupportedCurrency = "IDR",
+  currency: SupportedCurrency,
 ): ListingPriceDisplay {
   return {
     pointsLabel: formatPoints(priceInPoints, locale),
-    faceValueLabel: `${WORTH_WORD[locale]} ${formatMoney(faceValueIdr, currency)}`,
+    faceValueLabel: `${WORTH_WORD[locale]} ${formatMoney(faceValueMinor, currency)}`,
   };
 }
 

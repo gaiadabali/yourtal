@@ -83,8 +83,12 @@ export function buildOfferProductJsonLd(params: {
     offers: {
       "@type": "Offer",
       url,
-      priceCurrency: locale.currency,
-      // `faceValueIdr` is an integer count of the currency's minor unit;
+      // The listing's own currency (YT-0513), never the page's route
+      // locale — a listing is always denominated in its own region's
+      // currency, and the two happen to agree only because each public
+      // catalogue route is itself scoped to one region.
+      priceCurrency: listing.currency,
+      // `faceValueMinor` is an integer count of the currency's minor unit;
       // schema.org's `price` wants a decimal major-unit amount, so it is
       // scaled by that currency's exponent.
       //
@@ -97,8 +101,8 @@ export function buildOfferProductJsonLd(params: {
       // in the one place a wrong number is machine-readable and indexed.
       //
       // `MINOR_UNIT` is now the only place that knowledge lives.
-      price: (listing.faceValueIdr / 10 ** minorUnitExponent(locale.currency)).toFixed(
-        minorUnitExponent(locale.currency),
+      price: (listing.faceValueMinor / 10 ** minorUnitExponent(listing.currency)).toFixed(
+        minorUnitExponent(listing.currency),
       ),
       priceValidUntil: listing.expiresAt.slice(0, 10),
       availability: isAvailable ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
@@ -106,7 +110,7 @@ export function buildOfferProductJsonLd(params: {
       offeredBy: { "@id": `${merchantUrl}#organization` },
       priceSpecification: {
         "@type": "UnitPriceSpecification",
-        priceCurrency: locale.currency,
+        priceCurrency: listing.currency,
         price: "0",
         description: `Redeemed with ${listing.priceInPoints} YourTal points`,
         validForMemberTier: { "@type": "MemberProgramTier", name: "YourTal Member" },

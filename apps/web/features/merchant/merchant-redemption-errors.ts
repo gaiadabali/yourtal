@@ -33,7 +33,7 @@ export interface EligibilityInput {
   deviceMerchantName: string;
   amountMinor: number;
   /**
-   * `voucher.remainingValueIdr` minus whatever this device has already
+   * `voucher.remainingValueMinor` minus whatever this device has already
    * captured or queued against this voucher earlier today (see
    * `merchant-today-log.ts`) — the actual spendable ceiling right now, not
    * the voucher's own possibly-stale field. Passing the raw field here
@@ -95,7 +95,7 @@ export function classifyRedemptionEligibility(
     return { type: "amount_exceeds_remaining_value", remainingValueMinor: effectiveRemainingMinor };
   }
   // `minimum_spend` vouchers (docs/09 §8.2) are meant to carry their own
-  // minimum threshold — `Listing.minimumSpendIdr` exists for exactly this,
+  // minimum threshold — `Listing.minimumSpendMinor` exists for exactly this,
   // but `Voucher` (packages/contracts/src/voucher/voucher.ts) does not
   // carry that field once the voucher is minted, which is a real contract
   // gap (raised to the architect, not something this ticket owns fixing).

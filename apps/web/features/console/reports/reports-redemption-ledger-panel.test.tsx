@@ -5,69 +5,72 @@ import { asDisplayIdr } from "@yourtal/contracts/money/format";
 import { ReportsRedemptionLedgerPanel } from "./reports-redemption-ledger-panel";
 import type { RedemptionLedgerSummary } from "./reports-metrics";
 
-const SUMMARY: RedemptionLedgerSummary = {
-  totalVoucherCount: 3,
-  rows: [
-    {
-      status: "redeemed",
-      label: "Redeemed",
-      count: 2,
-      totalFaceValueIdr: asDisplayIdr(80_000),
-      provenance: "measured",
-    },
-    {
-      status: "active",
-      label: "Active",
-      count: 1,
-      totalFaceValueIdr: asDisplayIdr(20_000),
-      provenance: "measured",
-    },
-    {
-      status: "expired",
-      label: "Expired",
-      count: 0,
-      totalFaceValueIdr: asDisplayIdr(0),
-      provenance: "measured",
-    },
-    {
-      status: "transferred",
-      label: "Transferred",
-      count: 0,
-      totalFaceValueIdr: asDisplayIdr(0),
-      provenance: "measured",
-    },
-  ],
-};
+function summary(currency: "AUD" | "IDR"): RedemptionLedgerSummary {
+  return {
+    totalVoucherCount: 3,
+    rows: [
+      {
+        status: "redeemed",
+        label: "Redeemed",
+        count: 2,
+        totalFaceValueMinor: asDisplayIdr(80_000),
+        currency,
+        provenance: "measured",
+      },
+      {
+        status: "active",
+        label: "Active",
+        count: 1,
+        totalFaceValueMinor: asDisplayIdr(20_000),
+        currency,
+        provenance: "measured",
+      },
+      {
+        status: "expired",
+        label: "Expired",
+        count: 0,
+        totalFaceValueMinor: asDisplayIdr(0),
+        currency,
+        provenance: "measured",
+      },
+      {
+        status: "transferred",
+        label: "Transferred",
+        count: 0,
+        totalFaceValueMinor: asDisplayIdr(0),
+        currency,
+        provenance: "measured",
+      },
+    ],
+  };
+}
 
 describe("ReportsRedemptionLedgerPanel", () => {
   it("shows count and formatted total face value per non-zero status, labelled 'Measured'", () => {
-    render(<ReportsRedemptionLedgerPanel summary={SUMMARY} currency="IDR" />);
+    render(<ReportsRedemptionLedgerPanel summary={summary("IDR")} />);
     expect(screen.getByRole("heading", { name: "Redemption ledger" })).toBeInTheDocument();
     expect(screen.getByText("Measured")).toBeInTheDocument();
-    // 80_000 minor units: $800.00 under AUD and Rp 800 under IDR. The value is
-    // deliberately currency-free, because this panel's job is to render
-    // whatever the viewer's region says and never to assume Rp — so the same
-    // integer has to be legible in both, not scaled for one.
+    // 80_000 minor units in IDR renders Rp 800 (IDR is exponent 0).
     expect(screen.getByText(/^Rp\s?800$/)).toBeInTheDocument();
     expect(screen.queryByText("Expired")).not.toBeInTheDocument();
   });
 
-  it("renders AUD via formatMoney when the viewer's region is Australia, never a hardcoded Rp", () => {
-    render(<ReportsRedemptionLedgerPanel summary={SUMMARY} currency="AUD" />);
+  it("renders AUD via formatMoney using the vouchers' own currency, never a hardcoded Rp", () => {
+    render(<ReportsRedemptionLedgerPanel summary={summary("AUD")} />);
     expect(screen.getByText(/^\$800\.00$/)).toBeInTheDocument();
     expect(screen.queryByText(/^Rp/)).not.toBeInTheDocument();
   });
 
   it("states plainly that this ledger is not attributed to a source campaign", () => {
-    render(<ReportsRedemptionLedgerPanel summary={SUMMARY} currency="IDR" />);
+    render(<ReportsRedemptionLedgerPanel summary={summary("IDR")} />);
     expect(screen.getByText(/not attributed to a source campaign/i)).toBeInTheDocument();
   });
 
   it("shows an honest empty state when no vouchers have been issued", () => {
+    const empty = summary("IDR");
     render(
       <ReportsRedemptionLedgerPanel
-        summary={{ totalVoucherCount: 0, rows: SUMMARY.rows.map((row) => ({ ...row, count: 0 })) }}
-        currency="IDR"
+        summary={{ totalVoucherCount: 0, rows: empty.rows.map((row) => ({ ...row, count: 0 })) }}
       />,
     );
     expect(

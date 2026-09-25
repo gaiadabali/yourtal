@@ -16,7 +16,6 @@ describe("WalletVoucherList (id-ID)", () => {
         vouchers={[expiringWithinHourVoucherFixture, expiredVoucherFixture]}
         nowMs={nowMs}
         locale="id-ID"
-        currency="IDR"
       />,
     );
 
@@ -32,7 +31,6 @@ describe("WalletVoucherList (id-ID)", () => {
         vouchers={[expiringWithinHourVoucherFixture]}
         nowMs={nowMs}
         locale="id-ID"
-        currency="IDR"
       />,
     );
 
@@ -40,14 +38,7 @@ describe("WalletVoucherList (id-ID)", () => {
   });
 
   it("teaches how to get a voucher when there are no active ones, instead of an empty grid", () => {
-    render(
-      <WalletVoucherList
-        vouchers={[expiredVoucherFixture]}
-        nowMs={nowMs}
-        locale="id-ID"
-        currency="IDR"
-      />,
-    );
+    render(<WalletVoucherList vouchers={[expiredVoucherFixture]} nowMs={nowMs} locale="id-ID" />);
 
     expect(screen.getByText(/Tukar poin di Store/)).toBeInTheDocument();
   });
@@ -56,12 +47,7 @@ describe("WalletVoucherList (id-ID)", () => {
 describe("WalletVoucherList (en-AU, YT-0405)", () => {
   it("shows section headings and empty-active copy in English, with no Indonesian copy leaking through", () => {
     const { container } = render(
-      <WalletVoucherList
-        vouchers={[expiredVoucherFixture]}
-        nowMs={nowMs}
-        locale="en-AU"
-        currency="AUD"
-      />,
+      <WalletVoucherList vouchers={[expiredVoucherFixture]} nowMs={nowMs} locale="en-AU" />,
     );
 
     expect(screen.getByRole("heading", { name: "Active vouchers" })).toBeInTheDocument();

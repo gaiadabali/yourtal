@@ -47,7 +47,7 @@ describe("BurnSummary", () => {
   it("shows the minimum spend only when the policy requires one", () => {
     const withMinimum = makeListingFixture({
       partialRedemptionPolicy: "minimum_spend",
-      minimumSpendIdr: rupiah(50_000),
+      minimumSpendMinor: rupiah(50_000),
     });
     renderWithRegion(<BurnSummary listing={withMinimum} />);
     expect(screen.getByText("Minimum belanja")).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe("BurnSummary", () => {
   it("omits the minimum-spend row entirely for a non-minimum-spend policy", () => {
     const listing = makeListingFixture({
       partialRedemptionPolicy: "single_use_forfeit",
-      minimumSpendIdr: null,
+      minimumSpendMinor: null,
     });
     renderWithRegion(<BurnSummary listing={listing} />);
     expect(screen.queryByText("Minimum belanja")).not.toBeInTheDocument();
@@ -71,8 +71,11 @@ describe("BurnSummary", () => {
 });
 
 describe("BurnSummary (en-AU, YT-0405)", () => {
+  // A listing's currency is its own field (YT-0513), never the viewer's
+  // region — these fixtures are explicitly AUD-denominated, matching what
+  // an AU catalogue actually carries.
   it("restates the points cost and face value in AUD, never a hardcoded Rp", () => {
-    const listing = makeListingFixture({ merchantName: "Sydney Coffee Co" });
+    const listing = makeListingFixture({ merchantName: "Sydney Coffee Co", currency: "AUD" });
     renderWithRegion(<BurnSummary listing={listing} />, "AU");
 
     expect(screen.getByText(/points$/)).toBeInTheDocument();
@@ -81,15 +84,16 @@ describe("BurnSummary (en-AU, YT-0405)", () => {
   });
 
   it("shows the confirmation heading in English", () => {
-    const listing = makeListingFixture();
+    const listing = makeListingFixture({ currency: "AUD" });
     renderWithRegion(<BurnSummary listing={listing} variant="confirmation" />, "AU");
     expect(screen.getByRole("heading", { name: "Confirm redemption" })).toBeInTheDocument();
   });
 
   it("states minimum spend in AUD and transferability in English", () => {
     const withMinimum = makeListingFixture({
+      currency: "AUD",
       partialRedemptionPolicy: "minimum_spend",
-      minimumSpendIdr: rupiah(5_000),
+      minimumSpendMinor: rupiah(5_000),
       transferable: false,
     });
     renderWithRegion(<BurnSummary listing={withMinimum} />, "AU");

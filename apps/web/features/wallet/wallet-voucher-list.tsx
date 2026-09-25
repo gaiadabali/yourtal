@@ -3,14 +3,11 @@ import { WalletVoucherCard } from "./wallet-voucher-card";
 import { isVoucherEffectivelyExpired } from "./wallet-voucher-status-copy";
 import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
 
-type SupportedCurrency = "AUD" | "IDR";
-
 export interface WalletVoucherListProps {
   vouchers: Voucher[];
   nowMs: number;
   /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
   locale: SupportedLocale;
-  currency: SupportedCurrency;
 }
 
 function isActiveAndLive(voucher: Voucher, nowMs: number): boolean {
@@ -24,7 +21,7 @@ function isActiveAndLive(voucher: Voucher, nowMs: number): boolean {
  * render in their own, visually distinct section below the active ones,
  * always present when there is anything to show there.
  */
-export function WalletVoucherList({ vouchers, nowMs, locale, currency }: WalletVoucherListProps) {
+export function WalletVoucherList({ vouchers, nowMs, locale }: WalletVoucherListProps) {
   const t = getWalletTranslator(locale);
   const active = vouchers.filter((voucher) => isActiveAndLive(voucher, nowMs));
   const archived = vouchers.filter((voucher) => !isActiveAndLive(voucher, nowMs));
@@ -38,13 +35,7 @@ export function WalletVoucherList({ vouchers, nowMs, locale, currency }: WalletV
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {active.map((voucher) => (
-              <WalletVoucherCard
-                key={voucher.id}
-                voucher={voucher}
-                nowMs={nowMs}
-                locale={locale}
-                currency={currency}
-              />
+              <WalletVoucherCard key={voucher.id} voucher={voucher} nowMs={nowMs} locale={locale} />
             ))}
           </div>
         )}
@@ -56,13 +47,7 @@ export function WalletVoucherList({ vouchers, nowMs, locale, currency }: WalletV
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {archived.map((voucher) => (
-              <WalletVoucherCard
-                key={voucher.id}
-                voucher={voucher}
-                nowMs={nowMs}
-                locale={locale}
-                currency={currency}
-              />
+              <WalletVoucherCard key={voucher.id} voucher={voucher} nowMs={nowMs} locale={locale} />
             ))}
           </div>
         </section>

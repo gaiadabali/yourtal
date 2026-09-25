@@ -12,7 +12,7 @@ import { getRegionDisplayConfig } from "@/features/region/get-region";
  * voucher detail leaf, not here.
  */
 export default async function WalletPage() {
-  const [balance, vouchers, history, { locale, currency }] = await Promise.all([
+  const [balance, vouchers, history, { locale }] = await Promise.all([
     getWalletBalance(),
     listWalletVouchers(),
     listWalletHistory(),
@@ -26,7 +26,6 @@ export default async function WalletPage() {
       history={history}
       nowMs={Date.now()}
       locale={locale}
-      currency={currency}
     />
   );
 }

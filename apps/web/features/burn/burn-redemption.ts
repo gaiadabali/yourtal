@@ -10,7 +10,7 @@ import { isLockExpired } from "./price-lock";
  * `@yourtal/contracts/voucher` `Voucher`. There is no live redemption API
  * yet (docs/09-points-economy-and-redemption.md section 8: authorize →
  * capture against the merchant), so nothing is actually minted; this is
- * just enough shape to render a success screen. `faceValueIdr` is carried
+ * just enough shape to render a success screen. `faceValueMinor` is carried
  * as a plain `number` for the same reason `BurnError`'s fields are (see
  * `burn-errors.ts`'s doc comment).
  */
@@ -18,7 +18,7 @@ export interface BurnVoucherSummary {
   code: string;
   merchantName: string;
   title: string;
-  faceValueIdr: number;
+  faceValueMinor: number;
   redeemedAt: string;
 }
 
@@ -76,7 +76,7 @@ export function attemptBurn(input: BurnAttemptInput): BurnAttemptResult {
       code: generateMockVoucherCode(input.listing.id, input.nowMs),
       merchantName: input.listing.merchantName,
       title: input.listing.title,
-      faceValueIdr: input.listing.faceValueIdr,
+      faceValueMinor: input.listing.faceValueMinor,
       redeemedAt: new Date(input.nowMs).toISOString(),
     },
   };

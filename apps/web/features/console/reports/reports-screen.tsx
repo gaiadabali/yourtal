@@ -14,8 +14,6 @@ import { ReportsRedemptionLedgerPanel } from "./reports-redemption-ledger-panel"
 import { ReportsUnavailablePanel } from "./reports-unavailable-panel";
 import { UNAVAILABLE_METRICS } from "./reports-unavailable-metrics";
 
-type SupportedCurrency = "AUD" | "IDR";
-
 export interface ReportsScreenProps {
   /** Already fetched by `page.tsx` — this component does no data access of its own, matching how `TeamScreen` receives `initialRoster` rather than fetching it, and keeping this component plain-`render()`-testable. */
   bundle: ReportsBundle;
@@ -24,8 +22,6 @@ export interface ReportsScreenProps {
   selectedCampaignId: string | undefined;
   /** `""` or `"?business=<id>"`, threaded through to the campaign filter so it never drops the business switcher's selection. */
   businessQuery: string;
-  /** From the viewer's own region (`getRegionDisplayConfig()` in `page.tsx`), never hardcoded — see `reports-redemption-ledger-panel.tsx` for the one known gap this still carries. */
-  currency: SupportedCurrency;
 }
 
 /**
@@ -53,7 +49,6 @@ export function ReportsScreen({
   relationships,
   selectedCampaignId,
   businessQuery,
-  currency,
 }: ReportsScreenProps) {
   const isAdvertiser = relationships.includes("advertiser");
   const isSupplier = relationships.includes("supplier");
@@ -104,9 +99,7 @@ export function ReportsScreen({
         <ReportsQuestionBankPanel scopeLabel={scopeLabel} typeCounts={typeCounts} />
       ) : null}
 
-      {isSupplier ? (
-        <ReportsRedemptionLedgerPanel summary={redemptionSummary} currency={currency} />
-      ) : null}
+      {isSupplier ? <ReportsRedemptionLedgerPanel summary={redemptionSummary} /> : null}
 
       {!isAdvertiser && !isSupplier ? (
         <Card>

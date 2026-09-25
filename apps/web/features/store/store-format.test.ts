@@ -5,7 +5,7 @@ import { audCents } from "@yourtal/contracts/money/value";
 
 describe("formatListingPrice", () => {
   it("formats the points price and the face value beside it", () => {
-    const result = formatListingPrice(toPoints(2_500), rupiah(50_000));
+    const result = formatListingPrice(toPoints(2_500), rupiah(50_000), "id-ID", "IDR");
     expect(result.pointsLabel).toContain("2.500");
     expect(result.faceValueLabel).toContain("Senilai");
     expect(result.faceValueLabel).toContain("Rp");

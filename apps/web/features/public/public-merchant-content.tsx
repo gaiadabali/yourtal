@@ -76,9 +76,10 @@ export function PublicMerchantContent({
               {merchant.listings.map((listing) => {
                 const price = formatListingPrice(
                   listing.priceInPoints,
-                  listing.faceValueIdr,
+                  listing.faceValueMinor,
                   localeConfig.intlLocale,
-                  localeConfig.currency,
+                  // The listing's own currency (YT-0513), never the page locale.
+                  listing.currency,
                 );
                 return (
                   <li key={listing.id}>

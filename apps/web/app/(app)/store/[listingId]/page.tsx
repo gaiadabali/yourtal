@@ -18,14 +18,11 @@ export default async function StoreOfferPage(props: PageProps<"/store/[listingId
     notFound();
   }
 
-  const [balance, { locale, currency }] = await Promise.all([
-    getCurrentBalance(),
-    getRegionDisplayConfig(),
-  ]);
+  const [balance, { locale }] = await Promise.all([getCurrentBalance(), getRegionDisplayConfig()]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4">
-      <StoreOfferCard listing={listing} balance={balance} locale={locale} currency={currency} />
+      <StoreOfferCard listing={listing} balance={balance} locale={locale} />
     </div>
   );
 }

@@ -16,10 +16,17 @@ function makeVoucher(overrides: Partial<Voucher> = {}): Voucher {
     code: "ABC12345",
     merchantId: "00000000-0000-4000-8000-000000000601",
     merchantName: "Toko Berkah",
-    minimumSpendIdr: null,
+    location: {
+      id: "00000000-0000-4000-8000-000000000701",
+      name: "Toko Berkah Kemang",
+      address: "Jl. Kemang Raya 1",
+      district: "Kemang",
+    },
+    minimumSpendMinor: null,
     title: "Voucher Toko Berkah",
-    faceValueIdr: rupiah(50_000),
-    remainingValueIdr: rupiah(50_000),
+    currency: "IDR",
+    faceValueMinor: rupiah(50_000),
+    remainingValueMinor: rupiah(50_000),
     partialRedemptionPolicy: "balance_carrying",
     transferable: false,
     status: "active",
@@ -147,7 +154,7 @@ describe("classifyRedemptionEligibility", () => {
   });
 
   it("refuses an amount exceeding the effective remaining value, not the voucher's raw field", () => {
-    const voucher = makeVoucher({ remainingValueIdr: rupiah(50_000) });
+    const voucher = makeVoucher({ remainingValueMinor: rupiah(50_000) });
     const error = classifyRedemptionEligibility({
       voucher,
       deviceMerchantId: "00000000-0000-4000-8000-000000000601",
@@ -162,7 +169,7 @@ describe("classifyRedemptionEligibility", () => {
   it("requires a minimum_spend voucher to be redeemed in full", () => {
     const voucher = makeVoucher({
       partialRedemptionPolicy: "minimum_spend",
-      remainingValueIdr: rupiah(100_000),
+      remainingValueMinor: rupiah(100_000),
     });
     const error = classifyRedemptionEligibility({
       voucher,
@@ -178,7 +185,7 @@ describe("classifyRedemptionEligibility", () => {
   it("allows a minimum_spend voucher redeemed for its exact full value", () => {
     const voucher = makeVoucher({
       partialRedemptionPolicy: "minimum_spend",
-      remainingValueIdr: rupiah(100_000),
+      remainingValueMinor: rupiah(100_000),
     });
     const error = classifyRedemptionEligibility({
       voucher,

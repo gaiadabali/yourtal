@@ -16,7 +16,6 @@ describe("WalletScreen (id-ID)", () => {
         history={[]}
         nowMs={nowMs}
         locale="id-ID"
-        currency="IDR"
       />,
     );
 
@@ -32,7 +31,6 @@ describe("WalletScreen (id-ID)", () => {
         history={[]}
         nowMs={nowMs}
         locale="id-ID"
-        currency="IDR"
       />,
     );
 
@@ -48,7 +46,6 @@ describe("WalletScreen (id-ID)", () => {
         history={[]}
         nowMs={nowMs}
         locale="id-ID"
-        currency="IDR"
       />,
     );
 
@@ -67,7 +64,6 @@ describe("WalletScreen (en-AU, YT-0405)", () => {
         history={[]}
         nowMs={nowMs}
         locale="en-AU"
-        currency="AUD"
       />,
     );
 

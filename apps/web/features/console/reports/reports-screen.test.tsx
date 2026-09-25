@@ -34,7 +34,6 @@ describe("ReportsScreen", () => {
         relationships={["advertiser", "supplier"]}
         selectedCampaignId={undefined}
         businessQuery=""
-        currency="IDR"
       />,
     );
     expect(screen.getByRole("heading", { name: "How to read these numbers" })).toBeInTheDocument();
@@ -47,7 +46,6 @@ describe("ReportsScreen", () => {
         relationships={["supplier"]}
         selectedCampaignId={undefined}
         businessQuery=""
-        currency="IDR"
       />,
     );
     expect(screen.queryByRole("heading", { name: "Campaigns" })).not.toBeInTheDocument();
@@ -64,7 +62,6 @@ describe("ReportsScreen", () => {
         relationships={["advertiser"]}
         selectedCampaignId={undefined}
         businessQuery=""
-        currency="IDR"
       />,
     );
     expect(screen.getByRole("heading", { name: "Campaigns" })).toBeInTheDocument();
@@ -82,7 +79,6 @@ describe("ReportsScreen", () => {
         relationships={["advertiser"]}
         selectedCampaignId={target.id}
         businessQuery=""
-        currency="IDR"
       />,
     );
     // The scope label under "Question bank composition" is the one place
@@ -101,7 +97,6 @@ describe("ReportsScreen", () => {
         relationships={["redeemer"]}
         selectedCampaignId={undefined}
         businessQuery=""
-        currency="IDR"
       />,
     );
     expect(screen.getByRole("heading", { name: "Nothing to report yet" })).toBeInTheDocument();
@@ -114,7 +109,6 @@ describe("ReportsScreen", () => {
         relationships={["advertiser"]}
         selectedCampaignId={undefined}
         businessQuery=""
-        currency="IDR"
       />,
     );
     expect(
@@ -138,7 +132,6 @@ describe("ReportsScreen", () => {
         relationships={["advertiser", "supplier"]}
         selectedCampaignId={undefined}
         businessQuery=""
-        currency="IDR"
       />,
     );
     // No link or button anywhere targets a user/owner/viewer-scoped path or id.

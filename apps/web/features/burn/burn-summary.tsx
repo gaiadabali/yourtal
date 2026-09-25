@@ -32,13 +32,13 @@ export interface BurnSummaryProps {
  * pull ~100 KB gz into this client-reachable component — docs/13b §8).
  *
  * YT-0405: a Client Component (its only consumer, `burn-flow.tsx`, is
- * already `"use client"`), so it reads the active region and its
- * translations ambiently via `useRegion()`/`useTranslations()` — the face
- * value and minimum spend render via `formatMoney` in the region's real
- * currency, never a hardcoded `formatIdr`/`Rp`.
+ * already `"use client"`), so it reads the active locale ambiently via
+ * `useRegion()`/`useTranslations()` — the face value and minimum spend
+ * render via `formatMoney` in the LISTING's own currency (never the
+ * viewer's region), never a hardcoded `formatIdr`/`Rp`.
  */
 export function BurnSummary({ listing, variant = "review" }: BurnSummaryProps) {
-  const { locale, currency } = useRegion();
+  const { locale } = useRegion();
   const t = useTranslations("burn");
   const partialRedemptionCopy: Record<Listing["partialRedemptionPolicy"], string> = {
     balance_carrying: t("summary.balanceCarrying"),
@@ -62,17 +62,17 @@ export function BurnSummary({ listing, variant = "review" }: BurnSummaryProps) {
         </dd>
         <dt className="text-fg-muted">{t("summary.voucherValue")}</dt>
         <dd className="text-right text-fg">
-          {formatMoney(asDisplayIdr(listing.faceValueIdr), currency)}
+          {formatMoney(asDisplayIdr(listing.faceValueMinor), listing.currency)}
         </dd>
         <dt className="text-fg-muted">{t("summary.youGet")}</dt>
         <dd className="text-right text-fg">
           {t("summary.voucherFor", { merchantName: listing.merchantName })}
         </dd>
-        {listing.minimumSpendIdr !== null ? (
+        {listing.minimumSpendMinor !== null ? (
           <>
             <dt className="text-fg-muted">{t("summary.minimumSpend")}</dt>
             <dd className="text-right text-fg">
-              {formatMoney(asDisplayIdr(listing.minimumSpendIdr), currency)}
+              {formatMoney(asDisplayIdr(listing.minimumSpendMinor), listing.currency)}
             </dd>
           </>
         ) : null}

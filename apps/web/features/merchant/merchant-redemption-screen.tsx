@@ -103,7 +103,7 @@ export function MerchantRedemptionScreen({ device, vouchers }: MerchantRedemptio
       setStep({ step: "not_found", reason: notFoundReason });
       return;
     }
-    const effective = effectiveRemainingValue(logEntries, voucher.id, voucher.remainingValueIdr);
+    const effective = effectiveRemainingValue(logEntries, voucher.id, voucher.remainingValueMinor);
     setStep({
       step: "reviewing",
       voucher,

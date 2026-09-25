@@ -1,4 +1,4 @@
-import type { IdrMinorUnits } from "@yourtal/contracts/money";
+import type { MinorUnits } from "@yourtal/contracts/money";
 import type { PartialRedemptionPolicy } from "@yourtal/contracts/listing";
 import { Badge } from "@yourtal/ui/badge";
 import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
@@ -12,10 +12,11 @@ type SupportedCurrency = "AUD" | "IDR";
 
 export interface StoreOfferTermsProps {
   partialRedemptionPolicy: PartialRedemptionPolicy;
-  minimumSpendIdr: IdrMinorUnits | null;
+  minimumSpendMinor: MinorUnits | null;
   transferable: boolean;
   /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
   locale: SupportedLocale;
+  /** The listing's own currency (YT-0513), never the viewer's region. */
   currency: SupportedCurrency;
 }
 
@@ -35,7 +36,7 @@ export interface StoreOfferTermsProps {
  */
 export function StoreOfferTerms({
   partialRedemptionPolicy,
-  minimumSpendIdr,
+  minimumSpendMinor,
   transferable,
   locale,
   currency,
@@ -52,7 +53,7 @@ export function StoreOfferTerms({
       <p className="text-xs text-fg-muted">
         {partialRedemptionPolicyDescription(
           partialRedemptionPolicy,
-          minimumSpendIdr,
+          minimumSpendMinor,
           locale,
           currency,
         )}

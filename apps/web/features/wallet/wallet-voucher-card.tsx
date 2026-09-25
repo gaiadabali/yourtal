@@ -9,23 +9,23 @@ import { describeVoucherStatus, isVoucherEffectivelyExpired } from "./wallet-vou
 import { formatWalletDate } from "./wallet-format";
 import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
 
-type SupportedCurrency = "AUD" | "IDR";
-
 export interface WalletVoucherCardProps {
   voucher: Voucher;
   nowMs: number;
   /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
   locale: SupportedLocale;
-  currency: SupportedCurrency;
 }
 
 /**
  * One voucher card in the Wallet's voucher list. Archived vouchers (used,
  * expired, transferred, or expired-by-wall-clock) render visually distinct
  * — reduced emphasis, a status badge — but never disappear
- * (YT-0424: "archived and still viewable").
+ * (YT-0424: "archived and still viewable"). The remaining value renders in
+ * the VOUCHER's own currency (`voucher.currency`, YT-0513), never the
+ * viewer's region — a voucher is a bearer instrument for a specific
+ * region's economy and must display as such regardless of who is viewing.
  */
-export function WalletVoucherCard({ voucher, nowMs, locale, currency }: WalletVoucherCardProps) {
+export function WalletVoucherCard({ voucher, nowMs, locale }: WalletVoucherCardProps) {
   const expired = isVoucherEffectivelyExpired(voucher, nowMs);
   const statusCopy = describeVoucherStatus(voucher.status, expired, locale);
   const href = `/wallet/voucher/${voucher.id}` as Route;
@@ -63,7 +63,7 @@ export function WalletVoucherCard({ voucher, nowMs, locale, currency }: WalletVo
             wider than the viewport (YT-0401). */}
         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-sm">
           <span className="min-w-0 font-semibold text-price">
-            {formatMoney(voucher.remainingValueIdr, currency)}
+            {formatMoney(voucher.remainingValueMinor, voucher.currency)}
           </span>
           <span className="min-w-0 text-xs text-fg-subtle">
             {statusCopy.isArchived

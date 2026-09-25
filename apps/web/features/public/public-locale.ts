@@ -24,7 +24,7 @@ import { notFound } from "next/navigation";
  * campaign/listing catalogues this feature read from
  * (`@yourtal/contracts/campaign/mock`, `@yourtal/contracts/listing/mock`)
  * were Indonesia-only in substance — Jakarta districts, Rupiah-denominated
- * `faceValueIdr`. Reinterpreting the same Rupiah amounts as AUD would have
+ * `faceValueMinor`. Reinterpreting the same Rupiah amounts as AUD would have
  * misstated real money figures, so this file deliberately did not generate
  * `/au/**` rather than fake it.
  *

@@ -9,13 +9,10 @@ import { listingDistrictLabel } from "./listing-locations";
 import { listingStatusPresentation } from "./store-status";
 import type { SupportedLocale } from "./store-i18n";
 
-type SupportedCurrency = "AUD" | "IDR";
-
 export interface StoreListingCardProps {
   listing: Listing;
   /** YT-0405: required, not defaulted — see `campaign-card.tsx`'s report. */
   locale: SupportedLocale;
-  currency: SupportedCurrency;
 }
 
 /**
@@ -27,14 +24,15 @@ export interface StoreListingCardProps {
  * Only the title is a real link; a `::after` stretched-link pseudo-element
  * extends the click target to the whole card, matching `campaign-card.tsx`.
  */
-export function StoreListingCard({ listing, locale, currency }: StoreListingCardProps) {
+export function StoreListingCard({ listing, locale }: StoreListingCardProps) {
   const href = `/store/${listing.id}` as Route;
   const status = listingStatusPresentation(listing.status, locale);
   const { pointsLabel, faceValueLabel } = formatListingPrice(
     listing.priceInPoints,
-    listing.faceValueIdr,
+    listing.faceValueMinor,
     locale,
-    currency,
+    // The listing's own currency (YT-0513), never the viewer's region.
+    listing.currency,
   );
 
   return (

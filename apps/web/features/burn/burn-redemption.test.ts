@@ -74,7 +74,7 @@ describe("attemptBurn", () => {
     if (result.ok) {
       expect(result.voucher.merchantName).toBe(listing.merchantName);
       expect(result.voucher.title).toBe(listing.title);
-      expect(result.voucher.faceValueIdr).toBe(listing.faceValueIdr);
+      expect(result.voucher.faceValueMinor).toBe(listing.faceValueMinor);
       expect(result.voucher.code.length).toBeGreaterThan(0);
     }
   });

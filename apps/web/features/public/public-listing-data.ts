@@ -53,7 +53,7 @@ function catalogueFor(locale: PublicLocale): readonly Listing[] {
  * Strips the listing down to what a public surface may carry.
  *
  * The fixtures behind this module are merchant-facing `Listing`s and so
- * carry `settlementValueIdr` — S, what the merchant is paid. Publishing S
+ * carry `settlementValueMinor` — S, what the merchant is paid. Publishing S
  * beside `priceInPoints` publishes the backing rate by arithmetic
  * (`B = S / priceInPoints`, exactly, since the demand multiplier is pinned
  * at 1.0), which `docs/24` ID-1 names as the single largest legal exposure

@@ -38,9 +38,10 @@ export function PublicCatalogueContent({
           const merchantSlug = slugify(listing.merchantName);
           const price = formatListingPrice(
             listing.priceInPoints,
-            listing.faceValueIdr,
+            listing.faceValueMinor,
             localeConfig.intlLocale,
-            localeConfig.currency,
+            // The listing's own currency (YT-0513), never the page locale.
+            listing.currency,
           );
           return (
             <li key={listing.id}>

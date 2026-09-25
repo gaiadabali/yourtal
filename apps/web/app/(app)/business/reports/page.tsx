@@ -5,7 +5,6 @@ import { ConsoleShell } from "@/features/console/console-shell";
 import { canViewZone } from "@/features/console/console-zone-access";
 import { getReportsBundle } from "@/features/console/reports/reports-data";
 import { ReportsScreen } from "@/features/console/reports/reports-screen";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
 
 /**
  * `/business/reports` (YT-0443). Reports has no relationship gate of its
@@ -34,7 +33,6 @@ export default async function BusinessReportsPage(props: PageProps<"/business/re
     typeof searchParams.campaign === "string" ? searchParams.campaign : undefined;
   const businessQuery =
     current.business.id === defaultBusinessId ? "" : `?business=${current.business.id}`;
-  const { currency } = await getRegionDisplayConfig();
   const bundle = allowed
     ? await getReportsBundle(current.business.id, current.business.displayName)
     : undefined;
@@ -47,7 +45,6 @@ export default async function BusinessReportsPage(props: PageProps<"/business/re
           relationships={current.business.roles}
           selectedCampaignId={selectedCampaignId}
           businessQuery={businessQuery}
-          currency={currency}
         />
       ) : (
         <ConsoleAccessDenied zoneLabel="Reports" />

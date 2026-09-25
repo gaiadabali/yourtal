@@ -70,7 +70,7 @@ function multipleChoiceQuestion(id: string, campaignId: string): Question {
 }
 
 function voucher(overrides: Partial<Voucher>): Voucher {
-  const faceValueIdr = overrides.faceValueIdr ?? rupiah(50_000);
+  const faceValueMinor = overrides.faceValueMinor ?? rupiah(50_000);
   return voucherSchema.parse({
     id: "00000000-0000-4000-8000-000000000301",
     listingId: "00000000-0000-4000-8000-000000000401",
@@ -85,14 +85,15 @@ function voucher(overrides: Partial<Voucher>): Voucher {
       district: "Kemang",
     },
     title: "Test voucher",
-    faceValueIdr,
-    // Defaults to the (possibly overridden) faceValueIdr, never a fixed
-    // literal — voucherSchema rejects remainingValueIdr > faceValueIdr, so a
-    // fixed default here would break the moment a test overrides faceValueIdr
-    // to something smaller.
-    remainingValueIdr: faceValueIdr,
+    currency: "IDR",
+    faceValueMinor,
+    // Defaults to the (possibly overridden) faceValueMinor, never a fixed
+    // literal — voucherSchema rejects remainingValueMinor > faceValueMinor, so
+    // a fixed default here would break the moment a test overrides
+    // faceValueMinor to something smaller.
+    remainingValueMinor: faceValueMinor,
     partialRedemptionPolicy: "single_use_forfeit",
-    minimumSpendIdr: null,
+    minimumSpendMinor: null,
     transferable: false,
     status: "active",
     issuedAt: "2026-01-01T00:00:00.000Z",
@@ -158,9 +159,9 @@ describe("aggregateQuestionTypeCounts", () => {
 describe("summarizeRedemptionLedger", () => {
   it("counts and sums face value per status, and always labels rows 'measured'", () => {
     const vouchers = [
-      voucher({ status: "redeemed", faceValueIdr: rupiah(50_000) }),
-      voucher({ status: "redeemed", faceValueIdr: rupiah(30_000) }),
-      voucher({ status: "active", faceValueIdr: rupiah(20_000) }),
+      voucher({ status: "redeemed", faceValueMinor: rupiah(50_000) }),
+      voucher({ status: "redeemed", faceValueMinor: rupiah(30_000) }),
+      voucher({ status: "active", faceValueMinor: rupiah(20_000) }),
     ];
 
     const summary = summarizeRedemptionLedger(vouchers);
@@ -168,12 +169,13 @@ describe("summarizeRedemptionLedger", () => {
 
     const redeemedRow = summary.rows.find((row) => row.status === "redeemed");
     expect(redeemedRow?.count).toBe(2);
-    expect(redeemedRow?.totalFaceValueIdr).toBe(rupiah(80_000));
+    expect(redeemedRow?.totalFaceValueMinor).toBe(rupiah(80_000));
+    expect(redeemedRow?.currency).toBe("IDR");
     expect(redeemedRow?.provenance).toBe("measured");
 
     const expiredRow = summary.rows.find((row) => row.status === "expired");
     expect(expiredRow?.count).toBe(0);
-    expect(expiredRow?.totalFaceValueIdr).toBe(0);
+    expect(expiredRow?.totalFaceValueMinor).toBe(0);
   });
 
   it("never mixes statuses into one combined figure", () => {

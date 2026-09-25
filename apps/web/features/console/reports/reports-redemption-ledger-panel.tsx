@@ -4,38 +4,25 @@ import { ReportProvenanceBadge } from "./report-provenance-badge";
 import { ReportsBarChart } from "./reports-bar-chart";
 import type { RedemptionLedgerSummary } from "./reports-metrics";
 
-type SupportedCurrency = "AUD" | "IDR";
-
 export interface ReportsRedemptionLedgerPanelProps {
   summary: RedemptionLedgerSummary;
-  /** From the viewer's own region (`getRegionDisplayConfig()`), never hardcoded — see this file's docstring for the one known gap this still has. */
-  currency: SupportedCurrency;
 }
 
 /**
  * The one panel in this zone backed by a real (mock) ledger fact rather
  * than configuration or an honest gap: a voucher's `status` and
- * `faceValueIdr` on this business's own listings. Deliberately titled
+ * `faceValueMinor` on this business's own listings. Deliberately titled
  * "ledger", not "campaign performance" — `voucherSchema` has no
  * `campaignId`, so nothing here can be attributed to a specific campaign
  * (see `reports-unavailable-metrics.ts`'s `campaign-redemption-attribution`
  * entry, always rendered alongside this panel).
  *
- * KNOWN GAP this file does not solve: amounts are read from
- * `Voucher.faceValueIdr`, a field typed `IdrMinorUnits` regardless of
- * region (packages/contracts has no currency-tagged Money type yet —
- * docs/tasks/phase-u-ui.md YT-0405's report flags the same gap for every
- * other screen). Passing the viewer's own `currency` to `formatMoney`
- * here is the mechanically correct call for an Australian viewer's number
- * formatting and currency symbol, but the underlying fixture amounts are
- * only ever generated in Rupiah scale — there is no real currency
- * conversion, because none exists in the contracts yet. That is the
- * architect's call (YT-0506/docs/12 §3), not this ticket's to invent.
+ * Each row's total is formatted in that row's OWN currency
+ * (`row.currency`, read off the underlying vouchers — YT-0513), never the
+ * viewer's region: a business's vouchers are always one region's, so this
+ * renders the true currency rather than assuming the viewer shares it.
  */
-export function ReportsRedemptionLedgerPanel({
-  summary,
-  currency,
-}: ReportsRedemptionLedgerPanelProps) {
+export function ReportsRedemptionLedgerPanel({ summary }: ReportsRedemptionLedgerPanelProps) {
   const nonZeroRows = summary.rows.filter((row) => row.count > 0);
 
   return (
@@ -91,7 +78,7 @@ export function ReportsRedemptionLedgerPanel({
                     </th>
                     <td className="py-2 pr-3 text-fg">{row.count}</td>
                     <td className="py-2 pr-3 text-fg">
-                      {formatMoney(row.totalFaceValueIdr, currency)}
+                      {formatMoney(row.totalFaceValueMinor, row.currency)}
                     </td>
                   </tr>
                 ))}

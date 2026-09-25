@@ -24,7 +24,7 @@ type SupportedLocale = "en-AU" | "id-ID";
  * Just the part of a listing these helpers actually read.
  *
  * Taking the whole `Listing` would force every caller to hold one — and a
- * `Listing` carries `settlementValueIdr`, which a public surface must not
+ * `Listing` carries `settlementValueMinor`, which a public surface must not
  * (`publicListingSchema`'s header, `docs/24` ID-1). Demanding more than you
  * read is not free: it decides what the caller is allowed to be. These
  * functions read `locations` and nothing else, so that is what they ask

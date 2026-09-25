@@ -16,7 +16,6 @@ describe("StoreOfferCard (id-ID)", () => {
         listing={expiringSoonListingFixture}
         balance={mixedStateBalanceFixture}
         locale="id-ID"
-        currency="IDR"
       />,
     );
     const bodyText = document.body.textContent ?? "";
@@ -33,7 +32,6 @@ describe("StoreOfferCard (id-ID)", () => {
         listing={soldOutListingFixture}
         balance={mixedStateBalanceFixture}
         locale="id-ID"
-        currency="IDR"
       />,
     );
     expect(screen.getByRole("button", { name: /stok habis/i })).toBeDisabled();
@@ -46,7 +44,6 @@ describe("StoreOfferCard (id-ID)", () => {
         listing={abovePlausibleBalanceListingFixture}
         balance={zeroBalanceFixture}
         locale="id-ID"
-        currency="IDR"
       />,
     );
     expect(screen.getByRole("button", { name: /poin belum cukup/i })).toBeDisabled();
@@ -59,7 +56,6 @@ describe("StoreOfferCard (id-ID)", () => {
         listing={expiringSoonListingFixture}
         balance={mixedStateBalanceFixture}
         locale="id-ID"
-        currency="IDR"
       />,
     );
     expect(screen.getByRole("link", { name: /tukar sekarang/i })).toHaveAttribute(
@@ -76,7 +72,6 @@ describe("StoreOfferCard (en-AU, YT-0405)", () => {
         listing={expiringSoonListingFixture}
         balance={mixedStateBalanceFixture}
         locale="en-AU"
-        currency="AUD"
       />,
     );
     expect(screen.getByText("Terms")).toBeInTheDocument();
@@ -92,7 +87,6 @@ describe("StoreOfferCard (en-AU, YT-0405)", () => {
         listing={soldOutListingFixture}
         balance={mixedStateBalanceFixture}
         locale="en-AU"
-        currency="AUD"
       />,
     );
     expect(screen.getByRole("button", { name: /sold out/i })).toBeDisabled();

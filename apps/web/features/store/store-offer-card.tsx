@@ -14,14 +14,11 @@ import { StoreOfferRedeemSteps } from "./store-offer-redeem-steps";
 import { StoreOfferTerms } from "./store-offer-terms";
 import { listingStatusPresentation } from "./store-status";
 
-type SupportedCurrency = "AUD" | "IDR";
-
 export interface StoreOfferCardProps {
   listing: Listing;
   balance: Balance;
   /** YT-0405: required, not defaulted — see `campaign-card.tsx`'s report. */
   locale: SupportedLocale;
-  currency: SupportedCurrency;
 }
 
 /**
@@ -34,12 +31,14 @@ export interface StoreOfferCardProps {
  * behind a collapsed accordion, so scrolling straight down the page reads
  * the terms before ever reaching a button.
  */
-export function StoreOfferCard({ listing, balance, locale, currency }: StoreOfferCardProps) {
+export function StoreOfferCard({ listing, balance, locale }: StoreOfferCardProps) {
   const t = getStoreTranslator(locale);
   const status = listingStatusPresentation(listing.status, locale);
+  // The listing's own currency (YT-0513), never the viewer's region.
+  const currency = listing.currency;
   const { pointsLabel, faceValueLabel } = formatListingPrice(
     listing.priceInPoints,
-    listing.faceValueIdr,
+    listing.faceValueMinor,
     locale,
     currency,
   );
@@ -71,7 +70,7 @@ export function StoreOfferCard({ listing, balance, locale, currency }: StoreOffe
 
         <StoreOfferTerms
           partialRedemptionPolicy={listing.partialRedemptionPolicy}
-          minimumSpendIdr={listing.minimumSpendIdr}
+          minimumSpendMinor={listing.minimumSpendMinor}
           transferable={listing.transferable}
           locale={locale}
           currency={currency}

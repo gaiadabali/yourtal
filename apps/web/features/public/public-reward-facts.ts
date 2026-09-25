@@ -62,7 +62,9 @@ export function computeOfferRewardFacts(
   listing: PublicListing,
   locale: PublicLocaleConfig,
 ): OfferRewardFacts {
-  const worthLabel = formatMoney(listing.faceValueIdr, locale.currency);
+  // The listing's own currency (YT-0513), never the page's route locale —
+  // a listing is always denominated in its own region's currency.
+  const worthLabel = formatMoney(listing.faceValueMinor, listing.currency);
   const pointsLabel = formatPoints(listing.priceInPoints, locale.intlLocale);
   return { worthLabel, pointsLabel, headline: `${worthLabel} · ${pointsLabel}` };
 }

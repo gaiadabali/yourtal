@@ -9,7 +9,7 @@ describe("StoreOfferTerms (id-ID)", () => {
     render(
       <StoreOfferTerms
         partialRedemptionPolicy="minimum_spend"
-        minimumSpendIdr={rupiah(100_000)}
+        minimumSpendMinor={rupiah(100_000)}
         transferable={false}
         locale="id-ID"
         currency="IDR"
@@ -22,7 +22,7 @@ describe("StoreOfferTerms (id-ID)", () => {
     render(
       <StoreOfferTerms
         partialRedemptionPolicy="balance_carrying"
-        minimumSpendIdr={null}
+        minimumSpendMinor={null}
         transferable
         locale="id-ID"
         currency="IDR"
@@ -35,7 +35,7 @@ describe("StoreOfferTerms (id-ID)", () => {
     render(
       <StoreOfferTerms
         partialRedemptionPolicy="single_use_forfeit"
-        minimumSpendIdr={null}
+        minimumSpendMinor={null}
         transferable={false}
         locale="id-ID"
         currency="IDR"
@@ -51,7 +51,7 @@ describe("StoreOfferTerms (en-AU, YT-0405)", () => {
     const { container } = render(
       <StoreOfferTerms
         partialRedemptionPolicy="minimum_spend"
-        minimumSpendIdr={rupiah(100_000)}
+        minimumSpendMinor={rupiah(100_000)}
         transferable={false}
         locale="en-AU"
         currency="AUD"

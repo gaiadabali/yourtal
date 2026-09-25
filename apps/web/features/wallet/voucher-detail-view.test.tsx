@@ -252,16 +252,15 @@ describe("VoucherDetailView (en-AU, YT-0405)", () => {
   });
 
   it("shows the remaining value in AUD and the section labels in English, never a hardcoded Rp", async () => {
+    // The voucher's own currency (YT-0513), never the viewer's region —
+    // this fixture is explicitly AUD-denominated.
+    const auVoucher: Voucher = { ...cachedVoucher, currency: "AUD" };
     const instructions = buildRedemptionInstructions(
-      cachedVoucher.merchantName,
-      cachedVoucher.partialRedemptionPolicy,
+      auVoucher.merchantName,
+      auVoucher.partialRedemptionPolicy,
       "id-ID",
     );
-    const detail = buildCachedVoucherDetail(
-      cachedVoucher,
-      instructions,
-      "2026-09-19T09:00:00.000Z",
-    );
+    const detail = buildCachedVoucherDetail(auVoucher, instructions, "2026-09-19T09:00:00.000Z");
 
     renderWithRegion(
       <VoucherDetailView voucherId={cachedVoucher.id} initialDetail={detail} />,

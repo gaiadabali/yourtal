@@ -1,4 +1,4 @@
-import type { IdrMinorUnits } from "@yourtal/contracts/money";
+import type { MinorUnits } from "@yourtal/contracts/money";
 import type { PartialRedemptionPolicy } from "@yourtal/contracts/listing";
 import { formatMoney } from "@yourtal/contracts/money/format";
 import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
@@ -42,22 +42,21 @@ export function partialRedemptionPolicyLabel(
 /**
  * The full sentence explaining what happens when an order is less than the
  * voucher's face value (docs/09 §8.2's three behaviours: "a gift card" /
- * "a coupon" / "a promo code"). `minimumSpendIdr` is required exactly when
+ * "a coupon" / "a promo code"). `minimumSpendMinor` is required exactly when
  * `policy` is `"minimum_spend"` — enforced by the contract's own refine
  * (`listing.ts`) — so it is only read in that branch.
  *
- * YT-0405: the minimum-spend amount is rendered via `formatMoney`, never a
- * hardcoded `formatIdr` — an `en-AU` caller passing `currency: "AUD"` sees
- * `$75.00`, never `Rp75.000`. `minimumSpendIdr`'s name is a legacy of the
- * IDR-only original signature (YT-0506 has not settled the stored money
- * type); it is still the raw minor-unit amount, now formatted in whichever
- * currency the caller passes.
+ * YT-0405/YT-0513: the minimum-spend amount is rendered via `formatMoney`,
+ * never a hardcoded `formatIdr` — an `en-AU` caller passing
+ * `currency: "AUD"` sees `$75.00`, never `Rp75.000`. `currency` is
+ * REQUIRED, never defaulted: it must be the listing's/voucher's own
+ * `currency` field, never assumed from the viewer's region.
  */
 export function partialRedemptionPolicyDescription(
   policy: PartialRedemptionPolicy,
-  minimumSpendIdr: IdrMinorUnits | null,
+  minimumSpendMinor: MinorUnits | null,
   locale: SupportedLocale = "id-ID",
-  currency: SupportedCurrency = "IDR",
+  currency: SupportedCurrency,
 ): string {
   const t = getStoreTranslator(locale);
   switch (policy) {
@@ -66,9 +65,9 @@ export function partialRedemptionPolicyDescription(
     case "single_use_forfeit":
       return t("redemption.descSingleUseForfeit");
     case "minimum_spend":
-      return minimumSpendIdr
+      return minimumSpendMinor
         ? t("redemption.descMinimumSpendWithAmount", {
-            amount: formatMoney(minimumSpendIdr, currency),
+            amount: formatMoney(minimumSpendMinor, currency),
           })
         : t("redemption.descMinimumSpendUnspecified");
     default: {

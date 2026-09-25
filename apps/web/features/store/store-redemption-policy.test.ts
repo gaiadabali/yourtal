@@ -17,15 +17,21 @@ describe("partialRedemptionPolicyLabel", () => {
 
 describe("partialRedemptionPolicyDescription", () => {
   it("explains that the remainder carries over as a balance", () => {
-    expect(partialRedemptionPolicyDescription("balance_carrying", null)).toMatch(/tersimpan/i);
+    expect(partialRedemptionPolicyDescription("balance_carrying", null, "id-ID", "IDR")).toMatch(
+      /tersimpan/i,
+    );
   });
 
   it("explains that the remainder is forfeited", () => {
-    expect(partialRedemptionPolicyDescription("single_use_forfeit", null)).toMatch(/hangus/i);
+    expect(partialRedemptionPolicyDescription("single_use_forfeit", null, "id-ID", "IDR")).toMatch(
+      /hangus/i,
+    );
   });
 
   it("states the minimum spend amount when the policy requires one", () => {
-    expect(partialRedemptionPolicyDescription("minimum_spend", rupiah(75_000))).toContain("75.000");
+    expect(
+      partialRedemptionPolicyDescription("minimum_spend", rupiah(75_000), "id-ID", "IDR"),
+    ).toContain("75.000");
   });
 });
 

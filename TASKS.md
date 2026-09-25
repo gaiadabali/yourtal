@@ -35,7 +35,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
+| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 31/32 | `██████████`  97% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 32/52 | `██████░░░░`  62% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **20/82** | **148/366** | `████░░░░░░`  40% |
+| **All** | | | **20/82** | **149/366** | `████░░░░░░`  41% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -679,7 +679,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - the public header and footer.
     
     (requested by C) Remove the business tab from the viewer shell.
-  - [ ] 3.5.d Move `(app)/page.tsx` to `(app)/home/page.tsx`. In the same merge, add these to `route-redirects.ts`: `/` → `/home` when signed in, and `/` → `/au` when signed out, until 11.1.a. — 🔄 slot 2 (1.7.c landed in 54835a8)
+  - [x] 3.5.d Move `(app)/page.tsx` to `(app)/home/page.tsx`. In the same merge, add these to `route-redirects.ts`: `/` → `/home` when signed in, and `/` → `/au` when signed out, until 11.1.a.
   - [x] 3.5.e **Check:** the feed holds at most 3 `<video>` elements after scrolling 20 items, and nothing links to `/business` from the viewer shell.
 - [ ] **3.6 Brand, gallery and visual tests** · needs: 3.4 — 🔄 slot 2
   - [x] 3.6.a Brand: the wordmark "YourTal" in Bricolage Grotesque 800, with the points coin glyph as the mark. Favicon, maskable icons and the web manifest. Today `/favicon.ico` returns 404.

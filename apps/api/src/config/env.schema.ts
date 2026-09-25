@@ -78,13 +78,19 @@ export const envSchema = z.object({
   /**
    * TASKS.md 1.2.d. `fake` runs `FakeLedgerClient`/`FakeVoucherClient`
    * against `platform.{ledger,voucher}_fake_*` — real semantics, no network
-   * call. `live` calls the real services over HTTP. Defaults to `fake`
-   * because the real routes are still 501s (4.1.b); 4.9.e is what refuses
+   * call. `live` calls the real services over HTTP, signed with
+   * `LEDGER_SERVICE_SECRET`. Defaults to `fake`; 4.9.e is what refuses
    * `fake` once `APP_ENV=staging`.
    */
   LEDGER_MODE: z.enum(["fake", "live"]).default("fake"),
   /** Only read when `LEDGER_MODE=live`. Loopback service name, never a public URL. */
-  LEDGER_BASE_URL: z.url().default("http://ledger:8080"),
+  LEDGER_BASE_URL: z.url().default("http://127.0.0.1:26910"),
+  /**
+   * The HMAC secret api and worker sign ledger calls with
+   * (services/ledger/internal/serviceauth, 4.1.a). At least 32 bytes, the
+   * ledger's own minimum. The default is the local stack's, never a real one.
+   */
+  LEDGER_SERVICE_SECRET: z.string().min(32).default("local-only-ledger-service-secret-not-real"),
   /** Only read when `LEDGER_MODE=live` (`VoucherInternalClient` shares the same switch). */
   VOUCHER_BASE_URL: z.url().default("http://voucher:8080"),
 

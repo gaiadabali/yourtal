@@ -89,6 +89,71 @@ func (q *Queries) CountRecentGrantsForUser(ctx context.Context, arg CountRecentG
 	return grants, err
 }
 
+const economyDaily = `-- name: EconomyDaily :many
+WITH days AS (
+  SELECT d::date AS day
+  FROM generate_series($4::date, $5::date, interval '1 day') AS d
+)
+SELECT days.day::date AS day,
+  (SELECT COALESCE(SUM(g.points), 0) FROM ledger.grant g
+    WHERE g.region = $1::text AND (g.created_at AT TIME ZONE $2::text)::date = days.day)::bigint AS points_issued,
+  (SELECT COALESCE(SUM(b.points), 0) FROM ledger.burn b
+    WHERE b.region = $1::text AND (b.created_at AT TIME ZONE $2::text)::date = days.day)::bigint AS points_redeemed,
+  (SELECT -COALESCE(SUM(e.amount_minor), 0) FROM ledger.entry e
+    WHERE e.account_id = $3::text
+      AND (e.created_at AT TIME ZONE $2::text)::date <= days.day)::bigint AS reserve_minor
+FROM days
+ORDER BY days.day
+`
+
+type EconomyDailyParams struct {
+	Region         string
+	Tz             string
+	ReserveAccount string
+	FromDay        pgtype.Date
+	ToDay          pgtype.Date
+}
+
+type EconomyDailyRow struct {
+	Day            pgtype.Date
+	PointsIssued   int64
+	PointsRedeemed int64
+	ReserveMinor   int64
+}
+
+// Per region-clock day: points granted, points burned, and the reserve's
+// natural balance at the end of the day (an asset, so -SUM).
+func (q *Queries) EconomyDaily(ctx context.Context, arg EconomyDailyParams) ([]EconomyDailyRow, error) {
+	rows, err := q.db.Query(ctx, economyDaily,
+		arg.Region,
+		arg.Tz,
+		arg.ReserveAccount,
+		arg.FromDay,
+		arg.ToDay,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []EconomyDailyRow
+	for rows.Next() {
+		var i EconomyDailyRow
+		if err := rows.Scan(
+			&i.Day,
+			&i.PointsIssued,
+			&i.PointsRedeemed,
+			&i.ReserveMinor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const findImbalancedTransfers = `-- name: FindImbalancedTransfers :many
 SELECT transfer_id, SUM(amount_minor)::text AS imbalance
 FROM ledger.entry

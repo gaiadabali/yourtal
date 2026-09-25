@@ -210,6 +210,11 @@ func (e *Engine) issue(
 			if err := queries.LockUserGrants(ctx, req.UserID); err != nil {
 				return fmt.Errorf("locking the user's grants: %w", err)
 			}
+			// The region's platform accounts exist before anything posts to
+			// them, even on a database nobody has bought or funded in yet.
+			if err := ensureChart(ctx, queries, e.region); err != nil {
+				return err
+			}
 			if err := e.checkCaps(ctx, queries, req, def, caps); err != nil {
 				return err
 			}

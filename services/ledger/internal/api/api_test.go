@@ -145,7 +145,9 @@ func TestTheLedgerRoutesEndToEnd(t *testing.T) {
 		campaign, alloc.AllocationID); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _, _ = s.owner.Exec(context.Background(), `DELETE FROM campaign.reward_config WHERE campaign_id = $1`, campaign) })
+	t.Cleanup(func() {
+		_, _ = s.owner.Exec(context.Background(), `DELETE FROM campaign.reward_config WHERE campaign_id = $1`, campaign)
+	})
 
 	var grant struct {
 		GrantID string `json:"grantId"`

@@ -1,6 +1,7 @@
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import type { ResultAsync } from "neverthrow";
 import { ResultAsync as ResultAsyncCtor, err, ok } from "neverthrow";
-import { ledgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
+import { ledgerError, ledgerErrorCodeSchema } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type {
   LockQuoteRequest,
@@ -50,59 +51,70 @@ import type {
   ProposeSettingInput,
   RegionSetting,
 } from "@yourtal/contracts/ledger-internal/settings";
+import type { AppDb } from "../persistence/drizzle-client";
+import * as settings from "./fake/fake-ledger-settings";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 
+/** The services allowed to sign a ledger call (services/ledger/internal/serviceauth). */
+export type LedgerCaller = "api" | "worker";
+
 /**
- * TASKS.md 1.2.d's HTTP half. Every method POSTs to the ledger service and
- * decodes its JSON response — real plumbing, but nothing on the other end
- * yet: `services/ledger/internal/api/routes.go` answers every route with a
- * 501 `notYetExposed` until 4.1 builds them and the HMAC service-auth 4.1.a
- * asks for. Until then this client is exercised only by `it.todo` cases in
- * `ledger-client.contract.spec.ts` (1.2.e) — `LEDGER_MODE=fake` is what
- * actually runs today.
+ * The live ledger client (1.2.d, 4.1.c). Every call is a POST signed the way
+ * `services/ledger/internal/serviceauth` verifies it: HMAC-SHA256 over
+ * timestamp, caller, nonce, method, path with query, and the body's SHA-256,
+ * newline-joined. A refusal the contract names comes back as its closed
+ * ledger-error code; any other failure rejects, because it is not a decision
+ * a caller can act on.
+ *
+ * Settings are not the ledger's to serve: they live in apps/api's own
+ * `platform.region_setting`, so they go straight to the same store the fake
+ * uses (1.2.f).
  */
 export class HttpLedgerClient implements LedgerInternalClient {
-  constructor(private readonly baseUrl: string) {}
+  constructor(
+    private readonly baseUrl: string,
+    private readonly secret: string,
+    private readonly db: AppDb,
+    private readonly caller: LedgerCaller = "api",
+  ) {}
+
+  /** The X-YourTal-Service-Signature header for one request. */
+  private sign(path: string, body: string): string {
+    const t = Math.floor(Date.now() / 1000);
+    const nonce = randomUUID();
+    const digest = createHash("sha256").update(body).digest("base64");
+    const mac = createHmac("sha256", this.secret)
+      .update([t, this.caller, nonce, "POST", path, digest].join("\n"))
+      .digest("hex");
+    return `t=${String(t)},c=${this.caller},n=${nonce},v1=${mac}`;
+  }
+
+  private async send(path: string, body: unknown): Promise<Response> {
+    const payload = JSON.stringify(body);
+    return fetch(`${this.baseUrl}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-yourtal-service-signature": this.sign(path, payload) },
+      body: payload,
+    });
+  }
 
   private post<T>(path: string, body: unknown): ResultAsync<T, LedgerError> {
     return new ResultAsyncCtor(
       (async () => {
-        const response = await fetch(`${this.baseUrl}${path}`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!response.ok) {
-          const problem: unknown = await response.json().catch(() => null);
-          const code =
-            problem !== null && typeof problem === "object" && "code" in problem
-              ? String((problem as Record<string, unknown>)["code"])
-              : "unknown";
-          return err(ledgerError("region_mismatch", `ledger service refused: ${code}`));
+        const response = await this.send(path, body);
+        if (response.ok) {
+          return ok((await response.json()) as T);
         }
-        return ok((await response.json()) as T);
+        const problem: unknown = await response.json().catch(() => null);
+        const refusal =
+          problem !== null && typeof problem === "object" ? (problem as Record<string, unknown>) : {};
+        const code = ledgerErrorCodeSchema.safeParse(refusal["code"]);
+        if (code.success) {
+          return err(ledgerError(code.data, String(refusal["message"] ?? code.data)));
+        }
+        throw new Error(`ledger ${path} answered ${String(response.status)}: ${JSON.stringify(problem)}`);
       })(),
     );
-  }
-
-  /**
-   * `getSettings`/`proposeSetting`/`approveSetting` (1.2.f) are plain
-   * `Promise<T>` in their own contract, not `ResultAsync` — see
-   * `ledger-internal-client.ts`'s class comment — so this rejects on
-   * failure rather than resolving to an `err(...)`, the ordinary fetch
-   * failure shape every other caller of a plain-Promise API already expects.
-   */
-  private async postPlain<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const problem: unknown = await response.json().catch(() => null);
-      throw new Error(`ledger service refused ${path}: ${JSON.stringify(problem)}`);
-    }
-    return (await response.json()) as T;
   }
 
   quote(request: QuoteRequest): ResultAsync<Quote, LedgerError> {
@@ -220,14 +232,14 @@ export class HttpLedgerClient implements LedgerInternalClient {
   // --- settings (1.2.f/1.2.g) ---
 
   getSettings(region: Region): Promise<readonly RegionSetting[]> {
-    return this.postPlain("/v1/settings/list", { region });
+    return settings.getSettings(this.db, region);
   }
 
   proposeSetting(input: ProposeSettingInput): Promise<RegionSetting> {
-    return this.postPlain("/v1/settings/propose", input);
+    return settings.proposeSetting(this.db, input);
   }
 
   approveSetting(input: ApproveSettingInput): Promise<RegionSetting> {
-    return this.postPlain("/v1/settings/approve", input);
+    return settings.approveSetting(this.db, input);
   }
 }

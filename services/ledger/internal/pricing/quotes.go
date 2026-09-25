@@ -23,9 +23,10 @@ var (
 	ErrQuoteExpired = errors.New("pricing: the quote has expired")
 	// ErrQuoteNotFound — no such quote.
 	ErrQuoteNotFound = errors.New("pricing: no such quote")
-	// ErrRegionMismatch — a currency that is not the region's, or a listing
-	// repriced into the other region.
+	// ErrRegionMismatch — a listing repriced into the other region.
 	ErrRegionMismatch = errors.New("pricing: region mismatch")
+	// ErrCurrencyMismatch — a currency that is not the region's.
+	ErrCurrencyMismatch = errors.New("pricing: currency is not the region's")
 )
 
 // StoredQuote is a quote as the contract returns it.
@@ -44,7 +45,7 @@ type StoredQuote struct {
 // stores the quote.
 func (e *Engine) NewQuote(ctx context.Context, region ledger.Region, currency string, settlementMinor int64) (StoredQuote, error) {
 	if currency != string(region.Currency()) {
-		return StoredQuote{}, fmt.Errorf("%w: %s in %s", ErrRegionMismatch, currency, region)
+		return StoredQuote{}, fmt.Errorf("%w: %s in %s", ErrCurrencyMismatch, currency, region)
 	}
 	q := sqlcgen.New(e.pool)
 	points, rateID, err := priceNow(ctx, q, currency, settlementMinor)
@@ -98,7 +99,7 @@ type ListingPrice struct {
 // from its caller. A listing never moves region.
 func (e *Engine) PriceListing(ctx context.Context, listingID string, region ledger.Region, currency string, settlementMinor int64) (ListingPrice, error) {
 	if currency != string(region.Currency()) {
-		return ListingPrice{}, fmt.Errorf("%w: %s in %s", ErrRegionMismatch, currency, region)
+		return ListingPrice{}, fmt.Errorf("%w: %s in %s", ErrCurrencyMismatch, currency, region)
 	}
 	q := sqlcgen.New(e.pool)
 	points, rateID, err := priceNow(ctx, q, currency, settlementMinor)

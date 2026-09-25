@@ -20,6 +20,7 @@ function configFor(nodeEnv: AppConfig["nodeEnv"]): AppConfig {
       mode: "fake" as const,
       baseUrl: "http://127.0.0.1:26312",
       voucherBaseUrl: "http://127.0.0.1:26313",
+      serviceSecret: "test-only-ledger-service-secret-not-real",
     },
     teenAccounts: false,
   };

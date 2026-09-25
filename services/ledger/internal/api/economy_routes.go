@@ -6,10 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/yourtal/services/ledger/internal/httpx"
+	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
@@ -80,7 +83,7 @@ func (a *API) proposeRate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.Currency != string(region.Currency()) {
-		a.fail(w, fmt.Errorf("%w: %s in %s", pricing.ErrRegionMismatch, body.Currency, region))
+		a.fail(w, fmt.Errorf("%w: %s in %s", pricing.ErrCurrencyMismatch, body.Currency, region))
 		return
 	}
 	current, err := sqlcgen.New(a.pool).GetBackingRateInForce(r.Context(), body.Currency)
@@ -140,4 +143,45 @@ func randomHex() string {
 	var b [12]byte
 	_, _ = rand.Read(b[:])
 	return hex.EncodeToString(b[:])
+}
+
+// maxEconomyDays bounds one economyDaily request.
+const maxEconomyDays = 4_018 // eleven years
+
+func (a *API) economyDaily(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Region string `json:"region"`
+		From   string `json:"from"`
+		To     string `json:"to"`
+	}
+	if !a.decode(w, r, &body) {
+		return
+	}
+	_, region, ok := a.engineFor(w, body.Region)
+	if !ok {
+		return
+	}
+	from, errFrom := time.Parse(time.DateOnly, body.From)
+	to, errTo := time.Parse(time.DateOnly, body.To)
+	if errFrom != nil || errTo != nil || to.Before(from) || to.Sub(from) > maxEconomyDays*24*time.Hour {
+		a.fail(w, fmt.Errorf("%w: from and to are dates, from before to, at most %d days apart", errBadRequest, maxEconomyDays))
+		return
+	}
+	rows, err := sqlcgen.New(a.pool).EconomyDaily(r.Context(), sqlcgen.EconomyDailyParams{
+		Region: string(region), Tz: region.TimeZone(),
+		ReserveAccount: ledger.PlatformAccountID(region, ledger.RoleReserve),
+		FromDay:        pgtype.Date{Time: from, Valid: true}, ToDay: pgtype.Date{Time: to, Valid: true},
+	})
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+	days := make([]map[string]any, 0, len(rows))
+	for _, row := range rows {
+		days = append(days, map[string]any{
+			"date": row.Day.Time.Format(time.DateOnly), "region": body.Region,
+			"pointsIssued": row.PointsIssued, "pointsRedeemed": row.PointsRedeemed, "reserveMinor": row.ReserveMinor,
+		})
+	}
+	httpx.WriteJSON(w, a.logger, http.StatusOK, days)
 }

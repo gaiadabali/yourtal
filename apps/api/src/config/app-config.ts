@@ -21,6 +21,7 @@ export interface AppConfig {
   readonly ledger: {
     readonly mode: Env["LEDGER_MODE"];
     readonly baseUrl: string;
+    readonly serviceSecret: string;
     readonly voucherBaseUrl: string;
   };
   /** 1.4.b, F4 — default false everywhere; only 12.1 turns it on, for staging. */
@@ -46,6 +47,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
     ledger: {
       mode: env.LEDGER_MODE,
       baseUrl: env.LEDGER_BASE_URL,
+      serviceSecret: env.LEDGER_SERVICE_SECRET,
       voucherBaseUrl: env.VOUCHER_BASE_URL,
     },
     teenAccounts: env.TEEN_ACCOUNTS,

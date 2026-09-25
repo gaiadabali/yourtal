@@ -1,17 +1,85 @@
 import { randomUUID } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { sql } from "drizzle-orm";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { testDb } from "../testing/test-db";
 import { FakeLedgerClient } from "./fake-ledger-client";
+import { HttpLedgerClient } from "./http-ledger-client";
+import type { LedgerInternalClient } from "./ledger-internal-client";
 
 /**
- * TASKS.md 1.2.e. Runs against `FakeLedgerClient` today; the `it.todo` cases
- * are exactly the ones 4.1 makes real by pointing `HttpLedgerClient` at a
- * live `services/ledger` — see that file's own header for why it cannot be
- * exercised yet.
+ * TASKS.md 1.2.e and 4.1.d: one spec, two clients. `pnpm check` runs it
+ * against `FakeLedgerClient`; `scripts/ledger-contract-live.mjs` runs the same
+ * cases against a live `services/ledger` by setting
+ * `LEDGER_CONTRACT_LIVE_URL`, which picks the signed `HttpLedgerClient`.
  */
 const db = testDb();
-const client = new FakeLedgerClient(db);
+const liveUrl = process.env["LEDGER_CONTRACT_LIVE_URL"];
+const client: LedgerInternalClient =
+  liveUrl === undefined
+    ? new FakeLedgerClient(db)
+    : new HttpLedgerClient(liveUrl, process.env["LEDGER_SERVICE_SECRET"] ?? "local-only-ledger-service-secret-not-real", db);
+
+/** An operation whose ledger task has not landed yet: `it.todo` against live (4.1.d). */
+const itUnlessLive = liveUrl === undefined ? it : it.todo;
+
+// Marketing-funded grants (streak, receipt, goodwill) are backed by marketing
+// cash at issue (K6), so the region has some before any test grants one.
+beforeAll(async () => {
+  for (const region of ["ID", "AU"] as const) {
+    const funded = await client.fundMarketing({
+      region,
+      amountMinor: toMinorUnits(region === "ID" ? 50_000_000 : 500_000),
+      proposedBy: "staff-1",
+      approvedBy: "staff-2",
+    });
+    expect(funded.isOk()).toBe(true);
+  }
+});
+
+/** A listing the ledger has priced, so a burn can read its S and region. */
+async function pricedListing(): Promise<string> {
+  const listingId = randomUUID();
+  const priced = await client.priceListing({
+    listingId,
+    region: "ID",
+    currency: "IDR",
+    settlementMinor: toMinorUnits(600),
+  });
+  expect(priced.isOk()).toBe(true);
+  return listingId;
+}
+
+/**
+ * A campaign that pays: a seeded campaign given a reward config drawing on a
+ * purchased ID allocation. The studio (C) writes reward configs; the fake
+ * never reads them, the live ledger does.
+ */
+async function rewardedCampaign(): Promise<string> {
+  const allocation = (
+    await client.purchasePoints({
+      businessId: randomUUID(),
+      region: "ID",
+      currency: "IDR",
+      points: toPoints(100_000),
+      paidMinor: toMinorUnits(900_000),
+      idempotencyKey: randomUUID(),
+    })
+  )._unsafeUnwrap();
+  const rows = await db.execute<{ id: string }>(sql`
+    SELECT c.id::text AS id FROM campaign.campaigns c
+      LEFT JOIN campaign.reward_config r ON r.campaign_id = c.id
+     WHERE r.campaign_id IS NULL ORDER BY random() LIMIT 1
+  `);
+  const campaignId = rows.rows[0]?.id ?? randomUUID();
+  await db.execute(sql`
+    INSERT INTO campaign.reward_config
+      (campaign_id, allocation_id, funder_type, max_points_for_campaign, reward_points_per_completion, accuracy_bonus_points)
+    VALUES (${campaignId}::uuid, ${allocation.allocationId}, 'partner', 100000, 500, 100)
+    ON CONFLICT (campaign_id) DO NOTHING
+  `);
+  return campaignId;
+}
 
 describe("pricing", () => {
   it("quotes ceil(S * 1e6 / B) and expires in 15 minutes", async () => {
@@ -110,15 +178,15 @@ describe("funding and allocations", () => {
         businessId,
         region: "ID",
         currency: "IDR",
-        points: toPoints(100),
-        paidMinor: toMinorUnits(900),
+        points: toPoints(1_000),
+        paidMinor: toMinorUnits(9_000),
         idempotencyKey: randomUUID(),
       })
     )._unsafeUnwrap();
 
     const held = await client.hold({
       allocationId: allocation.allocationId,
-      points: toPoints(100),
+      points: toPoints(1_000),
       sagaId: randomUUID(),
     });
     expect(held._unsafeUnwrap().state).toBe("held");
@@ -138,21 +206,21 @@ describe("funding and allocations", () => {
         businessId,
         region: "ID",
         currency: "IDR",
-        points: toPoints(50),
-        paidMinor: toMinorUnits(450),
+        points: toPoints(1_000),
+        paidMinor: toMinorUnits(9_000),
         idempotencyKey: randomUUID(),
       })
     )._unsafeUnwrap();
     const held = (
       await client.hold({
         allocationId: allocation.allocationId,
-        points: toPoints(50),
+        points: toPoints(1_000),
         sagaId: randomUUID(),
       })
     )._unsafeUnwrap();
     expect((await client.release(held.holdId)).isOk()).toBe(true);
     const after = (await client.getAllocation(allocation.allocationId))._unsafeUnwrap();
-    expect(after.remainingPoints).toBe(50);
+    expect(after.remainingPoints).toBe(1_000);
   });
 
   it("listAllocations returns every allocation for a business", async () => {
@@ -174,9 +242,20 @@ describe("funding and allocations", () => {
   });
 
   it("campaignSpend and returnGrant are callable", async () => {
-    const spend = await client.campaignSpend(randomUUID());
+    const campaignId = await rewardedCampaign();
+    const grant = (
+      await client.grantReward({
+        campaignId,
+        userId: randomUUID(),
+        region: "ID",
+        points: toPoints(500),
+        trustTier: 3,
+        idempotencyKey: randomUUID(),
+      })
+    )._unsafeUnwrap();
+    const spend = await client.campaignSpend(campaignId);
     expect(spend.isOk()).toBe(true);
-    const returned = await client.returnGrant({ grantId: randomUUID() });
+    const returned = await client.returnGrant({ grantId: grant.grantId });
     expect(returned.isOk()).toBe(true);
   });
 });
@@ -185,7 +264,7 @@ describe("earning and spending", () => {
   it("a reward grant goes to pending with an unlock time by tier, then becomes available", async () => {
     const userId = randomUUID();
     const granted = await client.grantReward({
-      campaignId: randomUUID(),
+      campaignId: await rewardedCampaign(),
       userId,
       region: "ID",
       points: toPoints(500),
@@ -263,7 +342,7 @@ describe("earning and spending", () => {
 
     const tooMuch = await client.burnForVoucher({
       userId,
-      listingId: randomUUID(),
+      listingId: await pricedListing(),
       points: toPoints(200),
       sagaId: randomUUID(),
     });
@@ -272,7 +351,7 @@ describe("earning and spending", () => {
     const sagaId = randomUUID();
     const burned = await client.burnForVoucher({
       userId,
-      listingId: randomUUID(),
+      listingId: await pricedListing(),
       points: toPoints(60),
       sagaId,
     });
@@ -304,7 +383,7 @@ describe("earning and spending", () => {
       (
         await client.burnForVoucher({
           userId,
-          listingId: randomUUID(),
+          listingId: await pricedListing(),
           points: toPoints(100),
           sagaId,
         })
@@ -319,7 +398,7 @@ describe("earning and spending", () => {
 });
 
 describe("users", () => {
-  it("escrow holds points out of available, and releaseEscrow gives them back", async () => {
+  itUnlessLive("escrow holds points out of available, and releaseEscrow gives them back", async () => {
     const userId = randomUUID();
     expect(
       (
@@ -360,7 +439,7 @@ describe("users", () => {
       (
         await client.burnForVoucher({
           userId,
-          listingId: randomUUID(),
+          listingId: await pricedListing(),
           points: toPoints(10),
           sagaId: randomUUID(),
         })

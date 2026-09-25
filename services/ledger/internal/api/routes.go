@@ -78,14 +78,15 @@ func (a *API) Routes() chi.Router {
 	r.Post("/wallet/history", a.history)
 
 	r.Post("/economy/coverage", a.coverage)
+	r.Post("/economy/daily", a.economyDaily)
 	r.Post("/economy/rates/propose", a.proposeRate)
 	r.Post("/economy/rates/approve", a.approveRate)
 	r.Post("/economy/marketing/fund", a.fundMarketing)
 
 	// Not the ledger's yet: escrow waits for its task, statements and
-	// payouts for 10.1, and economyDaily for the staff reports. Settings are
+	// payouts for 10.1. Settings are
 	// apps/api's own store (1.2.f); the ledger only reads them.
-	for _, path := range []string{"/escrow", "/escrow/release", "/economy/daily", "/economy/statements",
+	for _, path := range []string{"/escrow", "/escrow/release", "/economy/statements",
 		"/economy/payouts/approve", "/settings/list", "/settings/propose", "/settings/approve"} {
 		r.Post(path, a.notImplemented)
 	}
@@ -94,7 +95,7 @@ func (a *API) Routes() chi.Router {
 
 func (a *API) notImplemented(w http.ResponseWriter, _ *http.Request) {
 	httpx.WriteError(w, a.logger, http.StatusNotImplemented, "api_error", "not_implemented",
-		"this ledger-internal operation is not served by the ledger yet")
+		"not implemented: this ledger-internal operation is not served by the ledger yet")
 }
 
 // decode reads a JSON body into dst, refusing unknown fields so a caller's
@@ -139,6 +140,14 @@ var contractCodes = []struct {
 	{reward.ErrAlreadyGranted, "already_granted"},
 	{ledger.ErrIdempotencyConflict, "idempotency_conflict"},
 	{ledger.ErrMixedCurrency, "currency_mismatch"},
+	// An unknown quote is answered like an expired one: either way the
+	// caller's next step is a fresh quote.
+	{pricing.ErrQuoteNotFound, "quote_expired"},
+	// The closed enum has no two-person code; the contract answers a
+	// self-approval with already_granted, as its fake does.
+	{pricing.ErrSameApprover, "already_granted"},
+	{reward.ErrSameApprover, "already_granted"},
+	{pricing.ErrCurrencyMismatch, "currency_mismatch"},
 }
 
 // fail answers an engine error: a contract code as 409, a missing thing as

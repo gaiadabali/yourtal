@@ -315,3 +315,21 @@ FROM campaign.reward_config WHERE campaign_id = $1;
 SELECT r.id, r.currency, r.micros_per_point, r.issue_price_micros_per_point, r.set_by,
        a.approved_by
 FROM ledger.backing_rate r LEFT JOIN ledger.backing_rate_approval a ON a.rate_id = r.id WHERE r.id = $1;
+
+-- name: EconomyDaily :many
+-- Per region-clock day: points granted, points burned, and the reserve's
+-- natural balance at the end of the day (an asset, so -SUM).
+WITH days AS (
+  SELECT d::date AS day
+  FROM generate_series(sqlc.arg(from_day)::date, sqlc.arg(to_day)::date, interval '1 day') AS d
+)
+SELECT days.day::date AS day,
+  (SELECT COALESCE(SUM(g.points), 0) FROM ledger.grant g
+    WHERE g.region = sqlc.arg(region)::text AND (g.created_at AT TIME ZONE sqlc.arg(tz)::text)::date = days.day)::bigint AS points_issued,
+  (SELECT COALESCE(SUM(b.points), 0) FROM ledger.burn b
+    WHERE b.region = sqlc.arg(region)::text AND (b.created_at AT TIME ZONE sqlc.arg(tz)::text)::date = days.day)::bigint AS points_redeemed,
+  (SELECT -COALESCE(SUM(e.amount_minor), 0) FROM ledger.entry e
+    WHERE e.account_id = sqlc.arg(reserve_account)::text
+      AND (e.created_at AT TIME ZONE sqlc.arg(tz)::text)::date <= days.day)::bigint AS reserve_minor
+FROM days
+ORDER BY days.day;

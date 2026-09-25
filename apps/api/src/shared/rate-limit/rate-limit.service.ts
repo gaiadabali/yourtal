@@ -113,7 +113,10 @@ const KEY_PREFIX = "yt:ratelimit";
 export class RateLimitService {
   private readonly prefix: string;
 
-  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis, namespace = "") {
+  constructor(
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    namespace = "",
+  ) {
     this.prefix = namespace === "" ? KEY_PREFIX : `${KEY_PREFIX}:${namespace}`;
   }
 

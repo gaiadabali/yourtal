@@ -76,6 +76,13 @@ func writeAuthorizeError(w http.ResponseWriter, logger *slog.Logger, err error) 
 		// threshold makes the voucher usable rather than insecure.
 		httpx.WriteError(w, logger, http.StatusPaymentRequired,
 			"card_error", "below_minimum_spend", err.Error())
+	case errors.Is(err, ErrCurrencyMismatch):
+		// A malformed request, not an enumeration signal: the merchant's own
+		// integration chose the request currency, so naming the mismatch
+		// (and which currency the voucher actually is) discloses nothing a
+		// prober could use — same reasoning as below_minimum_spend.
+		httpx.WriteError(w, logger, http.StatusBadRequest,
+			"invalid_request_error", "currency_mismatch", err.Error())
 	case errors.Is(err, ErrDuplicateOrder):
 		// About the merchant's OWN order reference, which they chose — not
 		// about the voucher, so distinguishing it costs nothing.
@@ -93,10 +100,10 @@ func writeAuthorizeError(w http.ResponseWriter, logger *slog.Logger, err error) 
 	case errors.Is(err, ErrRefused):
 		// Unknown code, wrong merchant, insufficient value, inactive
 		// voucher, an un-thresholded policy refusal: one status, one code,
-		// one message, always. `err.Error()` is deliberately NOT used —
-		// `check()` wraps ErrRefused with extra detail in its currency
-		// branch, and passing that through would reopen the exact oracle
-		// `voucher.redemption_attempt` exists to keep closed. Only the
+		// one message, always. `err.Error()` is deliberately NOT used, even
+		// though nothing currently wraps ErrRefused with extra detail —
+		// passing a wrapped message through here would reopen the exact
+		// oracle `voucher.redemption_attempt` exists to keep closed. Only the
 		// sentinel's own fixed text ever leaves this branch.
 		httpx.WriteError(w, logger, http.StatusPaymentRequired,
 			"card_error", "authorization_refused", ErrRefused.Error())

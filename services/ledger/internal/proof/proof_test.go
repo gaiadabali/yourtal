@@ -229,7 +229,7 @@ func TestRunPagesRatherThanMerelyLogging(t *testing.T) {
 	checker, pool := newChecker(t, alerter)
 	ctx := context.Background()
 
-	super, err := pgxpool.New(ctx, "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal")
+	super, err := pgxpool.New(ctx, superuserURL())
 	if err != nil {
 		t.Fatalf("superuser connect: %v", err)
 	}
@@ -260,7 +260,7 @@ func TestAFailedPageIsItselfAnIncident(t *testing.T) {
 	checker, pool := newChecker(t, alerter)
 	ctx := context.Background()
 
-	super, err := pgxpool.New(ctx, "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal")
+	super, err := pgxpool.New(ctx, superuserURL())
 	if err != nil {
 		t.Fatalf("superuser connect: %v", err)
 	}
@@ -327,7 +327,7 @@ func writeTransfer(t *testing.T, pool *pgxpool.Pool, amount int64) string {
 func superuser(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	pool, err := pgxpool.New(context.Background(),
-		"postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal")
+		superuserURL())
 	if err != nil {
 		t.Fatalf("superuser connect: %v", err)
 	}
@@ -450,4 +450,13 @@ func tamperBalance(t *testing.T, ctx context.Context, super *pgxpool.Pool, trans
 			t.Errorf("restore ran and did NOT balance transfer %s: entries sum to %d, want 0", transferID, sum)
 		}
 	}
+}
+
+// superuserURL follows DATABASE_OWNER_URL so the tampering happens in the
+// same database the checker reads (a slot or test database, not always yourtal).
+func superuserURL() string {
+	if url := os.Getenv("DATABASE_OWNER_URL"); url != "" {
+		return url
+	}
+	return "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal"
 }

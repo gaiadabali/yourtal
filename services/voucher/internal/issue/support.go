@@ -98,7 +98,7 @@ func (m *Minter) transition(
 			To:             to,
 			Reason:         reason,
 			Owner:          owner,
-			RemainingMinor: current.RemainingValueIdr,
+			RemainingMinor: current.RemainingValueMinor,
 			Version:        current.Version,
 			EventType:      eventType,
 			Detail:         chain.Detail("from", current.State, "to", string(to)),
@@ -149,7 +149,7 @@ func Move(
 		State:             string(req.To),
 		VoidReason:        voidReason,
 		Version:           req.Version,
-		RemainingValueIdr: req.RemainingMinor,
+		RemainingValueMinor: req.RemainingMinor,
 		OwnerID:           owner,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {

@@ -169,7 +169,7 @@ func (f *fixture) remainingOf(t *testing.T, voucherID uuid.UUID) int64 {
 	t.Helper()
 	var remaining int64
 	if err := f.pool.QueryRow(context.Background(),
-		`SELECT remaining_value_idr FROM voucher.vouchers WHERE id = $1`,
+		`SELECT remaining_value_minor FROM voucher.vouchers WHERE id = $1`,
 		voucherID).Scan(&remaining); err != nil {
 		t.Fatalf("reading remaining value: %v", err)
 	}

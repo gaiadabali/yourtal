@@ -14,7 +14,8 @@ import (
 const countFailedAttemptsSince = `-- name: CountFailedAttemptsSince :one
 SELECT COUNT(*)::bigint AS failures
 FROM voucher.redemption_attempt
-WHERE merchant_id = $1 AND outcome <> 'authorized' AND occurred_at >= $2
+WHERE merchant_id = $1 AND outcome NOT IN ('authorized', 'currency_mismatch')
+  AND occurred_at >= $2
 `
 
 type CountFailedAttemptsSinceParams struct {
@@ -24,6 +25,13 @@ type CountFailedAttemptsSinceParams struct {
 
 // docs/09 section 10: "repeated invalid codes from one merchant is THE
 // canonical signal of a compromised key or an enumeration attempt."
+//
+// `currency_mismatch` is excluded alongside `authorized`: it means the code
+// was real, belonged to this merchant, and was otherwise redeemable — the
+// caller just sent the wrong currency on the request. That is a client-side
+// integration bug, not a signal of a compromised key or an enumeration
+// attempt, so counting it toward the throttle would rate-limit a merchant
+// whose integration has a bug rather than one who is probing codes.
 func (q *Queries) CountFailedAttemptsSince(ctx context.Context, arg CountFailedAttemptsSinceParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countFailedAttemptsSince, arg.MerchantID, arg.OccurredAt)
 	var failures int64

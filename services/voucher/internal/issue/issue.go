@@ -226,13 +226,18 @@ func (m *Minter) mintOne(
 		MerchantID:              listing.merchantID,
 		MerchantName:            listing.merchantName,
 		Title:                   listing.title,
-		FaceValueIdr:            batch.FaceValueMinor,
+		FaceValueMinor:          batch.FaceValueMinor,
 		PartialRedemptionPolicy: batch.PartialRedemptionPolicy,
-		MinimumSpendIdr:         batch.MinimumSpendMinor,
+		MinimumSpendMinor:       batch.MinimumSpendMinor,
 		Transferable:            batch.Transferable,
 		ExpiresAt:               batch.ExpiresAt,
 		LocationID:              listing.locationID,
 		BatchID:                 batch.ID,
+		// The batch's own currency, carried from the listing at RequestBatch
+		// time (InsertBatch's caller reads it off the listing row) — a
+		// voucher is denominated in whatever its batch was, not re-derived
+		// from the listing again at mint time.
+		Currency: batch.Currency,
 	}); err != nil {
 		return "", fmt.Errorf("inserting voucher %s: %w", voucherID, err)
 	}

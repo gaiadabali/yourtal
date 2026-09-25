@@ -51,14 +51,19 @@ UPDATE voucher.batch SET state = 'minted', manifest_sha256 = $2
 -- until allocation. `vouchers_owner_iff_issued` ties the two facts, so a
 -- minted row that named an owner would be refused.
 --
--- `remaining_value_idr` is `$7` a second time rather than its own parameter.
--- A freshly minted voucher's remaining value IS its face value, and passing
--- them separately would let a caller mint one already partly spent.
+-- `remaining_value_minor` is `$7` a second time rather than its own
+-- parameter. A freshly minted voucher's remaining value IS its face value,
+-- and passing them separately would let a caller mint one already partly
+-- spent.
+--
+-- `currency` ($13) is the batch's currency (batch.currency, itself carried
+-- from the listing at RequestBatch time) — a voucher is denominated in
+-- whatever its batch was, not re-derived at mint time.
 INSERT INTO voucher.vouchers
-  (id, listing_id, merchant_id, merchant_name, title, face_value_idr,
-   remaining_value_idr, partial_redemption_policy, minimum_spend_idr, transferable,
-   issued_at, expires_at, location_id, state, batch_id)
-VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', $12);
+  (id, listing_id, merchant_id, merchant_name, title, face_value_minor,
+   remaining_value_minor, partial_redemption_policy, minimum_spend_minor, transferable,
+   issued_at, expires_at, location_id, state, batch_id, currency)
+VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', $12, $13);
 
 -- name: InsertCodeCustody :exec
 INSERT INTO voucher.code_custody
@@ -93,9 +98,9 @@ FROM voucher.code_custody WHERE voucher_id = $1;
 -- code is not owned by a merchant, a voucher's REMAINING VALUE is, and that
 -- is what `check()` compares.
 SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title,
-       v.face_value_idr, v.remaining_value_idr, v.partial_redemption_policy,
-       v.minimum_spend_idr, v.transferable, v.issued_at, v.expires_at,
-       v.location_id, v.state, v.void_reason, v.batch_id, v.version
+       v.face_value_minor, v.remaining_value_minor, v.partial_redemption_policy,
+       v.minimum_spend_minor, v.transferable, v.issued_at, v.expires_at,
+       v.location_id, v.state, v.void_reason, v.batch_id, v.version, v.currency
 FROM voucher.vouchers v
 JOIN voucher.code_custody c ON c.voucher_id = v.id
 WHERE c.code_hash = $1;
@@ -110,10 +115,10 @@ WHERE c.code_hash = $1;
 -- `GetAuthorizationForOrder`; allocate.go's transition reads it for a
 -- voucher id the saga itself is moving. None of these are "look up any
 -- voucher by id for a caller who only supplied the id."
-SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_idr,
-       remaining_value_idr, partial_redemption_policy, minimum_spend_idr,
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
        transferable, issued_at, expires_at, location_id, state, void_reason,
-       batch_id, version
+       batch_id, version, currency
 FROM voucher.vouchers WHERE id = $1;
 
 -- name: TransitionVoucher :one
@@ -132,14 +137,14 @@ FROM voucher.vouchers WHERE id = $1;
 UPDATE voucher.vouchers
    SET state = $2,
        void_reason = $3,
-       remaining_value_idr = $5,
+       remaining_value_minor = $5,
        -- COALESCE, so a transition that is not an allocation leaves the
        -- owner alone. Passing the current owner back in would make every
        -- caller responsible for not accidentally re-owning the voucher.
        owner_id = COALESCE($6, owner_id),
        version = version + 1
  WHERE id = $1 AND version = $4
-RETURNING id, state, void_reason, remaining_value_idr, owner_id, version;
+RETURNING id, state, void_reason, remaining_value_minor, owner_id, version;
 
 -- name: InsertEvent :exec
 INSERT INTO voucher.event

@@ -96,9 +96,9 @@ func (q *Queries) CompleteMinting(ctx context.Context, arg CompleteMintingParams
 
 const findVoucherByCodeHash = `-- name: FindVoucherByCodeHash :one
 SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title,
-       v.face_value_idr, v.remaining_value_idr, v.partial_redemption_policy,
-       v.minimum_spend_idr, v.transferable, v.issued_at, v.expires_at,
-       v.location_id, v.state, v.void_reason, v.batch_id, v.version
+       v.face_value_minor, v.remaining_value_minor, v.partial_redemption_policy,
+       v.minimum_spend_minor, v.transferable, v.issued_at, v.expires_at,
+       v.location_id, v.state, v.void_reason, v.batch_id, v.version, v.currency
 FROM voucher.vouchers v
 JOIN voucher.code_custody c ON c.voucher_id = v.id
 WHERE c.code_hash = $1
@@ -127,10 +127,10 @@ func (q *Queries) FindVoucherByCodeHash(ctx context.Context, codeHash string) (V
 		&i.MerchantID,
 		&i.MerchantName,
 		&i.Title,
-		&i.FaceValueIdr,
-		&i.RemainingValueIdr,
+		&i.FaceValueMinor,
+		&i.RemainingValueMinor,
 		&i.PartialRedemptionPolicy,
-		&i.MinimumSpendIdr,
+		&i.MinimumSpendMinor,
 		&i.Transferable,
 		&i.IssuedAt,
 		&i.ExpiresAt,
@@ -139,6 +139,7 @@ func (q *Queries) FindVoucherByCodeHash(ctx context.Context, codeHash string) (V
 		&i.VoidReason,
 		&i.BatchID,
 		&i.Version,
+		&i.Currency,
 	)
 	return i, err
 }
@@ -265,10 +266,10 @@ func (q *Queries) GetListingTerms(ctx context.Context, id pgtype.UUID) (GetListi
 }
 
 const getVoucher = `-- name: GetVoucher :one
-SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_idr,
-       remaining_value_idr, partial_redemption_policy, minimum_spend_idr,
+SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
+       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
        transferable, issued_at, expires_at, location_id, state, void_reason,
-       batch_id, version
+       batch_id, version, currency
 FROM voucher.vouchers WHERE id = $1
 `
 
@@ -291,10 +292,10 @@ func (q *Queries) GetVoucher(ctx context.Context, id pgtype.UUID) (VoucherVouche
 		&i.MerchantID,
 		&i.MerchantName,
 		&i.Title,
-		&i.FaceValueIdr,
-		&i.RemainingValueIdr,
+		&i.FaceValueMinor,
+		&i.RemainingValueMinor,
 		&i.PartialRedemptionPolicy,
-		&i.MinimumSpendIdr,
+		&i.MinimumSpendMinor,
 		&i.Transferable,
 		&i.IssuedAt,
 		&i.ExpiresAt,
@@ -303,6 +304,7 @@ func (q *Queries) GetVoucher(ctx context.Context, id pgtype.UUID) (VoucherVouche
 		&i.VoidReason,
 		&i.BatchID,
 		&i.Version,
+		&i.Currency,
 	)
 	return i, err
 }
@@ -410,10 +412,10 @@ func (q *Queries) InsertEvent(ctx context.Context, arg InsertEventParams) error 
 
 const insertVoucher = `-- name: InsertVoucher :exec
 INSERT INTO voucher.vouchers
-  (id, listing_id, merchant_id, merchant_name, title, face_value_idr,
-   remaining_value_idr, partial_redemption_policy, minimum_spend_idr, transferable,
-   issued_at, expires_at, location_id, state, batch_id)
-VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', $12)
+  (id, listing_id, merchant_id, merchant_name, title, face_value_minor,
+   remaining_value_minor, partial_redemption_policy, minimum_spend_minor, transferable,
+   issued_at, expires_at, location_id, state, batch_id, currency)
+VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', $12, $13)
 `
 
 type InsertVoucherParams struct {
@@ -422,22 +424,28 @@ type InsertVoucherParams struct {
 	MerchantID              pgtype.UUID
 	MerchantName            string
 	Title                   string
-	FaceValueIdr            int64
+	FaceValueMinor          int64
 	PartialRedemptionPolicy string
-	MinimumSpendIdr         *int64
+	MinimumSpendMinor       *int64
 	Transferable            bool
 	ExpiresAt               pgtype.Timestamptz
 	LocationID              pgtype.UUID
 	BatchID                 pgtype.UUID
+	Currency                string
 }
 
 // No `owner_id`: a minted voucher belongs to nobody, and the column is NULL
 // until allocation. `vouchers_owner_iff_issued` ties the two facts, so a
 // minted row that named an owner would be refused.
 //
-// `remaining_value_idr` is `$7` a second time rather than its own parameter.
-// A freshly minted voucher's remaining value IS its face value, and passing
-// them separately would let a caller mint one already partly spent.
+// `remaining_value_minor` is `$7` a second time rather than its own
+// parameter. A freshly minted voucher's remaining value IS its face value,
+// and passing them separately would let a caller mint one already partly
+// spent.
+//
+// `currency` ($13) is the batch's currency (batch.currency, itself carried
+// from the listing at RequestBatch time) — a voucher is denominated in
+// whatever its batch was, not re-derived at mint time.
 func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) error {
 	_, err := q.db.Exec(ctx, insertVoucher,
 		arg.ID,
@@ -445,13 +453,14 @@ func (q *Queries) InsertVoucher(ctx context.Context, arg InsertVoucherParams) er
 		arg.MerchantID,
 		arg.MerchantName,
 		arg.Title,
-		arg.FaceValueIdr,
+		arg.FaceValueMinor,
 		arg.PartialRedemptionPolicy,
-		arg.MinimumSpendIdr,
+		arg.MinimumSpendMinor,
 		arg.Transferable,
 		arg.ExpiresAt,
 		arg.LocationID,
 		arg.BatchID,
+		arg.Currency,
 	)
 	return err
 }
@@ -576,32 +585,32 @@ const transitionVoucher = `-- name: TransitionVoucher :one
 UPDATE voucher.vouchers
    SET state = $2,
        void_reason = $3,
-       remaining_value_idr = $5,
+       remaining_value_minor = $5,
        -- COALESCE, so a transition that is not an allocation leaves the
        -- owner alone. Passing the current owner back in would make every
        -- caller responsible for not accidentally re-owning the voucher.
        owner_id = COALESCE($6, owner_id),
        version = version + 1
  WHERE id = $1 AND version = $4
-RETURNING id, state, void_reason, remaining_value_idr, owner_id, version
+RETURNING id, state, void_reason, remaining_value_minor, owner_id, version
 `
 
 type TransitionVoucherParams struct {
-	ID                pgtype.UUID
-	State             string
-	VoidReason        *string
-	Version           int32
-	RemainingValueIdr int64
-	OwnerID           pgtype.UUID
+	ID                  pgtype.UUID
+	State               string
+	VoidReason          *string
+	Version             int32
+	RemainingValueMinor int64
+	OwnerID             pgtype.UUID
 }
 
 type TransitionVoucherRow struct {
-	ID                pgtype.UUID
-	State             string
-	VoidReason        *string
-	RemainingValueIdr int64
-	OwnerID           pgtype.UUID
-	Version           int32
+	ID                  pgtype.UUID
+	State               string
+	VoidReason          *string
+	RemainingValueMinor int64
+	OwnerID             pgtype.UUID
+	Version             int32
 }
 
 // YT-0571 audit: `version = $4` is a concurrency predicate, not an ownership
@@ -622,7 +631,7 @@ func (q *Queries) TransitionVoucher(ctx context.Context, arg TransitionVoucherPa
 		arg.State,
 		arg.VoidReason,
 		arg.Version,
-		arg.RemainingValueIdr,
+		arg.RemainingValueMinor,
 		arg.OwnerID,
 	)
 	var i TransitionVoucherRow
@@ -630,7 +639,7 @@ func (q *Queries) TransitionVoucher(ctx context.Context, arg TransitionVoucherPa
 		&i.ID,
 		&i.State,
 		&i.VoidReason,
-		&i.RemainingValueIdr,
+		&i.RemainingValueMinor,
 		&i.OwnerID,
 		&i.Version,
 	)

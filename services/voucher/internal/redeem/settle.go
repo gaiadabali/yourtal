@@ -75,7 +75,7 @@ func (n *Network) place(
 		if _, err := issue.Move(ctx, queries, issue.MoveRequest{
 			VoucherID:      asUUID(voucher.ID),
 			To:             lifecycle.Held,
-			RemainingMinor: voucher.RemainingValueIdr,
+			RemainingMinor: voucher.RemainingValueMinor,
 			Version:        voucher.Version,
 			EventType:      chain.TypeAuthorized,
 			Detail: chain.Detail(
@@ -93,7 +93,7 @@ func (n *Network) place(
 			ID:             id,
 			VoucherID:      asUUID(voucher.ID),
 			AmountMinor:    row.AmountMinor,
-			RemainingMinor: voucher.RemainingValueIdr,
+			RemainingMinor: voucher.RemainingValueMinor,
 			ExpiresAt:      row.ExpiresAt.Time,
 		}
 		return nil
@@ -128,7 +128,7 @@ func (n *Network) replay(
 		ID:             asUUID(existing.ID),
 		VoucherID:      asUUID(existing.VoucherID),
 		AmountMinor:    existing.AmountMinor,
-		RemainingMinor: voucher.RemainingValueIdr,
+		RemainingMinor: voucher.RemainingValueMinor,
 		ExpiresAt:      existing.ExpiresAt.Time,
 		AlreadyExisted: true,
 	}, nil
@@ -194,7 +194,7 @@ func (n *Network) Capture(
 		}
 
 		remaining, state := afterCapture(
-			voucher.PartialRedemptionPolicy, voucher.RemainingValueIdr, finalAmountMinor)
+			voucher.PartialRedemptionPolicy, voucher.RemainingValueMinor, finalAmountMinor)
 
 		if _, err := issue.Move(ctx, queries, issue.MoveRequest{
 			VoucherID:      asUUID(voucher.ID),

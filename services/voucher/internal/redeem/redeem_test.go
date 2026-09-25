@@ -269,7 +269,7 @@ func (f *fixture) stateOf(t *testing.T, voucherID uuid.UUID) string {
 func (f *fixture) asOwner(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 
-	url := os.Getenv("OWNER_DATABASE_URL")
+	url := os.Getenv("DATABASE_OWNER_URL")
 	if url == "" {
 		url = defaultOwnerURL
 	}

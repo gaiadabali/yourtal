@@ -53,10 +53,10 @@ CREATE TABLE voucher.vouchers (
   merchant_id               uuid        NOT NULL,
   merchant_name             text        NOT NULL,
   title                     text        NOT NULL,
-  face_value_idr            bigint      NOT NULL,
-  remaining_value_idr       bigint      NOT NULL,
+  face_value_minor          bigint      NOT NULL,
+  remaining_value_minor     bigint      NOT NULL,
   partial_redemption_policy text        NOT NULL,
-  minimum_spend_idr         bigint,
+  minimum_spend_minor       bigint,
   transferable              boolean     NOT NULL,
   issued_at                 timestamptz NOT NULL,
   expires_at                timestamptz NOT NULL,
@@ -64,7 +64,8 @@ CREATE TABLE voucher.vouchers (
   state                     text        NOT NULL,
   void_reason               text,
   batch_id                  uuid,
-  version                   integer     NOT NULL DEFAULT 1
+  version                   integer     NOT NULL DEFAULT 1,
+  currency                  text        NOT NULL
 );
 
 CREATE TABLE voucher.code_custody (
@@ -161,14 +162,14 @@ CREATE TABLE store.listings (
   title                     text        NOT NULL,
   description               text        NOT NULL,
   category                  text        NOT NULL,
-  face_value_idr            bigint      NOT NULL,
-  settlement_value_idr      bigint      NOT NULL,
+  face_value_minor          bigint      NOT NULL,
+  settlement_value_minor    bigint      NOT NULL,
   price_in_points           bigint      NOT NULL,
   stock_remaining           integer     NOT NULL,
   stock_total               integer     NOT NULL,
   transferable              boolean     NOT NULL,
   partial_redemption_policy text        NOT NULL,
-  minimum_spend_idr         bigint,
+  minimum_spend_minor       bigint,
   expires_at                timestamptz NOT NULL,
   status                    text        NOT NULL,
   -- Added by packages/db/migrations/20260920040000_store_listing_management.sql.
@@ -177,7 +178,11 @@ CREATE TABLE store.listings (
   -- mirror that omits a column cannot tell "not needed here" apart from
   -- "nobody noticed it was added".
   lifecycle_state           text        NOT NULL DEFAULT 'active',
-  per_user_limit            integer
+  per_user_limit            integer,
+  -- Added by packages/db/migrations/20260922030000_currency_tagged_money.sql.
+  -- 20260925063126 adds UNIQUE (id, currency) on top, not mirrored here: the
+  -- drift guard above only compares column names, not constraints.
+  currency                  text        NOT NULL
 );
 
 CREATE TABLE store.listing_location (

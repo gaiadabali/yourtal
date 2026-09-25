@@ -186,12 +186,7 @@ services:
     command:
       - |
         set -eu
-        if [ -f /keys/voucher_code.v1.key ]; then
-          echo "voucher_code.v1.key already present, leaving it alone"
-        else
-          head -c 32 /dev/urandom | od -An -vtx1 | tr -d ' \n' > /keys/voucher_code.v1.key
-          echo "generated a dev voucher_code.v1.key"
-        fi
+        for k in voucher_code merchant_hmac; do [ -f /keys/$$k.v1.key ] || head -c 32 /dev/urandom | od -An -vtx1 | tr -d ' \n' > /keys/$$k.v1.key; done
 
   voucher:
     build:

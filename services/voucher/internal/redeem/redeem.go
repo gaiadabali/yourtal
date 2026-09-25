@@ -72,6 +72,13 @@ const (
 	OutcomePolicyRefused     Outcome = "policy_refused"
 	OutcomeKilled            Outcome = "killed"
 	OutcomeThrottled         Outcome = "throttled"
+	// OutcomeCurrencyMismatch — the request's currency does not match the
+	// voucher's. Unlike the other non-authorized outcomes this is not
+	// counted toward the enumeration throttle (CountFailedAttemptsSince
+	// excludes it): the code was real, belonged to this merchant, and was
+	// otherwise redeemable — this is a client-side integration bug, not a
+	// probe.
+	OutcomeCurrencyMismatch Outcome = "currency_mismatch"
 )
 
 var (
@@ -89,6 +96,12 @@ var (
 	ErrAlreadyHeld = errors.New("redeem: this voucher already has a live authorization")
 	// ErrDuplicateOrder — this merchant already authorized this order.
 	ErrDuplicateOrder = errors.New("redeem: this merchant order was already authorized")
+	// ErrCurrencyMismatch — the request's currency does not match the
+	// voucher's own. Wrapped with a detail, not the bare sentinel: like
+	// ErrBelowMinimumSpend, this is a fact the caller's own integration
+	// already knows (it chose both currencies), so naming it costs a prober
+	// nothing.
+	ErrCurrencyMismatch = errors.New("redeem: the request's currency does not match this voucher's")
 )
 
 // Network is the redemption API's implementation.
@@ -227,21 +240,14 @@ func (n *Network) check(
 	if voucher.MerchantID.Bytes != req.MerchantID {
 		return OutcomeWrongMerchant, ErrRefused
 	}
-	// `voucher.vouchers` has no currency column — its money columns are
-	// named `*_idr` and the table is Indonesian by construction. So the
-	// check that can be made is that the caller agrees, and an AUD amount
-	// against this table is refused rather than silently treated as Rupiah.
-	//
-	// ⚠️ This is the shape of the AU gap, not a solution to it. Multi-currency
-	// vouchers need those columns renamed and a `currency` column added,
-	// which is a contracts change and belongs with the AU-primary re-cut —
-	// see the two-region note in TASKS.md. Until then a refusal here is the
-	// honest behaviour: the alternative is honouring an amount whose unit
-	// nobody agreed on.
-	if req.Currency != "IDR" {
-		return OutcomeWrongMerchant, fmt.Errorf(
-			"%w: this voucher is denominated in IDR and the request is in %s",
-			ErrRefused, req.Currency)
+	// Own outcome, own error, and — unlike every other refusal in this
+	// function — NOT wrapped as ErrRefused. The request's currency is a fact
+	// the merchant's own integration already knows (it chose both sides of
+	// the mismatch), so naming it costs a prober nothing the way naming
+	// "insufficient value" or "wrong merchant" would.
+	if req.Currency != voucher.Currency {
+		return OutcomeCurrencyMismatch, fmt.Errorf("%w: this voucher is denominated in %s and the request is in %s",
+			ErrCurrencyMismatch, voucher.Currency, req.Currency)
 	}
 	if !lifecycle.Spendable(lifecycle.State(voucher.State)) {
 		return OutcomeInactiveVoucher, ErrRefused
@@ -252,7 +258,7 @@ func (n *Network) check(
 		// expired vouchers spendable.
 		return OutcomeInactiveVoucher, ErrRefused
 	}
-	if req.AmountMinor > voucher.RemainingValueIdr {
+	if req.AmountMinor > voucher.RemainingValueMinor {
 		return OutcomeInsufficientValue, ErrRefused
 	}
 
@@ -261,15 +267,15 @@ func (n *Network) check(
 	// secret — and hiding it here would make the voucher unusable rather
 	// than secure, because nobody at the till would know what to do.
 	if voucher.PartialRedemptionPolicy == "minimum_spend" {
-		if voucher.MinimumSpendIdr == nil {
+		if voucher.MinimumSpendMinor == nil {
 			// Unreachable while `vouchers_minimum_spend_iff_policy` holds.
 			// Refused rather than treated as zero: a minimum_spend voucher
 			// with no threshold is a voucher whose terms nobody can state.
 			return OutcomePolicyRefused, ErrRefused
 		}
-		if req.AmountMinor < *voucher.MinimumSpendIdr {
+		if req.AmountMinor < *voucher.MinimumSpendMinor {
 			return OutcomePolicyRefused, fmt.Errorf("%w: %d of %d",
-				ErrBelowMinimumSpend, req.AmountMinor, *voucher.MinimumSpendIdr)
+				ErrBelowMinimumSpend, req.AmountMinor, *voucher.MinimumSpendMinor)
 		}
 	}
 

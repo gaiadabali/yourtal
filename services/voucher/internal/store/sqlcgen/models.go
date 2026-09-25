@@ -26,16 +26,19 @@ type StoreListing struct {
 	Title                   string
 	Description             string
 	Category                string
-	FaceValueIdr            int64
-	SettlementValueIdr      int64
+	FaceValueMinor          int64
+	SettlementValueMinor    int64
 	PriceInPoints           int64
 	StockRemaining          int32
 	StockTotal              int32
 	Transferable            bool
 	PartialRedemptionPolicy string
-	MinimumSpendIdr         *int64
+	MinimumSpendMinor       *int64
 	ExpiresAt               pgtype.Timestamptz
 	Status                  string
+	LifecycleState          string
+	PerUserLimit            *int32
+	Currency                string
 }
 
 type StoreListingLocation struct {
@@ -157,10 +160,10 @@ type VoucherVoucher struct {
 	MerchantID              pgtype.UUID
 	MerchantName            string
 	Title                   string
-	FaceValueIdr            int64
-	RemainingValueIdr       int64
+	FaceValueMinor          int64
+	RemainingValueMinor     int64
 	PartialRedemptionPolicy string
-	MinimumSpendIdr         *int64
+	MinimumSpendMinor       *int64
 	Transferable            bool
 	IssuedAt                pgtype.Timestamptz
 	ExpiresAt               pgtype.Timestamptz
@@ -169,4 +172,5 @@ type VoucherVoucher struct {
 	VoidReason              *string
 	BatchID                 pgtype.UUID
 	Version                 int32
+	Currency                string
 }

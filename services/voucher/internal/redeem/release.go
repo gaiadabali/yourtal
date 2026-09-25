@@ -54,7 +54,7 @@ func (n *Network) Void(ctx context.Context, authorizationID, merchantID uuid.UUI
 		_, err = issue.Move(ctx, queries, issue.MoveRequest{
 			VoucherID:      asUUID(voucher.ID),
 			To:             lifecycle.Active,
-			RemainingMinor: voucher.RemainingValueIdr,
+			RemainingMinor: voucher.RemainingValueMinor,
 			Version:        voucher.Version,
 			EventType:      chain.TypeVoided,
 			Detail: chain.Detail(
@@ -112,13 +112,13 @@ func (n *Network) Refund(
 			return fmt.Errorf("recording the refund: %w", err)
 		}
 
-		restored := voucher.RemainingValueIdr + amountMinor
-		if restored > voucher.FaceValueIdr {
+		restored := voucher.RemainingValueMinor + amountMinor
+		if restored > voucher.FaceValueMinor {
 			// A voucher cannot be refunded to more than it was ever worth.
 			// The database says so too (`vouchers_remaining_within_face`);
 			// catching it here names the number instead of the constraint.
 			return fmt.Errorf("%w: refunding %d would take the voucher to %d above its face value",
-				ErrRefused, amountMinor, restored-voucher.FaceValueIdr)
+				ErrRefused, amountMinor, restored-voucher.FaceValueMinor)
 		}
 
 		_, err = issue.Move(ctx, queries, issue.MoveRequest{

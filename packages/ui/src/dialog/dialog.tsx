@@ -17,40 +17,54 @@ export const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-50 bg-fg/50", className)}
+    className={cn("fixed inset-0 z-(--z-overlay) bg-overlay", className)}
     {...props}
   />
 ));
 DialogOverlay.displayName = "DialogOverlay";
 
-export type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>;
+export interface DialogContentProps extends React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> {
+  /**
+   * Accessible name for the close button. Optional so every existing caller
+   * keeps compiling and keeps its current "Close" name; new and bilingual
+   * callers should pass the translated string (en-AU / id-ID) explicitly —
+   * see the house rule against copy in primitives.
+   */
+  closeLabel?: string;
+  /** Hide the built-in close button, e.g. when the dialog supplies its own. */
+  hideClose?: boolean;
+}
 
 export const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, ...props }, ref) => (
+>(({ className, children, closeLabel = "Close", hideClose, ...props }, ref) => (
   <DialogPrimitive.Portal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
-        "rounded-lg border border-border bg-surface p-6 shadow-lg",
+        "fixed left-1/2 top-1/2 z-(--z-overlay) w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
+        "rounded-card border border-border-subtle bg-surface p-6 shadow-3",
         "focus-visible:outline-none",
         className,
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close
-        className={cn(
-          "absolute right-4 top-4 rounded-md text-fg-muted",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        )}
-      >
-        <X className="h-4 w-4" aria-hidden="true" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
+      {hideClose ? null : (
+        <DialogPrimitive.Close
+          className={cn(
+            "absolute right-4 top-4 rounded-control text-fg-muted hover:text-fg",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+          )}
+        >
+          <X className="size-4" aria-hidden="true" />
+          <span className="sr-only">{closeLabel}</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>
 ));
@@ -72,7 +86,7 @@ export const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-sans font-semibold text-fg", className)}
+    className={cn("text-title font-sans text-fg", className)}
     {...props}
   />
 ));
@@ -88,7 +102,7 @@ export const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-fg-muted", className)}
+    className={cn("text-body-sm text-fg-muted", className)}
     {...props}
   />
 ));

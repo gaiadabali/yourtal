@@ -18,8 +18,8 @@ export const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-sm font-sans text-fg",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      "flex h-control w-full items-center justify-between gap-2 rounded-control border border-border-control bg-surface px-3 text-body font-sans text-fg",
+      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
       "disabled:cursor-not-allowed disabled:opacity-50",
       "data-[placeholder]:text-fg-subtle",
       className,
@@ -28,7 +28,7 @@ export const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 shrink-0 opacity-60" aria-hidden="true" />
+      <ChevronDown className="size-4 shrink-0 opacity-60" aria-hidden="true" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -45,18 +45,18 @@ export const SelectContent = React.forwardRef<
       ref={ref}
       position={position}
       className={cn(
-        "z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-hidden rounded-md",
-        "border border-border bg-surface shadow-md",
+        "z-(--z-overlay) max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-hidden rounded-control",
+        "border border-border-subtle bg-surface shadow-2",
         className,
       )}
       {...props}
     >
       <SelectPrimitive.ScrollUpButton className="flex items-center justify-center py-1">
-        <ChevronUp className="h-4 w-4" aria-hidden="true" />
+        <ChevronUp className="size-4" aria-hidden="true" />
       </SelectPrimitive.ScrollUpButton>
       <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
       <SelectPrimitive.ScrollDownButton className="flex items-center justify-center py-1">
-        <ChevronDown className="h-4 w-4" aria-hidden="true" />
+        <ChevronDown className="size-4" aria-hidden="true" />
       </SelectPrimitive.ScrollDownButton>
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
@@ -71,7 +71,7 @@ export const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn("px-2 py-1.5 text-xs font-sans font-medium text-fg-muted", className)}
+    className={cn("px-2 py-1.5 text-caption font-sans font-medium text-fg-muted", className)}
     {...props}
   />
 ));
@@ -86,15 +86,15 @@ export const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm font-sans text-fg outline-none",
-      "focus:bg-surface-raised data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex w-full cursor-default select-none items-center rounded-control py-1.5 pl-8 pr-2 text-body font-sans text-fg outline-none",
+      "focus:bg-surface-sunken data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}
     {...props}
   >
-    <span className="absolute left-2 flex h-4 w-4 items-center justify-center">
+    <span className="absolute left-2 flex size-4 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" aria-hidden="true" />
+        <Check className="size-4" aria-hidden="true" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -110,7 +110,7 @@ export const SelectSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-border", className)}
+    className={cn("-mx-1 my-1 h-px bg-border-subtle", className)}
     {...props}
   />
 ));

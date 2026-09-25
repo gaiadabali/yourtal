@@ -54,4 +54,34 @@ describe("Button", () => {
     expect(link).toBeInTheDocument();
     expect(link.tagName).toBe("A");
   });
+
+  it("keeps v1 variant and size names working as aliases", () => {
+    render(
+      <Button variant="destructive" size="default">
+        Delete
+      </Button>,
+    );
+    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+  });
+
+  it("marks itself aria-busy and disabled while loading, keeping the label present", () => {
+    render(<Button loading>Save changes</Button>);
+    const button = screen.getByRole("button", { name: "Save changes" });
+    expect(button).toHaveAttribute("aria-busy", "true");
+    expect(button).toBeDisabled();
+  });
+
+  it("renders a leading and trailing icon around the label", () => {
+    render(
+      <Button
+        leadingIcon={<svg aria-hidden="true" data-testid="leading" />}
+        trailingIcon={<svg aria-hidden="true" data-testid="trailing" />}
+      >
+        Continue
+      </Button>,
+    );
+    const button = screen.getByRole("button", { name: "Continue" });
+    expect(button.querySelector('[data-testid="leading"]')).toBeInTheDocument();
+    expect(button.querySelector('[data-testid="trailing"]')).toBeInTheDocument();
+  });
 });

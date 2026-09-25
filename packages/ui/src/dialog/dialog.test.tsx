@@ -65,4 +65,25 @@ describe("Dialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
+
+  it("defaults the built-in close button's accessible name to Close", async () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
+    await screen.findByRole("dialog", { name: "Settings" });
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+  });
+
+  it("takes the close button's accessible name from closeLabel", async () => {
+    render(
+      <Dialog>
+        <DialogTrigger>Open settings</DialogTrigger>
+        <DialogContent closeLabel="Tutup">
+          <DialogTitle>Settings</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open settings" }));
+    await screen.findByRole("dialog", { name: "Settings" });
+    expect(screen.getByRole("button", { name: "Tutup" })).toBeInTheDocument();
+  });
 });

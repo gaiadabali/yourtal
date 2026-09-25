@@ -29,7 +29,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor={inputId}
-          className={cn("text-sm font-sans font-medium text-fg", hideLabel && "sr-only")}
+          className={cn("text-label font-sans text-fg", hideLabel && "sr-only")}
         >
           {label}
         </label>
@@ -39,22 +39,22 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           aria-describedby={describedBy}
           aria-invalid={errorMessage ? true : undefined}
           className={cn(
-            "h-10 w-full min-w-0 rounded-md border border-border bg-surface px-3 text-sm font-sans text-fg",
+            "h-control w-full min-w-0 rounded-control border border-border-control bg-surface px-3 text-body font-sans text-fg",
             "placeholder:text-fg-subtle",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            errorMessage && "border-danger",
+            errorMessage && "border-danger-solid",
             className,
           )}
           {...props}
         />
         {helpText ? (
-          <p id={helpId} className="text-xs font-sans text-fg-muted">
+          <p id={helpId} className="text-caption font-sans text-fg-muted">
             {helpText}
           </p>
         ) : null}
         {errorMessage ? (
-          <p id={errorId} role="alert" className="text-xs font-sans text-danger">
+          <p id={errorId} role="alert" className="text-caption font-sans text-danger-solid">
             {errorMessage}
           </p>
         ) : null}

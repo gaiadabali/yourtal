@@ -23,11 +23,11 @@ export const Progress = React.forwardRef<
     ref={ref}
     value={value}
     max={max}
-    className={cn("relative h-2 w-full overflow-hidden rounded-full bg-surface-raised", className)}
+    className={cn("relative h-2 w-full overflow-hidden rounded-pill bg-surface-sunken", className)}
     {...props}
   >
     <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-primary transition-transform duration-300 ease-out"
+      className="h-full w-full flex-1 bg-accent transition-transform duration-(--duration-slow) ease-standard"
       style={{ transform: `translateX(-${100 - (Math.min(value, max) / max) * 100}%)` }}
     />
   </ProgressPrimitive.Root>

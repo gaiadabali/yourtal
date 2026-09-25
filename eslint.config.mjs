@@ -8,6 +8,10 @@ import prettier from "eslint-config-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
 import mustUseResult from "./eslint-rules/must-use-result.mjs";
 import noVendorSdk from "./eslint-rules/no-vendor-sdk.mjs";
+import { builtinRules } from "eslint/use-at-your-own-risk";
+
+// A second copy of no-restricted-syntax, so a rule set can warn while the first errors.
+const restrictedSyntaxWarn = builtinRules.get("no-restricted-syntax");
 
 export default tseslint.config(
   {
@@ -197,6 +201,7 @@ export default tseslint.config(
       // The OG image is drawn by satori outside the CSS, so it needs literal colours.
       "apps/web/features/public/public-og-card.tsx",
     ],
+    plugins: { "yt-b": { rules: { "prefer-primitives": restrictedSyntaxWarn } } },
     rules: {
       "no-restricted-syntax": [
         "error",
@@ -220,6 +225,25 @@ export default tseslint.config(
         {
           selector: "TemplateElement[value.raw=/text-\\[[0-9.]+px\\]/]",
           message: "Use a type role (text-caption, text-body-sm, ...), not a pixel size.",
+        },
+      ],
+      // Primitives and catalogue copy, not raw elements and literals. Warnings
+      // for now; they become errors in 6.1.
+      "yt-b/prefer-primitives": [
+        "warn",
+        {
+          selector: "JSXOpeningElement[name.name=/^(button|select|table|input)$/]",
+          message:
+            "Use the @yourtal/ui primitive (Button, NativeSelect, DataTable, Input) instead.",
+        },
+        {
+          selector: "JSXText[value=/[A-Za-z]/]",
+          message: "User-facing copy comes from the message catalogues, not a JSX literal.",
+        },
+        {
+          selector:
+            "JSXAttribute[name.name=/^(aria-label|title|placeholder|alt)$/] > Literal[value=/[A-Za-z]/]",
+          message: "User-facing copy comes from the message catalogues, not a JSX literal.",
         },
       ],
     },

@@ -32,9 +32,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 6/8 | 40/47 | `█████████░`  85% |
+| **Phase 0** Reset | A | 🔄 in progress | 6/8 | 41/47 | `█████████░`  87% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
-| **Phase 2** Staging on Helios | A | · not started | 0/3 | 0/15 | `░░░░░░░░░░`   0% |
+| **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
 | **Phase 4** The bank is correct | A | · not started | 0/9 | 0/49 | `░░░░░░░░░░`   0% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **6/81** | **40/353** | `█░░░░░░░░░`  11% |
+| **All** | | | **6/82** | **41/361** | `█░░░░░░░░░`  11% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -369,7 +369,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - the contracts Go module to 1.26, and openapi-generator v7.25.0 (regenerate and commit).
     
     Run `pnpm verify` after each group.
-  - [ ] 0.8.g Schedule the majors, each as its own task once the plan is green:
+  - [x] 0.8.g Schedule the majors, each as its own task once the plan is green:
     - TypeScript 6.0.3 (7.x breaks typescript-eslint);
     - web-vitals 6;
     - Go 1.27;
@@ -563,6 +563,16 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - "Advance my account by N days".
   - [ ] 2.3.e A minimal seed when the database is empty: snap-app in AU and in ID, 2 campaigns each using the 30 s fixture video, one demo login per role, and one tier-0 demo viewer seeded with a pending grant through the 1.2 fake. The full demo world is 13.1.
   - [ ] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points.
+
+- [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`)
+  - [ ] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint).
+  - [ ] 2.4.b web-vitals 6.
+  - [ ] 2.4.c Go 1.27, in every `go.mod`, the Dockerfiles and CI.
+  - [ ] 2.4.d Postgres 18: PGDATA moves, so dump, upgrade and restore; do it before staging holds data worth keeping.
+  - [ ] 2.4.e Valkey 9.
+  - [ ] 2.4.f pnpm 12, locally and on Helios.
+  - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships.
+  - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one.
 
 **Done when:** every merge to `main` is live on staging within minutes, with the API, both Go services and the datastores running on Helios, backed up nightly.
 

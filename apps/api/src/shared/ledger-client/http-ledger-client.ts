@@ -44,6 +44,12 @@ import type {
   RateProposal,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
+import type { Region } from "@yourtal/contracts/region";
+import type {
+  ApproveSettingInput,
+  ProposeSettingInput,
+  RegionSetting,
+} from "@yourtal/contracts/ledger-internal/settings";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 
 /**
@@ -77,6 +83,26 @@ export class HttpLedgerClient implements LedgerInternalClient {
         return ok((await response.json()) as T);
       })(),
     );
+  }
+
+  /**
+   * `getSettings`/`proposeSetting`/`approveSetting` (1.2.f) are plain
+   * `Promise<T>` in their own contract, not `ResultAsync` — see
+   * `ledger-internal-client.ts`'s class comment — so this rejects on
+   * failure rather than resolving to an `err(...)`, the ordinary fetch
+   * failure shape every other caller of a plain-Promise API already expects.
+   */
+  private async postPlain<T>(path: string, body: unknown): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const problem: unknown = await response.json().catch(() => null);
+      throw new Error(`ledger service refused ${path}: ${JSON.stringify(problem)}`);
+    }
+    return (await response.json()) as T;
   }
 
   quote(request: QuoteRequest): ResultAsync<Quote, LedgerError> {
@@ -189,5 +215,19 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   approvePayout(request: ApprovePayoutRequest): ResultAsync<never, LedgerError> {
     return this.post("/v1/economy/payouts/approve", request);
+  }
+
+  // --- settings (1.2.f/1.2.g) ---
+
+  getSettings(region: Region): Promise<readonly RegionSetting[]> {
+    return this.postPlain("/v1/settings/list", { region });
+  }
+
+  proposeSetting(input: ProposeSettingInput): Promise<RegionSetting> {
+    return this.postPlain("/v1/settings/propose", input);
+  }
+
+  approveSetting(input: ApproveSettingInput): Promise<RegionSetting> {
+    return this.postPlain("/v1/settings/approve", input);
   }
 }

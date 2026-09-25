@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { testDb } from "../testing/test-db";
 import { FakeLedgerClient } from "./fake-ledger-client";
 
@@ -14,7 +15,7 @@ const client = new FakeLedgerClient(db);
 
 describe("pricing", () => {
   it("quotes ceil(S * 1e6 / B) and expires in 15 minutes", async () => {
-    const result = await client.quote({ region: "ID", currency: "IDR", settlementMinor: 54_000 });
+    const result = await client.quote({ region: "ID", currency: "IDR", settlementMinor: toMinorUnits(54_000) });
     expect(result.isOk()).toBe(true);
     const quote = result._unsafeUnwrap();
     // ID's F1 rate is 6,000,000 micros/point (Rp 6/point): ceil(54000/6) = 9000.
@@ -26,13 +27,13 @@ describe("pricing", () => {
   });
 
   it("refuses a currency that does not match the region", async () => {
-    const result = await client.quote({ region: "ID", currency: "AUD", settlementMinor: 1_000 });
+    const result = await client.quote({ region: "ID", currency: "AUD", settlementMinor: toMinorUnits(1_000) });
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr().code).toBe("currency_mismatch");
   });
 
   it("locks a quote, and refuses to lock one that has expired", async () => {
-    const quote = (await client.quote({ region: "AU", currency: "AUD", settlementMinor: 3_000 }))._unsafeUnwrap();
+    const quote = (await client.quote({ region: "AU", currency: "AUD", settlementMinor: toMinorUnits(3_000) }))._unsafeUnwrap();
     const locked = await client.lockQuote({ quoteId: quote.quoteId });
     expect(locked._unsafeUnwrap().locked).toBe(true);
 
@@ -45,13 +46,13 @@ describe("pricing", () => {
       listingId: randomUUID(),
       region: "ID",
       currency: "IDR",
-      settlementMinor: 54_000,
+      settlementMinor: toMinorUnits(54_000),
     });
     expect(result._unsafeUnwrap().pricePoints).toBe(9_000);
   });
 
   it("quotePurchase prices a points pack at F12's fixed rate", async () => {
-    const result = await client.quotePurchase({ points: 1_000, region: "AU" });
+    const result = await client.quotePurchase({ points: toPoints(1_000), region: "AU" });
     expect(result._unsafeUnwrap()).toMatchObject({ totalMinor: 4_500, currency: "AUD" });
   });
 });
@@ -64,8 +65,8 @@ describe("funding and allocations", () => {
       businessId,
       region: "AU",
       currency: "AUD",
-      points: 10_000,
-      paidMinor: 450_000,
+      points: toPoints(10_000),
+      paidMinor: toMinorUnits(450_000),
       idempotencyKey,
     });
     const allocation = first._unsafeUnwrap();
@@ -75,8 +76,8 @@ describe("funding and allocations", () => {
       businessId,
       region: "AU",
       currency: "AUD",
-      points: 10_000,
-      paidMinor: 450_000,
+      points: toPoints(10_000),
+      paidMinor: toMinorUnits(450_000),
       idempotencyKey,
     });
     expect(replay._unsafeUnwrap().allocationId).toBe(allocation.allocationId);
@@ -85,8 +86,8 @@ describe("funding and allocations", () => {
       businessId,
       region: "AU",
       currency: "AUD",
-      points: 1,
-      paidMinor: 1,
+      points: toPoints(1),
+      paidMinor: toMinorUnits(1),
       idempotencyKey,
     });
     expect(conflicting._unsafeUnwrapErr().code).toBe("idempotency_conflict");
@@ -99,16 +100,16 @@ describe("funding and allocations", () => {
         businessId,
         region: "ID",
         currency: "IDR",
-        points: 100,
-        paidMinor: 900,
+        points: toPoints(100),
+        paidMinor: toMinorUnits(900),
         idempotencyKey: randomUUID(),
       })
     )._unsafeUnwrap();
 
-    const held = await client.hold({ allocationId: allocation.allocationId, points: 100, sagaId: randomUUID() });
+    const held = await client.hold({ allocationId: allocation.allocationId, points: toPoints(100), sagaId: randomUUID() });
     expect(held._unsafeUnwrap().state).toBe("held");
 
-    const exhausted = await client.hold({ allocationId: allocation.allocationId, points: 1, sagaId: randomUUID() });
+    const exhausted = await client.hold({ allocationId: allocation.allocationId, points: toPoints(1), sagaId: randomUUID() });
     expect(exhausted._unsafeUnwrapErr().code).toBe("allocation_exhausted");
   });
 
@@ -119,13 +120,13 @@ describe("funding and allocations", () => {
         businessId,
         region: "ID",
         currency: "IDR",
-        points: 50,
-        paidMinor: 450,
+        points: toPoints(50),
+        paidMinor: toMinorUnits(450),
         idempotencyKey: randomUUID(),
       })
     )._unsafeUnwrap();
     const held = (
-      await client.hold({ allocationId: allocation.allocationId, points: 50, sagaId: randomUUID() })
+      await client.hold({ allocationId: allocation.allocationId, points: toPoints(50), sagaId: randomUUID() })
     )._unsafeUnwrap();
     await client.release(held.holdId);
     const after = (await client.getAllocation(allocation.allocationId))._unsafeUnwrap();
@@ -138,8 +139,8 @@ describe("funding and allocations", () => {
       businessId,
       region: "AU",
       currency: "AUD",
-      points: 1_000,
-      paidMinor: 45_000,
+      points: toPoints(1_000),
+      paidMinor: toMinorUnits(45_000),
       idempotencyKey: randomUUID(),
     });
     const result = await client.listAllocations(businessId);
@@ -161,7 +162,7 @@ describe("earning and spending", () => {
       campaignId: randomUUID(),
       userId,
       region: "ID",
-      points: 500,
+      points: toPoints(500),
       trustTier: 1,
       idempotencyKey: randomUUID(),
     });
@@ -180,7 +181,7 @@ describe("earning and spending", () => {
       kind: "streak",
       userId,
       region: "ID",
-      points: 100,
+      points: toPoints(100),
       trustTier: 3,
       idempotencyKey: randomUUID(),
     });
@@ -192,12 +193,12 @@ describe("earning and spending", () => {
   it("the same idempotency key with a different body returns idempotency_conflict", async () => {
     const userId = randomUUID();
     const idempotencyKey = randomUUID();
-    await client.grantAction({ kind: "receipt", userId, region: "ID", points: 10, trustTier: 3, idempotencyKey });
+    await client.grantAction({ kind: "receipt", userId, region: "ID", points: toPoints(10), trustTier: 3, idempotencyKey });
     const conflict = await client.grantAction({
       kind: "receipt",
       userId,
       region: "ID",
-      points: 99,
+      points: toPoints(99),
       trustTier: 3,
       idempotencyKey,
     });
@@ -206,13 +207,13 @@ describe("earning and spending", () => {
 
   it("burnForVoucher draws from available only, and refuses when short", async () => {
     const userId = randomUUID();
-    await client.grantAction({ kind: "goodwill", userId, region: "ID", points: 100, trustTier: 3, idempotencyKey: randomUUID() });
+    await client.grantAction({ kind: "goodwill", userId, region: "ID", points: toPoints(100), trustTier: 3, idempotencyKey: randomUUID() });
 
-    const tooMuch = await client.burnForVoucher({ userId, listingId: randomUUID(), points: 200, sagaId: randomUUID() });
+    const tooMuch = await client.burnForVoucher({ userId, listingId: randomUUID(), points: toPoints(200), sagaId: randomUUID() });
     expect(tooMuch._unsafeUnwrapErr().code).toBe("insufficient_available");
 
     const sagaId = randomUUID();
-    const burned = await client.burnForVoucher({ userId, listingId: randomUUID(), points: 60, sagaId });
+    const burned = await client.burnForVoucher({ userId, listingId: randomUUID(), points: toPoints(60), sagaId });
     expect(burned._unsafeUnwrap().state).toBe("burned");
 
     const balance = (await client.balance(userId))._unsafeUnwrap();
@@ -224,9 +225,9 @@ describe("earning and spending", () => {
 
   it("reinstateBurn (K13) gives the points back", async () => {
     const userId = randomUUID();
-    await client.grantAction({ kind: "goodwill", userId, region: "ID", points: 100, trustTier: 3, idempotencyKey: randomUUID() });
+    await client.grantAction({ kind: "goodwill", userId, region: "ID", points: toPoints(100), trustTier: 3, idempotencyKey: randomUUID() });
     const sagaId = randomUUID();
-    await client.burnForVoucher({ userId, listingId: randomUUID(), points: 100, sagaId });
+    await client.burnForVoucher({ userId, listingId: randomUUID(), points: toPoints(100), sagaId });
     expect((await client.balance(userId))._unsafeUnwrap().availablePoints).toBe(0);
 
     const reinstated = await client.reinstateBurn(sagaId);
@@ -238,9 +239,9 @@ describe("earning and spending", () => {
 describe("users", () => {
   it("escrow holds points out of available, and releaseEscrow gives them back", async () => {
     const userId = randomUUID();
-    await client.grantAction({ kind: "goodwill", userId, region: "ID", points: 100, trustTier: 3, idempotencyKey: randomUUID() });
+    await client.grantAction({ kind: "goodwill", userId, region: "ID", points: toPoints(100), trustTier: 3, idempotencyKey: randomUUID() });
 
-    const escrowed = await client.escrow({ userId, points: 40, reason: "dispute hold" });
+    const escrowed = await client.escrow({ userId, points: toPoints(40), reason: "dispute hold" });
     expect(escrowed._unsafeUnwrap().state).toBe("held");
     expect((await client.balance(userId))._unsafeUnwrap().availablePoints).toBe(60);
 
@@ -250,8 +251,8 @@ describe("users", () => {
 
   it("history lists grants and burns, newest first, paginated", async () => {
     const userId = randomUUID();
-    await client.grantAction({ kind: "goodwill", userId, region: "ID", points: 100, trustTier: 3, idempotencyKey: randomUUID() });
-    await client.burnForVoucher({ userId, listingId: randomUUID(), points: 10, sagaId: randomUUID() });
+    await client.grantAction({ kind: "goodwill", userId, region: "ID", points: toPoints(100), trustTier: 3, idempotencyKey: randomUUID() });
+    await client.burnForVoucher({ userId, listingId: randomUUID(), points: toPoints(10), sagaId: randomUUID() });
 
     const page = (await client.history({ userId, limit: 20 }))._unsafeUnwrap();
     expect(page.length).toBeGreaterThanOrEqual(2);
@@ -286,7 +287,7 @@ describe("economy", () => {
   it("fundMarketing refuses a single-person approval", async () => {
     const result = await client.fundMarketing({
       region: "AU",
-      amountMinor: 500_000,
+      amountMinor: toMinorUnits(500_000),
       proposedBy: "staff-1",
       approvedBy: "staff-1",
     });
@@ -300,6 +301,35 @@ describe("economy", () => {
     await expect(client.approvePayout({ statementId: randomUUID(), approvedBy: "staff-1" })).rejects.toThrow(
       /not implemented/,
     );
+  });
+});
+
+describe("settings (1.2.f/1.2.g)", () => {
+  it("proposeSetting starts a pending row; getSettings never returns it until approved", async () => {
+    const key = `test_setting_${randomUUID()}`;
+    const proposed = await client.proposeSetting({ region: "AU", key, value: 42, proposedBy: "staff-1" });
+    expect(proposed.approvedBy).toBeNull();
+    expect(proposed.effectiveFrom).toBeNull();
+
+    const beforeApproval = await client.getSettings("AU");
+    expect(beforeApproval.some((setting) => setting.key === key)).toBe(false);
+
+    const selfApprove = client.approveSetting({ id: proposed.id, approvedBy: "staff-1" });
+    await expect(selfApprove).rejects.toThrow();
+
+    const approved = await client.approveSetting({ id: proposed.id, approvedBy: "staff-2" });
+    expect(approved.approvedBy).toBe("staff-2");
+    expect(approved.effectiveFrom).not.toBeNull();
+
+    const afterApproval = await client.getSettings("AU");
+    const found = afterApproval.find((setting) => setting.key === key);
+    expect(found?.value).toBe(42);
+  });
+
+  it("F12's own seeded default reads back through getSettings", async () => {
+    const settings = await client.getSettings("AU");
+    const dailyEarnCap = settings.find((setting) => setting.key === "daily_earn_cap");
+    expect(dailyEarnCap?.value).toBe(500);
   });
 });
 

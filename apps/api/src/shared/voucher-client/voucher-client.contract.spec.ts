@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { toMinorUnits } from "@yourtal/contracts/money";
 import { testDb } from "../testing/test-db";
 import { FakeVoucherClient } from "./fake-voucher-client";
 
@@ -14,7 +15,7 @@ describe("batches", () => {
         listingId: randomUUID(),
         merchantId: randomUUID(),
         currency: "IDR",
-        faceValueMinor: 50_000,
+        faceValueMinor: toMinorUnits(50_000),
         quantity: 10,
         partialRedemptionPolicy: "single_use_forfeit",
         requestedBy: "staff-1",

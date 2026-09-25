@@ -1,5 +1,6 @@
 import type { ResultAsync } from "neverthrow";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
+import type { LedgerSettingsOperations } from "@yourtal/contracts/ledger-internal/settings";
 import type {
   LockQuoteRequest,
   PriceListingRequest,
@@ -53,13 +54,15 @@ import type {
  * closed enum 1.2.c shares with `voucher-internal`, because every caller
  * needs to switch on the failure rather than pattern-match a string.
  *
- * `getSettings`, `proposeSetting` and `approveSetting` (1.2.f, F12) are a
- * separate agent's addition to this interface — deliberately not declared
- * here yet, so that task can add them (and its own settings-backed
- * implementation) without this file and `FakeLedgerClient`/`HttpLedgerClient`
- * needing a contract-breaking change.
+ * `getSettings`, `proposeSetting` and `approveSetting` (1.2.f, F12,
+ * `@yourtal/contracts/ledger-internal/settings`) are the one exception to
+ * "every method returns `ResultAsync`": that contract is a separate agent's
+ * and returns plain `Promise<T>` (see its own file comment for why — the
+ * two-person rule is enforced by a database trigger and Cerbos, not by this
+ * interface), so `LedgerInternalClient` extends it as-is rather than
+ * wrapping it to match the rest of this file.
  */
-export interface LedgerInternalClient {
+export interface LedgerInternalClient extends LedgerSettingsOperations {
   // --- pricing ---
   quote(request: QuoteRequest): ResultAsync<Quote, LedgerError>;
   lockQuote(request: LockQuoteRequest): ResultAsync<Quote, LedgerError>;

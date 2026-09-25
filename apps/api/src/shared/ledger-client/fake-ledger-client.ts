@@ -42,6 +42,12 @@ import type {
   RateProposal,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
+import type { Region } from "@yourtal/contracts/region";
+import type {
+  ApproveSettingInput,
+  ProposeSettingInput,
+  RegionSetting,
+} from "@yourtal/contracts/ledger-internal/settings";
 import type { AppDb } from "../persistence/drizzle-client";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 import * as pricing from "./fake/fake-ledger-pricing";
@@ -49,6 +55,7 @@ import * as funding from "./fake/fake-ledger-funding";
 import * as rewards from "./fake/fake-ledger-rewards";
 import * as wallet from "./fake/fake-ledger-wallet";
 import * as economy from "./fake/fake-ledger-economy";
+import * as settings from "./fake/fake-ledger-settings";
 
 /**
  * TASKS.md 1.2.d. Real semantics against `platform.ledger_fake_*`, shared by
@@ -170,5 +177,19 @@ export class FakeLedgerClient implements LedgerInternalClient {
 
   approvePayout(request: ApprovePayoutRequest): ResultAsync<never, LedgerError> {
     return economy.approvePayout(request);
+  }
+
+  // --- settings (1.2.f/1.2.g) ---
+
+  getSettings(region: Region): Promise<readonly RegionSetting[]> {
+    return settings.getSettings(this.db, region);
+  }
+
+  proposeSetting(input: ProposeSettingInput): Promise<RegionSetting> {
+    return settings.proposeSetting(this.db, input);
+  }
+
+  approveSetting(input: ApproveSettingInput): Promise<RegionSetting> {
+    return settings.approveSetting(this.db, input);
   }
 }

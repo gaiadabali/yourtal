@@ -98,9 +98,18 @@ export function resolveOriginEndpoint(): string {
 }
 
 export function resolveCredentials(): { accessKeyId: string; secretAccessKey: string } {
+  const isProduction = process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test";
+  // In production, require the env var to be set explicitly (do not fall back to .env).
+  if (isProduction && !process.env.S3_SECRET_KEY) {
+    throw new Error(
+      "S3_SECRET_KEY environment variable is required in production; set it as an env var",
+    );
+  }
+
+  const secretAccessKey = readEnv("S3_SECRET_KEY");
   return {
     accessKeyId: readEnv("S3_ACCESS_KEY") ?? "yourtal",
-    secretAccessKey: readEnv("S3_SECRET_KEY") ?? "yourtal_local_only",
+    secretAccessKey: secretAccessKey ?? "yourtal_local_only",
   };
 }
 

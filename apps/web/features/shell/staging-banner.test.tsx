@@ -18,12 +18,12 @@ describe("staging posture", () => {
 
   it("renders the banner in the document's language", () => {
     render(<StagingBanner lang="id-ID" />);
-    expect(screen.getByRole("note").textContent).toContain("pembayaran disimulasikan");
+    expect(screen.getByRole("complementary").textContent).toContain("pembayaran disimulasikan");
   });
 
   it("falls back to English for an unknown lang", () => {
     render(<StagingBanner lang="fr-FR" />);
-    expect(screen.getByRole("note").textContent).toContain("payments simulated");
+    expect(screen.getByRole("complementary").textContent).toContain("payments simulated");
   });
 
   it("keeps every crawler out on staging", () => {

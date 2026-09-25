@@ -16,12 +16,10 @@ export function StagingBanner({ lang }: StagingBannerProps) {
     messages: { shell: CATALOGUES[locale] },
     namespace: "shell",
   });
+  // A landmark, so axe's `region` rule holds on every page it tops.
   return (
-    <div
-      role="note"
-      className="bg-warning text-warning-fg px-4 py-1.5 text-center text-sm font-semibold"
-    >
+    <aside className="bg-warning text-warning-fg px-4 py-1.5 text-center text-sm font-semibold">
       {t("stagingBanner")}
-    </div>
+    </aside>
   );
 }

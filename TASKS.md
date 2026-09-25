@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 3/43 | `█░░░░░░░░░`   7% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 2/6 | 14/32 | `████░░░░░░`  44% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 11/50 | `██░░░░░░░░`  22% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 12/50 | `██░░░░░░░░`  24% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **11/82** | **74/363** | `██░░░░░░░░`  20% |
+| **All** | | | **11/82** | **75/363** | `██░░░░░░░░`  21% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -123,6 +123,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F20** | The shared `yourtal` dev database was full of Go-test leftovers, some not whole Rupiah, so 0.7's migration refused it | **Recreate it clean** (migrations + seed), done 2026-09-25. Slot databases untouched. |
 | **F21** | Phase 4 is gated on Phase 1, which had just started | **Start Phase 4's Go-only parts early** in slot 1: 4.1.a, 4.2 and 4.3.a–d touch only `services/**` and add-only migrations, not 1.2's contracts. Everything that needs 1.2 still waits for it. |
 | **F22** | F21's early scope was done and 1.2 had not started | **More Go-only fixes** in slot 1, inside `services/**` only: 4.4.f, 4.4.i, 4.9.b, then the voucher defects 4.6.a–e. HTTP routes, TS clients and anything needing 1.2's contracts still wait for 1.2. |
+| **F23** | Should Phase 1 get more agents? | **Add one when 1.1 merges.** A third agent takes 1.2.f (per-region settings) in its own helper worktree; agent A does the rest of 1.2, agent B does 1.3.b then 1.4. Not before 1.1, since everything waits on it. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -635,7 +636,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - Playwright `recordVideo` captures at 390×844 of a scripted 30 s run for each variant (swipe 3 items, in-feed earn, open a campaign, a question appears, the earn moment, the store, the wallet pass), saved to `docs/audit/2026-09-25/lab/`;
     - F3 asked with options.
   - [x] 3.2.g **Check:** F3 is answered, or it defaults to After Dark 24 h after 3.2.f.
-- [ ] **3.3 Tokens v2** · needs: F3
+- [ ] **3.3 Tokens v2** · needs: F3 — 🔄 slot 2
   - [ ] 3.3.a Rewrite `packages/ui/src/styles/tokens.css` in three tiers (raw → semantic → component), using the token names in `ui-design.md` §5 D1:
     - surfaces: `canvas`, `surface`, `surface-sunken`, `overlay`;
     - text: `fg`, `fg-muted`, `fg-subtle`, `fg-on-accent`, `fg-on-points`;
@@ -738,7 +739,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - Marketing cash is increased only by `fundMarketing` (two-person, staff) and by the seed.
     - A partner allocation can only come from a `point_purchase`.
     - Rewrite the test that currently asserts the opposite (EM-02).
-  - [ ] 4.4.i Purchases:
+  - [x] 4.4.i Purchases:
     - check `amount_minor × 1_000_000 ≥ points × issue_micros` in integers;
     - the server computes the charge with `quotePurchase` (packs per F12);
     - add `CHECK B × 1.25 ≤ P_issue`;
@@ -792,7 +793,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
 - [ ] **4.8 Wallet API** · needs: 4.7
   - [ ] 4.8.a `apps/api/src/modules/wallet`: `GET /api/wallet` (available, pending with unlock dates, expiring), `/api/wallet/history` (plain-language entries built from the ledger's references), `/api/wallet/vouchers`, `/api/wallet/vouchers/:id` and `/api/wallet/vouchers/:id/qr`.
   - [ ] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token.
-- [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4
+- [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22) — 🔄 slot 1
   - [ ] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view.
   - [ ] 4.9.b Rate governance inside the ledger:
     - `proposeRate` / `approveRate`, with `approved_by ≠ set_by` (CHECK);

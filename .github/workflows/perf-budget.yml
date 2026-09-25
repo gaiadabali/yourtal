@@ -121,9 +121,10 @@ jobs:
         run: node scripts/perf-check-bundle-size.mjs apps/web
 
       - name: Run Lighthouse CI (mid-tier Android / 4G)
-        # @lhci/cli is a devDependency of @yourtal/web, not of the root, so
-        # its bin only exists in apps/web/node_modules/.bin. --filter runs the
-        # command with apps/web as cwd, hence the relative --config path.
-        run: pnpm --filter @yourtal/web exec lhci autorun --config=lighthouserc.cjs
+        # Run through dlx rather than as a devDependency: @lhci/cli 0.15.1 is
+        # the latest release, and it pins lighthouse 12.6.1, whose tree carries
+        # extract-zip/tmp/uuid advisories. dlx keeps them out of pnpm-lock.yaml.
+        working-directory: apps/web
+        run: pnpm dlx @lhci/cli@0.15.1 autorun --config=lighthouserc.cjs
         env:
           CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}

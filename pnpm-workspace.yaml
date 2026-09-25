@@ -15,14 +15,12 @@ allowBuilds:
   # (apps/web/scripts/build-service-worker.mjs). Same category as the two
   # above — a compiler binary, not an arbitrary script.
   esbuild: true
-minimumReleaseAgeExclude:
-  - "@turbo/darwin-64@2.11.2"
-  - "@turbo/darwin-arm64@2.11.2"
-  - "@turbo/linux-64@2.11.2"
-  - "@turbo/linux-arm64@2.11.2"
-  - "@turbo/windows-64@2.11.2"
-  - "@turbo/windows-arm64@2.11.2"
-  - "@types/node@26.6.2"
-  - eslint@10.11.0
-  - knip@6.37.0
-  - turbo@2.11.2
+# Supply-chain cooldown: refuse any version published less than a day ago.
+# Declared explicitly so a pnpm upgrade cannot silently change it; the pnpm 11
+# default happens to be the same 1440 minutes.
+minimumReleaseAge: 1440
+overrides:
+  # GHSA-c83g-rgw3-j3cx and GHSA-73wf-gq98-2v4g (high). @serwist/next 9.5.12
+  # pins browserslist 4.28.6 exactly, and no serwist release fixes it yet.
+  # Drop this once serwist unpins it (TASKS.md 0.8.g).
+  "browserslist@<4.28.7": "4.29.0"

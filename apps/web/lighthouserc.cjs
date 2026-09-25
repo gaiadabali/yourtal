@@ -74,7 +74,7 @@
 
 const PORT = 4173;
 
-/** @type {import('@lhci/utils/src/types').LHCI.RcFile} */
+// Shape: @lhci/cli's RcFile. perf-budget.yml runs it with `pnpm dlx @lhci/cli@0.15.1`.
 module.exports = {
   ci: {
     collect: {

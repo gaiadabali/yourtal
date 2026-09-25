@@ -49,10 +49,10 @@ export function StreakLadder({ cycleDay, hasCheckedInToday, locale }: StreakLadd
                   : "border-border bg-transparent text-fg-muted")
             }
           >
-            <span className="text-[10px] font-semibold">
+            <span className="text-caption font-semibold">
               {t("ladderDayLabel", { day: dayNumber })}
             </span>
-            <span className="text-[10px] opacity-90">
+            <span className="text-caption opacity-90">
               {formatPoints(asDisplayPoints(points), locale)}
             </span>
             <span className="sr-only"> · {status}</span>

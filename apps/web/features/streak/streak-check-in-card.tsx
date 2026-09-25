@@ -55,7 +55,7 @@ export function StreakCheckInCard() {
         </Button>
       </div>
 
-      <p className="text-[11px] font-sans text-fg-subtle">{t("fundingNote")}</p>
+      <p className="text-caption font-sans text-fg-subtle">{t("fundingNote")}</p>
     </section>
   );
 }

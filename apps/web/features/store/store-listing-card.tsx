@@ -61,7 +61,7 @@ export function StoreListingCard({ listing, locale }: StoreListingCardProps) {
         <>
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-sm font-semibold text-price">{pointsLabel}</span>
-            <span className="truncate text-[11px] text-fg-subtle">{faceValueLabel}</span>
+            <span className="truncate text-caption text-fg-subtle">{faceValueLabel}</span>
           </span>
           {status ? (
             <Badge variant={status.badgeVariant} className="shrink-0">

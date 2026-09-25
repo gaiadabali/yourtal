@@ -187,5 +187,44 @@ export default tseslint.config(
     rules: { "ytBoundary/no-vendor-sdk": "error" },
   },
 
+  // Area B: the viewer's features use design tokens only. C turns the same
+  // rules on for its own features in 7.8.
+  {
+    files: [
+      "apps/web/features/{auth,campaign,player,checkpoint,quick,store,burn,wallet,me,streak,shell,onboarding,region,open-view,public,notifications,rum}/**/*.{ts,tsx}",
+    ],
+    ignores: [
+      "**/*.test.{ts,tsx}",
+      // The OG image is drawn by satori outside the CSS, so it needs literal colours.
+      "apps/web/features/public/public-og-card.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        // Restated: this rule replaces, not extends, the repo-wide one above.
+        {
+          selector: "ExportAllDeclaration",
+          message: "`export *` is banned (13b §5) — it defeats tree-shaking.",
+        },
+        {
+          selector: "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+          message: "Use a colour token, not a raw hex value.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b/]",
+          message: "Use a colour token, not a raw hex value.",
+        },
+        {
+          selector: "Literal[value=/text-\\[[0-9.]+px\\]/]",
+          message: "Use a type role (text-caption, text-body-sm, ...), not a pixel size.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/text-\\[[0-9.]+px\\]/]",
+          message: "Use a type role (text-caption, text-body-sm, ...), not a pixel size.",
+        },
+      ],
+    },
+  },
+
   prettier,
 );

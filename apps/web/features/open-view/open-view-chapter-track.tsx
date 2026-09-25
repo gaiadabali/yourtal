@@ -57,7 +57,7 @@ export function OpenViewChapterTrack({
               onClick={() => onSelectChapter(chapter.startSeconds)}
             >
               <span className="text-xs font-semibold">{chapter.title}</span>
-              <span className="text-[10px] font-normal opacity-80">
+              <span className="text-caption font-normal opacity-80">
                 {formatClock(chapter.startSeconds)}–{formatClock(chapter.endSeconds)} · {status}
               </span>
             </Button>

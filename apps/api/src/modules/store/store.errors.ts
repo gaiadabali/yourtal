@@ -65,9 +65,7 @@ export interface ApprovalRefusedError {
 }
 
 export type CreateListingError =
-  | InvalidLocationsError
-  | BusinessNotFoundError
-  | PersistenceFailedError;
+  InvalidLocationsError | BusinessNotFoundError | PersistenceFailedError;
 
 export type EditListingError = ListingNotFoundError | PersistenceFailedError;
 

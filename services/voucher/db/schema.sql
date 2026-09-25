@@ -29,7 +29,7 @@ CREATE TABLE voucher.batch (
   id                        uuid        PRIMARY KEY,
   listing_id                uuid        NOT NULL,
   supplier_business_id      uuid        NOT NULL,
-  -- text, not uuid: packages/db/migrations/20260925210000_voucher_internal_api.sql
+  -- text, not uuid: packages/db/migrations/20260926010000_voucher_internal_api.sql
   -- brings this in line with ledger.backing_rate_approval.approved_by, since
   -- the voucher-internal contract's requestedBy/approvedBy are free-text
   -- staff identifiers ("staff-1"), not user ids.
@@ -70,7 +70,7 @@ CREATE TABLE voucher.vouchers (
   batch_id                  uuid,
   version                   integer     NOT NULL DEFAULT 1,
   currency                  text        NOT NULL,
-  -- Added by packages/db/migrations/20260925210000_voucher_internal_api.sql.
+  -- Added by packages/db/migrations/20260926010000_voucher_internal_api.sql.
   region                    text        NOT NULL,
   saga_id                   text,
   reserved_until            timestamptz
@@ -111,7 +111,7 @@ CREATE TABLE voucher.authorization (
   created_at         timestamptz NOT NULL DEFAULT now(),
   resolved_at        timestamptz,
   order_total_minor  bigint,
-  -- Added by packages/db/migrations/20260925210000_voucher_internal_api.sql.
+  -- Added by packages/db/migrations/20260926010000_voucher_internal_api.sql.
   device_id          text
 );
 
@@ -163,7 +163,7 @@ CREATE TABLE voucher.merchant_credential (
   created_at       timestamptz NOT NULL DEFAULT now(),
   not_after        timestamptz,
   revoked_at       timestamptz,
-  -- Added by packages/db/migrations/20260925210000_voucher_internal_api.sql.
+  -- Added by packages/db/migrations/20260926010000_voucher_internal_api.sql.
   device_id        text
 );
 

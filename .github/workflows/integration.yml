@@ -317,3 +317,13 @@ jobs:
             grep -iE '[0-9]+ skipped' /tmp/sweep.log
             exit 1
           fi
+
+      # Area B's gates (3.1.h, 3.6.d). Rendered: overlays in the viewport,
+      # axe in both themes, no packages/ui class missing from the built CSS.
+      # Visual: gallery baselines, drawn by the Linux browser in the Playwright
+      # image so they match baselines made on any machine.
+      - name: Rendered UI gate
+        run: pnpm --filter @yourtal/web test:rendered
+
+      - name: Visual baselines
+        run: pnpm --filter @yourtal/web test:visual

@@ -19,7 +19,6 @@
 // `playwright test`.
 import { spawn, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import net from "node:net";
 import { parseEnv } from "node:util";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -102,24 +101,26 @@ function stopContainer() {
   spawnSync("docker", ["stop", containerName], { stdio: "inherit" });
 }
 
-/** Poll a TCP connect until the run-server inside the container accepts one. */
-function waitForPort(port, timeoutMs) {
+/**
+ * Wait for run-server to log that it is listening. A TCP probe is not enough:
+ * Docker's port proxy accepts connections before the server inside is up, and
+ * in CI `npx` first downloads Playwright, so early connects hang up.
+ */
+function waitForListening(timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   return new Promise((resolve, reject) => {
     attempt();
     function attempt() {
-      const socket = net.connect({ host: "127.0.0.1", port }, () => {
-        socket.destroy();
+      const logs = spawnSync("docker", ["logs", containerName], { encoding: "utf8" });
+      if (`${logs.stdout ?? ""}${logs.stderr ?? ""}`.includes("Listening on")) {
         resolve();
-      });
-      socket.on("error", () => {
-        socket.destroy();
-        if (Date.now() > deadline) {
-          reject(new Error(`timed out waiting for 127.0.0.1:${port} to accept connections`));
-          return;
-        }
-        setTimeout(attempt, 300);
-      });
+        return;
+      }
+      if (Date.now() > deadline) {
+        reject(new Error(`timed out waiting for ${containerName} to start run-server`));
+        return;
+      }
+      setTimeout(attempt, 500);
     }
   });
 }
@@ -138,7 +139,7 @@ async function main() {
   }
 
   try {
-    await waitForPort(controlPort, 30_000);
+    await waitForListening(120_000);
   } catch (error) {
     console.error(`[visual] ${error.message}`);
     if (startedHere) stopContainer();

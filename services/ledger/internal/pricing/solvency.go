@@ -42,13 +42,18 @@ type Coverage struct {
 	Currency string
 	// PointsOutstanding is points held by users — the claims.
 	PointsOutstanding int64
-	// LiabilityMinor is those claims valued at B: what honouring them costs.
-	LiabilityMinor int64
+	// LiabilityMinor is everything owed, in the region currency: the points
+	// valued at B, plus face value owed on live vouchers, plus captures not
+	// yet paid out to merchants (4.9.c). Burned points leave the first term
+	// and arrive in the second, so a burn never flatters the ratio (D11).
+	LiabilityMinor        int64
+	VoucherLiabilityMinor int64
+	MerchantPayableMinor  int64
 	// ReserveMinor is what is actually in the segregated reserve.
 	ReserveMinor int64
 	// RatioBps is Reserve / Liability in basis points. 10_000 is exactly 1.0.
 	RatioBps int64
-	// NoPointsOutstanding distinguishes "nothing is owed" from a ratio.
+	// NoPointsOutstanding means nothing at all is owed, which is not a ratio.
 	//
 	// Without it, zero liability has to be reported as either an infinite
 	// ratio or a zero one, and a zero would read as total insolvency on
@@ -69,69 +74,92 @@ func (c Coverage) ShouldAlert() bool {
 	return !c.NoPointsOutstanding && c.RatioBps < CoverageAlertBps
 }
 
-// Coverage measures the invariant for one data plane.
-//
-// Both halves are PROJECTIONS over ledger entries, never stored totals. A
-// stored coverage figure is a second source of truth about solvency, and the
-// one thing worse than not measuring solvency is measuring a copy of it that
-// stopped updating.
-//
-// One region at a time: its currency is fixed, so an AU reserve can never
-// mask an ID shortfall.
-func (e *Engine) Coverage(
-	ctx context.Context, region ledger.Region, at time.Time,
-) (Coverage, error) {
-	country, currency := string(region), string(region.Currency())
-	rate, err := e.RateAt(ctx, currency, at)
+// Coverage measures the invariant for one region at an instant.
+func (e *Engine) Coverage(ctx context.Context, region ledger.Region, at time.Time) (Coverage, error) {
+	rate, err := e.RateAt(ctx, string(region.Currency()), at)
 	if err != nil {
 		return Coverage{}, err
 	}
+	return measure(ctx, sqlcgen.New(e.pool), region, rate.ID, rate.MicrosPerPoint, at)
+}
 
-	queries := sqlcgen.New(e.pool)
+// CoverageNow measures inside the caller's transaction at the rate in force
+// by the database's clock, for a check that must see the same state as the
+// write it guards (4.9.c, EM-10).
+func CoverageNow(ctx context.Context, q *sqlcgen.Queries, region ledger.Region) (Coverage, error) {
+	rate, err := q.GetBackingRateInForce(ctx, string(region.Currency()))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Coverage{}, fmt.Errorf("%w: %s", ErrNoRateInForce, region.Currency())
+	}
+	if err != nil {
+		return Coverage{}, fmt.Errorf("reading the rate in force: %w", err)
+	}
+	return measure(ctx, q, region, rate.ID, rate.MicrosPerPoint, time.Now().UTC())
+}
 
-	points, err := queries.SumPointsOutstanding(ctx, country)
+// measure is reserve ÷ (points × B + voucher liability + merchant payable).
+// Every term is a projection over entries, never a stored total.
+func measure(
+	ctx context.Context, q *sqlcgen.Queries, region ledger.Region, rateID string, backingMicros int64, at time.Time,
+) (Coverage, error) {
+	points, err := q.SumPointsOutstanding(ctx, string(region))
 	if err != nil {
 		return Coverage{}, fmt.Errorf("summing points outstanding: %w", err)
 	}
-
-	// Natural balance: the reserve is an asset, so its entries are debits.
-	reserve, err := queries.GetAccountBalance(ctx, ledger.PlatformAccountID(region, ledger.RoleReserve))
-	if errors.Is(err, pgx.ErrNoRows) {
-		reserve, err = 0, nil
-	}
-	if err != nil {
-		return Coverage{}, fmt.Errorf("reading the reserve balance: %w", err)
-	}
-
-	coverage := Coverage{
-		Country:           country,
-		Currency:          currency,
-		PointsOutstanding: points,
-		ReserveMinor:      reserve,
-		BackingRateID:     rate.ID,
-		MeasuredAt:        at,
-	}
-
-	if points <= 0 {
-		coverage.NoPointsOutstanding = true
-		return coverage, nil
-	}
-
-	liability, err := SettlementLiabilityMinor(points, rate.MicrosPerPoint)
+	reserve, err := naturalBalance(ctx, q, ledger.PlatformAccountID(region, ledger.RoleReserve))
 	if err != nil {
 		return Coverage{}, err
 	}
-	coverage.LiabilityMinor = liability
-
-	// Integer basis points, floored — so a ratio that rounds is reported
-	// slightly WORSE than it is. The alternative rounds a 0.99996 up to 1.0
-	// and reports an insolvent economy as exactly solvent.
-	ratio := new(big.Int).Mul(big.NewInt(reserve), big.NewInt(coverageScale))
-	ratio.Quo(ratio, big.NewInt(liability))
-	if !ratio.IsInt64() {
-		return Coverage{}, fmt.Errorf("%w: reserve=%d liability=%d", ErrPriceOutOfRange, reserve, liability)
+	vouchers, err := naturalBalance(ctx, q, ledger.PlatformAccountID(region, ledger.RoleVoucherLiability))
+	if err != nil {
+		return Coverage{}, err
 	}
-	coverage.RatioBps = ratio.Int64()
+	payable, err := q.SumMerchantPayables(ctx, string(region))
+	if err != nil {
+		return Coverage{}, fmt.Errorf("summing merchant payables: %w", err)
+	}
 
-	return coverage, nil
+	c := Coverage{
+		Country: string(region), Currency: string(region.Currency()),
+		PointsOutstanding: points, ReserveMinor: reserve,
+		VoucherLiabilityMinor: vouchers, MerchantPayableMinor: payable,
+		BackingRateID: rateID, MeasuredAt: at,
+	}
+	var pointsValue int64
+	if points > 0 {
+		if pointsValue, err = SettlementLiabilityMinor(points, backingMicros); err != nil {
+			return Coverage{}, err
+		}
+	}
+	liability := new(big.Int).Add(big.NewInt(pointsValue), big.NewInt(vouchers))
+	liability.Add(liability, big.NewInt(payable))
+	if liability.Sign() <= 0 {
+		c.NoPointsOutstanding = true
+		return c, nil
+	}
+	if !liability.IsInt64() {
+		return Coverage{}, fmt.Errorf("%w: liability beyond int64", ErrPriceOutOfRange)
+	}
+	c.LiabilityMinor = liability.Int64()
+
+	// Integer basis points, floored: a ratio that rounds is reported slightly
+	// WORSE than it is, never an insolvent economy as exactly solvent.
+	ratio := new(big.Int).Mul(big.NewInt(reserve), big.NewInt(coverageScale))
+	ratio.Quo(ratio, liability)
+	if !ratio.IsInt64() {
+		return Coverage{}, fmt.Errorf("%w: reserve=%d liability=%s", ErrPriceOutOfRange, reserve, liability)
+	}
+	c.RatioBps = ratio.Int64()
+	return c, nil
+}
+
+func naturalBalance(ctx context.Context, q *sqlcgen.Queries, accountID string) (int64, error) {
+	balance, err := q.GetAccountBalance(ctx, accountID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("reading %s: %w", accountID, err)
+	}
+	return balance, nil
 }

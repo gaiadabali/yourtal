@@ -212,6 +212,9 @@ func (e *Engine) issue(
 				return err
 			}
 			if def.MarketingFunded {
+				if err := e.checkSolvency(ctx, queries); err != nil {
+					return err
+				}
 				if err := e.backMarketingGrant(ctx, tx, queries, ref, def.Points); err != nil {
 					return err
 				}

@@ -203,6 +203,22 @@ func (q *Queries) ListBackingRates(ctx context.Context, currency string) ([]List
 	return items, nil
 }
 
+const sumMerchantPayables = `-- name: SumMerchantPayables :one
+SELECT COALESCE(SUM(e.amount_minor), 0)::bigint AS payable_minor
+FROM ledger.entry e
+JOIN ledger.account a ON a.id = e.account_id AND e.currency = a.currency
+WHERE a.purpose = 'payable' AND a.country = $1
+`
+
+// What the platform owes merchants in a region for captured vouchers not yet
+// paid out. Payables are liabilities, so +SUM (4.9.c).
+func (q *Queries) SumMerchantPayables(ctx context.Context, country string) (int64, error) {
+	row := q.db.QueryRow(ctx, sumMerchantPayables, country)
+	var payable_minor int64
+	err := row.Scan(&payable_minor)
+	return payable_minor, err
+}
+
 const sumPointsOutstanding = `-- name: SumPointsOutstanding :one
 SELECT COALESCE(SUM(e.amount_minor), 0)::bigint AS points
 FROM ledger.entry e

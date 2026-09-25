@@ -119,7 +119,7 @@ func run(logger *slog.Logger) error {
 		}
 
 		checker := proof.New(pool, proof.LoggingAlerter{Logger: logger})
-		go runChecker(ctx, logger, checker, sqlcgen.New(pool))
+		go runChecker(ctx, logger, checker, sqlcgen.New(pool), proof.LoggingAlerter{Logger: logger})
 	} else {
 		logger.Warn("no LEDGER_DATABASE_URL: the invariant checker is NOT running " +
 			"and /v1 routes will report the database as unconfigured")
@@ -242,11 +242,34 @@ func run(logger *slog.Logger) error {
 //
 // The same loop releases allocation holds past their TTL (4.4.e), so an
 // abandoned reward session's points return to the campaign.
-func runChecker(ctx context.Context, logger *slog.Logger, checker *proof.Checker, queries *sqlcgen.Queries) {
+//
+// And it is the solvency monitor (4.9.c): per region, coverage below 1.2
+// pages. Below 1.1 marketing-funded grants already stop, checked live inside
+// each grant, so the monitor is the warning and never the control.
+func runChecker(
+	ctx context.Context, logger *slog.Logger, checker *proof.Checker, queries *sqlcgen.Queries, alerter proof.Alerter,
+) {
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
 
 	for {
+		for _, region := range []ledger.Region{ledger.RegionAU, ledger.RegionID} {
+			coverage, err := pricing.CoverageNow(ctx, queries, region)
+			switch {
+			case err != nil:
+				logger.Error("measuring coverage failed", "region", region, "error", err)
+			case coverage.ShouldAlert():
+				if err := alerter.Page(ctx, "coverage below 1.2 in "+string(region),
+					fmt.Sprintf("coverage %d bps: reserve %d against liability %d (points %d, vouchers %d, payable %d)",
+						coverage.RatioBps, coverage.ReserveMinor, coverage.LiabilityMinor, coverage.PointsOutstanding,
+						coverage.VoucherLiabilityMinor, coverage.MerchantPayableMinor)); err != nil {
+					logger.Error("paging on coverage failed", "region", region, "error", err)
+				}
+			default:
+				logger.Info("coverage", "region", region, "bps", coverage.RatioBps, "nothing_owed", coverage.NoPointsOutstanding)
+			}
+		}
+
 		if released, err := queries.ReleaseExpiredHolds(ctx); err != nil {
 			logger.Error("releasing expired allocation holds failed", "error", err)
 		} else if released > 0 {

@@ -66,3 +66,11 @@ JOIN ledger.backing_rate_approval a ON a.rate_id = r.id
 WHERE r.currency = $1 AND a.effective_from <= now()
 ORDER BY a.effective_from DESC, a.approved_at DESC
 LIMIT 1;
+
+-- name: SumMerchantPayables :one
+-- What the platform owes merchants in a region for captured vouchers not yet
+-- paid out. Payables are liabilities, so +SUM (4.9.c).
+SELECT COALESCE(SUM(e.amount_minor), 0)::bigint AS payable_minor
+FROM ledger.entry e
+JOIN ledger.account a ON a.id = e.account_id AND e.currency = a.currency
+WHERE a.purpose = 'payable' AND a.country = $1;

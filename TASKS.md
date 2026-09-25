@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 30/44 | `███████░░░`  68% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 31/44 | `███████░░░`  70% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 28/32 | `█████████░`  88% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 23/52 | `████░░░░░░`  44% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **16/82** | **127/366** | `████░░░░░░`  35% |
+| **All** | | | **16/82** | **128/366** | `████░░░░░░`  35% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -484,7 +484,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.4.c `POST /api/auth/register` takes region, locale, display name, date of birth, timezone and, when needed, guardian email. It returns a session.
   - [x] 1.4.d `apps/api/src/modules/identity/me.controller.ts` provides `GET /api/me` (profile, age band, business memberships, staff roles) and `PATCH /api/me` (display name, locale). These are root routes only; B's `me` module owns the sub-routes and C's `business` module owns `/api/me/businesses`. — Verified: `me.controller.test.ts`, 12 tests against a real app/DB/PDP (register→GET, PATCH persists, region immutable, anonymous refused).
   - [x] 1.4.e Email verification actually stores `verified_at`. Today it stores nothing (`auth.service.ts:284-308`). — Verified: `auth.service.test.ts`, a real-DB round trip (register → login → requestEmailVerification → confirmEmailVerification → `identity.credential.verified_at` reads back as a `Date`, starts NULL, survives a replay refusal unchanged).
-  - [ ] 1.4.f (requested by B for 5.4.b) DSAR handlers for `identity.user_profile`, credentials and sessions, registered with `dsar-orchestrator`.
+  - [x] 1.4.f (requested by B for 5.4.b) DSAR handlers for `identity.user_profile`, credentials and sessions, registered with `dsar-orchestrator`. — `packages/db/src/dsar-handlers.ts`'s `identity` domain now erases all four of business membership, `user_profile`, `credential` and `session` in one handler (a migration first widened `identity.credential`'s grant to include DELETE). Verified against real Postgres in `dsar-handlers.test.ts`.
   - [x] 1.4.g **Check:** register → `GET /api/me` shows region AU, locale en-AU and age band adult. With the flag off, a 15-year-old is refused. — Verified in `me.controller.test.ts`, including the under-13 neutral refusal and its 24h retry-block cookie, and the TEEN_ACCOUNTS-on path (guardian_email_required, a pending teen's ageBand reading "teen").
 - [ ] **1.5 The principal comes from the session, never from headers** · needs: 1.4 — 🔄 slot 3 — d, c ✅ (don't need 1.4); a/b/e/f wait for 1.4, still not ✅
   - [ ] 1.5.a `PrincipalService.resolve` reads the `yt_session` httpOnly cookie (or Bearer token) through `SessionService.validateAndTouch`. **Delete every `x-yt-*` header path**, and remove the refusal to boot when `NODE_ENV=production`. **In the same commit** (exempt), remove the header fallback from `session-for.ts` and move every boot test in every area that still sends raw `x-yt-*` headers onto it.

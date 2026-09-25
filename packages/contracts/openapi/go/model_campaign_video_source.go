@@ -1,7 +1,7 @@
 /*
 YourTal contracts
 
-Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.ts (YT-0552, extended by YT-0559). Do not edit by hand.  `paths` covers every route the business module (apps/api/src/modules/business), campaign module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint serve, hand-declared in route-registry.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the watch module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this package has not given a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a documented module's controller route and a route-registry entry ever disagree, in either direction.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
+Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory in src/openapi/route-registry.{a,b,c}.ts, one file per area (YT-0552, extended by YT-0559, split by area in 1.3.a). Do not edit by hand.  `paths` covers every route the business module (apps/api/src/modules/business), campaign module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint serve, hand-declared in route-registry.{a,b,c}.ts against the live controllers rather than generated from Nest decorators — apps/api has no decorator metadata rich enough to produce accurate request/response shapes on its own. NOT every route apps/api serves: the watch module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this package has not given a contract entry — see src/openapi/route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails CI if a live controller route and a route-registry entry ever disagree, in either direction, across the whole of apps/api/src.  Cross-field rules are documented per component but NOT enforced by this document. Anything that must enforce them has to run the Zod schema or re-implement and test the rule.
 
 API version: 0.0.0
 */
@@ -22,7 +22,7 @@ var _ MappedNullable = &CampaignVideoSource{}
 // CampaignVideoSource Where the player resolves a campaign's video from, without guessing (YT-0503).
 type CampaignVideoSource struct {
 	Kind string `json:"kind"`
-	ManifestUrl string `json:"manifestUrl"`
+	ManifestUrl NullableString `json:"manifestUrl"`
 }
 
 type _CampaignVideoSource CampaignVideoSource
@@ -31,7 +31,7 @@ type _CampaignVideoSource CampaignVideoSource
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignVideoSource(kind string, manifestUrl string) *CampaignVideoSource {
+func NewCampaignVideoSource(kind string, manifestUrl NullableString) *CampaignVideoSource {
 	this := CampaignVideoSource{}
 	this.Kind = kind
 	this.ManifestUrl = manifestUrl
@@ -71,27 +71,29 @@ func (o *CampaignVideoSource) SetKind(v string) {
 }
 
 // GetManifestUrl returns the ManifestUrl field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *CampaignVideoSource) GetManifestUrl() string {
-	if o == nil {
+	if o == nil || o.ManifestUrl.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ManifestUrl
+	return *o.ManifestUrl.Get()
 }
 
 // GetManifestUrlOk returns a tuple with the ManifestUrl field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CampaignVideoSource) GetManifestUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ManifestUrl, true
+	return o.ManifestUrl.Get(), o.ManifestUrl.IsSet()
 }
 
 // SetManifestUrl sets field value
 func (o *CampaignVideoSource) SetManifestUrl(v string) {
-	o.ManifestUrl = v
+	o.ManifestUrl.Set(&v)
 }
 
 func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
@@ -105,7 +107,7 @@ func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
 func (o CampaignVideoSource) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["kind"] = o.Kind
-	toSerialize["manifestUrl"] = o.ManifestUrl
+	toSerialize["manifestUrl"] = o.ManifestUrl.Get()
 	return toSerialize, nil
 }
 

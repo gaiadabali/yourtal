@@ -119,18 +119,19 @@ export function buildDocument(version: string): OpenApiDocument {
       version,
       description:
         "Generated from the Zod schemas in @yourtal/contracts (YT-0031) plus the route inventory " +
-        "in src/openapi/route-registry.ts (YT-0552, extended by YT-0559). Do not edit by hand.\n\n" +
+        "in src/openapi/route-registry.{a,b,c}.ts, one file per area (YT-0552, extended by YT-0559, " +
+        "split by area in 1.3.a). Do not edit by hand.\n\n" +
         "`paths` covers every route the business module (apps/api/src/modules/business), campaign " +
         "module, watch module (excluding its checkpoint/ sub-module) and the shared health endpoint " +
-        "serve, hand-declared in route-registry.ts against the live controllers rather than " +
+        "serve, hand-declared in route-registry.{a,b,c}.ts against the live controllers rather than " +
         "generated from Nest decorators — apps/api has no decorator metadata rich enough to produce " +
         "accurate request/response shapes on its own. NOT every route apps/api serves: the watch " +
         "module's checkpoint/ sub-module (YT-0121/YT-0122), the store module (YT-0130/YT-0131/" +
         "YT-0132) and the auth module (YT-0540) are separate, concurrently in-flight streams this " +
         "package has not given a contract entry — see src/openapi/route-drift.test.ts's " +
         "KNOWN_OUT_OF_SCOPE ledger for exactly which routes those are and why. That same test fails " +
-        "CI if a documented module's controller route and a route-registry entry ever disagree, in " +
-        "either direction.\n\n" +
+        "CI if a live controller route and a route-registry entry ever disagree, in either " +
+        "direction, across the whole of apps/api/src.\n\n" +
         "Cross-field rules are documented per component but NOT enforced by this document. Anything " +
         "that must enforce them has to run the Zod schema or re-implement and test the rule.",
     },

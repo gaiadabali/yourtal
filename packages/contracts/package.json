@@ -55,7 +55,8 @@
     "./region": "./src/region/region.ts",
     "./region/mock": "./src/region/region.mock.ts",
     "./mock-source": "./src/mock-source.ts",
-    "./mock-seed": "./src/mock-seed.ts"
+    "./mock-seed": "./src/mock-seed.ts",
+    "./*": "./src/*.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

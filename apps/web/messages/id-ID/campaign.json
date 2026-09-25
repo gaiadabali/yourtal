@@ -28,5 +28,18 @@
     "emptyShowAll": "Tampilkan semua campaign",
     "kindLongForm": "video panjang",
     "kindQuick": "cepat"
+  },
+  "board": {
+    "title": "Dapatkan",
+    "filterAria": "Filter jenis campaign",
+    "filterAll": "Semua",
+    "filterLongForm": "Video panjang",
+    "filterQuick": "Cepat",
+    "sortLabel": "Urutkan",
+    "sortAria": "Urutkan campaign",
+    "sortValue": "Nilai terbaik",
+    "sortReward": "Reward tertinggi",
+    "sortDuration": "Durasi tersingkat",
+    "sortNewest": "Terbaru"
   }
 }

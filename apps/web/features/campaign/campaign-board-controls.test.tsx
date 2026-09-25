@@ -2,6 +2,9 @@ import "@testing-library/jest-dom/vitest";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { CampaignBoardControls } from "./campaign-board-controls";
+import { getCampaignBoardLabels } from "./campaign-board-labels";
+
+const labels = getCampaignBoardLabels("id-ID");
 
 const push = vi.fn();
 let searchParams = new URLSearchParams();
@@ -39,20 +42,20 @@ describe("CampaignBoardControls", () => {
   // in-page panel), so these assert the href each one points at rather than a
   // mocked router call — the URL is the actual contract.
   it("renders a link for every kind filter option and a labelled sort combobox", () => {
-    render(<CampaignBoardControls />);
+    render(<CampaignBoardControls labels={labels} />);
     expect(screen.getByRole("navigation", { name: /filter jenis campaign/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Semua" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("combobox", { name: /urutkan campaign/i })).toBeInTheDocument();
   });
 
   it("points each kind filter at a URL carrying that filter, preserving the pathname", () => {
-    render(<CampaignBoardControls />);
+    render(<CampaignBoardControls labels={labels} />);
     expect(screen.getByRole("link", { name: "Cepat" })).toHaveAttribute("href", "/?kind=quick");
   });
 
   it("reads its initial kind selection from the URL rather than defaulting blind", () => {
     searchParams = new URLSearchParams("kind=long_form");
-    render(<CampaignBoardControls />);
+    render(<CampaignBoardControls labels={labels} />);
     expect(screen.getByRole("link", { name: "Video panjang" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -62,7 +65,7 @@ describe("CampaignBoardControls", () => {
 
   it("preserves the existing sort value when only the kind filter changes", () => {
     searchParams = new URLSearchParams("sort=reward");
-    render(<CampaignBoardControls />);
+    render(<CampaignBoardControls labels={labels} />);
     expect(screen.getByRole("link", { name: "Cepat" })).toHaveAttribute(
       "href",
       "/?sort=reward&kind=quick",
@@ -70,10 +73,18 @@ describe("CampaignBoardControls", () => {
   });
 
   it("navigates via router.push when the sort select changes", async () => {
-    render(<CampaignBoardControls />);
+    render(<CampaignBoardControls labels={labels} />);
     fireEvent.change(screen.getByRole("combobox", { name: /urutkan campaign/i }), {
       target: { value: "reward" },
     });
     await waitFor(() => expect(push).toHaveBeenCalledWith("/?sort=reward"));
+  });
+
+  it("renders English labels for en-AU", () => {
+    render(<CampaignBoardControls labels={getCampaignBoardLabels("en-AU")} />);
+    expect(screen.getByRole("link", { name: "All" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Long videos" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /sort campaigns/i })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Best value" })).toBeInTheDocument();
   });
 });

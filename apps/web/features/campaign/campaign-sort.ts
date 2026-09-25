@@ -13,12 +13,13 @@ export type CampaignSortKey = (typeof campaignSortKeys)[number];
 
 export const DEFAULT_CAMPAIGN_SORT: CampaignSortKey = "value";
 
-export const CAMPAIGN_SORT_OPTIONS: ReadonlyArray<{ key: CampaignSortKey; label: string }> = [
-  { key: "value", label: "Nilai terbaik" },
-  { key: "reward", label: "Reward tertinggi" },
-  { key: "duration", label: "Durasi tersingkat" },
-  { key: "newest", label: "Terbaru" },
-];
+/** Each option's label lives in the `campaign.board` catalogue under `labelKey`. */
+export const CAMPAIGN_SORT_OPTIONS = [
+  { key: "value", labelKey: "sortValue" },
+  { key: "reward", labelKey: "sortReward" },
+  { key: "duration", labelKey: "sortDuration" },
+  { key: "newest", labelKey: "sortNewest" },
+] as const satisfies ReadonlyArray<{ key: CampaignSortKey; labelKey: string }>;
 
 export function isCampaignSortKey(value: string): value is CampaignSortKey {
   return (campaignSortKeys as readonly string[]).includes(value);

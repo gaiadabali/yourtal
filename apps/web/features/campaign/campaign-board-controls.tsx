@@ -4,6 +4,7 @@ import { useId } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import Link from "next/link";
+import type { CampaignBoardLabels } from "./campaign-board-labels";
 import { buildCampaignBoardQuery, parseCampaignBoardParams } from "./campaign-board-params";
 import { CAMPAIGN_KIND_FILTER_OPTIONS } from "./campaign-filter";
 import { CAMPAIGN_SORT_OPTIONS, isCampaignSortKey } from "./campaign-sort";
@@ -29,7 +30,7 @@ import { CAMPAIGN_SORT_OPTIONS, isCampaignSortKey } from "./campaign-sort";
  * picker on the mid-tier Android this app targets (docs/08 §3). Radix
  * Select stays the right choice where a trigger needs rich content.
  */
-export function CampaignBoardControls() {
+export function CampaignBoardControls({ labels }: { labels: CampaignBoardLabels }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -47,7 +48,7 @@ export function CampaignBoardControls() {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <nav
-        aria-label="Filter jenis campaign"
+        aria-label={labels.filterAria}
         // flex-wrap: three pill links (plus their padding) don't fit one
         // row at 320px x 200% zoom; without it they force the row past the
         // viewport instead of wrapping onto a second line (YT-0401).
@@ -66,7 +67,7 @@ export function CampaignBoardControls() {
                   : "rounded-md px-3 py-1.5 text-sm font-sans text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               }
             >
-              {option.label}
+              {labels.kinds[option.key]}
             </Link>
           );
         })}
@@ -75,8 +76,8 @@ export function CampaignBoardControls() {
       <div className="flex items-center gap-2 text-sm font-sans text-fg-muted">
         <label htmlFor={sortId} className="shrink-0">
           {/* Visible text stays short; the accessible name stays complete. */}
-          {"Urutkan "}
-          <span className="sr-only">campaign</span>
+          <span aria-hidden="true">{labels.sortLabel}</span>
+          <span className="sr-only">{labels.sortAria}</span>
         </label>
         <select
           id={sortId}
@@ -91,7 +92,7 @@ export function CampaignBoardControls() {
         >
           {CAMPAIGN_SORT_OPTIONS.map((option) => (
             <option key={option.key} value={option.key}>
-              {option.label}
+              {labels.sorts[option.key]}
             </option>
           ))}
         </select>

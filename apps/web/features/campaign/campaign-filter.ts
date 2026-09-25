@@ -25,14 +25,12 @@ export type CampaignKindFilter = (typeof CAMPAIGN_KIND_FILTER_VALUES)[number];
 
 export const DEFAULT_CAMPAIGN_KIND_FILTER: CampaignKindFilter = "all";
 
-export const CAMPAIGN_KIND_FILTER_OPTIONS: ReadonlyArray<{
-  key: CampaignKindFilter;
-  label: string;
-}> = [
-  { key: "all", label: "Semua" },
-  { key: "long_form", label: "Video panjang" },
-  { key: "quick", label: "Cepat" },
-];
+/** Each option's label lives in the `campaign.board` catalogue under `labelKey`. */
+export const CAMPAIGN_KIND_FILTER_OPTIONS = [
+  { key: "all", labelKey: "filterAll" },
+  { key: "long_form", labelKey: "filterLongForm" },
+  { key: "quick", labelKey: "filterQuick" },
+] as const satisfies ReadonlyArray<{ key: CampaignKindFilter; labelKey: string }>;
 
 export function isCampaignKindFilter(value: string): value is CampaignKindFilter {
   return (CAMPAIGN_KIND_FILTER_VALUES as readonly string[]).includes(value);

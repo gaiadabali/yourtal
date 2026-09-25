@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { CampaignBoardControls } from "@/features/campaign/campaign-board-controls";
+import { getCampaignBoardLabels } from "@/features/campaign/campaign-board-labels";
 import { parseCampaignBoardParams } from "@/features/campaign/campaign-board-params";
 import { listCampaigns } from "@/features/campaign/campaign-data";
 import { CampaignEmptyState } from "@/features/campaign/campaign-empty-state";
@@ -21,12 +22,14 @@ import { getRegionDisplayConfig } from "@/features/region/get-region";
 export default async function EarnBoardPage(props: PageProps<"/">) {
   const searchParams = await props.searchParams;
   const { sort, kind } = parseCampaignBoardParams(searchParams);
+  const { locale } = await getRegionDisplayConfig();
+  const labels = getCampaignBoardLabels(locale);
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold text-fg">Earn</h1>
+      <h1 className="text-2xl font-semibold text-fg">{labels.title}</h1>
       <StreakCheckInCard />
-      <CampaignBoardControls />
+      <CampaignBoardControls labels={labels} />
       {/* Board-specific fallback lives here, not in the group's loading.tsx,
           which is shared with every sibling tab. */}
       <Suspense fallback={<CampaignGridSkeleton />}>

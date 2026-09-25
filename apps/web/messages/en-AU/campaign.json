@@ -28,5 +28,18 @@
     "emptyShowAll": "Show all campaigns",
     "kindLongForm": "long-form",
     "kindQuick": "quick"
+  },
+  "board": {
+    "title": "Earn",
+    "filterAria": "Filter campaigns by kind",
+    "filterAll": "All",
+    "filterLongForm": "Long videos",
+    "filterQuick": "Quick",
+    "sortLabel": "Sort",
+    "sortAria": "Sort campaigns",
+    "sortValue": "Best value",
+    "sortReward": "Highest reward",
+    "sortDuration": "Shortest",
+    "sortNewest": "Newest"
   }
 }

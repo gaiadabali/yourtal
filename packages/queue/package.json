@@ -20,7 +20,7 @@
   "dependencies": {
     "@yourtal/idempotency": "workspace:*",
     "pg": "8.23.0",
-    "pg-boss": "12.30.0"
+    "pg-boss": "12.33.1"
   },
   "devDependencies": {
     "@types/pg": "8.23.1",

@@ -393,6 +393,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "ledger.allocation_hold":
     "EM-08 (4.4.e, 20260925195500_allocation_holds.sql): a reward session's in-flight reservation against its allocation, moved only through the four SECURITY DEFINER verbs. Same ledger-internals note as ledger.account above.",
   "ledger.allocation_return": "Same ledger-internals note as ledger.account above.",
+  "ledger.burn":
+    "4.3.e (20260925196000_ledger_burns.sql): the exactly-once-per-saga record behind burnForVoucher/getBurn. Same ledger-internals note as ledger.account above.",
+  "ledger.burn_reinstatement":
+    "K13's exactly-once reinstatement of a burn (same migration). Same ledger-internals note as ledger.account above.",
   "ledger.marketing_funding":
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
   // pg-boss's own schema, installed verbatim from its v40 construction plan by
@@ -480,8 +484,6 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "voucher.merchant_credential": "Same redemption-network note as voucher.authorization above.",
   "voucher.kill_switch": "Same redemption-network note as voucher.authorization above.",
   "voucher.redemption_attempt": "Same redemption-network note as voucher.authorization above.",
-  "voucher.merchant_signature_seen":
-    "D9 (4.6.d, 20260925194200_voucher_replay_guards.sql): the replay-guard set for merchant-signed requests, pruned by a sweeper past the replay window. `yourtal_app` is REVOKEd from it entirely -- same redemption-network note as voucher.authorization above.",
   "watch.coverage":
     "The raw evidence rows behind watch-coverage.ts's range arithmetic (YT-0120/YT-0551). That module exports functions and types over server-computed ranges, not a persisted object schema, so there is no contract to map.",
   "watch.checkpoint_nonce":

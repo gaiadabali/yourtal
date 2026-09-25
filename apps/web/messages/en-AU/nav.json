@@ -1,8 +1,11 @@
 {
-  "earn": "Earn",
-  "quick": "Quick",
+  "home": "Home",
+  "watch": "Watch",
   "store": "Store",
   "wallet": "Wallet",
   "me": "Me",
-  "primary": "Primary"
+  "primary": "Primary",
+  "searchLabel": "Search YourTal",
+  "searchPlaceholder": "Search brands, videos and rewards",
+  "pointsAvailable": "{points} points available"
 }

@@ -65,5 +65,11 @@
   "notFound": {
     "heading": "Not found",
     "body": "This page does not exist or is no longer available."
+  },
+  "footer": {
+    "tagline": "Watch, learn, earn — and spend it where you live.",
+    "regionsHeading": "Choose your region",
+    "au": "Australia (English)",
+    "id": "Indonesia (Bahasa Indonesia)"
   }
 }

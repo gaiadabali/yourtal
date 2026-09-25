@@ -65,5 +65,11 @@
   "notFound": {
     "heading": "Tidak ditemukan",
     "body": "Halaman ini tidak ada atau sudah tidak tersedia."
+  },
+  "footer": {
+    "tagline": "Tonton, pelajari, dapatkan poin — dan belanjakan di tempat kamu tinggal.",
+    "regionsHeading": "Pilih wilayahmu",
+    "au": "Australia (English)",
+    "id": "Indonesia (Bahasa Indonesia)"
   }
 }

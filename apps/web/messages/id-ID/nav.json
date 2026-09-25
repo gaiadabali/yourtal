@@ -1,8 +1,11 @@
 {
-  "earn": "Dapatkan",
-  "quick": "Cepat",
+  "home": "Beranda",
+  "watch": "Tonton",
   "store": "Toko",
   "wallet": "Dompet",
   "me": "Saya",
-  "primary": "Utama"
+  "primary": "Utama",
+  "searchLabel": "Cari di YourTal",
+  "searchPlaceholder": "Cari merek, video, dan reward",
+  "pointsAvailable": "{points} poin tersedia"
 }

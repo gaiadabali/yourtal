@@ -9,6 +9,8 @@ import { FormsGroup } from "./groups/forms";
 import { OverlaysGroup } from "./groups/overlays";
 import { LayoutGroup } from "./groups/structure";
 import { RewardsMediaGroup } from "./groups/rewards-media";
+import { ShellsGroup } from "./groups/shells";
+import { VideoGroup } from "./groups/video";
 
 const SURFACES = [
   { value: "viewer", label: "Viewer" },
@@ -64,6 +66,8 @@ export function Gallery({ initialSurface, initialTheme }: GalleryProps) {
         <LayoutGroup />
         <DataDisplayGroup />
         <RewardsMediaGroup />
+        <VideoGroup />
+        <ShellsGroup />
       </main>
     </div>
   );

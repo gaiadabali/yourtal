@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isActiveTab } from "./nav-items";
+import { isActiveTab, navItems } from "./nav-items";
 
 describe("isActiveTab", () => {
   it("matches the tab's own exact path", () => {
@@ -14,19 +14,42 @@ describe("isActiveTab", () => {
     expect(isActiveTab("/walletx", "/wallet")).toBe(false);
   });
 
-  it("matches the Earn tab on the campaign entry and watch subtrees", () => {
+  it("matches the Home tab on the campaign entry and watch subtrees", () => {
     expect(isActiveTab("/campaign/abc-123", "/", ["/campaign", "/watch"])).toBe(true);
     expect(isActiveTab("/watch/abc-123", "/", ["/campaign", "/watch"])).toBe(true);
     expect(isActiveTab("/watch/abc-123/checkpoint", "/", ["/campaign", "/watch"])).toBe(true);
   });
 
-  it("does not match Earn for other tabs' routes", () => {
+  it("does not match Home for other tabs' routes", () => {
     expect(isActiveTab("/quick", "/", ["/campaign", "/watch"])).toBe(false);
     expect(isActiveTab("/store", "/", ["/campaign", "/watch"])).toBe(false);
   });
 
-  it("matches Earn's root path exactly, not every path", () => {
+  it("matches Home's root path exactly, not every path", () => {
     expect(isActiveTab("/", "/", ["/campaign", "/watch"])).toBe(true);
     expect(isActiveTab("/me", "/", ["/campaign", "/watch"])).toBe(false);
+  });
+});
+
+describe("navItems", () => {
+  it("lists the five tabs in the fixed Home · Watch · Store · Wallet · Me order (task 3.5.c)", () => {
+    expect(navItems.map((item) => item.labelKey)).toStrictEqual([
+      "home",
+      "watch",
+      "store",
+      "wallet",
+      "me",
+    ]);
+    expect(navItems.map((item) => item.href)).toStrictEqual([
+      "/",
+      "/quick",
+      "/store",
+      "/wallet",
+      "/me",
+    ]);
+  });
+
+  it("keeps no link to /business anywhere in the tab list (requested by C)", () => {
+    expect(navItems.some((item) => item.href.startsWith("/business"))).toBe(false);
   });
 });

@@ -1,14 +1,14 @@
-import { CircleUserRound, Coins, Store, Wallet, Zap } from "lucide-react";
+import { CircleUserRound, Home, PlayCircle, Store, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { SupportedLocale } from "./nav-i18n";
 
 /**
- * The five tabs, in the fixed order set by docs/17-surfaces-and-roles.md:1
- * (Earn · Quick · Store · Wallet · Me). `href` is the tab's own route;
- * `matchPrefixes` lists additional route subtrees that belong to this tab
- * without living under its path — Earn's entry (`/campaign/[id]`) and watch
- * (`/watch/[id]`) flows are reached from the Earn board but are not
- * themselves tab routes.
+ * The five tabs, in the fixed order set by docs/17-surfaces-and-roles.md:1,
+ * relabelled Home · Watch · Store · Wallet · Me by task 3.5.c (was Earn ·
+ * Quick). `href` is the tab's own route; `matchPrefixes` lists additional
+ * route subtrees that belong to this tab without living under its path —
+ * Home's entry (`/campaign/[id]`) and watch (`/watch/[id]`) flows are
+ * reached from the home board but are not themselves tab routes.
  *
  * `labelKey` (YT-0058), not `label`: this list is a plain data module with
  * no locale of its own, and a hardcoded English `label` here was exactly
@@ -26,7 +26,7 @@ import type { SupportedLocale } from "./nav-i18n";
 // generated route types.
 export type TabHref = "/" | "/quick" | "/store" | "/wallet" | "/me";
 
-export type NavLabelKey = "earn" | "quick" | "store" | "wallet" | "me";
+export type NavLabelKey = "home" | "watch" | "store" | "wallet" | "me";
 
 export interface NavItem {
   href: TabHref;
@@ -36,8 +36,8 @@ export interface NavItem {
 }
 
 export const navItems: readonly NavItem[] = [
-  { href: "/", labelKey: "earn", icon: Coins, matchPrefixes: ["/campaign", "/watch"] },
-  { href: "/quick", labelKey: "quick", icon: Zap },
+  { href: "/", labelKey: "home", icon: Home, matchPrefixes: ["/campaign", "/watch"] },
+  { href: "/quick", labelKey: "watch", icon: PlayCircle },
   { href: "/store", labelKey: "store", icon: Store },
   { href: "/wallet", labelKey: "wallet", icon: Wallet },
   { href: "/me", labelKey: "me", icon: CircleUserRound },

@@ -7,6 +7,7 @@ import {
   publicLocaleConfig,
   requirePublicLocale,
 } from "@/features/public/public-locale";
+import { PublicFooter } from "@/features/public/public-footer";
 import { PublicHeader } from "@/features/public/public-header";
 
 /**
@@ -64,6 +65,7 @@ export default async function PublicLocaleLayout({ children, params }: PublicLoc
       <div className="flex min-h-dvh flex-col bg-surface">
         <PublicHeader locale={config.intlLocale} homeHref={`/${locale}`} />
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">{children}</main>
+        <PublicFooter locale={config.intlLocale} />
       </div>
     </RootDocument>
   );

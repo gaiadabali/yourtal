@@ -1,36 +1,41 @@
 import { cn } from "@yourtal/ui/cn";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
-import { getNavTranslator } from "./nav-i18n";
+import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
 import { navItems } from "./nav-items";
 import { NavLink } from "./nav-link";
 
+export interface SideNavProps {
+  locale: SupportedLocale;
+}
+
 const LINK_BASE =
-  "flex w-full flex-col items-center gap-1 rounded-md px-2 py-2 text-xs font-sans font-medium text-fg-muted " +
-  "transition-colors hover:bg-surface lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm";
-const LINK_ACTIVE = "bg-surface text-primary";
+  "flex w-full items-center gap-3 rounded-control px-3 py-2 text-label font-sans font-medium " +
+  "text-fg-muted transition-colors duration-(--duration-fast) ease-standard hover:bg-surface-sunken";
+const LINK_ACTIVE = "bg-surface-sunken text-accent";
 
 /**
- * Side rail from `md` up, replacing the bottom bar (docs/17 §1.1: "tablet
- * and desktop widen the layout ... persistent side navigation. Not a
- * different product."). Fixed width (`w-20`, `lg:w-56`) so it never resizes
- * on route change. `pl-[env(safe-area-inset-left)]` clears a notch in
- * landscape orientation on the side the rail sits against.
+ * Side rail from `lg` (1024px) up, replacing the bottom bar — task 3.5.c
+ * moved this from `md`, so the rail is a desktop affordance only; a tablet
+ * in portrait keeps the mobile bottom nav (docs/17 §1.1 talks about
+ * "tablet and desktop" together, but 1024px is where this app actually has
+ * room for a persistent 56-character-wide label column without cramping
+ * page content). Fixed width (`w-56`) so it never resizes on route change.
+ * `pl-[env(safe-area-inset-left)]` clears a notch in landscape orientation
+ * on the side the rail sits against.
  *
- * `async` (YT-0058): see bottom-nav.tsx's doc comment — same reason, same
- * pattern, same `nav.json` catalogue, so the two chrome variants can never
- * disagree on a label for a given region.
+ * Takes `locale` as a plain prop — see `bottom-nav.tsx`'s doc comment for
+ * why (same reasoning, same catalogue, so the two chrome variants can never
+ * disagree on a label for a given region).
  */
-export async function SideNav() {
-  const { locale } = await getRegionDisplayConfig();
+export function SideNav({ locale }: SideNavProps) {
   const t = getNavTranslator(locale);
 
   return (
     <nav
       aria-label={t("primary")}
       className={cn(
-        "fixed inset-y-0 left-0 z-40 hidden w-20 flex-col items-center gap-1 border-r border-border",
-        "bg-surface-raised py-6 md:flex lg:w-56 lg:items-stretch lg:px-3",
-        "pl-[max(0px,env(safe-area-inset-left))]",
+        "fixed inset-y-0 left-0 z-(--z-nav) hidden w-56 flex-col gap-1 border-r border-border-subtle",
+        "bg-surface px-3 py-6 lg:flex",
+        "pl-[max(0.75rem,env(safe-area-inset-left))]",
       )}
     >
       {navItems.map((item) => {

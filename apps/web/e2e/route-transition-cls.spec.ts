@@ -18,12 +18,16 @@ import { pinRegionCookie } from "./pin-region";
  * un-attributed JSON import ("needs an import attribute of type: json") —
  * a Next.js-loader feature, not a Node one, per
  * wallet-merchant-qr-agreement.spec.ts's identical note.
+ *
+ * `watch` (task 3.5.c): the second tab was relabelled from "Quick" to
+ * "Watch" (href unchanged, still `/quick`) when the viewer shell moved to
+ * Home · Watch · Store · Wallet · Me.
  */
 interface NavCatalogue {
   primary: string;
   store: string;
   wallet: string;
-  quick: string;
+  watch: string;
   me: string;
 }
 const idNav = JSON.parse(
@@ -43,7 +47,7 @@ test.beforeEach(async ({ context, baseURL }) => {
  * not cumulative session noise. The gate is CLS <= 0.1 per transition.
  *
  * Transitions are driven through the real bottom nav (`nav[aria-label=idNav.primary]`),
- * clicking each tab in turn — Earn -> Store -> Wallet -> Quick -> Me — so this
+ * clicking each tab in turn — Home -> Store -> Wallet -> Watch -> Me — so this
  * exercises actual client-side Next.js navigation between the app shell's
  * five tabs, not a fresh document load each time. Waiting is done on real
  * conditions (network idle plus two animation-frame flushes so any
@@ -51,14 +55,15 @@ test.beforeEach(async ({ context, baseURL }) => {
  * fixed timeout.
  */
 
-// Starting tab is Earn ("/"), loaded before the loop below. Each entry is
+// Starting tab is Home ("/"), loaded before the loop below. Each entry is
 // the NEXT tab clicked into, so the sequence exercised is
-// Earn -> Store -> Wallet -> Quick -> Me, per the ticket's own wording
-// ("Earn -> Store -> Wallet -> Me") plus Quick, since it is a fifth real tab.
+// Home -> Store -> Wallet -> Watch -> Me, per the ticket's own wording
+// ("Earn -> Store -> Wallet -> Me", pre-3.5.c naming) plus Watch, since it
+// is a fifth real tab.
 const TRANSITIONS: readonly { label: string; to: string }[] = [
   { label: idNav.store, to: "/store" },
   { label: idNav.wallet, to: "/wallet" },
-  { label: idNav.quick, to: "/quick" },
+  { label: idNav.watch, to: "/quick" },
   { label: idNav.me, to: "/me" },
 ];
 

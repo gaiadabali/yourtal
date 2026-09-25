@@ -10,4 +10,14 @@ describe("PublicHeader", () => {
     const signUp = screen.getByRole("link", { name: "Daftar gratis" });
     expect(signUp).toHaveAttribute("href", "/onboarding");
   });
+
+  it("offers a log-in link, pointed at /au until /login exists (task 3.5.c)", () => {
+    render(<PublicHeader locale="en-AU" homeHref="/au" />);
+    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/au");
+  });
+
+  it("localises the log-in link for id-ID", () => {
+    render(<PublicHeader locale="id-ID" homeHref="/id" />);
+    expect(screen.getByRole("link", { name: "Masuk" })).toHaveAttribute("href", "/au");
+  });
 });

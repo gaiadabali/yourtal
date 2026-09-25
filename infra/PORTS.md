@@ -64,13 +64,20 @@ main checkout runs compose. The ports are set in each worktree's `.env`.
 | 1    | 26310 | 26311 | 26312  | 26313   | 26314      | 26316       | 26315  |
 | 2    | 26320 | 26321 | 26322  | 26323   | 26324      | 26326       | 26325  |
 | 3    | 26330 | 26331 | 26332  | 26333   | 26334      | 26336       | 26335  |
+| 3b (`yourtal-p1-b` helper worktree) | 26336 | 26337 | 26338 | 26339 | 26340 | 26342 | 26335 (shared with slot 3) |
 
 - web and api read `WEB_PORT` and `PORT`; Playwright reads `PLAYWRIGHT_PORT`
   (the offline config adds 2).
 - Cerbos runs as the container `yourtal-cerbos-<slot>` via `pnpm dev:cerbos`,
-  serving that worktree's `./policies`.
+  serving that worktree's `./policies`. Slot 3b has no policy work of its own
+  (Phase 1's agent B only touches `packages/jurisdiction`), so it shares
+  slot 3's Cerbos container on 26335 instead of running its own.
 - The ledger and voucher ports are reserved; until per-slot services exist
-  every slot uses the shared containers on 26910 and 26911.
+  every slot (including 3b) uses the shared containers on 26910 and 26911.
+- Slot 3b's web port (26336) is the same number as slot 3's offline-e2e port.
+  They do not collide in practice — offline e2e only binds that port for the
+  duration of one Playwright run — but do not run slot 3's offline e2e suite
+  and slot 3b's `next dev` at the exact same moment.
 - The media worker runs on the host, not in compose, and needs `ffmpeg` on
   PATH (the dev machine has ffmpeg 8.1.2 from winget). It takes no port.
 

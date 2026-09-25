@@ -35,10 +35,11 @@ import { deviceBindingSchema, type DeviceBinding } from "./device-binding-schema
  * this module — only `provisioning-actions.ts` (`"use server"`) and Server
  * Components (`page.tsx`, `device-provisioning-form.tsx`,
  * `pin-unlock-screen.tsx`, `merchant-session-chrome.tsx`,
- * `app/(merchant)/merchant/devices/page.tsx`). The repo has no `server-only`
- * package installed to enforce this at build time (same gap
- * `get-region.ts` notes); this comment is the only guard until one is
- * added.
+ * `app/(merchant)/merchant/devices/page.tsx`, and, since task 0.5,
+ * `app/(merchant)/layout.tsx`, which reads `locale` for `lang`). The repo
+ * has no `server-only` package installed to enforce this at build time
+ * (same gap `get-region.ts` notes); this comment is the only guard until
+ * one is added.
  */
 const DEVICE_COOKIE = "yourtal-merchant-device";
 const UNLOCK_COOKIE = "yourtal-merchant-unlocked";

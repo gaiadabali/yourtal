@@ -8,7 +8,7 @@ import { regionSchema, type Region } from "@yourtal/contracts/region";
 import { regionDisplayConfig, type RegionDisplayConfig } from "./region-config";
 import { REGION_COOKIE_NAME } from "./region-cookie";
 
-const DEFAULT_REGION: Region = "ID";
+const DEFAULT_REGION: Region = "AU";
 
 /**
  * Resolves the active region for a Server Component, without prop-drilling:
@@ -19,9 +19,9 @@ const DEFAULT_REGION: Region = "ID";
  * since `cookies()` is a server-only API.
  *
  * There is no registration flow yet (YT-0405 is foundation only; region
- * selection at registration is a future ticket), so this defaults to "ID"
- * — today's assumed region — until something writes a validated value to
- * the `yourtal-region` cookie.
+ * selection at registration is a future ticket), so this defaults to "AU"
+ * (task 0.5) — English/AUD for a cookie-less first visit — until something
+ * writes a validated value to the `yourtal-region` cookie.
  *
  * This file is NOT marked `"use client"` and must never be imported from a
  * file that is: it value-imports `regionSchema` (Zod) and calls a

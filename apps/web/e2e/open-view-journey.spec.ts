@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { findBonusAccuracyCampaign } from "./find-bonus-accuracy-campaign";
+import { pinRegionCookie } from "./pin-region";
 
 /**
  * Any campaign that shows a "Reward dasar" figure on its public entry page
@@ -29,6 +30,17 @@ const BONUS_ACCURACY_CAMPAIGN_ID = findBonusAccuracyCampaign().id;
  * for real, rather than leaving it unverified.
  */
 test.describe("Open-view journey", () => {
+  // this journey lives entirely under `/id/...`
+  // (`app/(public)/[locale]/**`), whose locale is resolved from the URL
+  // segment, not the `yourtal-region` cookie — so `get-region.ts`'s
+  // cookie-less default flipping to "AU" does not change what this route
+  // renders. Pinned anyway for defense-in-depth (and to match this task's
+  // spec list), in case a future step in this journey ever crosses into a
+  // cookie-driven `(app)` route.
+  test.beforeEach(async ({ context, baseURL }) => {
+    await pinRegionCookie(context, "ID", baseURL!);
+  });
+
   test("public campaign page links to anonymous playback with no reward UI and no claim affordance anywhere in the DOM", async ({
     page,
   }) => {

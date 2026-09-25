@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { MOCK_MERCHANTS } from "@yourtal/contracts/merchant/roster";
 import { healthyVoucherFixture } from "@/features/merchant/merchant-voucher-fixtures";
+import { pinRegionCookie } from "./pin-region";
 
 // An arbitrary 4-digit PIN this suite sets during pairing — pairing CREATES
 // this PIN, it is never matched against a generated value, so there is
@@ -50,6 +51,13 @@ const MERCHANT_PROVISIONING_CODE = merchantForHealthyVoucher.provisioningCode;
  * a customer meets them.
  */
 test.describe("Redeem journey", () => {
+  // `get-region.ts`'s cookie-less default is now "AU". The
+  // `(app)` wallet leg of this journey renders from `id-ID` catalogues, so
+  // pin the region cookie explicitly rather than rely on the old default.
+  test.beforeEach(async ({ context, baseURL }) => {
+    await pinRegionCookie(context, "ID", baseURL!);
+  });
+
   test("a voucher taken from the wallet redeems at a provisionable counter device", async ({
     page,
   }) => {

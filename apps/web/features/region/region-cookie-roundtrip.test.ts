@@ -22,17 +22,17 @@ describe("region cookie round-trip between onboarding and the region reader", ()
   });
 
   it("resolves the region that onboarding wrote, rather than the default", async () => {
-    // Australia specifically: "ID" is the fallback, so a bug that loses the
-    // cookie entirely would still pass if this asserted "ID".
+    // Indonesia specifically: "AU" is the fallback (task 0.5), so a bug
+    // that loses the cookie entirely would still pass if this asserted "AU".
     vi.doMock("next/headers", () => ({
       cookies: () =>
         Promise.resolve({
-          get: (name: string) => (name === ONBOARDING_REGION_COOKIE ? { value: "AU" } : undefined),
+          get: (name: string) => (name === ONBOARDING_REGION_COOKIE ? { value: "ID" } : undefined),
         }),
     }));
 
     const { getRegion } = await import("./get-region");
-    expect(await getRegion()).toBe("AU");
+    expect(await getRegion()).toBe("ID");
     vi.doUnmock("next/headers");
   });
 
@@ -42,8 +42,9 @@ describe("region cookie round-trip between onboarding and the region reader", ()
       cookies: () => Promise.resolve({ get: () => undefined }),
     }));
 
+    // the cookie-less default is "AU" (English/AUD), not "ID".
     const { getRegion } = await import("./get-region");
-    expect(await getRegion()).toBe("ID");
+    expect(await getRegion()).toBe("AU");
     vi.doUnmock("next/headers");
   });
 });

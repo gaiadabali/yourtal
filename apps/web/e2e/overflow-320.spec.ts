@@ -6,24 +6,34 @@ import {
   zeroRewardCampaignFixture,
 } from "@yourtal/contracts/campaign/mock";
 import { abovePlausibleBalanceListingFixture } from "@yourtal/contracts/listing/mock";
+import { pinRegionCookie } from "./pin-region";
 
 /**
- * `features/region/get-region.ts`'s `DEFAULT_REGION` is "ID" (id-ID), so the
- * primary nav's `aria-label` (YT-0058's nav i18n) renders this catalogue's
- * "primary" value, not a hardcoded English "Primary" — reading it from the
- * same catalogue the component itself renders from means this test tracks a
- * copy change instead of silently asserting a locale that no longer
- * applies. Read via `fs`, not a bare `import ... from "*.json"`: Playwright's
- * own Node/ESM runtime rejects an un-attributed JSON import ("needs an
- * import attribute of type: json") — a Next.js-loader feature, not a Node
- * one, per wallet-merchant-qr-agreement.spec.ts's identical note.
+ * `features/region/get-region.ts`'s `DEFAULT_REGION` was "ID"
+ * (id-ID) and is now "AU" (task 0.5.a) — this suite pins the region cookie
+ * to "ID" below (`test.beforeEach`) so it keeps exercising the `id-ID`
+ * catalogue it was written against, rather than picking up whichever
+ * locale happens to be the cookie-less default. The primary nav's
+ * `aria-label` (YT-0058's nav i18n) is read out of that SAME pinned
+ * locale's catalogue file, not a hardcoded English "Primary" — reading it
+ * from the same catalogue the component itself renders from means this
+ * test tracks a copy change instead of silently asserting a locale that no
+ * longer applies. Read via `fs`, not a bare `import ... from "*.json"`:
+ * Playwright's own Node/ESM runtime rejects an un-attributed JSON import
+ * ("needs an import attribute of type: json") — a Next.js-loader feature,
+ * not a Node one, per wallet-merchant-qr-agreement.spec.ts's identical note.
  */
 interface NavCatalogue {
   primary: string;
 }
+const PINNED_REGION = "ID";
 const idNav = JSON.parse(
   readFileSync(fileURLToPath(new URL("../messages/id-ID/nav.json", import.meta.url)), "utf-8"),
 ) as NavCatalogue;
+
+test.beforeEach(async ({ context, baseURL }) => {
+  await pinRegionCookie(context, PINNED_REGION, baseURL!);
+});
 
 // These three are named, hand-authored fixtures with fixed literal ids in
 // their own generator modules (`campaign.mock.ts`, `listing.mock.ts`) — NOT

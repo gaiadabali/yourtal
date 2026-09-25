@@ -29,9 +29,11 @@ const HlsAttacher = dynamic(() => import("./hls-attacher").then((mod) => mod.Hls
 export interface VideoPlayerProps {
   campaign: Campaign;
   chapters: readonly PlayerChapter[];
+  /** Passed to the point copy, which would otherwise format as `id-ID`. */
+  locale?: "en-AU" | "id-ID";
 }
 
-export function VideoPlayer({ campaign, chapters }: VideoPlayerProps) {
+export function VideoPlayer({ campaign, chapters, locale = "en-AU" }: VideoPlayerProps) {
   const isVisible = useTabVisibility();
   const session = useWatchSession(campaign, chapters, !isVisible);
   const showStartOverlay = !session.hasStarted && !session.resumeOffer;
@@ -78,6 +80,7 @@ export function VideoPlayer({ campaign, chapters }: VideoPlayerProps) {
         totalPoints={campaign.rewardPoints}
         isPlaying={session.isPlaying}
         isBackgrounded={session.isBackgrounded}
+        locale={locale}
       />
 
       <SeekSlider
@@ -105,7 +108,11 @@ export function VideoPlayer({ campaign, chapters }: VideoPlayerProps) {
       />
 
       {session.hasEnded ? (
-        <CompletionHandoff campaignId={campaign.id} provisionalPoints={session.accruedPoints} />
+        <CompletionHandoff
+          campaignId={campaign.id}
+          provisionalPoints={session.accruedPoints}
+          locale={locale}
+        />
       ) : null}
 
       {/* Play/pause state, announced once per transition — not spammed per frame. */}

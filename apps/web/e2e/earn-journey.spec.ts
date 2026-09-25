@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { findBonusAccuracyCampaign } from "./find-bonus-accuracy-campaign";
+import { pinRegionCookie } from "./pin-region";
 
 /**
  * A `long_form` campaign that actually scores `base_plus_accuracy_bonus`
@@ -46,6 +47,13 @@ const BONUS_ACCURACY_CAMPAIGN_ID = findBonusAccuracyCampaign().id;
  * The fixture is served by the local MinIO origin, not from `public/`.
  */
 test.describe("Earn journey", () => {
+  // `get-region.ts`'s cookie-less default is now "AU", so this
+  // suite's Indonesian assertions ("Reward dasar", "Mulai video", etc.) need
+  // the region cookie pinned explicitly — see pin-region.ts.
+  test.beforeEach(async ({ context, baseURL }) => {
+    await pinRegionCookie(context, "ID", baseURL!);
+  });
+
   test("home board's card reaches the entry card, whose terms and start action reach the same campaign's player, through real playback, into the checkpoint, to a result distinguishing base reward from accuracy bonus", async ({
     page,
   }) => {

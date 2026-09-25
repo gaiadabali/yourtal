@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { zeroRewardCampaignFixture } from "@yourtal/contracts/campaign/mock";
 import { manifestUrl } from "@yourtal/media/hls-origin";
+import { pinRegionCookie } from "./pin-region";
 
 // A named, hand-authored fixture with a fixed literal id in its own
 // generator module — not an element of the generated `mockCampaigns` array,
@@ -49,6 +50,16 @@ const LONG_FORM_CAMPAIGN_ID = zeroRewardCampaignFixture.id;
  * MinIO container, or point `S3_ENDPOINT` at a closed port) and confirm
  * every test fails here, not fifty seconds later inside the page.
  */
+// `get-region.ts`'s cookie-less default is now "AU". Nothing this
+// file asserts on (mm:ss text, aria-valuetext, raw video positions) is
+// itself locale-formatted, but the `/watch/[campaignId]` route this suite
+// exercises now reads the region cookie for the player's point copy
+// (`video-player.tsx`'s `locale` prop, task 0.5.c) — pinned so this suite
+// stays deterministic regardless of the default region.
+test.beforeEach(async ({ context, baseURL }) => {
+  await pinRegionCookie(context, "ID", baseURL!);
+});
+
 test.beforeAll(async () => {
   const url = manifestUrl();
   let response: Response;

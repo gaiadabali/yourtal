@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { mockListings } from "@yourtal/contracts/listing/mock";
 import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
 import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
+import { pinRegionCookie } from "./pin-region";
 
 /**
  * `burn-redemption.ts`'s `attemptBurn` deterministically simulates the
@@ -48,6 +49,13 @@ if (!affordableListing) {
 }
 const AFFORDABLE_LISTING_ID = affordableListing.id;
 test.describe("Spend journey", () => {
+  // `get-region.ts`'s cookie-less default is now "AU"; this suite
+  // asserts `id-ID` copy ("Tukar Sekarang", etc.), so pin the region cookie
+  // explicitly rather than rely on the old default.
+  test.beforeEach(async ({ context, baseURL }) => {
+    await pinRegionCookie(context, "ID", baseURL!);
+  });
+
   test("store browse -> offer -> burn flow -> price lock -> confirm -> success, with the offer page's affordability verdict honoured all the way through", async ({
     page,
   }) => {

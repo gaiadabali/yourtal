@@ -33,10 +33,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 15/43 | `████░░░░░░`  35% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 2/7 | 15/44 | `███░░░░░░░`  34% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 3/6 | 21/32 | `███████░░░`  66% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 18/51 | `████░░░░░░`  35% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 18/52 | `████░░░░░░`  35% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **14/82** | **100/364** | `███░░░░░░░`  27% |
+| **All** | | | **14/82** | **100/366** | `███░░░░░░░`  27% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`, F21/F22): 4.1.a ✅, 4.2 ✅, 4.3.a–d ✅ (0f18df1); 4.4.f, 4.4.i, 4.9.b ✅ (abc7ade); now 4.6.a–e. Routes and TS clients wait for 1.2 |
+| 1 | `yourtal-1` | **4** The bank is correct (early, F21/F22/F24) | 2026-09-25 | Go-only ahead of Phase 1 (`phase/4`): 4.1.a, 4.2, 4.3.a–d, 4.4.f, 4.4.i, 4.9.b, 4.6.a–e ✅ (e8dd34c). Now 4.4.k, 4.4.h, 4.4.e, 4.9.c, 4.3.e engine. Routes and TS clients wait for 1.2.a/b |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.3 ✅ (tokens v2 from After Dark). Now 3.4 primitives |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) on 1.2.a–e, then 1.5; B (`yourtal-p1-b`, `phase/1-b`) now on 1.4 → rest of 1.6 (AuthService wiring, dev inbox) → 1.7; C (`yourtal-p1-c`, `phase/1-c`) on 1.2.f (F23) |
 
@@ -465,6 +465,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.3.c Create `apps/worker`: a pg-boss runner (`packages/queue`) that **auto-loads** every `src/jobs/*.ts` exporting `job`, with no central list. Add ffmpeg to the Helios host prerequisites (`infra/HELIOS.md`).
   - [x] 1.3.d `apps/api/src/shared/testing/session-for.ts` (register + login → cookie) for everyone's tests. Until 1.5.a lands it **also returns the matching `x-yt-*` headers**, so a test passes both before and after 1.5.a. The boot tests move onto it in 1.5.a.
   - [x] 1.3.e **Check:** a new job file is picked up without editing any other file, and a new route passes route-drift once it is added to its area's registry. Verified: `apps/worker/src/job-loader.test.ts` adds `second.job.ts` next to `real.job.ts` with no other file touched; `packages/contracts/src/openapi/route-drift.test.ts` passes for the whole `apps/api` route set against the concatenated `route-registry.{a,b,c}.ts`.
+  - [ ] 1.3.f (requested by 4) `pnpm --filter @yourtal/db test` is red on `main` since 199958e: `seed.test.ts` fails 3 tests ("is idempotent" hits `question_option_question_id_fkey` in `seed/studio.ts:244`, plus the question-bank 3x and chapter checks). `pnpm check` does not run this suite, so the merge gate stayed green.
 - [ ] **1.4 Accounts and profile** · needs: 1.1 — 🔄 slot 3
   - [ ] 1.4.a Add a migration for `identity.user_profile` with these fields:
     - `region` AU | ID, immutable after signup;
@@ -746,6 +747,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - add `CHECK B × 1.25 ≤ P_issue`;
     - pin the multiplier at 1.00 (EM-11).
   - [ ] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
+  - [ ] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h
   - [ ] 4.4.j **Check:**
     - five concurrent grants at a cap of 19/20 → exactly one succeeds;
     - a campaign pointed at another business's allocation is refused;

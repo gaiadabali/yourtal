@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 30/52 | `██████░░░░`  58% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 31/52 | `██████░░░░`  60% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **20/82** | **145/366** | `████░░░░░░`  40% |
+| **All** | | | **20/82** | **146/366** | `████░░░░░░`  40% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Four agents. A (`yourtal-1`, `phase/4`): 4.4.a–d merging, then 4.8 and 4.7. B (`yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5, then 4.6.f/h. C (`yourtal-p4-c`, `phase/4-c`, db `yourtal_s1c`): 4.9.a remainder, 4.9.d. D (`yourtal-p4-d`, `phase/4-d`, db `yourtal_s1d`): 4.4.g event, 4.4.l |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Four agents. A (`yourtal-1`, `phase/4`): 4.4.a–d and 4.4.j ✅ (4331d78); now 4.8, then 4.7. B (`yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5, then 4.6.f/h. C (`yourtal-p4-c`, `phase/4-c`, db `yourtal_s1c`): 4.9.a remainder, 4.9.d. D (`yourtal-p4-d`, `phase/4-d`, db `yourtal_s1d`): 4.4.g event, 4.4.l |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | Helper on `phase/11`, no slot of its own. 11.3.a, then 11.3.b without JSON-LD. 11.1 and 11.2 ⛔ Phase 7 |
@@ -751,7 +751,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - pin the multiplier at 1.00 (EM-11).
   - [x] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
   - [ ] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h — 🔄 slot 1 (agent D)
-  - [ ] 4.4.j **Check:**
+  - [x] 4.4.j **Check:** passed on main 4331d78 (`caps_test`, `contract_test`, `k6_test`; live spec 22/22)
     - five concurrent grants at a cap of 19/20 → exactly one succeeds;
     - a campaign pointed at another business's allocation is refused;
     - a second session on the same campaign earns nothing;

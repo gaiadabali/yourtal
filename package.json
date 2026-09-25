@@ -33,6 +33,7 @@
     "media:publish": "pnpm --filter @yourtal/media publish:fixture",
     "dev:fresh": "pnpm dev:reset && pnpm db:migrate && pnpm db:seed && pnpm media:publish",
     "check:eol": "node scripts/check-line-endings.mjs",
+    "check:bundle-b": "node scripts/check-bundle-no-backing-rate.mjs apps/web",
     "format:check": "prettier --check ."
   },
   "devDependencies": {

@@ -8,6 +8,7 @@ import prettier from "eslint-config-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
 import mustUseResult from "./eslint-rules/must-use-result.mjs";
 import noVendorSdk from "./eslint-rules/no-vendor-sdk.mjs";
+import noMockBackingRate from "./eslint-rules/no-mock-backing-rate.mjs";
 import { builtinRules } from "eslint/use-at-your-own-risk";
 
 // A second copy of no-restricted-syntax, so a rule set can warn while the first errors.
@@ -188,6 +189,14 @@ export default tseslint.config(
     files: ["apps/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}", "services/**/*.ts"],
     plugins: { ytBoundary: { rules: { "no-vendor-sdk": noVendorSdk } } },
     rules: { "ytBoundary/no-vendor-sdk": "error" },
+  },
+
+  // Area A, 4.9.d: B never reaches a browser, so no new mock backing rate.
+  // The files still allowed one are named inside the rule.
+  {
+    files: ["apps/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}"],
+    plugins: { ytMoney: { rules: { "no-mock-backing-rate": noMockBackingRate } } },
+    rules: { "ytMoney/no-mock-backing-rate": "error" },
   },
 
   // Area B: the viewer's features use design tokens only. C turns the same

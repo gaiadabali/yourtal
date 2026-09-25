@@ -32,6 +32,8 @@ on:
     paths:
       - "apps/web/**"
       - "packages/ui/**"
+      # A contract can carry B into the bundle (4.9.d).
+      - "packages/contracts/**"
 
 # Superseded runs on the same PR are pointless — cancel them to free runners.
 concurrency:
@@ -86,6 +88,10 @@ jobs:
         run: pnpm exec turbo run build --filter=@yourtal/web
         env:
           CI: "true"
+
+      # 4.9.d: B (the backing rate) never reaches a browser.
+      - name: No backing rate in the client bundle
+        run: pnpm check:bundle-b
 
       - name: Generate bundle-size report
         run: node scripts/perf-bundle-report.mjs apps/web bundle-report.md

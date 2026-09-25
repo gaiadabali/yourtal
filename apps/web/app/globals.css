@@ -1,6 +1,25 @@
 @import "tailwindcss";
+/* Tailwind v4 only scans this app by default; the primitives live in packages/ui. */
+@source "../../../packages/ui/src";
 
-/* Design tokens and theme are owned by packages/ui (YT-0400). Do not define
+/* Design tokens and theme are owned by packages/ui. Do not define
    colour, type, spacing, radius or elevation values in this file. */
 @import "@yourtal/ui/styles/tokens.css";
 @import "@yourtal/ui/styles/theme.css";
+
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+  }
+}

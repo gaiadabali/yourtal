@@ -115,10 +115,11 @@ func TestEditingAnEventBreaksTheChain(t *testing.T) {
 	}
 }
 
-// Deleting the LAST event leaves every remaining hash perfectly valid. Only
-// the sequence being dense from 1 catches it — which is why Verify checks
-// that rather than trusting the hashes alone.
-func TestTruncatingTheChainIsDetected(t *testing.T) {
+// A deletion from the MIDDLE breaks the dense sequence, which Verify catches.
+// Deleting the LAST events leaves a valid prefix that the chain alone cannot
+// tell apart; issue.VerifyChain catches that by version == max(seq)
+// (redeem/tamper_head_test.go).
+func TestASplicedChainIsDetected(t *testing.T) {
 	events, hashes := build(t, 5)
 
 	// Both the event and its hash removed, as a deletion would.

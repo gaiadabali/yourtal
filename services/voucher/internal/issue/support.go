@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -286,7 +287,55 @@ func (m *Minter) VerifyChain(ctx context.Context, voucherID uuid.UUID) error {
 		stored = append(stored, row.Hash)
 	}
 
-	return chain.Verify(events, stored)
+	if err := chain.Verify(events, stored); err != nil {
+		return err
+	}
+
+	// The chain cannot see its own latest events deleted, nor an edit to the
+	// voucher row it describes (D6). Every write bumps the version and appends
+	// one event, so version == max(seq); and the value the events replay to
+	// must be the value the row holds.
+	voucher, err := sqlcgen.New(m.pool).GetVoucher(ctx, pgUUID(voucherID))
+	if err != nil {
+		return fmt.Errorf("reading voucher %s: %w", voucherID, err)
+	}
+	if int(voucher.Version) != len(events) {
+		return fmt.Errorf("%w: voucher %s is at version %d but its chain has %d events",
+			chain.ErrBroken, voucherID, voucher.Version, len(events))
+	}
+	replayed, err := replayRemaining(events)
+	if err != nil {
+		return err
+	}
+	if replayed != voucher.RemainingValueMinor {
+		return fmt.Errorf("%w: voucher %s holds %d but its history replays to %d",
+			chain.ErrBroken, voucherID, voucher.RemainingValueMinor, replayed)
+	}
+	return nil
+}
+
+// replayRemaining is the value a voucher's hash-protected history leaves it
+// with: the face value at mint, then each capture's and refund's recorded
+// remainder.
+func replayRemaining(events []chain.Event) (int64, error) {
+	var remaining int64
+	for _, event := range events {
+		field := ""
+		switch event.Type {
+		case chain.TypeMinted:
+			field = "face_value_minor"
+		case chain.TypeCaptured, chain.TypeRefunded:
+			field = "remaining_minor"
+		default:
+			continue
+		}
+		value, err := strconv.ParseInt(event.Detail[field], 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("%w: event %d has no readable %s", chain.ErrBroken, event.Seq, field)
+		}
+		remaining = value
+	}
+	return remaining, nil
 }
 
 const uniqueViolation = "23505"

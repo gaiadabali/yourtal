@@ -69,9 +69,7 @@ export function ActionsGroup() {
           {/* packages/ui bug (reported, not patched here): Button's `loading` state hides its
               label with the `invisible` utility, which drops it from the accessible name too —
               an aria-label matching the label is the only way a loading button keeps one. */}
-          <Button loading>
-            Saving
-          </Button>
+          <Button loading>Saving</Button>
           <Button disabled>Disabled</Button>
           <Button leadingIcon={<Plus className="size-4" aria-hidden="true" />}>With icon</Button>
         </GalleryRow>

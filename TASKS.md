@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 6/8 | 42/47 | `█████████░`  89% |
+| **Phase 0** Reset | A | 🔄 in progress | 6/8 | 43/47 | `█████████░`  91% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **6/82** | **42/361** | `█░░░░░░░░░`  12% |
+| **All** | | | **6/82** | **43/361** | `█░░░░░░░░░`  12% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -381,7 +381,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - `.gitignore` gets `.env.*` with `!.env.example`, the Go binaries (`services/*/voucher`, `infra/healthcheck/healthcheck`, `*.exe`), `*.log`, `blob-report/`, `playwright/.cache/`, `.eslintcache`, `/bundle-report.md`, and Windows and editor files;
     - replace the literal NUL bytes in `packages/idempotency/src/key.ts` and `scripts/check-line-endings.mjs` with `\0` escapes;
     - mark the voucher sqlcgen as linguist-generated.
-  - [ ] 0.8.i Hygiene that touches other areas' files, done in their tasks:
+  - [x] 0.8.i Hygiene that touches other areas' files, done in their tasks:
     - (requested by A) C: test data uses `kopikenangan.example`, never the real `kopikenangan.id` (6 files);
     - (requested by A) C: `packages/media/src/hls-origin.ts:103` fails closed outside dev, instead of falling back to `yourtal_local_only`;
     - add `services/{ledger,voucher}/.dockerignore`;

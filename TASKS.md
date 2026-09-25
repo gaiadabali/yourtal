@@ -817,9 +817,9 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - Below **1.1**: stop marketing-funded grants.
     - Below **1.0**: block all unfunded issuance, checked inside `Grant` (EM-10).
   - [ ] 4.9.d B never reaches a browser. — 🔄 slot 1 (agent C)
-    - No API response carries it.
-    - The bundle test fails if any client chunk contains `micros_per_point`, `issuePriceMicros` or `backingMicros`.
-    - `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove. 13.5.c deletes the rest.
+    - [x] No API response carries it: `packages/contracts/src/money/no-backing-rate-in-api.test.ts` scans every published path and schema (abf2b1b).
+    - [x] The bundle test fails if any client chunk contains `micros_per_point`, `issuePriceMicros` or `backingMicros`: `pnpm check:bundle-b`, run by perf-budget.yml after the build (abf2b1b).
+    - [x] `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove, plus the contract mocks 13.5.c deletes: `eslint-rules/no-mock-backing-rate.mjs` (abf2b1b).
   - [ ] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live.
   - [ ] 4.9.f **Check:**
     - after an AU purchase of 1,000 pts that is fully granted, coverage = 1.50 and a streak grant succeeds;

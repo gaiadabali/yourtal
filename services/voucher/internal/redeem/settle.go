@@ -59,6 +59,7 @@ func (n *Network) place(
 			Currency:         req.Currency,
 			MerchantOrderRef: req.OrderRef,
 			ExpiresAt:        pgTime(n.now().Add(HoldTTL)),
+			OrderTotalMinor:  ptr(req.orderTotal()),
 		})
 		if err != nil {
 			// Two unique indexes, two different things to tell a till.
@@ -202,6 +203,13 @@ func (n *Network) Capture(
 		if lifecycle.State(voucher.State) != lifecycle.Held {
 			return fmt.Errorf("%w: voucher %s is %s", ErrNoLiveHold, asUUID(voucher.ID), voucher.State)
 		}
+		// The minimum is re-checked at capture against the order the hold
+		// recorded, so no path settles a draw from an order below it (D5).
+		if voucher.PartialRedemptionPolicy == "minimum_spend" && voucher.MinimumSpendMinor != nil &&
+			authorization.OrderTotalMinor != nil && *authorization.OrderTotalMinor < *voucher.MinimumSpendMinor {
+			return fmt.Errorf("%w: %d of %d", ErrBelowMinimumSpend,
+				*authorization.OrderTotalMinor, *voucher.MinimumSpendMinor)
+		}
 		// A kill stops captures too, not only new holds: a stolen key's
 		// outstanding holds must not settle (D4).
 		killed, err := queries.IsKilled(ctx, sqlcgen.IsKilledParams{
@@ -289,3 +297,5 @@ func afterCapture(policy string, remaining, captured int64) (int64, lifecycle.St
 		return 0, lifecycle.Redeemed
 	}
 }
+
+func ptr[T any](v T) *T { return &v }

@@ -57,6 +57,7 @@ type VoucherAuthorization struct {
 	ExpiresAt        pgtype.Timestamptz
 	CreatedAt        pgtype.Timestamptz
 	ResolvedAt       pgtype.Timestamptz
+	OrderTotalMinor  *int64
 }
 
 type VoucherBatch struct {

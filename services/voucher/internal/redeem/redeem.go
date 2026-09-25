@@ -132,6 +132,38 @@ type AuthorizeRequest struct {
 	AmountMinor int64
 	Currency    string
 	OrderRef    string
+	// OrderTotalMinor is the basket the voucher is used against. A minimum
+	// spend is a floor on the ORDER, not on the draw from the voucher (D5).
+	// Zero means "the draw is the whole order", for callers that predate it.
+	OrderTotalMinor int64
+}
+
+func (r AuthorizeRequest) orderTotal() int64 {
+	if r.OrderTotalMinor == 0 {
+		return r.AmountMinor
+	}
+	return r.OrderTotalMinor
+}
+
+// sameRequest is whether a retried authorize for an order is the same
+// request: the same voucher, amount, currency and order total (D7). A
+// malformed or unknown code is simply not the same request.
+func (n *Network) sameRequest(
+	ctx context.Context, queries *sqlcgen.Queries, existing sqlcgen.VoucherAuthorization, req AuthorizeRequest,
+) bool {
+	if existing.AmountMinor != req.AmountMinor || existing.Currency != req.Currency {
+		return false
+	}
+	if existing.OrderTotalMinor != nil && *existing.OrderTotalMinor != req.orderTotal() {
+		return false
+	}
+	canonical, err := code.Parse(req.Code)
+	if err != nil {
+		return false
+	}
+	digest := sha256.Sum256([]byte(canonical))
+	presented, err := queries.FindVoucherByCodeHash(ctx, hex.EncodeToString(digest[:]))
+	return err == nil && presented.ID == existing.VoucherID
 }
 
 // Authorization is the hold.
@@ -194,6 +226,10 @@ func (n *Network) Authorize(ctx context.Context, req AuthorizeRequest) (Authoriz
 		MerchantID: pgUUID(req.MerchantID), MerchantOrderRef: req.OrderRef,
 	})
 	if err == nil {
+		if !n.sameRequest(ctx, queries, existing, req) {
+			return Authorization{}, fmt.Errorf("%w: order %s was authorized with another voucher or amount",
+				ErrDuplicateOrder, req.OrderRef)
+		}
 		return n.replay(ctx, queries, existing)
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
@@ -277,6 +313,10 @@ func (n *Network) check(
 	if req.AmountMinor > voucher.RemainingValueMinor {
 		return OutcomeInsufficientValue, ErrRefused
 	}
+	// The draw pays part or all of the order, never more than it.
+	if req.AmountMinor > req.orderTotal() {
+		return OutcomePolicyRefused, ErrRefused
+	}
 
 	// The one refusal a cashier can act on. docs/09 §8.2: the policy is
 	// shown to the user before they spend points, so the threshold is not a
@@ -289,9 +329,9 @@ func (n *Network) check(
 			// with no threshold is a voucher whose terms nobody can state.
 			return OutcomePolicyRefused, ErrRefused
 		}
-		if req.AmountMinor < *voucher.MinimumSpendMinor {
+		if req.orderTotal() < *voucher.MinimumSpendMinor {
 			return OutcomePolicyRefused, fmt.Errorf("%w: %d of %d",
-				ErrBelowMinimumSpend, req.AmountMinor, *voucher.MinimumSpendMinor)
+				ErrBelowMinimumSpend, req.orderTotal(), *voucher.MinimumSpendMinor)
 		}
 	}
 

@@ -101,7 +101,8 @@ CREATE TABLE voucher.authorization (
   state              text        NOT NULL,
   expires_at         timestamptz NOT NULL,
   created_at         timestamptz NOT NULL DEFAULT now(),
-  resolved_at        timestamptz
+  resolved_at        timestamptz,
+  order_total_minor  bigint
 );
 
 CREATE TABLE voucher.capture (

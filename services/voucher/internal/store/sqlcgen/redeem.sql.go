@@ -132,7 +132,7 @@ func (q *Queries) GetActiveCredential(ctx context.Context, keyID string) (Vouche
 
 const getAuthorization = `-- name: GetAuthorization :one
 SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-       state, expires_at, created_at, resolved_at
+       state, expires_at, created_at, resolved_at, order_total_minor
 FROM voucher.authorization WHERE id = $1
 `
 
@@ -161,13 +161,14 @@ func (q *Queries) GetAuthorization(ctx context.Context, id pgtype.UUID) (Voucher
 		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.ResolvedAt,
+		&i.OrderTotalMinor,
 	)
 	return i, err
 }
 
 const getAuthorizationForOrder = `-- name: GetAuthorizationForOrder :one
 SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-       state, expires_at, created_at, resolved_at
+       state, expires_at, created_at, resolved_at, order_total_minor
 FROM voucher.authorization WHERE merchant_id = $1 AND merchant_order_ref = $2
 `
 
@@ -193,6 +194,7 @@ func (q *Queries) GetAuthorizationForOrder(ctx context.Context, arg GetAuthoriza
 		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.ResolvedAt,
+		&i.OrderTotalMinor,
 	)
 	return i, err
 }
@@ -282,10 +284,11 @@ func (q *Queries) InsertAttempt(ctx context.Context, arg InsertAttemptParams) er
 
 const insertAuthorization = `-- name: InsertAuthorization :one
 INSERT INTO voucher.authorization
-  (id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref, state, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6, 'held', $7)
+  (id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref, state, expires_at,
+   order_total_minor)
+VALUES ($1, $2, $3, $4, $5, $6, 'held', $7, $8)
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-          state, expires_at, created_at, resolved_at
+          state, expires_at, created_at, resolved_at, order_total_minor
 `
 
 type InsertAuthorizationParams struct {
@@ -296,6 +299,7 @@ type InsertAuthorizationParams struct {
 	Currency         string
 	MerchantOrderRef string
 	ExpiresAt        pgtype.Timestamptz
+	OrderTotalMinor  *int64
 }
 
 // Places the hold. Two unique indexes do the work that no service check
@@ -312,6 +316,7 @@ func (q *Queries) InsertAuthorization(ctx context.Context, arg InsertAuthorizati
 		arg.Currency,
 		arg.MerchantOrderRef,
 		arg.ExpiresAt,
+		arg.OrderTotalMinor,
 	)
 	var i VoucherAuthorization
 	err := row.Scan(
@@ -325,6 +330,7 @@ func (q *Queries) InsertAuthorization(ctx context.Context, arg InsertAuthorizati
 		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.ResolvedAt,
+		&i.OrderTotalMinor,
 	)
 	return i, err
 }
@@ -470,7 +476,7 @@ UPDATE voucher.authorization
    SET state = $2, resolved_at = now()
  WHERE id = $1 AND merchant_id = $3 AND state = 'held' AND expires_at > now()
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-          state, expires_at, created_at, resolved_at
+          state, expires_at, created_at, resolved_at, order_total_minor
 `
 
 type ResolveAuthorizationParams struct {
@@ -510,6 +516,7 @@ func (q *Queries) ResolveAuthorization(ctx context.Context, arg ResolveAuthoriza
 		&i.ExpiresAt,
 		&i.CreatedAt,
 		&i.ResolvedAt,
+		&i.OrderTotalMinor,
 	)
 	return i, err
 }

@@ -5,10 +5,11 @@
 -- distinct refusals — "that voucher is busy" and "you already authorized
 -- this order" need different answers at a till.
 INSERT INTO voucher.authorization
-  (id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref, state, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6, 'held', $7)
+  (id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref, state, expires_at,
+   order_total_minor)
+VALUES ($1, $2, $3, $4, $5, $6, 'held', $7, $8)
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-          state, expires_at, created_at, resolved_at;
+          state, expires_at, created_at, resolved_at, order_total_minor;
 
 -- name: GetAuthorization :one
 -- YT-0571 audit: no merchant predicate, by consideration rather than by
@@ -23,7 +24,7 @@ RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_re
 -- check already does the comparison it exists to do, and the other caller
 -- never had an unscoped id in the first place.
 SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-       state, expires_at, created_at, resolved_at
+       state, expires_at, created_at, resolved_at, order_total_minor
 FROM voucher.authorization WHERE id = $1;
 
 -- name: GetAuthorizationForOrder :one
@@ -31,7 +32,7 @@ FROM voucher.authorization WHERE id = $1;
 -- back the hold it already has, rather than a duplicate-key error it would
 -- have to interpret.
 SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-       state, expires_at, created_at, resolved_at
+       state, expires_at, created_at, resolved_at, order_total_minor
 FROM voucher.authorization WHERE merchant_id = $1 AND merchant_order_ref = $2;
 
 -- name: ResolveAuthorization :one
@@ -56,7 +57,7 @@ UPDATE voucher.authorization
    SET state = $2, resolved_at = now()
  WHERE id = $1 AND merchant_id = $3 AND state = 'held' AND expires_at > now()
 RETURNING id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
-          state, expires_at, created_at, resolved_at;
+          state, expires_at, created_at, resolved_at, order_total_minor;
 
 -- name: ExpireStaleHolds :many
 -- The sweeper. Idempotent by construction: it only matches rows still

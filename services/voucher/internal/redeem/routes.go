@@ -31,6 +31,8 @@ type authorizeBody struct {
 	Amount           int64  `json:"amount"`
 	Currency         string `json:"currency"`
 	MerchantOrderRef string `json:"merchant_order_ref"`
+	// OrderTotal is the whole basket; a minimum spend applies to it.
+	OrderTotal int64 `json:"order_total,omitempty"`
 }
 
 type authorizeResponse struct {
@@ -52,11 +54,12 @@ func authorizeHandler(logger *slog.Logger, network *Network) http.HandlerFunc {
 		}
 
 		authorization, err := network.Authorize(r.Context(), AuthorizeRequest{
-			Code:        body.Code,
-			MerchantID:  merchantID,
-			AmountMinor: body.Amount,
-			Currency:    body.Currency,
-			OrderRef:    body.MerchantOrderRef,
+			Code:            body.Code,
+			MerchantID:      merchantID,
+			AmountMinor:     body.Amount,
+			Currency:        body.Currency,
+			OrderRef:        body.MerchantOrderRef,
+			OrderTotalMinor: body.OrderTotal,
 		})
 		if err != nil {
 			writeAuthorizeError(w, logger, err)

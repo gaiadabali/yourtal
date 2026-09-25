@@ -399,6 +399,13 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "K13's exactly-once reinstatement of a burn (same migration). Same ledger-internals note as ledger.account above.",
   "ledger.marketing_funding":
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
+  "ledger.grant_release":
+    "Holdback releases (4.4.g), ledger-internal. The wallet's pending buckets are the public view, computed by the ledger, not a row mirror.",
+  "ledger.quote":
+    "Stored quotes (4.1.b), ledger-internal. ledger-internal's quoteSchema is what callers see, built by the ledger route, not a row mirror.",
+  "ledger.quote_lock": "Same as ledger.quote: an append-only lock record for a stored quote.",
+  "ledger.listing_price":
+    "The ledger-owned listing price (4.9.a). ledger-internal's priceListingResultSchema is the public view; apps/api reads only listing id and points.",
   // pg-boss's own schema, installed verbatim from its v40 construction plan by
   // 20260921234000_pgboss_schema.sql (YT-0040). These are a VENDOR's internal
   // tables, not this project's: nothing in `packages/contracts` describes them,

@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 1/8 | 10/46 | `██░░░░░░░░`  22% |
+| **Phase 0** Reset | A | 🔄 in progress | 1/8 | 14/46 | `███░░░░░░░`  30% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/42 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/3 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **1/81** | **10/351** | `░░░░░░░░░░`   3% |
+| **All** | | | **1/81** | **14/351** | `░░░░░░░░░░`   4% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,8 +78,8 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **0** Reset (running in the main checkout until 0.2.b) | 2026-09-25 | 0.1 ✅; 0.8.a–e and 0.8.h ✅. Next: 0.2 |
-| 2 | `yourtal-2` | — free | — | Next: Phase 3, once 0.2.b ✅ |
+| 1 | `yourtal-1` | **0** Reset | 2026-09-25 | 0.2.a–d ✅ (0.2.e–f wait for 0.3.c). Now: 0.3, in `yourtal-1` on `phase/0` (session yourtal-74) |
+| 2 | `yourtal-2` | — free | — | Phase 3 can start now (0.2.b ✅); worktree, `.env` and deps are ready |
 | 3 | `yourtal-3` | — free | — | Next: Phase 1, once Phase 0 ✅ |
 
 ## Decisions for the founder
@@ -271,9 +271,9 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
   - [x] 0.1.b Commit this plan: `TASKS.md`, `CLAUDE.md`, `scripts/progress.mjs` and the deletion of `scripts/tasks.mjs` (archived as `docs/tasks/_generator-v1.mjs`), `.gitignore` (with `TASKS.md.lock`, `.claude/settings.local.json` and `apps/web/public/lab-media/`), `docs/audit/2026-09-25/`, the archive of the old board in `docs/tasks/`, and the gate removals (`quality.yml`, `release.yml`, `package.json`, `.githooks/pre-commit`, `.prettierignore`, `.gitattributes`, `README.md`). This closes the old board (EW-23).
   - [x] 0.1.c Fast-forward `main` to this branch and check out `main` in the main checkout. It keeps `b225116`, whose currency tagging we need; 0.3 finishes it. Do not push until 0.3 compiles.
   - [x] 0.1.d **Check:** `git status` is clean on `main`, and `wip/leftovers-2026-09-22` holds the leftovers.
-- [ ] **0.2 One isolated environment per slot** · needs: 0.1 (0.2.e needs 0.3.c)
-  - [ ] 0.2.a Add a top-level `name: yourtal` to `docker-compose.yml`. Zitadel is already removed (0.8.d). The worker (1.3) runs on the host with ffmpeg on PATH (this machine has ffmpeg 8.1.2 from winget); record that in `infra/PORTS.md`, and add no worker image or compose service. `pnpm dev:up` from the main checkout comes up healthy.
-  - [ ] 0.2.b Create the slot worktrees `../yourtal-1|2|3`, detached at `main` (setup commands above), each with `.claude/settings.local.json`. Each worktree's `.env` (copied from `.env.example`) gets:
+- [ ] **0.2 One isolated environment per slot** · needs: 0.1 (0.2.e needs 0.3.c) — 🔄 slot 1
+  - [x] 0.2.a Add a top-level `name: yourtal` to `docker-compose.yml`. Zitadel is already removed (0.8.d). The worker (1.3) runs on the host with ffmpeg on PATH (this machine has ffmpeg 8.1.2 from winget); record that in `infra/PORTS.md`, and add no worker image or compose service. `pnpm dev:up` from the main checkout comes up healthy.
+  - [x] 0.2.b Create the slot worktrees `../yourtal-1|2|3`, detached at `main` (setup commands above), each with `.claude/settings.local.json`. Each worktree's `.env` (copied from `.env.example`) gets:
     - the database `yourtal_s1|s2|s3` in DATABASE_URL, DATABASE_OWNER_URL, LEDGER_DATABASE_URL and VOUCHER_DATABASE_URL;
     - `REDIS_URL=redis://127.0.0.1:26379/1|2|3`;
     - `S3_BUCKET=yourtal-media-1|2|3` (there is no prefix setting);
@@ -281,8 +281,8 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - `PORT` (api), `WEB_PORT`, `PLAYWRIGHT_PORT` and `PDP_BASE_URL` from the ports table.
 
     `apps/web` gets `scripts/dev.mjs`, which loads the root `.env` and runs `next dev -p $WEB_PORT`. Both Playwright configs read `PLAYWRIGHT_PORT`; the offline config uses 26316, 26326 or 26336. The ledger and voucher ports stay reserved for 4.1; until then every slot uses the shared containers.
-  - [ ] 0.2.c Add the scripts `pnpm db:reset:slot` (drop, create, migrate and seed only this worktree's database) and `pnpm dev:cerbos` (run a Cerbos container named `yourtal-cerbos-1|2|3` on this worktree's port, mounting this worktree's `./policies`).
-  - [ ] 0.2.d Run `git worktree prune`. List the `worktree-agent-*` branches; delete those with no unmerged commits and note any that have some.
+  - [x] 0.2.c Add the scripts `pnpm db:reset:slot` (drop, create, migrate and seed only this worktree's database) and `pnpm dev:cerbos` (run a Cerbos container named `yourtal-cerbos-1|2|3` on this worktree's port, mounting this worktree's `./policies`).
+  - [x] 0.2.d Run `git worktree prune`. List the `worktree-agent-*` branches; delete those with no unmerged commits and note any that have some. Done 2026-09-25: nothing to prune; both `worktree-agent-*` branches had no unmerged commits and were deleted.
   - [ ] 0.2.e After 0.3.c is on `main`, in each worktree run `node packages/db/scripts/test-db.mjs create yourtal_s1|s2|s3`, which drops, creates, migrates and seeds. Before 0.3.c it fails, because `atlas.sum` has no line for `20260922030000_currency_tagged_money.sql` and `seed.ts` still inserts `face_value_idr`.
   - [ ] 0.2.f **Check** (after 0.2.e): all three worktrees run web and api side by side, and a migration applied in `yourtal-2` does not change `yourtal-1`'s schema.
 - [ ] **0.3 Unbreak HEAD: finish currency-tagged money (was YT-0513 part 2; EM-22, D1)** · needs: 0.1

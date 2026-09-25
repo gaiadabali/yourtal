@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 1/7 | 12/43 | `███░░░░░░░`  28% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 3/6 | 19/32 | `██████░░░░`  59% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 15/50 | `███░░░░░░░`  30% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 16/50 | `███░░░░░░░`  32% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **13/82** | **92/363** | `███░░░░░░░`  25% |
+| **All** | | | **13/82** | **93/363** | `███░░░░░░░`  26% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`, F21/F22): 4.1.a ✅, 4.2 ✅, 4.3.a–d ✅ (0f18df1); 4.4.f, 4.4.i, 4.9.b ✅ (abc7ade); now 4.6.a–e. Routes and TS clients wait for 1.2 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.3 ✅ (tokens v2 from After Dark). Now 3.4 primitives |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ merged (98d7aa1) — agent B on `yourtal-p1-b` unblocked for 1.3.b and 1.3's Check, then 1.4/1.6; a third agent starts 1.2.f (F23). This agent (`yourtal-3`, `phase/1`) is on 1.2.a–e now; 1.5 and 1.7 last |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.3.a/c/d and 1.6's drivers merged. Three agents: A (`yourtal-3`, `phase/1`) on 1.2.a–e, then 1.5; B (`yourtal-p1-b`, `phase/1-b`) on 1.3.b → 1.4 → rest of 1.6 → 1.7; C (`yourtal-p1-c`, `phase/1-c`) on 1.2.f (F23) |
 
 ## Decisions for the founder
 
@@ -763,7 +763,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
 - [ ] **4.6 Voucher hardening** · needs: 4.5 (4.6.a–e early, F22) — 🔄 slot 1
   - [x] 4.6.a Enforce the lifecycle inside `issue.Move` and with a database transition trigger. Capture and void require `held` (D3). A swept stale hold returns the voucher to active (D15).
   - [x] 4.6.b Kill switch: check it after the code lookup (batch, merchant and global scopes) and again inside Capture (D4). The throttle counts only probes (D13). `ErrStaleVersion` returns 409 (D14).
-  - [ ] 4.6.c Authorize takes `order_total_minor`. Minimum spend is checked against it and re-checked at capture (D5). An authorize replay compares code hash, amount and currency (D7).
+  - [x] 4.6.c Authorize takes `order_total_minor`. Minimum spend is checked against it and re-checked at capture (D5). An authorize replay compares code hash, amount and currency (D7). Over HTTP it is `order_total` on authorize; merchant callers (8.3 SDK, the device counter) should send it.
   - [ ] 4.6.d Idempotency:
     - record completion on `context.WithoutCancel`, reclaim stale rows, and make `refund_ref` unique per capture (D8);
     - put `Idempotency-Key` and the query string in the HMAC canonical string, and remember nonces (D9).

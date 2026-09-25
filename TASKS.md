@@ -35,7 +35,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ⛔ blocked | 7/8 | 46/47 | `██████████`  98% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
+| **Phase 3** Design language | B | 🔄 in progress | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
 | **Phase 4** The bank is correct | A | · not started | 0/9 | 0/49 | `░░░░░░░░░░`   0% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
@@ -79,7 +79,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | — free | — | Phase 0 done 2026-09-25 (0.4.h waits for 3.1.d). Phase 1 runs in slot 3 |
-| 2 | `yourtal-2` | — free | — | Phase 3 can start now (0.2.b ✅); worktree, `.env` and deps are ready |
+| 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1 CSS pipeline first (`phase/3`), then 3.2 prototypes |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); 1.3 on helper `yourtal-p1-b` (`phase/1-b`), then 1.4 and 1.6; 1.5 and 1.7 last |
 
 ## Decisions for the founder
@@ -587,7 +587,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
 - **Copy says "earn points" and "rewards"**, never "get paid", "money", "income", "cash" or "salary".
 - **No claims about redemption rates, return on investment or breakage** (red line 5).
 
-- [ ] **3.1 Fix the CSS pipeline first (half a day; fixes dialogs and badges immediately)** · needs: 0.2.b
+- [ ] **3.1 Fix the CSS pipeline first (half a day; fixes dialogs and badges immediately)** · needs: 0.2.b — 🔄 slot 2
   - [ ] 3.1.a Add `@source "../../../packages/ui/src";` after the Tailwind import in `apps/web/app/globals.css`. Today 57 `packages/ui` classes are never compiled, which is why Dialog opens at `top: 1596px` on an 800 px screen.
   - [ ] 3.1.b Add a base layer: `html { color-scheme }` and body background, text colour and font from the tokens.
   - [ ] 3.1.c Rewrite `select.tsx:48` in Tailwind v4 syntax.

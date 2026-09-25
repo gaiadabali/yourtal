@@ -34,9 +34,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
-| **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 0/6 | 0/32 | `░░░░░░░░░░`   0% |
-| **Phase 4** The bank is correct | A | · not started | 0/9 | 0/49 | `░░░░░░░░░░`   0% |
+| **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
+| **Phase 3** Design language | B | 🔄 in progress | 0/6 | 5/32 | `██░░░░░░░░`  16% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 0/9 | 0/49 | `░░░░░░░░░░`   0% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **8/82** | **46/361** | `█░░░░░░░░░`  13% |
+| **All** | | | **8/82** | **51/362** | `█░░░░░░░░░`  14% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | — free | — | Phase 0 done 2026-09-25. Phase 1 runs in slot 3 |
+| 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`): 4.1.a, 4.2, 4.3.a–d. 4.1.b/c, 4.3.e and 4.4+ wait for 1.2 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1 CSS pipeline first (`phase/3`), then 3.2 prototypes |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); 1.3 on helper `yourtal-p1-b` (`phase/1-b`), then 1.4 and 1.6; 1.5 and 1.7 last |
 
@@ -121,6 +121,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F18** | F2's no-expiry weakens `docs/24` ID-1, which cited expiry as one of its four legs | **Off in both regions, for good.** Keep expiry built and switchable per region in the staff console. `docs/24` and `docs/25` now record ID-1 as resting on three legs. |
 | **F19** | Only `web-gaiada` can push to `gaiadabali/yourtal`; the active gh account cannot | **Push as web-gaiada** through a one-off credential helper, without switching the active account. Until FA1 gives `hansel-gaiada` write access. |
 | **F20** | The shared `yourtal` dev database was full of Go-test leftovers, some not whole Rupiah, so 0.7's migration refused it | **Recreate it clean** (migrations + seed), done 2026-09-25. Slot databases untouched. |
+| **F21** | Phase 4 is gated on Phase 1, which had just started | **Start Phase 4's Go-only parts early** in slot 1: 4.1.a, 4.2 and 4.3.a–d touch only `services/**` and add-only migrations, not 1.2's contracts. Everything that needs 1.2 still waits for it. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -563,6 +564,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - "Advance my account by N days".
   - [ ] 2.3.e A minimal seed when the database is empty: snap-app in AU and in ID, 2 campaigns each using the 30 s fixture video, one demo login per role, and one tier-0 demo viewer seeded with a pending grant through the 1.2 fake. The full demo world is 13.1.
   - [ ] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points.
+  - [ ] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`).
 
 - [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`)
   - [ ] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint).
@@ -588,17 +590,17 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
 - **No claims about redemption rates, return on investment or breakage** (red line 5).
 
 - [ ] **3.1 Fix the CSS pipeline first (half a day; fixes dialogs and badges immediately)** · needs: 0.2.b — 🔄 slot 2
-  - [ ] 3.1.a Add `@source "../../../packages/ui/src";` after the Tailwind import in `apps/web/app/globals.css`. Today 57 `packages/ui` classes are never compiled, which is why Dialog opens at `top: 1596px` on an 800 px screen.
-  - [ ] 3.1.b Add a base layer: `html { color-scheme }` and body background, text colour and font from the tokens.
-  - [ ] 3.1.c Rewrite `select.tsx:48` in Tailwind v4 syntax.
+  - [x] 3.1.a Add `@source "../../../packages/ui/src";` after the Tailwind import in `apps/web/app/globals.css`. Today 57 `packages/ui` classes are never compiled, which is why Dialog opens at `top: 1596px` on an 800 px screen.
+  - [x] 3.1.b Add a base layer: `html { color-scheme }` and body background, text colour and font from the tokens.
+  - [x] 3.1.c Rewrite `select.tsx:48` in Tailwind v4 syntax.
   - [ ] 3.1.d A rendered-output gate, run as `pnpm --filter @yourtal/web test:rendered` (A adds it to `pnpm verify` and CI in 0.4.d):
     - a spec that opens a Dialog and asserts it sits inside the viewport;
     - axe color-contrast in both themes, on 6 routes that stay public after 1.7.c (`/`, `/id`, `/login` and the `(lab)` pages);
     - a check that no `packages/ui` class is missing from the built CSS.
 
     `next build` fails until 0.3 is on `main`, so do 3.1.d and 3.1.g after rebasing past 0.3; check 3.1.a–c with `next dev`.
-  - [ ] 3.1.e `i18n/request.ts` loads every `messages/<locale>/*.json` that exists, with no hard-coded list, and the parity test globs the same way. Then C can add its own catalogues without touching B's files.
-  - [ ] 3.1.f (requested by A for 2.3.a) `RootDocument` renders `<StagingBanner/>` when `APP_ENV=staging`, and `robots.ts` disallows everything there.
+  - [x] 3.1.e `i18n/request.ts` loads every `messages/<locale>/*.json` that exists, with no hard-coded list, and the parity test globs the same way. Then C can add its own catalogues without touching B's files.
+  - [x] 3.1.f (requested by A for 2.3.a) `RootDocument` renders `<StagingBanner/>` when `APP_ENV=staging`, and `robots.ts` disallows everything there.
   - [ ] 3.1.h (requested by A, moved from 0.4.h) Add `pnpm --filter @yourtal/web test:rendered` to root `pnpm verify` and as a step in `.github/workflows/integration.yml`; this one line in each file is yours to edit.
   - [ ] 3.1.g **Check:** the team invite dialog is visible and usable, axe is clean on the gate's routes, and the banner shows with `APP_ENV=staging`.
 - [ ] **3.2 Two prototypes, and the founder picks one (F3)** · needs: 0.2.b
@@ -684,7 +686,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
 
 The money engines are sound libraries with **confirmed defects and no callers**. Fix each defect with a regression test that fails on the audit's scenario first, then expose the engines. Defect IDs point into `docs/audit/2026-09-25/`: `engine-money.md` (EM-), `engine-voucher.md` (D) and `engine-watch.md` (EW-). The order below is chosen to replace B's and C's fakes as early as possible. **The regions are separate economies** (F2): every account, rate, allocation, reserve and voucher is region-scoped, and the ledger refuses anything that crosses.
 
-- [ ] **4.1 Ledger internal API (was YT-0593; EM-03)** · needs: 1.2
+- [ ] **4.1 Ledger internal API (was YT-0593; EM-03)** · needs: 1.2 (4.1.a early, F21) — 🔄 slot 1
   - [ ] 4.1.a Service authentication for loopback calls. Each caller (api, worker) signs method, path, body and timestamp with an HMAC shared secret. Reject more than 60 s of skew, and keep a replay cache.
   - [ ] 4.1.b Replace the four 501 routes (`services/ledger/internal/api/routes.go:80-106`) with the 1.2.a operations the existing engines already support: balance, history, quote (priced at server `now()` only, EM-19), purchases and grants. Add the rest as their tasks land.
   - [ ] 4.1.c Implement the HTTP side of `ledger-client` for the 4.1.b operations. Staging stays on `LEDGER_MODE=fake` until every 1.2.a operation has a live route (4.9.e).

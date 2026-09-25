@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Two agents. A (`yourtal-1`, `phase/4`): 4.1.b/c/d done on the branch (86de46c), next 4.4.a–d, 4.7, 4.8, 4.9. B (helper `yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5 voucher core API, then 4.6.f/h |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Four agents. A (`yourtal-1`, `phase/4`): 4.4.a–d merging, then 4.8 and 4.7. B (`yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5, then 4.6.f/h. C (`yourtal-p4-c`, `phase/4-c`, db `yourtal_s1c`): 4.9.a remainder, 4.9.d. D (`yourtal-p4-d`, `phase/4-d`, db `yourtal_s1d`): 4.4.g event, 4.4.l |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | Helper on `phase/11`, no slot of its own. 11.3.a, then 11.3.b without JSON-LD. 11.1 and 11.2 ⛔ Phase 7 |
@@ -505,7 +505,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - Fastify `trustProxy`;
     - cookies Secure (except in dev), HttpOnly and SameSite=Lax;
     - session lifetimes from F12.
-  - [ ] 1.5.f Stop storing token-bearing responses in `platform.idempotency` (`auth.controller.ts:107,132`). Make the throttle atomic (`SET NX EX`), removing its check-then-act race.
+  - [ ] 1.5.f Stop storing token-bearing responses in `platform.idempotency` (`auth.controller.ts:107,132`). Make the throttle atomic (`SET NX EX`), removing its check-then-act race. — 🔄 slot 3 (agent B)
   - [ ] 1.5.g **Check:**
     - a call with `x-yt-user-id` and no session gets 401;
     - an ID principal reading an AU campaign is denied;
@@ -738,7 +738,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.4.d **One reward per user per campaign:** `UNIQUE (user_id, campaign_id)` for watch-completed grants, returning `already_granted`.
   - [x] 4.4.e Allocation holds. At reward-session start, `hold` base + maximum bonus with a TTL of 2 × duration + 1 h. The grant consumes the hold; abandonment or expiry releases it through a job. This way a viewer is never refused at the end for `allocation_exhausted`. The decrement-only `SECURITY DEFINER` function has four verbs: hold, consume, release and return. Revoke the ledger role's UPDATE on allocations (EM-08).
   - [x] 4.4.f Velocity caps and the daily and monthly caps (F12) are counted inside the transaction, under a per-user advisory lock, using the database's `now()` (EM-06, EW-11).
-  - [ ] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13).
+  - [ ] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13). — 🔄 slot 1 (agent D)
   - [x] 4.4.h K6: every point not paid for by a business is backed by cash.
     - `grantAction` (streak, receipt, goodwill) draws only from a marketing allocation funded by marketing cash → reserve in the same transaction.
     - Marketing cash is increased only by `fundMarketing` (two-person, staff) and by the seed.
@@ -750,7 +750,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - add `CHECK B × 1.25 ≤ P_issue`;
     - pin the multiplier at 1.00 (EM-11).
   - [x] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
-  - [ ] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h
+  - [ ] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h — 🔄 slot 1 (agent D)
   - [ ] 4.4.j **Check:**
     - five concurrent grants at a cap of 19/20 → exactly one succeeds;
     - a campaign pointed at another business's allocation is refused;
@@ -801,7 +801,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.8.a `apps/api/src/modules/wallet`: `GET /api/wallet` (available, pending with unlock dates, expiring), `/api/wallet/history` (plain-language entries built from the ledger's references), `/api/wallet/vouchers`, `/api/wallet/vouchers/:id` and `/api/wallet/vouchers/:id/qr`.
   - [ ] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token.
 - [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22; 4.9.c, F24) — 🔄 slot 1
-  - [ ] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view.
+  - [ ] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view. — 🔄 slot 1 (agent C)
   - [x] 4.9.b Rate governance inside the ledger:
     - `proposeRate` / `approveRate`, with `approved_by ≠ set_by` (CHECK);
     - `effective_from ≥ created_at`;
@@ -812,7 +812,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - Below **1.2**: alert.
     - Below **1.1**: stop marketing-funded grants.
     - Below **1.0**: block all unfunded issuance, checked inside `Grant` (EM-10).
-  - [ ] 4.9.d B never reaches a browser.
+  - [ ] 4.9.d B never reaches a browser. — 🔄 slot 1 (agent C)
     - No API response carries it.
     - The bundle test fails if any client chunk contains `micros_per_point`, `issuePriceMicros` or `backingMicros`.
     - `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove. 13.5.c deletes the rest.

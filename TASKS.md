@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 4/7 | 31/44 | `███████░░░`  70% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 23/52 | `████░░░░░░`  44% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 24/52 | `█████░░░░░`  46% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **17/82** | **130/366** | `████░░░░░░`  36% |
+| **All** | | | **17/82** | **131/366** | `████░░░░░░`  36% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 1.2 ✅ on `main`, resumed (`phase/4`). Done early (F21/F22/F24): 4.1.a, 4.2, 4.3.a–d, 4.4.e/f/h/i/k, 4.9.b/c, 4.6.a–e, the 4.3.e burn engine. Now 4.1.b live routes, then 4.1.c client, 4.3.e route, 4.5 |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Two agents. A (`yourtal-1`, `phase/4`): 4.1.b/c/d done on the branch (86de46c), next 4.4.a–d, 4.7, 4.8, 4.9. B (helper `yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5 voucher core API, then 4.6.f/h |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1–1.4 ✅; 1.5.c/d merged. Three agents: A (`yourtal-3`, `phase/1`) on the rest of 1.5; B (`yourtal-p1-b`, `phase/1-b`) on 1.6; D (`yourtal-p1-c`, `phase/1-c`) on 1.7 (F25) |
 
@@ -694,7 +694,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
 - [ ] **4.1 Ledger internal API (was YT-0593; EM-03)** · needs: 1.2 (4.1.a early, F21) — 🔄 slot 1
   - [x] 4.1.a Service authentication for loopback calls. Each caller (api, worker) signs method, path, body and timestamp with an HMAC shared secret. Reject more than 60 s of skew, and keep a replay cache. The canonical string (for the TS signer in 1.2.d / 4.1.c) is in `services/ledger/internal/serviceauth`; secret `LEDGER_SERVICE_SECRET`.
   - [x] 4.1.b Replace the four 501 routes (`services/ledger/internal/api/routes.go:80-106`) with the 1.2.a operations the existing engines already support: balance, history, quote (priced at server `now()` only, EM-19), purchases and grants. Add the rest as their tasks land.
-  - [ ] 4.1.c Implement the HTTP side of `ledger-client` for the 4.1.b operations. Staging stays on `LEDGER_MODE=fake` until every 1.2.a operation has a live route (4.9.e).
+  - [x] 4.1.c Implement the HTTP side of `ledger-client` for the 4.1.b operations. Staging stays on `LEDGER_MODE=fake` until every 1.2.a operation has a live route (4.9.e).
   - [ ] 4.1.d **Check:** the contract-spec cases for the 4.1.b operations pass against live, the rest are `it.todo` until their task lands, and the ledger rejects an unsigned call.
 - [x] **4.2 Chart of accounts and posting rules: decide first, then code** · needs: 4.1 (early, F21) — ✅ 2026-09-25 8dcfe2c
   - [x] 4.2.a **Keep the credit-positive convention** from migration `20260919000002`. Fix `FundReserve` (`chart.go:260-264`) and read asset balances as −SUM. Every sign-dependent reader must agree: `EarnPoints`, `BurnPoints`, `ExpirePoints`, `IssueMarketingPoints`, `SumPointsOutstanding` (`pricing.sql:31-44`), the balance and history endpoints, and the overdraft guard (EM-15).
@@ -754,7 +754,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - a campaign pointed at another business's allocation is refused;
     - a second session on the same campaign earns nothing;
     - a marketing grant larger than marketing cash is refused.
-- [ ] **4.5 Voucher core API: generation, reservation, QR and devices (was YT-0594, YT-0150/0151)** · needs: 4.1
+- [ ] **4.5 Voucher core API: generation, reservation, QR and devices (was YT-0594, YT-0150/0151)** · needs: 4.1 — 🔄 slot 1 (agent B, `yourtal-p4-b`)
   - [ ] 4.5.a Every 1.2.b operation behind service auth, including these:
     - batches whose terms are derived from the listing, with the supplier required to equal `listing.merchant` (D12);
     - `reserve(listing, sagaId)`: Minted → Allocated with `saga_id` and `reserved_until` = now + 15 min. This **is** the stock reservation: stock is the count of unallocated vouchers in approved batches.

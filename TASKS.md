@@ -35,8 +35,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 29/44 | `███████░░░`  66% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 27/32 | `████████░░`  84% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 22/52 | `████░░░░░░`  42% |
+| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 28/32 | `█████████░`  88% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 23/52 | `████░░░░░░`  44% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **16/82** | **124/366** | `███░░░░░░░`  34% |
+| **All** | | | **16/82** | **126/366** | `███░░░░░░░`  34% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -679,7 +679,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [ ] 3.5.d Move `(app)/page.tsx` to `(app)/home/page.tsx`. In the same merge, add these to `route-redirects.ts`: `/` → `/home` when signed in, and `/` → `/au` when signed out, until 11.1.a. — ⛔ 1.7.c (`route-redirects.ts` and the `yt_session` check do not exist yet; moving the page first would 404 `/`)
   - [x] 3.5.e **Check:** the feed holds at most 3 `<video>` elements after scrolling 20 items, and nothing links to `/business` from the viewer shell.
 - [ ] **3.6 Brand, gallery and visual tests** · needs: 3.4 — 🔄 slot 2
-  - [ ] 3.6.a Brand: the wordmark "YourTal" in Bricolage Grotesque 800, with the points coin glyph as the mark. Favicon, maskable icons and the web manifest. Today `/favicon.ico` returns 404.
+  - [x] 3.6.a Brand: the wordmark "YourTal" in Bricolage Grotesque 800, with the points coin glyph as the mark. Favicon, maskable icons and the web manifest. Today `/favicon.ico` returns 404.
   - [ ] 3.6.b A gallery at `(lab)/lab/ui`, with Playwright `toHaveScreenshot` baselines for every primitive at 390 px and 1280 px, light and dark. `pnpm test:visual` runs inside `mcr.microsoft.com/playwright:<installed version>-noble` for both generating and comparing, and the snapshot path has no platform suffix, so baselines made on Windows match CI on Linux.
   - [x] 3.6.c Lint in B's `features/**`: ban raw `<button>`, `<select>`, `<table>` and `<input>`, and ban JSX string literals. Warn for now; it becomes an error in 6.1.
   - [ ] 3.6.d **Check:** `pnpm test:visual` passes locally and in CI.
@@ -692,7 +692,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
 
 - [ ] **4.1 Ledger internal API (was YT-0593; EM-03)** · needs: 1.2 (4.1.a early, F21) — 🔄 slot 1
   - [x] 4.1.a Service authentication for loopback calls. Each caller (api, worker) signs method, path, body and timestamp with an HMAC shared secret. Reject more than 60 s of skew, and keep a replay cache. The canonical string (for the TS signer in 1.2.d / 4.1.c) is in `services/ledger/internal/serviceauth`; secret `LEDGER_SERVICE_SECRET`.
-  - [ ] 4.1.b Replace the four 501 routes (`services/ledger/internal/api/routes.go:80-106`) with the 1.2.a operations the existing engines already support: balance, history, quote (priced at server `now()` only, EM-19), purchases and grants. Add the rest as their tasks land.
+  - [x] 4.1.b Replace the four 501 routes (`services/ledger/internal/api/routes.go:80-106`) with the 1.2.a operations the existing engines already support: balance, history, quote (priced at server `now()` only, EM-19), purchases and grants. Add the rest as their tasks land.
   - [ ] 4.1.c Implement the HTTP side of `ledger-client` for the 4.1.b operations. Staging stays on `LEDGER_MODE=fake` until every 1.2.a operation has a live route (4.9.e).
   - [ ] 4.1.d **Check:** the contract-spec cases for the 4.1.b operations pass against live, the rest are `it.todo` until their task lands, and the ledger rejects an unsigned call.
 - [x] **4.2 Chart of accounts and posting rules: decide first, then code** · needs: 4.1 (early, F21) — ✅ 2026-09-25 8dcfe2c
@@ -1259,6 +1259,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · B · ⚠️ Slot 2 ran `git checkout -- TASKS.md` in the main checkout by mistake, discarding any tick made after b0519b7 that was not yet committed. If a tick of yours is missing, please re-tick it · b0519b7
 - 2026-09-25 · A · 1.2 Internal ledger and voucher contracts: `ledger-internal`/`voucher-internal` operation types (1.2.a-b), the shared closed error enum (1.2.c), `FakeLedgerClient`/`FakeVoucherClient` with real semantics against `platform.ledger_fake_*`/`voucher_fake_*` plus HTTP twins waiting on 4.1/4.5 (1.2.d), contract specs (1.2.e), and getSettings/proposeSetting/approveSetting wired onto C's `platform.region_setting` (1.2.g) · bbf01bd
 - 2026-09-25 · B · 3.4 Primitives: 11 reworked onto tokens v2 with every v1 export and variant kept, 26 new ones, all in the `/lab/ui` gallery; console and merchant screens still render · ec58a47
 - 2026-09-25 · A · 1.3 Parallel-phase plumbing: route-registry split one file per area with a module-agnostic drift test, `apps/worker` auto-loading `src/jobs/*.ts`, `session-for.ts` for real register+login in tests, `packages/db/src/seed.ts` split one file per domain · 199958e

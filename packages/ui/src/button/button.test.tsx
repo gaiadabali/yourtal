@@ -69,6 +69,9 @@ describe("Button", () => {
     const button = screen.getByRole("button", { name: "Save changes" });
     expect(button).toHaveAttribute("aria-busy", "true");
     expect(button).toBeDisabled();
+    // jsdom applies no CSS, so guard the class: `invisible` would drop the
+    // label from the accessible name in a real browser (axe: button-name).
+    expect(button.querySelector(".invisible")).toBeNull();
   });
 
   it("renders a leading and trailing icon around the label", () => {

@@ -125,7 +125,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 <Spinner />
               </span>
             ) : null}
-            <span className={cn("inline-flex items-center gap-2", showLoading && "invisible")}>
+            <span className={cn("inline-flex items-center gap-2", showLoading && "opacity-0")}>
               {leadingIcon}
               {children}
               {trailingIcon}

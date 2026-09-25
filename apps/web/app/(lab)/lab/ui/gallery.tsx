@@ -1,145 +1,70 @@
 "use client";
 
-import { useState } from "react";
-import { Badge } from "@yourtal/ui/badge";
-import { Button } from "@yourtal/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@yourtal/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from "@yourtal/ui/dialog";
-import { Input } from "@yourtal/ui/input";
-import { Progress } from "@yourtal/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@yourtal/ui/select";
-import { Skeleton } from "@yourtal/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@yourtal/ui/tabs";
-import {
-  Toast,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@yourtal/ui/toast";
+import * as React from "react";
+import { SegmentedControl } from "@yourtal/ui/segmented-control";
+import { ActionsGroup } from "./groups/actions";
+import { DataDisplayGroup } from "./groups/data-display";
+import { FeedbackGroup } from "./groups/feedback";
+import { FormsGroup } from "./groups/forms";
+import { OverlaysGroup } from "./groups/overlays";
+import { LayoutGroup } from "./groups/structure";
+import { RewardsMediaGroup } from "./groups/rewards-media";
 
-const BUTTONS = ["default", "secondary", "outline", "ghost", "destructive"] as const;
-const BADGES = [
-  "default",
-  "secondary",
-  "success",
-  "warning",
-  "danger",
-  "reward",
-  "outline",
+const SURFACES = [
+  { value: "viewer", label: "Viewer" },
+  { value: "studio", label: "Studio" },
+  { value: "counter", label: "Counter" },
 ] as const;
 
-/** Every primitive on one page, for the rendered gate and the visual baselines. */
-export function Gallery() {
-  const [toastOpen, setToastOpen] = useState(false);
+const THEMES = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+] as const;
+
+export type GallerySurface = (typeof SURFACES)[number]["value"];
+export type GalleryTheme = (typeof THEMES)[number]["value"];
+
+export interface GalleryProps {
+  initialSurface: GallerySurface;
+  initialTheme: GalleryTheme;
+}
+
+/**
+ * Every `@yourtal/ui` export on one page, for visual review and the visual
+ * test baselines. `data-surface`/`data-theme` on the root let the header
+ * controls (and a `?surface=`/`?theme=` URL, read once by the server page)
+ * drive the same tokens the real app uses — nothing here is bespoke CSS.
+ */
+export function Gallery({ initialSurface, initialTheme }: GalleryProps) {
+  const [surface, setSurface] = React.useState<GallerySurface>(initialSurface);
+  const [theme, setTheme] = React.useState<GalleryTheme>(initialTheme);
+
   return (
-    <ToastProvider>
-      <main className="mx-auto flex max-w-3xl flex-col gap-8 p-4">
-        <h1 className="text-2xl font-bold">Primitives</h1>
-
-        <section aria-labelledby="buttons" className="flex flex-wrap gap-2">
-          <h2 id="buttons" className="w-full text-lg font-semibold">
-            Buttons
-          </h2>
-          {BUTTONS.map((variant) => (
-            <Button key={variant} variant={variant}>
-              {variant}
-            </Button>
-          ))}
-          <Button size="sm">small</Button>
-          <Button size="lg">large</Button>
-          <Button disabled>disabled</Button>
-        </section>
-
-        <section aria-labelledby="badges" className="flex flex-wrap gap-2">
-          <h2 id="badges" className="w-full text-lg font-semibold">
-            Badges
-          </h2>
-          {BADGES.map((variant) => (
-            <Badge key={variant} variant={variant}>
-              {variant}
-            </Badge>
-          ))}
-        </section>
-
-        <section aria-labelledby="forms" className="flex flex-col gap-3">
-          <h2 id="forms" className="text-lg font-semibold">
-            Form controls
-          </h2>
-          <Input label="Email" type="email" placeholder="you@example.com" />
-          <Input label="Code" helpText="Six digits" errorMessage="That code has expired" />
-          <Select defaultValue="marketer">
-            <SelectTrigger aria-label="Role">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="marketer">Marketer</SelectItem>
-              <SelectItem value="finance">Finance</SelectItem>
-            </SelectContent>
-          </Select>
-          <Progress value={40} aria-label="Watched" />
-        </section>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Card</CardTitle>
-            <CardDescription>Surface, border and muted text.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
-          </CardContent>
-        </Card>
-
-        <Tabs defaultValue="one">
-          <TabsList>
-            <TabsTrigger value="one">One</TabsTrigger>
-            <TabsTrigger value="two">Two</TabsTrigger>
-          </TabsList>
-          <TabsContent value="one">First panel</TabsContent>
-          <TabsContent value="two">Second panel</TabsContent>
-        </Tabs>
-
-        <section aria-labelledby="overlays" className="flex flex-wrap gap-2">
-          <h2 id="overlays" className="w-full text-lg font-semibold">
-            Overlays
-          </h2>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>Open dialog</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite a team member</DialogTitle>
-                <DialogDescription>They can accept once the invite arrives.</DialogDescription>
-              </DialogHeader>
-              <Input label="Email" type="email" />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          <Button variant="secondary" onClick={() => setToastOpen(true)}>
-            Show toast
-          </Button>
-        </section>
+    <div data-surface={surface} data-theme={theme} className="min-h-dvh bg-canvas text-fg">
+      <header className="sticky top-0 z-(--z-nav) flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle bg-surface px-gutter-md py-3">
+        <div>
+          <p className="text-title font-sans font-semibold text-fg">YourTal primitives</p>
+          <p className="text-caption text-fg-muted">Every @yourtal/ui export, one page.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <SegmentedControl
+            label="Surface"
+            options={SURFACES}
+            value={surface}
+            onChange={setSurface}
+          />
+          <SegmentedControl label="Theme" options={THEMES} value={theme} onChange={setTheme} />
+        </div>
+      </header>
+      <main className="mx-auto flex max-w-page-wide flex-col gap-8 px-gutter-sm py-8 md:px-gutter-md lg:px-gutter-lg">
+        <ActionsGroup />
+        <FormsGroup />
+        <OverlaysGroup />
+        <FeedbackGroup />
+        <LayoutGroup />
+        <DataDisplayGroup />
+        <RewardsMediaGroup />
       </main>
-      <Toast open={toastOpen} onOpenChange={setToastOpen}>
-        <ToastTitle>Saved</ToastTitle>
-        <ToastDescription>Your changes are in.</ToastDescription>
-      </Toast>
-      <ToastViewport />
-    </ToastProvider>
+    </div>
   );
 }

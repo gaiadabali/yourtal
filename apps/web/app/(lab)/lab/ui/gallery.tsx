@@ -3,6 +3,7 @@
 import * as React from "react";
 import { SegmentedControl } from "@yourtal/ui/segmented-control";
 import { ActionsGroup } from "./groups/actions";
+import { BrandGroup } from "./groups/brand";
 import { DataDisplayGroup } from "./groups/data-display";
 import { FeedbackGroup } from "./groups/feedback";
 import { FormsGroup } from "./groups/forms";
@@ -59,6 +60,7 @@ export function Gallery({ initialSurface, initialTheme }: GalleryProps) {
         </div>
       </header>
       <main className="mx-auto flex max-w-page-wide flex-col gap-8 px-gutter-sm py-8 md:px-gutter-md lg:px-gutter-lg">
+        <BrandGroup />
         <ActionsGroup />
         <FormsGroup />
         <OverlaysGroup />

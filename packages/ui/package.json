@@ -49,6 +49,8 @@
     "./vertical-feed/video": "./src/vertical-feed/vertical-feed-video.tsx",
     "./studio-shell": "./src/studio-shell/studio-shell.tsx",
     "./counter-shell": "./src/counter-shell/counter-shell.tsx",
+    "./brand/coin-mark": "./src/brand/coin-mark.tsx",
+    "./brand/wordmark": "./src/brand/wordmark.tsx",
     "./cn": "./src/cn.ts"
   },
   "scripts": {

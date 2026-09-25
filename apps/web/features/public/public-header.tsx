@@ -1,3 +1,4 @@
+import { BrandWordmark } from "@yourtal/ui/brand/wordmark";
 import type { SupportedLocale } from "./public-i18n";
 import { getPublicTranslator } from "./public-i18n";
 import { PublicCtaLink } from "./public-cta-link";
@@ -28,8 +29,8 @@ export function PublicHeader({ locale, homeHref }: PublicHeaderProps) {
   const t = getPublicTranslator(locale);
   return (
     <header className="flex items-center justify-between gap-4 border-b border-border-subtle px-gutter-sm py-3 md:px-gutter-md">
-      <a href={homeHref} className="text-title font-display font-extrabold text-fg">
-        YourTal
+      <a href={homeHref}>
+        <BrandWordmark size="sm" />
       </a>
       <div className="flex items-center gap-4">
         <a href="/au" className="text-label font-sans font-medium text-fg-muted hover:text-fg">

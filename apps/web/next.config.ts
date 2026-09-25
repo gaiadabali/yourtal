@@ -8,6 +8,9 @@ const config: NextConfig = {
   // packages/* ship TypeScript source via subpath exports (no barrel files, 13b §5).
   transpilePackages: ["@yourtal/ui", "@yourtal/contracts"],
   typedRoutes: true,
+  // `(lab)` prototypes and the primitive gallery use `.lab.tsx`, so they are routes
+  // only in a YOURTAL_LAB=1 build and never in the one that ships.
+  pageExtensions: process.env["YOURTAL_LAB"] === "1" ? ["tsx", "ts", "lab.tsx"] : ["tsx", "ts"],
   // Self-contained server bundle for deployment (YT-0532, decision S-1).
   //
   // Required, not a preference: this is a pnpm WORKSPACE, so node_modules is a

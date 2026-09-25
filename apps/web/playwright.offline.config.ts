@@ -1,14 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
-
-// The slot's PLAYWRIGHT_PORT lives in the root .env; Playwright does not read it.
-try {
-  process.loadEnvFile(new URL("../../.env", import.meta.url));
-} catch (error) {
-  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-}
+import { playwrightPort } from "./playwright-port";
 
 // Two above the main suite's port, so both can run at once.
-const port = Number(process.env["PLAYWRIGHT_PORT"] ?? 3100) + 2;
+const port = playwrightPort(2);
 
 /**
  * A deliberately SEPARATE Playwright config from `playwright.config.ts`,

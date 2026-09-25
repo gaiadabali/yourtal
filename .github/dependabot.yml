@@ -1,0 +1,45 @@
+# Keeps the stack current so GitHub security alerts do not pile up.
+# Security updates ignore the cooldown by design; version updates wait 7 days,
+# longer than pnpm's 1-day minimumReleaseAge, so Dependabot never proposes a
+# version `pnpm install` would refuse.
+version: 2
+updates:
+  - package-ecosystem: npm # reads pnpm-lock.yaml
+    directory: "/"
+    schedule: { interval: weekly, day: monday }
+    cooldown: { default-days: 7, semver-major-days: 30 }
+    open-pull-requests-limit: 10
+    groups:
+      nestjs: { patterns: ["@nestjs/*"] }
+      next: { patterns: ["next", "@next/*"] }
+      npm-minor-patch: { update-types: [minor, patch] }
+
+  - package-ecosystem: gomod
+    directories:
+      [
+        "/services/ledger",
+        "/services/voucher",
+        "/infra/healthcheck",
+        "/packages/contracts/openapi/go",
+      ]
+    schedule: { interval: weekly, day: monday }
+    cooldown: { default-days: 7 }
+    groups:
+      go-minor-patch: { update-types: [minor, patch] }
+
+  - package-ecosystem: docker
+    directories: ["/services/ledger", "/services/voucher"]
+    schedule: { interval: weekly, day: monday }
+    cooldown: { default-days: 7 }
+
+  - package-ecosystem: docker-compose
+    directory: "/"
+    schedule: { interval: weekly, day: monday }
+    cooldown: { default-days: 7 }
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly, day: monday }
+    cooldown: { default-days: 7 }
+    groups:
+      actions: { patterns: ["*"] }

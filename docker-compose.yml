@@ -87,42 +87,12 @@ services:
   # --- YT-0520 / YT-0521: local substitutes for cloud services, so nothing
   # --- waits on an account signup. Same interfaces, real protocols.
 
-  zitadel:
-    image: ghcr.io/zitadel/zitadel:v2.66.0
-    container_name: yourtal-zitadel
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      ZITADEL_DATABASE_POSTGRES_HOST: postgres
-      ZITADEL_DATABASE_POSTGRES_PORT: 5432
-      ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
-      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: yourtal
-      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: yourtal_local_only
-      ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
-      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: yourtal
-      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: yourtal_local_only
-      ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
-      ZITADEL_EXTERNALSECURE: "false"
-      ZITADEL_EXTERNALDOMAIN: localhost
-      ZITADEL_EXTERNALPORT: 26080
-      ZITADEL_TLS_ENABLED: "false"
-      # Local-only bootstrap credentials. Deployed realms come from YT-0032.
-      # Exactly 32 bytes, as Zitadel requires. Local development only —
-      # deployed instances take this from Secret Manager (YT-0026).
-      ZITADEL_MASTERKEY: "YourTalLocalDevMasterKey32Bytes!"
-      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: dev@yourtal.local
-      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: DevPassword1!
-    command: ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "disabled"]
-    ports:
-      - "127.0.0.1:26080:8080"
-
   minio:
-    # Official registry is quay.io; Docker Hub's minio/minio is no longer
-    # public. TODO(YT-0523): pin by digest once a tag is confirmed, per the
-    # Atlas lesson in YT-0518 — :latest is a moving target.
-    image: quay.io/minio/minio:latest
+    # Upstream MinIO stopped publishing images and its repo is archived with
+    # unpatched critical CVEs (e.g. GHSA-5cx5-wh4m-82fh), and
+    # quay.io/minio/minio:latest no longer pulls. pgsty/minio is the
+    # maintained drop-in fork: same API, same `mc` for the healthcheck.
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372
     container_name: yourtal-minio
     restart: unless-stopped
     environment:

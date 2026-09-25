@@ -41,7 +41,6 @@ interfaces, which on a laptop on a café network is the whole problem.
 
 | Host  | Container | Service         |
 | ----- | --------- | --------------- |
-| 26080 | 8080      | zitadel         |
 | 26379 | 6379      | redis (Valkey)  |
 | 26432 | 5432      | postgres        |
 | 26592 | 3592      | cerbos          |

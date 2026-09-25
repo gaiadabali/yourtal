@@ -146,7 +146,7 @@ jobs:
             -p 127.0.0.1:26900:9000 \
             -e MINIO_ROOT_USER=yourtal \
             -e MINIO_ROOT_PASSWORD=yourtal_local_only \
-            quay.io/minio/minio:latest server /data
+            pgsty/minio:RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372 server /data
           for _ in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:26900/minio/health/live >/dev/null 2>&1; then
               exit 0

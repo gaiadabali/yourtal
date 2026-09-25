@@ -21,6 +21,7 @@
 package ledger
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -39,6 +40,10 @@ import (
 // retry on 40001" — documented here, because a retry loop with no comment
 // is indistinguishable from one that is papering over a real bug.
 const serializationFailure = "40001"
+
+// deadlockDetected is retried like a serialization failure: guardDebits locks
+// in id order, but the COMMIT-time trigger locks in entry order.
+const deadlockDetected = "40P01"
 
 // maxAttempts bounds the retry, and baseBackoff spaces attempts out.
 //
@@ -82,6 +87,10 @@ var (
 	ErrNotInverse = errors.New("ledger: a reversal must exactly invert its original")
 	// ErrUnbalancedBooks — a trial balance did not balance.
 	ErrUnbalancedBooks = errors.New("ledger: trial balance does not balance")
+	// ErrInsufficientFunds — a debit would take a guarded account below zero.
+	ErrInsufficientFunds = errors.New("ledger: insufficient funds")
+	// ErrIdempotencyConflict — the key was already used for a different request.
+	ErrIdempotencyConflict = errors.New("ledger: idempotency key reused with a different request")
 )
 
 // Entry is one side of a transfer. Debits are negative, credits positive;
@@ -181,11 +190,13 @@ func (l *Ledger) postInTx(ctx context.Context, tx pgx.Tx, req TransferRequest) (
 		if req.Reverses != "" {
 			reverses = &req.Reverses
 		}
+		hash := requestHash(req)
 		created, err := queries.InsertTransfer(ctx, sqlcgen.InsertTransferParams{
 			ID:             req.ID,
 			IdempotencyKey: req.IdempotencyKey,
 			ReasonCode:     req.ReasonCode,
 			Reverses:       reverses,
+			RequestHash:    hash,
 		})
 		if errors.Is(err, pgx.ErrNoRows) {
 			existing, lookupErr := queries.GetTransferByIdempotencyKey(ctx, req.IdempotencyKey)
@@ -193,10 +204,19 @@ func (l *Ledger) postInTx(ctx context.Context, tx pgx.Tx, req TransferRequest) (
 				return TransferResult{}, fmt.Errorf(
 					"reading the transfer that already owns this key: %w", lookupErr)
 			}
+			// A replay must be the same request. Rows from before request
+			// hashes existed carry none and replay as before.
+			if existing.RequestHash != nil && !bytes.Equal(existing.RequestHash, hash) {
+				return TransferResult{}, fmt.Errorf("%w: %s", ErrIdempotencyConflict, req.IdempotencyKey)
+			}
 			return TransferResult{TransferID: existing.ID, Replayed: true}, nil
 		}
 		if err != nil {
 			return TransferResult{}, fmt.Errorf("inserting transfer: %w", err)
+		}
+
+		if err := guardDebits(ctx, queries, req.Entries); err != nil {
+			return TransferResult{}, err
 		}
 
 		for _, entry := range req.Entries {
@@ -306,7 +326,8 @@ func (tb TrialBalance) Check() error {
 // Imbalance is one transfer whose entries do not sum to zero.
 type Imbalance struct {
 	TransferID string
-	Amount     int64
+	// Amount is the exact sum as decimal text: a tamper can exceed int64.
+	Amount string
 }
 
 // CheckInvariants looks for any transfer that does not sum to zero.
@@ -360,14 +381,14 @@ func WithSerializableRetry(ctx context.Context, pool *pgxpool.Pool, fn func(pgx.
 		}
 
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == serializationFailure {
+		if errors.As(err, &pgErr) && (pgErr.Code == serializationFailure || pgErr.Code == deadlockDetected) {
 			lastErr = err
 			if waitErr := backoff(ctx, attempt); waitErr != nil {
 				return waitErr
 			}
 			continue
 		}
-		return err
+		return asLedgerError(err)
 	}
 
 	return fmt.Errorf("ledger: serialization conflict persisted after %d attempts: %w",
@@ -401,7 +422,6 @@ func validate(req TransferRequest) error {
 		return ErrTooFewEntries
 	}
 
-	var sum int64
 	currency := req.Entries[0].Currency
 	for _, entry := range req.Entries {
 		if entry.AmountMinor == 0 {
@@ -410,10 +430,9 @@ func validate(req TransferRequest) error {
 		if entry.Currency != currency {
 			return ErrMixedCurrency
 		}
-		sum += entry.AmountMinor
 	}
-	if sum != 0 {
-		return fmt.Errorf("%w: off by %d", ErrUnbalanced, sum)
+	if sum := sumExactly(req.Entries); sum.Sign() != 0 {
+		return fmt.Errorf("%w: off by %s", ErrUnbalanced, sum)
 	}
 	return nil
 }

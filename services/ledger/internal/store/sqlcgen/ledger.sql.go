@@ -104,19 +104,21 @@ func (q *Queries) DrawDownAllocation(ctx context.Context, arg DrawDownAllocation
 }
 
 const findImbalancedTransfers = `-- name: FindImbalancedTransfers :many
-SELECT transfer_id, COALESCE(SUM(amount_minor), 0)::bigint AS imbalance
+SELECT transfer_id, SUM(amount_minor)::text AS imbalance
 FROM ledger.entry
 GROUP BY transfer_id
-HAVING COALESCE(SUM(amount_minor), 0) <> 0
+HAVING SUM(amount_minor) <> 0
 `
 
 type FindImbalancedTransfersRow struct {
 	TransferID string
-	Imbalance  int64
+	Imbalance  string
 }
 
 // The invariant checker. Should always return nothing; if it ever does not,
 // the deferred trigger has been bypassed or dropped and that is a P1.
+// Summed as numeric and returned as text, so a tamper that overflows bigint
+// is reported with its true sum rather than failing the query (EM-23).
 func (q *Queries) FindImbalancedTransfers(ctx context.Context) ([]FindImbalancedTransfersRow, error) {
 	rows, err := q.db.Query(ctx, findImbalancedTransfers)
 	if err != nil {
@@ -174,7 +176,7 @@ const getAccountBalance = `-- name: GetAccountBalance :one
 SELECT (CASE WHEN a.kind IN ('asset', 'expense') THEN -1 ELSE 1 END
         * COALESCE(SUM(e.amount_minor), 0))::bigint AS balance_minor
 FROM ledger.account a
-LEFT JOIN ledger.entry e ON e.account_id = a.id
+LEFT JOIN ledger.entry e ON e.account_id = a.id AND e.currency = a.currency
 WHERE a.id = $1
 GROUP BY a.kind
 `
@@ -251,7 +253,7 @@ func (q *Queries) GetPointPurchase(ctx context.Context, id string) (LedgerPointP
 }
 
 const getTransferByIdempotencyKey = `-- name: GetTransferByIdempotencyKey :one
-SELECT id, idempotency_key, reason_code, created_at, reverses
+SELECT id, idempotency_key, reason_code, created_at, reverses, request_hash
 FROM ledger.transfer
 WHERE idempotency_key = $1
 `
@@ -265,6 +267,7 @@ func (q *Queries) GetTransferByIdempotencyKey(ctx context.Context, idempotencyKe
 		&i.ReasonCode,
 		&i.CreatedAt,
 		&i.Reverses,
+		&i.RequestHash,
 	)
 	return i, err
 }
@@ -436,10 +439,10 @@ func (q *Queries) InsertPointPurchase(ctx context.Context, arg InsertPointPurcha
 }
 
 const insertTransfer = `-- name: InsertTransfer :one
-INSERT INTO ledger.transfer (id, idempotency_key, reason_code, reverses)
-VALUES ($1, $2, $3, $4)
+INSERT INTO ledger.transfer (id, idempotency_key, reason_code, reverses, request_hash)
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (idempotency_key) DO NOTHING
-RETURNING id, idempotency_key, reason_code, created_at, reverses
+RETURNING id, idempotency_key, reason_code, created_at, reverses, request_hash
 `
 
 type InsertTransferParams struct {
@@ -447,6 +450,7 @@ type InsertTransferParams struct {
 	IdempotencyKey string
 	ReasonCode     string
 	Reverses       *string
+	RequestHash    []byte
 }
 
 // Returns nothing on a key that already exists, which is how the caller
@@ -457,6 +461,7 @@ func (q *Queries) InsertTransfer(ctx context.Context, arg InsertTransferParams) 
 		arg.IdempotencyKey,
 		arg.ReasonCode,
 		arg.Reverses,
+		arg.RequestHash,
 	)
 	var i LedgerTransfer
 	err := row.Scan(
@@ -465,6 +470,7 @@ func (q *Queries) InsertTransfer(ctx context.Context, arg InsertTransferParams) 
 		&i.ReasonCode,
 		&i.CreatedAt,
 		&i.Reverses,
+		&i.RequestHash,
 	)
 	return i, err
 }
@@ -617,10 +623,21 @@ func (q *Queries) ListPurchasesForPartner(ctx context.Context, partnerID string)
 	return items, nil
 }
 
+const lockAccount = `-- name: LockAccount :exec
+SELECT pg_advisory_xact_lock(hashtextextended('ledger.account:' || $1::text, 0))
+`
+
+// Serialises debits of one guarded account for the rest of the transaction;
+// the overdraft trigger takes the same lock at COMMIT.
+func (q *Queries) LockAccount(ctx context.Context, accountID string) error {
+	_, err := q.db.Exec(ctx, lockAccount, accountID)
+	return err
+}
+
 const trialBalance = `-- name: TrialBalance :many
 SELECT a.kind, a.currency, COALESCE(SUM(e.amount_minor), 0)::bigint AS credit_minus_debit
 FROM ledger.account a
-LEFT JOIN ledger.entry e ON e.account_id = a.id
+LEFT JOIN ledger.entry e ON e.account_id = a.id AND e.currency = a.currency
 WHERE a.country = $1
 GROUP BY a.kind, a.currency
 ORDER BY a.currency, a.kind

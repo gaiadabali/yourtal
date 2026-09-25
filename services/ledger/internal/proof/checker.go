@@ -146,7 +146,7 @@ func (c *Checker) Run(ctx context.Context) ([]Finding, error) {
 	for _, row := range imbalanced {
 		findings = append(findings, Finding{
 			Kind: "imbalance",
-			Detail: fmt.Sprintf("transfer=%s imbalance=%d — the deferred trigger was bypassed or dropped",
+			Detail: fmt.Sprintf("transfer=%s imbalance=%s — the deferred trigger was bypassed or dropped",
 				row.TransferID, row.Imbalance),
 		})
 	}

@@ -1,15 +1,20 @@
 -- name: InsertTransfer :one
 -- Returns nothing on a key that already exists, which is how the caller
 -- learns a replay happened without a second round trip or a race.
-INSERT INTO ledger.transfer (id, idempotency_key, reason_code, reverses)
-VALUES ($1, $2, $3, $4)
+INSERT INTO ledger.transfer (id, idempotency_key, reason_code, reverses, request_hash)
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (idempotency_key) DO NOTHING
-RETURNING id, idempotency_key, reason_code, created_at, reverses;
+RETURNING id, idempotency_key, reason_code, created_at, reverses, request_hash;
 
 -- name: GetTransferByIdempotencyKey :one
-SELECT id, idempotency_key, reason_code, created_at, reverses
+SELECT id, idempotency_key, reason_code, created_at, reverses, request_hash
 FROM ledger.transfer
 WHERE idempotency_key = $1;
+
+-- name: LockAccount :exec
+-- Serialises debits of one guarded account for the rest of the transaction;
+-- the overdraft trigger takes the same lock at COMMIT.
+SELECT pg_advisory_xact_lock(hashtextextended('ledger.account:' || sqlc.arg(account_id)::text, 0));
 
 -- name: InsertEntry :exec
 INSERT INTO ledger.entry (transfer_id, account_id, amount_minor, currency)
@@ -40,7 +45,7 @@ ON CONFLICT (id) DO NOTHING;
 SELECT (CASE WHEN a.kind IN ('asset', 'expense') THEN -1 ELSE 1 END
         * COALESCE(SUM(e.amount_minor), 0))::bigint AS balance_minor
 FROM ledger.account a
-LEFT JOIN ledger.entry e ON e.account_id = a.id
+LEFT JOIN ledger.entry e ON e.account_id = a.id AND e.currency = a.currency
 WHERE a.id = $1
 GROUP BY a.kind;
 
@@ -50,7 +55,7 @@ GROUP BY a.kind;
 -- assets + expenses = liabilities + equity + revenue.
 SELECT a.kind, a.currency, COALESCE(SUM(e.amount_minor), 0)::bigint AS credit_minus_debit
 FROM ledger.account a
-LEFT JOIN ledger.entry e ON e.account_id = a.id
+LEFT JOIN ledger.entry e ON e.account_id = a.id AND e.currency = a.currency
 WHERE a.country = $1
 GROUP BY a.kind, a.currency
 ORDER BY a.currency, a.kind;
@@ -58,10 +63,12 @@ ORDER BY a.currency, a.kind;
 -- name: FindImbalancedTransfers :many
 -- The invariant checker. Should always return nothing; if it ever does not,
 -- the deferred trigger has been bypassed or dropped and that is a P1.
-SELECT transfer_id, COALESCE(SUM(amount_minor), 0)::bigint AS imbalance
+-- Summed as numeric and returned as text, so a tamper that overflows bigint
+-- is reported with its true sum rather than failing the query (EM-23).
+SELECT transfer_id, SUM(amount_minor)::text AS imbalance
 FROM ledger.entry
 GROUP BY transfer_id
-HAVING COALESCE(SUM(amount_minor), 0) <> 0;
+HAVING SUM(amount_minor) <> 0;
 
 -- name: InsertAllocation :exec
 INSERT INTO ledger.allocation

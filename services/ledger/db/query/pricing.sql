@@ -41,5 +41,5 @@ ORDER BY effective_from;
 SELECT COALESCE(SUM(e.amount_minor), 0)::bigint AS points
 FROM ledger.entry e
 JOIN ledger.account a ON a.id = e.account_id
-WHERE a.owner_type = 'user' AND a.currency = 'YTP' AND a.country = $1
+WHERE a.owner_type = 'user' AND a.currency = 'YTP' AND e.currency = 'YTP' AND a.country = $1
   AND a.purpose IN ('available', 'pending', 'escrow');

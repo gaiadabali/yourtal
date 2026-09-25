@@ -22,7 +22,8 @@ CREATE TABLE ledger.transfer (
   idempotency_key  text        NOT NULL UNIQUE,
   reason_code      text        NOT NULL,
   created_at       timestamptz NOT NULL DEFAULT now(),
-  reverses         text        UNIQUE REFERENCES ledger.transfer (id)
+  reverses         text        UNIQUE REFERENCES ledger.transfer (id),
+  request_hash     bytea
 );
 
 CREATE TABLE ledger.entry (

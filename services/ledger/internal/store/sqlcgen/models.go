@@ -89,4 +89,5 @@ type LedgerTransfer struct {
 	ReasonCode     string
 	CreatedAt      pgtype.Timestamptz
 	Reverses       *string
+	RequestHash    []byte
 }

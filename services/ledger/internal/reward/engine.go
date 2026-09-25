@@ -238,7 +238,8 @@ func (e *Engine) issue(
 			}
 
 			entries := e.postingFor(def, allocation.FunderType, req.UserID)
-			transferID := fmt.Sprintf("led_txn_%s_%s", req.Action, req.ExternalRef)
+			// Ids carry the user: two users may share an external ref (EM-17).
+			transferID := fmt.Sprintf("led_txn_%s_%s_%s", req.UserID, req.Action, req.ExternalRef)
 
 			if err := e.ensureUserAccount(ctx, queries, req.UserID); err != nil {
 				return err
@@ -254,7 +255,7 @@ func (e *Engine) issue(
 				return err
 			}
 
-			grantID := fmt.Sprintf("grt_%s_%s", req.Action, req.ExternalRef)
+			grantID := fmt.Sprintf("grt_%s_%s_%s", req.UserID, req.Action, req.ExternalRef)
 			if err := queries.InsertGrant(ctx, sqlcgen.InsertGrantParams{
 				ID:           grantID,
 				UserID:       req.UserID,

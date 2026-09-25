@@ -180,15 +180,15 @@ func TestOneAccountPerUserPerPurpose(t *testing.T) {
 func TestATransferCannotCrossRegions(t *testing.T) {
 	book, pool := newLedger(t)
 	ctx := context.Background()
-	auUser, idUser := unique("u"), unique("u")
-	for _, a := range append(ledger.UserAccounts(auUser, au), ledger.UserAccounts(idUser, id)...) {
+	for _, a := range append(ledger.PlatformChart(au), ledger.PlatformChart(id)...) {
 		insert(t, pool, a)
 	}
+	// Unguarded contra accounts, so only the region wall can refuse it.
 	_, err := book.Transfer(ctx, ledger.TransferRequest{
 		ID: unique("t"), IdempotencyKey: unique("k"), ReasonCode: "test",
 		Entries: []ledger.Entry{
-			{AccountID: ledger.UserAccountID(auUser, ledger.PurposeAvailable), AmountMinor: -10, Currency: "YTP"},
-			{AccountID: ledger.UserAccountID(idUser, ledger.PurposeAvailable), AmountMinor: 10, Currency: "YTP"},
+			{AccountID: plat(au, ledger.RolePointsIssued), AmountMinor: -10, Currency: "YTP"},
+			{AccountID: plat(id, ledger.RolePointsIssued), AmountMinor: 10, Currency: "YTP"},
 		},
 	})
 	if err == nil || !strings.Contains(err.Error(), "crosses regions") {

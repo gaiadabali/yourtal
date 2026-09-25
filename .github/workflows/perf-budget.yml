@@ -129,6 +129,12 @@ jobs:
       - name: Enforce initial-JS budget (170 KB gz)
         run: node scripts/perf-check-bundle-size.mjs apps/web
 
+      # Ubuntu 24.04 blocks the unprivileged user namespaces Chrome's sandbox
+      # needs ("No usable sandbox!"). Lift that on this runner rather than
+      # running Chrome with --no-sandbox.
+      - name: Allow Chrome's sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Run Lighthouse CI (mid-tier Android / 4G)
         # Run through dlx rather than as a devDependency: @lhci/cli 0.15.1 is
         # the latest release, and it pins lighthouse 12.6.1, whose tree carries

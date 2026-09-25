@@ -54,13 +54,21 @@ describe("proxy (1.7.c)", () => {
     expect(location.searchParams.get("returnTo")).toBe("/store?highlight=listing-1");
   });
 
-  it.each(["/", "/id", "/login", "/merchant/pair", "/api/health"])(
+  it.each(["/id", "/login", "/merchant/pair", "/api/health"])(
     "leaves %s public with no cookies at all",
     (path) => {
       const response = proxy(requestFor(path));
       expect(response.status).not.toBe(307);
     },
   );
+
+  // 3.5.d's route-redirects rule: `/` is the signed-in home, never a login wall.
+  it("sends / to /au signed out and to /home signed in", () => {
+    const signedOut = proxy(requestFor("/"));
+    expect(new URL(signedOut.headers.get("location") ?? "").pathname).toBe("/au");
+    const signedIn = proxy(requestFor("/", "yt_session=token"));
+    expect(new URL(signedIn.headers.get("location") ?? "").pathname).toBe("/home");
+  });
 
   it("redirects an unpaired /merchant route to /merchant/pair", () => {
     const response = proxy(requestFor("/merchant/devices"));

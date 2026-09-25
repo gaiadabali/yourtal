@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 5/8 | 38/47 | `████████░░`  81% |
+| **Phase 0** Reset | A | 🔄 in progress | 6/8 | 40/47 | `█████████░`  85% |
 | **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/3 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **5/81** | **38/353** | `█░░░░░░░░░`  11% |
+| **All** | | | **6/81** | **40/353** | `█░░░░░░░░░`  11% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **0** Reset | 2026-09-25 | 0.2, 0.3, 0.5, 0.6 ✅; 0.4.a–e ✅. Now: 0.4.g (CI green on main), then 0.7, 0.4.f, 0.8.f–j (session yourtal-74) |
+| 1 | `yourtal-1` | **0** Reset | 2026-09-25 | 0.2, 0.3, 0.5, 0.6, 0.7 ✅. Now: 0.4.f, 0.8.f, 0.8.i on three helper worktrees (`yourtal-p0-biz`, `-deps`, `-hyg`); then 0.4.g, 0.8.g, 0.8.j (session yourtal-74) |
 | 2 | `yourtal-2` | — free | — | Phase 3 can start now (0.2.b ✅); worktree, `.env` and deps are ready |
 | 3 | `yourtal-3` | — free | — | Next: Phase 1, once Phase 0 ✅ |
 
@@ -119,6 +119,8 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F12** | Economy numbers for staging | Set by the plan ("best mechanics for now"). Every one is a config value editable in the staff console (9.5) through the 1.2.f settings store, never a constant in code. See the table below. |
 | **F17** | Migration `20260922030000` opened its own transaction inside Atlas's, so it could never apply | **Fix it in place.** It had never been pushed or applied anywhere (no `atlas.sum` line; dev stopped at `20260922020000`). "Never edit a migration" protects applied history; an unapplied, unpushed one may be fixed. |
 | **F18** | F2's no-expiry weakens `docs/24` ID-1, which cited expiry as one of its four legs | **Off in both regions, for good.** Keep expiry built and switchable per region in the staff console. `docs/24` and `docs/25` now record ID-1 as resting on three legs. |
+| **F19** | Only `web-gaiada` can push to `gaiadabali/yourtal`; the active gh account cannot | **Push as web-gaiada** through a one-off credential helper, without switching the active account. Until FA1 gives `hansel-gaiada` write access. |
+| **F20** | The shared `yourtal` dev database was full of Go-test leftovers, some not whole Rupiah, so 0.7's migration refused it | **Recreate it clean** (migrations + seed), done 2026-09-25. Slot databases untouched. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -334,15 +336,15 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - B4 (24 → no expiry by default), K2 (IDR 8 → 9) and docs/18 §1 ("IDR in sen") superseded.
   - [x] 0.6.c Bring `docs/24` and `docs/25` from `wip/leftovers-2026-09-22` onto `main`, and amend them to match F2: no expiry by default, Helios acceptable for production.
   - [x] 0.6.d **Check:** no document still describes Indonesia-first, Zitadel, phone OTP, 24-month expiry or IDR-in-sen as current.
-- [ ] **0.7 IDR in whole Rupiah (decision T-1): a data migration, not a constant** · needs: 0.3 — 🔄 slot 1
+- [x] **0.7 IDR in whole Rupiah (decision T-1): a data migration, not a constant** · needs: 0.3 — ✅ 2026-09-25 76ac899
   - [x] 0.7.a Add a migration that divides IDR amounts by 100 where `currency = 'IDR'`. It covers `store.listings`, `voucher.vouchers`, `store.listing_price_revision`, `store.settlement_decrease_request`, and every ledger entry, allocation, purchase and pricing-rate row. The ID rates become micros per point: B = 6_000_000, P_issue = 9_000_000.
   - [x] 0.7.b `MINOR_UNIT.IDR` becomes exponent 0.
     - Remove `SEN_PER_RUPIAH`; `rupiah(n)` scales by `10^exponent` (= 1).
     - Rename `MOCK_BACKING_RATE_IDR_SEN_PER_POINT` to `…_IDR_PER_POINT = 6`, until 4.9 deletes it.
     - `pointsPriceFromSettlement` rounds **up** (EM-20).
     - Unify `MAX_SAFE_AMOUNT_MINOR` into one constant.
-  - [ ] 0.7.c Convert every IDR literal from sen to Rupiah across contracts mocks, `apps/web` fixtures, the seed, and Go ledger and voucher tests (and the `price_test.go` comments). Remove the IDR defaults and fallbacks from `packages/drivers` (`payments.ts:122,194`, `disbursement.ts:69`, `declaredMinorUnitExponent`).
-  - [ ] 0.7.d **Check:** a seeded listing with S = Rp 54,000 stores 54000, shows face value "Rp54.000", and costs 9,000 pts.
+  - [x] 0.7.c Convert every IDR literal from sen to Rupiah across contracts mocks, `apps/web` fixtures, the seed, and Go ledger and voucher tests (and the `price_test.go` comments). Remove the IDR defaults and fallbacks from `packages/drivers` (`payments.ts:122,194`, `disbursement.ts:69`, `declaredMinorUnitExponent`).
+  - [x] 0.7.d **Check:** a seeded listing with S = Rp 54,000 stores 54000, shows face value "Rp54.000", and costs 9,000 pts.
 - [ ] **0.8 Clean stack: security fixes now, latest versions once the gate is green** · needs: 0.1 (0.8.f needs 0.4) — 🔄 A
   - [x] 0.8.a npm advisories (GitHub dependency graph and `pnpm audit`, 7 found):
     - remove the stale `@lhci/cli` devDependency, which carries 6 of them (extract-zip, tmp, uuid), and run it through `pnpm dlx @lhci/cli@0.15.1` in `perf-budget.yml`;
@@ -1237,6 +1239,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · A · 0.7 IDR is whole Rupiah: exact data migration (refuses to round), exponent 0, literals converted, drivers declare their unit · 76ac899
 - 2026-09-25 · A · 0.6 The docs tell the current story: README, docs/16 section U, docs/24–25 on main and amended, and a sweep of 11 docs · 3a097c2
 - 2026-09-25 · A · 0.5 A first visit is English: AU by default, merchant `lang` from the device, player and earn-board copy from the catalogues · 3d166a2
 - 2026-09-25 · A · 0.2 Three slot worktrees run web, api and Cerbos side by side on their own databases; a migration in one leaves the others alone · efffeda

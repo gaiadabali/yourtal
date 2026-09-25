@@ -33,10 +33,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 4/7 | 33/44 | `████████░░`  75% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 4/7 | 37/44 | `████████░░`  84% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 26/52 | `█████░░░░░`  50% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 30/52 | `██████░░░░`  58% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **19/82** | **135/366** | `████░░░░░░`  37% |
+| **All** | | | **19/82** | **143/366** | `████░░░░░░`  39% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Two agents. A (`yourtal-1`, `phase/4`): 4.1.b/c/d done on the branch (86de46c), next 4.4.a–d, 4.7, 4.8, 4.9. B (helper `yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5 voucher core API, then 4.6.f/h |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged. Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) on 1.6; D (`yourtal-p1-c`, `phase/1-c`) on 1.7 (F25) |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged. Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) on 1.6; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
 
 ## Decisions for the founder
 
@@ -513,17 +513,17 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [ ] 1.6.b `GET /api/dev/inbox` and a plain `/dev/inbox` page. They are enabled only when `APP_ENV` is `dev` or `staging`.
   - [x] 1.6.c (requested by B and C) `push` and `webhook` boundaries in `packages/drivers`, with simulated drivers that store to `platform.sim_outbox`.
   - [ ] 1.6.d **Check:** register → the verification email appears in `/dev/inbox` → its link verifies the account.
-- [ ] **1.7 Web ↔ API plumbing** · needs: 1.5
-  - [ ] 1.7.a `apps/web/lib/api/`: a server-only `apiFetch(path, zodSchema)` that calls `API_INTERNAL_URL`, forwards `yt_session` and returns typed errors. Per-domain calls live in each area's `features/<x>/<x>-api.ts`.
-  - [ ] 1.7.b The login and `PATCH /api/me` Server Actions set the `yt_session`, `yt_locale` and `yt_region` cookies. `proxy.ts` reads only those cookies and defaults to AU / en-AU. (requested by A) B makes `i18n/request.ts` read only `yt_locale` and `yt_region`, defaulting to en-AU, under 6.1.b.
-  - [ ] 1.7.c `apps/web/proxy.ts` protects these exact prefixes, redirecting to `/login?returnTo=`: `/home`, `/watch`, `/campaign`, `/store`, `/wallet`, `/me`, `/onboarding`, `/quick`, `/business`, `/studio`, `/staff`. Everything else stays public, with these exceptions for the merchant counter:
+- [ ] **1.7 Web ↔ API plumbing** · needs: 1.5 — 🔄 slot 3 (agent D)
+  - [x] 1.7.a `apps/web/lib/api/`: a server-only `apiFetch(path, zodSchema)` that calls `API_INTERNAL_URL`, forwards `yt_session` and returns typed errors. Per-domain calls live in each area's `features/<x>/<x>-api.ts`.
+  - [x] 1.7.b The login and `PATCH /api/me` Server Actions set the `yt_session`, `yt_locale` and `yt_region` cookies. `proxy.ts` reads only those cookies and defaults to AU / en-AU. (requested by A) B makes `i18n/request.ts` read only `yt_locale` and `yt_region`, defaulting to en-AU, under 6.1.b.
+  - [x] 1.7.c `apps/web/proxy.ts` protects these exact prefixes, redirecting to `/login?returnTo=`: `/home`, `/watch`, `/campaign`, `/store`, `/wallet`, `/me`, `/onboarding`, `/quick`, `/business`, `/studio`, `/staff`. Everything else stays public, with these exceptions for the merchant counter:
     - `/merchant/pair` is public;
     - `/merchant/**` also passes with a `yt_device` cookie (the 8.1 device credential), which the page and the BFF verify on the server through the 1.5.c resolver;
     - there is never an open fallback.
 
     Redirects come from `apps/web/route-redirects.ts`, which starts empty; each area adds its own lines.
-  - [ ] 1.7.d (requested by B) In `money-format.ts`, add `formatPointsIn(locale, amount)` with no default, change `formatPoints`'s default to `en-AU` and mark it deprecated. B and C move their own call sites (6.1.c, 7.8.c, 8.2.d).
-  - [ ] 1.7.e **Check:** a Server Component shows the signed-in user's name through `apiFetch`, and `/wallet` without a session redirects to `/login`.
+  - [x] 1.7.d (requested by B) In `money-format.ts`, add `formatPointsIn(locale, amount)` with no default, change `formatPoints`'s default to `en-AU` and mark it deprecated. B and C move their own call sites (6.1.c, 7.8.c, 8.2.d).
+  - [ ] 1.7.e **Check:** a Server Component shows the signed-in user's name through `apiFetch`, and `/wallet` without a session redirects to `/login`. — ⛔ 1.5 (needs 1.5.a merged so the API reads the principal from `yt_session`; a–d (f49d1a7, 2a1ade8) already prove `apiFetch`/`proxy.ts` in isolation with 43 tests)
 
 **Done when:** you can register, verify through the simulated inbox, log in and see your name; no `x-yt-*` header is accepted anywhere; a principal can never read another region's data; B and C are building against the contracts and fakes.
 
@@ -727,13 +727,13 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.3.e Add `/v1/burns` (`burnForVoucher`, `getBurn`, `reinstateBurn`) on these guards, where `reinstateBurn` is K13.
   - [x] 4.3.f **Check:** each of EM-04/09/14/17/18/23 has a test that failed before the fix and passes after.
 - [ ] **4.4 The Reward Engine pays what the partner set, once** · needs: 4.3 (4.4.f and 4.4.i early, F22) — 🔄 slot 1
-  - [ ] 4.4.a The amount comes from the **frozen terms version**, never from the editable `reward_config`, so viewers are paid the terms they entered under (EM-05, EM-16, EW-05).
+  - [x] 4.4.a The amount comes from the **frozen terms version**, never from the editable `reward_config`, so viewers are paid the terms they entered under (EM-05, EM-16, EW-05).
     - A migration creates the view `campaign.campaign_owner(id, business_id, region, state)`, with SELECT granted to `yourtal_ledger`.
     - A grant is refused unless all of these hold: the allocation's funder type is partner; the funder is the campaign's owner; the allocation's country is the campaign's region; and the campaign is live.
     - **Delete the constant 2,400 at `taxonomy.go:89`.**
-  - [ ] 4.4.b Bonus = `floor(accuracy_bonus_points × correct ÷ asked)`, when the terms' scoring rule is base_plus_accuracy_bonus; the base requires every asked question answered. The bonus counts toward `max_points_for_campaign`.
-  - [ ] 4.4.c Evidence: apps/api signs a completion attestation with HMAC over session, user, campaign, terms version, completion time, **asked and correct** (EW-12).
-  - [ ] 4.4.d **One reward per user per campaign:** `UNIQUE (user_id, campaign_id)` for watch-completed grants, returning `already_granted`.
+  - [x] 4.4.b Bonus = `floor(accuracy_bonus_points × correct ÷ asked)`, when the terms' scoring rule is base_plus_accuracy_bonus; the base requires every asked question answered. The bonus counts toward `max_points_for_campaign`.
+  - [x] 4.4.c Evidence: apps/api signs a completion attestation with HMAC over session, user, campaign, terms version, completion time, **asked and correct** (EW-12). The ledger verifies it (`internal/attest`); `signRewardAttestation` in apps/api's ledger client signs it. Phase 5 (B) calls it when a watch session completes.
+  - [x] 4.4.d **One reward per user per campaign:** `UNIQUE (user_id, campaign_id)` for watch-completed grants, returning `already_granted`.
   - [x] 4.4.e Allocation holds. At reward-session start, `hold` base + maximum bonus with a TTL of 2 × duration + 1 h. The grant consumes the hold; abandonment or expiry releases it through a job. This way a viewer is never refused at the end for `allocation_exhausted`. The decrement-only `SECURITY DEFINER` function has four verbs: hold, consume, release and return. Revoke the ledger role's UPDATE on allocations (EM-08).
   - [x] 4.4.f Velocity caps and the daily and monthly caps (F12) are counted inside the transaction, under a per-user advisory lock, using the database's `now()` (EM-06, EW-11).
   - [ ] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13).

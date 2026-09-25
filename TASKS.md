@@ -33,20 +33,20 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 40/44 | `█████████░`  91% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 35/53 | `███████░░░`  66% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
-| **Phase 8** Voucher engine for clients | C | · not started | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
+| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/6 | 0/18 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **22/82** | **153/368** | `████░░░░░░`  42% |
+| **All** | | | **22/82** | **154/368** | `████░░░░░░`  42% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -508,7 +508,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - Fastify `trustProxy`;
     - cookies Secure (except in dev), HttpOnly and SameSite=Lax;
     - session lifetimes from F12.
-  - [ ] 1.5.f Stop storing token-bearing responses in `platform.idempotency` (`auth.controller.ts:107,132`). Make the throttle atomic (`SET NX EX`), removing its check-then-act race. — `password/change` and `password/reset/confirm` are `@NotValueMoving` now, not `@Idempotent` (both are safe against a bare retry already: `changePassword` revokes the very session authenticating the retry, and the reset token is single-use). `ThrottleService.recordFailure` is `SET key 1 EX windowSeconds NX` falling through to `INCR`, closing the INCR-then-EXPIRE gap that could leave a key with no TTL. Verified against real Postgres/Valkey/HTTP: zero `platform.idempotency` rows for either route, a stale-token retry refused cleanly, and 20 concurrent `recordFailure` calls landing at exactly 20 with a TTL set throughout. — reopened: `register` still stores its token-bearing reply in `platform.idempotency` (it returns a session since 1.4.c); password change/reset and the atomic throttle are done (ce65378)
+  - [x] 1.5.f Stop storing token-bearing responses in `platform.idempotency` (`auth.controller.ts:107,132`). Make the throttle atomic (`SET NX EX`), removing its check-then-act race. — `password/change` and `password/reset/confirm` are `@NotValueMoving` now, not `@Idempotent` (both are safe against a bare retry already). `register` stays `@Idempotent` (it protects a concurrent double-submit under one key, on top of the email-uniqueness constraint) but now takes `IdempotentOptions.redact: withoutToken` — a new option that strips a field before `IdempotencyInterceptor` persists the response, never from what the original caller receives, so a replay confirms the registration without ever handing out a session. `ThrottleService.recordFailure` is `SET key 1 EX windowSeconds NX` falling through to `INCR`, closing the INCR-then-EXPIRE gap that could leave a key with no TTL. Checked every other `@Idempotent` route in `apps/api` for a token/sessionToken/secret in its reply: only `checkpoint.controller.ts`'s `issue()` carries one, a short-lived checkpoint PRF token (not a session credential) that its own doc comment explains must replay byte-identical by design — left alone, not a fix owed here. `email/verify/confirm` returns `{verified: true}`, already safe. Verified against real Postgres/Valkey/HTTP: the register row's stored body has no `token` field and doesn't contain the issued token anywhere; a replay of the same idempotency key returns `userId` but not `token`; zero `platform.idempotency` rows for password/change or password/reset/confirm; a stale-token retry refused cleanly; 20 concurrent `recordFailure` calls land at exactly 20 with a TTL set throughout (f838712)
   - [ ] 1.5.g **Check:**
     - a call with `x-yt-user-id` and no session gets 401;
     - an ID principal reading an AU campaign is denied;

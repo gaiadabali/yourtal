@@ -73,11 +73,13 @@ const (
 	TypeExpired     = "expired"
 	TypeRestored    = "restored"
 	TypeTransferred = "transferred"
+	// TypeHoldExpired — a hold timed out and the sweeper released the voucher.
+	TypeHoldExpired = "hold_expired"
 )
 
 var Types = []string{
 	TypeMinted, TypeAllocated, TypeActivated, TypeAuthorized, TypeCaptured,
-	TypeVoided, TypeRefunded, TypeExpired, TypeRestored, TypeTransferred,
+	TypeVoided, TypeRefunded, TypeExpired, TypeRestored, TypeTransferred, TypeHoldExpired,
 }
 
 var (

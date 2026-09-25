@@ -95,6 +95,7 @@ func (m *Minter) transition(
 
 		_, err = Move(ctx, queries, MoveRequest{
 			VoucherID:      voucherID,
+			From:           lifecycle.State(current.State),
 			To:             to,
 			Reason:         reason,
 			Owner:          owner,
@@ -110,15 +111,21 @@ func (m *Minter) transition(
 
 // MoveRequest is one state transition plus the event that records it.
 type MoveRequest struct {
-	VoucherID      uuid.UUID
-	To             lifecycle.State
-	Reason         lifecycle.VoidReason
-	Owner          *uuid.UUID
-	RemainingMinor int64
-	Version        int32
-	EventType      string
-	Detail         map[string]string
-	At             time.Time
+	VoucherID uuid.UUID
+	// From is the state the caller read at Version. Move checks From -> To
+	// against the lifecycle table, and the database checks it again (D3).
+	From lifecycle.State
+	To   lifecycle.State
+	// ValueAdjustment marks the one same-state write: a refund restoring
+	// value to an active voucher.
+	ValueAdjustment bool
+	Reason          lifecycle.VoidReason
+	Owner           *uuid.UUID
+	RemainingMinor  int64
+	Version         int32
+	EventType       string
+	Detail          map[string]string
+	At              time.Time
 }
 
 // Move applies a transition inside a caller's transaction.
@@ -130,6 +137,15 @@ type MoveRequest struct {
 func Move(
 	ctx context.Context, queries *sqlcgen.Queries, req MoveRequest,
 ) (sqlcgen.TransitionVoucherRow, error) {
+	if req.ValueAdjustment {
+		if req.From != lifecycle.Active || req.To != lifecycle.Active {
+			return sqlcgen.TransitionVoucherRow{}, fmt.Errorf("%w: only an active voucher takes a value adjustment, not %s",
+				lifecycle.ErrIllegalTransition, req.From)
+		}
+	} else if err := lifecycle.Check(req.From, req.To, req.Reason); err != nil {
+		return sqlcgen.TransitionVoucherRow{}, err
+	}
+
 	var voidReason *string
 	if req.Reason != "" {
 		value := string(req.Reason)

@@ -57,3 +57,9 @@ func (m *Minter) Allocate(ctx context.Context, voucherID, owner uuid.UUID) error
 func (m *Minter) Activate(ctx context.Context, voucherID uuid.UUID) error {
 	return m.transition(ctx, voucherID, lifecycle.Active, "", nil, chain.TypeActivated)
 }
+
+// Void kills a voucher for a reason (fraud, admin). Legal from every live
+// state, including held: a kill must not wait for a cart (lifecycle.Held).
+func (m *Minter) Void(ctx context.Context, voucherID uuid.UUID, reason lifecycle.VoidReason) error {
+	return m.transition(ctx, voucherID, lifecycle.Voided, reason, nil, chain.TypeVoided)
+}

@@ -1,4 +1,4 @@
-h1:0r1MHMdKxrXQSr8B/dUjouQO4+QsruPUwc1x7oqWhzU=
+h1:KQ947S5xTRQDPkKbOOUqrEVA7avQAb4RaK17Qtss4zY=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -39,5 +39,6 @@ h1:0r1MHMdKxrXQSr8B/dUjouQO4+QsruPUwc1x7oqWhzU=
 20260925182000_backing_rate_margin.sql h1:cJVN1RaBK2t9UHo4W6+IpkDVpHeEKrlJ/MJxp6eDBWw=
 20260925183000_rate_governance.sql h1:jm4HQxz4YeKSSr7XQWfra6GecmDVTpfT3uJ0EZi+vLM=
 20260925183100_platform_sim_outbox.sql h1:3sqQy/IFaNLqR6odLcnYxpZruIb4iWgNZteN80drPp8=
-20260925190000_campaign_listing_business_targeting_columns.sql h1:es0UwYwae87aN1x8kv95rYlDfy6E/gSTqGjaZen6iYM=
-20260925193000_platform_region_setting.sql h1:TNhGo2/ahEcXyHhcM00+2/YxJ/mxh3b8N8qSr6jns20=
+20260925184000_voucher_transitions.sql h1:eBTzMxa2Ji900eEYYLwk1E/gO0MhNqARGdY9WGHa6iY=
+20260925190000_campaign_listing_business_targeting_columns.sql h1:p0qNxswqHCqDEox/Skfo4IqCwMnozVbCoT8GhsEKRY8=
+20260925193000_platform_region_setting.sql h1:zSN7Bk+fV94ounMdxnFyd9wpA6LdamEpDjGirsc/86U=

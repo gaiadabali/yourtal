@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/yourtal/services/voucher/internal/chain"
 	"github.com/yourtal/services/voucher/internal/issue"
@@ -49,10 +50,15 @@ func (n *Network) Void(ctx context.Context, authorizationID, merchantID uuid.UUI
 		if err != nil {
 			return fmt.Errorf("reading the voucher: %w", err)
 		}
+		// Releasing a hold on a voucher voided under it must not revive it.
+		if lifecycle.State(voucher.State) != lifecycle.Held {
+			return fmt.Errorf("%w: voucher %s is %s", ErrNoLiveHold, asUUID(voucher.ID), voucher.State)
+		}
 
 		// Back to active with its value untouched. A void takes nothing.
 		_, err = issue.Move(ctx, queries, issue.MoveRequest{
 			VoucherID:      asUUID(voucher.ID),
+			From:           lifecycle.Held,
 			To:             lifecycle.Active,
 			RemainingMinor: voucher.RemainingValueMinor,
 			Version:        voucher.Version,
@@ -121,12 +127,20 @@ func (n *Network) Refund(
 				ErrRefused, amountMinor, restored-voucher.FaceValueMinor)
 		}
 
+		// Value returns only to a live, active voucher: never to a voided or
+		// expired one, or the kill switch would be advisory.
+		if lifecycle.State(voucher.State) != lifecycle.Active {
+			return fmt.Errorf("%w: voucher %s is %s", ErrRefused, asUUID(voucher.ID), voucher.State)
+		}
+
 		_, err = issue.Move(ctx, queries, issue.MoveRequest{
-			VoucherID:      asUUID(voucher.ID),
-			To:             lifecycle.State(voucher.State),
-			RemainingMinor: restored,
-			Version:        voucher.Version,
-			EventType:      chain.TypeRefunded,
+			VoucherID:       asUUID(voucher.ID),
+			From:            lifecycle.Active,
+			To:              lifecycle.Active,
+			ValueAdjustment: true,
+			RemainingMinor:  restored,
+			Version:         voucher.Version,
+			EventType:       chain.TypeRefunded,
 			Detail: chain.Detail(
 				"capture_id", captureID.String(),
 				"amount_minor", chain.Amount(amountMinor),
@@ -169,13 +183,45 @@ func constraintIs(err error, name string) bool {
 // on it, which it does not yet — recorded here rather than left as a
 // silence.
 //
-// The vouchers themselves are deliberately NOT moved back to `active` here.
-// Doing so would be a second write racing whatever the customer is doing at
-// that moment, and `Authorize` already accepts a voucher in `held`.
+// Each voucher goes back to `active` with its value intact (D15); leaving it
+// `held` made the next authorize an illegal held -> held move. A voucher that
+// moved meanwhile (captured by a racing request, voided) is left alone.
 func (n *Network) SweepExpiredHolds(ctx context.Context) (int, error) {
 	released, err := sqlcgen.New(n.pool).ExpireStaleHolds(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("expiring stale holds: %w", err)
 	}
+	for _, hold := range released {
+		if err := n.releaseVoucher(ctx, hold.ID, hold.VoucherID); err != nil {
+			return len(released), err
+		}
+	}
 	return len(released), nil
+}
+
+func (n *Network) releaseVoucher(ctx context.Context, authorizationID, voucherID pgtype.UUID) error {
+	return pgx.BeginTxFunc(ctx, n.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		queries := sqlcgen.New(tx)
+		voucher, err := queries.GetVoucher(ctx, voucherID)
+		if err != nil {
+			return fmt.Errorf("reading the swept voucher: %w", err)
+		}
+		if lifecycle.State(voucher.State) != lifecycle.Held {
+			return nil
+		}
+		_, err = issue.Move(ctx, queries, issue.MoveRequest{
+			VoucherID:      asUUID(voucher.ID),
+			From:           lifecycle.Held,
+			To:             lifecycle.Active,
+			RemainingMinor: voucher.RemainingValueMinor,
+			Version:        voucher.Version,
+			EventType:      chain.TypeHoldExpired,
+			Detail:         chain.Detail("authorization_id", asUUID(authorizationID).String()),
+			At:             n.now(),
+		})
+		if errors.Is(err, issue.ErrStaleVersion) {
+			return nil
+		}
+		return err
+	})
 }

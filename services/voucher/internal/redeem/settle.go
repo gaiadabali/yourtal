@@ -74,6 +74,7 @@ func (n *Network) place(
 
 		if _, err := issue.Move(ctx, queries, issue.MoveRequest{
 			VoucherID:      asUUID(voucher.ID),
+			From:           lifecycle.State(voucher.State),
 			To:             lifecycle.Held,
 			RemainingMinor: voucher.RemainingValueMinor,
 			Version:        voucher.Version,
@@ -86,6 +87,10 @@ func (n *Network) place(
 			),
 			At: n.now(),
 		}); err != nil {
+			// Held with no live hold: a hold the sweeper has not released yet.
+			if errors.Is(err, lifecycle.ErrIllegalTransition) {
+				return ErrAlreadyHeld
+			}
 			return err
 		}
 
@@ -192,12 +197,18 @@ func (n *Network) Capture(
 		if err != nil {
 			return fmt.Errorf("reading the voucher: %w", err)
 		}
+		// A voucher voided or expired under its hold cannot be captured: the
+		// hold outlived the thing it held (D3).
+		if lifecycle.State(voucher.State) != lifecycle.Held {
+			return fmt.Errorf("%w: voucher %s is %s", ErrNoLiveHold, asUUID(voucher.ID), voucher.State)
+		}
 
 		remaining, state := afterCapture(
 			voucher.PartialRedemptionPolicy, voucher.RemainingValueMinor, finalAmountMinor)
 
 		if _, err := issue.Move(ctx, queries, issue.MoveRequest{
 			VoucherID:      asUUID(voucher.ID),
+			From:           lifecycle.Held,
 			To:             state,
 			RemainingMinor: remaining,
 			Version:        voucher.Version,

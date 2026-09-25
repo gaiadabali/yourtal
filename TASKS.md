@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Four agents. A (`yourtal-1`, `phase/4`): 4.4.a–d and 4.4.j ✅ (4331d78); now 4.8, then 4.7. B (`yourtal-p4-b`, `phase/4-b`, db `yourtal_s1b`): 4.5, then 4.6.f/h. C (`yourtal-p4-c`, `phase/4-c`, db `yourtal_s1c`): 4.9.a remainder, 4.9.d. D (`yourtal-p4-d`, `phase/4-d`, db `yourtal_s1d`): 4.4.g event, 4.4.l |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | A (`yourtal-1`, `phase/4`): 4.8.a ✅ (d448b73); 4.7.a/b and the burn-price fix merging; next 4.4.m, 4.7.c. B (`yourtal-p4-b`, `phase/4-b`): 4.5, then 4.6.f/h. C done (4.9.a, 4.9.d) and D done (4.4.l, 4.4.g event); their helper worktrees stay in place |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
@@ -130,6 +130,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F25** | Add another Phase 1 agent to speed things up | **Yes: agent D takes 1.7** (web ↔ API plumbing) in helper `yourtal-p1-c` now. Its 1.7.a–d need only the session cookie from 1.4; the 1.7.e Check waits for 1.5. Agent B keeps only 1.6. |
 | **F26** | Phase 11 was asked to start while Phase 7 (its gate) had not begun and all 3 slots were busy | **Start its early slice now**, like F21, in helper `yourtal-p11` (`phase/11`): only what needs no Phase 7. That is 11.3.a (trust pages, 404, OG cards) and the 11.3.b robots/sitemap fixes, `llms.txt` and staging `noindex`. `VideoObject` JSON-LD, 11.1 and 11.2 wait for 7.7. |
 | **F27** | Phase 8 was asked to start while its gates (Phases 4 and 5) were unfinished | **Start an early slice now** in helper `yourtal-p8` (`phase/8`, slot 8): 8.3.b the merchant SDK against the 4.6.d signing spec, 8.2.d the merchant copy into `messages/*/merchant.json`, and 8.1.a's server side (device record, pairing code, hashed credential, argon2id PIN in `apps/api` devices). The Studio screen, the device principal (8.1.b, needs 1.5) and everything else wait. |
+| **F28** | 4.4.m: marketing points are backed at exactly B, so a region with only marketing points sits at coverage 1.0 and pauses its own streaks | **Count unspent marketing budget as reserve** in the coverage ratio: it is platform cash set aside to back points. The 1.0 hard floor still holds. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -754,7 +755,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - pin the multiplier at 1.00 (EM-11).
   - [x] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
   - [x] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h — 8b75a69
-  - [ ] 4.4.m Marketing points are backed at exactly B, so a region with no partner purchases sits at coverage 1.0, under the 1.1 pause: its second streak or receipt is refused `solvency_blocked`. Decide whether unspent marketing cash counts toward coverage, or partner purchases must come first in staging
+  - [ ] 4.4.m Marketing points are backed at exactly B, so a region with no partner purchases sits at coverage 1.0, under the 1.1 pause: its second streak or receipt is refused `solvency_blocked`. Decide whether unspent marketing cash counts toward coverage, or partner purchases must come first in staging. Decided (F28): count unspent marketing cash as reserve — 🔄 slot 1
   - [x] 4.4.j **Check:** passed on main 4331d78 (`caps_test`, `contract_test`, `k6_test`; live spec 22/22)
     - five concurrent grants at a cap of 19/20 → exactly one succeeds;
     - a campaign pointed at another business's allocation is refused;

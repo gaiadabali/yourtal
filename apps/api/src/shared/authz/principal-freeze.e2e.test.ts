@@ -9,6 +9,9 @@ import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../persistence/drizzle-client";
 import type { AppDb } from "../persistence/drizzle-client";
 import { DrizzlePrincipalSecurityStateRepository } from "../../modules/identity/persistence/drizzle-principal-security-state.repository";
+import { DrizzleUserProfileRepository } from "../../modules/identity/persistence/drizzle-user-profile.repository";
+import { DrizzleBusinessMembershipReader } from "../../modules/identity/persistence/drizzle-business-membership-reader";
+import { DrizzleStaffRoleReader } from "../../modules/identity/persistence/drizzle-staff-role-reader";
 import { principalSecurityState } from "../../modules/identity/persistence/schema/principal-security-state.table";
 
 /**
@@ -43,7 +46,16 @@ const CONFIG: AppConfig = {
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);
 const securityState = new DrizzlePrincipalSecurityStateRepository(db);
-const principals = new AsyncPrincipalResolver(new PrincipalService(CONFIG), securityState);
+const profiles = new DrizzleUserProfileRepository(db);
+const businessMemberships = new DrizzleBusinessMembershipReader(db);
+const staffRoles = new DrizzleStaffRoleReader(db);
+const principals = new AsyncPrincipalResolver(
+  new PrincipalService(CONFIG),
+  securityState,
+  profiles,
+  businessMemberships,
+  staffRoles,
+);
 const pdp = createPdpClient({ baseUrl: CONFIG.pdp.baseUrl });
 
 function requestFor(userId: string): FastifyRequest {

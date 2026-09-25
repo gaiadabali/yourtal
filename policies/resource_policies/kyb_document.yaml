@@ -44,3 +44,20 @@ resourcePolicy:
       actions: ["view", "approve", "reject"]
       effect: EFFECT_ALLOW
       roles: ["ops"]
+
+    - name: f2-region-wall
+      # 1.5.b: AU and ID are separate economies (F2) -- a consumer or
+      # business-side caller may never act on a resource governed by the
+      # OTHER region, even if some other rule above would otherwise allow
+      # it. Scoped to user/business_user only: internal staff (support,
+      # moderator, finance, ops, risk_analyst, admin) cross regions by design
+      # (docs/17 section 5), and store_device already names one business via
+      # its own credential (1.5.c). has(R.attr.region) makes this a no-op
+      # for an action with no resource yet (a create) or a kind whose
+      # controller does not populate region yet.
+      actions: ["view", "submit", "approve", "reject"]
+      effect: EFFECT_DENY
+      roles: ["user", "business_user"]
+      condition:
+        match:
+          expr: has(R.attr.region) && has(P.attr.jurisdiction) && P.attr.jurisdiction != R.attr.region

@@ -10,13 +10,25 @@ import { PrincipalService } from "./principal.service";
 import { AUTHORIZE_METADATA, PUBLIC_ROUTE_METADATA } from "./authorize.decorator";
 import type { AppConfig } from "../../config/app-config";
 import type { PrincipalSecurityStateRepository } from "../../modules/identity/persistence/principal-security-state.repository";
+import type { UserProfileRepository } from "../../modules/identity/persistence/user-profile.repository";
+import type { BusinessMembershipReader } from "../../modules/identity/persistence/business-membership-reader";
+import type { StaffRoleReader } from "../../modules/identity/persistence/staff-role-reader";
 
 // No security-state rows in this suite — nothing here exercises the freeze,
 // only that a principal reaches the PDP at all.
-// async-principal-resolver.test.ts covers the freeze itself.
+// async-principal-resolver.test.ts covers the freeze itself, including the
+// 1.5.b database overlay these three no-op fakes deliberately skip.
 const NO_SECURITY_STATE: PrincipalSecurityStateRepository = {
   findByUserId: () => Promise.resolve(null),
 };
+const NO_PROFILE: UserProfileRepository = {
+  create: () => Promise.reject(new Error("not used by this fake")),
+  findByUserId: () => Promise.resolve(null),
+  update: () => Promise.reject(new Error("not used by this fake")),
+  deleteByUserId: () => Promise.reject(new Error("not used by this fake")),
+};
+const NO_MEMBERSHIPS: BusinessMembershipReader = { listForUser: () => Promise.resolve([]) };
+const NO_STAFF_ROLES: StaffRoleReader = { listForUser: () => Promise.resolve([]) };
 
 /**
  * That a declared route is actually enforced. `authorized-routes.test.ts`
@@ -58,7 +70,13 @@ function guardWith(metadata: Record<string, unknown>): PdpGuard {
   return new PdpGuard(
     reflector,
     pdp,
-    new AsyncPrincipalResolver(new PrincipalService(CONFIG), NO_SECURITY_STATE),
+    new AsyncPrincipalResolver(
+      new PrincipalService(CONFIG),
+      NO_SECURITY_STATE,
+      NO_PROFILE,
+      NO_MEMBERSHIPS,
+      NO_STAFF_ROLES,
+    ),
   );
 }
 

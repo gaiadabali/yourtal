@@ -101,7 +101,17 @@ async function populatableAttributes(): Promise<Set<string>> {
         userId === FROZEN_USER ? { valueFrozenUntil: new Date("2099-01-01T00:00:00.000Z") } : null,
       ),
   };
-  const resolver = new AsyncPrincipalResolver(new PrincipalService(CONFIG), repo);
+  // No profile/membership/staff-role rows in this suite (1.5.b): every
+  // scenario below is header-driven, matching how the OTHER five optional
+  // attributes here are already proved. async-principal-resolver.test.ts is
+  // where the database overlay itself is exercised.
+  const resolver = new AsyncPrincipalResolver(
+    new PrincipalService(CONFIG),
+    repo,
+    { create: () => Promise.reject(new Error("unused")), findByUserId: () => Promise.resolve(null), update: () => Promise.reject(new Error("unused")), deleteByUserId: () => Promise.reject(new Error("unused")) },
+    { listForUser: () => Promise.resolve([]) },
+    { listForUser: () => Promise.resolve([]) },
+  );
 
   const scenarios: FastifyRequest[] = [
     requestWith({}),

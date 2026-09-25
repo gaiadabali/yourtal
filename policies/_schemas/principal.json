@@ -7,7 +7,7 @@
   "required": ["jurisdiction", "businessRoles", "isSuspended"],
   "properties": {
     "jurisdiction": {
-      "description": "Where this principal is governed. Drives nothing in these policies yet; the jurisdiction policy service (YT-0037) owns feature switches.",
+      "description": "This principal's own region (F2's hard wall) -- from identity.user_profile.region as of 1.5.b, never a header. Compared against a resource's own R.attr.region wherever that resource carries one; AU and ID never cross.",
       "type": "string",
       "enum": ["ID", "AU"]
     },
@@ -48,6 +48,11 @@
       "description": "support only: the per-case ceiling below which a goodwill credit needs no second approver.",
       "type": "integer",
       "minimum": 0
+    },
+    "ageBand": {
+      "description": "1.5.b, computed from identity.user_profile.date_of_birth. Absent for anonymous and store_device.",
+      "type": "string",
+      "enum": ["teen", "adult"]
     }
   }
 }

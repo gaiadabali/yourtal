@@ -7,7 +7,16 @@
   "required": ["businessId"],
   "properties": {
     "businessId": { "type": "string" },
-    "state": { "type": "string", "enum": ["draft", "live", "paused", "archived"] },
+    "state": {
+      "description": "campaign.campaigns.lifecycle_state (1.5.d found the same drift for campaign_view.json: the DB's own CHECK constraint says ended, not archived).",
+      "type": "string",
+      "enum": ["draft", "in_review", "rejected", "live", "paused", "ended"]
+    },
+    "region": {
+      "description": "1.5.b's F2 hard wall: the campaign's own region, compared against P.attr.jurisdiction.",
+      "type": "string",
+      "enum": ["AU", "ID"]
+    },
     "moderationState": {
       "description": "A campaign may not be published until the automated screen and the human queue (YT-0113, YT-0114) have passed it.",
       "type": "string",

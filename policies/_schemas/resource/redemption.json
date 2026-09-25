@@ -20,6 +20,11 @@
     "merchantSuspended": {
       "description": "Per-merchant kill switch (docs/14 section 6). Trips authorize without touching captures of existing holds.",
       "type": "boolean"
+    },
+    "region": {
+      "description": "1.5.b's F2 hard wall: the business's own region, compared against P.attr.jurisdiction. store_device is exempt (1.5.c's own credential already names one business/region); this only ever bites a business_user office-staff caller.",
+      "type": "string",
+      "enum": ["AU", "ID"]
     }
   }
 }

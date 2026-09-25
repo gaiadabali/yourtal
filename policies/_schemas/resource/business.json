@@ -8,6 +8,11 @@
     "businessId": {
       "description": "NOT required, unlike every other tenant-scoped kind. `create` has no business yet -- that is the point of it -- and Cerbos runs with enforcement: reject, so requiring it would make every create fail schema validation before any rule was evaluated. Caught by booting apps/api against a live PDP (YT-0500), not by any unit test. Absence is safe: the derived roles in derived_roles/business.yaml all begin with has(R.attr.businessId), so no tenant-scoped role can match a resource without one.",
       "type": "string"
+    },
+    "region": {
+      "description": "1.5.b's F2 hard wall: the business's own region, compared against P.attr.jurisdiction. Absent on `create`, same reason businessId is -- there is no business's region to name yet.",
+      "type": "string",
+      "enum": ["AU", "ID"]
     }
   }
 }

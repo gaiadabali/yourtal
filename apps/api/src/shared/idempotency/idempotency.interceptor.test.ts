@@ -11,12 +11,23 @@ import { AsyncPrincipalResolver } from "../authz/async-principal-resolver";
 import { PrincipalService } from "./../authz/principal.service";
 import type { AppConfig } from "../../config/app-config";
 import type { PrincipalSecurityStateRepository } from "../../modules/identity/persistence/principal-security-state.repository";
+import type { UserProfileRepository } from "../../modules/identity/persistence/user-profile.repository";
+import type { BusinessMembershipReader } from "../../modules/identity/persistence/business-membership-reader";
+import type { StaffRoleReader } from "../../modules/identity/persistence/staff-role-reader";
 
 // Every context in this suite carries a tenantId, so the principal fallback
 // in `scopeFor` (and the database read behind it) is never reached.
 const NO_SECURITY_STATE: PrincipalSecurityStateRepository = {
   findByUserId: () => Promise.resolve(null),
 };
+const NO_PROFILE: UserProfileRepository = {
+  create: () => Promise.reject(new Error("not used by this fake")),
+  findByUserId: () => Promise.resolve(null),
+  update: () => Promise.reject(new Error("not used by this fake")),
+  deleteByUserId: () => Promise.reject(new Error("not used by this fake")),
+};
+const NO_MEMBERSHIPS: BusinessMembershipReader = { listForUser: () => Promise.resolve([]) };
+const NO_STAFF_ROLES: StaffRoleReader = { listForUser: () => Promise.resolve([]) };
 
 /**
  * The half `mutating-routes.test.ts` cannot cover: that the interceptor
@@ -58,7 +69,13 @@ beforeEach(() => {
   interceptor = new IdempotencyInterceptor(
     reflector,
     store,
-    new AsyncPrincipalResolver(new PrincipalService(CONFIG), NO_SECURITY_STATE),
+    new AsyncPrincipalResolver(
+      new PrincipalService(CONFIG),
+      NO_SECURITY_STATE,
+      NO_PROFILE,
+      NO_MEMBERSHIPS,
+      NO_STAFF_ROLES,
+    ),
   );
 });
 

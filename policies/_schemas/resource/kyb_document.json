@@ -5,5 +5,12 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["businessId"],
-  "properties": { "businessId": { "type": "string" } }
+  "properties": {
+    "businessId": { "type": "string" },
+    "region": {
+      "description": "1.5.b's F2 hard wall: the business's own region, compared against P.attr.jurisdiction.",
+      "type": "string",
+      "enum": ["AU", "ID"]
+    }
+  }
 }

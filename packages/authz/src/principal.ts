@@ -66,6 +66,14 @@ export const principalAttrSchema = z
 
     /** support only: the ceiling below which goodwill needs no approver. */
     goodwillCreditCeilingIdr: z.number().int().nonnegative().optional(),
+
+    /**
+     * 1.5.b, from `identity.user_profile.date_of_birth` (computed at read
+     * time, `@yourtal/jurisdiction/age`'s `ageBandFrom`, never stored twice).
+     * Absent for `anonymous` and `store_device`, neither of which has a
+     * profile.
+     */
+    ageBand: z.enum(["teen", "adult"]).optional(),
   })
   .strict();
 

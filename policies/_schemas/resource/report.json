@@ -9,6 +9,11 @@
     "containsPii": {
       "description": "A report that resolves to individuals is not exportable by a business at all -- cohort floors are the product (YT-0217).",
       "type": "boolean"
+    },
+    "region": {
+      "description": "1.5.b's F2 hard wall: the business's own region, compared against P.attr.jurisdiction.",
+      "type": "string",
+      "enum": ["AU", "ID"]
     }
   }
 }

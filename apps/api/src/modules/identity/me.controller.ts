@@ -9,6 +9,8 @@ import {
 } from "./persistence/business-membership-reader";
 import { USER_PROFILE_REPOSITORY } from "./persistence/user-profile.repository";
 import type { UserProfileRepository } from "./persistence/user-profile.repository";
+import { STAFF_ROLE_READER } from "./persistence/staff-role-reader";
+import type { StaffRoleReader } from "./persistence/staff-role-reader";
 import { UpdateMeDto } from "./dto/update-me.schema";
 import { mapMeErrorToHttpException } from "./to-http-exception";
 import { getMe } from "./use-cases/get-me.use-case";
@@ -32,13 +34,20 @@ export class MeController {
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(BUSINESS_MEMBERSHIP_READER)
     private readonly businessMemberships: BusinessMembershipReader,
+    @Inject(STAFF_ROLE_READER) private readonly staffRoles: StaffRoleReader,
   ) {}
 
   @Authorize({ kind: "session", action: "view_profile" })
   @Get()
   async getMe(@Req() request: FastifyRequest) {
     const userId = this.principals.resolve(request).id;
-    const result = await getMe(this.profiles, this.businessMemberships, userId, new Date());
+    const result = await getMe(
+      this.profiles,
+      this.businessMemberships,
+      this.staffRoles,
+      userId,
+      new Date(),
+    );
     if (result.isErr()) throw mapMeErrorToHttpException(result.error);
     return result.value;
   }
@@ -60,7 +69,13 @@ export class MeController {
     });
     if (result.isErr()) throw mapMeErrorToHttpException(result.error);
 
-    const refreshed = await getMe(this.profiles, this.businessMemberships, userId, new Date());
+    const refreshed = await getMe(
+      this.profiles,
+      this.businessMemberships,
+      this.staffRoles,
+      userId,
+      new Date(),
+    );
     if (refreshed.isErr()) throw mapMeErrorToHttpException(refreshed.error);
     return refreshed.value;
   }

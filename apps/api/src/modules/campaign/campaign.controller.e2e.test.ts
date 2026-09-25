@@ -11,6 +11,9 @@ import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { DrizzlePrincipalSecurityStateRepository } from "../identity/persistence/drizzle-principal-security-state.repository";
+import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-user-profile.repository";
+import { DrizzleBusinessMembershipReader } from "../identity/persistence/drizzle-business-membership-reader";
+import { DrizzleStaffRoleReader } from "../identity/persistence/drizzle-staff-role-reader";
 import { DrizzleCampaignRepository } from "./persistence/drizzle-campaign.repository";
 import { DrizzleCampaignAuthzAttributesReader } from "./persistence/drizzle-campaign-authz-attributes";
 import { DrizzleWatchSessionRepository } from "../watch/persistence/drizzle-watch-session.repository";
@@ -44,7 +47,16 @@ const CONFIG: AppConfig = {
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);
 const securityState = new DrizzlePrincipalSecurityStateRepository(db);
-const principals = new AsyncPrincipalResolver(new PrincipalService(CONFIG), securityState);
+const profiles = new DrizzleUserProfileRepository(db);
+const businessMemberships = new DrizzleBusinessMembershipReader(db);
+const staffRoles = new DrizzleStaffRoleReader(db);
+const principals = new AsyncPrincipalResolver(
+  new PrincipalService(CONFIG),
+  securityState,
+  profiles,
+  businessMemberships,
+  staffRoles,
+);
 const pdp = createPdpClient({ baseUrl: CONFIG.pdp.baseUrl });
 const campaignRepository = new DrizzleCampaignRepository(db);
 const loader = new CampaignViewAttributeLoader(

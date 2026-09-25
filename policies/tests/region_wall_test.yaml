@@ -1,0 +1,61 @@
+---
+name: RegionWallSuite
+description: |-
+  1.5.b, F2: AU and ID are separate economies, and nothing crosses. Every
+  tenant-scoped resource kind gets the identical `has(R.attr.region) &&
+  P.attr.jurisdiction != R.attr.region` DENY (business.yaml, billing.yaml,
+  kyb_document.yaml, team.yaml, listing.yaml, campaign.yaml,
+  voucher_batch.yaml, redemption.yaml, report.yaml, campaign_view.yaml). This
+  suite proves the mechanism on three representative kinds rather than all
+  ten, since the condition is byte-identical everywhere it appears — what
+  differs per kind is only which actions and roles it is attached to, and
+  those are already covered by that kind's own suite.
+tests:
+  - name: a business role from the OTHER region cannot touch the business's own campaign
+    input:
+      principals: [budi_owner, budi_owner_au]
+      resources: [campaign_kopi]
+      actions: [view, edit]
+    expected:
+      - principal: budi_owner
+        resource: campaign_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_ALLOW }
+      - principal: budi_owner_au
+        resource: campaign_kopi
+        actions: { view: EFFECT_DENY, edit: EFFECT_DENY }
+
+  - name: same wall, a different resource kind (listing)
+    input:
+      principals: [budi_owner, budi_owner_au]
+      resources: [listing_kopi]
+      actions: [view, edit]
+    expected:
+      - principal: budi_owner
+        resource: listing_kopi
+        actions: { view: EFFECT_ALLOW, edit: EFFECT_ALLOW }
+      - principal: budi_owner_au
+        resource: listing_kopi
+        actions: { view: EFFECT_DENY, edit: EFFECT_DENY }
+
+  - name: a signed-in viewer from the other region cannot watch or earn
+    input:
+      principals: [wina, wina_au]
+      resources: [view_open_funded]
+      actions: [watch_open, earn]
+    expected:
+      - principal: wina
+        resource: view_open_funded
+        actions: { watch_open: EFFECT_ALLOW, earn: EFFECT_ALLOW }
+      - principal: wina_au
+        resource: view_open_funded
+        actions: { watch_open: EFFECT_DENY, earn: EFFECT_DENY }
+
+  - name: internal staff are exempt from the wall by design (docs/17 section 5)
+    input:
+      principals: [moderator_tono]
+      resources: [campaign_kopi]
+      actions: [view]
+    expected:
+      - principal: moderator_tono
+        resource: campaign_kopi
+        actions: { view: EFFECT_ALLOW }

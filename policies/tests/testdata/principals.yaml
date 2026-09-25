@@ -27,6 +27,18 @@ principals:
       isPhoneVerified: true
       hasPasskey: false
 
+  # 1.5.b's F2 region wall — see budi_owner_au's comment; same shape here for
+  # a plain consumer rather than a business role.
+  wina_au:
+    id: wina
+    roles: ["user"]
+    attr:
+      jurisdiction: "AU"
+      businessRoles: {}
+      isSuspended: false
+      isPhoneVerified: true
+      hasPasskey: false
+
   wina_with_passkey:
     id: wina
     roles: ["user"]
@@ -65,6 +77,18 @@ principals:
     roles: ["business_user"]
     attr:
       jurisdiction: "ID"
+      businessRoles: { "biz-kopi": "owner" }
+      isSuspended: false
+
+  # 1.5.b's F2 region wall: the same person and the same business role, but
+  # registered in AU rather than ID -- everything BUT region matches
+  # budi_owner exactly, which is what isolates the wall as the reason for a
+  # DENY rather than some other rule.
+  budi_owner_au:
+    id: budi
+    roles: ["business_user"]
+    attr:
+      jurisdiction: "AU"
       businessRoles: { "biz-kopi": "owner" }
       isSuspended: false
 

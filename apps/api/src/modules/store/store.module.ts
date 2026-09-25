@@ -78,6 +78,10 @@ export const STORE_DB = Symbol("STORE_DB");
       inject: [STORE_DB],
     },
   ],
+  // BUSINESS_REGION_LOOKUP is exported so PdpGuard (declared in app.module.ts,
+  // which imports this module) can inject it for 1.5.b's F2 region wall —
+  // additive, changes nothing for this module's own existing consumers.
+  exports: [BUSINESS_REGION_LOOKUP],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class StoreModule {}

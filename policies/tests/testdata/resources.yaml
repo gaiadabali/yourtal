@@ -8,6 +8,7 @@ resources:
     attr:
       businessId: "biz-kopi"
       state: "draft"
+      region: "ID"
       moderationState: "approved"
       questionsContainPii: false
 
@@ -44,6 +45,7 @@ resources:
     attr:
       campaignId: "camp-1"
       state: "live"
+      region: "ID"
       openViewingEnabled: true
       openViewingBudgetRemaining: 500
 
@@ -72,6 +74,7 @@ resources:
       businessId: "biz-kopi"
       isMaterialSettlementDecrease: false
       approvalState: "none"
+      region: "ID"
 
   listing_kopi_cut:
     kind: listing

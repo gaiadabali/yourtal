@@ -11,6 +11,8 @@ import { AUTHORIZE_METADATA, PUBLIC_ROUTE_METADATA } from "./authorize.decorator
 import type { AuthorizeOptions } from "./authorize.decorator";
 import { RESOURCE_ATTRIBUTE_LOADERS } from "./resource-attribute-loader";
 import type { ResourceAttributeLoader } from "./resource-attribute-loader";
+import { BUSINESS_REGION_LOOKUP } from "../../modules/store/persistence/business-region-lookup";
+import type { BusinessRegionLookup } from "../../modules/store/persistence/business-region-lookup";
 
 /**
  * Resolves every route's authorization through the PDP. YT-0500 AC1.
@@ -42,6 +44,9 @@ export class PdpGuard implements CanActivate {
     @Optional()
     @Inject(RESOURCE_ATTRIBUTE_LOADERS)
     loaders: readonly ResourceAttributeLoader[] = [],
+    @Optional()
+    @Inject(BUSINESS_REGION_LOOKUP)
+    private readonly regions?: BusinessRegionLookup,
   ) {
     this.loaders = new Map(loaders.map((loader) => [loader.kind, loader]));
   }
@@ -85,6 +90,19 @@ export class PdpGuard implements CanActivate {
       throw new NotFoundException("No such resource.");
     }
 
+    // 1.5.b (F2): every tenant-scoped resource gets the OWNING business's
+    // region alongside its businessId, the same one-line addition to the
+    // existing tenant path rather than a per-kind loader — every
+    // resource_policy.yaml's `f2-region-wall` rule reads this. `undefined`
+    // (no lookup registered, or the business does not exist — the route's
+    // own handler gives the real error for that) simply omits the
+    // attribute, which the wall's own `has(R.attr.region)` guard treats as
+    // "nothing to compare", not as an allow.
+    const tenantRegion =
+      tenantId === undefined
+        ? undefined
+        : (await this.regions?.findRegionAndCurrency(tenantId))?.region;
+
     const result = await this.pdp.requireAction(
       principal,
       {
@@ -96,6 +114,7 @@ export class PdpGuard implements CanActivate {
           // THAT business from it. Omitted when there is no tenant (a create),
           // where no derived role can or should match.
           ...(tenantId === undefined ? {} : { businessId: tenantId }),
+          ...(tenantRegion === undefined ? {} : { region: tenantRegion }),
           ...(loaded?.attr ?? {}),
           ...(options.attrsFrom?.(request) ?? {}),
         },

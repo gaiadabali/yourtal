@@ -24,6 +24,8 @@ var (
 	ErrRegionMismatch = errors.New("burn: region mismatch")
 	// ErrNotFound — no burn for this saga.
 	ErrNotFound = errors.New("burn: no burn for this saga")
+	// ErrPriceNotHeld — the points asked are not the price the ledger holds for this listing.
+	ErrPriceNotHeld = errors.New("burn: not the held price")
 )
 
 // Request is one checkout's burn: Points from the user's available balance,
@@ -185,16 +187,49 @@ var ErrListingNotPriced = errors.New("burn: the listing has no ledger price")
 
 // ForListing is burnForVoucher: the listing's region and S come from the
 // ledger's own listing price (4.9.a), never from the caller.
-func (e *Engine) ForListing(ctx context.Context, sagaID, userID, listingID string, points int64) (Burn, error) {
-	price, err := sqlcgen.New(e.pool).GetListingPrice(ctx, parseUUID(listingID))
+func (e *Engine) ForListing(ctx context.Context, sagaID, userID, listingID, quoteID string, points int64) (Burn, error) {
+	q := sqlcgen.New(e.pool)
+	price, err := q.GetListingPrice(ctx, parseUUID(listingID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Burn{}, fmt.Errorf("%w: %s", ErrListingNotPriced, listingID)
 	}
 	if err != nil {
 		return Burn{}, fmt.Errorf("reading the listing price: %w", err)
 	}
+	// A replay answers from the burn itself, even once its quote has lapsed.
+	if _, err := e.Get(ctx, sagaID); errors.Is(err, ErrNotFound) {
+		if err := heldPrice(ctx, q, price, quoteID, points); err != nil {
+			return Burn{}, err
+		}
+	}
 	return e.Burn(ctx, Request{SagaID: sagaID, UserID: userID, Region: ledger.Region(price.Region),
 		Points: points, SettlementMinor: price.SettlementMinor, ListingID: listingID})
+}
+
+func heldPrice(ctx context.Context, q *sqlcgen.Queries, price sqlcgen.LedgerListingPrice, quoteID string, points int64) error {
+	want := price.PricePoints
+	if quoteID != "" {
+		quote, err := q.GetQuote(ctx, parseUUID(quoteID))
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%w: no quote %s", ErrPriceNotHeld, quoteID)
+		}
+		if err != nil {
+			return fmt.Errorf("reading the quote: %w", err)
+		}
+		switch {
+		case quote.Region != price.Region:
+			return fmt.Errorf("%w: a %s quote for a %s listing", ErrRegionMismatch, quote.Region, price.Region)
+		case !quote.Locked || quote.Expired:
+			return fmt.Errorf("%w: quote %s is not locked and live", ErrPriceNotHeld, quoteID)
+		case quote.Currency != price.Currency || quote.SettlementMinor != price.SettlementMinor:
+			return fmt.Errorf("%w: quote %s prices another value", ErrPriceNotHeld, quoteID)
+		}
+		want = quote.PricePoints
+	}
+	if points != want {
+		return fmt.Errorf("%w: %d points asked, the price is %d", ErrPriceNotHeld, points, want)
+	}
+	return nil
 }
 
 func parseUUID(value string) pgtype.UUID {

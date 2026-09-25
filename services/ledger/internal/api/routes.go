@@ -140,6 +140,7 @@ var contractCodes = []struct {
 	{reward.ErrSolvencyBlocked, "solvency_blocked"},
 	{reward.ErrRegionMismatch, "region_mismatch"},
 	{burn.ErrRegionMismatch, "region_mismatch"},
+	{burn.ErrPriceNotHeld, "quote_expired"},
 	{pricing.ErrRegionMismatch, "region_mismatch"},
 	{reward.ErrAlreadyGranted, "already_granted"},
 	{ledger.ErrIdempotencyConflict, "idempotency_conflict"},

@@ -80,8 +80,11 @@ export type Grant = z.infer<typeof grantSchema>;
 export const burnForVoucherRequestSchema = z.object({
   userId: z.uuid(),
   listingId: z.uuid(),
+  /** Must be the held price: the locked quote's, or else the listing's own (4.7). */
   points: pointsSchema,
   sagaId: z.string().min(1),
+  /** The checkout's locked quote. */
+  quoteId: z.uuid().optional(),
 });
 export type BurnForVoucherRequest = z.infer<typeof burnForVoucherRequestSchema>;
 

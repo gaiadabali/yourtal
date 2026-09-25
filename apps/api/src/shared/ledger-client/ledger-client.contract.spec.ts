@@ -42,16 +42,19 @@ beforeAll(async () => {
   }
 });
 
-/** A listing the ledger has priced, so a burn can read its S and region. */
-async function pricedListing(): Promise<string> {
+/**
+ * A listing the ledger has priced at `points`, so a burn can read its S and
+ * region: at the ID backing rate of IDR 6 a point, S = 6 × points.
+ */
+async function pricedListing(points: number): Promise<string> {
   const listingId = randomUUID();
   const priced = await client.priceListing({
     listingId,
     region: "ID",
     currency: "IDR",
-    settlementMinor: toMinorUnits(600),
+    settlementMinor: toMinorUnits(6 * points),
   });
-  expect(priced.isOk()).toBe(true);
+  expect(priced._unsafeUnwrap().pricePoints).toBe(points);
   return listingId;
 }
 
@@ -374,7 +377,7 @@ describe("earning and spending", () => {
 
     const tooMuch = await client.burnForVoucher({
       userId,
-      listingId: await pricedListing(),
+      listingId: await pricedListing(200),
       points: toPoints(200),
       sagaId: randomUUID(),
     });
@@ -383,7 +386,7 @@ describe("earning and spending", () => {
     const sagaId = randomUUID();
     const burned = await client.burnForVoucher({
       userId,
-      listingId: await pricedListing(),
+      listingId: await pricedListing(60),
       points: toPoints(60),
       sagaId,
     });
@@ -415,7 +418,7 @@ describe("earning and spending", () => {
       (
         await client.burnForVoucher({
           userId,
-          listingId: await pricedListing(),
+          listingId: await pricedListing(100),
           points: toPoints(100),
           sagaId,
         })
@@ -478,7 +481,7 @@ describe("users", () => {
       (
         await client.burnForVoucher({
           userId,
-          listingId: await pricedListing(),
+          listingId: await pricedListing(10),
           points: toPoints(10),
           sagaId: randomUUID(),
         })

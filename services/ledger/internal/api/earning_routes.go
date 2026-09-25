@@ -120,11 +120,12 @@ func (a *API) burnForVoucher(w http.ResponseWriter, r *http.Request) {
 		ListingID string `json:"listingId"`
 		Points    int64  `json:"points"`
 		SagaID    string `json:"sagaId"`
+		QuoteID   string `json:"quoteId"`
 	}
 	if !a.decode(w, r, &body) {
 		return
 	}
-	burned, err := a.burns.ForListing(r.Context(), body.SagaID, body.UserID, body.ListingID, body.Points)
+	burned, err := a.burns.ForListing(r.Context(), body.SagaID, body.UserID, body.ListingID, body.QuoteID, body.Points)
 	if err != nil {
 		a.fail(w, err)
 		return

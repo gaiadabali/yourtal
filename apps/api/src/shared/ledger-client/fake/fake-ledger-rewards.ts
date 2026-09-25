@@ -152,6 +152,27 @@ export function burnForVoucher(
         return ok(toBurn(prior));
       }
 
+      if (request.quoteId !== undefined) {
+        const quotes = await db.execute<{
+          price_points: string;
+          locked: boolean;
+          live: boolean;
+        }>(sql`
+          SELECT price_points, locked, expires_at > now() AS live
+            FROM platform.ledger_fake_quote WHERE id = ${request.quoteId}
+        `);
+        const quote = quotes.rows[0];
+        if (
+          quote?.locked !== true ||
+          !quote.live ||
+          Number(quote.price_points) !== request.points
+        ) {
+          return err(
+            ledgerError("quote_expired", `quote ${request.quoteId} does not hold this price`),
+          );
+        }
+      }
+
       const available = await availablePoints(db, request.userId);
       if (available < request.points) {
         return err(

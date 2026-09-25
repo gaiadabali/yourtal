@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 28/44 | `██████░░░░`  64% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 29/44 | `███████░░░`  66% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 27/32 | `████████░░`  84% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 22/52 | `████░░░░░░`  42% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **16/82** | **123/366** | `███░░░░░░░`  34% |
+| **All** | | | **16/82** | **124/366** | `███░░░░░░░`  34% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -497,7 +497,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     
     Cerbos policies compare the principal's region with the resource's region on every resource (the F2 hard walls). (requested by C for 9.1) `pnpm staff:add <email> <role>` writes `identity.staff_role`.
   - [ ] 1.5.c Add a `store_device` principal resolver that calls a `DeviceCredentialVerifier` port in `apps/api/src/shared`. Until C's devices module implements the port (8.1.b), it returns a clear 401.
-  - [ ] 1.5.d `PdpGuard` gets an async resource-attribute loader, so resources send `campaignId`, state, `region`, `audience` and `openViewing` (EW-03). Add one guard-to-real-Cerbos integration test per module.
+  - [x] 1.5.d `PdpGuard` gets an async resource-attribute loader, so resources send `campaignId`, state, `region`, `audience` and `openViewing` (EW-03). Add one guard-to-real-Cerbos integration test per module. — ✅ 2026-09-26: `ResourceAttributeLoader`/`RESOURCE_ATTRIBUTE_LOADERS` (a real NestJS provider registry, since a decorator's `attrsFrom` runs before DI and can never hold a repository) + `CampaignViewAttributeLoader`, fixing every `campaign_view` route (watch start/resume/progress/complete, `campaign.controller.ts`'s `get`) that shipped with empty attrs. Found and fixed a real drift along the way: `campaign_view.json`'s `state` enum said `archived`, the DB's own CHECK says `ended`. One real-Cerbos `.e2e.test.ts` per module (watch, business, campaign, store) against `yourtal-cerbos-3` (26335, this worktree's own policies). `pnpm check` green; `scripts/policy-test.mjs` (the native Cerbos suite) 484/484 green, unaffected by the schema widening.
   - [ ] 1.5.e HTTP hardening:
     - Fastify `trustProxy`;
     - cookies Secure (except in dev), HttpOnly and SameSite=Lax;

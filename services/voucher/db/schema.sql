@@ -125,6 +125,16 @@ CREATE TABLE voucher.capture (
   created_at              timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE voucher.capture_outbox (
+  capture_id   uuid        PRIMARY KEY,
+  region       text        NOT NULL,
+  merchant_id  uuid        NOT NULL,
+  amount_minor bigint      NOT NULL,
+  currency     char(3)     NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  posted_at    timestamptz
+);
+
 CREATE TABLE voucher.refund (
   id           uuid        PRIMARY KEY,
   capture_id   uuid        NOT NULL,

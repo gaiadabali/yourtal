@@ -254,6 +254,16 @@ func (n *Network) Capture(
 			return err
 		}
 
+		// 4.6.f: the outbox row, in the SAME transaction as the capture —
+		// see the migration's own comment for why. The worker posts it to
+		// the ledger with idempotency key = capture_id.
+		if err := queries.InsertCaptureOutbox(ctx, sqlcgen.InsertCaptureOutboxParams{
+			CaptureID: row.ID, Region: voucher.Region, MerchantID: pgUUID(merchantID),
+			AmountMinor: finalAmountMinor, Currency: authorization.Currency,
+		}); err != nil {
+			return fmt.Errorf("recording the capture outbox row: %w", err)
+		}
+
 		captured = Capture{
 			ID:             asUUID(row.ID),
 			ReceiptID:      receiptID,

@@ -82,6 +82,13 @@ VALUES ($1, $2, $3, $4, $5)
 RETURNING id, authorization_id, authorized_amount_minor, amount_minor, receipt_id,
           settled_at, created_at;
 
+-- name: InsertCaptureOutbox :exec
+-- 4.6.f: written in the same transaction as the capture it names. The
+-- worker (apps/worker, 10.1) posts unposted rows to the ledger with
+-- idempotency key = capture_id.
+INSERT INTO voucher.capture_outbox (capture_id, region, merchant_id, amount_minor, currency)
+VALUES ($1, $2, $3, $4, $5);
+
 -- name: GetCapture :one
 -- YT-0571 audit: no merchant predicate, considered rather than silent. The
 -- only caller is Refund (release.go), and its capture id is never

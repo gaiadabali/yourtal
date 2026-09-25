@@ -240,6 +240,15 @@ func (a *API) captureAsDevice(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
+		// 4.6.f: same transaction as the capture — see the migration's own
+		// comment.
+		if err := queries.InsertCaptureOutbox(r.Context(), sqlcgen.InsertCaptureOutboxParams{
+			CaptureID: pgUUID(captureID), Region: voucher.Region, MerchantID: pgUUID(merchantID),
+			AmountMinor: resolved.AmountMinor, Currency: resolved.Currency,
+		}); err != nil {
+			return fmt.Errorf("recording the capture outbox row: %w", err)
+		}
+
 		view = captureView{
 			CaptureID: captureID.String(), VoucherID: asUUID(voucher.ID).String(),
 			AmountMinor: resolved.AmountMinor, Currency: resolved.Currency, CapturedAt: iso(time.Now().UTC()),

@@ -98,6 +98,16 @@ type VoucherCapture struct {
 	CreatedAt             pgtype.Timestamptz
 }
 
+type VoucherCaptureOutbox struct {
+	CaptureID   pgtype.UUID
+	Region      string
+	MerchantID  pgtype.UUID
+	AmountMinor int64
+	Currency    string
+	CreatedAt   pgtype.Timestamptz
+	PostedAt    pgtype.Timestamptz
+}
+
 type VoucherCodeCustody struct {
 	VoucherID      pgtype.UUID
 	CodeHash       string

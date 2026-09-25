@@ -74,6 +74,19 @@ export const envSchema = z.object({
    * refusal to boot, which is worse.
    */
   REDIS_URL: z.url().default("redis://127.0.0.1:26379"),
+
+  /**
+   * TASKS.md 1.2.d. `fake` runs `FakeLedgerClient`/`FakeVoucherClient`
+   * against `platform.{ledger,voucher}_fake_*` — real semantics, no network
+   * call. `live` calls the real services over HTTP. Defaults to `fake`
+   * because the real routes are still 501s (4.1.b); 4.9.e is what refuses
+   * `fake` once `APP_ENV=staging`.
+   */
+  LEDGER_MODE: z.enum(["fake", "live"]).default("fake"),
+  /** Only read when `LEDGER_MODE=live`. Loopback service name, never a public URL. */
+  LEDGER_BASE_URL: z.url().default("http://ledger:8080"),
+  /** Only read when `LEDGER_MODE=live` (`VoucherInternalClient` shares the same switch). */
+  VOUCHER_BASE_URL: z.url().default("http://voucher:8080"),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -6,7 +6,10 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   test: {
-    include: ["src/**/*.test.ts"],
+    // `.contract.spec.ts` is 1.2.e's own naming (`ledger-client.contract.spec.ts`,
+    // `voucher-client.contract.spec.ts`) — run against the fake today, against
+    // the live services once 4.1/4.5 land.
+    include: ["src/**/*.test.ts", "src/**/*.contract.spec.ts"],
     environment: "node",
     passWithNoTests: false,
     // YT-0571: refuses to run this suite against anything but a

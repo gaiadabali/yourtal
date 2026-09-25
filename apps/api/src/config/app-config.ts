@@ -17,6 +17,12 @@ export interface AppConfig {
   readonly databaseUrl: string;
   /** Valkey (YT-0540) — sessions and login throttle counters. */
   readonly redisUrl: string;
+  /** TASKS.md 1.2.d — `LedgerInternalClient`/`VoucherInternalClient`'s fake-vs-live switch. */
+  readonly ledger: {
+    readonly mode: Env["LEDGER_MODE"];
+    readonly baseUrl: string;
+    readonly voucherBaseUrl: string;
+  };
 }
 
 /**
@@ -35,5 +41,10 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
     },
     databaseUrl: env.DATABASE_URL,
     redisUrl: env.REDIS_URL,
+    ledger: {
+      mode: env.LEDGER_MODE,
+      baseUrl: env.LEDGER_BASE_URL,
+      voucherBaseUrl: env.VOUCHER_BASE_URL,
+    },
   };
 }

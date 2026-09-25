@@ -14,7 +14,8 @@
 //   - [x] **4.2 Burn saga** — ✅ 2026-09-30 1a2b3c4
 //     - [ ] 4.2.a Reserve stock ...           subtask
 //   A task line containing ⛔ counts as blocked; one containing ✂️ (cut) is
-//   not counted at all, and neither are its subtasks. A subtask marked ✂️ is
+//   not counted at all, and neither are its subtasks. A subtask ending in
+//   "— ✂️ cut: ..." is
 //   not counted either.
 
 import { execFileSync } from "node:child_process";
@@ -111,7 +112,7 @@ for (const line of lines) {
     continue;
   }
   const sub = line.match(/^\s+- \[( |x)\] \d+\.\d+\.[a-z]/);
-  if (sub && !cut && !line.includes("✂️")) {
+  if (sub && !cut && !line.includes("— ✂️ cut")) {
     current.subs += 1;
     if (sub[1] === "x") current.subsDone += 1;
   }

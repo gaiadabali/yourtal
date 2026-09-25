@@ -23,6 +23,8 @@ export interface AppConfig {
     readonly baseUrl: string;
     /** Signs live ledger calls; optional so test configs in fake mode need not name it. */
     readonly serviceSecret?: string;
+    /** Signs reward completions (4.4.c); optional so fake-mode test configs need not name it. */
+    readonly rewardAttestationSecret?: string;
     readonly voucherBaseUrl: string;
   };
   /** 1.4.b, F4 — default false everywhere; only 12.1 turns it on, for staging. */
@@ -51,6 +53,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       mode: env.LEDGER_MODE,
       baseUrl: env.LEDGER_BASE_URL,
       serviceSecret: env.LEDGER_SERVICE_SECRET,
+      rewardAttestationSecret: env.REWARD_ATTESTATION_SECRET,
       voucherBaseUrl: env.VOUCHER_BASE_URL,
     },
     teenAccounts: env.TEEN_ACCOUNTS,

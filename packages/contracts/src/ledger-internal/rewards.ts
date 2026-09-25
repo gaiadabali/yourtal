@@ -24,6 +24,23 @@ export const DEFAULT_HOLDBACK_HOURS_BY_TIER: Readonly<Record<TrustTier, number>>
 export const grantKindSchema = z.enum(["campaign", "streak", "receipt", "goodwill"]);
 export type GrantKind = z.infer<typeof grantKindSchema>;
 
+/**
+ * apps/api's signed attestation of one completed reward session (4.4.c,
+ * EW-12). The ledger pays only a completion it verifies, and computes the
+ * points from the terms version it names (4.4.a-b). Signed by
+ * `signRewardAttestation` in apps/api's ledger client.
+ */
+export const rewardAttestationSchema = z.object({
+  sessionId: z.string().min(1),
+  termsVersion: z.number().int().min(1),
+  /** RFC3339 in whole seconds, UTC: `2026-09-26T10:00:00Z`. */
+  completedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/),
+  asked: z.number().int().min(0),
+  correct: z.number().int().min(0),
+  signature: z.string().regex(/^[0-9a-f]{64}$/),
+});
+export type RewardAttestation = z.infer<typeof rewardAttestationSchema>;
+
 export const grantRewardRequestSchema = z.object({
   campaignId: z.uuid(),
   userId: z.uuid(),
@@ -33,6 +50,7 @@ export const grantRewardRequestSchema = z.object({
   idempotencyKey: z.string().min(1),
   /** The reward session's hold (`hold` at session start), which this grant consumes (4.4.e). */
   holdId: z.string().min(1).optional(),
+  attestation: rewardAttestationSchema,
 });
 export type GrantRewardRequest = z.infer<typeof grantRewardRequestSchema>;
 

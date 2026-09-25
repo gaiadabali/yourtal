@@ -150,6 +150,7 @@ services:
       LEDGER_ADDR: 0.0.0.0:3010
       # Local-only; matches .env.example so host-run api and worker can sign.
       LEDGER_SERVICE_SECRET: local-only-ledger-service-secret-not-real
+      REWARD_ATTESTATION_SECRET: local-only-reward-attestation-secret-not-real
     ports:
       - "127.0.0.1:26910:3010"
     healthcheck:

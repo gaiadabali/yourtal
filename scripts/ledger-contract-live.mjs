@@ -15,6 +15,8 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const secret = process.env.LEDGER_SERVICE_SECRET ?? "local-only-ledger-service-secret-not-real";
+const attestationSecret =
+  process.env.REWARD_ATTESTATION_SECRET ?? "local-only-reward-attestation-secret-not-real";
 if (!/yourtal_test_/.test(process.env.LEDGER_DATABASE_URL ?? "")) {
   console.error("ledger-contract-live: run me through packages/db/scripts/with-test-db.mjs");
   process.exit(2);
@@ -37,7 +39,12 @@ const port = await new Promise((resolve) => {
 });
 const url = `http://127.0.0.1:${port}`;
 const ledger = spawn(binary, [], {
-  env: { ...process.env, LEDGER_ADDR: `127.0.0.1:${port}`, LEDGER_SERVICE_SECRET: secret },
+  env: {
+    ...process.env,
+    LEDGER_ADDR: `127.0.0.1:${port}`,
+    LEDGER_SERVICE_SECRET: secret,
+    REWARD_ATTESTATION_SECRET: attestationSecret,
+  },
   stdio: ["ignore", openSync(logPath, "w"), "inherit"],
 });
 
@@ -69,7 +76,12 @@ const spec = spawnSync(
     cwd: root,
     stdio: "inherit",
     shell: true,
-    env: { ...process.env, LEDGER_CONTRACT_LIVE_URL: url, LEDGER_SERVICE_SECRET: secret },
+    env: {
+      ...process.env,
+      LEDGER_CONTRACT_LIVE_URL: url,
+      LEDGER_SERVICE_SECRET: secret,
+      REWARD_ATTESTATION_SECRET: attestationSecret,
+    },
   },
 );
 ledger.kill();

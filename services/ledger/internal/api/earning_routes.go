@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/yourtal/services/ledger/internal/attest"
 	"github.com/yourtal/services/ledger/internal/burn"
 	"github.com/yourtal/services/ledger/internal/httpx"
 	"github.com/yourtal/services/ledger/internal/ledger"
@@ -36,6 +38,14 @@ func (a *API) grantReward(w http.ResponseWriter, r *http.Request) {
 		TrustTier      int    `json:"trustTier"`
 		IdempotencyKey string `json:"idempotencyKey"`
 		HoldID         string `json:"holdId,omitempty"`
+		Attestation    struct {
+			SessionID    string `json:"sessionId"`
+			TermsVersion int    `json:"termsVersion"`
+			CompletedAt  string `json:"completedAt"`
+			Asked        int    `json:"asked"`
+			Correct      int    `json:"correct"`
+			Signature    string `json:"signature"`
+		} `json:"attestation"`
 	}
 	if !a.decode(w, r, &body) {
 		return
@@ -44,9 +54,20 @@ func (a *API) grantReward(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	completedAt, err := time.Parse(time.RFC3339, body.Attestation.CompletedAt)
+	if err != nil {
+		a.fail(w, fmt.Errorf("%w: attestation.completedAt is not RFC3339", errBadRequest))
+		return
+	}
 	granted, err := engine.GrantReward(r.Context(), reward.RewardRequest{
 		CampaignID: body.CampaignID, UserID: body.UserID, Points: body.Points, TrustTier: body.TrustTier,
 		IdempotencyKey: body.IdempotencyKey, HoldID: body.HoldID,
+		Completion: attest.Completion{
+			SessionID: body.Attestation.SessionID, UserID: body.UserID, CampaignID: body.CampaignID,
+			TermsVersion: body.Attestation.TermsVersion, CompletedAt: completedAt,
+			Asked: body.Attestation.Asked, Correct: body.Attestation.Correct,
+		},
+		Signature: body.Attestation.Signature,
 	})
 	if err != nil {
 		a.fail(w, err)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/yourtal/services/ledger/internal/attest"
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/settings"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
@@ -28,30 +29,21 @@ type RewardRequest struct {
 	TrustTier      int
 	IdempotencyKey string
 	HoldID         string
+	// Completion and Signature are apps/api's attestation (4.4.c).
+	Completion attest.Completion
+	Signature  string
 }
 
-// GrantReward pays a completed campaign from the allocation its reward
-// config names, once per user per campaign (4.4.d). A replay of the same key
-// returns the grant; the same key with other points is a conflict.
+// GrantReward pays a completed campaign what its frozen terms promise, on a
+// completion apps/api attests, from the owner's partner allocation, once per
+// user per campaign (4.4.a-d). A replay of the same key returns the grant;
+// the same key with other points is a conflict.
 func (e *Engine) GrantReward(ctx context.Context, req RewardRequest) (GrantResult, error) {
-	config, err := sqlcgen.New(e.pool).GetRewardConfig(ctx, optionalUUID(req.CampaignID))
-	if errors.Is(err, pgx.ErrNoRows) {
-		return GrantResult{}, fmt.Errorf("%w: campaign %s has no reward config", ErrWrongFunder, req.CampaignID)
-	}
+	grant, err := e.campaignGrant(ctx, req)
 	if err != nil {
-		return GrantResult{}, fmt.Errorf("reading the reward config: %w", err)
+		return GrantResult{}, err
 	}
-	most := config.RewardPointsPerCompletion + config.AccuracyBonusPoints
-	if req.Points <= 0 || req.Points > most {
-		return GrantResult{}, fmt.Errorf("%w: %d points, the most is %d", ErrOverCampaignMax, req.Points, most)
-	}
-	def, _ := Definition(ActionWatchCompleted)
-	def.Points, def.Evidence, def.MarketingFunded = req.Points, EvidenceNone, config.FunderType == "marketing"
-	return e.contractGrant(ctx, GrantRequest{
-		UserID: req.UserID, Action: ActionWatchCompleted, ExternalRef: req.CampaignID,
-		AllocationID: config.AllocationID, HoldID: req.HoldID, CampaignID: req.CampaignID,
-		IdempotencyKey: req.IdempotencyKey, def: &def,
-	}, req.TrustTier)
+	return e.contractGrant(ctx, grant, req.TrustTier)
 }
 
 // ActionRequest is grantAction: a streak, receipt or goodwill credit.

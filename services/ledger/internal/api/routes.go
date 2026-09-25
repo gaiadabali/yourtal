@@ -38,13 +38,15 @@ type API struct {
 	burns   *burn.Engine
 }
 
-func New(logger *slog.Logger, pool *pgxpool.Pool) *API {
+// New wires the engines. attestationSecret verifies apps/api's completion
+// attestations (4.4.c); without one, no campaign reward can be paid.
+func New(logger *slog.Logger, pool *pgxpool.Pool, attestationSecret []byte) *API {
 	book := ledger.New(pool)
 	return &API{
 		logger: logger, pool: pool, ledger: book, pricing: pricing.New(pool), burns: burn.New(pool, book),
 		rewards: map[ledger.Region]*reward.Engine{
-			ledger.RegionAU: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionAU),
-			ledger.RegionID: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionID),
+			ledger.RegionAU: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionAU).WithAttestationSecret(attestationSecret),
+			ledger.RegionID: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionID).WithAttestationSecret(attestationSecret),
 		},
 	}
 }
@@ -167,7 +169,9 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 		errors.Is(err, pricing.ErrMarginTooThin), errors.Is(err, pricing.ErrSameApprover),
 		errors.Is(err, pricing.ErrRateCutTooSoon), errors.Is(err, reward.ErrSameApprover),
 		errors.Is(err, reward.ErrUnderpriced), errors.Is(err, reward.ErrWrongFunder),
-		errors.Is(err, reward.ErrUnknownAction), errors.Is(err, errBadRequest):
+		errors.Is(err, reward.ErrUnknownAction), errors.Is(err, reward.ErrAttestation),
+		errors.Is(err, reward.ErrCampaignNotLive), errors.Is(err, reward.ErrPointsMismatch),
+		errors.Is(err, errBadRequest):
 		httpx.WriteError(w, a.logger, http.StatusBadRequest, "invalid_request_error", "refused", err.Error())
 	default:
 		a.logger.Error("ledger request failed", "error", err)

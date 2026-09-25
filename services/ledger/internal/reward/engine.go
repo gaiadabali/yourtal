@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/yourtal/services/ledger/internal/attest"
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
@@ -91,8 +92,12 @@ type GrantRequest struct {
 	IdempotencyKey string
 
 	// def replaces the taxonomy entry, for the contract's grants whose
-	// points the caller sets (GrantReward, GrantAction).
+	// points are set per request (GrantReward, GrantAction).
 	def *ActionDefinition
+	// completion is the attestation a campaign grant is paid on, and
+	// campaignMax the campaign's total ceiling (4.4.a-c).
+	completion  *attest.Completion
+	campaignMax int64
 }
 
 // GrantResult is what was paid, and from where.
@@ -117,6 +122,8 @@ type Engine struct {
 	region ledger.Region
 	// capsOverride replaces the settings read; tests only (WithCaps).
 	capsOverride *Caps
+	// attestationSecret verifies apps/api's completion attestations.
+	attestationSecret []byte
 }
 
 func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, region ledger.Region) *Engine {
@@ -146,11 +153,15 @@ func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, region ledger.R
 // account for.
 func (e *Engine) Grant(ctx context.Context, req GrantRequest) (GrantResult, error) {
 	definition, known := Definition(req.Action)
-	if req.def != nil {
-		definition, known = *req.def, true
+	if req.def != nil && known {
+		definition = *req.def
 	}
 	if !known {
 		return GrantResult{}, fmt.Errorf("%w: %q", ErrUnknownAction, req.Action)
+	}
+	// A watch has no taxonomy price: only GrantReward, from the terms, pays one.
+	if definition.Points <= 0 {
+		return GrantResult{}, fmt.Errorf("%w: %s is priced by the campaign's terms", ErrUnknownAction, req.Action)
 	}
 
 	if definition.Evidence != EvidenceNone && req.Evidence == "" {
@@ -218,6 +229,9 @@ func (e *Engine) issue(
 			if err := e.checkCaps(ctx, queries, req, def, caps); err != nil {
 				return err
 			}
+			if err := checkCampaignMax(ctx, queries, req, def.Points); err != nil {
+				return err
+			}
 
 			// K6, structurally: the allocation verbs are the only way points
 			// leave an allocation, and an exhausted one draws nothing.
@@ -273,6 +287,10 @@ func (e *Engine) issue(
 				Region:         &region,
 				HoldbackHours:  req.HoldbackHours,
 				IdempotencyKey: optional(req.IdempotencyKey),
+				SessionID:      completionSession(req.completion),
+				TermsVersion:   completionInt(req.completion, func(c *attest.Completion) int { return c.TermsVersion }),
+				Asked:          completionInt(req.completion, func(c *attest.Completion) int { return c.Asked }),
+				Correct:        completionInt(req.completion, func(c *attest.Completion) int { return c.Correct }),
 			})
 			if err != nil {
 				if isUniqueViolation(err) {

@@ -61,7 +61,11 @@ CREATE TABLE ledger.grant (
   campaign_id   uuid,
   region        text,
   unlock_at     timestamptz,
-  idempotency_key text
+  idempotency_key text,
+  session_id    text,
+  terms_version integer,
+  asked         integer,
+  correct       integer
 );
 
 CREATE TABLE ledger.point_purchase (
@@ -204,4 +208,22 @@ CREATE TABLE campaign.reward_config (
   max_points_for_campaign      bigint NOT NULL,
   reward_points_per_completion bigint NOT NULL,
   accuracy_bonus_points        bigint NOT NULL
+);
+
+-- Views over the campaign tables (20260925210000), read-only to the ledger.
+-- Declared as tables so sqlc can type them.
+CREATE TABLE campaign.campaign_owner (
+  id          uuid NOT NULL,
+  business_id uuid NOT NULL,
+  region      text NOT NULL,
+  state       text NOT NULL
+);
+
+CREATE TABLE campaign.campaign_terms (
+  campaign_id           uuid    NOT NULL,
+  version               integer NOT NULL,
+  reward_points         bigint  NOT NULL,
+  question_count        integer NOT NULL,
+  scoring_rule          text    NOT NULL,
+  accuracy_bonus_points bigint  NOT NULL
 );

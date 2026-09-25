@@ -8,6 +8,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type CampaignCampaignOwner struct {
+	ID         pgtype.UUID
+	BusinessID pgtype.UUID
+	Region     string
+	State      string
+}
+
+type CampaignCampaignTerm struct {
+	CampaignID          pgtype.UUID
+	Version             int32
+	RewardPoints        int64
+	QuestionCount       int32
+	ScoringRule         string
+	AccuracyBonusPoints int64
+}
+
 type CampaignRewardConfig struct {
 	CampaignID                pgtype.UUID
 	AllocationID              string
@@ -128,6 +144,10 @@ type LedgerGrant struct {
 	Region         *string
 	UnlockAt       pgtype.Timestamptz
 	IdempotencyKey *string
+	SessionID      *string
+	TermsVersion   *int32
+	Asked          *int32
+	Correct        *int32
 }
 
 type LedgerGrantRelease struct {

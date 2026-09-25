@@ -105,12 +105,14 @@ FROM ledger.allocation WHERE id = $1;
 -- unlock_at is the database's now() plus the tier's holdback (4.4.g).
 INSERT INTO ledger.grant
   (id, user_id, action_type, taxonomy_ver, points, allocation_id, transfer_id,
-   device_id, ip_address, external_ref, campaign_id, region, unlock_at, idempotency_key)
+   device_id, ip_address, external_ref, campaign_id, region, unlock_at, idempotency_key,
+   session_id, terms_version, asked, correct)
 VALUES (sqlc.arg(id), sqlc.arg(user_id), sqlc.arg(action_type), sqlc.arg(taxonomy_ver), sqlc.arg(points),
         sqlc.arg(allocation_id), sqlc.arg(transfer_id), sqlc.narg(device_id), sqlc.narg(ip_address),
         sqlc.arg(external_ref), sqlc.narg(campaign_id), sqlc.narg(region),
         -- NULL holdback: no unlock time, the grant waits in pending (legacy callers).
-        now() + make_interval(hours => sqlc.narg(holdback_hours)::int), sqlc.narg(idempotency_key))
+        now() + make_interval(hours => sqlc.narg(holdback_hours)::int), sqlc.narg(idempotency_key),
+        sqlc.narg(session_id), sqlc.narg(terms_version)::int, sqlc.narg(asked)::int, sqlc.narg(correct)::int)
 RETURNING created_at, unlock_at;
 
 -- Velocity counts run inside the grant's transaction on the database's
@@ -333,3 +335,15 @@ SELECT days.day::date AS day,
       AND (e.created_at AT TIME ZONE sqlc.arg(tz)::text)::date <= days.day)::bigint AS reserve_minor
 FROM days
 ORDER BY days.day;
+
+-- name: GetCampaignOwner :one
+SELECT id, business_id, region, state FROM campaign.campaign_owner WHERE id = $1;
+
+-- name: GetCampaignTerms :one
+SELECT campaign_id, version, reward_points, question_count, scoring_rule, accuracy_bonus_points
+FROM campaign.campaign_terms WHERE campaign_id = $1 AND version = $2;
+
+-- name: LockCampaignGrants :exec
+-- Serialises grants on one campaign, so its maximum is checked and spent
+-- by one grant at a time.
+SELECT pg_advisory_xact_lock(hashtextextended('ledger.campaign:' || sqlc.arg(campaign_id)::text, 0));

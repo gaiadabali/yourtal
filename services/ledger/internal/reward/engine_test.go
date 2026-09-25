@@ -113,13 +113,18 @@ func fundedMarketing(t *testing.T, engine *reward.Engine, points int64) string {
 }
 
 func request(userID, allocationID string, action reward.ActionType) reward.GrantRequest {
-	return reward.GrantRequest{
+	req := reward.GrantRequest{
 		UserID:       userID,
 		Action:       action,
 		ExternalRef:  unique("ref"),
 		Evidence:     "checkpoint-token",
 		AllocationID: allocationID,
 	}
+	// A watch has no taxonomy price (4.4.a); these tests pay a fixed 2,400.
+	if action == reward.ActionWatchCompleted {
+		req = reward.WithPoints(req, 2_400)
+	}
+	return req
 }
 
 func TestGrantCreditsTheUserAndDrawsDownTheAllocation(t *testing.T) {
@@ -413,7 +418,8 @@ func TestEveryTaxonomyEntryIsUsable(t *testing.T) {
 		if !found {
 			t.Fatalf("%s is listed but has no definition", action)
 		}
-		if definition.Points <= 0 {
+		// A watch is priced by its campaign's terms (4.4.a), never here.
+		if action != reward.ActionWatchCompleted && definition.Points <= 0 {
 			t.Errorf("%s pays %d", action, definition.Points)
 		}
 		if definition.MaxPerUserPerDay <= 0 {

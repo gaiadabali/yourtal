@@ -162,7 +162,8 @@ func run(logger *slog.Logger) error {
 	}
 
 	if pool != nil && auth != nil {
-		module := api.New(logger, pool)
+		// REWARD_ATTESTATION_SECRET: apps/api signs completions with it (4.4.c).
+		module := api.New(logger, pool, []byte(os.Getenv("REWARD_ATTESTATION_SECRET")))
 		router.Route("/v1", func(r chi.Router) {
 			r.Use(auth.Middleware(logger))
 			r.Mount("/", module.Routes())

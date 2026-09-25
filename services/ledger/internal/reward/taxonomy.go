@@ -87,8 +87,10 @@ type ActionDefinition struct {
 // means bumping TaxonomyVersion, so old grants stay attributable to the
 // numbers that actually applied.
 var taxonomy = map[ActionType]ActionDefinition{
+	// Priced per campaign by its frozen terms (GrantReward, 4.4.a): no
+	// constant here, so a watch cannot be paid without them.
 	ActionWatchCompleted: {
-		Points: 2_400, MaxPerUserPerDay: 20, Evidence: EvidenceCheckpointToken,
+		MaxPerUserPerDay: 20, Evidence: EvidenceCheckpointToken,
 	},
 	ActionQuickWatched: {
 		Points: 60, MaxPerUserPerDay: 100, Evidence: EvidenceCheckpointToken,

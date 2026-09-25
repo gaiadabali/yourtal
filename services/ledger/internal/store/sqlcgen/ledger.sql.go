@@ -337,6 +337,46 @@ func (q *Queries) GetBurn(ctx context.Context, sagaID string) (GetBurnRow, error
 	return i, err
 }
 
+const getCampaignOwner = `-- name: GetCampaignOwner :one
+SELECT id, business_id, region, state FROM campaign.campaign_owner WHERE id = $1
+`
+
+func (q *Queries) GetCampaignOwner(ctx context.Context, id pgtype.UUID) (CampaignCampaignOwner, error) {
+	row := q.db.QueryRow(ctx, getCampaignOwner, id)
+	var i CampaignCampaignOwner
+	err := row.Scan(
+		&i.ID,
+		&i.BusinessID,
+		&i.Region,
+		&i.State,
+	)
+	return i, err
+}
+
+const getCampaignTerms = `-- name: GetCampaignTerms :one
+SELECT campaign_id, version, reward_points, question_count, scoring_rule, accuracy_bonus_points
+FROM campaign.campaign_terms WHERE campaign_id = $1 AND version = $2
+`
+
+type GetCampaignTermsParams struct {
+	CampaignID pgtype.UUID
+	Version    int32
+}
+
+func (q *Queries) GetCampaignTerms(ctx context.Context, arg GetCampaignTermsParams) (CampaignCampaignTerm, error) {
+	row := q.db.QueryRow(ctx, getCampaignTerms, arg.CampaignID, arg.Version)
+	var i CampaignCampaignTerm
+	err := row.Scan(
+		&i.CampaignID,
+		&i.Version,
+		&i.RewardPoints,
+		&i.QuestionCount,
+		&i.ScoringRule,
+		&i.AccuracyBonusPoints,
+	)
+	return i, err
+}
+
 const getDailyProof = `-- name: GetDailyProof :one
 SELECT proof_date, merkle_root, entry_count, first_entry_id, last_entry_id, computed_at
 FROM ledger.daily_proof WHERE proof_date = $1
@@ -789,12 +829,14 @@ func (q *Queries) InsertEntry(ctx context.Context, arg InsertEntryParams) error 
 const insertGrant = `-- name: InsertGrant :one
 INSERT INTO ledger.grant
   (id, user_id, action_type, taxonomy_ver, points, allocation_id, transfer_id,
-   device_id, ip_address, external_ref, campaign_id, region, unlock_at, idempotency_key)
+   device_id, ip_address, external_ref, campaign_id, region, unlock_at, idempotency_key,
+   session_id, terms_version, asked, correct)
 VALUES ($1, $2, $3, $4, $5,
         $6, $7, $8, $9,
         $10, $11, $12,
         -- NULL holdback: no unlock time, the grant waits in pending (legacy callers).
-        now() + make_interval(hours => $13::int), $14)
+        now() + make_interval(hours => $13::int), $14,
+        $15, $16::int, $17::int, $18::int)
 RETURNING created_at, unlock_at
 `
 
@@ -813,6 +855,10 @@ type InsertGrantParams struct {
 	Region         *string
 	HoldbackHours  *int32
 	IdempotencyKey *string
+	SessionID      *string
+	TermsVersion   *int32
+	Asked          *int32
+	Correct        *int32
 }
 
 type InsertGrantRow struct {
@@ -837,6 +883,10 @@ func (q *Queries) InsertGrant(ctx context.Context, arg InsertGrantParams) (Inser
 		arg.Region,
 		arg.HoldbackHours,
 		arg.IdempotencyKey,
+		arg.SessionID,
+		arg.TermsVersion,
+		arg.Asked,
+		arg.Correct,
 	)
 	var i InsertGrantRow
 	err := row.Scan(&i.CreatedAt, &i.UnlockAt)
@@ -1227,6 +1277,17 @@ SELECT pg_advisory_xact_lock(hashtextextended('ledger.account:' || $1::text, 0))
 // the overdraft trigger takes the same lock at COMMIT.
 func (q *Queries) LockAccount(ctx context.Context, accountID string) error {
 	_, err := q.db.Exec(ctx, lockAccount, accountID)
+	return err
+}
+
+const lockCampaignGrants = `-- name: LockCampaignGrants :exec
+SELECT pg_advisory_xact_lock(hashtextextended('ledger.campaign:' || $1::text, 0))
+`
+
+// Serialises grants on one campaign, so its maximum is checked and spent
+// by one grant at a time.
+func (q *Queries) LockCampaignGrants(ctx context.Context, campaignID string) error {
+	_, err := q.db.Exec(ctx, lockCampaignGrants, campaignID)
 	return err
 }
 

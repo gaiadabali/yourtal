@@ -5,6 +5,7 @@ import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { testDb } from "../testing/test-db";
 import { FakeLedgerClient } from "./fake-ledger-client";
 import { HttpLedgerClient } from "./http-ledger-client";
+import { signRewardAttestation } from "./reward-attestation";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 
 /**
@@ -54,15 +55,31 @@ async function pricedListing(): Promise<string> {
   return listingId;
 }
 
+const attestationSecret =
+  process.env["REWARD_ATTESTATION_SECRET"] ?? "local-only-reward-attestation-secret-not-real";
+
+interface PayingCampaign {
+  readonly campaignId: string;
+  readonly termsVersion: number;
+}
+
 /**
- * A campaign that pays: a seeded campaign given a reward config drawing on a
- * purchased ID allocation. The studio (C) writes reward configs; the fake
- * never reads them, the live ledger does.
+ * A campaign that pays 500 points: a seeded ID campaign made live with a
+ * terms version, and a reward config drawing on its own owner's purchased
+ * allocation (4.4.a). The studio (C) writes these; the fake never reads
+ * them, the live ledger does.
  */
-async function rewardedCampaign(): Promise<string> {
+async function rewardedCampaign(): Promise<PayingCampaign> {
+  const rows = await db.execute<{ id: string; business: string }>(sql`
+    SELECT c.id::text AS id, c.business_id::text AS business FROM campaign.campaigns c
+      LEFT JOIN campaign.reward_config r ON r.campaign_id = c.id
+     WHERE r.campaign_id IS NULL AND c.region = 'ID' ORDER BY random() LIMIT 1
+  `);
+  const campaignId = rows.rows[0]?.id ?? randomUUID();
+  const businessId = rows.rows[0]?.business ?? randomUUID();
   const allocation = (
     await client.purchasePoints({
-      businessId: randomUUID(),
+      businessId,
       region: "ID",
       currency: "IDR",
       points: toPoints(100_000),
@@ -70,19 +87,46 @@ async function rewardedCampaign(): Promise<string> {
       idempotencyKey: randomUUID(),
     })
   )._unsafeUnwrap();
-  const rows = await db.execute<{ id: string }>(sql`
-    SELECT c.id::text AS id FROM campaign.campaigns c
-      LEFT JOIN campaign.reward_config r ON r.campaign_id = c.id
-     WHERE r.campaign_id IS NULL ORDER BY random() LIMIT 1
+  const versions = await db.execute<{ next: number }>(sql`
+    SELECT COALESCE(max(version), 0) + 1 AS next FROM campaign.terms_version WHERE campaign_id = ${campaignId}::uuid
   `);
-  const campaignId = rows.rows[0]?.id ?? randomUUID();
+  const termsVersion = Number(versions.rows[0]?.next ?? 1);
+  await db.execute(sql`
+    INSERT INTO campaign.terms_version
+      (campaign_id, version, reward_points, question_count, scoring_rule, duration_seconds, effective_from, accuracy_bonus_points)
+    VALUES (${campaignId}::uuid, ${termsVersion}, 500, 0, 'base_only', 600, now(), 0)
+  `);
+  await db.execute(
+    sql`UPDATE campaign.campaigns SET lifecycle_state = 'live' WHERE id = ${campaignId}::uuid`,
+  );
   await db.execute(sql`
     INSERT INTO campaign.reward_config
       (campaign_id, allocation_id, funder_type, max_points_for_campaign, reward_points_per_completion, accuracy_bonus_points)
-    VALUES (${campaignId}::uuid, ${allocation.allocationId}, 'partner', 100000, 500, 100)
+    VALUES (${campaignId}::uuid, ${allocation.allocationId}, 'partner', 100000, 500, 0)
     ON CONFLICT (campaign_id) DO NOTHING
   `);
-  return campaignId;
+  return { campaignId, termsVersion };
+}
+
+/** A grantReward request for one attested, completed session. */
+function reward(campaign: PayingCampaign, userId: string, trustTier: 0 | 1 | 2 | 3) {
+  return {
+    campaignId: campaign.campaignId,
+    userId,
+    region: "ID" as const,
+    points: toPoints(500),
+    trustTier,
+    idempotencyKey: randomUUID(),
+    attestation: signRewardAttestation(attestationSecret, {
+      sessionId: randomUUID(),
+      userId,
+      campaignId: campaign.campaignId,
+      termsVersion: campaign.termsVersion,
+      completedAt: new Date(),
+      asked: 0,
+      correct: 0,
+    }),
+  };
 }
 
 describe("pricing", () => {
@@ -246,18 +290,9 @@ describe("funding and allocations", () => {
   });
 
   it("campaignSpend and returnGrant are callable", async () => {
-    const campaignId = await rewardedCampaign();
-    const grant = (
-      await client.grantReward({
-        campaignId,
-        userId: randomUUID(),
-        region: "ID",
-        points: toPoints(500),
-        trustTier: 3,
-        idempotencyKey: randomUUID(),
-      })
-    )._unsafeUnwrap();
-    const spend = await client.campaignSpend(campaignId);
+    const campaign = await rewardedCampaign();
+    const grant = (await client.grantReward(reward(campaign, randomUUID(), 3)))._unsafeUnwrap();
+    const spend = await client.campaignSpend(campaign.campaignId);
     expect(spend.isOk()).toBe(true);
     const returned = await client.returnGrant({ grantId: grant.grantId });
     expect(returned.isOk()).toBe(true);
@@ -267,14 +302,7 @@ describe("funding and allocations", () => {
 describe("earning and spending", () => {
   it("a reward grant goes to pending with an unlock time by tier, then becomes available", async () => {
     const userId = randomUUID();
-    const granted = await client.grantReward({
-      campaignId: await rewardedCampaign(),
-      userId,
-      region: "ID",
-      points: toPoints(500),
-      trustTier: 1,
-      idempotencyKey: randomUUID(),
-    });
+    const granted = await client.grantReward(reward(await rewardedCampaign(), userId, 1));
     const grant = granted._unsafeUnwrap();
     expect(new Date(grant.unlockAt).getTime()).toBeGreaterThan(Date.now());
 

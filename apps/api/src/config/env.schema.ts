@@ -91,6 +91,14 @@ export const envSchema = z.object({
    * ledger's own minimum. The default is the local stack's, never a real one.
    */
   LEDGER_SERVICE_SECRET: z.string().min(32).default("local-only-ledger-service-secret-not-real"),
+  /**
+   * Signs completed reward sessions (4.4.c): the ledger pays a campaign reward
+   * only on a completion it verifies with the same secret. At least 32 bytes.
+   */
+  REWARD_ATTESTATION_SECRET: z
+    .string()
+    .min(32)
+    .default("local-only-reward-attestation-secret-not-real"),
   /** Only read when `LEDGER_MODE=live` (`VoucherInternalClient` shares the same switch). */
   VOUCHER_BASE_URL: z.url().default("http://voucher:8080"),
 

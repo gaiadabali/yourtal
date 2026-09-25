@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 40/44 | `█████████░`  91% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 39/44 | `█████████░`  89% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 4/6 | 31/32 | `██████████`  97% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 32/52 | `██████░░░░`  62% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **20/82** | **150/366** | `████░░░░░░`  41% |
+| **All** | | | **20/82** | **149/366** | `████░░░░░░`  41% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -505,7 +505,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - Fastify `trustProxy`;
     - cookies Secure (except in dev), HttpOnly and SameSite=Lax;
     - session lifetimes from F12.
-  - [x] 1.5.f Stop storing token-bearing responses in `platform.idempotency` (`auth.controller.ts:107,132`). Make the throttle atomic (`SET NX EX`), removing its check-then-act race. — `password/change` and `password/reset/confirm` are `@NotValueMoving` now, not `@Idempotent` (both are safe against a bare retry already: `changePassword` revokes the very session authenticating the retry, and the reset token is single-use). `ThrottleService.recordFailure` is `SET key 1 EX windowSeconds NX` falling through to `INCR`, closing the INCR-then-EXPIRE gap that could leave a key with no TTL. Verified against real Postgres/Valkey/HTTP: zero `platform.idempotency` rows for either route, a stale-token retry refused cleanly, and 20 concurrent `recordFailure` calls landing at exactly 20 with a TTL set throughout.
+  - [ ] 1.5.f Stop storing token-bearing responses in `platform.idempotency` (`auth.controller.ts:107,132`). Make the throttle atomic (`SET NX EX`), removing its check-then-act race. — `password/change` and `password/reset/confirm` are `@NotValueMoving` now, not `@Idempotent` (both are safe against a bare retry already: `changePassword` revokes the very session authenticating the retry, and the reset token is single-use). `ThrottleService.recordFailure` is `SET key 1 EX windowSeconds NX` falling through to `INCR`, closing the INCR-then-EXPIRE gap that could leave a key with no TTL. Verified against real Postgres/Valkey/HTTP: zero `platform.idempotency` rows for either route, a stale-token retry refused cleanly, and 20 concurrent `recordFailure` calls landing at exactly 20 with a TTL set throughout. — reopened: `register` still stores its token-bearing reply in `platform.idempotency` (it returns a session since 1.4.c); password change/reset and the atomic throttle are done (ce65378)
   - [ ] 1.5.g **Check:**
     - a call with `x-yt-user-id` and no session gets 401;
     - an ID principal reading an AU campaign is denied;

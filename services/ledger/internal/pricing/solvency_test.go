@@ -43,7 +43,7 @@ func TestMarketingPointsCannotDiluteCoverage(t *testing.T) {
 		t.Fatalf("RecordPurchase: %v", err)
 	}
 	if _, err := rewards.Grant(ctx, reward.GrantRequest{
-		UserID: unique("usr"), Action: reward.ActionWatchCompleted, ExternalRef: unique("watch"),
+		UserID: unique("usr"), Action: reward.ActionQuickWatched, ExternalRef: unique("watch"),
 		Evidence: "checkpoint-token", AllocationID: purchase.AllocationID,
 	}); err != nil {
 		t.Fatalf("funded grant: %v", err)

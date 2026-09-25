@@ -92,7 +92,7 @@ describe("fromLegacyAmount", () => {
   it("renders the same legacy integer differently once it is tagged", () => {
     const legacy = toMinorUnits(1_250);
     expect(formatMoneyValue(fromLegacyAmount(legacy, "AUD"))).toContain("12.50");
-    expect(formatMoneyValue(fromLegacyAmount(legacy, "IDR"))).toContain("12,5");
+    expect(formatMoneyValue(fromLegacyAmount(legacy, "IDR"))).toContain("1.250");
   });
 });
 
@@ -124,10 +124,10 @@ describe("the minor-unit registry", () => {
    * while the status still read `provisional` would be a unit change nobody
    * had authority for, which is precisely what the pair exists to prevent.
    */
-  it("records IDR as two-decimal sen, settled by YT-0506", () => {
-    expect(MINOR_UNIT.IDR).toMatchObject({ exponent: 2, status: "confirmed" });
+  it("records IDR as whole Rupiah, decision T-1", () => {
+    expect(MINOR_UNIT.IDR).toMatchObject({ exponent: 0, status: "confirmed" });
     expect(isUnitSettled("IDR")).toBe(true);
-    expect(MINOR_UNIT.IDR.evidence).toContain("YT-0506");
+    expect(MINOR_UNIT.IDR.evidence).toContain("T-1");
     expect(() => {
       assertUnitSettled("IDR", "settle a merchant payout");
     }).not.toThrow();
@@ -185,15 +185,13 @@ describe("formatting derives its scale from the registry", () => {
     expect(formatMoney(toMinorUnits(1_250), "AUD")).toContain("12.50");
   });
 
-  it("divides IDR by its two-decimal minor unit", () => {
-    // 4_500_000 sen is Rp 45.000. Before YT-0506 this integer was undivided;
-    // the formatter needed no edit, because its scale comes from MINOR_UNIT.
-    expect(formatMoney(toMinorUnits(4_500_000), "IDR")).toContain("45.000");
+  it("renders IDR undivided, since its exponent is 0", () => {
+    expect(formatMoney(toMinorUnits(45_000), "IDR")).toContain("45.000");
   });
 
   it("scales by ten to the power of the declared exponent", () => {
     expect(minorUnitExponent("AUD")).toBe(2);
-    expect(minorUnitExponent("IDR")).toBe(2);
+    expect(minorUnitExponent("IDR")).toBe(0);
   });
 });
 

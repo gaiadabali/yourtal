@@ -32,11 +32,8 @@
  * (YT-0050). These exist so mock catalogues show plausible point prices.
  */
 
-/**
- * Sen per point. 600 sen = Rp 6, the rate this was before YT-0506 settled
- * the minor unit — the same economics, restated in the unit we now store.
- */
-export const MOCK_BACKING_RATE_IDR_SEN_PER_POINT = 600;
+/** Rupiah per point (B = IDR 6), in the unit IDR is stored in. Until 4.9 removes it. */
+export const MOCK_BACKING_RATE_IDR_PER_POINT = 6;
 
 /** AUD cents per point. Unaffected by YT-0506: AUD was always two-decimal. */
 export const MOCK_BACKING_RATE_AUD_CENTS_PER_POINT = 3;

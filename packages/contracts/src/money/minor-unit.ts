@@ -25,21 +25,16 @@ import type { Currency } from "./currency";
  *
  * ## `status` records whether a unit is evidenced, not whether it is guessed
  *
- * IDR was `provisional` here while YT-0506 was open. The founder settled it
- * on 2026-09-20 — **IDR has a sen minor unit and we store it, exponent 2** —
- * so the entry is now `confirmed` and `assertUnitSettled` lets IDR through.
+ * IDR was `provisional` here while YT-0506 was open. It is now `confirmed`
+ * at exponent 0, whole Rupiah, following the gateway (decision T-1).
  *
  * The field stays because it earned its keep. While IDR was provisional,
  * `assertUnitSettled` blocked settlement and left display working, which is
  * what let the rest of the platform proceed without anyone guessing. The next
  * currency will arrive unevidenced too.
  *
- * **What the decision did NOT settle is what Xendit accepts**, and that was
- * always the second question. Adyen flags IDR as diverging from ISO precisely
- * because processors differ, so the conversion belongs in each PSP adapter
- * rather than in a constant here — which is what YT-0537 already encodes by
- * making the money unit a declared property of the driver. This table says
- * what we STORE. A driver says what it SPEAKS. A parity test compares them.
+ * This table says what we STORE. A payment driver says what it SPEAKS
+ * (YT-0537). A parity test compares them.
  */
 export interface MinorUnit {
   /** Decimal places in the stored integer: 2 means the integer is cents. */
@@ -64,16 +59,12 @@ export const MINOR_UNIT: Record<Currency, MinorUnit> = {
       "disputes this, so nothing here is waiting on anyone.",
   },
   IDR: {
-    exponent: 2,
+    exponent: 0,
     status: "confirmed",
     evidence:
-      "FOUNDER DECISION, 2026-09-20 (YT-0506): IDR has a sen minor unit and we store it. " +
-      "Sen is uncommon in daily use but banking uses it — amounts appear as Rp 1.000,26. " +
-      "This matches ISO 4217 and Stripe's treatment, and restores the original intent of " +
-      "docs/12, docs/18 and YT-0041. SETTLES THE CURRENCY, NOT THE PROCESSOR: what Xendit's " +
-      "API accepts is still unconfirmed, and Adyen flags IDR as diverging from ISO precisely " +
-      "because processors differ. That conversion belongs in each PSP adapter, which is what " +
-      "YT-0537 encodes by making the unit a declared property of the payment driver.",
+      "FOUNDER DECISION T-1, 2026-09-22: the stored unit follows the payment gateway. " +
+      "Xendit takes IDR in whole Rupiah, so IDR is stored in whole Rupiah (exponent 0). " +
+      "This reverses the 2026-09-20 sen decision (YT-0506).",
   },
 };
 
@@ -83,6 +74,13 @@ export const MINOR_UNIT: Record<Currency, MinorUnit> = {
  * render would take down every working IDR screen to make a point that
  * belongs on the settlement path instead.
  */
+/**
+ * The largest amount any money field accepts, in minor units: IDR 10 billion
+ * or AUD 100 million. Past int32, which is why the OpenAPI build widens money
+ * fields to int64 for Go.
+ */
+export const MAX_SAFE_AMOUNT_MINOR = 10_000_000_000;
+
 export function minorUnitExponent(currency: Currency): number {
   return MINOR_UNIT[currency].exponent;
 }

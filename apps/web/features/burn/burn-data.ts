@@ -9,7 +9,7 @@ import {
 import type { Balance } from "@yourtal/contracts/balance";
 import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
 import { pointsPriceFromSettlement, rupiah } from "@yourtal/contracts/money";
-import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "@yourtal/contracts/money/mock-backing-rate";
+import { MOCK_BACKING_RATE_IDR_PER_POINT } from "@yourtal/contracts/money/mock-backing-rate";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 
 export interface RedeemData {
@@ -65,7 +65,7 @@ export const holdbackDemoListing: Listing = listingSchema.parse({
   currency: "IDR",
   faceValueMinor: rupiah(180_000),
   settlementValueMinor: rupiah(54_000),
-  priceInPoints: pointsPriceFromSettlement(rupiah(54_000), MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
+  priceInPoints: pointsPriceFromSettlement(rupiah(54_000), MOCK_BACKING_RATE_IDR_PER_POINT),
   stockRemaining: 20,
   stockTotal: 20,
   transferable: false,

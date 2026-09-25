@@ -79,11 +79,19 @@ describe("arithmetic helpers", () => {
   });
 
   it("computes a points price from a settlement value and backing rate", () => {
-    // docs/09 4.1 worked example in sen: S = Rp 12.000, B = 600 sen/point ->
-    // 2,000 points. Both sides of the division moved together, which is the
-    // whole discipline YT-0506 is about.
-    const settlement = rupiah(12_000);
-    expect(pointsPriceFromSettlement(settlement, 600)).toBe(2_000);
+    // docs/09 4.1: S = Rp 12.000, B = Rp 6/point -> 2,000 points. Both sides
+    // share the stored unit, whole Rupiah.
+    expect(pointsPriceFromSettlement(rupiah(12_000), 6)).toBe(2_000);
+    expect(pointsPriceFromSettlement(rupiah(54_000), 6)).toBe(9_000);
+  });
+
+  it("rounds a points price up, never below its backing", () => {
+    expect(pointsPriceFromSettlement(rupiah(12_001), 6)).toBe(2_001);
+    expect(pointsPriceFromSettlement(rupiah(12_005), 6)).toBe(2_001);
+  });
+
+  it("rejects a fractional backing rate", () => {
+    expect(() => pointsPriceFromSettlement(rupiah(12_000), 4.5)).toThrow();
   });
 
   it("rejects a non-positive backing rate", () => {
@@ -108,13 +116,10 @@ describe("formatting", () => {
    * A bare `45_000` reaching a money field now means Rp 450, not Rp 45.000.
    * That is the same 100x error pointing the other way.
    */
-  it("stores IDR as sen, settled by YT-0506", () => {
-    expect(rupiah(45_000)).toBe(4_500_000);
-    // Rp 45.000 renders exactly as it always did, because the formatter takes
-    // its scale from MINOR_UNIT rather than from a literal.
+  it("stores IDR in whole Rupiah, decision T-1", () => {
+    expect(rupiah(45_000)).toBe(45_000);
     expect(formatIdr(rupiah(45_000))).toContain("45.000");
-    // ...while the raw integer that USED to mean Rp 45.000 is now Rp 450.
-    expect(formatIdr(toMinorUnits(45_000))).toContain("450");
+    expect(() => rupiah(45_000.5)).toThrow();
   });
 
   it("formats points with the Indonesian word for points", () => {

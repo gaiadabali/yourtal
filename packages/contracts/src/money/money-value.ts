@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CURRENCY_CODES, type Currency } from "./currency";
+import { MAX_SAFE_AMOUNT_MINOR } from "./minor-unit";
 import { toMinorUnits, type MinorUnits } from "./money";
 
 /**
@@ -44,10 +45,6 @@ import { toMinorUnits, type MinorUnits } from "./money";
  * document and the Go types together, and is coordinated separately rather
  * than smuggled in beside the type that makes it possible.
  */
-
-// Shared with `money.ts`: IDR 10 billion, past int32, which is why
-// `src/openapi/build-document.ts` widens money fields to int64 for Go.
-const MAX_SAFE_AMOUNT_MINOR = 10_000_000_000;
 
 export const currencySchema = z.enum(CURRENCY_CODES);
 

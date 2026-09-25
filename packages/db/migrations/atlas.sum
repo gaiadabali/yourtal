@@ -1,4 +1,4 @@
-h1:ZhQO9GWI3ajQWRj6rT9XTk49Ms6mgSaHifvRHkosUe0=
+h1:juL9QZTZAAVCW+2obs11MmBJwr5GTvM2xuHsXe1duJQ=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -32,3 +32,4 @@ h1:ZhQO9GWI3ajQWRj6rT9XTk49Ms6mgSaHifvRHkosUe0=
 20260922030000_currency_tagged_money.sql h1:nymiCguXuRB9570hsMKKNs9gXkms8aWUjzeGGAFFA6g=
 20260925063126_store_audit_currency_tagged.sql h1:Ff7oz/gaCxX1jZIvYjWM+LHy2581I9/RUDUcKJY8xK8=
 20260925065820_redemption_attempt_currency_mismatch.sql h1:YqGWPrT/4kxxK6N5CVaWrODM5bfmuTFHrJtI55Bg7H4=
+20260925074421_idr_whole_rupiah.sql h1:4QtG61CMWxImPavSd+CHWQhaWTUdclRAFi4+bWlQrow=

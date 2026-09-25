@@ -31,7 +31,7 @@
  */
 import {
   MOCK_BACKING_RATE_AUD_CENTS_PER_POINT,
-  MOCK_BACKING_RATE_IDR_SEN_PER_POINT,
+  MOCK_BACKING_RATE_IDR_PER_POINT,
 } from "@yourtal/contracts/money/mock-backing-rate";
 
 /** IDR 720 for 180 MB in docs/06's own table (30 min at 480p) is almost exactly 4 Rupiah/MB, i.e. 400 sen/MB since YT-0506. */
@@ -70,7 +70,7 @@ export function assessRewardToDataCost(
       : estimatedDataMb * MOCK_DATA_COST_AUD_CENTS_PER_MB;
   const rewardValueMinorUnits =
     currency === "IDR"
-      ? rewardPoints * MOCK_BACKING_RATE_IDR_SEN_PER_POINT
+      ? rewardPoints * MOCK_BACKING_RATE_IDR_PER_POINT
       : rewardPoints * MOCK_BACKING_RATE_AUD_CENTS_PER_POINT;
 
   const ratio =

@@ -4,7 +4,7 @@ import { DEFAULT_REFERENCE_INSTANT, addDays, addHours, toIsoString } from "../in
 import { createSeededFaker } from "../internal/seeded-faker";
 import { LONG_MERCHANT_NAME, generateMerchantLocations } from "../internal/jakarta";
 import { pointsPriceFromSettlement, rupiah, toMinorUnits, toPoints } from "../money/money";
-import { MOCK_BACKING_RATE_IDR_SEN_PER_POINT } from "../money/mock-backing-rate";
+import { MOCK_BACKING_RATE_IDR_PER_POINT } from "../money/mock-backing-rate";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 
 /** Illustrative mock backing rate (IDR per point), see docs/09 section 4.1. Not the real pricing engine. */
@@ -68,10 +68,7 @@ export function generateListing(params: GenerateListingParams): Listing {
     currency: "IDR" as const,
     faceValueMinor,
     settlementValueMinor,
-    priceInPoints: pointsPriceFromSettlement(
-      settlementValueMinor,
-      MOCK_BACKING_RATE_IDR_SEN_PER_POINT,
-    ),
+    priceInPoints: pointsPriceFromSettlement(settlementValueMinor, MOCK_BACKING_RATE_IDR_PER_POINT),
     stockRemaining,
     stockTotal,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
@@ -111,7 +108,7 @@ export const soldOutListingFixture: Listing = listingSchema.parse({
   currency: "IDR" as const,
   faceValueMinor: rupiah(30_000),
   settlementValueMinor: rupiah(9_000),
-  priceInPoints: pointsPriceFromSettlement(rupiah(9_000), MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
+  priceInPoints: pointsPriceFromSettlement(rupiah(9_000), MOCK_BACKING_RATE_IDR_PER_POINT),
   stockRemaining: 0,
   stockTotal: 100,
   transferable: false,
@@ -180,7 +177,7 @@ export const expiringSoonListingFixture: Listing = listingSchema.parse({
   currency: "IDR" as const,
   faceValueMinor: rupiah(50_000),
   settlementValueMinor: rupiah(15_000),
-  priceInPoints: pointsPriceFromSettlement(rupiah(15_000), MOCK_BACKING_RATE_IDR_SEN_PER_POINT),
+  priceInPoints: pointsPriceFromSettlement(rupiah(15_000), MOCK_BACKING_RATE_IDR_PER_POINT),
   stockRemaining: 12,
   stockTotal: 50,
   transferable: true,

@@ -5,8 +5,9 @@ import { pointsSchema } from "../money/money";
  * One entry in the wallet's points history (docs/17 section 3: "points
  * history in plain language... not TXN_CREDIT_CAMPAIGN_4471"). YT-0504.
  *
- * `description` is the whole point: server-rendered prose, never a
- * transaction code. `points`/`direction` keep the branded, always
+ * Never a transaction code: the web renders each entry's words from `kind`
+ * and `relatedId` through its next-intl catalogues, so the live API omits
+ * `description` (4.8.a); mocks may still carry prose. `points`/`direction` keep the branded, always
  * non-negative `Points` type intact (docs/13 "Zod is the single source of
  * truth" — a signed delta would have meant a second, weaker points type) —
  * a burn is `{ points: 2_400, direction: "debit" }`, never `-2400`.
@@ -35,7 +36,7 @@ export const walletHistoryEntrySchema = z
     id: z.string().min(1).max(80),
     kind: walletHistoryEntryKindSchema,
     occurredAt: z.iso.datetime(),
-    description: z.string().min(1).max(MAX_DESCRIPTION_LENGTH),
+    description: z.string().min(1).max(MAX_DESCRIPTION_LENGTH).optional(),
     points: pointsSchema,
     direction: z.enum(["credit", "debit"]),
     /**

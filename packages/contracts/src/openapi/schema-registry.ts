@@ -40,6 +40,14 @@ import { voucherLifecycleStateSchema, voucherVoidReasonSchema } from "../voucher
 import { balanceSchema } from "../balance/balance";
 import { walletHistoryEntryKindSchema, walletHistoryEntrySchema } from "../wallet/wallet-history";
 import {
+  walletHistoryPageSchema,
+  walletPendingSchema,
+  walletQrSchema,
+  walletSummarySchema,
+  walletVoucherPageSchema,
+  walletVoucherSchema,
+} from "../wallet/wallet";
+import {
   ageBandSchema as identityAgeBandSchema,
   displayLocaleSchema,
   userProfileSchema,
@@ -403,6 +411,45 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       "a burn entry is always a debit.",
       "an expiry entry is always a debit.",
     ],
+  },
+
+  {
+    id: "WalletPending",
+    schema: walletPendingSchema,
+    description: "Points still in holdback that unlock at one time (4.8.a).",
+    crossFieldRules: [],
+  },
+  {
+    id: "WalletSummary",
+    schema: walletSummarySchema,
+    description:
+      "GET /api/wallet: spendable, pending by unlock time, and expiring points. Points only, never a rate or a money value (4.9.d).",
+    crossFieldRules: ["pendingPoints is the sum of pending."],
+  },
+  {
+    id: "WalletHistoryPage",
+    schema: walletHistoryPageSchema,
+    description: "GET /api/wallet/history: newest first; nextCursor goes back as startingAfter.",
+    crossFieldRules: [],
+  },
+  {
+    id: "WalletVoucher",
+    schema: walletVoucherSchema,
+    description:
+      "A voucher the caller holds (4.8.a). Its words and value come from the store listing.",
+    crossFieldRules: [],
+  },
+  {
+    id: "WalletVoucherPage",
+    schema: walletVoucherPageSchema,
+    description: "GET /api/wallet/vouchers.",
+    crossFieldRules: [],
+  },
+  {
+    id: "WalletQr",
+    schema: walletQrSchema,
+    description: "A short-lived signed token a counter scans to redeem the voucher.",
+    crossFieldRules: [],
   },
 
   // --- identity ---

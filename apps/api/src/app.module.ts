@@ -8,6 +8,8 @@ import { StoreModule } from "./modules/store/store.module";
 import { WatchModule } from "./modules/watch/watch.module";
 import { CheckpointModule } from "./modules/watch/checkpoint/checkpoint.module";
 import { DevModule } from "./modules/dev/dev.module";
+import { WalletModule } from "./modules/wallet/wallet.module";
+import { WalletAttributeLoader } from "./modules/wallet/wallet-attribute-loader";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
 import { RESOURCE_ATTRIBUTE_LOADERS } from "./shared/authz/resource-attribute-loader";
@@ -39,6 +41,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     WatchModule,
     CheckpointModule,
     DevModule,
+    WalletModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying
@@ -66,8 +69,9 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
       provide: RESOURCE_ATTRIBUTE_LOADERS,
       useFactory: (
         campaignView: CampaignViewAttributeLoader,
-      ): readonly ResourceAttributeLoader[] => [campaignView],
-      inject: [CampaignViewAttributeLoader],
+        wallet: WalletAttributeLoader,
+      ): readonly ResourceAttributeLoader[] => [campaignView, wallet],
+      inject: [CampaignViewAttributeLoader, WalletAttributeLoader],
     },
   ],
 })

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { displayLocaleSchema } from "../identity/user-profile";
 import {
   FORBIDDEN,
+  PDP_UNAVAILABLE,
   VALIDATION_400,
   inlineSchema,
   ref,
@@ -147,5 +148,97 @@ export const ME_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "The profile as stored after the change.",
     successSchema: meResponseSchema,
     errors: [VALIDATION_400, FORBIDDEN, PROFILE_NOT_FOUND],
+  },
+];
+
+// --- wallet.controller.ts ---
+//
+// Always the caller's own wallet (WalletAttributeLoader). A voucher the
+// caller does not hold is a 404, so its existence never leaks.
+
+const WALLET_UNAVAILABLE: RouteErrorResponse = {
+  status: 502,
+  description: "The ledger or voucher service refused or could not be reached.",
+  documented: false,
+};
+
+const VOUCHER_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description: "The caller holds no voucher with this id.",
+  documented: false,
+};
+
+const STARTING_AFTER = {
+  name: "startingAfter",
+  description: "The last id of the previous page.",
+  required: false,
+  schema: { type: "string" },
+};
+
+const VOUCHER_ID = {
+  name: "voucherId",
+  description: "The voucher's id.",
+  schema: { type: "string", format: "uuid" },
+};
+
+const WALLET_ERRORS = [FORBIDDEN, PDP_UNAVAILABLE, WALLET_UNAVAILABLE];
+
+export const WALLET_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "get",
+    path: "/api/wallet",
+    summary: "The caller's points: spendable, pending with unlock dates, and expiring",
+    tags: ["wallet"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription: "The caller's wallet summary.",
+    successSchema: ref("WalletSummary"),
+    errors: WALLET_ERRORS,
+  },
+  {
+    method: "get",
+    path: "/api/wallet/history",
+    summary: "The caller's points history, newest first",
+    tags: ["wallet"],
+    pathParams: [],
+    queryParams: [STARTING_AFTER],
+    successStatus: 200,
+    successDescription: "One page of history.",
+    successSchema: ref("WalletHistoryPage"),
+    errors: WALLET_ERRORS,
+  },
+  {
+    method: "get",
+    path: "/api/wallet/vouchers",
+    summary: "The vouchers the caller holds",
+    tags: ["wallet"],
+    pathParams: [],
+    queryParams: [STARTING_AFTER],
+    successStatus: 200,
+    successDescription: "One page of vouchers.",
+    successSchema: ref("WalletVoucherPage"),
+    errors: WALLET_ERRORS,
+  },
+  {
+    method: "get",
+    path: "/api/wallet/vouchers/{voucherId}",
+    summary: "One voucher the caller holds",
+    tags: ["wallet"],
+    pathParams: [VOUCHER_ID],
+    successStatus: 200,
+    successDescription: "The voucher.",
+    successSchema: ref("WalletVoucher"),
+    errors: [...WALLET_ERRORS, VOUCHER_NOT_FOUND],
+  },
+  {
+    method: "get",
+    path: "/api/wallet/vouchers/{voucherId}/qr",
+    summary: "A short-lived QR token for one voucher the caller holds",
+    tags: ["wallet"],
+    pathParams: [VOUCHER_ID],
+    successStatus: 200,
+    successDescription: "The token and when it expires.",
+    successSchema: ref("WalletQr"),
+    errors: [...WALLET_ERRORS, VOUCHER_NOT_FOUND],
   },
 ];

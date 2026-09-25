@@ -1,4 +1,8 @@
-import { HEALTH_ROUTE_DEFINITIONS, ME_ROUTE_DEFINITIONS } from "./route-registry.a";
+import {
+  HEALTH_ROUTE_DEFINITIONS,
+  ME_ROUTE_DEFINITIONS,
+  WALLET_ROUTE_DEFINITIONS,
+} from "./route-registry.a";
 import { CAMPAIGN_ROUTE_DEFINITIONS, WATCH_ROUTE_DEFINITIONS } from "./route-registry.b";
 import { BUSINESS_ROUTE_DEFINITIONS } from "./route-registry.c";
 import { buildPathsFrom, type RouteDefinition } from "./route-registry-shared";
@@ -29,6 +33,7 @@ import { buildPathsFrom, type RouteDefinition } from "./route-registry-shared";
 export {
   HEALTH_ROUTE_DEFINITIONS,
   ME_ROUTE_DEFINITIONS,
+  WALLET_ROUTE_DEFINITIONS,
   CAMPAIGN_ROUTE_DEFINITIONS,
   WATCH_ROUTE_DEFINITIONS,
   BUSINESS_ROUTE_DEFINITIONS,
@@ -41,6 +46,7 @@ export type { RouteDefinition } from "./route-registry-shared";
 export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...HEALTH_ROUTE_DEFINITIONS,
   ...ME_ROUTE_DEFINITIONS,
+  ...WALLET_ROUTE_DEFINITIONS,
   ...CAMPAIGN_ROUTE_DEFINITIONS,
   ...WATCH_ROUTE_DEFINITIONS,
   ...BUSINESS_ROUTE_DEFINITIONS,

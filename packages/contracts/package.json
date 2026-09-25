@@ -54,6 +54,7 @@
     "./money/mock-backing-rate": "./src/money/mock-backing-rate.ts",
     "./region": "./src/region/region.ts",
     "./region/mock": "./src/region/region.mock.ts",
+    "./identity/user-profile": "./src/identity/user-profile.ts",
     "./mock-source": "./src/mock-source.ts",
     "./mock-seed": "./src/mock-seed.ts",
     "./*": "./src/*.ts"

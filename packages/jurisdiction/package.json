@@ -11,7 +11,8 @@
     "./policy-data": "./src/policy-data.ts",
     "./policy-query": "./src/policy-query.ts",
     "./voiding-red-lines": "./src/voiding-red-lines.ts",
-    "./content-category": "./src/content-category.ts"
+    "./content-category": "./src/content-category.ts",
+    "./age": "./src/age.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

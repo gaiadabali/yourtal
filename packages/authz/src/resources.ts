@@ -170,6 +170,10 @@ export const RESOURCE_ACTIONS = {
     "confirm_password_reset",
     "request_email_verification",
     "confirm_email_verification",
+    // 1.4.d: GET/PATCH /api/me. Same "caller IS the resource" shape as
+    // everything else in this kind — see session.yaml's header.
+    "view_profile",
+    "update_profile",
   ],
 } as const satisfies Record<string, readonly string[]>;
 

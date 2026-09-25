@@ -5,6 +5,13 @@ description: |-
   log out, change password, request/confirm a password reset,
   request/confirm email verification. YT-0540.
 
+  `view_profile`/`update_profile` (1.4.d) are `GET`/`PATCH /api/me` --
+  reading and changing display name/locale on the account's own
+  `identity.user_profile` row. Added here rather than to a new resource
+  kind because the same "the caller IS the resource" reasoning applies
+  unchanged: there is no `:userId` in either route, so there is nothing
+  narrower than "a real signed-in identity" to check.
+
   There is no derived role here, and no `ownerId` on the resource schema
   (`policies/_schemas/resource/session.json` declares no attributes at
   all). Every other tenant-scoped or ownership-scoped kind in this repo
@@ -79,7 +86,14 @@ resourcePolicy:
         ]
 
     - name: only-a-real-signed-in-identity-manages-its-own-session
-      actions: ["delete", "change_password", "request_email_verification"]
+      actions:
+        [
+          "delete",
+          "change_password",
+          "request_email_verification",
+          "view_profile",
+          "update_profile",
+        ]
       effect: EFFECT_ALLOW
       roles:
         [
@@ -94,6 +108,13 @@ resourcePolicy:
         ]
 
     - name: anonymous-has-no-session-to-manage
-      actions: ["delete", "change_password", "request_email_verification"]
+      actions:
+        [
+          "delete",
+          "change_password",
+          "request_email_verification",
+          "view_profile",
+          "update_profile",
+        ]
       effect: EFFECT_DENY
       roles: ["anonymous"]

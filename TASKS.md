@@ -33,10 +33,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 3/43 | `█░░░░░░░░░`   7% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 8/43 | `██░░░░░░░░`  19% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 2/6 | 14/32 | `████░░░░░░`  44% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 12/50 | `██░░░░░░░░`  24% |
+| **Phase 3** Design language | B | 🔄 in progress | 2/6 | 16/32 | `█████░░░░░`  50% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 13/50 | `███░░░░░░░`  26% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **11/82** | **75/363** | `██░░░░░░░░`  21% |
+| **All** | | | **11/82** | **83/363** | `██░░░░░░░░`  23% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -402,23 +402,23 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
 
 Everything else depends on knowing who is calling, and on a shared shape everyone builds against. Today the API builds identity from `x-yt-user-id` / `x-yt-business-roles` headers that anyone can send (`principal.service.ts:70-85`, EW-02), and the web app has no login. **Do 1.1 to 1.3 first:** they publish the contracts, columns and fakes that let B and C build before Phase 4 lands.
 
-- [ ] **1.1 Shared contracts and columns** · needs: 0.7 — 🔄 slot 3
-  - [ ] 1.1.a Campaign contract: `businessId`, `region`, `audience`, `contentCategory`, `posterUrl`, `teaserUrl` (a progressive MP4), `hlsUrl`, `captionsUrl`, `durationSeconds`, `aspect`, `estimatedBytes`, `startsAt`, `endsAt`, `openViewing` (default false), `teaserStartSeconds`. Listing contract: `region`, `audience`, `contentCategory`, `imageUrl`, `channel` (`in_store` | `online` | `both`), `partialRedemption` (`single_use` | `balance_carries`). Business contract: `region` (immutable), `currency`, `handle`, `logoUrl`, `coverUrl`.
-  - [ ] 1.1.b **In the same commit**, a migration adds every one of those columns (campaign `business_id` etc.; listing; business), updates the Drizzle tables and the seed, and keeps `schema-drift.test.ts` green. Today no contract has an image field, which is why every card is text-only.
-  - [ ] 1.1.c **Audience rules**, the one definition everyone uses:
+- [ ] **1.1 Shared contracts and columns** · needs: 0.7 — 🔄 slot 3 — a–e committed on `phase/1` (5a471c7, d0522c4), merging after a migration rename; f is partial (no `answerable_after_seconds` yet), h is open
+  - [x] 1.1.a Campaign contract: `businessId`, `region`, `audience`, `contentCategory`, `posterUrl`, `teaserUrl` (a progressive MP4), `hlsUrl`, `captionsUrl`, `durationSeconds`, `aspect`, `estimatedBytes`, `startsAt`, `endsAt`, `openViewing` (default false), `teaserStartSeconds`. Listing contract: `region`, `audience`, `contentCategory`, `imageUrl`, `channel` (`in_store` | `online` | `both`), `partialRedemption` (`single_use` | `balance_carries`). Business contract: `region` (immutable), `currency`, `handle`, `logoUrl`, `coverUrl`.
+  - [x] 1.1.b **In the same commit**, a migration adds every one of those columns (campaign `business_id` etc.; listing; business), updates the Drizzle tables and the seed, and keeps `schema-drift.test.ts` green. Today no contract has an image field, which is why every card is text-only.
+  - [x] 1.1.c **Audience rules**, the one definition everyone uses:
     - `all_ages` reaches every account.
     - `teen` reaches only accounts aged 13–17.
     - `adult` reaches only 18+.
     - `parents` reaches 18+, boosted for accounts that have declared the parent-of-young-children interest and given ad-targeting consent.
     - **Adults** see all_ages, adult and parents. **Teens** see all_ages and teen, with teen items boosted.
     - Until 12.x, non-adult accounts do not exist (the `TEEN_ACCOUNTS` flag is off).
-  - [ ] 1.1.d Category policy, one source in `packages/jurisdiction`: `categoryPolicy[region][contentCategory] = allowed | adult_only | prohibited`.
+  - [x] 1.1.d Category policy, one source in `packages/jurisdiction`: `categoryPolicy[region][contentCategory] = allowed | adult_only | prohibited`.
     - AU prohibited: tobacco, vaping.
     - ID prohibited: gambling, tobacco, vaping.
     - adult_only in both regions: alcohol, dating, financial products, weight loss, cosmetic procedures, energy drinks, plus gambling in AU.
     - The `contentCategory` values are: food-and-drink, fashion, personal-care, electronics, telco, transport, fitness, education, travel, home, entertainment, games, books, family, toys, digital-goods, services, and the restricted categories above.
     - Keep `listingCategorySchema` as it is.
-  - [ ] 1.1.e Interest taxonomy v2:
+  - [x] 1.1.e Interest taxonomy v2:
     - add `family-young-children` ("Parent of young children"), declared only and never derived from receipts;
     - add "expecting" and "baby-bump" to `BLOCKED_INTEREST_TERMS`;
     - bump `INTEREST_TAXONOMY_VERSION`;
@@ -637,7 +637,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - F3 asked with options.
   - [x] 3.2.g **Check:** F3 is answered, or it defaults to After Dark 24 h after 3.2.f.
 - [ ] **3.3 Tokens v2** · needs: F3 — 🔄 slot 2
-  - [ ] 3.3.a Rewrite `packages/ui/src/styles/tokens.css` in three tiers (raw → semantic → component), using the token names in `ui-design.md` §5 D1:
+  - [x] 3.3.a Rewrite `packages/ui/src/styles/tokens.css` in three tiers (raw → semantic → component), using the token names in `ui-design.md` §5 D1:
     - surfaces: `canvas`, `surface`, `surface-sunken`, `overlay`;
     - text: `fg`, `fg-muted`, `fg-subtle`, `fg-on-accent`, `fg-on-points`;
     - borders: `border-subtle`, `border-control`, `border-strong`;
@@ -649,7 +649,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - motion at 120 / 200 / 320 ms with a reduced-motion reset; z-index layers.
     
     Light and dark are both defined from the picked variant.
-  - [ ] 3.3.b Three themes from one token set: **viewer** (the picked variant), **studio** (desaturated and dense) and **counter** (maximum contrast, 56 px targets).
+  - [x] 3.3.b Three themes from one token set: **viewer** (the picked variant), **studio** (desaturated and dense) and **counter** (maximum contrast, 56 px targets).
   - [ ] 3.3.c Rewrite `contrast.test.ts` for the new pairs. Lint bans `text-[Npx]` and raw hex colours, **in B's `features/**` directories only**; C turns the same rules on for its own in 7.8.
   - [ ] 3.3.d Delete `(lab)` except the gallery (3.6).
   - [ ] 3.3.e **Check:** the contrast suite passes in both themes, and a raw hex colour in `features/player` fails lint.
@@ -795,12 +795,12 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token.
 - [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22) — 🔄 slot 1
   - [ ] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view.
-  - [ ] 4.9.b Rate governance inside the ledger:
+  - [x] 4.9.b Rate governance inside the ledger:
     - `proposeRate` / `approveRate`, with `approved_by ≠ set_by` (CHECK);
     - `effective_from ≥ created_at`;
     - a cut to B takes effect no sooner than now + 15 min, so locked quotes are honoured.
     
-    Seed ID B 6_000_000 / P_issue 9_000_000 micros and AU B 3_000_000 / P_issue 4_500_000 micros (F1). Remove the test rates with a one-off superuser script.
+    Seed ID B 6_000_000 / P_issue 9_000_000 micros and AU B 3_000_000 / P_issue 4_500_000 micros (F1). Remove the test rates with a one-off superuser script. Done instead by approval gating: unapproved legacy test rates are inert proposals, so append-only history is kept.
   - [ ] 4.9.c Solvency monitor: every 15 minutes, per region, coverage = reserve ÷ ((available + pending + escrow points) × B + voucher liability + unpaid merchant payable).
     - Below **1.2**: alert.
     - Below **1.1**: stop marketing-funded grants.

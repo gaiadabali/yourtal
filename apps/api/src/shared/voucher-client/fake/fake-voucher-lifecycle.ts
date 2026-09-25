@@ -14,6 +14,7 @@ import type {
   RevealedCode,
   VerifyQrTokenRequest,
   VerifyQrTokenResult,
+  VoidVoucherRequest,
 } from "@yourtal/contracts/voucher-internal/lifecycle";
 import type { VoucherError } from "../voucher-internal-client";
 import type { AppDb } from "../../persistence/drizzle-client";
@@ -123,6 +124,51 @@ export function activate(
          WHERE saga_id = ${request.sagaId}
       `);
       return ok({ ...toReservation(row), state: "activated" });
+    })(),
+  );
+}
+
+/**
+ * 4.7.c / K13 (requested by A): the owner disputes an uncaptured voucher.
+ * Legal only from "activated" (the fake has no "held"/"redeemed" state of
+ * its own — captures write to a separate table, per `fake-voucher-redemption.ts`
+ * — so this is the fake's best approximation: anything not already
+ * "activated" or "voided" refuses). Voiding twice replays rather than
+ * refusing, matching the real engine's own idempotence.
+ */
+export function voidVoucher(
+  db: AppDb,
+  request: VoidVoucherRequest,
+): ResultAsync<void, VoucherError> {
+  return new ResultAsync(
+    (async (): Promise<Result<void, VoucherError>> => {
+      const result = await db.execute<VoucherRow>(sql`
+        SELECT id, listing_id, saga_id, owner_id, code, state
+          FROM platform.voucher_fake_voucher WHERE id = ${request.voucherId}
+      `);
+      const row = result.rows[0];
+      if (row === undefined) throw new Error(`no voucher ${request.voucherId} exists`);
+      if (row.owner_id !== request.ownerId) {
+        return err(
+          ledgerError(
+            "audience_blocked",
+            `voucher ${request.voucherId} does not belong to this caller`,
+          ),
+        );
+      }
+      if (row.state === "voided") return ok(undefined); // replay
+      if (row.state !== "activated") {
+        return err(
+          ledgerError(
+            "already_granted",
+            `voucher ${request.voucherId} is ${row.state}, not active — it cannot be disputed now`,
+          ),
+        );
+      }
+      await db.execute(
+        sql`UPDATE platform.voucher_fake_voucher SET state = 'voided' WHERE id = ${request.voucherId}`,
+      );
+      return ok(undefined);
     })(),
   );
 }

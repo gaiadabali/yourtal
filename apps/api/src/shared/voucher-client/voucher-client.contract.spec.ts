@@ -32,7 +32,10 @@ const client: VoucherInternalClient =
  * exist at all — `reserve` claims an actually-minted voucher, not an
  * invented one.
  */
-async function seedListing(): Promise<{ listingId: string; merchantId: string }> {
+async function seedListing(
+  currency: "IDR" | "AUD" = "IDR",
+  region: "ID" | "AU" = "ID",
+): Promise<{ listingId: string; merchantId: string }> {
   const listingId = randomUUID();
   const merchantId = randomUUID();
   const locationId = randomUUID();
@@ -48,7 +51,7 @@ async function seedListing(): Promise<{ listingId: string; merchantId: string }>
     VALUES (${listingId}, ${merchantId}, 'Contract Spec Merchant', 'Contract Spec Listing',
             'seeded for voucher-client.contract.spec.ts', 'food-and-drink',
             50000, 15000, 1000, 10, 10, false, 'single_use_forfeit',
-            NULL, ${farFuture}, 'available', 'IDR', 'ID', 'all_ages',
+            NULL, ${farFuture}, 'available', ${currency}, ${region}, 'all_ages',
             'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg', 'both', 'single_use')
   `);
   await db.execute(sql`
@@ -67,7 +70,7 @@ async function seedListing(): Promise<{ listingId: string; merchantId: string }>
     await client.requestBatch({
       listingId,
       merchantId,
-      currency: "IDR",
+      currency,
       faceValueMinor: toMinorUnits(50_000),
       quantity: 5,
       partialRedemptionPolicy: "single_use_forfeit",
@@ -80,12 +83,15 @@ async function seedListing(): Promise<{ listingId: string; merchantId: string }>
 }
 
 /** `reserve` + `activate`, ready for reveal/qrToken/device tests. */
-async function activeVoucher(): Promise<{
+async function activeVoucher(
+  currency: "IDR" | "AUD" = "IDR",
+  region: "ID" | "AU" = "ID",
+): Promise<{
   voucherId: string;
   ownerId: string;
   merchantId: string;
 }> {
-  const { listingId, merchantId } = await seedListing();
+  const { listingId, merchantId } = await seedListing(currency, region);
   const sagaId = randomUUID();
   const reserved = (await client.reserve({ listingId, sagaId }))._unsafeUnwrap();
   const ownerId = randomUUID();
@@ -164,6 +170,30 @@ describe("reservation lifecycle", () => {
     const released = await client.release({ sagaId });
     expect(released.isOk()).toBe(true);
   });
+
+  // 4.7.c / K13 (requested by A): the owner disputes an uncaptured voucher.
+  it("voidVoucher disputes an active voucher, replays, and refuses another owner", async () => {
+    const { voucherId, ownerId } = await activeVoucher();
+
+    const wrongOwner = await client.voidVoucher({
+      voucherId,
+      ownerId: randomUUID(),
+      reason: "merchant would not honour the code",
+    });
+    expect(wrongOwner._unsafeUnwrapErr().code).toBe("audience_blocked");
+
+    const voided = await client.voidVoucher({
+      voucherId,
+      ownerId,
+      reason: "merchant would not honour the code",
+    });
+    expect(voided.isOk()).toBe(true);
+
+    // Replay: voiding an already-voided voucher succeeds rather than
+    // refusing, so a retried call after a lost response is safe.
+    const replayed = await client.voidVoucher({ voucherId, ownerId, reason: "retry" });
+    expect(replayed.isOk()).toBe(true);
+  });
 });
 
 describe("wallet", () => {
@@ -212,6 +242,49 @@ describe("device-authorized redemption", () => {
       merchantId,
     });
     expect(twice._unsafeUnwrapErr().code).toBe("already_granted");
+  });
+
+  // 4.5.f's Check, in full: an AUD voucher (not just IDR, exercised above)
+  // reserves, activates, shows a QR token, authorizes and captures.
+  it("an AUD voucher reserves, activates, shows a QR token, authorizes and captures", async () => {
+    const { listingId, merchantId } = await seedListing("AUD", "AU");
+    const sagaId = randomUUID();
+
+    const reserved = (await client.reserve({ listingId, sagaId }))._unsafeUnwrap();
+    expect(reserved.state).toBe("reserved");
+
+    const ownerId = randomUUID();
+    const activated = (await client.activate({ sagaId, ownerId }))._unsafeUnwrap();
+    expect(activated.state).toBe("activated");
+
+    const token = (
+      await client.qrToken({ voucherId: reserved.voucherId, ownerId })
+    )._unsafeUnwrap();
+    expect(token.token.length).toBeGreaterThan(0);
+
+    const revealed = (
+      await client.reveal({ voucherId: reserved.voucherId, ownerId })
+    )._unsafeUnwrap();
+
+    const authorization = (
+      await client.authorizeAsDevice({
+        voucherCode: revealed.code,
+        deviceId: "device-1",
+        merchantId,
+        currency: "AUD",
+      })
+    )._unsafeUnwrap();
+    expect(authorization.currency).toBe("AUD");
+
+    const captured = (
+      await client.captureAsDevice({
+        authorizationId: authorization.authorizationId,
+        deviceId: "device-1",
+        merchantId,
+      })
+    )._unsafeUnwrap();
+    expect(captured.voucherId).toBe(reserved.voucherId);
+    expect(captured.currency).toBe("AUD");
   });
 });
 

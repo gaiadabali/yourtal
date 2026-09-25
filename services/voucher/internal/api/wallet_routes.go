@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/voucher/internal/httpx"
+	"github.com/yourtal/services/voucher/internal/lifecycle"
 	"github.com/yourtal/services/voucher/internal/qrtoken"
 	"github.com/yourtal/services/voucher/internal/store/sqlcgen"
 )
@@ -58,6 +60,58 @@ func (a *API) reveal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]string{"voucherId": voucherID.String(), "code": code})
+}
+
+type voidVoucherBody struct {
+	VoucherID string `json:"voucherId"`
+	OwnerID   string `json:"ownerId"`
+	Reason    string `json:"reason"`
+}
+
+// voidVoucher is 4.7.c / K13 (requested by A): the owner disputes a voucher
+// the merchant would not honour, before it was ever captured. Legal only
+// from Active (`lifecycle.Transitions[Active]` already includes Voided) —
+// Held or Redeemed refuse with `already_granted`, the closest code in the
+// closed enum to "a merchant transaction is already in flight or done".
+// Already-Voided replays rather than refusing, so a retried call after a
+// lost response is safe.
+func (a *API) voidVoucher(w http.ResponseWriter, r *http.Request) {
+	var body voidVoucherBody
+	if !a.decode(w, r, &body) {
+		return
+	}
+	voucherID, ownerID, ok := parseTwoIDs(w, a, body.VoucherID, body.OwnerID)
+	if !ok {
+		return
+	}
+	if body.Reason == "" {
+		httpx.WriteError(w, a.logger, http.StatusBadRequest, "invalid_request_error", "missing_reason", "reason is required")
+		return
+	}
+
+	voucher, err := ownedVoucher(r.Context(), a.pool, voucherID, ownerID)
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+
+	switch lifecycle.State(voucher.State) {
+	case lifecycle.Voided:
+		httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]bool{"voided": true})
+	case lifecycle.Active:
+		// The structural VoidReason is closed (fraud/transfer/refund_reversal
+		// /admin); this is a staff/system-mediated dispute resolution, which
+		// "admin" is the closest fit for. The caller's free-text `reason`
+		// this handler receives is for the caller's own audit trail, not
+		// threaded into the chain event today.
+		if err := a.minter.Void(r.Context(), voucherID, lifecycle.ReasonAdmin); err != nil {
+			a.fail(w, err)
+			return
+		}
+		httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]bool{"voided": true})
+	default:
+		a.fail(w, fmt.Errorf("%w: voucher %s is %s, not active", errAlreadyCaptured, voucherID, voucher.State))
+	}
 }
 
 type qrTokenBody struct {

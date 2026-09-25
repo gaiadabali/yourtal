@@ -149,7 +149,16 @@ func (v *Verifier) Middleware(logger *slog.Logger) func(http.Handler) http.Handl
 			}
 
 			merchantID := uuid.UUID(credential.MerchantID.Bytes)
-			next.ServeHTTP(w, r.WithContext(WithMerchantID(r.Context(), merchantID)))
+			ctx := WithMerchantID(r.Context(), merchantID)
+			// 4.5.c: every credential this API issues is device-scoped
+			// (credential.DeviceID). A nil DeviceID is the one thing that
+			// stays a legacy merchant-wide key — void and refund's own
+			// 403 check (routes_release.go) is what treats the two
+			// differently.
+			if credential.DeviceID != nil {
+				ctx = WithDeviceID(ctx, *credential.DeviceID)
+			}
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

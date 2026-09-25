@@ -20,6 +20,7 @@ import type {
   RevealedCode,
   VerifyQrTokenRequest,
   VerifyQrTokenResult,
+  VoidVoucherRequest,
 } from "@yourtal/contracts/voucher-internal/lifecycle";
 import type {
   GetVoucherRequest,
@@ -137,6 +138,11 @@ export class HttpVoucherClient implements VoucherInternalClient {
 
   reveal(request: RevealRequest): ResultAsync<RevealedCode, VoucherError> {
     return this.post("/internal/v1/vouchers/reveal", request);
+  }
+
+  /** 4.7.c / K13 (requested by A). */
+  voidVoucher(request: VoidVoucherRequest): ResultAsync<void, VoucherError> {
+    return this.post("/internal/v1/vouchers/void", request);
   }
 
   /**

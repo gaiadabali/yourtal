@@ -16,6 +16,7 @@ import type {
   RevealedCode,
   VerifyQrTokenRequest,
   VerifyQrTokenResult,
+  VoidVoucherRequest,
 } from "@yourtal/contracts/voucher-internal/lifecycle";
 import type {
   GetVoucherRequest,
@@ -56,6 +57,8 @@ export interface VoucherInternalClient {
   reserve(request: ReserveRequest): ResultAsync<Reservation, VoucherError>;
   release(request: ReleaseRequest): ResultAsync<void, VoucherError>;
   activate(request: ActivateRequest): ResultAsync<Reservation, VoucherError>;
+  /** 4.7.c / K13 (requested by A): dispute an uncaptured, active voucher. */
+  voidVoucher(request: VoidVoucherRequest): ResultAsync<void, VoucherError>;
   reveal(request: RevealRequest): ResultAsync<RevealedCode, VoucherError>;
   qrToken(request: QrTokenRequest): ResultAsync<QrToken, VoucherError>;
   verifyQrToken(request: VerifyQrTokenRequest): ResultAsync<VerifyQrTokenResult, VoucherError>;

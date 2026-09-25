@@ -101,6 +101,38 @@ func (f *fixture) issueCredential(
 	return credential{merchantID: merchantID, secret: secret, keyID: keyID}
 }
 
+// issueDeviceCredential is issueCredential's device-scoped twin (4.5.c/d):
+// the same signed-credential shape, but voucher.merchant_credential.device_id
+// is set, which is what makes the request's context carry a device id after
+// Middleware — see routes_release.go's refuseDevicePrincipal.
+func (f *fixture) issueDeviceCredential(
+	t *testing.T, ctx context.Context, keys *keyring.Keyring, merchantID uuid.UUID, deviceID string,
+) credential {
+	t.Helper()
+
+	secret := []byte("http-integration test device secret, 32b")
+	sealed, err := keys.Seal(keyring.PurposeMerchantHMAC, secret)
+	if err != nil {
+		t.Fatalf("seal: %v", err)
+	}
+
+	keyID := "key_http_device_test_" + uuid.NewString()
+	if err := sqlcgen.New(f.pool).InsertCredential(ctx, sqlcgen.InsertCredentialParams{
+		KeyID:          keyID,
+		MerchantID:     pgtype.UUID{Bytes: merchantID, Valid: true},
+		WrappedDataKey: sealed.WrappedDataKey,
+		Nonce:          sealed.Nonce,
+		Ciphertext:     sealed.Ciphertext,
+		KeyPurpose:     string(sealed.Purpose),
+		KeyVersion:     int32(sealed.Version),
+		DeviceID:       &deviceID,
+	}); err != nil {
+		t.Fatalf("InsertCredential: %v", err)
+	}
+
+	return credential{merchantID: merchantID, secret: secret, keyID: keyID}
+}
+
 // signedRequest builds a real, independently-verifiable signed request —
 // the same three lines docs/09 §10 asks a merchant's SDK to implement.
 func signedRequest(t *testing.T, handler http.Handler, method, path string, body []byte, cred credential, idempotencyKey string) *httptest.ResponseRecorder {

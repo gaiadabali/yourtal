@@ -15,6 +15,7 @@ import type {
   RevealedCode,
   VerifyQrTokenRequest,
   VerifyQrTokenResult,
+  VoidVoucherRequest,
 } from "@yourtal/contracts/voucher-internal/lifecycle";
 import type {
   GetVoucherRequest,
@@ -77,6 +78,10 @@ export class FakeVoucherClient implements VoucherInternalClient {
 
   reveal(request: RevealRequest): ResultAsync<RevealedCode, VoucherError> {
     return lifecycle.reveal(this.db, request);
+  }
+
+  voidVoucher(request: VoidVoucherRequest): ResultAsync<void, VoucherError> {
+    return lifecycle.voidVoucher(this.db, request);
   }
 
   qrToken(request: QrTokenRequest): ResultAsync<QrToken, VoucherError> {

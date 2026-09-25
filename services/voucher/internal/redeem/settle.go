@@ -11,6 +11,7 @@ import (
 	"github.com/yourtal/services/voucher/internal/chain"
 	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/lifecycle"
+	"github.com/yourtal/services/voucher/internal/merchantauth"
 	"github.com/yourtal/services/voucher/internal/store/sqlcgen"
 )
 
@@ -47,6 +48,14 @@ func (n *Network) place(
 ) (Authorization, error) {
 	var placed Authorization
 
+	// 4.5.c: stamped from the signed credential's own device id, when the
+	// caller signed with a device-scoped one — never from the request body,
+	// which a device cannot assert about itself.
+	var deviceID *string
+	if id, isDevice := merchantauth.DeviceID(ctx); isDevice {
+		deviceID = &id
+	}
+
 	err := pgx.BeginTxFunc(ctx, n.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		queries := sqlcgen.New(tx)
 		id := uuid.New()
@@ -60,6 +69,7 @@ func (n *Network) place(
 			MerchantOrderRef: req.OrderRef,
 			ExpiresAt:        pgTime(n.now().Add(HoldTTL)),
 			OrderTotalMinor:  ptr(req.orderTotal()),
+			DeviceID:         deviceID,
 		})
 		if err != nil {
 			// Two unique indexes, two different things to tell a till.

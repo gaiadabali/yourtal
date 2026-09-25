@@ -64,3 +64,20 @@ export const verifyQrTokenResultSchema = z.object({
   voucherId: z.uuid().nullable(),
 });
 export type VerifyQrTokenResult = z.infer<typeof verifyQrTokenResultSchema>;
+
+/**
+ * 4.7.c / K13 (requested by A): the owner disputes a voucher the merchant
+ * would not honour, before it was ever captured. Legal only from `active`
+ * (`Active -> Voided` is already in the lifecycle table) — a `held` or
+ * `redeemed` voucher refuses with `already_granted`, the closest code in
+ * the closed enum: a merchant transaction is already in flight or done, the
+ * same "this already happened" shape that code names elsewhere. A voucher
+ * already `voided` replays rather than refusing, so a retried call after a
+ * lost response is safe.
+ */
+export const voidVoucherRequestSchema = z.object({
+  voucherId: z.uuid(),
+  ownerId: z.uuid(),
+  reason: z.string().min(1),
+});
+export type VoidVoucherRequest = z.infer<typeof voidVoucherRequestSchema>;

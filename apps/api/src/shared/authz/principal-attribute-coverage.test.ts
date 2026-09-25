@@ -108,7 +108,12 @@ async function populatableAttributes(): Promise<Set<string>> {
   const resolver = new AsyncPrincipalResolver(
     new PrincipalService(CONFIG),
     repo,
-    { create: () => Promise.reject(new Error("unused")), findByUserId: () => Promise.resolve(null), update: () => Promise.reject(new Error("unused")), deleteByUserId: () => Promise.reject(new Error("unused")) },
+    {
+      create: () => Promise.reject(new Error("unused")),
+      findByUserId: () => Promise.resolve(null),
+      update: () => Promise.reject(new Error("unused")),
+      deleteByUserId: () => Promise.reject(new Error("unused")),
+    },
     { listForUser: () => Promise.resolve([]) },
     { listForUser: () => Promise.resolve([]) },
   );

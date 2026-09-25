@@ -93,7 +93,10 @@ export class AsyncPrincipalResolver {
       // plain `string` at that boundary, so this is the point that turns it
       // into the closed enum `principalAttrSchema` requires.
       const businessRoles = Object.fromEntries(
-        memberships.map((membership) => [membership.businessId, businessRoleSchema.parse(membership.role)]),
+        memberships.map((membership) => [
+          membership.businessId,
+          businessRoleSchema.parse(membership.role),
+        ]),
       );
 
       attr = {

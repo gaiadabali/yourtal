@@ -102,7 +102,18 @@ resourcePolicy:
       # its own credential (1.5.c). has(R.attr.region) makes this a no-op
       # for an action with no resource yet (a create) or a kind whose
       # controller does not populate region yet.
-      actions: ["authorize", "capture", "void", "refund", "lookup", "view_log", "view_credential", "rotate_credential", "approve_credential_rotation"]
+      actions:
+        [
+          "authorize",
+          "capture",
+          "void",
+          "refund",
+          "lookup",
+          "view_log",
+          "view_credential",
+          "rotate_credential",
+          "approve_credential_rotation",
+        ]
       effect: EFFECT_DENY
       roles: ["user", "business_user"]
       condition:

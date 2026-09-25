@@ -66,7 +66,17 @@ resourcePolicy:
       # its own credential (1.5.c). has(R.attr.region) makes this a no-op
       # for an action with no resource yet (a create) or a kind whose
       # controller does not populate region yet.
-      actions: ["view", "invite", "remove_member", "change_role", "transfer_ownership", "provision_device", "revoke_device", "delete_business"]
+      actions:
+        [
+          "view",
+          "invite",
+          "remove_member",
+          "change_role",
+          "transfer_ownership",
+          "provision_device",
+          "revoke_device",
+          "delete_business",
+        ]
       effect: EFFECT_DENY
       roles: ["user", "business_user"]
       condition:

@@ -8,7 +8,10 @@ import type {
   PrincipalSecurityState,
   PrincipalSecurityStateRepository,
 } from "../../modules/identity/persistence/principal-security-state.repository";
-import type { StoredUserProfile, UserProfileRepository } from "../../modules/identity/persistence/user-profile.repository";
+import type {
+  StoredUserProfile,
+  UserProfileRepository,
+} from "../../modules/identity/persistence/user-profile.repository";
 import type {
   BusinessMembershipReader,
   BusinessMembershipSummary,
@@ -66,9 +69,7 @@ function fakeMembershipReader(
 }
 
 /** A fake `identity.staff_role` reader (1.5.b) — empty unless seeded. */
-function fakeStaffRoleReader(
-  rows: Record<string, readonly PrincipalRole[]> = {},
-): StaffRoleReader {
+function fakeStaffRoleReader(rows: Record<string, readonly PrincipalRole[]> = {}): StaffRoleReader {
   return {
     listForUser: (userId) => Promise.resolve(rows[userId] ?? []),
   };
@@ -180,7 +181,9 @@ describe("AsyncPrincipalResolver — 1.5.b (region, ageBand, suspension, busines
 
   it("with a profile row, region/ageBand/isSuspended/businessRoles come from the database, not the header", async () => {
     const resolver = resolverWith({
-      profiles: { wina: profileFor({ region: "AU", dateOfBirth: "1990-01-01", suspendedAt: null }) },
+      profiles: {
+        wina: profileFor({ region: "AU", dateOfBirth: "1990-01-01", suspendedAt: null }),
+      },
       memberships: { wina: [{ businessId: "biz-real", role: "analyst" }] },
     });
     const principal = await resolver.resolve(
@@ -208,16 +211,14 @@ describe("AsyncPrincipalResolver — 1.5.b (region, ageBand, suspension, busines
   });
 
   it("ageBand is teen for a 15-year-old and adult for a 40-year-old", async () => {
-    const now = new Date("2026-01-01T00:00:00.000Z");
     const teen = resolverWith({ profiles: { wina: profileFor({ dateOfBirth: "2010-06-01" }) } });
     const adult = resolverWith({ profiles: { wina: profileFor({ dateOfBirth: "1986-06-01" }) } });
     const teenPrincipal = await teen.resolve(requestWith({ "x-yt-user-id": "wina" }));
     const adultPrincipal = await adult.resolve(requestWith({ "x-yt-user-id": "wina" }));
     // ageBandFrom computes from `new Date()` internally; this asserts the
-    // shape rather than the exact band, since a fixed `now` is not injected
+    // shape rather than the exact band, since a fixed "now" is not injected
     // — the two dates of birth are chosen far enough apart (16 years either
     // side of 18) that today's date can never put both on the same side.
-    void now;
     expect(teenPrincipal.attr.ageBand).toBe("teen");
     expect(adultPrincipal.attr.ageBand).toBe("adult");
   });

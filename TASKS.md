@@ -32,7 +32,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | ✅ done | 8/8 | 46/47 | `██████████`  98% |
+| **Phase 0** Reset | A | ✅ done | 8/8 | 45/45 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 0/6 | 0/32 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **8/82** | **46/362** | `█░░░░░░░░░`  13% |
+| **All** | | | **8/82** | **45/360** | `█░░░░░░░░░`  13% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | — free | — | Phase 0 done 2026-09-25 (0.4.h waits for 3.1.d). Phase 1 runs in slot 3 |
+| 1 | `yourtal-1` | — free | — | Phase 0 done 2026-09-25. Phase 1 runs in slot 3 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1 CSS pipeline first (`phase/3`), then 3.2 prototypes |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); 1.3 on helper `yourtal-p1-b` (`phase/1-b`), then 1.4 and 1.6; 1.5 and 1.7 last |
 

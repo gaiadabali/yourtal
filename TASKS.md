@@ -35,7 +35,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 31/44 | `███████░░░`  70% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 28/32 | `█████████░`  88% |
+| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 30/32 | `█████████░`  94% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 23/52 | `████░░░░░░`  44% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **16/82** | **128/366** | `████░░░░░░`  35% |
+| **All** | | | **16/82** | **130/366** | `████░░░░░░`  36% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -605,7 +605,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     `next build` fails until 0.3 is on `main`, so do 3.1.d and 3.1.g after rebasing past 0.3; check 3.1.a–c with `next dev`.
   - [x] 3.1.e `i18n/request.ts` loads every `messages/<locale>/*.json` that exists, with no hard-coded list, and the parity test globs the same way. Then C can add its own catalogues without touching B's files.
   - [x] 3.1.f (requested by A for 2.3.a) `RootDocument` renders `<StagingBanner/>` when `APP_ENV=staging`, and `robots.ts` disallows everything there.
-  - [ ] 3.1.h (requested by A, moved from 0.4.h) Add `pnpm --filter @yourtal/web test:rendered` to root `pnpm verify` and as a step in `.github/workflows/integration.yml`; this one line in each file is yours to edit.
+  - [x] 3.1.h (requested by A, moved from 0.4.h) Add `pnpm --filter @yourtal/web test:rendered` to root `pnpm verify` and as a step in `.github/workflows/integration.yml`; this one line in each file is yours to edit.
   - [x] 3.1.g **Check:** the team invite dialog is visible and usable, axe is clean on the gate's routes, and the banner shows with `APP_ENV=staging`.
 - [x] **3.2 Two prototypes, and the founder picks one (F3)** · needs: 0.2.b — ✅ 2026-09-25 4b28ec2
   - [x] 3.2.a Media: `apps/web/app/(lab)/lab/fetch-media.mjs` downloads 6 vertical and 2 horizontal Pexels clips into `apps/web/public/lab-media/` (gitignored), with each clip's URL and licence in `CREDITS.txt`.
@@ -680,7 +680,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 3.5.e **Check:** the feed holds at most 3 `<video>` elements after scrolling 20 items, and nothing links to `/business` from the viewer shell.
 - [ ] **3.6 Brand, gallery and visual tests** · needs: 3.4 — 🔄 slot 2
   - [x] 3.6.a Brand: the wordmark "YourTal" in Bricolage Grotesque 800, with the points coin glyph as the mark. Favicon, maskable icons and the web manifest. Today `/favicon.ico` returns 404.
-  - [ ] 3.6.b A gallery at `(lab)/lab/ui`, with Playwright `toHaveScreenshot` baselines for every primitive at 390 px and 1280 px, light and dark. `pnpm test:visual` runs inside `mcr.microsoft.com/playwright:<installed version>-noble` for both generating and comparing, and the snapshot path has no platform suffix, so baselines made on Windows match CI on Linux.
+  - [x] 3.6.b A gallery at `(lab)/lab/ui`, with Playwright `toHaveScreenshot` baselines for every primitive at 390 px and 1280 px, light and dark. `pnpm test:visual` runs inside `mcr.microsoft.com/playwright:<installed version>-noble` for both generating and comparing, and the snapshot path has no platform suffix, so baselines made on Windows match CI on Linux.
   - [x] 3.6.c Lint in B's `features/**`: ban raw `<button>`, `<select>`, `<table>` and `<input>`, and ban JSX string literals. Warn for now; it becomes an error in 6.1.
   - [ ] 3.6.d **Check:** `pnpm test:visual` passes locally and in CI.
 

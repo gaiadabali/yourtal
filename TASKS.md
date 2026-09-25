@@ -33,10 +33,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 9/43 | `██░░░░░░░░`  21% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 1/7 | 12/43 | `███░░░░░░░`  28% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | 🔄 in progress | 3/6 | 19/32 | `██████░░░░`  59% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 14/50 | `███░░░░░░░`  28% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 15/50 | `███░░░░░░░`  30% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **12/82** | **88/363** | `██░░░░░░░░`  24% |
+| **All** | | | **13/82** | **92/363** | `███░░░░░░░`  25% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct (early, F21) | 2026-09-25 | Go-only parts ahead of Phase 1 (`phase/4`, F21/F22): 4.1.a ✅, 4.2 ✅, 4.3.a–d ✅ (0f18df1); 4.4.f, 4.4.i, 4.9.b ✅ (abc7ade); now 4.6.a–e. Routes and TS clients wait for 1.2 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.3 ✅ (tokens v2 from After Dark). Now 3.4 primitives |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | Two agents: 1.1 then 1.2 in `yourtal-3` (`phase/1`); agent B on helper `yourtal-p1-b` (`phase/1-b`) merged 1.3.a/c/d and 1.6.c + 1.6.a's driver half (a953bf3), still ⛔ waiting on 1.1 ✅ for 1.3.b and 1.3's Check; 1.5 and 1.7 last |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ merged (98d7aa1) — agent B on `yourtal-p1-b` unblocked for 1.3.b and 1.3's Check, then 1.4/1.6; a third agent starts 1.2.f (F23). This agent (`yourtal-3`, `phase/1`) is on 1.2.a–e now; 1.5 and 1.7 last |
 
 ## Decisions for the founder
 
@@ -402,7 +402,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
 
 Everything else depends on knowing who is calling, and on a shared shape everyone builds against. Today the API builds identity from `x-yt-user-id` / `x-yt-business-roles` headers that anyone can send (`principal.service.ts:70-85`, EW-02), and the web app has no login. **Do 1.1 to 1.3 first:** they publish the contracts, columns and fakes that let B and C build before Phase 4 lands.
 
-- [ ] **1.1 Shared contracts and columns** · needs: 0.7 — 🔄 slot 3 — a–e committed on `phase/1` (5a471c7, d0522c4), merging after a migration rename; f is partial (no `answerable_after_seconds` yet), h is open
+- [x] **1.1 Shared contracts and columns** · needs: 0.7 — ✅ 2026-09-25 98d7aa1
   - [x] 1.1.a Campaign contract: `businessId`, `region`, `audience`, `contentCategory`, `posterUrl`, `teaserUrl` (a progressive MP4), `hlsUrl`, `captionsUrl`, `durationSeconds`, `aspect`, `estimatedBytes`, `startsAt`, `endsAt`, `openViewing` (default false), `teaserStartSeconds`. Listing contract: `region`, `audience`, `contentCategory`, `imageUrl`, `channel` (`in_store` | `online` | `both`), `partialRedemption` (`single_use` | `balance_carries`). Business contract: `region` (immutable), `currency`, `handle`, `logoUrl`, `coverUrl`.
   - [x] 1.1.b **In the same commit**, a migration adds every one of those columns (campaign `business_id` etc.; listing; business), updates the Drizzle tables and the seed, and keeps `schema-drift.test.ts` green. Today no contract has an image field, which is why every card is text-only.
   - [x] 1.1.c **Audience rules**, the one definition everyone uses:
@@ -423,10 +423,10 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - add "expecting" and "baby-bump" to `BLOCKED_INTEREST_TERMS`;
     - bump `INTEREST_TAXONOMY_VERSION`;
     - a test fails if any entry is sensitive (health, religion, ethnicity, sexuality, politics, financial hardship), which keeps red line 6.
-  - [ ] 1.1.f `questionsAskedFor(d)` in `question-bank.ts` implements F10 (`d < 60` → 0, otherwise `max(1, min(5, floor(d/300)))`). The 1.1.b migration also adds `campaign.terms_version.accuracy_bonus_points`, a CHECK that questions asked ≤ 5, and a required `answerable_after_seconds` on questions.
-  - [ ] 1.1.h A listing's `currency` comes from its business's region on the server. Until then, `POST /api/:tenantId/store/listings` takes it in the body (0.3.a); remove that field then.
-  - [ ] 1.1.g **Check:** contracts and migrations land together and `pnpm check` is green.
-- [ ] **1.2 Internal ledger and voucher contracts, with fakes that behave like the real thing** · needs: 1.1
+  - [x] 1.1.f `questionsAskedFor(d)` in `question-bank.ts` implements F10 (`d < 60` → 0, otherwise `max(1, min(5, floor(d/300)))`). The 1.1.b migration also adds `campaign.terms_version.accuracy_bonus_points`, a CHECK that questions asked ≤ 5, and a required `answerable_after_seconds` on questions.
+  - [x] 1.1.h A listing's `region` and `currency` come from its business on the server (`BusinessRegionLookup`, a cross-schema read `yourtal_app` already has SELECT for) — `createListingSchema` no longer takes either in the body; a business that does not exist refuses with `business_not_found`.
+  - [x] 1.1.g **Check:** contracts and migrations land together and `pnpm check` is green. Verified 2026-09-25: `pnpm check` green (contracts 35/35, web 190/190, ui/authz/jurisdiction/consent/drivers all pass); `packages/db` (10/10) and `apps/api` (44/44, incl. a real-Postgres `DrizzleBusinessRegionLookup` round trip) also pass under `pnpm verify`; `openapi:go:verify` (Go build + vet) clean.
+- [ ] **1.2 Internal ledger and voucher contracts, with fakes that behave like the real thing** · needs: 1.1 — 🔄 slot 3 — a–e here; f (per-region settings) is a third agent's, per F23
   - [ ] 1.2.a `ledger-internal` covers:
     - **pricing:** `quote` and `lockQuote`; `priceListing(listingId, S, currency)`; `quotePurchase(points, region)`;
     - **funding and allocations:** `purchasePoints`; `listAllocations(businessId)` and `getAllocation`; allocation `hold` / `consume` / `release` / `returnGrant`; `campaignSpend(campaignId)`;
@@ -762,7 +762,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.5.f **Check:** `voucher-client.contract.spec.ts` passes against live, and an AUD voucher reserves, activates, shows a QR token, authorizes and captures.
 - [ ] **4.6 Voucher hardening** · needs: 4.5 (4.6.a–e early, F22) — 🔄 slot 1
   - [x] 4.6.a Enforce the lifecycle inside `issue.Move` and with a database transition trigger. Capture and void require `held` (D3). A swept stale hold returns the voucher to active (D15).
-  - [ ] 4.6.b Kill switch: check it after the code lookup (batch, merchant and global scopes) and again inside Capture (D4). The throttle counts only probes (D13). `ErrStaleVersion` returns 409 (D14).
+  - [x] 4.6.b Kill switch: check it after the code lookup (batch, merchant and global scopes) and again inside Capture (D4). The throttle counts only probes (D13). `ErrStaleVersion` returns 409 (D14).
   - [ ] 4.6.c Authorize takes `order_total_minor`. Minimum spend is checked against it and re-checked at capture (D5). An authorize replay compares code hash, amount and currency (D7).
   - [ ] 4.6.d Idempotency:
     - record completion on `context.WithoutCancel`, reclaim stale rows, and make `refund_ref` unique per capture (D8);
@@ -1255,6 +1255,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · A · 1.1 Shared contracts and columns: campaign/listing/business gain region, audience, contentCategory, media and scheduling fields; the migration lands with them; audience rules, category policy (packages/jurisdiction), interest taxonomy v2, F10's questionsAskedFor and the accuracy-bonus/question-count columns; a listing's region and currency now come from its business server-side (BusinessRegionLookup), never the body · 98d7aa1
 - 2026-09-25 · B · 3.3 Tokens v2 from After Dark: raw → semantic → component, viewer/studio/counter surfaces as light-dark() pairs, v1 names kept as aliases, contrast checked on every surface in both themes, hex and px lint in B's features, prototypes removed · 3f090ad
 - 2026-09-25 · B · 3.2 Two prototypes of the same flow, captured at 390×844; the founder picked After Dark (F3) · 4b28ec2
 - 2026-09-25 · A · 4.2 Chart of accounts per region: natural balances (FundReserve sign fixed), account purposes, the full posting table, one region per transfer in the DB trigger, exact-inverse reversals, trial balance · 8dcfe2c

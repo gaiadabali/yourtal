@@ -122,13 +122,26 @@ func (e *Engine) PriceListing(ctx context.Context, listingID string, region ledg
 
 // priceNow is ceil(S × 1e6 / B) at the rate in force now, multiplier 1.00.
 func priceNow(ctx context.Context, q *sqlcgen.Queries, currency string, settlementMinor int64) (int64, string, error) {
+	rate, err := rateInForce(ctx, q, currency)
+	if err != nil {
+		return 0, "", err
+	}
+	return priceAt(rate, settlementMinor)
+}
+
+func rateInForce(ctx context.Context, q *sqlcgen.Queries, currency string) (sqlcgen.GetBackingRateInForceRow, error) {
 	rate, err := q.GetBackingRateInForce(ctx, currency)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, "", fmt.Errorf("%w: %s", ErrNoRateInForce, currency)
+		return rate, fmt.Errorf("%w: %s", ErrNoRateInForce, currency)
 	}
 	if err != nil {
-		return 0, "", fmt.Errorf("reading the rate in force: %w", err)
+		return rate, fmt.Errorf("reading the rate in force: %w", err)
 	}
+	return rate, nil
+}
+
+// priceAt is the one points formula every listing price and quote uses.
+func priceAt(rate sqlcgen.GetBackingRateInForceRow, settlementMinor int64) (int64, string, error) {
 	points, err := PriceInPoints(settlementMinor, rate.MicrosPerPoint, NeutralDemandBps)
 	if err != nil {
 		return 0, "", err

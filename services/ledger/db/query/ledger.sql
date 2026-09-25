@@ -347,3 +347,26 @@ FROM campaign.campaign_terms WHERE campaign_id = $1 AND version = $2;
 -- Serialises grants on one campaign, so its maximum is checked and spent
 -- by one grant at a time.
 SELECT pg_advisory_xact_lock(hashtextextended('ledger.campaign:' || sqlc.arg(campaign_id)::text, 0));
+
+-- name: ListStaleListingPrices :many
+-- 4.9.a: listings priced at a rate that is no longer the one in force now.
+SELECT lp.listing_id, lp.currency, lp.settlement_minor, lp.backing_rate_id
+FROM ledger.listing_price lp
+JOIN LATERAL (
+  SELECT r.id FROM ledger.backing_rate r
+  JOIN ledger.backing_rate_approval a ON a.rate_id = r.id
+  WHERE r.currency = lp.currency AND a.effective_from <= now()
+  ORDER BY a.effective_from DESC, a.approved_at DESC
+  LIMIT 1
+) cur ON true
+WHERE cur.id <> lp.backing_rate_id
+ORDER BY lp.listing_id
+LIMIT $1;
+
+-- name: RepriceListing :execrows
+-- Only if S and the rate are still what was read, so a concurrent
+-- priceListing is never overwritten with a stale S.
+UPDATE ledger.listing_price
+SET price_points = sqlc.arg(price_points), backing_rate_id = sqlc.arg(rate_id), computed_at = now()
+WHERE listing_id = sqlc.arg(listing_id) AND settlement_minor = sqlc.arg(settlement_minor)
+  AND backing_rate_id = sqlc.arg(priced_rate_id);

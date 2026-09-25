@@ -1233,6 +1233,54 @@ func (q *Queries) ListPurchasesForPartner(ctx context.Context, partnerID string)
 	return items, nil
 }
 
+const listStaleListingPrices = `-- name: ListStaleListingPrices :many
+SELECT lp.listing_id, lp.currency, lp.settlement_minor, lp.backing_rate_id
+FROM ledger.listing_price lp
+JOIN LATERAL (
+  SELECT r.id FROM ledger.backing_rate r
+  JOIN ledger.backing_rate_approval a ON a.rate_id = r.id
+  WHERE r.currency = lp.currency AND a.effective_from <= now()
+  ORDER BY a.effective_from DESC, a.approved_at DESC
+  LIMIT 1
+) cur ON true
+WHERE cur.id <> lp.backing_rate_id
+ORDER BY lp.listing_id
+LIMIT $1
+`
+
+type ListStaleListingPricesRow struct {
+	ListingID       pgtype.UUID
+	Currency        string
+	SettlementMinor int64
+	BackingRateID   string
+}
+
+// 4.9.a: listings priced at a rate that is no longer the one in force now.
+func (q *Queries) ListStaleListingPrices(ctx context.Context, limit int32) ([]ListStaleListingPricesRow, error) {
+	rows, err := q.db.Query(ctx, listStaleListingPrices, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStaleListingPricesRow
+	for rows.Next() {
+		var i ListStaleListingPricesRow
+		if err := rows.Scan(
+			&i.ListingID,
+			&i.Currency,
+			&i.SettlementMinor,
+			&i.BackingRateID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUnlockedGrants = `-- name: ListUnlockedGrants :many
 SELECT g.id, g.user_id, g.points
 FROM ledger.grant g
@@ -1380,6 +1428,37 @@ func (q *Queries) ReleaseHold(ctx context.Context, holdID string) (bool, error) 
 	var released bool
 	err := row.Scan(&released)
 	return released, err
+}
+
+const repriceListing = `-- name: RepriceListing :execrows
+UPDATE ledger.listing_price
+SET price_points = $1, backing_rate_id = $2, computed_at = now()
+WHERE listing_id = $3 AND settlement_minor = $4
+  AND backing_rate_id = $5
+`
+
+type RepriceListingParams struct {
+	PricePoints     int64
+	RateID          string
+	ListingID       pgtype.UUID
+	SettlementMinor int64
+	PricedRateID    string
+}
+
+// Only if S and the rate are still what was read, so a concurrent
+// priceListing is never overwritten with a stale S.
+func (q *Queries) RepriceListing(ctx context.Context, arg RepriceListingParams) (int64, error) {
+	result, err := q.db.Exec(ctx, repriceListing,
+		arg.PricePoints,
+		arg.RateID,
+		arg.ListingID,
+		arg.SettlementMinor,
+		arg.PricedRateID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const returnGrant = `-- name: ReturnGrant :one

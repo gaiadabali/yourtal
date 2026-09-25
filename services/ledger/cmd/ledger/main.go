@@ -48,6 +48,8 @@ const (
 	// and a nightly one leaves a whole day in which the ledger is wrong and
 	// nobody knows.
 	checkInterval = 15 * time.Minute
+	// A newly effective rate reprices listings within a minute (4.9.a).
+	repriceInterval = time.Minute
 
 	defaultAddr     = "127.0.0.1:3010"
 	requestTimeout  = 10 * time.Second
@@ -112,6 +114,7 @@ func run(logger *slog.Logger) error {
 
 		checker := proof.New(pool, proof.LoggingAlerter{Logger: logger})
 		go runChecker(ctx, logger, checker, sqlcgen.New(pool), proof.LoggingAlerter{Logger: logger})
+		go runRepricer(ctx, logger, pricing.New(pool))
 	} else {
 		logger.Warn("no LEDGER_DATABASE_URL: the invariant checker is NOT running " +
 			"and /v1 routes will report the database as unconfigured")
@@ -276,6 +279,25 @@ func runChecker(
 			logger.Info("ledger invariants hold", "checked_at", time.Now().UTC())
 		}
 
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// runRepricer reprices every listing whose rate was superseded (4.9.a).
+// Errors are logged and the loop continues, as runChecker does.
+func runRepricer(ctx context.Context, logger *slog.Logger, engine *pricing.Engine) {
+	ticker := time.NewTicker(repriceInterval)
+	defer ticker.Stop()
+	for {
+		if n, err := engine.RepriceListings(ctx); err != nil {
+			logger.Error("repricing listings failed", "error", err)
+		} else if n > 0 {
+			logger.Info("repriced listings at the rate in force", "count", n)
+		}
 		select {
 		case <-ctx.Done():
 			return

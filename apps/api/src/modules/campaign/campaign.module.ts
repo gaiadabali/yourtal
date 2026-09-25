@@ -8,6 +8,8 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { CampaignController } from "./campaign.controller";
 import { CAMPAIGN_REPOSITORY } from "./persistence/campaign.repository";
 import { DrizzleCampaignRepository } from "./persistence/drizzle-campaign.repository";
+import { CAMPAIGN_AUTHZ_ATTRIBUTES_READER } from "./persistence/campaign-authz-attributes";
+import { DrizzleCampaignAuthzAttributesReader } from "./persistence/drizzle-campaign-authz-attributes";
 
 export const CAMPAIGN_DB = Symbol("CAMPAIGN_DB");
 
@@ -33,8 +35,13 @@ export const CAMPAIGN_DB = Symbol("CAMPAIGN_DB");
       useFactory: (db: AppDb) => new DrizzleCampaignRepository(db),
       inject: [CAMPAIGN_DB],
     },
+    {
+      provide: CAMPAIGN_AUTHZ_ATTRIBUTES_READER,
+      useFactory: (db: AppDb) => new DrizzleCampaignAuthzAttributesReader(db),
+      inject: [CAMPAIGN_DB],
+    },
   ],
-  exports: [CAMPAIGN_REPOSITORY, CAMPAIGN_DB],
+  exports: [CAMPAIGN_REPOSITORY, CAMPAIGN_DB, CAMPAIGN_AUTHZ_ATTRIBUTES_READER],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class CampaignModule {}

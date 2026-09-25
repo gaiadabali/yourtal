@@ -8,6 +8,7 @@ import {
   WATCH_SESSION_REPOSITORY,
 } from "./persistence/drizzle-watch-session.repository";
 import { WatchController } from "./watch.controller";
+import { CampaignViewAttributeLoader } from "./campaign-view-attribute-loader";
 
 /**
  * Watch sessions. YT-0553.
@@ -27,12 +28,16 @@ import { WatchController } from "./watch.controller";
       useFactory: (db: AppDb) => new DrizzleWatchSessionRepository(db),
       inject: [CAMPAIGN_DB],
     },
+    CampaignViewAttributeLoader,
   ],
   // Exported so `CheckpointModule` (YT-0121) reads sessions through THIS
   // repository rather than constructing a second one over the same table.
   // Additive: exporting a provider changes nothing for existing consumers,
   // and two repositories over one table is how they drift.
-  exports: [WATCH_SESSION_REPOSITORY],
+  //
+  // `CampaignViewAttributeLoader` is exported so `app.module.ts` can gather
+  // it into `RESOURCE_ATTRIBUTE_LOADERS` for the app-wide `PdpGuard` (1.5.d).
+  exports: [WATCH_SESSION_REPOSITORY, CampaignViewAttributeLoader],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class WatchModule {}

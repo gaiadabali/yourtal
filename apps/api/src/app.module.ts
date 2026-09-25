@@ -9,6 +9,9 @@ import { WatchModule } from "./modules/watch/watch.module";
 import { CheckpointModule } from "./modules/watch/checkpoint/checkpoint.module";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
+import { RESOURCE_ATTRIBUTE_LOADERS } from "./shared/authz/resource-attribute-loader";
+import type { ResourceAttributeLoader } from "./shared/authz/resource-attribute-loader";
+import { CampaignViewAttributeLoader } from "./modules/watch/campaign-view-attribute-loader";
 import { HealthModule } from "./shared/health/health.module";
 import { IdempotencyInterceptor } from "./shared/idempotency/idempotency.interceptor";
 import { IdempotencyModule } from "./shared/idempotency/idempotency.module";
@@ -50,6 +53,20 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: PdpGuard },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
+    // 1.5.d (EW-03): every DB-backed resource-attribute loader, gathered
+    // here rather than via NestJS's per-module multi-binding (which does
+    // not exist) because `PdpGuard` itself is provided in THIS module — a
+    // token it injects must be resolvable from AppModule's own injector,
+    // which already has both WatchModule (for the loader) and its
+    // dependencies (CampaignModule, imported by WatchModule) in scope.
+    // Add a new provider here as new kinds need one.
+    {
+      provide: RESOURCE_ATTRIBUTE_LOADERS,
+      useFactory: (
+        campaignView: CampaignViewAttributeLoader,
+      ): readonly ResourceAttributeLoader[] => [campaignView],
+      inject: [CampaignViewAttributeLoader],
+    },
   ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100

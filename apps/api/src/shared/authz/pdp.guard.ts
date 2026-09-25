@@ -1,13 +1,16 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException, Optional } from "@nestjs/common";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { FastifyRequest } from "fastify";
 import type { PdpClient } from "@yourtal/authz/pdp-client";
+import type { ResourceKind } from "@yourtal/authz/resources";
 import { PDP_CLIENT } from "../pdp/pdp-client.module";
 import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { mapAuthzErrorToHttpException } from "./authz-error.mapper";
 import { AUTHORIZE_METADATA, PUBLIC_ROUTE_METADATA } from "./authorize.decorator";
 import type { AuthorizeOptions } from "./authorize.decorator";
+import { RESOURCE_ATTRIBUTE_LOADERS } from "./resource-attribute-loader";
+import type { ResourceAttributeLoader } from "./resource-attribute-loader";
 
 /**
  * Resolves every route's authorization through the PDP. YT-0500 AC1.
@@ -29,11 +32,19 @@ import type { AuthorizeOptions } from "./authorize.decorator";
  */
 @Injectable()
 export class PdpGuard implements CanActivate {
+  /** Built once from the injected array — a `Map` so a request-time lookup is O(1), not a scan. */
+  private readonly loaders: ReadonlyMap<ResourceKind, ResourceAttributeLoader>;
+
   constructor(
     private readonly reflector: Reflector,
     @Inject(PDP_CLIENT) private readonly pdp: PdpClient,
     private readonly principals: AsyncPrincipalResolver,
-  ) {}
+    @Optional()
+    @Inject(RESOURCE_ATTRIBUTE_LOADERS)
+    loaders: readonly ResourceAttributeLoader[] = [],
+  ) {
+    this.loaders = new Map(loaders.map((loader) => [loader.kind, loader]));
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const handler = context.getHandler();
@@ -63,17 +74,29 @@ export class PdpGuard implements CanActivate {
     const principal = await this.principals.resolve(request);
     const tenantId = tenantOf(request);
 
+    // 1.5.d (EW-03): a resource kind with a registered loader gets its id
+    // AND attributes from a real DB read, replacing the tenant/attrsFrom
+    // path entirely for that kind — the loader is the one place that knows
+    // how to get from the URL (a session id, say) to the resource the
+    // policy actually reasons about (its campaign).
+    const loader = this.loaders.get(options.kind);
+    const loaded = await loader?.resolve(request);
+    if (loader !== undefined && loaded === null) {
+      throw new NotFoundException("No such resource.");
+    }
+
     const result = await this.pdp.requireAction(
       principal,
       {
         kind: options.kind,
-        id: options.idFrom?.(request) ?? tenantId ?? "new",
+        id: loaded?.id ?? options.idFrom?.(request) ?? tenantId ?? "new",
         attr: {
           // Every tenant-scoped policy reads businessId; the derived roles in
           // policies/derived_roles/business.yaml resolve the caller's role at
           // THAT business from it. Omitted when there is no tenant (a create),
           // where no derived role can or should match.
           ...(tenantId === undefined ? {} : { businessId: tenantId }),
+          ...(loaded?.attr ?? {}),
           ...(options.attrsFrom?.(request) ?? {}),
         },
       },

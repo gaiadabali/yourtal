@@ -7,7 +7,18 @@
   "required": ["campaignId"],
   "properties": {
     "campaignId": { "type": "string" },
-    "state": { "type": "string", "enum": ["draft", "live", "paused", "archived"] },
+    "state": {
+      "type": "string",
+      "enum": ["draft", "in_review", "rejected", "live", "paused", "ended"]
+    },
+    "region": {
+      "description": "F2's hard wall (1.5.b adds the comparison rule against the principal's own region).",
+      "type": "string"
+    },
+    "audience": {
+      "description": "1.5.b's audience-targeting hard wall, same status as region above.",
+      "type": "string"
+    },
     "openViewingEnabled": {
       "description": "Per-campaign opt-in, off by default (docs/17 section 4.2). An anonymous visitor may watch only when this is true.",
       "type": "boolean"

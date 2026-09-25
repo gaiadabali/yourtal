@@ -63,13 +63,256 @@
     "viewOffer": "Lihat voucher"
   },
   "notFound": {
-    "heading": "Tidak ditemukan",
-    "body": "Halaman ini tidak ada atau sudah tidak tersedia."
+    "heading": "Halaman tidak ditemukan",
+    "body": "Tautannya mungkin sudah lama, atau halamannya sudah dipindahkan.",
+    "homeLink": "Ke beranda",
+    "rewardsLink": "Lihat hadiah"
   },
   "footer": {
     "tagline": "Tonton, pelajari, dapatkan poin — dan belanjakan di tempat kamu tinggal.",
     "regionsHeading": "Pilih wilayahmu",
     "au": "Australia (English)",
     "id": "Indonesia (Bahasa Indonesia)"
+  },
+  "footerLinks": {
+    "heading": "Tentang YourTal"
+  },
+  "draftNotice": {
+    "title": "Draf",
+    "body": "Halaman ini masih draf dan belum final."
+  },
+  "pages": {
+    "help": {
+      "title": "Bantuan dan FAQ",
+      "description": "Jawaban atas pertanyaan umum tentang mengumpulkan poin, hadiah, dan akun YourTal kamu.",
+      "lead": "Jawaban singkat untuk pertanyaan yang paling sering diajukan.",
+      "sections": [
+        {
+          "heading": "Apa itu YourTal?",
+          "body": [
+            "YourTal adalah aplikasi video tempat kamu mengumpulkan poin dengan menonton video dari bisnis lokal dan menjawab beberapa pertanyaan tentangnya. Poinnya bisa kamu tukar dengan voucher dari bisnis tersebut."
+          ]
+        },
+        {
+          "heading": "Bagaimana cara mengumpulkan poin?",
+          "body": [
+            "Pilih video, tonton sampai selesai, dan jawab pertanyaan yang muncul di tengah video. Setiap video menampilkan hadiahnya sebelum kamu mulai, dan hadiah itu tidak berubah setelah kamu menekan putar."
+          ]
+        },
+        {
+          "heading": "Kenapa poin saya masih tertunda?",
+          "body": [
+            "Poin baru tertunda sebentar sebelum bisa dipakai. Ini menjaga hadiah tetap adil untuk semua. Dompet kamu menunjukkan kapan poin tertunda bisa dipakai."
+          ]
+        },
+        {
+          "heading": "Apakah poin bisa kedaluwarsa?",
+          "body": ["Tidak. Poin kamu tidak kedaluwarsa."]
+        },
+        {
+          "heading": "Bisakah poin dipakai di negara lain?",
+          "body": [
+            "Tidak. Australia dan Indonesia terpisah. Poin yang kamu kumpulkan di satu wilayah hanya bisa dipakai di wilayah itu."
+          ]
+        },
+        {
+          "heading": "Apakah ada batas poin yang bisa dikumpulkan?",
+          "body": [
+            "Ya. Ada batas harian agar hadiah tetap adil dan berkelanjutan. Aplikasi akan memberi tahu saat kamu mencapainya."
+          ]
+        },
+        {
+          "heading": "Bisakah poin ditukar dengan hal lain?",
+          "body": [
+            "Tidak. Poin hanya untuk hadiah. Poin tidak bisa dijual atau dipindahkan, dan kamu memakainya untuk voucher di katalog hadiah."
+          ]
+        },
+        {
+          "heading": "Bisakah orang lain melihat apa yang saya tonton?",
+          "body": [
+            "Tidak. Tidak ada profil publik, komentar, atau jumlah pengikut. Bisnis hanya melihat hasil gabungan dari kelompok penonton, tidak pernah kamu secara pribadi."
+          ]
+        },
+        {
+          "heading": "Bagaimana cara menukarkan voucher?",
+          "body": [
+            "Pilih voucher di katalog hadiah, konfirmasi, lalu tunjukkan kodenya di tempat bisnis."
+          ]
+        },
+        {
+          "heading": "Ada yang salah dengan poin saya",
+          "body": [
+            "Hubungi tim dukungan kami dan ceritakan apa yang terjadi. Kami memeriksa setiap kasus dan memperbaiki kesalahan."
+          ]
+        }
+      ]
+    },
+    "points": {
+      "title": "Cara kerja poin",
+      "description": "Cara mengumpulkan poin YourTal dengan menonton video, dan cara memakainya untuk hadiah.",
+      "lead": "Tonton, jawab, kumpulkan poin, lalu tukar dengan hadiah dari bisnis di sekitarmu.",
+      "sections": [
+        {
+          "heading": "Kumpulkan dengan menonton",
+          "body": [
+            "Setiap video menampilkan durasi dan hadiahnya sebelum kamu mulai. Tonton sampai selesai untuk mendapatkan hadiahnya.",
+            "Beberapa video memberi bonus akurasi untuk jawaban yang benar. Pertanyaan yang waktunya habis dihitung salah, tetapi tidak pernah membatalkan tontonanmu."
+          ]
+        },
+        {
+          "heading": "Tertunda, lalu milikmu",
+          "body": ["Poin baru tertunda sebentar, lalu masuk ke saldo yang bisa dipakai."]
+        },
+        {
+          "heading": "Streak",
+          "body": [
+            "Menonton beberapa hari berturut-turut membangun streak. Hari ke-3 dan ke-7 memberi poin bonus. Melewatkan satu hari tidak pernah mengurangi poinmu."
+          ]
+        },
+        {
+          "heading": "Tukar dengan hadiah",
+          "body": [
+            "Pakai poinmu untuk voucher dari bisnis di wilayahmu. Setiap voucher menampilkan harga dalam poin dan nilainya sebelum kamu memilih."
+          ]
+        },
+        {
+          "heading": "Yang tidak berlaku untuk poin",
+          "body": [
+            "Poin hanya untuk hadiah. Poin tidak bisa dijual atau dikirim ke orang lain. Poin tetap di wilayah tempat kamu mengumpulkannya, dan tidak kedaluwarsa."
+          ]
+        },
+        {
+          "heading": "Siapa yang mendanai hadiahmu",
+          "body": [
+            "Bisnis membayar untuk menampilkan video mereka, dan itulah yang mendanai poin yang kamu kumpulkan. Setiap poin didanai penuh saat diterbitkan, jadi hadiahmu selalu tersedia saat kamu ingin memakainya."
+          ]
+        }
+      ]
+    },
+    "business": {
+      "title": "YourTal untuk bisnis",
+      "description": "Jangkau penonton lokal yang memilih menonton videomu dan menunjukkan bahwa mereka memahaminya.",
+      "lead": "Tampilkan videomu kepada orang yang memilih menontonnya, dan beri mereka hadiah berupa voucher dari bisnismu.",
+      "cta": "Buat akun bisnis",
+      "sections": [
+        {
+          "heading": "Penonton yang memilih menonton",
+          "body": [
+            "Orang di YourTal memilih videomu dan menontonnya sampai selesai. Pertanyaan di tengah video memastikan pesanmu tersampaikan."
+          ]
+        },
+        {
+          "heading": "Kamu yang mengatur kampanye",
+          "body": [
+            "Unggah video, tulis pertanyaan, dan pilih hadiah dalam batas yang kami tetapkan. Setiap kampanye ditinjau sebelum tayang."
+          ]
+        },
+        {
+          "heading": "Datangkan orang ke tokomu",
+          "body": [
+            "Tawarkan voucher yang ditukarkan penonton dengan poin yang mereka kumpulkan. Stafmu memeriksa setiap kode di kasir."
+          ]
+        },
+        {
+          "heading": "Laporan yang menghormati privasi",
+          "body": [
+            "Lihat performa kampanyemu dan pertanyaan mana yang dijawab dengan benar. Hasil hanya ditampilkan untuk kelompok penonton, tidak pernah per individu."
+          ]
+        },
+        {
+          "heading": "Mulai",
+          "body": [
+            "Buat akun bisnis, beli poin untuk mendanai hadiahmu, dan terbitkan kampanye pertamamu."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Ketentuan penggunaan",
+      "description": "Aturan untuk menggunakan YourTal, mengumpulkan poin, dan menukarkan hadiah.",
+      "lead": "Ketentuan ini berlaku setiap kali kamu menggunakan YourTal.",
+      "sections": [
+        {
+          "heading": "Menyetujui ketentuan ini",
+          "body": [
+            "Dengan membuat akun, kamu menyetujui ketentuan ini. Jika tidak setuju, mohon jangan gunakan YourTal."
+          ]
+        },
+        {
+          "heading": "Akunmu",
+          "body": [
+            "Satu akun untuk satu orang, dengan data yang benar. Jaga kerahasiaan kata sandimu. Kamu bertanggung jawab atas apa yang terjadi di akunmu."
+          ]
+        },
+        {
+          "heading": "Poin",
+          "body": [
+            "Poin adalah hadiah untuk menonton dan menjawab. Poin tidak memiliki nilai tunai dan tidak bisa ditukar dengan uang tunai, dijual, dipindahkan, atau dipakai di luar wilayah tempat kamu mengumpulkannya.",
+            "Kami dapat menahan poin sebagai tertunda selama kami memeriksa aktivitas."
+          ]
+        },
+        {
+          "heading": "Penggunaan yang wajar",
+          "body": [
+            "Jangan gunakan bot, skrip, banyak akun, atau cara lain untuk memalsukan tontonan. Jika kami menemukan aktivitas seperti ini, kami dapat membatalkan poin terkait dan menangguhkan akunnya."
+          ]
+        },
+        {
+          "heading": "Hadiah",
+          "body": [
+            "Voucher disediakan oleh bisnis yang menawarkannya dan mengikuti syarat yang ditampilkan sebelum kamu menukarkannya."
+          ]
+        },
+        {
+          "heading": "Perubahan ketentuan",
+          "body": [
+            "Kami dapat memperbarui ketentuan ini. Kami akan memberi tahu perubahan penting sebelum berlaku."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privasi",
+      "description": "Apa yang dikumpulkan YourTal, untuk apa, dan siapa yang bisa melihatnya.",
+      "lead": "Cara kami menangani informasimu.",
+      "sections": [
+        {
+          "heading": "Yang kami kumpulkan",
+          "body": [
+            "Alamat email dan data akunmu, video yang kamu tonton, jawabanmu, serta poin dan voucher di akunmu. Kami juga mengumpulkan informasi dasar perangkat dan penggunaan untuk menjaga keamanan layanan."
+          ]
+        },
+        {
+          "heading": "Untuk apa kami mengumpulkannya",
+          "body": [
+            "Untuk menjalankan akunmu, menghitung hadiahmu, mencegah kecurangan, dan meningkatkan layanan."
+          ]
+        },
+        {
+          "heading": "Yang dilihat bisnis",
+          "body": [
+            "Bisnis melihat hasil gabungan dari kelompok penonton. Mereka tidak pernah melihat nama, alamat email, atau aktivitas pribadimu."
+          ]
+        },
+        {
+          "heading": "Yang dilihat orang lain",
+          "body": [
+            "Tidak ada. YourTal tidak memiliki profil publik, komentar, atau jumlah pengikut."
+          ]
+        },
+        {
+          "heading": "Wilayahmu",
+          "body": [
+            "Akunmu termasuk dalam wilayah tempat kamu mendaftar, dan informasinya dipisahkan dari wilayah lain."
+          ]
+        },
+        {
+          "heading": "Pilihanmu",
+          "body": [
+            "Kamu dapat meminta untuk melihat, memperbaiki, atau menghapus informasimu dengan menghubungi kami. Kami tidak menjual informasi pribadimu."
+          ]
+        }
+      ]
+    }
   }
 }

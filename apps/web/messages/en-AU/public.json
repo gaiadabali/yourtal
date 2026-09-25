@@ -63,13 +63,256 @@
     "viewOffer": "View voucher"
   },
   "notFound": {
-    "heading": "Not found",
-    "body": "This page does not exist or is no longer available."
+    "heading": "We couldn't find that page",
+    "body": "The link may be old, or the page may have moved.",
+    "homeLink": "Go to the home page",
+    "rewardsLink": "Browse rewards"
   },
   "footer": {
     "tagline": "Watch, learn, earn — and spend it where you live.",
     "regionsHeading": "Choose your region",
     "au": "Australia (English)",
     "id": "Indonesia (Bahasa Indonesia)"
+  },
+  "footerLinks": {
+    "heading": "About YourTal"
+  },
+  "draftNotice": {
+    "title": "Draft",
+    "body": "This page is a draft and is not final yet."
+  },
+  "pages": {
+    "help": {
+      "title": "Help and FAQ",
+      "description": "Answers to common questions about earning points, rewards and your YourTal account.",
+      "lead": "Quick answers to the questions people ask most.",
+      "sections": [
+        {
+          "heading": "What is YourTal?",
+          "body": [
+            "YourTal is a video app where you earn points for watching videos from local businesses and answering a few questions about them. You spend your points on vouchers from those businesses."
+          ]
+        },
+        {
+          "heading": "How do I earn points?",
+          "body": [
+            "Pick a video, watch it to the end and answer the questions that appear along the way. Every video shows its reward before you start, and that never changes once you press play."
+          ]
+        },
+        {
+          "heading": "Why are my points pending?",
+          "body": [
+            "New points stay pending for a short while before you can spend them. This keeps rewards fair for everyone. Your wallet shows when pending points become available."
+          ]
+        },
+        {
+          "heading": "Do points expire?",
+          "body": ["No. Your points don't expire."]
+        },
+        {
+          "heading": "Can I use my points in another country?",
+          "body": [
+            "No. Australia and Indonesia are separate. Points you earn in one region can only be spent in that region."
+          ]
+        },
+        {
+          "heading": "Is there a limit on how much I can earn?",
+          "body": [
+            "Yes. There is a daily limit so rewards stay fair and sustainable. The app tells you when you reach it."
+          ]
+        },
+        {
+          "heading": "Can I exchange points for anything else?",
+          "body": [
+            "No. Points are only for rewards. They can't be sold or transferred, and you spend them on vouchers in the rewards catalogue."
+          ]
+        },
+        {
+          "heading": "Can other people see what I watch?",
+          "body": [
+            "No. There are no public profiles, comments or follower counts. Businesses only see combined results for groups of viewers, never you personally."
+          ]
+        },
+        {
+          "heading": "How do I redeem a voucher?",
+          "body": [
+            "Choose a voucher in the rewards catalogue, confirm it, and show the code at the business."
+          ]
+        },
+        {
+          "heading": "Something is wrong with my points",
+          "body": [
+            "Contact our support team and tell us what happened. We review every case and put mistakes right."
+          ]
+        }
+      ]
+    },
+    "points": {
+      "title": "How points work",
+      "description": "How you earn YourTal points by watching videos, and how you spend them on rewards.",
+      "lead": "Watch, answer, earn points, then spend them on rewards from businesses near you.",
+      "sections": [
+        {
+          "heading": "Earn by watching",
+          "body": [
+            "Every video shows its length and reward before you start. Watch to the end to earn the reward.",
+            "Some videos add an accuracy bonus for correct answers. A question you run out of time on counts as wrong, but it never cancels your watch."
+          ]
+        },
+        {
+          "heading": "Pending, then yours",
+          "body": [
+            "New points stay pending for a short while, then move to your available balance."
+          ]
+        },
+        {
+          "heading": "Streaks",
+          "body": [
+            "Watch on consecutive days to build a streak. Day 3 and day 7 add bonus points. Missing a day never costs you points."
+          ]
+        },
+        {
+          "heading": "Spend on rewards",
+          "body": [
+            "Use your points on vouchers from businesses in your region. Each voucher shows its price in points and what it's worth before you choose it."
+          ]
+        },
+        {
+          "heading": "What points are not",
+          "body": [
+            "Points are only for rewards. They can't be sold or sent to someone else. They stay in the region where you earned them, and they don't expire."
+          ]
+        },
+        {
+          "heading": "Who funds your rewards",
+          "body": [
+            "Businesses pay to show you their videos, and that funds the points you earn. Every point is fully funded when it is issued, so your rewards are there when you want to use them."
+          ]
+        }
+      ]
+    },
+    "business": {
+      "title": "YourTal for business",
+      "description": "Reach local viewers who choose to watch your video and show they understood it.",
+      "lead": "Put your video in front of people who choose to watch it, and reward them with your own vouchers.",
+      "cta": "Set up a business account",
+      "sections": [
+        {
+          "heading": "Viewers who choose to watch",
+          "body": [
+            "People on YourTal pick your video and watch it to the end. Questions during the video check that your message landed."
+          ]
+        },
+        {
+          "heading": "You set the campaign",
+          "body": [
+            "Upload your video, write the questions and choose the reward within our limits. Every campaign is reviewed before it goes live."
+          ]
+        },
+        {
+          "heading": "Bring people to your door",
+          "body": [
+            "Offer vouchers that viewers redeem with the points they earned. Your staff check each code at the counter."
+          ]
+        },
+        {
+          "heading": "Reports that respect privacy",
+          "body": [
+            "See how your campaigns perform and which questions people answered correctly. Results only ever show groups of viewers, never individuals."
+          ]
+        },
+        {
+          "heading": "Getting started",
+          "body": [
+            "Create a business account, buy points to fund your rewards and publish your first campaign."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of use",
+      "description": "The rules for using YourTal, earning points and redeeming rewards.",
+      "lead": "These terms apply whenever you use YourTal.",
+      "sections": [
+        {
+          "heading": "Agreeing to these terms",
+          "body": [
+            "By creating an account you agree to these terms. If you don't agree, please don't use YourTal."
+          ]
+        },
+        {
+          "heading": "Your account",
+          "body": [
+            "One account per person, with accurate details. Keep your password private. You are responsible for what happens on your account."
+          ]
+        },
+        {
+          "heading": "Points",
+          "body": [
+            "Points are a reward for watching and answering. They have no cash value and can't be exchanged for cash, sold, transferred or used outside the region where you earned them.",
+            "We may keep points pending while we check activity."
+          ]
+        },
+        {
+          "heading": "Fair use",
+          "body": [
+            "Don't use bots, scripts, multiple accounts or anything else that fakes watching. If we find activity like this, we may cancel the points involved and suspend the account."
+          ]
+        },
+        {
+          "heading": "Rewards",
+          "body": [
+            "Vouchers are provided by the businesses that offer them and follow the conditions shown before you redeem."
+          ]
+        },
+        {
+          "heading": "Changes to these terms",
+          "body": [
+            "We may update these terms. We'll tell you about important changes before they apply."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "What YourTal collects, why, and who can see it.",
+      "lead": "How we handle your information.",
+      "sections": [
+        {
+          "heading": "What we collect",
+          "body": [
+            "Your email address and account details, the videos you watch, your answers, and the points and vouchers on your account. We also collect basic device and usage information to keep the service secure."
+          ]
+        },
+        {
+          "heading": "Why we collect it",
+          "body": [
+            "To run your account, work out your rewards, prevent fraud and improve the service."
+          ]
+        },
+        {
+          "heading": "What businesses see",
+          "body": [
+            "Businesses see combined results for groups of viewers. They never see your name, email address or individual activity."
+          ]
+        },
+        {
+          "heading": "What other people see",
+          "body": ["Nothing. YourTal has no public profiles, comments or follower counts."]
+        },
+        {
+          "heading": "Your region",
+          "body": [
+            "Your account belongs to the region you signed up in, and its information is kept separate from the other region."
+          ]
+        },
+        {
+          "heading": "Your choices",
+          "body": [
+            "You can ask to see, correct or delete your information by contacting us. We don't sell your personal information."
+          ]
+        }
+      ]
+    }
   }
 }

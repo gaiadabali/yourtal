@@ -219,3 +219,16 @@ export function buildCatalogueItemListJsonLd(
     })),
   };
 }
+
+/** `FAQPage` for the help page: each section heading is a question, its body the answer. */
+export function buildFaqPageJsonLd(items: readonly { question: string; answer: string }[]): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}

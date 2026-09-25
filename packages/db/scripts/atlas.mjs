@@ -24,9 +24,10 @@ import path from "node:path";
 // Pinned by digest, not by tag. `arigaio/atlas:latest` resolves to a
 // canary build that moves under you, and a migration tool that changes
 // between a developer's run and CI's is a bad surprise to have in the one
-// process that edits production schemas. This digest is v1.3.4.
+// process that edits production schemas. This digest is v1.3.3 (0.8.f: the
+// prior digest here was mislabelled v1.3.4 and was in fact a canary build).
 const ATLAS_IMAGE =
-  "arigaio/atlas@sha256:5a813e7fe345cc60a016cae50391805324f1fe04a9043e859afb29355a770cdd";
+  "arigaio/atlas:1.3.3@sha256:07f3f92fa46e684ed789d5ef344a25494a4fa6844ef1ea1fa4e138522c2c37ac";
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(packageRoot, "../..");

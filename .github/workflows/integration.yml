@@ -67,7 +67,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:17.11-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
         env:
           POSTGRES_USER: yourtal
           POSTGRES_PASSWORD: yourtal_local_only
@@ -175,7 +175,7 @@ jobs:
         run: |
           docker run -d --name yourtal-redis \
             -p 127.0.0.1:26379:6379 \
-            valkey/valkey:8-alpine valkey-server --save "" --appendonly no
+            valkey/valkey:8.1.10-alpine@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507 valkey-server --save "" --appendonly no
           for _ in $(seq 1 30); do
             if docker exec yourtal-redis valkey-cli ping 2>/dev/null | grep -q PONG; then
               exit 0
@@ -192,7 +192,7 @@ jobs:
             -p 127.0.0.1:26592:3592 \
             -v "$GITHUB_WORKSPACE/policies:/policies:ro" \
             -v "$GITHUB_WORKSPACE/infra/cerbos/config.yaml:/config/config.yaml:ro" \
-            ghcr.io/cerbos/cerbos:0.55.0 server --config=/config/config.yaml
+            ghcr.io/cerbos/cerbos:0.55.0@sha256:4b9d3b58c4f11c1b8953bc798d8d086e64f276882253ab169625fddc7f432515 server --config=/config/config.yaml
 
       - name: Wait for Cerbos, and assert it loaded actual policies
         run: |

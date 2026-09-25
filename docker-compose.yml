@@ -33,7 +33,7 @@ name: yourtal
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.11-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
     container_name: yourtal-postgres
     restart: unless-stopped
     environment:
@@ -60,7 +60,7 @@ services:
       - "log_min_duration_statement=200"
 
   cerbos:
-    image: ghcr.io/cerbos/cerbos:0.55.0
+    image: ghcr.io/cerbos/cerbos:0.55.0@sha256:4b9d3b58c4f11c1b8953bc798d8d086e64f276882253ab169625fddc7f432515
     container_name: yourtal-cerbos
     restart: unless-stopped
     # Loopback only. docs/10 and docs/15 specify a sidecar, never a shared PDP.
@@ -77,7 +77,7 @@ services:
       retries: 20
 
   redis:
-    image: valkey/valkey:8-alpine
+    image: valkey/valkey:8.1.10-alpine@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507
     container_name: yourtal-redis
     restart: unless-stopped
     ports:
@@ -178,7 +178,7 @@ services:
   # voucher keyring" in this file's own comments at the top for what to do
   # if a key needs regenerating.
   voucher-keygen:
-    image: alpine:3.22
+    image: alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
     container_name: yourtal-voucher-keygen
     volumes:
       - yourtal-voucher-keys:/keys

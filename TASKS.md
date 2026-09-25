@@ -32,8 +32,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | 🔄 in progress | 1/8 | 14/46 | `███░░░░░░░`  30% |
-| **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/42 | `░░░░░░░░░░`   0% |
+| **Phase 0** Reset | A | 🔄 in progress | 4/8 | 32/46 | `███████░░░`  70% |
+| **Phase 1** Identity, contracts & plumbing | A | · not started | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/3 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | · not started | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
 | **Phase 4** The bank is correct | A | · not started | 0/9 | 0/49 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **1/81** | **14/351** | `░░░░░░░░░░`   4% |
+| **All** | | | **4/81** | **32/352** | `█░░░░░░░░░`   9% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **0** Reset | 2026-09-25 | 0.2.a–d ✅ (0.2.e–f wait for 0.3.c). Now: 0.3, in `yourtal-1` on `phase/0` (session yourtal-74) |
+| 1 | `yourtal-1` | **0** Reset | 2026-09-25 | 0.2 ✅, 0.3 ✅, 0.6.a–c ✅. Now: 0.4 (gate) and 0.5 (helper agent); then 0.6.d, 0.7, 0.8.f–j (session yourtal-74) |
 | 2 | `yourtal-2` | — free | — | Phase 3 can start now (0.2.b ✅); worktree, `.env` and deps are ready |
 | 3 | `yourtal-3` | — free | — | Next: Phase 1, once Phase 0 ✅ |
 
@@ -117,6 +117,8 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F15** | Quick campaigns in the feed | **Under 60 s, no question.** Swipe, watch, earn. Anything 60 s or longer opens the full player. |
 | **F16** | Whose clock decides a streak day? | **One clock per region:** AU uses Australia/Sydney, ID uses Asia/Jakarta. |
 | **F12** | Economy numbers for staging | Set by the plan ("best mechanics for now"). Every one is a config value editable in the staff console (9.5) through the 1.2.f settings store, never a constant in code. See the table below. |
+| **F17** | Migration `20260922030000` opened its own transaction inside Atlas's, so it could never apply | **Fix it in place.** It had never been pushed or applied anywhere (no `atlas.sum` line; dev stopped at `20260922020000`). "Never edit a migration" protects applied history; an unapplied, unpushed one may be fixed. |
+| **F18** | F2's no-expiry weakens `docs/24` ID-1, which cited expiry as one of its four legs | **Off in both regions, for good.** Keep expiry built and switchable per region in the staff console. `docs/24` and `docs/25` now record ID-1 as resting on three legs. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -271,7 +273,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
   - [x] 0.1.b Commit this plan: `TASKS.md`, `CLAUDE.md`, `scripts/progress.mjs` and the deletion of `scripts/tasks.mjs` (archived as `docs/tasks/_generator-v1.mjs`), `.gitignore` (with `TASKS.md.lock`, `.claude/settings.local.json` and `apps/web/public/lab-media/`), `docs/audit/2026-09-25/`, the archive of the old board in `docs/tasks/`, and the gate removals (`quality.yml`, `release.yml`, `package.json`, `.githooks/pre-commit`, `.prettierignore`, `.gitattributes`, `README.md`). This closes the old board (EW-23).
   - [x] 0.1.c Fast-forward `main` to this branch and check out `main` in the main checkout. It keeps `b225116`, whose currency tagging we need; 0.3 finishes it. Do not push until 0.3 compiles.
   - [x] 0.1.d **Check:** `git status` is clean on `main`, and `wip/leftovers-2026-09-22` holds the leftovers.
-- [ ] **0.2 One isolated environment per slot** · needs: 0.1 (0.2.e needs 0.3.c) — 🔄 slot 1
+- [x] **0.2 One isolated environment per slot** · needs: 0.1 (0.2.e needs 0.3.c) — ✅ 2026-09-25 efffeda
   - [x] 0.2.a Add a top-level `name: yourtal` to `docker-compose.yml`. Zitadel is already removed (0.8.d). The worker (1.3) runs on the host with ffmpeg on PATH (this machine has ffmpeg 8.1.2 from winget); record that in `infra/PORTS.md`, and add no worker image or compose service. `pnpm dev:up` from the main checkout comes up healthy.
   - [x] 0.2.b Create the slot worktrees `../yourtal-1|2|3`, detached at `main` (setup commands above), each with `.claude/settings.local.json`. Each worktree's `.env` (copied from `.env.example`) gets:
     - the database `yourtal_s1|s2|s3` in DATABASE_URL, DATABASE_OWNER_URL, LEDGER_DATABASE_URL and VOUCHER_DATABASE_URL;
@@ -283,22 +285,22 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     `apps/web` gets `scripts/dev.mjs`, which loads the root `.env` and runs `next dev -p $WEB_PORT`. Both Playwright configs read `PLAYWRIGHT_PORT`; the offline config uses 26316, 26326 or 26336. The ledger and voucher ports stay reserved for 4.1; until then every slot uses the shared containers.
   - [x] 0.2.c Add the scripts `pnpm db:reset:slot` (drop, create, migrate and seed only this worktree's database) and `pnpm dev:cerbos` (run a Cerbos container named `yourtal-cerbos-1|2|3` on this worktree's port, mounting this worktree's `./policies`).
   - [x] 0.2.d Run `git worktree prune`. List the `worktree-agent-*` branches; delete those with no unmerged commits and note any that have some. Done 2026-09-25: nothing to prune; both `worktree-agent-*` branches had no unmerged commits and were deleted.
-  - [ ] 0.2.e After 0.3.c is on `main`, in each worktree run `node packages/db/scripts/test-db.mjs create yourtal_s1|s2|s3`, which drops, creates, migrates and seeds. Before 0.3.c it fails, because `atlas.sum` has no line for `20260922030000_currency_tagged_money.sql` and `seed.ts` still inserts `face_value_idr`.
-  - [ ] 0.2.f **Check** (after 0.2.e): all three worktrees run web and api side by side, and a migration applied in `yourtal-2` does not change `yourtal-1`'s schema.
-- [ ] **0.3 Unbreak HEAD: finish currency-tagged money (was YT-0513 part 2; EM-22, D1)** · needs: 0.1
-  - [ ] 0.3.a In the `apps/api` store module, change every `*Idr` field to `*Minor` + `currency`: `listing-assembler.ts`, `drizzle-listing.repository.ts`, the DTOs and the controllers. `assembleListings` must **throw** on a row that fails `listingSchema`, not silently drop it. The `listing_price_revision` and `settlement_decrease_request` `_idr` columns move to `*_minor` + currency in a new migration. `tsc` must be clean.
-  - [ ] 0.3.b In `apps/web`, fix the 26 files still reading `faceValueIdr` etc. Format money with **`listing.currency`, never the viewer's region**: `store/page.tsx:36,45`, `wallet-voucher-card.tsx:66`, `store-format.ts:45`. `tsc` must be clean.
-  - [ ] 0.3.c `packages/db`: make `seed.ts` insert the new columns, regenerate `atlas.sum`, and confirm a fresh `yourtal_scratch` database migrates and seeds cleanly.
-  - [ ] 0.3.d `services/voucher`: move `db/schema.sql`, `db/query/issue.sql` and `redeem.sql` to `*_minor` + currency, and regenerate from `services/voucher` with `MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W)":/src -w /src sqlc/sqlc:1.31.1 generate` (Git Bash rewrites the paths without `MSYS_NO_PATHCONV`). `InsertVoucher` copies `batch.currency`. At `redeem.go:241`, compare the request currency with the voucher's and return a new `currency_mismatch` outcome that is not counted as a probe (D10). `TestSqlcSchemaMatchesTheLiveDatabase` passes against `yourtal_s1` (see 0.3.f).
-  - [ ] 0.3.e The voucher-keygen generates **each missing key independently**: `for k in voucher_code merchant_hmac; do [ -f /keys/$k.v1.key ] || head -c 32 /dev/urandom | od -An -vtx1 | tr -d ' \n' > /keys/$k.v1.key; done`. The existing volume already has `voucher_code.v1.key`. Today's image predates the `merchant_hmac` check, so a 200 without `--build` proves nothing (D2).
-  - [ ] 0.3.f **Check:**
+  - [x] 0.2.e After 0.3.c is on `main`, in each worktree run `node packages/db/scripts/test-db.mjs create yourtal_s1|s2|s3`, which drops, creates, migrates and seeds. Before 0.3.c it fails, because `atlas.sum` has no line for `20260922030000_currency_tagged_money.sql` and `seed.ts` still inserts `face_value_idr`.
+  - [x] 0.2.f **Check** (after 0.2.e): all three worktrees run web and api side by side, and a migration applied in `yourtal-2` does not change `yourtal-1`'s schema.
+- [x] **0.3 Unbreak HEAD: finish currency-tagged money (was YT-0513 part 2; EM-22, D1)** · needs: 0.1 — ✅ 2026-09-25 d9762ae
+  - [x] 0.3.a In the `apps/api` store module, change every `*Idr` field to `*Minor` + `currency`: `listing-assembler.ts`, `drizzle-listing.repository.ts`, the DTOs and the controllers. `assembleListings` must **throw** on a row that fails `listingSchema`, not silently drop it. The `listing_price_revision` and `settlement_decrease_request` `_idr` columns move to `*_minor` + currency in a new migration. `tsc` must be clean.
+  - [x] 0.3.b In `apps/web`, fix the 26 files still reading `faceValueIdr` etc. Format money with **`listing.currency`, never the viewer's region**: `store/page.tsx:36,45`, `wallet-voucher-card.tsx:66`, `store-format.ts:45`. `tsc` must be clean.
+  - [x] 0.3.c `packages/db`: make `seed.ts` insert the new columns, regenerate `atlas.sum`, and confirm a fresh `yourtal_scratch` database migrates and seeds cleanly.
+  - [x] 0.3.d `services/voucher`: move `db/schema.sql`, `db/query/issue.sql` and `redeem.sql` to `*_minor` + currency, and regenerate from `services/voucher` with `MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W)":/src -w /src sqlc/sqlc:1.31.1 generate` (Git Bash rewrites the paths without `MSYS_NO_PATHCONV`). `InsertVoucher` copies `batch.currency`. At `redeem.go:241`, compare the request currency with the voucher's and return a new `currency_mismatch` outcome that is not counted as a probe (D10). `TestSqlcSchemaMatchesTheLiveDatabase` passes against `yourtal_s1` (see 0.3.f).
+  - [x] 0.3.e The voucher-keygen generates **each missing key independently**: `for k in voucher_code merchant_hmac; do [ -f /keys/$k.v1.key ] || head -c 32 /dev/urandom | od -An -vtx1 | tr -d ' \n' > /keys/$k.v1.key; done`. The existing volume already has `voucher_code.v1.key`. Today's image predates the `merchant_hmac` check, so a 200 without `--build` proves nothing (D2).
+  - [x] 0.3.f **Check:**
     - `tsc` is clean in web and api.
     - In `yourtal-1`: `set -a; . ./.env; set +a; (cd services/voucher && go test -count=1 -p 1 ./...) && (cd services/ledger && go test -count=1 -p 1 ./...)` passes. Go does not read `.env`; without this the tests use the unmigrated shared database. The pricing and reward `engine_test.go` still write to `yourtal` until 0.4.b, and that is accepted.
     - After the fast-forward, from the main checkout: `pnpm db:migrate && docker compose up -d --build --force-recreate --wait voucher-keygen voucher`, then voucher `/healthz` returns 200.
-- [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3
-  - [ ] 0.4.a Add `pnpm check`: line endings, format, typecheck, lint, and the unit tests that need no services. It should finish in under 3 minutes. `pnpm verify` becomes `check` plus the database, Go and Cerbos suites.
+- [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3 — 🔄 slot 1
+  - [x] 0.4.a Add `pnpm check`: line endings, format, typecheck, lint, and the unit tests that need no services. It should finish in under 3 minutes. `pnpm verify` becomes `check` plus the database, Go and Cerbos suites.
   - [ ] 0.4.b Every Go and TypeScript database suite runs against a `yourtal_test_*` database. A guard fails any test helper whose URL names a dev database; `engine_test.go:26` hard-codes one today. Once this is in, the Go tests stop writing fake AUD rates and coverage fixtures into dev data.
-  - [ ] 0.4.c Fix what is red today:
+  - [x] 0.4.c Fix what is red today:
     - CRLF in 4 files, with `.gitattributes` `eol=lf` rules so it cannot come back;
     - the 2 files failing Format in CI;
     - the `packages/db` `seed.test.ts` idempotency failure that keeps Integration red.
@@ -316,20 +318,20 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - CI and dev use Node 24 LTS: add `.nvmrc`, set `engines` to `>=24`, and use `node-version-file`. Check the Helios Node major in 2.1.
   - [ ] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-1`, merge them; otherwise record them here as ✂️ with the reason.
   - [ ] 0.4.g **Check:** every workflow is green on `main`, `pnpm check` is green in all three worktrees, and no workflow log shows a Node 20 deprecation warning.
-- [ ] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3
-  - [ ] 0.5.a Set `DEFAULT_REGION = "AU"` in `apps/web/features/region/get-region.ts:11`, and update `region-cookie-roundtrip.test.ts`.
-  - [ ] 0.5.b The merchant layout's `lang` comes from the device binding's locale, defaulting to `en-AU`, instead of the hard-coded `id-ID` at `app/(merchant)/layout.tsx:44`.
-  - [ ] 0.5.c Make the player pass `locale` to `AccrualIndicator` and `CompletionHandoff` (`video-player.tsx:76,108`), so English sentences stop saying "1.250 poin" (EW-22).
-  - [ ] 0.5.d Pin a region cookie in every e2e spec that assumes ID: `earn-journey`, `redeem-journey`, `spend-journey`, `open-view-journey`, `overflow-320` (have it read the pinned locale's catalogue), `keyboard-seek`, `find-bonus-accuracy-campaign`. Afterwards `grep -l "id-ID\|DEFAULT_REGION" apps/web/e2e` lists only pinned specs.
-  - [ ] 0.5.e **Check:** a fresh browser with no cookies sees English and AUD at `/`, and `/id` is still Indonesian.
-- [ ] **0.6 Retire the old story in the docs** · needs: 0.1
-  - [ ] 0.6.a `README.md`: remove the remaining false claims ("under 300 lines, enforced in CI"; the "six things" section's "Run the pilot before writing any code").
-  - [ ] 0.6.b Add a "Superseded by TASKS.md (2026-09-25)" banner to `docs/04-roadmap.md`. Add rows to `docs/16` for every **F** answer above and for each of these:
+- [x] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3 — ✅ 2026-09-25 3d166a2
+  - [x] 0.5.a Set `DEFAULT_REGION = "AU"` in `apps/web/features/region/get-region.ts:11`, and update `region-cookie-roundtrip.test.ts`.
+  - [x] 0.5.b The merchant layout's `lang` comes from the device binding's locale, defaulting to `en-AU`, instead of the hard-coded `id-ID` at `app/(merchant)/layout.tsx:44`.
+  - [x] 0.5.c Make the player pass `locale` to `AccrualIndicator` and `CompletionHandoff` (`video-player.tsx:76,108`), so English sentences stop saying "1.250 poin" (EW-22).
+  - [x] 0.5.d Pin a region cookie in every e2e spec that assumes ID: `earn-journey`, `redeem-journey`, `spend-journey`, `open-view-journey`, `overflow-320` (have it read the pinned locale's catalogue), `keyboard-seek`, `find-bonus-accuracy-campaign`. Afterwards `grep -l "id-ID\|DEFAULT_REGION" apps/web/e2e` lists only pinned specs.
+  - [x] 0.5.e **Check:** a fresh browser with no cookies sees English and AUD at `/`, and `/id` is still Indonesian. Verified 2026-09-25: `/` is `lang=en-AU` and all English (it shows no amounts), `/id` is Indonesian. `/store` still lists the ID-only mock catalogue in Rupiah to an AU visitor; that is 6.6.a (region-scoped store).
+- [ ] **0.6 Retire the old story in the docs** · needs: 0.1 — 🔄 slot 1
+  - [x] 0.6.a `README.md`: remove the remaining false claims ("under 300 lines, enforced in CI"; the "six things" section's "Run the pilot before writing any code").
+  - [x] 0.6.b Add a "Superseded by TASKS.md (2026-09-25)" banner to `docs/04-roadmap.md`. Add rows to `docs/16` for every **F** answer above and for each of these:
     - video-first social UI (it supersedes the board layout in docs/17 §1, while docs/17 §1.2's "do not copy" rules still hold);
     - self-hosted HLS through an ffmpeg worker, replacing Cloudflare Stream;
     - no user-to-user interaction anywhere on the platform (see Phase 3);
     - B4 (24 → no expiry by default), K2 (IDR 8 → 9) and docs/18 §1 ("IDR in sen") superseded.
-  - [ ] 0.6.c Bring `docs/24` and `docs/25` from `wip/leftovers-2026-09-22` onto `main`, and amend them to match F2: no expiry by default, Helios acceptable for production.
+  - [x] 0.6.c Bring `docs/24` and `docs/25` from `wip/leftovers-2026-09-22` onto `main`, and amend them to match F2: no expiry by default, Helios acceptable for production.
   - [ ] 0.6.d **Check:** no document still describes Indonesia-first, Zitadel, phone OTP, 24-month expiry or IDR-in-sen as current.
 - [ ] **0.7 IDR in whole Rupiah (decision T-1): a data migration, not a constant** · needs: 0.3
   - [ ] 0.7.a Add a migration that divides IDR amounts by 100 where `currency = 'IDR'`. It covers `store.listings`, `voucher.vouchers`, `store.listing_price_revision`, `store.settlement_decrease_request`, and every ledger entry, allocation, purchase and pricing-rate row. The ID rates become micros per point: B = 6_000_000, P_issue = 9_000_000.
@@ -416,6 +418,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - bump `INTEREST_TAXONOMY_VERSION`;
     - a test fails if any entry is sensitive (health, religion, ethnicity, sexuality, politics, financial hardship), which keeps red line 6.
   - [ ] 1.1.f `questionsAskedFor(d)` in `question-bank.ts` implements F10 (`d < 60` → 0, otherwise `max(1, min(5, floor(d/300)))`). The 1.1.b migration also adds `campaign.terms_version.accuracy_bonus_points`, a CHECK that questions asked ≤ 5, and a required `answerable_after_seconds` on questions.
+  - [ ] 1.1.h A listing's `currency` comes from its business's region on the server. Until then, `POST /api/:tenantId/store/listings` takes it in the body (0.3.a); remove that field then.
   - [ ] 1.1.g **Check:** contracts and migrations land together and `pnpm check` is green.
 - [ ] **1.2 Internal ledger and voucher contracts, with fakes that behave like the real thing** · needs: 1.1
   - [ ] 1.2.a `ledger-internal` covers:
@@ -1205,6 +1208,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 - **F9:** someone owns the economy numbers, and confirms the F12 defaults.
 - Helios for production is acceptable (F2), but check the APP 8 position for Australian personal data with counsel.
 - Minimum ages cited in `docs/24` (AU-9, ID-12), and the teen-mode review (12.4).
+- Counsel reviews `docs/24` ID-1 with expiry off (F18): points are then loyalty, not e-money, on three legs rather than four.
 - The founder re-signs the risk acceptance.
 - Entities: an AU Pty Ltd and an ID PT.
 - PSE registration (ID).
@@ -1232,6 +1236,9 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-25 · A · 0.5 A first visit is English: AU by default, merchant `lang` from the device, player and earn-board copy from the catalogues · 3d166a2
+- 2026-09-25 · A · 0.2 Three slot worktrees run web, api and Cerbos side by side on their own databases; a migration in one leaves the others alone · efffeda
+- 2026-09-25 · A · 0.3 HEAD compiles: store, web, seed and voucher service on `*_minor` + currency; migrations apply again; voucher `/healthz` 200 · d9762ae
 - 2026-09-25 · plan · Sessions now run one phase each, in slots 1–3; the Running order table says which phases can run together
 - 2026-09-25 · A · 0.8.d–e MinIO on a maintained fork pinned by digest, Zitadel removed, Dependabot on · 163f309
 - 2026-09-25 · A · 0.8.c Go advisories to zero (chi 5.3.2 without RealIP, x/text 0.42.0, go1.26.8) · e0d8f1c

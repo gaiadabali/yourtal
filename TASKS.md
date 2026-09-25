@@ -676,7 +676,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - the public header and footer.
     
     (requested by C) Remove the business tab from the viewer shell.
-  - [ ] 3.5.d Move `(app)/page.tsx` to `(app)/home/page.tsx`. In the same merge, add these to `route-redirects.ts`: `/` → `/home` when signed in, and `/` → `/au` when signed out, until 11.1.a.
+  - [ ] 3.5.d Move `(app)/page.tsx` to `(app)/home/page.tsx`. In the same merge, add these to `route-redirects.ts`: `/` → `/home` when signed in, and `/` → `/au` when signed out, until 11.1.a. — ⛔ 1.7.c (`route-redirects.ts` and the `yt_session` check do not exist yet; moving the page first would 404 `/`)
   - [ ] 3.5.e **Check:** the feed holds at most 3 `<video>` elements after scrolling 20 items, and nothing links to `/business` from the viewer shell.
 - [ ] **3.6 Brand, gallery and visual tests** · needs: 3.4
   - [ ] 3.6.a Brand: the wordmark "YourTal" in Bricolage Grotesque 800, with the points coin glyph as the mark. Favicon, maskable icons and the web manifest. Today `/favicon.ico` returns 404.

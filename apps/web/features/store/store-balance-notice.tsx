@@ -64,7 +64,7 @@ export function StoreBalanceNotice({
       </p>
       <div className="flex flex-wrap gap-2">
         <Button asChild size="sm" variant="secondary">
-          <Link href="/">{t("balance.earnAtEarn")}</Link>
+          <Link href="/home">{t("balance.earnAtEarn")}</Link>
         </Button>
         <Button asChild size="sm" variant="secondary">
           <Link href="/quick">{t("balance.tryQuick")}</Link>

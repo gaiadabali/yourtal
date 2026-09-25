@@ -14,7 +14,7 @@ describe("StoreBalanceNotice", () => {
       />,
     );
     expect(screen.getByText(/kurang 1\.491\.600 poin lagi/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /earn/i })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /earn/i })).toHaveAttribute("href", "/home");
     expect(screen.getByRole("link", { name: /quick/i })).toHaveAttribute("href", "/quick");
   });
 
@@ -41,7 +41,7 @@ describe("StoreBalanceNotice (en-AU, YT-0405)", () => {
       />,
     );
     expect(screen.getByText("You need 1,491,600 more points.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /earn/i })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /earn/i })).toHaveAttribute("href", "/home");
     expect(screen.getByRole("link", { name: /quick/i })).toHaveAttribute("href", "/quick");
   });
 

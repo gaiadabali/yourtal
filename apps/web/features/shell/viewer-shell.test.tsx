@@ -35,7 +35,7 @@ describe("ViewerShell", () => {
         <p>content</p>
       </ViewerShell>,
     );
-    expect(screen.getByRole("link", { name: "YourTal" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "YourTal" })).toHaveAttribute("href", "/home");
     expect(screen.getByRole("searchbox", { name: "Search YourTal" })).toHaveAttribute("name", "q");
     expect(screen.getByLabelText("8,400 points available")).toBeInTheDocument();
   });

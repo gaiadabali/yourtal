@@ -23,7 +23,7 @@ export function WalletEmptyState({ locale }: WalletEmptyStateProps) {
         <p className="text-base font-semibold text-fg">{t("emptyState.heading")}</p>
         <p className="max-w-sm text-sm text-fg-muted">{t("emptyState.body")}</p>
         <Button asChild>
-          <Link href="/">{t("emptyState.cta")}</Link>
+          <Link href="/home">{t("emptyState.cta")}</Link>
         </Button>
       </CardContent>
     </Card>

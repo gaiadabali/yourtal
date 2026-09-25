@@ -1,16 +1,15 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
- * Load a page and wait until its client code has loaded. A click before React
- * hydrates does nothing, which a fast local machine never shows and a cold CI
- * runner always does.
+ * Load a page and wait for its load event. Not `networkidle`: some pages keep
+ * a request open (in CI there is no API to answer it), so the network never
+ * goes idle. Hydration lag is handled where it matters, by retrying the action.
  */
 export async function gotoSettled(page: Page, url: string): Promise<void> {
-  await page.goto(url);
-  await page.waitForLoadState("networkidle");
+  await page.goto(url, { waitUntil: "load" });
 }
 
-/** Click until `opened` appears: hydration can still lag a moment after the network is idle. */
+/** Click until `opened` appears: a click before React hydrates does nothing. */
 export async function clickUntilVisible(trigger: Locator, opened: Locator): Promise<void> {
   await expect(async () => {
     // Once it is open, a second click would land on the modal overlay instead.

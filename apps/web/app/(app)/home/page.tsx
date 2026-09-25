@@ -19,7 +19,7 @@ import { getRegionDisplayConfig } from "@/features/region/get-region";
  * docs/13b-typescript-standards.md §8: this file carries no `"use client"`
  * directive; the only interactive piece is `CampaignBoardControls`, a leaf.
  */
-export default async function EarnBoardPage(props: PageProps<"/">) {
+export default async function EarnBoardPage(props: PageProps<"/home">) {
   const searchParams = await props.searchParams;
   const { sort, kind } = parseCampaignBoardParams(searchParams);
   const { locale } = await getRegionDisplayConfig();

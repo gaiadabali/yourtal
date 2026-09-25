@@ -24,7 +24,7 @@ import type { SupportedLocale } from "./nav-i18n";
 // time. Keeping this list literal (rather than widened to `string`) is what
 // lets `<Link href={item.href}>` in nav-link.tsx typecheck against Next's
 // generated route types.
-export type TabHref = "/" | "/quick" | "/store" | "/wallet" | "/me";
+export type TabHref = "/home" | "/quick" | "/store" | "/wallet" | "/me";
 
 export type NavLabelKey = "home" | "watch" | "store" | "wallet" | "me";
 
@@ -36,7 +36,7 @@ export interface NavItem {
 }
 
 export const navItems: readonly NavItem[] = [
-  { href: "/", labelKey: "home", icon: Home, matchPrefixes: ["/campaign", "/watch"] },
+  { href: "/home", labelKey: "home", icon: Home, matchPrefixes: ["/campaign", "/watch"] },
   { href: "/quick", labelKey: "watch", icon: PlayCircle },
   { href: "/store", labelKey: "store", icon: Store },
   { href: "/wallet", labelKey: "wallet", icon: Wallet },

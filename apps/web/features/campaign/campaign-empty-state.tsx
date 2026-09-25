@@ -36,7 +36,7 @@ export function CampaignEmptyState({ kind, locale }: CampaignEmptyStateProps) {
       </p>
       {filterLabel ? (
         <Button asChild variant="secondary">
-          <Link href="/">{t("campaign.emptyShowAll")}</Link>
+          <Link href="/home">{t("campaign.emptyShowAll")}</Link>
         </Button>
       ) : null}
     </div>

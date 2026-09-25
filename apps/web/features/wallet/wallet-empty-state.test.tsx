@@ -15,7 +15,7 @@ describe("WalletEmptyState (id-ID)", () => {
     render(<WalletEmptyState locale="id-ID" />);
 
     const link = screen.getByRole("link", { name: /Earn/ });
-    expect(link).toHaveAttribute("href", "/");
+    expect(link).toHaveAttribute("href", "/home");
   });
 });
 
@@ -24,7 +24,10 @@ describe("WalletEmptyState (en-AU, YT-0405)", () => {
     const { container } = render(<WalletEmptyState locale="en-AU" />);
 
     expect(screen.getByText(/watching short videos/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Find a video in Earn/ })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /Find a video in Earn/ })).toHaveAttribute(
+      "href",
+      "/home",
+    );
     expect(container.textContent).not.toMatch(/\bpoin\b|menonton/i);
   });
 });

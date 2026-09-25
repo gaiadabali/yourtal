@@ -11,7 +11,7 @@ export default function CampaignNotFound() {
         melihat campaign yang masih berjalan.
       </p>
       <Button asChild variant="secondary">
-        <Link href="/">Kembali ke Earn</Link>
+        <Link href="/home">Kembali ke Earn</Link>
       </Button>
     </div>
   );

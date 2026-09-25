@@ -42,7 +42,7 @@ export function TopBar({ locale, availablePoints }: TopBarProps) {
 
   return (
     <header className="sticky top-0 z-(--z-nav) flex items-center gap-3 border-b border-border-subtle bg-surface pl-gutter-sm pr-gutter-sm py-2 md:pl-gutter-md md:pr-gutter-md lg:pl-56">
-      <Link href="/" className="shrink-0">
+      <Link href="/home" className="shrink-0">
         <Wordmark />
       </Link>
       <form action="/store" method="get" role="search" className="min-w-0 flex-1">

@@ -7,16 +7,17 @@ const VIEWPORTS = { mobile: { width: 390, height: 844 }, desktop: { width: 1280,
  * 3.5.e (second half): nothing in the viewer shell links to `/business`
  * (requested by C), and the breakpoint the shell promises actually holds in
  * a real browser — bottom tabs below 1024px, the side rail from 1024px up.
- * `/store` renders today with no session (task 3.5.d, which would move `/`
- * behind a redirect, is blocked), so it is the cheapest real `(app)` route
- * to check the shell against.
+ * `/lab/shell` renders the real shell full-page without a session, which
+ * every (app) route needs since 1.7.c.
  */
 for (const [name, viewport] of Object.entries(VIEWPORTS)) {
   test.describe(`viewer shell at ${name} (${viewport.width}px)`, () => {
     test.use({ viewport });
 
     test("no shell link points at /business", async ({ page }) => {
-      await gotoSettled(page, "/store");
+      await gotoSettled(page, "/lab/shell");
+      // The page streams; wait for the shell before reading its links.
+      await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(1);
       const hrefs = await page
         .locator("nav a[href], header a[href]")
         .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
@@ -31,7 +32,8 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
 }
 
 test("the bottom nav is visible at 390px and the side nav at 1280px", async ({ page }) => {
-  await gotoSettled(page, "/store");
+  await gotoSettled(page, "/lab/shell");
+  await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(1);
 
   await page.setViewportSize(VIEWPORTS.mobile);
   const primaryNavs = page.getByRole("navigation", { name: "Primary" });

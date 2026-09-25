@@ -5,8 +5,8 @@
  * itself (Area A-owned) so a redirect rule never requires touching the auth
  * gate.
  *
- * Example (3.5.d, not yet added): `/` → `/home` when signed in, `/` → `/au`
- * when signed out.
+ * `/` is the signed-in home at `/home`; signed out it is the AU landing page
+ * until 11.1.a gives `/` a public page of its own.
  */
 export interface RouteRedirectRule {
   /** Exact pathname to match (no query string, no trailing slash). */
@@ -15,4 +15,7 @@ export interface RouteRedirectRule {
   resolve(context: { readonly signedIn: boolean }): string | null;
 }
 
-export const routeRedirects: readonly RouteRedirectRule[] = [];
+export const routeRedirects: readonly RouteRedirectRule[] = [
+  // Area B (3.5.d).
+  { path: "/", resolve: ({ signedIn }) => (signedIn ? "/home" : "/au") },
+];

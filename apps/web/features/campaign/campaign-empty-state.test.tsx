@@ -13,7 +13,7 @@ describe("CampaignEmptyState", () => {
     render(<CampaignEmptyState kind="long_form" locale="id-ID" />);
     expect(screen.getByRole("link", { name: /tampilkan semua campaign/i })).toHaveAttribute(
       "href",
-      "/",
+      "/home",
     );
   });
 

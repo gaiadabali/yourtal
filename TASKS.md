@@ -35,7 +35,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 3/7 | 27/44 | `██████░░░░`  61% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 26/32 | `████████░░`  81% |
+| **Phase 3** Design language | B | 🔄 in progress | 4/6 | 27/32 | `████████░░`  84% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 1/9 | 22/52 | `████░░░░░░`  42% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **16/82** | **121/366** | `███░░░░░░░`  33% |
+| **All** | | | **16/82** | **122/366** | `███░░░░░░░`  33% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct — ⏸ waits for 1.2 on `main` | 2026-09-25 | Done early (F21/F22/F24, all merged by a35cf23): 4.1.a, 4.2, 4.3.a–d, 4.4.e/f/h/i/k, 4.9.b/c, 4.6.a–e, the burn engine for 4.3.e. Everything left needs the 1.2.a/b contracts on `main` (ticked on `phase/1`, not merged yet); resume with 4.1.b then |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 1.2 ✅ on `main`, resumed (`phase/4`). Done early (F21/F22/F24): 4.1.a, 4.2, 4.3.a–d, 4.4.e/f/h/i/k, 4.9.b/c, 4.6.a–e, the 4.3.e burn engine. Now 4.1.b live routes, then 4.1.c client, 4.3.e route, 4.5 |
 | 2 | `yourtal-2` | **3** Design language | 2026-09-25 | 3.1–3.4 ✅; 3.5 ✅ except 3.5.d (⛔ 1.7.c). Now 3.6 brand and visual tests |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-25 | 1.1 ✅ (98d7aa1); 1.2 ✅ (bbf01bd); 1.3 ✅ (199958e). Three agents: A (`yourtal-3`, `phase/1`) now on 1.5.d (PdpGuard async resource-attribute loader, exempt from area ownership) then 1.5.c, stopping before 1.5.a/b/e/f until B's 1.4 merges; B (`yourtal-p1-b`, `phase/1-b`) still on 1.4 (editing auth.controller.ts/auth.service.ts) → rest of 1.6 → 1.7; C (`yourtal-p1-c`, `phase/1-c`) done with 1.2.f |
 
@@ -681,7 +681,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
 - [ ] **3.6 Brand, gallery and visual tests** · needs: 3.4 — 🔄 slot 2
   - [ ] 3.6.a Brand: the wordmark "YourTal" in Bricolage Grotesque 800, with the points coin glyph as the mark. Favicon, maskable icons and the web manifest. Today `/favicon.ico` returns 404.
   - [ ] 3.6.b A gallery at `(lab)/lab/ui`, with Playwright `toHaveScreenshot` baselines for every primitive at 390 px and 1280 px, light and dark. `pnpm test:visual` runs inside `mcr.microsoft.com/playwright:<installed version>-noble` for both generating and comparing, and the snapshot path has no platform suffix, so baselines made on Windows match CI on Linux.
-  - [ ] 3.6.c Lint in B's `features/**`: ban raw `<button>`, `<select>`, `<table>` and `<input>`, and ban JSX string literals. Warn for now; it becomes an error in 6.1.
+  - [x] 3.6.c Lint in B's `features/**`: ban raw `<button>`, `<select>`, `<table>` and `<input>`, and ban JSX string literals. Warn for now; it becomes an error in 6.1.
   - [ ] 3.6.d **Check:** `pnpm test:visual` passes locally and in CI.
 
 **Done when:** the founder has picked a variant from real motion captures, and every primitive, video component and shell exists in the gallery in light and dark at phone and desktop widths.

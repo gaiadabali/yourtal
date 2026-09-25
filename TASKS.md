@@ -32,10 +32,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
-| **Phase 0** Reset | A | ⛔ blocked | 7/8 | 46/47 | `██████████`  98% |
+| **Phase 0** Reset | A | ✅ done | 8/8 | 46/47 | `██████████`  98% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/23 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 0/6 | 0/31 | `░░░░░░░░░░`   0% |
+| **Phase 3** Design language | B | 🔄 in progress | 0/6 | 0/32 | `░░░░░░░░░░`   0% |
 | **Phase 4** The bank is correct | A | · not started | 0/9 | 0/49 | `░░░░░░░░░░`   0% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **7/82** | **46/361** | `█░░░░░░░░░`  13% |
+| **All** | | | **8/82** | **46/362** | `█░░░░░░░░░`  13% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -55,7 +55,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 
 | Wave | Phase (one session each) | Starts when | Size |
 | --- | --- | --- | --- |
-| 1 | **0** Reset | ✅ done 2026-09-25 (only 0.4.h is left, waiting for 3.1.d) | ~2.5d |
+| 1 | **0** Reset | ✅ done 2026-09-25 | ~2.5d |
 | 1 | **3** Design language | 0.2.b ✅. It needs no database. Until 0.3, 0.5 and 0.7 are merged it stays out of `apps/web/features/**`, `app/(app)/**`, `app/(merchant)/**` and the existing e2e specs, and its first merge waits for 0.4. | ~6d, plus your F3 pick |
 | 2 | **1** Identity, contracts & plumbing | Phase 0 ✅ | ~4d |
 | 3 | **4** The bank is correct | Phase 1 ✅ | ~9d |
@@ -299,7 +299,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - `tsc` is clean in web and api.
     - In `yourtal-1`: `set -a; . ./.env; set +a; (cd services/voucher && go test -count=1 -p 1 ./...) && (cd services/ledger && go test -count=1 -p 1 ./...)` passes. Go does not read `.env`; without this the tests use the unmigrated shared database. The pricing and reward `engine_test.go` still write to `yourtal` until 0.4.b, and that is accepted.
     - After the fast-forward, from the main checkout: `pnpm db:migrate && docker compose up -d --build --force-recreate --wait voucher-keygen voucher`, then voucher `/healthz` returns 200.
-- [ ] **0.4 One green gate, and tests off the dev database** · needs: 0.3 — ⛔ 0.4.a–g ✅ 2026-09-25 0758d48; only 0.4.h is left, and it waits for 3.1.d
+- [x] **0.4 One green gate, and tests off the dev database** · needs: 0.3 — ✅ 2026-09-25 0758d48
   - [x] 0.4.a Add `pnpm check`: line endings, format, typecheck, lint, and the unit tests that need no services. It should finish in under 3 minutes. `pnpm verify` becomes `check` plus the database, Go and Cerbos suites.
   - [x] 0.4.b Every Go and TypeScript database suite runs against a `yourtal_test_*` database. A guard fails any test helper whose URL names a dev database; `engine_test.go:26` hard-codes one today. Once this is in, the Go tests stop writing fake AUD rates and coverage fixtures into dev data.
   - [x] 0.4.c Fix what is red today:
@@ -319,7 +319,7 @@ One session, from day 1. Unbreak `main`, retire the old process, move IDR to who
     - Pin `runs-on: ubuntu-24.04`, because `ubuntu-latest` moves to 26.04 on 2026-10-19.
     - CI and dev use Node 24 LTS: add `.nvmrc`, set `engines` to `>=24`, and use `node-version-file`. Check the Helios Node major in 2.1.
   - [x] 0.4.f Diff the 14 business test-isolation files on `wip/leftovers-2026-09-22` against `main`. If they pass `pnpm verify` in `yourtal-1`, merge them; otherwise record them here as ✂️ with the reason.
-  - [ ] 0.4.h Once 3.1.d adds `pnpm --filter @yourtal/web test:rendered`, run it in `pnpm verify` and in `integration.yml` (split from 0.4.d) — ⛔ 3.1.d
+  - [ ] 0.4.h Once 3.1.d adds `pnpm --filter @yourtal/web test:rendered`, run it in `pnpm verify` and in `integration.yml` (split from 0.4.d) — ✂️ cut: moved to 3.1.h, where the command is created
   - [x] 0.4.g **Check:** every workflow is green on `main`, `pnpm check` is green in all three worktrees, and no workflow log shows a Node 20 deprecation warning.
 - [x] **0.5 English by default: the quick fix (the full i18n work is 6.1)** · needs: 0.3 — ✅ 2026-09-25 3d166a2
   - [x] 0.5.a Set `DEFAULT_REGION = "AU"` in `apps/web/features/region/get-region.ts:11`, and update `region-cookie-roundtrip.test.ts`.
@@ -599,6 +599,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     `next build` fails until 0.3 is on `main`, so do 3.1.d and 3.1.g after rebasing past 0.3; check 3.1.a–c with `next dev`.
   - [ ] 3.1.e `i18n/request.ts` loads every `messages/<locale>/*.json` that exists, with no hard-coded list, and the parity test globs the same way. Then C can add its own catalogues without touching B's files.
   - [ ] 3.1.f (requested by A for 2.3.a) `RootDocument` renders `<StagingBanner/>` when `APP_ENV=staging`, and `robots.ts` disallows everything there.
+  - [ ] 3.1.h (requested by A, moved from 0.4.h) Add `pnpm --filter @yourtal/web test:rendered` to root `pnpm verify` and as a step in `.github/workflows/integration.yml`; this one line in each file is yours to edit.
   - [ ] 3.1.g **Check:** the team invite dialog is visible and usable, axe is clean on the gate's routes, and the banner shows with `APP_ENV=staging`.
 - [ ] **3.2 Two prototypes, and the founder picks one (F3)** · needs: 0.2.b
   - [ ] 3.2.a Media: `apps/web/app/(lab)/lab/fetch-media.mjs` downloads 6 vertical and 2 horizontal Pexels clips into `apps/web/public/lab-media/` (gitignored), with each clip's URL and licence in `CREDITS.txt`.
@@ -1249,7 +1250,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
-- 2026-09-25 · A · Phase 0 done: every workflow green on `main`, 0 open GitHub alerts, `pnpm verify` green; only 0.4.h is left, waiting for 3.1.d · 0758d48
+- 2026-09-25 · A · Phase 0 done: every workflow green on `main`, 0 open GitHub alerts, `pnpm verify` green; 0.4.h moved to 3.1.h · 0758d48
 - 2026-09-25 · A · 0.8 Clean stack: latest secure versions, images pinned by digest, atlas 1.3.3, openapi-generator 7.25.0, 0 advisories · 0758d48
 - 2026-09-25 · A · 0.7 IDR is whole Rupiah: exact data migration (refuses to round), exponent 0, literals converted, drivers declare their unit · 76ac899
 - 2026-09-25 · A · 0.6 The docs tell the current story: README, docs/16 section U, docs/24–25 on main and amended, and a sweep of 11 docs · 3a097c2

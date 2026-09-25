@@ -52,6 +52,28 @@ interfaces, which on a laptop on a café network is the whole problem.
 `apps/api` defaults to `PORT=3001` and `apps/web` to `3000` locally; neither
 is in the `26xxx` scheme because neither is containerised.
 
+### Slot worktrees — `../yourtal-1|2|3`
+
+Parallel sessions each run in a slot worktree with its own database
+(`yourtal_s1|s2|s3`), Valkey DB index (`/1|2|3`) and MinIO bucket
+(`yourtal-media-1|2|3`), all on the shared compose stack above. Only the
+main checkout runs compose. The ports are set in each worktree's `.env`.
+
+| Slot | web   | api   | ledger | voucher | Playwright | offline e2e | Cerbos |
+| ---- | ----- | ----- | ------ | ------- | ---------- | ----------- | ------ |
+| 1    | 26310 | 26311 | 26312  | 26313   | 26314      | 26316       | 26315  |
+| 2    | 26320 | 26321 | 26322  | 26323   | 26324      | 26326       | 26325  |
+| 3    | 26330 | 26331 | 26332  | 26333   | 26334      | 26336       | 26335  |
+
+- web and api read `WEB_PORT` and `PORT`; Playwright reads `PLAYWRIGHT_PORT`
+  (the offline config adds 2).
+- Cerbos runs as the container `yourtal-cerbos-<slot>` via `pnpm dev:cerbos`,
+  serving that worktree's `./policies`.
+- The ledger and voucher ports are reserved; until per-slot services exist
+  every slot uses the shared containers on 26910 and 26911.
+- The media worker runs on the host, not in compose, and needs `ffmpeg` on
+  PATH (the dev machine has ffmpeg 8.1.2 from winget). It takes no port.
+
 ### Helios
 
 Surveyed live 2026-09-21 ~23:5x. **Both YourTal listeners bind `127.0.0.1`.

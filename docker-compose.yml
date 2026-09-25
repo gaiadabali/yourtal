@@ -26,6 +26,11 @@
 # is generated straight into the named volume instead of anywhere a
 # `git add -A` could ever reach.
 
+# Pinned so every checkout (slot worktrees included) names the same stack.
+# Worktrees must still run no compose command: this name makes them act on
+# the shared one.
+name: yourtal
+
 services:
   postgres:
     image: postgres:17-alpine

@@ -1,5 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// The slot's PLAYWRIGHT_PORT lives in the root .env; Playwright does not read it.
+try {
+  process.loadEnvFile(new URL("../../.env", import.meta.url));
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+}
+
+// Two above the main suite's port, so both can run at once.
+const port = Number(process.env["PLAYWRIGHT_PORT"] ?? 3100) + 2;
+
 /**
  * A deliberately SEPARATE Playwright config from `playwright.config.ts`,
  * for exactly one spec: `e2e/offline-voucher-detail.spec.ts` (YT-0424,
@@ -55,7 +65,7 @@ export default defineConfig({
   timeout: 60_000,
 
   use: {
-    baseURL: "http://127.0.0.1:3102",
+    baseURL: `http://127.0.0.1:${port}`,
     trace: "on-first-retry",
   },
 
@@ -67,8 +77,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "pnpm build && next start --port 3102",
-    url: "http://127.0.0.1:3102",
+    command: `pnpm build && next start --port ${port}`,
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env["CI"],
     timeout: 300_000,
   },

@@ -1,5 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// The slot's PLAYWRIGHT_PORT lives in the root .env; Playwright does not read it.
+try {
+  process.loadEnvFile(new URL("../../.env", import.meta.url));
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+}
+
+const port = Number(process.env["PLAYWRIGHT_PORT"] ?? 3100);
+
 /**
  * Real-browser verification for the acceptance criteria jsdom cannot reach:
  * YT-0401's 320 px and 200 % zoom, YT-0402's layout stability, and
@@ -20,7 +29,7 @@ export default defineConfig({
   reporter: process.env["CI"] ? "github" : "list",
 
   use: {
-    baseURL: "http://127.0.0.1:3100",
+    baseURL: `http://127.0.0.1:${port}`,
     trace: "on-first-retry",
   },
 
@@ -49,8 +58,8 @@ export default defineConfig({
   webServer: {
     // A production build, not `next dev`: layout stability and bundle
     // behaviour differ, and these tests exist to check the shipped thing.
-    command: "pnpm build && pnpm start --port 3100",
-    url: "http://127.0.0.1:3100",
+    command: `pnpm build && pnpm start --port ${port}`,
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env["CI"],
     timeout: 300_000,
   },

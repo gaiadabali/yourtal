@@ -32,7 +32,7 @@ const voucher: Voucher = {
   status: "active",
   issuedAt: "2026-09-01T00:00:00.000Z",
   expiresAt: "2026-12-01T00:00:00.000Z",
-} as Voucher;
+};
 
 describe("MerchantReviewForm", () => {
   it("defaults the amount to the full effective remaining value", () => {

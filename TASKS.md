@@ -35,8 +35,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 0/7 | 0/43 | `░░░░░░░░░░`   0% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/24 | `░░░░░░░░░░`   0% |
-| **Phase 3** Design language | B | 🔄 in progress | 0/6 | 5/32 | `██░░░░░░░░`  16% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 0/9 | 0/49 | `░░░░░░░░░░`   0% |
+| **Phase 3** Design language | B | 🔄 in progress | 0/6 | 6/32 | `██░░░░░░░░`  19% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 0/9 | 1/49 | `░░░░░░░░░░`   2% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | · not started | 0/3 | 0/10 | `░░░░░░░░░░`   0% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **8/82** | **51/362** | `█░░░░░░░░░`  14% |
+| **All** | | | **8/82** | **53/362** | `██░░░░░░░░`  15% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -593,7 +593,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 3.1.a Add `@source "../../../packages/ui/src";` after the Tailwind import in `apps/web/app/globals.css`. Today 57 `packages/ui` classes are never compiled, which is why Dialog opens at `top: 1596px` on an 800 px screen.
   - [x] 3.1.b Add a base layer: `html { color-scheme }` and body background, text colour and font from the tokens.
   - [x] 3.1.c Rewrite `select.tsx:48` in Tailwind v4 syntax.
-  - [ ] 3.1.d A rendered-output gate, run as `pnpm --filter @yourtal/web test:rendered` (A adds it to `pnpm verify` and CI in 0.4.d):
+  - [x] 3.1.d A rendered-output gate, run as `pnpm --filter @yourtal/web test:rendered` (A adds it to `pnpm verify` and CI in 0.4.d):
     - a spec that opens a Dialog and asserts it sits inside the viewport;
     - axe color-contrast in both themes, on 6 routes that stay public after 1.7.c (`/`, `/id`, `/login` and the `(lab)` pages);
     - a check that no `packages/ui` class is missing from the built CSS.
@@ -687,7 +687,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
 The money engines are sound libraries with **confirmed defects and no callers**. Fix each defect with a regression test that fails on the audit's scenario first, then expose the engines. Defect IDs point into `docs/audit/2026-09-25/`: `engine-money.md` (EM-), `engine-voucher.md` (D) and `engine-watch.md` (EW-). The order below is chosen to replace B's and C's fakes as early as possible. **The regions are separate economies** (F2): every account, rate, allocation, reserve and voucher is region-scoped, and the ledger refuses anything that crosses.
 
 - [ ] **4.1 Ledger internal API (was YT-0593; EM-03)** · needs: 1.2 (4.1.a early, F21) — 🔄 slot 1
-  - [ ] 4.1.a Service authentication for loopback calls. Each caller (api, worker) signs method, path, body and timestamp with an HMAC shared secret. Reject more than 60 s of skew, and keep a replay cache.
+  - [x] 4.1.a Service authentication for loopback calls. Each caller (api, worker) signs method, path, body and timestamp with an HMAC shared secret. Reject more than 60 s of skew, and keep a replay cache. The canonical string (for the TS signer in 1.2.d / 4.1.c) is in `services/ledger/internal/serviceauth`; secret `LEDGER_SERVICE_SECRET`.
   - [ ] 4.1.b Replace the four 501 routes (`services/ledger/internal/api/routes.go:80-106`) with the 1.2.a operations the existing engines already support: balance, history, quote (priced at server `now()` only, EM-19), purchases and grants. Add the rest as their tasks land.
   - [ ] 4.1.c Implement the HTTP side of `ledger-client` for the 4.1.b operations. Staging stays on `LEDGER_MODE=fake` until every 1.2.a operation has a live route (4.9.e).
   - [ ] 4.1.d **Check:** the contract-spec cases for the 4.1.b operations pass against live, the rest are `it.todo` until their task lands, and the ledger rejects an unsigned call.

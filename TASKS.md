@@ -83,7 +83,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (4916e31), including F30's reopen: 1.5.h makes a protected route with no session return 401/`no_session` instead of 403 (403 stays for a signed-in principal Cerbos refuses). `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | Three agents. A (`yourtal-4`, `phase/2`): 2.1 on Helios — datastores up, gaiada-deploy patched (F27), nginx + first release next. B (`yourtal-p2-b`, `phase/2-b`, db `yourtal_s4b`): 2.2.a/c continuous deploy, 2.3.c backups. C (`yourtal-p2-c`, `phase/2-c`, db `yourtal_s4c`): 2.3.b, 2.3.d `/dev/clock`, 2.3.e staging seed |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
-| 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Three agents: A (`yourtal-p8`, `phase/8`, db `yourtal_s8`) 8.1.a server side; B (`yourtal-p8-b`, `phase/8-b`) 8.2.d; C (`yourtal-p8-c`, `phase/8-c`) 8.3.b |
+| 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
 
 ## Decisions for the founder
 

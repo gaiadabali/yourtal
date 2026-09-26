@@ -153,7 +153,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 1
+          # Full history: git refuses a push it cannot prove is a fast-forward,
+          # and a depth-1 clone does not hold production's current tip.
+          fetch-depth: 0
 
       - name: Fast-forward production to this release
         run: |

@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 1/26 | `░░░░░░░░░░`   4% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 2/26 | `█░░░░░░░░░`   8% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/9 | 51/55 | `█████████░`  93% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **28/82** | **176/373** | `█████░░░░░`  47% |
+| **All** | | | **28/82** | **177/373** | `█████░░░░░`  47% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -131,6 +131,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F25** | Add another Phase 1 agent to speed things up | **Yes: agent D takes 1.7** (web ↔ API plumbing) in helper `yourtal-p1-c` now. Its 1.7.a–d need only the session cookie from 1.4; the 1.7.e Check waits for 1.5. Agent B keeps only 1.6. |
 | **F26** | Phase 2 must run commands on Helios, which is shared with 30 client sites | **Allow `ssh helios-w`** for the Phase 2 session. It touches only `/opt/yourtal`, `/home/uyourtal`, the yourtal nginx vhost (after `nginx -t`) and `yourtal*` systemd units. Also: start Phase 2 now in slot 4, with Phase 1 only at its 1.5.g Check. |
 | **F27** | gaiada-deploy has no step that runs migrations before the reload (2.1.b) | **Patch the shared agent** additively: if the release holds `deploy/pre-reload.sh`, run it as the site user before the pm2 reload and fail the deploy on non-zero. The same patch keeps `PM2_NAME` through rollback (2.2.b). Applied like the earlier subdir and pm2_name patches: dry run, backup, idempotent. |
+| **F28** | `production` still sat on the pre-rewrite history (the exposed commits), so it could never fast-forward to `main` again | **Reset `production` to `main` once** (force-with-lease, 2026-09-26: 7f53741 → 5d13115). Its tree already matched `main`. From now on CI only fast-forwards it; `main` is never force-pushed. |
 | **F26** | Phase 11 was asked to start while Phase 7 (its gate) had not begun and all 3 slots were busy | **Start its early slice now**, like F21, in helper `yourtal-p11` (`phase/11`): only what needs no Phase 7. That is 11.3.a (trust pages, 404, OG cards) and the 11.3.b robots/sitemap fixes, `llms.txt` and staging `noindex`. `VideoObject` JSON-LD, 11.1 and 11.2 wait for 7.7. |
 | **F27** | Phase 8 was asked to start while its gates (Phases 4 and 5) were unfinished | **Start an early slice now** in helper `yourtal-p8` (`phase/8`, slot 8): 8.3.b the merchant SDK against the 4.6.d signing spec, 8.2.d the merchant copy into `messages/*/merchant.json`, and 8.1.a's server side (device record, pairing code, hashed credential, argon2id PIN in `apps/api` devices). The Studio screen, the device principal (8.1.b, needs 1.5) and everything else wait. |
 | **F28** | 4.4.m: marketing points are backed at exactly B, so a region with only marketing points sits at coverage 1.0 and pauses its own streaks | **Count unspent marketing budget as reserve** in the coverage ratio: it is platform cash set aside to back points. The 1.0 hard floor still holds. |
@@ -564,7 +565,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - ledger and voucher `/healthz` return 200;
     - `ss -ltnp` shows every YourTal port on 127.0.0.1.
 - [ ] **2.2 Continuous deploy from main** · needs: 2.1 — 🔄 slot 4 (agent B)
-  - [ ] 2.2.a `release.yml` triggers on pushes to `main`, gated by `pnpm check` and the build. It publishes the `deploy/production-*` release that the poller installs. It keeps `paths-ignore: TASKS.md`.
+  - [x] 2.2.a `release.yml` triggers on pushes to `main`, gated by `pnpm check` and the build. It publishes the `deploy/production-*` release that the poller installs. It keeps `paths-ignore: TASKS.md`.
   - [ ] 2.2.b The shared `gaiada-deploy` rollback loses `PM2_NAME` (old YT-0532). Fix it upstream in `deploy-workflows` if we can reach it. Otherwise document "rollback = redeploy the previous tag" and exercise it once.
   - [ ] 2.2.c Add a daily check that the deployed SHA equals `main`, so a poller that has silently stopped gets noticed (old YT-0566).
   - [ ] 2.2.d **Check:** a trivial commit pushed to `main` is live on staging within about 5 minutes.

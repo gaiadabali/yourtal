@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 24/30 | `████████░░`  80% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 3/5 | 25/30 | `████████░░`  83% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 21/26 | `████████░░`  81% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **35/85** | **224/386** | `██████░░░░`  58% |
+| **All** | | | **36/85** | **225/386** | `██████░░░░`  58% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -573,13 +573,13 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.2.b The shared `gaiada-deploy` rollback loses `PM2_NAME` (old YT-0532). Fix it upstream in `deploy-workflows` if we can reach it. Otherwise document "rollback = redeploy the previous tag" and exercise it once. — Fixed upstream in the Helios agent (F27 patch, `gaiada-setups/patches/pre-reload-hook.md`): the health-check rollback now passes `--pm2-name`. Exercised 2026-09-26: rollback c361aa1 → cab5975 reloaded all five processes, redeploy back to c361aa1.
   - [x] 2.2.c Add a daily check that the deployed SHA equals `main`, so a poller that has silently stopped gets noticed (old YT-0566). — `staging-drift.yml`, daily plus manual; compares `/api/health` `revision` with main's latest release-relevant commit, with a 30-min grace. First run 2026-09-26: "in sync" at cab5975.
   - [x] 2.2.d **Check:** a trivial commit pushed to `main` is live on staging within about 5 minutes. — Verified 2026-09-26: c361aa1 pushed 12:37:31, live on staging (`/api/health` revision) 12:42:18, 4 min 47 s; CI fast-forwarded `production` itself. (First try took 8 min; the release gate now runs beside the build.)
-- [ ] **2.3 Staging posture and review tools** · needs: 2.2 — 🔄 slot 4 (agents B, C)
+- [x] **2.3 Staging posture and review tools** · needs: 2.2 — ✅ 2026-09-26 e367574
   - [x] 2.3.a With `APP_ENV=staging`:
     - `X-Robots-Tag: noindex` from nginx and the proxy;
     - `/dev/inbox` enabled;
     - B's 3.1.f renders `<StagingBanner/>` ("Staging — demo data, payments simulated"), and B's `robots.ts` disallows everything.
   - [x] 2.3.b Boot assertion: `APP_ENV=staging` refuses to start unless every driver is simulated.
-  - [ ] 2.3.c Nightly `pg_dump` **plus the keyring** to `/opt/yourtal/backups`, kept 7 days. Rehearse one restore that decrypts a stored voucher code (old YT-0531).
+  - [x] 2.3.c Nightly `pg_dump` **plus the keyring** to `/opt/yourtal/backups`, kept 7 days. Rehearse one restore that decrypts a stored voucher code (old YT-0531). — `yourtal-backup.timer` nightly at 03:30 UTC: `pg_dump -Fc`, keyring tar and `app.env` into `/opt/yourtal/backups/<date>/`, 7 days kept. Rehearsed 2026-09-26 on staging at e367574: `restore-rehearsal.sh` (strict) restored into `yourtal_restore` and `voucher-verify-backup` opened 1/1 real voucher codes with the backed-up keyring (the staging seed now mints one real voucher through the voucher service).
   - [x] 2.3.d `/dev/clock`, on staging only and audited, so a reviewer can walk time-based journeys in one sitting:
     - "Release my pending points now";
     - "Run job now" for every scheduled job (holdback release, expiry, settlement accrual, weekly statement, payout, solvency, proof);
@@ -1331,6 +1331,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · A · 2.3 Staging posture and review tools: banner, noindex, disallow-all robots, `/dev/inbox`, `/dev/clock` against the live ledger, staging-only drivers assertion, a minimal seed with 10 demo logins, a real pending grant and a real voucher, nightly backup with a strict decrypting restore rehearsal · e367574
 - 2026-09-26 · B · 5.1–5.3 Watch & earn, server side: cumulative-budget farming fix (EW-01, row-locked, real HTTP burst/parallel Checks), session parking/resume keyed to (user, campaign, terms) with `already_earned` and an allocation hold, checkpoint issuance made single-live (EW-08) with coverage/sequence gating, server-side scoring writing `question_response` + session counters (EW-04/09), and completion calling `grantReward` with the signed attestation — a real ledger pending entry, idempotent, EW-10's winner-only grant. Two real bugs the e2e suite caught along the way: `RETURNING` on an INSERT-only table needs SELECT `yourtal_app` must never have (fixed to a caught unique-violation), and a circular module/controller import that left a DI token unresolvable. `seed/watch.ts` aligns every campaign's duration to the one HLS fixture (EW-07, `time-remap.ts` deleted) and funds `campaign.reward_config` per campaign; the mock, client-scored checkpoint quiz deleted (EW-04's actual leak vector) rather than patched. A `WATCH_COMPLETION_HOOK` (5.5.d's ask) fires on every real grant, no-op until B's streak module binds it. 5.1.d ships the fake-ok stubs the task names (unsigned manifest URL, `deliveryCoverage` returning `"unknown"`); real exports are a two-line swap once 7.2.c/10.4.c land. `apps/api` watch/campaign/wallet/checkout/me suites green (137+ tests); `packages/contracts` 723/723; `pnpm check` green · acbdf73
 - 2026-09-26 · A · 4.10 Done-when audit: every Phase 4 engine-report defect mapped to its regression test, region walls in the database, every internal route refuses unsigned calls, points issued only by a grant · 764a2ee
 - 2026-09-26 · B · 5.4 The viewer's own API: `apps/api/src/modules/me` — consents (append-only `identity.consent_record`), declared interests, follows (F2 region-walled), saves, continue-watching, account deletion (`dsar-orchestrator`) + data export, one-time linked-app codes. A real header-vs-profile region/ageBand bug this ticket's own e2e suite caught and fixed (`require-region.ts`). `apps/api` 68 files/408 tests green (2 pre-existing, unrelated `/dev/clock` failures — 2.4.i); native Cerbos suite 580/580 including the new `MeSuite` (56). 5.5.a (server streak, F12/F16) also done this session, verified against real Postgres; 5.5.b's `ledger.points_unlocked` notification path is real; 5.5.c and the rest of 5.5.b stay ⛔ on 5.3/7.3.f/10.2 · 143d7d2

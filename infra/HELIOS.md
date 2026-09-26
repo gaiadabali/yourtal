@@ -9,7 +9,7 @@ everything it runs sits in `yourtal.slice` (2 cores, 4 GB).
 
 | Part                                 | Runs as          | How                                                                          | Updated by            |
 | ------------------------------------ | ---------------- | ---------------------------------------------------------------------------- | --------------------- |
-| Postgres 17, Valkey, Cerbos, MinIO   | root (docker)    | `docker-compose.helios.yml` in `/opt/yourtal/stack`, `yourtal-stack.service` | `bootstrap.sh` (rare) |
+| Postgres 18, Valkey, Cerbos, MinIO   | root (docker)    | `docker-compose.helios.yml` in `/opt/yourtal/stack`, `yourtal-stack.service` | `bootstrap.sh` (rare) |
 | web, api, worker                     | `uyourtal` (pm2) | `infra/helios/ecosystem.config.cjs`, Node 24 from `/opt/yourtal/node`        | every release         |
 | ledger, voucher                      | `uyourtal` (pm2) | static Go binaries in the release's `bin/`                                   | every release         |
 | migrations, role passwords, policies | `uyourtal`       | the release's `deploy/pre-reload.sh`                                         | every release         |

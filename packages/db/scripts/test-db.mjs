@@ -123,7 +123,7 @@ async function dropDatabase() {
   const admin = new Client({ connectionString: adminUrl });
   await admin.connect();
   try {
-    // WITH (FORCE) — Postgres 13+, and this stack runs postgres:17-alpine —
+    // WITH (FORCE) — Postgres 13+, and this stack runs postgres:18-alpine —
     // terminates any lingering connections from a previous run that did not
     // reach its own teardown (a killed test process, a crashed hook). A
     // database that refuses to drop because something is still connected to

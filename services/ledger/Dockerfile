@@ -6,7 +6,7 @@
 # no shell, no package manager, no source.
 #
 # Pinned by tag (matches this repo's docker-compose.yml convention:
-# postgres:17-alpine, cerbos:0.55.0 — never :latest, per the Atlas lesson
+# postgres:18-alpine, cerbos:0.55.0 — never :latest, per the Atlas lesson
 # recorded against docker-compose.yml's minio entry).
 FROM golang:1.26.8-alpine3.24@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c AS builder
 

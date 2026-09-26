@@ -83,6 +83,9 @@ LEDGER_SERVICE_SECRET=$(rand)
 VOUCHER_SERVICE_SECRET=$(rand)
 REWARD_ATTESTATION_SECRET=$(rand)
 CHECKPOINT_TOKEN_SECRET=$(rand)
+HLS_SIGNING_SECRET=$(rand)
+# One password for every demo login (2.3.e); read it here, never published (F5).
+STAGING_DEMO_PASSWORD=$(rand | cut -c1-20)
 EOF
   chown "$SITE_USER:$SITE_USER" "$app_env"
   chmod 600 "$app_env"

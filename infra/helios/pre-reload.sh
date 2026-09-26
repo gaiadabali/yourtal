@@ -28,7 +28,13 @@ log "atlas migrate apply"
 log "role passwords"
 /opt/yourtal/node/bin/node "$release/deploy/set-role-passwords.mjs"
 
-# 3. Cerbos policies. The container watches this directory and hot-reloads.
+# 3. The minimal demo world (2.3.e). A no-op once any profile exists; the tier-0
+#    viewer's pending grant goes through the live ledger, which is still the
+#    previous release's and running.
+log "staging seed"
+/opt/yourtal/node/bin/node "$release/api/dist/seed-staging.js"
+
+# 4. Cerbos policies. The container watches this directory and hot-reloads.
 log "cerbos policies"
 rsync -a --delete "$release/policies/" /opt/yourtal/shared/policies/
 

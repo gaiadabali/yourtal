@@ -111,6 +111,9 @@ jobs:
         run: |
           pnpm --filter @yourtal/web build
           pnpm --filter @yourtal/api build
+          # After api: its build clears apps/api/dist, where the seed lands so it
+          # can use api's node_modules (argon2 is a native addon).
+          node scripts/build-service.mjs seed
           pnpm --filter @yourtal/worker build
 
       # One artifact, one gaiada-deploy target (2.1.b): the agent swaps one

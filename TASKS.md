@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 41/44 | `█████████░`  93% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 38/53 | `███████░░░`  72% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 4/9 | 39/53 | `███████░░░`  74% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **22/82** | **158/368** | `████░░░░░░`  43% |
+| **All** | | | **23/82** | **159/368** | `████░░░░░░`  43% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -802,9 +802,9 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - a double submit burns once;
     - killing the voucher service mid-saga leaves the balance whole after recovery;
     - an ID user's burn of an AU listing is refused even when the ledger is called directly.
-- [ ] **4.8 Wallet API** · needs: 4.7
+- [x] **4.8 Wallet API** · needs: 4.7 — ✅ 2026-09-26 be8dca0
   - [x] 4.8.a `apps/api/src/modules/wallet`: `GET /api/wallet` (available, pending with unlock dates, expiring), `/api/wallet/history` (plain-language entries built from the ledger's references), `/api/wallet/vouchers`, `/api/wallet/vouchers/:id` and `/api/wallet/vouchers/:id/qr`. Merged d448b73; history carries kind and reference, no prose (the web words it).
-  - [ ] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token.
+  - [x] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token. Passed on main be8dca0 (`wallet.controller.test`, `checkout.controller.test`, fake voucher service; live in 4.9.e).
 - [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22; 4.9.c, F24) — 🔄 slot 1
   - [x] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view. — ✅ 2026-09-26 32f221a
     - [x] the table and the `priceListing` upsert, with the rate each listing was priced at (4.1.b)
@@ -1270,6 +1270,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · A · 4.8 Wallet API: points, pending by unlock date, history by kind, vouchers and QR, always the caller's own · be8dca0
 - 2026-09-26 · B · Phase 3 done: After Dark picked from real captures (F3); tokens v2, every primitive, video component and shell in the `/lab/ui` gallery in light and dark at 390 and 1280 px, with visual baselines; both UI gates green in CI (run 36171537379) · 1f00762
 - 2026-09-26 · B · 3.6 Brand (coin mark, wordmark, favicon, icons, manifest), 124 visual baselines drawn by the Playwright image, lint warnings for raw elements and JSX copy, UI gates as their own Integration job · 1f00762
 - 2026-09-26 · B · 3.5 VerticalFeed (≤ 3 videos), VideoSurface, viewer/studio/counter shells, `/` → `/home` or `/au` by session. For A: 3.5.d changed one case in `apps/web/proxy.test.ts` (`/` left the "stays public" list and got its own test). The "Postgres-backed suites" job is red on the api authz e2e tests (store-device resolver, watch controller), not on B's changes · cad8f7e

@@ -23,12 +23,24 @@ import { loadAppConfig } from "./config/app-config";
  */
 async function bootstrap(): Promise<void> {
   const config = loadAppConfig();
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
-    // The idempotency fingerprint hashes the bytes the client actually
-    // sent, not a re-serialisation of the parsed object — see
-    // @yourtal/idempotency/fingerprint for why canonical JSON was avoided.
-    rawBody: true,
-  });
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    // 1.5.e: `trustProxy` — every real deployment of this app runs behind
+    // Helios's nginx (docs/audit/2026-09-25/api-backend.md section 8), so
+    // without it `request.ip` is the PROXY's address on every request, not
+    // the caller's, and every per-IP limit (register, password-reset
+    // request, the login source throttle) collapses into one shared
+    // bucket for the whole site. `true` trusts the immediate hop, which is
+    // exactly nginx on the same host/network — never a public-facing
+    // multi-hop chain this app would need to pick apart.
+    new FastifyAdapter({ trustProxy: true }),
+    {
+      // The idempotency fingerprint hashes the bytes the client actually
+      // sent, not a re-serialisation of the parsed object — see
+      // @yourtal/idempotency/fingerprint for why canonical JSON was avoided.
+      rawBody: true,
+    },
+  );
   app.useGlobalPipes(new ZodValidationPipe());
   await app.listen(config.port, "0.0.0.0");
 }

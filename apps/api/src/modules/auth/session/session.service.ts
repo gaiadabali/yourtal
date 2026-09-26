@@ -1,24 +1,20 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { APP_CONFIG } from "../../../config/app-config.module";
+import type { AppConfig } from "../../../config/app-config";
 import { hashOpaqueToken, issueOpaqueToken } from "../crypto/opaque-token";
 import { SESSION_REPOSITORY } from "../persistence/session.repository";
 import type { SessionRepository, StoredSession } from "../persistence/session.repository";
 
 /**
- * Absolute lifetime ceiling — set once at issuance, never extended by
- * activity. 30 days: long enough that a consumer is not asked to log back
- * in every session, short enough that a stolen-but-unused session token
- * does not stay valid indefinitely.
+ * Which lifetime regime a session was issued under. 1.5.e, F12 "Sessions":
+ * a staff account signs in through the exact same `/api/auth/login` a
+ * consumer does (`pnpm staff:add` only grants an EXISTING account a role
+ * row, 1.5.b — it does not create a separate login path), so the
+ * distinction has to be decided at issuance, not assumed from the route.
+ * `AuthService` is what actually knows which kind applies (it can read
+ * `identity.staff_role`); this type is just the vocabulary the two share.
  */
-export const SESSION_ABSOLUTE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
-/**
- * Idle expiry — extended by `touch()` on every authenticated request.
- * Deliberately NOT stored as a column (see the migration header): this is
- * a policy constant `SessionService` compares `lastSeenAt` against, so
- * changing the window is a code change reviewed like any other, never a
- * per-row value that could disagree with itself across rows.
- */
-export const SESSION_IDLE_TTL_MS = 30 * 60 * 1000;
+export type SessionKind = "consumer" | "staff";
 
 export type SessionValidation =
   | { readonly valid: true; readonly userId: string }
@@ -29,15 +25,29 @@ export type SessionValidation =
 
 @Injectable()
 export class SessionService {
-  constructor(@Inject(SESSION_REPOSITORY) private readonly sessions: SessionRepository) {}
+  constructor(
+    @Inject(SESSION_REPOSITORY) private readonly sessions: SessionRepository,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
-  /** Mints a new session and returns the raw token — stored nowhere else. */
-  async issue(userId: string, now: Date): Promise<string> {
+  /**
+   * Mints a new session and returns the raw token — stored nowhere else.
+   *
+   * `kind` picks the ABSOLUTE ceiling only — `config.session.staffAbsoluteTtlMs`
+   * (12h, F12) is already far tighter than `consumerIdleTtlMs` (30 days), so
+   * a staff session hits its absolute cap long before the shared idle check
+   * in `validateAndTouch` could ever be the binding constraint. A second,
+   * separately-configured staff IDLE window would be a number that can
+   * never matter, not a real knob — see `env.schema.ts`'s own note.
+   */
+  async issue(userId: string, now: Date, kind: SessionKind = "consumer"): Promise<string> {
     const { token, hash } = issueOpaqueToken();
+    const absoluteTtlMs =
+      kind === "staff" ? this.config.session.staffAbsoluteTtlMs : this.config.session.consumerAbsoluteTtlMs;
     await this.sessions.create({
       id: hash,
       userId,
-      absoluteExpiresAt: new Date(now.getTime() + SESSION_ABSOLUTE_TTL_MS),
+      absoluteExpiresAt: new Date(now.getTime() + absoluteTtlMs),
     });
     return token;
   }
@@ -59,7 +69,7 @@ export class SessionService {
     if (record.absoluteExpiresAt <= now) {
       return { valid: false, reason: "expired" };
     }
-    if (now.getTime() - record.lastSeenAt.getTime() > SESSION_IDLE_TTL_MS) {
+    if (now.getTime() - record.lastSeenAt.getTime() > this.config.session.consumerIdleTtlMs) {
       return { valid: false, reason: "idle_timeout" };
     }
     await this.sessions.touch(record.id, now);

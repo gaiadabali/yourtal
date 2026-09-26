@@ -13,6 +13,8 @@ import type { AppConfig } from "../../config/app-config";
 import { EMAIL_DRIVER } from "../../shared/drivers/email-driver.module";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
+import { STAFF_ROLE_READER } from "../identity/persistence/staff-role-reader";
+import type { StaffRoleReader } from "../identity/persistence/staff-role-reader";
 import { hashPassword, verifyPassword } from "./crypto/password-hash";
 import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
 import { DevTokenAccess } from "./dev-token-access";
@@ -85,6 +87,7 @@ export class AuthService {
     @Inject(VERIFICATION_TOKEN_REPOSITORY)
     private readonly verificationTokens: VerificationTokenRepository,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
+    @Inject(STAFF_ROLE_READER) private readonly staffRoles: StaffRoleReader,
     private readonly sessions: SessionService,
     private readonly throttle: ThrottleService,
     private readonly devTokenAccess: DevTokenAccess,
@@ -169,7 +172,7 @@ export class AuthService {
         parentConsentStatus: isAdult ? "not_required" : "pending",
       });
 
-      const token = await this.sessions.issue(userId, now);
+      const token = await this.issueSession(userId, now);
       return ok({ userId, token });
     });
   }
@@ -227,7 +230,7 @@ export class AuthService {
       // A genuine success clears the ACCOUNT counter only — never the
       // source counter. See `ThrottleService.reset`'s own doc comment.
       await this.throttle.reset("account", accountKey);
-      const token = await this.sessions.issue(credential.userId, now);
+      const token = await this.issueSession(credential.userId, now);
       return ok({ token, userId: credential.userId });
     });
   }
@@ -276,7 +279,7 @@ export class AuthService {
       const newHash = await hashPassword(newPassword);
       await this.credentials.updateSecret(userId, PASSWORD_CREDENTIAL_KIND, newHash);
       await this.sessions.revokeAllForUser(userId, now);
-      const token = await this.sessions.issue(userId, now);
+      const token = await this.issueSession(userId, now);
       return ok({ token });
     });
   }
@@ -334,7 +337,7 @@ export class AuthService {
       const newHash = await hashPassword(newPassword);
       await this.credentials.updateSecret(userId, PASSWORD_CREDENTIAL_KIND, newHash);
       await this.sessions.revokeAllForUser(userId, now);
-      const token = await this.sessions.issue(userId, now);
+      const token = await this.issueSession(userId, now);
       return ok({ token });
     });
   }
@@ -450,6 +453,23 @@ export class AuthService {
     if (sent.isErr()) {
       this.logger.warn(`${purpose} email not sent for ${userId}: ${sent.error.kind}`);
     }
+  }
+
+  /**
+   * 1.5.e, F12: every session-minting call site goes through this rather
+   * than `this.sessions.issue` directly, so a staff account never gets a
+   * 90-day session by accident. A staff account signs in through this same
+   * `AuthService` (`pnpm staff:add` only adds a role row to an existing
+   * account, 1.5.b), so the two kinds cannot be told apart by which
+   * endpoint was called — only by whether `identity.staff_role` names this
+   * user, checked fresh here every time rather than cached on the
+   * credential or the profile, since a role grant or revocation must take
+   * effect on this person's very next login, not their next password
+   * change.
+   */
+  private async issueSession(userId: string, now: Date): Promise<string> {
+    const roles = await this.staffRoles.listForUser(userId);
+    return this.sessions.issue(userId, now, roles.length > 0 ? "staff" : "consumer");
   }
 
   /** One place every method wraps an unexpected store failure. */

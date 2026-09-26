@@ -144,6 +144,41 @@ export const envSchema = z.object({
    * page a real deployment serves.
    */
   APP_ENV: z.enum(["dev", "staging", "production"]).default("dev"),
+
+  /**
+   * 1.5.e / F12 "Sessions". `SessionService` used to hard-code these
+   * (`SESSION_ABSOLUTE_TTL_MS`, `SESSION_IDLE_TTL_MS`) — 30 days for BOTH,
+   * which is F12's ABSOLUTE number doing duty as the idle one too, an order
+   * of magnitude tighter than F12 actually specifies for a consumer's
+   * sliding window (docs/audit/2026-09-25/api-backend.md section 8: "harsh
+   * for a consumer PWA"). Config, not a constant, so the founder's own
+   * staff console (9.5) can retune it later without a code change — same
+   * reasoning as every other F12 number.
+   */
+  SESSION_CONSUMER_IDLE_TTL_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30 * 24 * 60 * 60 * 1000),
+  SESSION_CONSUMER_ABSOLUTE_TTL_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(90 * 24 * 60 * 60 * 1000),
+  /**
+   * F12: a staff session is 12h, full stop — not "sliding": `SessionService`
+   * applies this only to the ABSOLUTE ceiling at issuance, which is enough
+   * on its own, because 12h is already far tighter than
+   * `SESSION_CONSUMER_IDLE_TTL_MS` — the shared idle check a staff session
+   * is also subject to never gets the chance to be the binding constraint.
+   * Adding a second, separately-configured staff idle window would be a
+   * number that can never matter, not a real knob.
+   */
+  SESSION_STAFF_ABSOLUTE_TTL_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(12 * 60 * 60 * 1000),
 });
 
 export type Env = z.infer<typeof envSchema>;

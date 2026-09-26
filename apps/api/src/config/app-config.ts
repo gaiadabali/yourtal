@@ -34,6 +34,12 @@ export interface AppConfig {
   readonly teenAccounts: boolean;
   /** 1.6.b — gates `/api/dev/inbox`. Default `"dev"`, same as `Env["APP_ENV"]`. */
   readonly appEnv: Env["APP_ENV"];
+  /** 1.5.e, F12 "Sessions" — `SessionService`'s lifetimes, config rather than constants. */
+  readonly session: {
+    readonly consumerIdleTtlMs: number;
+    readonly consumerAbsoluteTtlMs: number;
+    readonly staffAbsoluteTtlMs: number;
+  };
 }
 
 /**
@@ -63,5 +69,10 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
     },
     teenAccounts: env.TEEN_ACCOUNTS,
     appEnv: env.APP_ENV,
+    session: {
+      consumerIdleTtlMs: env.SESSION_CONSUMER_IDLE_TTL_MS,
+      consumerAbsoluteTtlMs: env.SESSION_CONSUMER_ABSOLUTE_TTL_MS,
+      staffAbsoluteTtlMs: env.SESSION_STAFF_ABSOLUTE_TTL_MS,
+    },
   };
 }

@@ -36,6 +36,11 @@ const CONFIG: AppConfig = {
   nodeEnv: "test",
   teenAccounts: false,
   appEnv: "dev",
+  session: {
+    consumerIdleTtlMs: 30 * 24 * 60 * 60 * 1000,
+    consumerAbsoluteTtlMs: 90 * 24 * 60 * 60 * 1000,
+    staffAbsoluteTtlMs: 12 * 60 * 60 * 1000,
+  },
   port: 3001,
   pdp: { baseUrl: "http://127.0.0.1:26335", timeoutMs: 500 },
   databaseUrl: process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!,

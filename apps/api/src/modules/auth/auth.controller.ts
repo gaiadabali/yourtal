@@ -1,5 +1,7 @@
-import { Body, Controller, ForbiddenException, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Inject, Post, Req, Res } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import {
@@ -49,7 +51,10 @@ import { ConfirmEmailVerificationDto } from "./dto/confirm-email-verification.sc
  */
 @Controller("api/auth")
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
   /**
    * 1.4.b's under-13 refusal has to be neutral even under retry: a caller
@@ -93,7 +98,7 @@ export class AuthController {
       if (result.error.type === "too_young") {
         reply.header(
           "set-cookie",
-          `${SIGNUP_BLOCKED_COOKIE}=1; Max-Age=86400; Path=/; HttpOnly; SameSite=Lax`,
+          `${SIGNUP_BLOCKED_COOKIE}=1; Max-Age=86400; Path=/; HttpOnly; SameSite=Lax${secureCookieSuffix(this.config)}`,
         );
       }
       throw mapAuthErrorToHttpException(result.error);
@@ -254,4 +259,18 @@ function withoutToken(value: unknown): unknown {
     return rest;
   }
   return value;
+}
+
+/**
+ * 1.5.e: `; Secure` for every cookie this API sets, except in dev — the
+ * same gate `apps/web/lib/api/session-cookies.ts` already uses
+ * (`secure: process.env.NODE_ENV === "production"`) for the web-set
+ * `yt_session`/`yt_locale`/`yt_region` cookies, so the one cookie the API
+ * itself sets (`yt_signup_blocked`) does not disagree with them. A plain
+ * `docker-compose` dev boot has no TLS in front of it, and `Secure` on an
+ * HTTP-only connection makes a browser refuse to store the cookie at all,
+ * silently — never a security improvement to fail dev with.
+ */
+function secureCookieSuffix(config: AppConfig): string {
+  return config.nodeEnv === "production" ? "; Secure" : "";
 }

@@ -45,6 +45,11 @@ const CONFIG: AppConfig = {
   },
   teenAccounts: false,
   appEnv: "dev",
+  session: {
+    consumerIdleTtlMs: 30 * 24 * 60 * 60 * 1000,
+    consumerAbsoluteTtlMs: 90 * 24 * 60 * 60 * 1000,
+    staffAbsoluteTtlMs: 12 * 60 * 60 * 1000,
+  },
 };
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);

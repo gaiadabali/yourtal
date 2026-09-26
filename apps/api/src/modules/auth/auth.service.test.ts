@@ -4,13 +4,14 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { Logger } from "@nestjs/common";
 import { Redis } from "ioredis";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import pg from "pg";
 import { createEmailDriver, createSimulatedEmail } from "@yourtal/drivers/email";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { PostgresSimOutboxStore } from "../../shared/drivers/postgres-sim-outbox-store";
 import type { AppConfig } from "../../config/app-config";
 import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-user-profile.repository";
+import { DrizzleStaffRoleReader } from "../identity/persistence/drizzle-staff-role-reader";
 import type { RegisterProfile } from "./auth.service";
 import { AuthService } from "./auth.service";
 import { DevTokenAccess } from "./dev-token-access";
@@ -52,7 +53,18 @@ import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
 const DATABASE_URL = process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!;
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://127.0.0.1:26379";
 
-const CONFIG = { nodeEnv: "test", teenAccounts: false } as unknown as AppConfig;
+const CONFIG = {
+  nodeEnv: "test",
+  teenAccounts: false,
+  // 1.5.e / F12: real values, not just cast around — SessionService reads
+  // these at runtime now, so a fixture that only satisfied the TYPE and
+  // not the SHAPE would crash the moment a test actually issued a session.
+  session: {
+    consumerIdleTtlMs: 30 * 24 * 60 * 60 * 1000,
+    consumerAbsoluteTtlMs: 90 * 24 * 60 * 60 * 1000,
+    staffAbsoluteTtlMs: 12 * 60 * 60 * 1000,
+  },
+} as unknown as AppConfig;
 
 const db = createAppDb(DATABASE_URL);
 const redis = new Redis(REDIS_URL);
@@ -61,7 +73,8 @@ const credentials = new DrizzleCredentialRepository(db);
 const sessionRepo = new DrizzleSessionRepository(db);
 const verificationTokens = new DrizzleVerificationTokenRepository(db);
 const profiles = new DrizzleUserProfileRepository(db);
-const sessionService = new SessionService(sessionRepo);
+const staffRoles = new DrizzleStaffRoleReader(db);
+const sessionService = new SessionService(sessionRepo, CONFIG);
 const throttle = new ThrottleService(redis);
 const devTokenAccess = new DevTokenAccess();
 // The real simulated driver (1.6.a) against its default in-memory store —
@@ -74,6 +87,7 @@ const auth = new AuthService(
   credentials,
   verificationTokens,
   profiles,
+  staffRoles,
   sessionService,
   throttle,
   devTokenAccess,
@@ -550,6 +564,7 @@ describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox"
       credentials,
       verificationTokens,
       profiles,
+      staffRoles,
       sessionService,
       throttle,
       devTokenAccess,
@@ -595,6 +610,52 @@ describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox"
     // The token in the outbox is the SAME real token `devTokenAccess` has —
     // one delivery, recorded to both seams, not two different values.
     expect(rows[0]?.metadata.token).toBe(realToken);
+  });
+});
+
+describe("1.5.e: a staff account gets the 12h session ceiling, not the consumer's 90 days", () => {
+  it("login for a userId holding identity.staff_role issues a session whose absoluteExpiresAt is ~12h out", async () => {
+    const email = freshEmail();
+    await registerOk(email, "the-original-password");
+    const credential = await credentials.findByKindAndIdentifier(PASSWORD_CREDENTIAL_KIND, email);
+    const userId = credential?.userId ?? "";
+
+    // `identity.credential`'s own grant covers SELECT/INSERT/UPDATE/DELETE
+    // for `yourtal_app`, but `identity.staff_role` is SELECT-only (1.5.b) —
+    // written only by `pnpm staff:add`, against the owner connection. This
+    // is that same connection, scoped to this one test's fixture the same
+    // way `pnpm staff:add` itself is scoped to one grant at a time.
+    const ownerUrl = process.env["DATABASE_OWNER_URL"];
+    expect(ownerUrl, "DATABASE_OWNER_URL must be set (with-test-db.mjs sets it)").toBeDefined();
+    const ownerPool = new pg.Pool({ connectionString: ownerUrl, max: 1 });
+    try {
+      await ownerPool.query(
+        `INSERT INTO identity.staff_role (user_id, role, granted_by) VALUES ($1, 'support', 'test-fixture')`,
+        [userId],
+      );
+    } finally {
+      await ownerPool.end();
+    }
+
+    const loggedIn = await auth.login(email, "the-original-password", randomIp(), new Date());
+    expect(loggedIn.isOk()).toBe(true);
+
+    // `register` already issued ONE (consumer) session before the staff_role
+    // row existed; `login` just now issued a SECOND one, which is the one
+    // that should reflect it — hence newest first, not the oldest.
+    const [row] = await db
+      .select({ absoluteExpiresAt: sessionsTable.absoluteExpiresAt, createdAt: sessionsTable.createdAt })
+      .from(sessionsTable)
+      .where(eq(sessionsTable.userId, userId))
+      .orderBy(desc(sessionsTable.createdAt))
+      .limit(1);
+    expect(row).toBeDefined();
+    const lifetimeMs = (row?.absoluteExpiresAt.getTime() ?? 0) - (row?.createdAt.getTime() ?? 0);
+    // ~12h (43_200_000ms), not ~90 days (7_776_000_000ms) — a wide but
+    // unambiguous band: proving "closer to 12h than to 90 days" is the
+    // whole point, not pinning an exact millisecond.
+    expect(lifetimeMs).toBeGreaterThan(11 * 60 * 60 * 1000);
+    expect(lifetimeMs).toBeLessThan(13 * 60 * 60 * 1000);
   });
 });
 

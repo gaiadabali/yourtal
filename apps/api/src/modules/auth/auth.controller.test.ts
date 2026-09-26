@@ -59,6 +59,19 @@ async function idempotencyRowCountFor(userId: string): Promise<number> {
   return Number(rows[0]?.n ?? "0");
 }
 
+/**
+ * A distinct throttle-bucket key per call, never the SAME address on two
+ * calls. `app.inject`'s default `remoteAddress` when none is given is one
+ * fixed loopback value, shared by every call in this file that omits it —
+ * which several `@RateLimit`-carrying routes here key on. Same fix, same
+ * reason, as `auth.service.test.ts`'s own `randomIp()` and
+ * `me.controller.test.ts`'s own note: a real (not per-test-run) Redis
+ * remembers every earlier run's spend against that one shared address.
+ */
+function randomIp(): string {
+  return `auth-controller-test-${randomUUID()}`;
+}
+
 describe("register", () => {
   it("the caller who registers gets a token; the stored (and replayed) copy never does", async () => {
     const idempotencyKey = randomUUID();
@@ -76,7 +89,7 @@ describe("register", () => {
     const registered = await app.inject({
       method: "POST",
       url: "/api/auth/register",
-      remoteAddress: `auth-controller-register-test-${randomUUID()}`,
+      remoteAddress: randomIp(),
       headers: { "idempotency-key": idempotencyKey },
       payload,
     });
@@ -105,7 +118,7 @@ describe("register", () => {
     const replay = await app.inject({
       method: "POST",
       url: "/api/auth/register",
-      remoteAddress: `auth-controller-register-test-${randomUUID()}`,
+      remoteAddress: randomIp(),
       headers: { "idempotency-key": idempotencyKey },
       payload,
     });
@@ -124,6 +137,7 @@ describe("password/change", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/auth/password/change",
+      remoteAddress: randomIp(),
       headers: { authorization: `Bearer ${session.token}` },
       payload: { currentPassword: password, newPassword: "a-brand-new-password-123" },
     });
@@ -140,6 +154,7 @@ describe("password/change", () => {
     const first = await app.inject({
       method: "POST",
       url: "/api/auth/password/change",
+      remoteAddress: randomIp(),
       headers: { authorization: `Bearer ${session.token}` },
       payload: { currentPassword: password, newPassword: "a-second-brand-new-password-456" },
     });
@@ -152,6 +167,7 @@ describe("password/change", () => {
     const retry = await app.inject({
       method: "POST",
       url: "/api/auth/password/change",
+      remoteAddress: randomIp(),
       headers: { authorization: `Bearer ${session.token}` },
       payload: { currentPassword: password, newPassword: "a-second-brand-new-password-456" },
     });
@@ -167,13 +183,8 @@ describe("password/reset/confirm", () => {
     const requested = await app.inject({
       method: "POST",
       url: "/api/auth/password/reset/request",
-      // PASSWORD_RESET_REQUEST_RATE_LIMIT is 3/hour per source — the
-      // default `remoteAddress` `app.inject` uses when none is given is
-      // the SAME address on every call, which every earlier run of this
-      // very test in the same hour already spent against a real (not
-      // per-test-run) Redis. Same fix as auth.service.test.ts's own
-      // `randomIp()`, for the identical reason.
-      remoteAddress: `auth-controller-reset-request-test-${randomUUID()}`,
+      // PASSWORD_RESET_REQUEST_RATE_LIMIT is 3/hour per source — see randomIp()'s own comment.
+      remoteAddress: randomIp(),
       payload: { email: session.email },
     });
     expect(requested.statusCode).toBeLessThan(300);
@@ -184,6 +195,7 @@ describe("password/reset/confirm", () => {
     const confirmed = await app.inject({
       method: "POST",
       url: "/api/auth/password/reset/confirm",
+      remoteAddress: randomIp(),
       payload: { token, newPassword: "reset-brand-new-password-789" },
     });
     expect(confirmed.statusCode).toBeLessThan(300);
@@ -197,6 +209,7 @@ describe("password/reset/confirm", () => {
     const replay = await app.inject({
       method: "POST",
       url: "/api/auth/password/reset/confirm",
+      remoteAddress: randomIp(),
       payload: { token, newPassword: "yet-another-password-000" },
     });
     expect(replay.statusCode).toBeGreaterThanOrEqual(400);

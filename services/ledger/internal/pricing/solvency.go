@@ -51,6 +51,9 @@ type Coverage struct {
 	MerchantPayableMinor  int64
 	// ReserveMinor is what is actually in the segregated reserve.
 	ReserveMinor int64
+	// MarketingCashMinor is the marketing budget not yet moved into reserve.
+	// It counts toward the ratio (F28): it exists only to back points.
+	MarketingCashMinor int64
 	// RatioBps is Reserve / Liability in basis points. 10_000 is exactly 1.0.
 	RatioBps int64
 	// NoPointsOutstanding means nothing at all is owed, which is not a ratio.
@@ -110,6 +113,10 @@ func measure(
 	if err != nil {
 		return Coverage{}, err
 	}
+	marketingCash, err := naturalBalance(ctx, q, ledger.PlatformAccountID(region, ledger.RoleMarketingCash))
+	if err != nil {
+		return Coverage{}, err
+	}
 	vouchers, err := naturalBalance(ctx, q, ledger.PlatformAccountID(region, ledger.RoleVoucherLiability))
 	if err != nil {
 		return Coverage{}, err
@@ -121,7 +128,7 @@ func measure(
 
 	c := Coverage{
 		Country: string(region), Currency: string(region.Currency()),
-		PointsOutstanding: points, ReserveMinor: reserve,
+		PointsOutstanding: points, ReserveMinor: reserve, MarketingCashMinor: marketingCash,
 		VoucherLiabilityMinor: vouchers, MerchantPayableMinor: payable,
 		BackingRateID: rateID, MeasuredAt: at,
 	}
@@ -144,10 +151,10 @@ func measure(
 
 	// Integer basis points, floored: a ratio that rounds is reported slightly
 	// WORSE than it is, never an insolvent economy as exactly solvent.
-	ratio := new(big.Int).Mul(big.NewInt(reserve), big.NewInt(coverageScale))
+	ratio := new(big.Int).Mul(big.NewInt(reserve+marketingCash), big.NewInt(coverageScale))
 	ratio.Quo(ratio, liability)
 	if !ratio.IsInt64() {
-		return Coverage{}, fmt.Errorf("%w: reserve=%d liability=%s", ErrPriceOutOfRange, reserve, liability)
+		return Coverage{}, fmt.Errorf("%w: reserve=%d marketing=%d liability=%s", ErrPriceOutOfRange, reserve, marketingCash, liability)
 	}
 	c.RatioBps = ratio.Int64()
 	return c, nil

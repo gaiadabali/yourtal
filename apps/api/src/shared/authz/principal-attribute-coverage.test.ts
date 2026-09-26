@@ -88,18 +88,33 @@ async function populatableAttributes(): Promise<Set<string>> {
         userId === FROZEN_USER ? { valueFrozenUntil: new Date("2099-01-01T00:00:00.000Z") } : null,
       ),
   };
-  // No profile/membership/staff-role rows in this suite (1.5.b): `jurisdiction`,
-  // `businessRoles` and `isSuspended` are all REQUIRED fields on every
-  // principal regardless (principalAttrSchema's own `required` array), so
-  // the plain anonymous/signed-in scenarios below already prove them
-  // populatable without needing a real profile row — that overlay itself is
-  // async-principal-resolver.test.ts's job.
+  // A profile for every signed-in principal named below, not `null` — a real
+  // account always has one from the same transaction as its credential
+  // (2.5/F31), and `AsyncPrincipalResolver.resolve()` now refuses outright
+  // rather than falling back to a placeholder for one that has none. No
+  // membership/staff-role rows: `businessRoles` and `isSuspended` are still
+  // REQUIRED fields on every principal regardless (principalAttrSchema's own
+  // `required` array), so the plain anonymous/signed-in scenarios below
+  // already prove them populatable without needing either — that overlay
+  // itself is async-principal-resolver.test.ts's job.
   const resolver = new AsyncPrincipalResolver(
     new PrincipalService(alwaysValidSessionValidator()),
     repo,
     {
       create: () => Promise.reject(new Error("unused")),
-      findByUserId: () => Promise.resolve(null),
+      findByUserId: (userId) =>
+        Promise.resolve({
+          userId,
+          region: "AU",
+          displayLocale: "en-AU",
+          displayName: "Coverage Test",
+          dateOfBirth: "1990-01-01",
+          timezone: "Australia/Sydney",
+          guardianEmail: null,
+          parentConsentStatus: "not_required",
+          trustTier: 0,
+          suspendedAt: null,
+        }),
       update: () => Promise.reject(new Error("unused")),
     },
     { listForUser: () => Promise.resolve([]) },

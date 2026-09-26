@@ -17,13 +17,28 @@ import type { StaffRoleReader } from "../../modules/identity/persistence/staff-r
 // No security-state rows in this suite — nothing here exercises the freeze,
 // only that a principal reaches the PDP at all.
 // async-principal-resolver.test.ts covers the freeze itself, including the
-// 1.5.b database overlay these three no-op fakes deliberately skip.
+// 1.5.b database overlay and the 2.5/F31 no-profile refusal these fakes
+// deliberately skip: EVERY signed-in principal here gets a profile row (a
+// real one always has one, 2.5/F31), so this suite stays about PdpGuard's
+// own routing rather than about profile completeness.
 const NO_SECURITY_STATE: PrincipalSecurityStateRepository = {
   findByUserId: () => Promise.resolve(null),
 };
-const NO_PROFILE: UserProfileRepository = {
+const A_PROFILE: UserProfileRepository = {
   create: () => Promise.reject(new Error("not used by this fake")),
-  findByUserId: () => Promise.resolve(null),
+  findByUserId: (userId) =>
+    Promise.resolve({
+      userId,
+      region: "AU",
+      displayLocale: "en-AU",
+      displayName: "PdpGuard Test",
+      dateOfBirth: "1990-01-01",
+      timezone: "Australia/Sydney",
+      guardianEmail: null,
+      parentConsentStatus: "not_required",
+      trustTier: 0,
+      suspendedAt: null,
+    }),
   update: () => Promise.reject(new Error("not used by this fake")),
 };
 const NO_MEMBERSHIPS: BusinessMembershipReader = { listForUser: () => Promise.resolve([]) };
@@ -54,7 +69,7 @@ function guardWith(metadata: Record<string, unknown>): PdpGuard {
     new AsyncPrincipalResolver(
       new PrincipalService(alwaysValidSessionValidator()),
       NO_SECURITY_STATE,
-      NO_PROFILE,
+      A_PROFILE,
       NO_MEMBERSHIPS,
       NO_STAFF_ROLES,
     ),

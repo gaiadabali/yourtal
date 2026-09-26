@@ -22,6 +22,7 @@ import { DrizzleCampaignAuthzAttributesReader } from "../campaign/persistence/dr
 import { DrizzleWatchSessionRepository } from "./persistence/drizzle-watch-session.repository";
 import { CampaignViewAttributeLoader } from "./campaign-view-attribute-loader";
 import { WatchController } from "./watch.controller";
+import { seedUserProfile } from "../../shared/testing/seed-user-profile";
 
 /**
  * 1.5.d (EW-03), proved end to end.
@@ -136,34 +137,46 @@ afterAll(async () => {
 
 describe("starting a watch session against a live campaign (1.5.d, EW-03)", () => {
   it('ALLOWS: the loader supplies state:"live" from a real DB read', async () => {
+    const userId = randomUUID();
+    // 2.5/F31: a signed-in principal with no profile row is refused before
+    // the loader ever runs — a real one always has one, so this fixture
+    // gives one too. `region: "ID"` because the seeded live/long-form
+    // catalogue (packages/db/src/seed/watch.ts) is region ID throughout —
+    // an AU principal here would trip the F2 region wall for a reason this
+    // suite is not testing.
+    await seedUserProfile(db, { userId, region: "ID" });
     const context = contextFor(
       // eslint-disable-next-line @typescript-eslint/unbound-method -- read for its @Authorize metadata only, never called.
       WatchController.prototype.start,
       {},
       { campaignId: liveCampaignId },
-      randomUUID(),
+      userId,
     );
     await expect(guard().canActivate(context)).resolves.toBe(true);
   });
 
   it("DENIES a campaign that is not live, on the real Cerbos policy", async () => {
+    const userId = randomUUID();
+    await seedUserProfile(db, { userId, region: "ID" });
     const context = contextFor(
       // eslint-disable-next-line @typescript-eslint/unbound-method -- read for its @Authorize metadata only, never called.
       WatchController.prototype.start,
       {},
       { campaignId: pausedCampaignId },
-      randomUUID(),
+      userId,
     );
     await expect(guard().canActivate(context)).rejects.toBeTruthy();
   });
 
   it("404s a campaign that does not exist at all, same as the route's own check", async () => {
+    const userId = randomUUID();
+    await seedUserProfile(db, { userId, region: "ID" });
     const context = contextFor(
       // eslint-disable-next-line @typescript-eslint/unbound-method -- read for its @Authorize metadata only, never called.
       WatchController.prototype.start,
       {},
       { campaignId: randomUUID() },
-      randomUUID(),
+      userId,
     );
     await expect(guard().canActivate(context)).rejects.toBeInstanceOf(NotFoundException);
   });
@@ -172,6 +185,7 @@ describe("starting a watch session against a live campaign (1.5.d, EW-03)", () =
 describe("session-scoped routes resolve their campaign through the session (1.5.d)", () => {
   it("ALLOWS resume/progress/complete once the loader hops sessionId -> campaignId -> state", async () => {
     const userId = randomUUID();
+    await seedUserProfile(db, { userId, region: "ID" });
     const termsVersion = await campaignRepository.currentTermsVersion(liveCampaignId);
     expect(termsVersion, "the seeded live campaign should carry published terms").not.toBeNull();
 

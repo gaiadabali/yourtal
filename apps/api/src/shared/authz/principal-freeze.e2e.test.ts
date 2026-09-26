@@ -14,6 +14,7 @@ import { DrizzleUserProfileRepository } from "../../modules/identity/persistence
 import { DrizzleBusinessMembershipReader } from "../../modules/identity/persistence/drizzle-business-membership-reader";
 import { DrizzleStaffRoleReader } from "../../modules/identity/persistence/drizzle-staff-role-reader";
 import { principalSecurityState } from "../../modules/identity/persistence/schema/principal-security-state.table";
+import { seedUserProfile } from "../testing/seed-user-profile";
 
 /**
  * YT-0582, proved end to end at the boundary that actually exists.
@@ -83,6 +84,9 @@ afterEach(async () => {
 describe("the account freeze, proved end to end (YT-0582)", () => {
   it("a principal with NO freeze on file may redeem and transfer from their own wallet", async () => {
     const userId = `freeze-e2e-unfrozen-${randomUUID()}`;
+    // 2.5/F31: resolve() refuses a signed-in principal with no profile row
+    // now — a real account always has one, so this fixture gives one too.
+    await seedUserProfile(db, { userId });
     const principal = await principals.resolve(requestFor(userId));
     expect(principal.attr.valueFrozenUntil).toBeUndefined();
 
@@ -95,6 +99,7 @@ describe("the account freeze, proved end to end (YT-0582)", () => {
 
   it("a principal frozen in the DATABASE is denied redeem and transfer", async () => {
     const userId = `freeze-e2e-frozen-${randomUUID()}`;
+    await seedUserProfile(db, { userId });
     await db
       .insert(principalSecurityState)
       .values({ userId, valueFrozenUntil: new Date(Date.now() + 60 * 60 * 1000) });
@@ -113,6 +118,7 @@ describe("the account freeze, proved end to end (YT-0582)", () => {
 
   it("a freeze that has already EXPIRED is not a freeze — the timestamp is read, not merely stored", async () => {
     const userId = `freeze-e2e-expired-${randomUUID()}`;
+    await seedUserProfile(db, { userId });
     await db
       .insert(principalSecurityState)
       .values({ userId, valueFrozenUntil: new Date(Date.now() - 60 * 60 * 1000) });
@@ -125,6 +131,7 @@ describe("the account freeze, proved end to end (YT-0582)", () => {
 
   it("the freeze blocks spend, not reading the wallet", async () => {
     const userId = `freeze-e2e-view-${randomUUID()}`;
+    await seedUserProfile(db, { userId });
     await db
       .insert(principalSecurityState)
       .values({ userId, valueFrozenUntil: new Date(Date.now() + 60 * 60 * 1000) });

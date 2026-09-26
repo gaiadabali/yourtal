@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { principalSchema } from "@yourtal/authz/principal";
 import type { Principal } from "@yourtal/authz/principal";
 import { businessRoleSchema } from "@yourtal/authz/roles";
@@ -31,19 +31,30 @@ import type { StaffRoleReader } from "../../modules/identity/persistence/staff-r
  * the auth work in YT-0540/0541, and `goodwillCreditCeilingIdr` is
  * economy-owned (YT-0050).
  *
- * ## Falls back to the header when there is no profile row
+ * ## No profile row, no principal (2.5/F31)
  *
- * A principal with no `identity.user_profile` row (a synthetic test id, or
- * a principal 1.4's registration never created — there is no other way to
- * get one today) keeps `PrincipalService`'s header-derived `jurisdiction`,
- * `isSuspended` and `businessRoles` exactly as before. This is not a
- * loophole for a real account: every real consumer has a profile row from
- * the moment they register (1.4.c), so this path exists only for principals
- * this codebase itself invents (tests, fixtures) — the same reasoning
- * `valueFrozenUntil` already applies for `PrincipalSecurityStateRepository`.
- * Staff roles are the one exception: they are folded in whether or not a
- * profile row exists, since `pnpm staff:add` can grant a role to any user id
- * regardless of whether that id ever completed consumer registration.
+ * A SIGNED-IN principal (`base.id !== "anonymous"` — a real, validated
+ * session or bearer token) with no `identity.user_profile` row is REFUSED
+ * outright, not handed the header-derived placeholder jurisdiction/
+ * ageBand/isSuspended/businessRoles `PrincipalService` sets. Before 2.5 this
+ * fell through to those placeholders, which is exactly the F31 gap: a
+ * registration whose profile write failed after its credential committed
+ * left an account that could still sign in as an ID principal with no age
+ * band, because nothing here ever refused it. As of 2.5, `AuthService
+ * .register` writes the credential and the profile in ONE transaction (see
+ * its own comment), so a real account can no longer exist without a
+ * profile — the only way `resolve()` reaches this branch now is a
+ * principal this codebase itself invents (a test's fake `SessionValidator`
+ * naming a user id nobody registered), never a real session. Refusing here
+ * rather than keeping a "test-only" carve-out means a test that fabricates
+ * a signed-in principal has to seed a profile for it (`seedUserProfile`),
+ * exactly as a real one always has one.
+ *
+ * Staff roles no longer need their own "folds in regardless of a profile"
+ * carve-out either: `pnpm staff:add` grants a role to an EXISTING account,
+ * looked up by its already-registered credential (see that script's own
+ * comment), so a legitimate staff account always has a profile too, from
+ * the same registration transaction as everyone else.
  *
  * ## A separate class, not a new method on `PrincipalService`
  *
@@ -74,10 +85,20 @@ export class AsyncPrincipalResolver {
       return base;
     }
 
-    const [security, profile, staffRoles] = await Promise.all([
+    // 2.5/F31: checked before anything else, and before the three other
+    // lookups below even run — a signed-in principal with no profile row is
+    // refused outright now, never handed the header-derived placeholder. See
+    // this class's own doc comment for why reaching here can no longer
+    // happen for a real account.
+    const profile = await this.profiles.findByUserId(base.id);
+    if (profile === null) {
+      throw noProfileException();
+    }
+
+    const [security, staffRoles, memberships] = await Promise.all([
       this.securityState.findByUserId(base.id),
-      this.profiles.findByUserId(base.id),
       this.staffRoleReader.listForUser(base.id),
+      this.memberships.listForUser(base.id),
     ]);
 
     let attr = base.attr;
@@ -85,44 +106,48 @@ export class AsyncPrincipalResolver {
       attr = { ...attr, valueFrozenUntil: security.valueFrozenUntil.toISOString() };
     }
 
-    let roles: readonly PrincipalRole[] = base.roles;
+    // Parsed, not cast: `BusinessMembershipReader`'s own role column is
+    // plain `string` at that boundary, so this is the point that turns it
+    // into the closed enum `principalAttrSchema` requires.
+    const businessRoles = Object.fromEntries(
+      memberships.map((membership) => [
+        membership.businessId,
+        businessRoleSchema.parse(membership.role),
+      ]),
+    );
 
-    if (profile !== null) {
-      const memberships = await this.memberships.listForUser(base.id);
-      // Parsed, not cast: `BusinessMembershipReader`'s own role column is
-      // plain `string` at that boundary, so this is the point that turns it
-      // into the closed enum `principalAttrSchema` requires.
-      const businessRoles = Object.fromEntries(
-        memberships.map((membership) => [
-          membership.businessId,
-          businessRoleSchema.parse(membership.role),
-        ]),
-      );
+    attr = {
+      ...attr,
+      jurisdiction: profile.region,
+      ageBand: ageBandFrom(ageYearsFrom(profile.dateOfBirth, new Date())),
+      isSuspended: profile.suspendedAt !== null,
+      businessRoles,
+    };
 
-      attr = {
-        ...attr,
-        jurisdiction: profile.region,
-        ageBand: ageBandFrom(ageYearsFrom(profile.dateOfBirth, new Date())),
-        isSuspended: profile.suspendedAt !== null,
-        businessRoles,
-      };
-
-      roles = withoutRole(base.roles, "business_user");
-      if (Object.keys(businessRoles).length > 0) {
-        roles = [...roles, "business_user"];
-      }
+    let roles: readonly PrincipalRole[] = withoutRole(base.roles, "business_user");
+    if (Object.keys(businessRoles).length > 0) {
+      roles = [...roles, "business_user"];
     }
-
     if (staffRoles.length > 0) {
       roles = dedupeRoles([...roles, ...staffRoles]);
     }
 
-    if (attr === base.attr && roles === base.roles) {
-      return base;
-    }
-
     return principalSchema.parse({ ...base, roles, attr });
   }
+}
+
+/**
+ * Same 401 shape `principal.service.ts`'s own `invalidSession()` uses for
+ * `session_invalid` — a DIFFERENT code, because the session token itself
+ * validated fine; it is the account behind it that has no
+ * `identity.user_profile` row, which `AuthService.register` (2.5/F31) makes
+ * impossible for anything registered from here on.
+ */
+function noProfileException(): UnauthorizedException {
+  return new UnauthorizedException({
+    code: "no_profile",
+    message: "sign in again to continue",
+  });
 }
 
 function withoutRole(

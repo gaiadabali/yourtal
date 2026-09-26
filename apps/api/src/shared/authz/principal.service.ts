@@ -19,9 +19,15 @@ import type { PrincipalResolver } from "./principal-resolver";
  * is the only thing that turns one into a user id. `PrincipalService` no
  * longer decides `jurisdiction`, `businessRoles` or `isSuspended` at all —
  * every real account has an `identity.user_profile` row from the moment it
- * registers (1.4.c), and `AsyncPrincipalResolver` (this same directory)
- * overlays the true values from it. What is set here is a safe placeholder
- * for the rare principal `AsyncPrincipalResolver` finds no profile row for.
+ * registers, in the SAME transaction as its credential (2.5/F31), and
+ * `AsyncPrincipalResolver` (this same directory) overlays the true values
+ * from it. What is set here is never actually read for a signed-in
+ * principal: `AsyncPrincipalResolver.resolve()` refuses outright, rather
+ * than falling back to it, if no profile row exists (2.5/F31) — these
+ * placeholders exist only to satisfy `principalAttrSchema`'s own required
+ * fields for the brief moment between here and that overlay (or forever,
+ * for `anonymous`, which never reaches `AsyncPrincipalResolver`'s database
+ * lookups at all).
  *
  * No credential presented at all is `anonymous` — the same outcome an
  * absent `x-yt-user-id` header used to produce. A credential that IS

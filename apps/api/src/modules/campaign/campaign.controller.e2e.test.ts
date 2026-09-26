@@ -20,6 +20,7 @@ import { DrizzleCampaignAuthzAttributesReader } from "./persistence/drizzle-camp
 import { DrizzleWatchSessionRepository } from "../watch/persistence/drizzle-watch-session.repository";
 import { CampaignViewAttributeLoader } from "../watch/campaign-view-attribute-loader";
 import { CampaignController } from "./campaign.controller";
+import { seedUserProfile } from "../../shared/testing/seed-user-profile";
 
 /**
  * 1.5.d's "one guard-to-real-Cerbos integration test per module".
@@ -79,10 +80,11 @@ function guard(): PdpGuard {
 function contextFor(
   handler: (...args: never[]) => unknown,
   params: Record<string, string>,
+  userId: string,
 ): ExecutionContext {
   const request = {
     params,
-    headers: { cookie: `yt_session=${randomUUID()}` },
+    headers: { cookie: `yt_session=${userId}` },
   } as unknown as FastifyRequest;
   return {
     getHandler: () => handler,
@@ -105,7 +107,15 @@ const get = CampaignController.prototype.get;
 
 describe("CampaignController.get against real Cerbos", () => {
   it("ALLOWS a signed-in viewer reading a live campaign by id", async () => {
-    const context = contextFor(get, { campaignId: liveCampaignId });
+    const userId = randomUUID();
+    // 2.5/F31: a signed-in principal with no profile row is refused before
+    // Cerbos is ever asked — a real one always has one, so this fixture
+    // gives one too. `region: "ID"` because the seeded live catalogue
+    // (packages/db/src/seed/watch.ts) is region ID throughout — an AU
+    // principal here would trip the F2 region wall for a reason this test
+    // is not about.
+    await seedUserProfile(db, { userId, region: "ID" });
+    const context = contextFor(get, { campaignId: liveCampaignId }, userId);
     await expect(guard().canActivate(context)).resolves.toBe(true);
   });
 });

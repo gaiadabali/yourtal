@@ -85,11 +85,19 @@ interface ResolverFixtures {
   readonly staffRoles?: Record<string, readonly PrincipalRole[]>;
 }
 
+/**
+ * 2.5/F31: `resolve()` now REFUSES a signed-in principal with no profile
+ * row, rather than falling back to a placeholder — so every fixture below
+ * that is not itself testing that refusal needs "wina" to have one, the
+ * same way a real registered account always does. Pass `profiles: {}`
+ * explicitly to exercise the no-profile refusal itself.
+ */
 function resolverWith(fixtures: ResolverFixtures = {}): AsyncPrincipalResolver {
+  const profiles = fixtures.profiles ?? { wina: profileFor() };
   return new AsyncPrincipalResolver(
     new PrincipalService(fixtures.sessions ?? alwaysValidSessionValidator()),
     fakeSecurityStateRepo(fixtures.security),
-    fakeProfileRepo(fixtures.profiles),
+    fakeProfileRepo(profiles),
     fakeMembershipReader(fixtures.memberships),
     fakeStaffRoleReader(fixtures.staffRoles),
   );
@@ -150,13 +158,12 @@ describe("AsyncPrincipalResolver — YT-0582 (valueFrozenUntil)", () => {
 });
 
 describe("AsyncPrincipalResolver — 1.5.b (region, ageBand, suspension, business roles)", () => {
-  it("with no profile row, uses safe placeholder defaults — no x-yt-* header can override them any more (1.5.a)", async () => {
-    const resolver = resolverWith();
-    const principal = await resolver.resolve(requestForUser("wina"));
-    expect(principal.attr.jurisdiction).toBe("ID");
-    expect(principal.attr.isSuspended).toBe(false);
-    expect(principal.attr.businessRoles).toStrictEqual({});
-    expect(principal.attr.ageBand).toBeUndefined();
+  it("2.5/F31: a signed-in principal with NO profile row is refused, never handed a placeholder", async () => {
+    const resolver = resolverWith({ profiles: {} });
+    await expect(resolver.resolve(requestForUser("wina"))).rejects.toMatchObject({
+      status: 401,
+      response: { code: "no_profile" },
+    });
   });
 
   it("with a profile row, region/ageBand/isSuspended/businessRoles come from the database", async () => {
@@ -202,17 +209,20 @@ describe("AsyncPrincipalResolver — 1.5.b (region, ageBand, suspension, busines
     expect(principal.attr.businessRoles).toStrictEqual({});
   });
 
-  it("folds identity.staff_role into roles, with or without a profile", async () => {
+  it("folds identity.staff_role into roles — a staff account has a profile too (2.5/F31: pnpm staff:add only grants a role to an ALREADY-registered account)", async () => {
     const withProfile = resolverWith({
       profiles: { wina: profileFor() },
       staffRoles: { wina: ["moderator"] },
     });
-    const withoutProfile = resolverWith({ staffRoles: { staffer: ["finance", "ops"] } });
+    const secondStaffAccount = resolverWith({
+      profiles: { staffer: profileFor({ userId: "staffer" }) },
+      staffRoles: { staffer: ["finance", "ops"] },
+    });
 
     const p1 = await withProfile.resolve(requestForUser("wina"));
     expect(p1.roles).toContain("moderator");
 
-    const p2 = await withoutProfile.resolve(requestForUser("staffer"));
+    const p2 = await secondStaffAccount.resolve(requestForUser("staffer"));
     expect(p2.roles).toContain("finance");
     expect(p2.roles).toContain("ops");
   });

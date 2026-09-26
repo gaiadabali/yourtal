@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 6/7 | 43/44 | `██████████`  98% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 0/26 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 5/9 | 47/55 | `█████████░`  85% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 5/9 | 48/55 | `█████████░`  87% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **25/82** | **169/371** | `█████░░░░░`  46% |
+| **All** | | | **25/82** | **170/371** | `█████░░░░░`  46% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -801,7 +801,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     
     Failure before step 3 → `release`. Failure after step 3 → retry `activate`; only an unusable voucher gets void + reverse. A recovery job handles `Allocated` past `reserved_until`: activate if the burn exists, release if not.
   - [x] 4.7.b Refuse with `region_mismatch` unless listing region = user region = quote currency's region. Refuse with `audience_blocked` for a disallowed age band. Refuse `online` listings below trust tier 2 (trust-tiered fungibility, docs/16). The ledger re-checks region inside the burn. Merged 0e30db2.
-  - [ ] 4.7.c K13, a voucher the merchant would not honour: `POST /api/wallet/vouchers/:id/dispute` (called by B's 6.5).
+  - [x] 4.7.c K13, a voucher the merchant would not honour: `POST /api/wallet/vouchers/:id/dispute` (called by B's 6.5). Merged 27bcf0d: `POST /api/wallet/vouchers/:id/dispute`, reasons from a closed list; captured → `checkout.dispute` queued for 9.4/10.1.
     - An **uncaptured** voucher is voided and `reinstateBurn` returns the exact points to available at once.
     - A **captured** one goes to the staff queue (9.4), and a recovery line is posted against that merchant (10.1).
   - [ ] 4.7.d **Check:** — 🔄 slot 1 (agent F)

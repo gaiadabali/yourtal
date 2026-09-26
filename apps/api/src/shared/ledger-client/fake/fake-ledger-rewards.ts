@@ -75,14 +75,19 @@ async function insertGrant(
 
   const id = randomUUID();
   const holdbackHours = DEFAULT_HOLDBACK_HOURS_BY_TIER[request.trustTier];
-  const grantedAt = new Date();
-  const unlockAt = new Date(grantedAt.getTime() + holdbackHours * 60 * 60 * 1000);
-  await db.execute(sql`
+  // The database's clock, not this process's: balance compares unlock_at with
+  // now(), and a host clock a few ms ahead makes an instant grant look held.
+  const inserted = await db.execute<{ granted_at: string | Date; unlock_at: string | Date }>(sql`
     INSERT INTO platform.ledger_fake_grant
       (id, kind, user_id, region, points, unlock_at, granted_at, idempotency_key, campaign_id)
     VALUES (${id}, ${kind}, ${request.userId}, ${request.region}, ${request.points},
-            ${unlockAt.toISOString()}, ${grantedAt.toISOString()}, ${request.idempotencyKey}, ${campaignId})
+            now() + make_interval(hours => ${holdbackHours}), now(), ${request.idempotencyKey}, ${campaignId})
+    RETURNING granted_at, unlock_at
   `);
+  const row = inserted.rows[0];
+  if (row === undefined) throw new Error("the fake grant insert returned no row");
+  const grantedAt = new Date(row.granted_at);
+  const unlockAt = new Date(row.unlock_at);
   return ok({
     grantId: id,
     kind,

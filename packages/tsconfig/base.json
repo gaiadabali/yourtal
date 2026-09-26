@@ -3,6 +3,10 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2023"],
+    // TS 6.0 defaults `types` to [] instead of auto-including every
+    // node_modules/@types package (release notes, "types defaults to []").
+    // Every package here is Node code, so restore the one global we need.
+    "types": ["node"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,

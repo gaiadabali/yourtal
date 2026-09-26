@@ -5,5 +5,8 @@
   "files": [
     "base.json",
     "next.json"
-  ]
+  ],
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
 }

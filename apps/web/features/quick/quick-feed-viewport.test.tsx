@@ -28,6 +28,7 @@ function renderViewport(ui: ReactElement) {
 class FakeIntersectionObserver implements IntersectionObserver {
   readonly root: Element | Document | null = null;
   readonly rootMargin = "";
+  readonly scrollMargin = ""; // new in TS 6's updated lib.dom.d.ts
   readonly thresholds: readonly number[] = [];
   static instances: FakeIntersectionObserver[] = [];
   readonly callback: IntersectionObserverCallback;

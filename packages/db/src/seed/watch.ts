@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type pg from "pg";
 
 /**
@@ -6,12 +7,84 @@ import type pg from "pg";
  * Phase 5 (watch and earn) has a place to add it without touching `seed.ts`
  * or anyone else's file.
  *
- * Nothing to seed yet — a watch session is created by a viewer's own
- * `POST /api/watch/sessions` call, not by fixture data, so there is nothing
- * this seed can produce ahead of time that a real request would not.
+ * There is still nothing to seed for a SESSION — a viewer's own
+ * `POST /api/watch/sessions` call creates one, not fixture data. What this
+ * DOES seed, now that 5.1-5.3 wire the earning path end to end, is the two
+ * things a session needs from OTHER domains' tables in order to ever pay
+ * out at all:
+ *
+ * 1. Every seeded campaign's `durationSeconds` (campaign row AND terms
+ *    version) forced to 30, matching the ONE HLS fixture every mock
+ *    campaign actually points at (`campaign.mock.ts`'s
+ *    `MOCK_HLS_MANIFEST_URL`, the `attention-30s` asset). EW-07: before
+ *    this, the server demanded up to 1,800s of coverage against a 30s
+ *    video, which no honest viewer could ever produce. `time-remap.ts` used
+ *    to paper over the gap on the client; the honest fix is that the
+ *    number the server checks against is the length of the thing actually
+ *    playing, so that file is deleted (5.1.c).
+ * 2. `campaign.reward_config` (7.1's table, unwired until now — see that
+ *    migration's own comment) plus a funded `platform.ledger_fake_allocation`
+ *    for every campaign that pays a nonzero reward, so `WatchController`'s
+ *    allocation hold (5.1.b, 4.4.e) has something real to hold against
+ *    instead of starting every session non-earning for want of funding.
  */
-// `_pool`: kept for the (pool) => Promise<...> signature every domain seed
-// shares, so seed.ts's orchestration line reads the same for all five.
-export async function seedWatch(_pool: pg.Pool): Promise<void> {
-  return Promise.resolve();
+export async function seedWatch(pool: pg.Pool): Promise<void> {
+  await alignDurationToFixture(pool);
+  await seedRewardFunding(pool);
+}
+
+const FIXTURE_DURATION_SECONDS = 30;
+
+async function alignDurationToFixture(pool: pg.Pool): Promise<void> {
+  await pool.query(
+    `UPDATE campaign.campaigns SET duration_seconds = $1 WHERE duration_seconds <> $1`,
+    [FIXTURE_DURATION_SECONDS],
+  );
+  await pool.query(
+    `UPDATE campaign.terms_version SET duration_seconds = $1 WHERE duration_seconds <> $1`,
+    [FIXTURE_DURATION_SECONDS],
+  );
+}
+
+/** AU/ID's own currency, mirroring `RegionConfig` — kept local rather than importing `@yourtal/contracts` for one pairing. */
+function currencyFor(region: string): string {
+  return region === "AU" ? "AUD" : "IDR";
+}
+
+async function seedRewardFunding(pool: pg.Pool): Promise<void> {
+  const payingCampaigns = await pool.query<{
+    id: string;
+    business_id: string;
+    region: string;
+    reward_points: number;
+  }>(`SELECT id, business_id, region, reward_points FROM campaign.campaigns WHERE reward_points > 0`);
+
+  for (const campaign of payingCampaigns.rows) {
+    const existing = await pool.query(
+      `SELECT 1 FROM campaign.reward_config WHERE campaign_id = $1`,
+      [campaign.id],
+    );
+    if ((existing.rowCount ?? 0) > 0) continue;
+
+    const allocationId = randomUUID();
+    // Lavishly funded — this is fixture data for exercising the earning
+    // path in dev and tests, not a real partner's budget. 4.4.a-b's
+    // exhaustion behaviour is proved against the ledger's own tests, not
+    // by starving a seeded allocation here.
+    const totalPoints = Math.max(campaign.reward_points * 1_000, 100_000);
+    await pool.query(
+      `INSERT INTO platform.ledger_fake_allocation
+         (id, business_id, region, funder_type, currency, total_points, remaining_points)
+       VALUES ($1, $2, $3, 'partner', $4, $5, $5)`,
+      [allocationId, campaign.business_id, campaign.region, currencyFor(campaign.region), totalPoints],
+    );
+    await pool.query(
+      `INSERT INTO campaign.reward_config
+         (campaign_id, allocation_id, funder_type, max_points_for_campaign,
+          reward_points_per_completion, accuracy_bonus_points)
+       VALUES ($1, $2, 'partner', $3, $3, 0)
+       ON CONFLICT (campaign_id) DO NOTHING`,
+      [campaign.id, allocationId, campaign.reward_points],
+    );
+  }
 }

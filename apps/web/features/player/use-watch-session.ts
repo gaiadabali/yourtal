@@ -6,7 +6,6 @@ import type { Campaign } from "@yourtal/contracts/campaign";
 import type { PlayerChapter } from "./player-chapters";
 import { DEFAULT_QUALITY_TIER_ID, type QualityTierId } from "./quality-tier";
 import { MIN_RESUMABLE_SECONDS, clearResumePosition, readResumePosition } from "./resume-position";
-import { toRealSeconds } from "./time-remap";
 import { useVideoEventWiring } from "./use-video-event-wiring";
 
 export interface ResumeOffer {
@@ -20,7 +19,7 @@ export interface WatchSession {
   isPlaying: boolean;
   /** See `VideoEventWiringState.hasEnded` in `use-video-event-wiring.ts` for what this really means (YT-0551) — it is no longer driven by the DOM `ended` event. */
   hasEnded: boolean;
-  /** Playback position remapped onto the campaign's own advertised duration — see time-remap.ts. */
+  /** Playback position — equal to the video's own real time now that campaign.durationSeconds matches the fixture (EW-07). */
   virtualCurrentTime: number;
   qualityTierId: QualityTierId;
   setQualityTierId: (id: QualityTierId) => void;
@@ -91,12 +90,10 @@ export function useWatchSession(
     [campaign.id],
   );
 
-  const applyRealSeek = useCallback(
-    (video: HTMLVideoElement, virtualSeconds: number) => {
-      video.currentTime = toRealSeconds(virtualSeconds, video.duration, campaign.durationSeconds);
-    },
-    [campaign.durationSeconds],
-  );
+  const applyRealSeek = useCallback((video: HTMLVideoElement, virtualSeconds: number) => {
+    // EW-07: no remap — the virtual timeline IS the video's real one now.
+    video.currentTime = virtualSeconds;
+  }, []);
 
   /**
    * Reads `seeking` through a call so it is a fresh observation, not a
@@ -197,8 +194,8 @@ export function useWatchSession(
   /**
    * YT-0550. `Home` was landing at 0.35 s instead of zero, only against the
    * MinIO origin and never against a same-process static file — a standalone
-   * probe seeking to 0 lands exactly there, and `toRealSeconds(0, ...)` is
-   * exactly 0 for any duration, so the arithmetic was never the bug.
+   * probe seeking to 0 lands exactly there, so the arithmetic was never the
+   * bug (there is no remap arithmetic left at all post-EW-07).
    *
    * The remaining candidate is the one this file's own keyboard-seek test
    * comment already named: repeat keypresses (or a fast drag) call this

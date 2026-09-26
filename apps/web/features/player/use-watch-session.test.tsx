@@ -60,7 +60,10 @@ const campaign = campaignSchema.parse({
   endsAt: "2026-12-19T09:00:00.000Z",
 });
 const chapters = playerChapters(campaign);
-const HAND_OFF_LINK = { name: "Continue to questions" };
+// 5.2.e removed the "Continue to questions" link (it led to the deleted
+// mock checkpoint route); the hand-off message itself is what these tests
+// now assert mounts/does not mount.
+const HAND_OFF_TEXT = /You watched the whole video/;
 
 function mountAndReadyVideo(realDurationSeconds: number): HTMLVideoElement {
   render(<VideoPlayer campaign={campaign} chapters={chapters} />);
@@ -118,14 +121,14 @@ describe("useWatchSession completion gating (YT-0551)", () => {
   it("the attack: a single scrub to the end does not mount the checkpoint hand-off", () => {
     const video = mountAndReadyVideo(20);
     seek(video, 20);
-    expect(screen.queryByRole("link", HAND_OFF_LINK)).not.toBeInTheDocument();
+    expect(screen.queryByText(HAND_OFF_TEXT)).not.toBeInTheDocument();
 
     // Chrome declines to fire `ended` on a seek landing at the end — but
     // this must hold even if some engine did, so it is asserted anyway.
     act(() => {
       video.dispatchEvent(new Event("ended"));
     });
-    expect(screen.queryByRole("link", HAND_OFF_LINK)).not.toBeInTheDocument();
+    expect(screen.queryByText(HAND_OFF_TEXT)).not.toBeInTheDocument();
   });
 
   it("the attack: a synthetic `ended` event with zero real playback does not mount the hand-off", () => {
@@ -135,7 +138,7 @@ describe("useWatchSession completion gating (YT-0551)", () => {
     act(() => {
       video.dispatchEvent(new Event("ended"));
     });
-    expect(screen.queryByRole("link", HAND_OFF_LINK)).not.toBeInTheDocument();
+    expect(screen.queryByText(HAND_OFF_TEXT)).not.toBeInTheDocument();
   });
 
   it("the attack: playing most of it and skipping the rest still does not mount the hand-off", () => {
@@ -145,7 +148,7 @@ describe("useWatchSession completion gating (YT-0551)", () => {
     act(() => {
       video.dispatchEvent(new Event("ended"));
     });
-    expect(screen.queryByRole("link", HAND_OFF_LINK)).not.toBeInTheDocument();
+    expect(screen.queryByText(HAND_OFF_TEXT)).not.toBeInTheDocument();
   });
 
   it("control: real playback ticks covering the whole timeline DOES mount the hand-off", () => {
@@ -156,7 +159,7 @@ describe("useWatchSession completion gating (YT-0551)", () => {
     act(() => {
       video.dispatchEvent(new Event("ended"));
     });
-    expect(screen.getByRole("link", HAND_OFF_LINK)).toBeInTheDocument();
+    expect(screen.getByText(HAND_OFF_TEXT)).toBeInTheDocument();
   });
 
   it("control: a rewind-and-replay still earns, since the coverage rule counts a second once however often it is played", () => {
@@ -171,7 +174,7 @@ describe("useWatchSession completion gating (YT-0551)", () => {
     act(() => {
       video.dispatchEvent(new Event("ended"));
     });
-    expect(screen.getByRole("link", HAND_OFF_LINK)).toBeInTheDocument();
+    expect(screen.getByText(HAND_OFF_TEXT)).toBeInTheDocument();
   });
 });
 

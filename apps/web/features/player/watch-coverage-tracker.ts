@@ -24,18 +24,14 @@ import {
  * behaviour, not a control this app implemented. `video.dispatchEvent(new
  * Event("ended"))` from a console produced a completion regardless.
  *
- * ## Real seconds, not virtual ones
+ * ## Real seconds
  *
  * Tracking happens against the underlying `<video>` element's own
- * `currentTime`/`duration` (real seconds into the placeholder asset), not
- * the campaign's advertised virtual timeline (`time-remap.ts`). The remap
- * is a linear, zero-intercept scale, so a set of real intervals covers
- * `[0, realDuration)` completely if and only if its image covers
- * `[0, virtualDuration)` completely — checking in real seconds avoids
- * re-deriving that scale here and disappears cleanly the day
- * `time-remap.ts` does (per that file's own note, once real per-campaign
- * encodes land and `campaign.durationSeconds` equals the asset's own
- * duration).
+ * `currentTime`/`duration`. EW-07 deleted `time-remap.ts`: seeded campaigns
+ * now carry `durationSeconds` equal to the fixture's own real duration, so
+ * "real seconds" and "the campaign's advertised timeline" are the same
+ * number rather than a scaled pair — nothing here needed to change to stay
+ * correct once that alignment landed.
  *
  * ## What counts as "played": event source, not distance
  *

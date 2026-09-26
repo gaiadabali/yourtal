@@ -214,6 +214,28 @@ export default tseslint.config(
     ],
     plugins: { "yt-b": { rules: { "prefer-primitives": restrictedSyntaxWarn } } },
     rules: {
+      // EW-04, 5.2.e: `@yourtal/contracts/question` (and its `question.ts`
+      // sub-path) is the SCORING form and carries `correctOptionId` /
+      // `correctAnswer` / `correctOrder` — a VALUE import puts those into
+      // this bundle even if nothing reads them. `PresentedQuestion`
+      // (`@yourtal/contracts/question/presented-question`) is the only
+      // form with no field capable of carrying an answer key, so a runtime
+      // value from the scoring module has no legitimate reason to exist in
+      // apps/web at all; a `import type` is fine (erased, never reaches the
+      // bundle) for prop-typing the presentational question components.
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@yourtal/contracts/question", "@yourtal/contracts/question/question"],
+              message:
+                "That is the scoring form and carries the answer key. Use `import type` only, or import `@yourtal/contracts/question/presented-question` for a runtime value.",
+              allowTypeImports: true,
+            },
+          ],
+        },
+      ],
       "no-restricted-syntax": [
         "error",
         // Restated: this rule replaces, not extends, the repo-wide one above.

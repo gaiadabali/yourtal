@@ -5,7 +5,6 @@ import type { RefObject } from "react";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { CoverageInterval } from "@yourtal/contracts/watch/coverage";
 import { clearResumePosition, writeResumePosition } from "./resume-position";
-import { toVirtualSeconds } from "./time-remap";
 import { applyCoverageTick, hasFullRealCoverage } from "./watch-coverage-tracker";
 
 const RESUME_WRITE_INTERVAL_MS = 5_000;
@@ -22,7 +21,7 @@ export interface VideoEventWiringState {
    * the server refuses an incomplete claim regardless of what this flag says.
    */
   hasEnded: boolean;
-  /** Playback position remapped onto the campaign's own advertised duration — see time-remap.ts. */
+  /** Playback position — equal to the video's own real time now that campaign.durationSeconds matches the fixture (EW-07). */
   virtualCurrentTime: number;
 }
 
@@ -101,11 +100,10 @@ export function useVideoEventWiring({
       seekPendingRef.current = false;
       setHasEnded(hasFullRealCoverage(coverageRef.current, current.duration));
 
-      const virtual = toVirtualSeconds(
-        current.currentTime,
-        current.duration,
-        campaign.durationSeconds,
-      );
+      // EW-07: campaign.durationSeconds now equals the fixture's own real
+      // duration (5.1.c seeds it that way), so the "virtual" timeline is
+      // just the real one — no remap needed any more.
+      const virtual = current.currentTime;
       setVirtualCurrentTime(virtual);
 
       const now = Date.now();

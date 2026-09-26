@@ -143,9 +143,7 @@ async function openPausedPlayer(page: Page) {
   await page.goto(`/watch/${LONG_FORM_CAMPAIGN_ID}`);
   await page.waitForLoadState("networkidle");
   await startPlaybackAndWaitForDuration(page);
-  // Pause before asserting. Not a convenience: the fixture is a 30 s clip
-  // standing in for a 600 s campaign, so `time-remap.ts` advances the shown
-  // position ~20 virtual seconds per real second. While playing, playback
+  // Pause before asserting. Not a convenience: while playing, playback
   // outruns any seek before it can be read — which made these keys look
   // inert when they were in fact working. A user scrubbing pauses too.
   await page.evaluate(() => document.querySelector("video")?.pause());

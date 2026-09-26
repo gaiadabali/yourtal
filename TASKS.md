@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 28/30 | `█████████░`  93% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 9/10 | 56/57 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 21/26 | `████████░░`  81% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **37/85** | **228/386** | `██████░░░░`  59% |
+| **All** | | | **38/85** | **229/386** | `██████░░░░`  59% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -824,7 +824,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
 - [x] **4.8 Wallet API** · needs: 4.7 — ✅ 2026-09-26 be8dca0
   - [x] 4.8.a `apps/api/src/modules/wallet`: `GET /api/wallet` (available, pending with unlock dates, expiring), `/api/wallet/history` (plain-language entries built from the ledger's references), `/api/wallet/vouchers`, `/api/wallet/vouchers/:id` and `/api/wallet/vouchers/:id/qr`. Merged d448b73; history carries kind and reference, no prose (the web words it).
   - [x] 4.8.b **Check:** the wallet shows a pending grant with its unlock date and a bought voucher with a QR token. Passed on main be8dca0 (`wallet.controller.test`, `checkout.controller.test`, fake voucher service; live in 4.9.e).
-- [ ] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22; 4.9.c, F24) — 🔄 slot 1
+- [x] **4.9 Pricing, rates and solvency are enforced, not just calculated** · needs: 4.4 (4.9.b early, F22; 4.9.c, F24) — ✅ 2026-09-27 39edb4d
   - [x] 4.9.a The ledger owns `ledger.listing_price(listing_id, points, s_minor, currency, rate_id, computed_at)`. It is upserted by `priceListing` (called by C's 7.4 on create or when S changes) and recomputed by a ledger job when a rate takes effect. apps/api reads only listing ID and points through a `SECURITY DEFINER` view. — ✅ 2026-09-26 32f221a
     - [x] the table and the `priceListing` upsert, with the rate each listing was priced at (4.1.b)
     - [x] a one-minute ledger loop reprices every listing on a superseded rate once the new one takes effect, with a test before and after `effective_from` (32f221a)
@@ -843,7 +843,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - [x] No API response carries it: `packages/contracts/src/money/no-backing-rate-in-api.test.ts` scans every published path and schema (e3f1d8e).
     - [x] The bundle test fails if any client chunk contains `micros_per_point`, `issuePriceMicros` or `backingMicros`: `pnpm check:bundle-b`, run by perf-budget.yml after the build (e3f1d8e).
     - [x] `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove, plus the contract mocks 13.5.c deletes: `eslint-rules/no-mock-backing-rate.mjs` (e3f1d8e).
-  - [ ] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live. The spec already passes 23/23 against a local live ledger (4f282d7). — ⛔ staging does not exist until 2.1 (slot 4); asked there as 2.1.f
+  - [x] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live. The spec already passes 23/23 against a local live ledger (4f282d7). Passed on staging at main 39edb4d (F33): `ledger-client.contract.spec.ts` 30/30 against staging's live ledger and database through an SSH tunnel; staging runs `LEDGER_MODE=live` since 2.1.f.
   - [x] 4.9.f **Check:** Passed on main 568eacd: `coverage_check_test.go` (a 1,000-pt AU purchase adds exactly 1.50 and a streak succeeds; burn and capture move cash and liability by 0), and `pnpm verify` green with the AU rate 3,000,000 before and after.
 - [x] **4.10 Done-when audit** · needs: 4.1–4.9 — ✅ 2026-09-26 764a2ee
   - [x] 4.10.a Every verified Phase 4 defect in `engine-money.md`, `engine-watch.md` and `engine-voucher.md` → its regression test, on main 8dbeb15 (Go and live suites green). Out of scope, owned elsewhere: EM-01 (7.4.b), EM-07/24 (10.3.a), EM-20/21/22 (0.3, 0.7), EW-01/04/06–10/19–21 (Phase 5), EW-02/03 (1.x), EW-14/15 (6.x), EW-16/17 (7.x), EW-18 (2.x, 5.x, 10.x), EW-22/23 (0.x). D1–D17 are mapped under 4.6.g (D16 ⛔ 8.2.b, D17 refuted).
@@ -1331,6 +1331,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-27 · A · 4.9 Pricing, rates and solvency enforced: listing prices repriced on a new rate, rate governance, the solvency monitor, B never in a browser, the 4.9.f coverage Check, and the ledger contract spec 30/30 against staging's live ledger · 39edb4d
 - 2026-09-26 · A · 2.5 No account without a profile (F31): credential and profile written in one transaction; a session with no profile is refused with `no_profile` · eabe07e
 - 2026-09-26 · A · 2.3 Staging posture and review tools: banner, noindex, disallow-all robots, `/dev/inbox`, `/dev/clock` against the live ledger, staging-only drivers assertion, a minimal seed with 10 demo logins, a real pending grant and a real voucher, nightly backup with a strict decrypting restore rehearsal · e367574
 - 2026-09-26 · B · 5.1–5.3 Watch & earn, server side: cumulative-budget farming fix (EW-01, row-locked, real HTTP burst/parallel Checks), session parking/resume keyed to (user, campaign, terms) with `already_earned` and an allocation hold, checkpoint issuance made single-live (EW-08) with coverage/sequence gating, server-side scoring writing `question_response` + session counters (EW-04/09), and completion calling `grantReward` with the signed attestation — a real ledger pending entry, idempotent, EW-10's winner-only grant. Two real bugs the e2e suite caught along the way: `RETURNING` on an INSERT-only table needs SELECT `yourtal_app` must never have (fixed to a caught unique-violation), and a circular module/controller import that left a DI token unresolvable. `seed/watch.ts` aligns every campaign's duration to the one HLS fixture (EW-07, `time-remap.ts` deleted) and funds `campaign.reward_config` per campaign; the mock, client-scored checkpoint quiz deleted (EW-04's actual leak vector) rather than patched. A `WATCH_COMPLETION_HOOK` (5.5.d's ask) fires on every real grant, no-op until B's streak module binds it. 5.1.d ships the fake-ok stubs the task names (unsigned manifest URL, `deliveryCoverage` returning `"unknown"`); real exports are a two-line swap once 7.2.c/10.4.c land. `apps/api` watch/campaign/wallet/checkout/me suites green (137+ tests); `packages/contracts` 723/723; `pnpm check` green · acbdf73

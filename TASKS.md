@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 6/7 | 44/45 | `██████████`  98% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 0/26 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 6/9 | 50/55 | `█████████░`  91% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 7/9 | 51/55 | `█████████░`  93% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **26/82** | **173/373** | `█████░░░░░`  46% |
+| **All** | | | **27/82** | **174/373** | `█████░░░░░`  47% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -739,7 +739,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - `validate` uses checked int64 addition, and the checker sums as numeric (EM-23).
   - [x] 4.3.e Add `/v1/burns` (`burnForVoucher`, `getBurn`, `reinstateBurn`) on these guards, where `reinstateBurn` is K13.
   - [x] 4.3.f **Check:** each of EM-04/09/14/17/18/23 has a test that failed before the fix and passes after.
-- [ ] **4.4 The Reward Engine pays what the partner set, once** · needs: 4.3 (4.4.f and 4.4.i early, F22) — 🔄 slot 1
+- [x] **4.4 The Reward Engine pays what the partner set, once** · needs: 4.3 (4.4.f and 4.4.i early, F22) — ✅ 2026-09-26 4f282d7
   - [x] 4.4.a The amount comes from the **frozen terms version**, never from the editable `reward_config`, so viewers are paid the terms they entered under (EM-05, EM-16, EW-05).
     - A migration creates the view `campaign.campaign_owner(id, business_id, region, state)`, with SELECT granted to `yourtal_ledger`.
     - A grant is refused unless all of these hold: the allocation's funder type is partner; the funder is the campaign's owner; the allocation's country is the campaign's region; and the campaign is live.
@@ -749,7 +749,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.4.d **One reward per user per campaign:** `UNIQUE (user_id, campaign_id)` for watch-completed grants, returning `already_granted`.
   - [x] 4.4.e Allocation holds. At reward-session start, `hold` base + maximum bonus with a TTL of 2 × duration + 1 h. The grant consumes the hold; abandonment or expiry releases it through a job. This way a viewer is never refused at the end for `allocation_exhausted`. The decrement-only `SECURITY DEFINER` function has four verbs: hold, consume, release and return. Revoke the ledger role's UPDATE on allocations (EM-08).
   - [x] 4.4.f Velocity caps and the daily and monthly caps (F12) are counted inside the transaction, under a per-user advisory lock, using the database's `now()` (EM-06, EW-11).
-  - [ ] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13). — event emitted (2b35a27); skipping escrowed users waits for escrow — 🔄 slot 1 (agent E)
+  - [x] 4.4.g Holdback: grants post to **pending** with `unlock_at` by trust tier (F12). A job releases them to available (skipping escrowed users) and emits the `ledger.points_unlocked` pg-boss event (EM-13). — event emitted (2b35a27); escrowed users skipped (4f282d7: `ledger.escrow`, `/v1/escrow` live, `escrow_release_test`; live spec 23/23)
   - [x] 4.4.h K6: every point not paid for by a business is backed by cash.
     - `grantAction` (streak, receipt, goodwill) draws only from a marketing allocation funded by marketing cash → reserve in the same transaction.
     - Marketing cash is increased only by `fundMarketing` (two-person, staff) and by the seed.
@@ -1280,6 +1280,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · A (agent E) · 4.4 Reward Engine: the last piece, escrow — takes available then pending, releases each part back, and holdback release skips escrowed users (4.4.g). `ledger-client.contract.spec.ts` passes 23/23 against live, no todo · 4f282d7
 - 2026-09-26 · A · 4.7 Burn saga: quote → confirm (pre-check, reserve, burn at the held price, activate, done) with recovery, the region, audience and trust-tier refusals, and K13 disputes. Checked live (`pnpm test:checkout-live`): a double submit burns once and issues one voucher; a voucher service killed before the reserve spends nothing, and one killed between the burn and activate leaves the saga `burned` until it is back, then recovery finishes it, one burn and one voucher; an ID account cannot burn an AU listing through the api or straight at the ledger. The live run found two recovery defects (a thrown activation stopped every saga's recovery; an unreachable ledger released a spent voucher), fixed with regression tests · 8c29713
 - 2026-09-26 · A · Phase 1 done: identity, contracts and plumbing (1.1–1.7, all ✅). Done when verified against main — register → verify through `/dev/inbox` → log in → see your name (`dev-inbox.controller.test.ts`, and D's `a-identity-plumbing.spec.ts`, 8/8 Playwright, axe clean); no `x-yt-*` header accepted anywhere (every identity-assertion header path deleted in 1.5.a; the one remaining match, `store_device`'s `x-yt-device-id`, is an opaque credential reference a `DeviceCredentialVerifier` port must verify before any principal is issued, not an identity claim, and isn't wired to a route yet); a principal never reads another region's data at the authz layer this phase owns (Cerbos's F2 region wall on business/billing/kyb_document/team/listing/campaign/voucher_batch/redemption/report/campaign_view, native suite 509/509, plus a real-HTTP check denying an ID principal an AU campaign). B and C have been building against the contracts and fakes throughout (Phases 3, 4, 8, 11 all already active). Slot 3 freed · 6479720
 - 2026-09-26 · A · 1.5 The principal comes from the session, never from headers, done: `PrincipalService.resolve` reads `yt_session`/Bearer through `SessionService.validateAndTouch`, async throughout; every `x-yt-*` header path and the `NODE_ENV=production` boot refusal deleted (a); the principal carries region/ageBand/isSuspended/business roles/staff roles from real tables, with the F2 region wall in Cerbos on every tenant-scoped resource (b); a `store_device` principal path independent of a person (c); `PdpGuard`'s async resource-attribute loaders feeding `campaign_view` routes real state/region/audience (d); Fastify `trustProxy`, cookie flags and F12's real session lifetimes (e, agent B); no token-bearing idempotency replies, an atomic throttle (f, agent B); the Check proving a header-only request denied identically to an anonymous one, an ID principal denied an AU campaign by Cerbos itself, and the full route suites green against real Cerbos with `.env` sourced (g). Unblocks B's 1.7 (already done, 6a410d5) and D's 8.1.b · 6479720

@@ -3,6 +3,7 @@ import { NestFactory } from "@nestjs/core";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { ZodValidationPipe } from "nestjs-zod";
+import { assertDriversConfiguredForBoot } from "@yourtal/drivers/driver-mode";
 import { AppModule } from "./app.module";
 import { loadAppConfig } from "./config/app-config";
 
@@ -23,6 +24,12 @@ import { loadAppConfig } from "./config/app-config";
  */
 async function bootstrap(): Promise<void> {
   const config = loadAppConfig();
+  // 2.3.b: refuses to start on APP_ENV=staging unless every external driver
+  // (packages/drivers/src/boundary.ts) is simulated — before anything else
+  // boots, same reasoning as the ordinary misconfiguration check it wraps
+  // (packages/drivers/src/driver-mode.ts): a half-booted app is worse than
+  // one that never started.
+  assertDriversConfiguredForBoot(process.env, config.appEnv);
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     // 1.5.e: `trustProxy` — every real deployment of this app runs behind

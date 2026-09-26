@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { BOUNDARIES, BOUNDARY_NAMES } from "./boundary";
 import {
   DriverConfigurationError,
+  StagingDriverModeError,
   assertDriversConfigured,
+  assertDriversConfiguredForBoot,
+  assertStagingDriversSimulated,
   resolveDriverMode,
 } from "./driver-mode";
 
@@ -142,6 +145,84 @@ describe("the boot check", () => {
     expect(message).toContain("MESSAGING_SENDER_ID");
     // And why it refused, so nobody "fixes" it by adding a fallback.
     expect(message).toContain("indistinguishable from working");
+  });
+});
+
+describe("staging posture (2.3.b)", () => {
+  // Fully-configured live credentials for every boundary — the case
+  // `assertDriversConfigured` alone would happily allow, in any environment.
+  const allLive = Object.fromEntries(
+    BOUNDARY_NAMES.flatMap((boundary) => {
+      const definition = BOUNDARIES[boundary];
+      return [
+        [definition.modeEnvVar, "live"],
+        ...definition.liveCredentialEnvVars.map((name) => [name, "present"]),
+      ];
+    }),
+  );
+  const allSimulated = Object.fromEntries(
+    BOUNDARY_NAMES.map((boundary) => [BOUNDARIES[boundary].modeEnvVar, "simulated"]),
+  );
+
+  it("boots on staging when every driver is simulated", () => {
+    const modes = assertDriversConfiguredForBoot(allSimulated, "staging");
+    expect(Object.values(modes).every((mode) => mode === "simulated")).toBe(true);
+  });
+
+  it("boots on staging with nothing configured (the default is simulated)", () => {
+    expect(() => assertDriversConfiguredForBoot(noEnv, "staging")).not.toThrow();
+  });
+
+  it("refuses staging when any driver is fully-configured live, naming it", () => {
+    let thrown: unknown;
+    try {
+      assertDriversConfiguredForBoot(allLive, "staging");
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(StagingDriverModeError);
+    const failure = thrown as StagingDriverModeError;
+    // Every boundary was live, so every boundary is named.
+    for (const boundary of BOUNDARY_NAMES) {
+      expect(failure.message).toContain(boundary);
+    }
+    expect(failure.message).toContain("simulated");
+  });
+
+  it("names only the boundaries that are actually live, not every boundary", () => {
+    const oneLive = {
+      ...allSimulated,
+      PAYMENTS_DRIVER: "live",
+      PAYMENTS_API_KEY: "k",
+      PAYMENTS_WEBHOOK_SECRET: "s",
+    };
+    expect(() => assertStagingDriversSimulated("staging", assertDriversConfigured(oneLive))).toThrow(
+      StagingDriverModeError,
+    );
+    let thrown: unknown;
+    try {
+      assertStagingDriversSimulated("staging", assertDriversConfigured(oneLive));
+    } catch (error) {
+      thrown = error;
+    }
+    const failure = thrown as StagingDriverModeError;
+    expect(failure.boundaries).toStrictEqual(["payments"]);
+    expect(failure.message).toContain("PAYMENTS_DRIVER=live");
+    expect(failure.message).not.toContain("disbursement");
+  });
+
+  it("dev (and any non-staging APP_ENV) is unaffected by a live driver", () => {
+    for (const appEnv of ["dev", "production", "", "test"]) {
+      expect(() => assertDriversConfiguredForBoot(allLive, appEnv)).not.toThrow();
+    }
+  });
+
+  it("staging's ordinary misconfiguration check still runs first", () => {
+    // Live requested with no credentials: this is `missing_credentials`,
+    // caught by assertDriversConfigured before the staging rule ever runs.
+    expect(() => assertDriversConfiguredForBoot({ PAYMENTS_DRIVER: "live" }, "staging")).toThrow(
+      DriverConfigurationError,
+    );
   });
 });
 

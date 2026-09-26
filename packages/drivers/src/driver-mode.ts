@@ -118,6 +118,50 @@ export function describeProblem(problem: DriverConfigProblem): string {
   );
 }
 
+/**
+ * 2.3.b — staging refuses ANY live driver, even one whose credentials are
+ * fully present. `assertDriversConfigured` alone would let a correctly
+ * configured live boundary through in every environment, staging included;
+ * this is the additional, staging-only rule. Not folded into
+ * `resolveDriverMode`/`assertDriversConfigured` because those two answer
+ * "is this configuration usable at all", the same question in every
+ * environment — this answers a different one, "does this environment's
+ * *posture* allow it", which only staging asks.
+ *
+ * `LEDGER_MODE` (1.2.d) is a separate switch and deliberately NOT part of
+ * this check: staging runs `LEDGER_MODE=live` against the real Go ledger
+ * (TASKS.md 2.3.b), and 4.9.e is what will someday refuse `LEDGER_MODE=fake`
+ * on staging — the opposite direction from this rule.
+ */
+export class StagingDriverModeError extends Error {
+  readonly boundaries: readonly BoundaryName[];
+
+  constructor(boundaries: readonly BoundaryName[]) {
+    super(
+      `APP_ENV=staging requires every external driver to be simulated, but ` +
+        `${boundaries.length === 1 ? "this one is" : "these are"} live: ` +
+        boundaries
+          .map((boundary) => `${boundary} (${BOUNDARIES[boundary].modeEnvVar}=live)`)
+          .join(", ") +
+        `. Staging holds demo data only (red line 11) — a live driver here would reach a ` +
+        `real vendor with simulated money. Set ${boundaries.map((boundary) => BOUNDARIES[boundary].modeEnvVar).join("/")} to "simulated".`,
+    );
+    this.name = "StagingDriverModeError";
+    this.boundaries = boundaries;
+  }
+}
+
+export function assertStagingDriversSimulated(
+  appEnv: string,
+  modes: Record<BoundaryName, DriverMode>,
+): void {
+  if (appEnv !== "staging") return;
+  const live = BOUNDARY_NAMES.filter((boundary) => modes[boundary] === "live");
+  if (live.length > 0) {
+    throw new StagingDriverModeError(live);
+  }
+}
+
 /** Thrown at boot. Carries every problem, not just the first one found. */
 export class DriverConfigurationError extends Error {
   readonly problems: readonly DriverConfigProblem[];
@@ -181,4 +225,21 @@ export function assertDriversConfigured(env: Environment): Record<BoundaryName, 
     push: modeOf("push"),
     webhook: modeOf("webhook"),
   };
+}
+
+/**
+ * The single call `main.ts` makes at boot (2.3.b): every ordinary
+ * misconfiguration first (`assertDriversConfigured`, in every environment),
+ * then staging's stricter "must actually be simulated" rule on top. Kept as
+ * one function so a caller cannot wire the first check and forget the
+ * second — the same reasoning `assertDriversConfigured` itself gives for
+ * checking every boundary in one pass rather than one call site at a time.
+ */
+export function assertDriversConfiguredForBoot(
+  env: Environment,
+  appEnv: string,
+): Record<BoundaryName, DriverMode> {
+  const modes = assertDriversConfigured(env);
+  assertStagingDriversSimulated(appEnv, modes);
+  return modes;
 }

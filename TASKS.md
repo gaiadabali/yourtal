@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 1/5 | 7/29 | `██░░░░░░░░`  24% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 11/29 | `████░░░░░░`  38% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/9 | 51/55 | `█████████░`  93% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **29/83** | **182/376** | `█████░░░░░`  48% |
+| **All** | | | **30/83** | **186/376** | `█████░░░░░`  49% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`) auditing Done when: every engine-report defect → its regression test, region walls, signed-only services |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | Two agents. A (`yourtal-2`, `phase/5`, db `yourtal_s2`): 5.1 → 5.2 → 5.3. B (`yourtal-p5-b`, `phase/5-b`, db `yourtal_s5b`, ports 26390/26391, Valkey /11): 5.4 → 5.5 |
 | 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (4916e31), including F30's reopen: 1.5.h makes a protected route with no session return 401/`no_session` instead of 403 (403 stays for a signed-in principal Cerbos refuses). `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
-| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅ (whole stack live on Helios). A: merging B, then 2.2.d Check and 2.3. B done (2.2.a/c, 2.3.c repo side, merged into `phase/2`). C (`yourtal-p2-c`): 2.3.b, 2.3.d, 2.3.e |
+| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅, 2.2 ✅: every merge to main is live on staging in ~5 min. Now 2.3: C (`yourtal-p2-c`) on 2.3.b/d/e; A next on 2.3.a/g and the 2.3.c voucher-decrypt rehearsal; 2.4 after |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
 
@@ -565,11 +565,11 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - on Helios, `curl 127.0.0.1:<api>/api/health` returns 200;
     - ledger and voucher `/healthz` return 200;
     - `ss -ltnp` shows every YourTal port on 127.0.0.1.
-- [ ] **2.2 Continuous deploy from main** · needs: 2.1 — 🔄 slot 4 (agent B)
+- [x] **2.2 Continuous deploy from main** · needs: 2.1 — ✅ 2026-09-26 c361aa1
   - [x] 2.2.a `release.yml` triggers on pushes to `main`, gated by `pnpm check` and the build. It publishes the `deploy/production-*` release that the poller installs. It keeps `paths-ignore: TASKS.md`.
-  - [ ] 2.2.b The shared `gaiada-deploy` rollback loses `PM2_NAME` (old YT-0532). Fix it upstream in `deploy-workflows` if we can reach it. Otherwise document "rollback = redeploy the previous tag" and exercise it once.
-  - [ ] 2.2.c Add a daily check that the deployed SHA equals `main`, so a poller that has silently stopped gets noticed (old YT-0566).
-  - [ ] 2.2.d **Check:** a trivial commit pushed to `main` is live on staging within about 5 minutes.
+  - [x] 2.2.b The shared `gaiada-deploy` rollback loses `PM2_NAME` (old YT-0532). Fix it upstream in `deploy-workflows` if we can reach it. Otherwise document "rollback = redeploy the previous tag" and exercise it once. — Fixed upstream in the Helios agent (F27 patch, `gaiada-setups/patches/pre-reload-hook.md`): the health-check rollback now passes `--pm2-name`. Exercised 2026-09-26: rollback c361aa1 → cab5975 reloaded all five processes, redeploy back to c361aa1.
+  - [x] 2.2.c Add a daily check that the deployed SHA equals `main`, so a poller that has silently stopped gets noticed (old YT-0566). — `staging-drift.yml`, daily plus manual; compares `/api/health` `revision` with main's latest release-relevant commit, with a 30-min grace. First run 2026-09-26: "in sync" at cab5975.
+  - [x] 2.2.d **Check:** a trivial commit pushed to `main` is live on staging within about 5 minutes. — Verified 2026-09-26: c361aa1 pushed 12:37:31, live on staging (`/api/health` revision) 12:42:18, 4 min 47 s; CI fast-forwarded `production` itself. (First try took 8 min; the release gate now runs beside the build.)
 - [ ] **2.3 Staging posture and review tools** · needs: 2.2 — 🔄 slot 4 (agents B, C)
   - [ ] 2.3.a With `APP_ENV=staging`:
     - `X-Robots-Tag: noindex` from nginx and the proxy;
@@ -577,7 +577,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - B's 3.1.f renders `<StagingBanner/>` ("Staging — demo data, payments simulated"), and B's `robots.ts` disallows everything.
   - [x] 2.3.b Boot assertion: `APP_ENV=staging` refuses to start unless every driver is simulated.
   - [ ] 2.3.c Nightly `pg_dump` **plus the keyring** to `/opt/yourtal/backups`, kept 7 days. Rehearse one restore that decrypts a stored voucher code (old YT-0531).
-  - [ ] 2.3.d `/dev/clock`, on staging only and audited, so a reviewer can walk time-based journeys in one sitting:
+  - [x] 2.3.d `/dev/clock`, on staging only and audited, so a reviewer can walk time-based journeys in one sitting:
     - "Release my pending points now";
     - "Run job now" for every scheduled job (holdback release, expiry, settlement accrual, weekly statement, payout, solvency, proof);
     - "Advance my account by N days".
@@ -1286,6 +1286,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · A · 2.2 Continuous deploy from main: release on push to main, gate beside build, CI fast-forwards `production`, daily drift check, rollback keeps pm2 names; push-to-live 4 min 47 s · c361aa1
 - 2026-09-26 · A · 2.1 The whole stack runs on Helios: one artifact via the poller, migrations before the swap (F27), datastores in `yourtal.slice`, nginx with `/api`, media and signed HLS · 5d13115
 - 2026-09-26 · A · 1.5 reopened and re-closed for 1.5.h (F30): a protected route called with no session now returns 401/`no_session`, not 403 — `PdpGuard` only takes this branch for an anonymous principal Cerbos denies (`type: "forbidden"`), never for `pdp_unavailable`/`pdp_protocol_error` (still 503) and never touching Open Viewing's anonymous ALLOW path. Every existing "anonymous caller" test updated to 401; every signed-in-but-refused case (team-member, store-listing, settlement-decrease) stays 403, unchanged. `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509 · 4916e31
 - 2026-09-26 · A (agent E) · 4.4 Reward Engine: the last piece, escrow — takes available then pending, releases each part back, and holdback release skips escrowed users (4.4.g). `ledger-client.contract.spec.ts` passes 23/23 against live, no todo · 4f282d7

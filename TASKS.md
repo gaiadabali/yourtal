@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 41/44 | `█████████░`  93% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 6/7 | 42/44 | `██████████`  95% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 5/9 | 47/55 | `█████████░`  85% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **24/82** | **167/370** | `█████░░░░░`  45% |
+| **All** | | | **25/82** | **168/370** | `█████░░░░░`  45% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | A (`yourtal-1`, `phase/4`): 4.8.a ✅ (d448b73); 4.7.a/b and the burn-price fix merging; next 4.4.m, 4.7.c. B (`yourtal-p4-b`, `phase/4-b`): 4.5 ✅ (21871de), 4.6.f.1 ✅; slot freed — the rest (4.6.f.2, 4.6.h) needs a ledger-internal route only A can add (see 4.6.f.2's note). C done (4.9.a, 4.9.d) and D done (4.4.l, 4.4.g event); their helper worktrees stay in place |
 | 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.a/b/c/d/f merged (2e09392); 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) done with 1.5.a — moving to the 1.5.g Check once B's 1.5.e is on main; B (`yourtal-p1-b`, `phase/1-b`) now on 1.5.e (HTTP hardening), rebasing onto 1.5.a; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5 — slot freed, worktree left in place in case 1.5 lands before another task needs it |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.a/b/c/d/f merged (2e09392); 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) done with 1.5.a — moving to the 1.5.g Check once B's 1.5.e is on main; B (`yourtal-p1-b`, `phase/1-b`) now on 1.5.e (HTTP hardening), rebasing onto 1.5.a; D (`yourtal-p1-c`, `phase/1-c`) done — 1.7 ✅ (6a410d5); slot freed, worktree left in place |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Three agents: A (`yourtal-p8`, `phase/8`, db `yourtal_s8`) 8.1.a server side; B (`yourtal-p8-b`, `phase/8-b`) 8.2.d; C (`yourtal-p8-c`, `phase/8-c`) 8.3.b |
 
@@ -518,7 +518,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.6.b `GET /api/dev/inbox` and a plain `/dev/inbox` page. They are enabled only when `APP_ENV` is `dev` or `staging`. — `PostgresSimOutboxReader` reads `platform.sim_outbox` directly (newest first, every boundary); the route is `@PublicRoute` (nothing behind it is real user data) and 404s when the new `APP_ENV` config var is `production`. The web page is its own root layout, a plain server-side fetch with no cache — 1.7's BFF plumbing is a separate task. `next build` confirms it renders dynamically.
   - [x] 1.6.c (requested by B and C) `push` and `webhook` boundaries in `packages/drivers`, with simulated drivers that store to `platform.sim_outbox`.
   - [x] 1.6.d **Check:** register → the verification email appears in `/dev/inbox` → its link verifies the account. — Verified in `dev-inbox.controller.test.ts`: register → requestEmailVerification → the entry appears in `GET /api/dev/inbox` with the right recipient/category/region → its token confirms the account via the real confirm endpoint. A second test proves the production 404.
-- [ ] **1.7 Web ↔ API plumbing** · needs: 1.5 — 🔄 slot 3 (agent D)
+- [x] **1.7 Web ↔ API plumbing** · needs: 1.5 — ✅ 2026-09-26 6a410d5
   - [x] 1.7.a `apps/web/lib/api/`: a server-only `apiFetch(path, zodSchema)` that calls `API_INTERNAL_URL`, forwards `yt_session` and returns typed errors. Per-domain calls live in each area's `features/<x>/<x>-api.ts`.
   - [x] 1.7.b The login and `PATCH /api/me` Server Actions set the `yt_session`, `yt_locale` and `yt_region` cookies. `proxy.ts` reads only those cookies and defaults to AU / en-AU. (requested by A) B makes `i18n/request.ts` read only `yt_locale` and `yt_region`, defaulting to en-AU, under 6.1.b.
   - [x] 1.7.c `apps/web/proxy.ts` protects these exact prefixes, redirecting to `/login?returnTo=`: `/home`, `/watch`, `/campaign`, `/store`, `/wallet`, `/me`, `/onboarding`, `/quick`, `/business`, `/studio`, `/staff`. Everything else stays public, with these exceptions for the merchant counter:
@@ -528,7 +528,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
 
     Redirects come from `apps/web/route-redirects.ts`, which starts empty; each area adds its own lines.
   - [x] 1.7.d (requested by B) In `money-format.ts`, add `formatPointsIn(locale, amount)` with no default, change `formatPoints`'s default to `en-AU` and mark it deprecated. B and C move their own call sites (6.1.c, 7.8.c, 8.2.d).
-  - [ ] 1.7.e **Check:** a Server Component shows the signed-in user's name through `apiFetch`, and `/wallet` without a session redirects to `/login`. — ⛔ 1.5 (needs 1.5.a merged so the API reads the principal from `yt_session`; a–d (f49d1a7, 2a1ade8) already prove `apiFetch`/`proxy.ts` in isolation with 43 tests)
+  - [x] 1.7.e **Check:** a Server Component shows the signed-in user's name through `apiFetch`, and `/wallet` without a session redirects to `/login`. — Verified live: api on 26344, web on 26343 against `yourtal_s3c` post-1.5.a (2e09392). `apps/web/e2e/a-identity-plumbing.spec.ts` (its own `playwright.a-identity.config.ts`, since it needs a live api): register once → sign in through the real `loginAction` → `/dev/whoami`'s `apiFetch` renders the account's own `displayName`; anonymous `/dev/whoami` reports anonymous, not a crash; `/wallet` with no session redirects to `/login?returnTo=/wallet`; `yt_session` alone is refused for `/merchant` (needs `yt_device`); `/dev/login` and `/dev/whoami` render and pass axe (WCAG AA) at 390px/1280px, light/dark (8 screenshots, 0 violations). 8/8 passing.
 
 **Done when:** you can register, verify through the simulated inbox, log in and see your name; no `x-yt-*` header is accepted anywhere; a principal can never read another region's data; B and C are building against the contracts and fakes.
 
@@ -1272,6 +1272,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · D · 1.7 Web ↔ API plumbing done: server-only `apiFetch` (`apps/web/lib/api/`) forwarding `yt_session` with typed errors; `loginAction`/`logoutAction`/`updateMeAction` setting `yt_session`/`yt_region`/`yt_locale` from the account's own `GET /api/me`; `proxy.ts` (Next 16's `middleware.ts` rename) gating the exact listed prefixes plus `/merchant/**` on `yt_device`; `formatPointsIn` alongside a deprecated `formatPoints` defaulting to `en-AU`. 1.7.e Check verified live against a real api+web+Postgres, 8/8 Playwright tests (`a-identity-plumbing.spec.ts`), axe clean at 390/1280px light/dark · 6a410d5
 - 2026-09-26 · B · 4.5 Voucher core API: services/voucher/internal/api serves voucher-internal at /internal/v1 behind a new serviceauth (mirrors the ledger's); reserve/release/activate is the stock reservation with a new Allocated→Minted transition; QR tokens self-verify under a new `voucher_qr` keyring purpose; device-authorized authorize/capture, kill-switch route, device-scoped merchant credentials with void/refund refusing a device principal (403); a batch's terms are now derived from its listing with the supplier checked (D12); vouchers carry their region. Plus voidVoucher (requested by A, 4.7.c/K13) and 4.6.f.1 (capture_outbox). `voucher-client.contract.spec.ts` passes live, including a full AUD reserve→activate→qrToken→authorize→capture run · 21871de
 - 2026-09-26 · A · 4.8 Wallet API: points, pending by unlock date, history by kind, vouchers and QR, always the caller's own · be8dca0
 - 2026-09-26 · B · Phase 3 done: After Dark picked from real captures (F3); tokens v2, every primitive, video component and shell in the `/lab/ui` gallery in light and dark at 390 and 1280 px, with visual baselines; both UI gates green in CI (run 36171537379) · 1f00762

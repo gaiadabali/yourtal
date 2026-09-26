@@ -8,7 +8,7 @@ import (
 )
 
 // 4.6.f: the capture transaction writes a capture_outbox row, in the same
-// transaction as the capture itself — a worker job (10.1) posts unposted
+// transaction as the capture itself — internal/ledgerpost posts unposted
 // rows to the ledger with idempotency key = capture_id.
 func TestCaptureWritesAnOutboxRow(t *testing.T) {
 	f := newFixture(t)

@@ -47,6 +47,10 @@ import type {
   RateProposal,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
+import type {
+  CapturePosting,
+  CaptureVoucherRequest,
+} from "@yourtal/contracts/ledger-internal/capture";
 import type { Region } from "@yourtal/contracts/region";
 import type {
   ApproveSettingInput,
@@ -204,6 +208,10 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   reinstateBurn(sagaId: string): ResultAsync<Burn, LedgerError> {
     return this.post("/v1/burns/reinstate", { sagaId });
+  }
+
+  captureVoucher(request: CaptureVoucherRequest): ResultAsync<CapturePosting, LedgerError> {
+    return this.post("/v1/captures", request);
   }
 
   escrow(request: EscrowRequest): ResultAsync<Escrow, LedgerError> {

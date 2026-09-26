@@ -21,23 +21,26 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/burn"
+	"github.com/yourtal/services/ledger/internal/capture"
 	"github.com/yourtal/services/ledger/internal/escrow"
 	"github.com/yourtal/services/ledger/internal/httpx"
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/reward"
+	"github.com/yourtal/services/ledger/internal/serviceauth"
 )
 
 // API holds the engines. One reward engine per region: AU and ID never share
 // an account or a transfer.
 type API struct {
-	logger  *slog.Logger
-	pool    *pgxpool.Pool
-	ledger  *ledger.Ledger
-	pricing *pricing.Engine
-	rewards map[ledger.Region]*reward.Engine
-	burns   *burn.Engine
-	escrows *escrow.Engine
+	logger   *slog.Logger
+	pool     *pgxpool.Pool
+	ledger   *ledger.Ledger
+	pricing  *pricing.Engine
+	rewards  map[ledger.Region]*reward.Engine
+	burns    *burn.Engine
+	escrows  *escrow.Engine
+	captures *capture.Engine
 }
 
 // New wires the engines. attestationSecret verifies apps/api's completion
@@ -46,7 +49,7 @@ func New(logger *slog.Logger, pool *pgxpool.Pool, attestationSecret []byte) *API
 	book := ledger.New(pool)
 	return &API{
 		logger: logger, pool: pool, ledger: book, pricing: pricing.New(pool), burns: burn.New(pool, book),
-		escrows: escrow.New(pool, book),
+		escrows: escrow.New(pool, book), captures: capture.New(pool, book),
 		rewards: map[ledger.Region]*reward.Engine{
 			ledger.RegionAU: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionAU).WithAttestationSecret(attestationSecret),
 			ledger.RegionID: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionID).WithAttestationSecret(attestationSecret),
@@ -59,6 +62,17 @@ func New(logger *slog.Logger, pool *pgxpool.Pool, attestationSecret []byte) *API
 func (a *API) Routes() chi.Router {
 	r := chi.NewRouter()
 
+	// services/voucher signs as "voucher" and reaches only its own routes.
+	r.Post("/captures", a.captureVoucher)
+
+	r.Group(func(r chi.Router) {
+		r.Use(a.refuseCaller("voucher"))
+		a.platformRoutes(r)
+	})
+	return r
+}
+
+func (a *API) platformRoutes(r chi.Router) {
 	r.Post("/pricing/quote", a.quote)
 	r.Post("/pricing/quote/lock", a.lockQuote)
 	r.Post("/pricing/listing", a.priceListing)
@@ -98,7 +112,20 @@ func (a *API) Routes() chi.Router {
 		"/economy/payouts/approve", "/settings/list", "/settings/propose", "/settings/approve"} {
 		r.Post(path, a.notImplemented)
 	}
-	return r
+}
+
+// refuseCaller answers 403 to a signed caller that has no business here.
+func (a *API) refuseCaller(caller string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if serviceauth.Caller(r.Context()) == caller {
+				httpx.WriteError(w, a.logger, http.StatusForbidden, "permission_error", "caller_not_allowed",
+					"this caller may not use this route")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func (a *API) notImplemented(w http.ResponseWriter, _ *http.Request) {
@@ -157,6 +184,7 @@ var contractCodes = []struct {
 	{pricing.ErrSameApprover, "already_granted"},
 	{reward.ErrSameApprover, "already_granted"},
 	{pricing.ErrCurrencyMismatch, "currency_mismatch"},
+	{capture.ErrRegionMismatch, "region_mismatch"},
 }
 
 // fail answers an engine error: a contract code as 409, a missing thing as
@@ -171,7 +199,7 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, pricing.ErrQuoteNotFound), errors.Is(err, burn.ErrNotFound),
 		errors.Is(err, burn.ErrListingNotPriced), errors.Is(err, escrow.ErrNotFound),
-		errors.Is(err, errNotFound):
+		errors.Is(err, capture.ErrNotFound), errors.Is(err, errNotFound):
 		httpx.WriteError(w, a.logger, http.StatusNotFound, "invalid_request_error", "not_found", err.Error())
 	case errors.Is(err, pricing.ErrNotAPack), errors.Is(err, pricing.ErrNoRateInForce),
 		errors.Is(err, pricing.ErrMarginTooThin), errors.Is(err, pricing.ErrSameApprover),

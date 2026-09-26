@@ -99,6 +99,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   burnForVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   burnSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
+  // --- ledger-internal: captures (4.6.f.2), posted by the voucher service ---
+  captureVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  capturePostingSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
   // --- ledger-internal: holdback release notices (4.4.g) ---
   releaseSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   unnotifiedReleasesRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

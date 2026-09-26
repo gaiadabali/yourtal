@@ -452,9 +452,8 @@ type InsertCaptureOutboxParams struct {
 	Currency    string
 }
 
-// 4.6.f: written in the same transaction as the capture it names. The
-// worker (apps/worker, 10.1) posts unposted rows to the ledger with
-// idempotency key = capture_id.
+// 4.6.f: written in the same transaction as the capture it names.
+// internal/ledgerpost posts unposted rows to the ledger, keyed on capture_id.
 func (q *Queries) InsertCaptureOutbox(ctx context.Context, arg InsertCaptureOutboxParams) error {
 	_, err := q.db.Exec(ctx, insertCaptureOutbox,
 		arg.CaptureID,
@@ -607,6 +606,63 @@ func (q *Queries) ListActiveKillSwitches(ctx context.Context) ([]VoucherKillSwit
 		return nil, err
 	}
 	return items, nil
+}
+
+const listUnpostedCaptureOutbox = `-- name: ListUnpostedCaptureOutbox :many
+SELECT capture_id, region, merchant_id, amount_minor, currency
+FROM voucher.capture_outbox
+WHERE posted_at IS NULL
+ORDER BY created_at
+LIMIT $1
+`
+
+type ListUnpostedCaptureOutboxRow struct {
+	CaptureID   pgtype.UUID
+	Region      string
+	MerchantID  pgtype.UUID
+	AmountMinor int64
+	Currency    string
+}
+
+// internal/ledgerpost's backlog, one batch per pass.
+func (q *Queries) ListUnpostedCaptureOutbox(ctx context.Context, limit int32) ([]ListUnpostedCaptureOutboxRow, error) {
+	rows, err := q.db.Query(ctx, listUnpostedCaptureOutbox, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUnpostedCaptureOutboxRow
+	for rows.Next() {
+		var i ListUnpostedCaptureOutboxRow
+		if err := rows.Scan(
+			&i.CaptureID,
+			&i.Region,
+			&i.MerchantID,
+			&i.AmountMinor,
+			&i.Currency,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markCaptureOutboxPosted = `-- name: MarkCaptureOutboxPosted :execrows
+UPDATE voucher.capture_outbox SET posted_at = now()
+WHERE capture_id = $1 AND posted_at IS NULL
+`
+
+// Set only after the ledger answered 2xx; a second marker is a no-op.
+func (q *Queries) MarkCaptureOutboxPosted(ctx context.Context, captureID pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, markCaptureOutboxPosted, captureID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const pruneSeenSignatures = `-- name: PruneSeenSignatures :execrows

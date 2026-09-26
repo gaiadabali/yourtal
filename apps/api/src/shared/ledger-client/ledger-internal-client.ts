@@ -43,6 +43,10 @@ import type {
   RateProposal,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
+import type {
+  CapturePosting,
+  CaptureVoucherRequest,
+} from "@yourtal/contracts/ledger-internal/capture";
 
 /**
  * TASKS.md 1.2.a. One interface, two implementations: `FakeLedgerClient`
@@ -85,6 +89,11 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   burnForVoucher(request: BurnForVoucherRequest): ResultAsync<Burn, LedgerError>;
   getBurn(sagaId: string): ResultAsync<Burn, LedgerError>;
   reinstateBurn(sagaId: string): ResultAsync<Burn, LedgerError>;
+  /**
+   * 4.6.f.2: posts a voucher capture to the merchant's payable, keyed on
+   * captureId. Its real caller is services/voucher's outbox drainer, in Go.
+   */
+  captureVoucher(request: CaptureVoucherRequest): ResultAsync<CapturePosting, LedgerError>;
 
   // --- users ---
   escrow(request: EscrowRequest): ResultAsync<Escrow, LedgerError>;

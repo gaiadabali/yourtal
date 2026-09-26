@@ -110,6 +110,16 @@ type LedgerBurnReinstatement struct {
 	CreatedAt           pgtype.Timestamptz
 }
 
+type LedgerCapture struct {
+	CaptureID   string
+	Region      string
+	MerchantID  string
+	AmountMinor int64
+	Currency    string
+	TransferID  string
+	CreatedAt   pgtype.Timestamptz
+}
+
 type LedgerDailyProof struct {
 	ProofDate    pgtype.Date
 	MerkleRoot   string

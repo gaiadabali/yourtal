@@ -88,6 +88,17 @@ CREATE TABLE ledger.daily_proof (
   computed_at    timestamptz NOT NULL DEFAULT now()
 );
 
+-- Added by packages/db/migrations/20260926120000_ledger_captures.sql.
+CREATE TABLE ledger.capture (
+  capture_id   text        PRIMARY KEY,
+  region       text        NOT NULL,
+  merchant_id  text        NOT NULL,
+  amount_minor bigint      NOT NULL,
+  currency     char(3)     NOT NULL,
+  transfer_id  text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE ledger.backing_rate (
   id                           text        PRIMARY KEY,
   currency                     char(3)     NOT NULL,

@@ -214,6 +214,9 @@ services:
       # 4.5: /internal/v1 (apps/api, apps/worker) — see LEDGER_SERVICE_SECRET
       # above for the reasoning; same local-only default in .env.example.
       VOUCHER_SERVICE_SECRET: local-only-voucher-service-secret-not-real
+      # 4.6.f.2: the capture outbox drains into the ledger, signed as "voucher".
+      LEDGER_BASE_URL: http://ledger:3010
+      LEDGER_SERVICE_SECRET: local-only-ledger-service-secret-not-real
       # Where the master keyring landed. loadKeys() in
       # services/voucher/cmd/voucher/main.go refuses to boot without this —
       # by design, see that file's package comment — so a missing or empty

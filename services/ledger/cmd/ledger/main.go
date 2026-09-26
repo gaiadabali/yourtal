@@ -37,6 +37,7 @@ import (
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/proof"
+	"github.com/yourtal/services/ledger/internal/reward"
 	"github.com/yourtal/services/ledger/internal/serviceauth"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
@@ -110,6 +111,15 @@ func run(logger *slog.Logger) error {
 
 		if err := pool.Ping(ctx); err != nil {
 			return fmt.Errorf("the database is unreachable at boot: %w", err)
+		}
+
+		// Every platform account a posting rule names must exist before the
+		// first transfer in a region (a capture debits voucher_liability).
+		book := ledger.New(pool)
+		for _, region := range []ledger.Region{ledger.RegionAU, ledger.RegionID} {
+			if err := reward.New(pool, book, reward.AlwaysAllow{}, region).EnsureChart(ctx); err != nil {
+				return fmt.Errorf("ensuring the %s platform chart: %w", region, err)
+			}
 		}
 
 		checker := proof.New(pool, proof.LoggingAlerter{Logger: logger})

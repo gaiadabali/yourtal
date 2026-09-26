@@ -45,8 +45,10 @@ const (
 )
 
 // Callers are the services allowed to sign. The caller id is signed, so one
-// cannot pose as the other without the secret either way.
-var Callers = map[string]bool{"api": true, "worker": true}
+// cannot pose as the other without the secret either way. "voucher" is
+// services/voucher's outbox drainer (4.6.f.2); internal/api limits it to
+// its own routes.
+var Callers = map[string]bool{"api": true, "worker": true, "voucher": true}
 
 var (
 	ErrMalformed = errors.New("serviceauth: malformed signature header")

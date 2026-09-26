@@ -255,8 +255,8 @@ func (n *Network) Capture(
 		}
 
 		// 4.6.f: the outbox row, in the SAME transaction as the capture —
-		// see the migration's own comment for why. The worker posts it to
-		// the ledger with idempotency key = capture_id.
+		// see the migration's own comment for why. internal/ledgerpost
+		// posts it to the ledger keyed on capture_id (4.6.f.2).
 		if err := queries.InsertCaptureOutbox(ctx, sqlcgen.InsertCaptureOutboxParams{
 			CaptureID: row.ID, Region: voucher.Region, MerchantID: pgUUID(merchantID),
 			AmountMinor: finalAmountMinor, Currency: authorization.Currency,

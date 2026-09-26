@@ -83,11 +83,23 @@ RETURNING id, authorization_id, authorized_amount_minor, amount_minor, receipt_i
           settled_at, created_at;
 
 -- name: InsertCaptureOutbox :exec
--- 4.6.f: written in the same transaction as the capture it names. The
--- worker (apps/worker, 10.1) posts unposted rows to the ledger with
--- idempotency key = capture_id.
+-- 4.6.f: written in the same transaction as the capture it names.
+-- internal/ledgerpost posts unposted rows to the ledger, keyed on capture_id.
 INSERT INTO voucher.capture_outbox (capture_id, region, merchant_id, amount_minor, currency)
 VALUES ($1, $2, $3, $4, $5);
+
+-- name: ListUnpostedCaptureOutbox :many
+-- internal/ledgerpost's backlog, one batch per pass.
+SELECT capture_id, region, merchant_id, amount_minor, currency
+FROM voucher.capture_outbox
+WHERE posted_at IS NULL
+ORDER BY created_at
+LIMIT $1;
+
+-- name: MarkCaptureOutboxPosted :execrows
+-- Set only after the ledger answered 2xx; a second marker is a no-op.
+UPDATE voucher.capture_outbox SET posted_at = now()
+WHERE capture_id = $1 AND posted_at IS NULL;
 
 -- name: GetCapture :one
 -- YT-0571 audit: no merchant predicate, considered rather than silent. The

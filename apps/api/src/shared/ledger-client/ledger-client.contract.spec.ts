@@ -429,6 +429,81 @@ describe("earning and spending", () => {
   });
 });
 
+describe("captures (4.6.f.2)", () => {
+  it("captureVoucher posts a merchant payable, and replays rather than posting twice", async () => {
+    const captureId = randomUUID();
+    const merchantId = randomUUID();
+    const request = {
+      captureId,
+      region: "AU" as const,
+      merchantId,
+      amountMinor: toMinorUnits(45),
+      currency: "AUD" as const,
+    };
+    const first = (await client.captureVoucher(request))._unsafeUnwrap();
+    expect(first.transferId).not.toBe("");
+
+    expect(first).toMatchObject({ captureId, merchantId, amountMinor: 45, currency: "AUD" });
+
+    const replayed = (await client.captureVoucher(request))._unsafeUnwrap();
+    expect(replayed).toEqual(first);
+  });
+
+  it("a different amount for the same captureId is idempotency_conflict", async () => {
+    const captureId = randomUUID();
+    const merchantId = randomUUID();
+    (
+      await client.captureVoucher({
+        captureId,
+        region: "AU",
+        merchantId,
+        amountMinor: toMinorUnits(10),
+        currency: "AUD",
+      })
+    )._unsafeUnwrap();
+    const conflict = await client.captureVoucher({
+      captureId,
+      region: "AU",
+      merchantId,
+      amountMinor: toMinorUnits(20),
+      currency: "AUD",
+    });
+    expect(conflict._unsafeUnwrapErr().code).toBe("idempotency_conflict");
+  });
+
+  it("a merchant paid in one region cannot be captured in the other", async () => {
+    const merchantId = randomUUID();
+    (
+      await client.captureVoucher({
+        captureId: randomUUID(),
+        region: "ID",
+        merchantId,
+        amountMinor: toMinorUnits(10_000),
+        currency: "IDR",
+      })
+    )._unsafeUnwrap();
+    const crossed = await client.captureVoucher({
+      captureId: randomUUID(),
+      region: "AU",
+      merchantId,
+      amountMinor: toMinorUnits(10),
+      currency: "AUD",
+    });
+    expect(crossed._unsafeUnwrapErr().code).toBe("region_mismatch");
+  });
+
+  it("a currency that does not match the region is region_mismatch", async () => {
+    const mismatched = await client.captureVoucher({
+      captureId: randomUUID(),
+      region: "AU",
+      merchantId: randomUUID(),
+      amountMinor: toMinorUnits(10),
+      currency: "IDR",
+    });
+    expect(mismatched._unsafeUnwrapErr().code).toBe("region_mismatch");
+  });
+});
+
 describe("users", () => {
   it("escrow takes available then pending, replays by key, and releaseEscrow gives both back", async () => {
     const userId = randomUUID();

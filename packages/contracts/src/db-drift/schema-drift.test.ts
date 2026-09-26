@@ -403,6 +403,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "4.3.e (20260925196000_ledger_burns.sql): the exactly-once-per-saga record behind burnForVoucher/getBurn. Same ledger-internals note as ledger.account above.",
   "ledger.burn_reinstatement":
     "K13's exactly-once reinstatement of a burn (same migration). Same ledger-internals note as ledger.account above.",
+  "ledger.capture":
+    "4.6.f.2 (20260926120000_ledger_captures.sql): the exactly-once-per-capture-id record behind captureVoucher, posted by the voucher service. Same ledger-internals note as ledger.account above.",
+  "platform.ledger_fake_capture":
+    "1.2.d's FakeLedgerClient backing store for captureVoucher -- same reason as platform.ledger_fake_allocation above.",
   "ledger.marketing_funding":
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
   "checkout.dispute":

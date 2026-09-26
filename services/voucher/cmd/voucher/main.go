@@ -36,6 +36,7 @@ import (
 	"github.com/yourtal/services/voucher/internal/idempotency"
 	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/keyring"
+	"github.com/yourtal/services/voucher/internal/ledgerpost"
 	"github.com/yourtal/services/voucher/internal/merchantauth"
 	"github.com/yourtal/services/voucher/internal/redeem"
 	"github.com/yourtal/services/voucher/internal/serviceauth"
@@ -51,6 +52,8 @@ const (
 	// changes no decision. That is deliberate — a sweeper the correctness
 	// depends on is a single point of failure with no alarm on it.
 	sweepInterval = time.Minute
+	// How often the capture outbox is drained into the ledger (4.6.f.2).
+	postInterval = 5 * time.Second
 )
 
 func main() {
@@ -147,6 +150,15 @@ func run(logger *slog.Logger) error {
 	})
 
 	go sweepHolds(ctx, logger, network, verifier)
+
+	// Captures reach the ledger from this service's own outbox. Without a
+	// ledger URL and secret they wait in the outbox, loudly, until it has one.
+	poster, postErr := ledgerpost.New(pool, os.Getenv("LEDGER_BASE_URL"), []byte(os.Getenv("LEDGER_SERVICE_SECRET")), logger)
+	if postErr != nil {
+		logger.Warn("captures are NOT being posted to the ledger", "error", postErr)
+	} else {
+		go poster.Run(ctx, postInterval)
+	}
 
 	router.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		httpx.WriteError(w, logger, http.StatusNotFound,

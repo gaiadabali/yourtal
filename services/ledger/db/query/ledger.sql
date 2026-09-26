@@ -189,6 +189,17 @@ FROM ledger.daily_proof WHERE proof_date = $1;
 SELECT proof_date, merkle_root, entry_count, first_entry_id, last_entry_id, computed_at
 FROM ledger.daily_proof ORDER BY proof_date;
 
+-- name: InsertCapture :exec
+-- 4.6.f.2: written in the posting transfer's own transaction; ON CONFLICT
+-- covers a replay whose transfer already exists.
+INSERT INTO ledger.capture (capture_id, region, merchant_id, amount_minor, currency, transfer_id)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (capture_id) DO NOTHING;
+
+-- name: GetCapture :one
+SELECT capture_id, region, merchant_id, amount_minor, currency, transfer_id, created_at
+FROM ledger.capture WHERE capture_id = $1;
+
 -- name: LockUserGrantsSession :exec
 -- The session-level twin of LockUserGrants, taken before the grant's
 -- transaction begins; see reward.Engine.issue.

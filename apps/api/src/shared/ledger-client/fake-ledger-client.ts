@@ -42,6 +42,10 @@ import type {
   RateProposal,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
+import type {
+  CapturePosting,
+  CaptureVoucherRequest,
+} from "@yourtal/contracts/ledger-internal/capture";
 import type { Region } from "@yourtal/contracts/region";
 import type {
   ApproveSettingInput,
@@ -56,6 +60,7 @@ import * as rewards from "./fake/fake-ledger-rewards";
 import * as wallet from "./fake/fake-ledger-wallet";
 import * as economy from "./fake/fake-ledger-economy";
 import * as settings from "./fake/fake-ledger-settings";
+import * as capture from "./fake/fake-ledger-capture";
 
 /**
  * TASKS.md 1.2.d. Real semantics against `platform.ledger_fake_*`, shared by
@@ -133,6 +138,10 @@ export class FakeLedgerClient implements LedgerInternalClient {
 
   reinstateBurn(sagaId: string): ResultAsync<Burn, LedgerError> {
     return rewards.reinstateBurn(this.db, sagaId);
+  }
+
+  captureVoucher(request: CaptureVoucherRequest): ResultAsync<CapturePosting, LedgerError> {
+    return capture.captureVoucher(this.db, request);
   }
 
   escrow(request: EscrowRequest): ResultAsync<Escrow, LedgerError> {

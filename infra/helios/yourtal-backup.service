@@ -1,0 +1,13 @@
+[Unit]
+Description=YourTal nightly backup (Postgres dump, voucher keyring, app.env)
+Documentation=https://github.com/gaiadabali/yourtal/blob/main/infra/HELIOS.md
+Requires=yourtal-stack.service
+After=yourtal-stack.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/yourtal/bin/backup.sh
+# Root: docker exec into yourtal-postgres and reading /opt/yourtal/secrets
+# both need it (bootstrap.sh makes secrets/ 0700, owned by uyourtal, not
+# world-readable).
+User=root

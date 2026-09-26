@@ -104,4 +104,12 @@ systemctl daemon-reload
 systemctl enable --now yourtal-stack.service
 systemctl restart yourtal-stack.service
 
+# --- nightly backup (2.3.c): dump + keyring + app.env, root, on a timer ---
+install -m 755 "$SRC/infra/helios/backup.sh" "$Y/bin/backup.sh"
+install -m 755 "$SRC/infra/helios/restore-rehearsal.sh" "$Y/bin/restore-rehearsal.sh"
+install -m 644 "$SRC/infra/helios/yourtal-backup.service" /etc/systemd/system/yourtal-backup.service
+install -m 644 "$SRC/infra/helios/yourtal-backup.timer" /etc/systemd/system/yourtal-backup.timer
+systemctl daemon-reload
+systemctl enable --now yourtal-backup.timer
+
 log "done. Next: the first release, then 'pm2 start' per infra/HELIOS.md"

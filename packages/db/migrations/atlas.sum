@@ -1,4 +1,4 @@
-h1:M/1jl1wppbgUEe3YOJ+wV7hinDhUCiwMjT1cGn4i74Y=
+h1:VjplEELkY2iDmY0QxW+lVqXHy+cpRRIM5mJ3lFx94eI=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -59,3 +59,4 @@ h1:M/1jl1wppbgUEe3YOJ+wV7hinDhUCiwMjT1cGn4i74Y=
 20260926005000_checkout_saga.sql h1:yNc+BAtVb3MwgDLDauPSiaNK7lsOAAXY/++kKPq3uA8=
 20260926010000_voucher_internal_api.sql h1:EKx+rMHa92r2FwL5cZB+HthHIaIOyPjSuKhw+JAeT2s=
 20260926011000_voucher_capture_outbox.sql h1:bkC98JGl+2GTTyIst3nJ16mUeEbu/z0YuDGRB0WFdUQ=
+20260926012000_voucher_fake_voided_state.sql h1:BVPYNrTs6xnFb8bKDla5BCGGXzsmqRxHR3RWBSkmkUo=

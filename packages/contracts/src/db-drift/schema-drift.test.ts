@@ -233,6 +233,12 @@ const MAPPINGS: readonly Mapping[] = [
         "The issuance batch (YT-0141), which carries the funding record and the two-person approval. Not on the contract because a holder has no business knowing which batch minted their voucher.",
       version:
         "Optimistic concurrency on state transitions (YT-0142). A storage concern with no meaning to any consumer of the contract.",
+      region:
+        "4.5.e: denormalised from the listing at mint time, the same way merchant_name and title already are. Enforced through currency (AU/ID never share a currency), not surfaced as its own field on a public voucher.",
+      saga_id:
+        "4.5.a's reservation: the burn saga that reserved (and, once activated, once owned) this voucher. Storage for `reserve`/`release`/`activate` to find their voucher again — not a holder-facing fact.",
+      reserved_until:
+        "4.5.a's reservation TTL. Internal bookkeeping for the saga path; a holder never sees an unactivated reservation at all.",
     },
   },
   {
@@ -495,6 +501,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "voucher.merchant_credential": "Same redemption-network note as voucher.authorization above.",
   "voucher.kill_switch": "Same redemption-network note as voucher.authorization above.",
   "voucher.redemption_attempt": "Same redemption-network note as voucher.authorization above.",
+  "voucher.capture_outbox":
+    "4.6.f's outbox row, written in the same transaction as the capture it names (voucher.capture, mapped above). apps/worker reads it to post captures to the ledger; no public contract represents it, the same reasoning as the redemption-network tables above.",
   "watch.coverage":
     "The raw evidence rows behind watch-coverage.ts's range arithmetic (YT-0120/YT-0551). That module exports functions and types over server-computed ranges, not a persisted object schema, so there is no contract to map.",
   "watch.checkpoint_nonce":

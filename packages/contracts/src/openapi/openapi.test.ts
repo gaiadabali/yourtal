@@ -147,6 +147,7 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   qrTokenSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   verifyQrTokenRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   verifyQrTokenResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  voidVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- voucher-internal: wallet ---
   listForUserRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

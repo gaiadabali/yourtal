@@ -9,7 +9,10 @@ import type {
   CheckpointSpend,
   SpendRefusal,
 } from "./persistence/checkpoint-nonce.repository";
-import type { CheckpointIssueRepository, LiveIssuance } from "./persistence/checkpoint-issue.repository";
+import type {
+  CheckpointIssueRepository,
+  LiveIssuance,
+} from "./persistence/checkpoint-issue.repository";
 
 /**
  * `CheckpointService`'s orchestration. YT-0121.
@@ -157,9 +160,9 @@ describe("redeeming", () => {
     // there is no way to ever hold TWO distinct valid tokens for the same
     // checkpoint at once.
     const first = (await service.issue(sessionId, 3, NOW)).token;
-    expect((await service.redeem({ token: first, sessionId, checkpointIndex: 3, nowMs: NOW })).redeemed).toBe(
-      true,
-    );
+    expect(
+      (await service.redeem({ token: first, sessionId, checkpointIndex: 3, nowMs: NOW })).redeemed,
+    ).toBe(true);
 
     const second = (await service.issue(sessionId, 3, NOW)).token;
     expect(second).toBe(first);
@@ -264,7 +267,11 @@ describe("logging refusals", () => {
   });
 
   it("records a bad signature as a warning, not as routine", async () => {
-    const stranger = new CheckpointService(new FakeNonceRepository(), new FakeIssueRepository(), "a-different-secret");
+    const stranger = new CheckpointService(
+      new FakeNonceRepository(),
+      new FakeIssueRepository(),
+      "a-different-secret",
+    );
     const forged = (await stranger.issue(sessionId, 0, NOW)).token;
 
     await service.redeem({ token: forged, sessionId, checkpointIndex: 0, nowMs: NOW });

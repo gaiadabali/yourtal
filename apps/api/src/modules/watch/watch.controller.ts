@@ -123,7 +123,12 @@ export class WatchController {
     });
 
     if (!resumed) {
-      const outcome = await this.decideEarningOutcome(userId, campaignId, started.id, terms.durationSeconds);
+      const outcome = await this.decideEarningOutcome(
+        userId,
+        campaignId,
+        started.id,
+        terms.durationSeconds,
+      );
       await this.sessions.finalizeEarningOutcome(started.id, outcome);
     }
     const session = (await this.sessions.findById(started.id)) ?? started;
@@ -165,7 +170,11 @@ export class WatchController {
       ttlSeconds: holdTtlSeconds(durationSeconds),
     });
     if (held.isErr()) {
-      return { nonEarning: true, nonEarningReason: describeLedgerRefusal(held.error), holdId: null };
+      return {
+        nonEarning: true,
+        nonEarningReason: describeLedgerRefusal(held.error),
+        holdId: null,
+      };
     }
     return { nonEarning: false, nonEarningReason: null, holdId: held.value.holdId };
   }
@@ -267,10 +276,18 @@ export class WatchController {
     }
 
     if (session.nonEarning) {
-      return { completed: true, granted: false, reason: session.nonEarningReason, pendingPoints: 0 };
+      return {
+        completed: true,
+        granted: false,
+        reason: session.nonEarningReason,
+        pendingPoints: 0,
+      };
     }
 
-    const terms = await this.campaigns.termsVersionDetails(session.campaignId, session.termsVersion);
+    const terms = await this.campaigns.termsVersionDetails(
+      session.campaignId,
+      session.termsVersion,
+    );
     if (terms === null) {
       // Should be structurally impossible (the composite FK guarantees the
       // row exists), but a reward must never be computed from a guess.
@@ -282,7 +299,11 @@ export class WatchController {
     }
 
     const points = pointsForCompletion(
-      { rewardPoints: terms.rewardPoints, accuracyBonusPoints: terms.accuracyBonusPoints, scoringRule: terms.scoringRule },
+      {
+        rewardPoints: terms.rewardPoints,
+        accuracyBonusPoints: terms.accuracyBonusPoints,
+        scoringRule: terms.scoringRule,
+      },
       session.questionsAsked,
       session.questionsCorrect,
     );
@@ -352,7 +373,10 @@ export class WatchController {
     if (campaign === null) {
       throw new NotFoundException("The campaign for this session is no longer available.");
     }
-    const terms = await this.campaigns.termsVersionDetails(session.campaignId, session.termsVersion);
+    const terms = await this.campaigns.termsVersionDetails(
+      session.campaignId,
+      session.termsVersion,
+    );
     if (terms === null) {
       throw new NotFoundException("This session's terms version no longer exists.");
     }

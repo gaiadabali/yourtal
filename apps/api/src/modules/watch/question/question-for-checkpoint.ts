@@ -49,7 +49,8 @@ export function pickQuestionForCheckpoint(
     // key — so the pick is re-resolved by id against the SCORING bank
     // rather than trusted as-is. This is the one place the presented and
     // scoring forms are stitched back together, and only here.
-    const scoring = pick === undefined ? undefined : eligible.find((question) => question.id === pick.id);
+    const scoring =
+      pick === undefined ? undefined : eligible.find((question) => question.id === pick.id);
     picked = scoring ?? null;
     if (picked !== null) used.add(picked.id);
   }

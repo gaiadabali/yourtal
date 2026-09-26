@@ -39,7 +39,11 @@ export class DrizzleQuestionAnswerRepository implements QuestionAnswerRepository
   constructor(private readonly db: AppDb) {}
 
   async recordAnswer(input: AnswerQuestionInput): Promise<{ wasCorrect: boolean }> {
-    const correctAgainstKey = scoreAgainstKey(input.question, input.selectedOptionId, input.answeredBool);
+    const correctAgainstKey = scoreAgainstKey(
+      input.question,
+      input.selectedOptionId,
+      input.answeredBool,
+    );
     // "Timeout = answered wrong, never voids" (TASKS.md 5.2). The server's
     // own clock overrides whatever the answer said.
     const wasCorrect = !input.timedOut && correctAgainstKey;

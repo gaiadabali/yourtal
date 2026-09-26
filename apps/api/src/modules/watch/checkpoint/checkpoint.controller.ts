@@ -122,7 +122,12 @@ export class CheckpointController {
     }
 
     const askableBank = await this.bank.askableBank(campaignId);
-    const question = this.checkpoints.pickQuestion(askableBank, sessionId, schedule, checkpointIndex);
+    const question = this.checkpoints.pickQuestion(
+      askableBank,
+      sessionId,
+      schedule,
+      checkpointIndex,
+    );
     if (question === null) {
       // The bank cannot cover this checkpoint. A campaign passes 7.3's
       // approval gate only with `requiredBankSize` questions, so this is a
@@ -175,9 +180,18 @@ export class CheckpointController {
       );
     }
 
-    const schedule = this.checkpoints.schedule(sessionId, durationSeconds, questionsAskedFor(durationSeconds));
+    const schedule = this.checkpoints.schedule(
+      sessionId,
+      durationSeconds,
+      questionsAskedFor(durationSeconds),
+    );
     const askableBank = await this.bank.askableBank(campaignId);
-    const question = this.checkpoints.pickQuestion(askableBank, sessionId, schedule, checkpointIndex);
+    const question = this.checkpoints.pickQuestion(
+      askableBank,
+      sessionId,
+      schedule,
+      checkpointIndex,
+    );
     if (question === null) {
       throw new NotFoundException("No question is available for this checkpoint.");
     }
@@ -214,7 +228,10 @@ export class CheckpointController {
     }
     // EW-20: the FROZEN terms this session entered under, never the
     // campaign's current (possibly since-edited) duration.
-    const terms = await this.campaigns.termsVersionDetails(session.campaignId, session.termsVersion);
+    const terms = await this.campaigns.termsVersionDetails(
+      session.campaignId,
+      session.termsVersion,
+    );
     if (terms === null) {
       throw new NotFoundException("This session's terms version no longer exists.");
     }

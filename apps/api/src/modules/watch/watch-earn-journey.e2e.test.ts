@@ -4,7 +4,10 @@ import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { issueCheckpointToken, CHECKPOINT_TOKEN_TTL_MS } from "@yourtal/contracts/watch/checkpoint-token";
+import {
+  issueCheckpointToken,
+  CHECKPOINT_TOKEN_TTL_MS,
+} from "@yourtal/contracts/watch/checkpoint-token";
 import { AppModule } from "../../app.module";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
@@ -170,8 +173,12 @@ afterAll(async () => {
   await app.close();
   await owner.execute(sql`DELETE FROM campaign.reward_config WHERE campaign_id = ${campaignId}`);
   // Holds and grants reference the allocation; the allocation must go last.
-  await owner.execute(sql`DELETE FROM platform.ledger_fake_hold WHERE allocation_id = ${allocationId}`);
-  await owner.execute(sql`DELETE FROM platform.ledger_fake_grant WHERE campaign_id = ${campaignId}`);
+  await owner.execute(
+    sql`DELETE FROM platform.ledger_fake_hold WHERE allocation_id = ${allocationId}`,
+  );
+  await owner.execute(
+    sql`DELETE FROM platform.ledger_fake_grant WHERE campaign_id = ${campaignId}`,
+  );
   await owner.execute(sql`DELETE FROM platform.ledger_fake_allocation WHERE id = ${allocationId}`);
   // question_response references BOTH watch.session and question_option —
   // it must go before either.
@@ -179,9 +186,15 @@ afterAll(async () => {
     DELETE FROM campaign.question_response WHERE session_id IN
       (SELECT id FROM watch.session WHERE campaign_id IN (${campaignId}, ${otherCampaignId}))
   `);
-  await owner.execute(sql`DELETE FROM campaign.question_answer_key WHERE question_id IN (${questionAId}, ${questionBId})`);
-  await owner.execute(sql`DELETE FROM campaign.question_option WHERE question_id IN (${questionAId}, ${questionBId})`);
-  await owner.execute(sql`DELETE FROM campaign.question WHERE id IN (${questionAId}, ${questionBId})`);
+  await owner.execute(
+    sql`DELETE FROM campaign.question_answer_key WHERE question_id IN (${questionAId}, ${questionBId})`,
+  );
+  await owner.execute(
+    sql`DELETE FROM campaign.question_option WHERE question_id IN (${questionAId}, ${questionBId})`,
+  );
+  await owner.execute(
+    sql`DELETE FROM campaign.question WHERE id IN (${questionAId}, ${questionBId})`,
+  );
   await owner.execute(sql`
     DELETE FROM watch.checkpoint_issue WHERE session_id IN
       (SELECT id FROM watch.session WHERE campaign_id IN (${campaignId}, ${otherCampaignId}))
@@ -190,10 +203,18 @@ afterAll(async () => {
     DELETE FROM watch.checkpoint_nonce WHERE session_id IN
       (SELECT id FROM watch.session WHERE campaign_id IN (${campaignId}, ${otherCampaignId}))
   `);
-  await owner.execute(sql`DELETE FROM watch.session WHERE campaign_id IN (${campaignId}, ${otherCampaignId})`);
-  await owner.execute(sql`DELETE FROM campaign.terms_version WHERE campaign_id IN (${campaignId}, ${otherCampaignId})`);
-  await owner.execute(sql`DELETE FROM campaign.video_source WHERE campaign_id IN (${campaignId}, ${otherCampaignId})`);
-  await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id IN (${campaignId}, ${otherCampaignId})`);
+  await owner.execute(
+    sql`DELETE FROM watch.session WHERE campaign_id IN (${campaignId}, ${otherCampaignId})`,
+  );
+  await owner.execute(
+    sql`DELETE FROM campaign.terms_version WHERE campaign_id IN (${campaignId}, ${otherCampaignId})`,
+  );
+  await owner.execute(
+    sql`DELETE FROM campaign.video_source WHERE campaign_id IN (${campaignId}, ${otherCampaignId})`,
+  );
+  await owner.execute(
+    sql`DELETE FROM campaign.campaigns WHERE id IN (${campaignId}, ${otherCampaignId})`,
+  );
 });
 
 /** Backdates a session's clock so a single progress report can claim the whole campaign without a real wait. */
@@ -352,7 +373,11 @@ describe("5.2: questions during the video, served and scored on the server", () 
       method: "POST",
       url: `/api/watch/sessions/${sessionId}/progress`,
       headers: { cookie: viewer.cookie },
-      payload: { fromSeconds: 0, toSeconds: CAMPAIGN_DURATION_SECONDS, reportedAt: new Date().toISOString() },
+      payload: {
+        fromSeconds: 0,
+        toSeconds: CAMPAIGN_DURATION_SECONDS,
+        reportedAt: new Date().toISOString(),
+      },
     });
 
     const checkpoint0 = await app.inject({
@@ -382,7 +407,10 @@ describe("5.2: questions during the video, served and scored on the server", () 
       url: `/api/watch/sessions/${sessionId}/checkpoints/0`,
       headers: { cookie: viewer.cookie },
     });
-    const body = json<{ token: string; question: { id: string; options: { id: string; label: string }[] } }>(checkpoint);
+    const body = json<{
+      token: string;
+      question: { id: string; options: { id: string; label: string }[] };
+    }>(checkpoint);
     const correctId = await correctOptionFor(body.question.id);
     const wrongId = wrongOptionFor(body.question.options, correctId);
 
@@ -451,11 +479,16 @@ describe("5.3: completion grants the reward", () => {
     const balance = await ledger.balance(viewer.userId);
     expect(balance.isOk()).toBe(true);
     if (balance.isOk()) {
-      const totalPending = balance.value.pending.reduce((total, bucket) => total + bucket.points, 0);
+      const totalPending = balance.value.pending.reduce(
+        (total, bucket) => total + bucket.points,
+        0,
+      );
       expect(totalPending).toBeGreaterThanOrEqual(REWARD_POINTS);
       // A fresh account is trust tier 0 — F12's 72h holdback — so this is a
       // genuinely PENDING entry, not an immediately-available one.
-      expect(balance.value.pending.some((bucket) => new Date(bucket.unlockAt) > new Date())).toBe(true);
+      expect(balance.value.pending.some((bucket) => new Date(bucket.unlockAt) > new Date())).toBe(
+        true,
+      );
     }
 
     // Replaying the SAME Idempotency-Key returns the identical response
@@ -506,15 +539,22 @@ async function startFullyWatchedSession(cookie: string): Promise<string> {
     method: "POST",
     url: `/api/watch/sessions/${sessionId}/progress`,
     headers: { cookie },
-    payload: { fromSeconds: 0, toSeconds: CAMPAIGN_DURATION_SECONDS, reportedAt: new Date().toISOString() },
+    payload: {
+      fromSeconds: 0,
+      toSeconds: CAMPAIGN_DURATION_SECONDS,
+      reportedAt: new Date().toISOString(),
+    },
   });
   expect(progress.statusCode).toBe(201);
   return sessionId;
 }
 
-async function completeCampaignFully(
-  cookie: string,
-): Promise<{ sessionId: string; granted: boolean; pendingPoints: number; completeIdempotencyKey: string }> {
+async function completeCampaignFully(cookie: string): Promise<{
+  sessionId: string;
+  granted: boolean;
+  pendingPoints: number;
+  completeIdempotencyKey: string;
+}> {
   const sessionId = await startFullyWatchedSession(cookie);
 
   const checkpoint = await app.inject({

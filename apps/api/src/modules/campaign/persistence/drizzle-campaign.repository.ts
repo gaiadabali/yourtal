@@ -73,7 +73,10 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       .select()
       .from(campaignTermsVersions)
       .where(
-        and(eq(campaignTermsVersions.campaignId, campaignId), eq(campaignTermsVersions.version, version)),
+        and(
+          eq(campaignTermsVersions.campaignId, campaignId),
+          eq(campaignTermsVersions.version, version),
+        ),
       )
       .limit(1);
     const row = rows[0];

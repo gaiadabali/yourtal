@@ -192,7 +192,7 @@ const completeSessionResponseSchema: Record<string, unknown> = {
     "`granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was " +
     "non-earning (already_earned, no funding configured, the allocation hold failed, or the grant " +
     "call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c " +
-    "segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).",
+    'segment-log cross-check\'s verdict, `"unknown"` until that lands (5.1.d).',
   properties: {
     completed: { const: true },
     granted: { type: "boolean" },
@@ -326,8 +326,8 @@ export const WATCH_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       nestDefaultError(
         409,
         "EW-10: `markCompleted`'s conditional update lost a race against another concurrent " +
-        "completion of the SAME session (a distinct Idempotency-Key from whichever request won) " +
-        "— that other request is the only one that may have granted. Never a second grant from here.",
+          "completion of the SAME session (a distinct Idempotency-Key from whichever request won) " +
+          "— that other request is the only one that may have granted. Never a second grant from here.",
       ),
       PDP_UNAVAILABLE,
     ],

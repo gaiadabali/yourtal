@@ -99,7 +99,11 @@ export class CheckpointService {
    * token — `issueCheckpointToken` is pure over its claims, so replaying a
    * lost response needs no idempotency key of its own.
    */
-  async issue(sessionId: string, checkpointIndex: number, nowMs: number): Promise<IssuedCheckpoint> {
+  async issue(
+    sessionId: string,
+    checkpointIndex: number,
+    nowMs: number,
+  ): Promise<IssuedCheckpoint> {
     const fresh = {
       nonce: newCheckpointNonce(),
       expiresAtMs: nowMs + CHECKPOINT_TOKEN_TTL_MS,

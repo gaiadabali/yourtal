@@ -14,7 +14,10 @@ import {
   CHECKPOINT_NONCE_REPOSITORY,
   DrizzleCheckpointNonceRepository,
 } from "./persistence/checkpoint-nonce.repository";
-import { QUESTION_BANK_REPOSITORY, DrizzleQuestionBankRepository } from "../question/question-bank.repository";
+import {
+  QUESTION_BANK_REPOSITORY,
+  DrizzleQuestionBankRepository,
+} from "../question/question-bank.repository";
 import {
   QUESTION_ANSWER_REPOSITORY,
   DrizzleQuestionAnswerRepository,

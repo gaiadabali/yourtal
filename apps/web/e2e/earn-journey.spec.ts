@@ -61,9 +61,9 @@ test.describe("Earn journey", () => {
   // no longer links anywhere. Phase 6 (6.4.b/c) rebuilds this leg against a
   // real watch session and the 5.2 checkpoint endpoints; this spec is fixme
   // until that lands rather than silently red or quietly deleted.
-  test.fixme(
-    "home board's card reaches the entry card, whose terms and start action reach the same campaign's player, through real playback, into the checkpoint, to a result distinguishing base reward from accuracy bonus",
-    async ({ page }) => {
+  test.fixme("home board's card reaches the entry card, whose terms and start action reach the same campaign's player, through real playback, into the checkpoint, to a result distinguishing base reward from accuracy bonus", async ({
+    page,
+  }) => {
     // Clicking Play attempts a real, network-loaded HLS fetch (see this
     // file's top comment) before the start overlay clears, and this test
     // then waits out ~20 real seconds of actual playback to reach `ended`

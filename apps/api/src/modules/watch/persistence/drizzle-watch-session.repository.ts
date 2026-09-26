@@ -147,10 +147,16 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
           // A DIFFERENT campaign (or an earlier terms version of this one)
           // was active. Park it — it stays resumable — rather than
           // superseding it, which would forfeit its coverage for good.
-          await tx.update(watchSessions).set({ state: "parked" }).where(eq(watchSessions.id, active.id));
+          await tx
+            .update(watchSessions)
+            .set({ state: "parked" })
+            .where(eq(watchSessions.id, active.id));
         }
         if (tuple.state !== "active") {
-          await tx.update(watchSessions).set({ state: "active" }).where(eq(watchSessions.id, tuple.id));
+          await tx
+            .update(watchSessions)
+            .set({ state: "active" })
+            .where(eq(watchSessions.id, tuple.id));
         }
         const reactivatedRows = await tx
           .select()
@@ -170,7 +176,10 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
       // changed under it (watch-session.ts's own comment on `superseded`).
       const active = currentActive[0];
       if (active !== undefined) {
-        await tx.update(watchSessions).set({ state: "parked" }).where(eq(watchSessions.id, active.id));
+        await tx
+          .update(watchSessions)
+          .set({ state: "parked" })
+          .where(eq(watchSessions.id, active.id));
       }
       const staleForCampaign = await tx
         .select({ id: watchSessions.id })
@@ -185,7 +194,10 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
         )
         .for("update");
       for (const stale of staleForCampaign) {
-        await tx.update(watchSessions).set({ state: "superseded" }).where(eq(watchSessions.id, stale.id));
+        await tx
+          .update(watchSessions)
+          .set({ state: "superseded" })
+          .where(eq(watchSessions.id, stale.id));
       }
 
       const id = randomUUID();
@@ -210,7 +222,11 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
         questionsCorrect: 0,
         granted: false,
       });
-      const createdRows = await tx.select().from(watchSessions).where(eq(watchSessions.id, id)).limit(1);
+      const createdRows = await tx
+        .select()
+        .from(watchSessions)
+        .where(eq(watchSessions.id, id))
+        .limit(1);
       const createdRow = createdRows[0];
       if (createdRow === undefined) {
         throw new Error(`watch session ${id} vanished immediately after being created`);
@@ -231,7 +247,11 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
   }
 
   async findById(sessionId: string): Promise<WatchSession | null> {
-    const rows = await this.db.select().from(watchSessions).where(eq(watchSessions.id, sessionId)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(watchSessions)
+      .where(eq(watchSessions.id, sessionId))
+      .limit(1);
     const row = rows[0];
     return row === undefined ? null : toWatchSession(row);
   }
@@ -289,7 +309,10 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
         toSecond: verdict.interval.toSecond,
         recordedAt: now,
       });
-      await tx.update(watchSessions).set({ lastProgressAt: now }).where(eq(watchSessions.id, sessionId));
+      await tx
+        .update(watchSessions)
+        .set({ lastProgressAt: now })
+        .where(eq(watchSessions.id, sessionId));
 
       return { kind: "accepted", coverage: [...existingCoverage, verdict.interval] };
     });
@@ -327,6 +350,9 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
   }
 
   async markGranted(sessionId: string): Promise<void> {
-    await this.db.update(watchSessions).set({ granted: true }).where(eq(watchSessions.id, sessionId));
+    await this.db
+      .update(watchSessions)
+      .set({ granted: true })
+      .where(eq(watchSessions.id, sessionId));
   }
 }

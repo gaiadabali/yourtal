@@ -3,7 +3,11 @@ import { pointsForCompletion } from "./reward-for-completion";
 
 describe("pointsForCompletion", () => {
   it("pays only the base under base_only, whatever the score", () => {
-    const terms = { rewardPoints: 500, accuracyBonusPoints: 200, scoringRule: "base_only" as const };
+    const terms = {
+      rewardPoints: 500,
+      accuracyBonusPoints: 200,
+      scoringRule: "base_only" as const,
+    };
     expect(pointsForCompletion(terms, 3, 3)).toBe(500);
     expect(pointsForCompletion(terms, 3, 0)).toBe(500);
   });

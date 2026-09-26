@@ -5,7 +5,10 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { coveredSeconds } from "@yourtal/contracts/watch/coverage";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { FakeLedgerClient } from "../../shared/ledger-client/fake-ledger-client";
-import type { UserProfileRepository, StoredUserProfile } from "../identity/persistence/user-profile.repository";
+import type {
+  UserProfileRepository,
+  StoredUserProfile,
+} from "../identity/persistence/user-profile.repository";
 import { DrizzleCampaignRepository } from "../campaign/persistence/drizzle-campaign.repository";
 import { DrizzleWatchSessionRepository } from "./persistence/drizzle-watch-session.repository";
 import { StubDeliveryCoverageReader } from "./delivery-coverage";

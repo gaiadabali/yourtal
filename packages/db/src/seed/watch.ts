@@ -86,7 +86,9 @@ async function seedRewardFunding(pool: pg.Pool): Promise<void> {
     business_id: string;
     region: string;
     reward_points: number;
-  }>(`SELECT id, business_id, region, reward_points FROM campaign.campaigns WHERE reward_points > 0`);
+  }>(
+    `SELECT id, business_id, region, reward_points FROM campaign.campaigns WHERE reward_points > 0`,
+  );
 
   for (const campaign of payingCampaigns.rows) {
     const existing = await pool.query(
@@ -105,7 +107,13 @@ async function seedRewardFunding(pool: pg.Pool): Promise<void> {
       `INSERT INTO platform.ledger_fake_allocation
          (id, business_id, region, funder_type, currency, total_points, remaining_points)
        VALUES ($1, $2, $3, 'partner', $4, $5, $5)`,
-      [allocationId, campaign.business_id, campaign.region, currencyFor(campaign.region), totalPoints],
+      [
+        allocationId,
+        campaign.business_id,
+        campaign.region,
+        currencyFor(campaign.region),
+        totalPoints,
+      ],
     );
     await pool.query(
       `INSERT INTO campaign.reward_config

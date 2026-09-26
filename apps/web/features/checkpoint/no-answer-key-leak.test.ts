@@ -60,9 +60,8 @@ describe("the checkpoint feature never ships an answer key", () => {
       const text = readFileSync(file, "utf8");
       const lines = text.split("\n");
       for (const line of lines) {
-        const namesQuestionModule = /from\s+["']@yourtal\/contracts\/question(\/question)?["']/.test(
-          line,
-        );
+        const namesQuestionModule =
+          /from\s+["']@yourtal\/contracts\/question(\/question)?["']/.test(line);
         if (namesQuestionModule && !/^\s*import\s+type\s/.test(line)) {
           offenders.push(`${file}: ${line.trim()}`);
         }

@@ -36,17 +36,17 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 11/29 | `████░░░░░░`  38% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 7/9 | 51/55 | `█████████░`  93% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 52/57 | `█████████░`  91% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
-| **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
+| **Phase 7** Business studio | C | · not started | 0/8 | 0/34 | `░░░░░░░░░░`   0% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/6 | 0/18 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **30/83** | **186/376** | `█████░░░░░`  49% |
+| **All** | | | **30/84** | **187/379** | `█████░░░░░`  49% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`) auditing Done when: every engine-report defect → its regression test, region walls, signed-only services |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`): 4.10.a Done-when audit merged (8dbeb15: DB region wall, signed-route walk, EM-19 test); 4.10.b (EM-02 residue) open |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | Two agents. A (`yourtal-2`, `phase/5`, db `yourtal_s2`): 5.1 → 5.2 → 5.3. B (`yourtal-p5-b`, `phase/5-b`, db `yourtal_s5b`, ports 26390/26391, Valkey /11): 5.4 → 5.5 |
 | 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (4916e31), including F30's reopen: 1.5.h makes a protected route with no session return 401/`no_session` instead of 403 (403 stays for a signed-in principal Cerbos refuses). `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅, 2.2 ✅: every merge to main is live on staging in ~5 min. Now 2.3: C (`yourtal-p2-c`) on 2.3.b/d/e; A next on 2.3.a/g and the 2.3.c voucher-decrypt rehearsal; 2.4 after |
@@ -841,6 +841,30 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - [x] `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove, plus the contract mocks 13.5.c deletes: `eslint-rules/no-mock-backing-rate.mjs` (e3f1d8e).
   - [ ] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live. The spec already passes 23/23 against a local live ledger (4f282d7). — ⛔ staging does not exist until 2.1 (slot 4); asked there as 2.1.f
   - [x] 4.9.f **Check:** Passed on main 568eacd: `coverage_check_test.go` (a 1,000-pt AU purchase adds exactly 1.50 and a streak succeeds; burn and capture move cash and liability by 0), and `pnpm verify` green with the AU rate 3,000,000 before and after.
+- [ ] **4.10 Done-when audit** · needs: 4.1–4.9 — 🔄 slot 1 (agent H)
+  - [x] 4.10.a Every verified Phase 4 defect in `engine-money.md`, `engine-watch.md` and `engine-voucher.md` → its regression test, on main 8dbeb15 (Go and live suites green). Out of scope, owned elsewhere: EM-01 (7.4.b), EM-07/24 (10.3.a), EM-20/21/22 (0.3, 0.7), EW-01/04/06–10/19–21 (Phase 5), EW-02/03 (1.x), EW-14/15 (6.x), EW-16/17 (7.x), EW-18 (2.x, 5.x, 10.x), EW-22/23 (0.x). D1–D17 are mapped under 4.6.g (D16 ⛔ 8.2.b, D17 refuted).
+    - EM-02 → reward/k6_test `TestAMarketingGrantIsBackedByMarketingCash`, `TestAPartnerAllocationNeedsAPurchase`, `TestAMarketingActionCannotDrawAPartnerAllocation`; pricing/solvency_test `TestMarketingPointsCannotDiluteCoverage`
+    - EM-03 → api/api_test `TestTheLedgerRoutesEndToEnd`; `ledger-client.contract.spec.ts` live 23/23
+    - EM-04 → ledger/guards_test `TestConcurrentBurnsCannotOverdraw`, `TestTheDatabaseRefusesAnOverdraftTheServiceDidNotCheck`
+    - EM-05, EW-05 → reward/contract_test `TestTheTermsNotTheCallerSetTheAmount`
+    - EM-06, EW-11 → reward/caps_test `TestConcurrentGrantsAtTheCapGrantExactlyOne` (no caller clock: `GrantRequest` has no `Now`)
+    - EM-08 → reward/holds_test `TestTheLedgerRoleCannotRewriteAnAllocation`
+    - EM-09 → ledger/guards_test `TestAnEntryMustBeInItsAccountsCurrency`
+    - EM-10 → reward/solvency_test `TestMarketingGrantsStopBelowTheCoverageThreshold`; pricing/burn_coverage_test `TestABurnDoesNotFlatterCoverage`
+    - EM-11 → pricing/margin_test `TestTheSpreadCoversTheDemandFloor`; reward/price_check_test `TestAnUnderpricedPurchaseIsRefused`; api/quote_test `TestAQuoteIsPricedAtTheLedgersClock` (new: multiplier pinned)
+    - EM-12 → ledger/chart_test `TestPlatformChartIsPerRegion`, `TestATransferCannotCrossRegions`; reward/purchase_test `TestReservesAreSeparatePerRegion`
+    - EM-13 → reward/contract_test `TestHoldbackReleasesByTier`; reward/escrow_release_test `TestHoldbackReleaseSkipsEscrowedUsers`; escrow/escrow_test; ledger/chart_test `TestAReversalMustInvertItsOriginalAndHappensOnce`
+    - EM-14 → ledger/guards_test `TestSameKeyDifferentPayloadIsAConflict`
+    - EM-15 → ledger/chart_test `TestEveryPostingRuleDebitsAndCreditsTheRightAccounts`; pricing/books_test `TestAPurchaseAndAGrantKeepTheBooksBalanced`
+    - EM-16 → reward/contract_test `TestACampaignCannotSpendAnotherBusinessesAllocation`, `TestTheCampaignMaximumHolds`
+    - EM-17, EW-13 → reward/ids_test `TestTwoUsersMayShareAnExternalRef`
+    - EM-18 → ledger/guards_test `TestTheLedgerRoleCannotBackdate`, `TestACommittedTransferIsSealed`
+    - EM-19 → api/quote_test `TestAQuoteIsPricedAtTheLedgersClock` (new; plus CHECK `quote_lives_fifteen_minutes`)
+    - EM-23 → ledger/guards_test `TestValidateCatchesAnOverflowingSum`; proof/overflow_test `TestTheCheckerReportsAnOverflowingImbalance`
+    - EW-12 → attest/attest_test `TestEveryFieldIsSigned`; reward/contract_test `TestAnUnattestedCompletionIsNotPaid`
+    - Region wall in the database (new, migration `20260926040000_region_wall`): ledger/region_wall_test `TestAGrantCannotCrossRegions`, `TestAPurchaseCannotCrossRegions`, `TestABurnCannotCrossRegions`, `TestAPriceCannotUseTheOtherRegionsRate`; voucher redeem/region_wall_test `TestAVoucherCannotMoveRegion`
+    - Signed-only services (new): ledger api/auth_walk_test and voucher api/auth_walk_test `TestEveryRouteRefusesAnUnsignedOrForgedCall` walk every `/v1` and `/internal/v1` route: unsigned, bad MAC, other body or path, stale, future, unknown caller and replayed nonce → 401
+  - [ ] 4.10.b EM-02 residue: the ledger role can still post Dr points_issued / Cr user.pending through a bare `ledger.Transfer` with no grant or allocation (no route exposes it). Add a commit-time rule that a debit to points_issued or marketing_expense belongs to a `ledger.grant`, and move the tests that post grants by hand onto the engine
     - after an AU purchase of 1,000 pts that is fully granted, coverage = 1.50 and a streak grant succeeds;
     - burn → capture → before payout, coverage is unchanged to one minor unit;
     - after `pnpm verify`, the AU rate is still 3_000_000.
@@ -1004,6 +1028,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
   - [ ] 7.4.c Stock: `store.listings.stock_remaining` becomes a read-only projection of unallocated vouchers (4.5.a). A voucher batch request goes to staff approval (9.2) and is then minted through 4.5.
   - [ ] 7.4.d Consumer catalogue reads (`GET /api/store/listings[/:id]`) filter by the caller's region (anonymous visitors: the path region) and audience. They return `imageUrl`, category and channel, and filter by category, channel and price.
   - [ ] 7.4.e **Check:** a request carrying `priceInPoints` is rejected; the listing price equals the ledger quote; an ID user never sees an AU listing through list or get.
+  - [ ] 7.4.f (requested by A, 4.10) A CHECK on `store.listings` that currency is the region's (AUD with AU, IDR with ID). Vouchers, quotes and listing prices are walled in the database; the listing row itself is not.
 - [ ] **7.5 Billing: buy points** · needs: 7.1, 4.4 (fake ok)
   - [ ] 7.5.a `quotePurchase` shows pack prices (F12; P_issue appears only here, never on consumer surfaces). `POST /api/:tenantId/studio/billing/purchases` goes through the simulated payments driver, with the currency always stated (no IDR default), to a ledger purchase. That funds the region reserve and creates the business's allocation, idempotently.
   - [ ] 7.5.b Balance, per-campaign spend (`campaignSpend`) and remainder (remaining minus active holds). Unused points stay with the business; there are no cash refunds. Statements come from 10.1, and `POST …/statements/:id/dispute` holds the payout.

@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`): 4.10.a Done-when audit merged (8dbeb15: DB region wall, signed-route walk, EM-19 test); 4.10.b (EM-02 residue) open |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | A (`yourtal-2`, `phase/5`, db `yourtal_s2`) done and merged (acbdf73): 5.1 ✅, 5.2 ✅, 5.3 ✅ — see the Log entry and this task's own evidence notes. Slot 2 free; worktree left in place. B (`yourtal-p5-b`, `phase/5-b`) done and merged (143d7d2): 5.4 ✅, 5.5.a done, 5.5.b partial (`ledger.points_unlocked` real; `points_expiring`/followed-channel campaigns ⛔ 10.2/7.3.f). Left for whoever picks up 5.5 next: 5.5.d (the streak bonus on completion) has its hook now (`WATCH_COMPLETION_HOOK`, see 5.3.a's note) — bind a real listener rather than computing on read; then re-run 5.5.c's Check for real (a genuine completion now exists). |
-| 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | `phase/6`, db `yourtal_s3`. Early slice: 6.1 → 6.2 → 6.5 → 6.7. 6.3, 6.4, 6.6 and 6.8 wait for 7.4/7.7 and Phase 5's close. Now: 6.1 |
+| 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Early slice: 6.1 → 6.2, with 6.5 and 6.7 in parallel. Three agents: A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. 6.3, 6.4, 6.6 and 6.8 wait for 7.4/7.7 and Phase 5's close. |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅ (incl. 2.1.f, unblocks 4.9.e), 2.2 ✅; 2.3 all but c (needs one real voucher on staging for the strict decrypt rehearsal). 2.4: b, c, d, e done, g ⛔ serwist 10; next a (TypeScript 6), f (pnpm 12), i (Integration green on main) |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
@@ -971,7 +971,7 @@ Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen t
   - [ ] 6.4.c The completion screen: the earn moment, an **Up next** card that needs a tap (never autoplay), and the funder's own vouchers ("Spend at <brand>", docs/23 §1.0b).
   - [ ] 6.4.d In-app channel pages at `/c/[handle]`: cover, logo, Follow, the channel's campaigns and its vouchers.
   - [ ] 6.4.e **Check:** a full campaign watched on staging pauses for its questions, then shows the earn moment and Up next.
-- [ ] **6.5 Wallet and voucher** · needs: 4.8 (fake ok)
+- [ ] **6.5 Wallet and voucher** · needs: 4.8 (fake ok) — 🔄 slot 3
   - [ ] 6.5.a A balance card shows available, pending (with unlock dates) and expiring (only if expiry is enabled), above a plain-language history.
   - [ ] 6.5.b Each voucher is a pass:
     - the code in a mono face;
@@ -983,7 +983,7 @@ Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen t
   - [ ] 6.6.a The store is a shoppable grid with images, filters (category, channel, price) and the balance chip. It shows only the viewer's region and audience (7.4.d).
   - [ ] 6.6.b The offer page shows terms, locations, channel and expiry. **Get it** locks the price with a countdown (4.7) and checks out, with errors in plain language (the 1.2.c enum). (requested by A) Delete `burn-data.ts`'s rate and `wallet-history.ts`'s mock rate (4.9.d).
   - [ ] 6.6.c **Check:** the bought voucher is in the wallet immediately, the balance drops by the locked price, and an ID account never sees an AU listing.
-- [ ] **6.7 Me** · needs: 5.4
+- [ ] **6.7 Me** · needs: 5.4 — 🔄 slot 3
   - [ ] 6.7.a Profile, language, interests, follows, per-purpose consent (withdrawal takes effect), password change, log out, delete account, download my data, notification settings, linked apps (5.4.c) and an autoplay setting (Always / Wi-Fi only / Never; Wi-Fi only by default in ID).
   - [ ] 6.7.b **Check:** logging out ends the session on the server, and the autoplay setting holds on the feed.
 - [ ] **6.8 Notifications and search** · needs: 5.5, 7.7

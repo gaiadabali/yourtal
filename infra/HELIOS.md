@@ -50,11 +50,15 @@ dump is unreadable without the keyring generation it was sealed under, and
 vice versa. Bootstrapped by `bootstrap.sh`.
 
 `infra/helios/restore-rehearsal.sh` restores the newest backup into a
-scratch database (`yourtal_restore`, same container) and checks the
+scratch database (`yourtal_restore`, same container), checks the
 `voucher.code_custody` row count and the keyring's checksums against the
-live ones; it does not itself decrypt a code (see the script's header for
-why). Run it by hand after any bootstrap or restore-affecting change:
-`sudo /opt/yourtal/bin/restore-rehearsal.sh`.
+live ones, then runs `bin/voucher-verify-backup` (built alongside `ledger`
+and `voucher` by `release.yml`, `services/voucher/cmd/voucher-verify-backup`)
+against the restore to actually decrypt a sample of sealed voucher codes —
+counts only, never a code or a key. Pass `--allow-empty` while staging has
+no vouchers yet; the default is strict (zero rows fails). Run it by hand
+after any bootstrap or restore-affecting change:
+`sudo /opt/yourtal/bin/restore-rehearsal.sh --allow-empty`.
 
 ## Drift detection (2.2.c)
 

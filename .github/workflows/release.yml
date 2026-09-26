@@ -129,6 +129,10 @@ jobs:
           for svc in ledger voucher; do
             (cd "services/$svc" && CGO_ENABLED=0 GOOS=linux GOARCH=amd64               go build -trimpath -ldflags="-s -w" -o "$STAGE/bin/$svc" "./cmd/$svc")
           done
+          # The restore-rehearsal's proof step (2.3.c) — same module as
+          # voucher, a separate binary because it is an offline check, not
+          # part of the running service.
+          (cd services/voucher && CGO_ENABLED=0 GOOS=linux GOARCH=amd64             go build -trimpath -ldflags="-s -w" -o "$STAGE/bin/voucher-verify-backup" ./cmd/voucher-verify-backup)
           cp -r packages/db/migrations "$STAGE/migrations"
           cp -r policies "$STAGE/policies"
           cp infra/helios/pre-reload.sh infra/helios/set-role-passwords.mjs             infra/helios/run-with-env.sh infra/helios/ecosystem.config.cjs "$STAGE/deploy/"

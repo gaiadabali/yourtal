@@ -14,6 +14,7 @@ import {
 import { IdentityModule } from "../identity/identity.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { CheckoutController } from "./checkout.controller";
+import { DisputeController } from "./dispute.controller";
 import { CheckoutRecoveryService } from "./checkout-recovery.service";
 import { CHECKOUT_DB, SAGA_DEPS } from "./checkout.tokens";
 import { PostgresSagaRepository } from "./persistence/postgres-saga.repository";
@@ -22,7 +23,7 @@ import type { SagaDeps } from "./use-cases/run-saga";
 /** The burn saga (4.7). Uses the wallet module's ledger and voucher clients. */
 @Module({
   imports: [IdentityModule, WalletModule],
-  controllers: [CheckoutController],
+  controllers: [CheckoutController, DisputeController],
   providers: [
     {
       provide: CHECKOUT_DB,

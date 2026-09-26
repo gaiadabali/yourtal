@@ -714,6 +714,78 @@
         }
       }
     },
+    "/api/wallet/vouchers/{voucherId}/dispute": {
+      "post": {
+        "summary": "Report a voucher the merchant would not honour",
+        "tags": [
+          "checkout"
+        ],
+        "parameters": [
+          {
+            "name": "voucherId",
+            "in": "path",
+            "required": true,
+            "description": "The voucher's id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Why.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisputeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reinstated at once, or queued for staff.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The caller holds no voucher with this id."
+          },
+          "409": {
+            "description": "Refused with a closed code: insufficient_available, quote_expired, region_mismatch, audience_blocked or idempotency_conflict."
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/checkout/quote": {
       "post": {
         "summary": "Hold a listing's points price for 15 minutes",
@@ -3341,6 +3413,55 @@
           "en-AU",
           "id-ID"
         ]
+      },
+      "DisputeReason": {
+        "description": "Why a voucher was not honoured. A closed list: no viewer free text reaches staff.",
+        "type": "string",
+        "enum": [
+          "not_honoured",
+          "merchant_closed",
+          "other"
+        ]
+      },
+      "DisputeRequest": {
+        "description": "Report a voucher the merchant would not honour (4.7.c, K13).",
+        "type": "object",
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/DisputeReason"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "DisputeResult": {
+        "description": "reinstated: the voucher was not yet used, so it is void and the exact points are back. queued: the merchant took it; staff follow up.",
+        "type": "object",
+        "properties": {
+          "voucherId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "reinstated",
+              "queued"
+            ]
+          },
+          "points": {
+            "$ref": "#/components/schemas/Points"
+          }
+        },
+        "required": [
+          "voucherId",
+          "outcome",
+          "points"
+        ],
+        "additionalProperties": false
       },
       "ErrorResponse": {
         "description": "The error body every business-domain and authorization failure returns (YT-0552): to-http-exception.ts and authz-error.mapper.ts both build exactly this shape. NOT the shape of a request-body validation failure — nestjs-zod's ZodValidationPipe throws its own exception before either mapper runs; see route-registry.ts's VALIDATION_400.",

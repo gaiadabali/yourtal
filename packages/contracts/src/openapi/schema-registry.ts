@@ -54,6 +54,11 @@ import {
   checkoutResultSchema,
 } from "../checkout/checkout";
 import {
+  disputeReasonSchema,
+  disputeRequestSchema,
+  disputeResultSchema,
+} from "../checkout/dispute";
+import {
   ageBandSchema as identityAgeBandSchema,
   displayLocaleSchema,
   userProfileSchema,
@@ -482,6 +487,27 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: checkoutResultSchema,
     description:
       "done: the voucher is in the wallet. pending: the points are spent and the voucher is still being issued; it finishes on its own.",
+    crossFieldRules: [],
+  },
+
+  {
+    id: "DisputeReason",
+    schema: disputeReasonSchema,
+    description:
+      "Why a voucher was not honoured. A closed list: no viewer free text reaches staff.",
+    crossFieldRules: [],
+  },
+  {
+    id: "DisputeRequest",
+    schema: disputeRequestSchema,
+    description: "Report a voucher the merchant would not honour (4.7.c, K13).",
+    crossFieldRules: [],
+  },
+  {
+    id: "DisputeResult",
+    schema: disputeResultSchema,
+    description:
+      "reinstated: the voucher was not yet used, so it is void and the exact points are back. queued: the merchant took it; staff follow up.",
     crossFieldRules: [],
   },
 

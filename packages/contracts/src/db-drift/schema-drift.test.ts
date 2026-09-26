@@ -405,6 +405,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "K13's exactly-once reinstatement of a burn (same migration). Same ledger-internals note as ledger.account above.",
   "ledger.marketing_funding":
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
+  "checkout.dispute":
+    "4.7.c: a viewer's dispute of one voucher and what came of it, read by the staff queue (9.4); no contract publishes its rows.",
   "checkout.saga":
     "4.7: the burn saga's own state machine, read and written only by apps/api's checkout module; no contract publishes its rows.",
   "ledger.grant_release":

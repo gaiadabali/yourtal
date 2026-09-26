@@ -258,6 +258,30 @@ const CHECKOUT_REFUSED: RouteErrorResponse = {
 export const CHECKOUT_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "post",
+    path: "/api/wallet/vouchers/{voucherId}/dispute",
+    summary: "Report a voucher the merchant would not honour",
+    tags: ["checkout"],
+    pathParams: [
+      {
+        name: "voucherId",
+        description: "The voucher's id.",
+        schema: { type: "string", format: "uuid" },
+      },
+    ],
+    requestBody: { description: "Why.", schema: ref("DisputeRequest") },
+    successStatus: 200,
+    successDescription: "Reinstated at once, or queued for staff.",
+    successSchema: ref("DisputeResult"),
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      PDP_UNAVAILABLE,
+      { status: 404, description: "The caller holds no voucher with this id.", documented: false },
+      CHECKOUT_REFUSED,
+    ],
+  },
+  {
+    method: "post",
     path: "/api/checkout/quote",
     summary: "Hold a listing's points price for 15 minutes",
     tags: ["checkout"],

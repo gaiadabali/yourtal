@@ -31,6 +31,7 @@ export interface SagaRepository {
   create(saga: NewSaga): Promise<StoredSaga>;
   findByQuote(quoteId: string, userId: string): Promise<StoredSaga | null>;
   findById(id: string): Promise<StoredSaga | null>;
+  findByVoucher(voucherId: string, userId: string): Promise<StoredSaga | null>;
   /** Moves `from` → `to`; if another process moved it first, returns the row as it now is. */
   advance(id: string, from: SagaState, to: SagaState, patch: SagaPatch): Promise<StoredSaga>;
   /** Sagas left `reserved` past their reservation, or `burned` and not yet done. */

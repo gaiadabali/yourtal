@@ -45,6 +45,11 @@ export class PostgresSagaRepository implements SagaRepository {
     return this.maybe(sql`SELECT ${COLUMNS} FROM checkout.saga WHERE id = ${id}::uuid`);
   }
 
+  async findByVoucher(voucherId: string, userId: string): Promise<StoredSaga | null> {
+    return this.maybe(sql`SELECT ${COLUMNS} FROM checkout.saga
+      WHERE voucher_id = ${voucherId}::uuid AND user_id = ${userId}::uuid`);
+  }
+
   async advance(id: string, from: SagaState, to: SagaState, patch: SagaPatch): Promise<StoredSaga> {
     const moved = await this.maybe(sql`
       UPDATE checkout.saga

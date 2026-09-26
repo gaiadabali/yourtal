@@ -3,6 +3,7 @@ import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { sql } from "drizzle-orm";
+import { ResultAsync } from "neverthrow";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { checkoutQuoteSchema } from "@yourtal/contracts/checkout/checkout";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
@@ -40,7 +41,9 @@ afterAll(async () => {
   await app.close();
 });
 
-const unreachable = () => Promise.reject(new TypeError("fetch failed"));
+// What the HTTP clients do when nothing answers: the ResultAsync rejects.
+const unreachable = () =>
+  new ResultAsync<never, never>(Promise.reject(new TypeError("fetch failed")));
 
 /** `client` with some methods swapped out (a spread would drop a class's methods). */
 function patched<T extends object>(client: T, patch: Partial<T>): T {

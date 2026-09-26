@@ -43,7 +43,8 @@ import { WATCH_SESSION_REPOSITORY } from "./persistence/drizzle-watch-session.re
 import type { WatchSessionRepository } from "./persistence/drizzle-watch-session.repository";
 import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
 import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
-import { stubSegmentUrl } from "./media/segment-url-stub";
+import { mintManifestUrl } from "./media/mint-manifest-url";
+import { MANIFEST_SIGNING_SECRET } from "./media/manifest-signing-secret";
 import { DELIVERY_COVERAGE_READER } from "./delivery-coverage";
 import { WATCH_COMPLETION_HOOK } from "./watch-completion-hook";
 import type { WatchCompletionHook } from "./watch-completion-hook";
@@ -84,6 +85,7 @@ export class WatchController {
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(REWARD_ATTESTATION_SECRET) private readonly attestationSecret: string,
     @Inject(CHECKPOINT_SECRET) private readonly checkpointSecret: string,
+    @Inject(MANIFEST_SIGNING_SECRET) private readonly manifestSigningSecret: string,
     @Inject(DELIVERY_COVERAGE_READER) private readonly delivery: DeliveryCoverageReader,
     @Inject(WATCH_COMPLETION_HOOK) private readonly completionHook: WatchCompletionHook,
   ) {}
@@ -140,12 +142,13 @@ export class WatchController {
       session,
       durationSeconds: terms.durationSeconds,
       alreadyEarned: session.nonEarningReason === "already_earned",
-      // 5.1.d: a per-session manifest URL. Unsigned until `@yourtal/media`
-      // exports `mintSegmentUrl` (7.2.c) — see the stub's own header.
-      manifestUrl: stubSegmentUrl({
-        baseUrl: originOf(campaign.hlsUrl),
+      // 5.6.a: a per-session manifest URL, signed with the same scheme
+      // `/api/internal/hls-auth` verifies for nginx.
+      manifestUrl: mintManifestUrl({
+        secret: this.manifestSigningSecret,
+        hlsUrl: campaign.hlsUrl,
         sessionId: session.id,
-        assetId: campaignId,
+        durationSeconds: terms.durationSeconds,
       }),
     };
   }
@@ -401,14 +404,6 @@ export class WatchController {
       throw new NotFoundException("This session's terms version no longer exists.");
     }
     return { session, durationSeconds: terms.durationSeconds };
-  }
-}
-
-function originOf(url: string): string {
-  try {
-    return new URL(url).origin;
-  } catch {
-    return url;
   }
 }
 

@@ -16,6 +16,7 @@ import { CampaignViewAttributeLoader } from "./campaign-view-attribute-loader";
 import { DELIVERY_COVERAGE_READER, StubDeliveryCoverageReader } from "./delivery-coverage";
 import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
 import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
+import { MANIFEST_SIGNING_SECRET } from "./media/manifest-signing-secret";
 import { NoopWatchCompletionHook, WATCH_COMPLETION_HOOK } from "./watch-completion-hook";
 
 /**
@@ -57,6 +58,20 @@ import { NoopWatchCompletionHook, WATCH_COMPLETION_HOOK } from "./watch-completi
       inject: [APP_CONFIG],
     },
     { provide: DELIVERY_COVERAGE_READER, useClass: StubDeliveryCoverageReader },
+    {
+      // 5.6.a: signs the per-session manifest URL with the same secret
+      // `HlsAuthController` verifies with (`config.hlsSigningSecret`, both
+      // read from `HLS_SIGNING_SECRET` — one env var, one meaning).
+      provide: MANIFEST_SIGNING_SECRET,
+      useFactory: (config: AppConfig): string => {
+        const secret = config.hlsSigningSecret;
+        if (secret === undefined || secret === "") {
+          throw new Error("HLS_SIGNING_SECRET is required to sign session manifest URLs (5.6.a).");
+        }
+        return secret;
+      },
+      inject: [APP_CONFIG],
+    },
     // 5.5.d: overridable in app.module.ts (or a shared module both this and
     // the streak module import) once a real listener exists — see
     // watch-completion-hook.ts's own header for exactly how.

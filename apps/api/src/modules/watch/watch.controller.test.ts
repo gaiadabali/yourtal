@@ -91,6 +91,7 @@ const controller = new WatchController(
   new FakeProfiles(),
   "test-attestation-secret-not-a-real-one",
   "test-checkpoint-secret-not-a-real-one",
+  "test-manifest-signing-secret-not-a-real-one",
   new StubDeliveryCoverageReader(),
   new NoopWatchCompletionHook(),
 );

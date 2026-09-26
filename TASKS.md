@@ -39,7 +39,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 4** The bank is correct | A | ⛔ blocked | 9/10 | 56/57 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 21/26 | `████████░░`  81% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
-| **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
+| **Phase 7** Business studio | C | 🔄 in progress | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/6 | 0/18 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | free | 2026-09-27 | Phase 4 done except 4.6 (⛔ 4.6.g's D16 waits for 8.2.b; reopen 4.6.g when 8.2.b merges). 4.1–4.5 and 4.7–4.10 ✅. Helper worktrees `yourtal-p4-b`, `-c`, `-d` stay in place |
+| 1 | `yourtal-1` | **7** Business studio | 2026-09-27 | Four agents. A (`yourtal-1`, `phase/7`, db `yourtal_s1`): 7.1 → 7.3 → 7.7. B (`yourtal-p7-b`, `phase/7-b`, db `yourtal_s4b`, web/api 26410/26411, Valkey /9): 7.4 → 7.5. C (`yourtal-p7-c`, `phase/7-c`, db `yourtal_s4c`, 26420/26421, Valkey /10): 7.2. D (`yourtal-p7-d`, `phase/7-d`, db `yourtal_s4d`, 26440/26441, Valkey /12): 7.8. Helpers share slot 1's Cerbos (26315). 7.6 goes to whoever frees up first. Phase 4's 4.6 stays ⛔ (its branch `phase/4` kept) |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | 5.1–5.4 ✅. Two agents: C (`yourtal-2`, `phase/5-c`, db `yourtal_s2`) 5.6.a ✅ (0693f67), 5.6.b ✅ (real ledger round trip driven and verified); fixed two chained main regressions (73767ec, 9009b2b — 5.6.d, integration run for 9009b2b in progress). 5.6.c ⛔ staging still needs a fresh deploy past `0693f67` (F36's rename should let the next release migrate). D (`yourtal-p5-b`, `phase/5-d`, db `yourtal_s5b`) 5.5.b–d. 5.5.b's expiring and followed-channel feeds wait on 10.2 and 7.3.f. `phase/5` holds one withdrawn rename commit: never merge it |
 | 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Early slice: 6.1 → 6.2, with 6.5 and 6.7 in parallel. Three agents: A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. 6.3, 6.4, 6.6 and 6.8 wait for 7.4/7.7 and Phase 5's close. |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-27 | Reopened per F38: finishing 2.4.h (trim `/business/campaigns` bundle; wait for slot 2's `me.controller` fix). Everything else in Phase 2 ✅ |
@@ -998,12 +998,12 @@ Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen t
 
 The business console becomes **YourTal Studio**, in the spirit of YouTube Studio. Work in this order, which overrides task order: 7.1 → 7.4 → 7.5 → 7.3 → 7.2 → 7.7 → 7.8 → 7.6. Every Studio route sits under `api/:tenantId/studio/...`. Evidence: `docs/audit/2026-09-25/business-merchant.md`.
 
-- [ ] **7.1 Business accounts** · needs: 1.1, 1.3.a, 1.3.b, 1.6 (fake ok)
+- [ ] **7.1 Business accounts** · needs: 1.1, 1.3.a, 1.3.b, 1.6 (fake ok) — 🔄 slot 1
   - [ ] 7.1.a Migration: a tax ID kind and value (ABN for AU, NIB or NPWP for ID) and an address (state and postcode for AU, city for ID). Region, currency and handle came in 1.1. `district` is no longer required.
   - [ ] 7.1.b `modules/business/my-businesses.controller.ts` provides `GET /api/me/businesses`, plus the create-business flow. KYB documents upload through a presigned MinIO URL, so `storageRef` points to a real upload. Review happens in 9.3.
   - [ ] 7.1.c Team invites by **email**: an invitation token, sent through an `InvitationMailer` port in the business module that is bound to 1.6's simulated email driver once 1.6 is merged (never add a driver to `packages/drivers`), and an accept endpoint that sets `joined_at`. Add transfer ownership.
   - [ ] 7.1.d **Check:** an HTTP round trip creates an AU business with an ABN, and an invite is accepted through the inbox.
-- [ ] **7.2 Media pipeline, self-hosted (replaces Cloudflare Stream)** · needs: 1.3
+- [ ] **7.2 Media pipeline, self-hosted (replaces Cloudflare Stream)** · needs: 1.3 — 🔄 slot 1
   - [ ] 7.2.a Upload with a presigned multipart PUT to MinIO (`raw/…`), with size and type limits.
   - [ ] 7.2.b An `apps/worker/src/jobs/transcode.ts` job runs ffmpeg to produce:
     - HLS at 360p, 540p and 720p with 6 s segments, recording bytes per rendition (`estimatedBytes` uses 540p);
@@ -1037,7 +1037,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
   - [ ] 7.3.d Lifecycle `draft → in_review → live → paused → ended`, enforced by `canTransition` and by a database trigger (EW-17). Submitting is refused while the business is not KYB-verified (red line 7) and sends the campaign to moderation (9.2).
   - [ ] 7.3.f (requested by B for 5.5.b) A pg-boss event (e.g. `campaign.published`) when a campaign transitions to `live`, carrying at least `campaignId`, `businessId` and `region`. `apps/api/src/modules/me`'s notification worker consumes it to notify a business's followers (`me.follow`) — see 5.5.b's own note on what it built without this.
   - [ ] 7.3.e **Check:** an HTTP round trip creates a funded campaign at the F12 ceiling, with a question bank, and submits it to `in_review`; one point per minute above the ceiling is refused.
-- [ ] **7.4 Inventory (vouchers)** · needs: 7.1, 4.9 (fake ok)
+- [ ] **7.4 Inventory (vouchers)** · needs: 7.1, 4.9 (fake ok) — 🔄 slot 1
   - [ ] 7.4.a Locations CRUD. Today only the seed creates `store.merchant_location`, so a new business cannot list anything.
   - [ ] 7.4.b Listing CRUD. The supplier declares face value, S (≤ face value), locations, channel, partial-redemption policy, expiry, minimum spend, `contentCategory` and audience.
     - **Remove `priceInPoints` from `create-listing.schema.ts:16,32`** (EM-01). The price is `ledger-client.priceListing`, read-only for the business, and the set-settlement-value use case calls it too.
@@ -1071,7 +1071,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     - an ID viewer never sees an AU campaign;
     - a followed channel ranks higher;
     - without consent, interests do not change the order.
-- [ ] **7.8 Studio UI** · needs: 3.5
+- [ ] **7.8 Studio UI** · needs: 3.5 — 🔄 slot 1
   - [ ] 7.8.a The `(business)` route group at `/studio` with StudioShell (studio theme). In the same merge, add `/business/:path*` → `/studio/:path*` to `route-redirects.ts`.
   - [ ] 7.8.b Screens:
     - onboarding: create a business (region fixed, tax ID by region, address), KYB upload, and a verification banner that blocks submit;

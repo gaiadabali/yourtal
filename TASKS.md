@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 15/29 | `█████░░░░░`  52% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 16/30 | `█████░░░░░`  53% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 53/57 | `█████████░`  93% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 5/21 | `██░░░░░░░░`  24% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **30/84** | **197/380** | `█████░░░░░`  52% |
+| **All** | | | **30/84** | **198/381** | `█████░░░░░`  52% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -590,11 +590,12 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [ ] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint).
   - [ ] 2.4.b web-vitals 6.
   - [ ] 2.4.c Go 1.27, in every `go.mod`, the Dockerfiles and CI.
-  - [ ] 2.4.d Postgres 18: PGDATA moves, so dump, upgrade and restore; do it before staging holds data worth keeping.
+  - [x] 2.4.d Postgres 18: PGDATA moves, so dump, upgrade and restore; do it before staging holds data worth keeping. — Done 2026-09-26 (d330be5): 18.6 in CI, the shared dev stack (every slot db dumped and restored; old volume `yourtal-pgdata` kept) and Helios (staging data restored whole; old volume `yourtal_pgdata` kept). `pnpm verify` on 18 matched 17 exactly.
   - [ ] 2.4.e Valkey 9.
   - [ ] 2.4.f pnpm 12, locally and on Helios.
   - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships.
   - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one.
+  - [ ] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there.
 - [ ] **2.5 No account without a profile (F31)** · needs: 1.4
   - [ ] 2.5.a Login and session validation refuse a credential with no `identity.user_profile` row (`AsyncPrincipalResolver` must never fall back to the ID placeholder for a real session).
   - [ ] 2.5.b A registration whose profile write fails removes its credential (or retries it), so the same email can register again.

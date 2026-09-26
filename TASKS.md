@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 3/5 | 25/30 | `████████░░`  83% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 28/30 | `█████████░`  93% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 21/26 | `████████░░`  81% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **36/85** | **225/386** | `██████░░░░`  58% |
+| **All** | | | **37/85** | **228/386** | `██████░░░░`  59% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`): 4.10.a Done-when audit merged (8dbeb15: DB region wall, signed-route walk, EM-19 test); 4.10.b (EM-02 residue) open |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | 5.1–5.4 ✅. Two agents: C (`yourtal-2`, `phase/5-c`, db `yourtal_s2`) 5.6.a ✅ (0693f67), 5.6.b ✅ (real ledger round trip driven and verified); fixed two chained main regressions (73767ec, 9009b2b — 5.6.d, integration run for 9009b2b in progress). 5.6.c ⛔ staging still needs a fresh deploy past `0693f67` (F36's rename should let the next release migrate). D (`yourtal-p5-b`, `phase/5-d`, db `yourtal_s5b`) 5.5.b–d. 5.5.b's expiring and followed-channel feeds wait on 10.2 and 7.3.f. `phase/5` holds one withdrawn rename commit: never merge it |
 | 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Early slice: 6.1 → 6.2, with 6.5 and 6.7 in parallel. Three agents: A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. 6.3, 6.4, 6.6 and 6.8 wait for 7.4/7.7 and Phase 5's close. |
-| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅ (incl. 2.1.f, unblocks 4.9.e), 2.2 ✅; 2.3 all but c (needs one real voucher on staging for the strict decrypt rehearsal). 2.4: b, c, d, e done, g ⛔ serwist 10; next a (TypeScript 6), f (pnpm 12), i (Integration green on main) |
+| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1, 2.2, 2.3, 2.5 ✅; 2.4 all but g (⛔ serwist 10 not stable) and the h Check (every workflow green on main — waits on slot 2's `me.controller` e2e fix and Area C's `/business/campaigns` bundle, 202.9 KB over 200). Phase Done-when holds on staging |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
 
@@ -599,10 +599,10 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ⛔ serwist 10 not stable yet (latest 9.5.12, 10.0.0-preview.14 on 2026-09-26); override stays.
   - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one. — Status 2026-09-26: Quality and Release green; Contracts fixed (8775d9d: stale Go models, and its Go job ran 1.26 against 2.4.c's go 1.27). Still red and not from 2.4: Integration since acbdf73 (`ledger-client.contract.spec.ts`, handed to slot 2) and Performance budget since at least b70bd37 (`/business/campaigns` initial JS 202.9 KB over its 200 KB budget, Area C).
   - [x] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there. — Green again at c9effbe (Integration, Quality, Release all success). Three causes: five real-Cerbos e2e suites hard-coded slot 3's port 26335 (now `PDP_BASE_URL`); `/dev/clock` tests predated 1.5.h's 401 (agent D); the opt-in `checkout.live.test.ts` counted as "skipped" in the default run (now excluded unless `CHECKOUT_LIVE=1`).
-- [ ] **2.5 No account without a profile (F31)** · needs: 1.4
-  - [ ] 2.5.a Login and session validation refuse a credential with no `identity.user_profile` row (`AsyncPrincipalResolver` must never fall back to the ID placeholder for a real session).
-  - [ ] 2.5.b A registration whose profile write fails removes its credential (or retries it), so the same email can register again.
-  - [ ] 2.5.c **Check:** with the profile write forced to fail, register returns `persistence_failed`, login with that email is refused, and a second register with the same email succeeds.
+- [x] **2.5 No account without a profile (F31)** · needs: 1.4 — ✅ 2026-09-26 eabe07e
+  - [x] 2.5.a Login and session validation refuse a credential with no `identity.user_profile` row (`AsyncPrincipalResolver` must never fall back to the ID placeholder for a real session). — `AsyncPrincipalResolver` checks the profile first and refuses a signed-in principal with none: 401 `no_profile` (eabe07e).
+  - [x] 2.5.b A registration whose profile write fails removes its credential (or retries it), so the same email can register again. — Credential and profile share one database, so `AuthService.register` writes both in one transaction; no failure window, no compensation needed (eabe07e).
+  - [x] 2.5.c **Check:** with the profile write forced to fail, register returns `persistence_failed`, login with that email is refused, and a second register with the same email succeeds. — `registration-persistence-failure.e2e.test.ts`, real HTTP + Postgres + PDP: profile write forced to fail → `persistence_failed` (HTTP 503 `persistence_unavailable`), login refused, second register succeeds, exactly one credential and one profile. Green in Integration on e367574.
 
 **Done when:** every merge to `main` is live on staging within minutes, with the API, both Go services and the datastores running on Helios, backed up nightly.
 
@@ -1331,6 +1331,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · A · 2.5 No account without a profile (F31): credential and profile written in one transaction; a session with no profile is refused with `no_profile` · eabe07e
 - 2026-09-26 · A · 2.3 Staging posture and review tools: banner, noindex, disallow-all robots, `/dev/inbox`, `/dev/clock` against the live ledger, staging-only drivers assertion, a minimal seed with 10 demo logins, a real pending grant and a real voucher, nightly backup with a strict decrypting restore rehearsal · e367574
 - 2026-09-26 · B · 5.1–5.3 Watch & earn, server side: cumulative-budget farming fix (EW-01, row-locked, real HTTP burst/parallel Checks), session parking/resume keyed to (user, campaign, terms) with `already_earned` and an allocation hold, checkpoint issuance made single-live (EW-08) with coverage/sequence gating, server-side scoring writing `question_response` + session counters (EW-04/09), and completion calling `grantReward` with the signed attestation — a real ledger pending entry, idempotent, EW-10's winner-only grant. Two real bugs the e2e suite caught along the way: `RETURNING` on an INSERT-only table needs SELECT `yourtal_app` must never have (fixed to a caught unique-violation), and a circular module/controller import that left a DI token unresolvable. `seed/watch.ts` aligns every campaign's duration to the one HLS fixture (EW-07, `time-remap.ts` deleted) and funds `campaign.reward_config` per campaign; the mock, client-scored checkpoint quiz deleted (EW-04's actual leak vector) rather than patched. A `WATCH_COMPLETION_HOOK` (5.5.d's ask) fires on every real grant, no-op until B's streak module binds it. 5.1.d ships the fake-ok stubs the task names (unsigned manifest URL, `deliveryCoverage` returning `"unknown"`); real exports are a two-line swap once 7.2.c/10.4.c land. `apps/api` watch/campaign/wallet/checkout/me suites green (137+ tests); `packages/contracts` 723/723; `pnpm check` green · acbdf73
 - 2026-09-26 · A · 4.10 Done-when audit: every Phase 4 engine-report defect mapped to its regression test, region walls in the database, every internal route refuses unsigned calls, points issued only by a grant · 764a2ee

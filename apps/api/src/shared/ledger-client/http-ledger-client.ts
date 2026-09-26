@@ -61,6 +61,7 @@ import type { ServiceCaller } from "@yourtal/contracts/ledger-internal/service-s
 import type { AppDb } from "../persistence/drizzle-client";
 import * as settings from "./fake/fake-ledger-settings";
 import type { LedgerInternalClient } from "./ledger-internal-client";
+import { LedgerNotFoundError } from "./ledger-not-found";
 
 /** The services allowed to sign a ledger call (services/ledger/internal/serviceauth). */
 export type LedgerCaller = ServiceCaller;
@@ -130,9 +131,9 @@ export class HttpLedgerClient implements LedgerInternalClient {
             ),
           );
         }
-        throw new Error(
-          `ledger ${path} answered ${String(response.status)}: ${JSON.stringify(problem)}`,
-        );
+        const answer = `ledger ${path} answered ${String(response.status)}: ${JSON.stringify(problem)}`;
+        if (response.status === 404) throw new LedgerNotFoundError(answer);
+        throw new Error(answer);
       })(),
     );
   }

@@ -13,6 +13,7 @@
     "test": "turbo run test",
     "test:ledger-live": "node packages/db/scripts/with-test-db.mjs -- node scripts/ledger-contract-live.mjs",
     "test:voucher-live": "node packages/db/scripts/with-test-db.mjs -- node scripts/voucher-contract-live.mjs",
+    "test:checkout-live": "node packages/db/scripts/with-test-db.mjs -- node scripts/checkout-live.mjs",
     "check": "pnpm check:eol && pnpm format:check && turbo run typecheck lint && turbo run test --filter=!@yourtal/api --filter=!@yourtal/db --filter=!@yourtal/idempotency --filter=!@yourtal/queue --filter=!@yourtal/media --filter=!@yourtal/ledger-service --filter=!@yourtal/voucher-service --filter=!@yourtal/worker",
     "//check": "The fast gate, under 3 minutes, needing no services: line endings, format, typecheck (incl. go vet), lint, and every unit suite that needs no database. CI's quality.yml runs exactly this.",
     "verify": "pnpm check && turbo run test --filter=@yourtal/api --filter=@yourtal/db --filter=@yourtal/idempotency --filter=@yourtal/queue --filter=@yourtal/media --filter=@yourtal/ledger-service --filter=@yourtal/voucher-service --filter=@yourtal/worker && pnpm policy:test && pnpm --filter @yourtal/web test:rendered",

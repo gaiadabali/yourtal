@@ -88,20 +88,33 @@ export async function runSaga(
 }
 
 async function activate(deps: SagaDeps, saga: StoredSaga) {
-  let last = await deps.vouchers.activate({ sagaId: saga.id, ownerId: saga.userId });
+  let last = await tryActivate(deps, saga);
   for (
     let attempt = 1;
     attempt < ACTIVATE_ATTEMPTS && last.isErr() && !unusable(last.error);
     attempt++
   ) {
-    last = await deps.vouchers.activate({ sagaId: saga.id, ownerId: saga.userId });
+    last = await tryActivate(deps, saga);
   }
   return last;
 }
 
+// An unreachable voucher service is not a refusal (null): the points are
+// spent, so the saga stays `burned` for recovery instead of throwing.
+async function tryActivate(
+  deps: SagaDeps,
+  saga: StoredSaga,
+): Promise<Result<unknown, LedgerError | null>> {
+  try {
+    return await deps.vouchers.activate({ sagaId: saga.id, ownerId: saga.userId });
+  } catch {
+    return err(null);
+  }
+}
+
 // The voucher can never be activated: stop and give the points back.
-function unusable(error: LedgerError): boolean {
-  return error.code === "kill_switch" || error.code === "idempotency_conflict";
+function unusable(error: LedgerError | null): error is LedgerError {
+  return error?.code === "kill_switch" || error?.code === "idempotency_conflict";
 }
 
 async function release(deps: SagaDeps, saga: StoredSaga): Promise<void> {

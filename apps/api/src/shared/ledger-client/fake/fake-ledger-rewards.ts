@@ -15,6 +15,7 @@ import {
   type GrantRewardRequest,
 } from "@yourtal/contracts/ledger-internal/rewards";
 import type { AppDb } from "../../persistence/drizzle-client";
+import { LedgerNotFoundError } from "../ledger-not-found";
 import { availablePoints } from "./fake-ledger-balance";
 
 type GrantRow = {
@@ -210,7 +211,7 @@ async function loadBurn(db: AppDb, sagaId: string): Promise<BurnRow> {
       FROM platform.ledger_fake_burn WHERE saga_id = ${sagaId}
   `);
   const row = result.rows[0];
-  if (row === undefined) throw new Error(`no burn ${sagaId} exists`);
+  if (row === undefined) throw new LedgerNotFoundError(`no burn ${sagaId} exists`);
   return row;
 }
 

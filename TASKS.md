@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1). Still running: B (`yourtal-p4-b`) on 4.6.f.2 capture posting and 4.6.h anchoring. 4.6.g ⛔ D16 (8.2.b). E and F done; their helper worktrees stay in place |
 | 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
 | 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (6479720): 1.1–1.7 all ✅, Done when verified against main — register→verify→login→see-name (1.6.d, 1.7.e's 8/8 Playwright), no `x-yt-*` header accepted anywhere (grepped clean; `store_device`'s `x-yt-device-id` is a distinct, cryptographically-gated device-credential reference, not an identity claim, and unwired to any route yet), the F2 region wall enforced in Cerbos across every tenant-scoped resource plus `campaign_view` (509/509 native suite, `session-and-region-wall.check.e2e.test.ts`). DB-level RLS for region isn't built yet — no such task exists in this file, so not a Phase 1 gap. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
-| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | Started with Phase 1 only at its 1.5.g Check (founder OK). Ports 26360–26366, db `yourtal_s4`, Valkey `/7`, bucket `yourtal-media-4`. On 2.1 |
+| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | Three agents. A (`yourtal-4`, `phase/2`): 2.1 on Helios — datastores up, gaiada-deploy patched (F27), nginx + first release next. B (`yourtal-p2-b`, `phase/2-b`, db `yourtal_s4b`): 2.2.a/c continuous deploy, 2.3.c backups. C (`yourtal-p2-c`, `phase/2-c`, db `yourtal_s4c`): 2.3.b, 2.3.d `/dev/clock`, 2.3.e staging seed |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Three agents: A (`yourtal-p8`, `phase/8`, db `yourtal_s8`) 8.1.a server side; B (`yourtal-p8-b`, `phase/8-b`) 8.2.d; C (`yourtal-p8-c`, `phase/8-c`) 8.3.b |
 
@@ -563,12 +563,12 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - on Helios, `curl 127.0.0.1:<api>/api/health` returns 200;
     - ledger and voucher `/healthz` return 200;
     - `ss -ltnp` shows every YourTal port on 127.0.0.1.
-- [ ] **2.2 Continuous deploy from main** · needs: 2.1
+- [ ] **2.2 Continuous deploy from main** · needs: 2.1 — 🔄 slot 4 (agent B)
   - [ ] 2.2.a `release.yml` triggers on pushes to `main`, gated by `pnpm check` and the build. It publishes the `deploy/production-*` release that the poller installs. It keeps `paths-ignore: TASKS.md`.
   - [ ] 2.2.b The shared `gaiada-deploy` rollback loses `PM2_NAME` (old YT-0532). Fix it upstream in `deploy-workflows` if we can reach it. Otherwise document "rollback = redeploy the previous tag" and exercise it once.
   - [ ] 2.2.c Add a daily check that the deployed SHA equals `main`, so a poller that has silently stopped gets noticed (old YT-0566).
   - [ ] 2.2.d **Check:** a trivial commit pushed to `main` is live on staging within about 5 minutes.
-- [ ] **2.3 Staging posture and review tools** · needs: 2.2
+- [ ] **2.3 Staging posture and review tools** · needs: 2.2 — 🔄 slot 4 (agents B, C)
   - [ ] 2.3.a With `APP_ENV=staging`:
     - `X-Robots-Tag: noindex` from nginx and the proxy;
     - `/dev/inbox` enabled;

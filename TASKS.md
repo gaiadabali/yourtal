@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Four agents. A (`yourtal-1`, `phase/4`): 4.7.c and the 4.9.f Check merging, then 4.9.e. B (`yourtal-p4-b`): 4.6.f.2 capture posting, 4.6.h anchoring. E (`yourtal-p4-c`, `phase/4-e`): ledger escrow, finishing 4.4.g. F (`yourtal-p4-d`, `phase/4-f`): done — 4.7 ✅ (live 4.7.d), 4.6.g audited, ⛔ on D16 only |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1). Still running: B (`yourtal-p4-b`) on 4.6.f.2 capture posting and 4.6.h anchoring. 4.6.g ⛔ D16 (8.2.b). E and F done; their helper worktrees stay in place |
 | 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
 | 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (6479720): 1.1–1.7 all ✅, Done when verified against main — register→verify→login→see-name (1.6.d, 1.7.e's 8/8 Playwright), no `x-yt-*` header accepted anywhere (grepped clean; `store_device`'s `x-yt-device-id` is a distinct, cryptographically-gated device-credential reference, not an identity claim, and unwired to any route yet), the F2 region wall enforced in Cerbos across every tenant-scoped resource plus `campaign_view` (509/509 native suite, `session-and-region-wall.check.e2e.test.ts`). DB-level RLS for region isn't built yet — no such task exists in this file, so not a Phase 1 gap. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | Started with Phase 1 only at its 1.5.g Check (founder OK). Ports 26360–26366, db `yourtal_s4`, Valkey `/7`, bucket `yourtal-media-4`. On 2.1 |
@@ -833,7 +833,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - [x] No API response carries it: `packages/contracts/src/money/no-backing-rate-in-api.test.ts` scans every published path and schema (e3f1d8e).
     - [x] The bundle test fails if any client chunk contains `micros_per_point`, `issuePriceMicros` or `backingMicros`: `pnpm check:bundle-b`, run by perf-budget.yml after the build (e3f1d8e).
     - [x] `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove, plus the contract mocks 13.5.c deletes: `eslint-rules/no-mock-backing-rate.mjs` (e3f1d8e).
-  - [ ] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live. — ⛔ staging does not exist until 2.1 (slot 4); asked there as 2.1.f
+  - [ ] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live. The spec already passes 23/23 against a local live ledger (4f282d7). — ⛔ staging does not exist until 2.1 (slot 4); asked there as 2.1.f
   - [x] 4.9.f **Check:** Passed on main 568eacd: `coverage_check_test.go` (a 1,000-pt AU purchase adds exactly 1.50 and a streak succeeds; burn and capture move cash and liability by 0), and `pnpm verify` green with the AU rate 3,000,000 before and after.
     - after an AU purchase of 1,000 pts that is fully granted, coverage = 1.50 and a streak grant succeeds;
     - burn → capture → before payout, coverage is unchanged to one minor unit;

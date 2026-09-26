@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 20/30 | `███████░░░`  67% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 21/30 | `███████░░░`  70% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 1/5 | 5/22 | `██░░░░░░░░`  23% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **32/84** | **204/382** | `█████░░░░░`  53% |
+| **All** | | | **32/84** | **205/382** | `█████░░░░░`  54% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`): 4.10.a Done-when audit merged (8dbeb15: DB region wall, signed-route walk, EM-19 test); 4.10.b (EM-02 residue) open |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | Two agents. A (`yourtal-2`, `phase/5`, db `yourtal_s2`): 5.1 → 5.2 → 5.3. B (`yourtal-p5-b`, `phase/5-b`) done and merged (143d7d2): 5.4 ✅, 5.5.a done, 5.5.b partial (`ledger.points_unlocked` real; `points_expiring`/followed-channel campaigns ⛔ 10.2/7.3.f), 5.5.c ⛔ 5.3 (streak/notification mechanics each verified independently — see 5.5.c's own note). B's worktree left in place; its own `.env` now points its Cerbos at 26395 (`yourtal-cerbos-9`, its own `./policies`), not the shared 26325. |
 | 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (4916e31), including F30's reopen: 1.5.h makes a protected route with no session return 401/`no_session` instead of 403 (403 stays for a signed-in principal Cerbos refuses). `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
-| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅, 2.2 ✅; 2.3 a/b/d/g live. Staging seed ran (10 demo logins, `viewer.au` signs in); its tier-0 pending grant failed on unfunded marketing cash → C (`yourtal-p2-c`, `phase/2-c2`) fixing. D (`yourtal-p2-b`, `phase/2-d`): ledger staging-only early-release endpoint so `/dev/clock` works on the live ledger (2.3.f). 2.3.c needs one real voucher; 2.3.h ready to verify; then 2.4 |
+| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅ (incl. 2.1.f, unblocks 4.9.e), 2.2 ✅; 2.3 all but c (needs one real voucher on staging for the strict decrypt rehearsal). 2.4: b, c, d, e done, g ⛔ serwist 10; next a (TypeScript 6), f (pnpm 12), i (Integration green on main) |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
 
@@ -591,7 +591,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.4.b web-vitals 6. — 6.2.2, no RUM code change (34d40ca).
   - [x] 2.4.c Go 1.27, in every `go.mod`, the Dockerfiles and CI. — 1.27.1 in all four go.mod files and both Dockerfiles (pinned digest); Go suites and image builds green (34d40ca).
   - [x] 2.4.d Postgres 18: PGDATA moves, so dump, upgrade and restore; do it before staging holds data worth keeping. — Done 2026-09-26 (d330be5): 18.6 in CI, the shared dev stack (every slot db dumped and restored; old volume `yourtal-pgdata` kept) and Helios (staging data restored whole; old volume `yourtal_pgdata` kept). `pnpm verify` on 18 matched 17 exactly.
-  - [ ] 2.4.e Valkey 9.
+  - [x] 2.4.e Valkey 9. — 9.1.2 (pinned digest) in compose, Helios compose and CI (34d40ca); swapped on the shared dev stack and on Helios 2026-09-26; api Redis suites green on 9.
   - [ ] 2.4.f pnpm 12, locally and on Helios.
   - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ⛔ serwist 10 not stable yet (latest 9.5.12, 10.0.0-preview.14 on 2026-09-26); override stays.
   - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one.

@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./dsar-handlers": "./src/dsar-handlers.ts"
+  },
   "scripts": {
     "migrate": "node scripts/atlas.mjs apply",
     "migrate:status": "node scripts/atlas.mjs status",

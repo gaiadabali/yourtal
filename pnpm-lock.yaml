@@ -65,9 +65,15 @@ importers:
       '@yourtal/authz':
         specifier: workspace:*
         version: link:../../packages/authz
+      '@yourtal/consent':
+        specifier: workspace:*
+        version: link:../../packages/consent
       '@yourtal/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@yourtal/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@yourtal/drivers':
         specifier: workspace:*
         version: link:../../packages/drivers
@@ -265,9 +271,15 @@ importers:
       '@yourtal/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@yourtal/drivers':
+        specifier: workspace:*
+        version: link:../../packages/drivers
       '@yourtal/queue':
         specifier: workspace:*
         version: link:../../packages/queue
+      pg:
+        specifier: 8.23.0
+        version: 8.23.0
       pg-boss:
         specifier: 12.34.0
         version: 12.34.0
@@ -281,6 +293,9 @@ importers:
       '@swc/core':
         specifier: ^1.16.2
         version: 1.16.2(@swc/helpers@0.5.23)
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
       '@yourtal/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig

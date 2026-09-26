@@ -539,6 +539,29 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "YT-0540. Password-reset and email-verification tokens, hashed at rest like identity.session.id above. Single-use via consumed_at (see the migration's own header); no public contract represents a row of it, only the confirm endpoints' generic ok/token_invalid outcome.",
   "identity.staff_role":
     "1.5.b (20260926000000_identity_staff_role.sql): who holds a staff role, written only by `pnpm staff:add <email> <role>`. GET /api/me's staffRoles is a derived list of role names (get-me.use-case.ts), not a row mirror, so there is no MAPPINGS entry — same convention as identity.credential/identity.session above for a table no endpoint returns a row of.",
+
+  // MeModule -- TASKS.md 5.4/5.5, this pass's own ticket. Same reasoning as
+  // route-drift.test.ts's KNOWN_OUT_OF_SCOPE entries for these same routes:
+  // a full packages/contracts row-mirror schema is separate work from
+  // standing the module up, and each endpoint's own response shape (never a
+  // raw row) is asserted by me.controller.e2e.test.ts / streak.service.test.ts
+  // instead.
+  "identity.consent_record":
+    "Mirrored by @yourtal/consent's consentRecordSchema — a DIFFERENT package's contract, by that package's own design (its consent-record.ts header). This gate only ever compares packages/contracts schemas against migrations, so it cannot see that mapping and needs it named here instead of there.",
+  "me.interest":
+    "MeModule -- TASKS.md 5.4, this pass's own ticket. GET/PUT /api/me/interests returns/accepts only `nodeIds: string[]` (interests.controller.ts) — no schema mirrors the row's own user_id/created_at.",
+  "me.follow":
+    "MeModule -- TASKS.md 5.4, this pass's own ticket. GET /api/me/follows returns `{businessId, region}` per follow (follow.repository.ts's FollowedBusiness), a projection, not a row mirror.",
+  "me.save":
+    "MeModule -- TASKS.md 5.4, this pass's own ticket. GET /api/me/saves returns only `campaignIds: string[]` — no schema mirrors the row.",
+  "me.link_code":
+    "MeModule -- TASKS.md 5.4.c, this pass's own ticket. A server-internal one-time code; POST /api/me/linked-apps/code returns `{code, expiresAt}` once, at issuance, never a row read back.",
+  "me.streak_state":
+    "MeModule -- TASKS.md 5.5.a, this pass's own ticket. GET /api/me/streak returns `{currentLength, lastCountedDate, grantsIssued}` (streak.controller.ts) — the row's own day3Granted/day7Granted bonus-idempotency flags stay internal.",
+  "me.notification":
+    "MeModule -- TASKS.md 5.5.b, this pass's own ticket. No packages/contracts schema yet for the notification response shape.",
+  "me.notification_preference":
+    "MeModule -- TASKS.md 5.5.b, this pass's own ticket. GET/PUT .../preferences works in `{category: pushEnabled}` pairs (notifications.controller.ts), not a row mirror.",
 };
 
 const TABLES = replayMigrations();

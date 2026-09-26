@@ -332,3 +332,11 @@ resources:
     kind: session
     id: self
     attr: {}
+
+  # 5.4/5.5's own resource kind, same "caller IS the resource" shape as
+  # session_self above — see _schemas/resource/me.json and
+  # resource_policies/me.yaml.
+  me_self:
+    kind: me
+    id: self
+    attr: {}

@@ -14,13 +14,16 @@
   },
   "dependencies": {
     "@yourtal/contracts": "workspace:*",
+    "@yourtal/drivers": "workspace:*",
     "@yourtal/queue": "workspace:*",
+    "pg": "8.23.0",
     "pg-boss": "12.34.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@swc-node/register": "^1.12.1",
     "@swc/core": "^1.16.2",
+    "@types/pg": "8.23.1",
     "@yourtal/tsconfig": "workspace:*",
     "typescript": "5.9.3",
     "vitest": "5.0.1"

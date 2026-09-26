@@ -1,0 +1,135 @@
+---
+name: MeSuite
+description: |-
+  The viewer's own sub-account data (TASKS.md 5.4/5.5) -- consent,
+  interests, follows, saves, continue-watching, streak, notifications,
+  account deletion and data export. Same "caller IS the resource" shape as
+  SessionSuite; `store_device` and `admin` are asserted to reach nothing
+  here — see resource_policies/me.yaml for why.
+tests:
+  - name: a real signed-in identity manages its own me surface
+    input:
+      principals: [wina, budi_owner, support_sari]
+      resources: [me_self]
+      actions:
+        [
+          view_consents,
+          update_consent,
+          view_interests,
+          update_interests,
+          view_follows,
+          update_follows,
+          view_saves,
+          update_saves,
+          view_sessions,
+          view_streak,
+          view_notifications,
+          update_notifications,
+          delete_account,
+          export_data,
+          create_link_code,
+        ]
+    expected:
+      - principal: wina
+        resource: me_self
+        actions:
+          {
+            view_consents: EFFECT_ALLOW,
+            update_consent: EFFECT_ALLOW,
+            view_interests: EFFECT_ALLOW,
+            update_interests: EFFECT_ALLOW,
+            view_follows: EFFECT_ALLOW,
+            update_follows: EFFECT_ALLOW,
+            view_saves: EFFECT_ALLOW,
+            update_saves: EFFECT_ALLOW,
+            view_sessions: EFFECT_ALLOW,
+            view_streak: EFFECT_ALLOW,
+            view_notifications: EFFECT_ALLOW,
+            update_notifications: EFFECT_ALLOW,
+            delete_account: EFFECT_ALLOW,
+            export_data: EFFECT_ALLOW,
+            create_link_code: EFFECT_ALLOW,
+          }
+      - principal: budi_owner
+        resource: me_self
+        actions:
+          {
+            view_consents: EFFECT_ALLOW,
+            update_consent: EFFECT_ALLOW,
+            view_interests: EFFECT_ALLOW,
+            update_interests: EFFECT_ALLOW,
+            view_follows: EFFECT_ALLOW,
+            update_follows: EFFECT_ALLOW,
+            view_saves: EFFECT_ALLOW,
+            update_saves: EFFECT_ALLOW,
+            view_sessions: EFFECT_ALLOW,
+            view_streak: EFFECT_ALLOW,
+            view_notifications: EFFECT_ALLOW,
+            update_notifications: EFFECT_ALLOW,
+            delete_account: EFFECT_ALLOW,
+            export_data: EFFECT_ALLOW,
+            create_link_code: EFFECT_ALLOW,
+          }
+      - principal: support_sari
+        resource: me_self
+        actions:
+          {
+            view_consents: EFFECT_ALLOW,
+            update_consent: EFFECT_ALLOW,
+            view_interests: EFFECT_ALLOW,
+            update_interests: EFFECT_ALLOW,
+            view_follows: EFFECT_ALLOW,
+            update_follows: EFFECT_ALLOW,
+            view_saves: EFFECT_ALLOW,
+            update_saves: EFFECT_ALLOW,
+            view_sessions: EFFECT_ALLOW,
+            view_streak: EFFECT_ALLOW,
+            view_notifications: EFFECT_ALLOW,
+            update_notifications: EFFECT_ALLOW,
+            delete_account: EFFECT_ALLOW,
+            export_data: EFFECT_ALLOW,
+            create_link_code: EFFECT_ALLOW,
+          }
+
+  - name: anonymous has no me surface to manage
+    input:
+      principals: [anon]
+      resources: [me_self]
+      actions: [view_consents, update_consent, delete_account, export_data]
+    expected:
+      - principal: anon
+        resource: me_self
+        actions:
+          {
+            view_consents: EFFECT_DENY,
+            update_consent: EFFECT_DENY,
+            delete_account: EFFECT_DENY,
+            export_data: EFFECT_DENY,
+          }
+
+  - name: a store device has no me surface either
+    input:
+      principals: [counter_kemang]
+      resources: [me_self]
+      actions: [view_consents, view_streak, delete_account]
+    expected:
+      - principal: counter_kemang
+        resource: me_self
+        actions:
+          { view_consents: EFFECT_DENY, view_streak: EFFECT_DENY, delete_account: EFFECT_DENY }
+
+  - name: admin reaches no data here either (docs/17 section 5)
+    input:
+      principals: [admin_root]
+      resources: [me_self]
+      actions: [view_consents, view_streak, delete_account, export_data]
+    expected:
+      - principal: admin_root
+        resource: me_self
+        actions:
+          {
+            view_consents: EFFECT_DENY,
+            view_streak: EFFECT_DENY,
+            delete_account: EFFECT_DENY,
+            export_data: EFFECT_DENY,
+          }

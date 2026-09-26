@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "me",
+  "description": "The viewer's own sub-account data (5.4/5.5) -- consents, interests, follows, saves, continue-watching, streak, notifications, account deletion and data export. No attributes: every action is about the caller's OWN account, so there is nothing about the resource instance for a rule to read. See policies/README.md and policies/resource_policies/me.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

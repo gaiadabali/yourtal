@@ -1,0 +1,83 @@
+apiVersion: api.cerbos.dev/v1
+description: |-
+  The viewer's own sub-account data (TASKS.md 5.4/5.5): per-purpose
+  consent, declared interests, follows, saves, continue-watching, streak
+  and notifications -- plus account deletion and data export.
+
+  Same shape as `session.yaml`'s `view_profile`/`update_profile`: no route
+  here names a `:userId`, every action is already about the caller's own
+  account by construction, and there is nothing narrower than "a real
+  signed-in identity" to check. It is a SEPARATE resource kind rather than
+  more `session` actions so that this module's policy file and identity's
+  (a different module, this phase) are never the same YAML two parallel
+  sessions might edit at once.
+
+  `store_device` is absent from every rule for the same reason
+  `session.yaml` leaves it out: a provisioned counter has no
+  email-and-password identity and none of this data. `admin` is absent
+  from every rule for the structural reason `policies/README.md` and
+  `policy-drift.test.ts` enforce: admin's entire surface is role grants,
+  feature flags and kill switches, fixed by admin appearing in exactly one
+  resource policy file.
+resourcePolicy:
+  version: default
+  resource: me
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/me.json
+  rules:
+    - name: a-real-signed-in-identity-manages-its-own-me-surface
+      actions:
+        [
+          view_consents,
+          update_consent,
+          view_interests,
+          update_interests,
+          view_follows,
+          update_follows,
+          view_saves,
+          update_saves,
+          view_sessions,
+          view_streak,
+          view_notifications,
+          update_notifications,
+          delete_account,
+          export_data,
+          create_link_code,
+        ]
+      effect: EFFECT_ALLOW
+      roles:
+        [
+          "user",
+          "business_user",
+          "charity_admin",
+          "support",
+          "moderator",
+          "risk_analyst",
+          "finance",
+          "ops",
+        ]
+
+    - name: anonymous-has-no-me-surface-to-manage
+      actions:
+        [
+          view_consents,
+          update_consent,
+          view_interests,
+          update_interests,
+          view_follows,
+          update_follows,
+          view_saves,
+          update_saves,
+          view_sessions,
+          view_streak,
+          view_notifications,
+          update_notifications,
+          delete_account,
+          export_data,
+          create_link_code,
+        ]
+      effect: EFFECT_DENY
+      roles: ["anonymous"]

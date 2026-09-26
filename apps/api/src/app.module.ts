@@ -10,6 +10,7 @@ import { CheckpointModule } from "./modules/watch/checkpoint/checkpoint.module";
 import { DevModule } from "./modules/dev/dev.module";
 import { WalletModule } from "./modules/wallet/wallet.module";
 import { CheckoutModule } from "./modules/checkout/checkout.module";
+import { MeModule } from "./modules/me/me.module";
 import { WalletAttributeLoader } from "./modules/wallet/wallet-attribute-loader";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
@@ -46,6 +47,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     DevModule,
     WalletModule,
     CheckoutModule,
+    MeModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

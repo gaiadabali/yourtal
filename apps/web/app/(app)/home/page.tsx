@@ -9,7 +9,6 @@ import { filterCampaignsByKind } from "@/features/campaign/campaign-filter";
 import { CampaignGrid } from "@/features/campaign/campaign-grid";
 import { CampaignGridSkeleton } from "@/features/campaign/campaign-grid-skeleton";
 import { sortCampaigns } from "@/features/campaign/campaign-sort";
-import { StreakCheckInCard } from "@/features/streak/streak-check-in-card";
 import { getRegionDisplayConfig } from "@/features/region/get-region";
 
 /**
@@ -28,7 +27,7 @@ export default async function EarnBoardPage(props: PageProps<"/home">) {
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-2xl font-semibold text-fg">{labels.title}</h1>
-      <StreakCheckInCard />
+      {/* The real server-backed streak card (GET /api/me/streak, 5.5.a) is Phase 6's UI (6.7/6.8, needs 5.5) — the client-only fake this used to render was deleted with 5.5.a. */}
       <CampaignBoardControls labels={labels} />
       {/* Board-specific fallback lives here, not in the group's loading.tsx,
           which is shared with every sibling tab. */}

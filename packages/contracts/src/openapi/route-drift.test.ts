@@ -197,6 +197,32 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "POST /api/auth/password/reset/confirm": "AuthModule -- YT-0540, a separate in-flight stream.",
   "POST /api/auth/email/verify/request": "AuthModule -- YT-0540, a separate in-flight stream.",
   "POST /api/auth/email/verify/confirm": "AuthModule -- YT-0540, a separate in-flight stream.",
+
+  // MeModule -- TASKS.md 5.4/5.5, this pass's own ticket. Same reasoning as
+  // StoreModule/AuthModule above: a full request/response transcription is
+  // separate work from standing the module up, and these endpoints' own
+  // e2e/unit suites (me.controller.e2e.test.ts, streak.service.test.ts)
+  // are this ticket's verification instead.
+  "GET /api/me/consents": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "POST /api/me/consents": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "GET /api/me/interests": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "PUT /api/me/interests": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "GET /api/me/follows": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "PUT /api/me/follows/{businessId}": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "DELETE /api/me/follows/{businessId}": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "GET /api/me/saves": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "PUT /api/me/saves/{campaignId}": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "DELETE /api/me/saves/{campaignId}": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "GET /api/me/sessions": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "GET /api/me/streak": "MeModule -- TASKS.md 5.5, this pass's own ticket.",
+  "GET /api/me/notifications": "MeModule -- TASKS.md 5.5, this pass's own ticket.",
+  "PATCH /api/me/notifications/{id}/read": "MeModule -- TASKS.md 5.5, this pass's own ticket.",
+  "GET /api/me/notifications/preferences": "MeModule -- TASKS.md 5.5, this pass's own ticket.",
+  "PUT /api/me/notifications/preferences/{category}":
+    "MeModule -- TASKS.md 5.5, this pass's own ticket.",
+  "DELETE /api/me": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "GET /api/me/data-export": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "POST /api/me/linked-apps/code": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
 };
 
 describe("apps/api route inventory vs route-registry.{a,b,c}.ts", () => {

@@ -185,6 +185,36 @@ export const RESOURCE_ACTIONS = {
     "dev_clock_run_job",
     "dev_clock_advance_days",
   ],
+
+  /**
+   * The viewer's own sub-account data (5.4/5.5): consents, declared
+   * interests, follows, saves, continue-watching, streak and
+   * notifications, plus account deletion and data export. A new kind
+   * rather than more `session` actions, so this module's policy file and
+   * `session.yaml`'s (a different module's, this phase) never need the
+   * same YAML edited by two sessions at once — the reasoning is otherwise
+   * identical to `session`'s own: no route here names a `:userId`, the
+   * caller IS the resource, and the PDP answers only "does a principal of
+   * this SHAPE ever reach this action at all". See
+   * `policies/resource_policies/me.yaml`.
+   */
+  me: [
+    "view_consents",
+    "update_consent",
+    "view_interests",
+    "update_interests",
+    "view_follows",
+    "update_follows",
+    "view_saves",
+    "update_saves",
+    "view_sessions",
+    "view_streak",
+    "view_notifications",
+    "update_notifications",
+    "delete_account",
+    "export_data",
+    "create_link_code",
+  ],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

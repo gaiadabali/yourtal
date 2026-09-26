@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | A (`yourtal-1`, `phase/4`): 4.8.a ✅ (d448b73); 4.7.a/b and the burn-price fix merging; next 4.4.m, 4.7.c. B (`yourtal-p4-b`, `phase/4-b`): 4.5 ✅ (21871de), 4.6.f.1 ✅; slot freed — the rest (4.6.f.2, 4.6.h) needs a ledger-internal route only A can add (see 4.6.f.2's note). C done (4.9.a, 4.9.d) and D done (4.4.l, 4.4.g event); their helper worktrees stay in place |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | Four agents. A (`yourtal-1`, `phase/4`): 4.7.c and the 4.9.f Check merging, then 4.9.e. B (`yourtal-p4-b`): 4.6.f.2 capture posting, 4.6.h anchoring. E (`yourtal-p4-c`, `phase/4-e`): ledger escrow, finishing 4.4.g. F (`yourtal-p4-d`, `phase/4-f`): the live 4.7.d Check, the 4.6.g audit |
 | 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.a/b/c/d/e/f merged (e5756f3); 1.6 ✅ (63af281); 1.7 ✅ (6a410d5). Only 1.5.g's Check is left on 1.5. A (`yourtal-3`, `phase/1`) running the 1.5.g Check now that 1.5.e is on main; B (`yourtal-p1-b`, `phase/1-b`) done with 1.5.e, worktree idle awaiting next assignment; D (`yourtal-p1-c`, `phase/1-c`) done — slot freed, worktree left in place |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | Started with Phase 1 only at its 1.5.g Check (founder OK). Ports 26360–26366, db `yourtal_s4`, Valkey `/7`, bucket `yourtal-media-4`. On 2.1 |

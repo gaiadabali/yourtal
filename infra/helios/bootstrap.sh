@@ -59,7 +59,8 @@ app_env=$Y/secrets/app.env
 if ! grep -q '^LEDGER_SERVICE_SECRET=' "$app_env" 2>/dev/null; then
   [ -f "$app_env" ] && cp -p "$app_env" "$app_env.bak-$(date -u +%Y%m%dT%H%M%SZ)"
   log "writing app.env"
-  db=127.0.0.1:26432/yourtal
+  # Loopback only, so no TLS; atlas (lib/pq) would otherwise insist on it.
+  db=127.0.0.1:26432/yourtal?sslmode=disable
   cat >"$app_env" <<EOF
 # Generated on Helios by infra/helios/bootstrap.sh. Mode 0600. Never commit.
 # Values must stay free of spaces and quotes: bash and node both read this file.

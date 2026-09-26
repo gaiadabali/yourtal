@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import type { WorkerJob } from "./job";
 
 /**
- * Scans `dir` for `*.ts` files (excluding `*.test.ts`) and dynamically
+ * Scans `dir` for `*.ts` (or built `*.js`) files, excluding `*.test.*`, and dynamically
  * imports each, collecting the ones that export `job`. 1.3.c/1.3.e
  * (TASKS.md): this is the ENTIRE registration mechanism — there is no other
  * file anywhere that lists job names, so dropping a new file in
@@ -23,7 +23,9 @@ export interface LoadedJob {
 export async function loadJobs(dir: string): Promise<LoadedJob[]> {
   const files = readdirSync(dir, { withFileTypes: true })
     .filter(
-      (entry) => entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts"),
+      // .ts under src/ in dev, .js under dist/ in the built artifact (2.1.b).
+      (entry) =>
+        entry.isFile() && /\.(ts|js)$/.test(entry.name) && !/\.(test|d)\.[tj]s$/.test(entry.name),
     )
     .map((entry) => entry.name)
     .sort();

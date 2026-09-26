@@ -20,6 +20,11 @@ describe("loadJobs", () => {
     expect(queues).toEqual(["test.fixture.real", "test.fixture.second"].sort());
   });
 
+  it("loads the built .js jobs the artifact ships, skipping .test.js and .d.ts", async () => {
+    const loaded = await loadJobs(path.join(fixturesDir, "built"));
+    expect(loaded.map((entry) => entry.file)).toEqual(["built.job.js"]);
+  });
+
   it("throws when a file exports something named `job` with the wrong shape", async () => {
     await expect(loadJobs(path.join(fixturesDir, "bad"))).rejects.toThrow(/not a valid WorkerJob/);
   });

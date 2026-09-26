@@ -41,6 +41,8 @@ export default tseslint.config(
       // executed: 72 errors there, 0 locally, because every package's lint
       // script was scoped to `src` and never looked at `fixtures`.
       "packages/media/fixtures/**",
+      // Stand-ins for the worker's built dist/jobs/*.js; not in any tsconfig.
+      "apps/worker/src/job-loader.fixtures/**/*.js",
       // YT-0424: the Serwist service worker. `apps/web/app/sw.ts` runs in a
       // Service Worker global scope and is deliberately excluded from
       // `apps/web/tsconfig.json` (see that file's comment) — Serwist's own

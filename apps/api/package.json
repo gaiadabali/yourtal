@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/main.ts",
     "start": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/main.ts",
+    "build": "node ../../scripts/build-service.mjs api",
+    "start:dist": "node --enable-source-maps dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "node ../../packages/db/scripts/with-test-db.mjs -- vitest run"

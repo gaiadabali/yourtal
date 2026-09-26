@@ -24,6 +24,8 @@ import { z } from "zod";
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(3001),
+  // Loopback by default: on Helios nginx is the only way in (infra/PORTS.md).
+  HOST: z.string().min(1).default("127.0.0.1"),
 
   /**
    * Cerbos sidecar, loopback only (docs/10, docs/15) — never a shared PDP.

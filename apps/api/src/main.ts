@@ -42,7 +42,7 @@ async function bootstrap(): Promise<void> {
     },
   );
   app.useGlobalPipes(new ZodValidationPipe());
-  await app.listen(config.port, "0.0.0.0");
+  await app.listen(config.port, config.host ?? "127.0.0.1");
 }
 
 bootstrap().catch((error: unknown) => {

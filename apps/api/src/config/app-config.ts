@@ -9,6 +9,8 @@ import type { Env } from "./env.schema";
 export interface AppConfig {
   readonly nodeEnv: Env["NODE_ENV"];
   readonly port: number;
+  /** Optional so hand-built test configs need not name it; absent means loopback. */
+  readonly host?: string;
   readonly pdp: {
     readonly baseUrl: string;
     readonly timeoutMs: number;
@@ -52,6 +54,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
   return {
     nodeEnv: env.NODE_ENV,
     port: env.PORT,
+    host: env.HOST,
     pdp: {
       baseUrl: env.PDP_BASE_URL,
       timeoutMs: env.PDP_TIMEOUT_MS,

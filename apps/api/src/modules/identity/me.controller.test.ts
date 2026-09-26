@@ -85,9 +85,10 @@ describe("GET /api/me", () => {
     });
   });
 
-  it("refuses an anonymous caller", async () => {
+  it("refuses an anonymous caller with 401, not 403 (F30)", async () => {
     const response = await app.inject({ method: "GET", url: "/api/me" });
-    expect(response.statusCode).toBe(403);
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: "no_session" });
   });
 });
 
@@ -131,14 +132,15 @@ describe("PATCH /api/me", () => {
     expect(patched.json()).toMatchObject({ profile: { region: "AU", displayName: "Still AU" } });
   });
 
-  it("refuses an anonymous caller", async () => {
+  it("refuses an anonymous caller with 401, not 403 (F30)", async () => {
     const response = await app.inject({
       method: "PATCH",
       url: "/api/me",
       headers: { "idempotency-key": randomUUID() },
       payload: { displayName: "Nope" },
     });
-    expect(response.statusCode).toBe(403);
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: "no_session" });
   });
 });
 

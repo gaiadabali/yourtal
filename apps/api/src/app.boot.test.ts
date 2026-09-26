@@ -88,13 +88,14 @@ describe("business:view against a live PDP", () => {
     expect(response.statusCode).toBe(403);
   });
 
-  it("an anonymous caller is refused", async () => {
+  it("an anonymous caller is refused with 401, not 403 (F30 — no session, not merely denied)", async () => {
     const businessId = await seedBusinessMembership(db, {
       userId: (await sessionFor(app)).userId,
       role: "owner",
     });
     const response = await app.inject({ method: "GET", url: `/api/${businessId}/business` });
-    expect(response.statusCode).toBe(403);
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: "no_session" });
   });
 });
 
@@ -120,8 +121,9 @@ describe("business:create against a live PDP — the regression this ticket is f
     expect(response.statusCode).not.toBe(403);
   });
 
-  it("an anonymous caller is refused", async () => {
+  it("an anonymous caller is refused with 401, not 403 (F30 — no session, not merely denied)", async () => {
     const response = await app.inject({ method: "POST", url: "/api/businesses", payload: {} });
-    expect(response.statusCode).toBe(403);
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: "no_session" });
   });
 });

@@ -78,6 +78,17 @@ function contextWith(
   } as unknown as ExecutionContext;
 }
 
+/** No cookie, no Bearer token — PrincipalService resolves this to `anonymousPrincipal`, regardless of what the session validator would say about a token. */
+function contextWithNoCredential(
+  params: Record<string, string> = { tenantId: "biz-kopi" },
+): ExecutionContext {
+  const request = { method: "GET", url: "/api/biz-kopi/business", headers: {}, params, body: {} };
+  return {
+    getHandler: () => () => undefined,
+    switchToHttp: () => ({ getRequest: () => request }),
+  } as unknown as ExecutionContext;
+}
+
 describe("a declared route", () => {
   it("asks the PDP the declared question and allows on ALLOW", async () => {
     const guard = guardWith({
@@ -102,6 +113,33 @@ describe("a declared route", () => {
     });
 
     await expect(guard.canActivate(contextWith())).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("F30: an anonymous caller denied on this same route gets 401, not 403", async () => {
+    requireAction.mockReturnValue(
+      errAsync({ type: "forbidden", kind: "business", resourceId: "biz-kopi", action: "view" }),
+    );
+    const guard = guardWith({
+      [AUTHORIZE_METADATA]: { kind: "business", action: "view" },
+    });
+
+    await expect(guard.canActivate(contextWithNoCredential())).rejects.toMatchObject({
+      status: 401,
+      response: { code: "no_session" },
+    });
+  });
+
+  it("F30 does not touch an infrastructure failure — pdp_unavailable stays 503 even for an anonymous caller", async () => {
+    requireAction.mockReturnValue(
+      errAsync({ type: "pdp_unavailable", cause: "connection refused" }),
+    );
+    const guard = guardWith({
+      [AUTHORIZE_METADATA]: { kind: "business", action: "view" },
+    });
+
+    await expect(guard.canActivate(contextWithNoCredential())).rejects.toMatchObject({
+      status: 503,
+    });
   });
 
   it("passes the attributes the owner-protecting rules need", async () => {

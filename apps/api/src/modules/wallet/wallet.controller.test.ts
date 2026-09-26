@@ -71,8 +71,10 @@ describe("GET /api/wallet", () => {
     expect(response.body).not.toMatch(/micros|backing|rate/i);
   });
 
-  it("refuses an anonymous caller", async () => {
-    expect((await get("/api/wallet", {})).statusCode).toBeGreaterThanOrEqual(401);
+  it("refuses an anonymous caller with 401, not 403 (F30)", async () => {
+    const response = await get("/api/wallet", {});
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: "no_session" });
   });
 });
 

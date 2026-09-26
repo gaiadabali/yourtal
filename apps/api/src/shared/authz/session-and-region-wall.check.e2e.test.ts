@@ -12,7 +12,9 @@ import { sessionFor } from "../testing/session-for";
  * 1.5.g's Check, over the real HTTP stack (`PrincipalService` + `PdpGuard`
  * + a real Cerbos), not a hand-wired guard:
  *
- *   1. a call presenting `x-yt-user-id` with no session is refused;
+ *   1. a call presenting `x-yt-user-id` with no session gets 401 (F30 —
+ *      no session, not merely denied; a SIGNED-IN principal Cerbos refuses
+ *      still gets 403, proved in (2) below on the same route family);
  *   2. an ID principal reading an AU campaign is denied BY CERBOS
  *      (`campaign_view.yaml`'s `f2-region-wall`), not by anything in the web
  *      layer;
@@ -40,28 +42,25 @@ afterAll(async () => {
 });
 
 describe("1.5.g's Check (1): x-yt-user-id with no session", () => {
-  it("is refused — the header is not read at all, so this is exactly the anonymous case", async () => {
+  it("gets 401, not 403 (F30) — the header is not read at all, so this is exactly the anonymous case", async () => {
     const response = await app.inject({
       method: "GET",
       url: "/api/me",
       headers: { "x-yt-user-id": "someone-i-am-not" },
     });
 
-    // The original ticket text predicted 401. What ships is 403: PrincipalService
-    // no longer inspects x-yt-* at all (principal.service.test.ts proves that
-    // directly), so this request carries no credential whatsoever and reaches
-    // PdpGuard as `anonymousPrincipal` — the SAME principal a request with no
-    // headers at all produces (proved right below). Cerbos denies the
-    // `anonymous` role `session:view_profile` outright (there is no rule that
-    // grants it), and `authz-error.mapper.ts` maps every PDP deny to 403,
-    // never 401 — 401 exists in this codebase for exactly one thing, a
-    // credential that WAS presented and failed validation
-    // (`principal.service.ts`'s own `invalidSession()`), which this request
-    // never reaches. Refusing is the property that matters; asserting the
-    // real status code here, rather than the one predicted before this
-    // ticket was implemented, is what keeps this check honest.
-    expect(response.statusCode).toBe(403);
-    expect(response.json()).toMatchObject({ code: "forbidden" });
+    // PrincipalService no longer inspects x-yt-* at all
+    // (principal.service.test.ts proves that directly), so this request
+    // carries no credential whatsoever and reaches PdpGuard as
+    // `anonymousPrincipal` — the SAME principal a request with no headers at
+    // all produces (proved right below). `PdpGuard`'s own F30 branch maps an
+    // anonymous DENY to 401/no_session rather than the usual 403/forbidden
+    // `authz-error.mapper.ts` produces for a SIGNED-IN principal Cerbos
+    // refuses (proved for exactly that case in (2) below, on the campaign
+    // route family) — "sign in" is the correct instruction here, not "you
+    // lack permission", since there is no session to speak of.
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: "no_session" });
   });
 
   it("is refused identically to a request with no headers at all — proof the header has zero effect", async () => {
@@ -86,6 +85,15 @@ describe("1.5.g's Check (2): an ID principal reading an AU campaign is denied by
     // ALLOW rule's own state=="live" condition is satisfied too, so the
     // f2-region-wall DENY is the ONLY thing standing between allow and
     // deny — isolating exactly what this check exists to prove.
+    //
+    // `with-test-db.mjs` gives the WHOLE run one shared database, not one
+    // per file — campaign.controller.e2e.test.ts's own `beforeAll` grabs
+    // `listVisible(50)`'s first row as "a" live campaign to read, with no
+    // opinion on which one. Leaving this row flipped to AU after this test
+    // finishes made that file flaky (an ID-jurisdiction viewer there,
+    // legitimately reading whichever campaign sorted first, got denied by
+    // the very wall this file exists to prove) — so the flip is reverted
+    // in `finally`, real state, not a value this suite owns past this test.
     const rows = await owner.execute<{ id: string }>(sql`
       UPDATE campaign.campaigns SET region = 'AU'
        WHERE id = (SELECT id FROM campaign.campaigns WHERE lifecycle_state = 'live' ORDER BY random() LIMIT 1)
@@ -93,23 +101,29 @@ describe("1.5.g's Check (2): an ID principal reading an AU campaign is denied by
     const campaignId = rows.rows[0]?.id;
     expect(campaignId, "a live seeded campaign must exist to flip").toBeDefined();
 
-    const idViewer = await sessionFor(app, { jurisdiction: "ID" });
-    const denied = await app.inject({
-      method: "GET",
-      url: `/api/campaigns/${String(campaignId)}`,
-      headers: { cookie: idViewer.cookie },
-    });
-    expect(denied.statusCode).toBe(403);
-    expect(denied.json()).toMatchObject({ code: "forbidden" });
+    try {
+      const idViewer = await sessionFor(app, { jurisdiction: "ID" });
+      const denied = await app.inject({
+        method: "GET",
+        url: `/api/campaigns/${String(campaignId)}`,
+        headers: { cookie: idViewer.cookie },
+      });
+      expect(denied.statusCode).toBe(403);
+      expect(denied.json()).toMatchObject({ code: "forbidden" });
 
-    // Control: the SAME campaign, an AU viewer — proves the wall discriminates
-    // on region, rather than this route refusing every signed-in viewer.
-    const auViewer = await sessionFor(app, { jurisdiction: "AU" });
-    const allowed = await app.inject({
-      method: "GET",
-      url: `/api/campaigns/${String(campaignId)}`,
-      headers: { cookie: auViewer.cookie },
-    });
-    expect(allowed.statusCode).toBe(200);
+      // Control: the SAME campaign, an AU viewer — proves the wall discriminates
+      // on region, rather than this route refusing every signed-in viewer.
+      const auViewer = await sessionFor(app, { jurisdiction: "AU" });
+      const allowed = await app.inject({
+        method: "GET",
+        url: `/api/campaigns/${String(campaignId)}`,
+        headers: { cookie: auViewer.cookie },
+      });
+      expect(allowed.statusCode).toBe(200);
+    } finally {
+      await owner.execute(
+        sql`UPDATE campaign.campaigns SET region = 'ID' WHERE id = ${campaignId}`,
+      );
+    }
   });
 });

@@ -1,4 +1,10 @@
-import { Inject, Injectable, NotFoundException, Optional } from "@nestjs/common";
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  Optional,
+  UnauthorizedException,
+} from "@nestjs/common";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { FastifyRequest } from "fastify";
@@ -123,6 +129,20 @@ export class PdpGuard implements CanActivate {
     );
 
     if (result.isErr()) {
+      // F30: an anonymous caller denied on a protected route gets 401, not
+      // 403 — there is no session to speak of, so "sign in" is the correct
+      // instruction, not "you lack permission". A SIGNED-IN principal
+      // Cerbos refuses still gets 403 from mapAuthzErrorToHttpException
+      // below; this never touches the pdp_unavailable/pdp_protocol_error
+      // cases, which stay 503 regardless of who is asking. Open Viewing's
+      // anonymous ALLOW (campaign_view.yaml) is untouched — this only
+      // fires once Cerbos has already said no.
+      if (result.error.type === "forbidden" && principal.roles.includes("anonymous")) {
+        throw new UnauthorizedException({
+          code: "no_session",
+          message: "sign in to continue",
+        });
+      }
       throw mapAuthzErrorToHttpException(result.error);
     }
     return true;

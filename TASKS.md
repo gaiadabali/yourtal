@@ -37,7 +37,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 2/26 | `█░░░░░░░░░`   8% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/9 | 51/55 | `█████████░`  93% |
-| **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
+| **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
@@ -79,7 +79,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`) auditing Done when: every engine-report defect → its regression test, region walls, signed-only services |
-| 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
+| 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | Two agents. A (`yourtal-2`, `phase/5`, db `yourtal_s2`): 5.1 → 5.2 → 5.3. B (`yourtal-p5-b`, `phase/5-b`, db `yourtal_s5b`, ports 26390/26391, Valkey /11): 5.4 → 5.5 |
 | 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (4916e31), including F30's reopen: 1.5.h makes a protected route with no session return 401/`no_session` instead of 403 (403 stays for a signed-in principal Cerbos refuses). `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | Three agents. A (`yourtal-4`, `phase/2`): 2.1 on Helios — datastores up, gaiada-deploy patched (F27), nginx + first release next. B (`yourtal-p2-b`, `phase/2-b`, db `yourtal_s4b`): 2.2.a/c continuous deploy, 2.3.c backups. C (`yourtal-p2-c`, `phase/2-c`, db `yourtal_s4c`): 2.3.b, 2.3.d `/dev/clock`, 2.3.e staging seed |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
@@ -846,7 +846,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
 
 Earning is the product. Today completion is hard-coded to refuse (`watch.controller.ts:186`), the browser receives the answer keys and scores itself, and the progress check can be farmed. Build it server-first and the UI second, against the 1.2 fake until Phase 4 lands.
 
-- [ ] **5.1 A watch session that cannot be farmed** · needs: 1.5, 7.2.c (fake ok)
+- [ ] **5.1 A watch session that cannot be farmed** · needs: 1.5, 7.2.c (fake ok) — 🔄 slot 2
   - [ ] 5.1.a Cumulative budget: total accepted seconds ≤ (now − `startedAt`) + one tolerance. Take a per-session row lock (or compare-and-set on `last_progress_at`), anchor each span to the last accepted end, and rate-limit `progress` (EW-01). Add burst and parallel regression tests.
   - [ ] 5.1.b Coverage is keyed by (user, campaign, terms version), not by session.
     - Starting a reward session on Y **parks** X (a new state, resumable while the campaign is live and the terms version is unchanged), instead of destroying X's coverage.
@@ -876,7 +876,7 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
 - [ ] **5.3 Completion grants the reward (EW-06)** · needs: 5.2, 4.4 (fake ok)
   - [ ] 5.3.a On completion, call `ledger-client.grantReward` with `ExternalRef = sessionId` and the signed attestation including asked and correct (4.4.c). The response is the pending points and their unlock date, and the UI shows exactly that figure.
   - [ ] 5.3.b **Check:** in an HTTP round trip, start → progress → answer all → complete produces a ledger pending entry for the terms' points. A second complete returns the same result with no second grant.
-- [ ] **5.4 The viewer's own API** · needs: 1.5
+- [ ] **5.4 The viewer's own API** · needs: 1.5 — 🔄 slot 2
   - [ ] 5.4.a `apps/api/src/modules/me`: `api/me/consents` stored in a new append-only `identity.consent_record` table shaped like `consentRecordSchema` (read through `latestPerPurpose`), interests, follows (`/api/me/follows/:businessId`, a ranking signal only), saves (a private Watch later list) and `api/me/sessions` (continue watching = parked and active sessions with coverage).
   - [ ] 5.4.b Delete account runs `dsar-orchestrator` with the Postgres handlers, plus (requested by B from A) handlers for profile, credentials and sessions. Download my data returns the DSAR export.
   - [ ] 5.4.c Linked apps: a one-time link code that the user copies into snap-app (8.4).

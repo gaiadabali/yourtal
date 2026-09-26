@@ -37,7 +37,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 16/30 | `█████░░░░░`  53% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 53/57 | `█████████░`  93% |
-| **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 5/21 | `██░░░░░░░░`  24% |
+| **Phase 5** Watch & earn | B | 🔄 in progress | 1/5 | 5/21 | `██░░░░░░░░`  24% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **30/84** | **198/381** | `█████░░░░░`  52% |
+| **All** | | | **31/84** | **198/381** | `█████░░░░░`  52% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -79,7 +79,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`): 4.10.a Done-when audit merged (8dbeb15: DB region wall, signed-route walk, EM-19 test); 4.10.b (EM-02 residue) open |
-| 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | Two agents. A (`yourtal-2`, `phase/5`, db `yourtal_s2`): 5.1 → 5.2 → 5.3. B (`yourtal-p5-b`, `phase/5-b`, db `yourtal_s5b`, ports 26390/26391, Valkey /11): 5.4 → 5.5 |
+| 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | Two agents. A (`yourtal-2`, `phase/5`, db `yourtal_s2`): 5.1 → 5.2 → 5.3. B (`yourtal-p5-b`, `phase/5-b`) done and merged (143d7d2): 5.4 ✅, 5.5.a done, 5.5.b partial (`ledger.points_unlocked` real; `points_expiring`/followed-channel campaigns ⛔ 10.2/7.3.f), 5.5.c ⛔ 5.3 (streak/notification mechanics each verified independently — see 5.5.c's own note). B's worktree left in place; its own `.env` now points its Cerbos at 26395 (`yourtal-cerbos-9`, its own `./policies`), not the shared 26325. |
 | 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (4916e31), including F30's reopen: 1.5.h makes a protected route with no session return 401/`no_session` instead of 403 (403 stays for a signed-in principal Cerbos refuses). `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅, 2.2 ✅; 2.3 a/b/d/g live. Staging seed ran (10 demo logins, `viewer.au` signs in); its tier-0 pending grant failed on unfunded marketing cash → C (`yourtal-p2-c`, `phase/2-c2`) fixing. D (`yourtal-p2-b`, `phase/2-d`): ledger staging-only early-release endpoint so `/dev/clock` works on the live ledger (2.3.f). 2.3.c needs one real voucher; 2.3.h ready to verify; then 2.4 |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
@@ -906,7 +906,7 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
 - [ ] **5.3 Completion grants the reward (EW-06)** · needs: 5.2, 4.4 (fake ok)
   - [ ] 5.3.a On completion, call `ledger-client.grantReward` with `ExternalRef = sessionId` and the signed attestation including asked and correct (4.4.c). The response is the pending points and their unlock date, and the UI shows exactly that figure.
   - [ ] 5.3.b **Check:** in an HTTP round trip, start → progress → answer all → complete produces a ledger pending entry for the terms' points. A second complete returns the same result with no second grant.
-- [ ] **5.4 The viewer's own API** · needs: 1.5 — 🔄 slot 2
+- [x] **5.4 The viewer's own API** · needs: 1.5 — ✅ 2026-09-26 143d7d2
   - [x] 5.4.a `apps/api/src/modules/me`: `api/me/consents` stored in a new append-only `identity.consent_record` table shaped like `consentRecordSchema` (read through `latestPerPurpose`), interests, follows (`/api/me/follows/:businessId`, a ranking signal only), saves (a private Watch later list) and `api/me/sessions` (continue watching = parked and active sessions with coverage). — region/ageBand come from `identity.user_profile` via `UserProfileRepository`, never from `PrincipalService.resolve()`'s principal (its `jurisdiction` is a fixed "ID" placeholder and it carries no `ageBand` at all — see `apps/api/src/modules/me/require-region.ts`'s doc comment; a real bug this ticket's own e2e suite caught, where an AU follow 404'd and an ID one didn't).
   - [x] 5.4.b Delete account runs `dsar-orchestrator` with the Postgres handlers, plus (requested by B from A) handlers for profile, credentials and sessions. Download my data returns the DSAR export. — 1.4.f's handlers (already done) consumed as-is via a new `@yourtal/db` package export (`./dsar-handlers`, additive — the package had none before). `GET /api/me/data-export` aggregates this module's own domains plus `deletionPlan()`'s full domain list for transparency.
   - [x] 5.4.c Linked apps: a one-time link code that the user copies into snap-app (8.4). — `POST /api/me/linked-apps/code`, 10-minute TTL, `me.link_code`. Consuming it is 8.4's own side, not built.
@@ -1314,6 +1314,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · B · 5.4 The viewer's own API: `apps/api/src/modules/me` — consents (append-only `identity.consent_record`), declared interests, follows (F2 region-walled), saves, continue-watching, account deletion (`dsar-orchestrator`) + data export, one-time linked-app codes. A real header-vs-profile region/ageBand bug this ticket's own e2e suite caught and fixed (`require-region.ts`). `apps/api` 68 files/408 tests green (2 pre-existing, unrelated `/dev/clock` failures — 2.4.i); native Cerbos suite 580/580 including the new `MeSuite` (56). 5.5.a (server streak, F12/F16) also done this session, verified against real Postgres; 5.5.b's `ledger.points_unlocked` notification path is real; 5.5.c and the rest of 5.5.b stay ⛔ on 5.3/7.3.f/10.2 · 143d7d2
 - 2026-09-26 · A · 2.2 Continuous deploy from main: release on push to main, gate beside build, CI fast-forwards `production`, daily drift check, rollback keeps pm2 names; push-to-live 4 min 47 s · c361aa1
 - 2026-09-26 · A · 2.1 The whole stack runs on Helios: one artifact via the poller, migrations before the swap (F27), datastores in `yourtal.slice`, nginx with `/api`, media and signed HLS · 5d13115
 - 2026-09-26 · A · 1.5 reopened and re-closed for 1.5.h (F30): a protected route called with no session now returns 401/`no_session`, not 403 — `PdpGuard` only takes this branch for an anonymous principal Cerbos denies (`type: "forbidden"`), never for `pdp_unavailable`/`pdp_protocol_error` (still 503) and never touching Open Viewing's anonymous ALLOW path. Every existing "anonymous caller" test updated to 401; every signed-in-but-refused case (team-member, store-listing, settlement-decrease) stays 403, unchanged. `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509 · 4916e31

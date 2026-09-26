@@ -8,6 +8,7 @@ import (
 
 	"github.com/yourtal/services/ledger/internal/burn"
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/ledgertest"
 	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/reward"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
@@ -51,16 +52,16 @@ func TestCoverageCheck49f(t *testing.T) {
 	// An AU purchase of 1,000 points, fully granted: AUD 45.00 of cash
 	// against 1,000 × 3¢ = AUD 30.00 owed is coverage 1.50.
 	before := measureAU(t, pool)
-	if _, err := engine.RecordPurchase(ctx, reward.PurchaseRequest{
+	bought, err := engine.RecordPurchase(ctx, reward.PurchaseRequest{
 		ID: unique("pur"), PartnerID: unique("partner"), Points: 1_000, AmountMinor: 4_500, Currency: "AUD",
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
-	for _, entries := range [][]ledger.Entry{ledger.GrantPartner(ledger.RegionAU, user, 1_000), ledger.Release(user, 1_000)} {
-		if _, err := book.Transfer(ctx, ledger.TransferRequest{ID: unique("t"), IdempotencyKey: unique("k"),
-			ReasonCode: "test_grant", Entries: entries}); err != nil {
-			t.Fatal(err)
-		}
+	ledgertest.Grant(t, pool, ledger.RegionAU, bought.AllocationID, user, 1_000, ledger.GrantPartner(ledger.RegionAU, user, 1_000))
+	if _, err := book.Transfer(ctx, ledger.TransferRequest{ID: unique("t"), IdempotencyKey: unique("k"),
+		ReasonCode: "test_release", Entries: ledger.Release(user, 1_000)}); err != nil {
+		t.Fatal(err)
 	}
 	granted := measureAU(t, pool)
 	backing, owed := granted.backing-before.backing, granted.owed-before.owed

@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/ledgertest"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
 
@@ -187,8 +188,8 @@ func TestATransferCannotCrossRegions(t *testing.T) {
 	_, err := book.Transfer(ctx, ledger.TransferRequest{
 		ID: unique("t"), IdempotencyKey: unique("k"), ReasonCode: "test",
 		Entries: []ledger.Entry{
-			{AccountID: plat(au, ledger.RolePointsIssued), AmountMinor: -10, Currency: "YTP"},
-			{AccountID: plat(id, ledger.RolePointsIssued), AmountMinor: 10, Currency: "YTP"},
+			{AccountID: plat(au, ledger.RolePointsRedeemed), AmountMinor: -10, Currency: "YTP"},
+			{AccountID: plat(id, ledger.RolePointsRedeemed), AmountMinor: 10, Currency: "YTP"},
 		},
 	})
 	if err == nil || !strings.Contains(err.Error(), "crosses regions") {
@@ -204,16 +205,11 @@ func TestAReversalMustInvertItsOriginalAndHappensOnce(t *testing.T) {
 		insert(t, pool, a)
 	}
 	grant := ledger.GrantPartner(au, user, 100)
-	original, err := book.Transfer(ctx, ledger.TransferRequest{
-		ID: unique("t"), IdempotencyKey: unique("k"), ReasonCode: "grant", Entries: grant,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	original := ledgertest.PartnerGrant(t, pool, au, user, 100)
 	reverse := func(entries []ledger.Entry) error {
 		_, err := book.Transfer(ctx, ledger.TransferRequest{
 			ID: unique("t"), IdempotencyKey: unique("k"), ReasonCode: "reversal",
-			Entries: entries, Reverses: original.TransferID,
+			Entries: entries, Reverses: original,
 		})
 		return err
 	}

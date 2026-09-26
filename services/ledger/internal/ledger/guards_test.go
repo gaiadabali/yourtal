@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/ledgertest"
 )
 
 // 4.3: one regression test per audit defect (engine-money.md), each written
@@ -26,7 +27,7 @@ func fundedUser(t *testing.T, book *ledger.Ledger, pool *pgxpool.Pool, available
 		insert(t, pool, a)
 	}
 	if available > 0 {
-		post(t, book, ledger.GrantPartner(au, user, available))
+		ledgertest.PartnerGrant(t, pool, au, user, available)
 		post(t, book, ledger.Release(user, available))
 	}
 	return user

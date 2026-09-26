@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/ledgertest"
 	"github.com/yourtal/services/ledger/internal/testdb"
 )
 
@@ -59,35 +60,28 @@ func marketingAllocation(t *testing.T, owner *pgxpool.Pool, region ledger.Region
 	return allocation
 }
 
-func grantRow(transferID, allocation string, region ledger.Region) func(context.Context, func(string, ...any) error) error {
-	return sql(`INSERT INTO ledger.grant (id, user_id, action_type, taxonomy_ver, points, allocation_id,
-		transfer_id, external_ref, region) VALUES ($1, 'u-wall', 'daily_streak', 1, 10, $2, $3, $1, $4)`,
-		unique("g"), allocation, transferID, string(region))
-}
-
 func TestAGrantCannotCrossRegions(t *testing.T) {
-	book, pool := newLedger(t)
+	_, pool := newLedger(t)
 	owner := ownerPool(t)
 	user := unique("u")
 	for _, a := range append(append(ledger.PlatformChart(au), ledger.PlatformChart(id)...), ledger.UserAccounts(user, au)...) {
 		insert(t, pool, a)
 	}
-	auGrant, err := transfer(book, ledger.GrantPartner(au, user, 10))
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Marketing points from marketing allocations, so only the region wall
+	// can refuse these (4.10.b already refuses a funder mismatch).
+	auPoints := ledger.GrantMarketing(au, user, 10)
 
 	// An ID allocation paying an AU user.
-	if err := rawTx(t, owner, grantRow(auGrant.TransferID, marketingAllocation(t, owner, id), au)); err == nil ||
+	if _, err := ledgertest.TryGrant(pool, au, marketingAllocation(t, owner, id), user, 10, auPoints); err == nil ||
 		!strings.Contains(err.Error(), "crosses regions") {
 		t.Fatalf("an ID allocation funded an AU grant: %v", err)
 	}
 	// An AU transfer recorded as an ID grant.
-	if err := rawTx(t, owner, grantRow(auGrant.TransferID, marketingAllocation(t, owner, au), id)); err == nil ||
+	if _, err := ledgertest.TryGrant(pool, id, marketingAllocation(t, owner, au), user, 10, auPoints); err == nil ||
 		!strings.Contains(err.Error(), "crosses regions") {
 		t.Fatalf("an AU transfer was recorded as an ID grant: %v", err)
 	}
-	if err := rawTx(t, owner, grantRow(auGrant.TransferID, marketingAllocation(t, owner, au), au)); err != nil {
+	if _, err := ledgertest.TryGrant(pool, au, marketingAllocation(t, owner, au), user, 10, auPoints); err != nil {
 		t.Fatalf("an all-AU grant was refused: %v", err)
 	}
 }
@@ -124,8 +118,8 @@ func TestABurnCannotCrossRegions(t *testing.T) {
 	}
 	// Unguarded contra accounts, so only the region wall can refuse it.
 	points, err := transfer(book, []ledger.Entry{
-		{AccountID: plat(au, ledger.RolePointsIssued), AmountMinor: -10, Currency: "YTP"},
-		{AccountID: plat(au, ledger.RolePointsRedeemed), AmountMinor: 10, Currency: "YTP"},
+		{AccountID: plat(au, ledger.RolePointsRedeemed), AmountMinor: -10, Currency: "YTP"},
+		{AccountID: plat(au, ledger.RoleBreakageRevenue), AmountMinor: 10, Currency: "YTP"},
 	})
 	if err != nil {
 		t.Fatal(err)

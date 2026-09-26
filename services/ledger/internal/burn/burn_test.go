@@ -13,6 +13,7 @@ import (
 
 	"github.com/yourtal/services/ledger/internal/burn"
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/ledgertest"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 	"github.com/yourtal/services/ledger/internal/testdb"
 )
@@ -51,11 +52,13 @@ func (f *fixture) user(t *testing.T, region ledger.Region, available int64) stri
 			t.Fatal(err)
 		}
 	}
-	for _, entries := range [][]ledger.Entry{ledger.GrantPartner(region, id, available), ledger.Release(id, available)} {
-		if _, err := f.book.Transfer(ctx, ledger.TransferRequest{ID: unique("t"), IdempotencyKey: unique("k"),
-			ReasonCode: "test", Entries: entries}); err != nil {
-			t.Fatal(err)
-		}
+	if available == 0 {
+		return id
+	}
+	ledgertest.PartnerGrant(t, f.pool, region, id, available)
+	if _, err := f.book.Transfer(ctx, ledger.TransferRequest{ID: unique("t"), IdempotencyKey: unique("k"),
+		ReasonCode: "test", Entries: ledger.Release(id, available)}); err != nil {
+		t.Fatal(err)
 	}
 	return id
 }

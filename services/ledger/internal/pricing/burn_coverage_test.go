@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/ledgertest"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
 
@@ -32,7 +33,7 @@ func TestABurnDoesNotFlatterCoverage(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	post(ledger.GrantPartner(ledger.RegionAU, user, 1_000))
+	ledgertest.PartnerGrant(t, pool, ledger.RegionAU, user, 1_000)
 	post(ledger.Release(user, 1_000))
 
 	before, err := engine.Coverage(ctx, ledger.RegionAU, at)

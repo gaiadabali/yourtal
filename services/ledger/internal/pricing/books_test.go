@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/yourtal/services/ledger/internal/ledger"
+	"github.com/yourtal/services/ledger/internal/ledgertest"
 	"github.com/yourtal/services/ledger/internal/reward"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
@@ -28,9 +29,10 @@ func TestAPurchaseAndAGrantKeepTheBooksBalanced(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := rewards.RecordPurchase(ctx, reward.PurchaseRequest{
+	bought, err := rewards.RecordPurchase(ctx, reward.PurchaseRequest{
 		ID: unique("pur"), PartnerID: unique("partner"), Points: 1_000, AmountMinor: 4_500, Currency: "AUD",
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("RecordPurchase: %v", err)
 	}
 	afterPurchase := trialBalance(t, book)
@@ -52,12 +54,7 @@ func TestAPurchaseAndAGrantKeepTheBooksBalanced(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := book.Transfer(ctx, ledger.TransferRequest{
-		ID: unique("t"), IdempotencyKey: unique("k"), ReasonCode: "test_grant",
-		Entries: ledger.GrantPartner(ledger.RegionAU, user, 100),
-	}); err != nil {
-		t.Fatalf("grant: %v", err)
-	}
+	ledgertest.Grant(t, pool, ledger.RegionAU, bought.AllocationID, user, 100, ledger.GrantPartner(ledger.RegionAU, user, 100))
 	trialBalance(t, book)
 
 	coverage, err := engine.Coverage(ctx, ledger.RegionAU, at)

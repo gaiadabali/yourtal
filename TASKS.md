@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 41/44 | `█████████░`  93% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 4/9 | 39/53 | `███████░░░`  74% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 5/9 | 47/55 | `█████████░`  85% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **23/82** | **159/368** | `████░░░░░░`  43% |
+| **All** | | | **24/82** | **167/370** | `█████░░░░░`  45% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | A (`yourtal-1`, `phase/4`): 4.8.a ✅ (d448b73); 4.7.a/b and the burn-price fix merging; next 4.4.m, 4.7.c. B (`yourtal-p4-b`, `phase/4-b`): 4.5, then 4.6.f/h. C done (4.9.a, 4.9.d) and D done (4.4.l, 4.4.g event); their helper worktrees stay in place |
+| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | A (`yourtal-1`, `phase/4`): 4.8.a ✅ (d448b73); 4.7.a/b and the burn-price fix merging; next 4.4.m, 4.7.c. B (`yourtal-p4-b`, `phase/4-b`): 4.5 ✅ (21871de), 4.6.f.1 ✅; slot freed — the rest (4.6.f.2, 4.6.h) needs a ledger-internal route only A can add (see 4.6.f.2's note). C done (4.9.a, 4.9.d) and D done (4.4.l, 4.4.g event); their helper worktrees stay in place |
 | 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.a/b/c/d/f merged (2e09392); 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) done with 1.5.a — moving to the 1.5.g Check once B's 1.5.e is on main; B (`yourtal-p1-b`, `phase/1-b`) now on 1.5.e (HTTP hardening), rebasing onto 1.5.a; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5 — slot freed, worktree left in place in case 1.5 lands before another task needs it |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
@@ -761,16 +761,17 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - a campaign pointed at another business's allocation is refused;
     - a second session on the same campaign earns nothing;
     - a marketing grant larger than marketing cash is refused.
-- [ ] **4.5 Voucher core API: generation, reservation, QR and devices (was YT-0594, YT-0150/0151)** · needs: 4.1 — 🔄 slot 1 (agent B, `yourtal-p4-b`)
-  - [ ] 4.5.a Every 1.2.b operation behind service auth, including these:
+- [x] **4.5 Voucher core API: generation, reservation, QR and devices (was YT-0594, YT-0150/0151)** · needs: 4.1 — ✅ 2026-09-26 21871de
+  - [x] 4.5.a Every 1.2.b operation behind service auth, including these:
     - batches whose terms are derived from the listing, with the supplier required to equal `listing.merchant` (D12);
     - `reserve(listing, sagaId)`: Minted → Allocated with `saga_id` and `reserved_until` = now + 15 min. This **is** the stock reservation: stock is the count of unallocated vouchers in approved batches.
     - `release(sagaId)`: Allocated → Minted, a new transition, allowed only when `getBurn` finds no burn.
-  - [ ] 4.5.b QR: a `voucher_qr` keyring purpose. `qrToken` returns 12 signed tokens for consecutive 5-minute windows, which the wallet caches for offline display. Authorize accepts either a QR token or a code.
-  - [ ] 4.5.c Device mode (requested by C): a platform credential asserts `merchant_id` and `device_id`; a migration adds `voucher.authorization.device_id`; a device principal is refused on void and refund with 403.
-  - [ ] 4.5.d Merchant HMAC credentials: issue, rotate and revoke endpoints (requested by C for 8.3). The kill switch gets an HTTP route next to the CLI.
-  - [ ] 4.5.e Region: vouchers carry their region and currency, and authorize refuses a merchant from the other region.
-  - [ ] 4.5.f **Check:** `voucher-client.contract.spec.ts` passes against live, and an AUD voucher reserves, activates, shows a QR token, authorizes and captures.
+  - [x] 4.5.b QR: a `voucher_qr` keyring purpose. `qrToken` returns 12 signed tokens for consecutive 5-minute windows, which the wallet caches for offline display. Authorize accepts either a QR token or a code.
+  - [x] 4.5.c Device mode (requested by C): a platform credential asserts `merchant_id` and `device_id`; a migration adds `voucher.authorization.device_id`; a device principal is refused on void and refund with 403.
+  - [x] 4.5.d Merchant HMAC credentials: issue, rotate and revoke endpoints (requested by C for 8.3). The kill switch gets an HTTP route next to the CLI.
+  - [x] 4.5.e Region: vouchers carry their region and currency, and authorize refuses a merchant from the other region.
+  - [x] 4.5.f **Check:** `voucher-client.contract.spec.ts` passes against live, and an AUD voucher reserves, activates, shows a QR token, authorizes and captures. Verified 2026-09-26: `pnpm test:voucher-live` 10/10, including a dedicated AUD reserve→activate→qrToken→authorizeAsDevice→captureAsDevice scenario.
+  - [x] 4.5.g (added by B, requested by A) `voidVoucher({voucherId, ownerId, reason})` for 4.7.c/K13: Active → Voided (already legal in the lifecycle table), owner-checked; Held/Redeemed refuse `already_granted`; already-Voided replays. Contract, fake, HttpVoucherClient and a Go route (`POST /internal/v1/vouchers/void`) all landed in 02aaf6a.
 - [ ] **4.6 Voucher hardening** · needs: 4.5 (4.6.a–e early, F22) — 🔄 slot 1
   - [x] 4.6.a Enforce the lifecycle inside `issue.Move` and with a database transition trigger. Capture and void require `held` (D3). A swept stale hold returns the voucher to active (D15).
   - [x] 4.6.b Kill switch: check it after the code lookup (batch, merchant and global scopes) and again inside Capture (D4). The throttle counts only probes (D13). `ErrStaleVersion` returns 409 (D14).
@@ -779,9 +780,10 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - record completion on `context.WithoutCancel`, reclaim stale rows, and make `refund_ref` unique per capture (D8);
     - put `Idempotency-Key` and the query string in the HMAC canonical string, and remember nonces (D9).
   - [x] 4.6.e Tamper evidence: assert `version == max(seq)`, replay the remaining value (D6). Anchoring moved to 4.6.h.
-  - [ ] 4.6.f The capture transaction writes a `capture_outbox` row, which a worker job posts to the ledger with idempotency key = capture ID (feeds 10.1).
+  - [x] 4.6.f.1 The capture transaction writes a `capture_outbox` row (voucher.capture_outbox: capture_id, region, merchant_id, amount_minor, currency, posted_at), in the same transaction as the capture — both the merchant network's Capture and the internal captureAsDevice. `TestCaptureWritesAnOutboxRow` (internal/redeem).
+  - [ ] 4.6.f.2 (requested by B, for agent A) The worker job that reads unposted `capture_outbox` rows and posts them to the ledger with idempotency key = capture_id has nothing to call yet: the ledger-internal contract has no capture-posting operation (nothing near `ledger.Capture` in chart.go is exposed over `/v1`). Please add one (contract + Go route + HttpLedgerClient); the worker job (`apps/worker/src/jobs/*.ts`) is a small follow-up once it exists — ⛔ needs a ledger-internal route
   - [ ] 4.6.h Anchor each voucher's chain head in the ledger's daily proof (D6, F11): a worker job posts the day's heads to a ledger route, and the root covers them · needs: 4.1.b — ⛔ the ledger's internal routes wait for 1.2
-  - [ ] 4.6.g **Check:** — ⛔ the three races pass (55200d9) and D1, D3–D10, D13–D15 have tests; D11 waits for 4.9.c, D12 for 4.5.a, D16 for the web counter (8.x), D2 is the compose keygen (fixed, no test)
+  - [ ] 4.6.g **Check:** — ⛔ the three races pass (55200d9) and D1, D3–D10, D13–D15 have tests; D11 waits for 4.9.c, D16 for the web counter (8.x), D2 is the compose keygen (fixed, no test). D12 (a batch's terms derived from its listing, supplier == merchant) is done: 4.5.a, with its own regression tests in internal/issue/reserve_test.go.
     - goroutine concurrency tests on one voucher (authorize×authorize, capture×void, refund×authorize) pass;
     - every scenario from D1 to D16 has a test;
     - D17 was refuted and needs no work.
@@ -1270,6 +1272,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · B · 4.5 Voucher core API: services/voucher/internal/api serves voucher-internal at /internal/v1 behind a new serviceauth (mirrors the ledger's); reserve/release/activate is the stock reservation with a new Allocated→Minted transition; QR tokens self-verify under a new `voucher_qr` keyring purpose; device-authorized authorize/capture, kill-switch route, device-scoped merchant credentials with void/refund refusing a device principal (403); a batch's terms are now derived from its listing with the supplier checked (D12); vouchers carry their region. Plus voidVoucher (requested by A, 4.7.c/K13) and 4.6.f.1 (capture_outbox). `voucher-client.contract.spec.ts` passes live, including a full AUD reserve→activate→qrToken→authorize→capture run · 21871de
 - 2026-09-26 · A · 4.8 Wallet API: points, pending by unlock date, history by kind, vouchers and QR, always the caller's own · be8dca0
 - 2026-09-26 · B · Phase 3 done: After Dark picked from real captures (F3); tokens v2, every primitive, video component and shell in the `/lab/ui` gallery in light and dark at 390 and 1280 px, with visual baselines; both UI gates green in CI (run 36171537379) · 1f00762
 - 2026-09-26 · B · 3.6 Brand (coin mark, wordmark, favicon, icons, manifest), 124 visual baselines drawn by the Playwright image, lint warnings for raw elements and JSX copy, UI gates as their own Integration job · 1f00762

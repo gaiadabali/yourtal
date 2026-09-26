@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | ⛔ blocked | 4/5 | 28/30 | `█████████░`  93% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 28/29 | `██████████`  97% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | ⛔ blocked | 9/10 | 56/57 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 21/26 | `████████░░`  81% |
@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
-| **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **38/85** | **229/386** | `██████░░░░`  59% |
+| **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
+| **All** | | | **38/86** | **229/386** | `██████░░░░`  59% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | free | 2026-09-27 | Phase 4 done except 4.6 (⛔ 4.6.g's D16 waits for 8.2.b; reopen 4.6.g when 8.2.b merges). 4.1–4.5 and 4.7–4.10 ✅. Helper worktrees `yourtal-p4-b`, `-c`, `-d` stay in place |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | 5.1–5.4 ✅. Two agents: C (`yourtal-2`, `phase/5-c`, db `yourtal_s2`) 5.6.a ✅ (0693f67), 5.6.b ✅ (real ledger round trip driven and verified); fixed two chained main regressions (73767ec, 9009b2b — 5.6.d, integration run for 9009b2b in progress). 5.6.c ⛔ staging still needs a fresh deploy past `0693f67` (F36's rename should let the next release migrate). D (`yourtal-p5-b`, `phase/5-d`, db `yourtal_s5b`) 5.5.b–d. 5.5.b's expiring and followed-channel feeds wait on 10.2 and 7.3.f. `phase/5` holds one withdrawn rename commit: never merge it |
 | 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Early slice: 6.1 → 6.2, with 6.5 and 6.7 in parallel. Three agents: A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. 6.3, 6.4, 6.6 and 6.8 wait for 7.4/7.7 and Phase 5's close. |
-| 4 | `yourtal-4` | free | 2026-09-26 | Phase 2 stopped per F37: 2.1, 2.2, 2.3, 2.5 ✅; 2.4 done but g and the h Check (⛔, other phases). Slot db `yourtal_s4`, ports 26360–26366 stay for the next phase |
+| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-27 | Reopened per F38: finishing 2.4.h (trim `/business/campaigns` bundle; wait for slot 2's `me.controller` fix). Everything else in Phase 2 ✅ |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
 
@@ -589,15 +589,15 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`). — Verified live 2026-09-26 at ae748fc: `robots.txt` is `Disallow: /`, the banner renders on `/`, `X-Robots-Tag: noindex, nofollow` from nginx and `proxy.ts`, `/dev/inbox` 200.
   - [x] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`). — Verified live 2026-09-26: `sitemap.xml` locs are `https://yourtal.gaiada.com/…`.
 
-- [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`) — ⛔ g (serwist 10) and the h Check (other phases' red workflows); everything else done
+- [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`) — 🔄 slot 4: only the h Check left
   - [x] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint). — 6.0.3, typescript-eslint unchanged (its peer range already allows it). TS 6 defaults `types` to [], so `packages/tsconfig/base.json` names `node`; two IntersectionObserver fakes gained `scrollMargin` (ed57c69). `pnpm check` and `pnpm verify` green locally.
   - [x] 2.4.b web-vitals 6. — 6.2.2, no RUM code change (34d40ca).
   - [x] 2.4.c Go 1.27, in every `go.mod`, the Dockerfiles and CI. — 1.27.1 in all four go.mod files and both Dockerfiles (pinned digest); Go suites and image builds green (34d40ca).
   - [x] 2.4.d Postgres 18: PGDATA moves, so dump, upgrade and restore; do it before staging holds data worth keeping. — Done 2026-09-26 (d330be5): 18.6 in CI, the shared dev stack (every slot db dumped and restored; old volume `yourtal-pgdata` kept) and Helios (staging data restored whole; old volume `yourtal_pgdata` kept). `pnpm verify` on 18 matched 17 exactly.
   - [x] 2.4.e Valkey 9. — 9.1.2 (pinned digest) in compose, Helios compose and CI (34d40ca); swapped on the shared dev stack and on Helios 2026-09-26; api Redis suites green on 9.
   - [x] 2.4.f pnpm 12, locally and on Helios. — 12.6.0 (the `latest` tag; 12.7.0 is on `next`), ed57c69. pnpm switches itself per worktree from `packageManager`; Helios needs nothing (the release carries `node_modules`). Every YourTal session was told.
-  - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ⛔ serwist 10 not stable yet (latest 9.5.12, 10.0.0-preview.14 on 2026-09-26); override stays.
-  - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one. — Status 2026-09-26: Quality and Release green; Contracts fixed (8775d9d: stale Go models, and its Go job ran 1.26 against 2.4.c's go 1.27). Still red and not from 2.4: Integration since acbdf73 (`ledger-client.contract.spec.ts`, handed to slot 2) and Performance budget since at least b70bd37 (`/business/campaigns` initial JS 202.9 KB over its 200 KB budget, Area C). — ⛔ (F37) waits on slot 2's `me.controller.e2e` fix (Integration) and Area C trimming `/business/campaigns` under its 200 KB initial-JS budget (Performance budget).
+  - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ✂️ cut: moved to 13.7 (F38); serwist 10 is not stable yet.
+  - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one. — Status 2026-09-26: Quality and Release green; Contracts fixed (8775d9d: stale Go models, and its Go job ran 1.26 against 2.4.c's go 1.27). Still red and not from 2.4: Integration since acbdf73 (`ledger-client.contract.spec.ts`, handed to slot 2) and Performance budget since at least b70bd37 (`/business/campaigns` initial JS 202.9 KB over its 200 KB budget, Area C). — 🔄 slot 4 (F38): trimming `/business/campaigns`; waiting on slot 2's `me.controller` fix.
   - [x] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there. — Green again at c9effbe (Integration, Quality, Release all success). Three causes: five real-Cerbos e2e suites hard-coded slot 3's port 26335 (now `PDP_BASE_URL`); `/dev/clock` tests predated 1.5.h's 401 (agent D); the opt-in `checkout.live.test.ts` counted as "skipped" in the default run (now excluded unless `CHECKOUT_LIVE=1`).
 - [x] **2.5 No account without a profile (F31)** · needs: 1.4 — ✅ 2026-09-26 eabe07e
   - [x] 2.5.a Login and session validation refuse a credential with no `identity.user_profile` row (`AsyncPrincipalResolver` must never fall back to the ID placeholder for a real session). — `AsyncPrincipalResolver` checks the profile first and refuses a signed-in principal with none: 401 `no_profile` (eabe07e).
@@ -1278,6 +1278,8 @@ The internal team runs the economy and the review queues. Today none of it exist
 - [ ] **13.6 Founder walkthrough** · founder · needs: 13.2
   - [ ] 13.6.a Walk through `/review` on staging. Every issue becomes a task in this file, either in Phase 13 or in a new Phase 14.
 
+- [ ] **13.7 Drop the `browserslist` override once serwist 10 ships** (moved from 2.4.g by F38) · needs: serwist 10 stable
+  - [ ] 13.7.a Upgrade `serwist`, `@serwist/next` and `@serwist/build` to 10.x and remove the `browserslist@<4.28.7` override from `pnpm-workspace.yaml`; `pnpm verify` green and the service worker still serves a visited voucher page offline.
 **Done when:** the founder completes the walkthrough on staging, and every issue raised is either fixed or recorded as a task in this file.
 
 ---
@@ -1323,6 +1325,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **F33** | 4.9.e: running the ledger contract spec against staging writes test campaigns, listings, grants, burns and escrows into staging | **Run it on staging**, once, through an SSH tunnel; the test rows stay alongside staging's demo data. For the staging run the spec creates its own named test campaign under a test business, so no seeded demo campaign is published. |
 | **F36** | Phase 5 merged 3 watch migrations (…130000–130200) versioned below migrations already on main, so existing databases, staging included, refused them as out of order | **Rename them after main's newest** (…160000–160200, contents unchanged). Any database that applied the old names (slot 2) is reset. The slot 1 commit 09c552c that added this row is titled F34 by mistake. |
 | **F37** | Phase 2 is done but for 2.4.g (serwist 10 not stable) and the 2.4.h Check (every workflow green on main), which wait on other phases | **Mark both ⛔ and free slot 4.** Whoever next runs Phase 2 ticks 2.4.h once main is green, and does 2.4.g when serwist 10 ships. |
+| **F38** | How Phase 2's last two items close (replaces F37) | **Finish them:** slot 4 trims Area C's `/business/campaigns` under its 200 KB initial-JS budget (behaviour-neutral, their session told), waits for slot 2's `me.controller` fix, ticks 2.4.h once main is green; **2.4.g moves to Phase 13** (the browserslist override already neutralises the advisory). |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

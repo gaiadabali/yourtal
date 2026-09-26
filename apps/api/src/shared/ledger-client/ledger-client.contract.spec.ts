@@ -64,19 +64,41 @@ interface PayingCampaign {
 }
 
 /**
- * A campaign that pays 500 points: a seeded ID campaign made live with a
- * terms version, and a reward config drawing on its own owner's purchased
+ * A campaign that pays 500 points: its OWN fresh campaign row made live with
+ * a terms version, and a reward config drawing on its own owner's purchased
  * allocation (4.4.a). The studio (C) writes these; the fake never reads
  * them, the live ledger does.
+ *
+ * This used to borrow a seeded ID campaign that had no `reward_config` row
+ * yet (a `LEFT JOIN … WHERE r.campaign_id IS NULL`). `seed/watch.ts` (5.1.b)
+ * now funds and configures every seeded campaign with `reward_points > 0` —
+ * correctly, so the watch session's allocation hold has something real to
+ * hold against — which means no such unconfigured campaign is left to find.
+ * The fallback `randomUUID()` this spec used when the query came up empty
+ * then hit `campaign.terms_version`'s FK to a `campaign.campaigns` row that
+ * was never inserted. Owning a fresh row here removes the dependency on the
+ * seeded catalogue's shape entirely, which is what this spec should have
+ * done from the start: it does not need to reuse fixture data, it needs a
+ * campaign, and it can make one.
  */
 async function rewardedCampaign(): Promise<PayingCampaign> {
-  const rows = await db.execute<{ id: string; business: string }>(sql`
-    SELECT c.id::text AS id, c.business_id::text AS business FROM campaign.campaigns c
-      LEFT JOIN campaign.reward_config r ON r.campaign_id = c.id
-     WHERE r.campaign_id IS NULL AND c.region = 'ID' ORDER BY random() LIMIT 1
+  const campaignId = randomUUID();
+  const businessId = randomUUID();
+  await db.execute(sql`
+    INSERT INTO campaign.campaigns
+      (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+       estimated_data_mb, reward_points, question_count, scoring_rule,
+       lifecycle_state, published_at, business_id, region, audience, content_category,
+       poster_url, teaser_url, hls_url, aspect, estimated_bytes,
+       starts_at, ends_at, open_viewing, teaser_start_seconds)
+    VALUES
+      (${campaignId}, 'long_form', 'ledger-client contract fixture', ${randomUUID()}, 'contract-spec merchant',
+       'fixture', 600, 5, 500, 0, 'base_only',
+       'live', now(), ${businessId}, 'ID', 'all_ages', 'entertainment',
+       'https://example.test/poster.jpg', 'https://example.test/teaser.m3u8',
+       'https://example.test/hls.m3u8', '16:9', 1000000,
+       now(), now() + interval '30 days', false, 0)
   `);
-  const campaignId = rows.rows[0]?.id ?? randomUUID();
-  const businessId = rows.rows[0]?.business ?? randomUUID();
   const allocation = (
     await client.purchasePoints({
       businessId,

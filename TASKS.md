@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 6/7 | 43/44 | `██████████`  98% |
-| **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 5/9 | 47/55 | `█████████░`  85% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
@@ -81,6 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | A (`yourtal-1`, `phase/4`): 4.8.a ✅ (d448b73); 4.7.a/b and the burn-price fix merging; next 4.4.m, 4.7.c. B (`yourtal-p4-b`, `phase/4-b`): 4.5 ✅ (21871de), 4.6.f.1 ✅; slot freed — the rest (4.6.f.2, 4.6.h) needs a ledger-internal route only A can add (see 4.6.f.2's note). C done (4.9.a, 4.9.d) and D done (4.4.l, 4.4.g event); their helper worktrees stay in place |
 | 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
 | 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.a/b/c/d/e/f merged (e5756f3); 1.6 ✅ (63af281); 1.7 ✅ (6a410d5). Only 1.5.g's Check is left on 1.5. A (`yourtal-3`, `phase/1`) running the 1.5.g Check now that 1.5.e is on main; B (`yourtal-p1-b`, `phase/1-b`) done with 1.5.e, worktree idle awaiting next assignment; D (`yourtal-p1-c`, `phase/1-c`) done — slot freed, worktree left in place |
+| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | Started with Phase 1 only at its 1.5.g Check (founder OK). Ports 26360–26366, db `yourtal_s4`, Valkey `/7`, bucket `yourtal-media-4`. On 2.1 |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Three agents: A (`yourtal-p8`, `phase/8`, db `yourtal_s8`) 8.1.a server side; B (`yourtal-p8-b`, `phase/8-b`) 8.2.d; C (`yourtal-p8-c`, `phase/8-c`) 8.3.b |
 
@@ -536,7 +537,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
 
 Deploy early. After this phase every merge to `main` goes to staging within minutes, so the founder can watch progress live. Mechanically, Helios's poller follows gaiada-deploy's `production` channel. "Staging" is the posture we give it: banner, demo data, simulated drivers, `noindex`.
 
-- [ ] **2.1 The whole stack runs on Helios** · needs: 1.3
+- [ ] **2.1 The whole stack runs on Helios** · needs: 1.3 — 🔄 slot 4
   - [ ] 2.1.a Deploy targets:
     - add `yourtal-api` and `yourtal-worker` in `gaiada-setups/_data/deploy-registry.yml`, run `tools/sync-deploy-config.py`, and commit the regenerated `.gaiadeploy.yml`;
     - reach the box with `ssh helios-w`, as described in `gaiada-setups/access/`;

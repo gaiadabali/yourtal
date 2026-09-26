@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 13/29 | `█████░░░░░`  45% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 14/29 | `█████░░░░░`  48% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 52/57 | `█████████░`  91% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 5/21 | `██░░░░░░░░`  24% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **30/84** | **194/380** | `█████░░░░░`  51% |
+| **All** | | | **30/84** | **195/380** | `█████░░░░░`  51% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -584,7 +584,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [ ] 2.3.e A minimal seed when the database is empty: snap-app in AU and in ID, 2 campaigns each using the 30 s fixture video, one demo login per role, and one tier-0 demo viewer seeded with a pending grant through the 1.2 fake. The full demo world is 13.1.
   - [ ] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points.
   - [x] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`). — Verified live 2026-09-26 at ae748fc: `robots.txt` is `Disallow: /`, the banner renders on `/`, `X-Robots-Tag: noindex, nofollow` from nginx and `proxy.ts`, `/dev/inbox` 200.
-  - [ ] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`).
+  - [x] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`). — Verified live 2026-09-26: `sitemap.xml` locs are `https://yourtal.gaiada.com/…`.
 
 - [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`)
   - [ ] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint).

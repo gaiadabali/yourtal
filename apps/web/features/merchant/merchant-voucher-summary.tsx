@@ -2,7 +2,7 @@ import { formatMerchantMoney } from "./merchant-money";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import type { MerchantCopy } from "./merchant-copy";
+import { getMerchantTranslator, type MerchantCopy } from "./merchant-i18n";
 import type { MerchantCurrency, MerchantLocale } from "./merchant-device";
 
 export interface MerchantVoucherSummaryProps {
@@ -64,7 +64,5 @@ function formatExpiryWarning(expiresAt: string, locale: MerchantLocale): string 
     0,
     Math.round((new Date(expiresAt).getTime() - Date.now()) / 60_000),
   );
-  return locale === "id-ID"
-    ? `Kedaluwarsa dalam ${minutesLeft} menit`
-    : `Expires in ${minutesLeft} min`;
+  return getMerchantTranslator(locale)("portal.expiresInMinutes", { minutes: minutesLeft });
 }

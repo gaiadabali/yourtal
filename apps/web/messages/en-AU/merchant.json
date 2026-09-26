@@ -1,0 +1,110 @@
+{
+  "portal": {
+    "portalHeading": "Redeem Voucher",
+    "deviceBadgePrefix": "Device",
+    "deviceLocationPrefix": "Location",
+    "tabScan": "Scan QR",
+    "tabManual": "Enter code",
+    "manualCodeLabel": "Voucher code",
+    "manualCodeHelp": "Ask the customer to show the code on their Wallet screen.",
+    "manualCodePlaceholder": "e.g. AB12CD34",
+    "lookUpButton": "Look up voucher",
+    "scanHint": "Point the camera at the QR code on the customer's screen.",
+    "scanUnavailable": "Camera isn't available on this device. Use the \"Enter code\" tab below.",
+    "scanPermissionDenied": "Camera permission was denied. Use the \"Enter code\" tab below, or allow camera access in your browser settings.",
+    "scanNoCamera": "No camera was found. Use the \"Enter code\" tab below.",
+    "switchToManual": "Enter the code manually",
+    "notFoundHeading": "Code not found",
+    "notFoundBody": "No voucher matches that code. Double check it with the customer, or ask them to reopen the voucher page in their Wallet.",
+    "unreadableHeading": "Couldn't read that code",
+    "unreadableBody": "That code couldn't be verified — the screen may have moved or the code may have just rotated. Ask the customer to hold their screen steady and scan again, or enter the code manually.",
+    "tryAgainButton": "Try again",
+    "amountLabel": "Amount to redeem",
+    "amountHelp": "The value of the customer's purchase to deduct from this voucher.",
+    "confirmButton": "Confirm redemption",
+    "backButton": "Back",
+    "processingAuthorize": "Verifying voucher…",
+    "processingCapture": "Completing redemption…",
+    "successHeading": "Redeemed",
+    "queuedHeading": "Waiting for connection",
+    "queuedBody": "This device is offline. The redemption is saved and will confirm automatically once the connection returns — it has not succeeded yet.",
+    "newRedemptionButton": "Redeem another voucher",
+    "offlineLabel": "Offline",
+    "syncingLabel": "Syncing",
+    "offlineBanner": "Offline — new redemptions will be saved and wait to sync.",
+    "backOnlineBanner": "Connection restored. Syncing pending redemptions…",
+    "syncingBanner": "Syncing…",
+    "todayHeading": "Today's redemptions",
+    "todayTotalLabel": "Confirmed total",
+    "todayPendingLabel": "waiting to sync",
+    "todayEmpty": "No redemptions yet today.",
+    "todayStatusPending": "Pending",
+    "todayStatusFailed": "Failed",
+    "remainingValueLabel": "Remaining voucher value: ",
+    "expiresInMinutes": "Expires in {minutes} min"
+  },
+  "error": {
+    "voucherNotFound": {
+      "heading": "Voucher not found",
+      "body": "That code doesn't match any voucher. Double-check it with the customer."
+    },
+    "alreadyRedeemed": {
+      "heading": "Voucher already redeemed",
+      "body": "This voucher has already been used and can't be redeemed again. Ask the customer for another voucher or a different payment method."
+    },
+    "expired": {
+      "heading": "Voucher expired",
+      "body": "This voucher expired on {date} and can't be redeemed. Let the customer know it's no longer valid."
+    },
+    "wrongMerchant": {
+      "heading": "Voucher is for a different store",
+      "body": "This voucher is for {voucherMerchantName}, not {deviceMerchantName}. Direct the customer to the store named on the voucher."
+    },
+    "amountNotPositive": {
+      "heading": "Invalid amount",
+      "body": "Enter an amount greater than zero."
+    },
+    "amountExceedsRemainingValue": {
+      "heading": "Amount exceeds the voucher's remaining value",
+      "body": "This voucher only has {remaining} remaining. Reduce the amount, or ask the customer to pay the difference another way."
+    },
+    "requiresFullValueRedemption": {
+      "heading": "This voucher must be redeemed in full",
+      "body": "This voucher has a minimum-spend policy and must be redeemed for its full remaining value of {remaining}."
+    },
+    "networkError": {
+      "heading": "Redemption couldn't be processed",
+      "body": "A network problem interrupted this redemption. The voucher has not been charged — try again."
+    }
+  },
+  "provisioning": {
+    "unlockHeading": "Unlock this device",
+    "unlockPinHelp": "This PIN only locks this device's screen while it's not in use — it isn't a personal account. Anyone at the shop who knows it can use it.",
+    "pinLabel": "PIN",
+    "unlockButton": "Unlock",
+    "lockButton": "Lock now",
+    "lockedByDeviceLabel": "Device",
+    "errorWrongPin": "Wrong PIN. Try again.",
+    "errorTooManyAttempts": "Too many wrong attempts. Wait a moment and try again.",
+    "revokedHeading": "This device has been revoked",
+    "revokedBody": "Your business's Admin has revoked this device's access. Contact your Admin for a new pairing code.",
+    "devicesHeading": "Registered devices",
+    "devicesThisDevice": "(this device)",
+    "revokeButton": "Revoke access",
+    "revokedBadge": "Revoked",
+    "form": {
+      "heading": "Set up this device",
+      "intro": "Ask your business's Admin for a provisioning code — it's generated from the Team zone of the business console and binds this device to one shop location.",
+      "codeLabel": "Provisioning code",
+      "pinLabel": "Choose a 4–6 digit PIN",
+      "pinHelp": "This PIN just locks the screen for this shift — anyone who works this counter should be comfortable using it. It is not a password.",
+      "confirmPinLabel": "Confirm PIN",
+      "submitButton": "Pair this device",
+      "errors": {
+        "invalidCode": "That code wasn't recognised. Check it with your Admin.",
+        "pinInvalid": "PIN must be 4–6 digits.",
+        "pinMismatch": "The two PINs don't match."
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import type { MerchantDevice } from "../merchant-device";
-import { getProvisioningCopy } from "./provisioning-copy";
+import { getProvisioningCopy } from "./provisioning-i18n";
 import { lockDeviceAction } from "./provisioning-actions";
 import { AutoLockWatcher } from "./auto-lock-watcher";
 

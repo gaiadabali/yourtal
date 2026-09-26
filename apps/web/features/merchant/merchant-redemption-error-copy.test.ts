@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { errorCopyFor } from "./merchant-error-copy";
+import { errorCopyFor } from "./merchant-redemption-error-copy";
 import type { MerchantRedemptionError } from "./merchant-redemption-errors";
 
 const ERRORS: MerchantRedemptionError[] = [

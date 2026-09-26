@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import type { VoucherQrSource } from "@/features/wallet/voucher-qr-rotation";
 import type { MerchantDevice } from "./merchant-device";
-import { getMerchantCopy } from "./merchant-copy";
+import { getMerchantCopy } from "./merchant-i18n";
 import type { MerchantRedemptionStep } from "./merchant-redemption-state";
 import { validateScannedPayload } from "./merchant-qr-validation";
 import { attemptRedemption, generateIdempotencyKey } from "./merchant-redemption";

@@ -3,7 +3,7 @@ import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { getMerchantDevice } from "@/features/merchant/merchant-data";
-import { getProvisioningCopy } from "@/features/merchant/provisioning/provisioning-copy";
+import { getProvisioningCopy } from "@/features/merchant/provisioning/provisioning-i18n";
 import { listOtherKnownDevices } from "@/features/merchant/provisioning/provisioning-data";
 import { revokeDeviceAction } from "@/features/merchant/provisioning/provisioning-actions";
 

@@ -1,5 +1,5 @@
 import { Badge } from "@yourtal/ui/badge";
-import type { MerchantCopy } from "./merchant-copy";
+import type { MerchantCopy } from "./merchant-i18n";
 
 export interface MerchantConnectivityBannerProps {
   isOnline: boolean;

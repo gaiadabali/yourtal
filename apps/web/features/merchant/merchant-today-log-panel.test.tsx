@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { getMerchantCopy } from "./merchant-copy";
+import { getMerchantCopy } from "./merchant-i18n";
 import { MerchantTodayLogPanel } from "./merchant-today-log-panel";
 import type { MerchantLogEntry } from "./merchant-today-log";
 

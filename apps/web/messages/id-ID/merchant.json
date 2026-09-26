@@ -1,0 +1,110 @@
+{
+  "portal": {
+    "portalHeading": "Redeem Voucher",
+    "deviceBadgePrefix": "Perangkat",
+    "deviceLocationPrefix": "Lokasi",
+    "tabScan": "Pindai QR",
+    "tabManual": "Masukkan kode",
+    "manualCodeLabel": "Kode voucher",
+    "manualCodeHelp": "Minta pelanggan menunjukkan kode di layar Wallet mereka.",
+    "manualCodePlaceholder": "Contoh: AB12CD34",
+    "lookUpButton": "Cari voucher",
+    "scanHint": "Arahkan kamera ke kode QR di layar pelanggan.",
+    "scanUnavailable": "Kamera tidak tersedia di perangkat ini. Gunakan tab \"Masukkan kode\" di bawah.",
+    "scanPermissionDenied": "Izin kamera ditolak. Gunakan tab \"Masukkan kode\" di bawah, atau aktifkan izin kamera di pengaturan browser.",
+    "scanNoCamera": "Tidak ada kamera yang terdeteksi. Gunakan tab \"Masukkan kode\" di bawah.",
+    "switchToManual": "Masukkan kode secara manual",
+    "notFoundHeading": "Kode tidak ditemukan",
+    "notFoundBody": "Tidak ada voucher dengan kode ini. Periksa kembali kode dengan pelanggan, atau minta mereka membuka ulang halaman voucher di Wallet.",
+    "unreadableHeading": "Kode QR tidak terbaca",
+    "unreadableBody": "Kode ini tidak bisa diverifikasi — mungkin layar bergerak atau kode sudah berganti. Minta pelanggan menahan layar tetap diam dan coba pindai lagi, atau masukkan kode secara manual.",
+    "tryAgainButton": "Coba lagi",
+    "amountLabel": "Jumlah yang dipakai",
+    "amountHelp": "Nilai belanja pelanggan yang akan dipotong dari voucher ini.",
+    "confirmButton": "Konfirmasi redeem",
+    "backButton": "Kembali",
+    "processingAuthorize": "Memverifikasi voucher…",
+    "processingCapture": "Menyelesaikan redeem…",
+    "successHeading": "Berhasil di-redeem",
+    "queuedHeading": "Menunggu koneksi",
+    "queuedBody": "Perangkat sedang offline. Redeem ini disimpan dan akan dikonfirmasi otomatis begitu koneksi kembali — belum berhasil sampai saat itu.",
+    "newRedemptionButton": "Redeem voucher lain",
+    "offlineLabel": "Offline",
+    "syncingLabel": "Menyinkronkan",
+    "offlineBanner": "Offline — redeem baru akan disimpan dan menunggu sinkronisasi.",
+    "backOnlineBanner": "Koneksi kembali. Menyinkronkan redeem yang tertunda…",
+    "syncingBanner": "Menyinkronkan…",
+    "todayHeading": "Redeem hari ini",
+    "todayTotalLabel": "Total terkonfirmasi",
+    "todayPendingLabel": "menunggu sinkronisasi",
+    "todayEmpty": "Belum ada redeem hari ini.",
+    "todayStatusPending": "Menunggu",
+    "todayStatusFailed": "Gagal",
+    "remainingValueLabel": "Sisa nilai voucher: ",
+    "expiresInMinutes": "Kedaluwarsa dalam {minutes} menit"
+  },
+  "error": {
+    "voucherNotFound": {
+      "heading": "Voucher tidak ditemukan",
+      "body": "Kode ini tidak cocok dengan voucher manapun. Periksa lagi dengan pelanggan."
+    },
+    "alreadyRedeemed": {
+      "heading": "Voucher sudah dipakai",
+      "body": "Voucher ini sudah di-redeem sebelumnya dan tidak bisa dipakai lagi. Minta pelanggan menggunakan voucher lain atau metode pembayaran lain."
+    },
+    "expired": {
+      "heading": "Voucher sudah kedaluwarsa",
+      "body": "Voucher ini kedaluwarsa pada {date} dan tidak bisa dipakai. Beri tahu pelanggan bahwa voucher ini sudah tidak berlaku."
+    },
+    "wrongMerchant": {
+      "heading": "Voucher untuk toko lain",
+      "body": "Voucher ini untuk {voucherMerchantName}, bukan {deviceMerchantName}. Arahkan pelanggan ke toko yang tertera pada voucher."
+    },
+    "amountNotPositive": {
+      "heading": "Jumlah tidak valid",
+      "body": "Masukkan jumlah belanja yang lebih besar dari nol."
+    },
+    "amountExceedsRemainingValue": {
+      "heading": "Jumlah melebihi sisa nilai voucher",
+      "body": "Sisa nilai voucher ini hanya {remaining}. Kurangi jumlah, atau minta pelanggan membayar selisihnya dengan cara lain."
+    },
+    "requiresFullValueRedemption": {
+      "heading": "Voucher ini harus dipakai penuh",
+      "body": "Voucher ini punya minimum belanja dan harus di-redeem senilai penuh {remaining}."
+    },
+    "networkError": {
+      "heading": "Redeem gagal diproses",
+      "body": "Terjadi kendala jaringan saat memproses redeem. Voucher belum terpotong — coba lagi."
+    }
+  },
+  "provisioning": {
+    "unlockHeading": "Buka kunci perangkat",
+    "unlockPinHelp": "PIN ini hanya mengunci layar perangkat ini selama tidak dipakai — bukan akun pribadi. Siapa pun di toko yang tahu PIN ini boleh memakainya.",
+    "pinLabel": "PIN",
+    "unlockButton": "Buka kunci",
+    "lockButton": "Kunci sekarang",
+    "lockedByDeviceLabel": "Perangkat",
+    "errorWrongPin": "PIN salah. Coba lagi.",
+    "errorTooManyAttempts": "Terlalu banyak percobaan salah. Tunggu sebentar lalu coba lagi.",
+    "revokedHeading": "Perangkat ini telah dicabut",
+    "revokedBody": "Admin toko telah mencabut akses perangkat ini. Hubungi Admin untuk mendapatkan kode pemasangan baru.",
+    "devicesHeading": "Perangkat yang terdaftar",
+    "devicesThisDevice": "(perangkat ini)",
+    "revokeButton": "Cabut akses",
+    "revokedBadge": "Dicabut",
+    "form": {
+      "heading": "Siapkan perangkat ini",
+      "intro": "Minta kode pemasangan dari Admin bisnis kamu — kode ini dibuat dari zona Tim di konsol bisnis dan mengikat perangkat ini ke satu lokasi toko.",
+      "codeLabel": "Kode pemasangan",
+      "pinLabel": "Pilih PIN 4–6 digit",
+      "pinHelp": "PIN ini hanya mengunci layar untuk shift ini — siapa pun yang bertugas di kasir ini boleh memakainya. Ini bukan kata sandi.",
+      "confirmPinLabel": "Konfirmasi PIN",
+      "submitButton": "Pasangkan perangkat ini",
+      "errors": {
+        "invalidCode": "Kode tidak dikenali. Periksa kembali dengan Admin.",
+        "pinInvalid": "PIN harus 4–6 digit.",
+        "pinMismatch": "Kedua PIN tidak cocok."
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { getMerchantCopy } from "./merchant-copy";
+import { getMerchantCopy } from "./merchant-i18n";
 import { MerchantIdentifyPanel } from "./merchant-identify-panel";
 
 const copy = getMerchantCopy("en-AU");

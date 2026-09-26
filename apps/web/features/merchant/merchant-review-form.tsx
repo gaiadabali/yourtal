@@ -5,7 +5,7 @@ import type { Voucher } from "@yourtal/contracts/voucher";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { MerchantVoucherSummary } from "./merchant-voucher-summary";
-import type { MerchantCopy } from "./merchant-copy";
+import type { MerchantCopy } from "./merchant-i18n";
 import type { MerchantCurrency, MerchantLocale } from "./merchant-device";
 
 export interface MerchantReviewFormProps {

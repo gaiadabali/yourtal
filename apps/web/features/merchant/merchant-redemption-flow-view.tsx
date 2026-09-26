@@ -1,6 +1,6 @@
 import { Button } from "@yourtal/ui/button";
 import type { MerchantDevice } from "./merchant-device";
-import type { MerchantCopy } from "./merchant-copy";
+import type { MerchantCopy } from "./merchant-i18n";
 import type { MerchantRedemptionStep } from "./merchant-redemption-state";
 import type { MerchantLogEntry } from "./merchant-today-log";
 import type { MerchantOutcome } from "./merchant-outcome-panel";

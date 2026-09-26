@@ -3,7 +3,7 @@ import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import type { MerchantLogEntry } from "./merchant-today-log";
 import { confirmedRunningTotal, pendingEntries } from "./merchant-today-log";
-import type { MerchantCopy } from "./merchant-copy";
+import type { MerchantCopy } from "./merchant-i18n";
 import type { MerchantCurrency, MerchantLocale } from "./merchant-device";
 
 export interface MerchantTodayLogPanelProps {

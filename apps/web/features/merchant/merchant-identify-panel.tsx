@@ -7,7 +7,7 @@ import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { MerchantQrScanner } from "./merchant-qr-scanner";
 import type { MerchantScannerUnavailableReason } from "./merchant-qr-scanner-camera";
-import type { MerchantCopy } from "./merchant-copy";
+import type { MerchantCopy } from "./merchant-i18n";
 
 export interface MerchantIdentifyPanelProps {
   copy: MerchantCopy;

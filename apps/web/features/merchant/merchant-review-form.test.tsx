@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { Voucher } from "@yourtal/contracts/voucher";
-import { getMerchantCopy } from "./merchant-copy";
+import { getMerchantCopy } from "./merchant-i18n";
 import { MerchantReviewForm } from "./merchant-review-form";
 import { rupiah } from "@yourtal/contracts/money";
 

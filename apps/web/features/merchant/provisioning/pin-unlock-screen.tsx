@@ -2,7 +2,7 @@ import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import type { MerchantDevice } from "../merchant-device";
-import { getProvisioningCopy } from "./provisioning-copy";
+import { getProvisioningCopy } from "./provisioning-i18n";
 import { unlockWithPin } from "./provisioning-actions";
 
 export interface PinUnlockScreenProps {

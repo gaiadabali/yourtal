@@ -2,10 +2,10 @@ import { formatMerchantMoney } from "./merchant-money";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import type { RedemptionReceipt } from "./merchant-redemption";
-import { errorCopyFor } from "./merchant-error-copy";
+import { errorCopyFor } from "./merchant-redemption-error-copy";
 import { recoveryForRedemptionError } from "./merchant-redemption-errors";
 import type { MerchantRedemptionError } from "./merchant-redemption-errors";
-import type { MerchantCopy } from "./merchant-copy";
+import type { MerchantCopy } from "./merchant-i18n";
 import type { MerchantCurrency, MerchantLocale } from "./merchant-device";
 
 export type MerchantOutcome =
@@ -57,7 +57,7 @@ export function MerchantOutcomePanel({
           </span>
         </p>
         <p className="text-sm font-sans text-fg-muted">
-          {locale === "id-ID" ? "Sisa nilai voucher: " : "Remaining voucher value: "}
+          {copy.remainingValueLabel}
           <span className="tabular-nums">
             {formatMerchantMoney(outcome.receipt.remainingValueMinor, currency)}
           </span>

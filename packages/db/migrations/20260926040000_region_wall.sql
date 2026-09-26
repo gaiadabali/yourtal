@@ -66,3 +66,9 @@ CREATE CONSTRAINT TRIGGER point_purchase_in_one_region AFTER INSERT ON ledger.po
   DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION ledger.assert_in_one_region();
 CREATE CONSTRAINT TRIGGER burn_in_one_region AFTER INSERT ON ledger.burn
   DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION ledger.assert_in_one_region();
+
+-- EM-19: a quote lives 15 minutes from the database's clock (created_at is
+-- stamped now() before this is checked), so no writer can extend a price.
+ALTER TABLE ledger.quote
+  ADD CONSTRAINT quote_lives_fifteen_minutes
+    CHECK (expires_at <= created_at + interval '15 minutes') NOT VALID;

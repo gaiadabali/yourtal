@@ -24,6 +24,11 @@ export default defineConfig({
   testDir: "./e2e",
   testMatch: "a-identity-plumbing.spec.ts",
   fullyParallel: false,
+  // One worker only: the spec registers a single shared account in
+  // `beforeAll` (auth.register is capped at 5/IP/hour) and every test below
+  // reuses it through a real login — a second worker would run its own
+  // `beforeAll` and a second registration, plus race the shared variable.
+  workers: 1,
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 1 : 0,
   reporter: process.env["CI"] ? "github" : "list",

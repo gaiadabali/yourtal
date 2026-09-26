@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
@@ -12,6 +13,12 @@ import type { APIRequestContext, Page } from "@playwright/test";
  * (arranging an account is not this ticket's job — `loginAction` is), then
  * a real browser submit of `/dev/login`'s form (1.7.b's `loginAction`),
  * then a real `GET /api/me` behind `/dev/whoami` (1.7.a's `apiFetch`).
+ *
+ * Registers exactly ONE account, in `beforeAll`, and reuses it everywhere
+ * below through `loginAction` — `auth.register` is capped at 5 per IP per
+ * hour (`REGISTER_RATE_LIMIT`), which a fresh registration per test/theme
+ * combination blows through immediately. `auth.login` (30 per 15 min) has
+ * plenty of headroom for the handful of sign-ins this file does.
  */
 const WCAG_AA = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
@@ -25,7 +32,13 @@ function apiBaseUrl(): string {
   return url;
 }
 
-function uniqueTestAccount() {
+interface TestAccount {
+  readonly email: string;
+  readonly password: string;
+  readonly displayName: string;
+}
+
+function uniqueTestAccount(): TestAccount {
   const id = `${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
   return {
     email: `dev-e2e-${id}@example.com`,
@@ -34,11 +47,9 @@ function uniqueTestAccount() {
   };
 }
 
-async function registerAccount(
-  request: APIRequestContext,
-  account: ReturnType<typeof uniqueTestAccount>,
-): Promise<void> {
+async function registerAccount(request: APIRequestContext, account: TestAccount): Promise<void> {
   const response = await request.post(`${apiBaseUrl()}/api/auth/register`, {
+    headers: { "idempotency-key": randomUUID() },
     data: {
       email: account.email,
       password: account.password,
@@ -55,7 +66,7 @@ async function registerAccount(
 /** Drives the real `/dev/login` form (loginAction, 1.7.b) — no cookie is ever set by hand. */
 async function signInThroughLoginAction(
   page: Page,
-  account: ReturnType<typeof uniqueTestAccount>,
+  account: TestAccount,
   returnTo: string,
 ): Promise<void> {
   await page.goto(`/dev/login?returnTo=${encodeURIComponent(returnTo)}`);
@@ -64,30 +75,31 @@ async function signInThroughLoginAction(
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-test.describe("1.7.e: web/API identity plumbing against a live api", () => {
-  test("register, sign in through loginAction, and apiFetch renders the real display name", async ({
-    page,
-    request,
-  }) => {
-    const account = uniqueTestAccount();
-    await registerAccount(request, account);
+let sharedAccount: TestAccount;
 
-    await signInThroughLoginAction(page, account, "/dev/whoami");
+test.beforeAll(async ({ request }) => {
+  sharedAccount = uniqueTestAccount();
+  await registerAccount(request, sharedAccount);
+});
+
+test.describe("1.7.e: web/API identity plumbing against a live api", () => {
+  test("sign in through loginAction, and apiFetch renders the real display name", async ({
+    page,
+  }) => {
+    await signInThroughLoginAction(page, sharedAccount, "/dev/whoami");
 
     await expect(page).toHaveURL(/\/dev\/whoami$/);
     await expect(page.getByTestId("whoami-name")).toHaveText(
-      `Signed in as: ${account.displayName}`,
+      `Signed in as: ${sharedAccount.displayName}`,
     );
   });
 
   test("/dev/whoami with no session reports anonymous, not a crash", async ({ page }) => {
-    await page.context().clearCookies();
     await page.goto("/dev/whoami");
     await expect(page.getByTestId("whoami-anonymous")).toBeVisible();
   });
 
   test("/wallet without a session redirects to /login?returnTo=/wallet", async ({ page }) => {
-    await page.context().clearCookies();
     await page.goto("/wallet");
 
     const url = new URL(page.url());
@@ -97,11 +109,8 @@ test.describe("1.7.e: web/API identity plumbing against a live api", () => {
 
   test("a session cookie alone is not enough for /merchant — it needs yt_device, not yt_session", async ({
     page,
-    request,
   }) => {
-    const account = uniqueTestAccount();
-    await registerAccount(request, account);
-    await signInThroughLoginAction(page, account, "/dev/whoami");
+    await signInThroughLoginAction(page, sharedAccount, "/dev/whoami");
     await expect(page).toHaveURL(/\/dev\/whoami$/);
 
     await page.goto("/merchant/devices");
@@ -121,13 +130,7 @@ for (const viewport of VIEWPORTS) {
     test.describe(`${viewport.name}px, ${colorScheme}`, () => {
       test.use({ viewport: { width: viewport.width, height: viewport.height }, colorScheme });
 
-      test(`/dev/login and /dev/whoami render and pass axe (WCAG AA)`, async ({
-        page,
-        request,
-      }) => {
-        const account = uniqueTestAccount();
-        await registerAccount(request, account);
-
+      test(`/dev/login and /dev/whoami render and pass axe (WCAG AA)`, async ({ page }) => {
         await page.goto("/dev/login?returnTo=%2Fdev%2Fwhoami");
         await expect(page.getByRole("heading", { name: "Dev login" })).toBeVisible();
         await page.screenshot({
@@ -138,10 +141,10 @@ for (const viewport of VIEWPORTS) {
           loginAxe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" | ")}`),
         ).toStrictEqual([]);
 
-        await signInThroughLoginAction(page, account, "/dev/whoami");
+        await signInThroughLoginAction(page, sharedAccount, "/dev/whoami");
         await expect(page).toHaveURL(/\/dev\/whoami$/);
         await expect(page.getByTestId("whoami-name")).toHaveText(
-          `Signed in as: ${account.displayName}`,
+          `Signed in as: ${sharedAccount.displayName}`,
         );
         await page.screenshot({
           path: `test-results/a-identity-whoami-${viewport.name}-${colorScheme}.png`,

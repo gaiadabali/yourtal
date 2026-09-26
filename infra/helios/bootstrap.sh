@@ -43,7 +43,10 @@ if [ ! -x "$Y/bin/atlas" ]; then
 fi
 "$Y/bin/atlas" version | head -1
 
-command -v ffmpeg >/dev/null || { log "installing ffmpeg"; apt-get install -y -qq ffmpeg >/dev/null; }
+# Waits for unattended upgrades; no job needs ffmpeg yet, so a miss only warns.
+command -v ffmpeg >/dev/null ||
+  apt-get -o DPkg::Lock::Timeout=300 install -y -qq ffmpeg >/dev/null ||
+  log "WARNING: ffmpeg not installed; re-run later"
 
 # --- secrets, generated once on this host; never in the repo or the artifact ---
 stack_env=$Y/stack/secrets.env

@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 22/30 | `███████░░░`  73% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 24/30 | `████████░░`  80% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 19/25 | `████████░░`  76% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **35/85** | **220/385** | `██████░░░░`  57% |
+| **All** | | | **35/85** | **222/385** | `██████░░░░`  58% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -590,14 +590,14 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`). — Verified live 2026-09-26: `sitemap.xml` locs are `https://yourtal.gaiada.com/…`.
 
 - [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`) — 🔄 slot 4 (agent E: b, c, e, g; A: a, d, f per F32)
-  - [ ] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint).
+  - [x] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint). — 6.0.3, typescript-eslint unchanged (its peer range already allows it). TS 6 defaults `types` to [], so `packages/tsconfig/base.json` names `node`; two IntersectionObserver fakes gained `scrollMargin` (ed57c69). `pnpm check` and `pnpm verify` green locally.
   - [x] 2.4.b web-vitals 6. — 6.2.2, no RUM code change (34d40ca).
   - [x] 2.4.c Go 1.27, in every `go.mod`, the Dockerfiles and CI. — 1.27.1 in all four go.mod files and both Dockerfiles (pinned digest); Go suites and image builds green (34d40ca).
   - [x] 2.4.d Postgres 18: PGDATA moves, so dump, upgrade and restore; do it before staging holds data worth keeping. — Done 2026-09-26 (d330be5): 18.6 in CI, the shared dev stack (every slot db dumped and restored; old volume `yourtal-pgdata` kept) and Helios (staging data restored whole; old volume `yourtal_pgdata` kept). `pnpm verify` on 18 matched 17 exactly.
   - [x] 2.4.e Valkey 9. — 9.1.2 (pinned digest) in compose, Helios compose and CI (34d40ca); swapped on the shared dev stack and on Helios 2026-09-26; api Redis suites green on 9.
-  - [ ] 2.4.f pnpm 12, locally and on Helios.
+  - [x] 2.4.f pnpm 12, locally and on Helios. — 12.6.0 (the `latest` tag; 12.7.0 is on `next`), ed57c69. pnpm switches itself per worktree from `packageManager`; Helios needs nothing (the release carries `node_modules`). Every YourTal session was told.
   - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ⛔ serwist 10 not stable yet (latest 9.5.12, 10.0.0-preview.14 on 2026-09-26); override stays.
-  - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one.
+  - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one. — Status 2026-09-26: Quality and Release green; Contracts fixed (8775d9d: stale Go models, and its Go job ran 1.26 against 2.4.c's go 1.27). Still red and not from 2.4: Integration since acbdf73 (`ledger-client.contract.spec.ts`, handed to slot 2) and Performance budget since at least b70bd37 (`/business/campaigns` initial JS 202.9 KB over its 200 KB budget, Area C).
   - [x] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there. — Green again at c9effbe (Integration, Quality, Release all success). Three causes: five real-Cerbos e2e suites hard-coded slot 3's port 26335 (now `PDP_BASE_URL`); `/dev/clock` tests predated 1.5.h's 401 (agent D); the opt-in `checkout.live.test.ts` counted as "skipped" in the default run (now excluded unless `CHECKOUT_LIVE=1`).
 - [ ] **2.5 No account without a profile (F31)** · needs: 1.4
   - [ ] 2.5.a Login and session validation refuse a credential with no `identity.user_profile` row (`AsyncPrincipalResolver` must never fall back to the ID placeholder for a real session).

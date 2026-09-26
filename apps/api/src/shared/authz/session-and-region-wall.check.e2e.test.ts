@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -78,34 +79,47 @@ describe("1.5.g's Check (1): x-yt-user-id with no session", () => {
 
 describe("1.5.g's Check (2): an ID principal reading an AU campaign is denied by Cerbos", () => {
   it("region_mismatch — enforced by campaign_view.yaml's f2-region-wall, not the UI", async () => {
-    // The seeded catalogue is ID-only (campaign.mock.ts) — flip one LIVE,
-    // visible campaign to AU directly in the database, the same technique
-    // checkout.controller.test.ts's buyableListing() uses for the same
-    // reason. Picking a `live` row (rather than merely visible) means the
-    // ALLOW rule's own state=="live" condition is satisfied too, so the
-    // f2-region-wall DENY is the ONLY thing standing between allow and
-    // deny — isolating exactly what this check exists to prove.
-    //
-    // `with-test-db.mjs` gives the WHOLE run one shared database, not one
-    // per file — campaign.controller.e2e.test.ts's own `beforeAll` grabs
-    // `listVisible(50)`'s first row as "a" live campaign to read, with no
-    // opinion on which one. Leaving this row flipped to AU after this test
-    // finishes made that file flaky (an ID-jurisdiction viewer there,
-    // legitimately reading whichever campaign sorted first, got denied by
-    // the very wall this file exists to prove) — so the flip is reverted
-    // in `finally`, real state, not a value this suite owns past this test.
-    const rows = await owner.execute<{ id: string }>(sql`
-      UPDATE campaign.campaigns SET region = 'AU'
-       WHERE id = (SELECT id FROM campaign.campaigns WHERE lifecycle_state = 'live' ORDER BY random() LIMIT 1)
-      RETURNING id::text`);
-    const campaignId = rows.rows[0]?.id;
-    expect(campaignId, "a live seeded campaign must exist to flip").toBeDefined();
+    // A campaign this test owns outright, not a random pick off the shared
+    // `with-test-db.mjs` database (one database for the WHOLE run, every
+    // file's fixtures included). Picking `ORDER BY random() LIMIT 1` off
+    // every `lifecycle_state = 'live'` row used to land on another file's
+    // OWN fixture campaign instead of the seeded catalogue — including one
+    // this repo's own `ledger-client.contract.spec.ts` inserts with no
+    // `campaign.video_source` row, which `findVisibleById`'s `assemble()`
+    // can never parse (`videoSource` is a required field), so the AU
+    // viewer's control read 404'd rather than 200'd. A `live` row (not
+    // merely visible) still matters for the SAME reason the old comment
+    // gave: it satisfies the ALLOW rule's own `state=="live"` condition, so
+    // the f2-region-wall DENY is the only thing standing between allow and
+    // deny. Deleted in `finally` — nothing left for another file to trip on.
+    const campaignId = randomUUID();
+    const businessId = randomUUID();
+    await owner.execute(sql`
+      INSERT INTO campaign.campaigns
+        (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+         estimated_data_mb, reward_points, question_count, scoring_rule,
+         lifecycle_state, published_at, business_id, region, audience, content_category,
+         poster_url, teaser_url, hls_url, aspect, estimated_bytes,
+         starts_at, ends_at, open_viewing, teaser_start_seconds)
+      VALUES
+        (${campaignId}, 'quick', '1.5.g region-wall fixture', ${randomUUID()}, 'e2e merchant',
+         'fixture', 30, 5, 100, 0, 'base_only',
+         'live', now(), ${businessId}, 'ID', 'all_ages', 'entertainment',
+         'https://example.test/poster.jpg', 'https://example.test/teaser.m3u8',
+         'https://example.test/hls.m3u8', '16:9', 1000000,
+         now(), now() + interval '30 days', false, 0)
+    `);
+    await owner.execute(sql`
+      INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
+      VALUES (${campaignId}, 'hls', 'https://example.test/hls.m3u8')
+    `);
+    await owner.execute(sql`UPDATE campaign.campaigns SET region = 'AU' WHERE id = ${campaignId}`);
 
     try {
       const idViewer = await sessionFor(app, { jurisdiction: "ID" });
       const denied = await app.inject({
         method: "GET",
-        url: `/api/campaigns/${String(campaignId)}`,
+        url: `/api/campaigns/${campaignId}`,
         headers: { cookie: idViewer.cookie },
       });
       expect(denied.statusCode).toBe(403);
@@ -116,14 +130,12 @@ describe("1.5.g's Check (2): an ID principal reading an AU campaign is denied by
       const auViewer = await sessionFor(app, { jurisdiction: "AU" });
       const allowed = await app.inject({
         method: "GET",
-        url: `/api/campaigns/${String(campaignId)}`,
+        url: `/api/campaigns/${campaignId}`,
         headers: { cookie: auViewer.cookie },
       });
       expect(allowed.statusCode).toBe(200);
     } finally {
-      await owner.execute(
-        sql`UPDATE campaign.campaigns SET region = 'ID' WHERE id = ${campaignId}`,
-      );
+      await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${campaignId}`);
     }
   });
 });

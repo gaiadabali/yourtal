@@ -80,6 +80,18 @@ interface PayingCampaign {
  * seeded catalogue's shape entirely, which is what this spec should have
  * done from the start: it does not need to reuse fixture data, it needs a
  * campaign, and it can make one.
+ *
+ * Also gives it a `campaign.video_source` row and one `campaign.chapter`
+ * (required for `kind = 'long_form'`) — without them `assemble()`'s
+ * `campaignSchema` parse fails (`videoSource` is required; a `long_form`
+ * campaign needs `chapters.length > 0`) and `findVisibleById` returns
+ * `null`. The first version of this fix left the row `live` but
+ * unparseable, and it stays `live` for the rest of this file's whole run
+ * (no per-test cleanup, unlike other e2e fixtures) — any OTHER file in the
+ * same `with-test-db.mjs`-shared database that reads "a live campaign"
+ * without pinning an id (`session-and-region-wall.check.e2e.test.ts`'s own
+ * `ORDER BY random()` control read, found the hard way) could land on it
+ * and 404.
  */
 async function rewardedCampaign(): Promise<PayingCampaign> {
   const campaignId = randomUUID();
@@ -98,6 +110,14 @@ async function rewardedCampaign(): Promise<PayingCampaign> {
        'https://example.test/poster.jpg', 'https://example.test/teaser.m3u8',
        'https://example.test/hls.m3u8', '16:9', 1000000,
        now(), now() + interval '30 days', false, 0)
+  `);
+  await db.execute(sql`
+    INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
+    VALUES (${campaignId}::uuid, 'hls', 'https://example.test/hls.m3u8')
+  `);
+  await db.execute(sql`
+    INSERT INTO campaign.chapter (campaign_id, ordinal, title, start_seconds, reward_weight)
+    VALUES (${campaignId}::uuid, 0, 'Chapter 1', 0, 1)
   `);
   const allocation = (
     await client.purchasePoints({

@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 41/44 | `█████████░`  93% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 37/53 | `███████░░░`  70% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 38/53 | `███████░░░`  72% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **22/82** | **157/368** | `████░░░░░░`  43% |
+| **All** | | | **22/82** | **158/368** | `████░░░░░░`  43% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -755,7 +755,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - pin the multiplier at 1.00 (EM-11).
   - [x] 4.4.k Read the daily and monthly earn caps from the 1.2.f settings view instead of `reward.DefaultCaps` (the F12 values until then) · needs: 1.2.f
   - [x] 4.4.l Seed the F12 marketing budget (AUD 5,000 / IDR 50,000,000) through `fundMarketing` in `seed/ledger.ts`, so staging's streaks and receipts are backed · needs: 4.4.h — 8b75a69
-  - [ ] 4.4.m Marketing points are backed at exactly B, so a region with no partner purchases sits at coverage 1.0, under the 1.1 pause: its second streak or receipt is refused `solvency_blocked`. Decide whether unspent marketing cash counts toward coverage, or partner purchases must come first in staging. Decided (F28): count unspent marketing cash as reserve — 🔄 slot 1
+  - [x] 4.4.m Marketing points are backed at exactly B, so a region with no partner purchases sits at coverage 1.0, under the 1.1 pause: its second streak or receipt is refused `solvency_blocked`. Decide whether unspent marketing cash counts toward coverage, or partner purchases must come first in staging. Decided (F28): count unspent marketing cash as reserve Merged 1ae05bf.
   - [x] 4.4.j **Check:** passed on main 4331d78 (`caps_test`, `contract_test`, `k6_test`; live spec 22/22)
     - five concurrent grants at a cap of 19/20 → exactly one succeeds;
     - a campaign pointed at another business's allocation is refused;

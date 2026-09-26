@@ -1306,6 +1306,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **Design taste stalls the reskin** | The founder judges motion captures, not screenshots. Token names are fixed, so a later change of mind only swaps values. |
 | **Farming on an open staging site** | Money there is simulated. 5.1, 4.4.d, 10.4 and signed segments close the known exploits. Staff logins are never published. |
 | **F32** | When to run the upgrades that touch every session: TypeScript 6, pnpm 12, Postgres 18 (2.4.a/f/d) | **All three now, everywhere**, one at a time. Other sessions rebase and reinstall after each; every slot database is dumped and restored for Postgres 18, and Helios moves too. |
+| **F33** | 4.9.e: running the ledger contract spec against staging writes test campaigns, listings, grants, burns and escrows into staging | **Run it on staging**, once, through an SSH tunnel; the test rows stay alongside staging's demo data. |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

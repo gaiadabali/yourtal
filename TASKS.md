@@ -37,7 +37,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 24/30 | `████████░░`  80% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
-| **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 19/25 | `████████░░`  76% |
+| **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 19/26 | `███████░░░`  73% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **35/85** | **222/385** | `██████░░░░`  58% |
+| **All** | | | **35/85** | **222/386** | `██████░░░░`  58% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -929,6 +929,7 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
   - [ ] 5.6.a Session start returns a manifest URL signed with `shared/media-auth/hls-token.ts`, the token `/api/internal/hls-auth` already verifies for nginx (2.1.c). Retire `segment-url-stub.ts`; swap to `@yourtal/media`'s `mintSegmentUrl` only if 7.2.c exports one with the same scheme.
   - [ ] 5.6.b **Check:** 5.3.b's round trip with `LEDGER_MODE=http` against the running Go ledger service: the pending entry is in the ledger's own tables for the terms' points, and a second complete adds nothing. (5.3.b ran against the fake ledger.)
   - [ ] 5.6.c **Check:** on staging, a signed manifest URL from session start loads through nginx, and the same URL without its token returns 403.
+  - [ ] 5.6.d Fix the integration regression from `acbdf73`: two `ledger-client.contract.spec.ts` tests (campaignSpend/returnGrant; reward grant to pending) fail since 5.1–5.3 merged (CI run 36252790816). Integration green on main again.
 
 **Done when:** a signed-in user can watch a campaign, answer the questions that pause it, and see pending points appear in the ledger for exactly the terms the business set, once per campaign. The audit's farming probes all fail.
 

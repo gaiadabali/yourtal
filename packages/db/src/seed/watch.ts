@@ -44,6 +44,35 @@ async function alignDurationToFixture(pool: pg.Pool): Promise<void> {
     `UPDATE campaign.terms_version SET duration_seconds = $1 WHERE duration_seconds <> $1`,
     [FIXTURE_DURATION_SECONDS],
   );
+  // `campaignSchema` refines that every chapter starts before the
+  // campaign's own `durationSeconds`, and the first chapter at exactly 0
+  // (docs/06 §3's back-loaded-weight example, `campaign.mock.ts`'s
+  // `mockChapters`). Forcing `duration_seconds` down to 30 without touching
+  // `campaign.chapter` left every long_form campaign's LAST chapter
+  // starting well past its new duration — the exact refinement this fails,
+  // which `DrizzleCampaignRepository.assemble` then drops silently rather
+  // than erroring, so `listVisible` quietly returned zero long_form
+  // campaigns. Recomputed with the SAME algorithm `mockChapters` uses
+  // (`ordinal * floor(duration / chapterCount)`), which is exactly what
+  // regenerating chapters for a 30s video produces.
+  const chapterCounts = await pool.query<{ campaign_id: string; count: string }>(
+    `SELECT campaign_id, count(*) FROM campaign.chapter GROUP BY campaign_id`,
+  );
+  for (const row of chapterCounts.rows) {
+    const count = Number(row.count);
+    if (count === 0) continue;
+    const chapterSeconds = Math.floor(FIXTURE_DURATION_SECONDS / count);
+    await pool.query(
+      `UPDATE campaign.chapter SET start_seconds = ordinal * $2 WHERE campaign_id = $1`,
+      [row.campaign_id, Math.max(chapterSeconds, 1)],
+    );
+  }
+  // `teaserStartSeconds < durationSeconds` is the other refinement a stale
+  // value could now violate.
+  await pool.query(
+    `UPDATE campaign.campaigns SET teaser_start_seconds = 0 WHERE teaser_start_seconds >= $1`,
+    [FIXTURE_DURATION_SECONDS],
+  );
 }
 
 /** AU/ID's own currency, mirroring `RegionConfig` — kept local rather than importing `@yourtal/contracts` for one pairing. */

@@ -1410,7 +1410,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "description": "The new session — superseding any previous active one for this user, since only one reward-bearing session per user is live at a time — plus the campaign's duration, so the client knows what full coverage means without a second call.",
+                  "description": "The session — reactivated if one was already open for this exact (user, campaign, terms version) tuple, parking whatever else was active, otherwise freshly created (5.1.b) — plus the campaign's duration, `alreadyEarned` (true when this user has already been granted this campaign's reward and the session is a non-earning replay), and a per-session manifest URL (5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c).",
                   "properties": {
                     "session": {
                       "$ref": "#/components/schemas/WatchSession"
@@ -1418,11 +1418,19 @@
                     "durationSeconds": {
                       "type": "integer",
                       "minimum": 1
+                    },
+                    "alreadyEarned": {
+                      "type": "boolean"
+                    },
+                    "manifestUrl": {
+                      "type": "string"
                     }
                   },
                   "required": [
                     "session",
-                    "durationSeconds"
+                    "durationSeconds",
+                    "alreadyEarned",
+                    "manifestUrl"
                   ],
                   "additionalProperties": false
                 }
@@ -1891,19 +1899,43 @@
         ],
         "responses": {
           "201": {
-            "description": "The session earned its reward under decision O-1 (full coverage) — questionsAnswered is hard-coded false pending YT-0122's question bank, so this response cannot currently occur.",
+            "description": "The session earned its reward under decision O-1 (full coverage and every checkpoint answered) — 5.3. `grantReward` is called only when the session is earning; a non-earning session (already_earned, unfunded, or a failed hold/grant) still completes but never pays.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "description": "Always `{ completed: true }` on success — a refusal throws instead (see the 403 below).",
+                  "description": "`completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).",
                   "properties": {
                     "completed": {
                       "const": true
+                    },
+                    "granted": {
+                      "type": "boolean"
+                    },
+                    "pendingPoints": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "unlockAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "reason": {
+                      "type": "string"
+                    },
+                    "deliveryCoverage": {
+                      "type": "string",
+                      "enum": [
+                        "matches",
+                        "gap_detected",
+                        "unknown"
+                      ]
                     }
                   },
                   "required": [
-                    "completed"
+                    "completed",
+                    "granted",
+                    "pendingPoints"
                   ],
                   "additionalProperties": false
                 }
@@ -1947,6 +1979,34 @@
           },
           "404": {
             "description": "No such watch session belonging to this caller (a session owned by someone else 404s identically, rather than 403ing and confirming the id exists) — or the campaign it belongs to is no longer available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "EW-10: `markCompleted`'s conditional update lost a race against another concurrent completion of the SAME session (a distinct Idempotency-Key from whichever request won) — that other request is the only one that may have granted. Never a second grant from here.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5406,6 +5466,46 @@
                 "type": "null"
               }
             ]
+          },
+          "nonEarning": {
+            "type": "boolean"
+          },
+          "nonEarningReason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "holdId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "granted": {
+            "type": "boolean"
+          },
+          "questionsAsked": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "questionsCorrect": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
           }
         },
         "required": [
@@ -5416,7 +5516,13 @@
           "state",
           "startedAt",
           "lastProgressAt",
-          "completedAt"
+          "completedAt",
+          "nonEarning",
+          "nonEarningReason",
+          "holdId",
+          "granted",
+          "questionsAsked",
+          "questionsCorrect"
         ],
         "additionalProperties": false
       },
@@ -5426,6 +5532,7 @@
         "enum": [
           "active",
           "completed",
+          "parked",
           "superseded",
           "void"
         ]

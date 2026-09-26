@@ -156,6 +156,12 @@ describe("judging a completed session", () => {
     startedAt: "2026-09-20T00:00:00.000Z",
     lastProgressAt: "2026-09-20T00:30:00.000Z",
     completedAt: null,
+    nonEarning: false,
+    nonEarningReason: null,
+    holdId: null,
+    granted: false,
+    questionsAsked: 0,
+    questionsCorrect: 0,
   });
   const fullCoverage = [{ fromSecond: 0, toSecond: DURATION }];
 

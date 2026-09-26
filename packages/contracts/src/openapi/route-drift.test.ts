@@ -147,8 +147,10 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
     "2.1.c: nginx's auth_request target for signed HLS URLs, blocked on the public vhost, so not a published contract.",
   "GET /api/dev/inbox":
     "1.6.b: a dev-only reader of simulated messages, 404 in production, so not a published contract.",
-  "POST /api/watch/sessions/{sessionId}/checkpoints/{checkpointIndex}/token":
-    "CheckpointModule — YT-0121, a separate in-flight stream. Its response is deliberately NOT a published contract yet: the body carries a signed single-use token and the one checkpoint time being asked for, and publishing that shape invites a client to expect the whole schedule alongside it — which is exactly the predictability the PRF in watch-checkpoint-token.ts exists to deny. It gets a contract when the player consumes it (YT-0122).",
+  "POST /api/watch/sessions/{sessionId}/checkpoints/{checkpointIndex}":
+    "CheckpointModule — 5.2, a separate in-flight stream from watch.controller.ts's routes. Its response carries a PresentedQuestion (no answer key), a signed single-use token, and the one checkpoint time being asked for — deliberately not a published contract yet: publishing the shape invites a client to expect the whole schedule alongside it, which is exactly the predictability the PRF in watch-checkpoint-token.ts exists to deny. It gets a contract when the player consumes it (Phase 6, 6.4.b).",
+  "POST /api/watch/sessions/{sessionId}/checkpoints/{checkpointIndex}/answer":
+    "Same stream as the route above. Scores server-side and writes campaign.question_response; not yet a published contract for the same reason.",
 
   // StoreModule -- YT-0130/YT-0131/YT-0132 backend halves, the first pass of
   // the store module (previously 0 of 10 tasks, no module at all). Same

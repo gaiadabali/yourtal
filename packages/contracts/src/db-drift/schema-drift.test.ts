@@ -523,6 +523,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "The raw evidence rows behind watch-coverage.ts's range arithmetic (YT-0120/YT-0551). That module exports functions and types over server-computed ranges, not a persisted object schema, so there is no contract to map.",
   "watch.checkpoint_nonce":
     "The spend record that makes a checkpoint token single-use (YT-0121). watch-checkpoint-token.ts's CheckpointClaims is what a token CARRIES, not what this table stores — the row exists to be conflicted with, and its columns are the burn's own bookkeeping. Deliberately has no public contract: a nonce is a value a client presents once and must never be able to enumerate or read back.",
+  "watch.checkpoint_issue":
+    "5.1.b/EW-08's single-live-issuance bookkeeping: which nonce (and its expiry) is currently outstanding for a (session, checkpoint), so a repeated issue request while one is still live returns the SAME token instead of minting a second. Same reasoning as watch.checkpoint_nonce above — this is server-internal state a client presents against, never a shape any contract describes.",
   "campaign.chapter":
     "Already declared as a relation under campaignSchema.chapters above. campaignChapterSchema also exists standalone (packages/contracts/src/campaign/campaign-chapter.ts) but has not been given its own MAPPINGS row — a tracked gap in the campaign module, out of YT-0555's scope (business module only).",
   "campaign.video_source":

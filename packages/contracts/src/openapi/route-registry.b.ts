@@ -116,11 +116,18 @@ const startWatchSessionRequestSchema = inlineSchema(z.object({ campaignId: z.uui
 const startWatchSessionResponseSchema: Record<string, unknown> = {
   type: "object",
   description:
-    "The new session — superseding any previous active one for this user, since only one " +
-    "reward-bearing session per user is live at a time — plus the campaign's duration, so the " +
-    "client knows what full coverage means without a second call.",
-  properties: { session: ref("WatchSession"), durationSeconds: { type: "integer", minimum: 1 } },
-  required: ["session", "durationSeconds"],
+    "The session — reactivated if one was already open for this exact (user, campaign, terms " +
+    "version) tuple, parking whatever else was active, otherwise freshly created (5.1.b) — plus " +
+    "the campaign's duration, `alreadyEarned` (true when this user has already been granted this " +
+    "campaign's reward and the session is a non-earning replay), and a per-session manifest URL " +
+    "(5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c).",
+  properties: {
+    session: ref("WatchSession"),
+    durationSeconds: { type: "integer", minimum: 1 },
+    alreadyEarned: { type: "boolean" },
+    manifestUrl: { type: "string" },
+  },
+  required: ["session", "durationSeconds", "alreadyEarned", "manifestUrl"],
   additionalProperties: false,
 };
 
@@ -181,9 +188,20 @@ const progressReportResponseSchema: Record<string, unknown> = {
 const completeSessionResponseSchema: Record<string, unknown> = {
   type: "object",
   description:
-    "Always `{ completed: true }` on success — a refusal throws instead (see the 403 below).",
-  properties: { completed: { const: true } },
-  required: ["completed"],
+    "`completed` is always true on success — a refusal throws instead (see the 403 below). " +
+    "`granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was " +
+    "non-earning (already_earned, no funding configured, the allocation hold failed, or the grant " +
+    "call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c " +
+    "segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).",
+  properties: {
+    completed: { const: true },
+    granted: { type: "boolean" },
+    pendingPoints: { type: "integer", minimum: 0 },
+    unlockAt: { type: "string", format: "date-time" },
+    reason: { type: "string" },
+    deliveryCoverage: { type: "string", enum: ["matches", "gap_detected", "unknown"] },
+  },
+  required: ["completed", "granted", "pendingPoints"],
   additionalProperties: false,
 };
 
@@ -288,8 +306,9 @@ export const WATCH_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     pathParams: [SESSION_ID_PARAM],
     successStatus: 201,
     successDescription:
-      "The session earned its reward under decision O-1 (full coverage) — questionsAnswered is " +
-      "hard-coded false pending YT-0122's question bank, so this response cannot currently occur.",
+      "The session earned its reward under decision O-1 (full coverage and every checkpoint " +
+      "answered) — 5.3. `grantReward` is called only when the session is earning; a non-earning " +
+      "session (already_earned, unfunded, or a failed hold/grant) still completes but never pays.",
     successSchema: completeSessionResponseSchema,
     errors: [
       SESSION_NOT_FOUND,
@@ -304,6 +323,12 @@ export const WATCH_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
         documented: true,
         schema: { anyOf: [ref("ErrorResponse"), NEST_DEFAULT_ERROR_SCHEMA] },
       },
+      nestDefaultError(
+        409,
+        "EW-10: `markCompleted`'s conditional update lost a race against another concurrent " +
+        "completion of the SAME session (a distinct Idempotency-Key from whichever request won) " +
+        "— that other request is the only one that may have granted. Never a second grant from here.",
+      ),
       PDP_UNAVAILABLE,
     ],
   },

@@ -784,7 +784,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.6.f.1 The capture transaction writes a `capture_outbox` row (voucher.capture_outbox: capture_id, region, merchant_id, amount_minor, currency, posted_at), in the same transaction as the capture — both the merchant network's Capture and the internal captureAsDevice. `TestCaptureWritesAnOutboxRow` (internal/redeem).
   - [ ] 4.6.f.2 (requested by B, for agent A) The worker job that reads unposted `capture_outbox` rows and posts them to the ledger with idempotency key = capture_id has nothing to call yet: the ledger-internal contract has no capture-posting operation (nothing near `ledger.Capture` in chart.go is exposed over `/v1`). Please add one (contract + Go route + HttpLedgerClient); the worker job (`apps/worker/src/jobs/*.ts`) is a small follow-up once it exists — ⛔ needs a ledger-internal route
   - [ ] 4.6.h Anchor each voucher's chain head in the ledger's daily proof (D6, F11): a worker job posts the day's heads to a ledger route, and the root covers them · needs: 4.1.b — ⛔ the ledger's internal routes wait for 1.2
-  - [ ] 4.6.g **Check:** — ⛔ the three races pass (55200d9) and D1, D3–D10, D13–D15 have tests; D11 waits for 4.9.c, D16 for the web counter (8.x), D2 is the compose keygen (fixed, no test). D12 (a batch's terms derived from its listing, supplier == merchant) is done: 4.5.a, with its own regression tests in internal/issue/reserve_test.go.
+  - [ ] 4.6.g **Check:** — 🔄 slot 1 (agent F) — ⛔ the three races pass (55200d9) and D1, D3–D10, D13–D15 have tests; D11 waits for 4.9.c, D16 for the web counter (8.x), D2 is the compose keygen (fixed, no test). D12 (a batch's terms derived from its listing, supplier == merchant) is done: 4.5.a, with its own regression tests in internal/issue/reserve_test.go.
     - goroutine concurrency tests on one voucher (authorize×authorize, capture×void, refund×authorize) pass;
     - every scenario from D1 to D16 has a test;
     - D17 was refuted and needs no work.
@@ -801,7 +801,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [ ] 4.7.c K13, a voucher the merchant would not honour: `POST /api/wallet/vouchers/:id/dispute` (called by B's 6.5).
     - An **uncaptured** voucher is voided and `reinstateBurn` returns the exact points to available at once.
     - A **captured** one goes to the staff queue (9.4), and a recovery line is posted against that merchant (10.1).
-  - [ ] 4.7.d **Check:**
+  - [ ] 4.7.d **Check:** — 🔄 slot 1 (agent F)
     - a double submit burns once;
     - killing the voucher service mid-saga leaves the balance whole after recovery;
     - an ID user's burn of an AU listing is refused even when the ledger is called directly.

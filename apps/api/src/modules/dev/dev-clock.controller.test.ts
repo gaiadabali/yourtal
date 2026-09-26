@@ -81,9 +81,10 @@ async function latestAuditRow(
 }
 
 describe("GET /api/dev/clock/jobs", () => {
-  it("lists the one built job and refuses an anonymous caller", async () => {
+  it("lists the one built job and refuses an anonymous caller with 401, not 403 (F30)", async () => {
     const anon = await app.inject({ method: "GET", url: "/api/dev/clock/jobs" });
-    expect(anon.statusCode).toBe(403);
+    expect(anon.statusCode).toBe(401);
+    expect(anon.json()).toMatchObject({ code: "no_session" });
 
     const session = await sessionFor(app);
     const response = await app.inject({
@@ -126,13 +127,14 @@ describe("POST /api/dev/clock/release-pending", () => {
     expect(audit?.detail).toMatchObject({ released: 1 });
   });
 
-  it("refuses an anonymous caller", async () => {
+  it("refuses an anonymous caller with 401, not 403 (F30)", async () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/dev/clock/release-pending",
       payload: {},
     });
-    expect(response.statusCode).toBe(403);
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ code: "no_session" });
   });
 });
 

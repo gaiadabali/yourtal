@@ -586,7 +586,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`). — Verified live 2026-09-26 at ae748fc: `robots.txt` is `Disallow: /`, the banner renders on `/`, `X-Robots-Tag: noindex, nofollow` from nginx and `proxy.ts`, `/dev/inbox` 200.
   - [x] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`). — Verified live 2026-09-26: `sitemap.xml` locs are `https://yourtal.gaiada.com/…`.
 
-- [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`)
+- [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`) — 🔄 slot 4 (agent E: b, c, e, g; A: a, d, f per F32)
   - [ ] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint).
   - [ ] 2.4.b web-vitals 6.
   - [ ] 2.4.c Go 1.27, in every `go.mod`, the Dockerfiles and CI.
@@ -1303,6 +1303,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **Several sessions on one repo** | One phase per session, in slot worktrees with their own databases and ports; fast-forward-only merges; `needs:` on every task; additive-only shared files; the wave table says what may run together. |
 | **Design taste stalls the reskin** | The founder judges motion captures, not screenshots. Token names are fixed, so a later change of mind only swaps values. |
 | **Farming on an open staging site** | Money there is simulated. 5.1, 4.4.d, 10.4 and signed segments close the known exploits. Staff logins are never published. |
+| **F32** | When to run the upgrades that touch every session: TypeScript 6, pnpm 12, Postgres 18 (2.4.a/f/d) | **All three now, everywhere**, one at a time. Other sessions rebase and reinstall after each; every slot database is dumped and restored for Postgres 18, and Helios moves too. |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

@@ -86,7 +86,10 @@ describe("the consumer absolute ceiling (F12: 90 days)", () => {
     // Touched every 20 days — always well inside the 30-day idle window,
     // so nothing about idle timeout ever refuses this session.
     for (const days of [20, 40, 60, 80]) {
-      const touch = await sessions.validateAndTouch(token, new Date(issuedAt.getTime() + days * DAY_MS));
+      const touch = await sessions.validateAndTouch(
+        token,
+        new Date(issuedAt.getTime() + days * DAY_MS),
+      );
       expect(touch, `touch at +${String(days)}d should still be valid`).toMatchObject({
         valid: true,
         userId,

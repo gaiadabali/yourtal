@@ -43,7 +43,9 @@ export class SessionService {
   async issue(userId: string, now: Date, kind: SessionKind = "consumer"): Promise<string> {
     const { token, hash } = issueOpaqueToken();
     const absoluteTtlMs =
-      kind === "staff" ? this.config.session.staffAbsoluteTtlMs : this.config.session.consumerAbsoluteTtlMs;
+      kind === "staff"
+        ? this.config.session.staffAbsoluteTtlMs
+        : this.config.session.consumerAbsoluteTtlMs;
     await this.sessions.create({
       id: hash,
       userId,

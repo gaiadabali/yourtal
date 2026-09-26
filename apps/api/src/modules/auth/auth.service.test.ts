@@ -644,7 +644,10 @@ describe("1.5.e: a staff account gets the 12h session ceiling, not the consumer'
     // row existed; `login` just now issued a SECOND one, which is the one
     // that should reflect it — hence newest first, not the oldest.
     const [row] = await db
-      .select({ absoluteExpiresAt: sessionsTable.absoluteExpiresAt, createdAt: sessionsTable.createdAt })
+      .select({
+        absoluteExpiresAt: sessionsTable.absoluteExpiresAt,
+        createdAt: sessionsTable.createdAt,
+      })
       .from(sessionsTable)
       .where(eq(sessionsTable.userId, userId))
       .orderBy(desc(sessionsTable.createdAt))

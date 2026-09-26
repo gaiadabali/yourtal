@@ -134,7 +134,9 @@ const seededCampaignIds: string[] = [];
  * mid-mutation on. Each test below now owns its own row instead, the same
  * `seedBusiness` convention right above.
  */
-async function seedCampaign(region: "AU" | "ID"): Promise<{ campaignId: string; termsVersion: number }> {
+async function seedCampaign(
+  region: "AU" | "ID",
+): Promise<{ campaignId: string; termsVersion: number }> {
   const campaignId = randomUUID();
   await db.execute(sql`
     INSERT INTO campaign.campaigns
@@ -230,7 +232,7 @@ describe("GET/PUT/DELETE /api/me/saves/:campaignId", () => {
 
     const saved = await app.inject({
       method: "PUT",
-      url: `/api/me/saves/${String(campaignId)}`,
+      url: `/api/me/saves/${campaignId}`,
       headers: { cookie: session.cookie },
     });
     expect(saved.statusCode).toBe(200);
@@ -244,7 +246,7 @@ describe("GET/PUT/DELETE /api/me/saves/:campaignId", () => {
 
     const unsaved = await app.inject({
       method: "DELETE",
-      url: `/api/me/saves/${String(campaignId)}`,
+      url: `/api/me/saves/${campaignId}`,
       headers: { cookie: session.cookie },
     });
     expect(unsaved.statusCode).toBe(200);

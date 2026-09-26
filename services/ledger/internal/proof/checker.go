@@ -63,12 +63,13 @@ var (
 // can edit an entry AND recompute its day's root has defeated the entire
 // scheme, so the ability to recompute is the thing being denied.
 func (c *Checker) RecordDailyProof(ctx context.Context, day time.Time) (string, error) {
-	leaves, err := c.leavesFor(ctx, day)
+	leaves, heads, err := c.dayFor(ctx, day)
 	if err != nil {
 		return "", err
 	}
 
-	root := Root(leaves)
+	// 4.6.h: the root covers the day's voucher chain heads when it has any.
+	root, ledgerRoot, headsRoot := combineRoots(leaves, heads)
 	queries := sqlcgen.New(c.pool)
 
 	var first, last *int64
@@ -78,11 +79,14 @@ func (c *Checker) RecordDailyProof(ctx context.Context, day time.Time) (string, 
 	}
 
 	if err := queries.InsertDailyProof(ctx, sqlcgen.InsertDailyProofParams{
-		ProofDate:    pgtype.Date{Time: startOfDay(day), Valid: true},
-		MerkleRoot:   root,
-		EntryCount:   int64(len(leaves)),
-		FirstEntryID: first,
-		LastEntryID:  last,
+		ProofDate:        pgtype.Date{Time: startOfDay(day), Valid: true},
+		MerkleRoot:       root,
+		EntryCount:       int64(len(leaves)),
+		FirstEntryID:     first,
+		LastEntryID:      last,
+		LedgerRoot:       &ledgerRoot,
+		VoucherHeadsRoot: headsRootOrNil(headsRoot),
+		VoucherHeadCount: int64(len(heads)),
 	}); err != nil {
 		return "", fmt.Errorf("recording proof for %s: %w", startOfDay(day).Format(time.DateOnly), err)
 	}
@@ -106,12 +110,12 @@ func (c *Checker) VerifyDay(ctx context.Context, day time.Time) (Finding, bool, 
 		return Finding{}, false, fmt.Errorf("reading proof: %w", err)
 	}
 
-	leaves, err := c.leavesFor(ctx, day)
+	leaves, heads, err := c.dayFor(ctx, day)
 	if err != nil {
 		return Finding{}, false, err
 	}
 
-	recomputed := Root(leaves)
+	recomputed, _, _ := combineRoots(leaves, heads)
 	if recomputed == stored.MerkleRoot {
 		return Finding{}, false, nil
 	}
@@ -171,6 +175,23 @@ func (c *Checker) Run(ctx context.Context) ([]Finding, error) {
 	}
 
 	return findings, nil
+}
+
+// dayFor reads both halves of one UTC day's proof.
+func (c *Checker) dayFor(ctx context.Context, day time.Time) ([]Leaf, []VoucherHeadLeaf, error) {
+	leaves, err := c.leavesFor(ctx, day)
+	if err != nil {
+		return nil, nil, err
+	}
+	heads, err := c.headsFor(ctx, day)
+	return leaves, heads, err
+}
+
+func headsRootOrNil(root string) *string {
+	if root == "" {
+		return nil
+	}
+	return &root
 }
 
 // leavesFor reads one UTC day's entries in id order.

@@ -202,4 +202,5 @@ type VoucherVoucher struct {
 	Region                  string
 	SagaID                  *string
 	ReservedUntil           pgtype.Timestamptz
+	HeadAnchoredVersion     int32
 }

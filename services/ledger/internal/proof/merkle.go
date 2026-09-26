@@ -71,13 +71,18 @@ func Root(leaves []Leaf) string {
 	for _, leaf := range leaves {
 		level = append(level, leafHash(leaf))
 	}
+	return treeRoot(level)
+}
 
+// treeRoot pairs already-hashed leaves up to one root; the voucher-heads
+// tree (4.6.h) is built by the same code.
+func treeRoot(level []string) string {
 	for len(level) > 1 {
 		next := make([]string, 0, (len(level)+1)/2)
 
 		for index := 0; index < len(level); index += 2 {
 			if index+1 == len(level) {
-				// Promote, never duplicate. See the doc comment.
+				// Promote, never duplicate. See Root's doc comment.
 				next = append(next, level[index])
 				continue
 			}

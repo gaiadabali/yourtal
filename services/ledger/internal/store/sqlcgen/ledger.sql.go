@@ -402,9 +402,18 @@ SELECT proof_date, merkle_root, entry_count, first_entry_id, last_entry_id, comp
 FROM ledger.daily_proof WHERE proof_date = $1
 `
 
-func (q *Queries) GetDailyProof(ctx context.Context, proofDate pgtype.Date) (LedgerDailyProof, error) {
+type GetDailyProofRow struct {
+	ProofDate    pgtype.Date
+	MerkleRoot   string
+	EntryCount   int64
+	FirstEntryID *int64
+	LastEntryID  *int64
+	ComputedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) GetDailyProof(ctx context.Context, proofDate pgtype.Date) (GetDailyProofRow, error) {
 	row := q.db.QueryRow(ctx, getDailyProof, proofDate)
-	var i LedgerDailyProof
+	var i GetDailyProofRow
 	err := row.Scan(
 		&i.ProofDate,
 		&i.MerkleRoot,
@@ -662,6 +671,27 @@ func (q *Queries) GetTransferByIdempotencyKey(ctx context.Context, idempotencyKe
 	return i, err
 }
 
+const getVoucherHeadAnchor = `-- name: GetVoucherHeadAnchor :one
+SELECT head_hash, region FROM ledger.voucher_head_anchor WHERE voucher_id = $1 AND seq = $2
+`
+
+type GetVoucherHeadAnchorParams struct {
+	VoucherID pgtype.UUID
+	Seq       int64
+}
+
+type GetVoucherHeadAnchorRow struct {
+	HeadHash string
+	Region   string
+}
+
+func (q *Queries) GetVoucherHeadAnchor(ctx context.Context, arg GetVoucherHeadAnchorParams) (GetVoucherHeadAnchorRow, error) {
+	row := q.db.QueryRow(ctx, getVoucherHeadAnchor, arg.VoucherID, arg.Seq)
+	var i GetVoucherHeadAnchorRow
+	err := row.Scan(&i.HeadHash, &i.Region)
+	return i, err
+}
+
 const holdAllocation = `-- name: HoldAllocation :one
 
 SELECT ledger.allocation_hold($1::text, $2::text,
@@ -830,18 +860,23 @@ func (q *Queries) InsertCapture(ctx context.Context, arg InsertCaptureParams) er
 
 const insertDailyProof = `-- name: InsertDailyProof :exec
 INSERT INTO ledger.daily_proof
-  (proof_date, merkle_root, entry_count, first_entry_id, last_entry_id)
-VALUES ($1, $2, $3, $4, $5)
+  (proof_date, merkle_root, entry_count, first_entry_id, last_entry_id,
+   ledger_root, voucher_heads_root, voucher_head_count)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type InsertDailyProofParams struct {
-	ProofDate    pgtype.Date
-	MerkleRoot   string
-	EntryCount   int64
-	FirstEntryID *int64
-	LastEntryID  *int64
+	ProofDate        pgtype.Date
+	MerkleRoot       string
+	EntryCount       int64
+	FirstEntryID     *int64
+	LastEntryID      *int64
+	LedgerRoot       *string
+	VoucherHeadsRoot *string
+	VoucherHeadCount int64
 }
 
+// 4.6.h: merkle_root is the combined root; ledger_root the entries-only one.
 func (q *Queries) InsertDailyProof(ctx context.Context, arg InsertDailyProofParams) error {
 	_, err := q.db.Exec(ctx, insertDailyProof,
 		arg.ProofDate,
@@ -849,6 +884,9 @@ func (q *Queries) InsertDailyProof(ctx context.Context, arg InsertDailyProofPara
 		arg.EntryCount,
 		arg.FirstEntryID,
 		arg.LastEntryID,
+		arg.LedgerRoot,
+		arg.VoucherHeadsRoot,
+		arg.VoucherHeadCount,
 	)
 	return err
 }
@@ -1106,6 +1144,33 @@ func (q *Queries) InsertTransfer(ctx context.Context, arg InsertTransferParams) 
 	return i, err
 }
 
+const insertVoucherHeadAnchor = `-- name: InsertVoucherHeadAnchor :execrows
+INSERT INTO ledger.voucher_head_anchor (voucher_id, seq, head_hash, region)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (voucher_id, seq) DO NOTHING
+`
+
+type InsertVoucherHeadAnchorParams struct {
+	VoucherID pgtype.UUID
+	Seq       int64
+	HeadHash  string
+	Region    string
+}
+
+// A re-sent (voucher, seq) is a no-op: the poster retries after a lost reply.
+func (q *Queries) InsertVoucherHeadAnchor(ctx context.Context, arg InsertVoucherHeadAnchorParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertVoucherHeadAnchor,
+		arg.VoucherID,
+		arg.Seq,
+		arg.HeadHash,
+		arg.Region,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const listAllocationsForFunder = `-- name: ListAllocationsForFunder :many
 SELECT id, funder_type, funder_id, region, total_points, remaining_points, created_at
 FROM ledger.allocation WHERE funder_id = $1 ORDER BY created_at
@@ -1154,15 +1219,24 @@ SELECT proof_date, merkle_root, entry_count, first_entry_id, last_entry_id, comp
 FROM ledger.daily_proof ORDER BY proof_date
 `
 
-func (q *Queries) ListDailyProofs(ctx context.Context) ([]LedgerDailyProof, error) {
+type ListDailyProofsRow struct {
+	ProofDate    pgtype.Date
+	MerkleRoot   string
+	EntryCount   int64
+	FirstEntryID *int64
+	LastEntryID  *int64
+	ComputedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) ListDailyProofs(ctx context.Context) ([]ListDailyProofsRow, error) {
 	rows, err := q.db.Query(ctx, listDailyProofs)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []LedgerDailyProof
+	var items []ListDailyProofsRow
 	for rows.Next() {
-		var i LedgerDailyProof
+		var i ListDailyProofsRow
 		if err := rows.Scan(
 			&i.ProofDate,
 			&i.MerkleRoot,
@@ -1423,6 +1497,46 @@ func (q *Queries) ListUnnotifiedReleases(ctx context.Context, limit int32) ([]Li
 			&i.Region,
 			&i.Points,
 			&i.UnlockedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVoucherHeadAnchorsForDay = `-- name: ListVoucherHeadAnchorsForDay :many
+SELECT id, voucher_id, seq, head_hash, region, created_at
+FROM ledger.voucher_head_anchor
+WHERE created_at >= $1 AND created_at < $2
+ORDER BY id
+`
+
+type ListVoucherHeadAnchorsForDayParams struct {
+	CreatedAt   pgtype.Timestamptz
+	CreatedAt_2 pgtype.Timestamptz
+}
+
+// 4.6.h: one UTC day's anchored heads, in id order (as ListEntriesForDay).
+func (q *Queries) ListVoucherHeadAnchorsForDay(ctx context.Context, arg ListVoucherHeadAnchorsForDayParams) ([]LedgerVoucherHeadAnchor, error) {
+	rows, err := q.db.Query(ctx, listVoucherHeadAnchorsForDay, arg.CreatedAt, arg.CreatedAt_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LedgerVoucherHeadAnchor
+	for rows.Next() {
+		var i LedgerVoucherHeadAnchor
+		if err := rows.Scan(
+			&i.ID,
+			&i.VoucherID,
+			&i.Seq,
+			&i.HeadHash,
+			&i.Region,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

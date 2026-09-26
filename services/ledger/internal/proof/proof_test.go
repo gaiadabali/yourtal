@@ -354,6 +354,9 @@ func exclusiveDay(t *testing.T, super *pgxpool.Pool) time.Time {
 		_, _ = super.Exec(ctx,
 			`DELETE FROM ledger.transfer WHERE reason_code = 'proof_backdated'
 			   AND NOT EXISTS (SELECT 1 FROM ledger.entry e WHERE e.transfer_id = ledger.transfer.id)`)
+		// 4.6.h: any voucher head anchors a test backdated into the day.
+		_, _ = super.Exec(ctx,
+			`DELETE FROM ledger.voucher_head_anchor WHERE created_at >= $1 AND created_at < $1 + interval '1 day'`, day)
 	})
 	return day
 }

@@ -73,7 +73,9 @@ CREATE TABLE voucher.vouchers (
   -- Added by packages/db/migrations/20260926010000_voucher_internal_api.sql.
   region                    text        NOT NULL,
   saga_id                   text,
-  reserved_until            timestamptz
+  reserved_until            timestamptz,
+  -- Added by packages/db/migrations/20260926121000_voucher_head_anchor.sql.
+  head_anchored_version     integer     NOT NULL DEFAULT 0
 );
 
 CREATE TABLE voucher.code_custody (

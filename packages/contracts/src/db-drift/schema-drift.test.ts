@@ -239,6 +239,8 @@ const MAPPINGS: readonly Mapping[] = [
         "4.5.a's reservation: the burn saga that reserved (and, once activated, once owned) this voucher. Storage for `reserve`/`release`/`activate` to find their voucher again — not a holder-facing fact.",
       reserved_until:
         "4.5.a's reservation TTL. Internal bookkeeping for the saga path; a holder never sees an unactivated reservation at all.",
+      head_anchored_version:
+        "4.6.h: the last chain seq the voucher service anchored in the ledger's daily proof. A watermark for that loop, not a holder-facing fact.",
     },
   },
   {
@@ -405,6 +407,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "K13's exactly-once reinstatement of a burn (same migration). Same ledger-internals note as ledger.account above.",
   "ledger.capture":
     "4.6.f.2 (20260926120000_ledger_captures.sql): the exactly-once-per-capture-id record behind captureVoucher, posted by the voucher service. Same ledger-internals note as ledger.account above.",
+  "ledger.voucher_head_anchor":
+    "4.6.h (D6, F11, 20260926121000_voucher_head_anchor.sql): voucher chain heads the voucher service anchors, folded into ledger.daily_proof's root. Same ledger-internals note as ledger.account above.",
   "platform.ledger_fake_capture":
     "1.2.d's FakeLedgerClient backing store for captureVoucher -- same reason as platform.ledger_fake_allocation above.",
   "ledger.marketing_funding":

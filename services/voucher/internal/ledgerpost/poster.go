@@ -1,4 +1,5 @@
-// Package ledgerpost drains voucher.capture_outbox into the ledger (4.6.f.2).
+// Package ledgerpost drains voucher.capture_outbox into the ledger (4.6.f.2)
+// and anchors each voucher's chain head in the ledger's daily proof (4.6.h).
 // It runs inside this service because the outbox lives in the voucher
 // schema, which no other process can read. Each row is posted over signed
 // HTTP as the "voucher" caller, keyed on its capture id, and marked posted
@@ -83,7 +84,7 @@ func (p *Poster) DrainOnce(ctx context.Context) (int, error) {
 	return posted, nil
 }
 
-// Run drains every interval until ctx ends. Errors are logged, never fatal:
+// Run drains and anchors every interval until ctx ends. Errors are logged, never fatal:
 // the outbox keeps every row until the ledger confirms it.
 func (p *Poster) Run(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
@@ -94,6 +95,12 @@ func (p *Poster) Run(ctx context.Context, interval time.Duration) {
 			p.logger.Error("posting captures to the ledger failed; retrying next pass", "error", err)
 		} else if posted > 0 {
 			p.logger.Info("posted captures to the ledger", "count", posted)
+		}
+		anchored, err := p.AnchorOnce(ctx)
+		if err != nil {
+			p.logger.Error("anchoring voucher chain heads failed; retrying next pass", "error", err)
+		} else if anchored > 0 {
+			p.logger.Info("anchored voucher chain heads", "count", anchored)
 		}
 		select {
 		case <-ctx.Done():

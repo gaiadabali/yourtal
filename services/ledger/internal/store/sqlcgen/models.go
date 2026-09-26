@@ -121,12 +121,15 @@ type LedgerCapture struct {
 }
 
 type LedgerDailyProof struct {
-	ProofDate    pgtype.Date
-	MerkleRoot   string
-	EntryCount   int64
-	FirstEntryID *int64
-	LastEntryID  *int64
-	ComputedAt   pgtype.Timestamptz
+	ProofDate        pgtype.Date
+	MerkleRoot       string
+	EntryCount       int64
+	FirstEntryID     *int64
+	LastEntryID      *int64
+	ComputedAt       pgtype.Timestamptz
+	LedgerRoot       *string
+	VoucherHeadsRoot *string
+	VoucherHeadCount int64
 }
 
 type LedgerEntry struct {
@@ -244,4 +247,13 @@ type LedgerTransfer struct {
 	CreatedAt      pgtype.Timestamptz
 	Reverses       *string
 	RequestHash    []byte
+}
+
+type LedgerVoucherHeadAnchor struct {
+	ID        int64
+	VoucherID pgtype.UUID
+	Seq       int64
+	HeadHash  string
+	Region    string
+	CreatedAt pgtype.Timestamptz
 }

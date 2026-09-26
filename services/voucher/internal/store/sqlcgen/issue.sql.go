@@ -99,7 +99,7 @@ SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title,
        v.face_value_minor, v.remaining_value_minor, v.partial_redemption_policy,
        v.minimum_spend_minor, v.transferable, v.issued_at, v.expires_at,
        v.location_id, v.state, v.void_reason, v.batch_id, v.version, v.currency,
-       v.region, v.saga_id, v.reserved_until
+       v.region, v.saga_id, v.reserved_until, v.head_anchored_version
 FROM voucher.vouchers v
 JOIN voucher.code_custody c ON c.voucher_id = v.id
 WHERE c.code_hash = $1
@@ -144,6 +144,7 @@ func (q *Queries) FindVoucherByCodeHash(ctx context.Context, codeHash string) (V
 		&i.Region,
 		&i.SagaID,
 		&i.ReservedUntil,
+		&i.HeadAnchoredVersion,
 	)
 	return i, err
 }
@@ -376,7 +377,7 @@ const getVoucher = `-- name: GetVoucher :one
 SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
        remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
        transferable, issued_at, expires_at, location_id, state, void_reason,
-       batch_id, version, currency, region, saga_id, reserved_until
+       batch_id, version, currency, region, saga_id, reserved_until, head_anchored_version
 FROM voucher.vouchers WHERE id = $1
 `
 
@@ -415,6 +416,7 @@ func (q *Queries) GetVoucher(ctx context.Context, id pgtype.UUID) (VoucherVouche
 		&i.Region,
 		&i.SagaID,
 		&i.ReservedUntil,
+		&i.HeadAnchoredVersion,
 	)
 	return i, err
 }
@@ -898,6 +900,59 @@ func (q *Queries) ListVouchersForOwner(ctx context.Context, arg ListVouchersForO
 		return nil, err
 	}
 	return items, nil
+}
+
+const listVouchersNeedingHeadAnchor = `-- name: ListVouchersNeedingHeadAnchor :many
+SELECT id, region, version
+FROM voucher.vouchers
+WHERE version > head_anchored_version
+ORDER BY id
+LIMIT $1
+`
+
+type ListVouchersNeedingHeadAnchorRow struct {
+	ID      pgtype.UUID
+	Region  string
+	Version int32
+}
+
+// 4.6.h: vouchers whose chain moved since internal/ledgerpost last anchored
+// them. Unscoped: its only caller is that loop, never an HTTP route.
+func (q *Queries) ListVouchersNeedingHeadAnchor(ctx context.Context, limit int32) ([]ListVouchersNeedingHeadAnchorRow, error) {
+	rows, err := q.db.Query(ctx, listVouchersNeedingHeadAnchor, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListVouchersNeedingHeadAnchorRow
+	for rows.Next() {
+		var i ListVouchersNeedingHeadAnchorRow
+		if err := rows.Scan(&i.ID, &i.Region, &i.Version); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markHeadAnchored = `-- name: MarkHeadAnchored :exec
+UPDATE voucher.vouchers
+SET head_anchored_version = $2
+WHERE id = $1 AND head_anchored_version < $2
+`
+
+type MarkHeadAnchoredParams struct {
+	ID                  pgtype.UUID
+	HeadAnchoredVersion int32
+}
+
+// Only ever raises the watermark, so a racing second pass is harmless.
+func (q *Queries) MarkHeadAnchored(ctx context.Context, arg MarkHeadAnchoredParams) error {
+	_, err := q.db.Exec(ctx, markHeadAnchored, arg.ID, arg.HeadAnchoredVersion)
+	return err
 }
 
 const selectMintedForListing = `-- name: SelectMintedForListing :one

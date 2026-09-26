@@ -177,9 +177,11 @@ WHERE created_at >= $1 AND created_at < $2
 ORDER BY id;
 
 -- name: InsertDailyProof :exec
+-- 4.6.h: merkle_root is the combined root; ledger_root the entries-only one.
 INSERT INTO ledger.daily_proof
-  (proof_date, merkle_root, entry_count, first_entry_id, last_entry_id)
-VALUES ($1, $2, $3, $4, $5);
+  (proof_date, merkle_root, entry_count, first_entry_id, last_entry_id,
+   ledger_root, voucher_heads_root, voucher_head_count)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: GetDailyProof :one
 SELECT proof_date, merkle_root, entry_count, first_entry_id, last_entry_id, computed_at
@@ -188,6 +190,22 @@ FROM ledger.daily_proof WHERE proof_date = $1;
 -- name: ListDailyProofs :many
 SELECT proof_date, merkle_root, entry_count, first_entry_id, last_entry_id, computed_at
 FROM ledger.daily_proof ORDER BY proof_date;
+
+-- name: ListVoucherHeadAnchorsForDay :many
+-- 4.6.h: one UTC day's anchored heads, in id order (as ListEntriesForDay).
+SELECT id, voucher_id, seq, head_hash, region, created_at
+FROM ledger.voucher_head_anchor
+WHERE created_at >= $1 AND created_at < $2
+ORDER BY id;
+
+-- name: InsertVoucherHeadAnchor :execrows
+-- A re-sent (voucher, seq) is a no-op: the poster retries after a lost reply.
+INSERT INTO ledger.voucher_head_anchor (voucher_id, seq, head_hash, region)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (voucher_id, seq) DO NOTHING;
+
+-- name: GetVoucherHeadAnchor :one
+SELECT head_hash, region FROM ledger.voucher_head_anchor WHERE voucher_id = $1 AND seq = $2;
 
 -- name: InsertCapture :exec
 -- 4.6.f.2: written in the posting transfer's own transaction; ON CONFLICT

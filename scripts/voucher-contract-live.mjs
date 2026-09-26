@@ -8,7 +8,8 @@
 //
 // Builds both services, generates a throwaway keyring in the OS temp dir (the
 // keyring refuses keys inside a git tree), starts them on free loopback
-// ports, runs the spec, then checks every capture reached ledger.capture.
+// ports, runs the spec, then checks every capture reached ledger.capture
+// and every voucher's chain head is anchored in the ledger (4.6.h).
 import { randomBytes } from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, openSync, readFileSync, writeFileSync } from "node:fs";
@@ -139,9 +140,26 @@ for (let attempt = 0; attempt < 40; attempt++) {
   if (rows.length > 0 && rows.every((r) => r.posted && r.matches)) break;
   await new Promise((r) => setTimeout(r, 500));
 }
-await db.end();
 if (rows.length === 0) finish(1, "the spec made no capture, so the outbox drain was not exercised");
 const stuck = rows.filter((r) => !(r.posted && r.matches));
 if (stuck.length > 0) finish(1, `captures not posted to the ledger: ${JSON.stringify(stuck)}`);
 console.log(`voucher-contract-live: ${rows.length} capture(s) posted to the ledger`);
+
+// 4.6.h end to end: every voucher's latest chain head is anchored in the ledger.
+let heads = [];
+for (let attempt = 0; attempt < 40; attempt++) {
+  ({ rows: heads } = await db.query(`
+    SELECT v.id, a.head_hash = e.hash AND a.region = v.region AS anchored
+      FROM voucher.vouchers v
+      JOIN LATERAL (SELECT seq, hash FROM voucher.event WHERE voucher_id = v.id ORDER BY seq DESC LIMIT 1) e ON true
+      LEFT JOIN ledger.voucher_head_anchor a ON a.voucher_id = v.id AND a.seq = e.seq`));
+  if (heads.length > 0 && heads.every((h) => h.anchored)) break;
+  await new Promise((r) => setTimeout(r, 500));
+}
+await db.end();
+const unanchored = heads.filter((h) => !h.anchored);
+if (heads.length === 0) finish(1, "no voucher has a chain, so anchoring was not exercised");
+if (unanchored.length > 0)
+  finish(1, `chain heads not anchored: ${JSON.stringify(unanchored.slice(0, 5))}`);
+console.log(`voucher-contract-live: ${heads.length} chain head(s) anchored in the ledger`);
 finish(0);

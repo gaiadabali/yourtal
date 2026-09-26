@@ -26,6 +26,7 @@ import (
 	"github.com/yourtal/services/ledger/internal/httpx"
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
+	"github.com/yourtal/services/ledger/internal/proof"
 	"github.com/yourtal/services/ledger/internal/reward"
 	"github.com/yourtal/services/ledger/internal/serviceauth"
 )
@@ -41,6 +42,7 @@ type API struct {
 	burns    *burn.Engine
 	escrows  *escrow.Engine
 	captures *capture.Engine
+	proof    *proof.Checker
 }
 
 // New wires the engines. attestationSecret verifies apps/api's completion
@@ -49,7 +51,7 @@ func New(logger *slog.Logger, pool *pgxpool.Pool, attestationSecret []byte) *API
 	book := ledger.New(pool)
 	return &API{
 		logger: logger, pool: pool, ledger: book, pricing: pricing.New(pool), burns: burn.New(pool, book),
-		escrows: escrow.New(pool, book), captures: capture.New(pool, book),
+		escrows: escrow.New(pool, book), captures: capture.New(pool, book), proof: proof.New(pool, proof.LoggingAlerter{Logger: logger}),
 		rewards: map[ledger.Region]*reward.Engine{
 			ledger.RegionAU: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionAU).WithAttestationSecret(attestationSecret),
 			ledger.RegionID: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionID).WithAttestationSecret(attestationSecret),
@@ -64,6 +66,7 @@ func (a *API) Routes() chi.Router {
 
 	// services/voucher signs as "voucher" and reaches only its own routes.
 	r.Post("/captures", a.captureVoucher)
+	r.With(a.onlyCaller("voucher")).Post("/proof/voucher-heads", a.anchorVoucherHeads)
 
 	r.Group(func(r chi.Router) {
 		r.Use(a.refuseCaller("voucher"))
@@ -111,6 +114,20 @@ func (a *API) platformRoutes(r chi.Router) {
 	for _, path := range []string{"/economy/statements",
 		"/economy/payouts/approve", "/settings/list", "/settings/propose", "/settings/approve"} {
 		r.Post(path, a.notImplemented)
+	}
+}
+
+// onlyCaller answers 403 to every signed caller but one.
+func (a *API) onlyCaller(caller string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if serviceauth.Caller(r.Context()) != caller {
+				httpx.WriteError(w, a.logger, http.StatusForbidden, "permission_error", "caller_not_allowed",
+					"this caller may not use this route")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 

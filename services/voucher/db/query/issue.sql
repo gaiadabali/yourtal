@@ -102,7 +102,7 @@ SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title,
        v.face_value_minor, v.remaining_value_minor, v.partial_redemption_policy,
        v.minimum_spend_minor, v.transferable, v.issued_at, v.expires_at,
        v.location_id, v.state, v.void_reason, v.batch_id, v.version, v.currency,
-       v.region, v.saga_id, v.reserved_until
+       v.region, v.saga_id, v.reserved_until, v.head_anchored_version
 FROM voucher.vouchers v
 JOIN voucher.code_custody c ON c.voucher_id = v.id
 WHERE c.code_hash = $1;
@@ -120,7 +120,7 @@ WHERE c.code_hash = $1;
 SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
        remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
        transferable, issued_at, expires_at, location_id, state, void_reason,
-       batch_id, version, currency, region, saga_id, reserved_until
+       batch_id, version, currency, region, saga_id, reserved_until, head_anchored_version
 FROM voucher.vouchers WHERE id = $1;
 
 -- name: TransitionVoucher :one
@@ -287,3 +287,18 @@ FROM voucher.vouchers
 WHERE state = 'active' AND expires_at <= now()
 ORDER BY expires_at
 LIMIT $1;
+
+-- name: ListVouchersNeedingHeadAnchor :many
+-- 4.6.h: vouchers whose chain moved since internal/ledgerpost last anchored
+-- them. Unscoped: its only caller is that loop, never an HTTP route.
+SELECT id, region, version
+FROM voucher.vouchers
+WHERE version > head_anchored_version
+ORDER BY id
+LIMIT $1;
+
+-- name: MarkHeadAnchored :exec
+-- Only ever raises the watermark, so a racing second pass is harmless.
+UPDATE voucher.vouchers
+SET head_anchored_version = $2
+WHERE id = $1 AND head_anchored_version < $2;

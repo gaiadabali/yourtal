@@ -85,7 +85,22 @@ CREATE TABLE ledger.daily_proof (
   entry_count    bigint      NOT NULL,
   first_entry_id bigint,
   last_entry_id  bigint,
-  computed_at    timestamptz NOT NULL DEFAULT now()
+  computed_at    timestamptz NOT NULL DEFAULT now(),
+  -- Added by packages/db/migrations/20260926121000_voucher_head_anchor.sql.
+  ledger_root        text,
+  voucher_heads_root text,
+  voucher_head_count bigint NOT NULL DEFAULT 0
+);
+
+-- Added by packages/db/migrations/20260926121000_voucher_head_anchor.sql.
+CREATE TABLE ledger.voucher_head_anchor (
+  id         bigserial   PRIMARY KEY,
+  voucher_id uuid        NOT NULL,
+  seq        bigint      NOT NULL,
+  head_hash  char(64)    NOT NULL,
+  region     text        NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (voucher_id, seq)
 );
 
 -- Added by packages/db/migrations/20260926120000_ledger_captures.sql.

@@ -8,7 +8,7 @@
 # Pinned by tag (matches this repo's docker-compose.yml convention:
 # postgres:18-alpine, cerbos:0.55.0 — never :latest, per the Atlas lesson
 # recorded against docker-compose.yml's minio entry).
-FROM golang:1.26.8-alpine3.24@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c AS builder
+FROM golang:1.27.1-alpine3.24@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS builder
 
 WORKDIR /src
 
@@ -31,7 +31,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
 # docker-compose.yml's `additional_contexts: healthcheck: ../../infra/healthcheck`)
 # rather than copied into this service's own tree — see infra/healthcheck's
 # package comment for why it lives there instead of here.
-FROM golang:1.26.8-alpine3.24@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c AS healthcheck-builder
+FROM golang:1.27.1-alpine3.24@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414 AS healthcheck-builder
 WORKDIR /hc
 COPY --from=healthcheck . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/healthcheck .

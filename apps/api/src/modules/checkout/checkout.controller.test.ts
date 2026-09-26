@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { checkoutQuoteSchema, checkoutResultSchema } from "@yourtal/contracts/checkout/checkout";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
+import { walletQrSchema } from "@yourtal/contracts/wallet/wallet";
 import { AppModule } from "../../app.module";
 import { createAppDb, type AppDb } from "../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../shared/testing/session-for";
@@ -121,6 +122,21 @@ describe("POST /api/checkout", () => {
     expect(wallet.json()).toMatchObject({
       vouchers: [{ voucherId: result.voucherId, state: "activated" }],
     });
+
+    // 4.8.b: the bought voucher shows a QR token in the wallet.
+    const qr = await app.inject({
+      method: "GET",
+      url: `/api/wallet/vouchers/${result.voucherId}/qr`,
+      headers: { cookie: session.cookie },
+    });
+    expect(qr.statusCode).toBe(200);
+    expect(qr.json()).toMatchObject({
+      voucherId: result.voucherId,
+      token: expect.any(String) as unknown,
+    });
+    expect(new Date(walletQrSchema.parse(qr.json()).expiresAt).getTime()).toBeGreaterThan(
+      Date.now(),
+    );
   });
 
   it("refuses when the points are short, before reserving anything", async () => {

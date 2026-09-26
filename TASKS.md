@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 21/30 | `███████░░░`  70% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 22/30 | `███████░░░`  73% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 1/5 | 5/22 | `██░░░░░░░░`  23% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **32/84** | **205/382** | `█████░░░░░`  54% |
+| **All** | | | **32/84** | **206/382** | `█████░░░░░`  54% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -595,7 +595,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [ ] 2.4.f pnpm 12, locally and on Helios.
   - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ⛔ serwist 10 not stable yet (latest 9.5.12, 10.0.0-preview.14 on 2026-09-26); override stays.
   - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one.
-  - [ ] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there.
+  - [x] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there. — Green again at c9effbe (Integration, Quality, Release all success). Three causes: five real-Cerbos e2e suites hard-coded slot 3's port 26335 (now `PDP_BASE_URL`); `/dev/clock` tests predated 1.5.h's 401 (agent D); the opt-in `checkout.live.test.ts` counted as "skipped" in the default run (now excluded unless `CHECKOUT_LIVE=1`).
 - [ ] **2.5 No account without a profile (F31)** · needs: 1.4
   - [ ] 2.5.a Login and session validation refuse a credential with no `identity.user_profile` row (`AsyncPrincipalResolver` must never fall back to the ID placeholder for a real session).
   - [ ] 2.5.b A registration whose profile write fails removes its credential (or retries it), so the same email can register again.

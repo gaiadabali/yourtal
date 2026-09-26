@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 14/29 | `█████░░░░░`  48% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 15/29 | `█████░░░░░`  52% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 53/57 | `█████████░`  93% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 5/21 | `██░░░░░░░░`  24% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **30/84** | **196/380** | `█████░░░░░`  52% |
+| **All** | | | **30/84** | **197/380** | `█████░░░░░`  52% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -581,7 +581,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - "Release my pending points now";
     - "Run job now" for every scheduled job (holdback release, expiry, settlement accrual, weekly statement, payout, solvency, proof);
     - "Advance my account by N days".
-  - [ ] 2.3.e A minimal seed when the database is empty: snap-app in AU and in ID, 2 campaigns each using the 30 s fixture video, one demo login per role, and one tier-0 demo viewer seeded with a pending grant through the 1.2 fake. The full demo world is 13.1.
+  - [x] 2.3.e A minimal seed when the database is empty: snap-app in AU and in ID, 2 campaigns each using the 30 s fixture video, one demo login per role, and one tier-0 demo viewer seeded with a pending grant through the 1.2 fake. The full demo world is 13.1. — Runs in every deploy's pre-reload step (`api/dist/seed-staging.js`, three idempotent steps). On staging 2026-09-26: 2 businesses (snap-app AU and ID), 4 campaigns, 10 demo logins (`<role>@demo.yourtal.test`, password `STAGING_DEMO_PASSWORD` in `/opt/yourtal/secrets/app.env`); F12 marketing budget funded; `viewer.au` holds a real pending grant from the live ledger. `viewer.au` signs in and `/api/me` shows AU / en-AU / adult.
   - [ ] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points.
   - [x] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`). — Verified live 2026-09-26 at ae748fc: `robots.txt` is `Disallow: /`, the banner renders on `/`, `X-Robots-Tag: noindex, nofollow` from nginx and `proxy.ts`, `/dev/inbox` 200.
   - [x] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`). — Verified live 2026-09-26: `sitemap.xml` locs are `https://yourtal.gaiada.com/…`.

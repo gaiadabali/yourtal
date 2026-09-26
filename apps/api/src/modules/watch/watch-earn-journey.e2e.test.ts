@@ -73,10 +73,22 @@ async function correctOptionFor(questionId: string): Promise<string> {
   return id;
 }
 
-async function wrongOptionFor(presentedOptions: readonly { id: string }[], correctId: string): Promise<string> {
+function wrongOptionFor(presentedOptions: readonly { id: string }[], correctId: string): string {
   const wrong = presentedOptions.find((option) => option.id !== correctId);
   if (wrong === undefined) throw new Error("expected a wrong option to exist");
   return wrong.id;
+}
+
+/**
+ * `app.inject(...)`'s response `.json()` returns `any` — this is the one
+ * place that gets narrowed, so every call site below reads as a typed
+ * value rather than scattering `as` assertions `no-unnecessary-type-
+ * assertion` then flags as redundant once TS's own inference already
+ * widens through `any`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the single use IS the point: a narrow, per-call-site return type instead of `any` flowing out of `.json()`.
+function json<T>(response: { json: () => unknown }): T {
+  return response.json() as T;
 }
 
 beforeAll(async () => {
@@ -201,7 +213,7 @@ describe("5.1.e: the farming probe", () => {
       payload: { campaignId },
     });
     expect(started.statusCode).toBe(201);
-    const sessionId = (started.json() as { session: { id: string } }).session.id;
+    const sessionId = json<{ session: { id: string } }>(started).session.id;
 
     const startedAtMs = Date.now();
     let lastCovered = 0;
@@ -216,7 +228,7 @@ describe("5.1.e: the farming probe", () => {
         payload: { fromSeconds: from, toSeconds: to, reportedAt: new Date().toISOString() },
       });
       if (response.statusCode === 200) {
-        lastCovered = (response.json() as { coveredSeconds: number }).coveredSeconds;
+        lastCovered = json<{ coveredSeconds: number }>(response).coveredSeconds;
       }
     }
     const elapsedSeconds = (Date.now() - startedAtMs) / 1000;
@@ -235,10 +247,10 @@ describe("5.1.e: the farming probe", () => {
       headers: { cookie: viewer.cookie, "idempotency-key": randomUUID() },
       payload: { campaignId },
     });
-    const sessionId = (started.json() as { session: { id: string } }).session.id;
+    const sessionId = json<{ session: { id: string } }>(started).session.id;
 
     const startedAtMs = Date.now();
-    const requests = Array.from({ length: 30 }, (_unused, index) =>
+    const requests = Array.from({ length: 30 }, () =>
       app.inject({
         method: "POST",
         url: `/api/watch/sessions/${sessionId}/progress`,
@@ -258,7 +270,7 @@ describe("5.1.e: the farming probe", () => {
       url: `/api/watch/sessions/${sessionId}`,
       headers: { cookie: viewer.cookie },
     });
-    const covered = (resumed.json() as { coveredSeconds: number }).coveredSeconds;
+    const covered = json<{ coveredSeconds: number }>(resumed).coveredSeconds;
     expect(covered).toBeLessThanOrEqual(elapsedSeconds + 3.5);
   }, 30_000);
 });
@@ -272,7 +284,7 @@ describe("5.1.b: parking, resuming, and already_earned", () => {
       headers: { cookie: viewer.cookie, "idempotency-key": randomUUID() },
       payload: { campaignId },
     });
-    const firstSessionId = (first.json() as { session: { id: string } }).session.id;
+    const firstSessionId = json<{ session: { id: string } }>(first).session.id;
     await app.inject({
       method: "POST",
       url: `/api/watch/sessions/${firstSessionId}/progress`,
@@ -287,7 +299,7 @@ describe("5.1.b: parking, resuming, and already_earned", () => {
       payload: { campaignId: otherCampaignId },
     });
     expect(second.statusCode).toBe(201);
-    const secondSessionId = (second.json() as { session: { id: string } }).session.id;
+    const secondSessionId = json<{ session: { id: string } }>(second).session.id;
     expect(secondSessionId).not.toBe(firstSessionId);
 
     const resumedFirst = await app.inject({
@@ -296,7 +308,7 @@ describe("5.1.b: parking, resuming, and already_earned", () => {
       headers: { cookie: viewer.cookie, "idempotency-key": randomUUID() },
       payload: { campaignId },
     });
-    const resumedSession = (resumedFirst.json() as { session: { id: string; state: string } }).session;
+    const resumedSession = json<{ session: { id: string; state: string } }>(resumedFirst).session;
     expect(resumedSession.id).toBe(firstSessionId);
     expect(resumedSession.state).toBe("active");
 
@@ -305,7 +317,7 @@ describe("5.1.b: parking, resuming, and already_earned", () => {
       url: `/api/watch/sessions/${firstSessionId}`,
       headers: { cookie: viewer.cookie },
     });
-    expect((coverage.json() as { coveredSeconds: number }).coveredSeconds).toBe(2);
+    expect(json<{ coveredSeconds: number }>(coverage).coveredSeconds).toBe(2);
   });
 
   it("a second reward session on an already-granted campaign is non-earning (already_earned), and replay is allowed", async () => {
@@ -320,7 +332,7 @@ describe("5.1.b: parking, resuming, and already_earned", () => {
       payload: { campaignId },
     });
     expect(second.statusCode).toBe(201);
-    const body = second.json() as { alreadyEarned: boolean };
+    const body = json<{ alreadyEarned: boolean }>(second);
     expect(body.alreadyEarned).toBe(true);
   });
 });
@@ -334,7 +346,7 @@ describe("5.2: questions during the video, served and scored on the server", () 
       headers: { cookie: viewer.cookie, "idempotency-key": randomUUID() },
       payload: { campaignId },
     });
-    const sessionId = (started.json() as { session: { id: string } }).session.id;
+    const sessionId = json<{ session: { id: string } }>(started).session.id;
     await backdateSessionStart(sessionId, CAMPAIGN_DURATION_SECONDS + 5);
     await app.inject({
       method: "POST",
@@ -349,7 +361,7 @@ describe("5.2: questions during the video, served and scored on the server", () 
       headers: { cookie: viewer.cookie },
     });
     expect(checkpoint0.statusCode).toBe(201);
-    const question = (checkpoint0.json() as { question: Record<string, unknown> }).question;
+    const question = json<{ question: Record<string, unknown> }>(checkpoint0).question;
     expect(question).not.toHaveProperty("correctOptionId");
     expect(question).not.toHaveProperty("correctAnswer");
     expect(JSON.stringify(question)).not.toContain("correct");
@@ -370,12 +382,9 @@ describe("5.2: questions during the video, served and scored on the server", () 
       url: `/api/watch/sessions/${sessionId}/checkpoints/0`,
       headers: { cookie: viewer.cookie },
     });
-    const body = checkpoint.json() as {
-      token: string;
-      question: { id: string; options: { id: string; label: string }[] };
-    };
+    const body = json<{ token: string; question: { id: string; options: { id: string; label: string }[] } }>(checkpoint);
     const correctId = await correctOptionFor(body.question.id);
-    const wrongId = await wrongOptionFor(body.question.options, correctId);
+    const wrongId = wrongOptionFor(body.question.options, correctId);
 
     const answer = await app.inject({
       method: "POST",
@@ -384,7 +393,7 @@ describe("5.2: questions during the video, served and scored on the server", () 
       payload: { token: body.token, selectedOptionId: wrongId },
     });
     expect(answer.statusCode).toBe(201);
-    expect((answer.json() as { wasCorrect: boolean }).wasCorrect).toBe(false);
+    expect(json<{ wasCorrect: boolean }>(answer).wasCorrect).toBe(false);
   });
 
   it("a timeout is scored wrong, never voids, even when the submitted answer is correct", async () => {
@@ -395,7 +404,7 @@ describe("5.2: questions during the video, served and scored on the server", () 
       url: `/api/watch/sessions/${sessionId}/checkpoints/0`,
       headers: { cookie: viewer.cookie },
     });
-    const body = checkpoint.json() as { question: { id: string } };
+    const body = json<{ question: { id: string } }>(checkpoint);
     const correctId = await correctOptionFor(body.question.id);
 
     // A token whose SIGNATURE is still valid (well inside CHECKPOINT_TOKEN_TTL_MS)
@@ -425,7 +434,7 @@ describe("5.2: questions during the video, served and scored on the server", () 
     });
     expect(answer.statusCode).toBe(201);
     // Right answer, but 40s after issuance: scored wrong by the clock, not voided.
-    expect((answer.json() as { answered: boolean; wasCorrect: boolean })).toMatchObject({
+    expect(json<{ answered: boolean; wasCorrect: boolean }>(answer)).toMatchObject({
       answered: true,
       wasCorrect: false,
     });
@@ -491,7 +500,7 @@ async function startFullyWatchedSession(cookie: string): Promise<string> {
     headers: { cookie, "idempotency-key": randomUUID() },
     payload: { campaignId },
   });
-  const sessionId = (started.json() as { session: { id: string } }).session.id;
+  const sessionId = json<{ session: { id: string } }>(started).session.id;
   await backdateSessionStart(sessionId, CAMPAIGN_DURATION_SECONDS + 5);
   const progress = await app.inject({
     method: "POST",
@@ -513,7 +522,7 @@ async function completeCampaignFully(
     url: `/api/watch/sessions/${sessionId}/checkpoints/0`,
     headers: { cookie },
   });
-  const body = checkpoint.json() as { token: string; question: { id: string } };
+  const body = json<{ token: string; question: { id: string } }>(checkpoint);
   const correctId = await correctOptionFor(body.question.id);
   const answer = await app.inject({
     method: "POST",
@@ -521,7 +530,7 @@ async function completeCampaignFully(
     headers: { cookie },
     payload: { token: body.token, selectedOptionId: correctId },
   });
-  expect((answer.json() as { wasCorrect: boolean }).wasCorrect).toBe(true);
+  expect(json<{ wasCorrect: boolean }>(answer).wasCorrect).toBe(true);
 
   const completeIdempotencyKey = randomUUID();
   const complete = await app.inject({
@@ -530,7 +539,7 @@ async function completeCampaignFully(
     headers: { cookie, "idempotency-key": completeIdempotencyKey },
   });
   expect(complete.statusCode).toBe(201);
-  const completed = complete.json() as { granted: boolean; pendingPoints: number };
+  const completed = json<{ granted: boolean; pendingPoints: number }>(complete);
   return {
     sessionId,
     granted: completed.granted,

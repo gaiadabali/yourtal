@@ -92,12 +92,7 @@ export class DrizzleQuestionAnswerRepository implements QuestionAnswerRepository
 
 /** Postgres SQLSTATE 23505 (unique_violation), narrowed without an `as`. */
 function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: unknown }).code === "23505"
-  );
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
 }
 
 function scoreAgainstKey(

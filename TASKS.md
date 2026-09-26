@@ -39,14 +39,14 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 52/57 | `█████████░`  91% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 5/21 | `██░░░░░░░░`  24% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
-| **Phase 7** Business studio | C | · not started | 0/8 | 0/34 | `░░░░░░░░░░`   0% |
+| **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/6 | 0/18 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **30/84** | **194/379** | `█████░░░░░`  51% |
+| **All** | | | **30/84** | **194/380** | `█████░░░░░`  51% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1019,6 +1019,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     
     Publishing snapshots a terms version that includes the bonus.
   - [ ] 7.3.d Lifecycle `draft → in_review → live → paused → ended`, enforced by `canTransition` and by a database trigger (EW-17). Submitting is refused while the business is not KYB-verified (red line 7) and sends the campaign to moderation (9.2).
+  - [ ] 7.3.f (requested by B for 5.5.b) A pg-boss event (e.g. `campaign.published`) when a campaign transitions to `live`, carrying at least `campaignId`, `businessId` and `region`. `apps/api/src/modules/me`'s notification worker consumes it to notify a business's followers (`me.follow`) — see 5.5.b's own note on what it built without this.
   - [ ] 7.3.e **Check:** an HTTP round trip creates a funded campaign at the F12 ceiling, with a question bank, and submits it to `in_review`; one point per minute above the ceiling is refused.
 - [ ] **7.4 Inventory (vouchers)** · needs: 7.1, 4.9 (fake ok)
   - [ ] 7.4.a Locations CRUD. Today only the seed creates `store.merchant_location`, so a new business cannot list anything.

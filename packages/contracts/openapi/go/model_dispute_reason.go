@@ -15,58 +15,54 @@ import (
 	"fmt"
 )
 
-// WatchSessionState A watch attempt's state (YT-0120). `superseded` is kept rather than deleted because an abandoned attempt's coverage is evidence; `void` is terminal and never pays.
-type WatchSessionState string
+// DisputeReason Why a voucher was not honoured. A closed list: no viewer free text reaches staff.
+type DisputeReason string
 
-// List of WatchSessionState
+// List of DisputeReason
 const (
-	WATCHSESSIONSTATE_ACTIVE WatchSessionState = "active"
-	WATCHSESSIONSTATE_COMPLETED WatchSessionState = "completed"
-	WATCHSESSIONSTATE_PARKED WatchSessionState = "parked"
-	WATCHSESSIONSTATE_SUPERSEDED WatchSessionState = "superseded"
-	WATCHSESSIONSTATE_VOID WatchSessionState = "void"
+	DISPUTEREASON_NOT_HONOURED DisputeReason = "not_honoured"
+	DISPUTEREASON_MERCHANT_CLOSED DisputeReason = "merchant_closed"
+	DISPUTEREASON_OTHER DisputeReason = "other"
 )
 
-// All allowed values of WatchSessionState enum
-var AllowedWatchSessionStateEnumValues = []WatchSessionState{
-	"active",
-	"completed",
-	"parked",
-	"superseded",
-	"void",
+// All allowed values of DisputeReason enum
+var AllowedDisputeReasonEnumValues = []DisputeReason{
+	"not_honoured",
+	"merchant_closed",
+	"other",
 }
 
-func (v *WatchSessionState) UnmarshalJSON(src []byte) error {
+func (v *DisputeReason) UnmarshalJSON(src []byte) error {
 	var value string
 	err := json.Unmarshal(src, &value)
 	if err != nil {
 		return err
 	}
-	enumTypeValue := WatchSessionState(value)
-	for _, existing := range AllowedWatchSessionStateEnumValues {
+	enumTypeValue := DisputeReason(value)
+	for _, existing := range AllowedDisputeReasonEnumValues {
 		if existing == enumTypeValue {
 			*v = enumTypeValue
 			return nil
 		}
 	}
 
-	return fmt.Errorf("%+v is not a valid WatchSessionState", value)
+	return fmt.Errorf("%+v is not a valid DisputeReason", value)
 }
 
-// NewWatchSessionStateFromValue returns a pointer to a valid WatchSessionState
+// NewDisputeReasonFromValue returns a pointer to a valid DisputeReason
 // for the value passed as argument, or an error if the value passed is not allowed by the enum
-func NewWatchSessionStateFromValue(v string) (*WatchSessionState, error) {
-	ev := WatchSessionState(v)
+func NewDisputeReasonFromValue(v string) (*DisputeReason, error) {
+	ev := DisputeReason(v)
 	if ev.IsValid() {
 		return &ev, nil
 	} else {
-		return nil, fmt.Errorf("invalid value '%v' for WatchSessionState: valid values are %v", v, AllowedWatchSessionStateEnumValues)
+		return nil, fmt.Errorf("invalid value '%v' for DisputeReason: valid values are %v", v, AllowedDisputeReasonEnumValues)
 	}
 }
 
 // IsValid return true if the value is valid for the enum, false otherwise
-func (v WatchSessionState) IsValid() bool {
-	for _, existing := range AllowedWatchSessionStateEnumValues {
+func (v DisputeReason) IsValid() bool {
+	for _, existing := range AllowedDisputeReasonEnumValues {
 		if existing == v {
 			return true
 		}
@@ -74,43 +70,43 @@ func (v WatchSessionState) IsValid() bool {
 	return false
 }
 
-// Ptr returns reference to WatchSessionState value
-func (v WatchSessionState) Ptr() *WatchSessionState {
+// Ptr returns reference to DisputeReason value
+func (v DisputeReason) Ptr() *DisputeReason {
 	return &v
 }
 
-type NullableWatchSessionState struct {
-	value *WatchSessionState
+type NullableDisputeReason struct {
+	value *DisputeReason
 	isSet bool
 }
 
-func (v NullableWatchSessionState) Get() *WatchSessionState {
+func (v NullableDisputeReason) Get() *DisputeReason {
 	return v.value
 }
 
-func (v *NullableWatchSessionState) Set(val *WatchSessionState) {
+func (v *NullableDisputeReason) Set(val *DisputeReason) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableWatchSessionState) IsSet() bool {
+func (v NullableDisputeReason) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableWatchSessionState) Unset() {
+func (v *NullableDisputeReason) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableWatchSessionState(val *WatchSessionState) *NullableWatchSessionState {
-	return &NullableWatchSessionState{value: val, isSet: true}
+func NewNullableDisputeReason(val *DisputeReason) *NullableDisputeReason {
+	return &NullableDisputeReason{value: val, isSet: true}
 }
 
-func (v NullableWatchSessionState) MarshalJSON() ([]byte, error) {
+func (v NullableDisputeReason) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableWatchSessionState) UnmarshalJSON(src []byte) error {
+func (v *NullableDisputeReason) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

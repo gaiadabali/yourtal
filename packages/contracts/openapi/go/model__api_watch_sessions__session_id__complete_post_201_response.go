@@ -12,15 +12,21 @@ package contracts
 
 import (
 	"encoding/json"
+	"time"
 	"fmt"
 )
 
 // checks if the ApiWatchSessionsSessionIdCompletePost201Response type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &ApiWatchSessionsSessionIdCompletePost201Response{}
 
-// ApiWatchSessionsSessionIdCompletePost201Response Always `{ completed: true }` on success — a refusal throws instead (see the 403 below).
+// ApiWatchSessionsSessionIdCompletePost201Response `completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).
 type ApiWatchSessionsSessionIdCompletePost201Response struct {
 	Completed interface{} `json:"completed"`
+	Granted bool `json:"granted"`
+	PendingPoints int32 `json:"pendingPoints"`
+	UnlockAt *time.Time `json:"unlockAt,omitempty"`
+	Reason *string `json:"reason,omitempty"`
+	DeliveryCoverage *string `json:"deliveryCoverage,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,9 +36,11 @@ type _ApiWatchSessionsSessionIdCompletePost201Response ApiWatchSessionsSessionId
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsSessionIdCompletePost201Response(completed interface{}) *ApiWatchSessionsSessionIdCompletePost201Response {
+func NewApiWatchSessionsSessionIdCompletePost201Response(completed interface{}, granted bool, pendingPoints int32) *ApiWatchSessionsSessionIdCompletePost201Response {
 	this := ApiWatchSessionsSessionIdCompletePost201Response{}
 	this.Completed = completed
+	this.Granted = granted
+	this.PendingPoints = pendingPoints
 	return &this
 }
 
@@ -70,6 +78,150 @@ func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetCompleted(v interf
 	o.Completed = v
 }
 
+// GetGranted returns the Granted field value
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetGranted() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.Granted
+}
+
+// GetGrantedOk returns a tuple with the Granted field value
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetGrantedOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Granted, true
+}
+
+// SetGranted sets field value
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetGranted(v bool) {
+	o.Granted = v
+}
+
+// GetPendingPoints returns the PendingPoints field value
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetPendingPoints() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.PendingPoints
+}
+
+// GetPendingPointsOk returns a tuple with the PendingPoints field value
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetPendingPointsOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.PendingPoints, true
+}
+
+// SetPendingPoints sets field value
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetPendingPoints(v int32) {
+	o.PendingPoints = v
+}
+
+// GetUnlockAt returns the UnlockAt field value if set, zero value otherwise.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetUnlockAt() time.Time {
+	if o == nil || IsNil(o.UnlockAt) {
+		var ret time.Time
+		return ret
+	}
+	return *o.UnlockAt
+}
+
+// GetUnlockAtOk returns a tuple with the UnlockAt field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetUnlockAtOk() (*time.Time, bool) {
+	if o == nil || IsNil(o.UnlockAt) {
+		return nil, false
+	}
+	return o.UnlockAt, true
+}
+
+// HasUnlockAt returns a boolean if a field has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) HasUnlockAt() bool {
+	if o != nil && !IsNil(o.UnlockAt) {
+		return true
+	}
+
+	return false
+}
+
+// SetUnlockAt gets a reference to the given time.Time and assigns it to the UnlockAt field.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetUnlockAt(v time.Time) {
+	o.UnlockAt = &v
+}
+
+// GetReason returns the Reason field value if set, zero value otherwise.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetReason() string {
+	if o == nil || IsNil(o.Reason) {
+		var ret string
+		return ret
+	}
+	return *o.Reason
+}
+
+// GetReasonOk returns a tuple with the Reason field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetReasonOk() (*string, bool) {
+	if o == nil || IsNil(o.Reason) {
+		return nil, false
+	}
+	return o.Reason, true
+}
+
+// HasReason returns a boolean if a field has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) HasReason() bool {
+	if o != nil && !IsNil(o.Reason) {
+		return true
+	}
+
+	return false
+}
+
+// SetReason gets a reference to the given string and assigns it to the Reason field.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetReason(v string) {
+	o.Reason = &v
+}
+
+// GetDeliveryCoverage returns the DeliveryCoverage field value if set, zero value otherwise.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetDeliveryCoverage() string {
+	if o == nil || IsNil(o.DeliveryCoverage) {
+		var ret string
+		return ret
+	}
+	return *o.DeliveryCoverage
+}
+
+// GetDeliveryCoverageOk returns a tuple with the DeliveryCoverage field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetDeliveryCoverageOk() (*string, bool) {
+	if o == nil || IsNil(o.DeliveryCoverage) {
+		return nil, false
+	}
+	return o.DeliveryCoverage, true
+}
+
+// HasDeliveryCoverage returns a boolean if a field has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) HasDeliveryCoverage() bool {
+	if o != nil && !IsNil(o.DeliveryCoverage) {
+		return true
+	}
+
+	return false
+}
+
+// SetDeliveryCoverage gets a reference to the given string and assigns it to the DeliveryCoverage field.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetDeliveryCoverage(v string) {
+	o.DeliveryCoverage = &v
+}
+
 func (o ApiWatchSessionsSessionIdCompletePost201Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -82,6 +234,17 @@ func (o ApiWatchSessionsSessionIdCompletePost201Response) ToMap() (map[string]in
 	toSerialize := map[string]interface{}{}
 	if o.Completed != nil {
 		toSerialize["completed"] = o.Completed
+	}
+	toSerialize["granted"] = o.Granted
+	toSerialize["pendingPoints"] = o.PendingPoints
+	if !IsNil(o.UnlockAt) {
+		toSerialize["unlockAt"] = o.UnlockAt
+	}
+	if !IsNil(o.Reason) {
+		toSerialize["reason"] = o.Reason
+	}
+	if !IsNil(o.DeliveryCoverage) {
+		toSerialize["deliveryCoverage"] = o.DeliveryCoverage
 	}
 
 	for key, value := range o.AdditionalProperties {
@@ -97,6 +260,8 @@ func (o *ApiWatchSessionsSessionIdCompletePost201Response) UnmarshalJSON(data []
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"completed",
+		"granted",
+		"pendingPoints",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -127,6 +292,11 @@ func (o *ApiWatchSessionsSessionIdCompletePost201Response) UnmarshalJSON(data []
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "completed")
+		delete(additionalProperties, "granted")
+		delete(additionalProperties, "pendingPoints")
+		delete(additionalProperties, "unlockAt")
+		delete(additionalProperties, "reason")
+		delete(additionalProperties, "deliveryCoverage")
 		o.AdditionalProperties = additionalProperties
 	}
 

@@ -109,6 +109,14 @@ jobs:
 
       # go build + go vet, in a container, so this needs no Go toolchain on
       # the runner and uses the same version as a developer running it locally.
+      # The script forces GOTOOLCHAIN=local, so the runner's own Go must meet
+      # the module's `go` line (1.27 since 2.4.c); the image's default did not.
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: packages/contracts/openapi/go/go.mod
+          cache: false
+
       - name: Build and vet the generated Go
         run: node openapi/generate-go.mjs --verify
         working-directory: packages/contracts

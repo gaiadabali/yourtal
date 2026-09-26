@@ -30,6 +30,12 @@ type WatchSession struct {
 	StartedAt time.Time `json:"startedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	LastProgressAt time.Time `json:"lastProgressAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	CompletedAt NullableTime `json:"completedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	NonEarning bool `json:"nonEarning"`
+	NonEarningReason NullableString `json:"nonEarningReason"`
+	HoldId NullableString `json:"holdId"`
+	Granted bool `json:"granted"`
+	QuestionsAsked int64 `json:"questionsAsked"`
+	QuestionsCorrect int64 `json:"questionsCorrect"`
 }
 
 type _WatchSession WatchSession
@@ -38,7 +44,7 @@ type _WatchSession WatchSession
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWatchSession(id string, userId string, campaignId string, termsVersion int64, state WatchSessionState, startedAt time.Time, lastProgressAt time.Time, completedAt NullableTime) *WatchSession {
+func NewWatchSession(id string, userId string, campaignId string, termsVersion int64, state WatchSessionState, startedAt time.Time, lastProgressAt time.Time, completedAt NullableTime, nonEarning bool, nonEarningReason NullableString, holdId NullableString, granted bool, questionsAsked int64, questionsCorrect int64) *WatchSession {
 	this := WatchSession{}
 	this.Id = id
 	this.UserId = userId
@@ -48,6 +54,12 @@ func NewWatchSession(id string, userId string, campaignId string, termsVersion i
 	this.StartedAt = startedAt
 	this.LastProgressAt = lastProgressAt
 	this.CompletedAt = completedAt
+	this.NonEarning = nonEarning
+	this.NonEarningReason = nonEarningReason
+	this.HoldId = holdId
+	this.Granted = granted
+	this.QuestionsAsked = questionsAsked
+	this.QuestionsCorrect = questionsCorrect
 	return &this
 }
 
@@ -253,6 +265,154 @@ func (o *WatchSession) SetCompletedAt(v time.Time) {
 	o.CompletedAt.Set(&v)
 }
 
+// GetNonEarning returns the NonEarning field value
+func (o *WatchSession) GetNonEarning() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.NonEarning
+}
+
+// GetNonEarningOk returns a tuple with the NonEarning field value
+// and a boolean to check if the value has been set.
+func (o *WatchSession) GetNonEarningOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.NonEarning, true
+}
+
+// SetNonEarning sets field value
+func (o *WatchSession) SetNonEarning(v bool) {
+	o.NonEarning = v
+}
+
+// GetNonEarningReason returns the NonEarningReason field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *WatchSession) GetNonEarningReason() string {
+	if o == nil || o.NonEarningReason.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.NonEarningReason.Get()
+}
+
+// GetNonEarningReasonOk returns a tuple with the NonEarningReason field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *WatchSession) GetNonEarningReasonOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.NonEarningReason.Get(), o.NonEarningReason.IsSet()
+}
+
+// SetNonEarningReason sets field value
+func (o *WatchSession) SetNonEarningReason(v string) {
+	o.NonEarningReason.Set(&v)
+}
+
+// GetHoldId returns the HoldId field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *WatchSession) GetHoldId() string {
+	if o == nil || o.HoldId.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.HoldId.Get()
+}
+
+// GetHoldIdOk returns a tuple with the HoldId field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *WatchSession) GetHoldIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.HoldId.Get(), o.HoldId.IsSet()
+}
+
+// SetHoldId sets field value
+func (o *WatchSession) SetHoldId(v string) {
+	o.HoldId.Set(&v)
+}
+
+// GetGranted returns the Granted field value
+func (o *WatchSession) GetGranted() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.Granted
+}
+
+// GetGrantedOk returns a tuple with the Granted field value
+// and a boolean to check if the value has been set.
+func (o *WatchSession) GetGrantedOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Granted, true
+}
+
+// SetGranted sets field value
+func (o *WatchSession) SetGranted(v bool) {
+	o.Granted = v
+}
+
+// GetQuestionsAsked returns the QuestionsAsked field value
+func (o *WatchSession) GetQuestionsAsked() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.QuestionsAsked
+}
+
+// GetQuestionsAskedOk returns a tuple with the QuestionsAsked field value
+// and a boolean to check if the value has been set.
+func (o *WatchSession) GetQuestionsAskedOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.QuestionsAsked, true
+}
+
+// SetQuestionsAsked sets field value
+func (o *WatchSession) SetQuestionsAsked(v int64) {
+	o.QuestionsAsked = v
+}
+
+// GetQuestionsCorrect returns the QuestionsCorrect field value
+func (o *WatchSession) GetQuestionsCorrect() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.QuestionsCorrect
+}
+
+// GetQuestionsCorrectOk returns a tuple with the QuestionsCorrect field value
+// and a boolean to check if the value has been set.
+func (o *WatchSession) GetQuestionsCorrectOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.QuestionsCorrect, true
+}
+
+// SetQuestionsCorrect sets field value
+func (o *WatchSession) SetQuestionsCorrect(v int64) {
+	o.QuestionsCorrect = v
+}
+
 func (o WatchSession) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -271,6 +431,12 @@ func (o WatchSession) ToMap() (map[string]interface{}, error) {
 	toSerialize["startedAt"] = o.StartedAt
 	toSerialize["lastProgressAt"] = o.LastProgressAt
 	toSerialize["completedAt"] = o.CompletedAt.Get()
+	toSerialize["nonEarning"] = o.NonEarning
+	toSerialize["nonEarningReason"] = o.NonEarningReason.Get()
+	toSerialize["holdId"] = o.HoldId.Get()
+	toSerialize["granted"] = o.Granted
+	toSerialize["questionsAsked"] = o.QuestionsAsked
+	toSerialize["questionsCorrect"] = o.QuestionsCorrect
 	return toSerialize, nil
 }
 
@@ -287,6 +453,12 @@ func (o *WatchSession) UnmarshalJSON(data []byte) (err error) {
 		"startedAt",
 		"lastProgressAt",
 		"completedAt",
+		"nonEarning",
+		"nonEarningReason",
+		"holdId",
+		"granted",
+		"questionsAsked",
+		"questionsCorrect",
 	}
 
 	allProperties := make(map[string]interface{})

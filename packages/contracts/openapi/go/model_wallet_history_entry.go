@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -24,12 +25,11 @@ type WalletHistoryEntry struct {
 	Id string `json:"id"`
 	Kind WalletHistoryEntryKind `json:"kind"`
 	OccurredAt time.Time `json:"occurredAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
-	Description string `json:"description"`
+	Description *string `json:"description,omitempty"`
 	// Platform points. Always a whole number; there is no fractional point.
 	Points int64 `json:"points"`
 	Direction string `json:"direction"`
 	RelatedId *string `json:"relatedId,omitempty"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _WalletHistoryEntry WalletHistoryEntry
@@ -38,12 +38,11 @@ type _WalletHistoryEntry WalletHistoryEntry
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWalletHistoryEntry(id string, kind WalletHistoryEntryKind, occurredAt time.Time, description string, points int64, direction string) *WalletHistoryEntry {
+func NewWalletHistoryEntry(id string, kind WalletHistoryEntryKind, occurredAt time.Time, points int64, direction string) *WalletHistoryEntry {
 	this := WalletHistoryEntry{}
 	this.Id = id
 	this.Kind = kind
 	this.OccurredAt = occurredAt
-	this.Description = description
 	this.Points = points
 	this.Direction = direction
 	return &this
@@ -129,28 +128,36 @@ func (o *WalletHistoryEntry) SetOccurredAt(v time.Time) {
 	o.OccurredAt = v
 }
 
-// GetDescription returns the Description field value
+// GetDescription returns the Description field value if set, zero value otherwise.
 func (o *WalletHistoryEntry) GetDescription() string {
-	if o == nil {
+	if o == nil || IsNil(o.Description) {
 		var ret string
 		return ret
 	}
-
-	return o.Description
+	return *o.Description
 }
 
-// GetDescriptionOk returns a tuple with the Description field value
+// GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *WalletHistoryEntry) GetDescriptionOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Description) {
 		return nil, false
 	}
-	return &o.Description, true
+	return o.Description, true
 }
 
-// SetDescription sets field value
+// HasDescription returns a boolean if a field has been set.
+func (o *WalletHistoryEntry) HasDescription() bool {
+	if o != nil && !IsNil(o.Description) {
+		return true
+	}
+
+	return false
+}
+
+// SetDescription gets a reference to the given string and assigns it to the Description field.
 func (o *WalletHistoryEntry) SetDescription(v string) {
-	o.Description = v
+	o.Description = &v
 }
 
 // GetPoints returns the Points field value
@@ -246,17 +253,14 @@ func (o WalletHistoryEntry) ToMap() (map[string]interface{}, error) {
 	toSerialize["id"] = o.Id
 	toSerialize["kind"] = o.Kind
 	toSerialize["occurredAt"] = o.OccurredAt
-	toSerialize["description"] = o.Description
+	if !IsNil(o.Description) {
+		toSerialize["description"] = o.Description
+	}
 	toSerialize["points"] = o.Points
 	toSerialize["direction"] = o.Direction
 	if !IsNil(o.RelatedId) {
 		toSerialize["relatedId"] = o.RelatedId
 	}
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -268,7 +272,6 @@ func (o *WalletHistoryEntry) UnmarshalJSON(data []byte) (err error) {
 		"id",
 		"kind",
 		"occurredAt",
-		"description",
 		"points",
 		"direction",
 	}
@@ -289,26 +292,15 @@ func (o *WalletHistoryEntry) UnmarshalJSON(data []byte) (err error) {
 
 	varWalletHistoryEntry := _WalletHistoryEntry{}
 
-	err = json.Unmarshal(data, &varWalletHistoryEntry)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varWalletHistoryEntry)
 
 	if err != nil {
 		return err
 	}
 
 	*o = WalletHistoryEntry(varWalletHistoryEntry)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "kind")
-		delete(additionalProperties, "occurredAt")
-		delete(additionalProperties, "description")
-		delete(additionalProperties, "points")
-		delete(additionalProperties, "direction")
-		delete(additionalProperties, "relatedId")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

@@ -18,10 +18,12 @@ import (
 // checks if the ApiWatchSessionsPost201Response type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &ApiWatchSessionsPost201Response{}
 
-// ApiWatchSessionsPost201Response The new session — superseding any previous active one for this user, since only one reward-bearing session per user is live at a time — plus the campaign's duration, so the client knows what full coverage means without a second call.
+// ApiWatchSessionsPost201Response The session — reactivated if one was already open for this exact (user, campaign, terms version) tuple, parking whatever else was active, otherwise freshly created (5.1.b) — plus the campaign's duration, `alreadyEarned` (true when this user has already been granted this campaign's reward and the session is a non-earning replay), and a per-session manifest URL (5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c).
 type ApiWatchSessionsPost201Response struct {
 	Session WatchSession `json:"session"`
 	DurationSeconds int32 `json:"durationSeconds"`
+	AlreadyEarned bool `json:"alreadyEarned"`
+	ManifestUrl string `json:"manifestUrl"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,10 +33,12 @@ type _ApiWatchSessionsPost201Response ApiWatchSessionsPost201Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsPost201Response(session WatchSession, durationSeconds int32) *ApiWatchSessionsPost201Response {
+func NewApiWatchSessionsPost201Response(session WatchSession, durationSeconds int32, alreadyEarned bool, manifestUrl string) *ApiWatchSessionsPost201Response {
 	this := ApiWatchSessionsPost201Response{}
 	this.Session = session
 	this.DurationSeconds = durationSeconds
+	this.AlreadyEarned = alreadyEarned
+	this.ManifestUrl = manifestUrl
 	return &this
 }
 
@@ -94,6 +98,54 @@ func (o *ApiWatchSessionsPost201Response) SetDurationSeconds(v int32) {
 	o.DurationSeconds = v
 }
 
+// GetAlreadyEarned returns the AlreadyEarned field value
+func (o *ApiWatchSessionsPost201Response) GetAlreadyEarned() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.AlreadyEarned
+}
+
+// GetAlreadyEarnedOk returns a tuple with the AlreadyEarned field value
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsPost201Response) GetAlreadyEarnedOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.AlreadyEarned, true
+}
+
+// SetAlreadyEarned sets field value
+func (o *ApiWatchSessionsPost201Response) SetAlreadyEarned(v bool) {
+	o.AlreadyEarned = v
+}
+
+// GetManifestUrl returns the ManifestUrl field value
+func (o *ApiWatchSessionsPost201Response) GetManifestUrl() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ManifestUrl
+}
+
+// GetManifestUrlOk returns a tuple with the ManifestUrl field value
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsPost201Response) GetManifestUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ManifestUrl, true
+}
+
+// SetManifestUrl sets field value
+func (o *ApiWatchSessionsPost201Response) SetManifestUrl(v string) {
+	o.ManifestUrl = v
+}
+
 func (o ApiWatchSessionsPost201Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -106,6 +158,8 @@ func (o ApiWatchSessionsPost201Response) ToMap() (map[string]interface{}, error)
 	toSerialize := map[string]interface{}{}
 	toSerialize["session"] = o.Session
 	toSerialize["durationSeconds"] = o.DurationSeconds
+	toSerialize["alreadyEarned"] = o.AlreadyEarned
+	toSerialize["manifestUrl"] = o.ManifestUrl
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -121,6 +175,8 @@ func (o *ApiWatchSessionsPost201Response) UnmarshalJSON(data []byte) (err error)
 	requiredProperties := []string{
 		"session",
 		"durationSeconds",
+		"alreadyEarned",
+		"manifestUrl",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -152,6 +208,8 @@ func (o *ApiWatchSessionsPost201Response) UnmarshalJSON(data []byte) (err error)
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "session")
 		delete(additionalProperties, "durationSeconds")
+		delete(additionalProperties, "alreadyEarned")
+		delete(additionalProperties, "manifestUrl")
 		o.AdditionalProperties = additionalProperties
 	}
 

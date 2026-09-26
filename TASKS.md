@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 17/30 | `██████░░░░`  57% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 54/57 | `██████████`  95% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 1/5 | 5/22 | `██░░░░░░░░`  23% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **32/84** | **200/382** | `█████░░░░░`  52% |
+| **All** | | | **32/84** | **201/382** | `█████░░░░░`  53% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -796,7 +796,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.6.e Tamper evidence: assert `version == max(seq)`, replay the remaining value (D6). Anchoring moved to 4.6.h.
   - [x] 4.6.f.1 The capture transaction writes a `capture_outbox` row (voucher.capture_outbox: capture_id, region, merchant_id, amount_minor, currency, posted_at), in the same transaction as the capture — both the merchant network's Capture and the internal captureAsDevice. `TestCaptureWritesAnOutboxRow` (internal/redeem).
   - [x] 4.6.f.2 (requested by B) Capture posting: the ledger's `/v1/captures` posts `ledger.Capture` into the merchant's payable, keyed on capture_id (replay returns the original; other terms `idempotency_conflict`; wrong currency or a merchant paid in the other region `region_mismatch`), in the contract, fake and HttpLedgerClient. The drainer runs in **services/voucher** (`internal/ledgerpost`), not apps/worker, because the outbox lives in the voucher schema: it posts signed as caller `voucher` (which reaches only its own routes) and marks a row posted only after a 2xx. `TestACaptureIsPostedOnceAndReplayed`, `TestTheOutboxIsPostedToTheLedgerOnceAndSurvivesItBeingDown`; `pnpm test:voucher-live` now runs a real ledger and checks every capture lands in `ledger.capture` · b70bd37
-  - [ ] 4.6.h Anchor each voucher's chain head in the ledger's daily proof (D6, F11): a worker job posts the day's heads to a ledger route, and the root covers them · needs: 4.1.b — 🔄 slot 1 (agent G)
+  - [x] 4.6.h Anchor each voucher's chain head in the ledger's daily proof (D6, F11): a worker job posts the day's heads to a ledger route, and the root covers them · needs: 4.1.b Merged 845af2b (agent G's work): the voucher service posts each chain head to `POST /v1/proof/voucher-heads` (caller `voucher` only) after it moves, and a day's root is pairHash(ledger_root, voucher_heads_root), unchanged for days with no anchors; a rewritten head at an anchored seq is refused and pages.
   - [ ] 4.6.g **Check:** — ⛔ only D16 is left, and it waits for the web counter (8.2.b deletes the unsigned device cookie and the client-side voucher catalogue). Audited 2026-09-26 on main 8c29713, voucher and ledger Go suites green: races → `TestConcurrentAuthorizesPlaceOneHold`, `TestACaptureRacingAVoidEndsOneWay`, `TestARefundRacingAnAuthorizeKeepsTheValueExact`; D1 → `TestSqlcSchemaMatchesTheLiveDatabase`, `TestIssuanceCopiesCurrency`; D2 → `TestTheComposeKeygenBootsTheService` (new, cmd/voucher); D3 → `TestAVoucherVoidedWhileHeldCannotBeCaptured`, `TestTheDatabaseRefusesAnIllegalTransition`, `TestARefundCannotReviveAVoidedVoucher`; D4 → `TestAKilledBatchCannotBeRedeemed`, `TestAKilledMerchantCannotCaptureAHoldPlacedBefore`; D5 → `TestAMinimumSpendVoucherRedeemsAgainstABigEnoughOrder`, `TestAMinimumSpendVoucherRefusesASmallOrderTotal`; D6 → `TestDeletingTheLatestEventIsDetected`, `TestRaisingTheValueOnTheVoucherRowIsDetected` (anchoring is 4.6.h); D7 → `TestAReplayWithADifferentVoucherOrAmountIsADuplicateOrder`; D8 → `TestCompletionIsRecordedAfterTheClientHangsUp`, `TestARefundRefIsAppliedOnce`; D9 → `TestTheKeyAndQueryAreSigned`, `TestAReplayedSignedRequestIsRefused`; D10 → `TestAnAUDVoucherRedeemsInAustralia` (new), `TestCurrencyMismatchDoesNotThrottle`; D11 → `TestABurnDoesNotFlatterCoverage` (services/ledger/internal/pricing); D12 → `TestRequestBatchRefusesAWrongSupplier`, `TestRequestBatchDerivesTermsFromTheListingNotTheCaller`; D13 → `TestHonestRefusalsDoNotThrottleATill`; D14 → `TestALostRaceIsARetryable409`; D15 → `TestSweepingAStaleHoldReturnsTheVoucherToActive`; D17 refuted.
     - goroutine concurrency tests on one voucher (authorize×authorize, capture×void, refund×authorize) pass;
     - every scenario from D1 to D16 has a test;
@@ -1306,7 +1306,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **Design taste stalls the reskin** | The founder judges motion captures, not screenshots. Token names are fixed, so a later change of mind only swaps values. |
 | **Farming on an open staging site** | Money there is simulated. 5.1, 4.4.d, 10.4 and signed segments close the known exploits. Staff logins are never published. |
 | **F32** | When to run the upgrades that touch every session: TypeScript 6, pnpm 12, Postgres 18 (2.4.a/f/d) | **All three now, everywhere**, one at a time. Other sessions rebase and reinstall after each; every slot database is dumped and restored for Postgres 18, and Helios moves too. |
-| **F33** | 4.9.e: running the ledger contract spec against staging writes test campaigns, listings, grants, burns and escrows into staging | **Run it on staging**, once, through an SSH tunnel; the test rows stay alongside staging's demo data. |
+| **F33** | 4.9.e: running the ledger contract spec against staging writes test campaigns, listings, grants, burns and escrows into staging | **Run it on staging**, once, through an SSH tunnel; the test rows stay alongside staging's demo data. For the staging run the spec creates its own named test campaign under a test business, so no seeded demo campaign is published. |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

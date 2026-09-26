@@ -1,84 +1,78 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { cn } from "@yourtal/ui/cn";
-import { ME_INTEREST_OPTIONS } from "./me-interest-option";
-import { getMeTranslator, type SupportedLocale } from "./me-i18n";
+import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { Section } from "@yourtal/ui/section";
+import { ChoiceCard } from "@yourtal/ui/choice-card";
+import { Text } from "@yourtal/ui/text";
+import { ME_INTEREST_CATEGORIES } from "./me-interest-catalogue";
+import { updateInterestsAction } from "./me-actions";
+import { useMeActionStatus } from "./use-me-action-status";
 
 export interface MeInterestsSectionProps {
-  locale: SupportedLocale;
-  selectedIds: readonly string[];
-  onToggle: (id: string) => void;
+  initialNodeIds: readonly string[];
 }
 
 /**
- * The interests editor (YT-0433: "interests connect to the onboarding
- * picker — same vocabulary, and changes must be reversible"). Same
- * toggle-button-group pattern as `features/onboarding/interest-picker.tsx`
- * (`aria-pressed`, fully keyboard-operable via Tab/Enter/Space), and the
- * exact same catalogue (`me-interest-option.ts`, lockstep-tested against
- * onboarding's). Every tile stays clickable in both directions — selecting
- * and deselecting are the same one-click gesture, nothing is ever locked in.
+ * `PUT /api/me/interests` (5.4.a), saved on every toggle — matches
+ * `interests.controller.ts`'s own "replaces one set with another; retrying
+ * the same body ends in the same state" idempotency, so a rapid double
+ * click never corrupts the set (later write always wins, never merges).
+ * Categories come from the real taxonomy (`me-interest-catalogue.ts`), not
+ * a hand-duplicated list, so nothing offered here can ever be rejected by
+ * `isKnownInterestNode`.
  */
-export function MeInterestsSection({ locale, selectedIds, onToggle }: MeInterestsSectionProps) {
-  const t = getMeTranslator(locale);
+export function MeInterestsSection({ initialNodeIds }: MeInterestsSectionProps) {
+  const t = useTranslations("me.interests");
+  const [selected, setSelected] = useState<readonly string[]>(initialNodeIds);
+  const { status, run } = useMeActionStatus();
+
+  function toggle(id: string) {
+    const next = selected.includes(id)
+      ? selected.filter((existing) => existing !== id)
+      : [...selected, id];
+    setSelected(next);
+    run(
+      () => updateInterestsAction(next),
+      (data) => setSelected(data.nodeIds),
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle as="h2">{t("interests.heading")}</CardTitle>
-        <p className="text-sm font-sans text-fg-muted">{t("interests.intro")}</p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div
-          className="grid grid-cols-3 gap-2 sm:grid-cols-4"
-          role="group"
-          aria-label={t("interests.heading")}
-        >
-          {ME_INTEREST_OPTIONS.map((option) => {
-            const isSelected = selectedIds.includes(option.id);
-            const Icon = option.icon;
-            const label = locale === "id-ID" ? option.labelId : option.labelEn;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => onToggle(option.id)}
-                className={cn(
-                  "flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border p-2 text-center transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isSelected
-                    ? "border-primary ring-2 ring-ring"
-                    : "border-border hover:border-border-strong",
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full",
-                    TINT_CLASSES[option.tint],
-                  )}
-                >
-                  <Icon aria-hidden="true" className="h-4 w-4" />
-                </span>
-                <span className="text-xs font-sans font-medium leading-tight text-fg">{label}</span>
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-xs font-sans text-fg-muted" aria-live="polite">
-          {selectedIds.length} {t("interests.selectedSuffix")} · {t("interests.savedHint")}
-        </p>
-      </CardContent>
-    </Card>
+    <Section title={t("heading")} description={t("intro")}>
+      <div
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+        role="group"
+        aria-label={t("heading")}
+      >
+        {ME_INTEREST_CATEGORIES.map((category) => {
+          const isSelected = selected.includes(category.id);
+          const Icon = category.icon;
+          const label = t.has(`categories.${category.id}`)
+            ? t(`categories.${category.id}`)
+            : category.fallbackLabel;
+          return (
+            <ChoiceCard
+              key={category.id}
+              type="checkbox"
+              name="interest"
+              value={category.id}
+              checked={isSelected}
+              onChange={() => toggle(category.id)}
+              title={label}
+              media={<Icon aria-hidden="true" className="h-6 w-6" />}
+            />
+          );
+        })}
+      </div>
+      <Text size="body-sm" tone="muted" role="status" aria-live="polite">
+        {selected.length} {t("selectedSuffix")}
+      </Text>
+      {status.kind === "error" ? (
+        <Text size="body-sm" tone="danger" role="alert">
+          {status.message}
+        </Text>
+      ) : null}
+    </Section>
   );
 }
-
-/** Full literal class strings — Tailwind's build-time scanner needs them verbatim in source. See `interest-picker.tsx`'s identical comment. */
-const TINT_CLASSES: Record<(typeof ME_INTEREST_OPTIONS)[number]["tint"], string> = {
-  primary: "bg-primary/10 text-primary",
-  reward: "bg-reward/10 text-reward",
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  price: "bg-price/10 text-price",
-};

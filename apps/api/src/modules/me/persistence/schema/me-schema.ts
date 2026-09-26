@@ -72,3 +72,10 @@ export const notificationPreferences = mePgSchema.table("notification_preference
   category: text("category").notNull(),
   pushEnabled: boolean("push_enabled").notNull(),
 });
+
+/** 6.7.a: the viewer's own display settings. One row per user; absent means "use the region default". */
+export const viewerSettings = mePgSchema.table("viewer_setting", {
+  userId: text("user_id").primaryKey(),
+  autoplay: text("autoplay").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

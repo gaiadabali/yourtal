@@ -1,42 +1,115 @@
-import { getRegionDisplayConfig } from "@/features/region/get-region";
-import { getMeTranslator } from "@/features/me/me-i18n";
-import { MeSettingsClient } from "@/features/me/me-settings-client";
+import { getTranslations } from "next-intl/server";
+import { PageContainer } from "@yourtal/ui/page-container";
+import { PageHeader } from "@yourtal/ui/page-header";
+import { Button } from "@yourtal/ui/button";
+import {
+  getAutoplaySetting,
+  getMeProfile,
+  getNotificationPreferences,
+  listConsents,
+  listFollows,
+  listInterests,
+} from "@/features/me/me-data";
+import { logoutAction } from "@/lib/api/actions";
+import { MeProfileSection } from "@/features/me/me-profile-section";
 import { MeLanguageSection } from "@/features/me/me-language-section";
+import { MeAutoplaySection } from "@/features/me/me-autoplay-section";
+import { MeInterestsSection } from "@/features/me/me-interests-section";
+import { MeFollowsSection } from "@/features/me/me-follows-section";
+import { MeConsentSection } from "@/features/me/me-consent-section";
 import { MeSecuritySection } from "@/features/me/me-security-section";
-import { MeReferralsSection } from "@/features/me/me-referrals-section";
+import { MeNotificationsSection } from "@/features/me/me-notifications-section";
+import { MeLinkedAppsSection } from "@/features/me/me-linked-apps-section";
+import { MeDataExportSection } from "@/features/me/me-data-export-section";
 import { MeDeleteAccountSection } from "@/features/me/me-delete-account-section";
+import { MeSectionError } from "@/features/me/me-section-states";
 
 /**
- * The Me tab (YT-0433, replacing YT-0402's placeholder — docs/17-surfaces-and-roles.md
- * §1.1: "profile, declared interests, per-purpose consent toggles that
- * actually work, security (passkey), language, referrals").
+ * `/me` (TASKS.md 6.7.a), replacing the Phase U placeholder wholesale — see
+ * this ticket's report for why nothing of the old file survives. A Server
+ * Component per docs/13b section 8: every read below is a real `apiFetch`
+ * round trip run in parallel (`apiFetch` never throws — a failed call is
+ * an `ApiResult.error`, not a rejection — so a plain `Promise.all` is
+ * enough), and each section gets its OWN `ApiResult` rather than one
+ * `Promise.all().catch()` for the whole page, so one dead endpoint
+ * degrades only its own section (`MeSectionError`) instead of blanking
+ * every other control on the page.
  *
- * A Server Component, per docs/13b-typescript-standards.md §8 ("`page.tsx`
- * stays a Server Component; toggles are `\"use client\"` leaves"): it only
- * resolves the ambient region/locale and passes it down. Every interactive
- * piece is its own client leaf (`MeSettingsClient` for consent + interests,
- * which must share live state; `MeSecuritySection`, `MeReferralsSection` and
- * `MeDeleteAccountSection` independently, since none of them need to react
- * to each other). `MeLanguageSection` stays a Server Component entirely —
- * see its own docstring for why Language is read-only in this build rather
- * than a switcher.
+ * Password change, delete-account and log out do not depend on any of
+ * these reads, so they render unconditionally.
  */
 export default async function MePage() {
-  const { locale, currency, countryName } = await getRegionDisplayConfig();
-  const t = getMeTranslator(locale);
+  const t = await getTranslations("me");
+  const [profile, consents, interests, follows, notificationPreferences, autoplay] =
+    await Promise.all([
+      getMeProfile(),
+      listConsents(),
+      listInterests(),
+      listFollows(),
+      getNotificationPreferences(),
+      getAutoplaySetting(),
+    ]);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-sans font-semibold text-fg">{t("page.heading")}</h1>
-        <p className="text-sm font-sans text-fg-muted">{t("page.intro")}</p>
-      </header>
+    <PageContainer width="narrow">
+      <div className="flex flex-col gap-8 py-6">
+        <PageHeader
+          title={t("page.heading")}
+          description={t("page.intro")}
+          actions={
+            <form action={logoutAction}>
+              <Button type="submit" variant="secondary">
+                {t("logout.cta")}
+              </Button>
+            </form>
+          }
+        />
 
-      <MeSettingsClient locale={locale} />
-      <MeLanguageSection locale={locale} countryName={countryName} currency={currency} />
-      <MeSecuritySection locale={locale} />
-      <MeReferralsSection locale={locale} />
-      <MeDeleteAccountSection locale={locale} />
-    </div>
+        {profile.ok ? (
+          <>
+            <MeProfileSection profile={profile.data.profile} />
+            <MeLanguageSection displayLocale={profile.data.profile.displayLocale} />
+          </>
+        ) : (
+          <MeSectionError title={t("profile.heading")} error={profile.error} />
+        )}
+
+        {autoplay.ok ? (
+          <MeAutoplaySection initialAutoplay={autoplay.data.autoplay} />
+        ) : (
+          <MeSectionError title={t("autoplay.heading")} error={autoplay.error} />
+        )}
+
+        {interests.ok ? (
+          <MeInterestsSection initialNodeIds={interests.data.nodeIds} />
+        ) : (
+          <MeSectionError title={t("interests.heading")} error={interests.error} />
+        )}
+
+        {follows.ok ? (
+          <MeFollowsSection initialFollows={follows.data.follows} />
+        ) : (
+          <MeSectionError title={t("follows.heading")} error={follows.error} />
+        )}
+
+        {consents.ok ? (
+          <MeConsentSection initialConsents={consents.data.consents} />
+        ) : (
+          <MeSectionError title={t("consent.heading")} error={consents.error} />
+        )}
+
+        <MeSecuritySection />
+
+        {notificationPreferences.ok ? (
+          <MeNotificationsSection initialPreferences={notificationPreferences.data.preferences} />
+        ) : (
+          <MeSectionError title={t("notifications.heading")} error={notificationPreferences.error} />
+        )}
+
+        <MeLinkedAppsSection />
+        <MeDataExportSection />
+        <MeDeleteAccountSection />
+      </div>
+    </PageContainer>
   );
 }

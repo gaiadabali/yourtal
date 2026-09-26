@@ -39,6 +39,12 @@ import {
   FOLLOWABLE_BUSINESS_READER,
   DrizzleFollowableBusinessReader,
 } from "./persistence/followable-business.reader";
+import {
+  VIEWER_SETTING_REPOSITORY,
+  DrizzleViewerSettingRepository,
+  AUTOPLAY_SETTING_READER,
+  DrizzleAutoplaySettingReader,
+} from "./persistence/viewer-setting.repository";
 import { ConsentController } from "./consent.controller";
 import { InterestsController } from "./interests.controller";
 import { FollowsController } from "./follows.controller";
@@ -48,6 +54,7 @@ import { StreakController } from "./streak.controller";
 import { NotificationsController } from "./notifications.controller";
 import { AccountController } from "./account.controller";
 import { LinkedAppsController } from "./linked-apps.controller";
+import { SettingsController } from "./settings.controller";
 import { StreakService } from "./streak.service";
 
 export const ME_DB = Symbol("ME_DB");
@@ -72,6 +79,7 @@ export const ME_DB = Symbol("ME_DB");
     NotificationsController,
     AccountController,
     LinkedAppsController,
+    SettingsController,
   ],
   providers: [
     {
@@ -137,12 +145,26 @@ export const ME_DB = Symbol("ME_DB");
       useFactory: (db: AppDb) => new DrizzleFollowableBusinessReader(db),
       inject: [ME_DB],
     },
+    {
+      provide: VIEWER_SETTING_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleViewerSettingRepository(db),
+      inject: [ME_DB],
+    },
+    {
+      provide: AUTOPLAY_SETTING_READER,
+      useFactory: (repository: DrizzleViewerSettingRepository) =>
+        new DrizzleAutoplaySettingReader(repository),
+      inject: [VIEWER_SETTING_REPOSITORY],
+    },
     StreakService,
   ],
   // `StreakService` is exported for `WatchCompletionHookModule` (5.5.d) —
   // the neutral module `WatchModule` will import instead of providing
   // `NoopWatchCompletionHook` locally (see that module's own header).
-  exports: [StreakService],
+  // `AUTOPLAY_SETTING_READER` is exported for 6.3's feed module to inject
+  // once it exists (TASKS.md 6.7.a: "a small reader the feed can use") —
+  // nothing imports MeModule for either export yet.
+  exports: [StreakService, AUTOPLAY_SETTING_READER],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class MeModule {}

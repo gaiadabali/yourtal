@@ -1,47 +1,47 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { getMeTranslator, type SupportedLocale } from "./me-i18n";
+import { getTranslations } from "next-intl/server";
+import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
+import { Section } from "@yourtal/ui/section";
+import { NativeSelect } from "@yourtal/ui/native-select";
+import { Button } from "@yourtal/ui/button";
+import { updateMeAction } from "@/lib/api/actions";
 
 export interface MeLanguageSectionProps {
-  locale: SupportedLocale;
-  countryName: string;
-  currency: "AUD" | "IDR";
+  displayLocale: DisplayLocale;
 }
 
 /**
- * Language & region — read-only by design, not a stopgap. This ticket
- * cannot touch `app/(app)/layout.tsx` or add an independent locale field to
- * any contract, but even given the room, a working switcher here would
- * contradict `features/onboarding/region-picker.tsx`'s own sign-up copy:
- * "Your region sets your currency, language and consumer protections...
- * this can't be changed later." Region and locale are a 1:1 pair in
- * `@yourtal/contracts/region`'s `REGION_CONFIG` — there is no independent
- * "display language" field to flip without a schema change, which this
- * ticket's brief says to flag rather than build around.
- *
- * **Flag for the architect:** if product wants a Duolingo-style "read the
- * app in English while my region/currency/consumer protections stay
- * Indonesian" (or vice versa), that needs a new field decoupling display
- * locale from region — not a Me-screen change.
- *
- * A Server Component, not a `"use client"` leaf: it only reads and renders
- * ambient values, so it costs this route's client bundle nothing.
+ * 6.1.b's Me half: display language, independent of region. Submits
+ * straight to Area A's `updateMeAction` (`PATCH /api/me` +
+ * `yt_locale` cookie, `lib/api/actions.ts` — not edited here, only
+ * imported), the same zero-client-JS `<form action={...}>` shape
+ * `commitRegionAction` already uses. A full page reload is the right
+ * outcome here, not a shortcoming: every server-rendered string on the
+ * page depends on the locale the request resolved, so the whole tree has
+ * to re-render under the new one regardless of mechanism.
  */
-export function MeLanguageSection({ locale, countryName, currency }: MeLanguageSectionProps) {
-  const t = getMeTranslator(locale);
+export async function MeLanguageSection({ displayLocale }: MeLanguageSectionProps) {
+  const t = await getTranslations("me.language");
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle as="h2">{t("language.heading")}</CardTitle>
-        <p className="text-sm font-sans text-fg-muted">{t("language.intro")}</p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        <p className="text-sm font-sans text-fg">
-          <span className="font-medium">{t("language.currentLabel")}: </span>
-          {locale === "id-ID" ? "Bahasa Indonesia" : "English"} · {countryName} · {currency}
-        </p>
-        <p className="text-xs font-sans text-fg-muted">{t("language.fixedNote")}</p>
-      </CardContent>
-    </Card>
+    <Section title={t("heading")} description={t("intro")}>
+      <form action={updateMeAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        {/* A hidden field carries no user-facing copy or interaction for a
+            primitive to wrap — same as commit-region-action.ts's own form. */}
+        {/* eslint-disable-next-line yt-b/prefer-primitives */}
+        <input type="hidden" name="returnTo" value="/me" />
+        <div className="flex-1">
+          <NativeSelect
+            label={t("heading")}
+            hideLabel
+            name="displayLocale"
+            defaultValue={displayLocale}
+          >
+            <option value="en-AU">{t("labelEnAU")}</option>
+            <option value="id-ID">{t("labelIdID")}</option>
+          </NativeSelect>
+        </div>
+        <Button type="submit">{t("saveCta")}</Button>
+      </form>
+    </Section>
   );
 }

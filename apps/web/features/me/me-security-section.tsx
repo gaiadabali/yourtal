@@ -1,74 +1,73 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@yourtal/ui/badge";
+import type { SubmitEvent } from "react";
+import { useTranslations } from "next-intl";
+import { Section } from "@yourtal/ui/section";
+import { Input } from "@yourtal/ui/input";
 import { Button } from "@yourtal/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { readPasskeyEnrolled, writePasskeyEnrolled } from "./me-security-store";
-import { getMeTranslator, type SupportedLocale } from "./me-i18n";
-
-export interface MeSecuritySectionProps {
-  locale: SupportedLocale;
-}
+import { Notice } from "@yourtal/ui/notice";
+import { changePasswordAction } from "./me-actions";
+import { useMeActionStatus } from "./use-me-action-status";
 
 /**
- * Security — copy is deliberately blunt about what each control does and
- * does not prove (docs/23-critique.md §1.0: passkeys were measured at $0 to
- * fake at scale, phone OTP at cents per account; neither is described here
- * as making an account "secure"). The passkey control is explicitly labelled
- * a prototype: it only flips a `localStorage` label
- * (`me-security-store.ts`) since no WebAuthn/backend exists in this ticket's
- * scope, and the OTP row states plainly that no verified phone number is
- * persisted anywhere for this screen to display — it is not lying by
- * inventing one.
+ * `POST /api/auth/password/change`, real (auth.controller.ts). On success
+ * every other session for this account is revoked server-side — this
+ * widget doesn't surface that beyond the success message, since there is
+ * no "other sessions" list on Me yet (`GET /api/me/sessions` is watch
+ * sessions, "continue watching", not auth sessions — see
+ * `sessions.controller.ts`'s own doc comment).
  */
-export function MeSecuritySection({ locale }: MeSecuritySectionProps) {
-  const t = getMeTranslator(locale);
-  const [enrolled, setEnrolled] = useState(() => readPasskeyEnrolled());
+export function MeSecuritySection() {
+  const t = useTranslations("me.security");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const { status, run } = useMeActionStatus();
 
-  function toggleEnrolled() {
-    const next = !enrolled;
-    setEnrolled(next);
-    writePasskeyEnrolled(next);
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    run(() => changePasswordAction(currentPassword, newPassword), () => {
+      setCurrentPassword("");
+      setNewPassword("");
+    });
   }
 
+  const errorMessage =
+    status.kind === "error"
+      ? status.code === "invalid_credentials"
+        ? t("incorrectCurrentPassword")
+        : status.message
+      : undefined;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle as="h2">{t("security.heading")}</CardTitle>
-        <p className="text-sm font-sans text-fg-muted">{t("security.intro")}</p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <p className="text-sm font-sans font-semibold text-fg">{t("security.otpTitle")}</p>
-          <p className="mt-1 text-sm font-sans text-fg-muted">{t("security.otpBody")}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-sans font-semibold text-fg">
-                {t("security.passkeyTitle")}
-              </p>
-              <p className="mt-1 text-sm font-sans text-fg-muted">{t("security.passkeyBody")}</p>
-            </div>
-            <Badge variant={enrolled ? "success" : "secondary"}>
-              {enrolled
-                ? t("security.passkeyEnrolledLabel")
-                : t("security.passkeyNotEnrolledLabel")}
-            </Badge>
-          </div>
-          <Button
-            type="button"
-            variant={enrolled ? "outline" : "secondary"}
-            size="sm"
-            className="mt-3"
-            onClick={toggleEnrolled}
-          >
-            {enrolled ? t("security.removeCta") : t("security.enrollCta")}
-          </Button>
-          <p className="mt-2 text-xs font-sans text-fg-subtle">{t("security.prototypeNote")}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <Section title={t("heading")} description={t("intro")}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <Input
+          label={t("currentPasswordLabel")}
+          type="password"
+          autoComplete="current-password"
+          required
+          value={currentPassword}
+          onChange={(event) => setCurrentPassword(event.target.value)}
+        />
+        <Input
+          label={t("newPasswordLabel")}
+          type="password"
+          autoComplete="new-password"
+          minLength={12}
+          required
+          helpText={t("weakPassword")}
+          {...(errorMessage ? { errorMessage } : {})}
+          value={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
+        />
+        <Button type="submit" disabled={status.kind === "pending"} className="self-start">
+          {t("saveCta")}
+        </Button>
+        {status.kind === "success" ? (
+          <Notice tone="success">{t("successMessage")}</Notice>
+        ) : null}
+      </form>
+    </Section>
   );
 }

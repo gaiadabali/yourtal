@@ -225,6 +225,8 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "DELETE /api/me": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "GET /api/me/data-export": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "POST /api/me/linked-apps/code": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "GET /api/me/settings/autoplay": "MeModule -- TASKS.md 6.7.a, this pass's own ticket.",
+  "PUT /api/me/settings/autoplay": "MeModule -- TASKS.md 6.7.a, this pass's own ticket.",
 };
 
 describe("apps/api route inventory vs route-registry.{a,b,c}.ts", () => {

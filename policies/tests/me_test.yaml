@@ -28,6 +28,8 @@ tests:
           delete_account,
           export_data,
           create_link_code,
+          view_settings,
+          update_settings,
         ]
     expected:
       - principal: wina
@@ -49,6 +51,8 @@ tests:
             delete_account: EFFECT_ALLOW,
             export_data: EFFECT_ALLOW,
             create_link_code: EFFECT_ALLOW,
+            view_settings: EFFECT_ALLOW,
+            update_settings: EFFECT_ALLOW,
           }
       - principal: budi_owner
         resource: me_self
@@ -69,6 +73,8 @@ tests:
             delete_account: EFFECT_ALLOW,
             export_data: EFFECT_ALLOW,
             create_link_code: EFFECT_ALLOW,
+            view_settings: EFFECT_ALLOW,
+            update_settings: EFFECT_ALLOW,
           }
       - principal: support_sari
         resource: me_self
@@ -89,6 +95,8 @@ tests:
             delete_account: EFFECT_ALLOW,
             export_data: EFFECT_ALLOW,
             create_link_code: EFFECT_ALLOW,
+            view_settings: EFFECT_ALLOW,
+            update_settings: EFFECT_ALLOW,
           }
 
   - name: anonymous has no me surface to manage

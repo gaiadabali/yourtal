@@ -182,6 +182,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   // --- voucher-internal: merchant stats ---
   merchantCaptureStatsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   merchantCaptureStatsSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- me (TASKS.md 6.7.a) ---
+  autoplaySettingSchema:
+    "MeModule -- TASKS.md 6.7.a, this pass's own ticket. GET/PUT /api/me/settings/autoplay is in route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger (same convention as every other MeModule route from 5.4/5.5) -- no packages/contracts/src/openapi route-registry entry exists for it to be published from.",
 };
 
 function exportedSchemaNames(): string[] {

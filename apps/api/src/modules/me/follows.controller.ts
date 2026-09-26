@@ -46,7 +46,26 @@ export class FollowsController {
   @Get()
   async list(@Req() request: FastifyRequest) {
     const userId = (await this.principals.resolve(request)).id;
-    return { follows: await this.follows.listForUser(userId) };
+    const followed = await this.follows.listForUser(userId);
+    const summaries = await this.businesses.summariesByIds(
+      followed.map((entry) => entry.businessId),
+    );
+    const byId = new Map(summaries.map((summary) => [summary.id, summary]));
+    return {
+      follows: followed.map((entry) => {
+        const summary = byId.get(entry.businessId);
+        return {
+          businessId: entry.businessId,
+          region: entry.region,
+          // A follow can outlive the business row only in theory (nothing
+          // deletes business_accounts today) — a plain fallback name keeps
+          // the list renderable rather than throwing on a null summary.
+          displayName: summary?.displayName ?? "",
+          handle: summary?.handle ?? "",
+          logoUrl: summary?.logoUrl ?? null,
+        };
+      }),
+    };
   }
 
   @NotValueMoving("Following twice ends in the same followed state as following once.")

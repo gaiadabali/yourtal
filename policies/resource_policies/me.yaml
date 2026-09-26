@@ -46,6 +46,8 @@ resourcePolicy:
           delete_account,
           export_data,
           create_link_code,
+          view_settings,
+          update_settings,
         ]
       effect: EFFECT_ALLOW
       roles:
@@ -78,6 +80,8 @@ resourcePolicy:
           delete_account,
           export_data,
           create_link_code,
+          view_settings,
+          update_settings,
         ]
       effect: EFFECT_DENY
       roles: ["anonymous"]

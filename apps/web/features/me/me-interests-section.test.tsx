@@ -2,38 +2,39 @@ import "@testing-library/jest-dom/vitest";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
+import enAU from "@/messages/en-AU/me.json";
 import { MeInterestsSection } from "./me-interests-section";
+import { updateInterestsAction } from "./me-actions";
+
+vi.mock("./me-actions", () => ({ updateInterestsAction: vi.fn() }));
+
+function renderWithIntl(ui: React.ReactElement) {
+  return render(
+    <NextIntlClientProvider locale="en-AU" messages={{ me: enAU }}>
+      {ui}
+    </NextIntlClientProvider>,
+  );
+}
 
 describe("MeInterestsSection", () => {
-  it("renders every catalogue option as a pressable, keyboard-operable toggle", () => {
-    render(<MeInterestsSection locale="en-AU" selectedIds={["travel"]} onToggle={vi.fn()} />);
-    const travel = screen.getByRole("button", { name: "Travel" });
-    expect(travel).toHaveAttribute("aria-pressed", "true");
-    const food = screen.getByRole("button", { name: "Food & drink" });
-    expect(food).toHaveAttribute("aria-pressed", "false");
+  it("renders every real taxonomy root category and reflects the initial selection", () => {
+    renderWithIntl(<MeInterestsSection initialNodeIds={["travel"]} />);
+    expect(screen.getByRole("checkbox", { name: "Travel" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Food and drink" })).not.toBeChecked();
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
   });
 
-  it("selecting and deselecting are the same one-click gesture — both call onToggle with the id", async () => {
+  it("toggling calls updateInterestsAction with the full next set", async () => {
+    vi.mocked(updateInterestsAction).mockResolvedValue({
+      ok: true,
+      data: { nodeIds: ["travel", "fashion"] },
+    });
     const user = userEvent.setup();
-    const onToggle = vi.fn();
-    render(<MeInterestsSection locale="en-AU" selectedIds={["travel"]} onToggle={onToggle} />);
+    renderWithIntl(<MeInterestsSection initialNodeIds={["travel"]} />);
 
-    await user.click(screen.getByRole("button", { name: "Travel" }));
-    expect(onToggle).toHaveBeenCalledWith("travel");
+    await user.click(screen.getByRole("checkbox", { name: "Fashion" }));
 
-    await user.click(screen.getByRole("button", { name: "Food & drink" }));
-    expect(onToggle).toHaveBeenCalledWith("food");
-  });
-
-  it("shows the id-ID label set for id-ID", () => {
-    render(<MeInterestsSection locale="id-ID" selectedIds={[]} onToggle={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Traveling" })).toBeInTheDocument();
-  });
-
-  it("announces the selected count", () => {
-    render(
-      <MeInterestsSection locale="en-AU" selectedIds={["travel", "food"]} onToggle={vi.fn()} />,
-    );
-    expect(screen.getByText(/2 selected/)).toBeInTheDocument();
+    expect(updateInterestsAction).toHaveBeenCalledWith(["travel", "fashion"]);
   });
 });

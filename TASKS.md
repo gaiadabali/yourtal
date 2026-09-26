@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 14/29 | `█████░░░░░`  48% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 52/57 | `█████████░`  91% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 53/57 | `█████████░`  93% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 5/21 | `██░░░░░░░░`  24% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **30/84** | **195/380** | `█████░░░░░`  51% |
+| **All** | | | **30/84** | **196/380** | `█████░░░░░`  52% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -794,7 +794,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - put `Idempotency-Key` and the query string in the HMAC canonical string, and remember nonces (D9).
   - [x] 4.6.e Tamper evidence: assert `version == max(seq)`, replay the remaining value (D6). Anchoring moved to 4.6.h.
   - [x] 4.6.f.1 The capture transaction writes a `capture_outbox` row (voucher.capture_outbox: capture_id, region, merchant_id, amount_minor, currency, posted_at), in the same transaction as the capture — both the merchant network's Capture and the internal captureAsDevice. `TestCaptureWritesAnOutboxRow` (internal/redeem).
-  - [ ] 4.6.f.2 (requested by B, for agent A) The worker job that reads unposted `capture_outbox` rows and posts them to the ledger with idempotency key = capture_id has nothing to call yet: the ledger-internal contract has no capture-posting operation (nothing near `ledger.Capture` in chart.go is exposed over `/v1`). Please add one (contract + Go route + HttpLedgerClient); the worker job (`apps/worker/src/jobs/*.ts`) is a small follow-up once it exists — 🔄 slot 1 (agent G)
+  - [x] 4.6.f.2 (requested by B) Capture posting: the ledger's `/v1/captures` posts `ledger.Capture` into the merchant's payable, keyed on capture_id (replay returns the original; other terms `idempotency_conflict`; wrong currency or a merchant paid in the other region `region_mismatch`), in the contract, fake and HttpLedgerClient. The drainer runs in **services/voucher** (`internal/ledgerpost`), not apps/worker, because the outbox lives in the voucher schema: it posts signed as caller `voucher` (which reaches only its own routes) and marks a row posted only after a 2xx. `TestACaptureIsPostedOnceAndReplayed`, `TestTheOutboxIsPostedToTheLedgerOnceAndSurvivesItBeingDown`; `pnpm test:voucher-live` now runs a real ledger and checks every capture lands in `ledger.capture` · b70bd37
   - [ ] 4.6.h Anchor each voucher's chain head in the ledger's daily proof (D6, F11): a worker job posts the day's heads to a ledger route, and the root covers them · needs: 4.1.b — 🔄 slot 1 (agent G)
   - [ ] 4.6.g **Check:** — ⛔ only D16 is left, and it waits for the web counter (8.2.b deletes the unsigned device cookie and the client-side voucher catalogue). Audited 2026-09-26 on main 8c29713, voucher and ledger Go suites green: races → `TestConcurrentAuthorizesPlaceOneHold`, `TestACaptureRacingAVoidEndsOneWay`, `TestARefundRacingAnAuthorizeKeepsTheValueExact`; D1 → `TestSqlcSchemaMatchesTheLiveDatabase`, `TestIssuanceCopiesCurrency`; D2 → `TestTheComposeKeygenBootsTheService` (new, cmd/voucher); D3 → `TestAVoucherVoidedWhileHeldCannotBeCaptured`, `TestTheDatabaseRefusesAnIllegalTransition`, `TestARefundCannotReviveAVoidedVoucher`; D4 → `TestAKilledBatchCannotBeRedeemed`, `TestAKilledMerchantCannotCaptureAHoldPlacedBefore`; D5 → `TestAMinimumSpendVoucherRedeemsAgainstABigEnoughOrder`, `TestAMinimumSpendVoucherRefusesASmallOrderTotal`; D6 → `TestDeletingTheLatestEventIsDetected`, `TestRaisingTheValueOnTheVoucherRowIsDetected` (anchoring is 4.6.h); D7 → `TestAReplayWithADifferentVoucherOrAmountIsADuplicateOrder`; D8 → `TestCompletionIsRecordedAfterTheClientHangsUp`, `TestARefundRefIsAppliedOnce`; D9 → `TestTheKeyAndQueryAreSigned`, `TestAReplayedSignedRequestIsRefused`; D10 → `TestAnAUDVoucherRedeemsInAustralia` (new), `TestCurrencyMismatchDoesNotThrottle`; D11 → `TestABurnDoesNotFlatterCoverage` (services/ledger/internal/pricing); D12 → `TestRequestBatchRefusesAWrongSupplier`, `TestRequestBatchDerivesTermsFromTheListingNotTheCaller`; D13 → `TestHonestRefusalsDoNotThrottleATill`; D14 → `TestALostRaceIsARetryable409`; D15 → `TestSweepingAStaleHoldReturnsTheVoucherToActive`; D17 refuted.
     - goroutine concurrency tests on one voucher (authorize×authorize, capture×void, refund×authorize) pass;

@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 6/7 | 43/44 | `██████████`  98% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 0/26 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 5/9 | 47/55 | `█████████░`  85% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **25/82** | **169/370** | `█████░░░░░`  46% |
+| **All** | | | **25/82** | **169/371** | `█████░░░░░`  46% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -553,6 +553,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - `/opt/yourtal/secrets/app.env` (mode 0600), never in the artifact;
     - generate the voucher keyring once into `/opt/yourtal/secrets/keyring`, mounted read-only;
     - after migrating, the deploy sets the `yourtal_app`, `yourtal_ledger`, `yourtal_voucher` and `yourtal_analyst` role passwords from `app.env` (`ALTER ROLE … PASSWORD`), because the repo is public (F6) and the migrations hard-code local passwords.
+  - [ ] 2.1.f (requested by Phase 4, for 4.9.e) `app.env` also carries `LEDGER_MODE=live`, `LEDGER_SERVICE_SECRET`, `VOUCHER_SERVICE_SECRET` and `REWARD_ATTESTATION_SECRET` (each ≥ 32 random bytes, the same value on both ends of each call), and the ledger and voucher containers get their secrets from the same file.
   - [ ] 2.1.e **Check:**
     - on Helios, `curl 127.0.0.1:<api>/api/health` returns 200;
     - ledger and voucher `/healthz` return 200;
@@ -827,7 +828,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - [x] No API response carries it: `packages/contracts/src/money/no-backing-rate-in-api.test.ts` scans every published path and schema (e3f1d8e).
     - [x] The bundle test fails if any client chunk contains `micros_per_point`, `issuePriceMicros` or `backingMicros`: `pnpm check:bundle-b`, run by perf-budget.yml after the build (e3f1d8e).
     - [x] `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove, plus the contract mocks 13.5.c deletes: `eslint-rules/no-mock-backing-rate.mjs` (e3f1d8e).
-  - [ ] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live.
+  - [ ] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live. — ⛔ staging does not exist until 2.1 (slot 4); asked there as 2.1.f
   - [ ] 4.9.f **Check:**
     - after an AU purchase of 1,000 pts that is fully granted, coverage = 1.50 and a streak grant succeeds;
     - burn → capture → before payout, coverage is unchanged to one minor unit;

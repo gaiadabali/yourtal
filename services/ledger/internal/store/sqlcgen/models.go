@@ -128,6 +128,25 @@ type LedgerEntry struct {
 	CreatedAt   pgtype.Timestamptz
 }
 
+type LedgerEscrow struct {
+	ID              string
+	IdempotencyKey  string
+	UserID          string
+	Region          string
+	Points          int64
+	AvailablePoints int64
+	PendingPoints   int64
+	Reason          string
+	TransferID      string
+	CreatedAt       pgtype.Timestamptz
+}
+
+type LedgerEscrowRelease struct {
+	EscrowID   string
+	TransferID string
+	CreatedAt  pgtype.Timestamptz
+}
+
 type LedgerGrant struct {
 	ID             string
 	UserID         string

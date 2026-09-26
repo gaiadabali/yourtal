@@ -21,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/burn"
+	"github.com/yourtal/services/ledger/internal/escrow"
 	"github.com/yourtal/services/ledger/internal/httpx"
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
@@ -36,6 +37,7 @@ type API struct {
 	pricing *pricing.Engine
 	rewards map[ledger.Region]*reward.Engine
 	burns   *burn.Engine
+	escrows *escrow.Engine
 }
 
 // New wires the engines. attestationSecret verifies apps/api's completion
@@ -44,6 +46,7 @@ func New(logger *slog.Logger, pool *pgxpool.Pool, attestationSecret []byte) *API
 	book := ledger.New(pool)
 	return &API{
 		logger: logger, pool: pool, ledger: book, pricing: pricing.New(pool), burns: burn.New(pool, book),
+		escrows: escrow.New(pool, book),
 		rewards: map[ledger.Region]*reward.Engine{
 			ledger.RegionAU: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionAU).WithAttestationSecret(attestationSecret),
 			ledger.RegionID: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionID).WithAttestationSecret(attestationSecret),
@@ -79,6 +82,8 @@ func (a *API) Routes() chi.Router {
 	r.Post("/releases/notified", a.releasesNotified)
 
 	r.Post("/wallet/balance", a.balance)
+	r.Post("/escrow", a.escrow)
+	r.Post("/escrow/release", a.releaseEscrow)
 	r.Post("/wallet/history", a.history)
 
 	r.Post("/economy/coverage", a.coverage)
@@ -87,10 +92,9 @@ func (a *API) Routes() chi.Router {
 	r.Post("/economy/rates/approve", a.approveRate)
 	r.Post("/economy/marketing/fund", a.fundMarketing)
 
-	// Not the ledger's yet: escrow waits for its task, statements and
-	// payouts for 10.1. Settings are
+	// Not the ledger's yet: statements and payouts wait for 10.1. Settings are
 	// apps/api's own store (1.2.f); the ledger only reads them.
-	for _, path := range []string{"/escrow", "/escrow/release", "/economy/statements",
+	for _, path := range []string{"/economy/statements",
 		"/economy/payouts/approve", "/settings/list", "/settings/propose", "/settings/approve"} {
 		r.Post(path, a.notImplemented)
 	}
@@ -166,7 +170,8 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 	}
 	switch {
 	case errors.Is(err, pricing.ErrQuoteNotFound), errors.Is(err, burn.ErrNotFound),
-		errors.Is(err, burn.ErrListingNotPriced), errors.Is(err, errNotFound):
+		errors.Is(err, burn.ErrListingNotPriced), errors.Is(err, escrow.ErrNotFound),
+		errors.Is(err, errNotFound):
 		httpx.WriteError(w, a.logger, http.StatusNotFound, "invalid_request_error", "not_found", err.Error())
 	case errors.Is(err, pricing.ErrNotAPack), errors.Is(err, pricing.ErrNoRateInForce),
 		errors.Is(err, pricing.ErrMarginTooThin), errors.Is(err, pricing.ErrSameApprover),
@@ -174,7 +179,7 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 		errors.Is(err, reward.ErrUnderpriced), errors.Is(err, reward.ErrWrongFunder),
 		errors.Is(err, reward.ErrUnknownAction), errors.Is(err, reward.ErrAttestation),
 		errors.Is(err, reward.ErrCampaignNotLive), errors.Is(err, reward.ErrPointsMismatch),
-		errors.Is(err, errBadRequest):
+		errors.Is(err, escrow.ErrInvalid), errors.Is(err, errBadRequest):
 		httpx.WriteError(w, a.logger, http.StatusBadRequest, "invalid_request_error", "refused", err.Error())
 	default:
 		a.logger.Error("ledger request failed", "error", err)

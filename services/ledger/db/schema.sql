@@ -177,6 +177,25 @@ CREATE TABLE ledger.release_notice (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE ledger.escrow (
+  id               text        PRIMARY KEY,
+  idempotency_key  text        NOT NULL UNIQUE,
+  user_id          text        NOT NULL,
+  region           text        NOT NULL,
+  points           bigint      NOT NULL,
+  available_points bigint      NOT NULL,
+  pending_points   bigint      NOT NULL,
+  reason           text        NOT NULL,
+  transfer_id      text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  created_at       timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ledger.escrow_release (
+  escrow_id   text        PRIMARY KEY REFERENCES ledger.escrow (id),
+  transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE ledger.quote (
   id               uuid        PRIMARY KEY,
   region           text        NOT NULL,

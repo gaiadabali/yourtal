@@ -413,6 +413,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Holdback releases (4.4.g), ledger-internal. The wallet's pending buckets are the public view, computed by the ledger, not a row mirror.",
   "ledger.release_notice":
     "Which holdback releases the worker has announced as ledger.points_unlocked (4.4.g). ledger-internal's releaseSchema is built from ledger.grant_release, not a row mirror of this table.",
+  "ledger.escrow":
+    "Escrow holds (9.4.b, 20260926015000_ledger_escrow.sql), ledger-internal. ledger-internal's escrowSchema is built by the ledger route and leaves out the available/pending split, so it is not a row mirror. Same ledger-internals note as ledger.account above.",
+  "ledger.escrow_release":
+    "The exactly-once release of an escrow (same migration). escrowSchema's state is derived from it. Same ledger-internals note as ledger.account above.",
   "ledger.quote":
     "Stored quotes (4.1.b), ledger-internal. ledger-internal's quoteSchema is what callers see, built by the ledger route, not a row mirror.",
   "ledger.quote_lock": "Same as ledger.quote: an append-only lock record for a stored quote.",

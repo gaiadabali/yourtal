@@ -272,7 +272,7 @@ func TestRatesAndMarketingNeedTwoPeople(t *testing.T) {
 		"proposedBy": "alice", "approvedBy": "alice"}, &p); code != http.StatusConflict || p.Code != "already_granted" {
 		t.Errorf("one-person marketing funding answered %d %s, want 409 already_granted", code, p.Code)
 	}
-	if code := s.call("/escrow", map[string]any{}, nil); code != http.StatusNotImplemented {
-		t.Errorf("escrow answered %d, want 501 until its task", code)
+	if code := s.call("/economy/statements", map[string]any{}, nil); code != http.StatusNotImplemented {
+		t.Errorf("statements answered %d, want 501 until 10.1", code)
 	}
 }

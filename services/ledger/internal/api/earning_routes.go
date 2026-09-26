@@ -180,6 +180,12 @@ func (a *API) balance(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, err)
 		return
 	}
+	pendingBalance, err := a.ledger.Balance(r.Context(), ledger.UserAccountID(body.UserID, ledger.PurposePending))
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+	buckets = withoutEscrowed(buckets, pendingBalance)
 	pending := make([]map[string]any, 0, len(buckets))
 	for _, b := range buckets {
 		pending = append(pending, map[string]any{"points": b.Points, "unlockAt": iso(b.UnlockAt.Time)})

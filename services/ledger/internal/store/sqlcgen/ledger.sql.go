@@ -1301,6 +1301,11 @@ SELECT g.id, g.user_id, g.points
 FROM ledger.grant g
 LEFT JOIN ledger.grant_release r ON r.grant_id = g.id
 WHERE g.unlock_at IS NOT NULL AND g.unlock_at <= now() AND r.grant_id IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM ledger.escrow e
+    LEFT JOIN ledger.escrow_release er ON er.escrow_id = e.id
+    WHERE e.user_id = g.user_id AND er.escrow_id IS NULL
+  )
 ORDER BY g.unlock_at
 LIMIT $1
 `
@@ -1311,7 +1316,8 @@ type ListUnlockedGrantsRow struct {
 	Points int64
 }
 
-// 4.4.g: grants whose holdback has passed and that are not yet released.
+// 4.4.g: grants whose holdback has passed and that are not yet released,
+// skipping users with a held escrow: their pending stays pending until then.
 func (q *Queries) ListUnlockedGrants(ctx context.Context, limit int32) ([]ListUnlockedGrantsRow, error) {
 	rows, err := q.db.Query(ctx, listUnlockedGrants, limit)
 	if err != nil {

@@ -2,6 +2,7 @@ package reward
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -34,9 +35,9 @@ func (e *Engine) releaseInTx(ctx context.Context, tx pgx.Tx, q *sqlcgen.Queries,
 
 // ReleaseDue releases up to limit grants whose holdback has passed, each in
 // its own transaction, and reports how many. The ledger runs it on its loop.
-// A grant whose user's points are frozen (escrow) cannot be released: the
-// pending balance it would draw from is in escrow, and the transfer is
-// refused as an overdraft, so it stays due until the escrow ends.
+// A user with a held escrow is skipped (4.4.g): their pending stays pending,
+// with its unlock times, until the escrow is released. The list query skips
+// them, and the transaction re-checks so an escrow that lands in between wins.
 func ReleaseDue(ctx context.Context, pool ledgerPool, book *ledger.Ledger, limit int32) (int, error) {
 	due, err := sqlcgen.New(pool).ListUnlockedGrants(ctx, limit)
 	if err != nil {
@@ -46,7 +47,15 @@ func ReleaseDue(ctx context.Context, pool ledgerPool, book *ledger.Ledger, limit
 	engine := &Engine{ledger: book}
 	for _, grant := range due {
 		err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-			return engine.releaseInTx(ctx, tx, sqlcgen.New(tx), grant.ID, grant.UserID, grant.Points)
+			q := sqlcgen.New(tx)
+			held, err := q.UserHasHeldEscrow(ctx, grant.UserID)
+			if err != nil {
+				return err
+			}
+			if held {
+				return errEscrowHeld
+			}
+			return engine.releaseInTx(ctx, tx, q, grant.ID, grant.UserID, grant.Points)
 		})
 		if err != nil {
 			continue // left due; the next run retries it
@@ -55,6 +64,9 @@ func ReleaseDue(ctx context.Context, pool ledgerPool, book *ledger.Ledger, limit
 	}
 	return released, nil
 }
+
+// errEscrowHeld leaves a grant due while its user's escrow is held.
+var errEscrowHeld = errors.New("reward: the user's points are in escrow")
 
 // ledgerPool is the part of *pgxpool.Pool ReleaseDue needs.
 type ledgerPool interface {

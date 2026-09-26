@@ -7,6 +7,8 @@ export const escrowRequestSchema = z.object({
   userId: z.uuid(),
   points: pointsSchema,
   reason: z.string().min(1),
+  /** A retry with the same key answers the original escrow. */
+  idempotencyKey: z.string().min(1).optional(),
 });
 export type EscrowRequest = z.infer<typeof escrowRequestSchema>;
 

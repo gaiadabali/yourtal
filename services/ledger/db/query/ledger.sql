@@ -238,11 +238,17 @@ SELECT id, user_id, action_type, points, campaign_id, region, created_at, unlock
 FROM ledger.grant WHERE user_id = $1 AND action_type = $2 AND external_ref = $3;
 
 -- name: ListUnlockedGrants :many
--- 4.4.g: grants whose holdback has passed and that are not yet released.
+-- 4.4.g: grants whose holdback has passed and that are not yet released,
+-- skipping users with a held escrow: their pending stays pending until then.
 SELECT g.id, g.user_id, g.points
 FROM ledger.grant g
 LEFT JOIN ledger.grant_release r ON r.grant_id = g.id
 WHERE g.unlock_at IS NOT NULL AND g.unlock_at <= now() AND r.grant_id IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM ledger.escrow e
+    LEFT JOIN ledger.escrow_release er ON er.escrow_id = e.id
+    WHERE e.user_id = g.user_id AND er.escrow_id IS NULL
+  )
 ORDER BY g.unlock_at
 LIMIT $1;
 

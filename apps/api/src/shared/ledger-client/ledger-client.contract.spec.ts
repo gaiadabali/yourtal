@@ -25,9 +25,6 @@ const client: LedgerInternalClient =
         db,
       );
 
-/** An operation whose ledger task has not landed yet: `it.todo` against live (4.1.d). */
-const itUnlessLive = liveUrl === undefined ? it : it.todo;
-
 // Marketing-funded grants (streak, receipt, goodwill) are backed by marketing
 // cash at issue (K6), so the region has some before any test grants one.
 beforeAll(async () => {
@@ -433,35 +430,44 @@ describe("earning and spending", () => {
 });
 
 describe("users", () => {
-  itUnlessLive(
-    "escrow holds points out of available, and releaseEscrow gives them back",
-    async () => {
-      const userId = randomUUID();
-      expect(
-        (
-          await client.grantAction({
-            kind: "goodwill",
-            userId,
-            region: "ID",
-            points: toPoints(100),
-            trustTier: 3,
-            idempotencyKey: randomUUID(),
-          })
-        ).isOk(),
-      ).toBe(true);
-
-      const escrowed = await client.escrow({
+  it("escrow takes available then pending, replays by key, and releaseEscrow gives both back", async () => {
+    const userId = randomUUID();
+    for (const trustTier of [3, 0] as const) {
+      const granted = await client.grantAction({
+        kind: "goodwill",
         userId,
-        points: toPoints(40),
-        reason: "dispute hold",
+        region: "ID",
+        points: toPoints(trustTier === 3 ? 100 : 50),
+        trustTier,
+        idempotencyKey: randomUUID(),
       });
-      expect(escrowed._unsafeUnwrap().state).toBe("held");
-      expect((await client.balance(userId))._unsafeUnwrap().availablePoints).toBe(60);
+      expect(granted.isOk()).toBe(true);
+    }
+    const pendingOf = async () =>
+      (await client.balance(userId))
+        ._unsafeUnwrap()
+        .pending.reduce((sum, bucket) => sum + bucket.points, 0);
 
-      expect((await client.releaseEscrow(escrowed._unsafeUnwrap().escrowId)).isOk()).toBe(true);
-      expect((await client.balance(userId))._unsafeUnwrap().availablePoints).toBe(100);
-    },
-  );
+    const request = {
+      userId,
+      points: toPoints(120),
+      reason: "dispute hold",
+      idempotencyKey: randomUUID(),
+    };
+    const escrowed = (await client.escrow(request))._unsafeUnwrap();
+    expect(escrowed.state).toBe("held");
+    expect((await client.escrow(request))._unsafeUnwrap().escrowId).toBe(escrowed.escrowId);
+    expect((await client.balance(userId))._unsafeUnwrap().availablePoints).toBe(0);
+    expect(await pendingOf()).toBe(30);
+
+    const beyond = await client.escrow({ userId, points: toPoints(31), reason: "dispute hold" });
+    expect(beyond._unsafeUnwrapErr().code).toBe("insufficient_available");
+
+    const released = await client.releaseEscrow(escrowed.escrowId);
+    expect(released._unsafeUnwrap().state).toBe("released");
+    expect((await client.balance(userId))._unsafeUnwrap().availablePoints).toBe(100);
+    expect(await pendingOf()).toBe(50);
+  });
 
   it("history lists grants and burns, newest first, paginated", async () => {
     const userId = randomUUID();

@@ -13,34 +13,73 @@ import type {
   LedgerHistoryEntry,
 } from "@yourtal/contracts/ledger-internal/wallet";
 import type { AppDb } from "../../persistence/drizzle-client";
-import { availablePoints } from "./fake-ledger-balance";
+import { availablePoints, pendingBuckets } from "./fake-ledger-balance";
 
 export function escrow(db: AppDb, request: EscrowRequest): ResultAsync<Escrow, LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<Escrow, LedgerError>> => {
+      // A replay answers the original, as the live ledger does.
+      const id =
+        request.idempotencyKey === undefined ? randomUUID() : `escrow_${request.idempotencyKey}`;
+      const prior = await readEscrow(db, id);
+      if (prior !== undefined) return replayed(prior, request);
+
+      // Available first, then pending (9.4.b).
       const available = await availablePoints(db, request.userId);
-      if (available < request.points) {
+      const pending = (await pendingBuckets(db, request.userId)).reduce(
+        (sum, bucket) => sum + bucket.points,
+        0,
+      );
+      const fromAvailable = Math.min(request.points, Math.max(available, 0));
+      const fromPending = request.points - fromAvailable;
+      if (fromPending > pending) {
         return err(
           ledgerError(
             "insufficient_available",
-            `user ${request.userId} has ${String(available)} available, needs ${String(request.points)}`,
+            `user ${request.userId} holds ${String(available + pending)}, needs ${String(request.points)}`,
           ),
         );
       }
-      const id = randomUUID();
       await db.execute(sql`
-        INSERT INTO platform.ledger_fake_escrow (id, user_id, points, reason)
-        VALUES (${id}, ${request.userId}, ${request.points}, ${request.reason})
+        INSERT INTO platform.ledger_fake_escrow (id, user_id, points, pending_points, reason)
+        VALUES (${id}, ${request.userId}, ${request.points}, ${fromPending}, ${request.reason})
+        ON CONFLICT (id) DO NOTHING
       `);
-      return ok({
-        escrowId: id,
-        userId: request.userId,
-        points: request.points,
-        reason: request.reason,
-        state: "held",
-      });
+      const row = await readEscrow(db, id);
+      if (row === undefined) throw new Error(`escrow ${id} was not recorded`);
+      return replayed(row, request);
     })(),
   );
+}
+
+async function readEscrow(db: AppDb, escrowId: string): Promise<EscrowRow | undefined> {
+  const result = await db.execute<EscrowRow>(sql`
+    SELECT id, user_id, points, reason, state FROM platform.ledger_fake_escrow WHERE id = ${escrowId}
+  `);
+  return result.rows[0];
+}
+
+function toEscrow(row: EscrowRow, state: Escrow["state"]): Escrow {
+  return {
+    escrowId: row.id,
+    userId: row.user_id,
+    points: toPoints(Number(row.points)),
+    reason: row.reason,
+    state,
+  };
+}
+
+function replayed(row: EscrowRow, request: EscrowRequest): Result<Escrow, LedgerError> {
+  if (
+    row.user_id !== request.userId ||
+    Number(row.points) !== request.points ||
+    row.reason !== request.reason
+  ) {
+    return err(
+      ledgerError("idempotency_conflict", `escrow ${row.id} was already made with other terms`),
+    );
+  }
+  return ok(toEscrow(row, row.state === "released" ? "released" : "held"));
 }
 
 type EscrowRow = {
@@ -54,23 +93,14 @@ type EscrowRow = {
 export function releaseEscrow(db: AppDb, escrowId: string): ResultAsync<Escrow, LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<Escrow, LedgerError>> => {
-      const result = await db.execute<EscrowRow>(sql`
-        SELECT id, user_id, points, reason, state FROM platform.ledger_fake_escrow WHERE id = ${escrowId}
-      `);
-      const row = result.rows[0];
+      const row = await readEscrow(db, escrowId);
       if (row === undefined) throw new Error(`no escrow ${escrowId} exists`);
       if (row.state === "held") {
         await db.execute(
           sql`UPDATE platform.ledger_fake_escrow SET state = 'released' WHERE id = ${escrowId}`,
         );
       }
-      return ok({
-        escrowId: row.id,
-        userId: row.user_id,
-        points: toPoints(Number(row.points)),
-        reason: row.reason,
-        state: "released",
-      });
+      return ok(toEscrow(row, "released"));
     })(),
   );
 }
@@ -79,17 +109,13 @@ export function balance(db: AppDb, userId: string): ResultAsync<LedgerBalance, L
   return new ResultAsync(
     (async (): Promise<Result<LedgerBalance, LedgerError>> => {
       const available = await availablePoints(db, userId);
-      const pendingRows = await db.execute<{ unlock_at: string; points: string }>(sql`
-        SELECT unlock_at, SUM(points) AS points FROM platform.ledger_fake_grant
-         WHERE user_id = ${userId} AND unlock_at > now() AND NOT reversed
-         GROUP BY unlock_at ORDER BY unlock_at
-      `);
+      const pending = await pendingBuckets(db, userId);
       return ok({
         userId,
         availablePoints: toPoints(available),
-        pending: pendingRows.rows.map((row) => ({
-          points: toPoints(Number(row.points)),
-          unlockAt: new Date(row.unlock_at).toISOString(),
+        pending: pending.map((bucket) => ({
+          points: toPoints(bucket.points),
+          unlockAt: bucket.unlockAt.toISOString(),
         })),
         // F18: points never expire by default, in either region.
         expiringPoints: toPoints(0),

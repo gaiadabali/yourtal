@@ -143,6 +143,8 @@ function key(route: { method: string; path: string }): string {
  * the same commit.
  */
 const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
+  "GET /api/internal/hls-auth":
+    "2.1.c: nginx's auth_request target for signed HLS URLs, blocked on the public vhost, so not a published contract.",
   "GET /api/dev/inbox":
     "1.6.b: a dev-only reader of simulated messages, 404 in production, so not a published contract.",
   "POST /api/watch/sessions/{sessionId}/checkpoints/{checkpointIndex}/token":

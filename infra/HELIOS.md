@@ -29,6 +29,9 @@ bin/ledger  bin/voucher     CGO-free linux/amd64
 migrations/ policies/       deploy/  REVISION
 ```
 
+Signed HLS: nginx has no `secure_link`, so each `/media/hls/` request is checked by
+the api (`auth_request` to `/api/internal/hls-auth`, `shared/media-auth`).
+
 `gaiada-poll` installs it through `gaiada-deploy`, which (patched 2026-09-26,
 `gaiada-setups/patches/pre-reload-hook.md`) runs `deploy/pre-reload.sh`
 **before** the swap: `atlas migrate apply`, `ALTER ROLE … PASSWORD` from

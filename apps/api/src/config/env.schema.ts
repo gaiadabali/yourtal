@@ -24,6 +24,11 @@ import { z } from "zod";
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(3001),
+  /**
+   * Signs per-session HLS URLs (2.1.c, 5.1.d). The default is local-only;
+   * `loadAppConfig` refuses it on staging.
+   */
+  HLS_SIGNING_SECRET: z.string().min(32).default("local-only-hls-signing-secret-not-real"),
   // Loopback by default: on Helios nginx is the only way in (infra/PORTS.md).
   HOST: z.string().min(1).default("127.0.0.1"),
 

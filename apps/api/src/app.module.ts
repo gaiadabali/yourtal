@@ -17,6 +17,7 @@ import { RESOURCE_ATTRIBUTE_LOADERS } from "./shared/authz/resource-attribute-lo
 import type { ResourceAttributeLoader } from "./shared/authz/resource-attribute-loader";
 import { CampaignViewAttributeLoader } from "./modules/watch/campaign-view-attribute-loader";
 import { HealthModule } from "./shared/health/health.module";
+import { MediaAuthModule } from "./shared/media-auth/media-auth.module";
 import { IdempotencyInterceptor } from "./shared/idempotency/idempotency.interceptor";
 import { IdempotencyModule } from "./shared/idempotency/idempotency.module";
 import { PdpClientModule } from "./shared/pdp/pdp-client.module";
@@ -35,6 +36,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     // so the refusal happens before modules that open pools.
     PersistenceModule,
     HealthModule,
+    MediaAuthModule,
     AuthModule,
     BusinessModule,
     CampaignModule,

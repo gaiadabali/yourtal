@@ -11,6 +11,8 @@ export interface AppConfig {
   readonly port: number;
   /** Optional so hand-built test configs need not name it; absent means loopback. */
   readonly host?: string;
+  /** Optional for hand-built test configs; absent means every HLS request is refused. */
+  readonly hlsSigningSecret?: string;
   readonly pdp: {
     readonly baseUrl: string;
     readonly timeoutMs: number;
@@ -50,11 +52,15 @@ export interface AppConfig {
  */
 export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
   const env = envSchema.parse(source);
+  if (env.APP_ENV === "staging" && env.HLS_SIGNING_SECRET.startsWith("local-only")) {
+    throw new Error("HLS_SIGNING_SECRET is the local-only default; set a real one for staging.");
+  }
 
   return {
     nodeEnv: env.NODE_ENV,
     port: env.PORT,
     host: env.HOST,
+    hlsSigningSecret: env.HLS_SIGNING_SECRET,
     pdp: {
       baseUrl: env.PDP_BASE_URL,
       timeoutMs: env.PDP_TIMEOUT_MS,

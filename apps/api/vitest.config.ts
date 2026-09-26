@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 /**
  * `apps/api`'s tests talk to the real Postgres and the real Cerbos from
@@ -10,6 +10,14 @@ export default defineConfig({
     // `voucher-client.contract.spec.ts`) — run against the fake today, against
     // the live services once 4.1/4.5 land.
     include: ["src/**/*.test.ts", "src/**/*.contract.spec.ts"],
+    // `*.live.test.ts` needs the live services and runs only through its own
+    // script (scripts/checkout-live.mjs sets CHECKOUT_LIVE=1). Left in the
+    // default run it only ever reports "skipped", which Integration rightly
+    // refuses to treat as a pass.
+    exclude:
+      process.env.CHECKOUT_LIVE === "1"
+        ? configDefaults.exclude
+        : [...configDefaults.exclude, "src/**/*.live.test.ts"],
     environment: "node",
     passWithNoTests: false,
     // YT-0571: refuses to run this suite against anything but a

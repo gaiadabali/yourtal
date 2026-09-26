@@ -12,6 +12,8 @@ import {
 } from "@yourtal/contracts/ledger-internal/service-signature";
 import { grantActionRequestSchema } from "@yourtal/contracts/ledger-internal/rewards";
 import type { GrantActionRequest } from "@yourtal/contracts/ledger-internal/rewards";
+import { ledgerErrorSchema } from "@yourtal/contracts/ledger-internal/ledger-error";
+import { seedLedger } from "./ledger";
 
 /**
  * TASKS.md 2.3.e — the minimal world a reviewer needs on a fresh staging
@@ -29,14 +31,38 @@ import type { GrantActionRequest } from "@yourtal/contracts/ledger-internal/rewa
  * Area A's (2.3), so it gets one file that crosses domains on purpose
  * rather than five small edits to five owners' files.
  *
- * ## Runs once, ever, per database
+ * ## Three independently idempotent steps, not one
  *
- * `identity.user_profile` having ANY row is "not empty" — this refuses to
- * run at all rather than trying to be idempotent column by column. A
- * database that already has a real account (or a previous run of this
- * seed) is left alone. That is also what makes a mid-run crash safe to
- * retry: nothing committed yet, so `identity.user_profile` is still empty,
- * and the next run starts clean.
+ * The first staging run left the tier-0 viewer with no pending grant
+ * (`plat_AU_marketing_cash` was unfunded — `insufficient_available`), and
+ * because the whole seed was ONE all-or-nothing gate on
+ * `identity.user_profile` being empty, the next deploy's pre-reload would
+ * have skipped everything, forever, with the world already seeded. So this
+ * is now three steps, each with its own idempotency, run in order every
+ * invocation:
+ *
+ *   1. `seedWorldIfEmpty` — businesses, campaigns, accounts. Still gated on
+ *      `identity.user_profile` having no rows: a database that already has
+ *      a real account (or a previous run's world) is left alone. Looks up
+ *      the demo viewer's `user_id` either way, because steps 2 and 3 need
+ *      it regardless of whether the world was just created or already
+ *      existed.
+ *   2. `ensureMarketingFunding` — reuses `seedLedger` (`seed/ledger.ts`)
+ *      as-is, unconditionally, every run. `seedLedger` is already
+ *      idempotent per region (a fixed funding id, checked before
+ *      inserting), so calling it again when already funded is a no-op;
+ *      this wrapper only adds before/after balance reads so the result can
+ *      report which happened.
+ *   3. `ensureTierZeroPendingGrant` — the real ledger call, every run, with
+ *      a fixed `idempotencyKey`. The reward engine's own replay rule
+ *      (`contractGrant`, `services/ledger/internal/reward/contract.go`)
+ *      returns the SAME grant, 200, on a repeat with the same key and
+ *      points — so a second deploy that finds the grant already there is
+ *      not an error, and a first deploy that finds it MISSING (because the
+ *      previous one failed, e.g. on unfunded cash) creates it. Failures
+ *      other than a replay are reported and (see `main-staging.ts`) fail
+ *      the deploy loudly rather than being swallowed as "the ledger must
+ *      be unreachable".
  *
  * ## Real credential hashing, not a shortcut
  *
@@ -59,22 +85,34 @@ import type { GrantActionRequest } from "@yourtal/contracts/ledger-internal/rewa
  * table the running app never reads in live mode, invisible to anyone.
  * The real ledger's `POST /v1/actions/grants` (`grantAction`,
  * `services/ledger/internal/api/earning_routes.go`) is reachable instead,
- * uses only state this same migration set already seeds unconditionally —
- * `holdback_hours_by_tier` is pre-approved for both regions
- * (`20260925193000_platform_region_setting.sql`) and the region's
- * marketing cash is funded by `seedLedger` (`seed/ledger.ts`) — and pays a
- * `goodwill` grant through the SAME business logic a real one would run,
- * rather than duplicating the reward engine's own posting rules in SQL
- * here. See `seedTierZeroPendingGrant` below for what happens when the
- * ledger is not reachable.
+ * uses only state step 2 above guarantees — `holdback_hours_by_tier` is
+ * pre-approved for both regions
+ * (`20260925193000_platform_region_setting.sql`) — and pays a `goodwill`
+ * grant through the SAME business logic a real one would run, rather than
+ * duplicating the reward engine's own posting rules in SQL here.
+ *
+ * `POST /economy/marketing/fund` (`services/ledger/internal/api/
+ * economy_routes.go`) exists too, and was considered for step 2 instead of
+ * reusing `seedLedger`'s SQL — it does not fit: the HTTP handler mints a
+ * fresh random transfer id on every call (`randomHex()`), so calling it
+ * twice funds the budget twice, rather than replaying. `seedLedger`'s own
+ * SQL path uses a FIXED id per region and checks for it first, which is
+ * the actual idempotency this step needs — reused as-is, not duplicated.
  */
 
 export interface StagingSeedResult {
-  readonly skipped: boolean;
+  readonly world: "seeded" | "already_present";
   readonly businesses: number;
   readonly campaigns: number;
   readonly accounts: number;
-  readonly pendingGrant: "granted" | "unreachable" | "skipped";
+  readonly marketingFunding: "funded" | "already_funded";
+  /** `"skipped"` only when the world has no demo viewer to grant to at all
+   * (identity.user_profile is non-empty from something other than this
+   * seed's own accounts) — not a ledger outcome, so not a failure either. */
+  readonly pendingGrant: "granted" | "already_present" | "failed" | "skipped";
+  /** Present only when `pendingGrant` is `"failed"` — the ledger's own
+   * error code (e.g. `insufficient_available`), or a network-error message. */
+  readonly pendingGrantDetail?: string;
 }
 
 export interface StagingLedgerConfig {
@@ -88,6 +126,9 @@ export interface SeedStagingOptions {
   readonly ledger: StagingLedgerConfig;
   /** Injectable for tests; defaults to `console`. */
   readonly log?: (message: string) => void;
+  /** Injectable for tests only — see `REPLAY_DETECTION_WINDOW_MS`'s own
+   * comment. Defaults to that constant; production never overrides it. */
+  readonly replayDetectionWindowMs?: number;
 }
 
 /**
@@ -427,79 +468,41 @@ async function insertCampaign(pool: pg.Pool, campaign: Campaign): Promise<void> 
   );
 }
 
-/**
- * The one real ledger call this seed makes (see this file's own header for
- * why it is real rather than the 1.2 fake). `kind: "goodwill"` because it
- * needs no evidence and no campaign — a plain marketing-funded credit, the
- * same shape a goodwill case would pay. `idempotencyKey` is fixed, so a
- * retry of this seed (were the emptiness guard ever bypassed) cannot double
- * -grant.
- *
- * If the ledger cannot be reached (not yet started, wrong URL/secret), this
- * logs a clear warning and returns rather than throwing — a staging
- * database that seeded businesses and accounts but not one pending grant is
- * still useful; one that seeded nothing because a sidecar was slow to start
- * is not.
- */
-async function seedTierZeroPendingGrant(
-  ledger: StagingLedgerConfig,
-  userId: string,
-  log: (message: string) => void,
-): Promise<"granted" | "unreachable"> {
-  const request: GrantActionRequest = grantActionRequestSchema.parse({
-    kind: "goodwill",
-    userId,
-    region: "AU",
-    points: toPoints(500),
-    trustTier: 0,
-    idempotencyKey: "staging-seed-tier0-viewer-pending-grant",
-  });
-  const path = "/v1/actions/grants";
-  const body = JSON.stringify(request);
-  try {
-    const response = await fetch(`${ledger.baseUrl}${path}`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        [SERVICE_SIGNATURE_HEADER]: signServiceRequest({
-          secret: ledger.serviceSecret,
-          caller: "api",
-          method: "POST",
-          pathAndQuery: path,
-          body,
-        }),
-      },
-      body,
-    });
-    if (!response.ok) {
-      log(
-        `[seed:staging] ledger ${path} answered ${String(response.status)}: ` +
-          `${await response.text()} — skipping the tier-0 pending grant.`,
-      );
-      return "unreachable";
-    }
-    return "granted";
-  } catch (error) {
-    log(
-      `[seed:staging] could not reach the ledger at ${ledger.baseUrl} (${String(error)}) — ` +
-        "skipping the tier-0 pending grant. Everything else this seed writes is unaffected.",
-    );
-    return "unreachable";
-  }
+interface WorldResult {
+  readonly status: "seeded" | "already_present";
+  readonly businesses: number;
+  readonly campaigns: number;
+  readonly accounts: number;
+  /** `null` only when `identity.user_profile` is non-empty from something
+   * other than this seed's own accounts (no `viewer.au@…` credential row
+   * to look up) — a world this seed did not create and should not touch
+   * further than it already has. */
+  readonly viewerUserId: string | null;
 }
 
-export async function seedStaging(
-  pool: pg.Pool,
-  options: SeedStagingOptions,
-): Promise<StagingSeedResult> {
-  const log = options.log ?? ((message: string) => console.log(message));
+async function lookupUserId(pool: pg.Pool, email: string): Promise<string | null> {
+  const result = await pool.query<{ user_id: string }>(
+    `SELECT user_id FROM identity.credential WHERE kind = 'password' AND identifier = $1`,
+    [normalizeEmail(email)],
+  );
+  return result.rows[0]?.user_id ?? null;
+}
 
+/** Step 1 — see this file's header. Gated on `identity.user_profile` being
+ * empty; looks up the viewer's `user_id` either way, since steps 2 and 3
+ * need it whether the world was just created or already existed. */
+async function seedWorldIfEmpty(
+  pool: pg.Pool,
+  demoPassword: string,
+  log: (message: string) => void,
+): Promise<WorldResult> {
   const existing = await pool.query<{ count: string }>(
     "SELECT count(*)::text AS count FROM identity.user_profile",
   );
   if (Number(existing.rows[0]?.count ?? "0") > 0) {
-    log("[seed:staging] identity.user_profile is not empty — skipping (already seeded).");
-    return { skipped: true, businesses: 0, campaigns: 0, accounts: 0, pendingGrant: "skipped" };
+    log("[seed:staging] identity.user_profile is not empty — the world is already seeded.");
+    const viewerUserId = await lookupUserId(pool, "viewer.au@demo.yourtal.test");
+    return { status: "already_present", businesses: 0, campaigns: 0, accounts: 0, viewerUserId };
   }
 
   const now = new Date();
@@ -539,7 +542,7 @@ export async function seedStaging(
 
   const userIdByEmail = new Map<string, string>();
   for (const spec of demoAccounts()) {
-    const userId = await registerDemoAccount(pool, options.demoPassword, spec);
+    const userId = await registerDemoAccount(pool, demoPassword, spec);
     userIdByEmail.set(spec.email, userId);
   }
   const idOf = (email: string): string => {
@@ -562,17 +565,178 @@ export async function seedStaging(
     );
   }
 
-  const pendingGrant = await seedTierZeroPendingGrant(
-    options.ledger,
-    idOf("viewer.au@demo.yourtal.test"),
-    log,
-  );
-
   return {
-    skipped: false,
+    status: "seeded",
     businesses: 2,
     campaigns: campaigns.length,
     accounts: userIdByEmail.size,
-    pendingGrant,
+    viewerUserId: idOf("viewer.au@demo.yourtal.test"),
+  };
+}
+
+/** The two accounts `seedLedger`'s own `fundMarketing` posts to — read here
+ * only to observe whether step 2 changed anything, never written directly
+ * (see this file's header for why the write itself is `seedLedger`'s, not
+ * reimplemented here). Same query `seed/ledger.test.ts` already uses. */
+async function marketingCashBalance(pool: pg.Pool, region: "AU" | "ID"): Promise<number> {
+  const { rows } = await pool.query<{ balance: string }>(
+    `SELECT (-COALESCE(SUM(amount_minor), 0))::text AS balance
+       FROM ledger.entry WHERE account_id = $1`,
+    [`plat_${region}_marketing_cash`],
+  );
+  return Number(rows[0]?.balance ?? "0");
+}
+
+/** Step 2 — see this file's header for why this reuses `seedLedger` rather
+ * than the ledger's own `/economy/marketing/fund` HTTP route or a raw SQL
+ * copy of its idempotency check. Runs every invocation; the before/after
+ * balance read is only for an honest status, never a gate. */
+async function ensureMarketingFunding(pool: pg.Pool): Promise<"funded" | "already_funded"> {
+  const before = await Promise.all([
+    marketingCashBalance(pool, "AU"),
+    marketingCashBalance(pool, "ID"),
+  ]);
+  await seedLedger(pool);
+  const after = await Promise.all([
+    marketingCashBalance(pool, "AU"),
+    marketingCashBalance(pool, "ID"),
+  ]);
+  return before[0] === after[0] && before[1] === after[1] ? "already_funded" : "funded";
+}
+
+interface GrantOutcome {
+  readonly status: "granted" | "already_present" | "failed";
+  readonly detail?: string;
+}
+
+/** A replayed grant (same idempotencyKey, same points) answers with the
+ * ORIGINAL `grantedAt`, not now — `contractGrant`'s own replay rule
+ * (`services/ledger/internal/reward/contract.go`) returns the stored row,
+ * it does not touch it. So a `grantedAt` more than this far in the past
+ * means "already there before this call", not "just created" — generous
+ * enough that ordinary request latency never crosses it, tight enough that
+ * no real gap between deploys ever could either. `SeedStagingOptions.
+ * replayDetectionWindowMs` overrides this for a test that cannot wait 30s
+ * between two calls to tell them apart; production never sets it. */
+const REPLAY_DETECTION_WINDOW_MS = 30_000;
+
+function tryParseJson(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Step 3 — the one real ledger call this seed makes (see this file's own
+ * header for why it is real rather than the 1.2 fake). `kind: "goodwill"`
+ * because it needs no evidence and no campaign — a plain marketing-funded
+ * credit, the same shape a goodwill case would pay. `idempotencyKey` is
+ * fixed, so every run asks the SAME question and the reward engine's own
+ * replay rule answers it consistently — see `REPLAY_DETECTION_WINDOW_MS`
+ * for how this tells "just created" apart from "already there" given the
+ * two look identical on the wire (both a 200 with the grant).
+ *
+ * Any other outcome — a non-2xx response, or the ledger not answering at
+ * all — is `"failed"`, reported with its code or error message and never
+ * swallowed: on staging the ledger is always up during pre-reload
+ * (`main-staging.ts`'s own header), so a failure here is real and the
+ * caller is expected to fail the deploy loudly over it, not tiptoe past a
+ * missing demo grant a second time.
+ */
+async function ensureTierZeroPendingGrant(
+  ledger: StagingLedgerConfig,
+  userId: string,
+  log: (message: string) => void,
+  replayDetectionWindowMs: number,
+): Promise<GrantOutcome> {
+  const request: GrantActionRequest = grantActionRequestSchema.parse({
+    kind: "goodwill",
+    userId,
+    region: "AU",
+    points: toPoints(500),
+    trustTier: 0,
+    idempotencyKey: "staging-seed-tier0-viewer-pending-grant",
+  });
+  const path = "/v1/actions/grants";
+  const body = JSON.stringify(request);
+
+  let response: Response;
+  try {
+    response = await fetch(`${ledger.baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [SERVICE_SIGNATURE_HEADER]: signServiceRequest({
+          secret: ledger.serviceSecret,
+          caller: "api",
+          method: "POST",
+          pathAndQuery: path,
+          body,
+        }),
+      },
+      body,
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    log(`[seed:staging] could not reach the ledger at ${ledger.baseUrl} (${detail}).`);
+    return { status: "failed", detail };
+  }
+
+  if (!response.ok) {
+    const raw = await response.text();
+    const parsed = ledgerErrorSchema.safeParse(tryParseJson(raw));
+    const detail = parsed.success ? parsed.data.code : `http_${String(response.status)}: ${raw}`;
+    log(`[seed:staging] ledger ${path} answered ${String(response.status)}: ${raw}`);
+    return { status: "failed", detail };
+  }
+
+  const grantView: unknown = await response.json();
+  const grantedAtRaw =
+    typeof grantView === "object" && grantView !== null && "grantedAt" in grantView
+      ? grantView.grantedAt
+      : undefined;
+  const grantedAtMs = typeof grantedAtRaw === "string" ? Date.parse(grantedAtRaw) : NaN;
+  const justCreated =
+    Number.isFinite(grantedAtMs) && Date.now() - grantedAtMs < replayDetectionWindowMs;
+  return { status: justCreated ? "granted" : "already_present" };
+}
+
+export async function seedStaging(
+  pool: pg.Pool,
+  options: SeedStagingOptions,
+): Promise<StagingSeedResult> {
+  const log = options.log ?? ((message: string) => console.log(message));
+
+  const world = await seedWorldIfEmpty(pool, options.demoPassword, log);
+  const marketingFunding = await ensureMarketingFunding(pool);
+
+  const base = {
+    world: world.status,
+    businesses: world.businesses,
+    campaigns: world.campaigns,
+    accounts: world.accounts,
+    marketingFunding,
+  } as const;
+
+  if (world.viewerUserId === null) {
+    log(
+      "[seed:staging] no viewer.au@demo.yourtal.test account exists (a non-empty " +
+        "identity.user_profile this seed did not create) — skipping the pending grant.",
+    );
+    return { ...base, pendingGrant: "skipped" };
+  }
+
+  const grant = await ensureTierZeroPendingGrant(
+    options.ledger,
+    world.viewerUserId,
+    log,
+    options.replayDetectionWindowMs ?? REPLAY_DETECTION_WINDOW_MS,
+  );
+  return {
+    ...base,
+    pendingGrant: grant.status,
+    ...(grant.detail === undefined ? {} : { pendingGrantDetail: grant.detail }),
   };
 }

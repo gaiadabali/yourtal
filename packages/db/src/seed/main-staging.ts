@@ -24,8 +24,21 @@ import { seedStaging } from "./staging";
  * is the LOCAL dev seed (mock generators, `pnpm --filter @yourtal/db
  * seed`), reads `.env` by design, and is meant to be re-run freely. This
  * one is a deployment step, reads real environment variables with no
- * fallback for anything secret, and refuses to run twice (see
- * `seedStaging`'s own header on the emptiness guard).
+ * fallback for anything secret, and runs every deploy — see
+ * `seedStaging`'s own header: the world (businesses/campaigns/accounts)
+ * seeds once and is then left alone, but the marketing funding and the
+ * tier-0 pending grant are checked and completed on EVERY run, so a
+ * previous run's partial failure (staging's own first run: an unfunded
+ * marketing budget left the grant missing) is finished by the next one
+ * instead of skipped forever.
+ *
+ * The ledger is always up during pre-reload on staging (it is a separate,
+ * long-running systemd unit — `infra/HELIOS.md` — not rebuilt or restarted
+ * by this release), so any failure from it here is real and this exits
+ * non-zero: `infra/helios/pre-reload.sh` runs under `set -Eeuo pipefail`,
+ * so a non-zero exit here fails the whole deploy, leaving the previous
+ * release serving — the same reasoning that script's own header gives for
+ * every step in it.
  */
 
 const { Pool } = pg;
@@ -84,14 +97,28 @@ async function main(): Promise<void> {
       demoPassword,
       ledger: { baseUrl: ledgerBaseUrl, serviceSecret: ledgerServiceSecret },
     });
-    if (result.skipped) {
-      console.log("Staging seed skipped: identity.user_profile already has rows.");
-      return;
-    }
+
+    const worldSummary =
+      result.world === "seeded"
+        ? `world: seeded (${String(result.businesses)} businesses, ${String(result.campaigns)} campaigns, ${String(result.accounts)} demo accounts)`
+        : "world: already present";
+    const grantSummary =
+      result.pendingGrantDetail === undefined
+        ? `tier-0 pending grant: ${result.pendingGrant}`
+        : `tier-0 pending grant: ${result.pendingGrant}: ${result.pendingGrantDetail}`;
     console.log(
-      `Staging seed: ${String(result.businesses)} businesses, ${String(result.campaigns)} campaigns, ` +
-        `${String(result.accounts)} demo accounts, tier-0 pending grant: ${result.pendingGrant}.`,
+      `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ${grantSummary}.`,
     );
+
+    if (result.pendingGrant === "failed") {
+      // set -Eeuo pipefail in infra/helios/pre-reload.sh turns this into a
+      // failed deploy, on purpose — see this file's own header.
+      console.error(
+        "Staging seed: the tier-0 pending grant failed (see the line above). Failing the deploy " +
+          "rather than leaving it silently missing a second time.",
+      );
+      process.exitCode = 1;
+    }
   } finally {
     await pool.end();
   }

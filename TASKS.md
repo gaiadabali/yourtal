@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 28/30 | `█████████░`  93% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 9/10 | 56/57 | `██████████`  98% |
+| **Phase 4** The bank is correct | A | ⛔ blocked | 9/10 | 56/57 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 21/26 | `████████░░`  81% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`): 4.10.a Done-when audit merged (8dbeb15: DB region wall, signed-route walk, EM-19 test); 4.10.b (EM-02 residue) open |
+| 1 | `yourtal-1` | free | 2026-09-27 | Phase 4 done except 4.6 (⛔ 4.6.g's D16 waits for 8.2.b; reopen 4.6.g when 8.2.b merges). 4.1–4.5 and 4.7–4.10 ✅. Helper worktrees `yourtal-p4-b`, `-c`, `-d` stay in place |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | 5.1–5.4 ✅. Two agents: C (`yourtal-2`, `phase/5-c`, db `yourtal_s2`) 5.6.a ✅ (0693f67), 5.6.b ✅ (real ledger round trip driven and verified); fixed two chained main regressions (73767ec, 9009b2b — 5.6.d, integration run for 9009b2b in progress). 5.6.c ⛔ staging still needs a fresh deploy past `0693f67` (F36's rename should let the next release migrate). D (`yourtal-p5-b`, `phase/5-d`, db `yourtal_s5b`) 5.5.b–d. 5.5.b's expiring and followed-channel feeds wait on 10.2 and 7.3.f. `phase/5` holds one withdrawn rename commit: never merge it |
 | 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Early slice: 6.1 → 6.2, with 6.5 and 6.7 in parallel. Three agents: A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. 6.3, 6.4, 6.6 and 6.8 wait for 7.4/7.7 and Phase 5's close. |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1, 2.2, 2.3, 2.5 ✅; 2.4 all but g (⛔ serwist 10 not stable) and the h Check (every workflow green on main — waits on slot 2's `me.controller` e2e fix and Area C's `/business/campaigns` bundle, 202.9 KB over 200). Phase Done-when holds on staging |
@@ -789,7 +789,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.5.e Region: vouchers carry their region and currency, and authorize refuses a merchant from the other region.
   - [x] 4.5.f **Check:** `voucher-client.contract.spec.ts` passes against live, and an AUD voucher reserves, activates, shows a QR token, authorizes and captures. Verified 2026-09-26: `pnpm test:voucher-live` 10/10, including a dedicated AUD reserve→activate→qrToken→authorizeAsDevice→captureAsDevice scenario.
   - [x] 4.5.g (added by B, requested by A) `voidVoucher({voucherId, ownerId, reason})` for 4.7.c/K13: Active → Voided (already legal in the lifecycle table), owner-checked; Held/Redeemed refuse `already_granted`; already-Voided replays. Contract, fake, HttpVoucherClient and a Go route (`POST /internal/v1/vouchers/void`) all landed in 02aaf6a.
-- [ ] **4.6 Voucher hardening** · needs: 4.5 (4.6.a–e early, F22) — 🔄 slot 1
+- [ ] **4.6 Voucher hardening** · needs: 4.5 (4.6.a–e early, F22) — ⛔ only 4.6.g's D16 is left, and it waits for 8.2.b (the web counter)
   - [x] 4.6.a Enforce the lifecycle inside `issue.Move` and with a database transition trigger. Capture and void require `held` (D3). A swept stale hold returns the voucher to active (D15).
   - [x] 4.6.b Kill switch: check it after the code lookup (batch, merchant and global scopes) and again inside Capture (D4). The throttle counts only probes (D13). `ErrStaleVersion` returns 409 (D14).
   - [x] 4.6.c Authorize takes `order_total_minor`. Minimum spend is checked against it and re-checked at capture (D5). An authorize replay compares code hash, amount and currency (D7). Over HTTP it is `order_total` on authorize; merchant callers (8.3 SDK, the device counter) should send it.

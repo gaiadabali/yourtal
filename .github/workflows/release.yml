@@ -106,6 +106,8 @@ jobs:
         # staging, not only run as it (2.3.g).
         env:
           APP_ENV: staging
+          # Canonical, OG and sitemap URLs are baked at build time too (2.3.h).
+          SITE_URL: https://yourtal.gaiada.com
         run: |
           pnpm --filter @yourtal/web build
           pnpm --filter @yourtal/api build

@@ -26,6 +26,10 @@ import type {
   GrantRewardRequest,
 } from "@yourtal/contracts/ledger-internal/rewards";
 import type {
+  AdvanceHoldbackRequest,
+  AdvanceHoldbackResult,
+} from "@yourtal/contracts/ledger-internal/dev";
+import type {
   Escrow,
   EscrowRequest,
   HistoryRequest,
@@ -111,6 +115,9 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   statements(request: StatementsRequest): ResultAsync<never, LedgerError>;
   /** `not_implemented` until 10.1. */
   approvePayout(request: ApprovePayoutRequest): ResultAsync<never, LedgerError>;
+
+  // --- dev/staging only (2.3.d/2.3.f) ---
+  advanceHoldback(request: AdvanceHoldbackRequest): ResultAsync<AdvanceHoldbackResult, LedgerError>;
 }
 
 export const LEDGER_INTERNAL_CLIENT = Symbol("LEDGER_INTERNAL_CLIENT");

@@ -25,6 +25,10 @@ import type {
   GrantRewardRequest,
 } from "@yourtal/contracts/ledger-internal/rewards";
 import type {
+  AdvanceHoldbackRequest,
+  AdvanceHoldbackResult,
+} from "@yourtal/contracts/ledger-internal/dev";
+import type {
   Escrow,
   EscrowRequest,
   HistoryRequest,
@@ -61,6 +65,7 @@ import * as wallet from "./fake/fake-ledger-wallet";
 import * as economy from "./fake/fake-ledger-economy";
 import * as settings from "./fake/fake-ledger-settings";
 import * as capture from "./fake/fake-ledger-capture";
+import * as dev from "./fake/fake-ledger-dev";
 
 /**
  * TASKS.md 1.2.d. Real semantics against `platform.ledger_fake_*`, shared by
@@ -186,6 +191,12 @@ export class FakeLedgerClient implements LedgerInternalClient {
 
   approvePayout(request: ApprovePayoutRequest): ResultAsync<never, LedgerError> {
     return economy.approvePayout(request);
+  }
+
+  advanceHoldback(
+    request: AdvanceHoldbackRequest,
+  ): ResultAsync<AdvanceHoldbackResult, LedgerError> {
+    return dev.advanceHoldback(this.db, request);
   }
 
   // --- settings (1.2.f/1.2.g) ---

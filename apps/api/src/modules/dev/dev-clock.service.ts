@@ -5,6 +5,8 @@ import type { PgBoss } from "pg-boss";
 import { defineQueue } from "@yourtal/queue/define-queue";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
+import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import type {
   AdvanceDaysResponse,
   DevClockJob,
@@ -49,29 +51,15 @@ const KNOWN_JOBS: readonly DevClockJob[] = [
 ];
 
 /**
- * Why `release-pending`/`advance-days` refuse outright once `LEDGER_MODE=live`
- * (2.3.b's staging note: staging runs live against the real Go ledger).
- * Two independent reasons, either one sufficient on its own:
- *   1. `apps/api`'s `DATABASE_URL` role (`yourtal_app`) has no grant on the
- *      `ledger` schema at all (docs/14 §8, `.env`'s own comment) — there is
- *      no table this process could reach even if it wanted to.
- *   2. The real holdback release (`services/ledger/internal/reward/release.go`,
- *      `ReleaseDue`) runs on the ledger's own internal loop; it exposes no
- *      admin-triggered "release this grant early" RPC today.
- * Flagged here rather than worked around — see this ticket's own report for
- * the follow-up this leaves for whoever owns `services/ledger` next.
- */
-const LIVE_MODE_NOTE =
-  "Not available while LEDGER_MODE=live: apps/api has no grant on the ledger schema, and " +
-  "the real ledger's holdback release has no admin-triggered early-release endpoint yet.";
-
-/**
- * The business logic behind `/dev/clock` (2.3.d). Talks to
- * `platform.ledger_fake_grant` directly with a plain `pg.Pool` — same idiom
- * as `PostgresSimOutboxReader`'s own header explains for `/dev/inbox`: a
- * reviewer-facing read/write path has no reason to go through
- * `LedgerInternalClient`'s full interface (and in fake mode, that interface
- * has no "release early" method to call anyway).
+ * The business logic behind `/dev/clock` (2.3.d). Both actions below go
+ * through the ONE `LedgerInternalClient.advanceHoldback` method (1.2.d/2.3.f):
+ * `FakeLedgerClient` runs it against `platform.ledger_fake_grant` directly
+ * (`fake/fake-ledger-dev.ts`), `HttpLedgerClient` signs a call to the real
+ * ledger's own dev-only route (`services/ledger/internal/api/dev_routes.go`,
+ * refused with 404 unless the ledger's own `APP_ENV` is dev/staging) — this
+ * service does not need to know which. The audit row and the `ledgerMode` on
+ * every response are this file's own; the client call underneath is what
+ * changed.
  */
 @Injectable()
 export class DevClockService {
@@ -79,6 +67,7 @@ export class DevClockService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(DEV_CLOCK_DB_POOL) private readonly pool: Pool,
     @Inject(DEV_CLOCK_QUEUE_CLIENT) private readonly boss: PgBoss,
+    @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
   ) {}
 
   listJobs(): readonly DevClockJob[] {
@@ -88,48 +77,49 @@ export class DevClockService {
   /** Moves every one of the caller's still-pending grants to unlock now. */
   async releasePending(userId: string): Promise<ReleasePendingResponse> {
     const ledgerMode = this.config.ledger.mode;
-    if (ledgerMode !== "fake") {
-      await this.audit(userId, "release_pending", { ledgerMode, released: 0 });
-      return { ledgerMode, released: 0, note: LIVE_MODE_NOTE };
-    }
-
-    const result = await this.pool.query(
-      `UPDATE platform.ledger_fake_grant
-          SET unlock_at = now()
-        WHERE user_id = $1 AND unlock_at > now() AND NOT reversed`,
-      [userId],
-    );
-    const released = result.rowCount ?? 0;
+    const result = await this.ledger.advanceHoldback({ userId, releaseNow: true });
+    if (result.isErr()) throw new Error(result.error.message);
+    const { released } = result.value;
+    const note = this.escrowNote(result.value);
     await this.audit(userId, "release_pending", { ledgerMode, released });
-    return { ledgerMode, released };
+    return { ledgerMode, released, note };
   }
 
   /**
    * "Advancing N days" means exactly this in the current codebase: every
-   * still-pending grant's `unlock_at` moves N days earlier, the same field
+   * still-pending grant's holdback moves N days closer, the same field
    * `availablePoints`/`ReleaseDue` already read as the one clock that
    * matters. There is no separate simulated wall-clock anywhere to move
    * instead (TASKS.md 2.3.d's own instruction: "don't invent a global
-   * clock") — a grant whose shifted `unlock_at` lands in the past becomes
-   * available the same way waiting the real N days would have; one that
-   * does not stays exactly as pending as before.
+   * clock") — a grant a wait of that length would not yet have released
+   * stays exactly as pending as before; `shifted` counts every grant this
+   * touched, not only the ones it happened to clear (`advanceHoldback`'s own
+   * comment has the full accounting).
    */
   async advanceDays(userId: string, days: number): Promise<AdvanceDaysResponse> {
     const ledgerMode = this.config.ledger.mode;
-    if (ledgerMode !== "fake") {
-      await this.audit(userId, "advance_days", { ledgerMode, days, shifted: 0 });
-      return { ledgerMode, days, shifted: 0, note: LIVE_MODE_NOTE };
-    }
-
-    const result = await this.pool.query(
-      `UPDATE platform.ledger_fake_grant
-          SET unlock_at = unlock_at - ($2 || ' days')::interval
-        WHERE user_id = $1 AND unlock_at > now() AND NOT reversed`,
-      [userId, days],
-    );
-    const shifted = result.rowCount ?? 0;
+    const result = await this.ledger.advanceHoldback({ userId, days });
+    if (result.isErr()) throw new Error(result.error.message);
+    const { shifted } = result.value;
+    const note = this.escrowNote(result.value);
     await this.audit(userId, "advance_days", { ledgerMode, days, shifted });
-    return { ledgerMode, days, shifted };
+    return { ledgerMode, days, shifted, note };
+  }
+
+  /**
+   * A held escrow (4.4.g) is the one case worth calling out: some of what
+   * this call touched stayed pending for a reason other than "not due yet"
+   * — the fake never reports `escrowHeld`, so this is silent in fake mode
+   * exactly as it always was.
+   */
+  private escrowNote(value: {
+    shifted: number;
+    released: number;
+    escrowHeld: boolean;
+  }): string | undefined {
+    if (!value.escrowHeld) return undefined;
+    const remaining = value.shifted - value.released;
+    return `${String(remaining)} grant(s) remain pending: this account has a held escrow`;
   }
 
   /**

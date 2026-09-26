@@ -30,6 +30,10 @@ import type {
   GrantRewardRequest,
 } from "@yourtal/contracts/ledger-internal/rewards";
 import type {
+  AdvanceHoldbackRequest,
+  AdvanceHoldbackResult,
+} from "@yourtal/contracts/ledger-internal/dev";
+import type {
   Escrow,
   EscrowRequest,
   HistoryRequest,
@@ -256,6 +260,12 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   approvePayout(request: ApprovePayoutRequest): ResultAsync<never, LedgerError> {
     return this.post("/v1/economy/payouts/approve", request);
+  }
+
+  advanceHoldback(
+    request: AdvanceHoldbackRequest,
+  ): ResultAsync<AdvanceHoldbackResult, LedgerError> {
+    return this.post("/v1/dev/advance-holdback", request);
   }
 
   // --- settings (1.2.f/1.2.g) ---

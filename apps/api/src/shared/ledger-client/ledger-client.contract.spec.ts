@@ -654,6 +654,71 @@ describe("settings (1.2.f/1.2.g)", () => {
   });
 });
 
+// 2.3.d/2.3.f's `/dev/clock`. Against `FakeLedgerClient` specifically, not
+// the shared `client` var: this op is refused (404) by a live ledger outside
+// dev/staging, and `ledger-contract-live.mjs` starts the ledger with no
+// APP_ENV set (production's default) — so exercising it through `client`
+// would fail that script for a reason unrelated to what this test checks.
+describe("dev/staging holdback (2.3.d/2.3.f)", () => {
+  const fake = new FakeLedgerClient(db);
+
+  it("releaseNow releases a pending grant and is idempotent", async () => {
+    const userId = randomUUID();
+    const granted = await fake.grantAction({
+      kind: "goodwill",
+      userId,
+      region: "AU",
+      points: toPoints(40),
+      trustTier: 0, // F12: 72h holdback, still pending
+      idempotencyKey: randomUUID(),
+    });
+    expect(granted.isOk()).toBe(true);
+    expect((await fake.balance(userId))._unsafeUnwrap().availablePoints).toBe(0);
+
+    const released = (await fake.advanceHoldback({ userId, releaseNow: true }))._unsafeUnwrap();
+    expect(released).toStrictEqual({ shifted: 1, released: 1, escrowHeld: false });
+    expect((await fake.balance(userId))._unsafeUnwrap().availablePoints).toBe(40);
+
+    // Nothing left to release.
+    const replay = (await fake.advanceHoldback({ userId, releaseNow: true }))._unsafeUnwrap();
+    expect(replay).toStrictEqual({ shifted: 0, released: 0, escrowHeld: false });
+  });
+
+  it("advancing by fewer days than the holdback shifts without releasing", async () => {
+    const userId = randomUUID();
+    const granted = await fake.grantAction({
+      kind: "goodwill",
+      userId,
+      region: "AU",
+      points: toPoints(25),
+      trustTier: 0, // 72h holdback
+      idempotencyKey: randomUUID(),
+    });
+    expect(granted.isOk()).toBe(true);
+
+    const tooSoon = (await fake.advanceHoldback({ userId, days: 1 }))._unsafeUnwrap();
+    expect(tooSoon).toStrictEqual({ shifted: 1, released: 0, escrowHeld: false });
+    expect((await fake.balance(userId))._unsafeUnwrap().availablePoints).toBe(0);
+  });
+
+  it("advancing by enough days releases the grant", async () => {
+    const userId = randomUUID();
+    const granted = await fake.grantAction({
+      kind: "goodwill",
+      userId,
+      region: "AU",
+      points: toPoints(25),
+      trustTier: 0, // 72h holdback
+      idempotencyKey: randomUUID(),
+    });
+    expect(granted.isOk()).toBe(true);
+
+    const cleared = (await fake.advanceHoldback({ userId, days: 4 }))._unsafeUnwrap();
+    expect(cleared).toStrictEqual({ shifted: 1, released: 1, escrowHeld: false });
+    expect((await fake.balance(userId))._unsafeUnwrap().availablePoints).toBe(25);
+  });
+});
+
 // 4.1 (ledger internal API) makes these real once its routes replace the
 // service's current 501s. `HttpLedgerClient` already POSTs to the paths it
 // will need — see that file's own header.

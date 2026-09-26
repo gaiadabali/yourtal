@@ -9,9 +9,15 @@ import {
   SIM_OUTBOX_READER,
   PostgresSimOutboxReader,
 } from "../../shared/drivers/postgres-sim-outbox-reader";
+import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
+import type { AppDb } from "../../shared/persistence/drizzle-client";
+import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { DevInboxController } from "./dev-inbox.controller";
 import { DevClockController } from "./dev-clock.controller";
 import { DEV_CLOCK_DB_POOL, DEV_CLOCK_QUEUE_CLIENT, DevClockService } from "./dev-clock.service";
+
+const DEV_CLOCK_APP_DB = Symbol("DEV_CLOCK_APP_DB");
 
 /** Closes the pg-boss connection pool on shutdown — same reasoning
  * `RedisClientShutdown` gives for Valkey: a process that starts a pool
@@ -45,6 +51,21 @@ class DevClockQueueShutdown implements OnApplicationShutdown {
       provide: DEV_CLOCK_DB_POOL,
       useFactory: (config: AppConfig): Pool => new Pool({ connectionString: config.databaseUrl }),
       inject: [APP_CONFIG],
+    },
+    // A second, dedicated connection for `LedgerInternalClient` (1.2.d) —
+    // same reasoning `WalletModule`'s own `WALLET_DB` gives: the fake client
+    // needs a Drizzle `AppDb`, not the raw `pg.Pool` the audit table above
+    // uses, and a reviewer-facing tool has no reason to share either with a
+    // domain module's own pool.
+    {
+      provide: DEV_CLOCK_APP_DB,
+      useFactory: (config: AppConfig): AppDb => createAppDb(config.databaseUrl),
+      inject: [APP_CONFIG],
+    },
+    {
+      provide: LEDGER_INTERNAL_CLIENT,
+      useFactory: (config: AppConfig, db: AppDb) => createLedgerClient(config, db),
+      inject: [APP_CONFIG, DEV_CLOCK_APP_DB],
     },
     {
       provide: DEV_CLOCK_QUEUE_CLIENT,

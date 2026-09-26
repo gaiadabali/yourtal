@@ -103,6 +103,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   captureVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   capturePostingSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
+  // --- ledger-internal: dev/staging holdback control (2.3.d/2.3.f) ---
+  advanceHoldbackRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  advanceHoldbackResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
   // --- ledger-internal: holdback release notices (4.4.g) ---
   releaseSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   unnotifiedReleasesRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

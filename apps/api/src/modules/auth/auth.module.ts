@@ -18,8 +18,7 @@ import { SESSION_REPOSITORY } from "./persistence/session.repository";
 import { DrizzleSessionRepository } from "./persistence/drizzle-session.repository";
 import { VERIFICATION_TOKEN_REPOSITORY } from "./persistence/verification-token.repository";
 import { DrizzleVerificationTokenRepository } from "./persistence/drizzle-verification-token.repository";
-
-export const AUTH_DB = Symbol("AUTH_DB");
+import { AUTH_DB } from "./persistence/auth-db.token";
 
 /**
  * Email and password authentication (YT-0540). Owns `identity.credential`,
@@ -31,11 +30,16 @@ export const AUTH_DB = Symbol("AUTH_DB");
  *
  * `IdentityModule` IS imported here, though, as of 1.4: `AuthService.register`
  * writes a profile row (`USER_PROFILE_REPOSITORY`) right after it writes a
- * credential — two separate pools, so NOT one atomic transaction; see that
- * method's own comment for the known gap that leaves. (The older version of
- * this comment said importing `IdentityModule` here was out of reach because
- * its write set belonged to a different, concurrently-in-flight ticket —
- * true when written, and no longer true once one task owns both sides.)
+ * credential. As of 2.5 (F31) this IS one atomic transaction despite the two
+ * separate pools: `AUTH_DB` and `IDENTITY_DB` both point at the same
+ * `config.databaseUrl` (one physical database), so `AuthService.register`
+ * opens `db.transaction` on ITS OWN pool (`AUTH_DB`, injected directly —
+ * docs/13b §7's "opened in the use-case") and passes the transaction handle
+ * through `CredentialRepository.create`/`UserProfileRepository.create`'s own
+ * optional `tx` parameter — the cross-module boundary stays the OTHER
+ * module's provider interface, never its raw tables, exactly as docs/13b §7
+ * also requires. See `AuthService.register`'s own comment for the failure
+ * window this closes.
  *
  * Imports `RedisClientModule` for `ThrottleService`'s Valkey client, even
  * though that module is `@Global` and would already be visible — spelled

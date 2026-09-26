@@ -10,7 +10,9 @@ import {
 import type { EmailDriver } from "@yourtal/drivers/email";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
+import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { EMAIL_DRIVER } from "../../shared/drivers/email-driver.module";
+import { AUTH_DB } from "./persistence/auth-db.token";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { STAFF_ROLE_READER } from "../identity/persistence/staff-role-reader";
@@ -83,6 +85,7 @@ export class AuthService {
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(AUTH_DB) private readonly db: AppDb,
     @Inject(CREDENTIAL_REPOSITORY) private readonly credentials: CredentialRepository,
     @Inject(VERIFICATION_TOKEN_REPOSITORY)
     private readonly verificationTokens: VerificationTokenRepository,
@@ -144,33 +147,50 @@ export class AuthService {
       // migration header for why `user_id` cannot be the email itself.
       const userId = randomUUID();
       const secretHash = await hashPassword(password);
-      const created = await this.credentials.create({
-        userId,
-        kind: PASSWORD_CREDENTIAL_KIND,
-        identifier,
-        secretHash,
+
+      // 2.5/F31: one Postgres transaction, opened here (docs/13b §7 —
+      // "opened in the use-case") on THIS module's own pool (`AUTH_DB`).
+      // `identity.credential` and `identity.user_profile` are two DIFFERENT
+      // modules' tables, but the same PHYSICAL database (`AUTH_DB` and
+      // `IDENTITY_DB` are both `createAppDb(config.databaseUrl)` — see
+      // auth.module.ts's header), so a transaction opened on either pool can
+      // write both, as long as it goes through the OTHER module's own
+      // repository interface rather than its raw table — which is exactly
+      // what `UserProfileRepository.create`'s own `tx` parameter is for.
+      // Before this, a failure writing the profile after the credential had
+      // already committed left a credential with no profile — a real,
+      // known gap (F31). Now either both rows commit or neither does: a
+      // thrown error rolls the whole transaction back, `credentials.create`'s
+      // own conflict-check included, so the SAME email can register again
+      // right away rather than being permanently stuck behind a half-made
+      // account.
+      const outcome = await this.db.transaction(async (tx) => {
+        const created = await this.credentials.create(
+          { userId, kind: PASSWORD_CREDENTIAL_KIND, identifier, secretHash },
+          tx,
+        );
+        if (!created) return "conflict" as const;
+
+        await this.profiles.create(
+          {
+            userId,
+            region: profile.region,
+            displayLocale: profile.locale,
+            displayName: profile.displayName,
+            dateOfBirth: profile.dateOfBirth,
+            timezone: profile.timezone,
+            guardianEmail: isAdult ? null : (profile.guardianEmail ?? null),
+            parentConsentStatus: isAdult ? "not_required" : "pending",
+          },
+          tx,
+        );
+        return "created" as const;
       });
-      if (!created) {
+
+      if (outcome === "conflict") {
         const conflict: EmailAlreadyRegisteredError = { type: "email_already_registered" };
         return err(conflict);
       }
-
-      // A SEPARATE store from identity.credential above (AUTH_DB vs
-      // IDENTITY_DB — see auth.module.ts's header), so this is not one
-      // atomic transaction. A failure here after the credential already
-      // committed leaves a credential with no profile — a real, known gap,
-      // recorded rather than silently assumed away; `guarded()` still turns
-      // it into `persistence_failed` rather than a crash.
-      await this.profiles.create({
-        userId,
-        region: profile.region,
-        displayLocale: profile.locale,
-        displayName: profile.displayName,
-        dateOfBirth: profile.dateOfBirth,
-        timezone: profile.timezone,
-        guardianEmail: isAdult ? null : (profile.guardianEmail ?? null),
-        parentConsentStatus: isAdult ? "not_required" : "pending",
-      });
 
       const token = await this.issueSession(userId, now);
       return ok({ userId, token });

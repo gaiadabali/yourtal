@@ -11,6 +11,7 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { PostgresSimOutboxStore } from "../../shared/drivers/postgres-sim-outbox-store";
 import type { AppConfig } from "../../config/app-config";
 import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-user-profile.repository";
+import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { DrizzleStaffRoleReader } from "../identity/persistence/drizzle-staff-role-reader";
 import type { RegisterProfile } from "./auth.service";
 import { AuthService } from "./auth.service";
@@ -84,6 +85,7 @@ const devTokenAccess = new DevTokenAccess();
 const emailDriver = createSimulatedEmail();
 const auth = new AuthService(
   CONFIG,
+  db,
   credentials,
   verificationTokens,
   profiles,
@@ -180,6 +182,60 @@ describe("register", () => {
     // not be (or contain) the email this credential was registered with.
     expect(row?.userId).not.toBe(email);
     expect(row?.userId).not.toContain("@");
+  });
+});
+
+describe("register — 2.5/F31: credential and profile are one transaction", () => {
+  it("a profile-write failure rolls the credential insert back too, so the same email registers again immediately", async () => {
+    const email = freshEmail();
+    const failingProfiles: UserProfileRepository = {
+      create: () => Promise.reject(new Error("simulated profile write failure (2.5/F31 test)")),
+      findByUserId: () => Promise.resolve(null),
+      update: () => Promise.resolve(),
+    };
+    // A second AuthService instance sharing every real collaborator except
+    // the profile repository — proves the ROLLBACK, not just that a broken
+    // profile repository makes register() fail (that much would be true
+    // even without a shared transaction).
+    const authWithFailingProfile = new AuthService(
+      CONFIG,
+      db,
+      credentials,
+      verificationTokens,
+      failingProfiles,
+      staffRoles,
+      sessionService,
+      throttle,
+      devTokenAccess,
+      emailDriver,
+    );
+
+    const failed = await authWithFailingProfile.register(
+      email,
+      "correct-horse-battery-staple",
+      ADULT_PROFILE,
+      new Date(),
+    );
+    expect(failed.isErr()).toBe(true);
+    expect(failed.isErr() && failed.error.type).toBe("persistence_failed");
+
+    // The credential insert that ran INSIDE the same transaction as the
+    // failed profile write must not have survived it — this is the F31 gap
+    // this fix closes, proved by reading the row back rather than trusting
+    // the Result alone.
+    const strandedCredential = await credentials.findByKindAndIdentifier("password", email);
+    expect(strandedCredential).toBeNull();
+
+    // The real `auth` (working profile repository) can register the SAME
+    // email right away — nothing about the failed attempt is still there
+    // to conflict with it.
+    const retried = await auth.register(
+      email,
+      "a-second-attempt-password",
+      ADULT_PROFILE,
+      new Date(),
+    );
+    expect(retried.isOk()).toBe(true);
   });
 });
 
@@ -561,6 +617,7 @@ describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox"
     const realEmailDriver = createEmailDriver("simulated", {}, undefined, outboxStore);
     const authWithRealEmail = new AuthService(
       CONFIG,
+      db,
       credentials,
       verificationTokens,
       profiles,

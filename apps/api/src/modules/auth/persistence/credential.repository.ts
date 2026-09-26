@@ -1,3 +1,5 @@
+import type { AppDb } from "../../../shared/persistence/drizzle-client";
+
 export const CREDENTIAL_REPOSITORY = Symbol("CREDENTIAL_REPOSITORY");
 
 /** Today's only kind. A second (`phone_otp`, an OIDC subject) is YT-0541's. */
@@ -36,13 +38,22 @@ export interface CredentialRepository {
    * in `AuthService.register`) before this is ever called — a fresh UUID
    * cannot collide with an existing `(user_id, kind)` primary key, so the
    * conflict this guards against is always on `(kind, identifier)`.
+   *
+   * `tx` (2.5/F31): an open transaction to run this insert on instead of
+   * the repository's own pool — `AuthService.register`'s way of making this
+   * write and `UserProfileRepository.create`'s land or fail together. Omit
+   * it for every other caller; nothing about this method's own behaviour
+   * changes.
    */
-  create(input: {
-    userId: string;
-    kind: string;
-    identifier: string;
-    secretHash: string;
-  }): Promise<boolean>;
+  create(
+    input: {
+      userId: string;
+      kind: string;
+      identifier: string;
+      secretHash: string;
+    },
+    tx?: AppDb,
+  ): Promise<boolean>;
 
   /**
    * Replaces the hash for an EXISTING credential (password change). Returns

@@ -1,4 +1,5 @@
 import type { Region } from "@yourtal/contracts/region";
+import type { AppDb } from "../../../shared/persistence/drizzle-client";
 
 /**
  * `identity.user_profile` (1.4.a). `ageBand` is deliberately absent from
@@ -32,7 +33,14 @@ export interface UserProfileUpdate {
 }
 
 export interface UserProfileRepository {
-  create(profile: NewUserProfile): Promise<void>;
+  /**
+   * `tx` (2.5/F31): an open transaction to run this insert on, so
+   * `AuthService.register` can make this write land or fail together with
+   * `identity.credential`'s own insert — see that method's own comment.
+   * Omit it for every other caller (e.g. `seedUserProfile`); behaviour is
+   * unchanged.
+   */
+  create(profile: NewUserProfile, tx?: AppDb): Promise<void>;
   findByUserId(userId: string): Promise<StoredUserProfile | null>;
   /** No-op if the user has no profile row — callers that need "exists" check `findByUserId` first. */
   update(userId: string, patch: UserProfileUpdate): Promise<void>;

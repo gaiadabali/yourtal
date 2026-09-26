@@ -13,8 +13,8 @@ import type {
 export class DrizzleUserProfileRepository implements UserProfileRepository {
   constructor(private readonly db: AppDb) {}
 
-  async create(profile: NewUserProfile): Promise<void> {
-    await this.db.insert(userProfiles).values({
+  async create(profile: NewUserProfile, tx?: AppDb): Promise<void> {
+    await (tx ?? this.db).insert(userProfiles).values({
       userId: profile.userId,
       region: profile.region,
       displayLocale: profile.displayLocale,

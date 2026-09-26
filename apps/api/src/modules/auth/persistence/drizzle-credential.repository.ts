@@ -22,12 +22,15 @@ export class DrizzleCredentialRepository implements CredentialRepository {
     return row ?? null;
   }
 
-  async create(input: {
-    userId: string;
-    kind: string;
-    identifier: string;
-    secretHash: string;
-  }): Promise<boolean> {
+  async create(
+    input: {
+      userId: string;
+      kind: string;
+      identifier: string;
+      secretHash: string;
+    },
+    tx?: AppDb,
+  ): Promise<boolean> {
     // `onConflictDoNothing` targeting `(kind, identifier)` — NOT the primary
     // key. `userId` is a fresh `crypto.randomUUID()` minted by the caller
     // before this runs, so a primary-key collision on `(user_id, kind)` is
@@ -39,7 +42,7 @@ export class DrizzleCredentialRepository implements CredentialRepository {
     // `checkpoint-nonce.repository.ts` already documents at length for the
     // same reason (a read-then-write pair cannot be made race-free here
     // either).
-    const inserted = await this.db
+    const inserted = await (tx ?? this.db)
       .insert(credentials)
       .values({
         userId: input.userId,

@@ -3,7 +3,12 @@ import pg from "pg";
 import { APP_URL, OWNER_URL } from "./database-urls";
 import { seed } from "./seed";
 import { campaignSchema } from "@yourtal/contracts/campaign";
+import { mockCampaigns } from "@yourtal/contracts/campaign/mock";
 import { publicStatusOf, type CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
+
+// The seed's own campaigns. Files beside this one insert probe campaigns of
+// their own (no questions, no video) while it runs, which are not the seed's.
+const seededCampaignIds = mockCampaigns.map((campaign) => campaign.id);
 
 /**
  * YT-0519, against the real Postgres from `pnpm dev:up`.
@@ -136,8 +141,10 @@ describe("the seeded question bank (YT-0122)", () => {
     const { rows } = await pool.query<{ count: string }>(
       `SELECT count(*)::text AS count
          FROM campaign.campaigns c
-        WHERE (SELECT count(*) FROM campaign.question q WHERE q.campaign_id = c.id)
+        WHERE c.id = ANY($1::uuid[])
+          AND (SELECT count(*) FROM campaign.question q WHERE q.campaign_id = c.id)
               < 3 * greatest(c.question_count, least(c.duration_seconds / 300, 5))`,
+      [seededCampaignIds],
     );
     expect(rows[0]?.count, "every bank must be at least 3x the questions asked").toBe("0");
   });
@@ -460,11 +467,13 @@ describe("a seeded campaign can be read back as a Campaign (YT-0548)", () => {
     // directions rather than permitting an empty array by omission.
     const wrong = await pool.query<{ n: string }>(
       `SELECT count(*) AS n FROM campaign.campaigns c
-        WHERE NOT EXISTS (SELECT 1 FROM campaign.video_source v WHERE v.campaign_id = c.id)
+        WHERE c.id = ANY($1::uuid[])
+          AND (NOT EXISTS (SELECT 1 FROM campaign.video_source v WHERE v.campaign_id = c.id)
            OR (c.kind = 'long_form'
                AND NOT EXISTS (SELECT 1 FROM campaign.chapter ch WHERE ch.campaign_id = c.id))
            OR (c.kind = 'quick'
-               AND EXISTS (SELECT 1 FROM campaign.chapter ch WHERE ch.campaign_id = c.id))`,
+               AND EXISTS (SELECT 1 FROM campaign.chapter ch WHERE ch.campaign_id = c.id)))`,
+      [seededCampaignIds],
     );
     expect(Number(wrong.rows[0]?.n ?? "1")).toBe(0);
   });

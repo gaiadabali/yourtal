@@ -5,7 +5,9 @@ import { businessSchema } from "@yourtal/contracts/business";
 import type { Business } from "@yourtal/contracts/business";
 import { campaignSchema } from "@yourtal/contracts/campaign";
 import type { Campaign } from "@yourtal/contracts/campaign";
-import { toPoints } from "@yourtal/contracts/money";
+import { listingSchema } from "@yourtal/contracts/listing";
+import type { Listing } from "@yourtal/contracts/listing";
+import { toPoints, toMinorUnits } from "@yourtal/contracts/money";
 import {
   SERVICE_SIGNATURE_HEADER,
   signServiceRequest,
@@ -13,6 +15,15 @@ import {
 import { grantActionRequestSchema } from "@yourtal/contracts/ledger-internal/rewards";
 import type { GrantActionRequest } from "@yourtal/contracts/ledger-internal/rewards";
 import { ledgerErrorSchema } from "@yourtal/contracts/ledger-internal/ledger-error";
+import {
+  approveBatchRequestSchema,
+  batchSchema,
+  requestBatchRequestSchema,
+} from "@yourtal/contracts/voucher-internal/batches";
+import type {
+  ApproveBatchRequest,
+  RequestBatchRequest,
+} from "@yourtal/contracts/voucher-internal/batches";
 import { seedLedger } from "./ledger";
 
 /**
@@ -31,21 +42,21 @@ import { seedLedger } from "./ledger";
  * Area A's (2.3), so it gets one file that crosses domains on purpose
  * rather than five small edits to five owners' files.
  *
- * ## Three independently idempotent steps, not one
+ * ## Four independently idempotent steps, not one
  *
  * The first staging run left the tier-0 viewer with no pending grant
  * (`plat_AU_marketing_cash` was unfunded — `insufficient_available`), and
  * because the whole seed was ONE all-or-nothing gate on
  * `identity.user_profile` being empty, the next deploy's pre-reload would
  * have skipped everything, forever, with the world already seeded. So this
- * is now three steps, each with its own idempotency, run in order every
+ * is now four steps, each with its own idempotency, run in order every
  * invocation:
  *
  *   1. `seedWorldIfEmpty` — businesses, campaigns, accounts. Still gated on
  *      `identity.user_profile` having no rows: a database that already has
  *      a real account (or a previous run's world) is left alone. Looks up
- *      the demo viewer's `user_id` either way, because steps 2 and 3 need
- *      it regardless of whether the world was just created or already
+ *      the demo viewer's `user_id` either way, because steps 2-4 need it
+ *      regardless of whether the world was just created or already
  *      existed.
  *   2. `ensureMarketingFunding` — reuses `seedLedger` (`seed/ledger.ts`)
  *      as-is, unconditionally, every run. `seedLedger` is already
@@ -63,6 +74,12 @@ import { seedLedger } from "./ledger";
  *      other than a replay are reported and (see `main-staging.ts`) fail
  *      the deploy loudly rather than being swallowed as "the ledger must
  *      be unreachable".
+ *   4. `ensureDemoVoucher` — 2.3.c's own dependency: its restore rehearsal
+ *      must decrypt a REAL stored voucher code, and staging otherwise has
+ *      zero listings and zero vouchers. Own idempotency (a voucher already
+ *      existing for the fixed demo listing), because neither voucher-
+ *      service route this calls is idempotent itself — see that function's
+ *      own header.
  *
  * ## Real credential hashing, not a shortcut
  *
@@ -113,9 +130,21 @@ export interface StagingSeedResult {
   /** Present only when `pendingGrant` is `"failed"` — the ledger's own
    * error code (e.g. `insufficient_available`), or a network-error message. */
   readonly pendingGrantDetail?: string;
+  /** 2.3.c's restore rehearsal needs a real, decryptable voucher code — see
+   * `ensureDemoVoucher`. `"skipped"` for the same reason `pendingGrant` can
+   * be: no business this seed created to hang a listing off. */
+  readonly demoVoucher: "created" | "already_present" | "failed" | "skipped";
+  /** Present only when `demoVoucher` is `"failed"` — the voucher service's
+   * own error code, or a network-error message. */
+  readonly demoVoucherDetail?: string;
 }
 
 export interface StagingLedgerConfig {
+  readonly baseUrl: string;
+  readonly serviceSecret: string;
+}
+
+export interface StagingVoucherConfig {
   readonly baseUrl: string;
   readonly serviceSecret: string;
 }
@@ -124,6 +153,7 @@ export interface SeedStagingOptions {
   /** Refuses to run without one — see `main()`'s own check for why. */
   readonly demoPassword: string;
   readonly ledger: StagingLedgerConfig;
+  readonly voucher: StagingVoucherConfig;
   /** Injectable for tests; defaults to `console`. */
   readonly log?: (message: string) => void;
   /** Injectable for tests only — see `REPLAY_DETECTION_WINDOW_MS`'s own
@@ -163,6 +193,12 @@ const CAMPAIGN_IDS = {
   idOne: "00000000-0000-4000-9000-000000000201",
   idTwo: "00000000-0000-4000-9000-000000000202",
 } as const;
+
+/** 2.3.c's own listing/voucher — the restore rehearsal needs one real,
+ * decryptable voucher code to prove a backup restore against, and
+ * `voucher.batch` has an FK to `store.listings`, so both are seeded here. */
+const DEMO_LISTING_ID = "00000000-0000-4000-9000-000000000301";
+const DEMO_LOCATION_ID = "00000000-0000-4000-9000-000000000302";
 
 interface DemoAccountSpec {
   readonly email: string;
@@ -703,6 +739,329 @@ async function ensureTierZeroPendingGrant(
   return { status: justCreated ? "granted" : "already_present" };
 }
 
+/** AUD 45.00 / AUD 30.00 — what snap-app is paid per redemption. Never a
+ * points price: 4.9.d is explicit that B (the backing rate) never reaches
+ * anything outside the server, and a mock rate is exactly that reached from
+ * the wrong place (`eslint-rules/no-mock-backing-rate.mjs` refuses a new
+ * use of one for the same reason). `priceDemoListing` below prices this
+ * for real, the same way a business's own listing gets priced. */
+const DEMO_FACE_VALUE_MINOR = 4_500;
+const DEMO_SETTLEMENT_VALUE_MINOR = 3_000;
+
+/**
+ * One "quick" listing for snap-app AU, the same 1.1.h rule the campaign
+ * seed already follows: region and currency come from the business, never
+ * chosen independently. `priceInPoints` is a parameter, never computed
+ * in here — see `priceDemoListing`.
+ */
+function buildDemoListing(priceInPoints: number): Listing {
+  return listingSchema.parse({
+    id: DEMO_LISTING_ID,
+    merchantId: SNAP_APP_AU_ID,
+    merchantName: "Snap App",
+    title: "Snap App — Demo Voucher",
+    description:
+      "A demonstration voucher seeded for staging review and the backup restore rehearsal (2.3.c).",
+    category: "retail",
+    locations: [
+      {
+        id: DEMO_LOCATION_ID,
+        name: "Snap App — Surry Hills",
+        address: "12 Crown Street, Surry Hills NSW 2010",
+        district: "Surry Hills",
+      },
+    ],
+    currency: "AUD",
+    faceValueMinor: toMinorUnits(DEMO_FACE_VALUE_MINOR),
+    settlementValueMinor: toMinorUnits(DEMO_SETTLEMENT_VALUE_MINOR),
+    priceInPoints,
+    stockRemaining: 20,
+    stockTotal: 20,
+    transferable: false,
+    partialRedemptionPolicy: "single_use_forfeit",
+    minimumSpendMinor: null,
+    // A year out: this listing is created once and left alone (idempotent),
+    // so it has to outlive many deploys' worth of restore rehearsals, not
+    // just the one that first creates it.
+    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "available",
+    region: "AU",
+    audience: "all_ages",
+    contentCategory: "services",
+    imageUrl: "http://127.0.0.1:26900/yourtal-media/listings/snap-app-au-demo.jpg",
+    channel: "in_store",
+    partialRedemption: "single_use",
+  });
+}
+
+interface ExistingListingFacts {
+  readonly faceValueMinor: number;
+  readonly currency: string;
+  readonly partialRedemptionPolicy: string;
+}
+
+async function existingListingFacts(
+  pool: pg.Pool,
+  listingId: string,
+): Promise<ExistingListingFacts | null> {
+  const result = await pool.query<{
+    face_value_minor: string;
+    currency: string;
+    partial_redemption_policy: string;
+  }>(
+    `SELECT face_value_minor, currency, partial_redemption_policy
+       FROM store.listings WHERE id = $1`,
+    [listingId],
+  );
+  const row = result.rows[0];
+  return row === undefined
+    ? null
+    : {
+        faceValueMinor: Number(row.face_value_minor),
+        currency: row.currency,
+        partialRedemptionPolicy: row.partial_redemption_policy,
+      };
+}
+
+async function insertListing(pool: pg.Pool, listing: Listing): Promise<void> {
+  const location = listing.locations[0];
+  if (location === undefined) throw new Error(`listing ${listing.id} has no locations`);
+
+  await pool.query(
+    `INSERT INTO store.listings
+       (id, merchant_id, merchant_name, title, description, category,
+        face_value_minor, settlement_value_minor, price_in_points, stock_remaining,
+        stock_total, transferable, partial_redemption_policy, minimum_spend_minor,
+        expires_at, status, currency, region, audience, content_category, image_url,
+        channel, partial_redemption)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)`,
+    [
+      listing.id,
+      listing.merchantId,
+      listing.merchantName,
+      listing.title,
+      listing.description,
+      listing.category,
+      listing.faceValueMinor,
+      listing.settlementValueMinor,
+      listing.priceInPoints,
+      listing.stockRemaining,
+      listing.stockTotal,
+      listing.transferable,
+      listing.partialRedemptionPolicy,
+      listing.minimumSpendMinor,
+      listing.expiresAt,
+      listing.status,
+      listing.currency,
+      listing.region,
+      listing.audience,
+      listing.contentCategory,
+      listing.imageUrl,
+      listing.channel,
+      listing.partialRedemption,
+    ],
+  );
+  await pool.query(
+    `INSERT INTO store.merchant_location (id, merchant_id, name, address, district)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [location.id, listing.merchantId, location.name, location.address, location.district],
+  );
+  await pool.query(`INSERT INTO store.listing_location (listing_id, location_id) VALUES ($1,$2)`, [
+    listing.id,
+    location.id,
+  ]);
+}
+
+interface VoucherOutcome {
+  readonly status: "created" | "already_present" | "failed";
+  readonly detail?: string;
+}
+
+/** Signs and sends one call to either service — the same canonical string
+ * `services/ledger/internal/serviceauth` and `services/voucher/internal/
+ * serviceauth` both verify (`HttpLedgerClient`/`HttpVoucherClient` build the
+ * identical shape on the real request path); reused via `signServiceRequest`
+ * rather than copied a third time, because the algorithm — unlike the two
+ * Go services themselves — has no reason to differ between them. */
+async function postSigned(
+  config: { readonly baseUrl: string; readonly serviceSecret: string },
+  path: string,
+  request: unknown,
+): Promise<{ ok: true; body: unknown } | { ok: false; detail: string }> {
+  const body = JSON.stringify(request);
+  let response: Response;
+  try {
+    response = await fetch(`${config.baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        [SERVICE_SIGNATURE_HEADER]: signServiceRequest({
+          secret: config.serviceSecret,
+          caller: "api",
+          method: "POST",
+          pathAndQuery: path,
+          body,
+        }),
+      },
+      body,
+    });
+  } catch (error) {
+    return { ok: false, detail: error instanceof Error ? error.message : String(error) };
+  }
+
+  const raw = await response.text();
+  if (!response.ok) {
+    const parsed = ledgerErrorSchema.safeParse(tryParseJson(raw));
+    return {
+      ok: false,
+      detail: parsed.success ? parsed.data.code : `http_${String(response.status)}: ${raw}`,
+    };
+  }
+  return { ok: true, body: tryParseJson(raw) };
+}
+
+/**
+ * The real ledger prices the listing — `POST /v1/pricing/listing`
+ * (`services/ledger/internal/api/pricing_routes.go`'s `priceListing`,
+ * `HttpLedgerClient.priceListing`'s own route) — exactly the way a real
+ * business's listing would be priced, rather than a mock backing rate
+ * (4.9.d: B never reaches anything outside the server;
+ * `eslint-rules/no-mock-backing-rate.mjs` is what caught the first draft of
+ * this file reaching for one). `PriceListing`'s own engine
+ * (`services/ledger/internal/pricing/quotes.go`) upserts `ledger.
+ * listing_price` keyed by `listingId` — safe to call again, though this
+ * only ever does once, when the listing does not exist yet (see
+ * `ensureDemoVoucher`).
+ */
+async function priceDemoListing(
+  ledger: StagingLedgerConfig,
+): Promise<{ ok: true; pricePoints: number } | { ok: false; detail: string }> {
+  const request = {
+    listingId: DEMO_LISTING_ID,
+    region: "AU",
+    currency: "AUD",
+    settlementMinor: DEMO_SETTLEMENT_VALUE_MINOR,
+  };
+  const priced = await postSigned(ledger, "/v1/pricing/listing", request);
+  if (!priced.ok) return { ok: false, detail: priced.detail };
+
+  const body = priced.body;
+  const pricePoints =
+    typeof body === "object" && body !== null && "pricePoints" in body
+      ? body.pricePoints
+      : undefined;
+  if (typeof pricePoints !== "number") {
+    return {
+      ok: false,
+      detail: `unexpected /v1/pricing/listing response: ${JSON.stringify(body)}`,
+    };
+  }
+  return { ok: true, pricePoints };
+}
+
+/**
+ * Step 4 (2.3.c) — one real, decryptable voucher for the restore rehearsal
+ * to prove a backup restore against. `voucher.vouchers` seeded any other
+ * way (`seed/store.ts`'s own mock vouchers included) has no
+ * `voucher.code_custody` row — no envelope-encrypted code to decrypt — so
+ * this goes through the real minting flow, the same way the tier-0 grant
+ * goes through the real reward engine: `POST /internal/v1/batches` then
+ * `POST /internal/v1/batches/approve` (a DIFFERENT approver than requester
+ * — `Minter.Approve` matches no row, and answers the same error, for a
+ * self-approval as for "not awaiting approval" — `services/voucher/
+ * internal/issue/issue.go`). Approval mints synchronously.
+ *
+ * Neither voucher-service route is idempotent on its own — `requestBatch`'s
+ * handler mints a fresh `uuid.New()` batch id server-side on every call, the
+ * same "no caller-supplied key" gap `/economy/marketing/fund` has (this
+ * file's own header on step 2) — so idempotency is this function's own:
+ * skip entirely if a voucher already exists for this listing.
+ *
+ * Approval can return 200 with the batch merely "approved" rather than
+ * "minted" — `approveBatch`'s own handler mints synchronously but only LOGS
+ * a mint failure server-side, it does not fail the HTTP response (`services/
+ * voucher/internal/api/batches_routes.go`) — so this re-checks
+ * `voucher.vouchers` afterward rather than trusting the response shape.
+ */
+async function ensureDemoVoucher(
+  pool: pg.Pool,
+  ledger: StagingLedgerConfig,
+  voucher: StagingVoucherConfig,
+  log: (message: string) => void,
+): Promise<VoucherOutcome> {
+  const existingVouchers = async (): Promise<number> => {
+    const result = await pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM voucher.vouchers WHERE listing_id = $1",
+      [DEMO_LISTING_ID],
+    );
+    return Number(result.rows[0]?.count ?? "0");
+  };
+
+  if ((await existingVouchers()) > 0) {
+    return { status: "already_present" };
+  }
+
+  let listingFacts = await existingListingFacts(pool, DEMO_LISTING_ID);
+  if (listingFacts === null) {
+    const priced = await priceDemoListing(ledger);
+    if (!priced.ok) {
+      log(`[seed:staging] ledger /v1/pricing/listing answered an error: ${priced.detail}`);
+      return { status: "failed", detail: priced.detail };
+    }
+    const listing = buildDemoListing(priced.pricePoints);
+    await insertListing(pool, listing);
+    listingFacts = {
+      faceValueMinor: listing.faceValueMinor,
+      currency: listing.currency,
+      partialRedemptionPolicy: listing.partialRedemptionPolicy,
+    };
+  }
+
+  const requestBatchBody: RequestBatchRequest = requestBatchRequestSchema.parse({
+    listingId: DEMO_LISTING_ID,
+    merchantId: SNAP_APP_AU_ID,
+    currency: listingFacts.currency,
+    faceValueMinor: listingFacts.faceValueMinor,
+    quantity: 1,
+    partialRedemptionPolicy: listingFacts.partialRedemptionPolicy,
+    requestedBy: "staging-seed-requester",
+  });
+  const requested = await postSigned(voucher, "/internal/v1/batches", requestBatchBody);
+  if (!requested.ok) {
+    log(`[seed:staging] voucher /internal/v1/batches answered an error: ${requested.detail}`);
+    return { status: "failed", detail: requested.detail };
+  }
+  const requestedBatch = batchSchema.safeParse(requested.body);
+  if (!requestedBatch.success) {
+    const detail = `unexpected /internal/v1/batches response: ${requestedBatch.error.message}`;
+    log(`[seed:staging] ${detail}`);
+    return { status: "failed", detail };
+  }
+
+  // A different approver than requester — Minter.Approve rejects self-approval.
+  const approveBody: ApproveBatchRequest = approveBatchRequestSchema.parse({
+    batchId: requestedBatch.data.batchId,
+    approvedBy: "staging-seed-approver",
+  });
+  const approved = await postSigned(voucher, "/internal/v1/batches/approve", approveBody);
+  if (!approved.ok) {
+    log(
+      `[seed:staging] voucher /internal/v1/batches/approve answered an error: ${approved.detail}`,
+    );
+    return { status: "failed", detail: approved.detail };
+  }
+
+  // Approval can 200 without actually minting (see this function's own
+  // header) — the only trustworthy confirmation is a real row.
+  if ((await existingVouchers()) === 0) {
+    const detail =
+      "batches/approve answered 200 but no voucher.vouchers row exists for the listing";
+    log(`[seed:staging] ${detail}`);
+    return { status: "failed", detail };
+  }
+  return { status: "created" };
+}
+
 export async function seedStaging(
   pool: pg.Pool,
   options: SeedStagingOptions,
@@ -723,9 +1082,10 @@ export async function seedStaging(
   if (world.viewerUserId === null) {
     log(
       "[seed:staging] no viewer.au@demo.yourtal.test account exists (a non-empty " +
-        "identity.user_profile this seed did not create) — skipping the pending grant.",
+        "identity.user_profile this seed did not create) — skipping the pending grant " +
+        "and the demo voucher.",
     );
-    return { ...base, pendingGrant: "skipped" };
+    return { ...base, pendingGrant: "skipped", demoVoucher: "skipped" };
   }
 
   const grant = await ensureTierZeroPendingGrant(
@@ -734,9 +1094,13 @@ export async function seedStaging(
     log,
     options.replayDetectionWindowMs ?? REPLAY_DETECTION_WINDOW_MS,
   );
+  const voucher = await ensureDemoVoucher(pool, options.ledger, options.voucher, log);
+
   return {
     ...base,
     pendingGrant: grant.status,
     ...(grant.detail === undefined ? {} : { pendingGrantDetail: grant.detail }),
+    demoVoucher: voucher.status,
+    ...(voucher.detail === undefined ? {} : { demoVoucherDetail: voucher.detail }),
   };
 }

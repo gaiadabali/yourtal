@@ -32,13 +32,14 @@ import { seedStaging } from "./staging";
  * marketing budget left the grant missing) is finished by the next one
  * instead of skipped forever.
  *
- * The ledger is always up during pre-reload on staging (it is a separate,
- * long-running systemd unit — `infra/HELIOS.md` — not rebuilt or restarted
- * by this release), so any failure from it here is real and this exits
- * non-zero: `infra/helios/pre-reload.sh` runs under `set -Eeuo pipefail`,
- * so a non-zero exit here fails the whole deploy, leaving the previous
- * release serving — the same reasoning that script's own header gives for
- * every step in it.
+ * The ledger AND the voucher service (2.3.c's own dependency: the demo
+ * voucher `ensureDemoVoucher` mints) are always up during pre-reload on
+ * staging (separate, long-running systemd units — `infra/HELIOS.md` — not
+ * rebuilt or restarted by this release), so any failure from either here
+ * is real and this exits non-zero: `infra/helios/pre-reload.sh` runs under
+ * `set -Eeuo pipefail`, so a non-zero exit here fails the whole deploy,
+ * leaving the previous release serving — the same reasoning that script's
+ * own header gives for every step in it.
  */
 
 const { Pool } = pg;
@@ -85,17 +86,21 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Same dev defaults `apps/api/src/config/env.schema.ts` gives these two —
+  // Same dev defaults `apps/api/src/config/env.schema.ts` gives these four —
   // real values come from `/opt/yourtal/secrets/app.env` on Helios (2.1.f).
   const ledgerBaseUrl = process.env.LEDGER_BASE_URL ?? "http://127.0.0.1:26910";
   const ledgerServiceSecret =
     process.env.LEDGER_SERVICE_SECRET ?? "local-only-ledger-service-secret-not-real";
+  const voucherBaseUrl = process.env.VOUCHER_BASE_URL ?? "http://voucher:8080";
+  const voucherServiceSecret =
+    process.env.VOUCHER_SERVICE_SECRET ?? "local-only-voucher-service-secret-not-real";
 
   const pool = new Pool({ connectionString });
   try {
     const result = await seedStaging(pool, {
       demoPassword,
       ledger: { baseUrl: ledgerBaseUrl, serviceSecret: ledgerServiceSecret },
+      voucher: { baseUrl: voucherBaseUrl, serviceSecret: voucherServiceSecret },
     });
 
     const worldSummary =
@@ -106,16 +111,21 @@ async function main(): Promise<void> {
       result.pendingGrantDetail === undefined
         ? `tier-0 pending grant: ${result.pendingGrant}`
         : `tier-0 pending grant: ${result.pendingGrant}: ${result.pendingGrantDetail}`;
+    const voucherSummary =
+      result.demoVoucherDetail === undefined
+        ? `demo voucher: ${result.demoVoucher}`
+        : `demo voucher: ${result.demoVoucher}: ${result.demoVoucherDetail}`;
     console.log(
-      `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ${grantSummary}.`,
+      `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
+        `${grantSummary}; ${voucherSummary}.`,
     );
 
-    if (result.pendingGrant === "failed") {
+    if (result.pendingGrant === "failed" || result.demoVoucher === "failed") {
       // set -Eeuo pipefail in infra/helios/pre-reload.sh turns this into a
       // failed deploy, on purpose — see this file's own header.
       console.error(
-        "Staging seed: the tier-0 pending grant failed (see the line above). Failing the deploy " +
-          "rather than leaving it silently missing a second time.",
+        "Staging seed: a real service call failed (see the line(s) above). Failing the deploy " +
+          "rather than leaving a demo grant or voucher silently missing a second time.",
       );
       process.exitCode = 1;
     }

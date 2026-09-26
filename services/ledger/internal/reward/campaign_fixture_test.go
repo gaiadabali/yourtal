@@ -35,7 +35,10 @@ func newLiveCampaign(t *testing.T, engine *reward.Engine, base, bonus int64, max
 	var c liveCampaign
 	if err := owner.QueryRow(ctx, `SELECT c.id::text, c.business_id::text FROM campaign.campaigns c
 		LEFT JOIN campaign.reward_config r ON r.campaign_id = c.id
-		WHERE r.campaign_id IS NULL AND c.region = 'ID' ORDER BY random() LIMIT 1`).Scan(&c.ID, &c.Owner); err != nil {
+		WHERE r.campaign_id IS NULL AND c.region = 'ID'
+		  -- A campaign an earlier test paid from (its config since removed) is spent.
+		  AND NOT EXISTS (SELECT 1 FROM ledger.grant g WHERE g.campaign_id::text = c.id::text)
+		ORDER BY random() LIMIT 1`).Scan(&c.ID, &c.Owner); err != nil {
 		t.Skipf("no seeded ID campaign without a reward config: %v", err)
 	}
 	if err := owner.QueryRow(ctx, `SELECT COALESCE(max(version), 0) + 1 FROM campaign.terms_version WHERE campaign_id = $1`,

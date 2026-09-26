@@ -46,11 +46,15 @@ afterAll(async () => {
 /** A seeded listing in `region`, made buyable for anyone (the test owns its database). */
 async function buyableListing(region: "ID" | "AU", channel = "in_store"): Promise<string> {
   if (region === "AU") {
-    // The seed is ID-only: move one ID listing to AU for this test's database.
+    // The seed is ID-only: copy one ID listing as an AU one. A listing with
+    // vouchers can never move region (vouchers_in_their_listings_currency).
     await owner.execute(sql`
-      UPDATE store.listings SET region = 'AU', currency = 'AUD'
-       WHERE id = (SELECT id FROM store.listings WHERE region = 'ID' ORDER BY random() LIMIT 1)
-         AND NOT EXISTS (SELECT 1 FROM store.listings WHERE region = 'AU')`);
+      INSERT INTO store.listings
+      SELECT (jsonb_populate_record(NULL::store.listings, to_jsonb(l)
+                || jsonb_build_object('id', gen_random_uuid(), 'region', 'AU', 'currency', 'AUD'))).*
+        FROM store.listings l
+       WHERE region = 'ID' AND NOT EXISTS (SELECT 1 FROM store.listings WHERE region = 'AU')
+       LIMIT 1`);
   }
   const rows = await owner.execute<{ id: string }>(sql`
     UPDATE store.listings SET lifecycle_state = 'active', status = 'available', stock_remaining = stock_total,

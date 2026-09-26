@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 16/30 | `█████░░░░░`  53% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 53/57 | `█████████░`  93% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 54/57 | `██████████`  95% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 1/5 | 5/22 | `██░░░░░░░░`  23% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **31/84** | **198/382** | `█████░░░░░`  52% |
+| **All** | | | **32/84** | **199/382** | `█████░░░░░`  52% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -842,7 +842,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - [x] `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove, plus the contract mocks 13.5.c deletes: `eslint-rules/no-mock-backing-rate.mjs` (e3f1d8e).
   - [ ] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live. The spec already passes 23/23 against a local live ledger (4f282d7). — ⛔ staging does not exist until 2.1 (slot 4); asked there as 2.1.f
   - [x] 4.9.f **Check:** Passed on main 568eacd: `coverage_check_test.go` (a 1,000-pt AU purchase adds exactly 1.50 and a streak succeeds; burn and capture move cash and liability by 0), and `pnpm verify` green with the AU rate 3,000,000 before and after.
-- [ ] **4.10 Done-when audit** · needs: 4.1–4.9 — 🔄 slot 1 (agent H)
+- [x] **4.10 Done-when audit** · needs: 4.1–4.9 — ✅ 2026-09-26 764a2ee
   - [x] 4.10.a Every verified Phase 4 defect in `engine-money.md`, `engine-watch.md` and `engine-voucher.md` → its regression test, on main 8dbeb15 (Go and live suites green). Out of scope, owned elsewhere: EM-01 (7.4.b), EM-07/24 (10.3.a), EM-20/21/22 (0.3, 0.7), EW-01/04/06–10/19–21 (Phase 5), EW-02/03 (1.x), EW-14/15 (6.x), EW-16/17 (7.x), EW-18 (2.x, 5.x, 10.x), EW-22/23 (0.x). D1–D17 are mapped under 4.6.g (D16 ⛔ 8.2.b, D17 refuted).
     - EM-02 → reward/k6_test `TestAMarketingGrantIsBackedByMarketingCash`, `TestAPartnerAllocationNeedsAPurchase`, `TestAMarketingActionCannotDrawAPartnerAllocation`; pricing/solvency_test `TestMarketingPointsCannotDiluteCoverage`
     - EM-03 → api/api_test `TestTheLedgerRoutesEndToEnd`; `ledger-client.contract.spec.ts` live 23/23
@@ -865,7 +865,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - EW-12 → attest/attest_test `TestEveryFieldIsSigned`; reward/contract_test `TestAnUnattestedCompletionIsNotPaid`
     - Region wall in the database (new, migration `20260926040000_region_wall`): ledger/region_wall_test `TestAGrantCannotCrossRegions`, `TestAPurchaseCannotCrossRegions`, `TestABurnCannotCrossRegions`, `TestAPriceCannotUseTheOtherRegionsRate`; voucher redeem/region_wall_test `TestAVoucherCannotMoveRegion`
     - Signed-only services (new): ledger api/auth_walk_test and voucher api/auth_walk_test `TestEveryRouteRefusesAnUnsignedOrForgedCall` walk every `/v1` and `/internal/v1` route: unsigned, bad MAC, other body or path, stale, future, unknown caller and replayed nonce → 401
-  - [ ] 4.10.b EM-02 residue: the ledger role can still post Dr points_issued / Cr user.pending through a bare `ledger.Transfer` with no grant or allocation (no route exposes it). Add a commit-time rule that a debit to points_issued or marketing_expense belongs to a `ledger.grant`, and move the tests that post grants by hand onto the engine
+  - [x] 4.10.b EM-02 residue: the ledger role can still post Dr points_issued / Cr user.pending through a bare `ledger.Transfer` with no grant or allocation (no route exposes it). Add a commit-time rule that a debit to points_issued or marketing_expense belongs to a `ledger.grant`, and move the tests that post grants by hand onto the engine Merged 764a2ee: a commit-time trigger refuses any transfer debiting points_issued or marketing_expense unless `ledger.grant` rows from a matching-funder allocation account for exactly those points; `ledger/points_issued_test.go` TestPointsAreIssuedOnlyByAGrant; tests post grants through `internal/ledgertest`.
     - after an AU purchase of 1,000 pts that is fully granted, coverage = 1.50 and a streak grant succeeds;
     - burn → capture → before payout, coverage is unchanged to one minor unit;
     - after `pnpm verify`, the AU rate is still 3_000_000.
@@ -1315,6 +1315,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-26 · A · 4.10 Done-when audit: every Phase 4 engine-report defect mapped to its regression test, region walls in the database, every internal route refuses unsigned calls, points issued only by a grant · 764a2ee
 - 2026-09-26 · B · 5.4 The viewer's own API: `apps/api/src/modules/me` — consents (append-only `identity.consent_record`), declared interests, follows (F2 region-walled), saves, continue-watching, account deletion (`dsar-orchestrator`) + data export, one-time linked-app codes. A real header-vs-profile region/ageBand bug this ticket's own e2e suite caught and fixed (`require-region.ts`). `apps/api` 68 files/408 tests green (2 pre-existing, unrelated `/dev/clock` failures — 2.4.i); native Cerbos suite 580/580 including the new `MeSuite` (56). 5.5.a (server streak, F12/F16) also done this session, verified against real Postgres; 5.5.b's `ledger.points_unlocked` notification path is real; 5.5.c and the rest of 5.5.b stay ⛔ on 5.3/7.3.f/10.2 · 143d7d2
 - 2026-09-26 · A · 2.2 Continuous deploy from main: release on push to main, gate beside build, CI fast-forwards `production`, daily drift check, rollback keeps pm2 names; push-to-live 4 min 47 s · c361aa1
 - 2026-09-26 · A · 2.1 The whole stack runs on Helios: one artifact via the poller, migrations before the swap (F27), datastores in `yourtal.slice`, nginx with `/api`, media and signed HLS · 5d13115

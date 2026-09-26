@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 40/44 | `█████████░`  91% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 41/44 | `█████████░`  93% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 37/53 | `███████░░░`  70% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **22/82** | **156/368** | `████░░░░░░`  42% |
+| **All** | | | **22/82** | **157/368** | `████░░░░░░`  43% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | A (`yourtal-1`, `phase/4`): 4.8.a ✅ (d448b73); 4.7.a/b and the burn-price fix merging; next 4.4.m, 4.7.c. B (`yourtal-p4-b`, `phase/4-b`): 4.5, then 4.6.f/h. C done (4.9.a, 4.9.d) and D done (4.4.l, 4.4.g event); their helper worktrees stay in place |
 | 2 | `yourtal-2` | — free | — | Phase 3 done 2026-09-26 (1f00762). Worktree, `.env`, deps and slot DB are ready for the next phase |
-| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.b/c/d merged; 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) on 1.5.a next, then 1.5.e/f and the 1.5.g Check; B (`yourtal-p1-b`, `phase/1-b`) done with 1.6 (a–d) — scope was 1.6 only per the founder's re-split, not 1.7 — slot freed, worktree left in place; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5.a — slot freed, worktree left in place in case 1.5.a lands before another task needs it |
+| 3 | `yourtal-3` | **1** Identity, contracts & plumbing | 2026-09-26 | 1.1–1.4 ✅; 1.5.a/b/c/d/f merged (2e09392); 1.6 ✅ (63af281). Three agents: A (`yourtal-3`, `phase/1`) done with 1.5.a — moving to the 1.5.g Check once B's 1.5.e is on main; B (`yourtal-p1-b`, `phase/1-b`) now on 1.5.e (HTTP hardening), rebasing onto 1.5.a; D (`yourtal-p1-c`, `phase/1-c`) done with 1.7.a–d (2a1ade8), 1.7.e ⛔ 1.5 — slot freed, worktree left in place in case 1.5 lands before another task needs it |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Three agents: A (`yourtal-p8`, `phase/8`, db `yourtal_s8`) 8.1.a server side; B (`yourtal-p8-b`, `phase/8-b`) 8.2.d; C (`yourtal-p8-c`, `phase/8-c`) 8.3.b |
 
@@ -492,8 +492,8 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.4.e Email verification actually stores `verified_at`. Today it stores nothing (`auth.service.ts:284-308`). — Verified: `auth.service.test.ts`, a real-DB round trip (register → login → requestEmailVerification → confirmEmailVerification → `identity.credential.verified_at` reads back as a `Date`, starts NULL, survives a replay refusal unchanged).
   - [x] 1.4.f (requested by B for 5.4.b) DSAR handlers for `identity.user_profile`, credentials and sessions, registered with `dsar-orchestrator`. — `packages/db/src/dsar-handlers.ts`'s `identity` domain now erases all four of business membership, `user_profile`, `credential` and `session` in one handler (a migration first widened `identity.credential`'s grant to include DELETE). Verified against real Postgres in `dsar-handlers.test.ts`.
   - [x] 1.4.g **Check:** register → `GET /api/me` shows region AU, locale en-AU and age band adult. With the flag off, a 15-year-old is refused. — Verified in `me.controller.test.ts`, including the under-13 neutral refusal and its 24h retry-block cookie, and the TEEN_ACCOUNTS-on path (guardian_email_required, a pending teen's ageBand reading "teen").
-- [ ] **1.5 The principal comes from the session, never from headers** · needs: 1.4 — 🔄 slot 3 — d, c, b ✅. 1.4 is now ✅ on main; a/e/f next
-  - [ ] 1.5.a `PrincipalService.resolve` reads the `yt_session` httpOnly cookie (or Bearer token) through `SessionService.validateAndTouch`. **Delete every `x-yt-*` header path**, and remove the refusal to boot when `NODE_ENV=production`. **In the same commit** (exempt), remove the header fallback from `session-for.ts` and move every boot test in every area that still sends raw `x-yt-*` headers onto it.
+- [ ] **1.5 The principal comes from the session, never from headers** · needs: 1.4 — 🔄 slot 3 — a, d, c, b, f ✅. e in progress (agent B); g next once e lands
+  - [x] 1.5.a `PrincipalService.resolve` reads the `yt_session` httpOnly cookie (or Bearer token) through `SessionService.validateAndTouch`. **Delete every `x-yt-*` header path**, and remove the refusal to boot when `NODE_ENV=production`. **In the same commit** (exempt), remove the header fallback from `session-for.ts` and move every boot test in every area that still sends raw `x-yt-*` headers onto it. — ✅ 2026-09-26 2e09392: `PrincipalService.resolve` is now async, reading `yt_session` (cookie, then `Authorization: Bearer`) through `SessionService.validateAndTouch`; no credential is `anonymous`, an invalid one is a 401 (`session_invalid`, matching the codebase's existing convention rather than inventing a new one). Every `x-yt-*` header path and the `NODE_ENV=production` boot refusal are gone. Extracted `PrincipalResolver`/`SessionValidator` interfaces so duck-typed test fakes keep compiling despite the new private constructor field (TS nominal typing). `session-for.ts`'s `TestSession.headers` is deleted; every boot/e2e test across identity, business, store, watch, wallet, checkout and idempotency now drives a real cookie (seeding real `business_members`/`user_profile` rows where a business role is needed) — including modules (wallet, checkout) that landed on main mid-flight against the pre-1.5.a shape, fixed the same way. `apps/api`: 61 files/362 tests green; Cerbos native suite 509/509; `pnpm check` green.
   - [x] 1.5.b The principal carries:
     - business roles from `business.business_members`, only where `joined_at` is set;
     - staff roles from a new `identity.staff_role` table, with the roles in `packages/authz/src/roles.ts`;

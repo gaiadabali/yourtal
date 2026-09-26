@@ -8,7 +8,6 @@ import { AppModule } from "../../app.module";
 import { sessionFor } from "../../shared/testing/session-for";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
-import { DrizzleCampaignRepository } from "../campaign/persistence/drizzle-campaign.repository";
 
 /**
  * 5.4/5.5, end to end against the real app, real Postgres and this
@@ -20,7 +19,11 @@ let app: NestFastifyApplication;
 const db: AppDb = createAppDb(
   process.env["DATABASE_URL"] ?? process.env["TEST_DATABASE_URL"] ?? "",
 );
-const campaigns = new DrizzleCampaignRepository(db);
+// `watch.coverage` is append-only for `yourtal_app` (SELECT/INSERT only —
+// evidence a reward was paid against must not be editable), so cleaning up
+// this suite's own fixture rows needs the owner role, same as
+// `watch-earn-journey.e2e.test.ts`'s own teardown.
+const owner: AppDb = createAppDb(process.env["DATABASE_OWNER_URL"] ?? "");
 
 beforeAll(async () => {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -119,6 +122,65 @@ async function seedBusiness(region: "AU" | "ID"): Promise<string> {
   return id;
 }
 
+const seededCampaignIds: string[] = [];
+
+/**
+ * `campaigns.listVisible(1)`'s top row used to stand in for "any real
+ * campaign" here — but that borrows the SEEDED catalogue's own shared,
+ * mutable state, which other e2e files in this same suite pause, complete
+ * and otherwise mutate concurrently (vitest's file-level parallelism, one
+ * database). A real CI run caught exactly that: `listVisible(1)` came back
+ * empty, or with a campaign whose `terms_version` a different file was
+ * mid-mutation on. Each test below now owns its own row instead, the same
+ * `seedBusiness` convention right above.
+ */
+async function seedCampaign(region: "AU" | "ID"): Promise<{ campaignId: string; termsVersion: number }> {
+  const campaignId = randomUUID();
+  await db.execute(sql`
+    INSERT INTO campaign.campaigns
+      (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+       estimated_data_mb, reward_points, question_count, scoring_rule,
+       lifecycle_state, published_at, business_id, region, audience, content_category,
+       poster_url, teaser_url, hls_url, aspect, estimated_bytes,
+       starts_at, ends_at, open_viewing, teaser_start_seconds)
+    VALUES
+      (${campaignId}, 'quick', 'me e2e fixture', ${randomUUID()}, 'me e2e merchant',
+       'fixture', 30, 5, 100, 0, 'base_only',
+       'live', now(), ${randomUUID()}, ${region}, 'all_ages', 'entertainment',
+       'https://example.test/poster.jpg', 'https://example.test/teaser.m3u8',
+       'https://example.test/hls.m3u8', '16:9', 1000000,
+       now(), now() + interval '30 days', false, 0)
+  `);
+  await db.execute(sql`
+    INSERT INTO campaign.terms_version
+      (campaign_id, version, reward_points, question_count, scoring_rule, duration_seconds, accuracy_bonus_points, effective_from)
+    VALUES (${campaignId}, 1, 100, 0, 'base_only', 30, 0, now())
+  `);
+  // `findVisibleById`'s own `assemble()` needs a video source row to parse
+  // the campaign at all (`watch-earn-journey.e2e.test.ts`'s fixture does
+  // the same) — without it `campaignSchema.safeParse` fails and the
+  // campaign silently does not exist as far as `SavesController` is
+  // concerned, the exact 404 a real CI run caught here.
+  await db.execute(sql`
+    INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
+    VALUES (${campaignId}, 'hls', 'https://example.test/hls.m3u8')
+  `);
+  seededCampaignIds.push(campaignId);
+  return { campaignId, termsVersion: 1 };
+}
+
+afterAll(async () => {
+  for (const campaignId of seededCampaignIds) {
+    await owner.execute(sql`DELETE FROM watch.coverage WHERE session_id IN
+      (SELECT id FROM watch.session WHERE campaign_id = ${campaignId})`);
+    await owner.execute(sql`DELETE FROM watch.session WHERE campaign_id = ${campaignId}`);
+    await owner.execute(sql`DELETE FROM me.save WHERE campaign_id = ${campaignId}`);
+    await owner.execute(sql`DELETE FROM campaign.video_source WHERE campaign_id = ${campaignId}`);
+    await owner.execute(sql`DELETE FROM campaign.terms_version WHERE campaign_id = ${campaignId}`);
+    await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${campaignId}`);
+  }
+});
+
 describe("GET/PUT/DELETE /api/me/follows/:businessId", () => {
   it("follows and unfollows a real AU business", async () => {
     const session = await sessionFor(app, { jurisdiction: "AU" });
@@ -164,9 +226,7 @@ describe("GET/PUT/DELETE /api/me/follows/:businessId", () => {
 describe("GET/PUT/DELETE /api/me/saves/:campaignId", () => {
   it("saves and unsaves a real campaign", async () => {
     const session = await sessionFor(app, { jurisdiction: "AU" });
-    const visible = await campaigns.listVisible(1);
-    const campaignId = visible[0]?.id;
-    expect(campaignId, "expected at least one seeded campaign").toBeDefined();
+    const { campaignId } = await seedCampaign("AU");
 
     const saved = await app.inject({
       method: "PUT",
@@ -194,9 +254,7 @@ describe("GET/PUT/DELETE /api/me/saves/:campaignId", () => {
 describe("GET /api/me/sessions (continue watching)", () => {
   it("lists a parked (superseded) session with its coverage", async () => {
     const session = await sessionFor(app, { jurisdiction: "AU" });
-    const visible = await campaigns.listVisible(1);
-    const campaignId = visible[0]?.id;
-    const termsVersion = await campaigns.currentTermsVersion(String(campaignId));
+    const { campaignId, termsVersion } = await seedCampaign("AU");
     const sessionId = randomUUID();
     const now = new Date();
 

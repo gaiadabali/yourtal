@@ -38,7 +38,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 19/25 | `████████░░`  76% |
-| **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
+| **Phase 6** Viewer app | B | 🔄 in progress | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/6 | 0/18 | `░░░░░░░░░░`   0% |
@@ -80,7 +80,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **4** The bank is correct | 2026-09-25 | 4.4, 4.5, 4.7, 4.8 ✅; 4.9 all but 4.9.e (⛔ 2.1); 4.6.g ⛔ D16 (8.2.b). Two agents: G (`yourtal-p4-b`, `phase/4-b`) finishing B's cut-off work, 4.6.f.2 capture posting then 4.6.h anchoring (WIP saved as 06d44a5); H (`yourtal-p4-c`, `phase/4-h`): 4.10.a Done-when audit merged (8dbeb15: DB region wall, signed-route walk, EM-19 test); 4.10.b (EM-02 residue) open |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | A (`yourtal-2`, `phase/5`, db `yourtal_s2`) done and merged (acbdf73): 5.1 ✅, 5.2 ✅, 5.3 ✅ — see the Log entry and this task's own evidence notes. Slot 2 free; worktree left in place. B (`yourtal-p5-b`, `phase/5-b`) done and merged (143d7d2): 5.4 ✅, 5.5.a done, 5.5.b partial (`ledger.points_unlocked` real; `points_expiring`/followed-channel campaigns ⛔ 10.2/7.3.f). Left for whoever picks up 5.5 next: 5.5.d (the streak bonus on completion) has its hook now (`WATCH_COMPLETION_HOOK`, see 5.3.a's note) — bind a real listener rather than computing on read; then re-run 5.5.c's Check for real (a genuine completion now exists). |
-| 3 | `yourtal-3` | — free | 2026-09-26 | Phase 1 done (4916e31), including F30's reopen: 1.5.h makes a protected route with no session return 401/`no_session` instead of 403 (403 stays for a signed-in principal Cerbos refuses). `apps/api` 65 files/380 tests green with `.env` sourced against this worktree's own Cerbos; native suite 509/509. Next: Phase 2, 5 or 7 per Running order. Worktree left in place |
+| 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | `phase/6`, db `yourtal_s3`. Early slice: 6.1 → 6.2 → 6.5 → 6.7. 6.3, 6.4, 6.6 and 6.8 wait for 7.4/7.7 and Phase 5's close. Now: 6.1 |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-26 | 2.1 ✅ (incl. 2.1.f, unblocks 4.9.e), 2.2 ✅; 2.3 all but c (needs one real voucher on staging for the strict decrypt rehearsal). 2.4: b, c, d, e done, g ⛔ serwist 10; next a (TypeScript 6), f (pnpm 12), i (Integration green on main) |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
@@ -140,6 +140,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F31** | Registration writes the credential and the profile in two stores, not one transaction; a failed profile write leaves an account that can still sign in, as an ID principal with no age band | **Fix it in Phase 2 (2.5)**, before staging goes live. Phase 1 stays done. |
 | **F34** | Phase 5's three watch migrations reached `main` after newer ones (`…132841`, `…140000`, `…150000`), so every database with those applied refused to migrate (Atlas non-linear error) | **Rename them** to `20260926153513/14/15`, like F17: they had been on `main` for minutes and only `yourtal_s2` had applied the old names; its 3 revision rows were repointed. (The rename commit's message says F33 in error.) — ✂️ superseded by F36: slot 1's rename to …160000/160100/160200 is the one on main; this one never merged. |
 | **F35** | Does a partial score earn part of the accuracy bonus? | **No: perfect score only.** All questions right earns the full F12 bonus; anything less earns the base reward. |
+| **F36** | Phase 6 was asked to start while its gates (Phase 5, 7.4, 7.7) were unfinished | **Start an early slice now** in slot 3 (`phase/6`), like F21/F26/F27: 6.1 i18n, 6.2 sign-up and onboarding, 6.5 wallet and voucher, 6.7 Me, whose needs are all ✅. 6.3, 6.4, 6.6 and 6.8 wait for 7.4, 7.7 and Phase 5's close. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -941,7 +942,7 @@ Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen t
 - loading, empty, error and API-down states;
 - screenshots at 390 px and 1280 px, light and dark, with axe clean.
 
-- [ ] **6.1 One i18n system, English by default** · needs: 3.4
+- [ ] **6.1 One i18n system, English by default** · needs: 3.4 — 🔄 slot 3
   - [ ] 6.1.a Fold the four mechanisms (the next-intl provider, 10 `createTranslator` wrappers, the TS copy modules and the inline `locale === "id-ID"` ternaries) into next-intl catalogues, one namespace per feature, in B's features. en-AU is the default and id-ID is complete.
   - [ ] 6.1.b Display language is independent of region, stored in `profile.display_locale` and the `yt_locale` cookie. Add a language switch on Me and in the public header. `i18n/request.ts` reads only `yt_locale` and `yt_region` (1.7.b).
   - [ ] 6.1.c Make B's `id-ID` / `IDR` default parameters required (the list is in `public-i18n.md` A.2 §2). B's features call `formatPointsIn(locale, amount)` (1.7.d).

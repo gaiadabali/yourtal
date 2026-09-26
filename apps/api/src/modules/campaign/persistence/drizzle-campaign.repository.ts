@@ -1,9 +1,11 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import { campaignSchema } from "@yourtal/contracts/campaign";
+import type { CampaignTerms } from "@yourtal/contracts/campaign/campaign-terms";
 import { publicStatusOf, type CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
+import { toPoints } from "@yourtal/contracts/money";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
-import type { CampaignRepository } from "./campaign.repository";
+import type { CampaignRepository, CampaignRewardConfigRow } from "./campaign.repository";
 import {
   campaignChapters,
   campaignTermsVersions,
@@ -63,6 +65,60 @@ export class DrizzleCampaignRepository implements CampaignRepository {
     // `live` only. A paused campaign stays VISIBLE so nobody watching it is
     // stranded, but it must not start paying again while paused.
     return rows[0]?.state === "live";
+  }
+
+  /** EW-20: read via the Drizzle table so a shape drift fails typecheck, not just at runtime. */
+  async termsVersionDetails(campaignId: string, version: number): Promise<CampaignTerms | null> {
+    const rows = await this.db
+      .select()
+      .from(campaignTermsVersions)
+      .where(
+        and(eq(campaignTermsVersions.campaignId, campaignId), eq(campaignTermsVersions.version, version)),
+      )
+      .limit(1);
+    const row = rows[0];
+    if (row === undefined) return null;
+    return {
+      campaignId: row.campaignId,
+      version: row.version,
+      rewardPoints: toPoints(row.rewardPoints),
+      questionCount: row.questionCount,
+      scoringRule: row.scoringRule as CampaignTerms["scoringRule"],
+      durationSeconds: row.durationSeconds,
+      accuracyBonusPoints: toPoints(row.accuracyBonusPoints),
+      effectiveFrom: row.effectiveFrom.toISOString(),
+    };
+  }
+
+  /**
+   * Raw SQL rather than a Drizzle table: `campaign.reward_config` is owned
+   * by 7.1 (studio, area C) and its Drizzle definition lives in
+   * `campaign/persistence/schema/**`, which this session must not edit.
+   * Reading it through `db.execute` needs no schema file of its own.
+   */
+  async rewardConfigFor(campaignId: string): Promise<CampaignRewardConfigRow | null> {
+    const result = await this.db.execute<{
+      campaign_id: string;
+      allocation_id: string;
+      funder_type: string;
+      max_points_for_campaign: string;
+      reward_points_per_completion: string;
+      accuracy_bonus_points: string;
+    }>(sql`
+      SELECT campaign_id, allocation_id, funder_type, max_points_for_campaign,
+             reward_points_per_completion, accuracy_bonus_points
+        FROM campaign.reward_config WHERE campaign_id = ${campaignId}
+    `);
+    const row = result.rows[0];
+    if (row === undefined) return null;
+    return {
+      campaignId: row.campaign_id,
+      allocationId: row.allocation_id,
+      funderType: row.funder_type as CampaignRewardConfigRow["funderType"],
+      maxPointsForCampaign: Number(row.max_points_for_campaign),
+      rewardPointsPerCompletion: Number(row.reward_points_per_completion),
+      accuracyBonusPoints: Number(row.accuracy_bonus_points),
+    };
   }
 
   /**

@@ -5,11 +5,20 @@ import { CampaignModule, CAMPAIGN_DB } from "../../campaign/campaign.module";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { WatchModule } from "../watch.module";
 import { CheckpointController } from "./checkpoint.controller";
-import { CHECKPOINT_SECRET, CheckpointService } from "./checkpoint.service";
+import { CheckpointService } from "./checkpoint.service";
+import {
+  CHECKPOINT_ISSUE_REPOSITORY,
+  DrizzleCheckpointIssueRepository,
+} from "./persistence/checkpoint-issue.repository";
 import {
   CHECKPOINT_NONCE_REPOSITORY,
   DrizzleCheckpointNonceRepository,
 } from "./persistence/checkpoint-nonce.repository";
+import { QUESTION_BANK_REPOSITORY, DrizzleQuestionBankRepository } from "../question/question-bank.repository";
+import {
+  QUESTION_ANSWER_REPOSITORY,
+  DrizzleQuestionAnswerRepository,
+} from "../question/question-answer.repository";
 
 /**
  * Checkpoint token issuance. YT-0121.
@@ -51,21 +60,24 @@ import {
       inject: [CAMPAIGN_DB],
     },
     {
-      provide: CHECKPOINT_SECRET,
-      useFactory: (): string => {
-        const secret = process.env.CHECKPOINT_TOKEN_SECRET;
-        if (secret === undefined || secret === "") {
-          // Fail at boot, not at the first checkpoint. A missing signing key
-          // discovered on the request path is a 500 for a viewer who did
-          // nothing wrong, and — worse — it is the moment somebody reaches
-          // for a default to make the error go away.
-          throw new Error(
-            "CHECKPOINT_TOKEN_SECRET is required. Checkpoint tokens are signed with it, and a default would be a key every reader of this repository holds.",
-          );
-        }
-        return secret;
-      },
+      provide: CHECKPOINT_ISSUE_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleCheckpointIssueRepository(db),
+      inject: [CAMPAIGN_DB],
     },
+    {
+      provide: QUESTION_BANK_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleQuestionBankRepository(db),
+      inject: [CAMPAIGN_DB],
+    },
+    {
+      provide: QUESTION_ANSWER_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleQuestionAnswerRepository(db),
+      inject: [CAMPAIGN_DB],
+    },
+    // `CHECKPOINT_SECRET` is provided by `WatchModule` (5.2: `WatchController`
+    // needs the same secret to compute a session's schedule LENGTH for its
+    // own `questionsAnswered` gate, so the token now lives where both
+    // controllers can reach it — see that module's own comment).
   ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100

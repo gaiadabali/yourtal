@@ -60,6 +60,18 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 export const CHECKPOINT_TOKEN_TTL_MS = 90_000;
 
 /**
+ * How long an ANSWER has to arrive, once the question was delivered. F10,
+ * 5.2.d. Shorter than the token's own TTL above on purpose: the token stays
+ * SIGNATURE-valid for 90s so a slow network does not turn "expired" into a
+ * confusing extra failure mode, but an answer arriving more than 30s after
+ * delivery is scored wrong regardless of what it says — "timeout = answered
+ * wrong, never voids" (TASKS.md 5.2). The server measures this from the
+ * token's own issuance (`expiresAtMs - CHECKPOINT_TOKEN_TTL_MS`), never
+ * from anything the client reports.
+ */
+export const CHECKPOINT_ANSWER_TIMER_MS = 30_000;
+
+/**
  * Checkpoints are never placed within this many seconds of the start or the
  * end of a video.
  *

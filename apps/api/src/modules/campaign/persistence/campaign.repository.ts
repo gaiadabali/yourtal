@@ -1,4 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
+import type { CampaignTerms } from "@yourtal/contracts/campaign/campaign-terms";
 
 /**
  * Reading campaigns for a viewer. YT-0553.
@@ -31,6 +32,32 @@ export interface CampaignRepository {
   currentTermsVersion(campaignId: string): Promise<number | null>;
   /** Whether this campaign can still pay out. `live` only, not `paused`. */
   isLive(campaignId: string): Promise<boolean>;
+  /**
+   * The FROZEN terms a session entered under (EW-20). A watch session's
+   * duration, question count, scoring rule and reward figures must always
+   * come from here — the version named on the session row — never from the
+   * campaign's CURRENT config, which an advertiser may have edited since.
+   * `null` only if the (campaignId, version) pair does not exist, which a
+   * session's own composite foreign key makes impossible in practice.
+   */
+  termsVersionDetails(campaignId: string, version: number): Promise<CampaignTerms | null>;
+  /**
+   * The partner's funding link for this campaign (5.1.b, 5.3.a):
+   * `campaign.reward_config`. `null` when the campaign has none configured
+   * yet (a campaign authored before 7.1 wires this, or one that pays
+   * nothing) — a session on such a campaign starts non-earning rather than
+   * failing outright.
+   */
+  rewardConfigFor(campaignId: string): Promise<CampaignRewardConfigRow | null>;
+}
+
+export interface CampaignRewardConfigRow {
+  readonly campaignId: string;
+  readonly allocationId: string;
+  readonly funderType: "partner" | "marketing";
+  readonly maxPointsForCampaign: number;
+  readonly rewardPointsPerCompletion: number;
+  readonly accuracyBonusPoints: number;
 }
 
 export const CAMPAIGN_REPOSITORY = Symbol("CAMPAIGN_REPOSITORY");

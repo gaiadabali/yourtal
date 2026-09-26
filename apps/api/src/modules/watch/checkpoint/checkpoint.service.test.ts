@@ -9,6 +9,7 @@ import type {
   CheckpointSpend,
   SpendRefusal,
 } from "./persistence/checkpoint-nonce.repository";
+import type { CheckpointIssueRepository, LiveIssuance } from "./persistence/checkpoint-issue.repository";
 
 /**
  * `CheckpointService`'s orchestration. YT-0121.
@@ -58,6 +59,30 @@ class FakeNonceRepository implements CheckpointNonceRepository {
   }
 }
 
+/**
+ * A fake `CheckpointIssueRepository` for the same reason `FakeNonceRepository`
+ * is legitimate above: this file tests orchestration, not the database's own
+ * atomicity, which has its own suite against real Postgres.
+ */
+class FakeIssueRepository implements CheckpointIssueRepository {
+  private readonly live = new Map<string, LiveIssuance>();
+
+  issueOnce(
+    sessionId: string,
+    checkpointIndex: number,
+    fresh: LiveIssuance,
+    nowMs: number,
+  ): Promise<LiveIssuance> {
+    const key = `${sessionId}:${String(checkpointIndex)}`;
+    const existing = this.live.get(key);
+    if (existing !== undefined && existing.expiresAtMs > nowMs) {
+      return Promise.resolve(existing);
+    }
+    this.live.set(key, fresh);
+    return Promise.resolve(fresh);
+  }
+}
+
 const SECRET = "test-secret-not-a-real-one";
 const NOW = 1_764_000_000_000;
 
@@ -67,20 +92,20 @@ let sessionId: string;
 
 beforeEach(() => {
   nonces = new FakeNonceRepository();
-  service = new CheckpointService(nonces, SECRET);
+  service = new CheckpointService(nonces, new FakeIssueRepository(), SECRET);
   sessionId = randomUUID();
 });
 
 describe("issuing", () => {
   it("issues a token that redeems once", async () => {
-    const { token } = service.issue(sessionId, 0, NOW);
+    const { token } = await service.issue(sessionId, 0, NOW);
 
     const result = await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW });
     expect(result.redeemed).toBe(true);
   });
 
   it("expires a token after the TTL", async () => {
-    const { token, expiresAtMs } = service.issue(sessionId, 0, NOW);
+    const { token, expiresAtMs } = await service.issue(sessionId, 0, NOW);
     expect(expiresAtMs).toBe(NOW + CHECKPOINT_TOKEN_TTL_MS);
 
     const result = await service.redeem({
@@ -92,20 +117,28 @@ describe("issuing", () => {
     expect(result).toMatchObject({ redeemed: false, refusal: { kind: "token_rejected" } });
   });
 
-  it("gives every issuance its own nonce", () => {
-    const first = service.issue(sessionId, 0, NOW).token;
-    const second = service.issue(sessionId, 0, NOW).token;
+  it("reissuing while the prior token is still live returns the SAME token (EW-08)", async () => {
+    const first = (await service.issue(sessionId, 0, NOW)).token;
+    const second = (await service.issue(sessionId, 0, NOW)).token;
 
-    // Same session, same checkpoint, same instant — and still different
-    // bytes, because the nonce is fresh each time. This is exactly why the
-    // nonce alone cannot enforce one-answer-per-checkpoint.
-    expect(first).not.toBe(second);
+    // Unlike before EW-08's fix, a repeated issue for a still-live
+    // checkpoint no longer mints a fresh nonce — it hands back the token
+    // already in flight, so a client cannot collect two live issuances for
+    // one checkpoint.
+    expect(second).toBe(first);
+  });
+
+  it("issues a FRESH token once the prior one has expired", async () => {
+    const first = (await service.issue(sessionId, 0, NOW)).token;
+    const second = (await service.issue(sessionId, 0, NOW + CHECKPOINT_TOKEN_TTL_MS + 1)).token;
+
+    expect(second).not.toBe(first);
   });
 });
 
 describe("redeeming", () => {
   it("refuses the same token twice", async () => {
-    const { token } = service.issue(sessionId, 0, NOW);
+    const { token } = await service.issue(sessionId, 0, NOW);
     const input = { token, sessionId, checkpointIndex: 0, nowMs: NOW };
 
     expect((await service.redeem(input)).redeemed).toBe(true);
@@ -115,22 +148,28 @@ describe("redeeming", () => {
     });
   });
 
-  it("refuses a second, freshly-signed token for a checkpoint already answered", async () => {
-    // The attack nonce uniqueness does not cover: ask twice, spend both.
-    // Both tokens are genuinely ours and individually valid.
-    const first = service.issue(sessionId, 3, NOW).token;
-    const second = service.issue(sessionId, 3, NOW).token;
+  it("EW-08: re-issuing after a checkpoint is answered returns the SAME (now dead) token, never a fresh one", async () => {
+    // Before EW-08's fix, `ask twice, spend both` worked: two independent
+    // issuances for one checkpoint were both genuinely ours and both
+    // valid, and nonce uniqueness alone did nothing to stop it.
+    // `CheckpointIssueRepository` closes that: while a checkpoint's
+    // issuance is still live, asking again returns the identical token —
+    // there is no way to ever hold TWO distinct valid tokens for the same
+    // checkpoint at once.
+    const first = (await service.issue(sessionId, 3, NOW)).token;
+    expect((await service.redeem({ token: first, sessionId, checkpointIndex: 3, nowMs: NOW })).redeemed).toBe(
+      true,
+    );
 
-    expect(
-      (await service.redeem({ token: first, sessionId, checkpointIndex: 3, nowMs: NOW })).redeemed,
-    ).toBe(true);
+    const second = (await service.issue(sessionId, 3, NOW)).token;
+    expect(second).toBe(first);
     expect(
       await service.redeem({ token: second, sessionId, checkpointIndex: 3, nowMs: NOW }),
-    ).toMatchObject({ redeemed: false, refusal: { kind: "checkpoint_already_answered" } });
+    ).toMatchObject({ redeemed: false, refusal: { kind: "nonce_already_spent" } });
   });
 
   it("refuses a token minted for another session", async () => {
-    const { token } = service.issue(randomUUID(), 0, NOW);
+    const { token } = await service.issue(randomUUID(), 0, NOW);
 
     expect(
       await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW }),
@@ -148,13 +187,13 @@ describe("redeeming", () => {
   it("spends nothing when the token is rejected", async () => {
     await service.redeem({ token: "not-a-token", sessionId, checkpointIndex: 0, nowMs: NOW });
     await service.redeem({
-      token: service.issue(sessionId, 0, NOW).token,
+      token: (await service.issue(sessionId, 0, NOW)).token,
       sessionId,
       checkpointIndex: 0,
       nowMs: NOW + CHECKPOINT_TOKEN_TTL_MS + 1,
     });
     await service.redeem({
-      token: service.issue(randomUUID(), 0, NOW).token,
+      token: (await service.issue(randomUUID(), 0, NOW)).token,
       sessionId,
       checkpointIndex: 0,
       nowMs: NOW,
@@ -164,14 +203,14 @@ describe("redeeming", () => {
 
     // And the checkpoint is still answerable, which is the point — three
     // hostile requests left the viewer's own token working.
-    const { token } = service.issue(sessionId, 0, NOW);
+    const { token } = await service.issue(sessionId, 0, NOW);
     expect(
       (await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW })).redeemed,
     ).toBe(true);
   });
 
   it("records the token's own expiry on the spend, so pruning has something true to read", async () => {
-    const { token, expiresAtMs } = service.issue(sessionId, 0, NOW);
+    const { token, expiresAtMs } = await service.issue(sessionId, 0, NOW);
     await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW });
 
     const [spend] = [...nonces.spent.values()];
@@ -201,22 +240,21 @@ describe("logging refusals", () => {
     vi.restoreAllMocks();
   });
 
-  it("distinguishes a replay from a second issuance, which the caller cannot", async () => {
-    const { token } = service.issue(sessionId, 0, NOW);
+  it("logs a replay of the same token as nonce_already_spent", async () => {
+    const { token } = await service.issue(sessionId, 0, NOW);
     const input = { token, sessionId, checkpointIndex: 0, nowMs: NOW };
     await service.redeem(input);
 
+    // EW-08: since `CheckpointIssueRepository` now returns the SAME token
+    // for a repeated issue while the prior one is still live, a client can
+    // no longer collect two DIFFERENT valid tokens for one checkpoint —
+    // `checkpoint_already_answered` (two genuinely distinct tokens racing
+    // to answer one checkpoint) is consequently unreachable through this
+    // service's own public API any more. What remains reachable, and is
+    // asserted here, is the plain replay: the identical token presented
+    // twice.
     await service.redeem(input);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("nonce_already_spent"));
-
-    warn.mockClear();
-    await service.redeem({
-      token: service.issue(sessionId, 0, NOW).token,
-      sessionId,
-      checkpointIndex: 0,
-      nowMs: NOW,
-    });
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("checkpoint_already_answered"));
   });
 
   it("names the session and checkpoint, so a log line locates the attempt", async () => {
@@ -226,8 +264,8 @@ describe("logging refusals", () => {
   });
 
   it("records a bad signature as a warning, not as routine", async () => {
-    const stranger = new CheckpointService(new FakeNonceRepository(), "a-different-secret");
-    const forged = stranger.issue(sessionId, 0, NOW).token;
+    const stranger = new CheckpointService(new FakeNonceRepository(), new FakeIssueRepository(), "a-different-secret");
+    const forged = (await stranger.issue(sessionId, 0, NOW)).token;
 
     await service.redeem({ token: forged, sessionId, checkpointIndex: 0, nowMs: NOW });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("bad_signature"));
@@ -240,7 +278,7 @@ describe("logging refusals", () => {
    * ones get buried.
    */
   it("logs an expiry at info, never as a warning", async () => {
-    const { token, expiresAtMs } = service.issue(sessionId, 0, NOW);
+    const { token, expiresAtMs } = await service.issue(sessionId, 0, NOW);
     await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: expiresAtMs + 1 });
 
     expect(info).toHaveBeenCalledWith(expect.stringContaining("expired"));
@@ -248,7 +286,7 @@ describe("logging refusals", () => {
   });
 
   it("says nothing when a checkpoint is redeemed legitimately", async () => {
-    const { token } = service.issue(sessionId, 0, NOW);
+    const { token } = await service.issue(sessionId, 0, NOW);
     await service.redeem({ token, sessionId, checkpointIndex: 0, nowMs: NOW });
 
     expect(warn).not.toHaveBeenCalled();
@@ -269,7 +307,7 @@ describe("scheduling", () => {
     expect(times.length).toBeGreaterThan(0);
 
     for (const [index] of times.entries()) {
-      const { token } = service.issue(sessionId, index, NOW);
+      const { token } = await service.issue(sessionId, index, NOW);
       const result = await service.redeem({ token, sessionId, checkpointIndex: index, nowMs: NOW });
       expect(result.redeemed, `checkpoint ${String(index)} should redeem`).toBe(true);
     }

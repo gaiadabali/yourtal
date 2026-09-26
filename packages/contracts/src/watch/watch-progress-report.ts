@@ -1,50 +1,58 @@
 import { z } from "zod";
-import { type CoverageInterval, toWholeSeconds } from "./watch-coverage";
+import {
+  type CoverageInterval,
+  coveredSeconds,
+  mergeCoverage,
+  toWholeSeconds,
+} from "./watch-coverage";
 
 /**
- * Deciding whether a progress report could possibly be true. YT-0120.
+ * Deciding whether a progress report could possibly be true. YT-0120, EW-01.
  *
- * ## The check that needs no client cooperation
+ * ## Cumulative, not per-report
  *
- * A client says "I played seconds 600 to 660". The server knows how long it
- * has been since that client's last report. **You cannot watch sixty seconds
- * of video in four seconds of wall-clock time at 1x**, so a report claiming
- * more playback than time has passed is not a suspicious pattern to be
- * scored — it is arithmetically impossible, and it is refused.
+ * The first version of this check compared one report's claimed span
+ * against the time elapsed since the previous ACCEPTED report, with a fixed
+ * tolerance added back in on every single report. That is exactly what let
+ * `docs/audit/2026-09-25/engine-watch.md` §2's probe cover a 1,800s campaign
+ * in 3s of wall clock: 600 requests, each judged in isolation, each getting
+ * its own slice of tolerance, sum to whatever the attacker likes.
  *
- * This is the half of `docs/22`'s fraud model that survives without the
- * client's help. It does not depend on the player behaving, on an event
- * firing, or on a token being kept secret. A scripted client that simply
- * POSTs progress as fast as it can is stopped by the clock.
+ * The fix is to judge the SESSION, not the report. However many reports
+ * arrive, and however they overlap, the total number of DISTINCT seconds
+ * this session has ever claimed must not exceed the wall-clock time that has
+ * passed since it started, plus one tolerance for the whole session. A
+ * report that would push the running total past that line is refused,
+ * whatever it claims about its own span — which is also why a report's own
+ * `fromSeconds`/`toSeconds` no longer need to be checked against "time since
+ * last report" at all: the cumulative total already accounts for every
+ * second this session has ever been credited.
  *
- * ## Why a tolerance exists, and why it is small
+ * ## Why this also closes the idle-then-claim and parallel-report holes
  *
- * Reports are batched, clocks drift, and a request can be delayed in
- * flight — so a report covering slightly more than the elapsed window is
- * ordinary. The tolerance is a few seconds, not a percentage: a percentage
- * grows with the claim, which rewards exactly the behaviour being checked.
- * An attacker gains at most `TOLERANCE_SECONDS` per report, and reports are
- * rate-limited by the same clock.
+ * "Sleep 90s, then claim any 93s span" no longer works: the running total
+ * after that claim is 93s, and only 90s (plus the tolerance) has actually
+ * elapsed since the session started, so it is refused exactly as a claim
+ * made three seconds after starting would be. And because the total is
+ * compared against the SESSION's `startedAt` rather than against a
+ * per-report reference that a stale read can disagree about, two concurrent
+ * reports racing the same stale `lastProgressAt` no longer help an attacker
+ * — the row lock in `DrizzleWatchSessionRepository.recordProgress` is what
+ * stops them computing the total from the same base at once, and this
+ * function is what stops the total itself being too generous even when they
+ * do not race.
  *
- * ## What this deliberately does NOT do
+ * ## Why the tolerance is still a constant, not a percentage
  *
- * It does not reject a **seek**. Jumping forward produces a report whose
- * start is beyond the last position, and that is a legitimate thing a viewer
- * can do — it simply earns nothing, because the skipped seconds are never
- * covered (`watch-coverage.ts`). Blocking seeks would be a worse product for
- * no security gain; the coverage rule already makes them pointless as an
- * attack.
- *
- * It also does not reject a **rewind**. Re-watching is ordinary, and the
- * coverage set counts a second once however often it is played.
+ * Same reasoning as before: batching, clock drift and a request delayed in
+ * flight need a LITTLE slack, and a percentage grows with the size of the
+ * claim, rewarding exactly the behaviour being checked. It is spent once per
+ * session now rather than once per report, which is the whole fix.
  */
 
 export const MAX_PLAYBACK_RATE = 1;
 
-/**
- * Absolute, in seconds. Batching and clock skew, not a share of the claim —
- * a percentage tolerance grows with the size of the lie.
- */
+/** Absolute, in seconds, spent ONCE across the whole session — never per report. */
 export const TOLERANCE_SECONDS = 3;
 
 export const watchProgressReportSchema = z.object({
@@ -67,7 +75,7 @@ export type ReportRefusal =
   | { readonly kind: "not_forward"; readonly detail: string }
   | {
       readonly kind: "faster_than_realtime";
-      readonly claimedSeconds: number;
+      readonly cumulativeSeconds: number;
       readonly elapsedSeconds: number;
     }
   | {
@@ -78,21 +86,22 @@ export type ReportRefusal =
   | { readonly kind: "sub_second"; readonly detail: string };
 
 export interface ReportContext {
-  /** Server clock at the previous accepted report, or the session start. */
-  readonly previousServerMs: number;
+  /** Server clock when the SESSION started. The one reference the budget is measured from. */
+  readonly startedAtMs: number;
   /** Server clock now. The client's own timestamp is never used here. */
   readonly nowServerMs: number;
   readonly durationSeconds: number;
+  /** Every span this session has been credited so far, under the same lock as this judgement. */
+  readonly existingCoverage: readonly CoverageInterval[];
 }
 
 /**
- * Judges one report.
+ * Judges one report against the session's whole history.
  *
  * Returns the coverage interval to record, or why it was refused. The
- * refusal is a value rather than an exception because a refused report is
- * ordinary traffic — a buggy client, a laggy network, or somebody probing —
- * and an endpoint that throws on ordinary traffic gets a catch block that
- * swallows real errors with it.
+ * refusal is a value rather than an exception for the same reason as
+ * before: a refused report is ordinary traffic, and an endpoint that throws
+ * on ordinary traffic acquires a catch block that swallows real errors too.
  */
 export function judgeProgressReport(
   report: WatchProgressReport,
@@ -109,9 +118,8 @@ export function judgeProgressReport(
   }
 
   // Claiming past the end is either a bug or an attempt to satisfy a
-  // total-seconds check. `isFullyWatched` asks about gaps instead, so this
-  // would not have worked — but a report that cannot be true should be
-  // refused where it arrives rather than neutralised somewhere downstream.
+  // total-seconds check. Refused where it arrives rather than neutralised
+  // downstream.
   if (report.toSeconds > context.durationSeconds) {
     return {
       accepted: false,
@@ -120,16 +128,6 @@ export function judgeProgressReport(
         toSeconds: report.toSeconds,
         durationSeconds: context.durationSeconds,
       },
-    };
-  }
-
-  const elapsedSeconds = Math.max(0, (context.nowServerMs - context.previousServerMs) / 1_000);
-  const claimedSeconds = report.toSeconds - report.fromSeconds;
-
-  if (claimedSeconds > elapsedSeconds * MAX_PLAYBACK_RATE + TOLERANCE_SECONDS) {
-    return {
-      accepted: false,
-      reason: { kind: "faster_than_realtime", claimedSeconds, elapsedSeconds },
     };
   }
 
@@ -145,6 +143,20 @@ export function judgeProgressReport(
     };
   }
 
+  // The number this check actually cares about: not the claimed span's own
+  // length, but how many NEW distinct seconds it would add once merged with
+  // everything already credited. Merging first is what stops an attacker
+  // inflating the total by re-claiming seconds already covered.
+  const cumulativeSeconds = coveredSeconds(mergeCoverage([...context.existingCoverage, interval]));
+  const elapsedSeconds = Math.max(0, (context.nowServerMs - context.startedAtMs) / 1_000);
+
+  if (cumulativeSeconds > elapsedSeconds * MAX_PLAYBACK_RATE + TOLERANCE_SECONDS) {
+    return {
+      accepted: false,
+      reason: { kind: "faster_than_realtime", cumulativeSeconds, elapsedSeconds },
+    };
+  }
+
   return { accepted: true, interval };
 }
 
@@ -154,7 +166,7 @@ export function describeRefusal(refusal: ReportRefusal): string {
       return refusal.detail;
     case "faster_than_realtime":
       return (
-        `Claimed ${String(refusal.claimedSeconds)}s of playback in ` +
+        `This session would have ${String(refusal.cumulativeSeconds)}s of credited playback after ` +
         `${String(Math.round(refusal.elapsedSeconds))}s of real time. ` +
         `Impossible at ${String(MAX_PLAYBACK_RATE)}x, so it is refused rather than scored.`
       );

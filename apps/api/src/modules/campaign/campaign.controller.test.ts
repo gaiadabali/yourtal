@@ -110,6 +110,12 @@ class LimitRecordingRepository implements CampaignRepository {
   isLive(): Promise<boolean> {
     return Promise.resolve(false);
   }
+  termsVersionDetails(): ReturnType<CampaignRepository["termsVersionDetails"]> {
+    return Promise.resolve(null);
+  }
+  rewardConfigFor(): ReturnType<CampaignRepository["rewardConfigFor"]> {
+    return Promise.resolve(null);
+  }
 }
 
 /** A draft that is complete in every other respect. Assembled in `beforeAll`. */

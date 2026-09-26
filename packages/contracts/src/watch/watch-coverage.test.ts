@@ -7,7 +7,6 @@ import {
   toWholeSeconds,
   uncoveredGaps,
 } from "./watch-coverage";
-import { judgeProgressReport } from "./watch-progress-report";
 import { judgeCompletion, watchSessionSchema } from "./watch-session";
 
 /**
@@ -143,59 +142,9 @@ describe("completion is coverage, not position", () => {
   });
 });
 
-describe("a report has to be possible", () => {
-  const base = {
-    sessionId: "00000000-0000-4000-8000-00000000a001",
-    reportedAt: "2026-09-20T00:00:00.000Z",
-  };
-  const context = {
-    previousServerMs: 1_000_000,
-    nowServerMs: 1_010_000,
-    durationSeconds: DURATION,
-  };
-
-  it("accepts playback that fits in the elapsed time", () => {
-    // 10 seconds claimed, 10 seconds of wall clock.
-    const verdict = judgeProgressReport({ ...base, fromSeconds: 0, toSeconds: 10 }, context);
-    expect(verdict.accepted).toBe(true);
-  });
-
-  it("refuses more playback than time has passed", () => {
-    // You cannot watch 600 seconds in 10. This is the check that needs no
-    // client cooperation: a scripted client POSTing as fast as it can is
-    // stopped by the clock, not by a heuristic.
-    const verdict = judgeProgressReport({ ...base, fromSeconds: 0, toSeconds: 600 }, context);
-    expect(verdict.accepted).toBe(false);
-    expect(!verdict.accepted ? verdict.reason.kind : "").toBe("faster_than_realtime");
-  });
-
-  it("allows a small tolerance for batching and clock skew", () => {
-    // 12s claimed in a 10s window is ordinary. The tolerance is absolute,
-    // not a percentage — a percentage grows with the size of the lie.
-    const verdict = judgeProgressReport({ ...base, fromSeconds: 0, toSeconds: 12 }, context);
-    expect(verdict.accepted).toBe(true);
-  });
-
-  it("refuses a position past the end of the campaign", () => {
-    const verdict = judgeProgressReport({ ...base, fromSeconds: 0, toSeconds: 9_999 }, context);
-    expect(!verdict.accepted ? verdict.reason.kind : "").toBe("beyond_duration");
-  });
-
-  it("refuses a span that does not move forwards", () => {
-    const verdict = judgeProgressReport({ ...base, fromSeconds: 100, toSeconds: 100 }, context);
-    expect(!verdict.accepted ? verdict.reason.kind : "").toBe("not_forward");
-  });
-
-  it("ACCEPTS a seek, because seeking is allowed and simply earns nothing", () => {
-    // A jump forward reports a span beginning past the last position. It is
-    // legitimate — blocking seeks would be a worse product for no security
-    // gain, since the skipped seconds are never covered anyway.
-    const verdict = judgeProgressReport({ ...base, fromSeconds: 1_700, toSeconds: 1_705 }, context);
-    expect(verdict.accepted).toBe(true);
-    // And what it earns is five seconds, not completion.
-    expect(verdict.accepted ? coveredSeconds([verdict.interval]) : 0).toBe(5);
-  });
-});
+// `judgeProgressReport`'s own tests, including the cumulative-budget fix for
+// EW-01 (the burst and idle-then-claim attacks), moved to
+// `watch-progress-report.test.ts` — this file stays about coverage itself.
 
 describe("judging a completed session", () => {
   const session = watchSessionSchema.parse({

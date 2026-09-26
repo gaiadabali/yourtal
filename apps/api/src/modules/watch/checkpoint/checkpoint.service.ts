@@ -6,10 +6,16 @@ import {
   newCheckpointNonce,
   verifyCheckpointToken,
 } from "@yourtal/contracts/watch/checkpoint-token";
+import type { Question } from "@yourtal/contracts/question/question";
+import { pickQuestionForCheckpoint } from "../question/question-for-checkpoint";
 import {
   CHECKPOINT_NONCE_REPOSITORY,
   type CheckpointNonceRepository,
 } from "./persistence/checkpoint-nonce.repository";
+import {
+  CHECKPOINT_ISSUE_REPOSITORY,
+  type CheckpointIssueRepository,
+} from "./persistence/checkpoint-issue.repository";
 
 /**
  * The signing key, injected rather than read from `process.env` here.
@@ -48,7 +54,7 @@ export type RedeemRefusal =
   | { readonly kind: "checkpoint_already_answered" };
 
 export type RedeemResult =
-  | { readonly redeemed: true; readonly nonce: string }
+  | { readonly redeemed: true; readonly nonce: string; readonly expiresAtMs: number }
   | { readonly redeemed: false; readonly refusal: RedeemRefusal };
 
 export interface RedeemInput {
@@ -64,6 +70,7 @@ export class CheckpointService {
 
   constructor(
     @Inject(CHECKPOINT_NONCE_REPOSITORY) private readonly nonces: CheckpointNonceRepository,
+    @Inject(CHECKPOINT_ISSUE_REPOSITORY) private readonly issues: CheckpointIssueRepository,
     @Inject(CHECKPOINT_SECRET) private readonly secret: string,
   ) {}
 
@@ -72,13 +79,37 @@ export class CheckpointService {
     return checkpointSchedule({ sessionId, durationSeconds, count, secret: this.secret });
   }
 
-  issue(sessionId: string, checkpointIndex: number, nowMs: number): IssuedCheckpoint {
-    const expiresAtMs = nowMs + CHECKPOINT_TOKEN_TTL_MS;
+  /**
+   * Which question one checkpoint asks (5.2.b/c). Exposed here, rather than
+   * making the signing secret public, so the controller never touches it
+   * directly — the same reasoning `schedule` above already follows.
+   */
+  pickQuestion(
+    bank: readonly Question[],
+    sessionId: string,
+    schedule: readonly number[],
+    index: number,
+  ): Question | null {
+    return pickQuestionForCheckpoint(bank, sessionId, schedule, index, this.secret);
+  }
+
+  /**
+   * EW-08: at most one LIVE token per (session, checkpoint) at a time. A
+   * repeated call while the prior issuance is still live returns the SAME
+   * token — `issueCheckpointToken` is pure over its claims, so replaying a
+   * lost response needs no idempotency key of its own.
+   */
+  async issue(sessionId: string, checkpointIndex: number, nowMs: number): Promise<IssuedCheckpoint> {
+    const fresh = {
+      nonce: newCheckpointNonce(),
+      expiresAtMs: nowMs + CHECKPOINT_TOKEN_TTL_MS,
+    };
+    const live = await this.issues.issueOnce(sessionId, checkpointIndex, fresh, nowMs);
     const token = issueCheckpointToken(
-      { sessionId, checkpointIndex, nonce: newCheckpointNonce(), expiresAtMs },
+      { sessionId, checkpointIndex, nonce: live.nonce, expiresAtMs: live.expiresAtMs },
       this.secret,
     );
-    return { token, expiresAtMs };
+    return { token, expiresAtMs: live.expiresAtMs };
   }
 
   /**
@@ -118,7 +149,7 @@ export class CheckpointService {
       this.refuse(input, { kind: refused });
       return { redeemed: false, refusal: { kind: refused } };
     }
-    return { redeemed: true, nonce: verdict.claims.nonce };
+    return { redeemed: true, nonce: verdict.claims.nonce, expiresAtMs: verdict.claims.expiresAtMs };
   }
 
   /**

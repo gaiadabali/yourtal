@@ -42,7 +42,19 @@ export const watchSessionStateSchema = z.enum([
   "active",
   /** Full coverage reached and the questions answered. Terminal. */
   "completed",
-  /** The user started another session. Kept, not deleted — it is evidence. */
+  /**
+   * Set aside while the user watches something else. 5.1.b. Unlike
+   * `superseded`, a parked session is resumable: starting a new session on
+   * a DIFFERENT campaign parks whatever was active rather than destroying
+   * it, and returning to that campaign (while it is still live and its
+   * terms version has not changed) reactivates the SAME row — same id, same
+   * accumulated coverage — rather than creating a new one. This is what
+   * keeps coverage keyed to (user, campaign, terms version) in effect: at
+   * most one open (`active` or `parked`) session ever exists for a given
+   * tuple, enforced by `session_one_open_per_user_campaign_terms`.
+   */
+  "parked",
+  /** The user restarted under NEW terms, or the campaign ended. Terminal, not resumable, kept as evidence. */
   "superseded",
   /** Refused for fraud or an ended campaign. Terminal, and never pays. */
   "void",
@@ -66,6 +78,28 @@ export const watchSessionSchema = z.object({
   lastProgressAt: z.iso.datetime(),
   /** Set once, when coverage completes and the questions are answered. */
   completedAt: z.iso.datetime().nullable(),
+  /**
+   * 5.1.b. `true` when this session's completion must never call
+   * `grantReward` — either the user already earned this campaign's reward
+   * (a non-earning replay), or the allocation hold at session start failed.
+   * The session still tracks real coverage and questions, and still
+   * completes normally; it simply never pays.
+   */
+  nonEarning: z.boolean(),
+  /** Why, when `nonEarning` is true. Shown to the viewer rather than silently withheld. */
+  nonEarningReason: z.string().min(1).nullable(),
+  /** The allocation hold (4.4.e) this session's eventual grant will consume, if it has one. */
+  holdId: z.string().min(1).nullable(),
+  /** Set once `grantReward` actually succeeds at completion. Distinct from `nonEarning`, which is decided at start. */
+  granted: z.boolean(),
+  /**
+   * 5.2.f: derived from `campaign.question_response` AT WRITE TIME, never
+   * by re-reading it — `yourtal_app` has INSERT only on that table. These
+   * are what `complete` actually reads for `questionsAnswered`, and what
+   * `pointsForCompletion` scores the accuracy bonus against.
+   */
+  questionsAsked: z.number().int().min(0),
+  questionsCorrect: z.number().int().min(0),
 });
 
 export type WatchSession = z.infer<typeof watchSessionSchema>;

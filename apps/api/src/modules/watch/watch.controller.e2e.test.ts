@@ -175,7 +175,11 @@ describe("session-scoped routes resolve their campaign through the session (1.5.
     const termsVersion = await campaignRepository.currentTermsVersion(liveCampaignId);
     expect(termsVersion, "the seeded live campaign should carry published terms").not.toBeNull();
 
-    const session = await sessions.start(userId, liveCampaignId, termsVersion ?? 1);
+    const { session } = await sessions.startOrResume({
+      userId,
+      campaignId: liveCampaignId,
+      termsVersion: termsVersion ?? 1,
+    });
 
     /* eslint-disable @typescript-eslint/unbound-method -- each is read for its @Authorize metadata only, never called. */
     for (const handler of [

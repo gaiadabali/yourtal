@@ -1,11 +1,39 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyRequest } from "fastify";
 import type { Principal } from "@yourtal/authz/principal";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { coveredSeconds } from "@yourtal/contracts/watch/coverage";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { FakeLedgerClient } from "../../shared/ledger-client/fake-ledger-client";
+import type { UserProfileRepository, StoredUserProfile } from "../identity/persistence/user-profile.repository";
 import { DrizzleCampaignRepository } from "../campaign/persistence/drizzle-campaign.repository";
 import { DrizzleWatchSessionRepository } from "./persistence/drizzle-watch-session.repository";
+import { StubDeliveryCoverageReader } from "./delivery-coverage";
 import { WatchController } from "./watch.controller";
+
+/** A profile for whatever userId this suite invents — none of these are real registered accounts. */
+class FakeProfiles implements UserProfileRepository {
+  create(): Promise<void> {
+    return Promise.resolve();
+  }
+  findByUserId(userId: string): Promise<StoredUserProfile | null> {
+    return Promise.resolve({
+      userId,
+      region: "ID",
+      displayLocale: "id-ID",
+      displayName: "Test viewer",
+      dateOfBirth: "1990-01-01",
+      timezone: "Asia/Jakarta",
+      guardianEmail: null,
+      parentConsentStatus: "not_required",
+      trustTier: 3,
+      suspendedAt: null,
+    });
+  }
+  update(): Promise<void> {
+    return Promise.resolve();
+  }
+}
 
 /**
  * The watch routes, against real Postgres and the seeded catalogue. YT-0553.
@@ -51,23 +79,46 @@ const principal: Principal = {
 };
 const principals = { resolve: vi.fn().mockReturnValue(principal) };
 const request = {} as FastifyRequest;
-const controller = new WatchController(principals, sessions, campaigns);
+const controller = new WatchController(
+  principals,
+  sessions,
+  campaigns,
+  new FakeLedgerClient(db),
+  new FakeProfiles(),
+  "test-attestation-secret-not-a-real-one",
+  "test-checkpoint-secret-not-a-real-one",
+  new StubDeliveryCoverageReader(),
+);
 
 let longFormId = "";
 let durationSeconds = 0;
+let otherCampaignId = "";
 
 beforeAll(async () => {
-  // Owner, because the app role deliberately has no DELETE on `watch.session`
-  // — a session is the record of an attempt, and one that can be erased is
-  // not a record. The grant is the feature; the test works around it rather
-  // than widening it.
-  await owner.execute(`DELETE FROM watch.session WHERE user_id = '${userId}'`);
-
   const visible = await campaigns.listVisible(50);
   const longForm = visible.find((campaign) => campaign.kind === "long_form");
   expect(longForm, "the seeded catalogue should contain a live long-form campaign").toBeDefined();
   longFormId = longForm?.id ?? "";
   durationSeconds = longForm?.durationSeconds ?? 0;
+
+  const another = visible.find((campaign) => campaign.id !== longFormId);
+  expect(another, "the seeded catalogue should contain a second live campaign").toBeDefined();
+  otherCampaignId = another?.id ?? "";
+});
+
+/**
+ * 5.1.b changes what `start()` on the SAME campaign does: it now reactivates
+ * the one open session for (user, campaign, terms version) rather than
+ * always minting a fresh one, so coverage recorded in an earlier test would
+ * otherwise leak into the next one through session reuse. Each test in this
+ * file wants a genuinely blank slate unless it says otherwise, so this wipes
+ * every session between tests — owner, because the app role deliberately has
+ * no DELETE on `watch.session` (a session is the record of an attempt, and
+ * one that can be erased is not a record; the grant is the feature, and the
+ * test works around it rather than widening it).
+ */
+beforeEach(async () => {
+  await owner.execute(`DELETE FROM watch.session WHERE user_id = '${userId}'`);
 });
 
 describe("campaign reads never leak the authoring state", () => {
@@ -103,15 +154,37 @@ describe("starting a watch session", () => {
     expect(started.durationSeconds).toBe(durationSeconds);
   });
 
-  it("supersedes the previous session rather than refusing a second", async () => {
-    // Refusing would strand somebody who closed a tab. The old attempt is
-    // kept, not deleted — its coverage is evidence.
+  it("REACTIVATES the same session on a second start of the SAME campaign (5.1.b)", async () => {
+    // Refusing would strand somebody who closed a tab, and creating a
+    // second row (the old behaviour) would forfeit the first one's
+    // coverage. Neither happens: the exact same open row comes back.
     const first = await controller.start(request, { campaignId: longFormId });
     const second = await controller.start(request, { campaignId: longFormId });
 
+    expect(second.session.id).toBe(first.session.id);
+    expect(second.session.state).toBe("active");
+  });
+
+  it("PARKS the first session (resumable) rather than superseding it, when a second campaign starts", async () => {
+    const first = await controller.start(request, { campaignId: longFormId });
+    await controller.progress(request, first.session.id, {
+      fromSeconds: 0,
+      toSeconds: 2,
+      reportedAt: new Date().toISOString(),
+    });
+
+    const second = await controller.start(request, { campaignId: otherCampaignId });
     expect(second.session.id).not.toBe(first.session.id);
-    expect((await sessions.findById(first.session.id))?.state).toBe("superseded");
+    expect((await sessions.findById(first.session.id))?.state).toBe("parked");
     expect((await sessions.findById(second.session.id))?.state).toBe("active");
+
+    // Resuming the first campaign reactivates the SAME row and keeps its
+    // coverage — the Check in 5.1.e.
+    const resumed = await controller.start(request, { campaignId: longFormId });
+    expect(resumed.session.id).toBe(first.session.id);
+    expect(resumed.session.state).toBe("active");
+    expect(coveredSeconds(await sessions.coverageFor(first.session.id))).toBe(2);
+    expect((await sessions.findById(second.session.id))?.state).toBe("parked");
   });
 
   it("refuses a campaign that does not exist", async () => {
@@ -206,7 +279,15 @@ describe("completion is decided by coverage, not by the client", () => {
     // takes a "finished" flag.
     const methods = Object.getOwnPropertyNames(WatchController.prototype);
     expect(methods.sort()).toStrictEqual(
-      ["complete", "constructor", "loadOwnSession", "progress", "resume", "start"].sort(),
+      [
+        "complete",
+        "constructor",
+        "decideEarningOutcome",
+        "loadOwnSession",
+        "progress",
+        "resume",
+        "start",
+      ].sort(),
     );
   });
 });

@@ -15,8 +15,7 @@ import { WatchController } from "./watch.controller";
 import { CampaignViewAttributeLoader } from "./campaign-view-attribute-loader";
 import { DELIVERY_COVERAGE_READER, StubDeliveryCoverageReader } from "./delivery-coverage";
 import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
-
-export const REWARD_ATTESTATION_SECRET = Symbol("REWARD_ATTESTATION_SECRET");
+import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
 
 /**
  * Watch sessions. YT-0553, 5.1-5.3.

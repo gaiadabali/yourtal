@@ -41,7 +41,7 @@ import { CAMPAIGN_REPOSITORY } from "../campaign/persistence/campaign.repository
 import type { CampaignRepository } from "../campaign/persistence/campaign.repository";
 import { WATCH_SESSION_REPOSITORY } from "./persistence/drizzle-watch-session.repository";
 import type { WatchSessionRepository } from "./persistence/drizzle-watch-session.repository";
-import { REWARD_ATTESTATION_SECRET } from "./watch.module";
+import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
 import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
 import { stubSegmentUrl } from "./media/segment-url-stub";
 import { DELIVERY_COVERAGE_READER } from "./delivery-coverage";

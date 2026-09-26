@@ -45,23 +45,29 @@ export class DrizzleQuestionAnswerRepository implements QuestionAnswerRepository
     const wasCorrect = !input.timedOut && correctAgainstKey;
 
     await this.db.transaction(async (tx) => {
-      // `ON CONFLICT DO NOTHING`: `question_answered_once_per_session`
-      // backstops the checkpoint-token nonce (which already guarantees one
-      // answer per CHECKPOINT) in case two different checkpoints ever
-      // resolved to the same question — belt and braces, not the primary
-      // control.
-      const inserted = await tx.execute(sql`
-        INSERT INTO campaign.question_response
-          (session_id, question_id, selected_option_id, answered_bool, was_correct, latency_ms)
-        VALUES (${input.sessionId}, ${input.question.id}, ${input.selectedOptionId},
-                ${input.answeredBool}, ${wasCorrect}, ${Math.max(0, Math.round(input.latencyMs))})
-        ON CONFLICT (session_id, question_id) DO NOTHING
-        RETURNING session_id
-      `);
-      if (inserted.rows.length === 0) {
-        // Already answered (the defensive path above). Nothing else should
-        // be double-counted either.
-        return;
+      // NOT `ON CONFLICT ... RETURNING`: `yourtal_app` has INSERT and
+      // NOTHING else on `campaign.question_response` (20260921233000's own
+      // header explains why — the no-SELECT grant is the whole security
+      // boundary), and `RETURNING` needs SELECT on the columns it returns
+      // regardless of `ON CONFLICT`. So a plain INSERT, and the UNIQUE
+      // violation (`question_answered_once_per_session`) is caught instead
+      // of detected via a returned row. It backstops the checkpoint-token
+      // nonce (which already guarantees one answer per CHECKPOINT) in case
+      // two different checkpoints ever resolved to the same question —
+      // belt and braces, not the primary control.
+      try {
+        await tx.execute(sql`
+          INSERT INTO campaign.question_response
+            (session_id, question_id, selected_option_id, answered_bool, was_correct, latency_ms)
+          VALUES (${input.sessionId}, ${input.question.id}, ${input.selectedOptionId},
+                  ${input.answeredBool}, ${wasCorrect}, ${Math.max(0, Math.round(input.latencyMs))})
+        `);
+      } catch (error) {
+        if (isUniqueViolation(error)) {
+          // Already answered. Nothing else should be double-counted either.
+          return;
+        }
+        throw error;
       }
 
       await tx.execute(sql`
@@ -82,6 +88,16 @@ export class DrizzleQuestionAnswerRepository implements QuestionAnswerRepository
 
     return { wasCorrect };
   }
+}
+
+/** Postgres SQLSTATE 23505 (unique_violation), narrowed without an `as`. */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: unknown }).code === "23505"
+  );
 }
 
 function scoreAgainstKey(

@@ -27,6 +27,11 @@ export default defineConfig({
     // itself (a session id, a campaign id, `funding_reference = 'probe'`),
     // not by wiping a whole shared table — see e.g. `voucher-constraints
     // .test.ts` and `watch-session.test.ts`.
+    // Every file shares one test database, and several seed or count the same
+    // tables (seed.test's idempotency counts, the staging seed's empty-world
+    // gate). In parallel they raced and failed Integration; one file at a time
+    // costs little here and removes the whole class.
+    fileParallelism: false,
     testTimeout: 20_000,
     // `testTimeout` does NOT cover hooks — Vitest times those separately and
     // defaults to 10s. The expensive work here is in a hook: seed.test.ts's

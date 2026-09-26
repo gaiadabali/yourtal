@@ -26,6 +26,10 @@ export const checkResultSchema = z.discriminatedUnion("status", [
  */
 export const healthResponseSchema = z.object({
   status: z.enum(["ok", "degraded"]),
+  // The release SHA this process is running (2.2.c) — `staging-drift.yml`
+  // compares it to `main`'s HEAD so a poller that silently stopped is
+  // noticed within a day rather than discovered by the founder.
+  revision: z.string(),
   checks: z.object({
     postgres: checkResultSchema,
     pdp: checkResultSchema,

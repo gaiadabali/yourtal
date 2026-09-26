@@ -28,127 +28,8 @@
                         "degraded"
                       ]
                     },
-                    "checks": {
-                      "type": "object",
-                      "properties": {
-                        "postgres": {
-                          "oneOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "status": {
-                                  "type": "string",
-                                  "const": "ok"
-                                },
-                                "latencyMs": {
-                                  "type": "number",
-                                  "minimum": 0
-                                }
-                              },
-                              "required": [
-                                "status",
-                                "latencyMs"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "status": {
-                                  "type": "string",
-                                  "const": "error"
-                                },
-                                "latencyMs": {
-                                  "type": "number",
-                                  "minimum": 0
-                                },
-                                "error": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "status",
-                                "latencyMs",
-                                "error"
-                              ],
-                              "additionalProperties": false
-                            }
-                          ]
-                        },
-                        "pdp": {
-                          "oneOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "status": {
-                                  "type": "string",
-                                  "const": "ok"
-                                },
-                                "latencyMs": {
-                                  "type": "number",
-                                  "minimum": 0
-                                }
-                              },
-                              "required": [
-                                "status",
-                                "latencyMs"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "status": {
-                                  "type": "string",
-                                  "const": "error"
-                                },
-                                "latencyMs": {
-                                  "type": "number",
-                                  "minimum": 0
-                                },
-                                "error": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "status",
-                                "latencyMs",
-                                "error"
-                              ],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "required": [
-                        "postgres",
-                        "pdp"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "status",
-                    "checks"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Postgres or the PDP (or both) failed its check within the 2s timeout (health.service.ts) — the same HealthResponse body as 200, with status: \"degraded\".",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "ok",
-                        "degraded"
-                      ]
+                    "revision": {
+                      "type": "string"
                     },
                     "checks": {
                       "type": "object",
@@ -251,6 +132,133 @@
                   },
                   "required": [
                     "status",
+                    "revision",
+                    "checks"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Postgres or the PDP (or both) failed its check within the 2s timeout (health.service.ts) — the same HealthResponse body as 200, with status: \"degraded\".",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok",
+                        "degraded"
+                      ]
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "checks": {
+                      "type": "object",
+                      "properties": {
+                        "postgres": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "ok"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "error"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "error": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs",
+                                "error"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "pdp": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "ok"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "const": "error"
+                                },
+                                "latencyMs": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "error": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "latencyMs",
+                                "error"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "postgres",
+                        "pdp"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "revision",
                     "checks"
                   ],
                   "additionalProperties": false

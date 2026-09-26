@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Inject, Injectable } from "@nestjs/common";
 import type { OnModuleDestroy } from "@nestjs/common";
 import { ResultAsync } from "neverthrow";
@@ -5,6 +7,26 @@ import { Pool } from "pg";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { HealthCheckResult, HealthResponse } from "./health-check.schema";
+
+/**
+ * The release SHA (2.2.c). `release.yml` writes `REVISION` at the artifact
+ * root, and pm2's `cwd` is that same root (`ecosystem.config.cjs`) — so
+ * reading it relative to `process.cwd()` needs no new env var wired through
+ * `deploy/pre-reload.sh`. Read once at boot, not per request: it cannot
+ * change without a restart anyway (a new release always reloads pm2), and a
+ * probe answering under load should not touch the filesystem each time.
+ * Missing (any local/dev run, or CI) reads as `"dev"` rather than failing —
+ * this is a diagnostic, not a dependency.
+ */
+function readRevision(): string {
+  try {
+    return readFileSync(join(process.cwd(), "REVISION"), "utf8").trim() || "dev";
+  } catch {
+    return "dev";
+  }
+}
+
+const revision = readRevision();
 
 /**
  * Short on purpose. A slow dependency should make the health endpoint
@@ -53,7 +75,7 @@ export class HealthService implements OnModuleDestroy {
     // whichever one this function happened to check first.
     const [postgres, pdp] = await Promise.all([this.checkPostgres(), this.checkPdp()]);
     const status = postgres.status === "ok" && pdp.status === "ok" ? "ok" : "degraded";
-    return { status, checks: { postgres, pdp } };
+    return { status, revision, checks: { postgres, pdp } };
   }
 
   private checkPostgres(): Promise<HealthCheckResult> {

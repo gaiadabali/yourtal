@@ -37,6 +37,9 @@ export class HealthController {
     // dependency this process needs answered", not merely "the process is
     // running".
     reply.status(result.status === "ok" ? 200 : 503);
+    // `staging-drift.yml` (2.2.c) curls this to read `revision`; a cached
+    // 200 from an intermediary would make drift look fixed when it is not.
+    reply.header("Cache-Control", "no-store");
     return result;
   }
 }

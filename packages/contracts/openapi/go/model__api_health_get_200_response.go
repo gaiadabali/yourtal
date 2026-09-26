@@ -21,6 +21,7 @@ var _ MappedNullable = &ApiHealthGet200Response{}
 // ApiHealthGet200Response struct for ApiHealthGet200Response
 type ApiHealthGet200Response struct {
 	Status string `json:"status"`
+	Revision string `json:"revision"`
 	Checks ApiHealthGet200ResponseChecks `json:"checks"`
 	AdditionalProperties map[string]interface{}
 }
@@ -31,9 +32,10 @@ type _ApiHealthGet200Response ApiHealthGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiHealthGet200Response(status string, checks ApiHealthGet200ResponseChecks) *ApiHealthGet200Response {
+func NewApiHealthGet200Response(status string, revision string, checks ApiHealthGet200ResponseChecks) *ApiHealthGet200Response {
 	this := ApiHealthGet200Response{}
 	this.Status = status
+	this.Revision = revision
 	this.Checks = checks
 	return &this
 }
@@ -68,6 +70,30 @@ func (o *ApiHealthGet200Response) GetStatusOk() (*string, bool) {
 // SetStatus sets field value
 func (o *ApiHealthGet200Response) SetStatus(v string) {
 	o.Status = v
+}
+
+// GetRevision returns the Revision field value
+func (o *ApiHealthGet200Response) GetRevision() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Revision
+}
+
+// GetRevisionOk returns a tuple with the Revision field value
+// and a boolean to check if the value has been set.
+func (o *ApiHealthGet200Response) GetRevisionOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Revision, true
+}
+
+// SetRevision sets field value
+func (o *ApiHealthGet200Response) SetRevision(v string) {
+	o.Revision = v
 }
 
 // GetChecks returns the Checks field value
@@ -105,6 +131,7 @@ func (o ApiHealthGet200Response) MarshalJSON() ([]byte, error) {
 func (o ApiHealthGet200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["status"] = o.Status
+	toSerialize["revision"] = o.Revision
 	toSerialize["checks"] = o.Checks
 
 	for key, value := range o.AdditionalProperties {
@@ -120,6 +147,7 @@ func (o *ApiHealthGet200Response) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"status",
+		"revision",
 		"checks",
 	}
 
@@ -151,6 +179,7 @@ func (o *ApiHealthGet200Response) UnmarshalJSON(data []byte) (err error) {
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "status")
+		delete(additionalProperties, "revision")
 		delete(additionalProperties, "checks")
 		o.AdditionalProperties = additionalProperties
 	}

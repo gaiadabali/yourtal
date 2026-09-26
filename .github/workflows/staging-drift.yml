@@ -1,0 +1,74 @@
+# Notices a poller that has silently stopped (old YT-0566, 2.2.c).
+#
+# `gaiada-poll` on Helios installs whatever `release.yml` publishes; nothing
+# here proves it is still doing that. This asks the running API for the
+# revision it booted with (`GET /api/health`, which release.yml bakes into
+# the artifact's `REVISION` file and `health.service.ts` reads at boot) and
+# compares it to `main`. A red run IS the notice — there is no other alerting
+# path for this yet.
+#
+# WHY THE LATEST *RELEASE-RELEVANT* COMMIT, NOT BARE HEAD. `release.yml`
+# shares this workflow's `paths-ignore` (docs, TASKS.md, *.md): a docs-only
+# commit on `main` triggers no release, so staging legitimately still runs
+# the commit before it. Comparing against bare HEAD would false-positive on
+# every doc change. `git log -- . ':(exclude)...'` finds the same commit the
+# release workflow would have built from.
+#
+# WHY THE 30-MINUTE GRACE. A release takes a few minutes to build, publish,
+# and for the poller to pick up and install (2.2.d's "within about 5
+# minutes" is the common case, not a guarantee) — a schedule that fired mid
+# flight must not cry wolf.
+name: Staging drift
+
+on:
+  schedule:
+    - cron: "17 2 * * *" # once a day, off the hour so it doesn't pile up with everyone else's
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Deployed revision vs main
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Find the latest release-relevant commit
+        id: main_head
+        run: |
+          set -euo pipefail
+          sha=$(git log -1 --format=%H -- . ':(exclude)docs' ':(exclude)TASKS.md' ':(exclude)**/*.md')
+          ts=$(git log -1 --format=%cI "$sha")
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "ts=$ts" >> "$GITHUB_OUTPUT"
+
+      - name: Compare against the deployed revision
+        run: |
+          set -euo pipefail
+          expected="${{ steps.main_head.outputs.sha }}"
+          committed_at="${{ steps.main_head.outputs.ts }}"
+
+          deployed=$(curl -fsS --max-time 10 https://yourtal.gaiada.com/api/health | jq -r '.revision')
+          echo "staging is running $deployed; main's latest release-relevant commit is $expected"
+
+          if [ "$deployed" = "$expected" ]; then
+            echo "in sync"
+            exit 0
+          fi
+
+          age=$(( $(date -u +%s) - $(date -u -d "$committed_at" +%s) ))
+          if [ "$age" -lt 1800 ]; then
+            echo "commit is only ${age}s old — a deploy is plausibly still in flight, not failing"
+            exit 0
+          fi
+
+          echo "::error::staging ($deployed) has not caught up to main ($expected, ${age}s old) — check gaiada-poll on Helios"
+          exit 1

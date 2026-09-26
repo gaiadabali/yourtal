@@ -41,6 +41,9 @@ const healthCheckResultSchema = z.discriminatedUnion("status", [
 const healthResponseSchema = inlineSchema(
   z.object({
     status: z.enum(["ok", "degraded"]),
+    // 2.2.c: the release SHA this process runs, so staging-drift.yml can
+    // compare it to main's HEAD.
+    revision: z.string(),
     checks: z.object({ postgres: healthCheckResultSchema, pdp: healthCheckResultSchema }),
   }),
 );

@@ -62,7 +62,9 @@ export class DevClockController {
    */
   private assertValidDays(days: number): void {
     if (!Number.isInteger(days) || days < 1 || days > 3650) {
-      throw new BadRequestException(`days must be an integer between 1 and 3650, got ${String(days)}`);
+      throw new BadRequestException(
+        `days must be an integer between 1 and 3650, got ${String(days)}`,
+      );
     }
   }
 

@@ -26,9 +26,9 @@ export default async function DevClockPage(props: PageProps<"/dev/clock">) {
     <main style={{ padding: "1.5rem", fontFamily: "monospace", maxWidth: "40rem" }}>
       <h1>Dev clock</h1>
       <p>
-        Time-based journeys for the signed-in reviewer's own account. Every action here is
-        audited (<code>platform.dev_clock_audit</code>) and gated by <code>APP_ENV</code>, the
-        same way <code>/dev/inbox</code> is.
+        Time-based journeys for the signed-in reviewer's own account. Every action here is audited (
+        <code>platform.dev_clock_audit</code>) and gated by <code>APP_ENV</code>, the same way{" "}
+        <code>/dev/inbox</code> is.
       </p>
 
       {errorCode === undefined ? null : (
@@ -57,8 +57,8 @@ export default async function DevClockPage(props: PageProps<"/dev/clock">) {
       <section style={{ marginTop: "1.5rem" }}>
         <h2>Advance my account by N days</h2>
         <p>
-          Shifts your own still-pending grants&apos; unlock time N days earlier — the same field
-          the ledger reads to decide what is available, so a big enough N makes a grant available
+          Shifts your own still-pending grants&apos; unlock time N days earlier — the same field the
+          ledger reads to decide what is available, so a big enough N makes a grant available
           immediately. Does not touch anyone else&apos;s account or a global clock.
         </p>
         <form

@@ -350,7 +350,9 @@ const releasePendingResponseSchema = inlineSchema(
   }),
 );
 
-const advanceDaysRequestSchema = inlineSchema(z.object({ days: z.number().int().min(1).max(3650) }));
+const advanceDaysRequestSchema = inlineSchema(
+  z.object({ days: z.number().int().min(1).max(3650) }),
+);
 
 const advanceDaysResponseSchema = inlineSchema(
   z.object({
@@ -385,7 +387,7 @@ export const DEV_CLOCK_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     pathParams: [],
     successStatus: 200,
     successDescription:
-      "How many grants were released. ledgerMode: \"live\" always answers released: 0 with a note.",
+      'How many grants were released. ledgerMode: "live" always answers released: 0 with a note.',
     successSchema: releasePendingResponseSchema,
     errors: [FORBIDDEN, PDP_UNAVAILABLE],
   },

@@ -8,6 +8,7 @@ import {
   assertStagingDriversSimulated,
   resolveDriverMode,
 } from "./driver-mode";
+import type { Environment } from "./driver-mode";
 
 /**
  * The boot rules. YT-0535.
@@ -151,17 +152,20 @@ describe("the boot check", () => {
 describe("staging posture (2.3.b)", () => {
   // Fully-configured live credentials for every boundary — the case
   // `assertDriversConfigured` alone would happily allow, in any environment.
-  const allLive = Object.fromEntries(
-    BOUNDARY_NAMES.flatMap((boundary) => {
+  const allLive: Environment = Object.fromEntries(
+    BOUNDARY_NAMES.flatMap((boundary): [string, string][] => {
       const definition = BOUNDARIES[boundary];
       return [
         [definition.modeEnvVar, "live"],
-        ...definition.liveCredentialEnvVars.map((name) => [name, "present"]),
+        ...definition.liveCredentialEnvVars.map((name): [string, string] => [name, "present"]),
       ];
     }),
   );
-  const allSimulated = Object.fromEntries(
-    BOUNDARY_NAMES.map((boundary) => [BOUNDARIES[boundary].modeEnvVar, "simulated"]),
+  const allSimulated: Environment = Object.fromEntries(
+    BOUNDARY_NAMES.map((boundary): [string, string] => [
+      BOUNDARIES[boundary].modeEnvVar,
+      "simulated",
+    ]),
   );
 
   it("boots on staging when every driver is simulated", () => {
@@ -196,9 +200,9 @@ describe("staging posture (2.3.b)", () => {
       PAYMENTS_API_KEY: "k",
       PAYMENTS_WEBHOOK_SECRET: "s",
     };
-    expect(() => assertStagingDriversSimulated("staging", assertDriversConfigured(oneLive))).toThrow(
-      StagingDriverModeError,
-    );
+    expect(() =>
+      assertStagingDriversSimulated("staging", assertDriversConfigured(oneLive)),
+    ).toThrow(StagingDriverModeError);
     let thrown: unknown;
     try {
       assertStagingDriversSimulated("staging", assertDriversConfigured(oneLive));

@@ -320,10 +320,10 @@ describe("a voucher's branch must be one its listing offers (YT-0502)", () => {
         `INSERT INTO voucher.vouchers
            (id, listing_id, owner_id, merchant_id, merchant_name, title,
             face_value_minor, remaining_value_minor, partial_redemption_policy,
-            minimum_spend_minor, transferable, state, issued_at, expires_at, location_id, currency)
+            minimum_spend_minor, transferable, state, issued_at, expires_at, location_id, currency, region)
          VALUES (gen_random_uuid(), $1, gen_random_uuid(),
                  gen_random_uuid(), 'M', 'T', 1000, 1000, 'single_use_forfeit',
-                 NULL, false, 'active', now(), now() + interval '30 days', $2, 'IDR')`,
+                 NULL, false, 'active', now(), now() + interval '30 days', $2, 'IDR', 'ID')`,
         [mine?.listing_id, someoneElses?.location_id],
       ),
     ).rejects.toThrow(/vouchers_location_is_offered_by_its_listing/);
@@ -349,10 +349,10 @@ describe("a voucher's branch must be one its listing offers (YT-0502)", () => {
         `INSERT INTO voucher.vouchers
            (id, listing_id, owner_id, merchant_id, merchant_name, title,
             face_value_minor, remaining_value_minor, partial_redemption_policy,
-            minimum_spend_minor, transferable, state, issued_at, expires_at, location_id, currency)
+            minimum_spend_minor, transferable, state, issued_at, expires_at, location_id, currency, region)
          VALUES ($3, $1, gen_random_uuid(),
                  gen_random_uuid(), 'M', 'T', 1000, 1000, 'single_use_forfeit',
-                 NULL, false, 'active', now(), now() + interval '30 days', $2, 'IDR')
+                 NULL, false, 'active', now(), now() + interval '30 days', $2, 'IDR', 'ID')
          ON CONFLICT (id) DO NOTHING`,
         [pair?.listing_id, pair?.location_id, probeId],
       ),

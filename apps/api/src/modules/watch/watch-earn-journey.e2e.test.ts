@@ -224,6 +224,36 @@ async function backdateSessionStart(sessionId: string, secondsAgo: number): Prom
   );
 }
 
+describe("5.1.c: EW-19, progress is refused once a campaign is no longer live", () => {
+  it("a session that started while live is refused new progress once the campaign pauses", async () => {
+    const viewer = await sessionFor(app);
+    const started = await app.inject({
+      method: "POST",
+      url: "/api/watch/sessions",
+      headers: { cookie: viewer.cookie, "idempotency-key": randomUUID() },
+      payload: { campaignId },
+    });
+    const sessionId = json<{ session: { id: string } }>(started).session.id;
+
+    await owner.execute(
+      sql`UPDATE campaign.campaigns SET lifecycle_state = 'paused' WHERE id = ${campaignId}`,
+    );
+    try {
+      const refused = await app.inject({
+        method: "POST",
+        url: `/api/watch/sessions/${sessionId}/progress`,
+        headers: { cookie: viewer.cookie },
+        payload: { fromSeconds: 0, toSeconds: 2, reportedAt: new Date().toISOString() },
+      });
+      expect(refused.statusCode).toBe(403);
+    } finally {
+      await owner.execute(
+        sql`UPDATE campaign.campaigns SET lifecycle_state = 'live' WHERE id = ${campaignId}`,
+      );
+    }
+  });
+});
+
 describe("5.1.e: the farming probe", () => {
   it("600 progress reports posted as fast as possible cover no more than the real time that actually elapsed", async () => {
     const viewer = await sessionFor(app);

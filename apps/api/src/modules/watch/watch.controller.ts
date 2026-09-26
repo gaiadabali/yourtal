@@ -217,7 +217,13 @@ export class WatchController {
       );
     }
 
-    const { durationSeconds } = await this.loadOwnSession(request, sessionId);
+    const { session, durationSeconds } = await this.loadOwnSession(request, sessionId);
+    // EW-19: a paused or ended campaign stays resumable/readable so nobody
+    // mid-watch is stranded (loadOwnSession still finds it), but it must
+    // not accept new progress once it can no longer pay out.
+    if (!(await this.campaigns.isLive(session.campaignId))) {
+      throw new ForbiddenException("This campaign is no longer running.");
+    }
     const now = new Date();
     const outcome = await this.sessions.recordProgress(
       sessionId,

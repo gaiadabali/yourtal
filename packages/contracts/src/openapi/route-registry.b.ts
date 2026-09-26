@@ -290,8 +290,9 @@ export const WATCH_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
         description:
           "Two mechanisms share this status here, same as POST /api/watch/sessions. A PDP " +
           "denial (action `earn`) returns ErrorResponse; a domain refusal — this session is " +
-          "not `active` (superseded/completed/void) — is thrown directly by watch.controller.ts " +
-          "and returns Nest's own body instead.",
+          "not `active` (superseded/completed/void), or its campaign is no longer live " +
+          "(EW-19) — is thrown directly by watch.controller.ts and returns Nest's own body " +
+          "instead.",
         documented: true,
         schema: { anyOf: [ref("ErrorResponse"), NEST_DEFAULT_ERROR_SCHEMA] },
       },

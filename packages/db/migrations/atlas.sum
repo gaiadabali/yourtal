@@ -1,4 +1,4 @@
-h1:rL0REoCjEI5U1YjCuHQKRKw31VhdFdZAm7KjsMyNmBg=
+h1:xjZcOG5N5mKsgv6HrkFJSsKHkhaR1cAkDSQz4/nIKTQ=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -68,3 +68,6 @@ h1:rL0REoCjEI5U1YjCuHQKRKw31VhdFdZAm7KjsMyNmBg=
 20260926130000_watch_session_parking.sql h1:+QKou+4I2IJb00C5kfxXBdY5XBGHYxzmgD0hdnjYBFw=
 20260926130100_watch_checkpoint_issue.sql h1:jRV61bntD7tCIFojYRDXcYPo7aOlAZooD6+koQup7sw=
 20260926130200_watch_session_granted.sql h1:8C3TF97VW5ZOjYIvT5PTc5ULtLLPG9A6nfpeznZYNwg=
+20260926132841_me_schema.sql h1:9VuDxS3a93+fbIeDRj4kSOo1tVDK238bDfLnE0XphcA=
+20260926140000_points_issued_by_grant.sql h1:uIgBzDVDeEMGQbde5nLkTzLYwT7Iv3pBFrWCucMhzJU=
+20260926150000_voucher_head_anchor.sql h1:RE36TfyOj3qtsF1wXwWFUjo3n1KRKPN8ax2tQALs0Y4=

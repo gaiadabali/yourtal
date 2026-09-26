@@ -14,10 +14,24 @@ import (
 
 var attestationSecret = []byte("test-only-reward-attestation-secret-32")
 
-// liveCampaign is a seeded ID campaign made live with a terms version
+// liveCampaign is its OWN fresh campaign row, made live with a terms version
 // (base, bonus, scoring rule) and a reward config paid from its own owner's
 // purchased allocation. As the owner: the studio (C) writes these tables,
 // the ledger only reads them. Returns the campaign id and terms version.
+//
+// This used to borrow a seeded ID campaign that had no `reward_config` row
+// yet (a `LEFT JOIN … WHERE r.campaign_id IS NULL`, the exact TS shape
+// `ledger-client.contract.spec.ts`'s own `rewardedCampaign()` had). Once
+// `seed/watch.ts` (5.1.b) started funding and configuring every seeded
+// campaign with `reward_points > 0`, no such unconfigured campaign was
+// left to find, and every caller of this helper `t.Skip`ped — which CI
+// treats as a hard failure for a Postgres-backed test, not a pass. Owning a
+// fresh row removes the dependency on the seeded catalogue's shape
+// entirely: this helper does not need to reuse fixture data, it needs a
+// campaign, and it can make one. Only `campaign.campaigns`'s own DB-level
+// CHECK/NOT NULL constraints apply here — this package never reads through
+// `campaignSchema` (that is `apps/api`'s job), so no `video_source` or
+// `chapter` row is needed, unlike the TS fixture's equivalent fix.
 type liveCampaign struct {
 	ID, Owner, Allocation string
 	Terms                 int
@@ -33,14 +47,32 @@ func newLiveCampaign(t *testing.T, engine *reward.Engine, base, bonus int64, max
 	defer owner.Close()
 
 	var c liveCampaign
-	if err := owner.QueryRow(ctx, `SELECT c.id::text, c.business_id::text FROM campaign.campaigns c
-		LEFT JOIN campaign.reward_config r ON r.campaign_id = c.id
-		WHERE r.campaign_id IS NULL AND c.region = 'ID'
-		  -- A campaign an earlier test paid from (its config since removed) is spent.
-		  AND NOT EXISTS (SELECT 1 FROM ledger.grant g WHERE g.campaign_id::text = c.id::text)
-		ORDER BY random() LIMIT 1`).Scan(&c.ID, &c.Owner); err != nil {
-		t.Skipf("no seeded ID campaign without a reward config: %v", err)
+	if err := owner.QueryRow(ctx, `
+		INSERT INTO campaign.campaigns
+			(id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+			 estimated_data_mb, reward_points, question_count, scoring_rule,
+			 lifecycle_state, published_at, business_id, region, audience, content_category,
+			 poster_url, teaser_url, hls_url, aspect, estimated_bytes,
+			 starts_at, ends_at, open_viewing, teaser_start_seconds)
+		VALUES
+			(gen_random_uuid(), 'quick', 'reward engine contract fixture', gen_random_uuid(), 'reward-contract merchant',
+			 'fixture', 30, 5, $1, 0, 'base_only',
+			 'live', now(), gen_random_uuid(), 'ID', 'all_ages', 'entertainment',
+			 'https://example.test/poster.jpg', 'https://example.test/teaser.m3u8',
+			 'https://example.test/hls.m3u8', '16:9', 1000000,
+			 now(), now() + interval '30 days', false, 0)
+		RETURNING id::text, business_id::text`, base).Scan(&c.ID, &c.Owner); err != nil {
+		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		cleanup, err := pgxpool.New(context.Background(), testdb.URL(t, "DATABASE_OWNER_URL"))
+		if err == nil {
+			// campaign.chapter, .terms_version and .reward_config all
+			// cascade off campaign.campaigns; this owns the whole row.
+			_, _ = cleanup.Exec(context.Background(), `DELETE FROM campaign.campaigns WHERE id = $1`, c.ID)
+			cleanup.Close()
+		}
+	})
 	if err := owner.QueryRow(ctx, `SELECT COALESCE(max(version), 0) + 1 FROM campaign.terms_version WHERE campaign_id = $1`,
 		c.ID).Scan(&c.Terms); err != nil {
 		t.Fatal(err)
@@ -75,13 +107,8 @@ func newLiveCampaign(t *testing.T, engine *reward.Engine, base, bonus int64, max
 		c.ID, c.Allocation, maxPoints, base, bonus); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		cleanup, err := pgxpool.New(context.Background(), testdb.URL(t, "DATABASE_OWNER_URL"))
-		if err == nil {
-			_, _ = cleanup.Exec(context.Background(), `DELETE FROM campaign.reward_config WHERE campaign_id = $1`, c.ID)
-			cleanup.Close()
-		}
-	})
+	// No separate reward_config cleanup: the campaign-row cleanup above
+	// already cascades it away, along with terms_version and chapter.
 	return c
 }
 

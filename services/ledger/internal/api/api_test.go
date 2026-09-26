@@ -119,13 +119,37 @@ func TestTheLedgerRoutesEndToEnd(t *testing.T) {
 	user, listing := uuid(), uuid()
 
 	// The studio (C) writes campaigns, terms and reward configs; the ledger
-	// only reads them. A seeded ID campaign, made live with 450-point terms.
+	// only reads them. Its OWN fresh campaign, made live with 450-point
+	// terms — not a seeded one borrowed by `LEFT JOIN … WHERE r.campaign_id
+	// IS NULL`: `seed/watch.ts` (5.1.b) funds and configures every seeded
+	// campaign with `reward_points > 0` now, so no unconfigured seeded
+	// campaign is ever left to find, and this used to `t.Skip` — which CI
+	// treats as a hard failure for a Postgres-backed test, not a pass
+	// (`ledger-client.contract.spec.ts`'s own `rewardedCampaign()` had the
+	// identical bug, fixed the same way).
 	var campaign, business string
-	if err := s.owner.QueryRow(ctx, `SELECT c.id::text, c.business_id::text FROM campaign.campaigns c
-		LEFT JOIN campaign.reward_config r ON r.campaign_id = c.id
-		WHERE r.campaign_id IS NULL AND c.region = 'ID' ORDER BY c.id DESC LIMIT 1`).Scan(&campaign, &business); err != nil {
-		t.Skipf("no seeded campaign: %v", err)
+	if err := s.owner.QueryRow(ctx, `
+		INSERT INTO campaign.campaigns
+			(id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+			 estimated_data_mb, reward_points, question_count, scoring_rule,
+			 lifecycle_state, published_at, business_id, region, audience, content_category,
+			 poster_url, teaser_url, hls_url, aspect, estimated_bytes,
+			 starts_at, ends_at, open_viewing, teaser_start_seconds)
+		VALUES
+			(gen_random_uuid(), 'quick', 'ledger routes e2e fixture', gen_random_uuid(), 'ledger-routes merchant',
+			 'fixture', 30, 5, 450, 0, 'base_only',
+			 'live', now(), gen_random_uuid(), 'ID', 'all_ages', 'entertainment',
+			 'https://example.test/poster.jpg', 'https://example.test/teaser.m3u8',
+			 'https://example.test/hls.m3u8', '16:9', 1000000,
+			 now(), now() + interval '30 days', false, 0)
+		RETURNING id::text, business_id::text`).Scan(&campaign, &business); err != nil {
+		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		// campaign.chapter, .terms_version and .reward_config all cascade
+		// off campaign.campaigns; this test owns the whole row.
+		_, _ = s.owner.Exec(context.Background(), `DELETE FROM campaign.campaigns WHERE id = $1`, campaign)
+	})
 	var terms int
 	if err := s.owner.QueryRow(ctx, `SELECT COALESCE(max(version), 0) + 1 FROM campaign.terms_version WHERE campaign_id = $1`,
 		campaign).Scan(&terms); err != nil {
@@ -163,9 +187,8 @@ func TestTheLedgerRoutesEndToEnd(t *testing.T) {
 		campaign, alloc.AllocationID); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		_, _ = s.owner.Exec(context.Background(), `DELETE FROM campaign.reward_config WHERE campaign_id = $1`, campaign)
-	})
+	// No separate reward_config cleanup: the campaign-row cleanup above
+	// already cascades it away.
 
 	grantBody := func(key string) map[string]any {
 		completion := attest.Completion{SessionID: unique("session"), UserID: user, CampaignID: campaign,

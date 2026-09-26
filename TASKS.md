@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 16/30 | `█████░░░░░`  53% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 17/30 | `██████░░░░`  57% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 54/57 | `██████████`  95% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 1/5 | 5/22 | `██░░░░░░░░`  23% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **32/84** | **199/382** | `█████░░░░░`  52% |
+| **All** | | | **32/84** | **200/382** | `█████░░░░░`  52% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -560,7 +560,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - `/opt/yourtal/secrets/app.env` (mode 0600), never in the artifact;
     - generate the voucher keyring once into `/opt/yourtal/secrets/keyring`, mounted read-only;
     - after migrating, the deploy sets the `yourtal_app`, `yourtal_ledger`, `yourtal_voucher` and `yourtal_analyst` role passwords from `app.env` (`ALTER ROLE … PASSWORD`), because the repo is public (F6) and the migrations hard-code local passwords.
-  - [ ] 2.1.f (requested by Phase 4, for 4.9.e) `app.env` also carries `LEDGER_MODE=live`, `LEDGER_SERVICE_SECRET`, `VOUCHER_SERVICE_SECRET` and `REWARD_ATTESTATION_SECRET` (each ≥ 32 random bytes, the same value on both ends of each call), and the ledger and voucher containers get their secrets from the same file.
+  - [x] 2.1.f (requested by Phase 4, for 4.9.e) `app.env` also carries `LEDGER_MODE=live`, `LEDGER_SERVICE_SECRET`, `VOUCHER_SERVICE_SECRET` and `REWARD_ATTESTATION_SECRET` (each ≥ 32 random bytes, the same value on both ends of each call), and the ledger and voucher containers get their secrets from the same file. — Verified on Helios 2026-09-26: `/opt/yourtal/secrets/app.env` has `LEDGER_MODE=live` and the three secrets at 32 random bytes each; the ledger and voucher run as pm2 processes (not containers, see `infra/HELIOS.md`) that load the same file through `deploy/run-with-env.sh`, and their live environments hash identically to it; api and worker read it through `--env-file`. Staging has run live since 2.1 (the seed's signed grant call succeeds).
   - [x] 2.1.e **Check:** — Verified 2026-09-26 on 5d13115: api `/api/health` 200 (also via https), ledger and voucher `/healthz` 200, `ss -ltnp` shows 26300–26306, 26379, 26432 all on 127.0.0.1; all five pm2 processes in `yourtal.slice`, 0 restarts.
     - on Helios, `curl 127.0.0.1:<api>/api/health` returns 200;
     - ledger and voucher `/healthz` return 200;

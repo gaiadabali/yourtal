@@ -101,6 +101,11 @@ jobs:
           cache: false
 
       - name: Build the web app, api and worker
+        # Static public pages bake the staging banner and robots.txt at build
+        # time (apps/web/features/shell/app-env.ts), so staging is built as
+        # staging, not only run as it (2.3.g).
+        env:
+          APP_ENV: staging
         run: |
           pnpm --filter @yourtal/web build
           pnpm --filter @yourtal/api build

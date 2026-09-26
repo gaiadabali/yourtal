@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { proxy } from "./proxy";
 
@@ -85,5 +85,22 @@ describe("proxy (1.7.c)", () => {
   it("never treats a yt_session cookie as good enough for /merchant (device credential, not a personal session)", () => {
     const response = proxy(requestFor("/merchant/devices", "yt_session=abc123"));
     expect(response.status).toBe(307);
+  });
+});
+
+describe("proxy on staging (2.3.a)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("marks every response noindex on staging, redirects included", () => {
+    vi.stubEnv("APP_ENV", "staging");
+    expect(proxy(requestFor("/")).headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(proxy(requestFor("/wallet")).headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
+  it("leaves other environments alone", () => {
+    vi.stubEnv("APP_ENV", "production");
+    expect(proxy(requestFor("/")).headers.get("x-robots-tag")).toBeNull();
   });
 });

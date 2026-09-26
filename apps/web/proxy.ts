@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isStaging } from "./features/shell/app-env";
 import { SESSION_COOKIE } from "./lib/api/cookies";
 import { routeRedirects } from "./route-redirects";
 
@@ -52,6 +53,14 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 }
 
 export function proxy(request: NextRequest): NextResponse {
+  const response = route(request);
+  // Staging must never be indexed (2.3.a). nginx sets this too; the app says
+  // it itself so the posture survives any proxy in front of it.
+  if (isStaging()) response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
+}
+
+function route(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
   const signedIn = request.cookies.has(SESSION_COOKIE);
 

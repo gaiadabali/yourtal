@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { Region } from "@yourtal/contracts/region";
-import { advanceStreak, INITIAL_STREAK_STATE } from "@yourtal/contracts/me/streak";
+import { advanceStreak, streakGrantIdempotencyKey } from "@yourtal/contracts/me/streak";
 import type { StreakState } from "@yourtal/contracts/me/streak";
 import type { Grant } from "@yourtal/contracts/ledger-internal/rewards";
 import { toPoints } from "@yourtal/contracts/money";
@@ -54,75 +54,88 @@ export class StreakService {
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
   ) {}
 
+  /**
+   * 5.5.d: the hook (a real completion), the daily backstop job and a plain
+   * `GET` can all reach this for the same user at once — `runExclusive`
+   * holds a real Postgres row lock on `me.streak_state` for the user for
+   * the whole read-modify-write below, so only one of them is ever inside
+   * this function's body at a time; the loser re-reads the WINNER's
+   * already-`day3Granted`/`day7Granted` state and simply does not re-grant.
+   * That lock, not `grantAction`'s own idempotency key, is what makes the
+   * race in 5.5.d's own Check safe: it never even reaches the ledger twice.
+   */
   async sync(userId: string): Promise<StreakSyncResult> {
     const profile = await this.profiles.findByUserId(userId);
     if (profile === null) throw new NotFoundException("No such profile.");
     const region: Region = profile.region;
     const isTeen = ageBandFrom(ageYearsFrom(profile.dateOfBirth, new Date())) === "teen";
 
-    const stored = await this.states.find(userId);
-    const before = stored ?? INITIAL_STREAK_STATE;
-
-    const days = await this.completedDays.distinctDaysSince(userId, region, before.lastCountedDate);
-    if (days.length === 0) return { state: before, grantsIssued: [] };
-
-    const { state: advanced, bonuses } = advanceStreak(before, days);
-    if (bonuses.length === 0) {
-      await this.states.upsert(userId, region, advanced);
-      return { state: advanced, grantsIssued: [] };
-    }
-
-    // Teens get none (F12) — permanently: `advanceStreak` already marked
-    // each bonus granted, so it is never retried for this account.
-    if (isTeen) {
-      await this.states.upsert(userId, region, advanced);
-      return { state: advanced, grantsIssued: [] };
-    }
-
-    const bonusPoints = await this.bonusPointsFor(region);
-    const pauseThreshold = await this.coveragePauseThresholdFor(region);
-    const trustTier = profile.trustTier;
-
-    let finalState = advanced;
-    const grantsIssued: Grant[] = [];
-    for (const bonus of bonuses) {
-      const coverage = await this.ledger.coverage(region);
-      const ratio = coverage.isOk() ? coverage.value.ratio : 0;
-      if (coverage.isErr() || ratio < pauseThreshold) {
-        // Paused (F12): revert THIS bonus's granted flag so a later sync,
-        // once coverage recovers, pays it — the day count itself stands.
-        finalState =
-          bonus.day === 3
-            ? { ...finalState, day3Granted: false }
-            : { ...finalState, day7Granted: false };
-        this.logger.log(
-          `streak bonus paused: region=${region} ratio=${String(ratio)} < ${String(pauseThreshold)}`,
-        );
-        continue;
-      }
-
-      const points = bonus.day === 3 ? bonusPoints.day3 : bonusPoints.day7;
-      const granted = await this.ledger.grantAction({
-        kind: "streak",
+    return this.states.runExclusive(userId, region, async (before) => {
+      const days = await this.completedDays.distinctDaysSince(
         userId,
         region,
-        points: toPoints(points),
-        trustTier: trustTier as 0 | 1 | 2 | 3,
-        idempotencyKey: `streak:${userId}:day${String(bonus.day)}:${bonus.forDate}`,
-      });
-      if (granted.isOk()) {
-        grantsIssued.push(granted.value);
-      } else {
-        this.logger.warn(`streak grantAction failed: ${granted.error.code}`);
-        finalState =
-          bonus.day === 3
-            ? { ...finalState, day3Granted: false }
-            : { ...finalState, day7Granted: false };
-      }
-    }
+        before.lastCountedDate,
+      );
+      if (days.length === 0) return { next: before, result: { state: before, grantsIssued: [] } };
 
-    await this.states.upsert(userId, region, finalState);
-    return { state: finalState, grantsIssued };
+      const { state: advanced, bonuses } = advanceStreak(before, days);
+      if (bonuses.length === 0 || isTeen) {
+        // Teens get none (F12), permanently: `advanceStreak` already marked
+        // each bonus granted, so it is never retried for this account.
+        return { next: advanced, result: { state: advanced, grantsIssued: [] } };
+      }
+
+      const bonusPoints = await this.bonusPointsFor(region);
+      const pauseThreshold = await this.coveragePauseThresholdFor(region);
+      const trustTier = profile.trustTier;
+
+      let finalState = advanced;
+      const grantsIssued: Grant[] = [];
+      for (const bonus of bonuses) {
+        const coverage = await this.ledger.coverage(region);
+        // `nothingOwed` (nothing outstanding system-wide yet) is trivially
+        // covered — a fresh region's `ratio` is 0 by construction (division
+        // by zero avoided), which is NOT the same fact as "under-covered".
+        // Only a genuine sub-threshold ratio against real outstanding points
+        // pauses the bonus.
+        const paused =
+          coverage.isErr() ||
+          (!coverage.value.nothingOwed && coverage.value.ratio < pauseThreshold);
+        if (paused) {
+          // Paused (F12): revert THIS bonus's granted flag so a later sync,
+          // once coverage recovers, pays it — the day count itself stands.
+          finalState =
+            bonus.day === 3
+              ? { ...finalState, day3Granted: false }
+              : { ...finalState, day7Granted: false };
+          this.logger.log(
+            `streak bonus paused: region=${region} threshold=${String(pauseThreshold)}`,
+          );
+          continue;
+        }
+
+        const points = bonus.day === 3 ? bonusPoints.day3 : bonusPoints.day7;
+        const granted = await this.ledger.grantAction({
+          kind: "streak",
+          userId,
+          region,
+          points: toPoints(points),
+          trustTier: trustTier as 0 | 1 | 2 | 3,
+          idempotencyKey: streakGrantIdempotencyKey(userId, bonus),
+        });
+        if (granted.isOk()) {
+          grantsIssued.push(granted.value);
+        } else {
+          this.logger.warn(`streak grantAction failed: ${granted.error.code}`);
+          finalState =
+            bonus.day === 3
+              ? { ...finalState, day3Granted: false }
+              : { ...finalState, day7Granted: false };
+        }
+      }
+
+      return { next: finalState, result: { state: finalState, grantsIssued } };
+    });
   }
 
   private async bonusPointsFor(region: Region): Promise<{ day3: number; day7: number }> {

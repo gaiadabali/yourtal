@@ -15,6 +15,7 @@
   "dependencies": {
     "@yourtal/contracts": "workspace:*",
     "@yourtal/drivers": "workspace:*",
+    "@yourtal/jurisdiction": "workspace:*",
     "@yourtal/queue": "workspace:*",
     "pg": "8.23.0",
     "pg-boss": "12.34.0",

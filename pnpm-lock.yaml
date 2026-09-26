@@ -457,6 +457,9 @@ importers:
       '@yourtal/drivers':
         specifier: workspace:*
         version: link:../../packages/drivers
+      '@yourtal/jurisdiction':
+        specifier: workspace:*
+        version: link:../../packages/jurisdiction
       '@yourtal/queue':
         specifier: workspace:*
         version: link:../../packages/queue

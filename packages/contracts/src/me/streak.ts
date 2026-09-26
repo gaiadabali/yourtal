@@ -114,3 +114,14 @@ export function regionDateString(instant: Date, region: "AU" | "ID"): string {
     day: "2-digit",
   }).format(instant);
 }
+
+/**
+ * 5.5.d: the ONE place this key is spelled out, shared by `apps/api`'s
+ * `StreakService` (hook- and GET-triggered sync) and the worker's daily
+ * backstop job — both grant through this same key, so whichever of them
+ * gets there first is the only one the ledger's own idempotency ever lets
+ * through, regardless of which process raced the other.
+ */
+export function streakGrantIdempotencyKey(userId: string, bonus: StreakBonus): string {
+  return `streak:${userId}:day${String(bonus.day)}:${bonus.forDate}`;
+}

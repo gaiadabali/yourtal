@@ -40,6 +40,30 @@ which Cerbos watches. A failure there fails the deploy and the old release keeps
 serving. Then it swaps `current`, reloads the five pm2 processes named in
 `.gaiadeploy.yml` and health-checks the web port, rolling back on failure.
 
+## Backups (2.3.c)
+
+`yourtal-backup.timer` runs `infra/helios/backup.sh` nightly as root: a
+`pg_dump -Fc` of `yourtal`, a tar of the voucher keyring, and a copy of
+`app.env`, all under `/opt/yourtal/backups/<UTC date>/` (mode 0700/0600),
+pruned after 7 days. The dump and keyring are always taken together — a
+dump is unreadable without the keyring generation it was sealed under, and
+vice versa. Bootstrapped by `bootstrap.sh`.
+
+`infra/helios/restore-rehearsal.sh` restores the newest backup into a
+scratch database (`yourtal_restore`, same container) and checks the
+`voucher.code_custody` row count and the keyring's checksums against the
+live ones; it does not itself decrypt a code (see the script's header for
+why). Run it by hand after any bootstrap or restore-affecting change:
+`sudo /opt/yourtal/bin/restore-rehearsal.sh`.
+
+## Drift detection (2.2.c)
+
+`GET /api/health` returns `revision`: the release SHA, read once at API boot
+from `REVISION` at the artifact root (pm2's `cwd`; `health.service.ts`).
+`.github/workflows/staging-drift.yml` runs daily, compares it to `main`'s
+latest release-relevant commit, and fails loudly (with a 30-minute grace
+window) if the poller has stopped picking up releases.
+
 ## Secrets
 
 - `/opt/yourtal/secrets/app.env` (0600, `uyourtal`): every runtime variable,

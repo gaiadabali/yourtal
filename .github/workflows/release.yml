@@ -22,13 +22,19 @@ name: Release
 
 on:
   push:
-    branches: [production]
+    branches: [main]
     paths-ignore:
       - "docs/**"
       - "TASKS.md"
       - "**/*.md"
   workflow_dispatch:
 
+# `cancel-in-progress: false`, deliberately: two pushes to main must publish
+# in order, not have the first cancelled mid-release. Ordering is also why an
+# older run cannot un-do a newer one at the fast-forward step below — a
+# fast-forward-only push is refused outright if `production` has already
+# moved past that run's SHA, so a slow run finishing after a faster later one
+# fails loudly instead of rolling `production` backwards.
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -138,3 +144,22 @@ jobs:
           TAG="deploy/production-$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
           gh release create "$TAG"             --target "$GITHUB_SHA"             --title "$TAG"             --notes "Automated deploy artifact for Helios from ${GITHUB_SHA}."             out/yourtal.tar.gz             out/yourtal.tar.gz.sha256
           echo "published $TAG"
+
+      # `gaiada-poll` reads .gaiadeploy.yml from `production`, not `main`
+      # (infra/HELIOS.md), so a release nobody promotes never reaches the
+      # poller. Only this step needs write access to the checkout — the
+      # build job above stays read-only throughout.
+      - name: Checkout at the released commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Fast-forward production to this release
+        run: |
+          set -euo pipefail
+          # Fast-forward only, never --force: if `production` has moved past
+          # this SHA (an older run finishing late, or a manual push), the
+          # push is rejected and the job fails loudly rather than rewinding
+          # what the poller has already installed.
+          git push origin "${GITHUB_SHA}:refs/heads/production"

@@ -36,7 +36,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 5/7 | 40/44 | `█████████░`  91% |
 | **Phase 2** Staging on Helios | A | · not started | 0/4 | 0/25 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
-| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 35/53 | `███████░░░`  66% |
+| **Phase 4** The bank is correct | A | 🔄 in progress | 3/9 | 37/53 | `███████░░░`  70% |
 | **Phase 5** Watch & earn | B | · not started | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/33 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **22/82** | **154/368** | `████░░░░░░`  42% |
+| **All** | | | **22/82** | **156/368** | `████░░░░░░`  42% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -785,8 +785,8 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     - goroutine concurrency tests on one voucher (authorize×authorize, capture×void, refund×authorize) pass;
     - every scenario from D1 to D16 has a test;
     - D17 was refuted and needs no work.
-- [ ] **4.7 Burn saga: points become a voucher exactly once** · needs: 4.3, 4.5
-  - [ ] 4.7.a `apps/api/src/modules/checkout`: `POST /api/checkout/quote` locks a price for 15 minutes, and `POST /api/checkout` (with `Idempotency-Key`) runs these steps in order:
+- [ ] **4.7 Burn saga: points become a voucher exactly once** · needs: 4.3, 4.5 — 🔄 slot 1
+  - [x] 4.7.a `apps/api/src/modules/checkout`: `POST /api/checkout/quote` locks a price for 15 minutes, and `POST /api/checkout` (with `Idempotency-Key`) runs these steps in order: Merged 0e30db2; the ledger burns only the held price (940151e).
     1. pre-check available ≥ the locked price, with no side effects;
     2. voucher `reserve`;
     3. ledger burn keyed `burn_<sagaId>` from available, posting voucher liability at the quote's S;
@@ -794,7 +794,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
     5. mark the saga done in `checkout.saga`.
     
     Failure before step 3 → `release`. Failure after step 3 → retry `activate`; only an unusable voucher gets void + reverse. A recovery job handles `Allocated` past `reserved_until`: activate if the burn exists, release if not.
-  - [ ] 4.7.b Refuse with `region_mismatch` unless listing region = user region = quote currency's region. Refuse with `audience_blocked` for a disallowed age band. Refuse `online` listings below trust tier 2 (trust-tiered fungibility, docs/16). The ledger re-checks region inside the burn.
+  - [x] 4.7.b Refuse with `region_mismatch` unless listing region = user region = quote currency's region. Refuse with `audience_blocked` for a disallowed age band. Refuse `online` listings below trust tier 2 (trust-tiered fungibility, docs/16). The ledger re-checks region inside the burn. Merged 0e30db2.
   - [ ] 4.7.c K13, a voucher the merchant would not honour: `POST /api/wallet/vouchers/:id/dispute` (called by B's 6.5).
     - An **uncaptured** voucher is voided and `reinstateBurn` returns the exact points to available at once.
     - A **captured** one goes to the staff queue (9.4), and a recovery line is posted against that merchant (10.1).

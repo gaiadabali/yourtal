@@ -57,7 +57,7 @@ export class CheckoutController {
     @Req() request: FastifyRequest,
     @Body() body: CheckoutQuoteDto,
   ): Promise<CheckoutQuote> {
-    const userId = this.principals.resolve(request).id;
+    const userId = (await this.principals.resolve(request)).id;
     const profile = await this.profiles.findByUserId(userId);
     if (profile === null) throw new NotFoundException("No such account.");
     const quoted = await quoteCheckout(
@@ -82,7 +82,7 @@ export class CheckoutController {
     @Req() request: FastifyRequest,
     @Body() body: CheckoutDto,
   ): Promise<CheckoutResult> {
-    const userId = this.principals.resolve(request).id;
+    const userId = (await this.principals.resolve(request)).id;
     const saga = await this.deps.sagas.findById(body.checkoutId);
     if (saga === null || saga.userId !== userId) throw new NotFoundException("No such checkout.");
     const ran = await runSaga(this.deps, saga);

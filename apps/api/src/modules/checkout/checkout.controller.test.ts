@@ -84,14 +84,18 @@ async function available(userId: string): Promise<number> {
 describe("POST /api/checkout", () => {
   it("spends the quoted points once and issues one voucher, however often it is confirmed", async () => {
     const session = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
-    const quoted = await post("/api/checkout/quote", session.headers, {
-      listingId: await buyableListing("ID"),
-    });
+    const quoted = await post(
+      "/api/checkout/quote",
+      { cookie: session.cookie },
+      {
+        listingId: await buyableListing("ID"),
+      },
+    );
     expect(quoted.statusCode).toBe(201);
     const quote = checkoutQuoteSchema.parse(quoted.json());
     await earn(session.userId, "ID", quote.pricePoints + 5);
 
-    const key = { ...session.headers, "idempotency-key": randomUUID() };
+    const key = { cookie: session.cookie, "idempotency-key": randomUUID() };
     const first = await post("/api/checkout", key, { checkoutId: quote.checkoutId });
     expect(first.statusCode).toBe(200);
     const result = checkoutResultSchema.parse(first.json());
@@ -103,7 +107,7 @@ describe("POST /api/checkout", () => {
     );
     const again = await post(
       "/api/checkout",
-      { ...session.headers, "idempotency-key": randomUUID() },
+      { cookie: session.cookie, "idempotency-key": randomUUID() },
       { checkoutId: quote.checkoutId },
     );
     expect(checkoutResultSchema.parse(again.json()).voucherId).toBe(result.voucherId);
@@ -112,7 +116,7 @@ describe("POST /api/checkout", () => {
     const wallet = await app.inject({
       method: "GET",
       url: "/api/wallet/vouchers",
-      headers: session.headers,
+      headers: { cookie: session.cookie },
     });
     expect(wallet.json()).toMatchObject({
       vouchers: [{ voucherId: result.voucherId, state: "activated" }],
@@ -123,14 +127,18 @@ describe("POST /api/checkout", () => {
     const session = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
     const quote = checkoutQuoteSchema.parse(
       (
-        await post("/api/checkout/quote", session.headers, {
-          listingId: await buyableListing("ID"),
-        })
+        await post(
+          "/api/checkout/quote",
+          { cookie: session.cookie },
+          {
+            listingId: await buyableListing("ID"),
+          },
+        )
       ).json(),
     );
     const refused = await post(
       "/api/checkout",
-      { ...session.headers, "idempotency-key": randomUUID() },
+      { cookie: session.cookie, "idempotency-key": randomUUID() },
       { checkoutId: quote.checkoutId },
     );
     expect(refused.statusCode).toBe(409);
@@ -140,18 +148,26 @@ describe("POST /api/checkout", () => {
 
   it("never sells an AU reward to an ID account", async () => {
     const session = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
-    const refused = await post("/api/checkout/quote", session.headers, {
-      listingId: await buyableListing("AU"),
-    });
+    const refused = await post(
+      "/api/checkout/quote",
+      { cookie: session.cookie },
+      {
+        listingId: await buyableListing("AU"),
+      },
+    );
     expect(refused.statusCode).toBe(409);
     expect(refused.json()).toMatchObject({ code: "region_mismatch" });
   });
 
   it("keeps online rewards for established accounts", async () => {
     const session = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
-    const refused = await post("/api/checkout/quote", session.headers, {
-      listingId: await buyableListing("ID", "online"),
-    });
+    const refused = await post(
+      "/api/checkout/quote",
+      { cookie: session.cookie },
+      {
+        listingId: await buyableListing("ID", "online"),
+      },
+    );
     expect(refused.statusCode).toBe(409);
     expect(refused.json()).toMatchObject({ code: "audience_blocked" });
   });
@@ -161,12 +177,16 @@ describe("POST /api/checkout", () => {
     const stranger = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
     const quote = checkoutQuoteSchema.parse(
       (
-        await post("/api/checkout/quote", buyer.headers, { listingId: await buyableListing("ID") })
+        await post(
+          "/api/checkout/quote",
+          { cookie: buyer.cookie },
+          { listingId: await buyableListing("ID") },
+        )
       ).json(),
     );
     const refused = await post(
       "/api/checkout",
-      { ...stranger.headers, "idempotency-key": randomUUID() },
+      { cookie: stranger.cookie, "idempotency-key": randomUUID() },
       { checkoutId: quote.checkoutId },
     );
     expect(refused.statusCode).toBe(404);
@@ -181,9 +201,13 @@ describe("recovery", () => {
       quotes.push(
         checkoutQuoteSchema.parse(
           (
-            await post("/api/checkout/quote", session.headers, {
-              listingId: await buyableListing("ID"),
-            })
+            await post(
+              "/api/checkout/quote",
+              { cookie: session.cookie },
+              {
+                listingId: await buyableListing("ID"),
+              },
+            )
           ).json(),
         ),
       );

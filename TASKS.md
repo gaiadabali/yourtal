@@ -37,7 +37,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 22/30 | `███████░░░`  73% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
-| **Phase 5** Watch & earn | B | 🔄 in progress | 4/5 | 19/22 | `█████████░`  86% |
+| **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 19/25 | `████████░░`  76% |
 | **Phase 6** Viewer app | B | · not started | 0/8 | 0/29 | `░░░░░░░░░░`   0% |
 | **Phase 7** Business studio | C | · not started | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **35/84** | **220/382** | `██████░░░░`  58% |
+| **All** | | | **35/85** | **220/385** | `██████░░░░`  57% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -138,6 +138,8 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F29** | The region wall is in Cerbos and the API but not in Postgres (no row-level security), though CLAUDE.md asks for the database too | **Build it in Phase 13** (13.5.e). Cerbos, the region columns and their CHECKs keep AU and ID apart until then. |
 | **F30** | A request with no session (e.g. only a forged `x-yt-user-id`) got 403; 1.5.g's Check said 401 | **401 for no session.** Any protected route called without a session returns 401; 403 stays for a signed-in principal Cerbos refuses. Done in 1.5.h. |
 | **F31** | Registration writes the credential and the profile in two stores, not one transaction; a failed profile write leaves an account that can still sign in, as an ID principal with no age band | **Fix it in Phase 2 (2.5)**, before staging goes live. Phase 1 stays done. |
+| **F34** | Phase 5's three watch migrations reached `main` after newer ones (`…132841`, `…140000`, `…150000`), so every database with those applied refused to migrate (Atlas non-linear error) | **Rename them** to `20260926153513/14/15`, like F17: they had been on `main` for minutes and only `yourtal_s2` had applied the old names; its 3 revision rows were repointed. (The rename commit's message says F33 in error.) |
+| **F35** | Does a partial score earn part of the accuracy bonus? | **No: perfect score only.** All questions right earns the full F12 bonus; anything less earns the base reward. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -884,7 +886,7 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
     - Starting a reward session on a campaign already granted to this user returns `already_earned`; a non-earning replay is allowed.
     - Session start takes the allocation hold (4.4.e, fake ok). If the hold fails, the session starts non-earning, with the reason shown.
 
-    — migration `20260926130000` adds `parked`, `non_earning(_reason)`, `hold_id`, `granted`, `questions_asked/correct`, and a partial unique index `session_one_open_per_user_campaign_terms` (active/parked) — at most one OPEN row per (user, campaign, terms), which is what keeps coverage effectively keyed to that tuple without moving `watch.coverage`'s own FK. `startOrResume` reactivates that row (same id, same coverage) instead of creating a new one; starting elsewhere parks whatever was active; a different terms version on the same campaign supersedes (not resumable, terms changed). `hasBeenGranted` (read from `granted`, set only once `grantReward` actually succeeds) drives `already_earned`; the allocation hold goes through the REAL `LedgerInternalClient.hold()` (fake mode), funded by `campaign.reward_config` + `platform.ledger_fake_allocation`, both newly seeded per campaign in `seed/watch.ts`.
+    — migration `20260926153513` (renamed from `…130000`, F34) adds `parked`, `non_earning(_reason)`, `hold_id`, `granted`, `questions_asked/correct`, and a partial unique index `session_one_open_per_user_campaign_terms` (active/parked) — at most one OPEN row per (user, campaign, terms), which is what keeps coverage effectively keyed to that tuple without moving `watch.coverage`'s own FK. `startOrResume` reactivates that row (same id, same coverage) instead of creating a new one; starting elsewhere parks whatever was active; a different terms version on the same campaign supersedes (not resumable, terms changed). `hasBeenGranted` (read from `granted`, set only once `grantReward` actually succeeds) drives `already_earned`; the allocation hold goes through the REAL `LedgerInternalClient.hold()` (fake mode), funded by `campaign.reward_config` + `platform.ledger_fake_allocation`, both newly seeded per campaign in `seed/watch.ts`.
   - [x] 5.1.c Completion:
     - it reports whether its conditional update matched, and only the winner grants (EW-10);
     - its target comes from the session's terms version (EW-20);
@@ -922,6 +924,10 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
   - [ ] 5.5.b `GET /api/me/notifications` is fed by pg-boss events: `ledger.points_unlocked`, `ledger.points_expiring` (only if expiry is enabled), and new campaigns from followed channels. Notification preferences are stored. A simulated web-push driver. — Done: `ledger.points_unlocked` (real — 4.4.g already announces every release) via a new worker job (`apps/worker/src/jobs/points-unlocked-notify.ts`, consuming the queue 4.4.g's job only ever sent to), `me.notification`/`me.notification_preference`, `GET/PATCH /api/me/notifications`, `GET/PUT .../preferences`, `@yourtal/drivers/push`'s existing simulated driver. Not done, no source event to consume: `ledger.points_expiring` (⛔ 10.2, not started) and new campaigns from followed channels (⛔ 7.3 — added a `(requested by B)` subtask there for the `campaign.published` event `me.follow`s would consume).
   - [ ] 5.5.d The streak bonus is granted when a reward session completes (after 5.3) and by a daily backstop job, not only as a side effect of `GET /api/me/streak`. Idempotent per (user, streak day). · needs: 5.3
   - [ ] 5.5.c **Check:** a third streak day grants the F12 bonus once, and unlocked points raise a notification. — ⛔ 5.3 for the literal end-to-end (real watch completion → streak → bonus): completion is refused by design until 5.3's question bank lands, so no HTTP round trip can produce a third real completed day yet. Both halves ARE verified independently against real Postgres: the bonus mechanics via seeded `watch.session` rows (`streak.service.test.ts`, 5.5.a) and the notification via a real `ledger.points_unlocked` event (`points-unlocked-notify.test.ts`, 5.5.b). Re-run this Check once 5.3 merges — no code change expected, only a real completed session to drive it with.
+- [ ] **5.6 Earning proven against the real ledger and staging** · needs: 5.3, 2.1
+  - [ ] 5.6.a Session start returns a manifest URL signed with `shared/media-auth/hls-token.ts`, the token `/api/internal/hls-auth` already verifies for nginx (2.1.c). Retire `segment-url-stub.ts`; swap to `@yourtal/media`'s `mintSegmentUrl` only if 7.2.c exports one with the same scheme.
+  - [ ] 5.6.b **Check:** 5.3.b's round trip with `LEDGER_MODE=http` against the running Go ledger service: the pending entry is in the ledger's own tables for the terms' points, and a second complete adds nothing. (5.3.b ran against the fake ledger.)
+  - [ ] 5.6.c **Check:** on staging, a signed manifest URL from session start loads through nginx, and the same URL without its token returns 403.
 
 **Done when:** a signed-in user can watch a campaign, answer the questions that pause it, and see pending points appear in the ledger for exactly the terms the business set, once per campaign. The audit's farming probes all fail.
 
@@ -1313,6 +1319,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **Farming on an open staging site** | Money there is simulated. 5.1, 4.4.d, 10.4 and signed segments close the known exploits. Staff logins are never published. |
 | **F32** | When to run the upgrades that touch every session: TypeScript 6, pnpm 12, Postgres 18 (2.4.a/f/d) | **All three now, everywhere**, one at a time. Other sessions rebase and reinstall after each; every slot database is dumped and restored for Postgres 18, and Helios moves too. |
 | **F33** | 4.9.e: running the ledger contract spec against staging writes test campaigns, listings, grants, burns and escrows into staging | **Run it on staging**, once, through an SSH tunnel; the test rows stay alongside staging's demo data. For the staging run the spec creates its own named test campaign under a test business, so no seeded demo campaign is published. |
+| **F36** | Phase 5 merged 3 watch migrations (…130000–130200) versioned below migrations already on main, so existing databases, staging included, refused them as out of order | **Rename them after main's newest** (…160000–160200, contents unchanged). Any database that applied the old names (slot 2) is reset. |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

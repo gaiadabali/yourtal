@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 11/29 | `████░░░░░░`  38% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 13/29 | `█████░░░░░`  45% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/10 | 52/57 | `█████████░`  91% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **30/84** | **187/379** | `█████░░░░░`  49% |
+| **All** | | | **30/84** | **189/379** | `█████░░░░░`  50% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -571,7 +571,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.2.c Add a daily check that the deployed SHA equals `main`, so a poller that has silently stopped gets noticed (old YT-0566). — `staging-drift.yml`, daily plus manual; compares `/api/health` `revision` with main's latest release-relevant commit, with a 30-min grace. First run 2026-09-26: "in sync" at cab5975.
   - [x] 2.2.d **Check:** a trivial commit pushed to `main` is live on staging within about 5 minutes. — Verified 2026-09-26: c361aa1 pushed 12:37:31, live on staging (`/api/health` revision) 12:42:18, 4 min 47 s; CI fast-forwarded `production` itself. (First try took 8 min; the release gate now runs beside the build.)
 - [ ] **2.3 Staging posture and review tools** · needs: 2.2 — 🔄 slot 4 (agents B, C)
-  - [ ] 2.3.a With `APP_ENV=staging`:
+  - [x] 2.3.a With `APP_ENV=staging`:
     - `X-Robots-Tag: noindex` from nginx and the proxy;
     - `/dev/inbox` enabled;
     - B's 3.1.f renders `<StagingBanner/>` ("Staging — demo data, payments simulated"), and B's `robots.ts` disallows everything.
@@ -583,7 +583,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - "Advance my account by N days".
   - [ ] 2.3.e A minimal seed when the database is empty: snap-app in AU and in ID, 2 campaigns each using the 30 s fixture video, one demo login per role, and one tier-0 demo viewer seeded with a pending grant through the 1.2 fake. The full demo world is 13.1.
   - [ ] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points.
-  - [ ] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`).
+  - [x] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`). — Verified live 2026-09-26 at ae748fc: `robots.txt` is `Disallow: /`, the banner renders on `/`, `X-Robots-Tag: noindex, nofollow` from nginx and `proxy.ts`, `/dev/inbox` 200.
   - [ ] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`).
 
 - [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`)

@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 17/30 | `██████░░░░`  57% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 2/5 | 20/30 | `███████░░░`  67% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 8/10 | 55/57 | `██████████`  96% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 1/5 | 5/22 | `██░░░░░░░░`  23% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **32/84** | **201/382** | `█████░░░░░`  53% |
+| **All** | | | **32/84** | **204/382** | `█████░░░░░`  53% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -582,18 +582,18 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
     - "Run job now" for every scheduled job (holdback release, expiry, settlement accrual, weekly statement, payout, solvency, proof);
     - "Advance my account by N days".
   - [x] 2.3.e A minimal seed when the database is empty: snap-app in AU and in ID, 2 campaigns each using the 30 s fixture video, one demo login per role, and one tier-0 demo viewer seeded with a pending grant through the 1.2 fake. The full demo world is 13.1. — Runs in every deploy's pre-reload step (`api/dist/seed-staging.js`, three idempotent steps). On staging 2026-09-26: 2 businesses (snap-app AU and ID), 4 campaigns, 10 demo logins (`<role>@demo.yourtal.test`, password `STAGING_DEMO_PASSWORD` in `/opt/yourtal/secrets/app.env`); F12 marketing budget funded; `viewer.au` holds a real pending grant from the live ledger. `viewer.au` signs in and `/api/me` shows AU / en-AU / adult.
-  - [ ] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points.
+  - [x] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points. — Verified on staging 2026-09-26 at 34d40ca, live ledger: banner and `robots.txt` Disallow on `/`; `viewer.au@demo.yourtal.test` signs in; wallet 0 available / 500 pending (unlock 2026-09-29) → `POST /api/dev/clock/release-pending` → `{"ledgerMode":"live","released":1}` → 500 available / 0 pending, with a `platform.dev_clock_audit` row. The live release goes through the ledger's staging-only `POST /v1/dev/advance-holdback` (off unless `APP_ENV` is dev or staging).
   - [x] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`). — Verified live 2026-09-26 at ae748fc: `robots.txt` is `Disallow: /`, the banner renders on `/`, `X-Robots-Tag: noindex, nofollow` from nginx and `proxy.ts`, `/dev/inbox` 200.
   - [x] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`). — Verified live 2026-09-26: `sitemap.xml` locs are `https://yourtal.gaiada.com/…`.
 
 - [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`) — 🔄 slot 4 (agent E: b, c, e, g; A: a, d, f per F32)
   - [ ] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint).
-  - [ ] 2.4.b web-vitals 6.
-  - [ ] 2.4.c Go 1.27, in every `go.mod`, the Dockerfiles and CI.
+  - [x] 2.4.b web-vitals 6. — 6.2.2, no RUM code change (34d40ca).
+  - [x] 2.4.c Go 1.27, in every `go.mod`, the Dockerfiles and CI. — 1.27.1 in all four go.mod files and both Dockerfiles (pinned digest); Go suites and image builds green (34d40ca).
   - [x] 2.4.d Postgres 18: PGDATA moves, so dump, upgrade and restore; do it before staging holds data worth keeping. — Done 2026-09-26 (d330be5): 18.6 in CI, the shared dev stack (every slot db dumped and restored; old volume `yourtal-pgdata` kept) and Helios (staging data restored whole; old volume `yourtal_pgdata` kept). `pnpm verify` on 18 matched 17 exactly.
   - [ ] 2.4.e Valkey 9.
   - [ ] 2.4.f pnpm 12, locally and on Helios.
-  - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships.
+  - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ⛔ serwist 10 not stable yet (latest 9.5.12, 10.0.0-preview.14 on 2026-09-26); override stays.
   - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one.
   - [ ] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there.
 - [ ] **2.5 No account without a profile (F31)** · needs: 1.4

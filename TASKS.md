@@ -33,7 +33,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | Phase | Area | Status | Tasks | Subtasks | Progress |
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
-| **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 44/44 | `██████████` 100% |
+| **Phase 1** Identity, contracts & plumbing | A | 🔄 in progress | 6/7 | 44/45 | `██████████`  98% |
 | **Phase 2** Staging on Helios | A | 🔄 in progress | 0/4 | 0/26 | `░░░░░░░░░░`   0% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 5/9 | 49/55 | `█████████░`  89% |
@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
-| **Phase 13** Ready for live review | all | · not started | 0/6 | 0/15 | `░░░░░░░░░░`   0% |
-| **All** | | | **26/82** | **172/371** | `█████░░░░░`  46% |
+| **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
+| **All** | | | **25/82** | **172/373** | `█████░░░░░`  46% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -134,6 +134,8 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F26** | Phase 11 was asked to start while Phase 7 (its gate) had not begun and all 3 slots were busy | **Start its early slice now**, like F21, in helper `yourtal-p11` (`phase/11`): only what needs no Phase 7. That is 11.3.a (trust pages, 404, OG cards) and the 11.3.b robots/sitemap fixes, `llms.txt` and staging `noindex`. `VideoObject` JSON-LD, 11.1 and 11.2 wait for 7.7. |
 | **F27** | Phase 8 was asked to start while its gates (Phases 4 and 5) were unfinished | **Start an early slice now** in helper `yourtal-p8` (`phase/8`, slot 8): 8.3.b the merchant SDK against the 4.6.d signing spec, 8.2.d the merchant copy into `messages/*/merchant.json`, and 8.1.a's server side (device record, pairing code, hashed credential, argon2id PIN in `apps/api` devices). The Studio screen, the device principal (8.1.b, needs 1.5) and everything else wait. |
 | **F28** | 4.4.m: marketing points are backed at exactly B, so a region with only marketing points sits at coverage 1.0 and pauses its own streaks | **Count unspent marketing budget as reserve** in the coverage ratio: it is platform cash set aside to back points. The 1.0 hard floor still holds. |
+| **F29** | The region wall is in Cerbos and the API but not in Postgres (no row-level security), though CLAUDE.md asks for the database too | **Build it in Phase 13** (13.5.e). Cerbos, the region columns and their CHECKs keep AU and ID apart until then. |
+| **F30** | A request with no session (e.g. only a forged `x-yt-user-id`) got 403; 1.5.g's Check said 401 | **401 for no session.** Any protected route called without a session returns 401; 403 stays for a signed-in principal Cerbos refuses. Done in 1.5.h. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -495,7 +497,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
   - [x] 1.4.e Email verification actually stores `verified_at`. Today it stores nothing (`auth.service.ts:284-308`). — Verified: `auth.service.test.ts`, a real-DB round trip (register → login → requestEmailVerification → confirmEmailVerification → `identity.credential.verified_at` reads back as a `Date`, starts NULL, survives a replay refusal unchanged).
   - [x] 1.4.f (requested by B for 5.4.b) DSAR handlers for `identity.user_profile`, credentials and sessions, registered with `dsar-orchestrator`. — `packages/db/src/dsar-handlers.ts`'s `identity` domain now erases all four of business membership, `user_profile`, `credential` and `session` in one handler (a migration first widened `identity.credential`'s grant to include DELETE). Verified against real Postgres in `dsar-handlers.test.ts`.
   - [x] 1.4.g **Check:** register → `GET /api/me` shows region AU, locale en-AU and age band adult. With the flag off, a 15-year-old is refused. — Verified in `me.controller.test.ts`, including the under-13 neutral refusal and its 24h retry-block cookie, and the TEEN_ACCOUNTS-on path (guardian_email_required, a pending teen's ageBand reading "teen").
-- [x] **1.5 The principal comes from the session, never from headers** · needs: 1.4 — ✅ 2026-09-26 6479720
+- [ ] **1.5 The principal comes from the session, never from headers** · needs: 1.4 — ✅ 2026-09-26 6479720 — reopened for 1.5.h (F30)
   - [x] 1.5.a `PrincipalService.resolve` reads the `yt_session` httpOnly cookie (or Bearer token) through `SessionService.validateAndTouch`. **Delete every `x-yt-*` header path**, and remove the refusal to boot when `NODE_ENV=production`. **In the same commit** (exempt), remove the header fallback from `session-for.ts` and move every boot test in every area that still sends raw `x-yt-*` headers onto it. — ✅ 2026-09-26 2e09392: `PrincipalService.resolve` is now async, reading `yt_session` (cookie, then `Authorization: Bearer`) through `SessionService.validateAndTouch`; no credential is `anonymous`, an invalid one is a 401 (`session_invalid`, matching the codebase's existing convention rather than inventing a new one). Every `x-yt-*` header path and the `NODE_ENV=production` boot refusal are gone. Extracted `PrincipalResolver`/`SessionValidator` interfaces so duck-typed test fakes keep compiling despite the new private constructor field (TS nominal typing). `session-for.ts`'s `TestSession.headers` is deleted; every boot/e2e test across identity, business, store, watch, wallet, checkout and idempotency now drives a real cookie (seeding real `business_members`/`user_profile` rows where a business role is needed) — including modules (wallet, checkout) that landed on main mid-flight against the pre-1.5.a shape, fixed the same way. `apps/api`: 61 files/362 tests green; Cerbos native suite 509/509; `pnpm check` green.
   - [x] 1.5.b The principal carries:
     - business roles from `business.business_members`, only where `joined_at` is set;
@@ -516,6 +518,7 @@ Everything else depends on knowing who is calling, and on a shared shape everyon
     - a call with `x-yt-user-id` and no session gets 401;
     - an ID principal reading an AU campaign is denied;
     - the route suites pass against real Cerbos. — ✅ 2026-09-26 6479720: new `session-and-region-wall.check.e2e.test.ts`, over the real HTTP stack with `.env` sourced against this worktree's own Cerbos (26335, its own `policies/`). (1) The literal "401" prediction does not hold: `PrincipalService` no longer inspects `x-yt-*` at all, so this request carries no credential and reaches `PdpGuard` as `anonymousPrincipal` — proved byte-for-byte identical to a request with no headers whatsoever — and Cerbos's deny maps to 403 via `authz-error.mapper.ts` (401 is reserved for a credential that WAS presented and failed validation, which this request never reaches). Refusal is the property that matters; the real, consistent status is asserted rather than the pre-implementation guess. (2) An ID principal reading a live seeded campaign flipped to region AU (seed is ID-only) is denied by `campaign_view.yaml`'s `f2-region-wall`, with an AU-viewer control case on the same campaign proving the wall discriminates on region rather than refusing every signed-in viewer. (3) 64 files/376 tests green with `.env` sourced; Cerbos native suite 509/509; `pnpm check` green.
+  - [ ] 1.5.h (F30) A protected route called with no session returns 401, not 403; a signed-in principal that Cerbos refuses still gets 403. Update 1.5.g's check test to assert 401. — 🔄 slot 3
 - [x] **1.6 Simulated email you can read** · needs: 1.4 — ✅ 2026-09-26 63af281
   - [x] 1.6.a Add an `email` boundary to `packages/drivers`. The simulated driver stores messages in `platform.sim_outbox`. `AuthService.deliver` uses it for verification, reset and invitation emails. — driver half merged (a953bf3). `AuthService.deliver` now sends through it too (f092f5d): `EmailDriverModule` provides `EMAIL_DRIVER` (factory-provider, mirrors `IdempotencyModule`), `deliver` looks up the recipient and region itself and calls `EmailDriver.send`. Invitation emails are 7.1.c's `InvitationMailer` port, not `AuthService`'s. Verified against real Postgres: a requested verification writes a `platform.sim_outbox` row with the right recipient/category/region and the same token `DevTokenAccess` has.
   - [x] 1.6.b `GET /api/dev/inbox` and a plain `/dev/inbox` page. They are enabled only when `APP_ENV` is `dev` or `staging`. — `PostgresSimOutboxReader` reads `platform.sim_outbox` directly (newest first, every boundary); the route is `@PublicRoute` (nothing behind it is real user data) and 404s when the new `APP_ENV` config var is `production`. The web page is its own root layout, a plain server-side fetch with no cache — 1.7's BFF plumbing is a separate task. `next build` confirms it renders dynamically.
@@ -1222,6 +1225,7 @@ The internal team runs the economy and the review queues. Today none of it exist
     - **#7** unverified businesses cannot submit (7.3.d);
     - **#10** reports are aggregates only (7.6).
   - [ ] 13.5.c Delete `money/mock-backing-rate.ts`, drop `pointsPriceFromSettlement` from the exports, remove the bundle-test allowlist (4.9.d), and delete `formatPoints` once `git grep 'formatPoints('` is empty.
+  - [ ] 13.5.e Postgres row-level security for region on every region-scoped table (F29): policies keyed on a per-transaction region setting that the api and the ledger set from the principal, with a test that a query in the wrong region returns nothing.
   - [ ] 13.5.d **Check:** gitleaks and the audit are green in CI, and each red-line test fails when its guard is removed.
 - [ ] **13.6 Founder walkthrough** · founder · needs: 13.2
   - [ ] 13.6.a Walk through `/review` on staging. Every issue becomes a task in this file, either in Phase 13 or in a new Phase 14.

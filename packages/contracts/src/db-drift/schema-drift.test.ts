@@ -488,6 +488,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Same redemption-network note as voucher.authorization below -- a merchant-terminal signature replay-protection table (20260925194200), not a row a holder or merchant ever reads directly.",
   "platform.sim_outbox":
     "1.6's shared simulated-driver outbox (red line 11) -- infrastructure a reviewer reads through /dev/inbox, not a domain contract any consumer parses.",
+  "platform.dev_clock_audit":
+    "2.3.d's append-only audit trail for /dev/clock -- a reviewer's own action log, gated out of production by APP_ENV, never a domain contract any consumer parses.",
   "store.listing_location":
     "The join table behind listingSchema.locations, named in that mapping's fieldsWithNoColumn above. A pure many-to-many join on two foreign keys, with no field of its own to map.",
   "store.listing_price_revision":

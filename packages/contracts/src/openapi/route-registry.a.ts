@@ -320,3 +320,100 @@ export const CHECKOUT_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     ],
   },
 ];
+
+// --- dev-clock.controller.ts (2.3.d) ---
+//
+// Unlike `/api/dev/inbox` (KNOWN_OUT_OF_SCOPE in route-drift.test.ts), these
+// ARE given entries: this ticket asks for it explicitly, and unlike inbox's
+// read-only reviewer view, these routes write real rows (platform.ledger_
+// fake_grant, platform.dev_clock_audit, pgboss.job) worth documenting.
+// Schemas transcribed by hand from dev-clock.schema.ts, same convention as
+// health's above — apps/api-local DTOs, never promoted to a named component.
+
+const devClockJobSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  queue: z.string().optional(),
+  schedule: z.string().optional(),
+  built: z.boolean(),
+});
+
+const devClockJobsResponseSchema = inlineSchema(z.object({ jobs: z.array(devClockJobSchema) }));
+
+const devClockLedgerMode = z.enum(["fake", "live"]);
+
+const releasePendingResponseSchema = inlineSchema(
+  z.object({
+    ledgerMode: devClockLedgerMode,
+    released: z.number().int().min(0),
+    note: z.string().optional(),
+  }),
+);
+
+const advanceDaysRequestSchema = inlineSchema(z.object({ days: z.number().int().min(1).max(3650) }));
+
+const advanceDaysResponseSchema = inlineSchema(
+  z.object({
+    ledgerMode: devClockLedgerMode,
+    days: z.number().int(),
+    shifted: z.number().int().min(0),
+    note: z.string().optional(),
+  }),
+);
+
+const runJobRequestSchema = inlineSchema(z.object({ job: z.literal("points-unlocked") }));
+
+const runJobResponseSchema = inlineSchema(z.object({ queue: z.string(), jobId: z.string() }));
+
+export const DEV_CLOCK_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "get",
+    path: "/api/dev/clock/jobs",
+    summary: "List the worker's scheduled jobs, and which ones exist yet",
+    tags: ["dev"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription: "Every job TASKS.md 2.3.d names; only points-unlocked is built today.",
+    successSchema: devClockJobsResponseSchema,
+    errors: [FORBIDDEN, PDP_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/dev/clock/release-pending",
+    summary: "Release the caller's own pending grant(s) right now",
+    tags: ["dev"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription:
+      "How many grants were released. ledgerMode: \"live\" always answers released: 0 with a note.",
+    successSchema: releasePendingResponseSchema,
+    errors: [FORBIDDEN, PDP_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/dev/clock/advance-days",
+    summary: "Shift the caller's own still-pending grants N days earlier",
+    tags: ["dev"],
+    pathParams: [],
+    requestBody: { description: "How many days to shift.", schema: advanceDaysRequestSchema },
+    successStatus: 200,
+    successDescription: "How many grants were shifted.",
+    successSchema: advanceDaysResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, PDP_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/dev/clock/run-job",
+    summary: "Enqueue one immediate run of a scheduled job",
+    tags: ["dev"],
+    pathParams: [],
+    requestBody: {
+      description: 'The job to run. Only "points-unlocked" exists today.',
+      schema: runJobRequestSchema,
+    },
+    successStatus: 200,
+    successDescription: "The pg-boss queue and job id this enqueued.",
+    successSchema: runJobResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, PDP_UNAVAILABLE],
+  },
+];

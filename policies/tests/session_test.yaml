@@ -70,7 +70,17 @@ tests:
     input:
       principals: [anon, wina, budi_owner, support_sari]
       resources: [session_self]
-      actions: [delete, change_password, request_email_verification, view_profile, update_profile]
+      actions:
+        [
+          delete,
+          change_password,
+          request_email_verification,
+          view_profile,
+          update_profile,
+          dev_clock_release_pending,
+          dev_clock_run_job,
+          dev_clock_advance_days,
+        ]
     expected:
       - principal: anon
         resource: session_self
@@ -81,6 +91,9 @@ tests:
             request_email_verification: EFFECT_DENY,
             view_profile: EFFECT_DENY,
             update_profile: EFFECT_DENY,
+            dev_clock_release_pending: EFFECT_DENY,
+            dev_clock_run_job: EFFECT_DENY,
+            dev_clock_advance_days: EFFECT_DENY,
           }
       - principal: wina
         resource: session_self
@@ -91,6 +104,9 @@ tests:
             request_email_verification: EFFECT_ALLOW,
             view_profile: EFFECT_ALLOW,
             update_profile: EFFECT_ALLOW,
+            dev_clock_release_pending: EFFECT_ALLOW,
+            dev_clock_run_job: EFFECT_ALLOW,
+            dev_clock_advance_days: EFFECT_ALLOW,
           }
       - principal: budi_owner
         resource: session_self
@@ -101,6 +117,9 @@ tests:
             request_email_verification: EFFECT_ALLOW,
             view_profile: EFFECT_ALLOW,
             update_profile: EFFECT_ALLOW,
+            dev_clock_release_pending: EFFECT_ALLOW,
+            dev_clock_run_job: EFFECT_ALLOW,
+            dev_clock_advance_days: EFFECT_ALLOW,
           }
       - principal: support_sari
         resource: session_self
@@ -111,6 +130,9 @@ tests:
             request_email_verification: EFFECT_ALLOW,
             view_profile: EFFECT_ALLOW,
             update_profile: EFFECT_ALLOW,
+            dev_clock_release_pending: EFFECT_ALLOW,
+            dev_clock_run_job: EFFECT_ALLOW,
+            dev_clock_advance_days: EFFECT_ALLOW,
           }
 
   - name: a store device has no email-and-password identity to manage
@@ -157,6 +179,9 @@ tests:
           confirm_email_verification,
           view_profile,
           update_profile,
+          dev_clock_release_pending,
+          dev_clock_run_job,
+          dev_clock_advance_days,
         ]
     expected:
       - principal: admin_root
@@ -173,4 +198,7 @@ tests:
             confirm_email_verification: EFFECT_DENY,
             view_profile: EFFECT_DENY,
             update_profile: EFFECT_DENY,
+            dev_clock_release_pending: EFFECT_DENY,
+            dev_clock_run_job: EFFECT_DENY,
+            dev_clock_advance_days: EFFECT_DENY,
           }

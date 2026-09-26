@@ -174,6 +174,16 @@ export const RESOURCE_ACTIONS = {
     // everything else in this kind — see session.yaml's header.
     "view_profile",
     "update_profile",
+    // 2.3.d: `/dev/clock`'s three actions, all on the CALLER's own account —
+    // release its own pending grant, run the one existing scheduled job, or
+    // shift its own pending unlock times. Added here rather than a new
+    // resource kind for the exact reason `view_profile`/`update_profile`
+    // were: no `:userId` in any of these routes, so there is nothing
+    // narrower than "a real signed-in identity" to check. The controller
+    // itself gates on `APP_ENV` (404 in production), same as `/dev/inbox`.
+    "dev_clock_release_pending",
+    "dev_clock_run_job",
+    "dev_clock_advance_days",
   ],
 } as const satisfies Record<string, readonly string[]>;
 

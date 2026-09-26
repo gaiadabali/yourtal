@@ -43,6 +43,13 @@ description: |-
   identity in this model, and a PIN unlock is a separate mechanism this
   ticket does not touch.
 
+  2.3.d adds `dev_clock_release_pending`/`dev_clock_run_job`/
+  `dev_clock_advance_days` to the same two rules `view_profile`/
+  `update_profile` already sit in, for the same reason: `/dev/clock`'s three
+  actions are always about the caller's own account (`main.ts`'s own
+  `APP_ENV` gate is what keeps the route itself out of production, not this
+  policy).
+
   `admin` is deliberately absent from every rule in this file, even
   `change_password`/`delete` for the admin's own account. docs/17 section 5
   and `policies/README.md` fix admin's ENTIRE surface as role grants,
@@ -93,6 +100,9 @@ resourcePolicy:
           "request_email_verification",
           "view_profile",
           "update_profile",
+          "dev_clock_release_pending",
+          "dev_clock_run_job",
+          "dev_clock_advance_days",
         ]
       effect: EFFECT_ALLOW
       roles:
@@ -115,6 +125,9 @@ resourcePolicy:
           "request_email_verification",
           "view_profile",
           "update_profile",
+          "dev_clock_release_pending",
+          "dev_clock_run_job",
+          "dev_clock_advance_days",
         ]
       effect: EFFECT_DENY
       roles: ["anonymous"]

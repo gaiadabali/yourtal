@@ -67,6 +67,7 @@ main checkout runs compose. The ports are set in each worktree's `.env`.
 | 3b (`yourtal-p1-b` helper worktree) | 26336 | 26337 | 26338  | 26339   | 26340      | 26342       | 26335 (shared with slot 3) |
 | 3c (`yourtal-p1-c` helper worktree) | 26343 | 26344 | 26345  | 26346   | 26347      | 26349       | 26335 (shared with slot 3) |
 | 1b (`yourtal-p4-b` helper worktree) | 26350 | 26351 | 26352  | 26353   | 26354      | 26356       | 26315 (shared with slot 1) |
+| 4 (`yourtal-4`, Phase 2)            | 26360 | 26361 | 26362  | 26363   | 26364      | 26366       | 26365                      |
 
 - web and api read `WEB_PORT` and `PORT`; Playwright reads `PLAYWRIGHT_PORT`
   (the offline config adds 2).
@@ -97,6 +98,13 @@ Nothing of ours binds `0.0.0.0`.**
 | ----- | --------- | -------------- | ---------------------------------------------------------------------- |
 | 26300 | 127.0.0.1 | `next-server`  | `apps/web`, run by PM2 under the `uyourtal` account. Fronted by nginx. |
 | 26432 | 127.0.0.1 | `docker-proxy` | Postgres container, same host port as local — the scheme transferred.  |
+| 26301 | 127.0.0.1 | `node`         | `apps/api` (pm2, `uyourtal`). nginx sends `/api` here. Planned in 2.1. |
+| 26302 | 127.0.0.1 | `ledger`       | Go ledger (pm2, `uyourtal`). Called only by api and worker.            |
+| 26303 | 127.0.0.1 | `voucher`      | Go voucher service (pm2, `uyourtal`). Called only by api and worker.   |
+| 26304 | 127.0.0.1 | `docker-proxy` | Cerbos container.                                                      |
+| 26305 | 127.0.0.1 | `docker-proxy` | MinIO S3 API. nginx serves the public media prefixes from it.          |
+| 26306 | 127.0.0.1 | `docker-proxy` | MinIO console. Reach it over an SSH tunnel only.                       |
+| 26379 | 127.0.0.1 | `docker-proxy` | Valkey container.                                                      |
 
 Both processes sit inside `yourtal.slice`, confirmed from
 `/proc/<pid>/cgroup` rather than from the unit file: the Next server reports

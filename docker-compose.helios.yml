@@ -1,0 +1,92 @@
+# YourTal datastores on Helios (2.1.a). Run by root through
+# infra/helios/yourtal-stack.service from /opt/yourtal/stack; never on a laptop.
+#
+# Only the slow-moving infrastructure lives here. The apps and the two Go
+# services run under pm2 as the site user from each release (see
+# infra/HELIOS.md), so every merge reaches them without a root step.
+#
+# Differences from docker-compose.yml, each deliberate:
+#  - every container joins yourtal.slice (2 cores, 4G): this box serves ~30
+#    client sites, so a YourTal runaway must not become their outage;
+#  - credentials come from secrets.env on the host (0600), never the repo;
+#  - Cerbos reads /opt/yourtal/shared/policies, which each deploy refreshes
+#    (deploy/pre-reload.sh), and watches it, so policy changes need no restart.
+# Everything binds 127.0.0.1; nginx and the pm2 apps are the only callers.
+
+name: yourtal
+
+services:
+  postgres:
+    image: postgres:17.11-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    container_name: yourtal-postgres
+    restart: unless-stopped
+    cgroup_parent: yourtal.slice
+    env_file: [secrets.env]
+    environment:
+      POSTGRES_DB: yourtal
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "127.0.0.1:26432:5432"
+    volumes:
+      # The volume the 2026-09-20 stack created; keeping the key keeps the data.
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yourtal -d yourtal"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    command: ["postgres", "-c", "log_min_duration_statement=200"]
+
+  redis:
+    image: valkey/valkey:8.1.10-alpine@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507
+    container_name: yourtal-redis
+    restart: unless-stopped
+    cgroup_parent: yourtal.slice
+    ports:
+      - "127.0.0.1:26379:6379"
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  cerbos:
+    image: ghcr.io/cerbos/cerbos:0.55.0@sha256:4b9d3b58c4f11c1b8953bc798d8d086e64f276882253ab169625fddc7f432515
+    container_name: yourtal-cerbos
+    restart: unless-stopped
+    cgroup_parent: yourtal.slice
+    ports:
+      - "127.0.0.1:26304:3592"
+    volumes:
+      - /opt/yourtal/shared/policies:/policies:ro
+      - ./cerbos.yaml:/config/config.yaml:ro
+    command: ["server", "--config=/config/config.yaml"]
+    healthcheck:
+      test: ["CMD", "/cerbos", "healthcheck", "--config=/config/config.yaml"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372
+    container_name: yourtal-minio
+    restart: unless-stopped
+    cgroup_parent: yourtal.slice
+    env_file: [minio.env]
+    command: ["server", "/data", "--console-address", ":9001"]
+    ports:
+      - "127.0.0.1:26305:9000"
+      - "127.0.0.1:26306:9001"
+    volumes:
+      - minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  minio:

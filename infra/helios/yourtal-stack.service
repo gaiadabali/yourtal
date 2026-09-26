@@ -1,0 +1,17 @@
+[Unit]
+Description=YourTal datastores (Postgres, Valkey, Cerbos, MinIO) via docker compose
+Documentation=https://github.com/gaiadabali/yourtal/blob/main/infra/HELIOS.md
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/yourtal/stack
+# The containers themselves join yourtal.slice through cgroup_parent.
+ExecStart=/usr/bin/docker compose -f docker-compose.helios.yml up -d --wait
+ExecStop=/usr/bin/docker compose -f docker-compose.helios.yml stop
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

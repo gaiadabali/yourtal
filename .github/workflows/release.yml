@@ -64,27 +64,48 @@ jobs:
       - name: Gate
         run: pnpm check
 
-      - name: Build the web app
-        run: pnpm --filter @yourtal/web build
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: services/ledger/go.mod
+          cache: false
 
+      - name: Build the web app, api and worker
+        run: |
+          pnpm --filter @yourtal/web build
+          pnpm --filter @yourtal/api build
+          pnpm --filter @yourtal/worker build
+
+      # One artifact, one gaiada-deploy target (2.1.b): the agent swaps one
+      # `current` per site user, so api, worker and the Go services ride in the
+      # same release as web and reload together. Layout: infra/HELIOS.md.
       - name: Assemble the artifact
         run: |
           set -euo pipefail
-          STAGE="$RUNNER_TEMP/yourtal-web"
-          mkdir -p "$STAGE"
+          STAGE="$RUNNER_TEMP/yourtal"
+          mkdir -p "$STAGE/apps/web/.next" "$STAGE/bin" "$STAGE/deploy"
           cp -r apps/web/.next/standalone/. "$STAGE"/
-          mkdir -p "$STAGE/apps/web/.next"
           cp -r apps/web/.next/static "$STAGE/apps/web/.next/static"
           if [ -d apps/web/public ]; then cp -r apps/web/public "$STAGE/apps/web/public"; fi
+          pnpm --filter @yourtal/api deploy --prod "$STAGE/api"
+          pnpm --filter @yourtal/worker deploy --prod "$STAGE/worker"
+          for svc in ledger voucher; do
+            (cd "services/$svc" && CGO_ENABLED=0 GOOS=linux GOARCH=amd64               go build -trimpath -ldflags="-s -w" -o "$STAGE/bin/$svc" "./cmd/$svc")
+          done
+          cp -r packages/db/migrations "$STAGE/migrations"
+          cp -r policies "$STAGE/policies"
+          cp infra/helios/pre-reload.sh infra/helios/set-role-passwords.mjs             infra/helios/run-with-env.sh infra/helios/ecosystem.config.cjs "$STAGE/deploy/"
+          chmod 755 "$STAGE/deploy/"*.sh "$STAGE/bin/"*
+          echo "$GITHUB_SHA" > "$STAGE/REVISION"
           mkdir -p "$RUNNER_TEMP/out"
-          tar -czf "$RUNNER_TEMP/out/yourtal-web.tar.gz" -C "$STAGE" .
-          cd "$RUNNER_TEMP/out" && sha256sum yourtal-web.tar.gz > yourtal-web.tar.gz.sha256
+          tar -czf "$RUNNER_TEMP/out/yourtal.tar.gz" -C "$STAGE" .
+          cd "$RUNNER_TEMP/out" && sha256sum yourtal.tar.gz > yourtal.tar.gz.sha256
           ls -l "$RUNNER_TEMP/out"
 
       - name: Upload the artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: yourtal-web
+          name: yourtal
           path: ${{ runner.temp }}/out/
           if-no-files-found: error
           retention-days: 7
@@ -101,12 +122,12 @@ jobs:
       - name: Download the artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: yourtal-web
+          name: yourtal
           path: out
 
       - name: Verify the checksum
         working-directory: out
-        run: sha256sum -c yourtal-web.tar.gz.sha256
+        run: sha256sum -c yourtal.tar.gz.sha256
 
       - name: Publish the release
         env:
@@ -115,5 +136,5 @@ jobs:
         run: |
           set -euo pipefail
           TAG="deploy/production-$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
-          gh release create "$TAG"             --target "$GITHUB_SHA"             --title "$TAG"             --notes "Automated deploy artifact for Helios from ${GITHUB_SHA}."             out/yourtal-web.tar.gz             out/yourtal-web.tar.gz.sha256
+          gh release create "$TAG"             --target "$GITHUB_SHA"             --title "$TAG"             --notes "Automated deploy artifact for Helios from ${GITHUB_SHA}."             out/yourtal.tar.gz             out/yourtal.tar.gz.sha256
           echo "published $TAG"

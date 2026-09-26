@@ -18,4 +18,4 @@ production:
     domain: yourtal.gaiada.com
     type: node
     port: 26300
-    pm2_name: yourtal-web
+    pm2_name: yourtal-web,yourtal-api,yourtal-worker,yourtal-ledger,yourtal-voucher

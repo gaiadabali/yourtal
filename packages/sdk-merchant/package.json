@@ -1,0 +1,27 @@
+{
+  "name": "@yourtal/sdk-merchant",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts",
+    "./signing": "./src/signing.ts",
+    "./types": "./src/types.ts",
+    "./errors": "./src/errors.ts",
+    "./retry": "./src/retry.ts",
+    "./idempotency-key": "./src/idempotency-key.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "example:authorize-and-capture": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register examples/authorize-and-capture.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@swc-node/register": "^1.12.1",
+    "@yourtal/tsconfig": "workspace:*",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

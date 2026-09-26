@@ -45,6 +45,8 @@ import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
 import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
 import { stubSegmentUrl } from "./media/segment-url-stub";
 import { DELIVERY_COVERAGE_READER } from "./delivery-coverage";
+import { WATCH_COMPLETION_HOOK } from "./watch-completion-hook";
+import type { WatchCompletionHook } from "./watch-completion-hook";
 import type { DeliveryCoverageReader } from "./delivery-coverage";
 
 const startBody = z.object({ campaignId: z.uuid() });
@@ -83,6 +85,7 @@ export class WatchController {
     @Inject(REWARD_ATTESTATION_SECRET) private readonly attestationSecret: string,
     @Inject(CHECKPOINT_SECRET) private readonly checkpointSecret: string,
     @Inject(DELIVERY_COVERAGE_READER) private readonly delivery: DeliveryCoverageReader,
+    @Inject(WATCH_COMPLETION_HOOK) private readonly completionHook: WatchCompletionHook,
   ) {}
 
   @Authorize({ kind: "campaign_view", action: "earn" })
@@ -345,6 +348,17 @@ export class WatchController {
 
     await this.sessions.markGranted(session.id);
     const deliveryCoverageVerdict = await this.delivery.deliveryCoverage(session.id);
+
+    // 5.5.d's hook: fired only for a genuinely earning, granted completion
+    // — never for a non-earning one (see watch-completion-hook.ts's own
+    // header for why, and for how to bind a real listener).
+    await this.completionHook.onWatchCompleted({
+      userId: session.userId,
+      campaignId: session.campaignId,
+      sessionId: session.id,
+      completedAt: now,
+      region: profile.region,
+    });
 
     return {
       completed: true,

@@ -12,6 +12,7 @@ import type {
 import { DrizzleCampaignRepository } from "../campaign/persistence/drizzle-campaign.repository";
 import { DrizzleWatchSessionRepository } from "./persistence/drizzle-watch-session.repository";
 import { StubDeliveryCoverageReader } from "./delivery-coverage";
+import { NoopWatchCompletionHook } from "./watch-completion-hook";
 import { WatchController } from "./watch.controller";
 
 /** A profile for whatever userId this suite invents — none of these are real registered accounts. */
@@ -91,6 +92,7 @@ const controller = new WatchController(
   "test-attestation-secret-not-a-real-one",
   "test-checkpoint-secret-not-a-real-one",
   new StubDeliveryCoverageReader(),
+  new NoopWatchCompletionHook(),
 );
 
 let longFormId = "";

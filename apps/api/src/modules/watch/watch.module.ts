@@ -16,6 +16,7 @@ import { CampaignViewAttributeLoader } from "./campaign-view-attribute-loader";
 import { DELIVERY_COVERAGE_READER, StubDeliveryCoverageReader } from "./delivery-coverage";
 import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
 import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
+import { NoopWatchCompletionHook, WATCH_COMPLETION_HOOK } from "./watch-completion-hook";
 
 /**
  * Watch sessions. YT-0553, 5.1-5.3.
@@ -56,6 +57,10 @@ import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
       inject: [APP_CONFIG],
     },
     { provide: DELIVERY_COVERAGE_READER, useClass: StubDeliveryCoverageReader },
+    // 5.5.d: overridable in app.module.ts (or a shared module both this and
+    // the streak module import) once a real listener exists — see
+    // watch-completion-hook.ts's own header for exactly how.
+    { provide: WATCH_COMPLETION_HOOK, useClass: NoopWatchCompletionHook },
     {
       provide: CHECKPOINT_SECRET,
       useFactory: (): string => {

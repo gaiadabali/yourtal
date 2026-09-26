@@ -143,7 +143,8 @@ describe("pricing", () => {
     expect(quote.locked).toBe(false);
     const minutesToExpiry = (new Date(quote.expiresAt).getTime() - Date.now()) / 60_000;
     expect(minutesToExpiry).toBeGreaterThan(14);
-    expect(minutesToExpiry).toBeLessThanOrEqual(15);
+    // The ledger stamps the quote with the database's clock, not this host's.
+    expect(minutesToExpiry).toBeLessThanOrEqual(15 + 1 / 60);
   });
 
   it("refuses a currency that does not match the region", async () => {

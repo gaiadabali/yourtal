@@ -33,13 +33,10 @@ import { WatchController } from "./watch.controller";
  * of these routes. This suite drives the REAL `PdpGuard`, the REAL
  * `WatchController.prototype.start`'s own `@Authorize` metadata (not a
  * stand-in), and a REAL Cerbos sidecar — the same shape
- * `principal-freeze.e2e.test.ts` uses, except pointed at THIS slot's own
- * Cerbos (`yourtal-cerbos-3`, port 26335 per `infra/PORTS.md`) rather than
- * the shared one on 26592 — the schema change this ticket makes to
- * `policies/_schemas/resource/campaign_view.json` lives only in this
- * worktree until it merges, and only slot 3's own container mounts this
- * worktree's `./policies`. Run `docker restart yourtal-cerbos-3` immediately
- * before this suite: a long-running sidecar can serve a cached schema and
+ * `principal-freeze.e2e.test.ts` uses, at `PDP_BASE_URL` (default: the shared
+ * 26592). To test unmerged policy changes, point `PDP_BASE_URL` at your slot's
+ * own Cerbos, which mounts your worktree's `./policies`, and restart it
+ * immediately before this suite: a long-running sidecar can serve a cached schema and
  * hand back a false pass.
  */
 const CONFIG: AppConfig = {
@@ -52,7 +49,7 @@ const CONFIG: AppConfig = {
     staffAbsoluteTtlMs: 12 * 60 * 60 * 1000,
   },
   port: 3001,
-  pdp: { baseUrl: "http://127.0.0.1:26335", timeoutMs: 500 },
+  pdp: { baseUrl: process.env["PDP_BASE_URL"] ?? "http://127.0.0.1:26592", timeoutMs: 500 },
   databaseUrl: process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!,
   redisUrl: "redis://127.0.0.1:26379",
   ledger: {

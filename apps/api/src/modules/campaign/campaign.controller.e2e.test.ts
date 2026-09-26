@@ -42,7 +42,7 @@ const CONFIG: AppConfig = {
     staffAbsoluteTtlMs: 12 * 60 * 60 * 1000,
   },
   port: 3001,
-  pdp: { baseUrl: "http://127.0.0.1:26335", timeoutMs: 500 },
+  pdp: { baseUrl: process.env["PDP_BASE_URL"] ?? "http://127.0.0.1:26592", timeoutMs: 500 },
   databaseUrl: process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!,
   redisUrl: "redis://127.0.0.1:26379",
   ledger: {

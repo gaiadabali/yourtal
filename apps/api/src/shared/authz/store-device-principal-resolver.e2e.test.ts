@@ -20,12 +20,11 @@ import type {
  * later ticket's job), so this drives it directly, the same way the freeze
  * suite drives `AsyncPrincipalResolver` directly with no HTTP layer.
  *
- * Uses THIS worktree's own Cerbos (26335, per `infra/PORTS.md`) rather than
- * the shared 26592: nothing here depends on unmerged policy content, but
- * matching `watch.controller.e2e.test.ts`'s port keeps every 1.5 e2e suite
- * pointed at the same sidecar. Run `docker restart yourtal-cerbos-3` first.
+ * Uses `PDP_BASE_URL` (CI sets it; a slot can point it at its own Cerbos),
+ * falling back to the shared 26592. A hard-coded slot port only ever passed
+ * on that slot, and failed Integration on main (2.4.i).
  */
-const pdp = createPdpClient({ baseUrl: "http://127.0.0.1:26335" });
+const pdp = createPdpClient({ baseUrl: process.env["PDP_BASE_URL"] ?? "http://127.0.0.1:26592" });
 
 function requestWith(deviceId: string): FastifyRequest {
   return { headers: { "x-yt-device-id": deviceId } } as unknown as FastifyRequest;

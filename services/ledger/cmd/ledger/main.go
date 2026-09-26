@@ -177,6 +177,12 @@ func run(logger *slog.Logger) error {
 	if pool != nil && auth != nil {
 		// REWARD_ATTESTATION_SECRET: apps/api signs completions with it (4.4.c).
 		module := api.New(logger, pool, []byte(os.Getenv("REWARD_ATTESTATION_SECRET")))
+		// /dev/* (2.3.f's /dev/clock): read once at boot, same as
+		// LEDGER_SERVICE_SECRET above. Unset APP_ENV — the production default
+		// — disables it, the same fail-closed default docs/13a asks for
+		// everywhere else in this file.
+		appEnv := os.Getenv("APP_ENV")
+		module.EnableDevRoutes(appEnv == "dev" || appEnv == "staging")
 		router.Route("/v1", func(r chi.Router) {
 			r.Use(auth.Middleware(logger))
 			r.Mount("/", module.Routes())

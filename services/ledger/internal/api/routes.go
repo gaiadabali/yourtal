@@ -43,6 +43,18 @@ type API struct {
 	escrows  *escrow.Engine
 	captures *capture.Engine
 	proof    *proof.Checker
+	// devEnabled gates /dev/* (2.3.f's /dev/clock). false unless main.go
+	// calls EnableDevRoutes, which it only does when APP_ENV is dev or
+	// staging — unset or production means disabled, the same fail-closed
+	// default as serviceauth's missing-secret case above it.
+	devEnabled bool
+}
+
+// EnableDevRoutes turns on /dev/* (staging's /dev/clock, 2.3.f). Call it only
+// when APP_ENV is "dev" or "staging" — see cmd/ledger/main.go.
+func (a *API) EnableDevRoutes(enabled bool) *API {
+	a.devEnabled = enabled
+	return a
 }
 
 // New wires the engines. attestationSecret verifies apps/api's completion
@@ -108,6 +120,11 @@ func (a *API) platformRoutes(r chi.Router) {
 	r.Post("/economy/rates/propose", a.proposeRate)
 	r.Post("/economy/rates/approve", a.approveRate)
 	r.Post("/economy/marketing/fund", a.fundMarketing)
+
+	// Dev/staging only (2.3.f); the handler itself 404s unless
+	// EnableDevRoutes(true) was called, so this line is safe to register
+	// unconditionally.
+	r.Post("/dev/advance-holdback", a.advanceHoldback)
 
 	// Not the ledger's yet: statements and payouts wait for 10.1. Settings are
 	// apps/api's own store (1.2.f); the ledger only reads them.

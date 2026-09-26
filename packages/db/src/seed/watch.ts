@@ -115,11 +115,13 @@ async function seedRewardFunding(pool: pg.Pool): Promise<void> {
         totalPoints,
       ],
     );
+    // Only while the campaign still exists: test files that seed run beside
+    // ones that delete their own campaigns, and a row read above may be gone.
     await pool.query(
       `INSERT INTO campaign.reward_config
          (campaign_id, allocation_id, funder_type, max_points_for_campaign,
           reward_points_per_completion, accuracy_bonus_points)
-       VALUES ($1, $2, 'partner', $3, $3, 0)
+       SELECT c.id, $2, 'partner', $3, $3, 0 FROM campaign.campaigns c WHERE c.id = $1
        ON CONFLICT (campaign_id) DO NOTHING`,
       [campaign.id, allocationId, campaign.reward_points],
     );

@@ -56,7 +56,6 @@ describe("the seed", () => {
     // Deterministic generators plus ON CONFLICT DO NOTHING. A second run
     // writing rows would mean either the ids move between runs or the
     // catalogue doubles — both make a seeded stack useless to debug against.
-    const before = await count("SELECT COUNT(*)::text AS n FROM store.listings");
     // The owner again: seeding is administration, and since YT-0142 the app
     // role cannot write a voucher. Re-seeding as the app would fail on the
     // grant rather than on idempotency, which is not what this asserts.
@@ -70,6 +69,9 @@ describe("the seed", () => {
     // the test is actually asking: does seeding an already-seeded database
     // write anything?
     await seed(owner);
+    // Counted between the two runs, not before the first: files beside this
+    // one seed and delete too, and only the second run is the question.
+    const before = await count("SELECT COUNT(*)::text AS n FROM store.listings");
     const again = await seed(owner);
     const after = await count("SELECT COUNT(*)::text AS n FROM store.listings");
 

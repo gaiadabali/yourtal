@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 1/4 | 7/26 | `███░░░░░░░`  27% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 1/5 | 7/29 | `██░░░░░░░░`  24% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | 🔄 in progress | 7/9 | 51/55 | `█████████░`  93% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 0/5 | 0/21 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **29/82** | **182/373** | `█████░░░░░`  49% |
+| **All** | | | **29/83** | **182/376** | `█████░░░░░`  48% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -137,6 +137,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F28** | 4.4.m: marketing points are backed at exactly B, so a region with only marketing points sits at coverage 1.0 and pauses its own streaks | **Count unspent marketing budget as reserve** in the coverage ratio: it is platform cash set aside to back points. The 1.0 hard floor still holds. |
 | **F29** | The region wall is in Cerbos and the API but not in Postgres (no row-level security), though CLAUDE.md asks for the database too | **Build it in Phase 13** (13.5.e). Cerbos, the region columns and their CHECKs keep AU and ID apart until then. |
 | **F30** | A request with no session (e.g. only a forged `x-yt-user-id`) got 403; 1.5.g's Check said 401 | **401 for no session.** Any protected route called without a session returns 401; 403 stays for a signed-in principal Cerbos refuses. Done in 1.5.h. |
+| **F31** | Registration writes the credential and the profile in two stores, not one transaction; a failed profile write leaves an account that can still sign in, as an ID principal with no age band | **Fix it in Phase 2 (2.5)**, before staging goes live. Phase 1 stays done. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -594,6 +595,10 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [ ] 2.4.f pnpm 12, locally and on Helios.
   - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships.
   - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one.
+- [ ] **2.5 No account without a profile (F31)** · needs: 1.4
+  - [ ] 2.5.a Login and session validation refuse a credential with no `identity.user_profile` row (`AsyncPrincipalResolver` must never fall back to the ID placeholder for a real session).
+  - [ ] 2.5.b A registration whose profile write fails removes its credential (or retries it), so the same email can register again.
+  - [ ] 2.5.c **Check:** with the profile write forced to fail, register returns `persistence_failed`, login with that email is refused, and a second register with the same email succeeds.
 
 **Done when:** every merge to `main` is live on staging within minutes, with the API, both Go services and the datastores running on Helios, backed up nightly.
 

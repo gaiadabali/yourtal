@@ -38,7 +38,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/57 | `██████████` 100% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
-| **Phase 6** Viewer app | B | 🔄 in progress | 1/4 | 6/15 | `████░░░░░░`  40% |
+| **Phase 6** Viewer app | B | 🔄 in progress | 1/5 | 6/19 | `███░░░░░░░`  32% |
 | **Phase 7** Business studio | C | 🔄 in progress | 1/8 | 7/36 | `██░░░░░░░░`  19% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/16 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **44/86** | **252/403** | `██████░░░░`  63% |
+| **All** | | | **44/87** | **252/407** | `██████░░░░`  62% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -981,6 +981,12 @@ Rebuild and wire the viewer's account screens on the Phase 3 primitives: languag
   - [ ] 6.7.c (found by slot 1, Phase 7's agent B) `apps/api/src/modules/me/settings.controller.e2e.test.ts`: 4 tests get 403 instead of 200/400 on main since 6c2c1eb. Not re-run by slot 1; please confirm and fix.
 - [ ] **6.8 Notifications and search** — ✂️ cut: moved to 11.7 (it needs Phase 7's search); each 6.8.x is now 11.7.x
 
+- [ ] **6.9 A signed-in voucher opens with no signal, and CI proves it** (found by 2; F43) · needs: 4.8
+  - [ ] 6.9.a `apps/web/e2e/offline-voucher-detail.spec.ts` is stale: since 1.7.c `/wallet` requires a session and since 4.8 the voucher page reads the real API, so its first, online load now lands on the logged-out page and the fixture heading ("Voucher Kopi Kenangan Kemang") never appears (run 2026-09-27 on main 97f2e2b, `pnpm --filter @yourtal/web test:e2e:offline`). Rewrite it to sign in as a real account that owns a real voucher (the live stack, like 1.7.e's live harness), open the voucher page online, then prove it still renders its real content with the network fully off.
+  - [ ] 6.9.b Fix whatever the rewritten test finds in the service worker (`apps/web/app/sw.ts`, serwist 9.5.12, kept by F41/F42) so an authenticated voucher page is served from cache offline, without caching another user's page or a stale session.
+  - [ ] 6.9.c Run it in CI (Integration), so offline can never silently rot again. (requested by 2) Area A reviews the workflow change.
+  - [ ] 6.9.d **Check:** Integration on main runs the offline voucher test and it passes.
+
 **Done when:** a new viewer registers and onboards in either region and language, sees pending points and voucher passes in the wallet (the QR works offline, a dispute returns points once), and manages everything on Me, on staging, on the new design, with no mock data and no hard-coded strings.
 
 ## Phase 7 — Business studio · Area C · ~9d
@@ -1362,6 +1368,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **F38** | How Phase 2's last two items close (replaces F37) | **Finish them:** slot 4 trims Area C's `/business/campaigns` under its 200 KB initial-JS budget (behaviour-neutral, their session told), waits for slot 2's `me.controller` fix, ticks 2.4.h once main is green; **2.4.g moves to Phase 13** (the browserslist override already neutralises the advisory). |
 | **F41** | Keep Serwist? It is used only so a voucher and its QR open at a counter without signal (`apps/web/app/sw.ts`, `offline-voucher-detail.spec.ts`) | **Keep Serwist.** Stable is 9.5.12 (10 is preview only). Its `browserslist` pin is build-time and stays until 13.7. No hand-written worker, and offline stays on. |
 | **F42** | 13.7 waited on serwist 10, a release nobody here controls | **Ship on the latest stable** (serwist 9.5.12 with the `browserslist` override, which is still needed: 9.5.12 pins 4.28.6 exactly). Dependency upgrades happen later as routine maintenance, never as a gate. What must hold is that the app works, so the offline voucher e2e runs in CI. |
+| **F43** | The offline voucher test is stale (login and real vouchers arrived) and not in CI, so offline is unproven | **Phase 6 fixes it (6.9), then it gates CI.** Phase 6 owns the wallet and the service worker. |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

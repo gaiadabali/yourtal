@@ -142,17 +142,30 @@ async function main(): Promise<void> {
     // TASKS.md 7.2.d/e: the demo media kit's own campaigns (8 AU + 8 ID),
     // real ffmpeg/MinIO, idempotent by campaign id — a re-run after the
     // first successful one just checks 16 rows and does nothing further.
-    const demoMediaResults = await runDemoMedia({
-      databaseUrl: connectionString,
-      log: console.log,
-    });
+    //
+    // Deliberately NEVER fails the deploy (unlike pendingGrant/demoVoucher/
+    // media above, which gate real reward/voucher correctness): this step
+    // depends on two hosts this platform does not operate
+    // (download.blender.org, upload.wikimedia.org) plus ffmpeg/CPU time,
+    // and a transient failure in any one of 16 cosmetic demo campaigns must
+    // never hold every future deploy hostage — the exact failure mode a
+    // path bug in this same step caused earlier (F51). Caught here too, on
+    // top of runDemoMedia's own per-campaign try/catch, so a bug that
+    // throws instead of returning a "failed" result still can't fail main().
+    let demoMediaResults: readonly DemoMediaResult[] = [];
+    try {
+      demoMediaResults = await runDemoMedia({ databaseUrl: connectionString, log: console.log });
+    } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      console.error(`[seed:staging] demo media threw rather than returning results: ${detail}`);
+    }
     const demoMediaSeeded = demoMediaResults.filter(
       (r: DemoMediaResult) => r.status === "seeded",
     ).length;
     const demoMediaFailed = demoMediaResults.filter((r: DemoMediaResult) => r.status === "failed");
     const demoMediaSummary =
       demoMediaFailed.length > 0
-        ? `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaFailed.length)} FAILED (${demoMediaFailed.map((r: DemoMediaResult) => r.slug).join(", ")})`
+        ? `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaFailed.length)} FAILED (${demoMediaFailed.map((r: DemoMediaResult) => r.slug).join(", ")}) — not failing the deploy over it`
         : `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaResults.length - demoMediaSeeded)} already present`;
 
     console.log(
@@ -160,12 +173,7 @@ async function main(): Promise<void> {
         `${grantSummary}; ${voucherSummary}; ${mediaSummary}; ${demoMediaSummary}.`,
     );
 
-    if (
-      result.pendingGrant === "failed" ||
-      result.demoVoucher === "failed" ||
-      media?.status === "failed" ||
-      demoMediaFailed.length > 0
-    ) {
+    if (result.pendingGrant === "failed" || result.demoVoucher === "failed" || media?.status === "failed") {
       // set -Eeuo pipefail in infra/helios/pre-reload.sh turns this into a
       // failed deploy, on purpose — see this file's own header.
       console.error(

@@ -1,9 +1,18 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import pg from "pg";
+// Imported, not read off disk at runtime: `main-staging.ts` (2.3.e) bundles
+// this whole module into one file with esbuild (`scripts/build-service.mjs
+// seed`), and a path built from `import.meta.url` at runtime then points at
+// wherever that BUNDLE landed in the release, not at this source file's own
+// directory — which is exactly the bug that broke every staging deploy
+// after this shipped (F51/coordinator report). `with { type: "json" }`
+// makes esbuild inline the manifest's contents into the bundle at build
+// time, so there is no file to find at runtime at all.
+import demoMediaManifestJson from "../demo-media.json" with { type: "json" };
 import { probeInput, renderHlsLadder, renderPoster, renderTeaser } from "./ffmpeg-transcode";
 import {
   createMediaClient,
@@ -42,15 +51,18 @@ import {
  * runs for its own fixture campaign, which is Area A's to extend to these.
  */
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 // Overridable so a deploy that gets a fresh checkout per release (2.1.b)
-// can point this at a persistent path (e.g. `/opt/yourtal/shared/...`) —
-// otherwise every release re-fetches and re-transcodes from a cold cache.
-// Correctness never depends on it: the DB check (`hls_url IS NOT NULL`) is
-// what makes a re-run a no-op, a cold cache only costs time.
-const CACHE_DIR =
-  process.env["DEMO_MEDIA_CACHE_DIR"] ?? path.join(REPO_ROOT, ".cache", "demo-media");
-const MANIFEST_PATH = path.join(REPO_ROOT, "packages", "media", "demo-media.json");
+// can point this at a persistent path OUTSIDE the release directory (e.g.
+// `/opt/yourtal/data/demo-media-cache` — the release dir itself is not
+// guaranteed writable by `uyourtal`, and is deleted/replaced on every
+// deploy regardless). The default is `os.tmpdir()`, deliberately NOT
+// anything derived from this module's own on-disk location: once bundled
+// (see the JSON import above), that location is the release's `dist/`, and
+// a cache under it would vanish every deploy anyway. Correctness never
+// depends on any of this: the DB check (`hls_url IS NOT NULL`) is what
+// makes a re-run a no-op, a cold cache only costs time re-fetching and
+// re-transcoding.
+const CACHE_DIR = process.env["DEMO_MEDIA_CACHE_DIR"] ?? path.join(tmpdir(), "demo-media-cache");
 
 /** F10's own 60s floor, plus margin: every demo campaign lands at exactly this length. */
 const TARGET_DURATION_SECONDS = 90;
@@ -85,7 +97,13 @@ export interface Manifest {
 }
 
 function loadManifest(): Manifest {
-  return JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as Manifest;
+  // `JSON.parse(JSON.stringify(...))`: the imported JSON is already parsed
+  // (that is what `with { type: "json" }` means), but its inferred type is
+  // a structural match rather than literally `Manifest` — the same "trust
+  // the shape, don't re-derive it" cast every other JSON-import in this
+  // codebase uses, and cheaper than validating a file this package itself
+  // owns and already typechecks against via `ManifestCampaign` etc.
+  return demoMediaManifestJson as Manifest;
 }
 
 /** A stable UUID from a string (SHA-256, shaped as a version-5 UUID) — same technique `unlockJobId` (apps/worker/src/jobs/points-unlocked.ts) uses, so re-running this script always names the same rows. */

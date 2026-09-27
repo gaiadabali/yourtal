@@ -76,10 +76,7 @@ const mockDataSource: StudioDataSource = {
       handle: input.handle,
       coverUrl: null,
     };
-    MOCK_MEMBERSHIPS = [
-      ...MOCK_MEMBERSHIPS,
-      { business, myRole: "owner", roster: [] },
-    ];
+    MOCK_MEMBERSHIPS = [...MOCK_MEMBERSHIPS, { business, myRole: "owner", roster: [] }];
     return Promise.resolve(business);
   },
   updateChannelSettings: (businessId, input) => {

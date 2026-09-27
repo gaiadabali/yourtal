@@ -21,13 +21,17 @@ export function CampaignDraftList({ drafts, onOpen, onCreate, canEdit }: Campaig
 
   function formatMinutes(durationSeconds: number): string {
     const minutes = Math.round(durationSeconds / 60);
-    return minutes <= 0 ? t("campaignBuilder.list.noVideoYet") : t("campaignBuilder.list.minutes", { minutes });
+    return minutes <= 0
+      ? t("campaignBuilder.list.noVideoYet")
+      : t("campaignBuilder.list.minutes", { minutes });
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-sans font-semibold text-fg">{t("campaignBuilder.list.title")}</h2>
+        <h2 className="text-lg font-sans font-semibold text-fg">
+          {t("campaignBuilder.list.title")}
+        </h2>
         {canEdit ? (
           <Button type="button" onClick={onCreate}>
             {t("campaignBuilder.list.newCampaign")}

@@ -81,7 +81,12 @@ export function BusinessOnboardingForm({
 
           {region === "AU" ? (
             <>
-              <NativeSelect name="state" label={t("onboarding.stateLabel")} required defaultValue="">
+              <NativeSelect
+                name="state"
+                label={t("onboarding.stateLabel")}
+                required
+                defaultValue=""
+              >
                 <option value="" disabled>
                   {t("onboarding.selectState")}
                 </option>

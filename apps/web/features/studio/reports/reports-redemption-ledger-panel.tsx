@@ -61,8 +61,16 @@ export function ReportsRedemptionLedgerPanel({
               rows={nonZeroRows}
               getRowKey={(row) => row.status}
               columns={[
-                { key: "status", header: t("reports.ledger.statusHeader"), cell: (row) => row.label },
-                { key: "count", header: t("reports.ledger.vouchersHeader"), cell: (row) => row.count },
+                {
+                  key: "status",
+                  header: t("reports.ledger.statusHeader"),
+                  cell: (row) => row.label,
+                },
+                {
+                  key: "count",
+                  header: t("reports.ledger.vouchersHeader"),
+                  cell: (row) => row.count,
+                },
                 {
                   key: "value",
                   header: t("reports.ledger.faceValueHeader"),

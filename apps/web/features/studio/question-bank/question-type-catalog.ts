@@ -16,5 +16,7 @@ export function questionTypeDescription(t: StudioTranslator, type: QuestionDraft
 }
 
 export function questionTypeScoreLabel(t: StudioTranslator, type: QuestionDraftType): string {
-  return isScoredQuestionType(type) ? t("questionBank.type.scored") : t("questionBank.type.opinion");
+  return isScoredQuestionType(type)
+    ? t("questionBank.type.scored")
+    : t("questionBank.type.opinion");
 }

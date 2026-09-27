@@ -243,7 +243,9 @@ describe("TeamScreen", () => {
     expect(screen.getByText(/You transferred ownership to Citra Wulandari/)).toBeInTheDocument();
 
     // `currentUserId` (Budi) does not change — the component tracks the viewer's ROLE changing, not their identity.
-    const formerOwnerRow = within(table).getByText("Budi Santoso (you)").closest("tr") as HTMLElement;
+    const formerOwnerRow = within(table)
+      .getByText("Budi Santoso (you)")
+      .closest("tr") as HTMLElement;
     expect(within(formerOwnerRow).getByText("Admin")).toBeInTheDocument();
     const newOwnerRow = within(table).getByText("Citra Wulandari").closest("tr") as HTMLElement;
     expect(within(newOwnerRow).getByText("Owner")).toBeInTheDocument();

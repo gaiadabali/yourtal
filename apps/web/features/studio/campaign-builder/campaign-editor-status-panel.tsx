@@ -62,7 +62,9 @@ export function CampaignEditorStatusPanel({
 
         {draft.status === "rejected" && draft.rejectionReason ? (
           <p className="text-xs font-sans text-fg-muted">
-            <span className="font-medium text-fg">{t("campaignBuilder.status.moderatorFeedback")}</span>{" "}
+            <span className="font-medium text-fg">
+              {t("campaignBuilder.status.moderatorFeedback")}
+            </span>{" "}
             {draft.rejectionReason}
           </p>
         ) : null}

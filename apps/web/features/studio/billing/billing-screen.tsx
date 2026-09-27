@@ -74,7 +74,11 @@ export function BillingScreen({
                   <input type="hidden" name="businessId" value={businessId} />
                   <input type="hidden" name="points" value={quote.points} />
                   <input type="hidden" name="currency" value={quote.currency} />
-                  <input type="hidden" name="idempotencyKey" value={`${idempotencyKey}:${quote.points}`} />
+                  <input
+                    type="hidden"
+                    name="idempotencyKey"
+                    value={`${idempotencyKey}:${quote.points}`}
+                  />
                   <Button type="submit">{t("billing.buy")}</Button>
                 </form>
               ) : null}

@@ -61,9 +61,7 @@ export function TeamRemoveDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isSelf
-              ? t("team.remove.titleSelf")
-              : t("team.remove.title", { name: targetName })}
+            {isSelf ? t("team.remove.titleSelf") : t("team.remove.title", { name: targetName })}
           </DialogTitle>
           <DialogDescription>
             {isSelf

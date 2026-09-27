@@ -40,7 +40,10 @@ export function StudioVerificationBanner({ justSubmitted, locale }: StudioVerifi
             {t("chrome.verification.submittedMessage")}
           </p>
         ) : (
-          <form action={submitKybDocumentAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <form
+            action={submitKybDocumentAction}
+            className="flex flex-col gap-3 sm:flex-row sm:items-end"
+          >
             <NativeSelect
               name="documentType"
               label={t("chrome.verification.documentTypeLabel")}
@@ -55,7 +58,9 @@ export function StudioVerificationBanner({ justSubmitted, locale }: StudioVerifi
               ))}
             </NativeSelect>
             <label className="flex flex-col gap-1.5">
-              <span className="text-label font-sans text-fg">{t("chrome.verification.fileLabel")}</span>
+              <span className="text-label font-sans text-fg">
+                {t("chrome.verification.fileLabel")}
+              </span>
               <input
                 type="file"
                 name="document"

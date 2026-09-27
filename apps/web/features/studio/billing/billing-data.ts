@@ -67,11 +67,15 @@ const liveDataSource: BillingDataSource = {
   // honestly empty list, not an invented one.
   listPurchases: () => Promise.resolve([]),
   purchasePoints: async (businessId, points, currency, idempotencyKey) => {
-    const result = await apiFetch(`/api/${businessId}/studio/billing/purchases`, purchaseResultSchema, {
-      method: "POST",
-      headers: { "idempotency-key": idempotencyKey },
-      body: { points, currency },
-    });
+    const result = await apiFetch(
+      `/api/${businessId}/studio/billing/purchases`,
+      purchaseResultSchema,
+      {
+        method: "POST",
+        headers: { "idempotency-key": idempotencyKey },
+        body: { points, currency },
+      },
+    );
     if (!result.ok) throw new Error(`Could not buy points: ${result.error.message}`);
     return result.data;
   },

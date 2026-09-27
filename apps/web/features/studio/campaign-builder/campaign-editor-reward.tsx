@@ -115,7 +115,9 @@ export function CampaignEditorReward({
               ? t("campaignBuilder.reward.fairTrade")
               : t("campaignBuilder.reward.rewardTooSmall")}
         </Badge>
-        <p className="text-xs font-sans text-fg-muted">{describeRewardDataCostRatio(assessment, t)}</p>
+        <p className="text-xs font-sans text-fg-muted">
+          {describeRewardDataCostRatio(assessment, t)}
+        </p>
       </div>
     </div>
   );

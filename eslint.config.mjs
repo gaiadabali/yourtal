@@ -386,8 +386,7 @@ export default tseslint.config(
         },
         {
           selector: "JSXOpeningElement[name.name=/^(button|select|table)$/]",
-          message:
-            "Use the @yourtal/ui primitive (Button, NativeSelect, DataTable) instead.",
+          message: "Use the @yourtal/ui primitive (Button, NativeSelect, DataTable) instead.",
         },
         // `type="hidden"`/`type="file"` are exempt: a hidden field carries no
         // UI at all (a Server Action's own id/currency passthrough), and no

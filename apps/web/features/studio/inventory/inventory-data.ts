@@ -126,7 +126,12 @@ const mockStateByBusinessId = new Map<
   { listings: Listing[]; locations: MerchantLocation[] }
 >();
 
-function mockStateFor(businessId: string, merchantName: string, region: Region, currency: Currency) {
+function mockStateFor(
+  businessId: string,
+  merchantName: string,
+  region: Region,
+  currency: Currency,
+) {
   const existing = mockStateByBusinessId.get(businessId);
   if (existing) return existing;
   const outlet = mockLocation(businessId, "Main outlet", "1 Example St", "Central");
@@ -180,6 +185,8 @@ export function listLocations(
   return inventoryDataSource.listLocations(businessId, merchantName, region, currency);
 }
 
-export function listPendingDecreaseRequests(businessId: string): Promise<SettlementDecreaseRequest[]> {
+export function listPendingDecreaseRequests(
+  businessId: string,
+): Promise<SettlementDecreaseRequest[]> {
   return inventoryDataSource.listPendingDecreaseRequests(businessId);
 }

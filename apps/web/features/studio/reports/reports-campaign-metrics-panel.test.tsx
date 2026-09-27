@@ -6,9 +6,7 @@ import { ReportsCampaignMetricsPanel } from "./reports-campaign-metrics-panel";
 
 describe("ReportsCampaignMetricsPanel", () => {
   it("renders nothing when no campaign is selected", () => {
-    const { container } = render(
-      <ReportsCampaignMetricsPanel report={undefined} locale="en-AU" />,
-    );
+    const { container } = render(<ReportsCampaignMetricsPanel report={undefined} locale="en-AU" />);
     expect(container).toBeEmptyDOMElement();
   });
 

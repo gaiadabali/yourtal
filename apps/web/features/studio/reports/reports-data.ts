@@ -33,7 +33,10 @@ export interface ReportsBundle {
 interface ReportsDataSource {
   getReportsBundle: (businessId: string, businessDisplayName: string) => Promise<ReportsBundle>;
   /** `null` when the API has nothing for this campaign (not found, or not this business's own) — an honest gap, not an error toast. */
-  getCampaignReport: (businessId: string, campaignId: string) => Promise<CampaignReportResult | null>;
+  getCampaignReport: (
+    businessId: string,
+    campaignId: string,
+  ) => Promise<CampaignReportResult | null>;
 }
 
 const mockReportsDataSource: ReportsDataSource = {

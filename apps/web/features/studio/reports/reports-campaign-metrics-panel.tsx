@@ -78,7 +78,9 @@ export function ReportsCampaignMetricsPanel({ report, locale }: ReportsCampaignM
                   <PointsChip
                     value={report.pointsSpent}
                     size="sm"
-                    formatLabel={(formatted) => t("reports.metrics.pointsSpentLabel", { formatted })}
+                    formatLabel={(formatted) =>
+                      t("reports.metrics.pointsSpentLabel", { formatted })
+                    }
                   />
                 ),
               },

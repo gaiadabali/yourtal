@@ -19,12 +19,16 @@ import (
 // checks if the Business type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Business{}
 
-// Business An advertiser, supplier and/or redeemer.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - roles must not contain duplicates.   - currency must match the business's own region (F2: regions never cross).
+// Business An advertiser, supplier and/or redeemer.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - roles must not contain duplicates.   - currency must match the business's own region (F2: regions never cross).   - taxIdKind must match the business's region (ABN for AU; NIB or NPWP for ID).   - taxIdValue must match the expected shape for its taxIdKind.   - address must match the business's region (AU: state + postcode; ID: city).
 type Business struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	LegalName string `json:"legalName"`
 	DisplayName string `json:"displayName"`
-	District string `json:"district"`
+	TaxIdKind TaxIdKind `json:"taxIdKind"`
+	TaxIdValue string `json:"taxIdValue"`
+	AddressState NullableAuState `json:"addressState"`
+	AddressPostcode NullableString `json:"addressPostcode" validate:"regexp=^\\d{4}$"`
+	AddressCity NullableString `json:"addressCity"`
 	Roles []BusinessRole `json:"roles"`
 	IsVerified bool `json:"isVerified"`
 	LogoUrl NullableString `json:"logoUrl"`
@@ -41,12 +45,16 @@ type _Business Business
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBusiness(id string, legalName string, displayName string, district string, roles []BusinessRole, isVerified bool, logoUrl NullableString, region Region, currency Currency, handle string, coverUrl NullableString) *Business {
+func NewBusiness(id string, legalName string, displayName string, taxIdKind TaxIdKind, taxIdValue string, addressState NullableAuState, addressPostcode NullableString, addressCity NullableString, roles []BusinessRole, isVerified bool, logoUrl NullableString, region Region, currency Currency, handle string, coverUrl NullableString) *Business {
 	this := Business{}
 	this.Id = id
 	this.LegalName = legalName
 	this.DisplayName = displayName
-	this.District = district
+	this.TaxIdKind = taxIdKind
+	this.TaxIdValue = taxIdValue
+	this.AddressState = addressState
+	this.AddressPostcode = addressPostcode
+	this.AddressCity = addressCity
 	this.Roles = roles
 	this.IsVerified = isVerified
 	this.LogoUrl = logoUrl
@@ -137,28 +145,130 @@ func (o *Business) SetDisplayName(v string) {
 	o.DisplayName = v
 }
 
-// GetDistrict returns the District field value
-func (o *Business) GetDistrict() string {
+// GetTaxIdKind returns the TaxIdKind field value
+func (o *Business) GetTaxIdKind() TaxIdKind {
+	if o == nil {
+		var ret TaxIdKind
+		return ret
+	}
+
+	return o.TaxIdKind
+}
+
+// GetTaxIdKindOk returns a tuple with the TaxIdKind field value
+// and a boolean to check if the value has been set.
+func (o *Business) GetTaxIdKindOk() (*TaxIdKind, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TaxIdKind, true
+}
+
+// SetTaxIdKind sets field value
+func (o *Business) SetTaxIdKind(v TaxIdKind) {
+	o.TaxIdKind = v
+}
+
+// GetTaxIdValue returns the TaxIdValue field value
+func (o *Business) GetTaxIdValue() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.District
+	return o.TaxIdValue
 }
 
-// GetDistrictOk returns a tuple with the District field value
+// GetTaxIdValueOk returns a tuple with the TaxIdValue field value
 // and a boolean to check if the value has been set.
-func (o *Business) GetDistrictOk() (*string, bool) {
+func (o *Business) GetTaxIdValueOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.District, true
+	return &o.TaxIdValue, true
 }
 
-// SetDistrict sets field value
-func (o *Business) SetDistrict(v string) {
-	o.District = v
+// SetTaxIdValue sets field value
+func (o *Business) SetTaxIdValue(v string) {
+	o.TaxIdValue = v
+}
+
+// GetAddressState returns the AddressState field value
+// If the value is explicit nil, the zero value for AuState will be returned
+func (o *Business) GetAddressState() AuState {
+	if o == nil || o.AddressState.Get() == nil {
+		var ret AuState
+		return ret
+	}
+
+	return *o.AddressState.Get()
+}
+
+// GetAddressStateOk returns a tuple with the AddressState field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Business) GetAddressStateOk() (*AuState, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.AddressState.Get(), o.AddressState.IsSet()
+}
+
+// SetAddressState sets field value
+func (o *Business) SetAddressState(v AuState) {
+	o.AddressState.Set(&v)
+}
+
+// GetAddressPostcode returns the AddressPostcode field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *Business) GetAddressPostcode() string {
+	if o == nil || o.AddressPostcode.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.AddressPostcode.Get()
+}
+
+// GetAddressPostcodeOk returns a tuple with the AddressPostcode field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Business) GetAddressPostcodeOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.AddressPostcode.Get(), o.AddressPostcode.IsSet()
+}
+
+// SetAddressPostcode sets field value
+func (o *Business) SetAddressPostcode(v string) {
+	o.AddressPostcode.Set(&v)
+}
+
+// GetAddressCity returns the AddressCity field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *Business) GetAddressCity() string {
+	if o == nil || o.AddressCity.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.AddressCity.Get()
+}
+
+// GetAddressCityOk returns a tuple with the AddressCity field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Business) GetAddressCityOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.AddressCity.Get(), o.AddressCity.IsSet()
+}
+
+// SetAddressCity sets field value
+func (o *Business) SetAddressCity(v string) {
+	o.AddressCity.Set(&v)
 }
 
 // GetRoles returns the Roles field value
@@ -346,7 +456,11 @@ func (o Business) ToMap() (map[string]interface{}, error) {
 	toSerialize["id"] = o.Id
 	toSerialize["legalName"] = o.LegalName
 	toSerialize["displayName"] = o.DisplayName
-	toSerialize["district"] = o.District
+	toSerialize["taxIdKind"] = o.TaxIdKind
+	toSerialize["taxIdValue"] = o.TaxIdValue
+	toSerialize["addressState"] = o.AddressState.Get()
+	toSerialize["addressPostcode"] = o.AddressPostcode.Get()
+	toSerialize["addressCity"] = o.AddressCity.Get()
 	toSerialize["roles"] = o.Roles
 	toSerialize["isVerified"] = o.IsVerified
 	toSerialize["logoUrl"] = o.LogoUrl.Get()
@@ -365,7 +479,11 @@ func (o *Business) UnmarshalJSON(data []byte) (err error) {
 		"id",
 		"legalName",
 		"displayName",
-		"district",
+		"taxIdKind",
+		"taxIdValue",
+		"addressState",
+		"addressPostcode",
+		"addressCity",
 		"roles",
 		"isVerified",
 		"logoUrl",

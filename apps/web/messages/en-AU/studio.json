@@ -1,0 +1,374 @@
+{
+  "campaignBuilder": {
+    "list": {
+      "title": "Campaigns",
+      "newCampaign": "New campaign",
+      "empty": "No campaigns yet.",
+      "untitled": "Untitled campaign",
+      "rejected": "Rejected",
+      "noVideoYet": "no video yet",
+      "minutes": "{minutes} min",
+      "rewardPoints": "{points} points"
+    },
+    "budget": {
+      "totalLabel": "Total budget (points)",
+      "dailyCapLabel": "Daily cap (points, optional)",
+      "dailyCapPlaceholder": "No daily cap"
+    },
+    "chapters": {
+      "titleLabel": "Chapter {number} title",
+      "startsAtLabel": "Starts at (s)",
+      "remove": "Remove",
+      "removeChapter": "Remove chapter {number}",
+      "addChapter": "Add chapter"
+    },
+    "details": {
+      "titleLabel": "Campaign title",
+      "synopsisLabel": "Synopsis",
+      "synopsisHelp": "This is what the viewer reads before starting — {remaining} characters left."
+    },
+    "reward": {
+      "scoringRuleBaseOnly": "Fixed reward — same for every viewer who watches and answers",
+      "scoringRuleBaseBonus": "Base + accuracy bonus — scales up to 40% more for correct answers",
+      "rewardLabel": "Reward (points)",
+      "scoringRuleLabel": "Scoring rule",
+      "ratioPending": "Ratio pending",
+      "fairTrade": "Fair trade",
+      "rewardTooSmall": "Reward too small"
+    },
+    "sections": {
+      "navLabel": "Campaign editor sections",
+      "details": "Details",
+      "video": "Video & chapters",
+      "reward": "Reward",
+      "targeting": "Targeting",
+      "budget": "Budget",
+      "questions": "Questions"
+    },
+    "status": {
+      "label": {
+        "draft": "Draft",
+        "in_review": "In review",
+        "live": "Live",
+        "paused": "Paused",
+        "rejected": "Rejected"
+      },
+      "statusLabel": "Status",
+      "moderatorFeedback": "Moderator feedback:",
+      "verifyBeforeSubmit": "Verify your business on the overview page before you can submit.",
+      "verifyBeforeSubmitTitle": "Verify your business before you can submit a campaign",
+      "revise": "Revise",
+      "submitForReview": "Submit for review",
+      "pause": "Pause",
+      "resume": "Resume"
+    },
+    "targeting": {
+      "interestsLabel": "Interests",
+      "districtsLabel": "Districts",
+      "noInterests": "No interests added — this campaign targets everyone.",
+      "noDistricts": "No districts added — this campaign targets everyone.",
+      "tagPlaceholder": "Type and press Enter",
+      "add": "Add",
+      "removeTag": "Remove {value}"
+    },
+    "upload": {
+      "statusIdle": "No video uploaded yet",
+      "statusUploading": "Uploading… {percent}%",
+      "statusProcessing": "Processing (encoding, moderation scan)…",
+      "statusReady": "Ready",
+      "statusFailed": "Upload failed — try again",
+      "videoFileLabel": "Video file",
+      "progressAriaLabel": "Video upload progress",
+      "reset": "Reset"
+    },
+    "editor": {
+      "backToCampaigns": "← Back to campaigns"
+    },
+    "preview": {
+      "heading": "Entry card preview",
+      "untitled": "Untitled campaign",
+      "noSynopsis": "No synopsis yet.",
+      "duration": "Duration",
+      "dataCost": "Data cost",
+      "baseReward": "Base reward",
+      "accuracyBonus": "Accuracy bonus",
+      "upToPoints": "Up to {points}",
+      "questions": "Questions",
+      "scoring": "Scoring",
+      "dataCostBadge": "{amount} data cost",
+      "startVideo": "Start video",
+      "startVideoAriaLabel": "Start video — preview only, not interactive here"
+    }
+  },
+  "questionBank": {
+    "title": "Question bank",
+    "addQuestion": "Add question",
+    "editQuestion": "Edit question",
+    "chooseType": "Choose a question type",
+    "cancel": "Cancel",
+    "saveQuestion": "Save question",
+    "bankSizeOk": "Bank size OK",
+    "bankTooSmall": "Bank too small",
+    "empty": "No questions yet.",
+    "noPromptYet": "(no prompt yet)",
+    "incomplete": "Incomplete",
+    "edit": "Edit",
+    "remove": "Remove",
+    "promptLabel": "Question prompt",
+    "timerLabel": "Timer (seconds)",
+    "timerHelp": "Ample for a viewer who watched, tight for looking an answer up.",
+    "piiError": "Can't ask for a {category}: {reason}",
+    "addTypeButton": "Add {type}",
+    "type": {
+      "scored": "Scored",
+      "opinion": "Opinion",
+      "multiple_choice": {
+        "label": "Multiple choice",
+        "description": "Recall of a fact or claim from the video. Scored against one correct answer."
+      },
+      "true_false": {
+        "label": "True / false",
+        "description": "Quick comprehension check. Scored against one correct answer."
+      },
+      "likert": {
+        "label": "Rating (Likert)",
+        "description": "Brand sentiment or purchase intent on a rating scale. Opinion — never scored for correctness."
+      },
+      "ranked": {
+        "label": "Ranked preference",
+        "description": "Feature or product preference, ranked by the viewer. Opinion — never scored for correctness."
+      },
+      "short_text": {
+        "label": "Short free text",
+        "description": "Optional open feedback, capped in length. Never scored — sampled for reporting only."
+      }
+    },
+    "likert": {
+      "lowEndLabel": "Low end ({value})",
+      "highEndLabel": "High end ({value})",
+      "lowEndPlaceholder": "e.g. Not at all likely",
+      "highEndPlaceholder": "e.g. Extremely likely"
+    },
+    "multipleChoice": {
+      "legend": "Options and correct answer",
+      "markCorrect": "Mark option {number} as correct",
+      "optionLabel": "Option {number}",
+      "removeOption": "Remove option {number}",
+      "remove": "Remove",
+      "addOption": "Add option",
+      "markCorrectWarning": "Mark which option is correct before saving this question."
+    },
+    "ranked": {
+      "legend": "Items to rank",
+      "itemLabel": "Item {number}",
+      "removeItem": "Remove item {number}",
+      "remove": "Remove",
+      "addItem": "Add item"
+    },
+    "shortText": {
+      "maxLengthLabel": "Maximum answer length (characters)",
+      "help": "This is never scored — free text is sampled for reporting only."
+    },
+    "trueFalse": {
+      "legend": "Correct answer",
+      "true": "True",
+      "false": "False",
+      "markWarning": "Mark whether the correct answer is true or false before saving this question."
+    }
+  },
+  "reports": {
+    "filter": {
+      "ariaLabel": "Filter reports by campaign",
+      "allCampaigns": "All campaigns"
+    },
+    "overview": {
+      "empty": "This business has no campaigns yet.",
+      "caption": "This business's campaigns, as configured",
+      "campaignHeader": "Campaign",
+      "statusHeader": "Status",
+      "questionsHeader": "Questions",
+      "scoringRuleHeader": "Scoring rule"
+    },
+    "legend": {
+      "title": "How to read these numbers",
+      "description": "This platform cannot currently prove a view was watched by a person rather than a device farm. There is no \"verified\" tier below, on purpose: that would be a fabrication. Every number on this page carries one of these labels instead, and any metric this business asks for that none of them can honestly support is shown as a named gap further down, not a guess."
+    },
+    "questionBank": {
+      "title": "Question bank composition",
+      "empty": "No questions are configured in this scope.",
+      "caption": "Question count by type for {scopeLabel}",
+      "typeHeader": "Question type",
+      "countHeader": "Count"
+    },
+    "ledger": {
+      "title": "Redemption ledger",
+      "description": "{count, plural, one {# voucher} other {# vouchers}} issued against this business's own listings. Not attributed to a source campaign — see the gap noted below.",
+      "empty": "No vouchers have been issued against this business yet.",
+      "caption": "Vouchers by status, with total face value per status",
+      "statusHeader": "Status",
+      "vouchersHeader": "Vouchers",
+      "faceValueHeader": "Total face value"
+    },
+    "screen": {
+      "campaignsTitle": "Campaigns",
+      "nothingToReportTitle": "Nothing to report yet",
+      "nothingToReportBody": "This business holds no advertiser or supplier relationship, so it has no campaigns or listings for this zone to summarise. A redeemer-only business's own redemption log lives in the Redemption zone, not here.",
+      "gapsTitle": "What this report cannot show yet"
+    }
+  },
+  "team": {
+    "cancel": "Cancel",
+    "audit": {
+      "empty": "No team actions recorded yet."
+    },
+    "changeRole": {
+      "title": "Change {name}'s role",
+      "description": "This takes effect immediately.",
+      "newRoleLabel": "New role",
+      "losesAccessWarning": "You will lose access to Team management immediately after this change.",
+      "save": "Save role"
+    },
+    "invite": {
+      "title": "Invite a team member",
+      "description": "They'll receive an invite by email. They can accept it once it arrives — until then they show as pending.",
+      "emailLabel": "Email",
+      "emailInvalid": "Enter a valid email address.",
+      "roleLabel": "Role",
+      "send": "Send invite"
+    },
+    "remove": {
+      "titleSelf": "Remove yourself from this team?",
+      "title": "Remove {name}?",
+      "descriptionSelf": "You will lose access to this business console immediately. Another Owner or Admin will need to invite you back.",
+      "description": "{name} will immediately lose all access to this business console. This can't be undone from here — they'd need a new invite.",
+      "confirmSelf": "Remove me",
+      "confirm": "Remove"
+    },
+    "roster": {
+      "caption": "Team roster",
+      "memberHeader": "Member",
+      "roleHeader": "Role",
+      "statusHeader": "Status",
+      "actionsHeader": "Actions",
+      "you": " (you)",
+      "active": "Active",
+      "pendingInvite": "Pending invite",
+      "transferOwnership": "Transfer ownership",
+      "ownerTransferOnly": "Owner — transfer only",
+      "changeRole": "Change role"
+    },
+    "transfer": {
+      "title": "Transfer ownership",
+      "reauthDescription": "Confirm your password to continue — ownership transfer needs a fresh re-authentication.",
+      "selectDescription": "Pick who becomes Owner. You will become Admin immediately after.",
+      "passwordLabel": "Password",
+      "continue": "Continue",
+      "newOwnerLabel": "New Owner",
+      "incorrectPassword": "Incorrect password."
+    },
+    "screen": {
+      "selfRemovedTitle": "You've left {businessDisplayName}'s team",
+      "selfRemovedBody": "You no longer have access to this business console. Ask an Owner or Admin there to invite you back.",
+      "title": "Team",
+      "inviteMember": "Invite member",
+      "helperText": "Invites, role changes and removals here take effect immediately once an Owner or Admin confirms them — transferring ownership additionally needs a fresh re-authentication. Two-person approval (a second person confirming a different person's request) applies elsewhere in the console — bulk voucher issuance, a material settlement-value cut, and API credential rotation — not to team membership itself.",
+      "auditTrail": "Audit trail",
+      "noOwner": "This business has no recorded Owner — this should never happen; contact support."
+    }
+  },
+  "chrome": {
+    "identity": {
+      "verified": "Verified",
+      "unassignedMember": "Unassigned member",
+      "noRole": "no role"
+    },
+    "zoneNav": {
+      "ariaLabel": "Studio zones"
+    },
+    "zonePlaceholder": {
+      "body": "{zoneLabel} is coming in a later release, once the redemption data behind it exists."
+    },
+    "accessDenied": {
+      "title": "You don't have access to {zoneLabel}",
+      "body": "Your role at this business doesn't include {zoneLabel}. If you need it, ask an Owner or Admin on your team to change your role."
+    },
+    "noBusiness": {
+      "pageTitle": "Business console",
+      "title": "No business console yet",
+      "body": "You don't hold a role at any business yet. Ask a business Owner or Admin to invite you, or register your own business to get a console like this one."
+    },
+    "businessSwitcher": {
+      "label": "Business"
+    },
+    "verification": {
+      "heading": "Verify your business before you can submit a campaign",
+      "submittedMessage": "Documents submitted. We'll email you once they're reviewed.",
+      "documentTypeLabel": "Document type",
+      "fileLabel": "File",
+      "submit": "Submit for review",
+      "documentType": {
+        "business_registration_certificate": "Business registration certificate",
+        "tax_registration_number": "Tax registration document",
+        "director_identity": "Director identity",
+        "proof_of_address": "Proof of address"
+      }
+    },
+    "checklist": {
+      "title": "Finish setting up",
+      "progress": "{doneCount} of {total} done"
+    }
+  },
+  "billing": {
+    "balanceTitle": "Balance",
+    "pointsAvailable": "{formatted} points available",
+    "buyPointsTitle": "Buy points",
+    "points": "{formatted} points",
+    "buy": "Buy",
+    "purchaseHistoryTitle": "Purchase history",
+    "emptyTitle": "No purchases yet",
+    "emptyDescription": "Buy a pack above to fund your first campaign."
+  },
+  "channel": {
+    "saved": "Saved.",
+    "error": {
+      "invalidInput": "Check the highlighted fields and try again.",
+      "saveFailed": "Could not save your changes — try again.",
+      "default": "Check the highlighted field and try again."
+    },
+    "displayNameLabel": "Display name",
+    "handleLabel": "Handle",
+    "handleHelp": "Lowercase letters, digits and single hyphens only.",
+    "logoUrlLabel": "Logo URL",
+    "logoUrlHelp": "Direct upload arrives with the media pipeline; paste a hosted image URL for now.",
+    "coverUrlLabel": "Cover image URL",
+    "save": "Save"
+  },
+  "inventory": {
+    "pendingDecreasesTitle": "Pending settlement-value decreases",
+    "awaitingSecondApproval": "Awaiting second approval",
+    "listingsTitle": "Listings",
+    "emptyTitle": "No listings yet",
+    "emptyDescription": "Add a location and a voucher listing to start selling in the store.",
+    "stock": "{remaining} of {total} in stock · {locations, plural, one {# location} other {# locations}}"
+  },
+  "onboarding": {
+    "error": {
+      "createFailed": "Could not create the business — try again.",
+      "invalidInput": "Check the highlighted fields and try again.",
+      "fieldFallback": "Check the \"{errorField}\" field and try again."
+    },
+    "legalNameLabel": "Legal name",
+    "displayNameLabel": "Display name",
+    "handleLabel": "Handle",
+    "handlePlaceholder": "your-business-name",
+    "handleHelp": "Lowercase letters, digits and single hyphens only.",
+    "taxIdKindLabel": "Tax ID kind",
+    "taxIdValueLabel": "Tax ID number",
+    "addressLabel": "Address",
+    "cityLabel": "City",
+    "stateLabel": "State",
+    "selectState": "Select a state",
+    "postcodeLabel": "Postcode",
+    "createBusiness": "Create business"
+  }
+}

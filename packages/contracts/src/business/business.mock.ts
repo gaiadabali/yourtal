@@ -94,6 +94,34 @@ export function generateBusinesses(count: number, baseSeed: number): Business[] 
   );
 }
 
+/**
+ * `generateAuBusiness` used to live here as this generator's AU-only
+ * counterpart (task 7.8's own comment asked for it — AU is the primary
+ * market, and every Studio mock roster should show an AU business, not
+ * only Jakarta ones). 7.1.a's region-specific tax-ID/address rework of
+ * `generateBusiness` above folded AU generation into the one function
+ * (`region: "AU"`), so this was deleted rather than updated for the new
+ * schema — `auBusinessFixture` below still gets its AU business the way
+ * task 7.8 asked for, just through the unified generator's shape.
+ */
+export const auBusinessFixture: Business = businessSchema.parse({
+  id: "00000000-0000-4000-8000-000000000801",
+  legalName: "Harbour Roasters Pty Ltd",
+  displayName: "Harbour Roasters",
+  taxIdKind: "ABN",
+  taxIdValue: "51824753556",
+  addressState: "NSW",
+  addressPostcode: "2010",
+  addressCity: null,
+  roles: ["advertiser", "supplier", "redeemer"],
+  isVerified: true,
+  logoUrl: null,
+  region: "AU",
+  currency: "AUD",
+  handle: "harbour-roasters-801",
+  coverUrl: null,
+});
+
 /** A business with a deliberately long, real-sounding name — the merchant-name awkward fixture. */
 export const longNameBusinessFixture: Business = businessSchema.parse({
   id: "00000000-0000-4000-8000-000000000601",

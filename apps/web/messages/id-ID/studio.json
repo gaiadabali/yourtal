@@ -1,0 +1,374 @@
+{
+  "campaignBuilder": {
+    "list": {
+      "title": "Kampanye",
+      "newCampaign": "Kampanye baru",
+      "empty": "Belum ada kampanye.",
+      "untitled": "Kampanye tanpa judul",
+      "rejected": "Ditolak",
+      "noVideoYet": "belum ada video",
+      "minutes": "{minutes} mnt",
+      "rewardPoints": "{points} poin"
+    },
+    "budget": {
+      "totalLabel": "Total anggaran (poin)",
+      "dailyCapLabel": "Batas harian (poin, opsional)",
+      "dailyCapPlaceholder": "Tidak ada batas harian"
+    },
+    "chapters": {
+      "titleLabel": "Judul bab {number}",
+      "startsAtLabel": "Mulai pada (dtk)",
+      "remove": "Hapus",
+      "removeChapter": "Hapus bab {number}",
+      "addChapter": "Tambah bab"
+    },
+    "details": {
+      "titleLabel": "Judul kampanye",
+      "synopsisLabel": "Sinopsis",
+      "synopsisHelp": "Ini yang dibaca penonton sebelum mulai — sisa {remaining} karakter."
+    },
+    "reward": {
+      "scoringRuleBaseOnly": "Reward tetap — sama untuk setiap penonton yang menonton dan menjawab",
+      "scoringRuleBaseBonus": "Dasar + bonus akurasi — bertambah hingga 40% lebih banyak untuk jawaban benar",
+      "rewardLabel": "Reward (poin)",
+      "scoringRuleLabel": "Aturan penilaian",
+      "ratioPending": "Rasio belum tersedia",
+      "fairTrade": "Sepadan",
+      "rewardTooSmall": "Reward terlalu kecil"
+    },
+    "sections": {
+      "navLabel": "Bagian editor kampanye",
+      "details": "Detail",
+      "video": "Video & bab",
+      "reward": "Reward",
+      "targeting": "Target",
+      "budget": "Anggaran",
+      "questions": "Pertanyaan"
+    },
+    "status": {
+      "label": {
+        "draft": "Draf",
+        "in_review": "Ditinjau",
+        "live": "Aktif",
+        "paused": "Dijeda",
+        "rejected": "Ditolak"
+      },
+      "statusLabel": "Status",
+      "moderatorFeedback": "Masukan moderator:",
+      "verifyBeforeSubmit": "Verifikasi bisnis Anda di halaman ringkasan sebelum dapat mengirimkan kampanye.",
+      "verifyBeforeSubmitTitle": "Verifikasi bisnis Anda sebelum dapat mengirimkan kampanye",
+      "revise": "Revisi",
+      "submitForReview": "Kirim untuk ditinjau",
+      "pause": "Jeda",
+      "resume": "Lanjutkan"
+    },
+    "targeting": {
+      "interestsLabel": "Minat",
+      "districtsLabel": "Wilayah",
+      "noInterests": "Belum ada minat ditambahkan — kampanye ini menargetkan semua orang.",
+      "noDistricts": "Belum ada wilayah ditambahkan — kampanye ini menargetkan semua orang.",
+      "tagPlaceholder": "Ketik lalu tekan Enter",
+      "add": "Tambah",
+      "removeTag": "Hapus {value}"
+    },
+    "upload": {
+      "statusIdle": "Belum ada video diunggah",
+      "statusUploading": "Mengunggah… {percent}%",
+      "statusProcessing": "Memproses (enkoding, pemindaian moderasi)…",
+      "statusReady": "Siap",
+      "statusFailed": "Unggah gagal — coba lagi",
+      "videoFileLabel": "Berkas video",
+      "progressAriaLabel": "Progres unggah video",
+      "reset": "Atur ulang"
+    },
+    "editor": {
+      "backToCampaigns": "← Kembali ke kampanye"
+    },
+    "preview": {
+      "heading": "Pratinjau kartu entri",
+      "untitled": "Kampanye tanpa judul",
+      "noSynopsis": "Belum ada sinopsis.",
+      "duration": "Durasi",
+      "dataCost": "Biaya data",
+      "baseReward": "Reward dasar",
+      "accuracyBonus": "Bonus akurasi",
+      "upToPoints": "Hingga {points}",
+      "questions": "Pertanyaan",
+      "scoring": "Penilaian",
+      "dataCostBadge": "Biaya data {amount}",
+      "startVideo": "Mulai video",
+      "startVideoAriaLabel": "Mulai video — hanya pratinjau, tidak interaktif di sini"
+    }
+  },
+  "questionBank": {
+    "title": "Bank pertanyaan",
+    "addQuestion": "Tambah pertanyaan",
+    "editQuestion": "Ubah pertanyaan",
+    "chooseType": "Pilih jenis pertanyaan",
+    "cancel": "Batal",
+    "saveQuestion": "Simpan pertanyaan",
+    "bankSizeOk": "Ukuran bank sesuai",
+    "bankTooSmall": "Bank terlalu kecil",
+    "empty": "Belum ada pertanyaan.",
+    "noPromptYet": "(belum ada pertanyaan)",
+    "incomplete": "Belum lengkap",
+    "edit": "Ubah",
+    "remove": "Hapus",
+    "promptLabel": "Teks pertanyaan",
+    "timerLabel": "Timer (detik)",
+    "timerHelp": "Cukup bagi penonton yang sudah menonton, ketat bagi yang mencari jawaban.",
+    "piiError": "Tidak boleh meminta {category}: {reason}",
+    "addTypeButton": "Tambah {type}",
+    "type": {
+      "scored": "Dinilai",
+      "opinion": "Opini",
+      "multiple_choice": {
+        "label": "Pilihan ganda",
+        "description": "Mengingat fakta atau klaim dari video. Dinilai terhadap satu jawaban benar."
+      },
+      "true_false": {
+        "label": "Benar / salah",
+        "description": "Pemeriksaan pemahaman singkat. Dinilai terhadap satu jawaban benar."
+      },
+      "likert": {
+        "label": "Penilaian (Likert)",
+        "description": "Sentimen merek atau niat beli pada skala penilaian. Opini — tidak pernah dinilai benar-salah."
+      },
+      "ranked": {
+        "label": "Preferensi berperingkat",
+        "description": "Preferensi fitur atau produk, diberi peringkat oleh penonton. Opini — tidak pernah dinilai benar-salah."
+      },
+      "short_text": {
+        "label": "Teks bebas singkat",
+        "description": "Masukan terbuka opsional, dibatasi panjangnya. Tidak pernah dinilai — hanya disampel untuk laporan."
+      }
+    },
+    "likert": {
+      "lowEndLabel": "Ujung bawah ({value})",
+      "highEndLabel": "Ujung atas ({value})",
+      "lowEndPlaceholder": "mis. Sama sekali tidak mungkin",
+      "highEndPlaceholder": "mis. Sangat mungkin"
+    },
+    "multipleChoice": {
+      "legend": "Pilihan dan jawaban benar",
+      "markCorrect": "Tandai pilihan {number} sebagai benar",
+      "optionLabel": "Pilihan {number}",
+      "removeOption": "Hapus pilihan {number}",
+      "remove": "Hapus",
+      "addOption": "Tambah pilihan",
+      "markCorrectWarning": "Tandai pilihan mana yang benar sebelum menyimpan pertanyaan ini."
+    },
+    "ranked": {
+      "legend": "Item untuk diberi peringkat",
+      "itemLabel": "Item {number}",
+      "removeItem": "Hapus item {number}",
+      "remove": "Hapus",
+      "addItem": "Tambah item"
+    },
+    "shortText": {
+      "maxLengthLabel": "Panjang maksimum jawaban (karakter)",
+      "help": "Ini tidak pernah dinilai — teks bebas hanya disampel untuk laporan."
+    },
+    "trueFalse": {
+      "legend": "Jawaban benar",
+      "true": "Benar",
+      "false": "Salah",
+      "markWarning": "Tandai apakah jawaban benar adalah benar atau salah sebelum menyimpan pertanyaan ini."
+    }
+  },
+  "reports": {
+    "filter": {
+      "ariaLabel": "Filter laporan berdasarkan kampanye",
+      "allCampaigns": "Semua kampanye"
+    },
+    "overview": {
+      "empty": "Bisnis ini belum memiliki kampanye.",
+      "caption": "Kampanye bisnis ini, sebagaimana dikonfigurasi",
+      "campaignHeader": "Kampanye",
+      "statusHeader": "Status",
+      "questionsHeader": "Pertanyaan",
+      "scoringRuleHeader": "Aturan penilaian"
+    },
+    "legend": {
+      "title": "Cara membaca angka-angka ini",
+      "description": "Platform ini saat ini tidak dapat membuktikan bahwa sebuah tayangan ditonton oleh orang sungguhan, bukan oleh farm perangkat. Sengaja tidak ada tingkat \"terverifikasi\" di bawah ini: itu akan menjadi klaim palsu. Setiap angka di halaman ini membawa salah satu label berikut, dan metrik apa pun yang diminta bisnis ini yang tidak dapat didukung secara jujur oleh salah satunya ditampilkan sebagai celah bernama lebih lanjut, bukan sekadar tebakan."
+    },
+    "questionBank": {
+      "title": "Komposisi bank pertanyaan",
+      "empty": "Belum ada pertanyaan yang dikonfigurasi pada cakupan ini.",
+      "caption": "Jumlah pertanyaan per jenis untuk {scopeLabel}",
+      "typeHeader": "Jenis pertanyaan",
+      "countHeader": "Jumlah"
+    },
+    "ledger": {
+      "title": "Buku besar penukaran",
+      "description": "{count, plural, one {# voucher} other {# voucher}} diterbitkan terhadap listing bisnis ini sendiri. Tidak diatribusikan ke kampanye sumber — lihat celah yang tercatat di bawah.",
+      "empty": "Belum ada voucher yang diterbitkan untuk bisnis ini.",
+      "caption": "Voucher berdasarkan status, dengan total nilai nominal per status",
+      "statusHeader": "Status",
+      "vouchersHeader": "Voucher",
+      "faceValueHeader": "Total nilai nominal"
+    },
+    "screen": {
+      "campaignsTitle": "Kampanye",
+      "nothingToReportTitle": "Belum ada yang bisa dilaporkan",
+      "nothingToReportBody": "Bisnis ini tidak memiliki hubungan pengiklan atau pemasok, sehingga tidak ada kampanye atau listing untuk dirangkum di zona ini. Log penukaran milik bisnis khusus penukar sendiri ada di zona Penukaran, bukan di sini.",
+      "gapsTitle": "Yang belum dapat ditampilkan laporan ini"
+    }
+  },
+  "team": {
+    "cancel": "Batal",
+    "audit": {
+      "empty": "Belum ada aktivitas tim yang tercatat."
+    },
+    "changeRole": {
+      "title": "Ubah peran {name}",
+      "description": "Ini berlaku segera.",
+      "newRoleLabel": "Peran baru",
+      "losesAccessWarning": "Anda akan kehilangan akses ke pengelolaan Tim segera setelah perubahan ini.",
+      "save": "Simpan peran"
+    },
+    "invite": {
+      "title": "Undang anggota tim",
+      "description": "Mereka akan menerima undangan melalui email. Mereka dapat menerimanya begitu tiba — sampai saat itu statusnya tertunda.",
+      "emailLabel": "Email",
+      "emailInvalid": "Masukkan alamat email yang valid.",
+      "roleLabel": "Peran",
+      "send": "Kirim undangan"
+    },
+    "remove": {
+      "titleSelf": "Keluarkan diri Anda dari tim ini?",
+      "title": "Keluarkan {name}?",
+      "descriptionSelf": "Anda akan langsung kehilangan akses ke konsol bisnis ini. Pemilik atau Admin lain perlu mengundang Anda kembali.",
+      "description": "{name} akan langsung kehilangan seluruh akses ke konsol bisnis ini. Ini tidak dapat dibatalkan dari sini — mereka memerlukan undangan baru.",
+      "confirmSelf": "Keluarkan saya",
+      "confirm": "Keluarkan"
+    },
+    "roster": {
+      "caption": "Daftar tim",
+      "memberHeader": "Anggota",
+      "roleHeader": "Peran",
+      "statusHeader": "Status",
+      "actionsHeader": "Tindakan",
+      "you": " (Anda)",
+      "active": "Aktif",
+      "pendingInvite": "Undangan tertunda",
+      "transferOwnership": "Alihkan kepemilikan",
+      "ownerTransferOnly": "Pemilik — hanya bisa dialihkan",
+      "changeRole": "Ubah peran"
+    },
+    "transfer": {
+      "title": "Alihkan kepemilikan",
+      "reauthDescription": "Konfirmasi kata sandi Anda untuk melanjutkan — pengalihan kepemilikan memerlukan autentikasi ulang baru.",
+      "selectDescription": "Pilih siapa yang menjadi Pemilik. Anda akan langsung menjadi Admin setelahnya.",
+      "passwordLabel": "Kata sandi",
+      "continue": "Lanjutkan",
+      "newOwnerLabel": "Pemilik baru",
+      "incorrectPassword": "Kata sandi salah."
+    },
+    "screen": {
+      "selfRemovedTitle": "Anda telah keluar dari tim {businessDisplayName}",
+      "selfRemovedBody": "Anda tidak lagi memiliki akses ke konsol bisnis ini. Minta Pemilik atau Admin di sana untuk mengundang Anda kembali.",
+      "title": "Tim",
+      "inviteMember": "Undang anggota",
+      "helperText": "Undangan, perubahan peran, dan penghapusan di sini berlaku segera setelah dikonfirmasi oleh Pemilik atau Admin — mengalihkan kepemilikan juga memerlukan autentikasi ulang baru. Persetujuan dua orang (orang kedua yang mengonfirmasi permintaan orang lain) berlaku di bagian lain konsol — penerbitan voucher massal, penurunan nilai penyelesaian material, dan rotasi kredensial API — bukan untuk keanggotaan tim itu sendiri.",
+      "auditTrail": "Log aktivitas",
+      "noOwner": "Bisnis ini tidak memiliki Pemilik yang tercatat — ini seharusnya tidak pernah terjadi; hubungi dukungan."
+    }
+  },
+  "chrome": {
+    "identity": {
+      "verified": "Terverifikasi",
+      "unassignedMember": "Anggota belum ditugaskan",
+      "noRole": "tanpa peran"
+    },
+    "zoneNav": {
+      "ariaLabel": "Zona Studio"
+    },
+    "zonePlaceholder": {
+      "body": "{zoneLabel} akan hadir pada rilis berikutnya, setelah data penukaran di baliknya tersedia."
+    },
+    "accessDenied": {
+      "title": "Anda tidak memiliki akses ke {zoneLabel}",
+      "body": "Peran Anda di bisnis ini tidak mencakup {zoneLabel}. Jika Anda memerlukannya, minta Pemilik atau Admin di tim Anda untuk mengubah peran Anda."
+    },
+    "noBusiness": {
+      "pageTitle": "Konsol bisnis",
+      "title": "Belum ada konsol bisnis",
+      "body": "Anda belum memiliki peran di bisnis mana pun. Minta Pemilik atau Admin bisnis untuk mengundang Anda, atau daftarkan bisnis Anda sendiri untuk mendapatkan konsol seperti ini."
+    },
+    "businessSwitcher": {
+      "label": "Bisnis"
+    },
+    "verification": {
+      "heading": "Verifikasi bisnis Anda sebelum dapat mengirimkan kampanye",
+      "submittedMessage": "Dokumen terkirim. Kami akan mengirim email setelah ditinjau.",
+      "documentTypeLabel": "Jenis dokumen",
+      "fileLabel": "Berkas",
+      "submit": "Kirim untuk ditinjau",
+      "documentType": {
+        "business_registration_certificate": "Akta pendirian usaha",
+        "tax_registration_number": "Dokumen NPWP",
+        "director_identity": "Identitas direktur",
+        "proof_of_address": "Bukti alamat"
+      }
+    },
+    "checklist": {
+      "title": "Selesaikan penyiapan",
+      "progress": "{doneCount} dari {total} selesai"
+    }
+  },
+  "billing": {
+    "balanceTitle": "Saldo",
+    "pointsAvailable": "{formatted} poin tersedia",
+    "buyPointsTitle": "Beli poin",
+    "points": "{formatted} poin",
+    "buy": "Beli",
+    "purchaseHistoryTitle": "Riwayat pembelian",
+    "emptyTitle": "Belum ada pembelian",
+    "emptyDescription": "Beli paket di atas untuk mendanai kampanye pertama Anda."
+  },
+  "channel": {
+    "saved": "Tersimpan.",
+    "error": {
+      "invalidInput": "Periksa kolom yang ditandai dan coba lagi.",
+      "saveFailed": "Gagal menyimpan perubahan Anda — coba lagi.",
+      "default": "Periksa kolom yang ditandai dan coba lagi."
+    },
+    "displayNameLabel": "Nama tampilan",
+    "handleLabel": "Handel",
+    "handleHelp": "Hanya huruf kecil, angka, dan tanda hubung tunggal.",
+    "logoUrlLabel": "URL logo",
+    "logoUrlHelp": "Unggah langsung akan tersedia bersama pipeline media; untuk saat ini tempel URL gambar yang sudah dihosting.",
+    "coverUrlLabel": "URL gambar sampul",
+    "save": "Simpan"
+  },
+  "inventory": {
+    "pendingDecreasesTitle": "Penurunan nilai penyelesaian tertunda",
+    "awaitingSecondApproval": "Menunggu persetujuan kedua",
+    "listingsTitle": "Listing",
+    "emptyTitle": "Belum ada listing",
+    "emptyDescription": "Tambahkan lokasi dan listing voucher untuk mulai berjualan di toko.",
+    "stock": "{remaining} dari {total} stok tersedia · {locations, plural, other {# lokasi}}"
+  },
+  "onboarding": {
+    "error": {
+      "createFailed": "Gagal membuat bisnis — coba lagi.",
+      "invalidInput": "Periksa kolom yang ditandai dan coba lagi.",
+      "fieldFallback": "Periksa kolom \"{errorField}\" dan coba lagi."
+    },
+    "legalNameLabel": "Nama badan hukum",
+    "displayNameLabel": "Nama tampilan",
+    "handleLabel": "Handel",
+    "handlePlaceholder": "nama-bisnis-anda",
+    "handleHelp": "Hanya huruf kecil, angka, dan tanda hubung tunggal.",
+    "taxIdKindLabel": "Jenis NPWP",
+    "taxIdValueLabel": "Nomor NPWP",
+    "addressLabel": "Alamat",
+    "cityLabel": "Kota",
+    "stateLabel": "Negara bagian",
+    "selectState": "Pilih negara bagian",
+    "postcodeLabel": "Kode pos",
+    "createBusiness": "Buat bisnis"
+  }
+}

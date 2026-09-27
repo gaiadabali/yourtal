@@ -9,8 +9,7 @@ const ALLOWED = [
   // Removed by B's 6.6.b.
   "apps/web/features/burn/burn-data.ts",
   "apps/web/features/wallet/wallet-history.ts",
-  // Removed by C's 7.8.c.
-  "apps/web/features/console/campaign-builder/campaign-reward-risk.ts",
+  // C's 7.8.c removed this from `apps/web/features/studio/campaign-builder/campaign-reward-risk.ts`.
   // The contract mocks and the constant itself; 13.5.c deletes them.
   "packages/contracts/src/money/mock-backing-rate.ts",
   "packages/contracts/src/listing/listing.mock.ts",

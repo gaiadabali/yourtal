@@ -354,5 +354,64 @@ export default tseslint.config(
     },
   },
 
+  // Area C, task 7.8.c: Studio's own features use design tokens and
+  // @yourtal/ui primitives only, at ERROR severity from the start — unlike
+  // B's block above, which still warns until its own 6.1. `merchant`/`staff`
+  // are not in this file's list: they are Phase 8/9's to turn on.
+  {
+    files: ["apps/web/features/studio/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ExportAllDeclaration",
+          message: "`export *` is banned (13b §5) — it defeats tree-shaking.",
+        },
+        {
+          selector: "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+          message: "Use a colour token, not a raw hex value.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b/]",
+          message: "Use a colour token, not a raw hex value.",
+        },
+        {
+          selector: "Literal[value=/text-\\[[0-9.]+px\\]/]",
+          message: "Use a type role (text-caption, text-body-sm, ...), not a pixel size.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/text-\\[[0-9.]+px\\]/]",
+          message: "Use a type role (text-caption, text-body-sm, ...), not a pixel size.",
+        },
+        {
+          selector: "JSXOpeningElement[name.name=/^(button|select|table)$/]",
+          message:
+            "Use the @yourtal/ui primitive (Button, NativeSelect, DataTable) instead.",
+        },
+        // `type="hidden"`/`type="file"` are exempt: a hidden field carries no
+        // UI at all (a Server Action's own id/currency passthrough), and no
+        // `@yourtal/ui` primitive exists yet for a file picker (packages/ui
+        // is B-owned — Studio requests one rather than adding it here).
+        // Every other <input> (text, url, number, ...) still routes through
+        // `Input`.
+        {
+          selector:
+            "JSXOpeningElement[name.name='input']:not(:has(JSXAttribute[name.name='type'] Literal[value=/^(hidden|file)$/]))",
+          message: "Use the @yourtal/ui Input primitive instead.",
+        },
+        {
+          selector: "JSXText[value=/[A-Za-z]/]",
+          message: "User-facing copy comes from the message catalogues, not a JSX literal.",
+        },
+        {
+          selector:
+            "JSXAttribute[name.name=/^(aria-label|title|placeholder|alt)$/] > Literal[value=/[A-Za-z]/]",
+          message: "User-facing copy comes from the message catalogues, not a JSX literal.",
+        },
+      ],
+    },
+  },
+
   prettier,
 );

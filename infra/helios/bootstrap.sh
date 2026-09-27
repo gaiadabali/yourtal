@@ -116,4 +116,27 @@ install -m 644 "$SRC/infra/helios/yourtal-backup.timer" /etc/systemd/system/your
 systemctl daemon-reload
 systemctl enable --now yourtal-backup.timer
 
+# --- media bucket and the app's own MinIO user (2.3.i) ---
+# Anonymous read is safe only because MinIO is loopback-only: nginx decides
+# what is public, and gates /media/hls/ on a signature. The app never gets the
+# root key; its user can touch this one bucket and nothing else.
+minio_pass=$(sed -n 's/^MINIO_ROOT_PASSWORD=//p' "$minio_env")
+mc() { docker exec yourtal-minio mc "$@"; }
+mc alias set local http://127.0.0.1:9000 yourtal "$minio_pass" >/dev/null
+mc mb --ignore-existing local/yourtal-media >/dev/null
+mc anonymous set download local/yourtal-media >/dev/null
+if ! grep -q '^S3_ACCESS_KEY=' "$app_env"; then
+  s3_secret=$(rand)
+  docker exec -i yourtal-minio sh -c 'cat > /tmp/yourtal-media-rw.json' <<'JSON'
+{"Version":"2012-10-17","Statement":[
+ {"Effect":"Allow","Action":["s3:ListBucket","s3:GetBucketLocation"],"Resource":["arn:aws:s3:::yourtal-media"]},
+ {"Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:DeleteObject"],"Resource":["arn:aws:s3:::yourtal-media/*"]}]}
+JSON
+  mc admin policy create local yourtal-media-rw /tmp/yourtal-media-rw.json >/dev/null
+  mc admin user add local yourtal-app "$s3_secret" >/dev/null
+  mc admin policy attach local yourtal-media-rw --user yourtal-app >/dev/null
+  printf 'S3_ENDPOINT=http://127.0.0.1:26305\nS3_BUCKET=yourtal-media\nS3_ACCESS_KEY=yourtal-app\nS3_SECRET_KEY=%s\n' "$s3_secret" >>"$app_env"
+  log "created MinIO user yourtal-app for yourtal-media"
+fi
+
 log "done. Next: the first release, then 'pm2 start' per infra/HELIOS.md"

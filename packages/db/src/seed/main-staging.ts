@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import pg from "pg";
 import { seedStaging } from "./staging";
+import { ensureStagingMedia } from "./staging-media";
 
 /**
  * CLI entry point for the staging seed (2.3.e) — the pre-reload step calls
@@ -115,17 +116,42 @@ async function main(): Promise<void> {
       result.demoVoucherDetail === undefined
         ? `demo voucher: ${result.demoVoucher}`
         : `demo voucher: ${result.demoVoucher}: ${result.demoVoucherDetail}`;
+    // 2.3.i: only where a fixture ships (the Helios release sets
+    // MEDIA_FIXTURE_DIR); a laptop publishes its own with packages/media.
+    const fixtureDir = process.env.MEDIA_FIXTURE_DIR;
+    const media =
+      fixtureDir === undefined || fixtureDir === ""
+        ? null
+        : await ensureStagingMedia({
+            fixtureDir,
+            assetId: "attention-30s",
+            bucket: process.env.S3_BUCKET ?? "yourtal-media",
+            endpoint: process.env.S3_ENDPOINT ?? "http://127.0.0.1:26900",
+            accessKeyId: process.env.S3_ACCESS_KEY ?? "",
+            secretAccessKey: process.env.S3_SECRET_KEY ?? "",
+          });
+    const mediaSummary =
+      media === null
+        ? "demo video: skipped"
+        : media.detail === undefined
+          ? `demo video: ${media.status} (${String(media.uploaded)}/${String(media.total)} uploaded)`
+          : `demo video: ${media.status}: ${media.detail}`;
+
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
-        `${grantSummary}; ${voucherSummary}.`,
+        `${grantSummary}; ${voucherSummary}; ${mediaSummary}.`,
     );
 
-    if (result.pendingGrant === "failed" || result.demoVoucher === "failed") {
+    if (
+      result.pendingGrant === "failed" ||
+      result.demoVoucher === "failed" ||
+      media?.status === "failed"
+    ) {
       // set -Eeuo pipefail in infra/helios/pre-reload.sh turns this into a
       // failed deploy, on purpose — see this file's own header.
       console.error(
         "Staging seed: a real service call failed (see the line(s) above). Failing the deploy " +
-          "rather than leaving a demo grant or voucher silently missing a second time.",
+          "rather than leaving a demo grant, voucher or video silently missing.",
       );
       process.exitCode = 1;
     }

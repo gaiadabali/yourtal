@@ -87,7 +87,12 @@ const externalNpm = {
   name: "external-npm",
   setup(b) {
     b.onResolve({ filter: /^[^./]/ }, (args) =>
-      args.kind === "entry-point" || path.isAbsolute(args.path) || args.path.startsWith("@yourtal/")
+      args.kind === "entry-point" ||
+      path.isAbsolute(args.path) ||
+      args.path.startsWith("@yourtal/") ||
+      // The seed's S3 client (2.3.i) is not an apps/api dependency, so it is
+      // bundled rather than resolved from apps/api/node_modules on Helios.
+      (app === "seed" && args.path.startsWith("@aws-sdk/"))
         ? undefined
         : { path: args.path, external: true },
     );

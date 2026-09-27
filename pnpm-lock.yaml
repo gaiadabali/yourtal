@@ -563,6 +563,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@aws-sdk/client-s3':
+        specifier: 3.1139.0
+        version: 3.1139.0
       '@node-rs/argon2':
         specifier: 2.2.1
         version: 2.2.1

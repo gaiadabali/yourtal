@@ -53,7 +53,14 @@ const VENDOR_MODULES = [
 ];
 
 /** Directories allowed to import a vendor SDK, because they ARE the adapter. */
-const ADAPTER_DIRECTORIES = ["packages/drivers/", "packages/media/"];
+const ADAPTER_DIRECTORIES = [
+  "packages/drivers/",
+  "packages/media/",
+  // 2.3.i: the staging seed puts the demo HLS fixture into YourTal's own
+  // loopback MinIO at deploy time. Our storage, not a third party's, and no
+  // runtime path, so there is no boundary to simulate (same as packages/media).
+  "packages/db/src/seed/staging-media",
+];
 
 function isVendorModule(source) {
   return VENDOR_MODULES.some((vendor) => source === vendor || source.startsWith(vendor));

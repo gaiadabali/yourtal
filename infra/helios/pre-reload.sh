@@ -28,11 +28,13 @@ log "atlas migrate apply"
 log "role passwords"
 /opt/yourtal/node/bin/node "$release/deploy/set-role-passwords.mjs"
 
-# 3. The minimal demo world (2.3.e). A no-op once any profile exists; the tier-0
-#    viewer's pending grant goes through the live ledger, which is still the
-#    previous release's and running.
+# 3. The minimal demo world (2.3.e), each step a no-op once done: the world,
+#    marketing cash, the tier-0 viewer's pending grant and a real voucher go
+#    through the live ledger and voucher services (still the previous
+#    release's, and running), and the demo video goes into MinIO (2.3.i).
 log "staging seed"
-/opt/yourtal/node/bin/node "$release/api/dist/seed-staging.js"
+MEDIA_FIXTURE_DIR="$release/media-fixtures/attention-30s" \
+  /opt/yourtal/node/bin/node "$release/api/dist/seed-staging.js"
 
 # 4. Cerbos policies. The container watches this directory and hot-reloads.
 log "cerbos policies"

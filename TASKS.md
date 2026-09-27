@@ -39,14 +39,14 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/58 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
-| **Phase 7** Business studio | C | 🔄 in progress | 6/8 | 35/38 | `█████████░`  92% |
+| **Phase 7** Business studio | C | 🔄 in progress | 6/8 | 34/38 | `█████████░`  89% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 8/16 | `█████░░░░░`  50% |
 | **Phase 9** Staff console | C | 🔄 in progress | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **53/87** | **302/412** | `███████░░░`  73% |
+| **All** | | | **53/87** | **301/412** | `███████░░░`  73% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1102,7 +1102,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     `packages/contracts/src/feed/feed.ts` did not exist before this ticket (Area B's folder had nothing in it) — created as the working response shape (`FeedItem`/`FeedResponse`/`FeedChannelResult`/`SearchResponse`) so 7.7 had something real to build and test against. Additive only; Area B owns adjusting it from here.
 - [ ] **7.8 Studio UI** · needs: 3.5 — 🔄 slot 1
   - [x] 7.8.a The `(business)` route group at `/studio` with StudioShell (studio theme). In the same merge, add `/business/:path*` → `/studio/:path*` to `route-redirects.ts`. — Done: `apps/web/app/(business)/studio/**` (7 zones + onboarding), `features/console` renamed to `features/studio`, `StudioChrome` composes the real `StudioShell` primitive (3.5.c); 7 `route-redirects.ts` rules, each conditional on `signedIn` so `proxy.test.ts`'s signed-out expectations still hold. Verified: `pnpm check` green (typecheck/lint/1010+ tests), live Playwright + axe-core across all 8 routes × 390/1280px × light/dark = 0 violations, and a real 768px no-overflow + measurable-nav-box check (`tablet-768.spec.ts`'s own assertions, run manually against the dev server). Merged `057562be`.
-  - [x] 7.8.b Screens:
+  - [ ] 7.8.b Screens: — reopened 2026-09-28: the campaign builder's questions, reward, audience, category, schedule, Open Viewing, teaser and captions are not live yet (only the draft title and synopsis are). The allocation picker can use `GET …/studio/billing/balance`'s `allocations`.
     - onboarding: create a business (region fixed, tax ID by region, address), KYB upload, and a verification banner that blocks submit;
     - the overview, whose empty state is a setup checklist: channel → buy points → upload → questions → submit;
     - campaigns list and builder: upload with real progress, questions, reward within the ceiling, audience and category, schedule, Open Viewing, teaser picker, captions, preview as a viewer;

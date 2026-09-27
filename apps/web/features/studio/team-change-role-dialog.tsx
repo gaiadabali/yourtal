@@ -24,7 +24,9 @@ export interface TeamChangeRoleDialogProps {
   /** Whether the viewer is changing their OWN role — see the "losing Team access" warning below. */
   isSelf: boolean;
   onOpenChange: (open: boolean) => void;
-  onChangeRole: (newRole: Exclude<BusinessTeamRole, "owner">) => TeamActionError | null;
+  onChangeRole: (
+    newRole: Exclude<BusinessTeamRole, "owner">,
+  ) => TeamActionError | null | Promise<TeamActionError | null>;
 }
 
 /** Roles that keep Team-zone access (`policies/derived_roles/business.yaml`'s `business_team_editor_of`: owner, admin). */
@@ -50,8 +52,8 @@ export function TeamChangeRoleDialog({
   const roleSelectId = useId();
   const losesTeamAccess = isSelf && !ROLES_WITH_TEAM_ACCESS.includes(role);
 
-  function handleConfirm() {
-    const failure = onChangeRole(role);
+  async function handleConfirm() {
+    const failure = await onChangeRole(role);
     if (failure) {
       setError(teamActionErrorMessage(failure));
       return;
@@ -104,7 +106,11 @@ export function TeamChangeRoleDialog({
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             {t("team.cancel")}
           </Button>
-          <Button type="button" onClick={handleConfirm} disabled={role === currentRole}>
+          <Button
+            type="button"
+            onClick={() => void handleConfirm()}
+            disabled={role === currentRole}
+          >
             {t("team.changeRole.save")}
           </Button>
         </DialogFooter>

@@ -15,7 +15,9 @@ export type TeamActionError =
   | { type: "already_on_roster"; email: string }
   | { type: "reauth_required" }
   | { type: "reauth_expired" }
-  | { type: "successor_not_a_member" };
+  | { type: "successor_not_a_member" }
+  /** A real API refusal (`team-live-actions.ts`) with no closer match above — the server's own message, not a guess. */
+  | { type: "api_error"; message: string };
 
 export function teamActionErrorMessage(error: TeamActionError): string {
   switch (error.type) {
@@ -31,6 +33,8 @@ export function teamActionErrorMessage(error: TeamActionError): string {
       return "That re-authentication has expired (valid for 5 minutes). Re-authenticate again to continue.";
     case "successor_not_a_member":
       return "Ownership can only transfer to someone who has already joined the team.";
+    case "api_error":
+      return error.message;
     default: {
       const exhaustive: never = error;
       return exhaustive;

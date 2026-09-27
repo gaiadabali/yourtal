@@ -22,7 +22,10 @@ import { teamActionErrorMessage } from "./team-errors";
 export interface TeamInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onInvite: (email: string, role: Exclude<BusinessTeamRole, "owner">) => TeamActionError | null;
+  onInvite: (
+    email: string,
+    role: Exclude<BusinessTeamRole, "owner">,
+  ) => TeamActionError | null | Promise<TeamActionError | null>;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,8 +59,8 @@ export function TeamInviteDialog({ open, onOpenChange, onInvite }: TeamInviteDia
     formState: { errors },
   } = useForm<InviteFormValues>({ defaultValues: DEFAULT_VALUES });
 
-  function submitInvite(values: InviteFormValues) {
-    const failure = onInvite(values.email, values.role);
+  async function submitInvite(values: InviteFormValues) {
+    const failure = await onInvite(values.email, values.role);
     if (failure) {
       setError("email", { type: "server", message: teamActionErrorMessage(failure) });
       return;

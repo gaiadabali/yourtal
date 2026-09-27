@@ -5,6 +5,7 @@ import { businessTeamRoleSchema } from "@yourtal/contracts/business/team-role";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import { apiFetch } from "@/lib/api/api-fetch";
+import { meResponseSchema } from "@/lib/api/me-schema";
 import {
   AU_BUSINESS,
   AU_BUSINESS_ROSTER,
@@ -56,10 +57,13 @@ interface StudioDataSource {
   getBusinessMembership: (businessId: string) => Promise<BusinessMembership | undefined>;
   createBusiness: (input: CreateBusinessInput) => Promise<Business>;
   updateChannelSettings: (businessId: string, input: ChannelSettingsInput) => Promise<Business>;
+  /** The signed-in person's own id — never a guess, see `getCurrentUserId`'s own doc comment. */
+  getCurrentUserId: () => Promise<string>;
 }
 
 const mockDataSource: StudioDataSource = {
   listMyBusinesses: () => Promise.resolve(MOCK_MEMBERSHIPS),
+  getCurrentUserId: () => Promise.resolve(CURRENT_USER_ID),
   getBusinessMembership: (businessId) =>
     Promise.resolve(MOCK_MEMBERSHIPS.find((membership) => membership.business.id === businessId)),
   createBusiness: (input) => {
@@ -153,6 +157,12 @@ const liveDataSource: StudioDataSource = {
     return result.data;
   },
   updateChannelSettings: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
+  getCurrentUserId: async () => {
+    const result = await apiFetch("/api/me", meResponseSchema);
+    if (!result.ok)
+      throw new Error(`Could not load the signed-in account: ${result.error.message}`);
+    return result.data.profile.userId;
+  },
 };
 
 const studioDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
@@ -180,7 +190,7 @@ export function updateChannelSettings(
   return studioDataSource.updateChannelSettings(businessId, input);
 }
 
-/** The id used as the current-session demo user throughout the console (invite/remove/audit call sites). */
-export function getCurrentUserId(): string {
-  return CURRENT_USER_ID;
+/** The signed-in person's own id (live: `GET /api/me`'s `profile.userId`; mock: the fixed demo user), used throughout the console (invite/remove/audit call sites). */
+export function getCurrentUserId(): Promise<string> {
+  return studioDataSource.getCurrentUserId();
 }

@@ -25,7 +25,7 @@ export interface TeamRemoveDialogProps {
    */
   isSelf: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => TeamActionError | null;
+  onConfirm: () => TeamActionError | null | Promise<TeamActionError | null>;
 }
 
 export function TeamRemoveDialog({
@@ -38,8 +38,8 @@ export function TeamRemoveDialog({
   const t = useTranslations("studio");
   const [error, setError] = useState<string | null>(null);
 
-  function handleConfirm() {
-    const failure = onConfirm();
+  async function handleConfirm() {
+    const failure = await onConfirm();
     if (failure) {
       setError(teamActionErrorMessage(failure));
       return;
@@ -78,7 +78,7 @@ export function TeamRemoveDialog({
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             {t("team.cancel")}
           </Button>
-          <Button type="button" variant="destructive" onClick={handleConfirm}>
+          <Button type="button" variant="destructive" onClick={() => void handleConfirm()}>
             {isSelf ? t("team.remove.confirmSelf") : t("team.remove.confirm")}
           </Button>
         </DialogFooter>

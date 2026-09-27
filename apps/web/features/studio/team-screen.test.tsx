@@ -54,6 +54,7 @@ describe("TeamScreen", () => {
         currentUserId={OWNER_ID}
         initialViewerRole="owner"
         initialRoster={baseRoster()}
+        isLiveMode={false}
       />,
     );
 
@@ -77,6 +78,7 @@ describe("TeamScreen", () => {
         currentUserId={OWNER_ID}
         initialViewerRole="owner"
         initialRoster={baseRoster()}
+        isLiveMode={false}
       />,
     );
 
@@ -100,6 +102,7 @@ describe("TeamScreen", () => {
         currentUserId={OWNER_ID}
         initialViewerRole="owner"
         initialRoster={baseRoster()}
+        isLiveMode={false}
       />,
     );
 
@@ -129,6 +132,7 @@ describe("TeamScreen", () => {
         currentUserId={OWNER_ID}
         initialViewerRole="owner"
         initialRoster={baseRoster()}
+        isLiveMode={false}
       />,
     );
 
@@ -152,6 +156,7 @@ describe("TeamScreen", () => {
         currentUserId={OWNER_ID}
         initialViewerRole="owner"
         initialRoster={baseRoster()}
+        isLiveMode={false}
       />,
     );
 
@@ -175,6 +180,7 @@ describe("TeamScreen", () => {
         currentUserId={ADMIN_ID}
         initialViewerRole="admin"
         initialRoster={baseRoster()}
+        isLiveMode={false}
       />,
     );
 
@@ -202,6 +208,7 @@ describe("TeamScreen", () => {
         currentUserId={ADMIN_ID}
         initialViewerRole="admin"
         initialRoster={baseRoster()}
+        isLiveMode={false}
       />,
     );
 
@@ -226,6 +233,7 @@ describe("TeamScreen", () => {
         currentUserId={OWNER_ID}
         initialViewerRole="owner"
         initialRoster={baseRoster()}
+        isLiveMode={false}
       />,
     );
 

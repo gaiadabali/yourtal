@@ -29,7 +29,10 @@ export interface TeamTransferDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Mock re-authentication: any non-empty password "succeeds" — there is no real auth backend in Phase U. Returns the re-auth timestamp (ms) on success. */
   onReauthenticate: (password: string) => number | null;
-  onTransfer: (successorUserId: string, reauthenticatedAtMs: number) => TeamActionError | null;
+  onTransfer: (
+    successorUserId: string,
+    reauthenticatedAtMs: number,
+  ) => TeamActionError | null | Promise<TeamActionError | null>;
 }
 
 type Step = "reauth" | "select";
@@ -97,11 +100,11 @@ export function TeamTransferDialog({
     setStep("select");
   }
 
-  function handleTransferConfirm() {
+  async function handleTransferConfirm() {
     if (reauthenticatedAtMs === null || !successorUserId) {
       return;
     }
-    const failure = onTransfer(successorUserId, reauthenticatedAtMs);
+    const failure = await onTransfer(successorUserId, reauthenticatedAtMs);
     if (failure) {
       setTransferError(teamActionErrorMessage(failure));
       // A stale re-auth surfaces here, not before — push the person back to step one honestly.
@@ -177,7 +180,7 @@ export function TeamTransferDialog({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={handleTransferConfirm}
+                onClick={() => void handleTransferConfirm()}
                 disabled={!successorUserId}
               >
                 {t("team.transfer.title")}

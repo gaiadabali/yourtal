@@ -19,20 +19,22 @@ const ZONE_LINK_CLASS =
 
 /**
  * Studio's zone tabs, passed as `StudioShell`'s `nav` slot
- * (`packages/ui/src/studio-shell/studio-shell.tsx`). `className="contents"`
- * on the wrapping `<nav>` keeps the a11y landmark without taking it out of
- * the shell's own flex layout — the shell's container switches its own
- * flex-direction between a horizontal strip below `lg` and a sidebar at
- * `lg`, and each link needs to be that container's direct flex child for
- * either to work, exactly like the plain-fragment example in the shell's
- * own gallery entry (`(lab)/lab/ui/groups/shells.tsx`).
+ * (`packages/ui/src/studio-shell/studio-shell.tsx`), alongside
+ * `StudioIdentityPanel` as a sibling flex item — this `<nav>` mirrors the
+ * shell's own responsive direction (`lg:flex-col`) rather than using
+ * `display: contents` to make each link a direct flex child of the shell's
+ * container: a `contents` element reports no box of its own, which would
+ * make `tablet-768.spec.ts`'s overflow check measure nothing.
  */
 export function StudioZoneNav({ items, businessQuery }: StudioZoneNavProps) {
   const t = useTranslations("studio");
   const pathname = usePathname();
 
   return (
-    <nav aria-label={t("chrome.zoneNav.ariaLabel")} className="contents">
+    <nav
+      aria-label={t("chrome.zoneNav.ariaLabel")}
+      className="flex min-w-0 flex-1 flex-wrap gap-1 lg:w-full lg:flex-none lg:flex-col lg:gap-0.5"
+    >
       {items.map((item) => {
         const isActive = isActiveZone(pathname, item.href);
         const href = `${item.href}${businessQuery}` as Route;

@@ -12,25 +12,24 @@ import { expect, test } from "@playwright/test";
  * scrollbar at all fails this, full stop — it is not a visual diff or a
  * screenshot comparison.
  *
- * Scope: every route `ConsoleShell` (`features/console/console-shell.tsx`)
- * serves under `app/(app)/business/**`, since YT-0440's own report already
- * names this shell as the thing that was built fluid but never
- * real-browser-checked. Each route is also loaded once through the
- * consumer's shared `app/(app)/layout.tsx` — the console nests inside the
- * five-tab consumer shell (see YT-0440's report), so a real check has to
- * measure the composed page, not the console in isolation.
+ * Scope: every route `StudioChrome` (`features/studio/studio-chrome.tsx`)
+ * serves under `app/(business)/studio/**` (task 7.8.a moved this from
+ * `(app)/business/**`; `route-redirects.ts` sends the old paths here for a
+ * signed-in visitor). `(business)` is its own root layout now, not nested
+ * inside the viewer's five-tab shell, but the check itself — no horizontal
+ * scroll at 768px — still matters exactly as much.
  */
 
 test.use({ viewport: { width: 768, height: 1024 } });
 
 const BUSINESS_ROUTES: readonly string[] = [
-  "/business",
-  "/business/campaigns",
-  "/business/inventory",
-  "/business/redemption",
-  "/business/reports",
-  "/business/team",
-  "/business/billing",
+  "/studio",
+  "/studio/campaigns",
+  "/studio/inventory",
+  "/studio/redemptions",
+  "/studio/reports",
+  "/studio/team",
+  "/studio/billing",
 ];
 
 for (const route of BUSINESS_ROUTES) {
@@ -51,8 +50,8 @@ for (const route of BUSINESS_ROUTES) {
   });
 }
 
-test("business console zone tabs wrap rather than overflow at 768px", async ({ page }) => {
-  await page.goto("/business");
+test("Studio zone tabs wrap rather than overflow at 768px", async ({ page }) => {
+  await page.goto("/studio");
   await page.waitForLoadState("networkidle");
 
   const nav = page.getByRole("navigation").filter({ hasText: /./ }).last();

@@ -28,6 +28,7 @@
     "newRedemptionButton": "Redeem another voucher",
     "cantRedeemOfflineHeading": "Can't redeem offline",
     "cantRedeemOfflineBody": "This device has no connection right now. Nothing has been charged — try again when connected.",
+    "offlineIndicatorLabel": "Offline",
     "todayHeading": "Today's redemptions",
     "todayTotalLabel": "Confirmed total",
     "todayEmpty": "No redemptions yet today.",

@@ -42,7 +42,7 @@ export function PinUnlockScreen({ device, error }: PinUnlockScreenProps) {
     <div className="mx-auto flex w-full max-w-sm flex-col gap-6 p-4 pt-16">
       <header className="flex flex-col items-center gap-2 text-center">
         <Badge variant="secondary">
-          {copy.lockedByDeviceLabel}: {device.label}
+          {copy.lockedByDeviceLabel}: {device.id.slice(0, 8)}
         </Badge>
         <h1 className="text-2xl font-sans font-semibold text-fg">{copy.unlockHeading}</h1>
         <p className="text-sm font-sans text-fg-muted">{copy.unlockPinHelp}</p>

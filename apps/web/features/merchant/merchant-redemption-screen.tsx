@@ -8,7 +8,11 @@ import type {
 import type { MerchantDevice } from "./merchant-device";
 import { getMerchantCopy } from "./merchant-i18n";
 import type { MerchantRedemptionStep } from "./merchant-redemption-state";
-import { classifyAmount, type MerchantRedemptionError } from "./merchant-redemption-errors";
+import {
+  classifyAmount,
+  fromApiError,
+  type MerchantRedemptionError,
+} from "./merchant-redemption-errors";
 import {
   counterAuthorizeAction,
   counterCaptureAction,
@@ -117,7 +121,15 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
 
     const amountError = classifyAmount(preview, amountMinor);
     if (amountError) {
-      failWith(amountError, { code, orderRef, preview, amountMinor, effectiveRemainingMinor, idempotencyKey, authorizationId });
+      failWith(amountError, {
+        code,
+        orderRef,
+        preview,
+        amountMinor,
+        effectiveRemainingMinor,
+        idempotencyKey,
+        authorizationId,
+      });
       return;
     }
 
@@ -150,10 +162,15 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
         idempotencyKey,
       });
       if (!authResult.ok) {
-        failWith(
-          { code: authResult.error.code, fallbackMessage: authResult.error.message },
-          { code, orderRef, preview, amountMinor, effectiveRemainingMinor, idempotencyKey, authorizationId: null },
-        );
+        failWith(fromApiError(authResult.error), {
+          code,
+          orderRef,
+          preview,
+          amountMinor,
+          effectiveRemainingMinor,
+          idempotencyKey,
+          authorizationId: null,
+        });
         return;
       }
       authorizationId = authResult.data.authorizationId;
@@ -172,10 +189,15 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
     });
     const captureResult = await counterCaptureAction({ authorizationId, idempotencyKey });
     if (!captureResult.ok) {
-      failWith(
-        { code: captureResult.error.code, fallbackMessage: captureResult.error.message },
-        { code, orderRef, preview, amountMinor, effectiveRemainingMinor, idempotencyKey, authorizationId },
-      );
+      failWith(fromApiError(captureResult.error), {
+        code,
+        orderRef,
+        preview,
+        amountMinor,
+        effectiveRemainingMinor,
+        idempotencyKey,
+        authorizationId,
+      });
       return;
     }
     setStep({ step: "success", capture: captureResult.data });

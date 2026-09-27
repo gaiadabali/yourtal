@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { CounterLogEntry } from "@yourtal/contracts/device/counter-redemption";
+import { toMinorUnits } from "@yourtal/contracts/money";
 import { getMerchantCopy } from "./merchant-i18n";
 import { MerchantTodayLogPanel } from "./merchant-today-log-panel";
 
@@ -11,7 +12,7 @@ function makeEntry(overrides: Partial<CounterLogEntry> = {}): CounterLogEntry {
   return {
     captureId: "rcpt_1",
     voucherId: "00000000-0000-4000-8000-000000000001",
-    amountMinor: 10_000,
+    amountMinor: toMinorUnits(10_000),
     currency: "AUD",
     capturedAt: "2026-09-19T09:00:00.000Z",
     orderRef: "ORDER-1",
@@ -32,8 +33,8 @@ describe("MerchantTodayLogPanel", () => {
     // displayed amount, so the assertion below can't accidentally match an
     // individual row instead of the header total.
     const entries = [
-      makeEntry({ captureId: "a", amountMinor: 1_000 }),
-      makeEntry({ captureId: "b", amountMinor: 2_000 }),
+      makeEntry({ captureId: "a", amountMinor: toMinorUnits(1_000) }),
+      makeEntry({ captureId: "b", amountMinor: toMinorUnits(2_000) }),
     ];
     render(<MerchantTodayLogPanel entries={entries} locale="en-AU" copy={copy} />);
     expect(screen.getByText("$30.00")).toBeInTheDocument();

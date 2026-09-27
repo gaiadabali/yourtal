@@ -3,12 +3,16 @@ import { errorCopyFor } from "./merchant-redemption-error-copy";
 
 describe("errorCopyFor", () => {
   it("resolves each known code, in the given locale", () => {
-    expect(errorCopyFor({ code: "voucher_not_found" }, "en-AU", "AUD").heading).toMatch(/not found/i);
+    expect(errorCopyFor({ code: "voucher_not_found" }, "en-AU", "AUD").heading).toMatch(
+      /not found/i,
+    );
     expect(errorCopyFor({ code: "voucher_not_found" }, "id-ID", "AUD").heading).toMatch(
       /tidak ditemukan/i,
     );
     expect(errorCopyFor({ code: "already_redeemed" }, "en-AU", "AUD").heading).toMatch(/already/i);
-    expect(errorCopyFor({ code: "amount_not_positive" }, "en-AU", "AUD").body).toMatch(/greater than zero/i);
+    expect(errorCopyFor({ code: "amount_not_positive" }, "en-AU", "AUD").body).toMatch(
+      /greater than zero/i,
+    );
   });
 
   it("interpolates the remaining value into amount-related copy", () => {

@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { toMinorUnits } from "@yourtal/contracts/money";
 import { getMerchantCopy } from "./merchant-i18n";
 import { MerchantOutcomePanel } from "./merchant-outcome-panel";
 import type { MerchantOutcome } from "./merchant-outcome-panel";
@@ -36,7 +37,7 @@ describe("MerchantOutcomePanel", () => {
       capture: {
         captureId: "rcpt_1",
         voucherId: "00000000-0000-4000-8000-000000000001",
-        amountMinor: 20_000,
+        amountMinor: toMinorUnits(20_000),
         currency: "AUD",
         capturedAt: "2026-09-19T09:00:00.000Z",
         orderRef: "ORDER-1",

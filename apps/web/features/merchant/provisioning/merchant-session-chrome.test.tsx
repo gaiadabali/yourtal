@@ -5,19 +5,8 @@ import type { MerchantDevice } from "../merchant-device";
 import { MerchantSessionChrome } from "./merchant-session-chrome";
 
 const device: MerchantDevice = {
-  id: "counter-toko-berkah-1",
-  label: "Toko Berkah — Kasir 1",
-  merchantId: "00000000-0000-4000-8000-000000000601",
-  merchantName: "Toko Berkah",
+  id: "3f9a2b10-1111-4000-8000-000000000001",
   locale: "en-AU",
-  currency: "AUD",
-  countryName: "Australia",
-  location: {
-    id: "00000000-0000-4000-8000-0000000006a1",
-    name: "Test Merchant — Surry Hills",
-    address: "1 Surry Hills Street",
-    district: "Surry Hills",
-  },
 };
 
 /**
@@ -27,13 +16,13 @@ const device: MerchantDevice = {
  * itself is exercised directly by `use-auto-lock.test.ts`.
  */
 describe("MerchantSessionChrome", () => {
-  it("renders the device label, a Lock now control, and the wrapped children", () => {
+  it("renders a device badge, a Lock now control, and the wrapped children", () => {
     render(
       <MerchantSessionChrome device={device}>
         <p>redemption screen content</p>
       </MerchantSessionChrome>,
     );
-    expect(screen.getByText(device.label)).toBeInTheDocument();
+    expect(screen.getByText(device.id.slice(0, 8))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Lock now" })).toBeInTheDocument();
     expect(screen.getByText("redemption screen content")).toBeInTheDocument();
   });

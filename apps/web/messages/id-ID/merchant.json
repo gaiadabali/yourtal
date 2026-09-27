@@ -28,6 +28,7 @@
     "newRedemptionButton": "Redeem voucher lain",
     "cantRedeemOfflineHeading": "Tidak bisa redeem saat offline",
     "cantRedeemOfflineBody": "Perangkat ini sedang tidak terhubung. Belum ada yang terpotong — coba lagi setelah terhubung.",
+    "offlineIndicatorLabel": "Offline",
     "todayHeading": "Redeem hari ini",
     "todayTotalLabel": "Total terkonfirmasi",
     "todayEmpty": "Belum ada redeem hari ini.",

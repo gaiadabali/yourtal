@@ -1,4 +1,7 @@
-import type { CounterCapture, CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
+import type {
+  CounterCapture,
+  CounterVoucherPreview,
+} from "@yourtal/contracts/device/counter-redemption";
 import type { MerchantRedemptionError } from "./merchant-redemption-errors";
 
 /**

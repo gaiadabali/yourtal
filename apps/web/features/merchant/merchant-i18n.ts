@@ -62,9 +62,11 @@ export interface MerchantCopy {
   processingCapture: string;
   successHeading: string;
   newRedemptionButton: string;
-  /** TASKS.md 8.2.b: no offline redemption — shown instead of a queued state. */
+  /** TASKS.md 8.2.b: no offline redemption — shown instead of a queued state, in `MerchantOutcomePanel` after a confirm attempt is refused. */
   cantRedeemOfflineHeading: string;
   cantRedeemOfflineBody: string;
+  /** The persistent, proactive banner's short label (`MerchantConnectivityBanner`) — never the full refusal sentence, which would duplicate the outcome panel's. */
+  offlineIndicatorLabel: string;
   todayHeading: string;
   todayTotalLabel: string;
   todayEmpty: string;
@@ -103,6 +105,7 @@ export function getMerchantCopy(locale: MerchantLocale): MerchantCopy {
     newRedemptionButton: t("portal.newRedemptionButton"),
     cantRedeemOfflineHeading: t("portal.cantRedeemOfflineHeading"),
     cantRedeemOfflineBody: t("portal.cantRedeemOfflineBody"),
+    offlineIndicatorLabel: t("portal.offlineIndicatorLabel"),
     todayHeading: t("portal.todayHeading"),
     todayTotalLabel: t("portal.todayTotalLabel"),
     todayEmpty: t("portal.todayEmpty"),

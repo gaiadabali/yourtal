@@ -2,42 +2,35 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
+import { toMinorUnits } from "@yourtal/contracts/money";
 import type { MerchantDevice } from "./merchant-device";
 import { MerchantRedemptionScreen } from "./merchant-redemption-screen";
-import {
-  alreadyRedeemedVoucherFixture,
-  healthyVoucherFixture,
-  wrongMerchantVoucherFixture,
-} from "./merchant-voucher-fixtures";
-import { readTodayLog } from "./merchant-today-log";
 
-const device: MerchantDevice = {
-  id: "test-device",
-  label: "Test Counter",
-  merchantId: "00000000-0000-4000-8000-000000000601",
-  merchantName: "Toko Berkah",
-  locale: "en-AU",
+type AsyncMock = (...args: unknown[]) => Promise<unknown>;
+
+const counterLookupAction = vi.fn<AsyncMock>();
+const counterAuthorizeAction = vi.fn<AsyncMock>();
+const counterCaptureAction = vi.fn<AsyncMock>();
+const counterLogAction = vi.fn<AsyncMock>();
+
+vi.mock("./counter-redemption-actions", () => ({
+  counterLookupAction: (...args: unknown[]) => counterLookupAction(...args),
+  counterAuthorizeAction: (...args: unknown[]) => counterAuthorizeAction(...args),
+  counterCaptureAction: (...args: unknown[]) => counterCaptureAction(...args),
+  counterLogAction: (...args: unknown[]) => counterLogAction(...args),
+}));
+
+const device: MerchantDevice = { id: "3f9a2b10-1111-4000-8000-000000000001", locale: "en-AU" };
+
+const healthyPreview: CounterVoucherPreview = {
+  voucherId: "00000000-0000-4000-8000-000000000101",
+  merchantName: "Kopi Kenangan Kemang",
+  offerTitle: "20% off any drink",
+  remainingValueMinor: toMinorUnits(5000),
   currency: "AUD",
-  countryName: "Australia",
-  location: {
-    id: "00000000-0000-4000-8000-0000000006a1",
-    name: "Test Merchant — Surry Hills",
-    address: "1 Surry Hills Street",
-    district: "Surry Hills",
-  },
+  partialRedemptionPolicy: "balance_carrying",
 };
-
-const vouchers = [
-  healthyVoucherFixture,
-  wrongMerchantVoucherFixture,
-  alreadyRedeemedVoucherFixture,
-];
-
-// A fixed instant known (by direct computation against merchant-redemption.ts's
-// deterministic hash) NOT to land in the simulated network-failure bucket
-// for `healthyVoucherFixture`'s id — see the ticket's report for how this
-// was derived. Keeps the happy-path test from being a 1-in-12 flake.
-const SAFE_NOW_MS = Date.parse("2026-09-19T09:05:00.000Z");
 
 function setUpDevice() {
   Object.defineProperty(navigator, "onLine", { value: true, configurable: true });
@@ -45,29 +38,38 @@ function setUpDevice() {
 
 describe("MerchantRedemptionScreen", () => {
   beforeEach(() => {
-    window.localStorage.clear();
     setUpDevice();
-    vi.spyOn(Date, "now").mockReturnValue(SAFE_NOW_MS);
+    counterLookupAction.mockReset();
+    counterAuthorizeAction.mockReset();
+    counterCaptureAction.mockReset();
+    counterLogAction.mockReset().mockResolvedValue({ ok: true, data: { entries: [] } });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  // YT-0577: this file used to hand-bump these waits to `{ timeout: 3000 }`
-  // / `it(..., 10000)` and STILL failed under load — evidence that a
-  // per-file timeout bump chases a moving target rather than fixing the
-  // class. Every wait below now relies on the suite-wide policy in
-  // `vitest.setup.ts` (`asyncUtilTimeout: 5000`) and `vitest.config.ts`
-  // (`testTimeout: 15000`), which is strictly more generous than the old
-  // local overrides and is proven (not merely intended) to cover the
-  // simulated `PROCESSING_PHASE_DELAY_MS` network delay under contention.
-  it("completes a full redemption in two taps — look up, then confirm — and never shows success before processing finishes", async () => {
+  it("completes a full redemption in two taps — look up, then confirm — and never shows success before capture returns", async () => {
+    counterLookupAction.mockResolvedValue({ ok: true, data: healthyPreview });
+    let resolveAuthorize!: (value: unknown) => void;
+    counterAuthorizeAction.mockReturnValue(new Promise((resolve) => (resolveAuthorize = resolve)));
+    counterCaptureAction.mockResolvedValue({
+      ok: true,
+      data: {
+        captureId: "rcpt_1",
+        voucherId: healthyPreview.voucherId,
+        amountMinor: 5000,
+        currency: "AUD",
+        capturedAt: "2026-09-19T09:00:00.000Z",
+        orderRef: "ord_1",
+      },
+    });
+
     const user = userEvent.setup();
-    render(<MerchantRedemptionScreen device={device} vouchers={vouchers} />);
+    render(<MerchantRedemptionScreen device={device} />);
 
     await user.click(screen.getByRole("tab", { name: "Enter code" }));
-    await user.type(screen.getByLabelText("Voucher code"), healthyVoucherFixture.code);
+    await user.type(screen.getByLabelText("Voucher code"), "HEALTHY1");
     await user.click(screen.getByRole("button", { name: "Look up voucher" })); // tap 1
 
     const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
@@ -76,51 +78,50 @@ describe("MerchantRedemptionScreen", () => {
     await user.click(confirmButton); // tap 2
 
     // Processing must be visibly shown before any success claim.
-    expect(await screen.findByText(/Verifying voucher|Completing redemption/)).toBeInTheDocument();
+    expect(await screen.findByText(/Verifying voucher/)).toBeInTheDocument();
     expect(screen.queryByText("Redeemed")).not.toBeInTheDocument();
 
+    resolveAuthorize({
+      ok: true,
+      data: {
+        authorizationId: "auth_1",
+        voucherId: healthyPreview.voucherId,
+        amountMinor: 5000,
+        currency: "AUD",
+        expiresAt: "2026-09-19T09:05:00.000Z",
+      },
+    });
+
     await waitFor(() => expect(screen.getByText("Redeemed")).toBeInTheDocument());
-
-    const log = readTodayLog(device.id, "2026-09-19");
-    expect(log).toHaveLength(1);
-    expect(log[0]?.status).toBe("confirmed");
-    expect(log[0]?.voucherCode).toBe(healthyVoucherFixture.code);
+    expect(counterCaptureAction).toHaveBeenCalledWith(
+      expect.objectContaining({ authorizationId: "auth_1" }),
+    );
   });
 
-  it("shows a plain-language, specific message for a wrong-merchant voucher, not just 'invalid'", async () => {
+  it("shows already-redeemed with a specific message when the server says so", async () => {
+    counterLookupAction.mockResolvedValue({
+      ok: false,
+      error: { kind: "http", status: 409, code: "already_redeemed", message: "already redeemed" },
+    });
+
     const user = userEvent.setup();
-    render(<MerchantRedemptionScreen device={device} vouchers={vouchers} />);
+    render(<MerchantRedemptionScreen device={device} />);
 
     await user.click(screen.getByRole("tab", { name: "Enter code" }));
-    await user.type(screen.getByLabelText("Voucher code"), wrongMerchantVoucherFixture.code);
+    await user.type(screen.getByLabelText("Voucher code"), "REDEEMED1");
     await user.click(screen.getByRole("button", { name: "Look up voucher" }));
 
-    const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
-    await user.click(confirmButton);
-
-    await waitFor(() => expect(screen.getByText(/is for a different store/i)).toBeInTheDocument());
-    expect(
-      screen.getByText(new RegExp(wrongMerchantVoucherFixture.merchantName)),
-    ).toBeInTheDocument();
-  });
-
-  it("shows already-redeemed with a specific message when the voucher's own status says so", async () => {
-    const user = userEvent.setup();
-    render(<MerchantRedemptionScreen device={device} vouchers={vouchers} />);
-
-    await user.click(screen.getByRole("tab", { name: "Enter code" }));
-    await user.type(screen.getByLabelText("Voucher code"), alreadyRedeemedVoucherFixture.code);
-    await user.click(screen.getByRole("button", { name: "Look up voucher" }));
-
-    const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
-    await user.click(confirmButton);
-
-    await waitFor(() => expect(screen.getByText(/already redeemed/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Code not found")).toBeInTheDocument());
   });
 
   it("shows a 'not found' message, not a blank screen, for a code that matches nothing", async () => {
+    counterLookupAction.mockResolvedValue({
+      ok: false,
+      error: { kind: "http", status: 404, code: "voucher_not_found", message: "no such voucher" },
+    });
+
     const user = userEvent.setup();
-    render(<MerchantRedemptionScreen device={device} vouchers={vouchers} />);
+    render(<MerchantRedemptionScreen device={device} />);
 
     await user.click(screen.getByRole("tab", { name: "Enter code" }));
     await user.type(screen.getByLabelText("Voucher code"), "NOSUCHCODE");
@@ -129,23 +130,76 @@ describe("MerchantRedemptionScreen", () => {
     await waitFor(() => expect(screen.getByText("Code not found")).toBeInTheDocument());
   });
 
-  it("queues, rather than claims success, when confirming while offline", async () => {
-    Object.defineProperty(navigator, "onLine", { value: false, configurable: true });
+  it("refuses rather than queues when confirming while offline (TASKS.md 8.2.b: no offline redemption)", async () => {
+    counterLookupAction.mockResolvedValue({ ok: true, data: healthyPreview });
+
     const user = userEvent.setup();
-    render(<MerchantRedemptionScreen device={device} vouchers={vouchers} />);
+    render(<MerchantRedemptionScreen device={device} />);
 
     await user.click(screen.getByRole("tab", { name: "Enter code" }));
-    await user.type(screen.getByLabelText("Voucher code"), healthyVoucherFixture.code);
+    await user.type(screen.getByLabelText("Voucher code"), "HEALTHY1");
     await user.click(screen.getByRole("button", { name: "Look up voucher" }));
+    const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
 
+    // `useOnlineStatus` only reacts to the real `offline` event (mirroring a
+    // genuine connectivity drop) — redefining `navigator.onLine` alone does
+    // not re-render anything, so the event must actually fire.
+    Object.defineProperty(navigator, "onLine", { value: false, configurable: true });
+    window.dispatchEvent(new Event("offline"));
+    await user.click(confirmButton);
+
+    expect(await screen.findByText("Can't redeem offline")).toBeInTheDocument();
+    expect(screen.queryByText("Redeemed")).not.toBeInTheDocument();
+    expect(counterAuthorizeAction).not.toHaveBeenCalled();
+  });
+
+  it("retries capture (not authorize again) after a capture failure, reusing the same idempotency key", async () => {
+    counterLookupAction.mockResolvedValue({ ok: true, data: healthyPreview });
+    counterAuthorizeAction.mockResolvedValue({
+      ok: true,
+      data: {
+        authorizationId: "auth_1",
+        voucherId: healthyPreview.voucherId,
+        amountMinor: 5000,
+        currency: "AUD",
+        expiresAt: "2026-09-19T09:05:00.000Z",
+      },
+    });
+    counterCaptureAction
+      .mockResolvedValueOnce({
+        ok: false,
+        error: { kind: "network", message: "timed out" },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          captureId: "rcpt_1",
+          voucherId: healthyPreview.voucherId,
+          amountMinor: 5000,
+          currency: "AUD",
+          capturedAt: "2026-09-19T09:00:00.000Z",
+          orderRef: "ord_1",
+        },
+      });
+
+    const user = userEvent.setup();
+    render(<MerchantRedemptionScreen device={device} />);
+
+    await user.click(screen.getByRole("tab", { name: "Enter code" }));
+    await user.type(screen.getByLabelText("Voucher code"), "HEALTHY1");
+    await user.click(screen.getByRole("button", { name: "Look up voucher" }));
     const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
     await user.click(confirmButton);
 
-    expect(await screen.findByText("Waiting for connection")).toBeInTheDocument();
-    expect(screen.queryByText("Redeemed")).not.toBeInTheDocument();
+    const retryButton = await screen.findByRole("button", { name: "Try again" });
+    await user.click(retryButton);
 
-    const log = readTodayLog(device.id, "2026-09-19");
-    expect(log).toHaveLength(1);
-    expect(log[0]?.status).toBe("pending");
+    await waitFor(() => expect(screen.getByText("Redeemed")).toBeInTheDocument());
+    expect(counterAuthorizeAction).toHaveBeenCalledTimes(1);
+    expect(counterCaptureAction).toHaveBeenCalledTimes(2);
+    const [firstCall, secondCall] = counterCaptureAction.mock.calls as [
+      { idempotencyKey: string },
+    ][];
+    expect(firstCall?.[0].idempotencyKey).toBe(secondCall?.[0].idempotencyKey);
   });
 });

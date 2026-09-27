@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-import { readDeviceBinding } from "@/features/merchant/provisioning/device-session-cookie";
 import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
 
 /**
@@ -11,8 +10,10 @@ import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
  * for why — so the group needs one, and the only real question it raises
  * is which `lang` to declare.
  *
- * `lang` follows the paired device's own locale: a device belongs to one
- * merchant in one region. Unpaired, it falls back to `en-AU`, the default.
+ * TASKS.md 8.1/8.2 REWRITE: `lang` used to follow the paired device's own
+ * locale, read off the binding cookie. Pairing (`POST /api/devices/pair`)
+ * no longer returns a locale — see `merchant-i18n.ts`'s doc comment on the
+ * device-info gap — so this is a fixed `en-AU` until that endpoint exists.
  */
 
 export const metadata = baseMetadata;
@@ -22,8 +23,6 @@ export interface MerchantLayoutProps {
   children: ReactNode;
 }
 
-export default async function MerchantLayout({ children }: MerchantLayoutProps) {
-  const binding = await readDeviceBinding();
-  const lang = binding?.locale ?? "en-AU";
-  return <RootDocument lang={lang}>{children}</RootDocument>;
+export default function MerchantLayout({ children }: MerchantLayoutProps) {
+  return <RootDocument lang="en-AU">{children}</RootDocument>;
 }

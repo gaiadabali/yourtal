@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
+import { toMinorUnits } from "@yourtal/contracts/money";
 import {
   classifyAmount,
   recoveryForRedemptionError,
@@ -11,7 +12,7 @@ function preview(overrides: Partial<CounterVoucherPreview> = {}): CounterVoucher
     voucherId: "00000000-0000-4000-8000-000000000001",
     merchantName: "Test Merchant",
     offerTitle: "10% off",
-    remainingValueMinor: 1000,
+    remainingValueMinor: toMinorUnits(1000),
     currency: "AUD",
     partialRedemptionPolicy: "balance_carrying",
     ...overrides,
@@ -33,16 +34,19 @@ describe("classifyAmount", () => {
   });
 
   it("refuses an amount above the remaining value", () => {
-    expect(classifyAmount(preview({ remainingValueMinor: 1000 }), 1500)).toEqual({
+    expect(classifyAmount(preview({ remainingValueMinor: toMinorUnits(1000) }), 1500)).toEqual({
       code: "amount_exceeds_remaining_value",
-      remainingValueMinor: 1000,
+      remainingValueMinor: toMinorUnits(1000),
     });
   });
 
   it("refuses a partial amount on a single_use voucher", () => {
     expect(
-      classifyAmount(preview({ partialRedemptionPolicy: "single_use", remainingValueMinor: 1000 }), 500),
-    ).toEqual({ code: "requires_full_value_redemption", remainingValueMinor: 1000 });
+      classifyAmount(
+        preview({ partialRedemptionPolicy: "single_use", remainingValueMinor: toMinorUnits(1000) }),
+        500,
+      ),
+    ).toEqual({ code: "requires_full_value_redemption", remainingValueMinor: toMinorUnits(1000) });
   });
 });
 

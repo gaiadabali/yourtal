@@ -5,26 +5,15 @@ import type { MerchantDevice } from "../merchant-device";
 import { PinUnlockScreen } from "./pin-unlock-screen";
 
 const device: MerchantDevice = {
-  id: "counter-toko-berkah-1",
-  label: "Toko Berkah — Kasir 1",
-  merchantId: "00000000-0000-4000-8000-000000000601",
-  merchantName: "Toko Berkah",
+  id: "3f9a2b10-1111-4000-8000-000000000001",
   locale: "en-AU",
-  currency: "AUD",
-  countryName: "Australia",
-  location: {
-    id: "00000000-0000-4000-8000-0000000006a1",
-    name: "Test Merchant — Surry Hills",
-    address: "1 Surry Hills Street",
-    district: "Surry Hills",
-  },
 };
 
-/** Rendering-only — see `device-provisioning-form.test.tsx`'s doc comment on why the `unlockWithPin` Server Action is never invoked here. */
+/** Rendering-only — see `device-pairing-form.test.tsx`'s doc comment on why the `unlockWithPin` Server Action is never invoked here. */
 describe("PinUnlockScreen", () => {
-  it("shows the device label and the shift-lock, not-a-login copy", () => {
+  it("shows a device badge and the shift-lock, not-a-login copy", () => {
     render(<PinUnlockScreen device={device} />);
-    expect(screen.getByText(new RegExp(device.label))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(device.id.slice(0, 8)))).toBeInTheDocument();
     expect(screen.getByText(/isn't a personal account/i)).toBeInTheDocument();
   });
 

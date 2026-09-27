@@ -1,4 +1,5 @@
 import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
+import type { ApiError } from "@/lib/api/api-fetch";
 
 /**
  * Every reason a counter redemption can be refused, keyed by a `code`
@@ -25,9 +26,7 @@ export interface MerchantRedemptionError {
 }
 
 export type MerchantRedemptionErrorCode =
-  | "amount_not_positive"
-  | "amount_exceeds_remaining_value"
-  | "requires_full_value_redemption";
+  "amount_not_positive" | "amount_exceeds_remaining_value" | "requires_full_value_redemption";
 
 /**
  * The one eligibility fact this feature still checks itself, before ever
@@ -56,13 +55,31 @@ export function classifyAmount(
       remainingValueMinor: preview.remainingValueMinor,
     };
   }
-  if (preview.partialRedemptionPolicy === "single_use" && amountMinor !== preview.remainingValueMinor) {
+  if (
+    preview.partialRedemptionPolicy === "single_use" &&
+    amountMinor !== preview.remainingValueMinor
+  ) {
     return {
       code: "requires_full_value_redemption",
       remainingValueMinor: preview.remainingValueMinor,
     };
   }
   return null;
+}
+
+/**
+ * `apiFetch`'s `ApiError` has a `code` only for its `"http"` variant — a
+ * `"network"` (fetch itself failed) or `"invalid_response"` (the server's
+ * body didn't match its own contract) error carries no server code at all,
+ * so both collapse to this feature's own `"network_error"`: from a
+ * cashier's point of view, "the call didn't come back with an answer" is
+ * one fact, however it happened server- or transport-side.
+ */
+export function fromApiError(error: ApiError): MerchantRedemptionError {
+  if (error.kind === "http") {
+    return { code: error.code, fallbackMessage: error.message };
+  }
+  return { code: "network_error", fallbackMessage: error.message };
 }
 
 export type RedemptionErrorRecovery =
@@ -74,7 +91,9 @@ export type RedemptionErrorRecovery =
  * editing the amount, not by starting over; everything else describes a
  * fact about the voucher that only a different voucher resolves.
  */
-export function recoveryForRedemptionError(error: MerchantRedemptionError): RedemptionErrorRecovery {
+export function recoveryForRedemptionError(
+  error: MerchantRedemptionError,
+): RedemptionErrorRecovery {
   switch (error.code) {
     case "network_error":
       return { kind: "retry" };

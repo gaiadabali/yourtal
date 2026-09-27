@@ -13,8 +13,12 @@ export interface MerchantConnectivityBannerProps {
  * screen reader interrupting whatever staff is doing.
  *
  * TASKS.md 8.2.b REWRITE: no offline queue and no "syncing" state any
- * more — this only ever says "you are offline"; `merchant-redemption-screen.tsx`
- * refuses to attempt a redemption at all while this is up (`portal.cantRedeemOfflineHeading`).
+ * more. This is a proactive, short indicator (a bare "Offline" badge) that
+ * a redemption is about to be refused; the specific, full refusal
+ * (`portal.cantRedeemOfflineHeading`/`Body`) only appears in
+ * `MerchantOutcomePanel`, after an actual confirm attempt was refused —
+ * showing that same full sentence here too, unconditionally, would be
+ * pure duplication for anyone reading both at once.
  */
 export function MerchantConnectivityBanner({ isOnline, copy }: MerchantConnectivityBannerProps) {
   if (isOnline) {
@@ -27,8 +31,7 @@ export function MerchantConnectivityBanner({ isOnline, copy }: MerchantConnectiv
       aria-live="polite"
       className="flex items-center gap-2 rounded-lg border border-border-strong p-3"
     >
-      <Badge variant="danger">{copy.cantRedeemOfflineHeading}</Badge>
-      <p className="text-sm font-sans text-fg-muted">{copy.cantRedeemOfflineBody}</p>
+      <Badge variant="danger">{copy.offlineIndicatorLabel}</Badge>
     </div>
   );
 }

@@ -68,7 +68,11 @@ interface CounterDataSource {
 
 const MOCK_HELD: Map<
   string,
-  { preview: CounterVoucherPreview; amountMinor: CounterVoucherPreview["remainingValueMinor"]; orderRef: string }
+  {
+    preview: CounterVoucherPreview;
+    amountMinor: CounterVoucherPreview["remainingValueMinor"];
+    orderRef: string;
+  }
 > = new Map();
 const MOCK_LOG: CounterLogEntry[] = [];
 
@@ -133,7 +137,11 @@ const mockDataSource: CounterDataSource = {
     }
     const authorizationId = `mock_auth_${crypto.randomUUID()}`;
     const brandedAmount = toMinorUnits(params.amountMinor);
-    MOCK_HELD.set(authorizationId, { preview, amountMinor: brandedAmount, orderRef: params.orderRef });
+    MOCK_HELD.set(authorizationId, {
+      preview,
+      amountMinor: brandedAmount,
+      orderRef: params.orderRef,
+    });
     return Promise.resolve({
       ok: true,
       data: {
@@ -210,7 +218,12 @@ async function withDeviceAuth<T>(
   if (!binding) {
     return {
       ok: false,
-      error: { kind: "http", status: 401, code: "invalid_device_credential", message: "not paired" },
+      error: {
+        kind: "http",
+        status: 401,
+        code: "invalid_device_credential",
+        message: "not paired",
+      },
     };
   }
   return call(`Bearer ${binding.credential}`);
@@ -256,7 +269,10 @@ const dataSourceOrNotImplemented: CounterDataSource = {
   log: () => liveDataSource.log().catch(() => NOT_IMPLEMENTED("/api/counter/log")),
 };
 
-const counterDataSource = resolveDataSource({ mock: mockDataSource, live: dataSourceOrNotImplemented });
+const counterDataSource = resolveDataSource({
+  mock: mockDataSource,
+  live: dataSourceOrNotImplemented,
+});
 
 export async function counterLookupAction(code: string): Promise<ApiResult<CounterVoucherPreview>> {
   return counterDataSource.lookup(code);

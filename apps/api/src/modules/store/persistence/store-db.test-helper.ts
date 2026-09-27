@@ -4,6 +4,10 @@ import { createAppDb } from "../../../shared/persistence/drizzle-client";
 import { listingPriceRevisions } from "./schema/listing-price-revision.table";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
 import { settlementDecreaseRequests } from "./schema/settlement-decrease-request.table";
+// TASKS.md 8.1.a: store.counter_device (a devices module table, `store`
+// schema) holds a composite FK to store.merchant_location — cleared here,
+// child-first, for the same reason listingLocations/listings are.
+import { counterDevices } from "../../devices/persistence/schema/counter-device.table";
 
 /**
  * A real Postgres handle for this module's tests, following the pattern
@@ -88,5 +92,6 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   await db.delete(settlementDecreaseRequests);
   await db.delete(listingLocations);
   await db.delete(listings);
+  await db.delete(counterDevices);
   await db.delete(merchantLocations);
 }

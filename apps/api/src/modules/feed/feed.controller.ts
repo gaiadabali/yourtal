@@ -1,4 +1,13 @@
-import { BadRequestException, Controller, Get, Inject, Param, Post, Query, Req } from "@nestjs/common";
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { PublicRoute } from "../../shared/authz/authorize.decorator";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
@@ -80,7 +89,9 @@ export class FeedController {
     return result.result;
   }
 
-  @PublicRoute("Search covers the same public surface as the feed and the store catalogue, one query string.")
+  @PublicRoute(
+    "Search covers the same public surface as the feed and the store catalogue, one query string.",
+  )
   @NotValueMoving("A read.")
   @Get("search")
   async searchAll(

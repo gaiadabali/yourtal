@@ -28,7 +28,9 @@ export async function search(
   principal: Principal,
   query: string,
   queryRegion: Region | undefined,
-): Promise<{ readonly kind: "ok"; readonly result: SearchResponse } | { readonly kind: "region_required" }> {
+): Promise<
+  { readonly kind: "ok"; readonly result: SearchResponse } | { readonly kind: "region_required" }
+> {
   const scope = resolveCatalogueScope(principal, queryRegion);
   if (scope.kind === "anonymous_region_required") return { kind: "region_required" };
   if (scope.kind === "region_mismatch") {

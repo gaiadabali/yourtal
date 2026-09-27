@@ -208,7 +208,11 @@ describe("buildFeed", () => {
 
   it("caps a single business at 2 in a row when other businesses are available", () => {
     const businessId = randomUUID();
-    const sameBusiness = [candidate({ campaign: campaign({ businessId }) }), candidate({ campaign: campaign({ businessId }) }), candidate({ campaign: campaign({ businessId }) })];
+    const sameBusiness = [
+      candidate({ campaign: campaign({ businessId }) }),
+      candidate({ campaign: campaign({ businessId }) }),
+      candidate({ campaign: campaign({ businessId }) }),
+    ];
     const other = candidate();
     const items = buildFeed([...sameBusiness, other], baseContext());
 

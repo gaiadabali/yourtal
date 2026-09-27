@@ -58,7 +58,9 @@ export class DrizzleFeedSignalsRepository implements FeedSignalsRepository {
       )
       .flatMap((parsed) => {
         if (parsed.success) return [parsed.data];
-        logger.error(`identity.consent_record row for a feed viewer failed to parse: ${JSON.stringify(parsed.error.issues)}`);
+        logger.error(
+          `identity.consent_record row for a feed viewer failed to parse: ${JSON.stringify(parsed.error.issues)}`,
+        );
         return [];
       });
   }

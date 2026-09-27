@@ -12,7 +12,8 @@ export const FEED_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   {
     id: "FeedSurface",
     schema: feedSurfaceSchema,
-    description: "Which board GET /api/feed is ranking for -- home or the full-screen watch surface.",
+    description:
+      "Which board GET /api/feed is ranking for -- home or the full-screen watch surface.",
     crossFieldRules: [],
   },
   {
@@ -37,7 +38,8 @@ export const FEED_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   {
     id: "SearchResponse",
     schema: searchResponseSchema,
-    description: "GET /api/search's response: campaigns, channels and listings, region- and audience-walled.",
+    description:
+      "GET /api/search's response: campaigns, channels and listings, region- and audience-walled.",
     crossFieldRules: [],
   },
 ];

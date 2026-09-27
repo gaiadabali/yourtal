@@ -39,7 +39,9 @@ export async function getFeed(
   principal: Principal,
   surface: FeedSurface,
   queryRegion: Region | undefined,
-): Promise<{ readonly kind: "ok"; readonly result: FeedResult } | { readonly kind: "region_required" }> {
+): Promise<
+  { readonly kind: "ok"; readonly result: FeedResult } | { readonly kind: "region_required" }
+> {
   const scope = resolveCatalogueScope(principal, queryRegion);
   if (scope.kind === "anonymous_region_required") return { kind: "region_required" };
   // A signed-in caller stating a region that disagrees with their own sees
@@ -50,7 +52,8 @@ export async function getFeed(
   const anonymous = principal.id === "anonymous";
   const ageBand = anonymous ? undefined : principal.attr.ageBand;
 
-  const candidates = region === undefined ? [] : await fetchFundedCampaigns(campaigns, ledger, region);
+  const candidates =
+    region === undefined ? [] : await fetchFundedCampaigns(campaigns, ledger, region);
 
   const canServeMap = new Map(
     await Promise.all(
@@ -82,15 +85,21 @@ export async function getFeed(
     return { kind: "ok", result: { surface, items } };
   }
 
-  const [followedBusinessIds, declaredInterestNodeIds, consentRecords, alreadyEarned, demoted, minSegmentSetting] =
-    await Promise.all([
-      signals.followedBusinessIds(principal.id),
-      signals.declaredInterestNodeIds(principal.id),
-      signals.consentRecordsFor(principal.id),
-      signals.alreadyEarnedCampaignIds(principal.id),
-      signals.demotedCampaignIds(principal.id),
-      settings.getSetting<number>(region, "interest_targeting_min_segment"),
-    ]);
+  const [
+    followedBusinessIds,
+    declaredInterestNodeIds,
+    consentRecords,
+    alreadyEarned,
+    demoted,
+    minSegmentSetting,
+  ] = await Promise.all([
+    signals.followedBusinessIds(principal.id),
+    signals.declaredInterestNodeIds(principal.id),
+    signals.consentRecordsFor(principal.id),
+    signals.alreadyEarnedCampaignIds(principal.id),
+    signals.demotedCampaignIds(principal.id),
+    settings.getSetting<number>(region, "interest_targeting_min_segment"),
+  ]);
 
   const interestTargetingAllowed = mayUseSignalFor({
     purpose: "declared_interest_targeting",
@@ -109,12 +118,16 @@ export async function getFeed(
   };
   // Pre-warm the cache for every content category actually in play, so
   // `buildFeed`'s own segmentSizeOf can stay synchronous.
-  const categories = [...new Set(candidates.map((candidate) => candidate.campaign.contentCategory))];
+  const categories = [
+    ...new Set(candidates.map((candidate) => candidate.campaign.contentCategory)),
+  ];
   await Promise.all(categories.map((category) => segmentSizeOf(category)));
 
   const hasParentBoost = isBoostedForParents({
     ageBand: ageBand ?? "adult",
-    hasParentOfYoungChildrenInterest: declaredInterestNodeIds.includes(PARENT_OF_YOUNG_CHILDREN_NODE),
+    hasParentOfYoungChildrenInterest: declaredInterestNodeIds.includes(
+      PARENT_OF_YOUNG_CHILDREN_NODE,
+    ),
     hasAdTargetingConsent: interestTargetingAllowed,
   });
 

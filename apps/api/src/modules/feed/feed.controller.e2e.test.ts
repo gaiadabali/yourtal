@@ -42,7 +42,9 @@ interface SeedCampaignOptions {
   readonly businessId?: string;
 }
 
-async function seedCampaign(options: SeedCampaignOptions): Promise<{ campaignId: string; businessId: string }> {
+async function seedCampaign(
+  options: SeedCampaignOptions,
+): Promise<{ campaignId: string; businessId: string }> {
   const campaignId = randomUUID();
   const businessId = options.businessId ?? randomUUID();
   await db.execute(sql`
@@ -130,9 +132,13 @@ describe("GET /api/feed", () => {
 
   it("an ID viewer never sees an AU campaign", async () => {
     const idUser = await sessionFor(app, { jurisdiction: "ID" });
-    const { campaignId: auCampaignId, businessId: auBusinessId } = await seedCampaign({ region: "AU" });
+    const { campaignId: auCampaignId, businessId: auBusinessId } = await seedCampaign({
+      region: "AU",
+    });
     await fundCampaign(auCampaignId, auBusinessId, "AU");
-    const { campaignId: idCampaignId, businessId: idBusinessId } = await seedCampaign({ region: "ID" });
+    const { campaignId: idCampaignId, businessId: idBusinessId } = await seedCampaign({
+      region: "ID",
+    });
     await fundCampaign(idCampaignId, idBusinessId, "ID");
 
     const response = await app.inject({
@@ -192,7 +198,10 @@ describe("GET /api/feed", () => {
       contentCategory: "food-and-drink",
     });
     await fundCampaign(matchingCampaignId, randomUUID(), "AU");
-    const { campaignId: otherCampaignId } = await seedCampaign({ region: "AU", contentCategory: "travel" });
+    const { campaignId: otherCampaignId } = await seedCampaign({
+      region: "AU",
+      contentCategory: "travel",
+    });
     await fundCampaign(otherCampaignId, randomUUID(), "AU");
 
     // Honestly over the F12 segment floor: 1000 distinct declared users,
@@ -211,7 +220,9 @@ describe("GET /api/feed", () => {
       headers: { cookie: user.cookie },
     });
     expect(withoutConsent.statusCode).toBe(200);
-    const withoutConsentBody = withoutConsent.json<{ items: { campaignId: string; why: string }[] }>();
+    const withoutConsentBody = withoutConsent.json<{
+      items: { campaignId: string; why: string }[];
+    }>();
     expect(
       withoutConsentBody.items.find((item) => item.campaignId === matchingCampaignId)?.why,
     ).not.toBe("Matches an interest you declared");
@@ -229,7 +240,9 @@ describe("GET /api/feed", () => {
     });
     expect(withConsent.statusCode).toBe(200);
     const withConsentIds = itemIds(withConsent.json());
-    expect(withConsentIds.indexOf(matchingCampaignId)).toBeLessThan(withConsentIds.indexOf(otherCampaignId));
+    expect(withConsentIds.indexOf(matchingCampaignId)).toBeLessThan(
+      withConsentIds.indexOf(otherCampaignId),
+    );
   });
 
   it("Open Viewing anonymous: only openViewing + all_ages, in the path region, unpersonalised", async () => {

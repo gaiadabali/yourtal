@@ -33,8 +33,10 @@ export async function fetchFundedCampaigns(
     .filter(
       (
         entry,
-      ): entry is { campaign: Campaign; rewardConfig: NonNullable<(typeof rewardConfigs)[number]> } =>
-        entry.rewardConfig !== null,
+      ): entry is {
+        campaign: Campaign;
+        rewardConfig: NonNullable<(typeof rewardConfigs)[number]>;
+      } => entry.rewardConfig !== null,
     );
 
   const allocations = await Promise.allSettled(
@@ -44,7 +46,8 @@ export async function fetchFundedCampaigns(
   return withConfig
     .map((entry, index) => {
       const settled = allocations[index];
-      if (settled === undefined || settled.status === "rejected" || settled.value.isErr()) return null;
+      if (settled === undefined || settled.status === "rejected" || settled.value.isErr())
+        return null;
       const allocation = settled.value.value;
       return {
         campaign: entry.campaign,

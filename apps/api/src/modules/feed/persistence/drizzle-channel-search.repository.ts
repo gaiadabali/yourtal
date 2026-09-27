@@ -7,7 +7,11 @@ import type { ChannelSearchRepository } from "./channel-search.repository";
 export class DrizzleChannelSearchRepository implements ChannelSearchRepository {
   constructor(private readonly db: AppDb) {}
 
-  async search(query: string, region: string, limit: number): Promise<readonly FeedChannelResult[]> {
+  async search(
+    query: string,
+    region: string,
+    limit: number,
+  ): Promise<readonly FeedChannelResult[]> {
     const result = await this.db.execute<{
       id: string;
       display_name: string;

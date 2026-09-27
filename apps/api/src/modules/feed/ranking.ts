@@ -156,9 +156,7 @@ export function toFeedItem(candidate: CandidateCampaign, signals: Signals): Feed
  * everything between shifts back by one. O(n^2) worst case, fine for a
  * feed page (tens of items, not thousands).
  */
-function applyDiversityCap<T extends { readonly businessId: string }>(
-  items: readonly T[],
-): T[] {
+function applyDiversityCap<T extends { readonly businessId: string }>(items: readonly T[]): T[] {
   const result = [...items];
   for (let i = 2; i < result.length; i += 1) {
     const a = result[i - 2];

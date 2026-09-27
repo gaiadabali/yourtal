@@ -38,7 +38,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/57 | `██████████` 100% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
-| **Phase 6** Viewer app | B | 🔄 in progress | 1/4 | 6/14 | `████░░░░░░`  43% |
+| **Phase 6** Viewer app | B | 🔄 in progress | 1/4 | 6/15 | `████░░░░░░`  40% |
 | **Phase 7** Business studio | C | 🔄 in progress | 1/8 | 7/36 | `██░░░░░░░░`  19% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/16 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **44/87** | **252/403** | `██████░░░░`  63% |
+| **All** | | | **44/87** | **252/404** | `██████░░░░`  62% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -978,6 +978,7 @@ Rebuild and wire the viewer's account screens on the Phase 3 primitives: languag
 - [x] **6.7 Me** · needs: 5.4 — ✅ 2026-09-27 c8d0dab
   - [x] 6.7.a Profile, language, interests, follows, per-purpose consent (withdrawal takes effect), password change, log out, delete account, download my data, notification settings, linked apps (5.4.c) and an autoplay setting (Always / Wi-Fi only / Never; Wi-Fi only by default in ID). — `apps/web/app/(app)/me/page.tsx` + `apps/web/features/me/**` rebuilt wholesale on live `apiFetch` data and Phase 3 primitives (every old localStorage-backed widget deleted). New backend: `apps/api/src/modules/me/settings.controller.ts` (`GET`/`PUT /api/me/settings/autoplay`), `viewer-setting.repository.ts` (+`AutoplaySettingReader`, exported from `MeModule` for 6.3's feed to inject), migration `20260926161000_me_viewer_setting.sql` (renamed after rebasing past main's own …160000/160100/160200 watch-migration rename), Cerbos `view_settings`/`update_settings` (`me.yaml`, `me_test.yaml` 62 OK). `follows.controller.ts` now returns each channel's displayName/handle/logoUrl (narrow read over C's table). Interests use the real taxonomy's root categories (`me-interest-catalogue.ts`), not the old hand-duplicated list (which included "beauty"/"health" -- blocked terms `defineTaxonomy` would reject as real nodes). Password change re-issues the session cookie after `changePassword` revokes every prior session. Delete account calls the real 5.4.b DSAR deletion, not a local-storage clear.
   - [x] 6.7.b **Check:** logging out ends the session on the server, and the autoplay setting persists (holding it on the feed moved to 11.4.f). — Real HTTP round trip: pre-logout `GET /api/me` 200, `POST /api/auth/logout` `{loggedOut:true}`, post-logout `GET /api/me` with the same token 401, and `identity.session`'s row has a real `revoked_at` (verified against Postgres directly). Autoplay persists: `settings.controller.e2e.test.ts` (region default before any write, AU→always/ID→wifi_only; a write is read back; an out-of-enum value is rejected; anonymous gets 401) plus the same manual round trip. F40 moved "holds on the feed" to 11.4.f, which this closes on.
+  - [ ] 6.7.c (found by slot 1, Phase 7's agent B) `apps/api/src/modules/me/settings.controller.e2e.test.ts`: 4 tests get 403 instead of 200/400 on main since 6c2c1eb. Not re-run by slot 1; please confirm and fix.
 - [ ] **6.8 Notifications and search** — ✂️ cut: moved to 11.7 (it needs Phase 7's search); each 6.8.x is now 11.7.x
 
 **Done when:** a new viewer registers and onboards in either region and language, sees pending points and voucher passes in the wallet (the QR works offline, a dispute returns points once), and manages everything on Me, on staging, on the new design, with no mock data and no hard-coded strings.

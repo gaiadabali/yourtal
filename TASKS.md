@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 4/16 | `███░░░░░░░`  25% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **50/87** | **278/411** | `███████░░░`  68% |
+| **All** | | | **50/87** | **278/412** | `███████░░░`  67% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1055,7 +1055,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
   - [x] 7.5.b Balance, per-campaign spend (`campaignSpend`) and remainder (remaining minus active holds). Unused points stay with the business; there are no cash refunds. Statements and their dispute need 10.1, so they are 10.6.b. — `GET .../balance` sums `listAllocations`; `remainingPoints` already excludes active holds (a hold decrements it directly at the ledger). `GET .../campaigns/:campaignId/spend` scopes ownership through the ledger's own allocation graph, since no campaign table exists yet (7.3 is a separate stream). Statements/dispute not built — moved to 10.6.b per F40.
   - [x] 7.5.c **Check:** a simulated purchase appears as a ledger purchase with its allocation, and a replay does not charge twice. — `billing.controller.e2e.test.ts`, real HTTP + real Cerbos + real Postgres: a purchase funds an allocation, a replay on the same Idempotency-Key does not fund a second one, and a currency not matching the business's own is refused (400).
 - [x] **7.6 Reports** · needs: 7.3, 5.3, 4.5 (`merchantCaptureStats` is live; captures can come from device mode, 4.5.c, before the 8.2 counter exists) — ✅ 2026-09-27 f6f63273
-  - [x] 7.6.a Per campaign, **aggregates only**, each suppressed below the F12 cohort floor:
+  - [x] 7.6.a Per campaign, **aggregates only**, each suppressed below the F12 cohort floor: — Open views moved to 11.2.d: they need 11.2.b's anonymous sessions, which don't exist yet.
     - rewarded views, completions, completion rate, average watch time, question accuracy, points spent;
     - "your points bought N views and M of your own vouchers were redeemed" (docs/23 §1.0b, from `merchantCaptureStats`).
     
@@ -1219,6 +1219,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **11.2 Real data** · needs: 7.7 — ⛔ 7.7
   - [ ] 11.2.a `/au` and `/id` read the API with revalidation. **Channel pages live at the existing `/[locale]/m/[handle]` route** (keyed by business handle), and campaign pages stay at `/[locale]/c/[campaignId]`.
   - [ ] 11.2.b Open Viewing (F8): only campaigns with `openViewing` that are rated all_ages play logged-out through a **non-earning anonymous watch session**, which returns the same per-session signed manifest URL as 5.1.d and counts against the F12 per-IP limit. `/media/hls/` never becomes public. Other campaigns show their poster and terms with "Sign in to watch". Sign-up returns to **the same campaign**; today it lands on a different, synthesised one.
+  - [ ] 11.2.d (moved from 7.6.a) Open views in Studio reports: count 11.2.b's anonymous sessions per campaign as a separate metric from a separate query in `apps/api/src/modules/reports` (Area C), never summed with rewarded views, suppressed below the F12 cohort floor.
   - [ ] 11.2.c **Check:** a campaign created in Studio appears on the public page without a rebuild, and an adult-rated campaign cannot be played logged-out.
 - [ ] **11.3 SEO and trust pages** · needs: 11.2 — 🔄 slot 2b (early slice F26: a and b without JSON-LD)
   - [x] 11.3.a Help / FAQ, how points work, for business, and terms and privacy (marked draft on staging). A branded 404 and branded OG cards.

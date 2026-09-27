@@ -5,6 +5,7 @@ import { billingContacts } from "./schema/billing-contact.table";
 import { businessAccounts } from "./schema/business-account.table";
 import { businessMembers } from "./schema/business-member.table";
 import { kybDocuments } from "./schema/kyb-document.table";
+import { teamInvitations } from "./schema/team-invitation.table";
 
 /**
  * A real Postgres handle for tests. YT-0552.
@@ -110,6 +111,7 @@ export async function clearBusinessTables(
   }
   await db.delete(kybDocuments).where(inArray(kybDocuments.businessId, businessIds));
   await db.delete(billingContacts).where(inArray(billingContacts.businessId, businessIds));
+  await db.delete(teamInvitations).where(inArray(teamInvitations.businessId, businessIds));
   await db.delete(businessMembers).where(inArray(businessMembers.businessId, businessIds));
   await db.delete(businessAccounts).where(inArray(businessAccounts.id, businessIds));
 }

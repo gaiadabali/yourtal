@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-business-account.repository";
-import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
+import { DrizzleTeamInvitationRepository } from "../persistence/drizzle-team-invitation.repository";
 import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { createBusiness } from "./create-business.use-case";
 import { inviteMember } from "./invite-member.use-case";
@@ -16,7 +16,7 @@ const OWNER_ID = "owner-invite-member";
 async function setupWithBusiness() {
   const db = testBusinessDb();
   const businesses = new DrizzleBusinessAccountRepository(db);
-  const members = new DrizzleBusinessMemberRepository(db);
+  const invitations = new DrizzleTeamInvitationRepository(db);
   const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
   const created = await createBusiness(
     unitOfWork,
@@ -38,7 +38,7 @@ async function setupWithBusiness() {
     OWNER_ID,
   );
   const businessId = created._unsafeUnwrap().business.id;
-  return { businesses, members, businessId };
+  return { businesses, invitations, businessId };
 }
 
 /**
@@ -54,54 +54,60 @@ afterAll(async () => {
 });
 
 describe("inviteMember", () => {
-  it("adds a new member with the requested role, unjoined", async () => {
-    const { businesses, members, businessId } = await setupWithBusiness();
+  it("creates an open invitation and hands back a token, unstored", async () => {
+    const { businesses, invitations, businessId } = await setupWithBusiness();
 
-    const result = await inviteMember(businesses, members, {
+    const result = await inviteMember(businesses, invitations, {
       businessId,
-      userId: "marketer-1",
+      email: "marketer@example.com",
       role: "marketer",
       invitedByUserId: OWNER_ID,
     });
 
     expect(result.isOk()).toBe(true);
-    const member = result._unsafeUnwrap();
-    expect(member).toMatchObject({ userId: "marketer-1", role: "marketer", joinedAt: null });
+    const value = result._unsafeUnwrap();
+    expect(value.invitation).toMatchObject({
+      businessId,
+      email: "marketer@example.com",
+      role: "marketer",
+      acceptedAt: null,
+    });
+    expect(value.token.length).toBeGreaterThan(0);
   });
 
-  it("rejects a second invite to the same person", async () => {
-    const { businesses, members, businessId } = await setupWithBusiness();
+  it("rejects a second open invite to the same address", async () => {
+    const { businesses, invitations, businessId } = await setupWithBusiness();
     (
-      await inviteMember(businesses, members, {
+      await inviteMember(businesses, invitations, {
         businessId,
-        userId: "marketer-1",
+        email: "marketer@example.com",
         role: "marketer",
         invitedByUserId: OWNER_ID,
       })
     )._unsafeUnwrap();
 
-    const result = await inviteMember(businesses, members, {
+    const result = await inviteMember(businesses, invitations, {
       businessId,
-      userId: "marketer-1",
+      email: "marketer@example.com",
       role: "analyst",
       invitedByUserId: OWNER_ID,
     });
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toStrictEqual({
-      type: "member_already_exists",
-      userId: "marketer-1",
+      type: "invitation_already_open",
+      email: "marketer@example.com",
     });
   });
 
   it("rejects an invite against a business that does not exist", async () => {
     const db = testBusinessDb();
     const businesses = new DrizzleBusinessAccountRepository(db);
-    const members = new DrizzleBusinessMemberRepository(db);
+    const invitations = new DrizzleTeamInvitationRepository(db);
 
-    const result = await inviteMember(businesses, members, {
+    const result = await inviteMember(businesses, invitations, {
       businessId: "00000000-0000-4000-8000-000000000000",
-      userId: "marketer-1",
+      email: "marketer@example.com",
       role: "marketer",
       invitedByUserId: OWNER_ID,
     });

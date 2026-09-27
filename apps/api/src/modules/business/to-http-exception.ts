@@ -10,9 +10,12 @@ import type {
   BusinessNotFoundError,
   CannotChangeOwnerRoleError,
   CannotRemoveOwnerError,
-  MemberAlreadyExistsError,
+  InvitationAlreadyOpenError,
+  InvitationInvalidError,
   MemberNotFoundError,
   PersistenceFailedError,
+  StorageRefNotUploadedError,
+  TargetNotMemberError,
 } from "./business.errors";
 
 const logger = new Logger("BusinessErrorMapper");
@@ -28,7 +31,10 @@ const logger = new Logger("BusinessErrorMapper");
  */
 export type BusinessDomainError =
   | BusinessNotFoundError
-  | MemberAlreadyExistsError
+  | InvitationAlreadyOpenError
+  | InvitationInvalidError
+  | StorageRefNotUploadedError
+  | TargetNotMemberError
   | MemberNotFoundError
   | CannotRemoveOwnerError
   | CannotChangeOwnerRoleError
@@ -41,10 +47,29 @@ export function mapBusinessErrorToHttpException(error: BusinessDomainError): Htt
         code: "business_not_found",
         message: `business ${error.businessId} was not found`,
       });
-    case "member_already_exists":
+    case "invitation_already_open":
       return new ConflictException({
-        code: "member_already_exists",
-        message: `${error.userId} is already a member`,
+        code: "invitation_already_open",
+        message: `${error.email} already has an open invitation`,
+      });
+    case "target_not_member":
+      return new BadRequestException({
+        code: "target_not_member",
+        message: `${error.userId} must already be a member before receiving ownership`,
+      });
+    case "storage_ref_not_uploaded":
+      return new BadRequestException({
+        code: "storage_ref_not_uploaded",
+        message: "no object exists at this storageRef — request a fresh upload URL and try again",
+      });
+    case "invitation_invalid":
+      // Never distinguishes "not found" from "expired" from "already
+      // accepted" at the HTTP boundary -- same enumeration discipline as
+      // auth's own token_invalid (request-password-reset.schema's sibling
+      // confirm endpoints).
+      return new BadRequestException({
+        code: "invitation_invalid",
+        message: "this invitation is invalid, expired, or already used",
       });
     case "member_not_found":
       return new NotFoundException({

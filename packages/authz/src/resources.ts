@@ -28,7 +28,13 @@ export const RESOURCE_ACTIONS = {
    * reaches all six office roles from docs/17 section 2.1; `edit` is
    * owner/admin, same as the Team zone's edit column.
    */
-  business: ["view", "edit", "create"],
+  /**
+   * `list_own` (TASKS.md 7.1.b): `GET /api/me/businesses`. No single
+   * businessId to scope against -- the endpoint itself filters to real,
+   * joined memberships read from the database -- same "caller IS the
+   * resource, nothing narrower to check" shape as `create` below.
+   */
+  business: ["view", "edit", "create", "list_own"],
 
   /**
    * KYB onboarding documents. Submitted and read by the business

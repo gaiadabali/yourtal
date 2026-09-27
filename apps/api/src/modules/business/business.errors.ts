@@ -14,8 +14,15 @@ export interface PersistenceFailedError {
   readonly cause: string;
 }
 
-export interface MemberAlreadyExistsError {
-  readonly type: "member_already_exists";
+/** TASKS.md 7.1.c: a second invite to the same address while the first is still open (migration's partial unique index backs this up). */
+export interface InvitationAlreadyOpenError {
+  readonly type: "invitation_already_open";
+  readonly email: string;
+}
+
+/** A target for `transfer_ownership` who does not (yet) hold any role at this business. */
+export interface TargetNotMemberError {
+  readonly type: "target_not_member";
   readonly userId: string;
 }
 
@@ -43,7 +50,17 @@ export interface CannotChangeOwnerRoleError {
 export type CreateBusinessError = PersistenceFailedError;
 
 export type InviteMemberError =
-  BusinessNotFoundError | MemberAlreadyExistsError | PersistenceFailedError;
+  BusinessNotFoundError | InvitationAlreadyOpenError | PersistenceFailedError;
+
+export type TransferOwnershipError =
+  BusinessNotFoundError | TargetNotMemberError | PersistenceFailedError;
+
+/** Not found, already accepted/revoked, or expired -- collapsed per YT-0153 enumeration discipline, same as auth's token_invalid. */
+export interface InvitationInvalidError {
+  readonly type: "invitation_invalid";
+}
+
+export type AcceptInvitationError = InvitationInvalidError | PersistenceFailedError;
 
 /**
  * No separate `cannot_grant_owner_via_change_role` case: `GrantableRole`
@@ -70,6 +87,13 @@ export type ListTeamError = BusinessNotFoundError | PersistenceFailedError;
 
 export type SetBillingContactError = BusinessNotFoundError | PersistenceFailedError;
 
-export type SubmitKybDocumentError = BusinessNotFoundError | PersistenceFailedError;
+/** TASKS.md 7.1.b: `storageRef` names an object nothing was ever uploaded to. */
+export interface StorageRefNotUploadedError {
+  readonly type: "storage_ref_not_uploaded";
+  readonly storageRef: string;
+}
+
+export type SubmitKybDocumentError =
+  BusinessNotFoundError | StorageRefNotUploadedError | PersistenceFailedError;
 
 export type ListKybDocumentsError = BusinessNotFoundError | PersistenceFailedError;

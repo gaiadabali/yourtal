@@ -51,6 +51,12 @@ const CONFIG: AppConfig = {
     consumerAbsoluteTtlMs: 90 * 24 * 60 * 60 * 1000,
     staffAbsoluteTtlMs: 12 * 60 * 60 * 1000,
   },
+  objectStorage: {
+    endpoint: "http://127.0.0.1:26900",
+    accessKeyId: "yourtal",
+    secretAccessKey: "yourtal_local_only",
+    bucket: "yourtal-media",
+  },
 };
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);

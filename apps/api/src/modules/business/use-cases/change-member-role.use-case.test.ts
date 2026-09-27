@@ -6,7 +6,6 @@ import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-busi
 import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { changeMemberRole } from "./change-member-role.use-case";
 import { createBusiness } from "./create-business.use-case";
-import { inviteMember } from "./invite-member.use-case";
 
 /**
  * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings.
@@ -42,14 +41,12 @@ async function setup() {
     OWNER_ID,
   );
   const businessId = created._unsafeUnwrap().business.id;
-  (
-    await inviteMember(businesses, members, {
-      businessId,
-      userId: "member-1",
-      role: "marketer",
-      invitedByUserId: OWNER_ID,
-    })
-  )._unsafeUnwrap();
+  await members.addMember({
+    businessId,
+    userId: "member-1",
+    role: "marketer",
+    invitedByUserId: OWNER_ID,
+  });
   return { businesses, members, businessId };
 }
 

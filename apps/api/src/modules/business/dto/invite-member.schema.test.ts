@@ -3,19 +3,24 @@ import { inviteMemberSchema } from "./invite-member.schema";
 
 describe("inviteMemberSchema", () => {
   it("round-trips a valid invite", () => {
-    expect(inviteMemberSchema.parse({ userId: "user-1", role: "marketer" })).toStrictEqual({
-      userId: "user-1",
-      role: "marketer",
-    });
+    expect(
+      inviteMemberSchema.parse({ email: "marketer@example.com", role: "marketer" }),
+    ).toStrictEqual({ email: "marketer@example.com", role: "marketer" });
+  });
+
+  it("lowercases and trims the email", () => {
+    expect(
+      inviteMemberSchema.parse({ email: "  Marketer@Example.com  ", role: "marketer" }).email,
+    ).toBe("marketer@example.com");
   });
 
   const rejectionTable: Array<{ name: string; input: unknown }> = [
-    { name: "empty userId", input: { userId: "", role: "marketer" } },
-    { name: "missing role", input: { userId: "user-1" } },
-    { name: "unknown role value", input: { userId: "user-1", role: "manager" } },
+    { name: "not an email", input: { email: "not-an-email", role: "marketer" } },
+    { name: "missing role", input: { email: "marketer@example.com" } },
+    { name: "unknown role value", input: { email: "marketer@example.com", role: "manager" } },
     {
       name: "owner role — grantable only via transfer_ownership",
-      input: { userId: "user-1", role: "owner" },
+      input: { email: "marketer@example.com", role: "owner" },
     },
   ];
 

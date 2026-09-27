@@ -36,6 +36,12 @@ const CONFIG: AppConfig = {
     consumerAbsoluteTtlMs: 90 * 24 * 60 * 60 * 1000,
     staffAbsoluteTtlMs: 12 * 60 * 60 * 1000,
   },
+  objectStorage: {
+    endpoint: "http://127.0.0.1:26900",
+    accessKeyId: "yourtal",
+    secretAccessKey: "yourtal_local_only",
+    bucket: "yourtal-media",
+  },
   port: 3001,
   pdp: { baseUrl: process.env["PDP_BASE_URL"] ?? "http://127.0.0.1:26592", timeoutMs: 500 },
   databaseUrl: process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!,

@@ -99,3 +99,21 @@ tests:
       - principal: wina
         resource: business_unborn
         actions: { create: EFFECT_ALLOW, view: EFFECT_DENY, edit: EFFECT_DENY }
+
+  - name: any signed-in person may list their own businesses (7.1.b)
+    # GET /api/me/businesses names no single businessId either -- same
+    # "nothing narrower to check" shape as create, above.
+    input:
+      principals: [anon, wina, budi_owner]
+      resources: [business_unborn]
+      actions: [list_own]
+    expected:
+      - principal: anon
+        resource: business_unborn
+        actions: { list_own: EFFECT_DENY }
+      - principal: wina
+        resource: business_unborn
+        actions: { list_own: EFFECT_ALLOW }
+      - principal: budi_owner
+        resource: business_unborn
+        actions: { list_own: EFFECT_ALLOW }

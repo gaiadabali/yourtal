@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
 import type {
   AddMemberInput,
@@ -63,6 +63,14 @@ export class DrizzleBusinessMemberRepository implements BusinessMemberRepository
       .where(and(eq(businessMembers.businessId, businessId), eq(businessMembers.userId, userId)))
       .returning();
     return row === undefined ? null : toDomain(row);
+  }
+
+  async listByUser(userId: string): Promise<BusinessMember[]> {
+    const rows = await this.db
+      .select()
+      .from(businessMembers)
+      .where(and(eq(businessMembers.userId, userId), isNotNull(businessMembers.joinedAt)));
+    return rows.map(toDomain);
   }
 
   async removeMember(businessId: string, userId: string): Promise<boolean> {

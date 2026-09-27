@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it, vi, beforeAll, afterAll } from "vitest";
 import { DrizzleBusinessAccountRepository } from "./persistence/drizzle-business-account.repository";
-import { DrizzleBusinessMemberRepository } from "./persistence/drizzle-business-member.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "./persistence/drizzle-business-onboarding.unit-of-work";
+import { DrizzleTeamInvitationRepository } from "./persistence/drizzle-team-invitation.repository";
 import { clearBusinessTables, testBusinessDb } from "./persistence/business-db.test-helper";
 import type { Principal } from "@yourtal/authz/principal";
 import type { FastifyRequest } from "fastify";
 import type { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
+import type { InvitationMailer } from "./invitation-mailer";
 import { TeamInviteController } from "./team-invite.controller";
 
 /**
@@ -25,7 +26,7 @@ const ownerPrincipal: Principal = {
 async function setup() {
   const db = testBusinessDb();
   const businesses = new DrizzleBusinessAccountRepository(db);
-  const members = new DrizzleBusinessMemberRepository(db);
+  const invitations = new DrizzleTeamInvitationRepository(db);
   const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
   const created = await unitOfWork.createBusinessWithOwner(
     {
@@ -45,7 +46,7 @@ async function setup() {
     },
     OWNER_ID,
   );
-  return { businesses, members, businessId: created.business.id };
+  return { businesses, invitations, businessId: created.business.id };
 }
 
 /**
@@ -62,20 +63,36 @@ afterAll(async () => {
 });
 
 describe("TeamInviteController", () => {
-  it("invites a member and records who invited them", async () => {
-    const { businesses, members, businessId } = await setup();
+  it("invites a member by email and mails the token, never returning it", async () => {
+    const { businesses, invitations, businessId } = await setup();
     const principals = {
       resolve: vi.fn().mockResolvedValue(ownerPrincipal),
     } as unknown as AsyncPrincipalResolver;
-    const controller = new TeamInviteController(principals, businesses, members);
+    const sent: unknown[] = [];
+    const mailer: InvitationMailer = {
+      send: vi.fn((input) => Promise.resolve(void sent.push(input))),
+    };
+    const controller = new TeamInviteController(principals, businesses, invitations, mailer);
 
     const result = await controller.invite(
       businessId,
-      { userId: "marketer-1", role: "marketer" },
+      { email: "marketer@example.com", role: "marketer" },
       {} as FastifyRequest,
     );
 
-    expect(result).toMatchObject({ userId: "marketer-1", role: "marketer" });
+    expect(result).toMatchObject({
+      businessId,
+      email: "marketer@example.com",
+      role: "marketer",
+    });
+    expect(result).not.toHaveProperty("token");
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({
+      to: "marketer@example.com",
+      region: "ID",
+      businessDisplayName: "Kopi Kenangan",
+      role: "marketer",
+    });
   });
 
   // "never calls the use-case when the PDP refuses" moved to

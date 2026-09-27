@@ -6,10 +6,19 @@ import { DrizzleBillingContactRepository } from "../persistence/drizzle-billing-
 import { DrizzleKybDocumentRepository } from "../persistence/drizzle-kyb-document.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
+import type { KybObjectStorage } from "../object-storage/kyb-object-storage";
 import { createBusiness } from "./create-business.use-case";
 import { getBusinessProfile } from "./get-business-profile.use-case";
 import { setBillingContact } from "./set-billing-contact.use-case";
 import { submitKybDocument } from "./submit-kyb-document.use-case";
+
+/** A fake — this file is about `getBusinessProfile`'s own aggregation, not object storage. */
+const alwaysUploaded: KybObjectStorage = {
+  createUploadUrl: () => {
+    throw new Error("not used by this test");
+  },
+  exists: () => Promise.resolve(true),
+};
 
 /**
  * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings —
@@ -67,7 +76,7 @@ describe("getBusinessProfile", () => {
       })
     )._unsafeUnwrap();
     (
-      await submitKybDocument(businesses, kybDocuments, {
+      await submitKybDocument(businesses, kybDocuments, alwaysUploaded, {
         businessId,
         documentType: "business_registration_certificate",
         storageRef: "kms://kyb/one",

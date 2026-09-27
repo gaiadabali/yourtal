@@ -186,6 +186,21 @@ export const envSchema = z.object({
     .int()
     .positive()
     .default(12 * 60 * 60 * 1000),
+
+  /**
+   * Local object storage (YT-0521, shared with `packages/media`'s HLS
+   * origin). TASKS.md 7.1.b: the business module's own presigned-PUT KYB
+   * upload reads these too, rather than a private copy, so both consumers
+   * of the one MinIO instance agree on where it is. Defaults match
+   * `.env.example` and `packages/media/src/hls-origin.ts`'s own fallbacks —
+   * a loopback dev sidecar and its well-known local-only credential, not a
+   * production secret, so defaulting it here carries the same reasoning
+   * `REDIS_URL` above documents (nothing to leak by making it convenient).
+   */
+  S3_ENDPOINT: z.url().default("http://127.0.0.1:26900"),
+  S3_ACCESS_KEY: z.string().min(1).default("yourtal"),
+  S3_SECRET_KEY: z.string().min(1).default("yourtal_local_only"),
+  S3_BUCKET: z.string().min(1).default("yourtal-media"),
 });
 
 export type Env = z.infer<typeof envSchema>;

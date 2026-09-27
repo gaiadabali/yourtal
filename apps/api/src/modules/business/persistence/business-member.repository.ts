@@ -14,6 +14,8 @@ export interface BusinessMemberRepository {
   addMember(input: AddMemberInput): Promise<BusinessMember>;
   findMember(businessId: string, userId: string): Promise<BusinessMember | null>;
   listByBusiness(businessId: string): Promise<BusinessMember[]>;
+  /** TASKS.md 7.1.b: `GET /api/me/businesses`'s own read. Joined only — an outstanding invite lives in `team_invitations`, not here. */
+  listByUser(userId: string): Promise<BusinessMember[]>;
   updateRole(
     businessId: string,
     userId: string,

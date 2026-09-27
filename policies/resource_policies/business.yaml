@@ -48,6 +48,16 @@ resourcePolicy:
       effect: EFFECT_ALLOW
       roles: ["user", "business_user"]
 
+    - name: any-signed-in-person-may-list-their-own-businesses
+      # TASKS.md 7.1.b: `GET /api/me/businesses`. Same reasoning as `create`
+      # above -- the route names no single businessId, and the use-case
+      # itself reads only the caller's own real, joined memberships from
+      # `business.business_members`, so there is nothing for a per-resource
+      # rule to check that the query has not already guaranteed.
+      actions: ["list_own"]
+      effect: EFFECT_ALLOW
+      roles: ["user", "business_user"]
+
     - name: every-office-role-sees-the-business-it-works-for
       actions: ["view"]
       effect: EFFECT_ALLOW
@@ -70,7 +80,7 @@ resourcePolicy:
       # its own credential (1.5.c). has(R.attr.region) makes this a no-op
       # for an action with no resource yet (a create) or a kind whose
       # controller does not populate region yet.
-      actions: ["view", "edit", "create"]
+      actions: ["view", "edit", "create", "list_own"]
       effect: EFFECT_DENY
       roles: ["user", "business_user"]
       condition:

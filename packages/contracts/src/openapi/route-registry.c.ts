@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { businessRoleSchema } from "../business/business";
+import { auStateSchema, businessRoleSchema, taxIdKindSchema } from "../business/business";
 import { businessTeamRoleSchema } from "../business/business-team-role";
 import { billingContactSchema } from "../business/billing-contact";
 import { kybDocumentTypeSchema } from "../business/kyb-document";
@@ -64,10 +64,36 @@ const MEMBER_NOT_FOUND: RouteErrorResponse = {
   documented: true,
 };
 
-const MEMBER_ALREADY_EXISTS: RouteErrorResponse = {
+const INVITATION_ALREADY_OPEN: RouteErrorResponse = {
   status: 409,
   description:
-    "This userId is already a member of this business (to-http-exception.ts's member_already_exists).",
+    "This email already has an open invitation to this business " +
+    "(to-http-exception.ts's invitation_already_open).",
+  documented: true,
+};
+
+const INVITATION_INVALID: RouteErrorResponse = {
+  status: 400,
+  description:
+    "The token is unknown, expired, revoked, or already accepted -- collapsed into one outcome " +
+    "on purpose (to-http-exception.ts's invitation_invalid), the same enumeration discipline " +
+    "auth's own token_invalid uses.",
+  documented: true,
+};
+
+const STORAGE_REF_NOT_UPLOADED: RouteErrorResponse = {
+  status: 400,
+  description:
+    "No object exists at this storageRef yet (to-http-exception.ts's storage_ref_not_uploaded) " +
+    "-- request a fresh upload URL and upload through it first.",
+  documented: true,
+};
+
+const TARGET_NOT_MEMBER: RouteErrorResponse = {
+  status: 400,
+  description:
+    "The named new owner (or, in a should-not-happen case, the caller) is not a member of this " +
+    "business yet (to-http-exception.ts's target_not_member).",
   documented: true,
 };
 
@@ -91,7 +117,15 @@ const createBusinessRequestSchema = inlineSchema(
     .object({
       legalName: z.string().min(1).max(160),
       displayName: z.string().min(1).max(120),
-      district: z.string().min(1).max(60),
+      taxIdKind: taxIdKindSchema,
+      taxIdValue: z.string().min(1).max(32),
+      addressState: auStateSchema.nullable().optional(),
+      addressPostcode: z
+        .string()
+        .regex(/^\d{4}$/)
+        .nullable()
+        .optional(),
+      addressCity: z.string().min(1).max(120).nullable().optional(),
       roles: z.array(businessRoleSchema).min(1),
       // `.optional()` here, not `.default(null)` like the real apps/api DTO —
       // both mean "the client may omit this key", but `.default(null)`
@@ -112,7 +146,16 @@ const createBusinessRequestSchema = inlineSchema(
 );
 
 const inviteMemberRequestSchema = inlineSchema(
-  z.object({ userId: z.string().min(1), role: grantableTeamRoleSchema }),
+  z.object({
+    email: z.string().trim().toLowerCase().max(320).pipe(z.email()),
+    role: grantableTeamRoleSchema,
+  }),
+);
+
+const acceptInvitationRequestSchema = inlineSchema(z.object({ token: z.string().min(1) }));
+
+const transferOwnershipRequestSchema = inlineSchema(
+  z.object({ newOwnerUserId: z.string().min(1) }),
 );
 
 const changeMemberRoleRequestSchema = inlineSchema(z.object({ role: grantableTeamRoleSchema }));
@@ -121,6 +164,10 @@ const changeMemberRoleRequestSchema = inlineSchema(z.object({ role: grantableTea
 // the client never sends — see the file header on why this is the exception.
 const setBillingContactRequestSchema = inlineSchema(
   billingContactSchema.omit({ businessId: true, updatedAt: true }),
+);
+
+const createKybUploadUrlRequestSchema = inlineSchema(
+  z.object({ contentType: z.enum(["application/pdf", "image/jpeg", "image/png"]) }),
 );
 
 const submitKybDocumentRequestSchema = inlineSchema(
@@ -173,8 +220,66 @@ const billingContactOrNullResponseSchema: Record<string, unknown> = {
   anyOf: [ref("BillingContact"), { type: "null" }],
 };
 
+/** `team-invite.controller.ts`'s response — the invitation record, never the token (it already left, once, by email). */
+const teamInvitationResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    id: { type: "string", format: "uuid" },
+    businessId: { type: "string", format: "uuid" },
+    email: { type: "string" },
+    role: ref("BusinessTeamRole"),
+    invitedAt: { type: "string", format: "date-time" },
+    expiresAt: { type: "string", format: "date-time" },
+  },
+  required: ["id", "businessId", "email", "role", "invitedAt", "expiresAt"],
+  additionalProperties: false,
+};
+
+/** `my-businesses.controller.ts`'s `GET /api/me/businesses` — every business the caller has actually joined. */
+const myBusinessMembershipsResponseSchema: Record<string, unknown> = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      business: ref("Business"),
+      role: ref("BusinessTeamRole"),
+      joinedAt: { type: "string", format: "date-time" },
+    },
+    required: ["business", "role", "joinedAt"],
+    additionalProperties: false,
+  },
+};
+
+/** `my-businesses.controller.ts`'s accept-invitation response. */
+const acceptInvitationResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: { businessId: { type: "string", format: "uuid" }, member: ref("BusinessMember") },
+  required: ["businessId", "member"],
+  additionalProperties: false,
+};
+
+/** `kyb-document.controller.ts`'s `createUploadUrl` — never a full public URL, an opaque object key `submitKybDocument`'s `storageRef` must equal. */
+const kybUploadUrlResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    storageRef: { type: "string" },
+    uploadUrl: { type: "string", format: "uri" },
+    expiresAt: { type: "string", format: "date-time" },
+  },
+  required: ["storageRef", "uploadUrl", "expiresAt"],
+  additionalProperties: false,
+};
+
+/** `team-ownership.controller.ts`'s transfer response. */
+const transferOwnershipResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: { previousOwner: ref("BusinessMember"), newOwner: ref("BusinessMember") },
+  required: ["previousOwner", "newOwner"],
+  additionalProperties: false,
+};
+
 /**
- * The 10 routes `apps/api` serves from the `business` module specifically, verified against a
+ * The routes `apps/api` serves from the `business` module specifically, verified against a
  * real boot (see the ticket report). Kept in file order matching
  * `apps/api/src/modules/business/*.controller.ts` for easy side-by-side review, not path order.
  */
@@ -195,6 +300,34 @@ export const BUSINESS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successSchema: createBusinessResponseSchema,
     // CreateBusinessError is PersistenceFailedError only — no 404/409 possible before the row exists.
     errors: [VALIDATION_400, FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+
+  // --- my-businesses.controller.ts ---
+  {
+    method: "get",
+    path: "/api/me/businesses",
+    summary: "List every business the caller has joined",
+    tags: ["business"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription: "Every business membership the caller has actually joined.",
+    successSchema: myBusinessMembershipsResponseSchema,
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/me/businesses/invitations/accept",
+    summary: "Accept a team invitation by token",
+    tags: ["business", "team"],
+    pathParams: [],
+    requestBody: {
+      description: "The token the invitee received by email.",
+      schema: acceptInvitationRequestSchema,
+    },
+    successStatus: 201,
+    successDescription: "The membership the caller just joined.",
+    successSchema: acceptInvitationResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, INVITATION_INVALID, SERVICE_UNAVAILABLE],
   },
 
   // --- business.controller.ts ---
@@ -227,23 +360,40 @@ export const BUSINESS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "post",
     path: "/api/{tenantId}/business/team/invite",
-    summary: "Invite a member to a business's team",
+    summary: "Invite a member to a business's team by email",
     tags: ["business", "team"],
     pathParams: [TENANT_ID_PARAM],
     requestBody: {
-      description: "Who to invite and the role to grant.",
+      description: "The invitee's email and the role to grant.",
       schema: inviteMemberRequestSchema,
     },
     successStatus: 201,
-    successDescription: "The new membership.",
-    successSchema: ref("BusinessMember"),
+    successDescription: "The created invitation (never the token — it was mailed).",
+    successSchema: teamInvitationResponseSchema,
     errors: [
       VALIDATION_400,
       FORBIDDEN,
       BUSINESS_NOT_FOUND,
-      MEMBER_ALREADY_EXISTS,
+      INVITATION_ALREADY_OPEN,
       SERVICE_UNAVAILABLE,
     ],
+  },
+
+  // --- team-ownership.controller.ts ---
+  {
+    method: "post",
+    path: "/api/{tenantId}/business/team/transfer-ownership",
+    summary: "Transfer business ownership to an existing team member",
+    tags: ["business", "team"],
+    pathParams: [TENANT_ID_PARAM],
+    requestBody: {
+      description: "The existing member who becomes the new owner.",
+      schema: transferOwnershipRequestSchema,
+    },
+    successStatus: 200,
+    successDescription: "The previous owner (now admin) and the new owner.",
+    successSchema: transferOwnershipResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, BUSINESS_NOT_FOUND, TARGET_NOT_MEMBER, SERVICE_UNAVAILABLE],
   },
 
   // --- team-member.controller.ts ---
@@ -324,6 +474,21 @@ export const BUSINESS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   },
   {
     method: "post",
+    path: "/api/{tenantId}/business/kyb-documents/upload-url",
+    summary: "Mint a presigned MinIO upload URL for a KYB document",
+    tags: ["business", "kyb"],
+    pathParams: [TENANT_ID_PARAM],
+    requestBody: {
+      description: "The content type of the file about to be uploaded.",
+      schema: createKybUploadUrlRequestSchema,
+    },
+    successStatus: 201,
+    successDescription: "A presigned PUT and the storageRef it will land at.",
+    successSchema: kybUploadUrlResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
     path: "/api/{tenantId}/business/kyb-documents",
     summary: "Submit a KYB document",
     tags: ["business", "kyb"],
@@ -335,6 +500,12 @@ export const BUSINESS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successStatus: 201,
     successDescription: "The submitted document, in `submitted` status.",
     successSchema: ref("KybDocument"),
-    errors: [VALIDATION_400, FORBIDDEN, BUSINESS_NOT_FOUND, SERVICE_UNAVAILABLE],
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      BUSINESS_NOT_FOUND,
+      STORAGE_REF_NOT_UPLOADED,
+      SERVICE_UNAVAILABLE,
+    ],
   },
 ];

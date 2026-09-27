@@ -44,6 +44,13 @@ export interface AppConfig {
     readonly consumerAbsoluteTtlMs: number;
     readonly staffAbsoluteTtlMs: number;
   };
+  /** TASKS.md 7.1.b — the presigned KYB upload's own MinIO/S3 client config. */
+  readonly objectStorage: {
+    readonly endpoint: string;
+    readonly accessKeyId: string;
+    readonly secretAccessKey: string;
+    readonly bucket: string;
+  };
 }
 
 /**
@@ -82,6 +89,12 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       consumerIdleTtlMs: env.SESSION_CONSUMER_IDLE_TTL_MS,
       consumerAbsoluteTtlMs: env.SESSION_CONSUMER_ABSOLUTE_TTL_MS,
       staffAbsoluteTtlMs: env.SESSION_STAFF_ABSOLUTE_TTL_MS,
+    },
+    objectStorage: {
+      endpoint: env.S3_ENDPOINT,
+      accessKeyId: env.S3_ACCESS_KEY,
+      secretAccessKey: env.S3_SECRET_KEY,
+      bucket: env.S3_BUCKET,
     },
   };
 }

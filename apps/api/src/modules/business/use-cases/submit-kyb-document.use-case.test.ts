@@ -4,9 +4,24 @@ import { DrizzleBusinessAccountRepository } from "../persistence/drizzle-busines
 import { DrizzleKybDocumentRepository } from "../persistence/drizzle-kyb-document.repository";
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
+import type { KybObjectStorage } from "../object-storage/kyb-object-storage";
 import { createBusiness } from "./create-business.use-case";
 import { listKybDocuments } from "./list-kyb-documents.use-case";
 import { submitKybDocument } from "./submit-kyb-document.use-case";
+
+/**
+ * A fake, not the real MinIO client — this file is about the use-case's own
+ * logic (business lookup, error mapping), and the real presign/exists round
+ * trip already has its own test (`object-storage/s3-kyb-object-storage.test.ts`).
+ */
+function alwaysUploaded(): KybObjectStorage {
+  return {
+    createUploadUrl: () => {
+      throw new Error("not used by this test");
+    },
+    exists: () => Promise.resolve(true),
+  };
+}
 
 /**
  * A fixture id unique to THIS FILE, not `"owner-1"` shared with siblings —
@@ -58,7 +73,7 @@ describe("submitKybDocument", () => {
   it("records a submitted document with expiry tracked", async () => {
     const { businesses, kybDocuments, businessId } = await setup();
 
-    const result = await submitKybDocument(businesses, kybDocuments, {
+    const result = await submitKybDocument(businesses, kybDocuments, alwaysUploaded(), {
       businessId,
       documentType: "tax_registration_number",
       storageRef: "kms://kyb/npwp",
@@ -75,7 +90,7 @@ describe("submitKybDocument", () => {
     const db = testBusinessDb();
     const businesses = new DrizzleBusinessAccountRepository(db);
 
-    const result = await submitKybDocument(businesses, kybDocuments, {
+    const result = await submitKybDocument(businesses, kybDocuments, alwaysUploaded(), {
       businessId: "00000000-0000-4000-8000-000000000000",
       documentType: "proof_of_address",
       storageRef: "kms://kyb/address",
@@ -85,13 +100,36 @@ describe("submitKybDocument", () => {
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr().type).toBe("business_not_found");
   });
+
+  it("rejects a storageRef nothing was ever uploaded to", async () => {
+    const { businesses, kybDocuments, businessId } = await setup();
+    const neverUploaded: KybObjectStorage = {
+      createUploadUrl: () => {
+        throw new Error("not used by this test");
+      },
+      exists: () => Promise.resolve(false),
+    };
+
+    const result = await submitKybDocument(businesses, kybDocuments, neverUploaded, {
+      businessId,
+      documentType: "proof_of_address",
+      storageRef: "kyb/does-not-exist",
+      expiresAt: null,
+    });
+
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toStrictEqual({
+      type: "storage_ref_not_uploaded",
+      storageRef: "kyb/does-not-exist",
+    });
+  });
 });
 
 describe("listKybDocuments", () => {
   it("lists every document submitted for the business", async () => {
     const { businesses, kybDocuments, businessId } = await setup();
     (
-      await submitKybDocument(businesses, kybDocuments, {
+      await submitKybDocument(businesses, kybDocuments, alwaysUploaded(), {
         businessId,
         documentType: "business_registration_certificate",
         storageRef: "kms://kyb/nib",

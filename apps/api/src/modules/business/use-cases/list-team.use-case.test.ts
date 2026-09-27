@@ -5,7 +5,6 @@ import { DrizzleBusinessMemberRepository } from "../persistence/drizzle-business
 import { DrizzleBusinessOnboardingUnitOfWork } from "../persistence/drizzle-business-onboarding.unit-of-work";
 import { clearBusinessTables, testBusinessDb } from "../persistence/business-db.test-helper";
 import { createBusiness } from "./create-business.use-case";
-import { inviteMember } from "./invite-member.use-case";
 import { listTeam } from "./list-team.use-case";
 
 /**
@@ -52,14 +51,12 @@ describe("listTeam", () => {
       OWNER_ID,
     );
     const businessId = created._unsafeUnwrap().business.id;
-    (
-      await inviteMember(businesses, members, {
-        businessId,
-        userId: "member-1",
-        role: "finance",
-        invitedByUserId: OWNER_ID,
-      })
-    )._unsafeUnwrap();
+    await members.addMember({
+      businessId,
+      userId: "member-1",
+      role: "finance",
+      invitedByUserId: OWNER_ID,
+    });
 
     const result = await listTeam(businesses, members, businessId);
 

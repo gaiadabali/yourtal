@@ -11,10 +11,22 @@ import { GENERATED_PUBLIC_LOCALES, type PublicLocale } from "./public-locale";
  * deliberately NOT reused here: this control is a language switch (F2:
  * display language, described here as it maps 1:1 onto this static
  * surface's two region-scoped catalogues), not a country switch.
+ *
+ * The header spells each one out in full as its ACCESSIBLE name
+ * (`aria-label`) but shows only the short ISO code visually
+ * (`LANGUAGE_CODE`) — "Bahasa Indonesia" spelled out here, next to "Log
+ * in"/"Sign up free", overflowed the 390px gallery baseline (6.1.f). The
+ * full endonym still appears in `PublicFooter`'s own switcher, which has
+ * the vertical room for it.
  */
 const LANGUAGE_ENDONYM: Record<PublicLocale, string> = {
   au: "English",
   id: "Bahasa Indonesia",
+};
+
+const LANGUAGE_CODE: Record<PublicLocale, string> = {
+  au: "EN",
+  id: "ID",
 };
 
 export interface PublicHeaderProps {
@@ -49,13 +61,14 @@ export function PublicHeader({ locale, homeHref, currentPublicLocale }: PublicHe
         <BrandWordmark size="sm" />
       </a>
       <div className="flex items-center gap-4">
-        <nav aria-label={t("header.language")} className="flex items-center gap-2">
+        <nav aria-label={t("header.language")} className="flex items-center gap-1.5">
           {GENERATED_PUBLIC_LOCALES.map((publicLocale) => {
             const isCurrent = publicLocale === currentPublicLocale;
             return (
               <a
                 key={publicLocale}
                 href={`/${publicLocale}`}
+                aria-label={LANGUAGE_ENDONYM[publicLocale]}
                 aria-current={isCurrent ? "true" : undefined}
                 className={
                   isCurrent
@@ -63,7 +76,7 @@ export function PublicHeader({ locale, homeHref, currentPublicLocale }: PublicHe
                     : "text-label font-sans font-medium text-fg-muted hover:text-fg"
                 }
               >
-                {LANGUAGE_ENDONYM[publicLocale]}
+                {LANGUAGE_CODE[publicLocale]}
               </a>
             );
           })}

@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslations } from "next-intl";
 import { Section } from "@yourtal/ui/section";
 import { ErrorState } from "@yourtal/ui/error-state";

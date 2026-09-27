@@ -1,0 +1,85 @@
+"use server";
+
+import { apiFetch } from "@/lib/api/api-fetch";
+import type { CampaignDraft } from "./campaign-draft";
+import {
+  apiCampaignDraftSchema,
+  apiDraftToWebDraft,
+  newCampaignDraftDefaults,
+} from "./campaign-draft-live-mapping";
+
+/**
+ * Client-invokable Server Actions wrapping 7.3's real campaign-authoring
+ * endpoints (`apps/api/src/modules/studio/campaign-draft.controller.ts`) —
+ * same reasoning `team-live-actions.ts`/`media-upload-actions.ts` give:
+ * `campaign-builder-screen.tsx` is a `"use client"` leaf, so it cannot call
+ * `campaign-builder-data.ts` (`"server-only"`) directly. This file is that
+ * leaf's live counterpart, mirroring `team-live-actions.ts`'s
+ * `{ok:true,value}|{ok:false,message}` shape (mapping is out of scope this
+ * pass — see `campaign-draft-live-mapping.ts`'s own doc comment for exactly
+ * which fields do not round-trip yet).
+ */
+export type CampaignBuilderActionResult<T> =
+  { ok: true; value: T } | { ok: false; message: string };
+
+/** `POST /api/:tenantId/studio/campaigns` (7.3.a) with a safe, always-valid starting point — see `newCampaignDraftDefaults`'s own doc comment for why. */
+export async function createCampaignDraftLive(
+  businessId: string,
+  merchantName: string,
+): Promise<CampaignBuilderActionResult<CampaignDraft>> {
+  const defaults = newCampaignDraftDefaults();
+  const result = await apiFetch(`/api/${businessId}/studio/campaigns`, apiCampaignDraftSchema, {
+    method: "POST",
+    headers: { "idempotency-key": crypto.randomUUID() },
+    body: defaults,
+  });
+  if (!result.ok) return { ok: false, message: result.error.message };
+  return { ok: true, value: apiDraftToWebDraft(result.data, merchantName) };
+}
+
+export interface CampaignDraftDetailsPatch {
+  title: string;
+  synopsis: string;
+}
+
+/** `PATCH /api/:tenantId/studio/campaigns/:campaignId` (7.3.a) — title/synopsis only this pass; see this feature's own next-slice note in TASKS.md for the rest of the editor's fields. */
+export async function updateCampaignDraftDetailsLive(
+  businessId: string,
+  campaignId: string,
+  merchantName: string,
+  patch: CampaignDraftDetailsPatch,
+): Promise<CampaignBuilderActionResult<CampaignDraft>> {
+  const result = await apiFetch(
+    `/api/${businessId}/studio/campaigns/${campaignId}`,
+    apiCampaignDraftSchema,
+    { method: "PATCH", body: patch },
+  );
+  if (!result.ok) return { ok: false, message: result.error.message };
+  return { ok: true, value: apiDraftToWebDraft(result.data, merchantName) };
+}
+
+/**
+ * `POST /api/:tenantId/studio/campaigns/:campaignId/submit` (7.3.d) —
+ * wired for real but not yet called from `campaign-editor-status-panel.tsx`:
+ * that panel already disables the Submit button whenever `!isVerified`
+ * (the real, live `business.isVerified` flag, wired since 7.8.b), which is
+ * exactly what 7.8.d's Check asks for ("ready to submit, blocked by the
+ * verification banner") — the button being correctly disabled makes this
+ * call unreachable from the UI today regardless, since a real business is
+ * never verified except through staff KYB review (9.3.b, later phase).
+ * Left real and ready for whoever wires the button itself as this
+ * feature's own next slice.
+ */
+export async function submitCampaignDraftLive(
+  businessId: string,
+  campaignId: string,
+  merchantName: string,
+): Promise<CampaignBuilderActionResult<CampaignDraft>> {
+  const result = await apiFetch(
+    `/api/${businessId}/studio/campaigns/${campaignId}/submit`,
+    apiCampaignDraftSchema,
+    { method: "POST" },
+  );
+  if (!result.ok) return { ok: false, message: result.error.message };
+  return { ok: true, value: apiDraftToWebDraft(result.data, merchantName) };
+}

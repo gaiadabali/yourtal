@@ -3,21 +3,21 @@ import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Browser, BrowserContext, Page } from "@playwright/test";
 
 /**
- * 7.8.d's Check, as far as it can go today: a new business goes from
- * sign-up through the real Studio UI, against a real `apps/api` +
- * Postgres (`YOURTAL_DATA_SOURCE=live` in this worktree's `.env`; see
- * `playwright.c-studio.config.ts`).
+ * 7.8.d's Check: a new business goes from sign-up through the real Studio
+ * UI, against a real `apps/api` + Postgres (`YOURTAL_DATA_SOURCE=live` in
+ * this worktree's `.env`; see `playwright.c-studio.config.ts`) — sign-up,
+ * onboarding, billing, RBAC, and now (7.3 merged to `main`) a real campaign
+ * draft created and edited through `/studio/campaigns`, reaching "ready to
+ * submit" with the button correctly blocked by the verification banner
+ * (a fresh business is never KYB-verified; that's staff-only, 9.3.b, a
+ * later phase — this spec proves the button honours the real, live
+ * `business.isVerified` flag, not that submit itself succeeds).
  *
- * The full Check ("...to a funded campaign ready to submit") needs A's 7.3
- * (campaign authoring API), which is not on `main` yet (checked at the time
- * this spec was written). Per F40's "a phase waits only on lower-numbered
- * phases" and the coordinator's own instruction, this spec covers
- * everything that does NOT depend on 7.3 for real, and asserts — rather
- * than fakes or skips silently — that the campaign-dependent zones degrade
- * honestly (Studio's own `error.tsx`, no crash, no fabricated data) until
- * 7.3 lands. The campaign-builder portion itself is `test.fixme`, named
- * after the blocking task, so it is visible in every test run rather than
- * quietly missing.
+ * Not yet covered by this spec (this feature's own next slice — see
+ * `campaign-draft-live-mapping.ts`'s doc comment): reward config (needs an
+ * `allocationId` UX this pass doesn't add), the question bank, and
+ * targeting/budget/schedule/audience/category/teaser/captions fields, none
+ * of which has an editor field wired to a live PATCH yet.
  */
 const WCAG_AA = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
@@ -191,12 +191,39 @@ test.describe
     await context.close();
   });
 
-  // Blocked on A's 7.3 (campaign authoring API — `apps/api/src/modules/studio/campaigns`),
-  // confirmed not on `main` as of this spec: no endpoint exists yet to create a
-  // real campaign, so there is nothing for a real video upload, question bank,
-  // reward/schedule form or submit-blocked-by-verification-banner assertion to
-  // run against. Fill this in once 7.3 merges — do not fake the campaign list.
-  test.fixme("a funded business uploads a video, writes questions, sets reward/schedule and reaches a submit blocked by the verification banner — needs 7.3", () => {
-    throw new Error("blocked on 7.3");
+  test("a real campaign is created and edited live through the Campaigns UI, reaching a submit blocked by the verification banner", async ({
+    browser,
+    baseURL,
+  }) => {
+    const { context, page } = await newSessionContext(browser, baseURL as string, account.cookie);
+
+    await page.goto(`/studio/campaigns?business=${businessId}`);
+    await expect(page.getByRole("heading", { name: "Campaigns", level: 1 })).toBeVisible();
+
+    await page.getByRole("button", { name: "New campaign" }).click();
+    // POST /api/:tenantId/studio/campaigns (7.3.a): a real draft, with real
+    // server-assigned defaults — see `newCampaignDraftDefaults`'s own doc
+    // comment for why they're safe-but-placeholder rather than collected
+    // up front (this editor has no create-time intake form yet).
+    await expect(page.getByLabel("Campaign title")).toHaveValue("Untitled campaign");
+
+    const title = `Cold Brew Launch — E2E ${Date.now()}`;
+    await page.getByLabel("Campaign title").fill(title);
+    await page.getByRole("button", { name: "Back to campaigns" }).click();
+
+    // The title/synopsis PATCH flushes on the way out of the editor, not on
+    // every keystroke — a fresh reload (not just this same page's own local
+    // state) is what proves it actually reached the server.
+    await page.reload();
+    await expect(page.getByText(title)).toBeVisible();
+
+    await page.getByText(title).click();
+    const submitButton = page.getByRole("button", { name: "Submit for review" });
+    await expect(submitButton).toBeDisabled();
+    await expect(
+      page.getByText("Verify your business on the overview page before you can submit."),
+    ).toBeVisible();
+
+    await context.close();
   });
 });

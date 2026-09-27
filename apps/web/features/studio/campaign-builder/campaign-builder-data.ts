@@ -1,6 +1,9 @@
+import { z } from "zod";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import { apiFetch } from "@/lib/api/api-fetch";
 import type { CampaignDraft } from "./campaign-draft";
 import { buildDemoCampaignDrafts } from "./campaign-draft-fixtures";
+import { apiCampaignDraftSchema, apiDraftToWebDraft } from "./campaign-draft-live-mapping";
 
 /**
  * The campaign builder's data-access seam, same shape and same reasoning as
@@ -29,11 +32,21 @@ const mockDataSource: CampaignBuilderDataSource = {
   },
 };
 
-const NOT_IMPLEMENTED_MESSAGE =
-  "Live campaign builder data source is not implemented yet (Phase U is mock-only).";
-
+/**
+ * Live: `GET /api/:tenantId/studio/campaigns` (7.3.a, merged to `main`).
+ * Mapped through `apiDraftToWebDraft` — see `campaign-draft-live-mapping.ts`'s
+ * own doc comment for exactly which fields do not round-trip yet
+ * (targeting.districts, budget, question bank, the reward split).
+ */
 const liveDataSource: CampaignBuilderDataSource = {
-  listCampaignDrafts: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
+  listCampaignDrafts: async (businessId, merchantName) => {
+    const result = await apiFetch(
+      `/api/${businessId}/studio/campaigns`,
+      z.array(apiCampaignDraftSchema),
+    );
+    if (!result.ok) throw new Error(`Could not load campaign drafts: ${result.error.message}`);
+    return result.data.map((draft) => apiDraftToWebDraft(draft, merchantName));
+  },
 };
 
 const campaignBuilderDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });

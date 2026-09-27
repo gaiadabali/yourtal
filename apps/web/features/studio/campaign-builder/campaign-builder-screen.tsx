@@ -4,6 +4,10 @@ import { useState } from "react";
 import type { CampaignDraft } from "./campaign-draft";
 import { CampaignDraftList } from "./campaign-draft-list";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
+import {
+  createCampaignDraftLive,
+  updateCampaignDraftDetailsLive,
+} from "./campaign-builder-actions";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@yourtal/ui/skeleton";
 
@@ -44,15 +48,52 @@ export function CampaignBuilderScreen({
 }: CampaignBuilderScreenProps) {
   const [drafts, setDrafts] = useState<CampaignDraft[]>(initialDrafts);
   const [openDraftId, setOpenDraftId] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   function updateDraft(next: CampaignDraft) {
     setDrafts((current) => current.map((draft) => (draft.id === next.id ? next : draft)));
   }
 
-  function createDraft() {
+  async function createDraft() {
+    if (isLiveMode) {
+      const result = await createCampaignDraftLive(businessId, merchantName);
+      if (!result.ok) {
+        setCreateError(result.message);
+        return;
+      }
+      setCreateError(null);
+      setDrafts((current) => [result.value, ...current]);
+      setOpenDraftId(result.value.id);
+      return;
+    }
     const draft = createEmptyCampaignDraft(businessId, merchantName);
     setDrafts((current) => [draft, ...current]);
     setOpenDraftId(draft.id);
+  }
+
+  /**
+   * Flushes the details tab's title/synopsis to the real draft on the way
+   * out of the editor, rather than on every keystroke (`@NotValueMoving`,
+   * so a repeat is harmless, but a PATCH per character is still wasted
+   * work). The rest of the editor's fields (reward, targeting, budget,
+   * questions, schedule/audience/category/teaser/captions) stay local-only
+   * this pass — see `campaign-draft-live-mapping.ts`'s own doc comment.
+   */
+  async function closeEditor() {
+    const current = drafts.find((draft) => draft.id === openDraftId);
+    if (isLiveMode && current) {
+      const result = await updateCampaignDraftDetailsLive(businessId, current.id, merchantName, {
+        title: current.title,
+        synopsis: current.synopsis,
+      });
+      if (result.ok) {
+        updateDraft(result.value);
+      }
+      // A save hiccup on the way out is not worth trapping the author in
+      // the editor over — the list's own next live fetch shows whatever
+      // the server actually holds either way.
+    }
+    setOpenDraftId(null);
   }
 
   const openDraft = drafts.find((draft) => draft.id === openDraftId);
@@ -62,7 +103,7 @@ export function CampaignBuilderScreen({
       <CampaignEditor
         draft={openDraft}
         onChange={updateDraft}
-        onBack={() => setOpenDraftId(null)}
+        onBack={() => void closeEditor()}
         canEdit={canEdit}
         isVerified={isVerified}
         isLiveMode={isLiveMode}
@@ -71,11 +112,18 @@ export function CampaignBuilderScreen({
   }
 
   return (
-    <CampaignDraftList
-      drafts={drafts}
-      onOpen={setOpenDraftId}
-      onCreate={createDraft}
-      canEdit={canEdit}
-    />
+    <div className="flex flex-col gap-4">
+      {createError ? (
+        <p role="alert" className="text-sm font-sans text-danger">
+          {createError}
+        </p>
+      ) : null}
+      <CampaignDraftList
+        drafts={drafts}
+        onOpen={setOpenDraftId}
+        onCreate={() => void createDraft()}
+        canEdit={canEdit}
+      />
+    </div>
   );
 }

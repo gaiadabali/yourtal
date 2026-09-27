@@ -32,6 +32,12 @@ export function errorCopyFor(
   const t = getMerchantTranslator(locale);
   switch (error.code) {
     case "voucher_not_found":
+    // `audience_blocked` is the real backend's actual code for "no voucher
+    // matches this code" (`services/voucher`'s device lookup reuses the
+    // ledger's closed error enum, TASKS.md 1.2.c — confirmed against a real
+    // round trip, not guessed). `voucher_not_found` is kept alongside it as
+    // the more legible name this feature would rather have used.
+    case "audience_blocked":
       return { heading: t("error.voucherNotFound.heading"), body: t("error.voucherNotFound.body") };
     case "already_redeemed":
       return {

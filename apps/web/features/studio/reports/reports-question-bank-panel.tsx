@@ -50,7 +50,7 @@ export function ReportsQuestionBankPanel({
             />
             <DataTable
               caption={t("reports.questionBank.caption", { scopeLabel })}
-              rows={typeCounts}
+              rows={[...typeCounts]}
               getRowKey={(row) => row.type}
               columns={[
                 {

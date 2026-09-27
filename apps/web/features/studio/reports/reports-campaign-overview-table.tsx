@@ -35,7 +35,7 @@ export function ReportsCampaignOverviewTable({ campaigns }: ReportsCampaignOverv
     <div className="flex flex-col gap-2">
       <DataTable
         caption={t("reports.overview.caption")}
-        rows={campaigns}
+        rows={[...campaigns]}
         getRowKey={(campaign) => campaign.id}
         columns={[
           {

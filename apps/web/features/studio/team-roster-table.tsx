@@ -42,7 +42,7 @@ export function TeamRosterTable({
   return (
     <DataTable
       caption={t("team.roster.caption")}
-      rows={rows}
+      rows={[...rows]}
       getRowKey={(row) => row.member.userId}
       columns={[
         {

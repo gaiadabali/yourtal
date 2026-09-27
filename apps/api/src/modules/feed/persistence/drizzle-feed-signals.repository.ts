@@ -1,8 +1,11 @@
 import { sql } from "drizzle-orm";
+import { Logger } from "@nestjs/common";
 import { consentRecordSchema } from "@yourtal/consent/consent-record";
 import type { ConsentRecord } from "@yourtal/consent/consent-record";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { FeedSignalsRepository } from "./feed-signals.repository";
+
+const logger = new Logger("DrizzleFeedSignalsRepository");
 
 export class DrizzleFeedSignalsRepository implements FeedSignalsRepository {
   constructor(private readonly db: AppDb) {}
@@ -35,17 +38,29 @@ export class DrizzleFeedSignalsRepository implements FeedSignalsRepository {
         FROM identity.consent_record WHERE user_id = ${userId}
        ORDER BY recorded_at DESC
     `);
-    return result.rows.map((row) =>
-      consentRecordSchema.parse({
-        userId: row.user_id,
-        purpose: row.purpose,
-        jurisdiction: row.jurisdiction,
-        policyVersionId: row.policy_version_id,
-        state: row.state,
-        recordedAt: new Date(row.recorded_at).toISOString(),
-        source: row.source,
-      }),
-    );
+    // `safeParse`, not `parse`: `mayUseSignalFor`'s whole design is "every
+    // failure mode resolves to a denial" (consent-query.ts's own doc
+    // comment), and a record this feed cannot even parse is exactly that
+    // kind of failure -- dropping it (rather than 500ing the whole feed for
+    // one bad row) is the SAFE direction, since fewer records can only ever
+    // turn an allow into a deny, never the reverse.
+    return result.rows
+      .map((row) =>
+        consentRecordSchema.safeParse({
+          userId: row.user_id,
+          purpose: row.purpose,
+          jurisdiction: row.jurisdiction,
+          policyVersionId: row.policy_version_id,
+          state: row.state,
+          recordedAt: new Date(row.recorded_at).toISOString(),
+          source: row.source,
+        }),
+      )
+      .flatMap((parsed) => {
+        if (parsed.success) return [parsed.data];
+        logger.error(`identity.consent_record row for a feed viewer failed to parse: ${JSON.stringify(parsed.error.issues)}`);
+        return [];
+      });
   }
 
   async segmentSizeFor(nodeId: string): Promise<number> {

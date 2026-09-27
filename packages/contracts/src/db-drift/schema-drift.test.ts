@@ -614,6 +614,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "MeModule -- TASKS.md 5.5.b, this pass's own ticket. GET/PUT .../preferences works in `{category: pushEnabled}` pairs (notifications.controller.ts), not a row mirror.",
   "me.viewer_setting":
     "MeModule -- TASKS.md 6.7.a, this pass's own ticket. GET/PUT /api/me/settings/autoplay returns/accepts only `{autoplay}` (settings.controller.ts) -- the row's own user_id/updated_at stay internal. `autoplaySettingSchema` (me/autoplay-setting.ts) mirrors the VALUE, not the row.",
+  "feed.pacing_state":
+    "TASKS.md 7.7.b, this pass's own ticket. Advisory per-campaign daily serve counter (pacing-state.repository.ts) -- an internal ranking input, never read by any client; nothing in FeedResponse mirrors served_today.",
+  "feed.demotion":
+    "TASKS.md 7.7.a, this pass's own ticket. POST /api/feed/:campaignId/not-interested writes a row here but returns only `{ok: true}` (feed.controller.ts) -- the row itself (which campaigns a viewer demoted) is a ranking input read back through FeedItem.why, never returned as a list.",
 };
 
 const TABLES = replayMigrations();

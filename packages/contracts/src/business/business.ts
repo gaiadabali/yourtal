@@ -37,8 +37,6 @@ export const businessHandleSchema = z
  * business-merchant.md's own recommendation, "Drop district as the address
  * model").
  */
-export const auTaxIdKindSchema = z.literal("ABN");
-export const idTaxIdKindSchema = z.enum(["NIB", "NPWP"]);
 export const taxIdKindSchema = z.enum(["ABN", "NIB", "NPWP"]);
 export type TaxIdKind = z.infer<typeof taxIdKindSchema>;
 

@@ -1,4 +1,10 @@
-import { businessHandleSchema, businessRoleSchema, businessSchema } from "../business/business";
+import {
+  auStateSchema,
+  businessHandleSchema,
+  businessRoleSchema,
+  businessSchema,
+  taxIdKindSchema,
+} from "../business/business";
 import { businessTeamRoleSchema } from "../business/business-team-role";
 import { businessMemberSchema } from "../business/business-member";
 import { billingContactSchema } from "../business/billing-contact";
@@ -49,6 +55,19 @@ export const BUSINESS_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [],
   },
   {
+    id: "TaxIdKind",
+    schema: taxIdKindSchema,
+    description:
+      "TASKS.md 7.1.a: ABN for AU; NIB or NPWP for ID. Which kind is valid for which region is Business's own cross-field rule, not this enum's.",
+    crossFieldRules: [],
+  },
+  {
+    id: "AuState",
+    schema: auStateSchema,
+    description: "TASKS.md 7.1.a: an Australian state or territory, for an AU business's address.",
+    crossFieldRules: [],
+  },
+  {
     id: "BusinessTeamRole",
     schema: businessTeamRoleSchema,
     description:
@@ -62,6 +81,9 @@ export const BUSINESS_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [
       "roles must not contain duplicates.",
       "currency must match the business's own region (F2: regions never cross).",
+      "taxIdKind must match the business's region (ABN for AU; NIB or NPWP for ID).",
+      "taxIdValue must match the expected shape for its taxIdKind.",
+      "address must match the business's region (AU: state + postcode; ID: city).",
     ],
   },
   {

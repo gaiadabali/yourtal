@@ -36,8 +36,11 @@ export function ConsoleHeader({
             {current.business.isVerified ? <Badge variant="success">Verified</Badge> : null}
           </div>
           <p className="text-sm font-sans text-fg-muted">
-            {current.business.district} · You are{" "}
-            {current.myRole ? ROLE_LABELS[current.myRole] : "an unassigned member"}
+            {/* TASKS.md 7.1.a replaced `district` with a region-specific address; 7.8 replaces this whole console with Studio. */}
+            {current.business.region === "AU"
+              ? `${current.business.addressState} ${current.business.addressPostcode}`
+              : current.business.addressCity}{" "}
+            · You are {current.myRole ? ROLE_LABELS[current.myRole] : "an unassigned member"}
           </p>
         </div>
         {allMemberships.length > 1 ? (

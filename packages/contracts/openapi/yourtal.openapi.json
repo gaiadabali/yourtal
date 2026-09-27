@@ -2983,6 +2983,20 @@
           "parents"
         ]
       },
+      "AuState": {
+        "description": "TASKS.md 7.1.a: an Australian state or territory, for an AU business's address.",
+        "type": "string",
+        "enum": [
+          "NSW",
+          "VIC",
+          "QLD",
+          "WA",
+          "SA",
+          "TAS",
+          "ACT",
+          "NT"
+        ]
+      },
       "Balance": {
         "description": "What the Wallet surface answers: what do I have, what is coming, what am I about to lose (docs/17 section 3).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - pendingUnlockAt is set if and only if pendingPoints is positive.\n  - expiringAt is set if and only if expiringPoints is positive.\n  - expiringPoints cannot exceed availablePoints — points still in holdback cannot be about to expire.",
         "type": "object",
@@ -3143,7 +3157,7 @@
         "additionalProperties": false
       },
       "Business": {
-        "description": "An advertiser, supplier and/or redeemer.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - roles must not contain duplicates.\n  - currency must match the business's own region (F2: regions never cross).",
+        "description": "An advertiser, supplier and/or redeemer.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - roles must not contain duplicates.\n  - currency must match the business's own region (F2: regions never cross).\n  - taxIdKind must match the business's region (ABN for AU; NIB or NPWP for ID).\n  - taxIdValue must match the expected shape for its taxIdKind.\n  - address must match the business's region (AU: state + postcode; ID: city).",
         "type": "object",
         "properties": {
           "id": {
@@ -3161,10 +3175,46 @@
             "minLength": 1,
             "maxLength": 120
           },
-          "district": {
+          "taxIdKind": {
+            "$ref": "#/components/schemas/TaxIdKind"
+          },
+          "taxIdValue": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 60
+            "maxLength": 32
+          },
+          "addressState": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "addressPostcode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "addressCity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "roles": {
             "minItems": 1,
@@ -3212,7 +3262,11 @@
           "id",
           "legalName",
           "displayName",
-          "district",
+          "taxIdKind",
+          "taxIdValue",
+          "addressState",
+          "addressPostcode",
+          "addressCity",
           "roles",
           "isVerified",
           "logoUrl",
@@ -4987,6 +5041,15 @@
         "enum": [
           "AU",
           "ID"
+        ]
+      },
+      "TaxIdKind": {
+        "description": "TASKS.md 7.1.a: ABN for AU; NIB or NPWP for ID. Which kind is valid for which region is Business's own cross-field rule, not this enum's.",
+        "type": "string",
+        "enum": [
+          "ABN",
+          "NIB",
+          "NPWP"
         ]
       },
       "UserProfile": {

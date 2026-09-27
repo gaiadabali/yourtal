@@ -1,0 +1,46 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Accepting a team-by-email invitation (TASKS.md 7.1.c).
+
+  Same "caller IS the resource" shape as `session.yaml`/`me.yaml`: the route
+  is `POST /api/me/businesses/invitations/accept`, with no `:tenantId` --
+  the invitation's own token names the business, not the URL. So there is
+  nothing narrower than "a real signed-in identity" for the PDP to check;
+  the real authorization is the token itself (valid, unexpired, unconsumed,
+  and its `business_id`/`email` match), checked by the use-case, exactly
+  the way `session.yaml`'s password-reset/email-verification confirm
+  actions work.
+
+  `store_device` and `admin` are absent for the same structural reasons
+  `session.yaml` documents: a device has no email-and-password identity to
+  accept an invitation with, and `admin`'s entire surface is fixed
+  elsewhere (docs/17 section 5).
+resourcePolicy:
+  version: default
+  resource: team_invitation
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/team_invitation.json
+  rules:
+    - name: only-a-real-signed-in-identity-accepts-its-own-invitation
+      actions: ["accept"]
+      effect: EFFECT_ALLOW
+      roles:
+        [
+          "user",
+          "business_user",
+          "charity_admin",
+          "support",
+          "moderator",
+          "risk_analyst",
+          "finance",
+          "ops",
+        ]
+
+    - name: anonymous-has-nothing-to-accept-with
+      actions: ["accept"]
+      effect: EFFECT_DENY
+      roles: ["anonymous"]

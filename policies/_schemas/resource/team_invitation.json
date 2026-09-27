@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "team_invitation",
+  "description": "Accepting a team-by-email invitation (TASKS.md 7.1.c). No attributes: the route names no :tenantId, and the token itself -- not this resource -- is what actually authorizes acceptance. See policies/resource_policies/team_invitation.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

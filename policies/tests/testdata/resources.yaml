@@ -340,3 +340,11 @@ resources:
     kind: me
     id: self
     attr: {}
+
+  # TASKS.md 7.1.c: same "caller IS the resource" shape as session_self/
+  # me_self above -- see _schemas/resource/team_invitation.json and
+  # resource_policies/team_invitation.yaml.
+  team_invitation_self:
+    kind: team_invitation
+    id: self
+    attr: {}

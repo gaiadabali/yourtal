@@ -1,0 +1,32 @@
+---
+name: TeamInvitationSuite
+description: |-
+  Accepting a team-by-email invitation (TASKS.md 7.1.c). Any real signed-in
+  identity may attempt it -- the token itself is what actually authorizes,
+  checked by the use-case, not this policy. Anonymous is refused outright.
+tests:
+  - name: a real signed-in identity may attempt to accept an invitation
+    input:
+      principals: [wina, budi_owner, support_sari]
+      resources: [team_invitation_self]
+      actions: [accept]
+    expected:
+      - principal: wina
+        resource: team_invitation_self
+        actions: { accept: EFFECT_ALLOW }
+      - principal: budi_owner
+        resource: team_invitation_self
+        actions: { accept: EFFECT_ALLOW }
+      - principal: support_sari
+        resource: team_invitation_self
+        actions: { accept: EFFECT_ALLOW }
+
+  - name: anonymous has nothing to accept with
+    input:
+      principals: [anon]
+      resources: [team_invitation_self]
+      actions: [accept]
+    expected:
+      - principal: anon
+        resource: team_invitation_self
+        actions: { accept: EFFECT_DENY }

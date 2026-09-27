@@ -119,6 +119,12 @@ export const RESOURCE_ACTIONS = {
     "view_credential",
     "rotate_credential",
     "approve_credential_rotation",
+    // TASKS.md 8.3.a (Studio -> Developers): the voucher service's own
+    // credential_routes.go has issue/rotate/revoke but no matching PDP
+    // action existed for the third one — issue is gated the same way a
+    // create always is (no resource yet, `view_credential` on the
+    // business), rotate already had its action; revoke did not.
+    "revoke_credential",
   ],
 
   report: ["view", "export"],

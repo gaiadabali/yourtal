@@ -63,6 +63,15 @@ export const envSchema = z.object({
   CHECKPOINT_TOKEN_SECRET: z.string().min(32),
 
   /**
+   * TASKS.md 8.3.c: seals a business's webhook signing secret so
+   * `apps/worker`'s delivery job can recover and use it (a one-way hash
+   * cannot sign anything — see `developers/crypto/webhook-secret.ts`).
+   * Required, no default, same reasoning as `CHECKPOINT_TOKEN_SECRET`
+   * immediately above.
+   */
+  WEBHOOK_SECRET_ENCRYPTION_KEY: z.string().min(32),
+
+  /**
    * Valkey (Redis-compatible), YT-0540 — server-side session lookup and the
    * login throttle counters (account and source, kept separately). Already
    * named in `.env.example`/`.env` ("sessions, rate limits, checkpoint

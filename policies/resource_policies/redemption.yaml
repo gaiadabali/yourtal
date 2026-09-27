@@ -31,7 +31,14 @@ resourcePolicy:
   rules:
     - name: a-counter-device-never-moves-value-backwards
       actions:
-        ["void", "refund", "rotate_credential", "approve_credential_rotation", "view_credential"]
+        [
+          "void",
+          "refund",
+          "rotate_credential",
+          "approve_credential_rotation",
+          "view_credential",
+          "revoke_credential",
+        ]
       effect: EFFECT_DENY
       roles: ["store_device"]
 
@@ -77,7 +84,7 @@ resourcePolicy:
         - business_redeemer_of
 
     - name: owner-and-admin-rotate-credentials
-      actions: ["rotate_credential", "approve_credential_rotation"]
+      actions: ["rotate_credential", "approve_credential_rotation", "revoke_credential"]
       effect: EFFECT_ALLOW
       derivedRoles:
         - business_team_editor_of
@@ -113,6 +120,7 @@ resourcePolicy:
           "view_credential",
           "rotate_credential",
           "approve_credential_rotation",
+          "revoke_credential",
         ]
       effect: EFFECT_DENY
       roles: ["user", "business_user"]

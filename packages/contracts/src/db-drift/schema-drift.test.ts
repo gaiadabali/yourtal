@@ -16,6 +16,10 @@ import { billingContactSchema } from "../business/billing-contact";
 import { kybDocumentSchema } from "../business/kyb-document";
 import { userProfileSchema } from "../identity/user-profile";
 import { counterDeviceSchema } from "../device/counter-device";
+import {
+  merchantDeveloperCredentialSchema,
+  webhookSubscriptionSchema,
+} from "../merchant/merchant-developer-credential";
 import { mediaAssetSchema } from "../studio/media";
 
 /**
@@ -406,6 +410,41 @@ const MAPPINGS: readonly Mapping[] = [
         "Internal lockout bookkeeping. A locked device learns this only as a 401 on POST /api/devices/unlock (devices.errors.ts's device_locked), never as a readable field.",
       revoked_by:
         "Audit-only — who revoked a device, not surfaced on the CounterDevice a business reads back.",
+    },
+  },
+  {
+    name: "merchantDeveloperCredentialSchema",
+    schema: merchantDeveloperCredentialSchema,
+    table: "business.merchant_developer_credential",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {
+      secret:
+        "NEVER stored (TASKS.md 8.3.a) — services/voucher's own credential store holds the real, envelope-encrypted secret; this table only indexes which business a credentialId belongs to. Returned to a client exactly once, at issue/rotate.",
+      issuedAt:
+        "Holds real storage under a different name — this table's own `created_at`. Kept as `created_at` rather than renamed to `issued_at` because every other table in this migration set names its own creation timestamp `created_at`; see columnsWithNoField below.",
+    },
+    columnsWithNoField: {
+      business_id:
+        "This table's own index key (which business owns this credentialId) — not itself a field on the public MerchantDeveloperCredential; the route is already scoped by :tenantId.",
+      issued_by:
+        "Audit-only — who issued the credential, not surfaced on the contract a business reads back.",
+      created_at: "Holds the `issuedAt` field's value. See the note on that field above.",
+    },
+  },
+  {
+    name: "webhookSubscriptionSchema",
+    schema: webhookSubscriptionSchema,
+    table: "business.webhook_subscription",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {
+      secretIssuedAt:
+        "Holds real storage under a different name — this table's own `created_at`, same reasoning as merchantDeveloperCredentialSchema.issuedAt above.",
+    },
+    columnsWithNoField: {
+      secret_ciphertext:
+        "The signing secret, sealed (AES-256-GCM, developers/crypto/webhook-secret.ts) — never a field on the contract; returned to a client exactly once, at registration, as `RegisterWebhookResult.secret`, which register-webhook.use-case.ts adds on top of this published schema rather than storing it back.",
+      secret_nonce: "The seal's own nonce. See the note on secret_ciphertext above.",
+      created_at: "Holds the `secretIssuedAt` field's value.",
     },
   },
 ];

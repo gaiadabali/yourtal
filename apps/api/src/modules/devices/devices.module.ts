@@ -24,6 +24,15 @@ import { CAPTURE_LOG_REPOSITORY } from "./persistence/capture-log.repository";
 import { DrizzleCaptureLogRepository } from "./persistence/drizzle-capture-log.repository";
 import { CounterController } from "./counter/counter.controller";
 import { StudioRedemptionsController } from "./studio-redemptions.controller";
+import { StudioDevelopersController } from "./studio-developers.controller";
+import { DEVELOPER_CREDENTIAL_REPOSITORY } from "./developers/persistence/developer-credential.repository";
+import { DrizzleDeveloperCredentialRepository } from "./developers/persistence/drizzle-developer-credential.repository";
+import { WEBHOOK_SUBSCRIPTION_REPOSITORY } from "./developers/persistence/webhook-subscription.repository";
+import { DrizzleWebhookSubscriptionRepository } from "./developers/persistence/drizzle-webhook-subscription.repository";
+import {
+  WEBHOOK_SECRET_ENCRYPTION_KEY,
+  requireWebhookSecretEncryptionKey,
+} from "./developers/webhook-secret-encryption-key";
 import { DEVICES_DB } from "./devices.tokens";
 
 export { DEVICES_DB };
@@ -61,6 +70,7 @@ export { DEVICES_DB };
     DeviceUnlockController,
     CounterController,
     StudioRedemptionsController,
+    StudioDevelopersController,
   ],
   providers: [
     {
@@ -100,6 +110,20 @@ export { DEVICES_DB };
       provide: CAPTURE_LOG_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleCaptureLogRepository(db),
       inject: [DEVICES_DB],
+    },
+    {
+      provide: DEVELOPER_CREDENTIAL_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleDeveloperCredentialRepository(db),
+      inject: [DEVICES_DB],
+    },
+    {
+      provide: WEBHOOK_SUBSCRIPTION_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleWebhookSubscriptionRepository(db),
+      inject: [DEVICES_DB],
+    },
+    {
+      provide: WEBHOOK_SECRET_ENCRYPTION_KEY,
+      useFactory: requireWebhookSecretEncryptionKey,
     },
     CounterDeviceCredentialVerifier,
     DeviceAuthorize,

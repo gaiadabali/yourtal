@@ -10,7 +10,17 @@ tests:
       principals: [counter_kemang]
       resources: [redemption_today]
       actions:
-        [authorize, capture, lookup, view_log, void, refund, rotate_credential, view_credential]
+        [
+          authorize,
+          capture,
+          lookup,
+          view_log,
+          void,
+          refund,
+          rotate_credential,
+          view_credential,
+          revoke_credential,
+        ]
     expected:
       - principal: counter_kemang
         resource: redemption_today
@@ -23,6 +33,20 @@ tests:
           refund: EFFECT_DENY
           rotate_credential: EFFECT_DENY
           view_credential: EFFECT_DENY
+          revoke_credential: EFFECT_DENY
+
+  - name: 8.3.a -- an admin manages their own business's developer credentials; a device never does
+    input:
+      principals: [counter_kemang, citra_admin]
+      resources: [redemption_today]
+      actions: [rotate_credential, revoke_credential]
+    expected:
+      - principal: citra_admin
+        resource: redemption_today
+        actions: { rotate_credential: EFFECT_ALLOW, revoke_credential: EFFECT_ALLOW }
+      - principal: counter_kemang
+        resource: redemption_today
+        actions: { rotate_credential: EFFECT_DENY, revoke_credential: EFFECT_DENY }
 
   - name: a counter device sees today and no further back
     input:

@@ -13,31 +13,31 @@ package contracts
 import (
 	"encoding/json"
 	"time"
-	"bytes"
 	"fmt"
 )
 
-// checks if the MerchantDeveloperCredential type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &MerchantDeveloperCredential{}
+// checks if the ApiTenantIdStudioDevelopersCredentialsPost201Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiTenantIdStudioDevelopersCredentialsPost201Response{}
 
-// MerchantDeveloperCredential Studio -> Developers' merchant HMAC credential (8.3.a), wrapping the voucher service's own credential one-to-one. `secret` is present only on issue/rotate, never a later read.
-type MerchantDeveloperCredential struct {
+// ApiTenantIdStudioDevelopersCredentialsPost201Response struct for ApiTenantIdStudioDevelopersCredentialsPost201Response
+type ApiTenantIdStudioDevelopersCredentialsPost201Response struct {
 	CredentialId string `json:"credentialId"`
 	Label string `json:"label"`
 	Sandbox bool `json:"sandbox"`
 	State string `json:"state"`
 	Secret *string `json:"secret,omitempty"`
 	IssuedAt time.Time `json:"issuedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	AdditionalProperties map[string]interface{}
 }
 
-type _MerchantDeveloperCredential MerchantDeveloperCredential
+type _ApiTenantIdStudioDevelopersCredentialsPost201Response ApiTenantIdStudioDevelopersCredentialsPost201Response
 
-// NewMerchantDeveloperCredential instantiates a new MerchantDeveloperCredential object
+// NewApiTenantIdStudioDevelopersCredentialsPost201Response instantiates a new ApiTenantIdStudioDevelopersCredentialsPost201Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMerchantDeveloperCredential(credentialId string, label string, sandbox bool, state string, issuedAt time.Time) *MerchantDeveloperCredential {
-	this := MerchantDeveloperCredential{}
+func NewApiTenantIdStudioDevelopersCredentialsPost201Response(credentialId string, label string, sandbox bool, state string, issuedAt time.Time) *ApiTenantIdStudioDevelopersCredentialsPost201Response {
+	this := ApiTenantIdStudioDevelopersCredentialsPost201Response{}
 	this.CredentialId = credentialId
 	this.Label = label
 	this.Sandbox = sandbox
@@ -46,16 +46,16 @@ func NewMerchantDeveloperCredential(credentialId string, label string, sandbox b
 	return &this
 }
 
-// NewMerchantDeveloperCredentialWithDefaults instantiates a new MerchantDeveloperCredential object
+// NewApiTenantIdStudioDevelopersCredentialsPost201ResponseWithDefaults instantiates a new ApiTenantIdStudioDevelopersCredentialsPost201Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewMerchantDeveloperCredentialWithDefaults() *MerchantDeveloperCredential {
-	this := MerchantDeveloperCredential{}
+func NewApiTenantIdStudioDevelopersCredentialsPost201ResponseWithDefaults() *ApiTenantIdStudioDevelopersCredentialsPost201Response {
+	this := ApiTenantIdStudioDevelopersCredentialsPost201Response{}
 	return &this
 }
 
 // GetCredentialId returns the CredentialId field value
-func (o *MerchantDeveloperCredential) GetCredentialId() string {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetCredentialId() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -66,7 +66,7 @@ func (o *MerchantDeveloperCredential) GetCredentialId() string {
 
 // GetCredentialIdOk returns a tuple with the CredentialId field value
 // and a boolean to check if the value has been set.
-func (o *MerchantDeveloperCredential) GetCredentialIdOk() (*string, bool) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetCredentialIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -74,12 +74,12 @@ func (o *MerchantDeveloperCredential) GetCredentialIdOk() (*string, bool) {
 }
 
 // SetCredentialId sets field value
-func (o *MerchantDeveloperCredential) SetCredentialId(v string) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) SetCredentialId(v string) {
 	o.CredentialId = v
 }
 
 // GetLabel returns the Label field value
-func (o *MerchantDeveloperCredential) GetLabel() string {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetLabel() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -90,7 +90,7 @@ func (o *MerchantDeveloperCredential) GetLabel() string {
 
 // GetLabelOk returns a tuple with the Label field value
 // and a boolean to check if the value has been set.
-func (o *MerchantDeveloperCredential) GetLabelOk() (*string, bool) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetLabelOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -98,12 +98,12 @@ func (o *MerchantDeveloperCredential) GetLabelOk() (*string, bool) {
 }
 
 // SetLabel sets field value
-func (o *MerchantDeveloperCredential) SetLabel(v string) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) SetLabel(v string) {
 	o.Label = v
 }
 
 // GetSandbox returns the Sandbox field value
-func (o *MerchantDeveloperCredential) GetSandbox() bool {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetSandbox() bool {
 	if o == nil {
 		var ret bool
 		return ret
@@ -114,7 +114,7 @@ func (o *MerchantDeveloperCredential) GetSandbox() bool {
 
 // GetSandboxOk returns a tuple with the Sandbox field value
 // and a boolean to check if the value has been set.
-func (o *MerchantDeveloperCredential) GetSandboxOk() (*bool, bool) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetSandboxOk() (*bool, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -122,12 +122,12 @@ func (o *MerchantDeveloperCredential) GetSandboxOk() (*bool, bool) {
 }
 
 // SetSandbox sets field value
-func (o *MerchantDeveloperCredential) SetSandbox(v bool) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) SetSandbox(v bool) {
 	o.Sandbox = v
 }
 
 // GetState returns the State field value
-func (o *MerchantDeveloperCredential) GetState() string {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetState() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -138,7 +138,7 @@ func (o *MerchantDeveloperCredential) GetState() string {
 
 // GetStateOk returns a tuple with the State field value
 // and a boolean to check if the value has been set.
-func (o *MerchantDeveloperCredential) GetStateOk() (*string, bool) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetStateOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -146,12 +146,12 @@ func (o *MerchantDeveloperCredential) GetStateOk() (*string, bool) {
 }
 
 // SetState sets field value
-func (o *MerchantDeveloperCredential) SetState(v string) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) SetState(v string) {
 	o.State = v
 }
 
 // GetSecret returns the Secret field value if set, zero value otherwise.
-func (o *MerchantDeveloperCredential) GetSecret() string {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetSecret() string {
 	if o == nil || IsNil(o.Secret) {
 		var ret string
 		return ret
@@ -161,7 +161,7 @@ func (o *MerchantDeveloperCredential) GetSecret() string {
 
 // GetSecretOk returns a tuple with the Secret field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MerchantDeveloperCredential) GetSecretOk() (*string, bool) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetSecretOk() (*string, bool) {
 	if o == nil || IsNil(o.Secret) {
 		return nil, false
 	}
@@ -169,7 +169,7 @@ func (o *MerchantDeveloperCredential) GetSecretOk() (*string, bool) {
 }
 
 // HasSecret returns a boolean if a field has been set.
-func (o *MerchantDeveloperCredential) HasSecret() bool {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) HasSecret() bool {
 	if o != nil && !IsNil(o.Secret) {
 		return true
 	}
@@ -178,12 +178,12 @@ func (o *MerchantDeveloperCredential) HasSecret() bool {
 }
 
 // SetSecret gets a reference to the given string and assigns it to the Secret field.
-func (o *MerchantDeveloperCredential) SetSecret(v string) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) SetSecret(v string) {
 	o.Secret = &v
 }
 
 // GetIssuedAt returns the IssuedAt field value
-func (o *MerchantDeveloperCredential) GetIssuedAt() time.Time {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetIssuedAt() time.Time {
 	if o == nil {
 		var ret time.Time
 		return ret
@@ -194,7 +194,7 @@ func (o *MerchantDeveloperCredential) GetIssuedAt() time.Time {
 
 // GetIssuedAtOk returns a tuple with the IssuedAt field value
 // and a boolean to check if the value has been set.
-func (o *MerchantDeveloperCredential) GetIssuedAtOk() (*time.Time, bool) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) GetIssuedAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -202,11 +202,11 @@ func (o *MerchantDeveloperCredential) GetIssuedAtOk() (*time.Time, bool) {
 }
 
 // SetIssuedAt sets field value
-func (o *MerchantDeveloperCredential) SetIssuedAt(v time.Time) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) SetIssuedAt(v time.Time) {
 	o.IssuedAt = v
 }
 
-func (o MerchantDeveloperCredential) MarshalJSON() ([]byte, error) {
+func (o ApiTenantIdStudioDevelopersCredentialsPost201Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -214,7 +214,7 @@ func (o MerchantDeveloperCredential) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o MerchantDeveloperCredential) ToMap() (map[string]interface{}, error) {
+func (o ApiTenantIdStudioDevelopersCredentialsPost201Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["credentialId"] = o.CredentialId
 	toSerialize["label"] = o.Label
@@ -224,10 +224,15 @@ func (o MerchantDeveloperCredential) ToMap() (map[string]interface{}, error) {
 		toSerialize["secret"] = o.Secret
 	}
 	toSerialize["issuedAt"] = o.IssuedAt
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
-func (o *MerchantDeveloperCredential) UnmarshalJSON(data []byte) (err error) {
+func (o *ApiTenantIdStudioDevelopersCredentialsPost201Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -253,53 +258,63 @@ func (o *MerchantDeveloperCredential) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varMerchantDeveloperCredential := _MerchantDeveloperCredential{}
+	varApiTenantIdStudioDevelopersCredentialsPost201Response := _ApiTenantIdStudioDevelopersCredentialsPost201Response{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varMerchantDeveloperCredential)
+	err = json.Unmarshal(data, &varApiTenantIdStudioDevelopersCredentialsPost201Response)
 
 	if err != nil {
 		return err
 	}
 
-	*o = MerchantDeveloperCredential(varMerchantDeveloperCredential)
+	*o = ApiTenantIdStudioDevelopersCredentialsPost201Response(varApiTenantIdStudioDevelopersCredentialsPost201Response)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "credentialId")
+		delete(additionalProperties, "label")
+		delete(additionalProperties, "sandbox")
+		delete(additionalProperties, "state")
+		delete(additionalProperties, "secret")
+		delete(additionalProperties, "issuedAt")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }
 
-type NullableMerchantDeveloperCredential struct {
-	value *MerchantDeveloperCredential
+type NullableApiTenantIdStudioDevelopersCredentialsPost201Response struct {
+	value *ApiTenantIdStudioDevelopersCredentialsPost201Response
 	isSet bool
 }
 
-func (v NullableMerchantDeveloperCredential) Get() *MerchantDeveloperCredential {
+func (v NullableApiTenantIdStudioDevelopersCredentialsPost201Response) Get() *ApiTenantIdStudioDevelopersCredentialsPost201Response {
 	return v.value
 }
 
-func (v *NullableMerchantDeveloperCredential) Set(val *MerchantDeveloperCredential) {
+func (v *NullableApiTenantIdStudioDevelopersCredentialsPost201Response) Set(val *ApiTenantIdStudioDevelopersCredentialsPost201Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableMerchantDeveloperCredential) IsSet() bool {
+func (v NullableApiTenantIdStudioDevelopersCredentialsPost201Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableMerchantDeveloperCredential) Unset() {
+func (v *NullableApiTenantIdStudioDevelopersCredentialsPost201Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableMerchantDeveloperCredential(val *MerchantDeveloperCredential) *NullableMerchantDeveloperCredential {
-	return &NullableMerchantDeveloperCredential{value: val, isSet: true}
+func NewNullableApiTenantIdStudioDevelopersCredentialsPost201Response(val *ApiTenantIdStudioDevelopersCredentialsPost201Response) *NullableApiTenantIdStudioDevelopersCredentialsPost201Response {
+	return &NullableApiTenantIdStudioDevelopersCredentialsPost201Response{value: val, isSet: true}
 }
 
-func (v NullableMerchantDeveloperCredential) MarshalJSON() ([]byte, error) {
+func (v NullableApiTenantIdStudioDevelopersCredentialsPost201Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableMerchantDeveloperCredential) UnmarshalJSON(src []byte) error {
+func (v *NullableApiTenantIdStudioDevelopersCredentialsPost201Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

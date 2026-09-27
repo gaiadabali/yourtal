@@ -254,12 +254,12 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   merchantCredentialStateSchema:
     "merchant/merchant-developer-credential.ts's nested enum on the published MerchantDeveloperCredential.state — not a standalone component.",
   issueDeveloperCredentialRequestSchema:
-    "merchant/merchant-developer-credential.ts's request body for POST /studio/developers/credentials — not yet wired into route-registry.c.ts.",
+    "merchant/merchant-developer-credential.ts's request body for POST /studio/developers/credentials — documented inline (route-registry.c-developers.ts).",
   rotateDeveloperCredentialResultSchema:
     "merchant/merchant-developer-credential.ts's response for the rotate route — a bare alias of the " +
     "already-published MerchantDeveloperCredential, so it is not a second component.",
   registerWebhookRequestSchema:
-    "merchant/merchant-developer-credential.ts's request body for POST /studio/developers/webhooks — not yet wired into route-registry.c.ts.",
+    "merchant/merchant-developer-credential.ts's request body for POST /studio/developers/webhooks — documented inline (route-registry.c-developers.ts).",
   webhookEventTypeSchema:
     "merchant/merchant-developer-credential.ts's closed event-type union, documented in the webhook delivery worker's own spec, not a request/response component.",
   webhookSignatureHeaderSchema:

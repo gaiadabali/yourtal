@@ -20,7 +20,7 @@ var _ MappedNullable = &CampaignRewardConfig{}
 
 // CampaignRewardConfig Which ledger allocation funds a campaign and how much of it this campaign may use (YT-0101). Deliberately carries NO remaining balance: that number is owned by ledger.allocation, whose CHECK (remaining_points >= 0) and conditional drawdown are the real hard stop. A copy here would be a second total that disagrees the first time a grant lands between reads.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - rewardPointsPerCompletion must be greater than zero.   - One completion (reward plus accuracy bonus) must fit within maxPointsForCampaign.
 type CampaignRewardConfig struct {
-	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	AllocationId string `json:"allocationId"`
 	FunderType CampaignFunderType `json:"funderType"`
 	// Platform points. Always a whole number; there is no fractional point.
@@ -38,7 +38,7 @@ type _CampaignRewardConfig CampaignRewardConfig
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignRewardConfig(campaignId string, allocationId string, funderType CampaignFunderType, maxPointsForCampaign int64, rewardPointsPerCompletion int64, accuracyBonusPoints int64) *CampaignRewardConfig {
+func NewCampaignRewardConfig(campaignId NullableString, allocationId string, funderType CampaignFunderType, maxPointsForCampaign int64, rewardPointsPerCompletion int64, accuracyBonusPoints int64) *CampaignRewardConfig {
 	this := CampaignRewardConfig{}
 	this.CampaignId = campaignId
 	this.AllocationId = allocationId
@@ -58,27 +58,29 @@ func NewCampaignRewardConfigWithDefaults() *CampaignRewardConfig {
 }
 
 // GetCampaignId returns the CampaignId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *CampaignRewardConfig) GetCampaignId() string {
-	if o == nil {
+	if o == nil || o.CampaignId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.CampaignId
+	return *o.CampaignId.Get()
 }
 
 // GetCampaignIdOk returns a tuple with the CampaignId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CampaignRewardConfig) GetCampaignIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.CampaignId, true
+	return o.CampaignId.Get(), o.CampaignId.IsSet()
 }
 
 // SetCampaignId sets field value
 func (o *CampaignRewardConfig) SetCampaignId(v string) {
-	o.CampaignId = v
+	o.CampaignId.Set(&v)
 }
 
 // GetAllocationId returns the AllocationId field value
@@ -211,7 +213,7 @@ func (o CampaignRewardConfig) MarshalJSON() ([]byte, error) {
 
 func (o CampaignRewardConfig) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["campaignId"] = o.CampaignId
+	toSerialize["campaignId"] = o.CampaignId.Get()
 	toSerialize["allocationId"] = o.AllocationId
 	toSerialize["funderType"] = o.FunderType
 	toSerialize["maxPointsForCampaign"] = o.MaxPointsForCampaign

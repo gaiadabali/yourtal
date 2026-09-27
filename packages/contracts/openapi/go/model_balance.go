@@ -21,7 +21,7 @@ var _ MappedNullable = &Balance{}
 
 // Balance What the Wallet surface answers: what do I have, what is coming, what am I about to lose (docs/17 section 3).  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - pendingUnlockAt is set if and only if pendingPoints is positive.   - expiringAt is set if and only if expiringPoints is positive.   - expiringPoints cannot exceed availablePoints — points still in holdback cannot be about to expire.
 type Balance struct {
-	UserId string `json:"userId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	UserId NullableString `json:"userId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	// Platform points. Always a whole number; there is no fractional point.
 	AvailablePoints int64 `json:"availablePoints"`
 	// Platform points. Always a whole number; there is no fractional point.
@@ -40,7 +40,7 @@ type _Balance Balance
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBalance(userId string, availablePoints int64, pendingPoints int64, pendingUnlockAt NullableTime, expiringPoints int64, expiringAt NullableTime, updatedAt time.Time) *Balance {
+func NewBalance(userId NullableString, availablePoints int64, pendingPoints int64, pendingUnlockAt NullableTime, expiringPoints int64, expiringAt NullableTime, updatedAt time.Time) *Balance {
 	this := Balance{}
 	this.UserId = userId
 	this.AvailablePoints = availablePoints
@@ -61,27 +61,29 @@ func NewBalanceWithDefaults() *Balance {
 }
 
 // GetUserId returns the UserId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *Balance) GetUserId() string {
-	if o == nil {
+	if o == nil || o.UserId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.UserId
+	return *o.UserId.Get()
 }
 
 // GetUserIdOk returns a tuple with the UserId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Balance) GetUserIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.UserId, true
+	return o.UserId.Get(), o.UserId.IsSet()
 }
 
 // SetUserId sets field value
 func (o *Balance) SetUserId(v string) {
-	o.UserId = v
+	o.UserId.Set(&v)
 }
 
 // GetAvailablePoints returns the AvailablePoints field value
@@ -242,7 +244,7 @@ func (o Balance) MarshalJSON() ([]byte, error) {
 
 func (o Balance) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["userId"] = o.UserId
+	toSerialize["userId"] = o.UserId.Get()
 	toSerialize["availablePoints"] = o.AvailablePoints
 	toSerialize["pendingPoints"] = o.PendingPoints
 	toSerialize["pendingUnlockAt"] = o.PendingUnlockAt.Get()

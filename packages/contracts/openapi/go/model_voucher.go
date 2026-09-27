@@ -21,11 +21,11 @@ var _ MappedNullable = &Voucher{}
 
 // Voucher An issued voucher held by a user, with its remaining value and expiry.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - remainingValueMinor cannot exceed faceValueMinor.   - expiresAt must be after issuedAt.   - minimumSpendMinor is set if and only if the policy is minimum_spend.
 type Voucher struct {
-	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	ListingId string `json:"listingId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	OwnerId string `json:"ownerId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	ListingId NullableString `json:"listingId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	OwnerId NullableString `json:"ownerId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Code string `json:"code"`
-	MerchantId string `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	MerchantId NullableString `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	MerchantName NullableString `json:"merchantName"`
 	Location MerchantLocation `json:"location"`
 	Title string `json:"title"`
@@ -50,7 +50,7 @@ type _Voucher Voucher
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName NullableString, location MerchantLocation, title string, currency Currency, faceValueMinor int64, remainingValueMinor int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
+func NewVoucher(id NullableString, listingId NullableString, ownerId NullableString, code string, merchantId NullableString, merchantName NullableString, location MerchantLocation, title string, currency Currency, faceValueMinor int64, remainingValueMinor int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
 	this := Voucher{}
 	this.Id = id
 	this.ListingId = listingId
@@ -81,75 +81,81 @@ func NewVoucherWithDefaults() *Voucher {
 }
 
 // GetId returns the Id field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *Voucher) GetId() string {
-	if o == nil {
+	if o == nil || o.Id.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Id
+	return *o.Id.Get()
 }
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Voucher) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Id, true
+	return o.Id.Get(), o.Id.IsSet()
 }
 
 // SetId sets field value
 func (o *Voucher) SetId(v string) {
-	o.Id = v
+	o.Id.Set(&v)
 }
 
 // GetListingId returns the ListingId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *Voucher) GetListingId() string {
-	if o == nil {
+	if o == nil || o.ListingId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ListingId
+	return *o.ListingId.Get()
 }
 
 // GetListingIdOk returns a tuple with the ListingId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Voucher) GetListingIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ListingId, true
+	return o.ListingId.Get(), o.ListingId.IsSet()
 }
 
 // SetListingId sets field value
 func (o *Voucher) SetListingId(v string) {
-	o.ListingId = v
+	o.ListingId.Set(&v)
 }
 
 // GetOwnerId returns the OwnerId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *Voucher) GetOwnerId() string {
-	if o == nil {
+	if o == nil || o.OwnerId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.OwnerId
+	return *o.OwnerId.Get()
 }
 
 // GetOwnerIdOk returns a tuple with the OwnerId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Voucher) GetOwnerIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.OwnerId, true
+	return o.OwnerId.Get(), o.OwnerId.IsSet()
 }
 
 // SetOwnerId sets field value
 func (o *Voucher) SetOwnerId(v string) {
-	o.OwnerId = v
+	o.OwnerId.Set(&v)
 }
 
 // GetCode returns the Code field value
@@ -177,27 +183,29 @@ func (o *Voucher) SetCode(v string) {
 }
 
 // GetMerchantId returns the MerchantId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *Voucher) GetMerchantId() string {
-	if o == nil {
+	if o == nil || o.MerchantId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.MerchantId
+	return *o.MerchantId.Get()
 }
 
 // GetMerchantIdOk returns a tuple with the MerchantId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Voucher) GetMerchantIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MerchantId, true
+	return o.MerchantId.Get(), o.MerchantId.IsSet()
 }
 
 // SetMerchantId sets field value
 func (o *Voucher) SetMerchantId(v string) {
-	o.MerchantId = v
+	o.MerchantId.Set(&v)
 }
 
 // GetMerchantName returns the MerchantName field value
@@ -502,11 +510,11 @@ func (o Voucher) MarshalJSON() ([]byte, error) {
 
 func (o Voucher) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id
-	toSerialize["listingId"] = o.ListingId
-	toSerialize["ownerId"] = o.OwnerId
+	toSerialize["id"] = o.Id.Get()
+	toSerialize["listingId"] = o.ListingId.Get()
+	toSerialize["ownerId"] = o.OwnerId.Get()
 	toSerialize["code"] = o.Code
-	toSerialize["merchantId"] = o.MerchantId
+	toSerialize["merchantId"] = o.MerchantId.Get()
 	toSerialize["merchantName"] = o.MerchantName.Get()
 	toSerialize["location"] = o.Location
 	toSerialize["title"] = o.Title

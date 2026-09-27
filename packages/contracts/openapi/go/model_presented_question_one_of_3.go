@@ -20,8 +20,8 @@ var _ MappedNullable = &PresentedQuestionOneOf3{}
 
 // PresentedQuestionOneOf3 struct for PresentedQuestionOneOf3
 type PresentedQuestionOneOf3 struct {
-	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Prompt string `json:"prompt"`
 	TimerSeconds int32 `json:"timerSeconds"`
 	Type string `json:"type"`
@@ -35,7 +35,7 @@ type _PresentedQuestionOneOf3 PresentedQuestionOneOf3
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPresentedQuestionOneOf3(id string, campaignId string, prompt string, timerSeconds int32, type_ string, items []QuestionOption) *PresentedQuestionOneOf3 {
+func NewPresentedQuestionOneOf3(id NullableString, campaignId NullableString, prompt string, timerSeconds int32, type_ string, items []QuestionOption) *PresentedQuestionOneOf3 {
 	this := PresentedQuestionOneOf3{}
 	this.Id = id
 	this.CampaignId = campaignId
@@ -55,51 +55,55 @@ func NewPresentedQuestionOneOf3WithDefaults() *PresentedQuestionOneOf3 {
 }
 
 // GetId returns the Id field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *PresentedQuestionOneOf3) GetId() string {
-	if o == nil {
+	if o == nil || o.Id.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Id
+	return *o.Id.Get()
 }
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *PresentedQuestionOneOf3) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Id, true
+	return o.Id.Get(), o.Id.IsSet()
 }
 
 // SetId sets field value
 func (o *PresentedQuestionOneOf3) SetId(v string) {
-	o.Id = v
+	o.Id.Set(&v)
 }
 
 // GetCampaignId returns the CampaignId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *PresentedQuestionOneOf3) GetCampaignId() string {
-	if o == nil {
+	if o == nil || o.CampaignId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.CampaignId
+	return *o.CampaignId.Get()
 }
 
 // GetCampaignIdOk returns a tuple with the CampaignId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *PresentedQuestionOneOf3) GetCampaignIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.CampaignId, true
+	return o.CampaignId.Get(), o.CampaignId.IsSet()
 }
 
 // SetCampaignId sets field value
 func (o *PresentedQuestionOneOf3) SetCampaignId(v string) {
-	o.CampaignId = v
+	o.CampaignId.Set(&v)
 }
 
 // GetPrompt returns the Prompt field value
@@ -208,8 +212,8 @@ func (o PresentedQuestionOneOf3) MarshalJSON() ([]byte, error) {
 
 func (o PresentedQuestionOneOf3) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id
-	toSerialize["campaignId"] = o.CampaignId
+	toSerialize["id"] = o.Id.Get()
+	toSerialize["campaignId"] = o.CampaignId.Get()
 	toSerialize["prompt"] = o.Prompt
 	toSerialize["timerSeconds"] = o.TimerSeconds
 	toSerialize["type"] = o.Type

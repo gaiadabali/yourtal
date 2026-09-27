@@ -20,7 +20,7 @@ var _ MappedNullable = &ApiWatchSessionsPostRequest{}
 
 // ApiWatchSessionsPostRequest struct for ApiWatchSessionsPostRequest
 type ApiWatchSessionsPostRequest struct {
-	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,7 +30,7 @@ type _ApiWatchSessionsPostRequest ApiWatchSessionsPostRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsPostRequest(campaignId string) *ApiWatchSessionsPostRequest {
+func NewApiWatchSessionsPostRequest(campaignId NullableString) *ApiWatchSessionsPostRequest {
 	this := ApiWatchSessionsPostRequest{}
 	this.CampaignId = campaignId
 	return &this
@@ -45,27 +45,29 @@ func NewApiWatchSessionsPostRequestWithDefaults() *ApiWatchSessionsPostRequest {
 }
 
 // GetCampaignId returns the CampaignId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiWatchSessionsPostRequest) GetCampaignId() string {
-	if o == nil {
+	if o == nil || o.CampaignId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.CampaignId
+	return *o.CampaignId.Get()
 }
 
 // GetCampaignIdOk returns a tuple with the CampaignId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiWatchSessionsPostRequest) GetCampaignIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.CampaignId, true
+	return o.CampaignId.Get(), o.CampaignId.IsSet()
 }
 
 // SetCampaignId sets field value
 func (o *ApiWatchSessionsPostRequest) SetCampaignId(v string) {
-	o.CampaignId = v
+	o.CampaignId.Set(&v)
 }
 
 func (o ApiWatchSessionsPostRequest) MarshalJSON() ([]byte, error) {
@@ -78,7 +80,7 @@ func (o ApiWatchSessionsPostRequest) MarshalJSON() ([]byte, error) {
 
 func (o ApiWatchSessionsPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["campaignId"] = o.CampaignId
+	toSerialize["campaignId"] = o.CampaignId.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

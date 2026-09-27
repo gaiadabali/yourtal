@@ -20,7 +20,7 @@ var _ MappedNullable = &BillingCampaignSpend{}
 
 // BillingCampaignSpend One campaign's own spend: points granted to viewers and how many completions earned them.
 type BillingCampaignSpend struct {
-	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	// Platform points. Always a whole number; there is no fractional point.
 	GrantedPoints int64 `json:"grantedPoints"`
 	Completions int64 `json:"completions"`
@@ -33,7 +33,7 @@ type _BillingCampaignSpend BillingCampaignSpend
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBillingCampaignSpend(campaignId string, grantedPoints int64, completions int64) *BillingCampaignSpend {
+func NewBillingCampaignSpend(campaignId NullableString, grantedPoints int64, completions int64) *BillingCampaignSpend {
 	this := BillingCampaignSpend{}
 	this.CampaignId = campaignId
 	this.GrantedPoints = grantedPoints
@@ -50,27 +50,29 @@ func NewBillingCampaignSpendWithDefaults() *BillingCampaignSpend {
 }
 
 // GetCampaignId returns the CampaignId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *BillingCampaignSpend) GetCampaignId() string {
-	if o == nil {
+	if o == nil || o.CampaignId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.CampaignId
+	return *o.CampaignId.Get()
 }
 
 // GetCampaignIdOk returns a tuple with the CampaignId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *BillingCampaignSpend) GetCampaignIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.CampaignId, true
+	return o.CampaignId.Get(), o.CampaignId.IsSet()
 }
 
 // SetCampaignId sets field value
 func (o *BillingCampaignSpend) SetCampaignId(v string) {
-	o.CampaignId = v
+	o.CampaignId.Set(&v)
 }
 
 // GetGrantedPoints returns the GrantedPoints field value
@@ -131,7 +133,7 @@ func (o BillingCampaignSpend) MarshalJSON() ([]byte, error) {
 
 func (o BillingCampaignSpend) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["campaignId"] = o.CampaignId
+	toSerialize["campaignId"] = o.CampaignId.Get()
 	toSerialize["grantedPoints"] = o.GrantedPoints
 	toSerialize["completions"] = o.Completions
 

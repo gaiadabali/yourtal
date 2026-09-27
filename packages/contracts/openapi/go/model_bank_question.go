@@ -20,8 +20,8 @@ var _ MappedNullable = &BankQuestion{}
 
 // BankQuestion A question's standing in a campaign's bank (YT-0102). Carries timesAsked and timesCorrect as COUNTERS rather than a stored accuracy rate: a rate loses the denominator, and 97% from four answers cannot be told from 97% from four thousand — a leak detector that cannot distinguish those fires on noise and gets muted.
 type BankQuestion struct {
-	QuestionId string `json:"questionId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	QuestionId NullableString `json:"questionId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Status QuestionStatus `json:"status"`
 	PiiScreen NullablePiiScreenVerdict `json:"piiScreen"`
 	TimesAsked int64 `json:"timesAsked"`
@@ -36,7 +36,7 @@ type _BankQuestion BankQuestion
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBankQuestion(questionId string, campaignId string, status QuestionStatus, piiScreen NullablePiiScreenVerdict, timesAsked int64, timesCorrect int64, retiredReason NullableString) *BankQuestion {
+func NewBankQuestion(questionId NullableString, campaignId NullableString, status QuestionStatus, piiScreen NullablePiiScreenVerdict, timesAsked int64, timesCorrect int64, retiredReason NullableString) *BankQuestion {
 	this := BankQuestion{}
 	this.QuestionId = questionId
 	this.CampaignId = campaignId
@@ -57,51 +57,55 @@ func NewBankQuestionWithDefaults() *BankQuestion {
 }
 
 // GetQuestionId returns the QuestionId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *BankQuestion) GetQuestionId() string {
-	if o == nil {
+	if o == nil || o.QuestionId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.QuestionId
+	return *o.QuestionId.Get()
 }
 
 // GetQuestionIdOk returns a tuple with the QuestionId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *BankQuestion) GetQuestionIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.QuestionId, true
+	return o.QuestionId.Get(), o.QuestionId.IsSet()
 }
 
 // SetQuestionId sets field value
 func (o *BankQuestion) SetQuestionId(v string) {
-	o.QuestionId = v
+	o.QuestionId.Set(&v)
 }
 
 // GetCampaignId returns the CampaignId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *BankQuestion) GetCampaignId() string {
-	if o == nil {
+	if o == nil || o.CampaignId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.CampaignId
+	return *o.CampaignId.Get()
 }
 
 // GetCampaignIdOk returns a tuple with the CampaignId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *BankQuestion) GetCampaignIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.CampaignId, true
+	return o.CampaignId.Get(), o.CampaignId.IsSet()
 }
 
 // SetCampaignId sets field value
 func (o *BankQuestion) SetCampaignId(v string) {
-	o.CampaignId = v
+	o.CampaignId.Set(&v)
 }
 
 // GetStatus returns the Status field value
@@ -238,8 +242,8 @@ func (o BankQuestion) MarshalJSON() ([]byte, error) {
 
 func (o BankQuestion) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["questionId"] = o.QuestionId
-	toSerialize["campaignId"] = o.CampaignId
+	toSerialize["questionId"] = o.QuestionId.Get()
+	toSerialize["campaignId"] = o.CampaignId.Get()
 	toSerialize["status"] = o.Status
 	toSerialize["piiScreen"] = o.PiiScreen.Get()
 	toSerialize["timesAsked"] = o.TimesAsked

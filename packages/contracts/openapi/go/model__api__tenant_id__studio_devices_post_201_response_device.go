@@ -21,10 +21,10 @@ var _ MappedNullable = &ApiTenantIdStudioDevicesPost201ResponseDevice{}
 
 // ApiTenantIdStudioDevicesPost201ResponseDevice struct for ApiTenantIdStudioDevicesPost201ResponseDevice
 type ApiTenantIdStudioDevicesPost201ResponseDevice struct {
-	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	BusinessId string `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	BusinessId NullableString `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Region string `json:"region"`
-	LocationId string `json:"locationId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	LocationId NullableString `json:"locationId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Label string `json:"label"`
 	State string `json:"state"`
 	CreatedBy string `json:"createdBy"`
@@ -40,7 +40,7 @@ type _ApiTenantIdStudioDevicesPost201ResponseDevice ApiTenantIdStudioDevicesPost
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioDevicesPost201ResponseDevice(id string, businessId string, region string, locationId string, label string, state string, createdBy string, createdAt time.Time, pairedAt NullableTime, revokedAt NullableTime) *ApiTenantIdStudioDevicesPost201ResponseDevice {
+func NewApiTenantIdStudioDevicesPost201ResponseDevice(id NullableString, businessId NullableString, region string, locationId NullableString, label string, state string, createdBy string, createdAt time.Time, pairedAt NullableTime, revokedAt NullableTime) *ApiTenantIdStudioDevicesPost201ResponseDevice {
 	this := ApiTenantIdStudioDevicesPost201ResponseDevice{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -64,51 +64,55 @@ func NewApiTenantIdStudioDevicesPost201ResponseDeviceWithDefaults() *ApiTenantId
 }
 
 // GetId returns the Id field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) GetId() string {
-	if o == nil {
+	if o == nil || o.Id.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Id
+	return *o.Id.Get()
 }
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Id, true
+	return o.Id.Get(), o.Id.IsSet()
 }
 
 // SetId sets field value
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) SetId(v string) {
-	o.Id = v
+	o.Id.Set(&v)
 }
 
 // GetBusinessId returns the BusinessId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) GetBusinessId() string {
-	if o == nil {
+	if o == nil || o.BusinessId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.BusinessId
+	return *o.BusinessId.Get()
 }
 
 // GetBusinessIdOk returns a tuple with the BusinessId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) GetBusinessIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.BusinessId, true
+	return o.BusinessId.Get(), o.BusinessId.IsSet()
 }
 
 // SetBusinessId sets field value
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) SetBusinessId(v string) {
-	o.BusinessId = v
+	o.BusinessId.Set(&v)
 }
 
 // GetRegion returns the Region field value
@@ -136,27 +140,29 @@ func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) SetRegion(v string) {
 }
 
 // GetLocationId returns the LocationId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) GetLocationId() string {
-	if o == nil {
+	if o == nil || o.LocationId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.LocationId
+	return *o.LocationId.Get()
 }
 
 // GetLocationIdOk returns a tuple with the LocationId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) GetLocationIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.LocationId, true
+	return o.LocationId.Get(), o.LocationId.IsSet()
 }
 
 // SetLocationId sets field value
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) SetLocationId(v string) {
-	o.LocationId = v
+	o.LocationId.Set(&v)
 }
 
 // GetLabel returns the Label field value
@@ -317,10 +323,10 @@ func (o ApiTenantIdStudioDevicesPost201ResponseDevice) MarshalJSON() ([]byte, er
 
 func (o ApiTenantIdStudioDevicesPost201ResponseDevice) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id
-	toSerialize["businessId"] = o.BusinessId
+	toSerialize["id"] = o.Id.Get()
+	toSerialize["businessId"] = o.BusinessId.Get()
 	toSerialize["region"] = o.Region
-	toSerialize["locationId"] = o.LocationId
+	toSerialize["locationId"] = o.LocationId.Get()
 	toSerialize["label"] = o.Label
 	toSerialize["state"] = o.State
 	toSerialize["createdBy"] = o.CreatedBy

@@ -20,7 +20,7 @@ var _ MappedNullable = &ApiTenantIdStudioDevicesPostRequest{}
 
 // ApiTenantIdStudioDevicesPostRequest struct for ApiTenantIdStudioDevicesPostRequest
 type ApiTenantIdStudioDevicesPostRequest struct {
-	LocationId string `json:"locationId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	LocationId NullableString `json:"locationId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Label string `json:"label"`
 	Pin string `json:"pin" validate:"regexp=^\\d{4\\,8}$"`
 	AdditionalProperties map[string]interface{}
@@ -32,7 +32,7 @@ type _ApiTenantIdStudioDevicesPostRequest ApiTenantIdStudioDevicesPostRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioDevicesPostRequest(locationId string, label string, pin string) *ApiTenantIdStudioDevicesPostRequest {
+func NewApiTenantIdStudioDevicesPostRequest(locationId NullableString, label string, pin string) *ApiTenantIdStudioDevicesPostRequest {
 	this := ApiTenantIdStudioDevicesPostRequest{}
 	this.LocationId = locationId
 	this.Label = label
@@ -49,27 +49,29 @@ func NewApiTenantIdStudioDevicesPostRequestWithDefaults() *ApiTenantIdStudioDevi
 }
 
 // GetLocationId returns the LocationId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioDevicesPostRequest) GetLocationId() string {
-	if o == nil {
+	if o == nil || o.LocationId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.LocationId
+	return *o.LocationId.Get()
 }
 
 // GetLocationIdOk returns a tuple with the LocationId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioDevicesPostRequest) GetLocationIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.LocationId, true
+	return o.LocationId.Get(), o.LocationId.IsSet()
 }
 
 // SetLocationId sets field value
 func (o *ApiTenantIdStudioDevicesPostRequest) SetLocationId(v string) {
-	o.LocationId = v
+	o.LocationId.Set(&v)
 }
 
 // GetLabel returns the Label field value
@@ -130,7 +132,7 @@ func (o ApiTenantIdStudioDevicesPostRequest) MarshalJSON() ([]byte, error) {
 
 func (o ApiTenantIdStudioDevicesPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["locationId"] = o.LocationId
+	toSerialize["locationId"] = o.LocationId.Get()
 	toSerialize["label"] = o.Label
 	toSerialize["pin"] = o.Pin
 

@@ -20,7 +20,7 @@ var _ MappedNullable = &CounterVoucherPreview{}
 
 // CounterVoucherPreview POST /api/counter/lookup's read-only preview — no hold placed (8.2.a).
 type CounterVoucherPreview struct {
-	VoucherId string `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	MerchantName string `json:"merchantName"`
 	OfferTitle string `json:"offerTitle"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
@@ -36,7 +36,7 @@ type _CounterVoucherPreview CounterVoucherPreview
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCounterVoucherPreview(voucherId string, merchantName string, offerTitle string, remainingValueMinor int64, currency Currency, partialRedemptionPolicy string) *CounterVoucherPreview {
+func NewCounterVoucherPreview(voucherId NullableString, merchantName string, offerTitle string, remainingValueMinor int64, currency Currency, partialRedemptionPolicy string) *CounterVoucherPreview {
 	this := CounterVoucherPreview{}
 	this.VoucherId = voucherId
 	this.MerchantName = merchantName
@@ -56,27 +56,29 @@ func NewCounterVoucherPreviewWithDefaults() *CounterVoucherPreview {
 }
 
 // GetVoucherId returns the VoucherId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *CounterVoucherPreview) GetVoucherId() string {
-	if o == nil {
+	if o == nil || o.VoucherId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.VoucherId
+	return *o.VoucherId.Get()
 }
 
 // GetVoucherIdOk returns a tuple with the VoucherId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CounterVoucherPreview) GetVoucherIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.VoucherId, true
+	return o.VoucherId.Get(), o.VoucherId.IsSet()
 }
 
 // SetVoucherId sets field value
 func (o *CounterVoucherPreview) SetVoucherId(v string) {
-	o.VoucherId = v
+	o.VoucherId.Set(&v)
 }
 
 // GetMerchantName returns the MerchantName field value
@@ -209,7 +211,7 @@ func (o CounterVoucherPreview) MarshalJSON() ([]byte, error) {
 
 func (o CounterVoucherPreview) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["voucherId"] = o.VoucherId
+	toSerialize["voucherId"] = o.VoucherId.Get()
 	toSerialize["merchantName"] = o.MerchantName
 	toSerialize["offerTitle"] = o.OfferTitle
 	toSerialize["remainingValueMinor"] = o.RemainingValueMinor

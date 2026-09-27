@@ -21,7 +21,7 @@ var _ MappedNullable = &WatchProgressReport{}
 
 // WatchProgressReport One span of playback a client claims to have played. `reportedAt` is the client's clock and is recorded for audit only: the server judges a report against its OWN clock, because a claim of more playback than time has passed is arithmetically impossible rather than merely suspicious.
 type WatchProgressReport struct {
-	SessionId string `json:"sessionId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	SessionId NullableString `json:"sessionId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	FromSeconds float32 `json:"fromSeconds"`
 	ToSeconds float32 `json:"toSeconds"`
 	ReportedAt time.Time `json:"reportedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
@@ -34,7 +34,7 @@ type _WatchProgressReport WatchProgressReport
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWatchProgressReport(sessionId string, fromSeconds float32, toSeconds float32, reportedAt time.Time) *WatchProgressReport {
+func NewWatchProgressReport(sessionId NullableString, fromSeconds float32, toSeconds float32, reportedAt time.Time) *WatchProgressReport {
 	this := WatchProgressReport{}
 	this.SessionId = sessionId
 	this.FromSeconds = fromSeconds
@@ -52,27 +52,29 @@ func NewWatchProgressReportWithDefaults() *WatchProgressReport {
 }
 
 // GetSessionId returns the SessionId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *WatchProgressReport) GetSessionId() string {
-	if o == nil {
+	if o == nil || o.SessionId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.SessionId
+	return *o.SessionId.Get()
 }
 
 // GetSessionIdOk returns a tuple with the SessionId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *WatchProgressReport) GetSessionIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.SessionId, true
+	return o.SessionId.Get(), o.SessionId.IsSet()
 }
 
 // SetSessionId sets field value
 func (o *WatchProgressReport) SetSessionId(v string) {
-	o.SessionId = v
+	o.SessionId.Set(&v)
 }
 
 // GetFromSeconds returns the FromSeconds field value
@@ -157,7 +159,7 @@ func (o WatchProgressReport) MarshalJSON() ([]byte, error) {
 
 func (o WatchProgressReport) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["sessionId"] = o.SessionId
+	toSerialize["sessionId"] = o.SessionId.Get()
 	toSerialize["fromSeconds"] = o.FromSeconds
 	toSerialize["toSeconds"] = o.ToSeconds
 	toSerialize["reportedAt"] = o.ReportedAt

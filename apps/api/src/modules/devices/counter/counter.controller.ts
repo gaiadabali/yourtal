@@ -86,7 +86,11 @@ export class CounterController {
     );
     const { businessId, locationId } = deviceScope(principal);
     const result = await authorizeVoucher(this.vouchers, this.authMeta, {
-      ...body,
+      code: body.code,
+      amountMinor: body.amountMinor,
+      currency: body.currency,
+      orderRef: body.orderRef,
+      orderTotalMinor: body.orderTotalMinor,
       deviceId: deviceIdOf(principal),
       businessId,
       locationId,

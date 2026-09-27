@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { currencySchema } from "@yourtal/contracts/money/currency";
+import { currencySchema } from "@yourtal/contracts/money/value";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { counterCaptureLog } from "./schema/counter-capture-log.table";
 import type {

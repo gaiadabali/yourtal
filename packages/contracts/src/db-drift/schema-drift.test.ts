@@ -459,6 +459,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
   "checkout.dispute":
     "4.7.c: a viewer's dispute of one voucher and what came of it, read by the staff queue (9.4); no contract publishes its rows.",
+  "store.counter_capture_log":
+    "TASKS.md 8.2.b/8.2.g: this module's own audit trail, never a money source of truth (services/voucher stays that). No schema mirrors a row 1:1 -- CounterLogEntry (device's own log) and StudioRedemptionEntry (Studio's, joined with device label and location name) are both projections of it, assembled by list-today-log.use-case.ts and studio-redemptions-read-model.ts respectively, not read directly.",
+  "store.counter_authorization_meta":
+    "TASKS.md 8.2.b: BFF-only bookkeeping carrying an order ref/total from authorize to capture, because services/voucher's own device-mode authorize deliberately carries neither (device_routes.go's own comment). No contract publishes it at all -- it never reaches an HTTP response.",
   "checkout.saga":
     "4.7: the burn saga's own state machine, read and written only by apps/api's checkout module; no contract publishes its rows.",
   "ledger.grant_release":

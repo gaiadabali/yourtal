@@ -1,4 +1,5 @@
 import type { ResultAsync } from "neverthrow";
+import { toMinorUnits } from "@yourtal/contracts/money";
 import type { CounterLogEntry } from "@yourtal/contracts/device/counter-redemption";
 import type { CaptureLogRepository } from "../../persistence/capture-log.repository";
 import type { PersistenceFailedError } from "../../devices.errors";
@@ -13,7 +14,7 @@ export function listTodayLog(
     rows.map((row) => ({
       captureId: row.captureId,
       voucherId: row.voucherId,
-      amountMinor: row.amountMinor,
+      amountMinor: toMinorUnits(row.amountMinor),
       currency: row.currency,
       capturedAt: row.capturedAt.toISOString(),
       orderRef: row.orderRef,

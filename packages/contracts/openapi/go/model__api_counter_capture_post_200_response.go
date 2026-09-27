@@ -13,53 +13,50 @@ package contracts
 import (
 	"encoding/json"
 	"time"
-	"bytes"
 	"fmt"
 )
 
-// checks if the CounterLogEntry type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &CounterLogEntry{}
+// checks if the ApiCounterCapturePost200Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiCounterCapturePost200Response{}
 
-// CounterLogEntry One row of GET /api/counter/log — today's captures at this device only.
-type CounterLogEntry struct {
+// ApiCounterCapturePost200Response struct for ApiCounterCapturePost200Response
+type ApiCounterCapturePost200Response struct {
 	CaptureId string `json:"captureId"`
-	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	VoucherId string `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	AmountMinor int64 `json:"amountMinor"`
-	Currency Currency `json:"currency"`
+	Currency string `json:"currency"`
 	CapturedAt time.Time `json:"capturedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	OrderRef string `json:"orderRef"`
-	AuthorizedAt time.Time `json:"authorizedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	AdditionalProperties map[string]interface{}
 }
 
-type _CounterLogEntry CounterLogEntry
+type _ApiCounterCapturePost200Response ApiCounterCapturePost200Response
 
-// NewCounterLogEntry instantiates a new CounterLogEntry object
+// NewApiCounterCapturePost200Response instantiates a new ApiCounterCapturePost200Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCounterLogEntry(captureId string, voucherId NullableString, amountMinor int64, currency Currency, capturedAt time.Time, orderRef string, authorizedAt time.Time) *CounterLogEntry {
-	this := CounterLogEntry{}
+func NewApiCounterCapturePost200Response(captureId string, voucherId string, amountMinor int64, currency string, capturedAt time.Time, orderRef string) *ApiCounterCapturePost200Response {
+	this := ApiCounterCapturePost200Response{}
 	this.CaptureId = captureId
 	this.VoucherId = voucherId
 	this.AmountMinor = amountMinor
 	this.Currency = currency
 	this.CapturedAt = capturedAt
 	this.OrderRef = orderRef
-	this.AuthorizedAt = authorizedAt
 	return &this
 }
 
-// NewCounterLogEntryWithDefaults instantiates a new CounterLogEntry object
+// NewApiCounterCapturePost200ResponseWithDefaults instantiates a new ApiCounterCapturePost200Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewCounterLogEntryWithDefaults() *CounterLogEntry {
-	this := CounterLogEntry{}
+func NewApiCounterCapturePost200ResponseWithDefaults() *ApiCounterCapturePost200Response {
+	this := ApiCounterCapturePost200Response{}
 	return &this
 }
 
 // GetCaptureId returns the CaptureId field value
-func (o *CounterLogEntry) GetCaptureId() string {
+func (o *ApiCounterCapturePost200Response) GetCaptureId() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -70,7 +67,7 @@ func (o *CounterLogEntry) GetCaptureId() string {
 
 // GetCaptureIdOk returns a tuple with the CaptureId field value
 // and a boolean to check if the value has been set.
-func (o *CounterLogEntry) GetCaptureIdOk() (*string, bool) {
+func (o *ApiCounterCapturePost200Response) GetCaptureIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -78,38 +75,36 @@ func (o *CounterLogEntry) GetCaptureIdOk() (*string, bool) {
 }
 
 // SetCaptureId sets field value
-func (o *CounterLogEntry) SetCaptureId(v string) {
+func (o *ApiCounterCapturePost200Response) SetCaptureId(v string) {
 	o.CaptureId = v
 }
 
 // GetVoucherId returns the VoucherId field value
-// If the value is explicit nil, the zero value for string will be returned
-func (o *CounterLogEntry) GetVoucherId() string {
-	if o == nil || o.VoucherId.Get() == nil {
+func (o *ApiCounterCapturePost200Response) GetVoucherId() string {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.VoucherId.Get()
+	return o.VoucherId
 }
 
 // GetVoucherIdOk returns a tuple with the VoucherId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *CounterLogEntry) GetVoucherIdOk() (*string, bool) {
+func (o *ApiCounterCapturePost200Response) GetVoucherIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.VoucherId.Get(), o.VoucherId.IsSet()
+	return &o.VoucherId, true
 }
 
 // SetVoucherId sets field value
-func (o *CounterLogEntry) SetVoucherId(v string) {
-	o.VoucherId.Set(&v)
+func (o *ApiCounterCapturePost200Response) SetVoucherId(v string) {
+	o.VoucherId = v
 }
 
 // GetAmountMinor returns the AmountMinor field value
-func (o *CounterLogEntry) GetAmountMinor() int64 {
+func (o *ApiCounterCapturePost200Response) GetAmountMinor() int64 {
 	if o == nil {
 		var ret int64
 		return ret
@@ -120,7 +115,7 @@ func (o *CounterLogEntry) GetAmountMinor() int64 {
 
 // GetAmountMinorOk returns a tuple with the AmountMinor field value
 // and a boolean to check if the value has been set.
-func (o *CounterLogEntry) GetAmountMinorOk() (*int64, bool) {
+func (o *ApiCounterCapturePost200Response) GetAmountMinorOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -128,14 +123,14 @@ func (o *CounterLogEntry) GetAmountMinorOk() (*int64, bool) {
 }
 
 // SetAmountMinor sets field value
-func (o *CounterLogEntry) SetAmountMinor(v int64) {
+func (o *ApiCounterCapturePost200Response) SetAmountMinor(v int64) {
 	o.AmountMinor = v
 }
 
 // GetCurrency returns the Currency field value
-func (o *CounterLogEntry) GetCurrency() Currency {
+func (o *ApiCounterCapturePost200Response) GetCurrency() string {
 	if o == nil {
-		var ret Currency
+		var ret string
 		return ret
 	}
 
@@ -144,7 +139,7 @@ func (o *CounterLogEntry) GetCurrency() Currency {
 
 // GetCurrencyOk returns a tuple with the Currency field value
 // and a boolean to check if the value has been set.
-func (o *CounterLogEntry) GetCurrencyOk() (*Currency, bool) {
+func (o *ApiCounterCapturePost200Response) GetCurrencyOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -152,12 +147,12 @@ func (o *CounterLogEntry) GetCurrencyOk() (*Currency, bool) {
 }
 
 // SetCurrency sets field value
-func (o *CounterLogEntry) SetCurrency(v Currency) {
+func (o *ApiCounterCapturePost200Response) SetCurrency(v string) {
 	o.Currency = v
 }
 
 // GetCapturedAt returns the CapturedAt field value
-func (o *CounterLogEntry) GetCapturedAt() time.Time {
+func (o *ApiCounterCapturePost200Response) GetCapturedAt() time.Time {
 	if o == nil {
 		var ret time.Time
 		return ret
@@ -168,7 +163,7 @@ func (o *CounterLogEntry) GetCapturedAt() time.Time {
 
 // GetCapturedAtOk returns a tuple with the CapturedAt field value
 // and a boolean to check if the value has been set.
-func (o *CounterLogEntry) GetCapturedAtOk() (*time.Time, bool) {
+func (o *ApiCounterCapturePost200Response) GetCapturedAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -176,12 +171,12 @@ func (o *CounterLogEntry) GetCapturedAtOk() (*time.Time, bool) {
 }
 
 // SetCapturedAt sets field value
-func (o *CounterLogEntry) SetCapturedAt(v time.Time) {
+func (o *ApiCounterCapturePost200Response) SetCapturedAt(v time.Time) {
 	o.CapturedAt = v
 }
 
 // GetOrderRef returns the OrderRef field value
-func (o *CounterLogEntry) GetOrderRef() string {
+func (o *ApiCounterCapturePost200Response) GetOrderRef() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -192,7 +187,7 @@ func (o *CounterLogEntry) GetOrderRef() string {
 
 // GetOrderRefOk returns a tuple with the OrderRef field value
 // and a boolean to check if the value has been set.
-func (o *CounterLogEntry) GetOrderRefOk() (*string, bool) {
+func (o *ApiCounterCapturePost200Response) GetOrderRefOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -200,35 +195,11 @@ func (o *CounterLogEntry) GetOrderRefOk() (*string, bool) {
 }
 
 // SetOrderRef sets field value
-func (o *CounterLogEntry) SetOrderRef(v string) {
+func (o *ApiCounterCapturePost200Response) SetOrderRef(v string) {
 	o.OrderRef = v
 }
 
-// GetAuthorizedAt returns the AuthorizedAt field value
-func (o *CounterLogEntry) GetAuthorizedAt() time.Time {
-	if o == nil {
-		var ret time.Time
-		return ret
-	}
-
-	return o.AuthorizedAt
-}
-
-// GetAuthorizedAtOk returns a tuple with the AuthorizedAt field value
-// and a boolean to check if the value has been set.
-func (o *CounterLogEntry) GetAuthorizedAtOk() (*time.Time, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.AuthorizedAt, true
-}
-
-// SetAuthorizedAt sets field value
-func (o *CounterLogEntry) SetAuthorizedAt(v time.Time) {
-	o.AuthorizedAt = v
-}
-
-func (o CounterLogEntry) MarshalJSON() ([]byte, error) {
+func (o ApiCounterCapturePost200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -236,19 +207,23 @@ func (o CounterLogEntry) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o CounterLogEntry) ToMap() (map[string]interface{}, error) {
+func (o ApiCounterCapturePost200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["captureId"] = o.CaptureId
-	toSerialize["voucherId"] = o.VoucherId.Get()
+	toSerialize["voucherId"] = o.VoucherId
 	toSerialize["amountMinor"] = o.AmountMinor
 	toSerialize["currency"] = o.Currency
 	toSerialize["capturedAt"] = o.CapturedAt
 	toSerialize["orderRef"] = o.OrderRef
-	toSerialize["authorizedAt"] = o.AuthorizedAt
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
-func (o *CounterLogEntry) UnmarshalJSON(data []byte) (err error) {
+func (o *ApiCounterCapturePost200Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -259,7 +234,6 @@ func (o *CounterLogEntry) UnmarshalJSON(data []byte) (err error) {
 		"currency",
 		"capturedAt",
 		"orderRef",
-		"authorizedAt",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -276,53 +250,63 @@ func (o *CounterLogEntry) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varCounterLogEntry := _CounterLogEntry{}
+	varApiCounterCapturePost200Response := _ApiCounterCapturePost200Response{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varCounterLogEntry)
+	err = json.Unmarshal(data, &varApiCounterCapturePost200Response)
 
 	if err != nil {
 		return err
 	}
 
-	*o = CounterLogEntry(varCounterLogEntry)
+	*o = ApiCounterCapturePost200Response(varApiCounterCapturePost200Response)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "captureId")
+		delete(additionalProperties, "voucherId")
+		delete(additionalProperties, "amountMinor")
+		delete(additionalProperties, "currency")
+		delete(additionalProperties, "capturedAt")
+		delete(additionalProperties, "orderRef")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }
 
-type NullableCounterLogEntry struct {
-	value *CounterLogEntry
+type NullableApiCounterCapturePost200Response struct {
+	value *ApiCounterCapturePost200Response
 	isSet bool
 }
 
-func (v NullableCounterLogEntry) Get() *CounterLogEntry {
+func (v NullableApiCounterCapturePost200Response) Get() *ApiCounterCapturePost200Response {
 	return v.value
 }
 
-func (v *NullableCounterLogEntry) Set(val *CounterLogEntry) {
+func (v *NullableApiCounterCapturePost200Response) Set(val *ApiCounterCapturePost200Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableCounterLogEntry) IsSet() bool {
+func (v NullableApiCounterCapturePost200Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableCounterLogEntry) Unset() {
+func (v *NullableApiCounterCapturePost200Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableCounterLogEntry(val *CounterLogEntry) *NullableCounterLogEntry {
-	return &NullableCounterLogEntry{value: val, isSet: true}
+func NewNullableApiCounterCapturePost200Response(val *ApiCounterCapturePost200Response) *NullableApiCounterCapturePost200Response {
+	return &NullableApiCounterCapturePost200Response{value: val, isSet: true}
 }
 
-func (v NullableCounterLogEntry) MarshalJSON() ([]byte, error) {
+func (v NullableApiCounterCapturePost200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableCounterLogEntry) UnmarshalJSON(src []byte) error {
+func (v *NullableApiCounterCapturePost200Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

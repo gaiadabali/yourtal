@@ -24,8 +24,9 @@ import { CAPTURE_LOG_REPOSITORY } from "./persistence/capture-log.repository";
 import { DrizzleCaptureLogRepository } from "./persistence/drizzle-capture-log.repository";
 import { CounterController } from "./counter/counter.controller";
 import { StudioRedemptionsController } from "./studio-redemptions.controller";
+import { DEVICES_DB } from "./devices.tokens";
 
-export const DEVICES_DB = Symbol("DEVICES_DB");
+export { DEVICES_DB };
 
 /**
  * TASKS.md 8.1: counter devices, their pairing/PIN lifecycle, and the two
@@ -54,7 +55,13 @@ export const DEVICES_DB = Symbol("DEVICES_DB");
  */
 @Module({
   imports: [PdpClientModule, RateLimitModule],
-  controllers: [StudioDevicesController, DevicePairingController, DeviceUnlockController],
+  controllers: [
+    StudioDevicesController,
+    DevicePairingController,
+    DeviceUnlockController,
+    CounterController,
+    StudioRedemptionsController,
+  ],
   providers: [
     {
       provide: DEVICES_DB,
@@ -74,6 +81,24 @@ export const DEVICES_DB = Symbol("DEVICES_DB");
     {
       provide: BUSINESS_REGION_LOOKUP,
       useFactory: (db: AppDb) => new DevicesBusinessRegionLookup(db),
+      inject: [DEVICES_DB],
+    },
+    {
+      provide: VOUCHER_INTERNAL_CLIENT,
+      // Its own client/pool, not WalletModule's (Area A's module) — see this
+      // file's own header on why this module imports neither AuthzModule
+      // nor StoreModule; the same reasoning keeps this edge out too.
+      useFactory: (config: AppConfig, db: AppDb) => createVoucherClient(config, db),
+      inject: [APP_CONFIG, DEVICES_DB],
+    },
+    {
+      provide: AUTHORIZATION_META_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleAuthorizationMetaRepository(db),
+      inject: [DEVICES_DB],
+    },
+    {
+      provide: CAPTURE_LOG_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleCaptureLogRepository(db),
       inject: [DEVICES_DB],
     },
     CounterDeviceCredentialVerifier,

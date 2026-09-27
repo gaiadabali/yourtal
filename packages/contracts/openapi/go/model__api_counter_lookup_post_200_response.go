@@ -20,7 +20,7 @@ var _ MappedNullable = &ApiCounterLookupPost200Response{}
 
 // ApiCounterLookupPost200Response struct for ApiCounterLookupPost200Response
 type ApiCounterLookupPost200Response struct {
-	VoucherId string `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	MerchantName string `json:"merchantName"`
 	OfferTitle string `json:"offerTitle"`
 	RemainingValueMinor int64 `json:"remainingValueMinor"`
@@ -35,7 +35,7 @@ type _ApiCounterLookupPost200Response ApiCounterLookupPost200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiCounterLookupPost200Response(voucherId string, merchantName string, offerTitle string, remainingValueMinor int64, currency string, partialRedemptionPolicy string) *ApiCounterLookupPost200Response {
+func NewApiCounterLookupPost200Response(voucherId NullableString, merchantName string, offerTitle string, remainingValueMinor int64, currency string, partialRedemptionPolicy string) *ApiCounterLookupPost200Response {
 	this := ApiCounterLookupPost200Response{}
 	this.VoucherId = voucherId
 	this.MerchantName = merchantName
@@ -55,27 +55,29 @@ func NewApiCounterLookupPost200ResponseWithDefaults() *ApiCounterLookupPost200Re
 }
 
 // GetVoucherId returns the VoucherId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiCounterLookupPost200Response) GetVoucherId() string {
-	if o == nil {
+	if o == nil || o.VoucherId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.VoucherId
+	return *o.VoucherId.Get()
 }
 
 // GetVoucherIdOk returns a tuple with the VoucherId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiCounterLookupPost200Response) GetVoucherIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.VoucherId, true
+	return o.VoucherId.Get(), o.VoucherId.IsSet()
 }
 
 // SetVoucherId sets field value
 func (o *ApiCounterLookupPost200Response) SetVoucherId(v string) {
-	o.VoucherId = v
+	o.VoucherId.Set(&v)
 }
 
 // GetMerchantName returns the MerchantName field value
@@ -208,7 +210,7 @@ func (o ApiCounterLookupPost200Response) MarshalJSON() ([]byte, error) {
 
 func (o ApiCounterLookupPost200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["voucherId"] = o.VoucherId
+	toSerialize["voucherId"] = o.VoucherId.Get()
 	toSerialize["merchantName"] = o.MerchantName
 	toSerialize["offerTitle"] = o.OfferTitle
 	toSerialize["remainingValueMinor"] = o.RemainingValueMinor

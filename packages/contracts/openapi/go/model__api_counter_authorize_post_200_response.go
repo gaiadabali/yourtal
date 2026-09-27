@@ -22,7 +22,7 @@ var _ MappedNullable = &ApiCounterAuthorizePost200Response{}
 // ApiCounterAuthorizePost200Response struct for ApiCounterAuthorizePost200Response
 type ApiCounterAuthorizePost200Response struct {
 	AuthorizationId string `json:"authorizationId"`
-	VoucherId string `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	AmountMinor int64 `json:"amountMinor"`
 	Currency string `json:"currency"`
 	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
@@ -35,7 +35,7 @@ type _ApiCounterAuthorizePost200Response ApiCounterAuthorizePost200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiCounterAuthorizePost200Response(authorizationId string, voucherId string, amountMinor int64, currency string, expiresAt time.Time) *ApiCounterAuthorizePost200Response {
+func NewApiCounterAuthorizePost200Response(authorizationId string, voucherId NullableString, amountMinor int64, currency string, expiresAt time.Time) *ApiCounterAuthorizePost200Response {
 	this := ApiCounterAuthorizePost200Response{}
 	this.AuthorizationId = authorizationId
 	this.VoucherId = voucherId
@@ -78,27 +78,29 @@ func (o *ApiCounterAuthorizePost200Response) SetAuthorizationId(v string) {
 }
 
 // GetVoucherId returns the VoucherId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiCounterAuthorizePost200Response) GetVoucherId() string {
-	if o == nil {
+	if o == nil || o.VoucherId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.VoucherId
+	return *o.VoucherId.Get()
 }
 
 // GetVoucherIdOk returns a tuple with the VoucherId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiCounterAuthorizePost200Response) GetVoucherIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.VoucherId, true
+	return o.VoucherId.Get(), o.VoucherId.IsSet()
 }
 
 // SetVoucherId sets field value
 func (o *ApiCounterAuthorizePost200Response) SetVoucherId(v string) {
-	o.VoucherId = v
+	o.VoucherId.Set(&v)
 }
 
 // GetAmountMinor returns the AmountMinor field value
@@ -184,7 +186,7 @@ func (o ApiCounterAuthorizePost200Response) MarshalJSON() ([]byte, error) {
 func (o ApiCounterAuthorizePost200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["authorizationId"] = o.AuthorizationId
-	toSerialize["voucherId"] = o.VoucherId
+	toSerialize["voucherId"] = o.VoucherId.Get()
 	toSerialize["amountMinor"] = o.AmountMinor
 	toSerialize["currency"] = o.Currency
 	toSerialize["expiresAt"] = o.ExpiresAt

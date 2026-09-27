@@ -23,7 +23,7 @@ var _ MappedNullable = &CounterLogEntry{}
 // CounterLogEntry One row of GET /api/counter/log — today's captures at this device only.
 type CounterLogEntry struct {
 	CaptureId string `json:"captureId"`
-	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	VoucherId string `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
 	AmountMinor int64 `json:"amountMinor"`
 	Currency Currency `json:"currency"`
@@ -38,7 +38,7 @@ type _CounterLogEntry CounterLogEntry
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCounterLogEntry(captureId string, voucherId NullableString, amountMinor int64, currency Currency, capturedAt time.Time, orderRef string, authorizedAt time.Time) *CounterLogEntry {
+func NewCounterLogEntry(captureId string, voucherId string, amountMinor int64, currency Currency, capturedAt time.Time, orderRef string, authorizedAt time.Time) *CounterLogEntry {
 	this := CounterLogEntry{}
 	this.CaptureId = captureId
 	this.VoucherId = voucherId
@@ -83,29 +83,27 @@ func (o *CounterLogEntry) SetCaptureId(v string) {
 }
 
 // GetVoucherId returns the VoucherId field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *CounterLogEntry) GetVoucherId() string {
-	if o == nil || o.VoucherId.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.VoucherId.Get()
+	return o.VoucherId
 }
 
 // GetVoucherIdOk returns a tuple with the VoucherId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CounterLogEntry) GetVoucherIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.VoucherId.Get(), o.VoucherId.IsSet()
+	return &o.VoucherId, true
 }
 
 // SetVoucherId sets field value
 func (o *CounterLogEntry) SetVoucherId(v string) {
-	o.VoucherId.Set(&v)
+	o.VoucherId = v
 }
 
 // GetAmountMinor returns the AmountMinor field value
@@ -239,7 +237,7 @@ func (o CounterLogEntry) MarshalJSON() ([]byte, error) {
 func (o CounterLogEntry) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["captureId"] = o.CaptureId
-	toSerialize["voucherId"] = o.VoucherId.Get()
+	toSerialize["voucherId"] = o.VoucherId
 	toSerialize["amountMinor"] = o.AmountMinor
 	toSerialize["currency"] = o.Currency
 	toSerialize["capturedAt"] = o.CapturedAt

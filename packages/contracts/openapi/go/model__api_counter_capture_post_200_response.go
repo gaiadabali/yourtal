@@ -22,7 +22,7 @@ var _ MappedNullable = &ApiCounterCapturePost200Response{}
 // ApiCounterCapturePost200Response struct for ApiCounterCapturePost200Response
 type ApiCounterCapturePost200Response struct {
 	CaptureId string `json:"captureId"`
-	VoucherId string `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	AmountMinor int64 `json:"amountMinor"`
 	Currency string `json:"currency"`
 	CapturedAt time.Time `json:"capturedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
@@ -36,7 +36,7 @@ type _ApiCounterCapturePost200Response ApiCounterCapturePost200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiCounterCapturePost200Response(captureId string, voucherId string, amountMinor int64, currency string, capturedAt time.Time, orderRef string) *ApiCounterCapturePost200Response {
+func NewApiCounterCapturePost200Response(captureId string, voucherId NullableString, amountMinor int64, currency string, capturedAt time.Time, orderRef string) *ApiCounterCapturePost200Response {
 	this := ApiCounterCapturePost200Response{}
 	this.CaptureId = captureId
 	this.VoucherId = voucherId
@@ -80,27 +80,29 @@ func (o *ApiCounterCapturePost200Response) SetCaptureId(v string) {
 }
 
 // GetVoucherId returns the VoucherId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiCounterCapturePost200Response) GetVoucherId() string {
-	if o == nil {
+	if o == nil || o.VoucherId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.VoucherId
+	return *o.VoucherId.Get()
 }
 
 // GetVoucherIdOk returns a tuple with the VoucherId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiCounterCapturePost200Response) GetVoucherIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.VoucherId, true
+	return o.VoucherId.Get(), o.VoucherId.IsSet()
 }
 
 // SetVoucherId sets field value
 func (o *ApiCounterCapturePost200Response) SetVoucherId(v string) {
-	o.VoucherId = v
+	o.VoucherId.Set(&v)
 }
 
 // GetAmountMinor returns the AmountMinor field value
@@ -210,7 +212,7 @@ func (o ApiCounterCapturePost200Response) MarshalJSON() ([]byte, error) {
 func (o ApiCounterCapturePost200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["captureId"] = o.CaptureId
-	toSerialize["voucherId"] = o.VoucherId
+	toSerialize["voucherId"] = o.VoucherId.Get()
 	toSerialize["amountMinor"] = o.AmountMinor
 	toSerialize["currency"] = o.Currency
 	toSerialize["capturedAt"] = o.CapturedAt

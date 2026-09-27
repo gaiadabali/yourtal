@@ -23,11 +23,11 @@ var _ MappedNullable = &StudioRedemptionEntry{}
 // StudioRedemptionEntry One row of GET /api/:tenantId/studio/redemptions (8.2.g) — recent captures per location and device.
 type StudioRedemptionEntry struct {
 	CaptureId string `json:"captureId"`
-	DeviceId NullableString `json:"deviceId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	DeviceId string `json:"deviceId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	DeviceLabel string `json:"deviceLabel"`
-	LocationId NullableString `json:"locationId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	LocationId string `json:"locationId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	LocationName string `json:"locationName"`
-	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	VoucherId string `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
 	AmountMinor int64 `json:"amountMinor"`
 	Currency Currency `json:"currency"`
@@ -41,7 +41,7 @@ type _StudioRedemptionEntry StudioRedemptionEntry
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewStudioRedemptionEntry(captureId string, deviceId NullableString, deviceLabel string, locationId NullableString, locationName string, voucherId NullableString, amountMinor int64, currency Currency, orderRef string, capturedAt time.Time) *StudioRedemptionEntry {
+func NewStudioRedemptionEntry(captureId string, deviceId string, deviceLabel string, locationId string, locationName string, voucherId string, amountMinor int64, currency Currency, orderRef string, capturedAt time.Time) *StudioRedemptionEntry {
 	this := StudioRedemptionEntry{}
 	this.CaptureId = captureId
 	this.DeviceId = deviceId
@@ -89,29 +89,27 @@ func (o *StudioRedemptionEntry) SetCaptureId(v string) {
 }
 
 // GetDeviceId returns the DeviceId field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *StudioRedemptionEntry) GetDeviceId() string {
-	if o == nil || o.DeviceId.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.DeviceId.Get()
+	return o.DeviceId
 }
 
 // GetDeviceIdOk returns a tuple with the DeviceId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *StudioRedemptionEntry) GetDeviceIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.DeviceId.Get(), o.DeviceId.IsSet()
+	return &o.DeviceId, true
 }
 
 // SetDeviceId sets field value
 func (o *StudioRedemptionEntry) SetDeviceId(v string) {
-	o.DeviceId.Set(&v)
+	o.DeviceId = v
 }
 
 // GetDeviceLabel returns the DeviceLabel field value
@@ -139,29 +137,27 @@ func (o *StudioRedemptionEntry) SetDeviceLabel(v string) {
 }
 
 // GetLocationId returns the LocationId field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *StudioRedemptionEntry) GetLocationId() string {
-	if o == nil || o.LocationId.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.LocationId.Get()
+	return o.LocationId
 }
 
 // GetLocationIdOk returns a tuple with the LocationId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *StudioRedemptionEntry) GetLocationIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.LocationId.Get(), o.LocationId.IsSet()
+	return &o.LocationId, true
 }
 
 // SetLocationId sets field value
 func (o *StudioRedemptionEntry) SetLocationId(v string) {
-	o.LocationId.Set(&v)
+	o.LocationId = v
 }
 
 // GetLocationName returns the LocationName field value
@@ -189,29 +185,27 @@ func (o *StudioRedemptionEntry) SetLocationName(v string) {
 }
 
 // GetVoucherId returns the VoucherId field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *StudioRedemptionEntry) GetVoucherId() string {
-	if o == nil || o.VoucherId.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.VoucherId.Get()
+	return o.VoucherId
 }
 
 // GetVoucherIdOk returns a tuple with the VoucherId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *StudioRedemptionEntry) GetVoucherIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.VoucherId.Get(), o.VoucherId.IsSet()
+	return &o.VoucherId, true
 }
 
 // SetVoucherId sets field value
 func (o *StudioRedemptionEntry) SetVoucherId(v string) {
-	o.VoucherId.Set(&v)
+	o.VoucherId = v
 }
 
 // GetAmountMinor returns the AmountMinor field value
@@ -321,11 +315,11 @@ func (o StudioRedemptionEntry) MarshalJSON() ([]byte, error) {
 func (o StudioRedemptionEntry) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["captureId"] = o.CaptureId
-	toSerialize["deviceId"] = o.DeviceId.Get()
+	toSerialize["deviceId"] = o.DeviceId
 	toSerialize["deviceLabel"] = o.DeviceLabel
-	toSerialize["locationId"] = o.LocationId.Get()
+	toSerialize["locationId"] = o.LocationId
 	toSerialize["locationName"] = o.LocationName
-	toSerialize["voucherId"] = o.VoucherId.Get()
+	toSerialize["voucherId"] = o.VoucherId
 	toSerialize["amountMinor"] = o.AmountMinor
 	toSerialize["currency"] = o.Currency
 	toSerialize["orderRef"] = o.OrderRef

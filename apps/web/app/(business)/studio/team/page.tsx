@@ -1,5 +1,7 @@
 import type { BusinessTeamRole } from "@yourtal/contracts/business/team-role";
+import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
+import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -23,9 +25,10 @@ function isTeamManagerRole(
 export default async function StudioTeamPage(props: PageProps<"/studio/team">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
+  const locale = resolveSupportedLocale(await getLocale());
 
   if (!current) {
-    return <StudioNoBusiness />;
+    return <StudioNoBusiness locale={locale} />;
   }
 
   const allowed = current.myRole
@@ -33,7 +36,12 @@ export default async function StudioTeamPage(props: PageProps<"/studio/team">) {
     : false;
 
   return (
-    <StudioChrome current={current} allMemberships={all} defaultBusinessId={defaultBusinessId}>
+    <StudioChrome
+      current={current}
+      allMemberships={all}
+      defaultBusinessId={defaultBusinessId}
+      locale={locale}
+    >
       {allowed && current.myRole && isTeamManagerRole(current.myRole) ? (
         <TeamScreen
           businessId={current.business.id}
@@ -43,7 +51,7 @@ export default async function StudioTeamPage(props: PageProps<"/studio/team">) {
           initialRoster={current.roster}
         />
       ) : (
-        <StudioAccessDenied zoneLabel="Team" />
+        <StudioAccessDenied zoneLabel="Team" locale={locale} />
       )}
     </StudioChrome>
   );

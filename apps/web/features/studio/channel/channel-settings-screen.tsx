@@ -2,18 +2,24 @@ import type { Business } from "@yourtal/contracts/business";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { Card, CardContent } from "@yourtal/ui/card";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { updateChannelAction } from "./update-channel-action";
 
 export interface ChannelSettingsScreenProps {
   business: Business;
   saved: boolean;
   errorField: string | null;
+  locale: SupportedLocale;
 }
 
 /** Channel settings (task 7.8.b): logo, cover and handle. */
-export function ChannelSettingsScreen({ business, saved, errorField }: ChannelSettingsScreenProps) {
-  const t = getStudioTranslator();
+export function ChannelSettingsScreen({
+  business,
+  saved,
+  errorField,
+  locale,
+}: ChannelSettingsScreenProps) {
+  const t = getStudioTranslator(locale);
   const errorMessages: Record<string, string> = {
     invalid_input: t("channel.error.invalidInput"),
     save_failed: t("channel.error.saveFailed"),

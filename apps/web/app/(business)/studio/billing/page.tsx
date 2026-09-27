@@ -1,5 +1,7 @@
 import { PageHeader } from "@yourtal/ui/page-header";
+import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
+import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -16,9 +18,10 @@ import { BillingScreen } from "@/features/studio/billing/billing-screen";
 export default async function StudioBillingPage(props: PageProps<"/studio/billing">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
+  const locale = resolveSupportedLocale(await getLocale());
 
   if (!current) {
-    return <StudioNoBusiness />;
+    return <StudioNoBusiness locale={locale} />;
   }
 
   const allowed = current.myRole
@@ -30,8 +33,13 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
 
   if (!allowed) {
     return (
-      <StudioChrome current={current} allMemberships={all} defaultBusinessId={defaultBusinessId}>
-        <StudioAccessDenied zoneLabel="Billing" />
+      <StudioChrome
+        current={current}
+        allMemberships={all}
+        defaultBusinessId={defaultBusinessId}
+        locale={locale}
+      >
+        <StudioAccessDenied zoneLabel="Billing" locale={locale} />
       </StudioChrome>
     );
   }
@@ -50,6 +58,7 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
       current={current}
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
+      locale={locale}
       header={<PageHeader title="Billing" />}
     >
       <BillingScreen
@@ -59,6 +68,7 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
         purchases={purchases}
         canPurchase={canPurchase}
         idempotencyKey={idempotencyKey}
+        locale={locale}
       />
     </StudioChrome>
   );

@@ -11,7 +11,12 @@ const OPTIONS = [
 describe("ReportsCampaignFilter", () => {
   it("renders 'All campaigns' plus one link per campaign, all as real navigable links", () => {
     render(
-      <ReportsCampaignFilter options={OPTIONS} selectedCampaignId={undefined} businessQuery="" />,
+      <ReportsCampaignFilter
+        options={OPTIONS}
+        selectedCampaignId={undefined}
+        businessQuery=""
+        locale="en-AU"
+      />,
     );
     expect(screen.getByRole("link", { name: "All campaigns" })).toHaveAttribute(
       "href",
@@ -29,6 +34,7 @@ describe("ReportsCampaignFilter", () => {
         options={OPTIONS}
         selectedCampaignId="00000000-0000-4000-8000-000000000002"
         businessQuery=""
+        locale="en-AU"
       />,
     );
     expect(screen.getByRole("link", { name: "Campaign Two" })).toHaveAttribute(
@@ -44,6 +50,7 @@ describe("ReportsCampaignFilter", () => {
         options={OPTIONS}
         selectedCampaignId={undefined}
         businessQuery="?business=00000000-0000-4000-8000-000000000601"
+        locale="en-AU"
       />,
     );
     expect(screen.getByRole("link", { name: "Campaign One" })).toHaveAttribute(

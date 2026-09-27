@@ -1,10 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import {
   PROVENANCE_EXPLANATION,
   PROVENANCE_LABEL,
   REPORT_PROVENANCE_LEVELS,
 } from "./report-provenance";
+
+export interface ReportsProvenanceLegendProps {
+  locale: SupportedLocale;
+}
 
 /**
  * An unskippable banner before this screen shows a single attention
@@ -12,8 +16,8 @@ import {
  * folded into a tooltip a viewer can miss (red line 5: no promises this
  * platform cannot back up).
  */
-export function ReportsProvenanceLegend() {
-  const t = getStudioTranslator();
+export function ReportsProvenanceLegend({ locale }: ReportsProvenanceLegendProps) {
+  const t = getStudioTranslator(locale);
   return (
     <Card>
       <CardHeader>

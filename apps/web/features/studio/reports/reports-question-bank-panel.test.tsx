@@ -12,6 +12,7 @@ describe("ReportsQuestionBankPanel", () => {
           { type: "multiple_choice", label: "Multiple choice", count: 3 },
           { type: "true_false", label: "True / false", count: 1 },
         ]}
+        locale="en-AU"
       />,
     );
 
@@ -30,13 +31,14 @@ describe("ReportsQuestionBankPanel", () => {
       <ReportsQuestionBankPanel
         scopeLabel="All campaigns"
         typeCounts={[{ type: "likert", label: "Likert", count: 2 }]}
+        locale="en-AU"
       />,
     );
     expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
   });
 
   it("shows an honest empty state rather than an empty chart when nothing is configured", () => {
-    render(<ReportsQuestionBankPanel scopeLabel="Test Campaign" typeCounts={[]} />);
+    render(<ReportsQuestionBankPanel scopeLabel="Test Campaign" typeCounts={[]} locale="en-AU" />);
     expect(screen.getByText("No questions are configured in this scope.")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });

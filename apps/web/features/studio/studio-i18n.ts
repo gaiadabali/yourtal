@@ -26,3 +26,21 @@ export const getStudioTranslator = makeSyncTranslator("studio", {
   "en-AU": enAU,
   "id-ID": idID,
 });
+
+const SUPPORTED_LOCALES: readonly SupportedLocale[] = ["en-AU", "id-ID"];
+
+/**
+ * Narrows next-intl's `getLocale()` (a plain `string` at the type level,
+ * `next-intl/server`) into `SupportedLocale`, the same two values
+ * `displayLocaleSchema` (`@yourtal/contracts/identity/user-profile`)
+ * validates — falls back to `en-AU` for anything else. Every
+ * `/studio/**` `page.tsx` calls `getLocale()` itself (as
+ * `(business)/layout.tsx` already does) and narrows it through this rather
+ * than reading the `yt_locale` cookie directly, so this stays inside
+ * Studio's own owned files.
+ */
+export function resolveSupportedLocale(locale: string): SupportedLocale {
+  return (SUPPORTED_LOCALES as readonly string[]).includes(locale)
+    ? (locale as SupportedLocale)
+    : "en-AU";
+}

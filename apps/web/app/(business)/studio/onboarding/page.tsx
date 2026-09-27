@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { PageContainer } from "@yourtal/ui/page-container";
+import { getLocale } from "next-intl/server";
 import { getRegion } from "@/features/region/get-region";
 import { resolveStudioContext } from "@/features/studio/studio-context";
+import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { BusinessOnboardingForm } from "@/features/studio/onboarding/business-onboarding-form";
 
 /**
@@ -19,6 +21,7 @@ export default async function StudioOnboardingPage(props: PageProps<"/studio/onb
   }
 
   const region = await getRegion();
+  const locale = resolveSupportedLocale(await getLocale());
   const errorParam = searchParams.error;
   const errorField = typeof errorParam === "string" ? errorParam : null;
 
@@ -28,7 +31,7 @@ export default async function StudioOnboardingPage(props: PageProps<"/studio/onb
         title="Register your business"
         description="Set up a Studio channel to run campaigns and reward viewers with points."
       />
-      <BusinessOnboardingForm region={region} errorField={errorField} />
+      <BusinessOnboardingForm region={region} errorField={errorField} locale={locale} />
     </PageContainer>
   );
 }

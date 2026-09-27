@@ -1,4 +1,6 @@
+import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
+import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -20,9 +22,10 @@ import { ReportsScreen } from "@/features/studio/reports/reports-screen";
 export default async function StudioReportsPage(props: PageProps<"/studio/reports">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
+  const locale = resolveSupportedLocale(await getLocale());
 
   if (!current) {
-    return <StudioNoBusiness />;
+    return <StudioNoBusiness locale={locale} />;
   }
 
   const allowed = current.myRole
@@ -37,16 +40,22 @@ export default async function StudioReportsPage(props: PageProps<"/studio/report
     : undefined;
 
   return (
-    <StudioChrome current={current} allMemberships={all} defaultBusinessId={defaultBusinessId}>
+    <StudioChrome
+      current={current}
+      allMemberships={all}
+      defaultBusinessId={defaultBusinessId}
+      locale={locale}
+    >
       {allowed && bundle ? (
         <ReportsScreen
           bundle={bundle}
           relationships={current.business.roles}
           selectedCampaignId={selectedCampaignId}
           businessQuery={businessQuery}
+          locale={locale}
         />
       ) : (
-        <StudioAccessDenied zoneLabel="Reports" />
+        <StudioAccessDenied zoneLabel="Reports" locale={locale} />
       )}
     </StudioChrome>
   );

@@ -21,6 +21,8 @@
  * IDR 720 for 180 MB in the risk register's own table (30 min at 480p) is
  * almost exactly 4 Rupiah/MB.
  */
+import type { useTranslations } from "next-intl";
+
 const MOCK_DATA_COST_IDR_PER_MB = 4;
 /**
  * Illustrative only: Australian mobile data is comparatively cheap and
@@ -70,13 +72,10 @@ export function assessRewardToDataCost(
   };
 }
 
-/** A translate function shaped like next-intl's `useTranslations("studio")` — passed in rather than imported, so this stays a plain, dependency-free logic module. */
-export type RewardRiskTranslator = (key: string, values?: Record<string, string | number>) => string;
-
 /** Plain-language summary for the builder's risk banner — the ratio itself, not just a pass/fail badge. */
 export function describeRewardDataCostRatio(
   assessment: RewardDataCostAssessment,
-  t: RewardRiskTranslator,
+  t: ReturnType<typeof useTranslations>,
 ): string {
   if (assessment.ratio === null) {
     return t("campaignBuilder.reward.ratioUnavailable");

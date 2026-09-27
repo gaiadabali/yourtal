@@ -1,11 +1,12 @@
 import type { Campaign, CampaignStatus } from "@yourtal/contracts/campaign";
 import { Badge } from "@yourtal/ui/badge";
 import { DataTable } from "@yourtal/ui/data-table";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { ReportProvenanceBadge } from "./report-provenance-badge";
 
 export interface ReportsCampaignOverviewTableProps {
   campaigns: readonly Campaign[];
+  locale: SupportedLocale;
 }
 
 const STATUS_VARIANT: Record<CampaignStatus, "success" | "secondary" | "outline"> = {
@@ -24,8 +25,11 @@ const SCORING_RULE_LABEL: Record<Campaign["scoringRule"], string> = {
  * `@yourtal/ui/data-table`), the text equivalent this whole zone is built
  * around rather than a chart that would need one bolted on separately.
  */
-export function ReportsCampaignOverviewTable({ campaigns }: ReportsCampaignOverviewTableProps) {
-  const t = getStudioTranslator();
+export function ReportsCampaignOverviewTable({
+  campaigns,
+  locale,
+}: ReportsCampaignOverviewTableProps) {
+  const t = getStudioTranslator(locale);
 
   if (campaigns.length === 0) {
     return <p className="text-sm font-sans text-fg-muted">{t("reports.overview.empty")}</p>;

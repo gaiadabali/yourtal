@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { ReportProvenanceBadge } from "./report-provenance-badge";
 import { ReportsBarChart } from "./reports-bar-chart";
 import type { QuestionTypeCount } from "./reports-metrics";
@@ -9,6 +9,7 @@ export interface ReportsQuestionBankPanelProps {
   /** What the chart/table below are scoped to — a campaign title, or "All campaigns". */
   scopeLabel: string;
   typeCounts: readonly QuestionTypeCount[];
+  locale: SupportedLocale;
 }
 
 /**
@@ -22,8 +23,9 @@ export interface ReportsQuestionBankPanelProps {
 export function ReportsQuestionBankPanel({
   scopeLabel,
   typeCounts,
+  locale,
 }: ReportsQuestionBankPanelProps) {
-  const t = getStudioTranslator();
+  const t = getStudioTranslator(locale);
   const total = typeCounts.reduce((sum, row) => sum + row.count, 0);
 
   return (

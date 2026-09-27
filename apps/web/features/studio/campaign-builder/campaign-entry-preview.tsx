@@ -116,7 +116,7 @@ export function CampaignEntryPreview({ draft }: CampaignEntryPreviewProps) {
             })}
           </Badge>
           <p className="text-xs font-sans text-fg-muted">
-            {describeRewardDataCostRatio(assessment)}
+            {describeRewardDataCostRatio(assessment, t)}
           </p>
         </div>
 

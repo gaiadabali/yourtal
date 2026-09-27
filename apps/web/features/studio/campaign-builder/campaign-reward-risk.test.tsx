@@ -1,11 +1,13 @@
-import { createTranslator } from "next-intl";
+import "@testing-library/jest-dom/vitest";
+import { render, screen } from "@testing-library/react";
+import { useTranslations } from "next-intl";
 import { describe, expect, it } from "vitest";
-import enAU from "@/messages/en-AU/studio.json";
-import { assessRewardToDataCost, describeRewardDataCostRatio } from "./campaign-reward-risk";
-
-// A plain, non-React translator for this pure-logic test — see
-// `studio-test-i18n.tsx` for the RTL-render equivalent.
-const t = createTranslator({ locale: "en-AU", messages: { studio: enAU }, namespace: "studio" });
+import { StudioIntlProvider } from "../studio-test-i18n";
+import {
+  assessRewardToDataCost,
+  describeRewardDataCostRatio,
+  type RewardDataCostAssessment,
+} from "./campaign-reward-risk";
 
 describe("assessRewardToDataCost", () => {
   it("flags a trivially small reward against a long, data-heavy video (the risk register's insulting-ratio case)", () => {
@@ -43,22 +45,39 @@ describe("assessRewardToDataCost", () => {
   });
 });
 
+/**
+ * `describeRewardDataCostRatio` takes a real `useTranslations("studio")`
+ * translator, so it can only be exercised from inside a rendered component
+ * (`next-intl`'s own `Translator` type is not constructible outside one in
+ * a way TypeScript accepts as interchangeable — see
+ * `checkpoint/use-question-timer.test.tsx` for the same workaround).
+ */
+function Message({ assessment }: { assessment: RewardDataCostAssessment }) {
+  const t = useTranslations("studio");
+  return <p>{describeRewardDataCostRatio(assessment, t)}</p>;
+}
+
+function renderMessage(assessment: RewardDataCostAssessment) {
+  render(
+    <StudioIntlProvider>
+      <Message assessment={assessment} />
+    </StudioIntlProvider>,
+  );
+}
+
 describe("describeRewardDataCostRatio", () => {
   it("names the actual ratio in a failing message, not just pass/fail", () => {
-    const assessment = assessRewardToDataCost(600, 180, "IDR");
-    const message = describeRewardDataCostRatio(assessment, t);
-    expect(message).toContain("below the platform's 20x guideline");
+    renderMessage(assessRewardToDataCost(600, 180, "IDR"));
+    expect(screen.getByText(/below the platform's 20x guideline/)).toBeInTheDocument();
   });
 
   it("confirms the guideline is met in a passing message", () => {
-    const assessment = assessRewardToDataCost(15_000, 180, "IDR");
-    const message = describeRewardDataCostRatio(assessment, t);
-    expect(message).toContain("at or above the platform's 20x guideline");
+    renderMessage(assessRewardToDataCost(15_000, 180, "IDR"));
+    expect(screen.getByText(/at or above the platform's 20x guideline/)).toBeInTheDocument();
   });
 
   it("says plainly that the ratio isn't available yet, rather than showing a fabricated number", () => {
-    const assessment = assessRewardToDataCost(null, 180, "IDR");
-    const message = describeRewardDataCostRatio(assessment, t);
-    expect(message).toContain("isn't available yet");
+    renderMessage(assessRewardToDataCost(null, 180, "IDR"));
+    expect(screen.getByText(/isn't available yet/)).toBeInTheDocument();
   });
 });

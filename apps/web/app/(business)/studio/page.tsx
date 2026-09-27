@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
+import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioChrome } from "@/features/studio/studio-chrome";
 import { StudioZoneGrid } from "@/features/studio/studio-zone-grid";
 import { StudioVerificationBanner } from "@/features/studio/studio-verification-banner";
@@ -19,6 +21,7 @@ import { getBalance } from "@/features/studio/billing/billing-data";
 export default async function StudioOverviewPage(props: PageProps<"/studio">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
+  const locale = resolveSupportedLocale(await getLocale());
 
   if (!current) {
     redirect("/studio/onboarding");
@@ -45,15 +48,20 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
   const kybParam = searchParams.kyb;
 
   return (
-    <StudioChrome current={current} allMemberships={all} defaultBusinessId={defaultBusinessId}>
+    <StudioChrome
+      current={current}
+      allMemberships={all}
+      defaultBusinessId={defaultBusinessId}
+      locale={locale}
+    >
       <div className="flex flex-col gap-6">
         {!business.isVerified ? (
-          <StudioVerificationBanner justSubmitted={kybParam === "submitted"} />
+          <StudioVerificationBanner justSubmitted={kybParam === "submitted"} locale={locale} />
         ) : null}
         {isSetupComplete(setupStatus) ? (
           <StudioZoneGrid items={navItems} businessQuery={businessQuery} />
         ) : (
-          <StudioSetupChecklistCard steps={checklist} />
+          <StudioSetupChecklistCard steps={checklist} locale={locale} />
         )}
       </div>
     </StudioChrome>

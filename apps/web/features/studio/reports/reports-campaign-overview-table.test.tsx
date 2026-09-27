@@ -40,7 +40,7 @@ const CAMPAIGN = campaignSchema.parse({
 
 describe("ReportsCampaignOverviewTable", () => {
   it("renders one accessible table row per campaign with title, status, question count and scoring rule", () => {
-    render(<ReportsCampaignOverviewTable campaigns={[CAMPAIGN]} />);
+    render(<ReportsCampaignOverviewTable campaigns={[CAMPAIGN]} locale="en-AU" />);
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByRole("row", { name: /Kenali Produk Baru/ })).toBeInTheDocument();
     expect(screen.getAllByText("active").length).toBeGreaterThan(0);
@@ -48,7 +48,7 @@ describe("ReportsCampaignOverviewTable", () => {
   });
 
   it("shows an honest empty state instead of a bare empty table when the business has no campaigns", () => {
-    render(<ReportsCampaignOverviewTable campaigns={[]} />);
+    render(<ReportsCampaignOverviewTable campaigns={[]} locale="en-AU" />);
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("This business has no campaigns yet.")).toBeInTheDocument();
   });

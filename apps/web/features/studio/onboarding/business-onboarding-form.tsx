@@ -3,7 +3,7 @@ import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { NativeSelect } from "@yourtal/ui/native-select";
 import { Card, CardContent } from "@yourtal/ui/card";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { createBusinessAction } from "./create-business-action";
 import { AU_STATES } from "./au-states";
 import { TAX_ID_KINDS_BY_REGION } from "./business-onboarding-input";
@@ -13,6 +13,7 @@ export interface BusinessOnboardingFormProps {
   region: Region;
   /** The message key from `?error=`, or `null` when this is a fresh visit. */
   errorField: string | null;
+  locale: SupportedLocale;
 }
 
 /**
@@ -21,8 +22,12 @@ export interface BusinessOnboardingFormProps {
  * side, so which tax-id kinds and address fields to show is already known
  * before this renders, with no client-side branching needed.
  */
-export function BusinessOnboardingForm({ region, errorField }: BusinessOnboardingFormProps) {
-  const t = getStudioTranslator();
+export function BusinessOnboardingForm({
+  region,
+  errorField,
+  locale,
+}: BusinessOnboardingFormProps) {
+  const t = getStudioTranslator(locale);
   const taxIdKinds = TAX_ID_KINDS_BY_REGION[region];
   const errorMessages: Record<string, string> = {
     create_failed: t("onboarding.error.createFailed"),

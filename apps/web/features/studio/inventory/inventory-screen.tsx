@@ -4,13 +4,14 @@ import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { EmptyState } from "@yourtal/ui/empty-state";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import type { SettlementDecreaseRequest } from "./inventory-data";
 
 export interface InventoryScreenProps {
   listings: readonly Listing[];
   locations: readonly MerchantLocation[];
   pendingDecreaseRequests: readonly SettlementDecreaseRequest[];
+  locale: SupportedLocale;
 }
 
 /**
@@ -24,8 +25,9 @@ export function InventoryScreen({
   listings,
   locations,
   pendingDecreaseRequests,
+  locale,
 }: InventoryScreenProps) {
-  const t = getStudioTranslator();
+  const t = getStudioTranslator(locale);
   return (
     <div className="flex flex-col gap-6">
       <Card>

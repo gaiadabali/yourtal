@@ -1,4 +1,6 @@
+import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
+import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -19,9 +21,10 @@ import { listCampaignDrafts } from "@/features/studio/campaign-builder/campaign-
 export default async function StudioCampaignsPage(props: PageProps<"/studio/campaigns">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
+  const locale = resolveSupportedLocale(await getLocale());
 
   if (!current) {
-    return <StudioNoBusiness />;
+    return <StudioNoBusiness locale={locale} />;
   }
 
   const allowed = current.myRole
@@ -33,8 +36,13 @@ export default async function StudioCampaignsPage(props: PageProps<"/studio/camp
 
   if (!allowed) {
     return (
-      <StudioChrome current={current} allMemberships={all} defaultBusinessId={defaultBusinessId}>
-        <StudioAccessDenied zoneLabel="Campaigns" />
+      <StudioChrome
+        current={current}
+        allMemberships={all}
+        defaultBusinessId={defaultBusinessId}
+        locale={locale}
+      >
+        <StudioAccessDenied zoneLabel="Campaigns" locale={locale} />
       </StudioChrome>
     );
   }
@@ -42,7 +50,12 @@ export default async function StudioCampaignsPage(props: PageProps<"/studio/camp
   const drafts = await listCampaignDrafts(current.business.id, current.business.displayName);
 
   return (
-    <StudioChrome current={current} allMemberships={all} defaultBusinessId={defaultBusinessId}>
+    <StudioChrome
+      current={current}
+      allMemberships={all}
+      defaultBusinessId={defaultBusinessId}
+      locale={locale}
+    >
       <CampaignBuilderScreen
         businessId={current.business.id}
         merchantName={current.business.displayName}

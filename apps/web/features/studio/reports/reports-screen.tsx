@@ -1,6 +1,6 @@
 import type { BusinessRole } from "@yourtal/contracts/business";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import type { ReportsBundle } from "./reports-data";
 import {
   aggregateQuestionTypeCounts,
@@ -23,6 +23,7 @@ export interface ReportsScreenProps {
   selectedCampaignId: string | undefined;
   /** `""` or `"?business=<id>"`, threaded through to the campaign filter so it never drops the business switcher's selection. */
   businessQuery: string;
+  locale: SupportedLocale;
 }
 
 /**
@@ -50,8 +51,9 @@ export function ReportsScreen({
   relationships,
   selectedCampaignId,
   businessQuery,
+  locale,
 }: ReportsScreenProps) {
-  const t = getStudioTranslator();
+  const t = getStudioTranslator(locale);
   const isAdvertiser = relationships.includes("advertiser");
   const isSupplier = relationships.includes("supplier");
 
@@ -74,7 +76,7 @@ export function ReportsScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <ReportsProvenanceLegend />
+      <ReportsProvenanceLegend locale={locale} />
 
       {isAdvertiser ? (
         <Card>
@@ -82,7 +84,7 @@ export function ReportsScreen({
             <CardTitle as="h2">{t("reports.screen.campaignsTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <ReportsCampaignOverviewTable campaigns={bundle.campaigns} />
+            <ReportsCampaignOverviewTable campaigns={bundle.campaigns} locale={locale} />
             {bundle.campaigns.length > 0 ? (
               <ReportsCampaignFilter
                 options={bundle.campaigns.map((campaign) => ({
@@ -91,6 +93,7 @@ export function ReportsScreen({
                 }))}
                 selectedCampaignId={selectedCampaign?.id}
                 businessQuery={businessQuery}
+                locale={locale}
               />
             ) : null}
           </CardContent>
@@ -98,10 +101,12 @@ export function ReportsScreen({
       ) : null}
 
       {isAdvertiser ? (
-        <ReportsQuestionBankPanel scopeLabel={scopeLabel} typeCounts={typeCounts} />
+        <ReportsQuestionBankPanel scopeLabel={scopeLabel} typeCounts={typeCounts} locale={locale} />
       ) : null}
 
-      {isSupplier ? <ReportsRedemptionLedgerPanel summary={redemptionSummary} /> : null}
+      {isSupplier ? (
+        <ReportsRedemptionLedgerPanel summary={redemptionSummary} locale={locale} />
+      ) : null}
 
       {!isAdvertiser && !isSupplier ? (
         <Card>

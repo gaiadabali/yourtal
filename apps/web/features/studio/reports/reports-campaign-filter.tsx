@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 
 export interface ReportsCampaignFilterOption {
   id: string;
@@ -13,6 +13,7 @@ export interface ReportsCampaignFilterProps {
   selectedCampaignId: string | undefined;
   /** `""` or `"?business=<id>"`, carried through unchanged so switching the campaign filter never loses the business switcher's selection. */
   businessQuery: string;
+  locale: SupportedLocale;
 }
 
 const REPORTS_PATH = "/studio/reports";
@@ -33,8 +34,9 @@ export function ReportsCampaignFilter({
   options,
   selectedCampaignId,
   businessQuery,
+  locale,
 }: ReportsCampaignFilterProps) {
-  const t = getStudioTranslator();
+  const t = getStudioTranslator(locale);
   const separator = businessQuery ? "&" : "?";
 
   return (

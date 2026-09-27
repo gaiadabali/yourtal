@@ -4,7 +4,7 @@ import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { PointsChip } from "@yourtal/ui/points-chip";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import type { PurchaseQuote } from "@yourtal/contracts/billing";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import type { BillingBalance, PurchaseHistoryEntry } from "./billing-data";
 import { purchasePointsAction } from "./purchase-points-action";
 
@@ -17,6 +17,7 @@ export interface BillingScreenProps {
   canPurchase: boolean;
   /** Minted once per render (`page.tsx`) and embedded per form, so a double-click of the same button reuses one idempotency key rather than minting a fresh one per submit. */
   idempotencyKey: string;
+  locale: SupportedLocale;
 }
 
 /**
@@ -33,8 +34,9 @@ export function BillingScreen({
   purchases,
   canPurchase,
   idempotencyKey,
+  locale,
 }: BillingScreenProps) {
-  const t = getStudioTranslator();
+  const t = getStudioTranslator(locale);
   return (
     <div className="flex flex-col gap-6">
       <Card>

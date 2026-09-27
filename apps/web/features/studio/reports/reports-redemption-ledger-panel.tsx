@@ -1,13 +1,14 @@
 import { formatMoney } from "@yourtal/contracts/money/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
-import { getStudioTranslator } from "../studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { ReportProvenanceBadge } from "./report-provenance-badge";
 import { ReportsBarChart } from "./reports-bar-chart";
 import type { RedemptionLedgerSummary } from "./reports-metrics";
 
 export interface ReportsRedemptionLedgerPanelProps {
   summary: RedemptionLedgerSummary;
+  locale: SupportedLocale;
 }
 
 /**
@@ -24,8 +25,11 @@ export interface ReportsRedemptionLedgerPanelProps {
  * viewer's region: a business's vouchers are always one region's, so this
  * renders the true currency rather than assuming the viewer shares it.
  */
-export function ReportsRedemptionLedgerPanel({ summary }: ReportsRedemptionLedgerPanelProps) {
-  const t = getStudioTranslator();
+export function ReportsRedemptionLedgerPanel({
+  summary,
+  locale,
+}: ReportsRedemptionLedgerPanelProps) {
+  const t = getStudioTranslator(locale);
   const nonZeroRows = summary.rows.filter((row) => row.count > 0);
 
   return (

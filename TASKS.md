@@ -39,14 +39,14 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/58 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 2/5 | 9/19 | `█████░░░░░`  47% |
-| **Phase 7** Business studio | C | 🔄 in progress | 3/8 | 16/36 | `████░░░░░░`  44% |
+| **Phase 7** Business studio | C | 🔄 in progress | 3/8 | 16/37 | `████░░░░░░`  43% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 2/16 | `█░░░░░░░░░`  13% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **47/87** | **266/409** | `███████░░░`  65% |
+| **All** | | | **47/87** | **266/410** | `███████░░░`  65% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1037,6 +1037,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
   - [ ] 7.3.d Lifecycle `draft → in_review → live → paused → ended`, enforced by `canTransition` and by a database trigger (EW-17). Submitting is refused while the business is not KYB-verified (red line 7) and sets `in_review`. (The moderation queue that takes it live is 9.2.)
   - [ ] 7.3.f (requested by B for 5.5.b) A pg-boss event (e.g. `campaign.published`) when a campaign transitions to `live`, carrying at least `campaignId`, `businessId` and `region`. `apps/api/src/modules/me`'s notification worker consumes it to notify a business's followers (`me.follow`) — see 5.5.b's own note on what it built without this.
   - [ ] 7.3.g (moved from 5.5.b) Followers hear about it: a job `apps/worker/src/jobs/campaign-published-notify.ts`, like `points-unlocked-notify.ts`, consumes 7.3.f's event and writes a `me.notification` for each `me.follow` of that business in its region.
+  - [ ] 7.3.h (requested by D/7.8) The reward/budget response (7.3.c) should carry the reward's value in the business's own currency (or the reward-to-data-cost ratio itself), server-computed — B (the backing rate) never reaches a browser. Studio's authoring-time risk banner (`campaign-reward-risk.ts`) shows "ratio pending" until this exists; it takes the value as a plain argument already, so only the call site changes once this lands.
   - [ ] 7.3.e **Check:** an HTTP round trip creates a funded campaign at the F12 ceiling, with a question bank, and submits it to `in_review` for a business verified by the test fixture, while an unverified one is refused; one point per minute above the ceiling is refused. (Verifying through staff is 9.3.b.)
 - [x] **7.4 Inventory (vouchers)** · needs: 7.1, 4.9 (fake ok) — ✅ 2026-09-27 af3af4d
   - [x] 7.4.a Locations CRUD. Today only the seed creates `store.merchant_location`, so a new business cannot list anything. — `StoreLocationController` (`api/:tenantId/store/locations`), new `merchant_location` resource kind reusing listing's derived roles.

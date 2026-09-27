@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 29/32 | `█████████░`  91% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 30/32 | `█████████░`  94% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/57 | `██████████` 100% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **41/87** | **243/402** | `██████░░░░`  60% |
+| **All** | | | **41/87** | **244/402** | `██████░░░░`  61% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -603,7 +603,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.4.e Valkey 9. — 9.1.2 (pinned digest) in compose, Helios compose and CI (34d40ca); swapped on the shared dev stack and on Helios 2026-09-26; api Redis suites green on 9.
   - [x] 2.4.f pnpm 12, locally and on Helios. — 12.6.0 (the `latest` tag; 12.7.0 is on `next`), ed57c69. pnpm switches itself per worktree from `packageManager`; Helios needs nothing (the release carries `node_modules`). Every YourTal session was told.
   - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ✂️ cut: moved to 13.7 (F38); serwist 10 is not stable yet.
-  - [ ] 2.4.j Contracts workflow: its "Build and vet the generated Go" step still runs `golang:1.26.8` against 2.4.c's `go 1.27`, so it has failed on every run since ed57c69 (`go.mod requires go >= 1.27`). Pin the Go 1.27.1 image there too.
+  - [x] 2.4.j Contracts workflow: its "Build and vet the generated Go" step still runs `golang:1.26.8` against 2.4.c's `go 1.27`, so it has failed on every run since ed57c69 (`go.mod requires go >= 1.27`). Pin the Go 1.27.1 image there too. — 839443d: `generate-go.mjs` builds in a pinned image, now `golang:1.27.1-alpine3.24` (same digest as the Dockerfiles); 8775d9d's host `setup-go` never applied and is removed. "Go types compile" green on 839443d. Its stale-models failure there came from Phase 7's new business contract; regenerated in dab3e09.
   - [x] 2.4.k (F38) Merge slot 4's trim of `/business/campaigns` under its 200 KB initial-JS budget (202.8 → 171.9 KB). — merged 04bdee0; Performance budget's run on it decides 2.4.h.
   - [ ] 2.4.h **Check:** after 2.4.j and 2.4.k merge, `pnpm verify` and every workflow are green on `main`. A workflow that later work turns red belongs to that work's phase, not to this Check. — Status 2026-09-27: Quality, Integration and Release green on 737a58d; Performance budget green on 04bdee0 (2.4.k); only Contracts red (2.4.j). The earlier note that 8775d9d fixed Contracts was wrong: that run failed too.
   - [x] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there. — Green again at c9effbe (Integration, Quality, Release all success). Three causes: five real-Cerbos e2e suites hard-coded slot 3's port 26335 (now `PDP_BASE_URL`); `/dev/clock` tests predated 1.5.h's 401 (agent D); the opt-in `checkout.live.test.ts` counted as "skipped" in the default run (now excluded unless `CHECKOUT_LIVE=1`).

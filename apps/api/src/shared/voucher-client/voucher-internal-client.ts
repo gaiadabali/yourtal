@@ -28,6 +28,8 @@ import type {
   AuthorizeAsDeviceRequest,
   Capture,
   CaptureAsDeviceRequest,
+  LookupAsDeviceRequest,
+  VoucherPreview,
 } from "@yourtal/contracts/voucher-internal/redemption";
 import type {
   KillSwitch,
@@ -66,6 +68,8 @@ export interface VoucherInternalClient {
   listForUser(request: ListForUserRequest): ResultAsync<ListForUserResult, VoucherError>;
   get(request: GetVoucherRequest): ResultAsync<Reservation, VoucherError>;
 
+  /** 8.2.a: a read-only preview, no hold placed. */
+  lookupAsDevice(request: LookupAsDeviceRequest): ResultAsync<VoucherPreview, VoucherError>;
   authorizeAsDevice(request: AuthorizeAsDeviceRequest): ResultAsync<Authorization, VoucherError>;
   captureAsDevice(request: CaptureAsDeviceRequest): ResultAsync<Capture, VoucherError>;
 

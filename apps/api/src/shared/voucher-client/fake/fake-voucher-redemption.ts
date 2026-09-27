@@ -9,6 +9,8 @@ import type {
   AuthorizeAsDeviceRequest,
   Capture,
   CaptureAsDeviceRequest,
+  LookupAsDeviceRequest,
+  VoucherPreview,
 } from "@yourtal/contracts/voucher-internal/redemption";
 import type { VoucherError } from "../voucher-internal-client";
 import type { AppDb } from "../../persistence/drizzle-client";
@@ -19,6 +21,55 @@ type VoucherLookupRow = {
   readonly id: string;
   readonly code_hash: string;
 };
+
+type VoucherPreviewRow = {
+  readonly id: string;
+  readonly merchant_id: string;
+  readonly merchant_name: string;
+  readonly title: string;
+  readonly face_value_minor: string;
+  readonly currency: string;
+  readonly partial_redemption_policy: string;
+};
+
+/**
+ * 8.2.a: the fake has no per-voucher `remaining_value_minor` (unlike the
+ * real engine) — it never modelled partial redemption at all, so the
+ * listing's own face value stands in, the same simplification
+ * `authorizeAsDevice`'s own fake already makes by not checking currency
+ * against the row.
+ */
+export function lookupAsDevice(
+  db: AppDb,
+  request: LookupAsDeviceRequest,
+): ResultAsync<VoucherPreview, VoucherError> {
+  return new ResultAsync(
+    (async (): Promise<Result<VoucherPreview, VoucherError>> => {
+      const result = await db.execute<VoucherPreviewRow>(sql`
+        SELECT v.id, l.merchant_id, l.merchant_name, l.title, l.face_value_minor,
+               l.currency, l.partial_redemption_policy
+          FROM platform.voucher_fake_voucher v
+          JOIN store.listings l ON l.id = v.listing_id
+         WHERE v.code = ${request.voucherCode}
+      `);
+      const row = result.rows[0];
+      if (row === undefined) {
+        return err(ledgerError("audience_blocked", "no voucher matches this code"));
+      }
+      if (row.merchant_id !== request.merchantId) {
+        return err(ledgerError("audience_blocked", "this voucher belongs to a different merchant"));
+      }
+      return ok({
+        voucherId: row.id,
+        merchantName: row.merchant_name,
+        offerTitle: row.title,
+        remainingValueMinor: toMinorUnits(Number(row.face_value_minor)),
+        currency: row.currency as VoucherPreview["currency"],
+        partialRedemptionPolicy: row.partial_redemption_policy,
+      });
+    })(),
+  );
+}
 
 /** Both operations assert the device's merchant matches the voucher's own — TASKS.md 1.2.b's own words. */
 export function authorizeAsDevice(

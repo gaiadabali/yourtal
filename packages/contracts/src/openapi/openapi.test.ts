@@ -175,6 +175,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   getVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- voucher-internal: device-authorized redemption ---
+  lookupAsDeviceRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  voucherPreviewSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   authorizeAsDeviceRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   authorizationSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   captureAsDeviceRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

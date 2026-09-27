@@ -68,6 +68,7 @@ func (a *API) Routes() chi.Router {
 	r.Post("/wallet/list", a.listForUser)
 	r.Post("/wallet/get", a.get)
 
+	r.Post("/device/lookup", a.lookupAsDevice)
 	r.Post("/device/authorize", a.authorizeAsDevice)
 	r.Post("/device/capture", a.captureAsDevice)
 

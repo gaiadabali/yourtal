@@ -209,6 +209,34 @@ describe("wallet", () => {
 });
 
 describe("device-authorized redemption", () => {
+  it("8.2.a: lookupAsDevice previews without placing a hold, then authorize/capture still work", async () => {
+    const { voucherId, ownerId, merchantId } = await activeVoucher();
+    const revealed = (await client.reveal({ voucherId, ownerId }))._unsafeUnwrap();
+
+    const preview = (
+      await client.lookupAsDevice({ voucherCode: revealed.code, merchantId })
+    )._unsafeUnwrap();
+    expect(preview.voucherId).toBe(voucherId);
+    expect(preview.merchantName.length).toBeGreaterThan(0);
+
+    const wrongMerchant = await client.lookupAsDevice({
+      voucherCode: revealed.code,
+      merchantId: randomUUID(),
+    });
+    expect(wrongMerchant.isErr()).toBe(true);
+
+    // A lookup places no hold: authorize still sees the voucher spendable.
+    const authorization = (
+      await client.authorizeAsDevice({
+        voucherCode: revealed.code,
+        deviceId: "device-1",
+        merchantId,
+        currency: "IDR",
+      })
+    )._unsafeUnwrap();
+    expect(authorization.voucherId).toBe(voucherId);
+  });
+
   it("authorizeAsDevice then captureAsDevice, refusing a second capture", async () => {
     const { voucherId, ownerId, merchantId } = await activeVoucher();
     const revealed = (await client.reveal({ voucherId, ownerId }))._unsafeUnwrap();

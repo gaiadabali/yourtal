@@ -9,6 +9,31 @@ import { currencySchema } from "../money/money-value";
  * voucher issued by merchant B.
  */
 
+/**
+ * TASKS.md 8.2.a (Area C, added to this Area A file with the same
+ * disclosed-minimal-edit reasoning `shared/authz/device-credential-
+ * verifier.ts` records for 8.1.b): a read-only preview, so a cashier can see
+ * the merchant/offer/remaining value before committing to
+ * `authorizeAsDeviceRequestSchema`, which places a hold. No new storage —
+ * `services/voucher`'s `lookupAsDevice` handler reads the exact row
+ * `authorizeAsDevice` already loads, just without moving it to `held`.
+ */
+export const lookupAsDeviceRequestSchema = z.object({
+  voucherCode: z.string().min(1),
+  merchantId: z.uuid(),
+});
+export type LookupAsDeviceRequest = z.infer<typeof lookupAsDeviceRequestSchema>;
+
+export const voucherPreviewSchema = z.object({
+  voucherId: z.uuid(),
+  merchantName: z.string().min(1),
+  offerTitle: z.string().min(1),
+  remainingValueMinor: minorUnitsSchema,
+  currency: currencySchema,
+  partialRedemptionPolicy: z.string().min(1),
+});
+export type VoucherPreview = z.infer<typeof voucherPreviewSchema>;
+
 export const authorizeAsDeviceRequestSchema = z.object({
   voucherCode: z.string().min(1),
   deviceId: z.string().min(1),

@@ -33,6 +33,77 @@ import (
 // comment).
 const deviceAuthorizationTTL = 5 * time.Minute
 
+// TASKS.md 8.2.a: a read-only preview before a hold is placed, so a cashier
+// can see the merchant/offer/remaining value and decide the amount BEFORE
+// committing to authorizeAsDevice. Added by Phase 8 (Area C, apps/api's own
+// module), not Phase 4/A — see that ticket's own report for why this
+// touches services/voucher: the two mutating device operations above are
+// the only ones this service exposed for the device path, and neither is
+// safe to call just to look, since authorizeAsDevice already places a hold.
+// No new column, no new table -- purely a narrower read of the same row
+// authorizeAsDevice already loads.
+type lookupAsDeviceBody struct {
+	VoucherCode string `json:"voucherCode"`
+	MerchantID  string `json:"merchantId"`
+}
+
+type voucherPreviewView struct {
+	VoucherID               string `json:"voucherId"`
+	MerchantName            string `json:"merchantName"`
+	OfferTitle              string `json:"offerTitle"`
+	RemainingValueMinor     int64  `json:"remainingValueMinor"`
+	Currency                string `json:"currency"`
+	PartialRedemptionPolicy string `json:"partialRedemptionPolicy"`
+}
+
+func (a *API) lookupAsDevice(w http.ResponseWriter, r *http.Request) {
+	var body lookupAsDeviceBody
+	if !a.decode(w, r, &body) {
+		return
+	}
+	merchantID, err := uuid.Parse(body.MerchantID)
+	if err != nil {
+		httpx.WriteError(w, a.logger, http.StatusBadRequest, "invalid_request_error", "malformed_id", "merchantId is not a uuid")
+		return
+	}
+
+	canonical, err := code.Parse(body.VoucherCode)
+	if err != nil {
+		a.fail(w, fmt.Errorf("%w: no voucher matches this code", errAudienceBlocked))
+		return
+	}
+	digest := sha256.Sum256([]byte(canonical))
+	hash := hex.EncodeToString(digest[:])
+
+	queries := sqlcgen.New(a.pool)
+	voucher, err := queries.FindVoucherByCodeHash(r.Context(), hash)
+	if errors.Is(err, pgx.ErrNoRows) {
+		a.fail(w, fmt.Errorf("%w: no voucher matches this code", errAudienceBlocked))
+		return
+	}
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+	if asUUID(voucher.MerchantID) != merchantID {
+		a.fail(w, fmt.Errorf("%w: this voucher belongs to a different merchant", errAudienceBlocked))
+		return
+	}
+	if !lifecycle.Spendable(lifecycle.State(voucher.State)) {
+		a.fail(w, fmt.Errorf("%w: voucher is %s", errBadRequest, voucher.State))
+		return
+	}
+
+	httpx.WriteJSON(w, a.logger, http.StatusOK, voucherPreviewView{
+		VoucherID:               asUUID(voucher.ID).String(),
+		MerchantName:            voucher.MerchantName,
+		OfferTitle:              voucher.Title,
+		RemainingValueMinor:     voucher.RemainingValueMinor,
+		Currency:                voucher.Currency,
+		PartialRedemptionPolicy: voucher.PartialRedemptionPolicy,
+	})
+}
+
 type authorizeAsDeviceBody struct {
 	VoucherCode string `json:"voucherCode"`
 	DeviceID    string `json:"deviceId"`

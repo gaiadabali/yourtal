@@ -27,6 +27,8 @@ import type {
   AuthorizeAsDeviceRequest,
   Capture,
   CaptureAsDeviceRequest,
+  LookupAsDeviceRequest,
+  VoucherPreview,
 } from "@yourtal/contracts/voucher-internal/redemption";
 import type {
   KillSwitch,
@@ -98,6 +100,10 @@ export class FakeVoucherClient implements VoucherInternalClient {
 
   get(request: GetVoucherRequest): ResultAsync<Reservation, VoucherError> {
     return walletOps.get(this.db, request);
+  }
+
+  lookupAsDevice(request: LookupAsDeviceRequest): ResultAsync<VoucherPreview, VoucherError> {
+    return redemption.lookupAsDevice(this.db, request);
   }
 
   authorizeAsDevice(request: AuthorizeAsDeviceRequest): ResultAsync<Authorization, VoucherError> {

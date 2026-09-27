@@ -34,7 +34,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 30/32 | `█████████░`  94% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 31/32 | `██████████`  97% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/57 | `██████████` 100% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **41/87** | **244/402** | `██████░░░░`  61% |
+| **All** | | | **41/87** | **245/402** | `██████░░░░`  61% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -593,7 +593,7 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.3.f **Check:** staging shows the banner, a reviewer can log in with a demo account, and `/dev/clock` releases the tier-0 viewer's pending points. — Verified on staging 2026-09-26 at 34d40ca, live ledger: banner and `robots.txt` Disallow on `/`; `viewer.au@demo.yourtal.test` signs in; wallet 0 available / 500 pending (unlock 2026-09-29) → `POST /api/dev/clock/release-pending` → `{"ledgerMode":"live","released":1}` → 500 available / 0 pending, with a `platform.dev_clock_audit` row. The live release goes through the ledger's staging-only `POST /v1/dev/advance-holdback` (off unless `APP_ENV` is dev or staging).
   - [x] 2.3.g (requested by B) Build the web artifact with `APP_ENV=staging` set, not only run it: static public pages bake the banner and `robots.txt` at build time (`apps/web/features/shell/app-env.ts`). — Verified live 2026-09-26 at ae748fc: `robots.txt` is `Disallow: /`, the banner renders on `/`, `X-Robots-Tag: noindex, nofollow` from nginx and `proxy.ts`, `/dev/inbox` 200.
   - [x] 2.3.h (requested by B) Build the web artifact with `SITE_URL` set to the staging origin. Canonical, OG, breadcrumb and sitemap URLs are baked at build time and default to `https://yourtal.com` (`apps/web/features/public/public-locale.ts`). — Verified live 2026-09-26: `sitemap.xml` locs are `https://yourtal.gaiada.com/…`.
-  - [ ] 2.3.i (requested by B) Publish the 30 s HLS fixture (`hls/attention-30s/index.m3u8` and its segments) into staging's `yourtal-media` bucket as part of the staging seed, so 2.3.e's campaigns actually play. Today every staging campaign's manifest is `NoSuchKey`. Unblocks 5.6.c. **Check:** a signed manifest URL from session start loads the video through nginx on staging (moved from 5.6.c, F39). — Code merged f1d2f86; the Check waits for staging to deploy it (staging was on 737a58d, 2026-09-27).
+  - [x] 2.3.i (requested by B) Publish the 30 s HLS fixture (`hls/attention-30s/index.m3u8` and its segments) into staging's `yourtal-media` bucket as part of the staging seed, so 2.3.e's campaigns actually play. Today every staging campaign's manifest is `NoSuchKey`. Unblocks 5.6.c. **Check:** a signed manifest URL from session start loads the video through nginx on staging (moved from 5.6.c, F39). — Code merged f1d2f86; the Check waits for staging to deploy it (staging was on 737a58d, 2026-09-27). — Verified on staging 2026-09-27 at 4982c93: the seed published 28/28 fixture objects to `yourtal-media/hls/attention-30s/` as MinIO user `yourtal-app` (bucket-scoped). `viewer.au` started a session on AU campaign …0101; its signed manifest URL through nginx → master 200 `application/vnd.apple.mpegurl`, `v0/index.m3u8` 200, `v0/segment0.ts` 200 `video/mp2t` 80 088 bytes; the same URL with a tampered token → 403.
 
 - [ ] **2.4 Major upgrades, one at a time** · needs: 2.1 (scheduled by 0.8.g; each gets its own branch and `pnpm verify`) — 🔄 slot 4: only the h Check left
   - [x] 2.4.a TypeScript 6.0.3 (7.x still breaks typescript-eslint). — 6.0.3, typescript-eslint unchanged (its peer range already allows it). TS 6 defaults `types` to [], so `packages/tsconfig/base.json` names `node`; two IntersectionObserver fakes gained `scrollMargin` (ed57c69). `pnpm check` and `pnpm verify` green locally.

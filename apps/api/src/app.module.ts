@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { AppConfigModule } from "./config/app-config.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { BillingModule } from "./modules/billing/billing.module";
 import { BusinessModule } from "./modules/business/business.module";
 import { CampaignModule } from "./modules/campaign/campaign.module";
 import { StoreModule } from "./modules/store/store.module";
@@ -42,6 +43,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     BusinessModule,
     CampaignModule,
     StoreModule,
+    BillingModule,
     WatchModule,
     CheckpointModule,
     DevModule,

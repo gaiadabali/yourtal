@@ -3118,6 +3118,92 @@
         ],
         "additionalProperties": false
       },
+      "BillingAllocation": {
+        "description": "A funded pool of points a business can spend on campaigns. remainingPoints already excludes active holds.",
+        "type": "object",
+        "properties": {
+          "allocationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "funderType": {
+            "$ref": "#/components/schemas/FunderType"
+          },
+          "totalPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "remainingPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "allocationId",
+          "region",
+          "funderType",
+          "totalPoints",
+          "remainingPoints",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "BillingBalance": {
+        "description": "A business's total and remaining points across every allocation it holds.",
+        "type": "object",
+        "properties": {
+          "totalPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "remainingPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillingAllocation"
+            }
+          }
+        },
+        "required": [
+          "totalPoints",
+          "remainingPoints",
+          "allocations"
+        ],
+        "additionalProperties": false
+      },
+      "BillingCampaignSpend": {
+        "description": "One campaign's own spend: points granted to viewers and how many completions earned them.",
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "grantedPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "completions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "campaignId",
+          "grantedPoints",
+          "completions"
+        ],
+        "additionalProperties": false
+      },
       "BillingContact": {
         "description": "The person a business's invoices and settlement statements are sent to (docs/17 section 2, Billing zone).",
         "type": "object",
@@ -3918,6 +4004,14 @@
         ],
         "additionalProperties": false
       },
+      "FunderType": {
+        "description": "Who funded an allocation's points: a business's own purchase (partner) or platform marketing spend (marketing, K6).",
+        "type": "string",
+        "enum": [
+          "partner",
+          "marketing"
+        ]
+      },
       "IdrMinorUnits": {
         "description": "Indonesian Rupiah as an integer number of whole Rupiah (exponent 0). Rp 45.000 is 45000. The stored unit follows the payment gateway (decision T-1, 2026-09-22), reversing the earlier sen decision. Prefer Money, which carries its own currency.",
         "type": "integer",
@@ -4717,6 +4811,70 @@
           "imageUrl",
           "channel",
           "partialRedemption"
+        ],
+        "additionalProperties": false
+      },
+      "PurchasePointsRequest": {
+        "description": "Buy a pack of points. currency is required and never defaulted (7.5.a) -- the caller states what it expects to be charged, and a mismatch against the business's own currency is refused rather than coerced.",
+        "type": "object",
+        "properties": {
+          "points": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          }
+        },
+        "required": [
+          "points",
+          "currency"
+        ],
+        "additionalProperties": false
+      },
+      "PurchaseQuote": {
+        "description": "A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries.",
+        "type": "object",
+        "properties": {
+          "points": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "totalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          }
+        },
+        "required": [
+          "points",
+          "totalMinor",
+          "currency"
+        ],
+        "additionalProperties": false
+      },
+      "PurchaseResult": {
+        "description": "What buying a pack produced: the funded allocation, what was actually charged, and the simulated payments driver's own reference.",
+        "type": "object",
+        "properties": {
+          "allocation": {
+            "$ref": "#/components/schemas/BillingAllocation"
+          },
+          "paidMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "providerReference": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "allocation",
+          "paidMinor",
+          "currency",
+          "providerReference"
         ],
         "additionalProperties": false
       },

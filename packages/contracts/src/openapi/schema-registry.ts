@@ -63,6 +63,7 @@ import {
   displayLocaleSchema,
   userProfileSchema,
 } from "../identity/user-profile";
+import { BILLING_CONTRACT_COMPONENTS } from "./schema-registry-billing";
 import { BUSINESS_CONTRACT_COMPONENTS } from "./schema-registry-business";
 
 /**
@@ -538,4 +539,5 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   // stay under the 300-line ceiling once YT-0502/0503/0504 added their
   // components here.
   ...BUSINESS_CONTRACT_COMPONENTS,
+  ...BILLING_CONTRACT_COMPONENTS,
 ];

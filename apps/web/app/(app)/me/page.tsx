@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PageContainer } from "@yourtal/ui/page-container";
 import { PageHeader } from "@yourtal/ui/page-header";
-import { Button } from "@yourtal/ui/button";
 import {
   getAutoplaySetting,
   getMeProfile,
@@ -10,7 +9,7 @@ import {
   listFollows,
   listInterests,
 } from "@/features/me/me-data";
-import { logoutAction } from "@/lib/api/actions";
+import { LogoutButton } from "@/features/me/logout-button";
 import { MeProfileSection } from "@/features/me/me-profile-section";
 import { MeLanguageSection } from "@/features/me/me-language-section";
 import { MeAutoplaySection } from "@/features/me/me-autoplay-section";
@@ -56,13 +55,7 @@ export default async function MePage() {
         <PageHeader
           title={t("page.heading")}
           description={t("page.intro")}
-          actions={
-            <form action={logoutAction}>
-              <Button type="submit" variant="secondary">
-                {t("logout.cta")}
-              </Button>
-            </form>
-          }
+          actions={<LogoutButton label={t("logout.cta")} />}
         />
 
         {profile.ok ? (

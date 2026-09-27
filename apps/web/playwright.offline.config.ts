@@ -43,7 +43,18 @@ const port = playwrightPort(2);
  * Run with: `pnpm exec playwright test --config=playwright.offline.config.ts`.
  * Port 3102 (distinct from the main config's 3100 and any dev server on
  * 3000) so this can run alongside the main e2e suite without colliding.
+ *
+ * 6.9 (F43): the rewritten spec needs a real, signed-in account and a real
+ * voucher, so this config now also needs `apps/api` — reused if already
+ * running (the same `reuseExistingServer: true` pattern
+ * `playwright.a-identity.config.ts`/`playwright.b-wallet.config.ts` use),
+ * with `LEDGER_MODE=live` and a real ledger + voucher built from source
+ * (see `b-wallet-voucher.spec.ts`'s header for the exact commands — this
+ * spec reuses that same live stack and seeding recipe via
+ * `live-voucher-fixture.ts`). `WALLET_VOUCHER_LIVE=1` gates the spec itself.
  */
+const apiPort = Number(process.env["PORT"] ?? 26344);
+
 export default defineConfig({
   testDir: "./e2e",
   testMatch: "offline-voucher-detail.spec.ts",
@@ -70,10 +81,19 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: `pnpm build && next start --port ${port}`,
-    url: `http://127.0.0.1:${port}`,
-    reuseExistingServer: !process.env["CI"],
-    timeout: 300_000,
-  },
+  webServer: [
+    {
+      command: "pnpm --filter @yourtal/api dev",
+      url: `http://127.0.0.1:${apiPort}/api/health`,
+      reuseExistingServer: true,
+      timeout: 60_000,
+      cwd: "../..",
+    },
+    {
+      command: `pnpm build && next start --port ${port}`,
+      url: `http://127.0.0.1:${port}`,
+      reuseExistingServer: !process.env["CI"],
+      timeout: 300_000,
+    },
+  ],
 });

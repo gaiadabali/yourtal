@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import type pg from "pg";
 import {
+  apiBaseUrl,
   checkoutListing,
   ensureAccount,
   grantPointsBestEffort,
@@ -69,12 +71,14 @@ const ACCOUNT: TestAccount = {
 const GRANT_POINTS = 500;
 
 let voucherId: string;
+let token: string;
 let pool: pg.Pool;
 
 test.beforeAll(async ({ request }) => {
   pool = openLiveDbPool();
   const auth = await ensureAccount(request, ACCOUNT);
-  const balanceBefore = await walletBalanceViaToken(request, auth.token);
+  token = auth.token;
+  const balanceBefore = await walletBalanceViaToken(request, token);
   const listingId = await seedListing(pool);
   await grantPointsBestEffort(auth.userId, GRANT_POINTS, balanceBefore, 200);
 
@@ -83,13 +87,24 @@ test.beforeAll(async ({ request }) => {
   // in the test itself (`apiFetch`'s auth guard reads either).
   const { voucherId: minted } = await checkoutListing(
     request,
-    { authorization: `Bearer ${auth.token}` },
+    { authorization: `Bearer ${token}` },
     listingId,
   );
   voucherId = minted;
 });
 
-test.afterAll(async () => {
+test.afterAll(async ({ request }) => {
+  // Dispute the voucher this run minted, so this fixed, reused account's
+  // balance is whole again for the NEXT run — this spec only ever reads
+  // the voucher, so nothing here proves anything about disputing it (6.5.c
+  // already does), it just keeps the account's real daily earn cap
+  // (F12) from being the only way to top it back up between reruns.
+  await request
+    .post(`${apiBaseUrl()}/api/wallet/vouchers/${voucherId}/dispute`, {
+      headers: { authorization: `Bearer ${token}`, "idempotency-key": randomUUID() },
+      data: { reason: "not_honoured" },
+    })
+    .catch(() => {});
   await pool.end();
 });
 
@@ -112,12 +127,22 @@ test("voucher detail page renders from the service worker cache with the network
   await expect(statusBadge).toBeVisible();
 
   // Step 3: wait for the worker to finish installing and activating.
+  // `navigator.serviceWorker.ready` resolves the instant a worker becomes
+  // the registration's `active` worker, which can be a tick before that
+  // worker's OWN `state` string has flipped from "activating" to
+  // "activated" — so this also races `statechange` for the real terminal
+  // state rather than trusting `.ready` alone.
   const swState = await page.evaluate(async () => {
     if (!("serviceWorker" in navigator)) {
       return "unsupported";
     }
     const registration = await navigator.serviceWorker.ready;
-    return registration.active?.state ?? "no-active-worker";
+    const worker = registration.active;
+    if (!worker) return "no-active-worker";
+    if (worker.state === "activated") return "activated";
+    return new Promise<string>((resolve) => {
+      worker.addEventListener("statechange", () => resolve(worker.state));
+    });
   });
   expect(swState, "expected an activated service worker before continuing").toBe("activated");
 

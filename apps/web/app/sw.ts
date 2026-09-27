@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist";
-import { NetworkOnly, Serwist } from "serwist";
+import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
+import { Serwist } from "serwist";
 
 /**
  * The Serwist service worker (YT-0424: "renders from cache with the network
@@ -37,15 +37,17 @@ import { NetworkOnly, Serwist } from "serwist";
  * reachable; what IS reachable, and is what actually matters for YT-0424's
  * red line ("no one signed-in user's page is ever handed to another"), is
  * clearing every runtime-cached page whenever the session itself changes —
- * a fresh login, a fresh register, or a logout. `sessionBoundaryCaching`
- * below hooks exactly those three `/api/auth/*` calls (the SAME ones
- * `defaultCache` already routes `NetworkOnly`, ahead of it in this array so
- * it wins the match) and, once the network genuinely confirms the boundary
- * (a non-ok response — a failed login attempt, say — changes nothing),
- * empties every page/RSC/API runtime cache. The device's very next
- * navigation for whichever session is now active repopulates them from a
- * real, fresh, same-session fetch; nothing stale from a DIFFERENT session
- * is ever left for an offline read to find.
+ * a fresh login, a fresh register, or a logout.
+ *
+ * That boundary can't be caught by intercepting `/api/auth/*` traffic
+ * either, tempting as it looks: `loginAction`/`logoutAction`
+ * (`apps/web/lib/api/actions.ts`) are Server Actions, so the fetch to
+ * `apps/api` happens on the NEXT.JS SERVER, never as a request this
+ * service worker (which only ever sees the BROWSER's own network traffic)
+ * can observe. `clear-session-cache.ts`'s `logout-button.tsx` call site
+ * knows a session just ended and tells this worker directly with
+ * `postMessage`, handled below — see that file's own doc comment for the
+ * login-time half this does not cover yet.
  */
 
 declare global {
@@ -71,28 +73,20 @@ async function clearSessionScopedCaches(): Promise<void> {
   await Promise.all(SESSION_SCOPED_CACHE_NAMES.map((name) => caches.delete(name)));
 }
 
-const sessionBoundaryCaching: RuntimeCaching = {
-  matcher: /\/api\/auth\/(login|register|logout)$/,
-  method: "POST",
-  handler: new NetworkOnly({
-    networkTimeoutSeconds: 10,
-    plugins: [
-      {
-        fetchDidSucceed: async ({ response }) => {
-          if (response.ok) await clearSessionScopedCaches();
-          return response;
-        },
-      },
-    ],
-  }),
-};
+/** `clear-session-cache.ts`'s `postMessage({ type: "yt-clear-session-cache" })` — see this file's own doc comment for why a message, not a network hook, is the only thing that can actually see a session boundary. */
+self.addEventListener("message", (event: ExtendableMessageEvent) => {
+  const data: unknown = event.data;
+  if (typeof data === "object" && data !== null && (data as { type?: unknown }).type === "yt-clear-session-cache") {
+    event.waitUntil(clearSessionScopedCaches());
+  }
+});
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: [sessionBoundaryCaching, ...defaultCache],
+  runtimeCaching: defaultCache,
 });
 
 serwist.addEventListeners();

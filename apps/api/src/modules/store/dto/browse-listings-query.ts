@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { listingCategorySchema } from "@yourtal/contracts/listing";
 import { regionSchema } from "@yourtal/contracts/region";
+import type { Audience } from "@yourtal/contracts/campaign";
+import type { Region } from "@yourtal/contracts/region";
 import type { BrowseListingsFilter } from "../persistence/listing.repository";
 
 /**
@@ -11,16 +13,20 @@ import type { BrowseListingsFilter } from "../persistence/listing.repository";
  * be rejected (400) rather than silently substituted, since a caller
  * filtering by `minPoints=-5` almost certainly has a bug worth surfacing.
  *
- * `region` is REQUIRED, no default (7.4.d, F2) — this route has no
- * `:tenantId` and no session to read a region from, so the caller (the web
- * app) must state "the path region" itself. `DEFAULT_REGION = "ID"`
- * (docs/audit) is exactly the silent-default failure mode this refuses.
+ * `region` here is OPTIONAL, not the caller's actual filter region (7.4.d,
+ * F2, reopened): a signed-in caller's region and audience come from their
+ * OWN principal, never the query, and this file has no way to know whether
+ * a request is signed in. `store-catalogue.controller.ts` resolves the real
+ * principal, decides the EFFECTIVE region/audiences there, and passes them
+ * into `toBrowseFilter` explicitly. This schema still requires SOMETHING be
+ * present for an anonymous caller -- that check is the controller's too,
+ * because it is the one place that knows which case applies.
  */
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
 export const browseListingsQuerySchema = z.object({
-  region: regionSchema,
+  region: regionSchema.optional(),
   category: listingCategorySchema.optional(),
   merchantId: z.uuid().optional(),
   district: z.string().min(1).max(60).optional(),
@@ -33,9 +39,13 @@ export const browseListingsQuerySchema = z.object({
 
 export type BrowseListingsQuery = z.infer<typeof browseListingsQuerySchema>;
 
-export function toBrowseFilter(query: BrowseListingsQuery): BrowseListingsFilter {
+export function toBrowseFilter(
+  query: BrowseListingsQuery,
+  effective: { readonly region: Region; readonly audiences: readonly Audience[] },
+): BrowseListingsFilter {
   return {
-    region: query.region,
+    region: effective.region,
+    audiences: effective.audiences,
     category: query.category,
     merchantId: query.merchantId,
     district: query.district,

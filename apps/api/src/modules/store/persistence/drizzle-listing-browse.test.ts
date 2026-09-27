@@ -59,7 +59,7 @@ describe("browsePublic filters", () => {
     const coffee = await seededListing(MERCHANT_COFFEE, { category: "food_beverage" });
     const retail = await seededListing(MERCHANT_RETAIL, { category: "retail" });
 
-    const page = await repo.browsePublic({ region: "ID", category: "retail", limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", audiences: ["all_ages"], category: "retail", limit: 100 });
     const ids = page.listings.map((listing) => listing.id);
     expect(ids).toContain(retail.id);
     expect(ids).not.toContain(coffee.id);
@@ -67,7 +67,7 @@ describe("browsePublic filters", () => {
 
   it("filters by merchant", async () => {
     const mine = await seededListing(MERCHANT_COFFEE, { category: "digital_goods" });
-    const page = await repo.browsePublic({ region: "ID", merchantId: MERCHANT_COFFEE, limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", audiences: ["all_ages"], merchantId: MERCHANT_COFFEE, limit: 100 });
     expect(page.listings.every((listing) => listing.merchantId === MERCHANT_COFFEE)).toBe(true);
     expect(page.listings.some((listing) => listing.id === mine.id)).toBe(true);
   });
@@ -81,7 +81,7 @@ describe("browsePublic filters", () => {
     });
 
     const page = await repo.browsePublic({
-      region: "ID",
+      region: "ID", audiences: ["all_ages"],
       minPoints: 5_000,
       maxPoints: 10_000,
       limit: 100,
@@ -95,7 +95,7 @@ describe("browsePublic filters", () => {
     const senopati = await seededListing(MERCHANT_RETAIL, { district: "Senopati" });
     const kemang = await seededListing(MERCHANT_RETAIL, { district: "Kemang" });
 
-    const page = await repo.browsePublic({ region: "ID", district: "Senopati", limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", audiences: ["all_ages"], district: "Senopati", limit: 100 });
     const ids = page.listings.map((listing) => listing.id);
     expect(ids).toContain(senopati.id);
     expect(ids).not.toContain(kemang.id);
@@ -111,7 +111,7 @@ describe("browsePublic filters", () => {
       description: "Diskon untuk pembelian gadget.",
     });
 
-    const page = await repo.browsePublic({ region: "ID", search: "Kopi", limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", audiences: ["all_ages"], search: "Kopi", limit: 100 });
     const ids = page.listings.map((listing) => listing.id);
     expect(ids).toContain(match.id);
     expect(ids).not.toContain(noMatch.id);
@@ -134,7 +134,7 @@ describe("browsePublic filters", () => {
   it("never exposes settlementValueMinor -- S with priceInPoints publishes B (ID-1)", async () => {
     await seededListing(MERCHANT_COFFEE, { title: "Rate leak probe" });
 
-    const page = await repo.browsePublic({ region: "ID", limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", audiences: ["all_ages"], limit: 100 });
     expect(page.listings.length).toBeGreaterThan(0);
     for (const listing of page.listings) {
       expect(listing).not.toHaveProperty("settlementValueMinor");
@@ -146,13 +146,13 @@ describe("browsePublic filters", () => {
       await seededListing(MERCHANT_RETAIL, { title: `Cursor Listing ${String(index)}` });
     }
 
-    const firstPage = await repo.browsePublic({ region: "ID", merchantId: MERCHANT_RETAIL, limit: 1 });
+    const firstPage = await repo.browsePublic({ region: "ID", audiences: ["all_ages"], merchantId: MERCHANT_RETAIL, limit: 1 });
     expect(firstPage.listings).toHaveLength(1);
     expect(firstPage.hasMore).toBe(true);
 
     const cursor = firstPage.listings[0]?.id;
     const secondPage = await repo.browsePublic({
-      region: "ID",
+      region: "ID", audiences: ["all_ages"],
       merchantId: MERCHANT_RETAIL,
       limit: 1,
       startingAfter: cursor,

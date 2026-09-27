@@ -150,7 +150,7 @@ describe("public visibility follows lifecycle_state, not existence", () => {
     await repo.setLifecycleState(MERCHANT_A, created.id, "retired");
 
     expect(await repo.findPublicById(created.id)).toBeNull();
-    const page = await repo.browsePublic({ region: "ID", limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", audiences: ["all_ages"], limit: 100 });
     expect(page.listings.some((listing) => listing.id === created.id)).toBe(false);
   });
 });

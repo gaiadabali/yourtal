@@ -67,8 +67,19 @@ export interface EditListingInput {
 }
 
 export interface BrowseListingsFilter {
-  /** 7.4.d/F2: never optional -- an anonymous caller states it (the web app's own path region). */
+  /**
+   * 7.4.d/F2: never optional at THIS layer -- the controller always resolves
+   * a concrete region before calling in, either the caller's own (signed in)
+   * or the anonymous path region it required in the query string.
+   */
   readonly region: Region;
+  /**
+   * Every audience this caller may see (7.4.d) -- `["all_ages"]` for an
+   * anonymous caller (no age band to reach anything else), or whatever
+   * `reachesAudience` admits for a signed-in one's real age band. Always at
+   * least one value; never client-supplied.
+   */
+  readonly audiences: readonly Audience[];
   readonly category?: ListingCategory | undefined;
   readonly merchantId?: string | undefined;
   readonly district?: string | undefined;

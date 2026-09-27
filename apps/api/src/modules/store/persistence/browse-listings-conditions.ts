@@ -1,4 +1,4 @@
-import { and, eq, gt, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
 import type { BrowseListingsFilter } from "./listing.repository";
@@ -7,19 +7,14 @@ import type { BrowseListingsFilter } from "./listing.repository";
 export const PUBLIC_LIFECYCLE_STATE = "active";
 
 /**
- * 7.4.d: anonymous catalogue browse gates on `all_ages` only -- there is no
- * signed-in principal here to read an age band from (see
- * `store-catalogue.controller.ts`'s doc comment), and `reachesAudience`
- * (`@yourtal/contracts/audience`) has no "unknown viewer" case to widen
- * this from.
- */
-const ANONYMOUS_AUDIENCE = "all_ages";
-
-/**
  * Builds the `WHERE` clause for the public catalogue — region (F2) and
  * audience floors, category, merchant, price band, district (through the
  * joined location) and full-text search, every one optional except the
  * first two, AND-ed together with the `active`-only floor.
+ *
+ * `filter.audiences` is the caller's FULL reach (7.4.d): `["all_ages"]` for
+ * an anonymous caller, or whatever `reachesAudience` admits for a signed-in
+ * one's real age band -- computed once, by the controller, never here.
  *
  * `minPoints`/`maxPoints` prefer `platform.listing_points` (kept current by
  * 4.9.a's reprice job) but `COALESCE` to `listings.price_in_points`, the
@@ -37,7 +32,7 @@ export function browseConditions(filter: BrowseListingsFilter): SQL {
   const conditions = [
     eq(listings.lifecycleState, PUBLIC_LIFECYCLE_STATE),
     eq(listings.region, filter.region),
-    eq(listings.audience, ANONYMOUS_AUDIENCE),
+    inArray(listings.audience, filter.audiences),
   ];
   if (filter.category !== undefined) conditions.push(eq(listings.category, filter.category));
   if (filter.merchantId !== undefined) conditions.push(eq(listings.merchantId, filter.merchantId));

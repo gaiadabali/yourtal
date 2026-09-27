@@ -971,7 +971,9 @@ export const STUDIO_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "Submit a campaign draft for review",
     tags: ["studio", "campaign"],
     pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM],
-    successStatus: 200,
+    // Nest's default POST status -- campaign-draft.controller.ts's `submit`
+    // carries no @HttpCode override, verified against the real 7.3.e Check.
+    successStatus: 201,
     successDescription:
       'The campaign, now in lifecycleState "in_review" (or later -- see illegal_transition below for a repeat call).',
     successSchema: campaignDraftResponseSchema,

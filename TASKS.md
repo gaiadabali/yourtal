@@ -38,15 +38,15 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/57 | `██████████` 100% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 5/6 | 24/26 | `█████████░`  92% |
-| **Phase 6** Viewer app | B | 🔄 in progress | 0/8 | 1/31 | `░░░░░░░░░░`   3% |
-| **Phase 7** Business studio | C | 🔄 in progress | 0/8 | 1/35 | `░░░░░░░░░░`   3% |
+| **Phase 6** Viewer app | B | 🔄 in progress | 0/4 | 1/13 | `█░░░░░░░░░`   8% |
+| **Phase 7** Business studio | C | 🔄 in progress | 0/8 | 1/36 | `░░░░░░░░░░`   3% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
-| **Phase 9** Staff console | C | · not started | 0/6 | 0/19 | `░░░░░░░░░░`   0% |
-| **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
-| **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
+| **Phase 9** Staff console | C | · not started | 0/5 | 0/16 | `░░░░░░░░░░`   0% |
+| **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/28 | `░░░░░░░░░░`   4% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **40/86** | **235/391** | `██████░░░░`  60% |
+| **All** | | | **40/87** | **235/396** | `██████░░░░`  59% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -62,15 +62,15 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | 3 | **5** Watch & earn | Phase 1 ✅ | ~5d |
 | 3 | **2** Staging on Helios | Phase 1 ✅. Start it as soon as a slot is free: after it, every merge is live on staging. | ~2.5d |
 | 4 | **7** Business studio | Phase 1 ✅. Its 7.7 also needs 5.4, and its UI task 7.8 needs Phase 3. | ~9d |
-| 4 | **10** Settlement, lifecycle & risk | Phase 4 ✅ | ~5d |
-| 5 | **6** Viewer app | Phases 3 and 5 ✅, plus 7.4 and 7.7. Its 6.8.d needs 7.3.f and 6.8.e needs 10.2. | ~7d |
+| 4 | **10** Settlement, lifecycle & risk | Phase 4 ✅. Its C tasks 10.5 and 10.6 also wait for 9.1 and 9.4. | ~7d |
+| 4 | **6** Viewer app | Phase 3 ✅, plus 4.8 and 5.4 | ~3.5d |
 | 5 | **8** Voucher engine for clients | Phases 4 and 5 ✅ | ~5d |
-| 5 | **11** Public site | Phases 3 and 7 ✅ | ~3d |
-| 6 | **9** Staff console | Phases 7 and 10 ✅ | ~5d |
-| 6 | **12** Teen & family mode | Phases 7 and 10 ✅ | ~3d |
+| 5 | **9** Staff console | Phase 7 ✅ | ~4d |
+| 5 | **11** Viewer feed & public site | Phases 5, 6 and 7 ✅ | ~8d |
+| 6 | **12** Teen & family mode | Phases 10 and 11 ✅ | ~3d |
 | 7 | **13** Ready for live review | every other phase ✅ | ~3d |
 
-**Never run these two at once:** 4 and 10 (both rewrite `services/ledger`), and 5 and 6 (both change the player and watch flow). The waves above already keep them apart.
+**Never run these two at once:** 4 and 10 (both rewrite `services/ledger`), and 5 and 11 (both change the player and watch flow). The waves above already keep them apart.
 
 ## Now
 
@@ -79,8 +79,8 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **7** Business studio | 2026-09-27 | Four agents. A (`yourtal-1`, `phase/7`, db `yourtal_s1`): 7.1 → 7.3 → 7.7. B (`yourtal-p7-b`, `phase/7-b`, db `yourtal_s4b`, web/api 26410/26411, Valkey /9): 7.4 → 7.5. C (`yourtal-p7-c`, `phase/7-c`, db `yourtal_s4c`, 26420/26421, Valkey /10): 7.2. D (`yourtal-p7-d`, `phase/7-d`, db `yourtal_s4d`, 26440/26441, Valkey /12): 7.8. Helpers share slot 1's Cerbos (26315). 7.6 goes to whoever frees up first. Phase 4 ✅ (4.6.g's D16 moved to 8.2.f; branch `phase/4` kept) |
-| 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | 5.1–5.4 ✅. Two agents: C (`yourtal-2`, `phase/5-c`, db `yourtal_s2`) 5.6.a ✅ (0693f67), 5.6.b ✅ (real ledger round trip driven and verified). 5.6.c ⛔ staging deployed but its only campaigns share one missing media object (`NoSuchKey`) — signing/auth verified working, content is not. Fixed three chained main regressions surfaced one after another (73767ec TS, 9009b2b TS, 78d90e4 Go — all one root cause, seed/watch.ts funding every campaign; 5.6.d ✅, Integration green again on main). C stopped here: only 5.6.c left, waiting on staging media, not on this session. D (`yourtal-p5-b`, `phase/5-d`, db `yourtal_s5b`) 5.5.b–d. 5.5.b's expiring and followed-channel feeds moved to 6.8.e and 6.8.d. `phase/5` holds one withdrawn rename commit: never merge it |
-| 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Early slice: 6.1 → 6.2, with 6.5 and 6.7 in parallel. Three agents: A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. 6.3, 6.4, 6.6 and 6.8 wait for 7.4/7.7 and Phase 5's close. |
+| 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | 5.1–5.4 ✅. Two agents: C (`yourtal-2`, `phase/5-c`, db `yourtal_s2`) 5.6.a ✅ (0693f67), 5.6.b ✅ (real ledger round trip driven and verified). 5.6.c ⛔ staging deployed but its only campaigns share one missing media object (`NoSuchKey`) — signing/auth verified working, content is not. Fixed three chained main regressions surfaced one after another (73767ec TS, 9009b2b TS, 78d90e4 Go — all one root cause, seed/watch.ts funding every campaign; 5.6.d ✅, Integration green again on main). C stopped here: only 5.6.c left, waiting on staging media, not on this session. D (`yourtal-p5-b`, `phase/5-d`, db `yourtal_s5b`) 5.5.b–d. 5.5.b's expiring and followed-channel feeds moved to 10.2.d and 7.3.g. `phase/5` holds one withdrawn rename commit: never merge it |
+| 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Early slice: 6.1 → 6.2, with 6.5 and 6.7 in parallel. Three agents: A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. 6.3, 6.4, 6.6 and 6.8 moved to Phase 11 (11.4–11.7), so this slice is now all of Phase 6. |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-27 | Reopened per F38: finishing 2.4.h (trim `/business/campaigns` bundle; wait for slot 2's `me.controller` fix). Everything else in Phase 2 ✅ |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
@@ -844,7 +844,7 @@ The money engines are sound libraries with **confirmed defects and no callers**.
   - [x] 4.9.d B never reaches a browser. — ✅ 2026-09-26 e3f1d8e
     - [x] No API response carries it: `packages/contracts/src/money/no-backing-rate-in-api.test.ts` scans every published path and schema (e3f1d8e).
     - [x] The bundle test fails if any client chunk contains `micros_per_point`, `issuePriceMicros` or `backingMicros`: `pnpm check:bundle-b`, run by perf-budget.yml after the build (e3f1d8e).
-    - [x] `MOCK_BACKING_RATE` is allowed only in the three files that B (6.6.b) and C (7.8.c) remove, plus the contract mocks 13.5.c deletes: `eslint-rules/no-mock-backing-rate.mjs` (e3f1d8e).
+    - [x] `MOCK_BACKING_RATE` is allowed only in the three files that B (11.6.b) and C (7.8.c) remove, plus the contract mocks 13.5.c deletes: `eslint-rules/no-mock-backing-rate.mjs` (e3f1d8e).
   - [x] 4.9.e Switch staging to `LEDGER_MODE=live`; all of `ledger-client.contract.spec.ts` passes against live. The spec already passes 23/23 against a local live ledger (4f282d7). Passed on staging at main 39edb4d (F33): `ledger-client.contract.spec.ts` 30/30 against staging's live ledger and database through an SSH tunnel; staging runs `LEDGER_MODE=live` since 2.1.f.
   - [x] 4.9.f **Check:** Passed on main 568eacd: `coverage_check_test.go` (a 1,000-pt AU purchase adds exactly 1.50 and a streak succeeds; burn and capture move cash and liability by 0), and `pnpm verify` green with the AU rate 3,000,000 before and after.
 - [x] **4.10 Done-when audit** · needs: 4.1–4.9 — ✅ 2026-09-26 764a2ee
@@ -911,7 +911,7 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
   - [x] 5.2.b Schedule: checkpoints at server-chosen times within 20–90% of the duration. Each question has its required `answerableAfterSeconds` (1.1.f), and only questions answerable by that time are picked. The next checkpoint's time is revealed only once coverage reaches it. A token is issued once per (session, index) (EW-08), and only for live campaigns (EW-19). — New `watch.checkpoint_issue` table (migration `20260926130100`) makes issuance itself single-live: a repeated issue while the prior one hasn't expired returns the SAME token rather than minting a second (closes EW-08's "ask twice, spend both" — the OLD `@Idempotent`-with-client-key approach could not). Issuance is gated on sequential index (`checkpointIndex === session.questionsAsked`, so a client cannot pre-fetch ahead) AND on coverage having reached `atSecond − 2s` slack; refused otherwise with 409. `pickQuestionForCheckpoint` filters by `answerableAfterSeconds` per checkpoint and excludes questions already used earlier in the same session (recomputed cheaply, no extra storage). `@Authorize` on `earn` already gates on the campaign being live.
   - [x] 5.2.c `GET /api/watch/sessions/:id/checkpoints/:i` returns a `PresentedQuestion` with **no answer key**, from `selectQuestionsForSession`: a per-user subset and shuffled options. Playback pauses while the question is open; the server timer is 30 s. — Implemented as `POST` (not `GET`; issuing consumes the one live slot, so it is value-moving — see `checkpoint.controller.ts`'s own header for why), still no answer key: `PresentedQuestion` has no field capable of carrying one, and 5.2.g's e2e Check asserts the wire response directly. `CHECKPOINT_ANSWER_TIMER_MS = 30_000` added to `watch-checkpoint-token.ts`.
   - [x] 5.2.d `POST …/checkpoints/:i/answer` (with the token) scores against `question_answer_key` and writes `question_response` with server-measured latency. A timeout is recorded as answered and wrong. The answered-once record lives in a table that is never pruned (EW-09). — `DrizzleQuestionAnswerRepository.recordAnswer`; latency = now − (token's own signed expiry − `CHECKPOINT_TOKEN_TTL_MS`), never the client's report. `timedOut ⇒ wasCorrect = false` regardless of the submitted answer (never voids — still writes a normal wrong-answer row). Writes `campaign.question_response` (INSERT-only for `yourtal_app`, so the conflict-on-replay check uses a caught `unique_violation` rather than `RETURNING`, which needs SELECT — a real bug this ticket's own e2e suite caught), plus `campaign.question`'s aggregate counters and the session's own `questions_asked/correct` (which `complete()` reads, since it can never re-SELECT `question_response`).
-  - [x] 5.2.e Remove the answer keys and client scoring from apps/web (`checkpoint-scoring.ts`, `checkpoint-data.ts`), and require `import type` for question contracts in apps/web (EW-04). The bundle test searches for `correctOptionId` and the seeded answer-key option IDs. — Both files deleted, along with the mock, never-wired `/watch/[campaignId]/checkpoint` route and its quiz/result components (`checkpoint-quiz.tsx`, `checkpoint-result.tsx` + tests) — they passed full `Question` objects (with keys) as props into a `"use client"` component, the actual leak vector. The reusable, already-`import type`-only presentational pieces (`checkpoint-question-step.tsx`, the per-type `questions/*.tsx` views, etc.) are kept for Phase 6. Added: an eslint `no-restricted-imports` rule requiring `import type` for `@yourtal/contracts/question(/question)` in apps/web, and `apps/web/features/checkpoint/no-answer-key-leak.test.ts` (static source scan for the answer-key field names and the seeded fixture's own option id). `CompletionHandoff` no longer links to the deleted route; `earn-journey.spec.ts`'s dependent leg is `test.fixme` pending Phase 6 (6.4.b/c), not silently broken.
+  - [x] 5.2.e Remove the answer keys and client scoring from apps/web (`checkpoint-scoring.ts`, `checkpoint-data.ts`), and require `import type` for question contracts in apps/web (EW-04). The bundle test searches for `correctOptionId` and the seeded answer-key option IDs. — Both files deleted, along with the mock, never-wired `/watch/[campaignId]/checkpoint` route and its quiz/result components (`checkpoint-quiz.tsx`, `checkpoint-result.tsx` + tests) — they passed full `Question` objects (with keys) as props into a `"use client"` component, the actual leak vector. The reusable, already-`import type`-only presentational pieces (`checkpoint-question-step.tsx`, the per-type `questions/*.tsx` views, etc.) are kept for Phase 6. Added: an eslint `no-restricted-imports` rule requiring `import type` for `@yourtal/contracts/question(/question)` in apps/web, and `apps/web/features/checkpoint/no-answer-key-leak.test.ts` (static source scan for the answer-key field names and the seeded fixture's own option id). `CompletionHandoff` no longer links to the deleted route; `earn-journey.spec.ts`'s dependent leg is `test.fixme` pending 11.5.b/c, not silently broken.
   - [x] 5.2.f Derive `questionsAnswered`, `asked` and `correct` from `question_response`, and remove the hard-coded `false` at `watch.controller.ts:186`. — "Derived from" means from the counters written alongside each `question_response` insert (`watch.session.questions_asked/correct` — see 5.2.d; `yourtal_app` cannot SELECT `question_response` itself, by design), not by re-reading that table. `judgeCompletion`'s `questionsAnswered` is `session.questionsAsked >= questionsAskedFor(termsVersion.durationSeconds)`; the hard-coded `false` is gone.
   - [x] 5.2.g **Check:** in an HTTP round trip, a question arrives with no key, a wrong answer and a timeout are both scored wrong by the server, and a 60 s campaign issues exactly one checkpoint. — `watch-earn-journey.e2e.test.ts`: a dedicated 60 s fixture campaign + 2-question bank (the real seeded catalogue is entirely 30 s post-5.1.c, so `questionsAskedFor` is 0 for all of it); asserts `!('correctOptionId' in question)` etc. and that the response body's JSON never contains the substring "correct"; a wrong answer → `wasCorrect: false`; a token forged with a real, still-valid signature but a 40 s-old embedded issuance time → `wasCorrect: false` (not a real 40 s wait — `redeem()` only checks the nonce table, so a token with the right shape is a faithful stand-in); checkpoint index 1 on a 1-question schedule → 404.
 - [x] **5.3 Completion grants the reward (EW-06)** · needs: 5.2, 4.4 (fake ok) — ✅ 2026-09-26 acbdf73
@@ -924,7 +924,7 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
   - [x] 5.4.d **Check:** withdrawing ad-targeting consent is recorded and returned by `GET /api/me/consents`, and account deletion removes the profile and ends every session. — verified end to end, real HTTP + real Postgres, `apps/api/src/modules/me/me.controller.e2e.test.ts` (against this worktree's own Cerbos, `yourtal-cerbos-9`/26395 — the shared slot-2 sidecar does not carry the new `me` policy). `apps/api` 71 files/406 tests green (`.env` sourced); native Cerbos suite 565/565 including the new `MeSuite` (56 tests); route-drift green (new routes in `KNOWN_OUT_OF_SCOPE`, same convention as StoreModule/AuthModule — full OpenAPI transcription is separate work from standing the module up).
 - [ ] **5.5 Streak and notifications on the server** · needs: 5.4, 4.4 (fake ok) — 🔄 slot 2
   - [x] 5.5.a The streak follows F12: a day counts when it has ≥ 1 completed reward session on the region clock (F16). The bonus goes through `grantAction(streak)` on days 3 and 7, paused while coverage < 1.1, and teens get none. Delete `streak-schedule.ts` and the localStorage streak store. — `packages/contracts/src/me/streak.ts` (pure transition, 8 unit tests) + `apps/api/src/modules/me/streak.service.ts`, computed on read (`GET /api/me/streak`) against `watch.session` via a narrow read-only `CompletedWatchDaysReader` — there is no watch-completion hook to trigger this from (`watch.controller.ts` hard-codes `questionsAnswered: false` until 5.3's question bank lands). F12 amounts and the coverage-pause threshold come from `ledger.getSettings(region)` (1.2.f's `streak_bonus_points`/`streak_coverage_pause_threshold` keys), never a constant. `streak-schedule.ts`/`use-streak.ts`/the whole `apps/web/features/streak/**` fake and its two message catalogues deleted; the one page that rendered it (`home/page.tsx`) now has a placeholder comment for Phase 6's real UI. Verified against real Postgres with seeded `watch.session` rows (the real completion path is blocked on 5.3 — see 5.5.c): pays day 3 once and never twice, defers-then-retries the bonus across a coverage pause without losing it (a real off-by-logic bug this ticket's own test caught: `advanceStreak` was checking `length === 3`, which a deferred retry can never re-hit once the day has advanced past it — fixed to `length >= 3 && !granted`), and teens never receive it. No periodic backstop job (a user who never opens the app never sees a deferred bonus retried) — noted as a follow-up, not built this session (effort budget).
-  - [x] 5.5.b `GET /api/me/notifications` is fed by pg-boss events, starting with `ledger.points_unlocked`. Notification preferences are stored. A simulated web-push driver. The two other sources wait on later phases, so they moved to 6.8.d (followed channels, needs 7.3.f) and 6.8.e (`ledger.points_expiring`, needs 10.2). — Done: `ledger.points_unlocked` (real — 4.4.g already announces every release) via a new worker job (`apps/worker/src/jobs/points-unlocked-notify.ts`, consuming the queue 4.4.g's job only ever sent to), `me.notification`/`me.notification_preference`, `GET/PATCH /api/me/notifications`, `GET/PUT .../preferences`, `@yourtal/drivers/push`'s existing simulated driver. Not done, no source event to consume: `ledger.points_expiring` (⛔ 10.2, not started) and new campaigns from followed channels (⛔ 7.3 — added a `(requested by B)` subtask there for the `campaign.published` event `me.follow`s would consume).
+  - [x] 5.5.b `GET /api/me/notifications` is fed by pg-boss events, starting with `ledger.points_unlocked`. Notification preferences are stored. A simulated web-push driver. The two other sources moved next to the events they consume: 7.3.g (followed channels) and 10.2.d (`ledger.points_expiring`). — Done: `ledger.points_unlocked` (real — 4.4.g already announces every release) via a new worker job (`apps/worker/src/jobs/points-unlocked-notify.ts`, consuming the queue 4.4.g's job only ever sent to), `me.notification`/`me.notification_preference`, `GET/PATCH /api/me/notifications`, `GET/PUT .../preferences`, `@yourtal/drivers/push`'s existing simulated driver. Not done, no source event to consume: `ledger.points_expiring` (⛔ 10.2, not started) and new campaigns from followed channels (⛔ 7.3 — added a `(requested by B)` subtask there for the `campaign.published` event `me.follow`s would consume).
   - [ ] 5.5.d The streak bonus is granted when a reward session completes (after 5.3) and by a daily backstop job, not only as a side effect of `GET /api/me/streak`. Idempotent per (user, streak day). · needs: 5.3
   - [ ] 5.5.c **Check:** a third streak day grants the F12 bonus once, and unlocked points raise a notification. — 5.3 merged in acbdf73, so this can run now. It was ⛔ 5.3 for the literal end-to-end (real watch completion → streak → bonus): completion is refused by design until 5.3's question bank lands, so no HTTP round trip can produce a third real completed day yet. Both halves ARE verified independently against real Postgres: the bonus mechanics via seeded `watch.session` rows (`streak.service.test.ts`, 5.5.a) and the notification via a real `ledger.points_unlocked` event (`points-unlocked-notify.test.ts`, 5.5.b). Re-run this Check once 5.3 merges — no code change expected, only a real completed session to drive it with.
 - [x] **5.6 Earning proven against the real ledger and staging** · needs: 5.3, 2.1 — ✅ 2026-09-27 78d90e4
@@ -935,9 +935,9 @@ Earning is the product. Today completion is hard-coded to refuse (`watch.control
 
 **Done when:** a signed-in user can watch a campaign, answer the questions that pause it, and see pending points appear in the ledger for exactly the terms the business set, once per campaign. The audit's farming probes all fail.
 
-## Phase 6 — Viewer app · Area B · ~7d
+## Phase 6 — Viewer app · Area B · ~3.5d
 
-Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen task includes:
+Rebuild and wire the viewer's account screens on the Phase 3 primitives: language, sign-up, wallet and Me. The feed, watch page, store and search need Phase 7, so they are Phase 11. Every screen task includes:
 
 - live data through `apiFetch`;
 - a rebuild on the primitives;
@@ -957,23 +957,8 @@ Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen t
     - `/login`, `/forgot`, `/reset` and `/verify`.
   - [ ] 6.2.b Onboarding after register: per-purpose consent, then interests (only if targeting consent was given, which the step says), then follow 3 channels, then done, which goes to `returnTo`. **Delete** the phone-OTP mock (`otp-mock-service.ts`, `DEMO_OTP_CODE`) and the hard-coded reward amounts (`region-option.ts:31,37`, `done/page.tsx:22`).
   - [ ] 6.2.c **Check:** a new AU account created through the UI lands on Home in English, and an ID account lands in Indonesian.
-- [ ] **6.3 Home: the For You feed** · needs: 3.5, 7.7 (fake ok), 5.3
-  - [ ] 6.3.a A vertical feed of campaign teasers from C's feed API. Each item shows the channel avatar, the title and honest terms before any action: "18 min · 3 questions · up to 112 pts · ~120 MB · finish to earn" (AU; F12).
-  - [ ] 6.3.b **Quick campaigns (under 60 s, so they have no questions; F15) earn inside the feed.** Tapping Earn starts a reward session in place, and the earn moment lands in the item before the user swipes on. Longer campaigns show a teaser and **Watch & earn**. `/quick` redirects to Home.
-  - [ ] 6.3.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.
-  - [ ] 6.3.d Each item offers Share (Web Share API to the public campaign page, with no reward), Save, Not interested, and "Why am I seeing this?", which explains the 7.7 ranking.
-  - [ ] 6.3.e **Check:** on staging (after 7.2.e media), a new user scrolls the feed, earns a Quick campaign in place, and the wallet shows it pending.
-- [ ] **6.4 Watch: campaign page and player** · needs: 6.3
-  - [ ] 6.4.a The campaign page works like a YouTube watch page: player, channel row with Follow, the terms card, chapters, and more from this channel. The terms card states the question count, "stopping early earns nothing" and "new accounts' points unlock after up to 3 days", and shows absolute points from the terms. **Delete `campaign-reward-split.ts`** (its `BASE_REWARD_RATIO = 0.6` is not what gets paid).
-  - [ ] 6.4.b Wire the player to 5.1–5.3:
-    - the progress bar shows server coverage (EW-15);
-    - playback rate is locked to 1 and playback pauses when hidden, in reward sessions (EW-14);
-    - question overlays with the pause and the 30 s timer;
-    - captions;
-    - a video error state and a resume prompt.
-  - [ ] 6.4.c The completion screen: the earn moment, an **Up next** card that needs a tap (never autoplay), and the funder's own vouchers ("Spend at <brand>", docs/23 §1.0b).
-  - [ ] 6.4.d In-app channel pages at `/c/[handle]`: cover, logo, Follow, the channel's campaigns and its vouchers.
-  - [ ] 6.4.e **Check:** a full campaign watched on staging pauses for its questions, then shows the earn moment and Up next.
+- [ ] **6.3 Home: the For You feed** — ✂️ cut: moved to 11.4 (it needs Phase 7's feed); each 6.3.x is now 11.4.x
+- [ ] **6.4 Watch: campaign page and player** — ✂️ cut: moved to 11.5 (it needs the feed, now 11.4); each 6.4.x is now 11.5.x
 - [ ] **6.5 Wallet and voucher** · needs: 4.8 (fake ok) — 🔄 slot 3
   - [ ] 6.5.a A balance card shows available, pending (with unlock dates) and expiring (only if expiry is enabled), above a plain-language history.
   - [ ] 6.5.b Each voucher is a pass:
@@ -982,21 +967,13 @@ Rebuild and wire every consumer screen on the Phase 3 primitives. Every screen t
     - its status;
     - **"This voucher didn't work"** (4.7.c).
   - [ ] 6.5.c **Check:** the QR changes every window and shows with the network off, and a dispute on an unused voucher returns its points exactly once.
-- [ ] **6.6 Store and checkout** · needs: 4.7 (fake ok), 7.4
-  - [ ] 6.6.a The store is a shoppable grid with images, filters (category, channel, price) and the balance chip. It shows only the viewer's region and audience (7.4.d).
-  - [ ] 6.6.b The offer page shows terms, locations, channel and expiry. **Get it** locks the price with a countdown (4.7) and checks out, with errors in plain language (the 1.2.c enum). (requested by A) Delete `burn-data.ts`'s rate and `wallet-history.ts`'s mock rate (4.9.d).
-  - [ ] 6.6.c **Check:** the bought voucher is in the wallet immediately, the balance drops by the locked price, and an ID account never sees an AU listing.
+- [ ] **6.6 Store and checkout** — ✂️ cut: moved to 11.6 (it needs Phase 7's listings); each 6.6.x is now 11.6.x
 - [ ] **6.7 Me** · needs: 5.4 — 🔄 slot 3
   - [x] 6.7.a Profile, language, interests, follows, per-purpose consent (withdrawal takes effect), password change, log out, delete account, download my data, notification settings, linked apps (5.4.c) and an autoplay setting (Always / Wi-Fi only / Never; Wi-Fi only by default in ID). — `apps/web/app/(app)/me/page.tsx` + `apps/web/features/me/**` rebuilt wholesale on live `apiFetch` data and Phase 3 primitives (every old localStorage-backed widget deleted). New backend: `apps/api/src/modules/me/settings.controller.ts` (`GET`/`PUT /api/me/settings/autoplay`), `viewer-setting.repository.ts` (+`AutoplaySettingReader`, exported from `MeModule` for 6.3's feed to inject), migration `20260926160000_me_viewer_setting.sql`, Cerbos `view_settings`/`update_settings` (`me.yaml`, `me_test.yaml` 62 OK). `follows.controller.ts` now returns each channel's displayName/handle/logoUrl (narrow read over C's table). Interests use the real taxonomy's root categories (`me-interest-catalogue.ts`), not the old hand-duplicated list (which included "beauty"/"health" -- blocked terms `defineTaxonomy` would reject as real nodes). Password change re-issues the session cookie after `changePassword` revokes every prior session. Delete account calls the real 5.4.b DSAR deletion, not a local-storage clear.
-  - [ ] 6.7.b **Check:** logging out ends the session on the server, and the autoplay setting holds on the feed. — First half done: real HTTP round trip, pre-logout `GET /api/me` 200, `POST /api/auth/logout` `{loggedOut:true}`, post-logout `GET /api/me` with the same token 401, and `identity.session`'s row has a real `revoked_at` (verified against Postgres directly). Second half open — ⛔ 6.3: the feed doesn't exist yet to hold the setting on; `GET`/`PUT /api/me/settings/autoplay` itself is proven to persist and read back correctly (e2e test + a manual round trip), which is as much of this check as can run today.
-- [ ] **6.8 Notifications and search** · needs: 5.5, 7.7
-  - [ ] 6.8.a A bell in the top bar showing 5.5.b notifications.
-  - [ ] 6.8.b Search results (from 7.7.c) for campaigns, channels and vouchers.
-  - [ ] 6.8.d (moved from 5.5.b) A new campaign from a followed channel (`me.follow`) raises a notification, consumed from 7.3.f's `campaign.published` event by a job in `apps/worker/src/jobs/`. · needs: 7.3.f
-  - [ ] 6.8.e (moved from 5.5.b) `ledger.points_expiring` raises a notification, only while expiry is on for the region. · needs: 10.2.a
-  - [ ] 6.8.c **Check:** a search for a demo brand finds its channel and vouchers.
+  - [ ] 6.7.b **Check:** logging out ends the session on the server, and the autoplay setting persists (holding it on the feed moved to 11.4.f). — First half done: real HTTP round trip, pre-logout `GET /api/me` 200, `POST /api/auth/logout` `{loggedOut:true}`, post-logout `GET /api/me` with the same token 401, and `identity.session`'s row has a real `revoked_at` (verified against Postgres directly). The feed half moved to 11.4.f; `GET`/`PUT /api/me/settings/autoplay` itself is proven to persist and read back correctly (e2e test + a manual round trip), which is as much of this check as can run today.
+- [ ] **6.8 Notifications and search** — ✂️ cut: moved to 11.7 (it needs Phase 7's search); each 6.8.x is now 11.7.x
 
-**Done when:** the whole viewer journey (register → feed → earn in place → watch with questions → store → voucher in wallet → dispute) works on staging in both regions, on the new design, with no mock data and no hard-coded strings.
+**Done when:** a new viewer registers and onboards in either region and language, sees pending points and voucher passes in the wallet (the QR works offline, a dispute returns points once), and manages everything on Me, on staging, on the new design, with no mock data and no hard-coded strings.
 
 ## Phase 7 — Business studio · Area C · ~9d
 
@@ -1018,7 +995,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     The worker calls C's internal `POST /internal/studio/media/:assetId/ready`, and the studio module writes the campaign's media columns. The worker never touches campaign tables. A failure is visible in Studio.
   - [ ] 7.2.c Media URLs come from config, **never** from `127.0.0.1` literals (`campaign.mock.ts:48-49`). (requested by C) A's nginx routes (2.1.c). Export `signed-segment-url` from `packages/media` for B's 5.1.d.
   - [ ] 7.2.d The demo media kit (F7): `pnpm demo:media` fetches the Pexels and Blender clips listed in `demo-media.json`. Per campaign that manifest holds the brand, the clip, and 3–5 facts to burn in with ffmpeg `drawtext` at stated timestamps. It muxes a CC0 music bed into silent clips, and generates brand logos as SVG monograms. Licences are recorded per clip. Questions are generated from the facts, and each fact's timestamp becomes the question's `answerableAfterSeconds`.
-  - [ ] 7.2.e `pnpm demo:media` has produced 8 campaigns and 6 vouchers per region on staging (feeds B's 6.3.e and 11.1).
+  - [ ] 7.2.e `pnpm demo:media` has produced 8 campaigns and 6 vouchers per region on staging (feeds B's 11.4.e and 11.1).
   - [ ] 7.2.f **Check:** a 3-minute mp4 uploaded on staging becomes HLS, a poster, a teaser under 1.5 MB and captions within about 2 minutes.
 - [ ] **7.3 Campaign authoring API** · needs: 7.5, 7.1
   - [ ] 7.3.a Draft CRUD covering:
@@ -1040,6 +1017,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     Publishing snapshots a terms version that includes the bonus.
   - [ ] 7.3.d Lifecycle `draft → in_review → live → paused → ended`, enforced by `canTransition` and by a database trigger (EW-17). Submitting is refused while the business is not KYB-verified (red line 7) and sends the campaign to moderation (9.2).
   - [ ] 7.3.f (requested by B for 5.5.b) A pg-boss event (e.g. `campaign.published`) when a campaign transitions to `live`, carrying at least `campaignId`, `businessId` and `region`. `apps/api/src/modules/me`'s notification worker consumes it to notify a business's followers (`me.follow`) — see 5.5.b's own note on what it built without this.
+  - [ ] 7.3.g (moved from 5.5.b) Followers hear about it: a job `apps/worker/src/jobs/campaign-published-notify.ts`, like `points-unlocked-notify.ts`, consumes 7.3.f's event and writes a `me.notification` for each `me.follow` of that business in its region.
   - [ ] 7.3.e **Check:** an HTTP round trip creates a funded campaign at the F12 ceiling, with a question bank, and submits it to `in_review`; one point per minute above the ceiling is refused.
 - [ ] **7.4 Inventory (vouchers)** · needs: 7.1, 4.9 (fake ok) — 🔄 slot 1
   - [ ] 7.4.a Locations CRUD. Today only the seed creates `store.merchant_location`, so a new business cannot list anything.
@@ -1116,7 +1094,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
   - [ ] 8.2.c A counter device can never void or refund.
   - [ ] 8.2.d Move the merchant and provisioning copy into `messages/*/merchant.json`, and delete `merchant-copy.ts`, `merchant-error-copy.ts` and `provisioning-copy.ts`. One language per screen, from the device locale, with no bilingual stacking. The lint rules become errors for `features/merchant`.
   - [ ] 8.2.f (moved from 4.6.g) D16 regression tests: the counter's client bundle holds no voucher catalogue, and a hand-made or unsigned `yt_device` cookie is refused by the page and the BFF.
-  - [ ] 8.2.e **Check:** a voucher bought in 6.6 is redeemed at a counter on staging, and the user's wallet shows it as redeemed.
+  - [ ] 8.2.e **Check:** a voucher bought through `POST /api/checkout` (4.7) is redeemed at a counter on staging, and `GET /api/wallet/vouchers` shows it as redeemed.
 - [ ] **8.3 Client SDK and developer page** · needs: 4.5, 4.6 — 🔄 slot 8 (8.3.b only, F27)
   - [ ] 8.3.a Studio → Developers: issue, rotate and revoke merchant HMAC credentials (4.5.d), with a sandbox credential per business. A documentation page covers the signing spec, authorize / capture / void / refund, errors and idempotency.
   - [ ] 8.3.b `packages/sdk-merchant`: a small TypeScript SDK that signs requests and calls authorize / capture / void / refund, with retries and idempotency keys, plus an example script.
@@ -1146,12 +1124,12 @@ The internal team runs the economy and the review queues. Today none of it exist
 - [ ] **9.3 Businesses** · needs: 9.1, 7.1
   - [ ] 9.3.a KYB review (approve or reject documents, setting `is_verified`) and business suspension.
   - [ ] 9.3.b **Check:** approving KYB unblocks submit, and a suspended business's campaigns leave the feed.
-- [ ] **9.4 Users and support** · needs: 9.1, 4.7, 10.1, 10.4
+- [ ] **9.4 Users and support** · needs: 9.1, 4.7
   - [ ] 9.4.a Search users and view their ledger history.
   - [ ] 9.4.b Suspend into **escrow** (never zero a balance), and release.
   - [ ] 9.4.c Goodwill through `grantAction(goodwill)`, marketing-funded, within the F12 per-case limit.
-  - [ ] 9.4.d Change trust tier, the manual-review queue from 10.4, and the K13 dispute queue for captured vouchers (4.7.c).
-  - [ ] 9.4.e **Check:** a suspension moves available and pending points to escrow, and a K13 dispute resolves with a recovery line (10.1).
+  - [ ] 9.4.d Change trust tier, and the K13 dispute queue listing captured-voucher disputes (4.7.c). The risk review queue and resolving a dispute need Phase 10, so they are 10.5.
+  - [ ] 9.4.e **Check:** a suspension moves available and pending points to escrow, and a captured-voucher dispute appears in the K13 queue.
 - [ ] **9.5 Economy** · needs: 9.1, 4.9
   - [ ] 9.5.a Show, per region: coverage; daily issuance, burn and breakage; the reserve; the reported spread (purchase cash − granted points × B); and point purchases.
   - [ ] 9.5.b Rate changes (B and P_issue) through `proposeRate` / `approveRate`, requiring a second staff member. B is never shown outside this screen.
@@ -1161,14 +1139,13 @@ The internal team runs the economy and the review queues. Today none of it exist
     - a rate change needs a second approver;
     - changing the AU daily cap changes what RiskGate enforces;
     - coverage matches the ledger.
-- [ ] **9.6 Settlement** · needs: 9.1, 10.1
-  - [ ] 9.6.a Weekly statements, disputes and payout approval.
-  - [ ] 9.6.c (moved from 7.5.b) Studio billing lists the business's statements from 10.1, and `POST /api/:tenantId/studio/billing/statements/:id/dispute` holds that payout until staff resolve it in 9.6.a.
-  - [ ] 9.6.b **Check:** an approved statement produces one simulated payout after the dispute window, and a disputed one pays nothing until resolved.
+- [ ] **9.6 Settlement** — ✂️ cut: moved to 10.6 (it needs 10.1's statements)
 
-**Done when:** a staff member can approve a campaign and a business, suspend a user into escrow, resolve a voucher dispute, change a rate with a second approver, and adjust any economy setting per region, all on staging.
+**Done when:** a staff member can approve a campaign and a business, suspend a user into escrow, see a voucher dispute in the queue, change a rate with a second approver, and adjust any economy setting per region, all on staging.
 
-## Phase 10 — Settlement, lifecycle & risk · Area A · ~5d
+## Phase 10 — Settlement, lifecycle & risk · Areas A + C · ~7d
+
+10.1–10.4 are A. 10.5 and 10.6 are C's staff and Studio screens for them, done last, after Phase 9's 9.1 and 9.4.
 
 - [ ] **10.1 Clearing & settlement** · needs: 4.6, 4.7
   - [ ] 10.1.a A worker job posts each `capture_outbox` row to the ledger with idempotency key = capture ID: voucher liability → merchant payable, at ceil(S × captured ÷ face value), capped so the total never exceeds S. Test: Σ captures = Σ payable postings.
@@ -1178,6 +1155,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 - [ ] **10.2 Expiry: built, off by default (F2)** · needs: 4.4
   - [ ] 10.2.a `last_activity_at` is a column on the user's ledger points account, written inside every grant and burn transaction. Points expiry reads the per-region `points_expiry` setting (1.2.f; 9.5.d later makes it editable), **off by default**. When on, it posts breakage with the key `expire_<account>_<last_activity_at>`, skips escrow, and emits `ledger.points_expiring` 30 and 7 days before.
   - [ ] 10.2.b A voucher expiry job covers active vouchers and dead holds, and emits `voucher.expired`.
+  - [ ] 10.2.d (moved from 5.5.b) `ledger.points_expiring` raises a viewer notification through a job in `apps/worker/src/jobs/`, like `points-unlocked-notify.ts`, only while expiry is on for the region.
   - [ ] 10.2.c **Check:** with expiry off, nothing expires. With it on for a test region, an account clock-shifted 12 months posts breakage once, and an escrowed account does not.
 - [ ] **10.3 A daily proof that means something** · needs: 4.6
   - [ ] 10.3.a Record the proof after day close with a grace period, refusing today and future days. Verify every proved day. Write the roots to an append-only store outside the database (a simulated bucket driver). Include allocations, grants, purchases, rates and the voucher heads in the leaves (EM-07, EM-24).
@@ -1186,13 +1164,24 @@ The internal team runs the economy and the review queues. Today none of it exist
   - [ ] 10.3.d **Check:** tampering with one past ledger entry or voucher event fails verification, and `GET /api/proof/roots` returns that day's root. (The public page is 11.3.c.)
 - [ ] **10.4 Risk rules v1** · needs: 4.4, 5.1
   - [ ] 10.4.a A real `RiskGate` replaces `AlwaysAllow` (`engine.go:62`). It checks velocity per user, device and IP; timing plausibility (answers that come too fast); impossible flows; and the daily and monthly caps (F12).
-  - [ ] 10.4.b Trust: every tier earns the full terms (F13); the tier sets only the holdback (F12). Tier promotion follows F12. Flags are written to a manual-review queue table (9.4 later shows it), and a suspension moves the balance to escrow.
+  - [ ] 10.4.b Trust: every tier earns the full terms (F13); the tier sets only the holdback (F12). Tier promotion follows F12. Flags are written to a manual-review queue table (10.5 shows it), and a suspension moves the balance to escrow.
   - [ ] 10.4.c Delivery-log cross-check (EW-18): a worker job loads the nginx log into `platform.delivery_log`, and `deliveryCoverage(sessionId)` says whether the signed segments served cover the claimed coverage. B's completion (5.3) calls it; a gap flags the session for review and never fails it silently.
   - [ ] 10.4.d **Check:** a scripted farming account is flagged and its pending points are held, and a tier-0 account's grant unlocks after 72 h.
 
-**Done when:** a week of simulated activity produces statements that reproduce from the ledger; expiry does nothing until it is switched on; the proof, solvency and risk jobs run and alert.
+- [ ] **10.5 Staff review queues (moved from 9.4)** · C · needs: 9.4, 10.1, 10.4
+  - [ ] 10.5.a The manual-review queue from 10.4.b in the staff console: see why an account was flagged, then release it or suspend it into escrow.
+  - [ ] 10.5.b Resolving a captured-voucher K13 dispute (4.7.c) posts a recovery line against that merchant (10.1).
+  - [ ] 10.5.c **Check:** a flagged account is released from the queue, and a K13 dispute resolves with a recovery line on the merchant's next statement.
+- [ ] **10.6 Settlement screens (moved from 9.6)** · C · needs: 9.1, 10.1
+  - [ ] 10.6.a (was 9.6.a) Staff console: weekly statements, disputes and payout approval.
+  - [ ] 10.6.b (was 9.6.c, from 7.5.b) Studio billing lists the business's statements, and `POST /api/:tenantId/studio/billing/statements/:id/dispute` holds that payout until staff resolve it in 10.6.a.
+  - [ ] 10.6.c **Check:** an approved statement produces one simulated payout after the dispute window, and a disputed one pays nothing until resolved.
 
-## Phase 11 — Public site · Area B · ~3d
+**Done when:** a week of simulated activity produces statements that reproduce from the ledger; expiry does nothing until it is switched on; the proof, solvency and risk jobs run and alert; staff work the review queue, resolve a captured-voucher dispute and approve payouts, and a business can dispute its statement.
+
+## Phase 11 — Viewer feed & public site · Area B · ~8d
+
+Everything the viewer does with campaigns and listings, signed in or not, which needs Phase 7's feed and inventory. Work in this order, which overrides task order: 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. The Phase 6 screen rules (live data, primitives, copy pass, every state, screenshots with axe) apply to 11.4–11.7.
 
 - [ ] **11.1 Landing page and chooser** · needs: 3.5, 7.2.e, 7.7 — ⛔ 7.7
   - [ ] 11.1.a `/` becomes a public landing page, with logged-in visitors sent to `/home`:
@@ -1212,7 +1201,35 @@ The internal team runs the economy and the review queues. Today none of it exist
   - [ ] 11.3.c (requested by A) `/[locale]/transparency`, listing each day's root from `GET /api/proof/roots` (10.3.b); the page shows the same root the API returns (moved from 10.3.d's Check). · needs: 10.3.b
   - [ ] 11.3.d **Check:** a crawl of staging finds no broken links and no page without a title or description. — dry run 2026-09-26 on a local staging build: 303 URLs, no page without a title or description; the only broken link is `/login`, which the 1.7.c gate redirects to and 6.2.a builds
 
-**Done when:** a logged-out visitor lands on a real, video-led page in English, can watch an opted-in campaign without earning, and signing up brings them back to that same campaign.
+- [ ] **11.4 Home: the For You feed** · needs: 3.5, 7.7, 5.3, 6.2 (moved from 6.3)
+  - [ ] 11.4.a A vertical feed of campaign teasers from C's feed API. Each item shows the channel avatar, the title and honest terms before any action: "18 min · 3 questions · up to 112 pts · ~120 MB · finish to earn" (AU; F12).
+  - [ ] 11.4.b **Quick campaigns (under 60 s, so they have no questions; F15) earn inside the feed.** Tapping Earn starts a reward session in place, and the earn moment lands in the item before the user swipes on. Longer campaigns show a teaser and **Watch & earn**. `/quick` redirects to Home.
+  - [ ] 11.4.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.
+  - [ ] 11.4.d Each item offers Share (Web Share API to the public campaign page, with no reward), Save, Not interested, and "Why am I seeing this?", which explains the 7.7 ranking.
+  - [ ] 11.4.f (moved from 6.7.b) The autoplay setting from Me (6.7.a) holds on the feed.
+  - [ ] 11.4.e **Check:** on staging (after 7.2.e media), a new user scrolls the feed, earns a Quick campaign in place, and the wallet shows it pending.
+- [ ] **11.5 Watch: campaign page and player** · needs: 11.4 (moved from 6.4)
+  - [ ] 11.5.a The campaign page works like a YouTube watch page: player, channel row with Follow, the terms card, chapters, and more from this channel. The terms card states the question count, "stopping early earns nothing" and "new accounts' points unlock after up to 3 days", and shows absolute points from the terms. **Delete `campaign-reward-split.ts`** (its `BASE_REWARD_RATIO = 0.6` is not what gets paid).
+  - [ ] 11.5.b Wire the player to 5.1–5.3:
+    - the progress bar shows server coverage (EW-15);
+    - playback rate is locked to 1 and playback pauses when hidden, in reward sessions (EW-14);
+    - question overlays with the pause and the 30 s timer;
+    - captions;
+    - a video error state and a resume prompt.
+  - [ ] 11.5.c The completion screen: the earn moment, an **Up next** card that needs a tap (never autoplay), and the funder's own vouchers ("Spend at <brand>", docs/23 §1.0b).
+  - [ ] 11.5.d In-app channel pages at `/c/[handle]`: cover, logo, Follow, the channel's campaigns and its vouchers.
+  - [ ] 11.5.f (requested by A for 10.4.c) Bind the real `deliveryCoverage` reader in `watch.module.ts`, replacing the `"unknown"` stub (5.1.d); a gap flags the session for review. · needs: 10.4.c
+  - [ ] 11.5.e **Check:** a full campaign watched on staging pauses for its questions, then shows the earn moment and Up next.
+- [ ] **11.6 Store and checkout** · needs: 4.7, 7.4 (moved from 6.6)
+  - [ ] 11.6.a The store is a shoppable grid with images, filters (category, channel, price) and the balance chip. It shows only the viewer's region and audience (7.4.d).
+  - [ ] 11.6.b The offer page shows terms, locations, channel and expiry. **Get it** locks the price with a countdown (4.7) and checks out, with errors in plain language (the 1.2.c enum). (requested by A) Delete `burn-data.ts`'s rate and `wallet-history.ts`'s mock rate (4.9.d).
+  - [ ] 11.6.c **Check:** the bought voucher is in the wallet immediately, the balance drops by the locked price, and an ID account never sees an AU listing.
+- [ ] **11.7 Notifications and search** · needs: 5.5, 7.7 (moved from 6.8)
+  - [ ] 11.7.a A bell in the top bar showing 5.5.b notifications.
+  - [ ] 11.7.b Search results (from 7.7.c) for campaigns, channels and vouchers.
+  - [ ] 11.7.c **Check:** a search for a demo brand finds its channel and vouchers.
+
+**Done when:** the whole viewer journey (register → feed → earn in place → watch with questions → store → voucher in wallet → dispute) works on staging in both regions with no mock data; and a logged-out visitor lands on a real, video-led page in English, can watch an opted-in campaign without earning, and signing up brings them back to that same campaign.
 
 ## Phase 12 — Teen & family mode · Areas A + B + C · ~3d
 
@@ -1227,7 +1244,7 @@ The internal team runs the economy and the review queues. Today none of it exist
     - a 14-year-old registration waits for approval, and calling the guardian link's approve endpoint activates it (HTTP round trip);
     - an adult-only campaign is denied to a teen principal on every endpoint;
     - a teen's grant above the cap is refused.
-- [ ] **12.2 Teen feed and experience** · B · needs: 12.1, 7.7
+- [ ] **12.2 Teen feed and experience** · B · needs: 12.1, 7.7, 11.4
   - [ ] 12.2.a Teen items get the 1.1.c ranking boost, and teen accounts see only teen-relevant interests (games, books, school supplies, sportswear, streaming, cinema).
   - [ ] 12.2.b Softer engagement:
     - no streak counter and no loss-framed or at-risk messages;
@@ -1342,6 +1359,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
 - 2026-09-27 · B · 5.6 Earning proven: signed manifest URLs (0693f67), real Go ledger round trip, signature check on staging, integration green again after three shared-fixture fixes (73767ec, b4cf86f, 78d90e4) · 78d90e4
+- 2026-09-27 · plan · Every phase now waits only on lower-numbered phases: Phase 6's feed, watch, store and search (6.3, 6.4, 6.6, 6.8) → Phase 11 as 11.4–11.7 (Phase 11 is now "Viewer feed & public site"); 9.6 and 9.4's review queue and dispute resolution → Phase 10 as 10.6 and 10.5 (C tasks); the two notification sources → 7.3.g and 10.2.d, beside their events; 8.2.e buys through the checkout API, not 6.6; 10.4.c's watch-module swap → 11.5.f. Supersedes the line below for 6.8.d, 6.8.e and 9.6.c
 - 2026-09-27 · plan · Subtasks that waited on a later phase moved to that phase: D16 4.6.g → 8.2.f; 5.5.b's followed-channel and expiring notifications → 6.8.d, 6.8.e; 7.5.b's statements and dispute → 9.6.c; 10.3.d's page check → 11.3.c. 7.6 now needs 4.5, not 8.2; 10.2.a reads 1.2.f, not 9.5.d
 - 2026-09-27 · A · Phase 4 done: 4.6 Voucher hardening closes with D16 moved to 8.2.f (the Check passed on main 8c29713; 4.6.h anchoring merged in 845af2b). Phase 10 can start · 845af2b
 - 2026-09-27 · A · 4.9 Pricing, rates and solvency enforced: listing prices repriced on a new rate, rate governance, the solvency monitor, B never in a browser, the 4.9.f coverage Check, and the ledger contract spec 30/30 against staging's live ledger · 39edb4d

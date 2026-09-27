@@ -174,7 +174,10 @@ export async function verifyEmailAction(formData: FormData): Promise<void> {
   const result = await apiFetch(
     "/api/auth/email/verify/confirm",
     emailVerificationConfirmedSchema,
-    { method: "POST", body: { token } },
+    // `@Idempotent` on this route requires the header too — see
+    // `registerAction`'s own comment on why a fresh key per click is
+    // correct here rather than a workaround.
+    { method: "POST", headers: { "idempotency-key": randomUUID() }, body: { token } },
   );
   if (!result.ok) {
     redirectTo("/verify", { token, error: errorCode(result.error) });

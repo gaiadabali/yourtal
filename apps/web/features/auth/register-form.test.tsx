@@ -29,7 +29,9 @@ function renderForm(props: Partial<React.ComponentProps<typeof RegisterForm>> = 
 /** `years` ago, minus a day, so "today" never lands exactly on the boundary this year. */
 function isoDateYearsAgo(years: number): string {
   const now = new Date();
-  const d = new Date(Date.UTC(now.getUTCFullYear() - years, now.getUTCMonth(), now.getUTCDate() - 1));
+  const d = new Date(
+    Date.UTC(now.getUTCFullYear() - years, now.getUTCMonth(), now.getUTCDate() - 1),
+  );
   return d.toISOString().slice(0, 10);
 }
 
@@ -78,9 +80,7 @@ describe("RegisterForm — the age gate (6.2.a, F4)", () => {
 
   it("an errorCode prop renders that code's plain-language message", () => {
     renderForm({ errorCode: "email_already_registered" });
-    expect(
-      screen.getByText("An account with this email already exists."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("An account with this email already exists.")).toBeInTheDocument();
   });
 
   it("an unrecognised errorCode falls back to the generic message", () => {

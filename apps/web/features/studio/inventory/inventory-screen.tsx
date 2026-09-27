@@ -28,6 +28,7 @@ export function InventoryScreen({
   locale,
 }: InventoryScreenProps) {
   const t = getStudioTranslator(locale);
+  const listingTitleById = new Map(listings.map((listing) => [listing.id, listing.title]));
   return (
     <div className="flex flex-col gap-6">
       <Card>
@@ -66,7 +67,9 @@ export function InventoryScreen({
                 key={request.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-subtle p-3"
               >
-                <span className="text-body-sm text-fg">{request.listingTitle}</span>
+                <span className="text-body-sm text-fg">
+                  {listingTitleById.get(request.listingId) ?? request.listingId}
+                </span>
                 <span className="text-body-sm text-fg-muted">
                   <MoneyAmount
                     amountMinor={request.currentSettlementValueMinor}

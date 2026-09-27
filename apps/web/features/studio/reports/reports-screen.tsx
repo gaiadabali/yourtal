@@ -1,4 +1,5 @@
 import type { BusinessRole } from "@yourtal/contracts/business";
+import type { CampaignReportResult } from "@yourtal/contracts/report";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import type { ReportsBundle } from "./reports-data";
@@ -8,6 +9,7 @@ import {
   summarizeRedemptionLedger,
 } from "./reports-metrics";
 import { ReportsCampaignFilter } from "./reports-campaign-filter";
+import { ReportsCampaignMetricsPanel } from "./reports-campaign-metrics-panel";
 import { ReportsCampaignOverviewTable } from "./reports-campaign-overview-table";
 import { ReportsProvenanceLegend } from "./reports-provenance-legend";
 import { ReportsQuestionBankPanel } from "./reports-question-bank-panel";
@@ -23,6 +25,8 @@ export interface ReportsScreenProps {
   selectedCampaignId: string | undefined;
   /** `""` or `"?business=<id>"`, threaded through to the campaign filter so it never drops the business switcher's selection. */
   businessQuery: string;
+  /** The selected campaign's real 7.6.a report, fetched by `page.tsx` — `undefined` (the default, so existing tests need not pass it) when no campaign is selected, `null` when the API has nothing for it. */
+  campaignReport?: CampaignReportResult | null | undefined;
   locale: SupportedLocale;
 }
 
@@ -51,6 +55,7 @@ export function ReportsScreen({
   relationships,
   selectedCampaignId,
   businessQuery,
+  campaignReport,
   locale,
 }: ReportsScreenProps) {
   const t = getStudioTranslator(locale);
@@ -98,6 +103,10 @@ export function ReportsScreen({
             ) : null}
           </CardContent>
         </Card>
+      ) : null}
+
+      {isAdvertiser ? (
+        <ReportsCampaignMetricsPanel report={campaignReport} locale={locale} />
       ) : null}
 
       {isAdvertiser ? (

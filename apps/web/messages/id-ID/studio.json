@@ -181,6 +181,19 @@
     }
   },
   "reports": {
+    "metrics": {
+      "title": "Performa kampanye",
+      "notFound": "Belum ada laporan untuk kampanye ini.",
+      "suppressed": "Penonton masih terlalu sedikit untuk ditampilkan secara jujur — angka muncul setelah setidaknya {floor} orang menontonnya.",
+      "rewardedViews": "Tontonan berhadiah",
+      "completions": "Penyelesaian",
+      "completionRate": "Tingkat penyelesaian",
+      "averageWatchTime": "Rata-rata waktu tonton",
+      "questionAccuracy": "Akurasi jawaban",
+      "pointsSpent": "Poin terpakai",
+      "pointsSpentLabel": "{formatted} poin terpakai",
+      "vouchersRedeemed": "Voucher Anda yang ditukarkan"
+    },
     "filter": {
       "ariaLabel": "Filter laporan berdasarkan kampanye",
       "allCampaigns": "Semua kampanye"

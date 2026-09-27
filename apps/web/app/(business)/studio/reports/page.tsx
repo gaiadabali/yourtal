@@ -6,7 +6,7 @@ import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
 import { canViewZone } from "@/features/studio/studio-zone-access";
-import { getReportsBundle } from "@/features/studio/reports/reports-data";
+import { getCampaignReport, getReportsBundle } from "@/features/studio/reports/reports-data";
 import { ReportsScreen } from "@/features/studio/reports/reports-screen";
 
 /**
@@ -39,6 +39,16 @@ export default async function StudioReportsPage(props: PageProps<"/studio/report
   const bundle = allowed
     ? await getReportsBundle(current.business.id, current.business.displayName)
     : undefined;
+  // Real (7.6.a) when a campaign is selected; `undefined` (no panel) when
+  // "All campaigns" is selected. A network/server error degrades to `null`
+  // (an honest "no report" gap) rather than failing the whole page for one
+  // panel — matches `inventory-data.ts`/`billing-data.ts`'s own read paths,
+  // which throw and let `error.tsx` catch it, but this one call is a
+  // secondary enhancement on an otherwise-working page, not its main data.
+  const campaignReport =
+    allowed && selectedCampaignId
+      ? await getCampaignReport(current.business.id, selectedCampaignId).catch(() => null)
+      : undefined;
 
   return (
     <StudioChrome
@@ -54,6 +64,7 @@ export default async function StudioReportsPage(props: PageProps<"/studio/report
           relationships={current.business.roles}
           selectedCampaignId={selectedCampaignId}
           businessQuery={businessQuery}
+          campaignReport={campaignReport}
           locale={locale}
         />
       ) : (

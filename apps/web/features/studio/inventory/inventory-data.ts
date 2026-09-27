@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { listingSchema } from "@yourtal/contracts/listing";
+import { listingSchema, settlementDecreaseRequestSchema } from "@yourtal/contracts/listing";
 import { merchantLocationSchema } from "@yourtal/contracts/listing/merchant-location";
-import type { Listing } from "@yourtal/contracts/listing";
+import type { Listing, SettlementDecreaseRequest } from "@yourtal/contracts/listing";
 import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
 import type { Currency } from "@yourtal/contracts/money/currency";
 import type { Region } from "@yourtal/contracts/region";
@@ -9,27 +9,13 @@ import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-/**
- * A pending settlement-value decrease (7.4.b's two-person propose/approve
- * flow). `SettlementDecreaseController` (already on main) only exposes
- * per-listing propose/approve — there is no "list every pending request for
- * this business" route yet, so both data sources below always return `[]`
- * rather than an N+1 guess. (requested by D/7.8, for whoever owns 7.4.b
- * next: a list endpoint would let this section show real data.)
- */
-export interface SettlementDecreaseRequest {
-  id: string;
-  listingId: string;
-  listingTitle: string;
-  currentSettlementValueMinor: number;
-  proposedSettlementValueMinor: number;
-  currency: Currency;
-  proposedByUserId: string;
-  proposedAt: string;
-}
+export type { SettlementDecreaseRequest };
 
 const listingsResponseSchema = z.object({ listings: z.array(listingSchema) });
 const locationsResponseSchema = z.object({ locations: z.array(merchantLocationSchema) });
+const decreaseRequestsResponseSchema = z.object({
+  requests: z.array(settlementDecreaseRequestSchema),
+});
 
 interface InventoryDataSource {
   listListings: (
@@ -63,7 +49,16 @@ const liveDataSource: InventoryDataSource = {
     if (!result.ok) throw new Error(`Could not load locations: ${result.error.message}`);
     return result.data.locations;
   },
-  listPendingDecreaseRequests: () => Promise.resolve([]),
+  listPendingDecreaseRequests: async (businessId) => {
+    const result = await apiFetch(
+      `/api/${businessId}/store/settlement-decreases?state=pending`,
+      decreaseRequestsResponseSchema,
+    );
+    if (!result.ok) {
+      throw new Error(`Could not load pending settlement decreases: ${result.error.message}`);
+    }
+    return result.data.requests;
+  },
 };
 
 function mockLocation(

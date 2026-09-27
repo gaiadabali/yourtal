@@ -181,6 +181,19 @@
     }
   },
   "reports": {
+    "metrics": {
+      "title": "Campaign performance",
+      "notFound": "No report is available for this campaign yet.",
+      "suppressed": "Too few viewers so far to show this honestly — numbers appear once at least {floor} people have seen it.",
+      "rewardedViews": "Rewarded views",
+      "completions": "Completions",
+      "completionRate": "Completion rate",
+      "averageWatchTime": "Average watch time",
+      "questionAccuracy": "Question accuracy",
+      "pointsSpent": "Points spent",
+      "pointsSpentLabel": "{formatted} points spent",
+      "vouchersRedeemed": "Your vouchers redeemed"
+    },
     "filter": {
       "ariaLabel": "Filter reports by campaign",
       "allCampaigns": "All campaigns"

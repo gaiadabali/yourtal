@@ -3,6 +3,10 @@ import type { Listing } from "@yourtal/contracts/listing";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import type { Question } from "@yourtal/contracts/question";
 import type { Voucher } from "@yourtal/contracts/voucher";
+import { campaignReportResultSchema } from "@yourtal/contracts/report";
+import type { CampaignReportResult } from "@yourtal/contracts/report";
+import { toPoints } from "@yourtal/contracts/money";
+import { apiFetch } from "@/lib/api/api-fetch";
 import {
   buildCampaignFixtures,
   buildListingFixtures,
@@ -28,6 +32,8 @@ export interface ReportsBundle {
 
 interface ReportsDataSource {
   getReportsBundle: (businessId: string, businessDisplayName: string) => Promise<ReportsBundle>;
+  /** `null` when the API has nothing for this campaign (not found, or not this business's own) — an honest gap, not an error toast. */
+  getCampaignReport: (businessId: string, campaignId: string) => Promise<CampaignReportResult | null>;
 }
 
 const mockReportsDataSource: ReportsDataSource = {
@@ -41,6 +47,21 @@ const mockReportsDataSource: ReportsDataSource = {
     const vouchers = buildVoucherFixtures({ businessId, businessDisplayName, listings });
     return Promise.resolve({ campaigns, questionsByCampaignId, listings, vouchers });
   },
+  // A plausible-looking fixture, not a suppressed/gap state — mock mode has
+  // no real cohort floor to trip, so showing real-shaped numbers here is
+  // more useful for screen development than an always-suppressed stub.
+  getCampaignReport: (_businessId, campaignId) =>
+    Promise.resolve({
+      campaignId,
+      suppressed: false,
+      rewardedViews: 1_240,
+      completions: 860,
+      completionRate: 860 / 1_240,
+      averageWatchTimeSeconds: 96,
+      questionAccuracy: 0.78,
+      pointsSpent: toPoints(42_000),
+      merchantVouchersRedeemed: 37,
+    }),
 };
 
 const NOT_IMPLEMENTED_MESSAGE =
@@ -49,10 +70,25 @@ const NOT_IMPLEMENTED_MESSAGE =
 /**
  * Fails loudly and specifically rather than silently falling back to mock
  * data under a "live" flag — see `studio-data.ts`/`store-data.ts` for the
- * same reasoning.
+ * same reasoning. `getCampaignReport` is the one exception: 7.6's real
+ * endpoint exists, so it is genuinely wired, while the rest of the bundle
+ * (campaign listing, question banks, vouchers) still has no live source —
+ * `reports-screen.tsx` shows those as honest gaps via
+ * `reports-unavailable-metrics.ts` once 7.3's real campaign listing lands.
  */
 const liveReportsDataSource: ReportsDataSource = {
   getReportsBundle: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
+  getCampaignReport: async (businessId, campaignId) => {
+    const result = await apiFetch(
+      `/api/${businessId}/studio/reports/campaigns/${campaignId}`,
+      campaignReportResultSchema,
+    );
+    if (!result.ok) {
+      if (result.error.kind === "http" && result.error.status === 404) return null;
+      throw new Error(`Could not load the campaign report: ${result.error.message}`);
+    }
+    return result.data;
+  },
 };
 
 const reportsDataSource = resolveDataSource({
@@ -66,4 +102,12 @@ export function getReportsBundle(
   businessDisplayName: string,
 ): Promise<ReportsBundle> {
   return reportsDataSource.getReportsBundle(businessId, businessDisplayName);
+}
+
+/** One campaign's real, server-computed performance report (7.6.a) — aggregates only, suppressed below the cohort floor. */
+export function getCampaignReport(
+  businessId: string,
+  campaignId: string,
+): Promise<CampaignReportResult | null> {
+  return reportsDataSource.getCampaignReport(businessId, campaignId);
 }

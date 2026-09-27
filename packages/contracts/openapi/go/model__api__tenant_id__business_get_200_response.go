@@ -22,8 +22,8 @@ var _ MappedNullable = &ApiTenantIdBusinessGet200Response{}
 type ApiTenantIdBusinessGet200Response struct {
 	Business Business `json:"business"`
 	BillingContact NullableBillingContact `json:"billingContact"`
-	KybDocumentCount int32 `json:"kybDocumentCount"`
-	MemberCount int32 `json:"memberCount"`
+	KybDocumentCount NullableInt32 `json:"kybDocumentCount"`
+	MemberCount NullableInt32 `json:"memberCount"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -33,7 +33,7 @@ type _ApiTenantIdBusinessGet200Response ApiTenantIdBusinessGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdBusinessGet200Response(business Business, billingContact NullableBillingContact, kybDocumentCount int32, memberCount int32) *ApiTenantIdBusinessGet200Response {
+func NewApiTenantIdBusinessGet200Response(business Business, billingContact NullableBillingContact, kybDocumentCount NullableInt32, memberCount NullableInt32) *ApiTenantIdBusinessGet200Response {
 	this := ApiTenantIdBusinessGet200Response{}
 	this.Business = business
 	this.BillingContact = billingContact
@@ -101,51 +101,55 @@ func (o *ApiTenantIdBusinessGet200Response) SetBillingContact(v BillingContact) 
 }
 
 // GetKybDocumentCount returns the KybDocumentCount field value
+// If the value is explicit nil, the zero value for int32 will be returned
 func (o *ApiTenantIdBusinessGet200Response) GetKybDocumentCount() int32 {
-	if o == nil {
+	if o == nil || o.KybDocumentCount.Get() == nil {
 		var ret int32
 		return ret
 	}
 
-	return o.KybDocumentCount
+	return *o.KybDocumentCount.Get()
 }
 
 // GetKybDocumentCountOk returns a tuple with the KybDocumentCount field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessGet200Response) GetKybDocumentCountOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.KybDocumentCount, true
+	return o.KybDocumentCount.Get(), o.KybDocumentCount.IsSet()
 }
 
 // SetKybDocumentCount sets field value
 func (o *ApiTenantIdBusinessGet200Response) SetKybDocumentCount(v int32) {
-	o.KybDocumentCount = v
+	o.KybDocumentCount.Set(&v)
 }
 
 // GetMemberCount returns the MemberCount field value
+// If the value is explicit nil, the zero value for int32 will be returned
 func (o *ApiTenantIdBusinessGet200Response) GetMemberCount() int32 {
-	if o == nil {
+	if o == nil || o.MemberCount.Get() == nil {
 		var ret int32
 		return ret
 	}
 
-	return o.MemberCount
+	return *o.MemberCount.Get()
 }
 
 // GetMemberCountOk returns a tuple with the MemberCount field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessGet200Response) GetMemberCountOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MemberCount, true
+	return o.MemberCount.Get(), o.MemberCount.IsSet()
 }
 
 // SetMemberCount sets field value
 func (o *ApiTenantIdBusinessGet200Response) SetMemberCount(v int32) {
-	o.MemberCount = v
+	o.MemberCount.Set(&v)
 }
 
 func (o ApiTenantIdBusinessGet200Response) MarshalJSON() ([]byte, error) {
@@ -160,8 +164,8 @@ func (o ApiTenantIdBusinessGet200Response) ToMap() (map[string]interface{}, erro
 	toSerialize := map[string]interface{}{}
 	toSerialize["business"] = o.Business
 	toSerialize["billingContact"] = o.BillingContact.Get()
-	toSerialize["kybDocumentCount"] = o.KybDocumentCount
-	toSerialize["memberCount"] = o.MemberCount
+	toSerialize["kybDocumentCount"] = o.KybDocumentCount.Get()
+	toSerialize["memberCount"] = o.MemberCount.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

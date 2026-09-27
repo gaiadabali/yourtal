@@ -21,7 +21,7 @@ var _ MappedNullable = &ApiWatchSessionsSessionIdGet200ResponseCoverageInner{}
 // ApiWatchSessionsSessionIdGet200ResponseCoverageInner A half-open span of playback, in whole seconds: [fromSecond, toSecond).
 type ApiWatchSessionsSessionIdGet200ResponseCoverageInner struct {
 	FromSecond int32 `json:"fromSecond"`
-	ToSecond int32 `json:"toSecond"`
+	ToSecond NullableInt32 `json:"toSecond"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,7 +31,7 @@ type _ApiWatchSessionsSessionIdGet200ResponseCoverageInner ApiWatchSessionsSessi
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsSessionIdGet200ResponseCoverageInner(fromSecond int32, toSecond int32) *ApiWatchSessionsSessionIdGet200ResponseCoverageInner {
+func NewApiWatchSessionsSessionIdGet200ResponseCoverageInner(fromSecond int32, toSecond NullableInt32) *ApiWatchSessionsSessionIdGet200ResponseCoverageInner {
 	this := ApiWatchSessionsSessionIdGet200ResponseCoverageInner{}
 	this.FromSecond = fromSecond
 	this.ToSecond = toSecond
@@ -71,27 +71,29 @@ func (o *ApiWatchSessionsSessionIdGet200ResponseCoverageInner) SetFromSecond(v i
 }
 
 // GetToSecond returns the ToSecond field value
+// If the value is explicit nil, the zero value for int32 will be returned
 func (o *ApiWatchSessionsSessionIdGet200ResponseCoverageInner) GetToSecond() int32 {
-	if o == nil {
+	if o == nil || o.ToSecond.Get() == nil {
 		var ret int32
 		return ret
 	}
 
-	return o.ToSecond
+	return *o.ToSecond.Get()
 }
 
 // GetToSecondOk returns a tuple with the ToSecond field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiWatchSessionsSessionIdGet200ResponseCoverageInner) GetToSecondOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ToSecond, true
+	return o.ToSecond.Get(), o.ToSecond.IsSet()
 }
 
 // SetToSecond sets field value
 func (o *ApiWatchSessionsSessionIdGet200ResponseCoverageInner) SetToSecond(v int32) {
-	o.ToSecond = v
+	o.ToSecond.Set(&v)
 }
 
 func (o ApiWatchSessionsSessionIdGet200ResponseCoverageInner) MarshalJSON() ([]byte, error) {
@@ -105,7 +107,7 @@ func (o ApiWatchSessionsSessionIdGet200ResponseCoverageInner) MarshalJSON() ([]b
 func (o ApiWatchSessionsSessionIdGet200ResponseCoverageInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["fromSecond"] = o.FromSecond
-	toSerialize["toSecond"] = o.ToSecond
+	toSerialize["toSecond"] = o.ToSecond.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

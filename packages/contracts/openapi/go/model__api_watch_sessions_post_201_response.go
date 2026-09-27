@@ -23,7 +23,7 @@ type ApiWatchSessionsPost201Response struct {
 	Session WatchSession `json:"session"`
 	DurationSeconds int32 `json:"durationSeconds"`
 	AlreadyEarned bool `json:"alreadyEarned"`
-	ManifestUrl string `json:"manifestUrl"`
+	ManifestUrl NullableString `json:"manifestUrl"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -33,7 +33,7 @@ type _ApiWatchSessionsPost201Response ApiWatchSessionsPost201Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsPost201Response(session WatchSession, durationSeconds int32, alreadyEarned bool, manifestUrl string) *ApiWatchSessionsPost201Response {
+func NewApiWatchSessionsPost201Response(session WatchSession, durationSeconds int32, alreadyEarned bool, manifestUrl NullableString) *ApiWatchSessionsPost201Response {
 	this := ApiWatchSessionsPost201Response{}
 	this.Session = session
 	this.DurationSeconds = durationSeconds
@@ -123,27 +123,29 @@ func (o *ApiWatchSessionsPost201Response) SetAlreadyEarned(v bool) {
 }
 
 // GetManifestUrl returns the ManifestUrl field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiWatchSessionsPost201Response) GetManifestUrl() string {
-	if o == nil {
+	if o == nil || o.ManifestUrl.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ManifestUrl
+	return *o.ManifestUrl.Get()
 }
 
 // GetManifestUrlOk returns a tuple with the ManifestUrl field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiWatchSessionsPost201Response) GetManifestUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ManifestUrl, true
+	return o.ManifestUrl.Get(), o.ManifestUrl.IsSet()
 }
 
 // SetManifestUrl sets field value
 func (o *ApiWatchSessionsPost201Response) SetManifestUrl(v string) {
-	o.ManifestUrl = v
+	o.ManifestUrl.Set(&v)
 }
 
 func (o ApiWatchSessionsPost201Response) MarshalJSON() ([]byte, error) {
@@ -159,7 +161,7 @@ func (o ApiWatchSessionsPost201Response) ToMap() (map[string]interface{}, error)
 	toSerialize["session"] = o.Session
 	toSerialize["durationSeconds"] = o.DurationSeconds
 	toSerialize["alreadyEarned"] = o.AlreadyEarned
-	toSerialize["manifestUrl"] = o.ManifestUrl
+	toSerialize["manifestUrl"] = o.ManifestUrl.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

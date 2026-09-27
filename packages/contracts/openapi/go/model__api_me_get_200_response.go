@@ -22,7 +22,7 @@ var _ MappedNullable = &ApiMeGet200Response{}
 type ApiMeGet200Response struct {
 	Profile UserProfile `json:"profile"`
 	BusinessMemberships []ApiMeGet200ResponseBusinessMembershipsInner `json:"businessMemberships"`
-	StaffRoles []string `json:"staffRoles"`
+	StaffRoles []*string `json:"staffRoles"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -32,7 +32,7 @@ type _ApiMeGet200Response ApiMeGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiMeGet200Response(profile UserProfile, businessMemberships []ApiMeGet200ResponseBusinessMembershipsInner, staffRoles []string) *ApiMeGet200Response {
+func NewApiMeGet200Response(profile UserProfile, businessMemberships []ApiMeGet200ResponseBusinessMembershipsInner, staffRoles []*string) *ApiMeGet200Response {
 	this := ApiMeGet200Response{}
 	this.Profile = profile
 	this.BusinessMemberships = businessMemberships
@@ -97,9 +97,9 @@ func (o *ApiMeGet200Response) SetBusinessMemberships(v []ApiMeGet200ResponseBusi
 }
 
 // GetStaffRoles returns the StaffRoles field value
-func (o *ApiMeGet200Response) GetStaffRoles() []string {
+func (o *ApiMeGet200Response) GetStaffRoles() []*string {
 	if o == nil {
-		var ret []string
+		var ret []*string
 		return ret
 	}
 
@@ -108,7 +108,7 @@ func (o *ApiMeGet200Response) GetStaffRoles() []string {
 
 // GetStaffRolesOk returns a tuple with the StaffRoles field value
 // and a boolean to check if the value has been set.
-func (o *ApiMeGet200Response) GetStaffRolesOk() ([]string, bool) {
+func (o *ApiMeGet200Response) GetStaffRolesOk() ([]*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -116,7 +116,7 @@ func (o *ApiMeGet200Response) GetStaffRolesOk() ([]string, bool) {
 }
 
 // SetStaffRoles sets field value
-func (o *ApiMeGet200Response) SetStaffRoles(v []string) {
+func (o *ApiMeGet200Response) SetStaffRoles(v []*string) {
 	o.StaffRoles = v
 }
 

@@ -23,7 +23,7 @@ var _ MappedNullable = &ApiMeBusinessesGet200ResponseInner{}
 type ApiMeBusinessesGet200ResponseInner struct {
 	Business Business `json:"business"`
 	Role BusinessTeamRole `json:"role"`
-	JoinedAt time.Time `json:"joinedAt"`
+	JoinedAt NullableTime `json:"joinedAt"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -33,7 +33,7 @@ type _ApiMeBusinessesGet200ResponseInner ApiMeBusinessesGet200ResponseInner
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiMeBusinessesGet200ResponseInner(business Business, role BusinessTeamRole, joinedAt time.Time) *ApiMeBusinessesGet200ResponseInner {
+func NewApiMeBusinessesGet200ResponseInner(business Business, role BusinessTeamRole, joinedAt NullableTime) *ApiMeBusinessesGet200ResponseInner {
 	this := ApiMeBusinessesGet200ResponseInner{}
 	this.Business = business
 	this.Role = role
@@ -98,27 +98,29 @@ func (o *ApiMeBusinessesGet200ResponseInner) SetRole(v BusinessTeamRole) {
 }
 
 // GetJoinedAt returns the JoinedAt field value
+// If the value is explicit nil, the zero value for time.Time will be returned
 func (o *ApiMeBusinessesGet200ResponseInner) GetJoinedAt() time.Time {
-	if o == nil {
+	if o == nil || o.JoinedAt.Get() == nil {
 		var ret time.Time
 		return ret
 	}
 
-	return o.JoinedAt
+	return *o.JoinedAt.Get()
 }
 
 // GetJoinedAtOk returns a tuple with the JoinedAt field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiMeBusinessesGet200ResponseInner) GetJoinedAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.JoinedAt, true
+	return o.JoinedAt.Get(), o.JoinedAt.IsSet()
 }
 
 // SetJoinedAt sets field value
 func (o *ApiMeBusinessesGet200ResponseInner) SetJoinedAt(v time.Time) {
-	o.JoinedAt = v
+	o.JoinedAt.Set(&v)
 }
 
 func (o ApiMeBusinessesGet200ResponseInner) MarshalJSON() ([]byte, error) {
@@ -133,7 +135,7 @@ func (o ApiMeBusinessesGet200ResponseInner) ToMap() (map[string]interface{}, err
 	toSerialize := map[string]interface{}{}
 	toSerialize["business"] = o.Business
 	toSerialize["role"] = o.Role
-	toSerialize["joinedAt"] = o.JoinedAt
+	toSerialize["joinedAt"] = o.JoinedAt.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

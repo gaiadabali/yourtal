@@ -21,9 +21,9 @@ var _ MappedNullable = &ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response{
 
 // ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response struct for ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response
 type ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response struct {
-	StorageRef string `json:"storageRef"`
+	StorageRef NullableString `json:"storageRef"`
 	UploadUrl string `json:"uploadUrl"`
-	ExpiresAt time.Time `json:"expiresAt"`
+	ExpiresAt NullableTime `json:"expiresAt"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -33,7 +33,7 @@ type _ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response ApiTenantIdBusines
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdBusinessKybDocumentsUploadUrlPost201Response(storageRef string, uploadUrl string, expiresAt time.Time) *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response {
+func NewApiTenantIdBusinessKybDocumentsUploadUrlPost201Response(storageRef NullableString, uploadUrl string, expiresAt NullableTime) *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response {
 	this := ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response{}
 	this.StorageRef = storageRef
 	this.UploadUrl = uploadUrl
@@ -50,27 +50,29 @@ func NewApiTenantIdBusinessKybDocumentsUploadUrlPost201ResponseWithDefaults() *A
 }
 
 // GetStorageRef returns the StorageRef field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) GetStorageRef() string {
-	if o == nil {
+	if o == nil || o.StorageRef.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.StorageRef
+	return *o.StorageRef.Get()
 }
 
 // GetStorageRefOk returns a tuple with the StorageRef field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) GetStorageRefOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.StorageRef, true
+	return o.StorageRef.Get(), o.StorageRef.IsSet()
 }
 
 // SetStorageRef sets field value
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) SetStorageRef(v string) {
-	o.StorageRef = v
+	o.StorageRef.Set(&v)
 }
 
 // GetUploadUrl returns the UploadUrl field value
@@ -98,27 +100,29 @@ func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) SetUploadUrl(v
 }
 
 // GetExpiresAt returns the ExpiresAt field value
+// If the value is explicit nil, the zero value for time.Time will be returned
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) GetExpiresAt() time.Time {
-	if o == nil {
+	if o == nil || o.ExpiresAt.Get() == nil {
 		var ret time.Time
 		return ret
 	}
 
-	return o.ExpiresAt
+	return *o.ExpiresAt.Get()
 }
 
 // GetExpiresAtOk returns a tuple with the ExpiresAt field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) GetExpiresAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ExpiresAt, true
+	return o.ExpiresAt.Get(), o.ExpiresAt.IsSet()
 }
 
 // SetExpiresAt sets field value
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) SetExpiresAt(v time.Time) {
-	o.ExpiresAt = v
+	o.ExpiresAt.Set(&v)
 }
 
 func (o ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) MarshalJSON() ([]byte, error) {
@@ -131,9 +135,9 @@ func (o ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) MarshalJSON() (
 
 func (o ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["storageRef"] = o.StorageRef
+	toSerialize["storageRef"] = o.StorageRef.Get()
 	toSerialize["uploadUrl"] = o.UploadUrl
-	toSerialize["expiresAt"] = o.ExpiresAt
+	toSerialize["expiresAt"] = o.ExpiresAt.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

@@ -22,8 +22,8 @@ var _ MappedNullable = &ApiTenantIdStudioDevicesPost201Response{}
 // ApiTenantIdStudioDevicesPost201Response struct for ApiTenantIdStudioDevicesPost201Response
 type ApiTenantIdStudioDevicesPost201Response struct {
 	Device ApiTenantIdStudioDevicesPost201ResponseDevice `json:"device"`
-	PairingCode string `json:"pairingCode"`
-	PairingExpiresAt time.Time `json:"pairingExpiresAt"`
+	PairingCode NullableString `json:"pairingCode"`
+	PairingExpiresAt NullableTime `json:"pairingExpiresAt"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -33,7 +33,7 @@ type _ApiTenantIdStudioDevicesPost201Response ApiTenantIdStudioDevicesPost201Res
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioDevicesPost201Response(device ApiTenantIdStudioDevicesPost201ResponseDevice, pairingCode string, pairingExpiresAt time.Time) *ApiTenantIdStudioDevicesPost201Response {
+func NewApiTenantIdStudioDevicesPost201Response(device ApiTenantIdStudioDevicesPost201ResponseDevice, pairingCode NullableString, pairingExpiresAt NullableTime) *ApiTenantIdStudioDevicesPost201Response {
 	this := ApiTenantIdStudioDevicesPost201Response{}
 	this.Device = device
 	this.PairingCode = pairingCode
@@ -74,51 +74,55 @@ func (o *ApiTenantIdStudioDevicesPost201Response) SetDevice(v ApiTenantIdStudioD
 }
 
 // GetPairingCode returns the PairingCode field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioDevicesPost201Response) GetPairingCode() string {
-	if o == nil {
+	if o == nil || o.PairingCode.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.PairingCode
+	return *o.PairingCode.Get()
 }
 
 // GetPairingCodeOk returns a tuple with the PairingCode field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioDevicesPost201Response) GetPairingCodeOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PairingCode, true
+	return o.PairingCode.Get(), o.PairingCode.IsSet()
 }
 
 // SetPairingCode sets field value
 func (o *ApiTenantIdStudioDevicesPost201Response) SetPairingCode(v string) {
-	o.PairingCode = v
+	o.PairingCode.Set(&v)
 }
 
 // GetPairingExpiresAt returns the PairingExpiresAt field value
+// If the value is explicit nil, the zero value for time.Time will be returned
 func (o *ApiTenantIdStudioDevicesPost201Response) GetPairingExpiresAt() time.Time {
-	if o == nil {
+	if o == nil || o.PairingExpiresAt.Get() == nil {
 		var ret time.Time
 		return ret
 	}
 
-	return o.PairingExpiresAt
+	return *o.PairingExpiresAt.Get()
 }
 
 // GetPairingExpiresAtOk returns a tuple with the PairingExpiresAt field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioDevicesPost201Response) GetPairingExpiresAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PairingExpiresAt, true
+	return o.PairingExpiresAt.Get(), o.PairingExpiresAt.IsSet()
 }
 
 // SetPairingExpiresAt sets field value
 func (o *ApiTenantIdStudioDevicesPost201Response) SetPairingExpiresAt(v time.Time) {
-	o.PairingExpiresAt = v
+	o.PairingExpiresAt.Set(&v)
 }
 
 func (o ApiTenantIdStudioDevicesPost201Response) MarshalJSON() ([]byte, error) {
@@ -132,8 +136,8 @@ func (o ApiTenantIdStudioDevicesPost201Response) MarshalJSON() ([]byte, error) {
 func (o ApiTenantIdStudioDevicesPost201Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["device"] = o.Device
-	toSerialize["pairingCode"] = o.PairingCode
-	toSerialize["pairingExpiresAt"] = o.PairingExpiresAt
+	toSerialize["pairingCode"] = o.PairingCode.Get()
+	toSerialize["pairingExpiresAt"] = o.PairingExpiresAt.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

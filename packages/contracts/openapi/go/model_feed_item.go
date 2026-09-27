@@ -24,7 +24,7 @@ type FeedItem struct {
 	BusinessId NullableString `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	MerchantName string `json:"merchantName"`
 	Title string `json:"title"`
-	Synopsis string `json:"synopsis"`
+	Synopsis NullableString `json:"synopsis"`
 	PosterUrl string `json:"posterUrl"`
 	TeaserUrl string `json:"teaserUrl"`
 	DurationSeconds int64 `json:"durationSeconds"`
@@ -45,7 +45,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis string, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -174,27 +174,29 @@ func (o *FeedItem) SetTitle(v string) {
 }
 
 // GetSynopsis returns the Synopsis field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *FeedItem) GetSynopsis() string {
-	if o == nil {
+	if o == nil || o.Synopsis.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Synopsis
+	return *o.Synopsis.Get()
 }
 
 // GetSynopsisOk returns a tuple with the Synopsis field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FeedItem) GetSynopsisOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Synopsis, true
+	return o.Synopsis.Get(), o.Synopsis.IsSet()
 }
 
 // SetSynopsis sets field value
 func (o *FeedItem) SetSynopsis(v string) {
-	o.Synopsis = v
+	o.Synopsis.Set(&v)
 }
 
 // GetPosterUrl returns the PosterUrl field value
@@ -451,7 +453,7 @@ func (o FeedItem) ToMap() (map[string]interface{}, error) {
 	toSerialize["businessId"] = o.BusinessId.Get()
 	toSerialize["merchantName"] = o.MerchantName
 	toSerialize["title"] = o.Title
-	toSerialize["synopsis"] = o.Synopsis
+	toSerialize["synopsis"] = o.Synopsis.Get()
 	toSerialize["posterUrl"] = o.PosterUrl
 	toSerialize["teaserUrl"] = o.TeaserUrl
 	toSerialize["durationSeconds"] = o.DurationSeconds

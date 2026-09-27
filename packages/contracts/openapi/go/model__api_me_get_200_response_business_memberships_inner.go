@@ -21,7 +21,7 @@ var _ MappedNullable = &ApiMeGet200ResponseBusinessMembershipsInner{}
 // ApiMeGet200ResponseBusinessMembershipsInner struct for ApiMeGet200ResponseBusinessMembershipsInner
 type ApiMeGet200ResponseBusinessMembershipsInner struct {
 	BusinessId string `json:"businessId"`
-	Role string `json:"role"`
+	Role NullableString `json:"role"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,7 +31,7 @@ type _ApiMeGet200ResponseBusinessMembershipsInner ApiMeGet200ResponseBusinessMem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiMeGet200ResponseBusinessMembershipsInner(businessId string, role string) *ApiMeGet200ResponseBusinessMembershipsInner {
+func NewApiMeGet200ResponseBusinessMembershipsInner(businessId string, role NullableString) *ApiMeGet200ResponseBusinessMembershipsInner {
 	this := ApiMeGet200ResponseBusinessMembershipsInner{}
 	this.BusinessId = businessId
 	this.Role = role
@@ -71,27 +71,29 @@ func (o *ApiMeGet200ResponseBusinessMembershipsInner) SetBusinessId(v string) {
 }
 
 // GetRole returns the Role field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiMeGet200ResponseBusinessMembershipsInner) GetRole() string {
-	if o == nil {
+	if o == nil || o.Role.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Role
+	return *o.Role.Get()
 }
 
 // GetRoleOk returns a tuple with the Role field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiMeGet200ResponseBusinessMembershipsInner) GetRoleOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Role, true
+	return o.Role.Get(), o.Role.IsSet()
 }
 
 // SetRole sets field value
 func (o *ApiMeGet200ResponseBusinessMembershipsInner) SetRole(v string) {
-	o.Role = v
+	o.Role.Set(&v)
 }
 
 func (o ApiMeGet200ResponseBusinessMembershipsInner) MarshalJSON() ([]byte, error) {
@@ -105,7 +107,7 @@ func (o ApiMeGet200ResponseBusinessMembershipsInner) MarshalJSON() ([]byte, erro
 func (o ApiMeGet200ResponseBusinessMembershipsInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["businessId"] = o.BusinessId
-	toSerialize["role"] = o.Role
+	toSerialize["role"] = o.Role.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

@@ -21,8 +21,8 @@ var _ MappedNullable = &FeedChannelResult{}
 // FeedChannelResult A business matched by GET /api/search.
 type FeedChannelResult struct {
 	BusinessId NullableString `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	DisplayName string `json:"displayName"`
-	Handle string `json:"handle"`
+	DisplayName NullableString `json:"displayName"`
+	Handle NullableString `json:"handle"`
 	LogoUrl NullableString `json:"logoUrl"`
 	Region Region `json:"region"`
 	AdditionalProperties map[string]interface{}
@@ -34,7 +34,7 @@ type _FeedChannelResult FeedChannelResult
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedChannelResult(businessId NullableString, displayName string, handle string, logoUrl NullableString, region Region) *FeedChannelResult {
+func NewFeedChannelResult(businessId NullableString, displayName NullableString, handle NullableString, logoUrl NullableString, region Region) *FeedChannelResult {
 	this := FeedChannelResult{}
 	this.BusinessId = businessId
 	this.DisplayName = displayName
@@ -79,51 +79,55 @@ func (o *FeedChannelResult) SetBusinessId(v string) {
 }
 
 // GetDisplayName returns the DisplayName field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *FeedChannelResult) GetDisplayName() string {
-	if o == nil {
+	if o == nil || o.DisplayName.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.DisplayName
+	return *o.DisplayName.Get()
 }
 
 // GetDisplayNameOk returns a tuple with the DisplayName field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FeedChannelResult) GetDisplayNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.DisplayName, true
+	return o.DisplayName.Get(), o.DisplayName.IsSet()
 }
 
 // SetDisplayName sets field value
 func (o *FeedChannelResult) SetDisplayName(v string) {
-	o.DisplayName = v
+	o.DisplayName.Set(&v)
 }
 
 // GetHandle returns the Handle field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *FeedChannelResult) GetHandle() string {
-	if o == nil {
+	if o == nil || o.Handle.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Handle
+	return *o.Handle.Get()
 }
 
 // GetHandleOk returns a tuple with the Handle field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FeedChannelResult) GetHandleOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Handle, true
+	return o.Handle.Get(), o.Handle.IsSet()
 }
 
 // SetHandle sets field value
 func (o *FeedChannelResult) SetHandle(v string) {
-	o.Handle = v
+	o.Handle.Set(&v)
 }
 
 // GetLogoUrl returns the LogoUrl field value
@@ -187,8 +191,8 @@ func (o FeedChannelResult) MarshalJSON() ([]byte, error) {
 func (o FeedChannelResult) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["businessId"] = o.BusinessId.Get()
-	toSerialize["displayName"] = o.DisplayName
-	toSerialize["handle"] = o.Handle
+	toSerialize["displayName"] = o.DisplayName.Get()
+	toSerialize["handle"] = o.Handle.Get()
 	toSerialize["logoUrl"] = o.LogoUrl.Get()
 	toSerialize["region"] = o.Region
 

@@ -21,7 +21,7 @@ var _ MappedNullable = &ApiDevicesPairPost200Response{}
 // ApiDevicesPairPost200Response struct for ApiDevicesPairPost200Response
 type ApiDevicesPairPost200Response struct {
 	DeviceId string `json:"deviceId"`
-	Credential string `json:"credential"`
+	Credential NullableString `json:"credential"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,7 +31,7 @@ type _ApiDevicesPairPost200Response ApiDevicesPairPost200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiDevicesPairPost200Response(deviceId string, credential string) *ApiDevicesPairPost200Response {
+func NewApiDevicesPairPost200Response(deviceId string, credential NullableString) *ApiDevicesPairPost200Response {
 	this := ApiDevicesPairPost200Response{}
 	this.DeviceId = deviceId
 	this.Credential = credential
@@ -71,27 +71,29 @@ func (o *ApiDevicesPairPost200Response) SetDeviceId(v string) {
 }
 
 // GetCredential returns the Credential field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiDevicesPairPost200Response) GetCredential() string {
-	if o == nil {
+	if o == nil || o.Credential.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Credential
+	return *o.Credential.Get()
 }
 
 // GetCredentialOk returns a tuple with the Credential field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevicesPairPost200Response) GetCredentialOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Credential, true
+	return o.Credential.Get(), o.Credential.IsSet()
 }
 
 // SetCredential sets field value
 func (o *ApiDevicesPairPost200Response) SetCredential(v string) {
-	o.Credential = v
+	o.Credential.Set(&v)
 }
 
 func (o ApiDevicesPairPost200Response) MarshalJSON() ([]byte, error) {
@@ -105,7 +107,7 @@ func (o ApiDevicesPairPost200Response) MarshalJSON() ([]byte, error) {
 func (o ApiDevicesPairPost200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["deviceId"] = o.DeviceId
-	toSerialize["credential"] = o.Credential
+	toSerialize["credential"] = o.Credential.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

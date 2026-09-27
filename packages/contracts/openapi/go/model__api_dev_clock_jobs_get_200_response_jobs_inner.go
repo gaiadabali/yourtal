@@ -20,10 +20,10 @@ var _ MappedNullable = &ApiDevClockJobsGet200ResponseJobsInner{}
 
 // ApiDevClockJobsGet200ResponseJobsInner struct for ApiDevClockJobsGet200ResponseJobsInner
 type ApiDevClockJobsGet200ResponseJobsInner struct {
-	Key string `json:"key"`
-	Label string `json:"label"`
-	Queue *string `json:"queue,omitempty"`
-	Schedule *string `json:"schedule,omitempty"`
+	Key NullableString `json:"key"`
+	Label NullableString `json:"label"`
+	Queue NullableString `json:"queue,omitempty"`
+	Schedule NullableString `json:"schedule,omitempty"`
 	Built bool `json:"built"`
 	AdditionalProperties map[string]interface{}
 }
@@ -34,7 +34,7 @@ type _ApiDevClockJobsGet200ResponseJobsInner ApiDevClockJobsGet200ResponseJobsIn
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiDevClockJobsGet200ResponseJobsInner(key string, label string, built bool) *ApiDevClockJobsGet200ResponseJobsInner {
+func NewApiDevClockJobsGet200ResponseJobsInner(key NullableString, label NullableString, built bool) *ApiDevClockJobsGet200ResponseJobsInner {
 	this := ApiDevClockJobsGet200ResponseJobsInner{}
 	this.Key = key
 	this.Label = label
@@ -51,115 +51,139 @@ func NewApiDevClockJobsGet200ResponseJobsInnerWithDefaults() *ApiDevClockJobsGet
 }
 
 // GetKey returns the Key field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiDevClockJobsGet200ResponseJobsInner) GetKey() string {
-	if o == nil {
+	if o == nil || o.Key.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Key
+	return *o.Key.Get()
 }
 
 // GetKeyOk returns a tuple with the Key field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevClockJobsGet200ResponseJobsInner) GetKeyOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Key, true
+	return o.Key.Get(), o.Key.IsSet()
 }
 
 // SetKey sets field value
 func (o *ApiDevClockJobsGet200ResponseJobsInner) SetKey(v string) {
-	o.Key = v
+	o.Key.Set(&v)
 }
 
 // GetLabel returns the Label field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiDevClockJobsGet200ResponseJobsInner) GetLabel() string {
-	if o == nil {
+	if o == nil || o.Label.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Label
+	return *o.Label.Get()
 }
 
 // GetLabelOk returns a tuple with the Label field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevClockJobsGet200ResponseJobsInner) GetLabelOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Label, true
+	return o.Label.Get(), o.Label.IsSet()
 }
 
 // SetLabel sets field value
 func (o *ApiDevClockJobsGet200ResponseJobsInner) SetLabel(v string) {
-	o.Label = v
+	o.Label.Set(&v)
 }
 
-// GetQueue returns the Queue field value if set, zero value otherwise.
+// GetQueue returns the Queue field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *ApiDevClockJobsGet200ResponseJobsInner) GetQueue() string {
-	if o == nil || IsNil(o.Queue) {
+	if o == nil || IsNil(o.Queue.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Queue
+	return *o.Queue.Get()
 }
 
 // GetQueueOk returns a tuple with the Queue field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevClockJobsGet200ResponseJobsInner) GetQueueOk() (*string, bool) {
-	if o == nil || IsNil(o.Queue) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Queue, true
+	return o.Queue.Get(), o.Queue.IsSet()
 }
 
 // HasQueue returns a boolean if a field has been set.
 func (o *ApiDevClockJobsGet200ResponseJobsInner) HasQueue() bool {
-	if o != nil && !IsNil(o.Queue) {
+	if o != nil && o.Queue.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetQueue gets a reference to the given string and assigns it to the Queue field.
+// SetQueue gets a reference to the given NullableString and assigns it to the Queue field.
 func (o *ApiDevClockJobsGet200ResponseJobsInner) SetQueue(v string) {
-	o.Queue = &v
+	o.Queue.Set(&v)
+}
+// SetQueueNil sets the value for Queue to be an explicit nil
+func (o *ApiDevClockJobsGet200ResponseJobsInner) SetQueueNil() {
+	o.Queue.Set(nil)
 }
 
-// GetSchedule returns the Schedule field value if set, zero value otherwise.
+// UnsetQueue ensures that no value is present for Queue, not even an explicit nil
+func (o *ApiDevClockJobsGet200ResponseJobsInner) UnsetQueue() {
+	o.Queue.Unset()
+}
+
+// GetSchedule returns the Schedule field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *ApiDevClockJobsGet200ResponseJobsInner) GetSchedule() string {
-	if o == nil || IsNil(o.Schedule) {
+	if o == nil || IsNil(o.Schedule.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Schedule
+	return *o.Schedule.Get()
 }
 
 // GetScheduleOk returns a tuple with the Schedule field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevClockJobsGet200ResponseJobsInner) GetScheduleOk() (*string, bool) {
-	if o == nil || IsNil(o.Schedule) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Schedule, true
+	return o.Schedule.Get(), o.Schedule.IsSet()
 }
 
 // HasSchedule returns a boolean if a field has been set.
 func (o *ApiDevClockJobsGet200ResponseJobsInner) HasSchedule() bool {
-	if o != nil && !IsNil(o.Schedule) {
+	if o != nil && o.Schedule.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetSchedule gets a reference to the given string and assigns it to the Schedule field.
+// SetSchedule gets a reference to the given NullableString and assigns it to the Schedule field.
 func (o *ApiDevClockJobsGet200ResponseJobsInner) SetSchedule(v string) {
-	o.Schedule = &v
+	o.Schedule.Set(&v)
+}
+// SetScheduleNil sets the value for Schedule to be an explicit nil
+func (o *ApiDevClockJobsGet200ResponseJobsInner) SetScheduleNil() {
+	o.Schedule.Set(nil)
+}
+
+// UnsetSchedule ensures that no value is present for Schedule, not even an explicit nil
+func (o *ApiDevClockJobsGet200ResponseJobsInner) UnsetSchedule() {
+	o.Schedule.Unset()
 }
 
 // GetBuilt returns the Built field value
@@ -196,13 +220,13 @@ func (o ApiDevClockJobsGet200ResponseJobsInner) MarshalJSON() ([]byte, error) {
 
 func (o ApiDevClockJobsGet200ResponseJobsInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["key"] = o.Key
-	toSerialize["label"] = o.Label
-	if !IsNil(o.Queue) {
-		toSerialize["queue"] = o.Queue
+	toSerialize["key"] = o.Key.Get()
+	toSerialize["label"] = o.Label.Get()
+	if o.Queue.IsSet() {
+		toSerialize["queue"] = o.Queue.Get()
 	}
-	if !IsNil(o.Schedule) {
-		toSerialize["schedule"] = o.Schedule
+	if o.Schedule.IsSet() {
+		toSerialize["schedule"] = o.Schedule.Get()
 	}
 	toSerialize["built"] = o.Built
 

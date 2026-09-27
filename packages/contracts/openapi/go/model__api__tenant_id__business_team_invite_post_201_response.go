@@ -23,10 +23,10 @@ var _ MappedNullable = &ApiTenantIdBusinessTeamInvitePost201Response{}
 type ApiTenantIdBusinessTeamInvitePost201Response struct {
 	Id string `json:"id"`
 	BusinessId string `json:"businessId"`
-	Email string `json:"email"`
+	Email NullableString `json:"email"`
 	Role BusinessTeamRole `json:"role"`
-	InvitedAt time.Time `json:"invitedAt"`
-	ExpiresAt time.Time `json:"expiresAt"`
+	InvitedAt NullableTime `json:"invitedAt"`
+	ExpiresAt NullableTime `json:"expiresAt"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -36,7 +36,7 @@ type _ApiTenantIdBusinessTeamInvitePost201Response ApiTenantIdBusinessTeamInvite
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdBusinessTeamInvitePost201Response(id string, businessId string, email string, role BusinessTeamRole, invitedAt time.Time, expiresAt time.Time) *ApiTenantIdBusinessTeamInvitePost201Response {
+func NewApiTenantIdBusinessTeamInvitePost201Response(id string, businessId string, email NullableString, role BusinessTeamRole, invitedAt NullableTime, expiresAt NullableTime) *ApiTenantIdBusinessTeamInvitePost201Response {
 	this := ApiTenantIdBusinessTeamInvitePost201Response{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -104,27 +104,29 @@ func (o *ApiTenantIdBusinessTeamInvitePost201Response) SetBusinessId(v string) {
 }
 
 // GetEmail returns the Email field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) GetEmail() string {
-	if o == nil {
+	if o == nil || o.Email.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Email
+	return *o.Email.Get()
 }
 
 // GetEmailOk returns a tuple with the Email field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) GetEmailOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Email, true
+	return o.Email.Get(), o.Email.IsSet()
 }
 
 // SetEmail sets field value
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) SetEmail(v string) {
-	o.Email = v
+	o.Email.Set(&v)
 }
 
 // GetRole returns the Role field value
@@ -152,51 +154,55 @@ func (o *ApiTenantIdBusinessTeamInvitePost201Response) SetRole(v BusinessTeamRol
 }
 
 // GetInvitedAt returns the InvitedAt field value
+// If the value is explicit nil, the zero value for time.Time will be returned
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) GetInvitedAt() time.Time {
-	if o == nil {
+	if o == nil || o.InvitedAt.Get() == nil {
 		var ret time.Time
 		return ret
 	}
 
-	return o.InvitedAt
+	return *o.InvitedAt.Get()
 }
 
 // GetInvitedAtOk returns a tuple with the InvitedAt field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) GetInvitedAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.InvitedAt, true
+	return o.InvitedAt.Get(), o.InvitedAt.IsSet()
 }
 
 // SetInvitedAt sets field value
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) SetInvitedAt(v time.Time) {
-	o.InvitedAt = v
+	o.InvitedAt.Set(&v)
 }
 
 // GetExpiresAt returns the ExpiresAt field value
+// If the value is explicit nil, the zero value for time.Time will be returned
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) GetExpiresAt() time.Time {
-	if o == nil {
+	if o == nil || o.ExpiresAt.Get() == nil {
 		var ret time.Time
 		return ret
 	}
 
-	return o.ExpiresAt
+	return *o.ExpiresAt.Get()
 }
 
 // GetExpiresAtOk returns a tuple with the ExpiresAt field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) GetExpiresAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ExpiresAt, true
+	return o.ExpiresAt.Get(), o.ExpiresAt.IsSet()
 }
 
 // SetExpiresAt sets field value
 func (o *ApiTenantIdBusinessTeamInvitePost201Response) SetExpiresAt(v time.Time) {
-	o.ExpiresAt = v
+	o.ExpiresAt.Set(&v)
 }
 
 func (o ApiTenantIdBusinessTeamInvitePost201Response) MarshalJSON() ([]byte, error) {
@@ -211,10 +217,10 @@ func (o ApiTenantIdBusinessTeamInvitePost201Response) ToMap() (map[string]interf
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id
 	toSerialize["businessId"] = o.BusinessId
-	toSerialize["email"] = o.Email
+	toSerialize["email"] = o.Email.Get()
 	toSerialize["role"] = o.Role
-	toSerialize["invitedAt"] = o.InvitedAt
-	toSerialize["expiresAt"] = o.ExpiresAt
+	toSerialize["invitedAt"] = o.InvitedAt.Get()
+	toSerialize["expiresAt"] = o.ExpiresAt.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

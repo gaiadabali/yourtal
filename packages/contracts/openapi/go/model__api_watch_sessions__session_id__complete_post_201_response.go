@@ -23,9 +23,9 @@ var _ MappedNullable = &ApiWatchSessionsSessionIdCompletePost201Response{}
 type ApiWatchSessionsSessionIdCompletePost201Response struct {
 	Completed interface{} `json:"completed"`
 	Granted bool `json:"granted"`
-	PendingPoints int32 `json:"pendingPoints"`
+	PendingPoints NullableInt32 `json:"pendingPoints"`
 	UnlockAt *time.Time `json:"unlockAt,omitempty"`
-	Reason *string `json:"reason,omitempty"`
+	Reason NullableString `json:"reason,omitempty"`
 	DeliveryCoverage *string `json:"deliveryCoverage,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
@@ -36,7 +36,7 @@ type _ApiWatchSessionsSessionIdCompletePost201Response ApiWatchSessionsSessionId
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsSessionIdCompletePost201Response(completed interface{}, granted bool, pendingPoints int32) *ApiWatchSessionsSessionIdCompletePost201Response {
+func NewApiWatchSessionsSessionIdCompletePost201Response(completed interface{}, granted bool, pendingPoints NullableInt32) *ApiWatchSessionsSessionIdCompletePost201Response {
 	this := ApiWatchSessionsSessionIdCompletePost201Response{}
 	this.Completed = completed
 	this.Granted = granted
@@ -103,27 +103,29 @@ func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetGranted(v bool) {
 }
 
 // GetPendingPoints returns the PendingPoints field value
+// If the value is explicit nil, the zero value for int32 will be returned
 func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetPendingPoints() int32 {
-	if o == nil {
+	if o == nil || o.PendingPoints.Get() == nil {
 		var ret int32
 		return ret
 	}
 
-	return o.PendingPoints
+	return *o.PendingPoints.Get()
 }
 
 // GetPendingPointsOk returns a tuple with the PendingPoints field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetPendingPointsOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.PendingPoints, true
+	return o.PendingPoints.Get(), o.PendingPoints.IsSet()
 }
 
 // SetPendingPoints sets field value
 func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetPendingPoints(v int32) {
-	o.PendingPoints = v
+	o.PendingPoints.Set(&v)
 }
 
 // GetUnlockAt returns the UnlockAt field value if set, zero value otherwise.
@@ -158,36 +160,46 @@ func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetUnlockAt(v time.Ti
 	o.UnlockAt = &v
 }
 
-// GetReason returns the Reason field value if set, zero value otherwise.
+// GetReason returns the Reason field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetReason() string {
-	if o == nil || IsNil(o.Reason) {
+	if o == nil || IsNil(o.Reason.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Reason
+	return *o.Reason.Get()
 }
 
 // GetReasonOk returns a tuple with the Reason field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetReasonOk() (*string, bool) {
-	if o == nil || IsNil(o.Reason) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Reason, true
+	return o.Reason.Get(), o.Reason.IsSet()
 }
 
 // HasReason returns a boolean if a field has been set.
 func (o *ApiWatchSessionsSessionIdCompletePost201Response) HasReason() bool {
-	if o != nil && !IsNil(o.Reason) {
+	if o != nil && o.Reason.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetReason gets a reference to the given string and assigns it to the Reason field.
+// SetReason gets a reference to the given NullableString and assigns it to the Reason field.
 func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetReason(v string) {
-	o.Reason = &v
+	o.Reason.Set(&v)
+}
+// SetReasonNil sets the value for Reason to be an explicit nil
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetReasonNil() {
+	o.Reason.Set(nil)
+}
+
+// UnsetReason ensures that no value is present for Reason, not even an explicit nil
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) UnsetReason() {
+	o.Reason.Unset()
 }
 
 // GetDeliveryCoverage returns the DeliveryCoverage field value if set, zero value otherwise.
@@ -236,12 +248,12 @@ func (o ApiWatchSessionsSessionIdCompletePost201Response) ToMap() (map[string]in
 		toSerialize["completed"] = o.Completed
 	}
 	toSerialize["granted"] = o.Granted
-	toSerialize["pendingPoints"] = o.PendingPoints
+	toSerialize["pendingPoints"] = o.PendingPoints.Get()
 	if !IsNil(o.UnlockAt) {
 		toSerialize["unlockAt"] = o.UnlockAt
 	}
-	if !IsNil(o.Reason) {
-		toSerialize["reason"] = o.Reason
+	if o.Reason.IsSet() {
+		toSerialize["reason"] = o.Reason.Get()
 	}
 	if !IsNil(o.DeliveryCoverage) {
 		toSerialize["deliveryCoverage"] = o.DeliveryCoverage

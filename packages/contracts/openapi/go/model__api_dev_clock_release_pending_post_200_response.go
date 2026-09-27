@@ -22,7 +22,7 @@ var _ MappedNullable = &ApiDevClockReleasePendingPost200Response{}
 type ApiDevClockReleasePendingPost200Response struct {
 	LedgerMode string `json:"ledgerMode"`
 	Released int64 `json:"released"`
-	Note *string `json:"note,omitempty"`
+	Note NullableString `json:"note,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -95,36 +95,46 @@ func (o *ApiDevClockReleasePendingPost200Response) SetReleased(v int64) {
 	o.Released = v
 }
 
-// GetNote returns the Note field value if set, zero value otherwise.
+// GetNote returns the Note field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *ApiDevClockReleasePendingPost200Response) GetNote() string {
-	if o == nil || IsNil(o.Note) {
+	if o == nil || IsNil(o.Note.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Note
+	return *o.Note.Get()
 }
 
 // GetNoteOk returns a tuple with the Note field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevClockReleasePendingPost200Response) GetNoteOk() (*string, bool) {
-	if o == nil || IsNil(o.Note) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Note, true
+	return o.Note.Get(), o.Note.IsSet()
 }
 
 // HasNote returns a boolean if a field has been set.
 func (o *ApiDevClockReleasePendingPost200Response) HasNote() bool {
-	if o != nil && !IsNil(o.Note) {
+	if o != nil && o.Note.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetNote gets a reference to the given string and assigns it to the Note field.
+// SetNote gets a reference to the given NullableString and assigns it to the Note field.
 func (o *ApiDevClockReleasePendingPost200Response) SetNote(v string) {
-	o.Note = &v
+	o.Note.Set(&v)
+}
+// SetNoteNil sets the value for Note to be an explicit nil
+func (o *ApiDevClockReleasePendingPost200Response) SetNoteNil() {
+	o.Note.Set(nil)
+}
+
+// UnsetNote ensures that no value is present for Note, not even an explicit nil
+func (o *ApiDevClockReleasePendingPost200Response) UnsetNote() {
+	o.Note.Unset()
 }
 
 func (o ApiDevClockReleasePendingPost200Response) MarshalJSON() ([]byte, error) {
@@ -139,8 +149,8 @@ func (o ApiDevClockReleasePendingPost200Response) ToMap() (map[string]interface{
 	toSerialize := map[string]interface{}{}
 	toSerialize["ledgerMode"] = o.LedgerMode
 	toSerialize["released"] = o.Released
-	if !IsNil(o.Note) {
-		toSerialize["note"] = o.Note
+	if o.Note.IsSet() {
+		toSerialize["note"] = o.Note.Get()
 	}
 
 	for key, value := range o.AdditionalProperties {

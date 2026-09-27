@@ -15,50 +15,50 @@ import (
 	"fmt"
 )
 
-// checks if the QuestionOneOf3 type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &QuestionOneOf3{}
+// checks if the ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1{}
 
-// QuestionOneOf3 struct for QuestionOneOf3
-type QuestionOneOf3 struct {
+// ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 struct for ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1
+type ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 struct {
 	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Prompt string `json:"prompt"`
 	TimerSeconds int32 `json:"timerSeconds"`
 	AnswerableAfterSeconds int64 `json:"answerableAfterSeconds"`
 	Type string `json:"type"`
-	Items []QuestionOption `json:"items"`
+	CorrectAnswer bool `json:"correctAnswer"`
 	AdditionalProperties map[string]interface{}
 }
 
-type _QuestionOneOf3 QuestionOneOf3
+type _ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1
 
-// NewQuestionOneOf3 instantiates a new QuestionOneOf3 object
+// NewApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 instantiates a new ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewQuestionOneOf3(id NullableString, campaignId NullableString, prompt string, timerSeconds int32, answerableAfterSeconds int64, type_ string, items []QuestionOption) *QuestionOneOf3 {
-	this := QuestionOneOf3{}
+func NewApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1(id NullableString, campaignId NullableString, prompt string, timerSeconds int32, answerableAfterSeconds int64, type_ string, correctAnswer bool) *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 {
+	this := ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1{}
 	this.Id = id
 	this.CampaignId = campaignId
 	this.Prompt = prompt
 	this.TimerSeconds = timerSeconds
 	this.AnswerableAfterSeconds = answerableAfterSeconds
 	this.Type = type_
-	this.Items = items
+	this.CorrectAnswer = correctAnswer
 	return &this
 }
 
-// NewQuestionOneOf3WithDefaults instantiates a new QuestionOneOf3 object
+// NewApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1WithDefaults instantiates a new ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewQuestionOneOf3WithDefaults() *QuestionOneOf3 {
-	this := QuestionOneOf3{}
+func NewApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1WithDefaults() *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 {
+	this := ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1{}
 	return &this
 }
 
 // GetId returns the Id field value
 // If the value is explicit nil, the zero value for string will be returned
-func (o *QuestionOneOf3) GetId() string {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetId() string {
 	if o == nil || o.Id.Get() == nil {
 		var ret string
 		return ret
@@ -70,7 +70,7 @@ func (o *QuestionOneOf3) GetId() string {
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *QuestionOneOf3) GetIdOk() (*string, bool) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -78,13 +78,13 @@ func (o *QuestionOneOf3) GetIdOk() (*string, bool) {
 }
 
 // SetId sets field value
-func (o *QuestionOneOf3) SetId(v string) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) SetId(v string) {
 	o.Id.Set(&v)
 }
 
 // GetCampaignId returns the CampaignId field value
 // If the value is explicit nil, the zero value for string will be returned
-func (o *QuestionOneOf3) GetCampaignId() string {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetCampaignId() string {
 	if o == nil || o.CampaignId.Get() == nil {
 		var ret string
 		return ret
@@ -96,7 +96,7 @@ func (o *QuestionOneOf3) GetCampaignId() string {
 // GetCampaignIdOk returns a tuple with the CampaignId field value
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *QuestionOneOf3) GetCampaignIdOk() (*string, bool) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetCampaignIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -104,12 +104,12 @@ func (o *QuestionOneOf3) GetCampaignIdOk() (*string, bool) {
 }
 
 // SetCampaignId sets field value
-func (o *QuestionOneOf3) SetCampaignId(v string) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) SetCampaignId(v string) {
 	o.CampaignId.Set(&v)
 }
 
 // GetPrompt returns the Prompt field value
-func (o *QuestionOneOf3) GetPrompt() string {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetPrompt() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -120,7 +120,7 @@ func (o *QuestionOneOf3) GetPrompt() string {
 
 // GetPromptOk returns a tuple with the Prompt field value
 // and a boolean to check if the value has been set.
-func (o *QuestionOneOf3) GetPromptOk() (*string, bool) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetPromptOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -128,12 +128,12 @@ func (o *QuestionOneOf3) GetPromptOk() (*string, bool) {
 }
 
 // SetPrompt sets field value
-func (o *QuestionOneOf3) SetPrompt(v string) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) SetPrompt(v string) {
 	o.Prompt = v
 }
 
 // GetTimerSeconds returns the TimerSeconds field value
-func (o *QuestionOneOf3) GetTimerSeconds() int32 {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetTimerSeconds() int32 {
 	if o == nil {
 		var ret int32
 		return ret
@@ -144,7 +144,7 @@ func (o *QuestionOneOf3) GetTimerSeconds() int32 {
 
 // GetTimerSecondsOk returns a tuple with the TimerSeconds field value
 // and a boolean to check if the value has been set.
-func (o *QuestionOneOf3) GetTimerSecondsOk() (*int32, bool) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetTimerSecondsOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -152,12 +152,12 @@ func (o *QuestionOneOf3) GetTimerSecondsOk() (*int32, bool) {
 }
 
 // SetTimerSeconds sets field value
-func (o *QuestionOneOf3) SetTimerSeconds(v int32) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) SetTimerSeconds(v int32) {
 	o.TimerSeconds = v
 }
 
 // GetAnswerableAfterSeconds returns the AnswerableAfterSeconds field value
-func (o *QuestionOneOf3) GetAnswerableAfterSeconds() int64 {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetAnswerableAfterSeconds() int64 {
 	if o == nil {
 		var ret int64
 		return ret
@@ -168,7 +168,7 @@ func (o *QuestionOneOf3) GetAnswerableAfterSeconds() int64 {
 
 // GetAnswerableAfterSecondsOk returns a tuple with the AnswerableAfterSeconds field value
 // and a boolean to check if the value has been set.
-func (o *QuestionOneOf3) GetAnswerableAfterSecondsOk() (*int64, bool) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetAnswerableAfterSecondsOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -176,12 +176,12 @@ func (o *QuestionOneOf3) GetAnswerableAfterSecondsOk() (*int64, bool) {
 }
 
 // SetAnswerableAfterSeconds sets field value
-func (o *QuestionOneOf3) SetAnswerableAfterSeconds(v int64) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) SetAnswerableAfterSeconds(v int64) {
 	o.AnswerableAfterSeconds = v
 }
 
 // GetType returns the Type field value
-func (o *QuestionOneOf3) GetType() string {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetType() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -192,7 +192,7 @@ func (o *QuestionOneOf3) GetType() string {
 
 // GetTypeOk returns a tuple with the Type field value
 // and a boolean to check if the value has been set.
-func (o *QuestionOneOf3) GetTypeOk() (*string, bool) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetTypeOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -200,35 +200,35 @@ func (o *QuestionOneOf3) GetTypeOk() (*string, bool) {
 }
 
 // SetType sets field value
-func (o *QuestionOneOf3) SetType(v string) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) SetType(v string) {
 	o.Type = v
 }
 
-// GetItems returns the Items field value
-func (o *QuestionOneOf3) GetItems() []QuestionOption {
+// GetCorrectAnswer returns the CorrectAnswer field value
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetCorrectAnswer() bool {
 	if o == nil {
-		var ret []QuestionOption
+		var ret bool
 		return ret
 	}
 
-	return o.Items
+	return o.CorrectAnswer
 }
 
-// GetItemsOk returns a tuple with the Items field value
+// GetCorrectAnswerOk returns a tuple with the CorrectAnswer field value
 // and a boolean to check if the value has been set.
-func (o *QuestionOneOf3) GetItemsOk() ([]QuestionOption, bool) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) GetCorrectAnswerOk() (*bool, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Items, true
+	return &o.CorrectAnswer, true
 }
 
-// SetItems sets field value
-func (o *QuestionOneOf3) SetItems(v []QuestionOption) {
-	o.Items = v
+// SetCorrectAnswer sets field value
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) SetCorrectAnswer(v bool) {
+	o.CorrectAnswer = v
 }
 
-func (o QuestionOneOf3) MarshalJSON() ([]byte, error) {
+func (o ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -236,7 +236,7 @@ func (o QuestionOneOf3) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o QuestionOneOf3) ToMap() (map[string]interface{}, error) {
+func (o ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id.Get()
 	toSerialize["campaignId"] = o.CampaignId.Get()
@@ -244,7 +244,7 @@ func (o QuestionOneOf3) ToMap() (map[string]interface{}, error) {
 	toSerialize["timerSeconds"] = o.TimerSeconds
 	toSerialize["answerableAfterSeconds"] = o.AnswerableAfterSeconds
 	toSerialize["type"] = o.Type
-	toSerialize["items"] = o.Items
+	toSerialize["correctAnswer"] = o.CorrectAnswer
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -253,7 +253,7 @@ func (o QuestionOneOf3) ToMap() (map[string]interface{}, error) {
 	return toSerialize, nil
 }
 
-func (o *QuestionOneOf3) UnmarshalJSON(data []byte) (err error) {
+func (o *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -264,7 +264,7 @@ func (o *QuestionOneOf3) UnmarshalJSON(data []byte) (err error) {
 		"timerSeconds",
 		"answerableAfterSeconds",
 		"type",
-		"items",
+		"correctAnswer",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -281,15 +281,15 @@ func (o *QuestionOneOf3) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varQuestionOneOf3 := _QuestionOneOf3{}
+	varApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 := _ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1{}
 
-	err = json.Unmarshal(data, &varQuestionOneOf3)
+	err = json.Unmarshal(data, &varApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1)
 
 	if err != nil {
 		return err
 	}
 
-	*o = QuestionOneOf3(varQuestionOneOf3)
+	*o = ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1(varApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1)
 
 	additionalProperties := make(map[string]interface{})
 
@@ -300,45 +300,45 @@ func (o *QuestionOneOf3) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "timerSeconds")
 		delete(additionalProperties, "answerableAfterSeconds")
 		delete(additionalProperties, "type")
-		delete(additionalProperties, "items")
+		delete(additionalProperties, "correctAnswer")
 		o.AdditionalProperties = additionalProperties
 	}
 
 	return err
 }
 
-type NullableQuestionOneOf3 struct {
-	value *QuestionOneOf3
+type NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 struct {
+	value *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1
 	isSet bool
 }
 
-func (v NullableQuestionOneOf3) Get() *QuestionOneOf3 {
+func (v NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) Get() *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 {
 	return v.value
 }
 
-func (v *NullableQuestionOneOf3) Set(val *QuestionOneOf3) {
+func (v *NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) Set(val *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableQuestionOneOf3) IsSet() bool {
+func (v NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableQuestionOneOf3) Unset() {
+func (v *NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableQuestionOneOf3(val *QuestionOneOf3) *NullableQuestionOneOf3 {
-	return &NullableQuestionOneOf3{value: val, isSet: true}
+func NewNullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1(val *ApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) *NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1 {
+	return &NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1{value: val, isSet: true}
 }
 
-func (v NullableQuestionOneOf3) MarshalJSON() ([]byte, error) {
+func (v NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableQuestionOneOf3) UnmarshalJSON(src []byte) error {
+func (v *NullableApiTenantIdStudioCampaignsCampaignIdQuestionsGet200ResponseInnerQuestionOneOf1) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

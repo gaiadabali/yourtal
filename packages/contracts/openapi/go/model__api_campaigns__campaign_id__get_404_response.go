@@ -20,9 +20,9 @@ var _ MappedNullable = &ApiCampaignsCampaignIdGet404Response{}
 
 // ApiCampaignsCampaignIdGet404Response Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.
 type ApiCampaignsCampaignIdGet404Response struct {
-	StatusCode int32 `json:"statusCode"`
-	Message string `json:"message"`
-	Error string `json:"error"`
+	StatusCode NullableInt32 `json:"statusCode"`
+	Message NullableString `json:"message"`
+	Error NullableString `json:"error"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -32,7 +32,7 @@ type _ApiCampaignsCampaignIdGet404Response ApiCampaignsCampaignIdGet404Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiCampaignsCampaignIdGet404Response(statusCode int32, message string, error_ string) *ApiCampaignsCampaignIdGet404Response {
+func NewApiCampaignsCampaignIdGet404Response(statusCode NullableInt32, message NullableString, error_ NullableString) *ApiCampaignsCampaignIdGet404Response {
 	this := ApiCampaignsCampaignIdGet404Response{}
 	this.StatusCode = statusCode
 	this.Message = message
@@ -49,75 +49,81 @@ func NewApiCampaignsCampaignIdGet404ResponseWithDefaults() *ApiCampaignsCampaign
 }
 
 // GetStatusCode returns the StatusCode field value
+// If the value is explicit nil, the zero value for int32 will be returned
 func (o *ApiCampaignsCampaignIdGet404Response) GetStatusCode() int32 {
-	if o == nil {
+	if o == nil || o.StatusCode.Get() == nil {
 		var ret int32
 		return ret
 	}
 
-	return o.StatusCode
+	return *o.StatusCode.Get()
 }
 
 // GetStatusCodeOk returns a tuple with the StatusCode field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiCampaignsCampaignIdGet404Response) GetStatusCodeOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.StatusCode, true
+	return o.StatusCode.Get(), o.StatusCode.IsSet()
 }
 
 // SetStatusCode sets field value
 func (o *ApiCampaignsCampaignIdGet404Response) SetStatusCode(v int32) {
-	o.StatusCode = v
+	o.StatusCode.Set(&v)
 }
 
 // GetMessage returns the Message field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiCampaignsCampaignIdGet404Response) GetMessage() string {
-	if o == nil {
+	if o == nil || o.Message.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Message
+	return *o.Message.Get()
 }
 
 // GetMessageOk returns a tuple with the Message field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiCampaignsCampaignIdGet404Response) GetMessageOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Message, true
+	return o.Message.Get(), o.Message.IsSet()
 }
 
 // SetMessage sets field value
 func (o *ApiCampaignsCampaignIdGet404Response) SetMessage(v string) {
-	o.Message = v
+	o.Message.Set(&v)
 }
 
 // GetError returns the Error field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiCampaignsCampaignIdGet404Response) GetError() string {
-	if o == nil {
+	if o == nil || o.Error.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Error
+	return *o.Error.Get()
 }
 
 // GetErrorOk returns a tuple with the Error field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiCampaignsCampaignIdGet404Response) GetErrorOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Error, true
+	return o.Error.Get(), o.Error.IsSet()
 }
 
 // SetError sets field value
 func (o *ApiCampaignsCampaignIdGet404Response) SetError(v string) {
-	o.Error = v
+	o.Error.Set(&v)
 }
 
 func (o ApiCampaignsCampaignIdGet404Response) MarshalJSON() ([]byte, error) {
@@ -130,9 +136,9 @@ func (o ApiCampaignsCampaignIdGet404Response) MarshalJSON() ([]byte, error) {
 
 func (o ApiCampaignsCampaignIdGet404Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["statusCode"] = o.StatusCode
-	toSerialize["message"] = o.Message
-	toSerialize["error"] = o.Error
+	toSerialize["statusCode"] = o.StatusCode.Get()
+	toSerialize["message"] = o.Message.Get()
+	toSerialize["error"] = o.Error.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

@@ -23,7 +23,7 @@ type ApiDevClockAdvanceDaysPost200Response struct {
 	LedgerMode string `json:"ledgerMode"`
 	Days int64 `json:"days"`
 	Shifted int64 `json:"shifted"`
-	Note *string `json:"note,omitempty"`
+	Note NullableString `json:"note,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -121,36 +121,46 @@ func (o *ApiDevClockAdvanceDaysPost200Response) SetShifted(v int64) {
 	o.Shifted = v
 }
 
-// GetNote returns the Note field value if set, zero value otherwise.
+// GetNote returns the Note field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *ApiDevClockAdvanceDaysPost200Response) GetNote() string {
-	if o == nil || IsNil(o.Note) {
+	if o == nil || IsNil(o.Note.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Note
+	return *o.Note.Get()
 }
 
 // GetNoteOk returns a tuple with the Note field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevClockAdvanceDaysPost200Response) GetNoteOk() (*string, bool) {
-	if o == nil || IsNil(o.Note) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Note, true
+	return o.Note.Get(), o.Note.IsSet()
 }
 
 // HasNote returns a boolean if a field has been set.
 func (o *ApiDevClockAdvanceDaysPost200Response) HasNote() bool {
-	if o != nil && !IsNil(o.Note) {
+	if o != nil && o.Note.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetNote gets a reference to the given string and assigns it to the Note field.
+// SetNote gets a reference to the given NullableString and assigns it to the Note field.
 func (o *ApiDevClockAdvanceDaysPost200Response) SetNote(v string) {
-	o.Note = &v
+	o.Note.Set(&v)
+}
+// SetNoteNil sets the value for Note to be an explicit nil
+func (o *ApiDevClockAdvanceDaysPost200Response) SetNoteNil() {
+	o.Note.Set(nil)
+}
+
+// UnsetNote ensures that no value is present for Note, not even an explicit nil
+func (o *ApiDevClockAdvanceDaysPost200Response) UnsetNote() {
+	o.Note.Unset()
 }
 
 func (o ApiDevClockAdvanceDaysPost200Response) MarshalJSON() ([]byte, error) {
@@ -166,8 +176,8 @@ func (o ApiDevClockAdvanceDaysPost200Response) ToMap() (map[string]interface{}, 
 	toSerialize["ledgerMode"] = o.LedgerMode
 	toSerialize["days"] = o.Days
 	toSerialize["shifted"] = o.Shifted
-	if !IsNil(o.Note) {
-		toSerialize["note"] = o.Note
+	if o.Note.IsSet() {
+		toSerialize["note"] = o.Note.Get()
 	}
 
 	for key, value := range o.AdditionalProperties {

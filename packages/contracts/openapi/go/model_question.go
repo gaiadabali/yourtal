@@ -18,11 +18,32 @@ import (
 
 // Question - A checkpoint question, discriminated on type. Variants are inlined rather than named as components because they are never referenced independently.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - multiple_choice: correctOptionId must reference one of the provided options.   - likert: scaleMin must be less than scaleMax.
 type Question struct {
+	ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 *ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1
+	ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 *ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2
+	ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 *ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3
 	QuestionOneOf *QuestionOneOf
 	QuestionOneOf1 *QuestionOneOf1
-	QuestionOneOf2 *QuestionOneOf2
-	QuestionOneOf3 *QuestionOneOf3
-	QuestionOneOf4 *QuestionOneOf4
+}
+
+// ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1AsQuestion is a convenience function that returns ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 wrapped in Question
+func ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1AsQuestion(v *ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1) Question {
+	return Question{
+		ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1: v,
+	}
+}
+
+// ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2AsQuestion is a convenience function that returns ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 wrapped in Question
+func ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2AsQuestion(v *ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2) Question {
+	return Question{
+		ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2: v,
+	}
+}
+
+// ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3AsQuestion is a convenience function that returns ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 wrapped in Question
+func ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3AsQuestion(v *ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3) Question {
+	return Question{
+		ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3: v,
+	}
 }
 
 // QuestionOneOfAsQuestion is a convenience function that returns QuestionOneOf wrapped in Question
@@ -39,32 +60,62 @@ func QuestionOneOf1AsQuestion(v *QuestionOneOf1) Question {
 	}
 }
 
-// QuestionOneOf2AsQuestion is a convenience function that returns QuestionOneOf2 wrapped in Question
-func QuestionOneOf2AsQuestion(v *QuestionOneOf2) Question {
-	return Question{
-		QuestionOneOf2: v,
-	}
-}
-
-// QuestionOneOf3AsQuestion is a convenience function that returns QuestionOneOf3 wrapped in Question
-func QuestionOneOf3AsQuestion(v *QuestionOneOf3) Question {
-	return Question{
-		QuestionOneOf3: v,
-	}
-}
-
-// QuestionOneOf4AsQuestion is a convenience function that returns QuestionOneOf4 wrapped in Question
-func QuestionOneOf4AsQuestion(v *QuestionOneOf4) Question {
-	return Question{
-		QuestionOneOf4: v,
-	}
-}
-
 
 // Unmarshal JSON data into one of the pointers in the struct
 func (dst *Question) UnmarshalJSON(data []byte) error {
 	var err error
 	match := 0
+	// try to unmarshal data into ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1
+	err = newStrictDecoder(data).Decode(&dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1)
+	if err == nil {
+		jsonApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1, _ := json.Marshal(dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1)
+		if string(jsonApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1) == "{}" { // empty struct
+			dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 = nil
+		} else {
+			if err = validator.Validate(dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1); err != nil {
+				dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 = nil
+	}
+
+	// try to unmarshal data into ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2
+	err = newStrictDecoder(data).Decode(&dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2)
+	if err == nil {
+		jsonApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2, _ := json.Marshal(dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2)
+		if string(jsonApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2) == "{}" { // empty struct
+			dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 = nil
+		} else {
+			if err = validator.Validate(dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2); err != nil {
+				dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 = nil
+	}
+
+	// try to unmarshal data into ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3
+	err = newStrictDecoder(data).Decode(&dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3)
+	if err == nil {
+		jsonApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3, _ := json.Marshal(dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3)
+		if string(jsonApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3) == "{}" { // empty struct
+			dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 = nil
+		} else {
+			if err = validator.Validate(dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3); err != nil {
+				dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 = nil
+			} else {
+				match++
+			}
+		}
+	} else {
+		dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 = nil
+	}
+
 	// try to unmarshal data into QuestionOneOf
 	err = newStrictDecoder(data).Decode(&dst.QuestionOneOf)
 	if err == nil {
@@ -99,64 +150,13 @@ func (dst *Question) UnmarshalJSON(data []byte) error {
 		dst.QuestionOneOf1 = nil
 	}
 
-	// try to unmarshal data into QuestionOneOf2
-	err = newStrictDecoder(data).Decode(&dst.QuestionOneOf2)
-	if err == nil {
-		jsonQuestionOneOf2, _ := json.Marshal(dst.QuestionOneOf2)
-		if string(jsonQuestionOneOf2) == "{}" { // empty struct
-			dst.QuestionOneOf2 = nil
-		} else {
-			if err = validator.Validate(dst.QuestionOneOf2); err != nil {
-				dst.QuestionOneOf2 = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.QuestionOneOf2 = nil
-	}
-
-	// try to unmarshal data into QuestionOneOf3
-	err = newStrictDecoder(data).Decode(&dst.QuestionOneOf3)
-	if err == nil {
-		jsonQuestionOneOf3, _ := json.Marshal(dst.QuestionOneOf3)
-		if string(jsonQuestionOneOf3) == "{}" { // empty struct
-			dst.QuestionOneOf3 = nil
-		} else {
-			if err = validator.Validate(dst.QuestionOneOf3); err != nil {
-				dst.QuestionOneOf3 = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.QuestionOneOf3 = nil
-	}
-
-	// try to unmarshal data into QuestionOneOf4
-	err = newStrictDecoder(data).Decode(&dst.QuestionOneOf4)
-	if err == nil {
-		jsonQuestionOneOf4, _ := json.Marshal(dst.QuestionOneOf4)
-		if string(jsonQuestionOneOf4) == "{}" { // empty struct
-			dst.QuestionOneOf4 = nil
-		} else {
-			if err = validator.Validate(dst.QuestionOneOf4); err != nil {
-				dst.QuestionOneOf4 = nil
-			} else {
-				match++
-			}
-		}
-	} else {
-		dst.QuestionOneOf4 = nil
-	}
-
 	if match > 1 { // more than 1 match
 		// reset to nil
+		dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 = nil
+		dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 = nil
+		dst.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 = nil
 		dst.QuestionOneOf = nil
 		dst.QuestionOneOf1 = nil
-		dst.QuestionOneOf2 = nil
-		dst.QuestionOneOf3 = nil
-		dst.QuestionOneOf4 = nil
 
 		return fmt.Errorf("data matches more than one schema in oneOf(Question)")
 	} else if match == 1 {
@@ -172,24 +172,24 @@ func (dst *Question) UnmarshalJSON(data []byte) error {
 
 // Marshal data from the first non-nil pointers in the struct to JSON
 func (src Question) MarshalJSON() ([]byte, error) {
+	if src.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 != nil {
+		return json.Marshal(&src.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1)
+	}
+
+	if src.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 != nil {
+		return json.Marshal(&src.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2)
+	}
+
+	if src.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 != nil {
+		return json.Marshal(&src.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3)
+	}
+
 	if src.QuestionOneOf != nil {
 		return json.Marshal(&src.QuestionOneOf)
 	}
 
 	if src.QuestionOneOf1 != nil {
 		return json.Marshal(&src.QuestionOneOf1)
-	}
-
-	if src.QuestionOneOf2 != nil {
-		return json.Marshal(&src.QuestionOneOf2)
-	}
-
-	if src.QuestionOneOf3 != nil {
-		return json.Marshal(&src.QuestionOneOf3)
-	}
-
-	if src.QuestionOneOf4 != nil {
-		return json.Marshal(&src.QuestionOneOf4)
 	}
 
 	return nil, nil // no data in oneOf schemas
@@ -200,6 +200,18 @@ func (obj *Question) GetActualInstance() (interface{}) {
 	if obj == nil {
 		return nil
 	}
+	if obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 != nil {
+		return obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1
+	}
+
+	if obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 != nil {
+		return obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2
+	}
+
+	if obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 != nil {
+		return obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3
+	}
+
 	if obj.QuestionOneOf != nil {
 		return obj.QuestionOneOf
 	}
@@ -208,42 +220,30 @@ func (obj *Question) GetActualInstance() (interface{}) {
 		return obj.QuestionOneOf1
 	}
 
-	if obj.QuestionOneOf2 != nil {
-		return obj.QuestionOneOf2
-	}
-
-	if obj.QuestionOneOf3 != nil {
-		return obj.QuestionOneOf3
-	}
-
-	if obj.QuestionOneOf4 != nil {
-		return obj.QuestionOneOf4
-	}
-
 	// all schemas are nil
 	return nil
 }
 
 // Get the actual instance value
 func (obj Question) GetActualInstanceValue() (interface{}) {
+	if obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1 != nil {
+		return *obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf1
+	}
+
+	if obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2 != nil {
+		return *obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf2
+	}
+
+	if obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3 != nil {
+		return *obj.ApiTenantIdStudioCampaignsCampaignIdQuestionsPostRequestOneOf3
+	}
+
 	if obj.QuestionOneOf != nil {
 		return *obj.QuestionOneOf
 	}
 
 	if obj.QuestionOneOf1 != nil {
 		return *obj.QuestionOneOf1
-	}
-
-	if obj.QuestionOneOf2 != nil {
-		return *obj.QuestionOneOf2
-	}
-
-	if obj.QuestionOneOf3 != nil {
-		return *obj.QuestionOneOf3
-	}
-
-	if obj.QuestionOneOf4 != nil {
-		return *obj.QuestionOneOf4
 	}
 
 	// all schemas are nil

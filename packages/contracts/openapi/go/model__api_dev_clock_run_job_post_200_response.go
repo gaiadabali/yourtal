@@ -20,8 +20,8 @@ var _ MappedNullable = &ApiDevClockRunJobPost200Response{}
 
 // ApiDevClockRunJobPost200Response struct for ApiDevClockRunJobPost200Response
 type ApiDevClockRunJobPost200Response struct {
-	Queue string `json:"queue"`
-	JobId string `json:"jobId"`
+	Queue NullableString `json:"queue"`
+	JobId NullableString `json:"jobId"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,7 +31,7 @@ type _ApiDevClockRunJobPost200Response ApiDevClockRunJobPost200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiDevClockRunJobPost200Response(queue string, jobId string) *ApiDevClockRunJobPost200Response {
+func NewApiDevClockRunJobPost200Response(queue NullableString, jobId NullableString) *ApiDevClockRunJobPost200Response {
 	this := ApiDevClockRunJobPost200Response{}
 	this.Queue = queue
 	this.JobId = jobId
@@ -47,51 +47,55 @@ func NewApiDevClockRunJobPost200ResponseWithDefaults() *ApiDevClockRunJobPost200
 }
 
 // GetQueue returns the Queue field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiDevClockRunJobPost200Response) GetQueue() string {
-	if o == nil {
+	if o == nil || o.Queue.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Queue
+	return *o.Queue.Get()
 }
 
 // GetQueueOk returns a tuple with the Queue field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevClockRunJobPost200Response) GetQueueOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Queue, true
+	return o.Queue.Get(), o.Queue.IsSet()
 }
 
 // SetQueue sets field value
 func (o *ApiDevClockRunJobPost200Response) SetQueue(v string) {
-	o.Queue = v
+	o.Queue.Set(&v)
 }
 
 // GetJobId returns the JobId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiDevClockRunJobPost200Response) GetJobId() string {
-	if o == nil {
+	if o == nil || o.JobId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.JobId
+	return *o.JobId.Get()
 }
 
 // GetJobIdOk returns a tuple with the JobId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiDevClockRunJobPost200Response) GetJobIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.JobId, true
+	return o.JobId.Get(), o.JobId.IsSet()
 }
 
 // SetJobId sets field value
 func (o *ApiDevClockRunJobPost200Response) SetJobId(v string) {
-	o.JobId = v
+	o.JobId.Set(&v)
 }
 
 func (o ApiDevClockRunJobPost200Response) MarshalJSON() ([]byte, error) {
@@ -104,8 +108,8 @@ func (o ApiDevClockRunJobPost200Response) MarshalJSON() ([]byte, error) {
 
 func (o ApiDevClockRunJobPost200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["queue"] = o.Queue
-	toSerialize["jobId"] = o.JobId
+	toSerialize["queue"] = o.Queue.Get()
+	toSerialize["jobId"] = o.JobId.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

@@ -23,7 +23,7 @@ type ApiWatchSessionsSessionIdGet200Response struct {
 	Session WatchSession `json:"session"`
 	DurationSeconds int32 `json:"durationSeconds"`
 	Coverage []ApiWatchSessionsSessionIdGet200ResponseCoverageInner `json:"coverage"`
-	CoveredSeconds int32 `json:"coveredSeconds"`
+	CoveredSeconds NullableInt32 `json:"coveredSeconds"`
 	Fraction float32 `json:"fraction"`
 	Gaps []ApiWatchSessionsSessionIdGet200ResponseGapsInner `json:"gaps"`
 	AdditionalProperties map[string]interface{}
@@ -35,7 +35,7 @@ type _ApiWatchSessionsSessionIdGet200Response ApiWatchSessionsSessionIdGet200Res
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsSessionIdGet200Response(session WatchSession, durationSeconds int32, coverage []ApiWatchSessionsSessionIdGet200ResponseCoverageInner, coveredSeconds int32, fraction float32, gaps []ApiWatchSessionsSessionIdGet200ResponseGapsInner) *ApiWatchSessionsSessionIdGet200Response {
+func NewApiWatchSessionsSessionIdGet200Response(session WatchSession, durationSeconds int32, coverage []ApiWatchSessionsSessionIdGet200ResponseCoverageInner, coveredSeconds NullableInt32, fraction float32, gaps []ApiWatchSessionsSessionIdGet200ResponseGapsInner) *ApiWatchSessionsSessionIdGet200Response {
 	this := ApiWatchSessionsSessionIdGet200Response{}
 	this.Session = session
 	this.DurationSeconds = durationSeconds
@@ -127,27 +127,29 @@ func (o *ApiWatchSessionsSessionIdGet200Response) SetCoverage(v []ApiWatchSessio
 }
 
 // GetCoveredSeconds returns the CoveredSeconds field value
+// If the value is explicit nil, the zero value for int32 will be returned
 func (o *ApiWatchSessionsSessionIdGet200Response) GetCoveredSeconds() int32 {
-	if o == nil {
+	if o == nil || o.CoveredSeconds.Get() == nil {
 		var ret int32
 		return ret
 	}
 
-	return o.CoveredSeconds
+	return *o.CoveredSeconds.Get()
 }
 
 // GetCoveredSecondsOk returns a tuple with the CoveredSeconds field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiWatchSessionsSessionIdGet200Response) GetCoveredSecondsOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.CoveredSeconds, true
+	return o.CoveredSeconds.Get(), o.CoveredSeconds.IsSet()
 }
 
 // SetCoveredSeconds sets field value
 func (o *ApiWatchSessionsSessionIdGet200Response) SetCoveredSeconds(v int32) {
-	o.CoveredSeconds = v
+	o.CoveredSeconds.Set(&v)
 }
 
 // GetFraction returns the Fraction field value
@@ -211,7 +213,7 @@ func (o ApiWatchSessionsSessionIdGet200Response) ToMap() (map[string]interface{}
 	toSerialize["session"] = o.Session
 	toSerialize["durationSeconds"] = o.DurationSeconds
 	toSerialize["coverage"] = o.Coverage
-	toSerialize["coveredSeconds"] = o.CoveredSeconds
+	toSerialize["coveredSeconds"] = o.CoveredSeconds.Get()
 	toSerialize["fraction"] = o.Fraction
 	toSerialize["gaps"] = o.Gaps
 

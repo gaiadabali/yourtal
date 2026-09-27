@@ -20,7 +20,7 @@ var _ MappedNullable = &ApiTenantIdBusinessTeamInvitePostRequest{}
 
 // ApiTenantIdBusinessTeamInvitePostRequest struct for ApiTenantIdBusinessTeamInvitePostRequest
 type ApiTenantIdBusinessTeamInvitePostRequest struct {
-	UserId string `json:"userId"`
+	Email string `json:"email" validate:"regexp=^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2\\,}$"`
 	Role string `json:"role"`
 	AdditionalProperties map[string]interface{}
 }
@@ -31,9 +31,9 @@ type _ApiTenantIdBusinessTeamInvitePostRequest ApiTenantIdBusinessTeamInvitePost
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdBusinessTeamInvitePostRequest(userId string, role string) *ApiTenantIdBusinessTeamInvitePostRequest {
+func NewApiTenantIdBusinessTeamInvitePostRequest(email string, role string) *ApiTenantIdBusinessTeamInvitePostRequest {
 	this := ApiTenantIdBusinessTeamInvitePostRequest{}
-	this.UserId = userId
+	this.Email = email
 	this.Role = role
 	return &this
 }
@@ -46,28 +46,28 @@ func NewApiTenantIdBusinessTeamInvitePostRequestWithDefaults() *ApiTenantIdBusin
 	return &this
 }
 
-// GetUserId returns the UserId field value
-func (o *ApiTenantIdBusinessTeamInvitePostRequest) GetUserId() string {
+// GetEmail returns the Email field value
+func (o *ApiTenantIdBusinessTeamInvitePostRequest) GetEmail() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.UserId
+	return o.Email
 }
 
-// GetUserIdOk returns a tuple with the UserId field value
+// GetEmailOk returns a tuple with the Email field value
 // and a boolean to check if the value has been set.
-func (o *ApiTenantIdBusinessTeamInvitePostRequest) GetUserIdOk() (*string, bool) {
+func (o *ApiTenantIdBusinessTeamInvitePostRequest) GetEmailOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.UserId, true
+	return &o.Email, true
 }
 
-// SetUserId sets field value
-func (o *ApiTenantIdBusinessTeamInvitePostRequest) SetUserId(v string) {
-	o.UserId = v
+// SetEmail sets field value
+func (o *ApiTenantIdBusinessTeamInvitePostRequest) SetEmail(v string) {
+	o.Email = v
 }
 
 // GetRole returns the Role field value
@@ -104,7 +104,7 @@ func (o ApiTenantIdBusinessTeamInvitePostRequest) MarshalJSON() ([]byte, error) 
 
 func (o ApiTenantIdBusinessTeamInvitePostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["userId"] = o.UserId
+	toSerialize["email"] = o.Email
 	toSerialize["role"] = o.Role
 
 	for key, value := range o.AdditionalProperties {
@@ -119,7 +119,7 @@ func (o *ApiTenantIdBusinessTeamInvitePostRequest) UnmarshalJSON(data []byte) (e
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"userId",
+		"email",
 		"role",
 	}
 
@@ -150,7 +150,7 @@ func (o *ApiTenantIdBusinessTeamInvitePostRequest) UnmarshalJSON(data []byte) (e
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "userId")
+		delete(additionalProperties, "email")
 		delete(additionalProperties, "role")
 		o.AdditionalProperties = additionalProperties
 	}

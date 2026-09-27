@@ -23,7 +23,7 @@ var _ MappedNullable = &Listing{}
 type Listing struct {
 	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	MerchantId string `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	MerchantName string `json:"merchantName"`
+	MerchantName NullableString `json:"merchantName"`
 	Title string `json:"title"`
 	Description string `json:"description"`
 	Category ListingCategory `json:"category"`
@@ -59,7 +59,7 @@ type _Listing Listing
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, settlementValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, imageUrl string, channel ListingChannel, partialRedemption PartialRedemption) *Listing {
+func NewListing(id string, merchantId string, merchantName NullableString, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, settlementValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, imageUrl string, channel ListingChannel, partialRedemption PartialRedemption) *Listing {
 	this := Listing{}
 	this.Id = id
 	this.MerchantId = merchantId
@@ -145,27 +145,29 @@ func (o *Listing) SetMerchantId(v string) {
 }
 
 // GetMerchantName returns the MerchantName field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *Listing) GetMerchantName() string {
-	if o == nil {
+	if o == nil || o.MerchantName.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.MerchantName
+	return *o.MerchantName.Get()
 }
 
 // GetMerchantNameOk returns a tuple with the MerchantName field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Listing) GetMerchantNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MerchantName, true
+	return o.MerchantName.Get(), o.MerchantName.IsSet()
 }
 
 // SetMerchantName sets field value
 func (o *Listing) SetMerchantName(v string) {
-	o.MerchantName = v
+	o.MerchantName.Set(&v)
 }
 
 // GetTitle returns the Title field value
@@ -718,7 +720,7 @@ func (o Listing) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id
 	toSerialize["merchantId"] = o.MerchantId
-	toSerialize["merchantName"] = o.MerchantName
+	toSerialize["merchantName"] = o.MerchantName.Get()
 	toSerialize["title"] = o.Title
 	toSerialize["description"] = o.Description
 	toSerialize["category"] = o.Category

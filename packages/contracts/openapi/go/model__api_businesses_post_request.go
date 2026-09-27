@@ -21,8 +21,12 @@ var _ MappedNullable = &ApiBusinessesPostRequest{}
 // ApiBusinessesPostRequest struct for ApiBusinessesPostRequest
 type ApiBusinessesPostRequest struct {
 	LegalName string `json:"legalName"`
-	DisplayName string `json:"displayName"`
-	District string `json:"district"`
+	DisplayName NullableString `json:"displayName"`
+	TaxIdKind string `json:"taxIdKind"`
+	TaxIdValue string `json:"taxIdValue"`
+	AddressState NullableString `json:"addressState,omitempty"`
+	AddressPostcode NullableString `json:"addressPostcode,omitempty" validate:"regexp=^\\d{4}$"`
+	AddressCity NullableString `json:"addressCity,omitempty"`
 	Roles []string `json:"roles"`
 	LogoUrl NullableString `json:"logoUrl,omitempty"`
 	AdditionalProperties map[string]interface{}
@@ -34,11 +38,12 @@ type _ApiBusinessesPostRequest ApiBusinessesPostRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiBusinessesPostRequest(legalName string, displayName string, district string, roles []string) *ApiBusinessesPostRequest {
+func NewApiBusinessesPostRequest(legalName string, displayName NullableString, taxIdKind string, taxIdValue string, roles []string) *ApiBusinessesPostRequest {
 	this := ApiBusinessesPostRequest{}
 	this.LegalName = legalName
 	this.DisplayName = displayName
-	this.District = district
+	this.TaxIdKind = taxIdKind
+	this.TaxIdValue = taxIdValue
 	this.Roles = roles
 	return &this
 }
@@ -76,51 +81,203 @@ func (o *ApiBusinessesPostRequest) SetLegalName(v string) {
 }
 
 // GetDisplayName returns the DisplayName field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiBusinessesPostRequest) GetDisplayName() string {
-	if o == nil {
+	if o == nil || o.DisplayName.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.DisplayName
+	return *o.DisplayName.Get()
 }
 
 // GetDisplayNameOk returns a tuple with the DisplayName field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiBusinessesPostRequest) GetDisplayNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.DisplayName, true
+	return o.DisplayName.Get(), o.DisplayName.IsSet()
 }
 
 // SetDisplayName sets field value
 func (o *ApiBusinessesPostRequest) SetDisplayName(v string) {
-	o.DisplayName = v
+	o.DisplayName.Set(&v)
 }
 
-// GetDistrict returns the District field value
-func (o *ApiBusinessesPostRequest) GetDistrict() string {
+// GetTaxIdKind returns the TaxIdKind field value
+func (o *ApiBusinessesPostRequest) GetTaxIdKind() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.District
+	return o.TaxIdKind
 }
 
-// GetDistrictOk returns a tuple with the District field value
+// GetTaxIdKindOk returns a tuple with the TaxIdKind field value
 // and a boolean to check if the value has been set.
-func (o *ApiBusinessesPostRequest) GetDistrictOk() (*string, bool) {
+func (o *ApiBusinessesPostRequest) GetTaxIdKindOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.District, true
+	return &o.TaxIdKind, true
 }
 
-// SetDistrict sets field value
-func (o *ApiBusinessesPostRequest) SetDistrict(v string) {
-	o.District = v
+// SetTaxIdKind sets field value
+func (o *ApiBusinessesPostRequest) SetTaxIdKind(v string) {
+	o.TaxIdKind = v
+}
+
+// GetTaxIdValue returns the TaxIdValue field value
+func (o *ApiBusinessesPostRequest) GetTaxIdValue() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.TaxIdValue
+}
+
+// GetTaxIdValueOk returns a tuple with the TaxIdValue field value
+// and a boolean to check if the value has been set.
+func (o *ApiBusinessesPostRequest) GetTaxIdValueOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TaxIdValue, true
+}
+
+// SetTaxIdValue sets field value
+func (o *ApiBusinessesPostRequest) SetTaxIdValue(v string) {
+	o.TaxIdValue = v
+}
+
+// GetAddressState returns the AddressState field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ApiBusinessesPostRequest) GetAddressState() string {
+	if o == nil || IsNil(o.AddressState.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.AddressState.Get()
+}
+
+// GetAddressStateOk returns a tuple with the AddressState field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiBusinessesPostRequest) GetAddressStateOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.AddressState.Get(), o.AddressState.IsSet()
+}
+
+// HasAddressState returns a boolean if a field has been set.
+func (o *ApiBusinessesPostRequest) HasAddressState() bool {
+	if o != nil && o.AddressState.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetAddressState gets a reference to the given NullableString and assigns it to the AddressState field.
+func (o *ApiBusinessesPostRequest) SetAddressState(v string) {
+	o.AddressState.Set(&v)
+}
+// SetAddressStateNil sets the value for AddressState to be an explicit nil
+func (o *ApiBusinessesPostRequest) SetAddressStateNil() {
+	o.AddressState.Set(nil)
+}
+
+// UnsetAddressState ensures that no value is present for AddressState, not even an explicit nil
+func (o *ApiBusinessesPostRequest) UnsetAddressState() {
+	o.AddressState.Unset()
+}
+
+// GetAddressPostcode returns the AddressPostcode field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ApiBusinessesPostRequest) GetAddressPostcode() string {
+	if o == nil || IsNil(o.AddressPostcode.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.AddressPostcode.Get()
+}
+
+// GetAddressPostcodeOk returns a tuple with the AddressPostcode field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiBusinessesPostRequest) GetAddressPostcodeOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.AddressPostcode.Get(), o.AddressPostcode.IsSet()
+}
+
+// HasAddressPostcode returns a boolean if a field has been set.
+func (o *ApiBusinessesPostRequest) HasAddressPostcode() bool {
+	if o != nil && o.AddressPostcode.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetAddressPostcode gets a reference to the given NullableString and assigns it to the AddressPostcode field.
+func (o *ApiBusinessesPostRequest) SetAddressPostcode(v string) {
+	o.AddressPostcode.Set(&v)
+}
+// SetAddressPostcodeNil sets the value for AddressPostcode to be an explicit nil
+func (o *ApiBusinessesPostRequest) SetAddressPostcodeNil() {
+	o.AddressPostcode.Set(nil)
+}
+
+// UnsetAddressPostcode ensures that no value is present for AddressPostcode, not even an explicit nil
+func (o *ApiBusinessesPostRequest) UnsetAddressPostcode() {
+	o.AddressPostcode.Unset()
+}
+
+// GetAddressCity returns the AddressCity field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ApiBusinessesPostRequest) GetAddressCity() string {
+	if o == nil || IsNil(o.AddressCity.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.AddressCity.Get()
+}
+
+// GetAddressCityOk returns a tuple with the AddressCity field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiBusinessesPostRequest) GetAddressCityOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.AddressCity.Get(), o.AddressCity.IsSet()
+}
+
+// HasAddressCity returns a boolean if a field has been set.
+func (o *ApiBusinessesPostRequest) HasAddressCity() bool {
+	if o != nil && o.AddressCity.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetAddressCity gets a reference to the given NullableString and assigns it to the AddressCity field.
+func (o *ApiBusinessesPostRequest) SetAddressCity(v string) {
+	o.AddressCity.Set(&v)
+}
+// SetAddressCityNil sets the value for AddressCity to be an explicit nil
+func (o *ApiBusinessesPostRequest) SetAddressCityNil() {
+	o.AddressCity.Set(nil)
+}
+
+// UnsetAddressCity ensures that no value is present for AddressCity, not even an explicit nil
+func (o *ApiBusinessesPostRequest) UnsetAddressCity() {
+	o.AddressCity.Unset()
 }
 
 // GetRoles returns the Roles field value
@@ -200,8 +357,18 @@ func (o ApiBusinessesPostRequest) MarshalJSON() ([]byte, error) {
 func (o ApiBusinessesPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["legalName"] = o.LegalName
-	toSerialize["displayName"] = o.DisplayName
-	toSerialize["district"] = o.District
+	toSerialize["displayName"] = o.DisplayName.Get()
+	toSerialize["taxIdKind"] = o.TaxIdKind
+	toSerialize["taxIdValue"] = o.TaxIdValue
+	if o.AddressState.IsSet() {
+		toSerialize["addressState"] = o.AddressState.Get()
+	}
+	if o.AddressPostcode.IsSet() {
+		toSerialize["addressPostcode"] = o.AddressPostcode.Get()
+	}
+	if o.AddressCity.IsSet() {
+		toSerialize["addressCity"] = o.AddressCity.Get()
+	}
 	toSerialize["roles"] = o.Roles
 	if o.LogoUrl.IsSet() {
 		toSerialize["logoUrl"] = o.LogoUrl.Get()
@@ -221,7 +388,8 @@ func (o *ApiBusinessesPostRequest) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"legalName",
 		"displayName",
-		"district",
+		"taxIdKind",
+		"taxIdValue",
 		"roles",
 	}
 
@@ -254,7 +422,11 @@ func (o *ApiBusinessesPostRequest) UnmarshalJSON(data []byte) (err error) {
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "legalName")
 		delete(additionalProperties, "displayName")
-		delete(additionalProperties, "district")
+		delete(additionalProperties, "taxIdKind")
+		delete(additionalProperties, "taxIdValue")
+		delete(additionalProperties, "addressState")
+		delete(additionalProperties, "addressPostcode")
+		delete(additionalProperties, "addressCity")
 		delete(additionalProperties, "roles")
 		delete(additionalProperties, "logoUrl")
 		o.AdditionalProperties = additionalProperties

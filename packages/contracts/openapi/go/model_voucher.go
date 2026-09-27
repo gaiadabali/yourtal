@@ -26,7 +26,7 @@ type Voucher struct {
 	OwnerId string `json:"ownerId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Code string `json:"code"`
 	MerchantId string `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	MerchantName string `json:"merchantName"`
+	MerchantName NullableString `json:"merchantName"`
 	Location MerchantLocation `json:"location"`
 	Title string `json:"title"`
 	Currency Currency `json:"currency"`
@@ -50,7 +50,7 @@ type _Voucher Voucher
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName string, location MerchantLocation, title string, currency Currency, faceValueMinor int64, remainingValueMinor int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
+func NewVoucher(id string, listingId string, ownerId string, code string, merchantId string, merchantName NullableString, location MerchantLocation, title string, currency Currency, faceValueMinor int64, remainingValueMinor int64, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, transferable bool, status VoucherStatus, issuedAt time.Time, expiresAt time.Time) *Voucher {
 	this := Voucher{}
 	this.Id = id
 	this.ListingId = listingId
@@ -201,27 +201,29 @@ func (o *Voucher) SetMerchantId(v string) {
 }
 
 // GetMerchantName returns the MerchantName field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *Voucher) GetMerchantName() string {
-	if o == nil {
+	if o == nil || o.MerchantName.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.MerchantName
+	return *o.MerchantName.Get()
 }
 
 // GetMerchantNameOk returns a tuple with the MerchantName field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Voucher) GetMerchantNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MerchantName, true
+	return o.MerchantName.Get(), o.MerchantName.IsSet()
 }
 
 // SetMerchantName sets field value
 func (o *Voucher) SetMerchantName(v string) {
-	o.MerchantName = v
+	o.MerchantName.Set(&v)
 }
 
 // GetLocation returns the Location field value
@@ -505,7 +507,7 @@ func (o Voucher) ToMap() (map[string]interface{}, error) {
 	toSerialize["ownerId"] = o.OwnerId
 	toSerialize["code"] = o.Code
 	toSerialize["merchantId"] = o.MerchantId
-	toSerialize["merchantName"] = o.MerchantName
+	toSerialize["merchantName"] = o.MerchantName.Get()
 	toSerialize["location"] = o.Location
 	toSerialize["title"] = o.Title
 	toSerialize["currency"] = o.Currency

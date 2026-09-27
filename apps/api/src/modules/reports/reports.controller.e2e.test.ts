@@ -44,7 +44,7 @@ async function seedCampaign(businessId: string): Promise<string> {
        teaser_start_seconds)
     VALUES
       (${campaignId}, 'long_form', 'Reports e2e Campaign', ${businessId}, 'Reports e2e Merchant',
-       'Exercises 7.6.b end to end.', 30, 10, 100, 1, 'base_only', 'active',
+       'Exercises 7.6.b end to end.', 30, 10, 100, 1, 'base_only', 'live',
        now(), ${businessId}, 'AU', 'all_ages', 'food-and-drink',
        'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
        'https://cdn.example.com/manifest.m3u8', '9:16', 1000000, now(), now() + interval '30 days',

@@ -27,7 +27,7 @@ beforeAll(async () => {
        teaser_start_seconds)
     VALUES
       (${CAMPAIGN_ID}, 'long_form', 'Reports Test Campaign', ${BUSINESS_ID}, 'Reports Test Merchant',
-       'Exercises 7.6''s campaign report aggregates.', 30, 10, 100, 2, 'base_only', 'active',
+       'Exercises 7.6''s campaign report aggregates.', 30, 10, 100, 2, 'base_only', 'live',
        now(), ${BUSINESS_ID}, 'AU', 'all_ages', 'food-and-drink',
        'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
        'https://cdn.example.com/manifest.m3u8', '9:16', 1000000, now(), now() + interval '30 days',

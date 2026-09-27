@@ -59,7 +59,9 @@ export function CampaignEntryCard({ campaign, locale }: CampaignEntryCardProps) 
           {maxAccuracyBonusPoints > 0 ? (
             <EntryCardFact
               label={t("entry.accuracyBonus")}
-              value={t("entry.upToBonus", { amount: formatPointsIn(locale, maxAccuracyBonusPoints) })}
+              value={t("entry.upToBonus", {
+                amount: formatPointsIn(locale, maxAccuracyBonusPoints),
+              })}
               valueClassName="text-reward"
             />
           ) : null}

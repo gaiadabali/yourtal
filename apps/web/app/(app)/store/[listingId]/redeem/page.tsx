@@ -57,9 +57,7 @@ export default async function RedeemPage({ params }: RedeemPageProps) {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col gap-4 p-4 pb-24">
       <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-sans font-semibold text-fg">
-          {t("redeem.pageTitleGeneric")}
-        </h1>
+        <h1 className="text-xl font-sans font-semibold text-fg">{t("redeem.pageTitleGeneric")}</h1>
         <p className="text-sm font-sans text-fg-muted">{data.listing.merchantName}</p>
       </header>
       {/* Keyed by the quote's own expiry: a re-quote (a fresh render after

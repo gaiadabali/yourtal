@@ -11,9 +11,10 @@ import { listingHasDistrict } from "./listing-locations";
  * `<select>`, filter by exact match against an "all" sentinel), so they are
  * kept in one small file rather than two near-identical ones.
  *
- * YT-0405: `listingLocations`/`listingMerchants` sort with `localeCompare`,
- * which is collation, not copy — it takes an optional `locale`, defaulting
- * to `id-ID` so existing callers keep today's ordering.
+ * `listingLocations`/`listingMerchants` sort with `localeCompare`, which is
+ * collation, not copy — `locale` is still required and never defaulted
+ * (6.1.c), so a caller that forgets it fails to compile rather than
+ * silently sorting by the wrong region's collation rules.
  */
 export const STORE_LOCATION_ALL = "all";
 export const STORE_MERCHANT_ALL = "all";
@@ -31,10 +32,7 @@ export interface StoreMerchantOption {
  * a filter that could not offer two of them would hide real inventory from
  * a user who is standing in one of those two districts.
  */
-export function listingLocations(
-  listings: readonly Listing[],
-  locale: SupportedLocale = "id-ID",
-): string[] {
+export function listingLocations(listings: readonly Listing[], locale: SupportedLocale): string[] {
   return Array.from(
     new Set(listings.flatMap((listing) => listing.locations.map((location) => location.district))),
   ).sort((a, b) => a.localeCompare(b, locale));
@@ -43,7 +41,7 @@ export function listingLocations(
 /** Every merchant represented in `listings`, deduplicated by id and alphabetised by name. */
 export function listingMerchants(
   listings: readonly Listing[],
-  locale: SupportedLocale = "id-ID",
+  locale: SupportedLocale,
 ): StoreMerchantOption[] {
   const byId = new Map<string, string>();
   for (const listing of listings) {

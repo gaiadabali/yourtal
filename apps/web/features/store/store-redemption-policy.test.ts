@@ -9,9 +9,11 @@ import {
 
 describe("partialRedemptionPolicyLabel", () => {
   it("labels every policy distinctly", () => {
-    expect(partialRedemptionPolicyLabel("balance_carrying")).toBe("Sisa saldo tersimpan");
-    expect(partialRedemptionPolicyLabel("single_use_forfeit")).toBe("Sekali pakai, sisa hangus");
-    expect(partialRedemptionPolicyLabel("minimum_spend")).toBe("Ada minimum belanja");
+    expect(partialRedemptionPolicyLabel("balance_carrying", "id-ID")).toBe("Sisa saldo tersimpan");
+    expect(partialRedemptionPolicyLabel("single_use_forfeit", "id-ID")).toBe(
+      "Sekali pakai, sisa hangus",
+    );
+    expect(partialRedemptionPolicyLabel("minimum_spend", "id-ID")).toBe("Ada minimum belanja");
   });
 });
 
@@ -37,11 +39,11 @@ describe("partialRedemptionPolicyDescription", () => {
 
 describe("transferabilityDescription", () => {
   it("describes one-hop, verified-recipient transfer when transferable", () => {
-    expect(transferabilityDescription(true)).toMatch(/satu pengguna/i);
+    expect(transferabilityDescription(true, "id-ID")).toMatch(/satu pengguna/i);
   });
 
   it("states plainly that transfer is not possible otherwise", () => {
-    expect(transferabilityDescription(false)).toMatch(/tidak bisa/i);
+    expect(transferabilityDescription(false, "id-ID")).toMatch(/tidak bisa/i);
   });
 });
 

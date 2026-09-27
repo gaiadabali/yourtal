@@ -30,11 +30,10 @@ export default async function StorePage(props: PageProps<"/store">) {
   const searchParams = await props.searchParams;
   const params = parseStoreBoardParams(searchParams);
 
-  const listings = await listListings();
+  const [listings, locale] = await Promise.all([listListings(), getDisplayLocale()]);
   const visibleListings = filterListings(listings, params);
-  const locationOptions = listingLocations(listings);
-  const merchantOptions = listingMerchants(listings);
-  const locale = await getDisplayLocale();
+  const locationOptions = listingLocations(listings, locale);
+  const merchantOptions = listingMerchants(listings, locale);
   const t = getStoreTranslator(locale);
 
   return (

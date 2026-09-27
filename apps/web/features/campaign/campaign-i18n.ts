@@ -14,4 +14,7 @@ export type SupportedLocale = DisplayLocale;
  * calls these Server Components directly, with no request scope). See
  * `apps/web/i18n/sync-translator.ts` for the shared implementation.
  */
-export const getCampaignTranslator = makeSyncTranslator("campaign", { "en-AU": enAU, "id-ID": idID });
+export const getCampaignTranslator = makeSyncTranslator("campaign", {
+  "en-AU": enAU,
+  "id-ID": idID,
+});

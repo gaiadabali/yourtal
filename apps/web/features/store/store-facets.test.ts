@@ -82,11 +82,11 @@ const multiBranch: Listing = {
 
 describe("listingLocations", () => {
   it("deduplicates and alphabetises districts", () => {
-    expect(listingLocations([a, b, c])).toEqual(["Kemang", "Menteng"]);
+    expect(listingLocations([a, b, c], "id-ID")).toEqual(["Kemang", "Menteng"]);
   });
 
   it("offers every district a multi-branch listing reaches, not just its first", () => {
-    expect(listingLocations([multiBranch])).toEqual(["Kemang", "Senayan"]);
+    expect(listingLocations([multiBranch], "id-ID")).toEqual(["Kemang", "Senayan"]);
   });
 });
 
@@ -103,7 +103,7 @@ describe("filterListingsByLocation with multi-branch listings", () => {
 
 describe("listingMerchants", () => {
   it("deduplicates by merchant id and alphabetises by name", () => {
-    expect(listingMerchants([a, b, c])).toEqual([
+    expect(listingMerchants([a, b, c], "id-ID")).toEqual([
       { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Ayam Berkah" },
       { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", name: "Zeta Kopi" },
     ]);

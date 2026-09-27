@@ -60,7 +60,9 @@ describe("usePriceLockCountdown", () => {
   it("counts down every second and calls onExpire exactly once when it reaches zero", () => {
     const lockExpiresAt = new Date(NOW.getTime() + 3_000).toISOString();
     const onExpire = vi.fn();
-    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, onExpire), { wrapper });
+    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, onExpire), {
+      wrapper,
+    });
 
     advanceSeconds(1);
     expect(result.current.secondsRemaining).toBe(2);

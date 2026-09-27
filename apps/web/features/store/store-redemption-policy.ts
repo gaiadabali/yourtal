@@ -16,13 +16,13 @@ type SupportedCurrency = "AUD" | "IDR";
  * and a new policy added to the contract fails this file to compile
  * (docs/13b-typescript-standards.md §4's exhaustiveness discipline).
  *
- * YT-0405: takes an optional `locale`, defaulting to `id-ID` so existing
- * callers are unaffected, and reads its copy from the `store` message
- * catalogue via `store-i18n.ts`.
+ * Reads its copy from the `store` message catalogue via `store-i18n.ts`.
+ * No default `locale` (6.1.c) — a caller that forgets it must fail to
+ * compile, not silently render the wrong region's language.
  */
 export function partialRedemptionPolicyLabel(
   policy: PartialRedemptionPolicy,
-  locale: SupportedLocale = "id-ID",
+  locale: SupportedLocale,
 ): string {
   const t = getStoreTranslator(locale);
   switch (policy) {
@@ -55,7 +55,7 @@ export function partialRedemptionPolicyLabel(
 export function partialRedemptionPolicyDescription(
   policy: PartialRedemptionPolicy,
   minimumSpendMinor: MinorUnits | null,
-  locale: SupportedLocale = "id-ID",
+  locale: SupportedLocale,
   currency: SupportedCurrency,
 ): string {
   const t = getStoreTranslator(locale);
@@ -84,10 +84,7 @@ export function partialRedemptionPolicyDescription(
  * transfer as free trading is a compliance risk (§7.1), not just a copy
  * nuance.
  */
-export function transferabilityDescription(
-  transferable: boolean,
-  locale: SupportedLocale = "id-ID",
-): string {
+export function transferabilityDescription(transferable: boolean, locale: SupportedLocale): string {
   const t = getStoreTranslator(locale);
   return transferable ? t("redemption.transferable") : t("redemption.notTransferable");
 }

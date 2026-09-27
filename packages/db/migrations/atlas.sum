@@ -1,4 +1,4 @@
-h1:0TIx5zmDKV2SFNLRutaXgxvg04LQFAIFMSncI3MK7GM=
+h1:LhbV0hydzqXTemok6WfV2FIy2qsFFcyJ/QCYUsQZLPs=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -74,6 +74,6 @@ h1:0TIx5zmDKV2SFNLRutaXgxvg04LQFAIFMSncI3MK7GM=
 20260926161000_me_viewer_setting.sql h1:oGYlvnx0zfIhhuXY5cAIUpOfkvzeZYzeFhyhlIv/U+o=
 20260927013927_business_tax_id_and_address.sql h1:VT8TC+ykAabck760f5uGFJ0DLxCJZYz3y9Sn1s51hv0=
 20260927015452_team_invitations.sql h1:aR9MDch+7MAV2alfigrf978EkpwdG8D4NRXDJrr97sw=
-20260927090026_counter_devices.sql h1:uF5SvME0BJOw3SRTa7CPqW10W3dpU0Tq0a3TFFWkhSk=
-20260927120000_listings_currency_matches_region.sql h1:1YIW0RE5FBTRFnnXb9/6V+HBxTnSU9hBf/ZQf77ES/o=
-20260927130000_voucher_batch_request.sql h1:+PwW2QTN/iXd8sZ/es949v0Ex71xlvtWjcFS5fv1JfM=
+20260927120000_listings_currency_matches_region.sql h1:BSQXVsaJpkR0kYgrpgZonc4FITuaSZqNqBjO/ZIzXnQ=
+20260927130000_voucher_batch_request.sql h1:n4VUvd7FP/86LCUZ+jcSGCD8c/csJyo66iGlDolV3zY=
+20260927140000_counter_devices.sql h1:ryDpLUThdJnmp0NKRmzZYROsXJsPNgrQYrQ3oM01VLk=

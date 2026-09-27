@@ -16,19 +16,28 @@ class Routes {
   plain(): void {}
 }
 
+// Only their decorator metadata is read; `this` is never used.
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const approve = Routes.prototype.approve;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const plain = Routes.prototype.plain;
+
 const principal: Principal = {
   id: "staff-1",
   roles: ["user", "ops"],
   attr: { jurisdiction: "AU", businessRoles: {}, isSuspended: false },
-} as Principal;
+};
 
 function setup(recordImpl?: () => Promise<void>) {
   const events: StaffAuditEvent[] = [];
-  const record = vi.fn(async (event: StaffAuditEvent) => {
-    if (recordImpl) await recordImpl();
-    events.push(event);
-  });
-  const resolver = { resolve: vi.fn(async () => principal) } as unknown as AsyncPrincipalResolver;
+  const record = vi.fn((event: StaffAuditEvent) =>
+    (recordImpl ? recordImpl() : Promise.resolve()).then(() => {
+      events.push(event);
+    }),
+  );
+  const resolver = {
+    resolve: vi.fn(() => Promise.resolve(principal)),
+  } as unknown as AsyncPrincipalResolver;
   const interceptor = new StaffAuditInterceptor(new Reflector(), resolver, { record });
   return { interceptor, events, record };
 }
@@ -55,9 +64,7 @@ describe("StaffAuditInterceptor", () => {
         return of({ done: true });
       },
     };
-    const result = await lastValueFrom(
-      interceptor.intercept(contextFor(Routes.prototype.approve, request), next),
-    );
+    const result = await lastValueFrom(interceptor.intercept(contextFor(approve, request), next));
     expect(result).toEqual({ done: true });
     expect(events).toEqual([
       expect.objectContaining({
@@ -79,9 +86,7 @@ describe("StaffAuditInterceptor", () => {
     const { interceptor, events } = setup();
     const next: CallHandler = { handle: () => throwError(() => new BadRequestException("no")) };
     await expect(
-      lastValueFrom(
-        interceptor.intercept(contextFor(Routes.prototype.approve, { method: "POST" }), next),
-      ),
+      lastValueFrom(interceptor.intercept(contextFor(approve, { method: "POST" }), next)),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(events).toEqual([expect.objectContaining({ outcome: "failed", httpStatus: 400 })]);
   });
@@ -90,16 +95,14 @@ describe("StaffAuditInterceptor", () => {
     const { interceptor } = setup(() => Promise.reject(new Error("db down")));
     const next: CallHandler = { handle: () => of("done") };
     await expect(
-      lastValueFrom(
-        interceptor.intercept(contextFor(Routes.prototype.approve, { method: "POST" }), next),
-      ),
+      lastValueFrom(interceptor.intercept(contextFor(approve, { method: "POST" }), next)),
     ).resolves.toBe("done");
   });
 
   it("ignores a route without @StaffAction", async () => {
     const { interceptor, record } = setup();
     const next: CallHandler = { handle: () => of("x") };
-    await lastValueFrom(interceptor.intercept(contextFor(Routes.prototype.plain, {}), next));
+    await lastValueFrom(interceptor.intercept(contextFor(plain, {}), next));
     expect(record).not.toHaveBeenCalled();
   });
 });

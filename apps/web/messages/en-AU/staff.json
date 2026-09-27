@@ -1,0 +1,34 @@
+{
+  "chrome": {
+    "title": "Staff console",
+    "navLabel": "Staff console sections",
+    "signOut": "Sign out"
+  },
+  "nav": {
+    "overview": "Overview"
+  },
+  "overview": {
+    "title": "Overview",
+    "intro": "Internal tools for running YourTal. Every action you take here is recorded.",
+    "email": "Signed in as",
+    "roles": "Your roles",
+    "region": "Home region"
+  },
+  "roles": {
+    "support": "Support",
+    "moderator": "Moderator",
+    "risk_analyst": "Risk analyst",
+    "finance": "Finance",
+    "ops": "Operations",
+    "admin": "Admin"
+  },
+  "regions": {
+    "AU": "Australia",
+    "ID": "Indonesia"
+  },
+  "forbidden": {
+    "title": "No access",
+    "body": "This area is for YourTal staff only. If you think you should have access, ask a staff administrator.",
+    "home": "Back to YourTal"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "chrome": {
+    "title": "Konsol staf",
+    "navLabel": "Bagian konsol staf",
+    "signOut": "Keluar"
+  },
+  "nav": {
+    "overview": "Ringkasan"
+  },
+  "overview": {
+    "title": "Ringkasan",
+    "intro": "Alat internal untuk menjalankan YourTal. Setiap tindakan Anda di sini dicatat.",
+    "email": "Masuk sebagai",
+    "roles": "Peran Anda",
+    "region": "Wilayah asal"
+  },
+  "roles": {
+    "support": "Dukungan",
+    "moderator": "Moderator",
+    "risk_analyst": "Analis risiko",
+    "finance": "Keuangan",
+    "ops": "Operasional",
+    "admin": "Admin"
+  },
+  "regions": {
+    "AU": "Australia",
+    "ID": "Indonesia"
+  },
+  "forbidden": {
+    "title": "Tidak ada akses",
+    "body": "Area ini hanya untuk staf YourTal. Jika Anda merasa seharusnya punya akses, hubungi administrator staf.",
+    "home": "Kembali ke YourTal"
+  }
+}

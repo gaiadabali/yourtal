@@ -49,7 +49,7 @@ export class StaffAuditInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<unknown> {
     try {
-      const result = await lastValueFrom(next.handle(), { defaultValue: undefined });
+      const result: unknown = await lastValueFrom(next.handle(), { defaultValue: undefined });
       await this.write(request, action, "succeeded", successStatus);
       return result;
     } catch (error) {

@@ -356,10 +356,14 @@ export default tseslint.config(
 
   // Area C, task 7.8.c: Studio's own features use design tokens and
   // @yourtal/ui primitives only, at ERROR severity from the start — unlike
-  // B's block above, which still warns until its own 6.1. `merchant`/`staff`
-  // are not in this file's list: they are Phase 8/9's to turn on.
+  // B's block above, which still warns until its own 6.1. `merchant` is
+  // Phase 8's to turn on; `staff` joined with 9.1.
   {
-    files: ["apps/web/features/studio/**/*.{ts,tsx}"],
+    files: [
+      "apps/web/features/studio/**/*.{ts,tsx}",
+      "apps/web/features/staff/**/*.{ts,tsx}",
+      "apps/web/app/(staff)/**/*.{ts,tsx}",
+    ],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": [

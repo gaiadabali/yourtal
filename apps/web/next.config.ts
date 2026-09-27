@@ -9,7 +9,8 @@ const config: NextConfig = {
   transpilePackages: ["@yourtal/ui", "@yourtal/contracts"],
   typedRoutes: true,
   // Several root layouts, so unmatched URLs need app/global-not-found.tsx.
-  experimental: { globalNotFound: true },
+  // authInterrupts: `forbidden()` for a true 403 on /staff/* (F53, added by Phase 9).
+  experimental: { globalNotFound: true, authInterrupts: true },
   // `(lab)` prototypes and the primitive gallery use `.lab.tsx`, so they are routes
   // only in a YOURTAL_LAB=1 build and never in the one that ships.
   pageExtensions: process.env["YOURTAL_LAB"] === "1" ? ["tsx", "ts", "lab.tsx"] : ["tsx", "ts"],

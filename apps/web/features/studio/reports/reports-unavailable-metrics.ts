@@ -33,20 +33,20 @@ export const UNAVAILABLE_METRICS: readonly UnavailableMetric[] = [
     label: "Question accuracy & recall score",
     requiresRelationship: "advertiser",
     reason:
-      "questionSchema (@yourtal/contracts/question) defines prompts and correct answers, but no schema anywhere records what a viewer actually answered. Without a response/attempt record, accuracy and recall cannot be computed — only guessed, which would be worse than showing nothing (docs/23-critique.md §1.0).",
+      "The question bank defines prompts and correct answers, but no schema anywhere records what a viewer actually answered. Without a response/attempt record, accuracy and recall cannot be computed — only guessed, which would be worse than showing nothing.",
   },
   {
     id: "campaign-redemption-attribution",
     label: "Redemption attribution to a campaign",
     requiresRelationship: "advertiser",
     reason:
-      "voucherSchema (@yourtal/contracts/voucher) has no campaignId — only listingId and merchantId. This zone can attribute a voucher to this business (see the redemption ledger below), but not to the specific campaign whose view earned it, which is what docs/23-critique.md §1.0b's coalition-attribution requirement actually asks for.",
+      "A voucher records which business it belongs to, but not which campaign's view earned it. This zone can attribute a voucher to this business (see the redemption ledger below), but not to the specific campaign that drove it.",
   },
   {
     id: "open-vs-rewarded-views",
     label: "Open views vs rewarded views",
     requiresRelationship: "advertiser",
     reason:
-      "No view or watch-session event contract exists in packages/contracts at all — not for anonymous Open Viewing (docs/17-surfaces-and-roles.md §4.2) nor for signed-in rewarded views. Both counts, and therefore any ratio or total between them, are unavailable rather than fabricated. Kept as two separate, never-summed entries here on purpose, so the distinction the brief requires is structural even while both numbers are absent.",
+      "No view or watch-session event record exists yet — not for anonymous Open Viewing, nor for signed-in rewarded views. Both counts, and therefore any ratio or total between them, are unavailable rather than fabricated. Kept as two separate, never-summed entries here on purpose, so the distinction stays structural even while both numbers are absent.",
   },
 ];

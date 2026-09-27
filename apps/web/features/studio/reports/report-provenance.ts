@@ -43,11 +43,11 @@ export const PROVENANCE_EXPLANATION: Record<ReportProvenance, string> = {
   measured:
     "Read directly from a system of record — here, the redemption ledger. A real record of what happened, not a proxy for it. Still not proof anyone watched a video: a voucher's status says nothing about how it was earned.",
   self_reported:
-    "Answered by the viewer themselves, at a checkpoint question. Evidence of comprehension, not proof of watching — a device farm that actually plays the video back can answer honestly too (docs/06 §5).",
+    "Answered by the viewer themselves, at a checkpoint question. Evidence of comprehension, not proof of watching — a device farm that actually plays the video back can answer honestly too.",
   inferred:
     "Calculated from other measured facts by a documented rule, not observed directly. The rule is shown next to the number, not hidden behind it.",
   configured:
     "Describes what the business set up — question count, type, scoring rule — not a performance outcome. Shown so the reporting frame is legible even before a single performance number exists.",
   unavailable:
-    "No contract or event log exists yet to produce this honestly. Shown as an explicit, named gap rather than a plausible-looking fabricated figure (docs/23-critique.md §1.0).",
+    "No contract or event log exists yet to produce this honestly. Shown as an explicit, named gap rather than a plausible-looking fabricated figure.",
 };

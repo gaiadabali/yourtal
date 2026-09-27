@@ -10,7 +10,11 @@ import type { CreateBusinessRequest } from "./dto/create-business.schema";
 const validBody: CreateBusinessRequest = {
   legalName: "PT Kopi Kenangan Indonesia",
   displayName: "Kopi Kenangan",
-  district: "Kemang",
+  taxIdKind: "NPWP",
+  taxIdValue: "1234567890123456",
+  addressState: null,
+  addressPostcode: null,
+  addressCity: "Jakarta",
   roles: ["advertiser"],
   logoUrl: null,
   region: "ID",

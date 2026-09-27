@@ -187,9 +187,10 @@ describe("erasing identity: profile, credential, session and business membership
     // makes its own rather than assume the seed did.
     const { rows: businesses } = await pool.query<{ id: string }>(
       `INSERT INTO business.business_accounts
-         (legal_name, display_name, district, roles, region, currency, handle)
-       VALUES ('DSAR Test Pty Ltd', 'DSAR Test', 'Testville', '["advertiser"]'::jsonb,
-               'AU', 'AUD', $1)
+         (legal_name, display_name, tax_id_kind, tax_id_value, address_state, address_postcode,
+          roles, region, currency, handle)
+       VALUES ('DSAR Test Pty Ltd', 'DSAR Test', 'ABN', '12345678901', 'NSW', '2000',
+               '["advertiser"]'::jsonb, 'AU', 'AUD', $1)
        RETURNING id`,
       [`dsar-test-${subjectId.slice(0, 8)}`],
     );

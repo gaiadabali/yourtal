@@ -19,11 +19,18 @@ export async function seedBusinessMembership(
 ): Promise<string> {
   const businessId = randomUUID();
   const region = args.region ?? "AU";
+  // TASKS.md 7.1.a replaced `district` with a region-specific tax ID and
+  // address (migration 20260927013927); this fixture just needs values that
+  // satisfy the new CHECK constraints, not realistic ones.
   await db.insert(businessAccounts).values({
     id: businessId,
     legalName: "1.5.a Test Business Pty Ltd",
     displayName: "1.5.a Test Business",
-    district: "Test District",
+    taxIdKind: region === "AU" ? "ABN" : "NPWP",
+    taxIdValue: region === "AU" ? "12345678901" : "1234567890123456",
+    addressState: region === "AU" ? "NSW" : null,
+    addressPostcode: region === "AU" ? "2000" : null,
+    addressCity: region === "AU" ? null : "Jakarta",
     roles: ["advertiser"],
     region,
     currency: region === "AU" ? "AUD" : "IDR",

@@ -3,7 +3,11 @@ import type { Business } from "@yourtal/contracts/business";
 export interface CreateBusinessAccountInput {
   readonly legalName: string;
   readonly displayName: string;
-  readonly district: string;
+  readonly taxIdKind: Business["taxIdKind"];
+  readonly taxIdValue: string;
+  readonly addressState: Business["addressState"];
+  readonly addressPostcode: Business["addressPostcode"];
+  readonly addressCity: Business["addressCity"];
   readonly roles: Business["roles"];
   readonly logoUrl: string | null;
   readonly region: Business["region"];

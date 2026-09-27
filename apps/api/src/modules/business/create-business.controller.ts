@@ -47,7 +47,11 @@ export class CreateBusinessController {
       {
         legalName: body.legalName,
         displayName: body.displayName,
-        district: body.district,
+        taxIdKind: body.taxIdKind,
+        taxIdValue: body.taxIdValue,
+        addressState: body.addressState,
+        addressPostcode: body.addressPostcode,
+        addressCity: body.addressCity,
         roles: body.roles,
         logoUrl: body.logoUrl,
         region: body.region,

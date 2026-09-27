@@ -333,12 +333,19 @@ async function registerDemoAccount(
 }
 
 function snapApp(region: "AU" | "ID"): Business {
+  // TASKS.md 7.1.a: snap-app.md names it a sister company (not arm's-length),
+  // but its business row still needs a real-shaped tax ID and address like
+  // any other advertiser — snap-app-first-merchant.md.
   return region === "AU"
     ? businessSchema.parse({
         id: SNAP_APP_AU_ID,
         legalName: "Snap App Pty Ltd",
         displayName: "Snap App",
-        district: "Surry Hills",
+        taxIdKind: "ABN",
+        taxIdValue: "51824753556",
+        addressState: "NSW",
+        addressPostcode: "2010",
+        addressCity: null,
         roles: ["advertiser", "redeemer"],
         isVerified: true,
         logoUrl: null,
@@ -351,7 +358,11 @@ function snapApp(region: "AU" | "ID"): Business {
         id: SNAP_APP_ID_ID,
         legalName: "PT Snap App Indonesia",
         displayName: "Snap App",
-        district: "Kebayoran Baru",
+        taxIdKind: "NPWP",
+        taxIdValue: "0123456789012345",
+        addressState: null,
+        addressPostcode: null,
+        addressCity: "Kebayoran Baru",
         roles: ["advertiser", "redeemer"],
         isVerified: true,
         logoUrl: null,
@@ -365,14 +376,19 @@ function snapApp(region: "AU" | "ID"): Business {
 async function insertBusiness(pool: pg.Pool, business: Business): Promise<void> {
   await pool.query(
     `INSERT INTO business.business_accounts
-       (id, legal_name, display_name, district, roles, is_verified, logo_url,
+       (id, legal_name, display_name, tax_id_kind, tax_id_value,
+        address_state, address_postcode, address_city, roles, is_verified, logo_url,
         region, currency, handle, cover_url)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
     [
       business.id,
       business.legalName,
       business.displayName,
-      business.district,
+      business.taxIdKind,
+      business.taxIdValue,
+      business.addressState,
+      business.addressPostcode,
+      business.addressCity,
       JSON.stringify(business.roles),
       business.isVerified,
       business.logoUrl,

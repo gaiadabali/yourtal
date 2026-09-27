@@ -3,14 +3,17 @@ import { cn } from "../cn";
 
 export interface QRPanelProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
   /** A data URL (or any <img> src) for the QR image. Omit and pass `children` for a custom
-   * renderer, e.g. an inline <svg> - no QR dependency lives in this package. */
-  src?: string;
+   * renderer, e.g. an inline <svg> - no QR dependency lives in this package.
+   * `| undefined` (not just `?:`) so a caller computing `src` conditionally
+   * (e.g. `dataUrl ?? undefined`) can pass it through directly under
+   * `exactOptionalPropertyTypes`. */
+  src?: string | undefined;
   /** Required - describes what scanning the code does, for a screen-reader user. */
   alt: string;
   children?: React.ReactNode;
   /** The human-typeable fallback for the code, shown under the image. */
   code: string;
-  caption?: string;
+  caption?: string | undefined;
 }
 
 /**

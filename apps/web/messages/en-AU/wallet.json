@@ -1,35 +1,61 @@
 {
   "balance": {
     "available": "Available balance",
+    "availableLabel": "{amount} available",
     "pendingLabel": "On hold",
-    "pendingWithDate": "{amount} · unlocks {date} ({relative})",
-    "pendingNone": "No points on hold",
-    "expiringLabel": "Expiring soon",
-    "expiringWithDate": "{amount} · expires {date} ({relative})",
-    "expiringNone": "No points expiring soon"
+    "pendingGrantLabel": "{amount} on hold",
+    "unlocksOn": "Unlocks {date} ({relative})",
+    "expiringLabel": "{amount} expiring soon",
+    "expiresOn": "Expires {date} ({relative})"
   },
   "history": {
     "empty": "No point history yet.",
-    "earned": "Completed {merchantName}'s video — earned {amount}",
-    "spent": "Redeemed {amount} for a {merchantName} voucher"
+    "earned": "Earned {amount}",
+    "spent": "Redeemed {amount} for a voucher",
+    "expired": "{amount} expired",
+    "reversed": "{amount} returned to your wallet",
+    "adjusted": "Balance adjusted by {amount}"
   },
   "voucher": {
-    "statusActive": "Active",
-    "statusRedeemed": "Redeemed",
-    "statusTransferred": "Transferred",
+    "statusHeld": "Active",
+    "statusPending": "Processing",
+    "statusReleased": "Released",
     "statusExpired": "Expired",
+    "genericTitle": "Voucher",
+    "detailsUnavailable": "Details unavailable",
     "expiresOn": "Ended {date}",
     "validUntilCard": "Valid until {date}",
     "remainingValue": "Remaining value",
     "validUntilLabel": "Valid until",
     "howToRedeem": "How to redeem",
+    "genericInstructions": "Show this QR code to the cashier when paying, or read out the voucher code if asked to enter it manually.",
     "qrLabel": "Redemption QR code for {merchantName}",
+    "qrRenderFailed": "The QR code could not be generated. Show the voucher code to the cashier instead.",
+    "qrRefreshing": "Getting a fresh code…",
+    "qrExpiredOffline": "This voucher's offline code has run out. Reconnect to get a fresh one.",
+    "codeUnavailable": "Code not available offline — scan the QR code instead.",
     "codeAutoRefresh": "Code refreshes automatically",
     "secondsRemaining": "{seconds}s remaining",
     "refreshCountdownLabel": "Time until the QR code refreshes",
     "manualCodeLabel": "Or read this code to the cashier:",
     "redeemAtLabel": "Redeem at",
-    "redeemAtHint": "This voucher is valid at this branch only."
+    "redeemAtHint": "This voucher is valid at this branch only.",
+    "offlineNotice": "You're offline — showing your last saved copy of this voucher.",
+    "disputeCta": "This voucher didn't work",
+    "disputeDialogTitle": "This voucher didn't work",
+    "disputeDialogBody": "Tell us what happened. If the merchant hasn't redeemed it yet, your points go straight back to your wallet.",
+    "disputeDialogClose": "Close",
+    "disputeReasonLabel": "What happened?",
+    "disputeReason": {
+      "not_honoured": "The merchant wouldn't accept it",
+      "merchant_closed": "The merchant was closed",
+      "other": "Something else"
+    },
+    "disputeCancel": "Cancel",
+    "disputeSubmit": "Send report",
+    "disputeReinstated": "Your points are back in your wallet.",
+    "disputeQueued": "We've flagged this for review. We'll follow up if we need more from you.",
+    "disputeFailed": "That didn't go through. Check your connection and try again."
   },
   "redemption": {
     "balanceCarrying": "If your purchase is less than the voucher's value, the remainder is kept for next time.",
@@ -39,7 +65,17 @@
   },
   "screen": {
     "title": "Wallet",
-    "historyHeading": "Points history"
+    "historyHeading": "Points history",
+    "errorTitle": "Wallet unavailable",
+    "errorBody": "We couldn't load your wallet. Check your connection and try again.",
+    "retry": "Try again"
+  },
+  "voucherDetail": {
+    "notFoundTitle": "Voucher not found",
+    "notFoundBody": "This voucher may no longer exist, or the link was wrong. Go back to your wallet to see the vouchers you hold.",
+    "backToWallet": "Back to Wallet",
+    "errorTitle": "Voucher unavailable",
+    "errorBody": "We couldn't load this voucher. Check your connection and try again."
   },
   "emptyState": {
     "heading": "No points here yet",

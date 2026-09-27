@@ -8,14 +8,12 @@
  * reading `Date.now()` itself, so callers (and their tests) control the
  * clock instead of this module depending on the wall clock.
  *
- * YT-0405: both formatters take an optional `locale`, defaulting to
- * `id-ID` so existing call sites keep rendering exactly what they render
- * today. `Intl.RelativeTimeFormat`/`Intl.DateTimeFormat` translate the
- * surrounding phrasing themselves ("3 hari lagi" vs "in 3 days") — there is
- * no separate word list to keep in sync here.
+ * 6.1.c: `locale` is required on both — no default. A screen that forgets
+ * to pass one must fail to compile, not silently render the wrong
+ * region's language (F2).
  */
 
-type SupportedLocale = "en-AU" | "id-ID";
+export type SupportedLocale = "en-AU" | "id-ID";
 
 const WALLET_DATE_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
   "en-AU": new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" }),
@@ -36,7 +34,7 @@ const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
 
 /** Formats an ISO instant as a short date, e.g. "19 Sep 2026". */
-export function formatWalletDate(iso: string, locale: SupportedLocale = "id-ID"): string {
+export function formatWalletDate(iso: string, locale: SupportedLocale): string {
   return WALLET_DATE_FORMATTERS[locale].format(new Date(iso));
 }
 
@@ -47,11 +45,7 @@ export function formatWalletDate(iso: string, locale: SupportedLocale = "id-ID")
  * matters" — an unlock or expiry date should read as a timeframe, not just
  * a calendar date buried in an ISO string.
  */
-export function formatRelativeToNow(
-  iso: string,
-  nowMs: number,
-  locale: SupportedLocale = "id-ID",
-): string {
+export function formatRelativeToNow(iso: string, nowMs: number, locale: SupportedLocale): string {
   const diffMs = new Date(iso).getTime() - nowMs;
   const absMs = Math.abs(diffMs);
   const relativeFormatter = RELATIVE_FORMATTERS[locale];

@@ -1,18 +1,23 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Button } from "@yourtal/ui/button";
+import { EmptyState } from "@yourtal/ui/empty-state";
+import { PageContainer } from "@yourtal/ui/page-container";
 
-/** Rendered when `getWalletVoucher` finds no voucher for the given id (YT-0424). */
-export default function WalletVoucherNotFound() {
+/** Rendered when `getWalletVoucher` finds no voucher for the given id (6.5.b). */
+export default async function WalletVoucherNotFound() {
+  const t = await getTranslations("wallet");
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3 p-10 text-center">
-      <h1 className="text-lg font-semibold text-fg">Voucher tidak ditemukan</h1>
-      <p className="max-w-sm text-sm text-fg-muted">
-        Voucher ini mungkin sudah tidak ada atau tautannya salah. Coba kembali ke wallet untuk
-        melihat voucher yang kamu punya.
-      </p>
-      <Button asChild variant="secondary">
-        <Link href="/wallet">Kembali ke Wallet</Link>
-      </Button>
-    </div>
+    <PageContainer width="narrow" className="py-6">
+      <EmptyState
+        title={t("voucherDetail.notFoundTitle")}
+        description={t("voucherDetail.notFoundBody")}
+        action={
+          <Button asChild variant="secondary">
+            <Link href="/wallet">{t("voucherDetail.backToWallet")}</Link>
+          </Button>
+        }
+      />
+    </PageContainer>
   );
 }

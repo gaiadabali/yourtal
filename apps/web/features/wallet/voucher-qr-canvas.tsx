@@ -2,10 +2,16 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { QRPanel } from "@yourtal/ui/qr-panel";
 
 export interface VoucherQrCanvasProps {
   payload: string;
   label: string;
+  /** The human-typeable fallback shown under the QR image, per `QRPanel`. */
+  code: string;
+  caption?: string | undefined;
+  /** 6.1.d: translated copy for the "QR failed to render" fallback — never hard-coded here. */
+  fallbackLabel: string;
 }
 
 /**
@@ -20,13 +26,14 @@ export interface VoucherQrCanvasProps {
  * Regenerating the image on every `payload` change is the whole point —
  * `payload` changes each rotation window, and the new QR must render.
  */
-export function VoucherQrCanvas({ payload, label }: VoucherQrCanvasProps) {
+export function VoucherQrCanvas({ payload, label, code, caption, fallbackLabel }: VoucherQrCanvasProps) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setFailed(false);
+    setDataUrl(null);
     QRCode.toDataURL(payload, { margin: 1, width: 240 })
       .then((url) => {
         if (!cancelled) {
@@ -43,27 +50,11 @@ export function VoucherQrCanvas({ payload, label }: VoucherQrCanvasProps) {
     };
   }, [payload]);
 
-  if (failed) {
-    return (
-      <div className="flex h-60 w-60 items-center justify-center rounded-lg border border-dashed border-border p-4 text-center text-xs text-fg-muted">
-        Kode QR gagal dibuat. Tunjukkan kode voucher secara manual ke kasir.
-      </div>
-    );
-  }
-
-  if (!dataUrl) {
-    return (
-      <div aria-hidden="true" className="h-60 w-60 animate-pulse rounded-lg bg-surface-raised" />
-    );
-  }
-
   return (
-    <img
-      src={dataUrl}
-      alt={label}
-      width={240}
-      height={240}
-      className="h-60 w-60 rounded-lg border border-border"
-    />
+    <QRPanel src={dataUrl ?? undefined} alt={label} code={code} caption={failed ? fallbackLabel : caption}>
+      {dataUrl || failed ? null : (
+        <div aria-hidden="true" className="size-44 animate-pulse rounded-control bg-surface-sunken" />
+      )}
+    </QRPanel>
   );
 }

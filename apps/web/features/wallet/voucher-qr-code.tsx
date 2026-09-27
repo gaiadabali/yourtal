@@ -7,13 +7,21 @@ const VoucherQrCanvas = dynamic(
   () => import("./voucher-qr-canvas").then((qrModule) => qrModule.VoucherQrCanvas),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-60 w-60 rounded-lg" />,
+    loading: () => (
+      <div className="flex flex-col items-center gap-3 rounded-card border border-border-subtle bg-surface p-5">
+        <Skeleton className="size-44 rounded-control" />
+        <Skeleton className="h-5 w-32" />
+      </div>
+    ),
   },
 );
 
 export interface VoucherQrCodeProps {
   payload: string;
   label: string;
+  code: string;
+  caption?: string | undefined;
+  fallbackLabel: string;
 }
 
 /**
@@ -24,6 +32,14 @@ export interface VoucherQrCodeProps {
  * (docs/13b-typescript-standards.md §8; the YT-0424 brief's "qrcode is
  * heavy... never in the initial chunk").
  */
-export function VoucherQrCode({ payload, label }: VoucherQrCodeProps) {
-  return <VoucherQrCanvas payload={payload} label={label} />;
+export function VoucherQrCode({ payload, label, code, caption, fallbackLabel }: VoucherQrCodeProps) {
+  return (
+    <VoucherQrCanvas
+      payload={payload}
+      label={label}
+      code={code}
+      caption={caption}
+      fallbackLabel={fallbackLabel}
+    />
+  );
 }

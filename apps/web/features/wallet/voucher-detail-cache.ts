@@ -1,142 +1,85 @@
 import * as z from "zod/mini";
-import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
-import type { Voucher } from "@yourtal/contracts/voucher";
 
 /**
  * Local cache for one voucher's detail view — the offline guarantee behind
- * YT-0424's "renders from cache with the network disabled". Same shape and
- * reasoning as apps/web/features/player/resume-position.ts: localStorage is
- * a process boundary (another tab, a stale schema version, a tampered
- * value can all write there), so every read is Zod-parsed and every access
- * wrapped in try/catch, and `zod/mini` (not `zod`) keeps this out of the
- * ~96 KB gz full-Zod cost that would otherwise land in the client bundle
- * (docs/13b-typescript-standards.md §3, §8).
+ * 6.5.b's "voucher is a pass" (usable at the counter with no signal).
+ * localStorage is a process boundary (another tab, a stale schema version,
+ * a tampered value can all write there), so every read is Zod-parsed and
+ * every access wrapped in try/catch, and `zod/mini` (not `zod`) keeps this
+ * out of the Zod-runtime cost that would otherwise land in the client
+ * bundle (docs/13b-typescript-standards.md §3, §8) — see
+ * `use-voucher-qr-rotation.ts`'s sibling IndexedDB cache for the QR windows
+ * themselves, which live separately because they need a bigger, longer-lived
+ * store (6.5.c: an hour of rotating tokens, not one small record).
  *
- * IMPORTANT — what this proves and what it does not: this cache is what
- * lets `voucher-detail-view.tsx` render a voucher's data, QR payload and
- * redemption instructions with zero network calls once its JS and this
- * entry are in memory (see that file's test for the proof). It does NOT
- * make the voucher detail PAGE loadable with the network fully off — the
- * HTML/JS shell itself still needs a network fetch (or a service worker
- * intercepting it) to arrive in the first place. That full offline
- * guarantee needs Serwist (docs/15-stack-locked.md), which is not
- * installed in this ticket.
+ * Every field below except `voucherId`/`listingId`/`state` is OPTIONAL,
+ * mirroring `wallet-data.ts`'s `walletVoucherDetailSchema` — the live wallet
+ * API does not send them yet (see that file's doc comment on why), so a
+ * cache entry with them missing is still a valid, useful cache entry: the
+ * screen renders a generic placeholder for whichever field it does not
+ * have, live or cached alike.
  */
 const STORAGE_PREFIX = "yourtal:wallet:voucher:";
 
-const partialRedemptionPolicyValues = [
-  "balance_carrying",
-  "single_use_forfeit",
-  "minimum_spend",
-] as const;
-const voucherStatusValues = ["active", "redeemed", "expired", "transferred"] as const;
-
-/**
- * The voucher's outlet, re-declared in `zod/mini` rather than imported from
- * `@yourtal/contracts/listing/merchant-location`.
- *
- * That contract module is built with full `zod`, and this file is reachable
- * from a Client Component, so importing its schema pulls the whole Zod
- * runtime into the browser — the ~96 KB gz cost `merchant-region-source.ts`
- * warns about. It is not theoretical: importing it here first put
- * `/wallet/voucher/[voucherId]` at **264.2 KB** against a 200 KB hard gate,
- * caught by `scripts/perf-check-bundle-size.mjs`.
- *
- * `satisfies` below keeps the two in step at compile time at zero runtime
- * cost: if the contract gains or renames a field, this stops type-checking.
- */
 const cachedMerchantLocationSchema = z.object({
-  id: z.string().check(z.minLength(1)),
-  name: z.string().check(z.minLength(1)),
-  address: z.string().check(z.minLength(1)),
-  district: z.string().check(z.minLength(1)),
+  name: z.string(),
+  address: z.string(),
+  district: z.string(),
 });
 
-/**
- * Compile-time only: resolves to `true` while this mini schema and the
- * contract's `MerchantLocation` describe each other, and to `never` the
- * moment either gains, drops or renames a field.
- *
- * The exported constant below is what ENFORCES it. A type alias alone only
- * documents: one that resolves to `never` is perfectly legal and fails
- * nothing. Assigning `true` to it is what makes drift a compile error,
- * because `true` is not assignable to `never`.
- */
-export type CachedLocationMatchesContract =
-  z.infer<typeof cachedMerchantLocationSchema> extends MerchantLocation
-    ? MerchantLocation extends z.infer<typeof cachedMerchantLocationSchema>
-      ? true
-      : never
-    : never;
-
-/** Exists to be type-checked, not read: see the type above. */
-export const CACHED_LOCATION_MATCHES_CONTRACT: CachedLocationMatchesContract = true;
-
 export const cachedVoucherDetailSchema = z.object({
-  id: z.string().check(z.minLength(1)),
-  code: z.string().check(z.minLength(1)),
-  merchantName: z.string().check(z.minLength(1)),
-  title: z.string().check(z.minLength(1)),
-  // YT-0513: the voucher's own currency, never the viewer's region.
-  currency: z.enum(["AUD", "IDR"] as const),
-  faceValueMinor: z.number().check(z.minimum(0)),
-  remainingValueMinor: z.number().check(z.minimum(0)),
-  partialRedemptionPolicy: z.enum(partialRedemptionPolicyValues),
-  transferable: z.boolean(),
-  status: z.enum(voucherStatusValues),
-  issuedAt: z.iso.datetime(),
-  expiresAt: z.iso.datetime(),
-  redemptionInstructions: z.string().check(z.minLength(1)),
-  // YT-0583: which branch honours this voucher. Denormalised onto the
-  // voucher at issuance (`voucher.ts:53`, chosen from `listing.locations`),
-  // so it is a property of the voucher rather than a lookup — which is what
-  // makes it cacheable at all, and therefore available offline, standing in
-  // the shop, which is the only moment it matters.
-  //
-  // REQUIRED, not optional, deliberately. An entry cached before this field
-  // existed now fails `safeParse` and is discarded as a cache miss, falling
-  // back to the server-rendered `initialDetail`. That is the correct
-  // trade: an optional field would let a stale entry render a voucher with
-  // no branch on it, which is exactly the "two-branch merchant shows one
-  // address" defect this ticket exists to fix, resurrected from cache.
-  location: cachedMerchantLocationSchema,
-  cachedAt: z.iso.datetime(),
+  voucherId: z.string().check(z.minLength(1)),
+  listingId: z.string().check(z.minLength(1)),
+  state: z.enum(["reserved", "activated", "released"]),
+  merchantName: z.optional(z.string()),
+  title: z.optional(z.string()),
+  currency: z.optional(z.enum(["AUD", "IDR"])),
+  faceValueMinor: z.optional(z.number()),
+  remainingValueMinor: z.optional(z.number()),
+  partialRedemptionPolicy: z.optional(
+    z.enum(["balance_carrying", "single_use_forfeit", "minimum_spend"]),
+  ),
+  issuedAt: z.optional(z.string()),
+  expiresAt: z.optional(z.string()),
+  location: z.optional(cachedMerchantLocationSchema),
+  cachedAt: z.string(),
 });
 
 export type CachedVoucherDetail = z.infer<typeof cachedVoucherDetailSchema>;
 
-function storageKey(voucherId: string): string {
-  return `${STORAGE_PREFIX}${voucherId}`;
+/**
+ * A voucher fresh off the wallet API, minus its redemption `code` — see this
+ * file's own doc comment for why `code` never reaches this cache.
+ */
+export interface VoucherDetailSource {
+  voucherId: string;
+  listingId: string;
+  state: "reserved" | "activated" | "released";
+  // `| undefined` rather than a bare `?:` (repo-wide `exactOptionalPropertyTypes`):
+  // this type mirrors `WalletVoucherDetail`, whose optional fields come out of a
+  // Zod `.optional()` parse as an always-present key that MAY be `undefined`,
+  // not an omittable one — the two are different shapes under this flag.
+  merchantName?: string | undefined;
+  title?: string | undefined;
+  currency?: "AUD" | "IDR" | undefined;
+  faceValueMinor?: number | undefined;
+  remainingValueMinor?: number | undefined;
+  partialRedemptionPolicy?: "balance_carrying" | "single_use_forfeit" | "minimum_spend" | undefined;
+  issuedAt?: string | undefined;
+  expiresAt?: string | undefined;
+  location?: { name: string; address: string; district: string } | undefined;
 }
 
-/**
- * Builds a valid cache entry from a schema-validated `Voucher` plus its
- * redemption copy. The input is already trusted (it came straight off the
- * server-parsed contract type), but running it through `.parse` here is a
- * free safety net against a mapping mistake in this function itself.
- */
+/** Builds a valid cache entry from a live voucher read, deliberately dropping any `code`. */
 export function buildCachedVoucherDetail(
-  voucher: Voucher,
-  redemptionInstructions: string,
+  voucher: VoucherDetailSource,
   cachedAt: string,
 ): CachedVoucherDetail {
-  return cachedVoucherDetailSchema.parse({
-    id: voucher.id,
-    code: voucher.code,
-    merchantName: voucher.merchantName,
-    title: voucher.title,
-    currency: voucher.currency,
-    faceValueMinor: voucher.faceValueMinor,
-    remainingValueMinor: voucher.remainingValueMinor,
-    partialRedemptionPolicy: voucher.partialRedemptionPolicy,
-    transferable: voucher.transferable,
-    status: voucher.status,
-    issuedAt: voucher.issuedAt,
-    expiresAt: voucher.expiresAt,
-    redemptionInstructions,
-    location: voucher.location,
-    cachedAt,
-  });
+  return cachedVoucherDetailSchema.parse({ ...voucher, cachedAt });
+}
+
+function storageKey(voucherId: string): string {
+  return `${STORAGE_PREFIX}${voucherId}`;
 }
 
 /** Reads a cached voucher detail for `voucherId`, or null if there is none or it fails to validate. Never throws. */
@@ -163,7 +106,7 @@ export function writeVoucherDetailCache(detail: CachedVoucherDetail): void {
     if (typeof window === "undefined") {
       return;
     }
-    window.localStorage.setItem(storageKey(detail.id), JSON.stringify(detail));
+    window.localStorage.setItem(storageKey(detail.voucherId), JSON.stringify(detail));
   } catch {
     // Private mode, quota exceeded, or storage disabled.
   }

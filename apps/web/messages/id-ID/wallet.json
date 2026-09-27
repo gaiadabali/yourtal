@@ -1,35 +1,61 @@
 {
   "balance": {
     "available": "Saldo tersedia",
+    "availableLabel": "{amount} tersedia",
     "pendingLabel": "Menunggu pencairan",
-    "pendingWithDate": "{amount} · cair {date} ({relative})",
-    "pendingNone": "Tidak ada poin tertahan",
-    "expiringLabel": "Akan kedaluwarsa",
-    "expiringWithDate": "{amount} · kedaluwarsa {date} ({relative})",
-    "expiringNone": "Tidak ada poin yang akan hangus"
+    "pendingGrantLabel": "{amount} tertahan",
+    "unlocksOn": "Cair {date} ({relative})",
+    "expiringLabel": "{amount} akan kedaluwarsa",
+    "expiresOn": "Kedaluwarsa {date} ({relative})"
   },
   "history": {
     "empty": "Belum ada riwayat poin.",
-    "earned": "Menyelesaikan video {merchantName} — dapat {amount}",
-    "spent": "Ditukar {amount} untuk voucher {merchantName}"
+    "earned": "Mendapat {amount}",
+    "spent": "Ditukar {amount} untuk voucher",
+    "expired": "{amount} hangus",
+    "reversed": "{amount} dikembalikan ke wallet-mu",
+    "adjusted": "Saldo disesuaikan {amount}"
   },
   "voucher": {
-    "statusActive": "Aktif",
-    "statusRedeemed": "Sudah dipakai",
-    "statusTransferred": "Sudah ditransfer",
+    "statusHeld": "Aktif",
+    "statusPending": "Diproses",
+    "statusReleased": "Dilepas",
     "statusExpired": "Kedaluwarsa",
+    "genericTitle": "Voucher",
+    "detailsUnavailable": "Detail tidak tersedia",
     "expiresOn": "Berakhir {date}",
     "validUntilCard": "Berlaku hingga {date}",
     "remainingValue": "Sisa nilai",
     "validUntilLabel": "Berlaku sampai",
     "howToRedeem": "Cara redeem",
+    "genericInstructions": "Tunjukkan kode QR ini ke kasir saat membayar, atau sebutkan kode vouchernya kalau diminta secara manual.",
     "qrLabel": "Kode QR redeem voucher {merchantName}",
+    "qrRenderFailed": "Kode QR gagal dibuat. Tunjukkan kode voucher secara manual ke kasir.",
+    "qrRefreshing": "Mengambil kode baru…",
+    "qrExpiredOffline": "Kode offline voucher ini sudah habis. Sambungkan kembali untuk mendapatkan kode baru.",
+    "codeUnavailable": "Kode tidak tersedia saat offline — pindai kode QR saja.",
     "codeAutoRefresh": "Kode diperbarui otomatis",
     "secondsRemaining": "{seconds} detik lagi",
     "refreshCountdownLabel": "Waktu sebelum kode QR diperbarui",
     "manualCodeLabel": "Atau sebutkan kode ini ke kasir:",
     "redeemAtLabel": "Tukarkan di",
-    "redeemAtHint": "Voucher ini hanya berlaku di cabang ini."
+    "redeemAtHint": "Voucher ini hanya berlaku di cabang ini.",
+    "offlineNotice": "Kamu sedang offline — menampilkan salinan voucher yang tersimpan terakhir.",
+    "disputeCta": "Voucher ini tidak bisa dipakai",
+    "disputeDialogTitle": "Voucher ini tidak bisa dipakai",
+    "disputeDialogBody": "Ceritakan apa yang terjadi. Kalau merchant belum menukarkannya, poinmu langsung kembali ke wallet.",
+    "disputeDialogClose": "Tutup",
+    "disputeReasonLabel": "Apa yang terjadi?",
+    "disputeReason": {
+      "not_honoured": "Merchant tidak mau menerimanya",
+      "merchant_closed": "Merchant sedang tutup",
+      "other": "Lainnya"
+    },
+    "disputeCancel": "Batal",
+    "disputeSubmit": "Kirim laporan",
+    "disputeReinstated": "Poinmu sudah kembali ke wallet.",
+    "disputeQueued": "Kami sudah mencatat ini untuk ditinjau. Kami akan menghubungimu kalau butuh info lagi.",
+    "disputeFailed": "Gagal terkirim. Periksa koneksimu dan coba lagi."
   },
   "redemption": {
     "balanceCarrying": "Kalau belanjamu kurang dari nilai voucher, sisanya tetap tersimpan untuk dipakai lain kali.",
@@ -39,7 +65,17 @@
   },
   "screen": {
     "title": "Wallet",
-    "historyHeading": "Riwayat poin"
+    "historyHeading": "Riwayat poin",
+    "errorTitle": "Wallet tidak tersedia",
+    "errorBody": "Wallet-mu gagal dimuat. Periksa koneksi kamu dan coba lagi.",
+    "retry": "Coba lagi"
+  },
+  "voucherDetail": {
+    "notFoundTitle": "Voucher tidak ditemukan",
+    "notFoundBody": "Voucher ini mungkin sudah tidak ada atau tautannya salah. Coba kembali ke wallet untuk melihat voucher yang kamu punya.",
+    "backToWallet": "Kembali ke Wallet",
+    "errorTitle": "Voucher tidak tersedia",
+    "errorBody": "Voucher ini gagal dimuat. Periksa koneksi kamu dan coba lagi."
   },
   "emptyState": {
     "heading": "Belum ada poin di sini",

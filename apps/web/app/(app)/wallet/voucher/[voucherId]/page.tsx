@@ -1,41 +1,45 @@
 import { notFound } from "next/navigation";
-import { getWalletVoucher } from "@/features/wallet/wallet-data";
-import { buildRedemptionInstructions } from "@/features/wallet/wallet-redemption-copy";
+import { PageContainer } from "@yourtal/ui/page-container";
+import { getWalletVoucher, getWalletVoucherQr } from "@/features/wallet/wallet-data";
 import { buildCachedVoucherDetail } from "@/features/wallet/voucher-detail-cache";
+import { isVoucherEffectivelyExpired } from "@/features/wallet/wallet-voucher-status-copy";
 import { VoucherDetailView } from "@/features/wallet/voucher-detail-view";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
 
 /**
- * `/wallet/voucher/[voucherId]` (YT-0424). Server Component per
+ * `/wallet/voucher/[voucherId]` (6.5.b). Server Component per
  * docs/13b-typescript-standards.md §8; the rotating QR, countdown and
  * cache-first hydration all live in `VoucherDetailView`, the one client
  * leaf in this route.
+ *
+ * The QR is only fetched for a voucher that is actually redeemable right
+ * now — an archived voucher (released, or past `expiresAt`) has nothing to
+ * scan, and asking `services/voucher` for one would just be wasted work.
  */
 export default async function WalletVoucherDetailPage(
   props: PageProps<"/wallet/voucher/[voucherId]">,
 ) {
   const { voucherId } = await props.params;
-  const voucher = await getWalletVoucher(voucherId);
+  const voucherResult = await getWalletVoucher(voucherId);
 
-  if (!voucher) {
+  if (!voucherResult.ok) {
     notFound();
   }
+  const voucher = voucherResult.data;
 
-  const { locale } = await getRegionDisplayConfig();
-  const redemptionInstructions = buildRedemptionInstructions(
-    voucher.merchantName,
-    voucher.partialRedemptionPolicy,
-    locale,
-  );
-  const initialDetail = buildCachedVoucherDetail(
-    voucher,
-    redemptionInstructions,
-    new Date().toISOString(),
-  );
+  const isRedeemable =
+    voucher.state === "activated" && !isVoucherEffectivelyExpired(voucher.expiresAt, Date.now());
+  const qrResult = isRedeemable ? await getWalletVoucherQr(voucherId) : null;
+
+  const initialDetail = buildCachedVoucherDetail(voucher, new Date().toISOString());
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4">
-      <VoucherDetailView voucherId={voucher.id} initialDetail={initialDetail} />
-    </div>
+    <PageContainer width="narrow" className="py-4">
+      <VoucherDetailView
+        voucherId={voucher.voucherId}
+        initialDetail={initialDetail}
+        initialQr={qrResult?.ok ? qrResult.data : null}
+        code={voucher.code}
+      />
+    </PageContainer>
   );
 }

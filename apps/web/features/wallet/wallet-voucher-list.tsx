@@ -1,56 +1,63 @@
-import type { Voucher } from "@yourtal/contracts/voucher";
+import { Fragment } from "react";
+import { getTranslations } from "next-intl/server";
+import { Section } from "@yourtal/ui/section";
+import { Text } from "@yourtal/ui/text";
+import type { WalletVoucherDetail } from "./wallet-data";
 import { WalletVoucherCard } from "./wallet-voucher-card";
 import { isVoucherEffectivelyExpired } from "./wallet-voucher-status-copy";
-import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
+import type { SupportedLocale } from "./wallet-format";
 
 export interface WalletVoucherListProps {
-  vouchers: Voucher[];
+  vouchers: WalletVoucherDetail[];
   nowMs: number;
-  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
   locale: SupportedLocale;
 }
 
-function isActiveAndLive(voucher: Voucher, nowMs: number): boolean {
-  return voucher.status === "active" && !isVoucherEffectivelyExpired(voucher, nowMs);
+function isActiveAndLive(voucher: WalletVoucherDetail, nowMs: number): boolean {
+  return voucher.state === "activated" && !isVoucherEffectivelyExpired(voucher.expiresAt, nowMs);
+}
+
+/** `WalletVoucherCard` is itself async (`getTranslations`) — resolved here explicitly rather than left as JSX, so this works under a plain renderer too, not only Next's RSC pipeline (see wallet-screen.tsx's doc comment for the same rule). */
+async function renderCards(
+  vouchers: WalletVoucherDetail[],
+  nowMs: number,
+  locale: SupportedLocale,
+) {
+  return Promise.all(
+    vouchers.map(async (voucher) => (
+      <Fragment key={voucher.voucherId}>
+        {await WalletVoucherCard({ voucher, nowMs, locale })}
+      </Fragment>
+    )),
+  );
 }
 
 /**
  * Splits vouchers into an active section and an archived one. Archived
- * vouchers (used, expired or transferred) are never hidden or deleted —
- * YT-0424's "used and expired vouchers archived and still viewable" — they
- * render in their own, visually distinct section below the active ones,
- * always present when there is anything to show there.
+ * vouchers (released, or effectively expired) are never hidden or deleted
+ * — they render in their own, visually distinct section below the active
+ * ones, always present when there is anything to show there.
  */
-export function WalletVoucherList({ vouchers, nowMs, locale }: WalletVoucherListProps) {
-  const t = getWalletTranslator(locale);
+export async function WalletVoucherList({ vouchers, nowMs, locale }: WalletVoucherListProps) {
+  const t = await getTranslations("wallet");
   const active = vouchers.filter((voucher) => isActiveAndLive(voucher, nowMs));
   const archived = vouchers.filter((voucher) => !isActiveAndLive(voucher, nowMs));
+  const activeCards = await renderCards(active, nowMs, locale);
+  const archivedCards = await renderCards(archived, nowMs, locale);
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-fg">{t("voucherList.activeHeading")}</h2>
+      <Section title={t("voucherList.activeHeading")}>
         {active.length === 0 ? (
-          <p className="text-sm text-fg-muted">{t("voucherList.activeEmpty")}</p>
+          <Text tone="muted">{t("voucherList.activeEmpty")}</Text>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {active.map((voucher) => (
-              <WalletVoucherCard key={voucher.id} voucher={voucher} nowMs={nowMs} locale={locale} />
-            ))}
-          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{activeCards}</div>
         )}
-      </section>
+      </Section>
       {archived.length > 0 ? (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-fg-muted">
-            {t("voucherList.archivedHeading")}
-          </h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {archived.map((voucher) => (
-              <WalletVoucherCard key={voucher.id} voucher={voucher} nowMs={nowMs} locale={locale} />
-            ))}
-          </div>
-        </section>
+        <Section title={t("voucherList.archivedHeading")}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{archivedCards}</div>
+        </Section>
       ) : null}
     </div>
   );

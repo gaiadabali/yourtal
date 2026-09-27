@@ -1,63 +1,87 @@
-import type { Balance } from "@yourtal/contracts/balance";
-import { formatPoints } from "@yourtal/contracts/money/format";
-import { Card, CardContent } from "@yourtal/ui/card";
+import { getTranslations } from "next-intl/server";
+import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
+import { PointsChip } from "@yourtal/ui/points-chip";
+import { Heading } from "@yourtal/ui/heading";
+import { Text } from "@yourtal/ui/text";
+import type { SupportedLocale } from "./wallet-format";
 import { formatRelativeToNow, formatWalletDate } from "./wallet-format";
-import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
 
 export interface WalletBalanceSummaryProps {
-  balance: Balance;
+  balance: WalletSummary;
   nowMs: number;
-  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
   locale: SupportedLocale;
 }
 
 /**
- * Answers the three questions docs/17-surfaces-and-roles.md §3 says the
- * Wallet exists to answer: what do I have, what's coming, what am I about
- * to lose. Each is its own row so none can be missed or buried inside one
- * combined number — the "pending" and "expiring" rows always show their
- * date (`pendingUnlockAt` / `expiringAt`), never just an amount.
+ * Answers the three questions the wallet exists to answer (6.5.a): what do I
+ * have, what's coming, what am I about to lose. Pending is one row PER
+ * GRANT — the live `GET /api/wallet` (4.8.a) already gives each hold its own
+ * `unlockAt`, so this never collapses them into a single soonest-date line
+ * the way the old fixture-driven card did. Expiring only ever renders when
+ * `expiringPoints > 0` — points-expiry is off by default per region (F2),
+ * so an expiring row is simply absent for a region/account with it off.
  */
-export function WalletBalanceSummary({ balance, nowMs, locale }: WalletBalanceSummaryProps) {
-  const t = getWalletTranslator(locale);
+export async function WalletBalanceSummary({ balance, nowMs, locale }: WalletBalanceSummaryProps) {
+  const t = await getTranslations("wallet");
+
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-4 p-6">
-        <div>
-          <p className="text-xs text-fg-subtle">{t("balance.available")}</p>
-          <p className="text-3xl font-semibold text-reward">
-            {formatPoints(balance.availablePoints, locale)}
-          </p>
+    <div className="flex flex-col gap-4 rounded-card border border-border-subtle bg-surface p-6">
+      <div>
+        <Text tone="muted" size="body-sm">
+          {t("balance.available")}
+        </Text>
+        <div className="mt-1">
+          <PointsChip
+            value={balance.availablePoints}
+            size="lg"
+            locale={locale}
+            formatLabel={(formatted) => t("balance.availableLabel", { amount: formatted })}
+          />
         </div>
-        <dl className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2">
-          <div>
-            <dt className="text-xs text-fg-subtle">{t("balance.pendingLabel")}</dt>
-            <dd className="text-sm font-medium text-fg">
-              {balance.pendingPoints > 0 && balance.pendingUnlockAt
-                ? t("balance.pendingWithDate", {
-                    amount: formatPoints(balance.pendingPoints, locale),
-                    date: formatWalletDate(balance.pendingUnlockAt, locale),
-                    relative: formatRelativeToNow(balance.pendingUnlockAt, nowMs, locale),
-                  })
-                : t("balance.pendingNone")}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-fg-subtle">{t("balance.expiringLabel")}</dt>
-            <dd
-              className={`text-sm font-medium ${balance.expiringPoints > 0 ? "text-warning" : "text-fg"}`}
-            >
-              {balance.expiringPoints > 0 && balance.expiringAt
-                ? t("balance.expiringWithDate", {
-                    amount: formatPoints(balance.expiringPoints, locale),
-                    date: formatWalletDate(balance.expiringAt, locale),
-                    relative: formatRelativeToNow(balance.expiringAt, nowMs, locale),
-                  })
-                : t("balance.expiringNone")}
-            </dd>
-          </div>
-        </dl>
-      </CardContent>
-    </Card>
+      </div>
+
+      {balance.pending.length > 0 ? (
+        <div className="flex flex-col gap-2 border-t border-border-subtle pt-4">
+          <Heading level={3} size="title">
+            {t("balance.pendingLabel")}
+          </Heading>
+          <ul className="flex flex-col gap-2">
+            {balance.pending.map((grant) => (
+              <li key={grant.unlockAt} className="flex items-center justify-between gap-3 text-body-sm">
+                <PointsChip
+                  value={grant.points}
+                  size="sm"
+                  locale={locale}
+                  formatLabel={(formatted) => t("balance.pendingGrantLabel", { amount: formatted })}
+                />
+                <Text tone="muted" size="body-sm">
+                  {t("balance.unlocksOn", {
+                    date: formatWalletDate(grant.unlockAt, locale),
+                    relative: formatRelativeToNow(grant.unlockAt, nowMs, locale),
+                  })}
+                </Text>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {balance.expiringPoints > 0 && balance.expiringAt ? (
+        <div className="flex items-center justify-between gap-3 border-t border-border-subtle pt-4">
+          <PointsChip
+            value={balance.expiringPoints}
+            size="sm"
+            locale={locale}
+            formatLabel={(formatted) => t("balance.expiringLabel", { amount: formatted })}
+          />
+          <Text tone="danger" size="body-sm">
+            {t("balance.expiresOn", {
+              date: formatWalletDate(balance.expiringAt, locale),
+              relative: formatRelativeToNow(balance.expiringAt, nowMs, locale),
+            })}
+          </Text>
+        </div>
+      ) : null}
+    </div>
   );
 }

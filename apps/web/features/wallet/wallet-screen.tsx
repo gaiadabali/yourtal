@@ -1,22 +1,25 @@
-import type { Balance } from "@yourtal/contracts/balance";
-import type { Voucher } from "@yourtal/contracts/voucher";
-import type { WalletHistoryEntry } from "./wallet-history";
+import { getTranslations } from "next-intl/server";
+import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
+import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
+import { PageContainer } from "@yourtal/ui/page-container";
+import { PageHeader } from "@yourtal/ui/page-header";
+import { Section } from "@yourtal/ui/section";
+import type { WalletVoucherDetail } from "./wallet-data";
 import { WalletBalanceSummary } from "./wallet-balance-summary";
 import { WalletEmptyState } from "./wallet-empty-state";
 import { WalletVoucherList } from "./wallet-voucher-list";
 import { WalletHistoryList } from "./wallet-history-list";
-import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
+import type { SupportedLocale } from "./wallet-format";
 
 export interface WalletScreenProps {
-  balance: Balance;
-  vouchers: Voucher[];
+  balance: WalletSummary;
+  vouchers: WalletVoucherDetail[];
   history: WalletHistoryEntry[];
   nowMs: number;
-  /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
   locale: SupportedLocale;
 }
 
-function isWalletEmpty(balance: Balance, vouchers: Voucher[]): boolean {
+function isWalletEmpty(balance: WalletSummary, vouchers: WalletVoucherDetail[]): boolean {
   return (
     balance.availablePoints === 0 &&
     balance.pendingPoints === 0 &&
@@ -26,27 +29,36 @@ function isWalletEmpty(balance: Balance, vouchers: Voucher[]): boolean {
 }
 
 /**
- * Composes the Wallet surface (YT-0423): balance, vouchers, then history —
- * the order docs/17-surfaces-and-roles.md §3 lays the three answers out in
+ * Composes the Wallet surface (6.5): balance, vouchers, then history — the
+ * order docs/17-surfaces-and-roles.md §3 lays the three answers out in
  * ("what do I have, what's coming, what am I about to lose"), followed by
  * the vouchers those points bought and the plain-language history of how
  * they moved.
+ *
+ * Every child here (`WalletBalanceSummary`, `WalletEmptyState`,
+ * `WalletVoucherList`, `WalletHistoryList`) is itself an async Server
+ * Component (each calls `getTranslations` on its own). They are called and
+ * awaited directly rather than left as `<Child .../>` JSX: Next's real RSC
+ * pipeline resolves nested async components either way, but a plain client
+ * renderer (react-dom, and therefore this feature's own tests) does not —
+ * awaiting explicitly makes the composition work, and be testable, under
+ * both.
  */
-export function WalletScreen({ balance, vouchers, history, nowMs, locale }: WalletScreenProps) {
-  const t = getWalletTranslator(locale);
+export async function WalletScreen({ balance, vouchers, history, nowMs, locale }: WalletScreenProps) {
+  const t = await getTranslations("wallet");
+  const empty = isWalletEmpty(balance, vouchers);
+  const [balanceOrEmptyState, voucherList, historyList] = await Promise.all([
+    empty ? WalletEmptyState() : WalletBalanceSummary({ balance, nowMs, locale }),
+    WalletVoucherList({ vouchers, nowMs, locale }),
+    WalletHistoryList({ entries: history, locale }),
+  ]);
+
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4">
-      <h1 className="text-2xl font-semibold text-fg">{t("screen.title")}</h1>
-      {isWalletEmpty(balance, vouchers) ? (
-        <WalletEmptyState locale={locale} />
-      ) : (
-        <WalletBalanceSummary balance={balance} nowMs={nowMs} locale={locale} />
-      )}
-      <WalletVoucherList vouchers={vouchers} nowMs={nowMs} locale={locale} />
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-fg">{t("screen.historyHeading")}</h2>
-        <WalletHistoryList entries={history} locale={locale} />
-      </section>
-    </div>
+    <PageContainer width="narrow" className="flex flex-col gap-6 py-6">
+      <PageHeader title={t("screen.title")} />
+      {balanceOrEmptyState}
+      {voucherList}
+      <Section title={t("screen.historyHeading")}>{historyList}</Section>
+    </PageContainer>
   );
 }

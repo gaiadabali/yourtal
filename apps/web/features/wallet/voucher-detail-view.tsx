@@ -1,164 +1,218 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
-import { asDisplayIdr, formatMoney } from "@yourtal/contracts/money/format";
-import { Badge } from "@yourtal/ui/badge";
-import { Card, CardContent } from "@yourtal/ui/card";
+import type { DisputeResult } from "@yourtal/contracts/checkout/dispute";
+import { MoneyAmount } from "@yourtal/ui/money-amount";
+import { StatusBadge } from "@yourtal/ui/status-badge";
+import { Heading } from "@yourtal/ui/heading";
+import { Text } from "@yourtal/ui/text";
+import { KeyValue } from "@yourtal/ui/key-value";
+import { Notice } from "@yourtal/ui/notice";
 import { useRegion } from "@/features/region/use-region";
 import type { CachedVoucherDetail } from "./voucher-detail-cache";
 import { readVoucherDetailCache, writeVoucherDetailCache } from "./voucher-detail-cache";
-import { QR_ROTATION_INTERVAL_MS } from "./voucher-qr-rotation";
+import type { WalletQrDetail } from "./wallet-data";
 import { useVoucherQrRotation } from "./use-voucher-qr-rotation";
 import { VoucherQrCode } from "./voucher-qr-code";
 import { VoucherValidityCountdown } from "./voucher-validity-countdown";
 import { VoucherArchivedPanel } from "./voucher-archived-panel";
-import { classifyVoucherStatus, VOUCHER_STATUS_MESSAGE_KEY } from "./wallet-voucher-status-copy";
+import { VoucherDisputeButton } from "./voucher-dispute-button";
+import {
+  describeVoucherStatus,
+  isVoucherEffectivelyExpired,
+} from "./wallet-voucher-status-copy";
+import { buildRedemptionInstructions } from "./wallet-redemption-copy";
 import { formatWalletDate } from "./wallet-format";
 
 export interface VoucherDetailViewProps {
   voucherId: string;
   initialDetail: CachedVoucherDetail;
+  /** Only present when the voucher is in a redeemable (held/active) state — see the route's `page.tsx`. */
+  initialQr: WalletQrDetail | null;
+  /**
+   * The manual redemption code, fresh from this render's own server fetch
+   * only — NEVER part of `initialDetail`/the localStorage cache (docs/15
+   * rule 7: a plaintext code is never persisted client-side). It is
+   * therefore only ever present on a live, online first render; a cached
+   * offline render always sees `undefined` here and falls back to the QR
+   * alone, which is exactly the behaviour that rule requires.
+   */
+  code: string | undefined;
+}
+
+/** True while the browser reports itself offline — 6.5.c: "shows with the network off". */
+function useIsOffline(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener("online", onChange);
+      window.addEventListener("offline", onChange);
+      return () => {
+        window.removeEventListener("online", onChange);
+        window.removeEventListener("offline", onChange);
+      };
+    },
+    () => !navigator.onLine,
+    () => false,
+  );
 }
 
 /**
- * Client leaf for `/wallet/voucher/[voucherId]` (YT-0424). Cache-first by
+ * Client leaf for `/wallet/voucher/[voucherId]` (6.5.b). Cache-first by
  * design: on mount it prefers whatever is already in localStorage for this
- * voucher id over the freshly server-rendered `initialDetail` prop, and
- * every render after that writes the current value back to cache. That
- * makes "renders from cache with the network disabled" a literal, checkable
- * property of this one component — see voucher-detail-view.test.tsx, which
- * seeds the cache, stubs `fetch` to reject, and asserts the component still
- * renders the cached voucher correctly and never calls `fetch`.
- *
- * What this does NOT, on its own, prove: a full offline page load. Getting
- * this component's own HTML/JS shell without a network request needs a
- * service worker — docs/15-stack-locked.md locks Serwist, and it is now
- * installed (`app/sw.ts`, wired in `next.config.ts`) and genuinely caches
- * a visited page's document response (NetworkFirst, `@serwist/next`'s
- * `defaultCache`). The gap that remains, and is NOT this component's to
- * close: Serwist's stable Next.js integration hooks into webpack, and this
- * app's `next build`/`next start` default to Turbopack (Next 16's default,
- * unrelated to this ticket) — under Turbopack, `public/sw.js` is silently
- * never emitted, so the service worker this file's own e2e test proves
- * against a `next build --webpack` run does not yet exist in what
- * `pnpm build` actually ships. See `e2e/offline-voucher-detail.spec.ts` and
- * this ticket's report for the full account. Independent of all of that,
- * this component's own guarantee is unconditionally real: once its JS and
- * a cache entry exist, nothing in its render path — not the voucher data,
- * not the QR payload, not the redemption copy — depends on a network call.
+ * voucher id over the freshly server-rendered `initialDetail` prop, so the
+ * page renders correctly with the network off once it has been visited
+ * once (6.5.c). The QR itself has its own, separate IndexedDB cache
+ * (`use-voucher-qr-rotation.ts`) because it needs a full hour of rotating
+ * tokens, not one small record.
  */
-export function VoucherDetailView({ voucherId, initialDetail }: VoucherDetailViewProps) {
+export function VoucherDetailView({
+  voucherId,
+  initialDetail,
+  initialQr,
+  code,
+}: VoucherDetailViewProps) {
   const { locale } = useRegion();
   const t = useTranslations("wallet");
-  // Cache-first, not state: this component never mutates the voucher detail
-  // itself (a route change unmounts and remounts it for a different id), so
-  // a plain read-through beats useState — nothing here would ever call a
-  // setter.
+  const isOffline = useIsOffline();
+  const [disputeOutcome, setDisputeOutcome] = useState<
+    { ok: true; result: DisputeResult } | { ok: false } | null
+  >(null);
+
   const detail: CachedVoucherDetail = readVoucherDetailCache(voucherId) ?? initialDetail;
 
   useEffect(() => {
     writeVoucherDetailCache(detail);
-  }, [detail]);
+    // Only re-runs when the cached values actually change identity, not on
+    // every render — `detail` is a plain object read fresh each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail.voucherId, detail.state, detail.cachedAt]);
 
-  const rotation = useVoucherQrRotation({
-    id: detail.id,
-    code: detail.code,
-    expiresAt: detail.expiresAt,
-  });
-  const expired = rotation.isExpired;
-  // `classifyVoucherStatus` + `VOUCHER_STATUS_MESSAGE_KEY`, not the
-  // Server-only `describeVoucherStatus` (see that file's doc comment):
-  // this is a Client Component, so the label must come from this
-  // component's own `useTranslations("wallet")` — the active locale's
-  // catalogue only, already loaded by `NextIntlClientProvider` — never
-  // from a helper that statically imports both locales' JSON.
-  const statusClassification = classifyVoucherStatus(detail.status, expired);
-  const statusLabel = t(VOUCHER_STATUS_MESSAGE_KEY[statusClassification.kind]);
-  const isRedeemable = detail.status === "active" && !expired;
+  const expired = isVoucherEffectivelyExpired(detail.expiresAt, Date.now());
+  const statusCopy = describeVoucherStatus(detail.state, expired, t);
+  const isRedeemable = detail.state === "activated" && !expired;
+
+  // The hook must always run (rules of hooks) — `initialQr` is null for an
+  // already-archived voucher, so it is handed an inert placeholder that
+  // never rotates. Nothing reads `rotation` in that branch below.
+  const rotation = useVoucherQrRotation(
+    voucherId,
+    initialQr ?? { voucherId, token: "", expiresAt: new Date(0).toISOString() },
+  );
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
-        <CardContent className="flex flex-col items-center gap-4 p-6">
-          <div className="flex w-full items-start justify-between gap-2">
-            <div>
-              <p className="text-xs text-fg-subtle">{detail.merchantName}</p>
-              <h1 className="text-lg font-semibold text-fg">{detail.title}</h1>
-            </div>
-            <Badge variant={statusClassification.badgeVariant}>{statusLabel}</Badge>
+      {isOffline ? <Notice tone="info">{t("voucher.offlineNotice")}</Notice> : null}
+      {disputeOutcome ? (
+        <Notice tone={disputeOutcome.ok ? "success" : "danger"}>
+          {disputeOutcome.ok
+            ? disputeOutcome.result.outcome === "reinstated"
+              ? t("voucher.disputeReinstated")
+              : t("voucher.disputeQueued")
+            : t("voucher.disputeFailed")}
+        </Notice>
+      ) : null}
+
+      <div className="flex flex-col items-center gap-4 rounded-card border border-border-subtle bg-surface p-6">
+        <div className="flex w-full items-start justify-between gap-2">
+          <div>
+            {detail.merchantName ? (
+              <Text tone="muted" size="body-sm">
+                {detail.merchantName}
+              </Text>
+            ) : null}
+            <Heading level={1} size="title">
+              {detail.title ?? t("voucher.genericTitle")}
+            </Heading>
           </div>
+          <StatusBadge status={statusCopy.badgeStatus}>{statusCopy.label}</StatusBadge>
+        </div>
 
-          {isRedeemable ? (
-            <>
-              <VoucherQrCode
-                payload={rotation.payload}
-                label={t("voucher.qrLabel", { merchantName: detail.merchantName })}
-              />
-              <VoucherValidityCountdown
-                secondsUntilRotation={rotation.secondsUntilRotation}
-                rotationIntervalSeconds={QR_ROTATION_INTERVAL_MS / 1000}
-              />
-              {/* The code as readable text, not only encoded in the QR above.
-                  The merchant portal treats manual entry as a first-class path
-                  precisely because cameras fail — bad light, a cracked screen,
-                  a browser without BarcodeDetector. Until this was shown, a
-                  customer in that situation had nothing to read out and the
-                  fallback was unreachable from their side. `select-all` and a
-                  monospaced face so it can be read aloud or copied without
-                  transcription errors between similar glyphs. */}
-              <p className="text-center font-sans text-sm text-fg-muted">
-                {t("voucher.manualCodeLabel")}
-                <br />
-                <span className="select-all font-mono text-lg tracking-widest text-fg">
-                  {detail.code}
-                </span>
-              </p>
-            </>
-          ) : (
-            <VoucherArchivedPanel
-              statusLabel={statusLabel}
-              dateLabel={t("voucher.expiresOn", {
-                date: formatWalletDate(detail.expiresAt, locale),
-              })}
-            />
-          )}
+        {isRedeemable && initialQr ? (
+          <>
+            {rotation.current ? (
+              <>
+                <VoucherQrCode
+                  payload={rotation.current.token}
+                  label={t("voucher.qrLabel", { merchantName: detail.merchantName ?? "" })}
+                  code={code ?? "—"}
+                  caption={code ? undefined : t("voucher.codeUnavailable")}
+                  fallbackLabel={t("voucher.qrRenderFailed")}
+                />
+                <VoucherValidityCountdown
+                  secondsUntilRotation={rotation.secondsUntilRotation}
+                  rotationIntervalSeconds={300}
+                />
+              </>
+            ) : (
+              <Notice tone={rotation.refreshFailed ? "warning" : "info"}>
+                {rotation.refreshFailed ? t("voucher.qrExpiredOffline") : t("voucher.qrRefreshing")}
+              </Notice>
+            )}
+            <VoucherDisputeButton voucherId={voucherId} onResolved={setDisputeOutcome} />
+          </>
+        ) : (
+          <VoucherArchivedPanel
+            statusLabel={statusCopy.label}
+            dateLabel={
+              detail.expiresAt ? t("voucher.expiresOn", { date: formatWalletDate(detail.expiresAt, locale) }) : ""
+            }
+          />
+        )}
 
-          <dl className="grid w-full grid-cols-2 gap-3 border-t border-border pt-4 text-sm">
-            <div>
-              <dt className="text-xs text-fg-subtle">{t("voucher.remainingValue")}</dt>
-              <dd className="font-semibold text-price">
-                {formatMoney(asDisplayIdr(detail.remainingValueMinor), detail.currency)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-fg-subtle">{t("voucher.validUntilLabel")}</dt>
-              <dd className="font-medium text-fg">{formatWalletDate(detail.expiresAt, locale)}</dd>
-            </div>
-          </dl>
+        {(() => {
+          const items = [
+            ...(detail.remainingValueMinor !== undefined && detail.currency
+              ? [
+                  {
+                    key: "remaining",
+                    label: t("voucher.remainingValue"),
+                    value: (
+                      <MoneyAmount
+                        amountMinor={detail.remainingValueMinor}
+                        currency={detail.currency}
+                        locale={locale}
+                      />
+                    ),
+                  },
+                ]
+              : []),
+            ...(detail.expiresAt
+              ? [
+                  {
+                    key: "validUntil",
+                    label: t("voucher.validUntilLabel"),
+                    value: formatWalletDate(detail.expiresAt, locale),
+                  },
+                ]
+              : []),
+          ];
+          return items.length > 0 ? (
+            <KeyValue items={items} className="w-full border-t border-border pt-4" />
+          ) : null;
+        })()}
 
-          {/* YT-0583: which branch honours this voucher. Before this, a
-              voucher for a multi-branch merchant named the merchant and not
-              the outlet, so a user standing in the wrong shop had no way to
-              know. `location` is denormalised onto the voucher at issuance,
-              so this renders from cache and works offline — which is the
-              only state that matters when you are at the counter. */}
+        {detail.location ? (
           <div className="w-full border-t border-border pt-4">
-            <h2 className="text-xs text-fg-subtle">{t("voucher.redeemAtLabel")}</h2>
-            <p className="font-medium text-fg">{detail.location.name}</p>
-            <p className="text-sm text-fg-muted">{detail.location.address}</p>
-            <p className="text-sm text-fg-muted">{detail.location.district}</p>
-            <p className="mt-1 text-xs text-fg-subtle">{t("voucher.redeemAtHint")}</p>
+            <h2 className="text-caption text-fg-subtle">{t("voucher.redeemAtLabel")}</h2>
+            <p className="font-sans text-body font-medium text-fg">{detail.location.name}</p>
+            <p className="text-body-sm text-fg-muted">{detail.location.address}</p>
+            <p className="text-body-sm text-fg-muted">{detail.location.district}</p>
+            <p className="mt-1 text-caption text-fg-subtle">{t("voucher.redeemAtHint")}</p>
           </div>
-        </CardContent>
-      </Card>
+        ) : null}
+      </div>
 
-      <Card>
-        <CardContent className="flex flex-col gap-2 p-6">
-          <h2 className="text-sm font-semibold text-fg">{t("voucher.howToRedeem")}</h2>
-          <p className="text-sm text-fg-muted">{detail.redemptionInstructions}</p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-2 rounded-card border border-border-subtle bg-surface p-6">
+        <Heading level={2} size="title">
+          {t("voucher.howToRedeem")}
+        </Heading>
+        <Text tone="muted">
+          {detail.merchantName && detail.partialRedemptionPolicy
+            ? buildRedemptionInstructions(detail.merchantName, detail.partialRedemptionPolicy, t)
+            : t("voucher.genericInstructions")}
+        </Text>
+      </div>
     </div>
   );
 }

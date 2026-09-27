@@ -1,95 +1,132 @@
-import type { Balance } from "@yourtal/contracts/balance";
-import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
-import type { Voucher } from "@yourtal/contracts/voucher";
+import { z } from "zod";
+import { apiFetch, type ApiResult } from "@/lib/api/api-fetch";
 import {
-  expiredVoucherFixture,
-  expiringWithinHourVoucherFixture,
-  mockVouchers,
-} from "@yourtal/contracts/voucher/mock";
-import { mockCampaigns } from "@yourtal/contracts/campaign/mock";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
-import type { WalletHistoryEntry } from "./wallet-history";
-import { buildWalletHistory } from "./wallet-history";
+  walletHistoryPageSchema,
+  walletSummarySchema,
+  type WalletHistoryPage,
+  type WalletSummary,
+} from "@yourtal/contracts/wallet/wallet";
 
 /**
- * The Wallet's single data-access seam (docs/tasks/phase-u-ui.md preamble:
- * "one switch flips every screen between mock and live"), same shape as
- * apps/web/features/campaign/campaign-data.ts. Server-data-only per
- * docs/13b-typescript-standards.md §8: only `page.tsx` Server Components in
- * apps/web/app/(app)/wallet/** import this module — no "use client" file in
- * this feature does.
+ * The Wallet's one data-access seam (6.5, replacing Phase U's mock-only
+ * `resolveDataSource`). Every read is a real `GET /api/wallet*` round trip
+ * through `apiFetch` (1.7.a) — no mock branch, per Phase 6's "Done when:
+ * ...with no mock data".
  *
- * The awkward voucher fixtures (`expiredVoucherFixture`,
- * `expiringWithinHourVoucherFixture`) are folded into the catalogue rather
- * than kept test-only, so the real /wallet page exercises the archived and
- * "about to lose it" states directly, per the brief: "use them." The
- * balance fixtures cannot both be shown at once (a wallet has exactly one
- * balance) — `mixedStateBalanceFixture` is used here because it exercises
- * every balance-card branch (available, pending, expiring) simultaneously;
- * `zeroBalanceFixture` is exercised directly by wallet-empty-state's own
- * test instead.
+ * `GET /api/wallet` and `GET /api/wallet/history` (4.8.a) already answer
+ * exactly what 6.5.a needs (available/pending-with-unlock-dates/expiring,
+ * and plain-language-ready history entries), so those two are consumed
+ * as-is from `@yourtal/contracts/wallet/wallet`.
+ *
+ * `GET /api/wallet/vouchers[/:id]` and `/qr` are a different story — see
+ * `walletVoucherDetailSchema` below.
  */
-const HISTORY_CAMPAIGN_SAMPLE_SIZE = 6;
 
-const mockVoucherCatalogue: Voucher[] = [
-  ...mockVouchers,
-  expiredVoucherFixture,
-  expiringWithinHourVoucherFixture,
-];
-
-interface WalletDataSource {
-  getBalance: () => Promise<Balance>;
-  listVouchers: () => Promise<Voucher[]>;
-  getVoucher: (voucherId: string) => Promise<Voucher | undefined>;
-  listHistory: () => Promise<WalletHistoryEntry[]>;
-}
-
-const mockDataSource: WalletDataSource = {
-  getBalance: () => Promise.resolve(mixedStateBalanceFixture),
-  listVouchers: () => Promise.resolve(mockVoucherCatalogue),
-  getVoucher: (voucherId) =>
-    Promise.resolve(mockVoucherCatalogue.find((voucher) => voucher.id === voucherId)),
-  listHistory: () =>
-    Promise.resolve(
-      buildWalletHistory(
-        mockVoucherCatalogue,
-        mockCampaigns.slice(0, HISTORY_CAMPAIGN_SAMPLE_SIZE),
-      ),
-    ),
-};
-
-const NOT_IMPLEMENTED_MESSAGE =
-  "Live wallet data source is not implemented yet (Phase U is mock-only).";
+// ---------------------------------------------------------------------------
+// Vouchers: the live contract is deliberately narrower than 6.5.b needs.
+// ---------------------------------------------------------------------------
 
 /**
- * Fails loudly and specifically rather than silently falling back to mock
- * data under a "live" flag — see campaign-data.ts for the same reasoning.
+ * `@yourtal/contracts/wallet/wallet`'s `WalletVoucher` carries only
+ * `{ voucherId, listingId, state }` — enough to track a reservation through
+ * the burn saga (4.7), nothing to *show* a viewer. Every display field a
+ * "voucher is a pass" screen needs — merchant name, title, code, currency,
+ * remaining value, expiry, redeeming branch — already exists one layer
+ * down: `voucher.vouchers` in `services/voucher/db/schema.sql` has every one
+ * of these columns, and `GetOwnedVoucher` (`services/voucher/db/query/issue.sql`)
+ * already selects them all. The gap is purely in the HTTP contract: the Go
+ * handlers `get`/`listForUser` (`services/voucher/internal/api/wallet_routes.go`)
+ * narrow every row down to `reservationView` before it reaches
+ * apps/api, and `contractState` collapses active/held/redeemed/expired/voided
+ * into one bucket — the handler's own comment says as much: "the wallet's
+ * own listing endpoint is where redeemed/held/expired/voided vouchers
+ * surface their real state via a wider read."
+ *
+ * Per TASKS.md's rule for needing something another area owns: this schema
+ * is written as the WIDENED shape 6.5.b needs, with every field beyond the
+ * live `WalletVoucher` marked optional, so `apiFetch`'s `safeParse` accepts
+ * today's narrower response cleanly (every extra field parses as
+ * `undefined`) and the UI degrades to a generic placeholder for each missing
+ * field (see `wallet-voucher-card.tsx` / `voucher-detail-view.tsx`). The day
+ * apps/api's wallet routes (Area A) return the wider row, this file and its
+ * schema need no change — every field just stops being `undefined`. See
+ * TASKS.md 4.8's "(requested by B)" subtask for the exact widening asked
+ * for, including the QR's 12 five-minute windows below.
  */
-const liveDataSource: WalletDataSource = {
-  getBalance: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
-  listVouchers: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
-  getVoucher: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
-  listHistory: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
-};
+const merchantLocationDisplaySchema = z.object({
+  name: z.string(),
+  address: z.string(),
+  district: z.string(),
+});
 
-const walletDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
+export const walletVoucherDetailSchema = z.object({
+  voucherId: z.uuid(),
+  listingId: z.uuid(),
+  state: z.enum(["reserved", "activated", "released"]),
+  merchantName: z.string().optional(),
+  title: z.string().optional(),
+  /** Never cached (docs/15 rule 7: a plaintext redemption code is never persisted client-side) — see `voucher-detail-cache.ts`. */
+  code: z.string().optional(),
+  currency: z.enum(["AUD", "IDR"]).optional(),
+  faceValueMinor: z.number().optional(),
+  remainingValueMinor: z.number().optional(),
+  partialRedemptionPolicy: z
+    .enum(["balance_carrying", "single_use_forfeit", "minimum_spend"])
+    .optional(),
+  issuedAt: z.iso.datetime().optional(),
+  expiresAt: z.iso.datetime().optional(),
+  location: merchantLocationDisplaySchema.optional(),
+});
+export type WalletVoucherDetail = z.infer<typeof walletVoucherDetailSchema>;
 
-/** The signed-in user's wallet balance. */
-export function getWalletBalance(): Promise<Balance> {
-  return walletDataSource.getBalance();
+const walletVoucherDetailPageSchema = z.object({
+  vouchers: z.array(walletVoucherDetailSchema),
+  hasMore: z.boolean(),
+});
+
+/**
+ * Same story as the voucher schema above: the live `QrToken`/`WalletQr`
+ * shape is `{ voucherId, token, expiresAt }` — one window. The Go service
+ * behind it already mints and returns twelve consecutive 5-minute-window
+ * tokens (`services/voucher/internal/api/wallet_routes.go`'s `qrTokenView.Tokens`,
+ * `qrtoken.Mint`) — `HttpVoucherClient` and `WalletController.qr` just pick
+ * `tokens[0]` today. `tokens` here is that same widening, optional so this
+ * parses cleanly against the live response either way; when absent, the
+ * caller falls back to the one token it did get (see
+ * `use-voucher-qr-rotation.ts`).
+ */
+const walletQrDetailSchema = z.object({
+  voucherId: z.uuid(),
+  token: z.string().min(1),
+  expiresAt: z.iso.datetime(),
+  tokens: z.array(z.object({ token: z.string().min(1), expiresAt: z.iso.datetime() })).optional(),
+});
+export type WalletQrDetail = z.infer<typeof walletQrDetailSchema>;
+
+/** The signed-in user's wallet balance: available, pending (per grant, each with its own unlock date) and expiring. */
+export function getWalletBalance(): Promise<ApiResult<WalletSummary>> {
+  return apiFetch("/api/wallet", walletSummarySchema);
 }
 
-/** Every voucher the user holds, active and archived alike. */
-export function listWalletVouchers(): Promise<Voucher[]> {
-  return walletDataSource.listVouchers();
+/** Points history, newest first; pass a cursor from a previous page's `nextCursor` to paginate. */
+export function listWalletHistory(startingAfter?: string): Promise<ApiResult<WalletHistoryPage>> {
+  const query = startingAfter ? `?startingAfter=${encodeURIComponent(startingAfter)}` : "";
+  return apiFetch(`/api/wallet/history${query}`, walletHistoryPageSchema);
 }
 
-/** A single voucher for the detail screen, or `undefined` if no such voucher exists. */
-export function getWalletVoucher(voucherId: string): Promise<Voucher | undefined> {
-  return walletDataSource.getVoucher(voucherId);
+/** Every voucher the user holds. */
+export function listWalletVouchers(): Promise<
+  ApiResult<{ vouchers: WalletVoucherDetail[]; hasMore: boolean }>
+> {
+  return apiFetch("/api/wallet/vouchers", walletVoucherDetailPageSchema);
 }
 
-/** Points history, newest first, in plain language. */
-export function listWalletHistory(): Promise<WalletHistoryEntry[]> {
-  return walletDataSource.listHistory();
+/** A single voucher for the detail screen. */
+export function getWalletVoucher(voucherId: string): Promise<ApiResult<WalletVoucherDetail>> {
+  return apiFetch(`/api/wallet/vouchers/${voucherId}`, walletVoucherDetailSchema);
+}
+
+/** A fresh QR token (or, once Area A widens it, all twelve of this window's tokens) for showing the voucher at the counter. */
+export function getWalletVoucherQr(voucherId: string): Promise<ApiResult<WalletQrDetail>> {
+  return apiFetch(`/api/wallet/vouchers/${voucherId}/qr`, walletQrDetailSchema);
 }

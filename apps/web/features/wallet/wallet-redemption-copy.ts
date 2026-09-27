@@ -1,21 +1,19 @@
-import type { Voucher } from "@yourtal/contracts/voucher";
-import { getWalletTranslator, type SupportedLocale } from "./wallet-i18n";
+import type { Translator } from "./wallet-voucher-status-copy";
+
+/** The partial-redemption policies a voucher can carry (`@yourtal/contracts/listing/listing`). */
+export type PartialRedemptionPolicy = "balance_carrying" | "single_use_forfeit" | "minimum_spend";
 
 /**
  * Plain-language explanation of a voucher's partial-redemption policy
- * (docs/09-points-economy-and-redemption.md §8.2). Type-only import from
- * `@yourtal/contracts/voucher`, so this is safe from a client leaf as well
- * as a Server Component.
- *
- * YT-0405: `locale` is required, not defaulted. Its one call site,
- * `app/(app)/wallet/voucher/[voucherId]/page.tsx`, now resolves the real
- * region via `getRegionDisplayConfig()` and passes it through.
+ * (docs/09-points-economy-and-redemption.md §8.2). Takes the caller's own
+ * translator — see `wallet-voucher-status-copy.ts`'s `Translator` doc
+ * comment for why this is shared between a Server and a Client caller
+ * instead of each holding its own locale-keyed copy.
  */
 export function describePartialRedemptionPolicy(
-  policy: Voucher["partialRedemptionPolicy"],
-  locale: SupportedLocale,
+  policy: PartialRedemptionPolicy,
+  t: Translator,
 ): string {
-  const t = getWalletTranslator(locale);
   switch (policy) {
     case "balance_carrying":
       return t("redemption.balanceCarrying");
@@ -38,9 +36,9 @@ export function describePartialRedemptionPolicy(
  */
 export function buildRedemptionInstructions(
   merchantName: string,
-  policy: Voucher["partialRedemptionPolicy"],
-  locale: SupportedLocale,
+  policy: PartialRedemptionPolicy,
+  t: Translator,
 ): string {
-  const policyLine = describePartialRedemptionPolicy(policy, locale);
-  return getWalletTranslator(locale)("redemption.instructions", { merchantName, policyLine });
+  const policyLine = describePartialRedemptionPolicy(policy, t);
+  return t("redemption.instructions", { merchantName, policyLine });
 }

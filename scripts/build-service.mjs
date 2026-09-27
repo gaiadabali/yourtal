@@ -90,9 +90,10 @@ const externalNpm = {
       args.kind === "entry-point" ||
       path.isAbsolute(args.path) ||
       args.path.startsWith("@yourtal/") ||
-      // The seed's S3 client (2.3.i) is not an apps/api dependency, so it is
-      // bundled rather than resolved from apps/api/node_modules on Helios.
-      (app === "seed" && args.path.startsWith("@aws-sdk/"))
+      // The seed bundles every pure-JS dependency: on Helios it resolves
+      // externals from apps/api/node_modules, which lacks e.g. the S3 client's
+      // @smithy/* tree (2.3.i). Only native addons stay external.
+      (app === "seed" && !/^(@node-rs\/|pg-native$)/.test(args.path))
         ? undefined
         : { path: args.path, external: true },
     );
@@ -115,6 +116,15 @@ await build({
   target: "node24",
   sourcemap: true,
   chunkNames: "chunks/[name]-[hash]",
+  // The seed bundles CommonJS packages (pg, the S3 client's deps) into ESM,
+  // where their require() calls need a real require to reach Node built-ins.
+  ...(app === "seed"
+    ? {
+        banner: {
+          js: 'import { createRequire as __ytCreateRequire } from "node:module"; const require = __ytCreateRequire(import.meta.url);',
+        },
+      }
+    : {}),
   plugins: [externalNpm, swcDecorators],
   logLevel: "info",
 });

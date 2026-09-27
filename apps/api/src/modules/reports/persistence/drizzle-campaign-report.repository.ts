@@ -19,7 +19,10 @@ import type {
 export class DrizzleCampaignReportRepository implements CampaignReportRepository {
   constructor(private readonly db: AppDb) {}
 
-  async findOwnedCampaign(businessId: string, campaignId: string): Promise<ReportedCampaign | null> {
+  async findOwnedCampaign(
+    businessId: string,
+    campaignId: string,
+  ): Promise<ReportedCampaign | null> {
     const result = await this.db.execute<{ audience: string }>(sql`
       SELECT audience FROM campaign.campaigns
        WHERE id = ${campaignId} AND business_id = ${businessId}

@@ -44,38 +44,32 @@ export function getCampaignReport(
       return wrapPersistence(repo.questionAggregates(campaignId)).andThen((questions) =>
         ledger
           .campaignSpend(campaignId)
-          .mapErr(
-            (error): GetCampaignReportError => ({
-              type: "ledger_refused",
-              code: error.code,
-              message: error.message,
-            }),
-          )
+          .mapErr((error): GetCampaignReportError => ({
+            type: "ledger_refused",
+            code: error.code,
+            message: error.message,
+          }))
           .andThen((spend) => {
             const today = new Date().toISOString().slice(0, 10);
             return vouchers
               .merchantCaptureStats({ merchantId: businessId, from: "2000-01-01", to: today })
-              .mapErr(
-                (error): GetCampaignReportError => ({
-                  type: "voucher_refused",
-                  code: error.code,
-                  message: error.message,
-                }),
-              )
-              .map(
-                (captureStats): CampaignReportResult => ({
-                  campaignId,
-                  suppressed: false,
-                  rewardedViews: sessions.rewardedViews,
-                  completions: sessions.completions,
-                  completionRate: sessions.completions / sessions.rewardedViews,
-                  averageWatchTimeSeconds: sessions.averageWatchTimeSeconds,
-                  questionAccuracy:
-                    questions === null ? null : questions.timesCorrect / questions.timesAsked,
-                  pointsSpent: toPoints(spend.grantedPoints),
-                  merchantVouchersRedeemed: captureStats.captureCount,
-                }),
-              );
+              .mapErr((error): GetCampaignReportError => ({
+                type: "voucher_refused",
+                code: error.code,
+                message: error.message,
+              }))
+              .map((captureStats): CampaignReportResult => ({
+                campaignId,
+                suppressed: false,
+                rewardedViews: sessions.rewardedViews,
+                completions: sessions.completions,
+                completionRate: sessions.completions / sessions.rewardedViews,
+                averageWatchTimeSeconds: sessions.averageWatchTimeSeconds,
+                questionAccuracy:
+                  questions === null ? null : questions.timesCorrect / questions.timesAsked,
+                pointsSpent: toPoints(spend.grantedPoints),
+                merchantVouchersRedeemed: captureStats.captureCount,
+              }));
           }),
       );
     });

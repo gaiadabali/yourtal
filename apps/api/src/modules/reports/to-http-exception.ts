@@ -1,4 +1,9 @@
-import { BadRequestException, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from "@nestjs/common";
 import type { HttpException } from "@nestjs/common";
 import type { GetCampaignReportError } from "./reports.errors";
 

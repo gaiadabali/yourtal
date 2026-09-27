@@ -21,7 +21,4 @@ export interface VoucherRefusedError {
 }
 
 export type GetCampaignReportError =
-  | CampaignNotFoundError
-  | LedgerRefusedError
-  | VoucherRefusedError
-  | PersistenceFailedError;
+  CampaignNotFoundError | LedgerRefusedError | VoucherRefusedError | PersistenceFailedError;

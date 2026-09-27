@@ -87,7 +87,9 @@ describe("getCampaignReport", () => {
 
   it("suppresses the whole report -- not just one number -- below the F12 cohort floor", async () => {
     const result = await getCampaignReport(
-      fakeRepo({ sessions: { rewardedViews: COHORT_FLOOR - 1, completions: 2, averageWatchTimeSeconds: 10 } }),
+      fakeRepo({
+        sessions: { rewardedViews: COHORT_FLOOR - 1, completions: 2, averageWatchTimeSeconds: 10 },
+      }),
       fakeLedger(),
       fakeVouchers(),
       BUSINESS_ID,
@@ -95,7 +97,11 @@ describe("getCampaignReport", () => {
     );
     expect(result.isOk()).toBe(true);
     const report = result._unsafeUnwrap();
-    expect(report).toStrictEqual({ campaignId: CAMPAIGN_ID, suppressed: true, floor: COHORT_FLOOR });
+    expect(report).toStrictEqual({
+      campaignId: CAMPAIGN_ID,
+      suppressed: true,
+      floor: COHORT_FLOOR,
+    });
   });
 
   it("uses the wider teen floor (20) for a teen-audience campaign", async () => {
@@ -110,7 +116,11 @@ describe("getCampaignReport", () => {
       CAMPAIGN_ID,
     );
     const report = result._unsafeUnwrap();
-    expect(report).toStrictEqual({ campaignId: CAMPAIGN_ID, suppressed: true, floor: TEEN_COHORT_FLOOR });
+    expect(report).toStrictEqual({
+      campaignId: CAMPAIGN_ID,
+      suppressed: true,
+      floor: TEEN_COHORT_FLOOR,
+    });
   });
 
   it("questionAccuracy is null when no question has been asked yet", async () => {
@@ -135,14 +145,23 @@ describe("getCampaignReport", () => {
       CAMPAIGN_ID,
     );
     expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "campaign_not_found", campaignId: CAMPAIGN_ID });
+    expect(result._unsafeUnwrapErr()).toStrictEqual({
+      type: "campaign_not_found",
+      campaignId: CAMPAIGN_ID,
+    });
   });
 
   it("surfaces a ledger refusal as ledger_refused", async () => {
     const ledger: Pick<LedgerInternalClient, "campaignSpend"> = {
       campaignSpend: () => errAsync({ code: "region_mismatch", message: "wrong region" }),
     };
-    const result = await getCampaignReport(fakeRepo({}), ledger, fakeVouchers(), BUSINESS_ID, CAMPAIGN_ID);
+    const result = await getCampaignReport(
+      fakeRepo({}),
+      ledger,
+      fakeVouchers(),
+      BUSINESS_ID,
+      CAMPAIGN_ID,
+    );
     expect(result._unsafeUnwrapErr()).toStrictEqual({
       type: "ledger_refused",
       code: "region_mismatch",

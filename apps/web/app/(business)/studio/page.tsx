@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
+import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
 import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -53,6 +54,13 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
+      // A fixed, short label — never the business's own (arbitrary-length,
+      // user-supplied) display name: `StudioShell`'s header row is a fixed
+      // 56px strip, and a long name wrapping to multiple lines there
+      // overflows into the content below it. The name is already shown in
+      // the sidebar identity panel, so nothing is lost by not repeating it
+      // here too.
+      header={<PageHeader title="Overview" />}
     >
       <div className="flex flex-col gap-6">
         {!business.isVerified ? (

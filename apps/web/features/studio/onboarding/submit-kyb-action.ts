@@ -12,7 +12,12 @@ import { redirect } from "next/navigation";
  * discarded rather than stored anywhere, matching "everything external is
  * simulated" — there is nowhere real to put encrypted PII bytes yet.
  */
-export function submitKybDocumentAction(formData: FormData): void {
+// Next.js requires every export from a "use server" file to be async, even
+// with nothing to await here — do not "simplify" this back to a plain
+// function (a prior pass did, to satisfy eslint's require-await, and broke
+// the build: "Server Actions must be async functions").
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function submitKybDocumentAction(formData: FormData): Promise<void> {
   const documentType = formData.get("documentType");
   const file = formData.get("document");
   if (typeof documentType !== "string" || !(file instanceof File) || file.size === 0) {

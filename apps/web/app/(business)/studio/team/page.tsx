@@ -1,5 +1,6 @@
 import type { BusinessTeamRole } from "@yourtal/contracts/business/team-role";
 import { getLocale } from "next-intl/server";
+import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
 import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
@@ -41,6 +42,7 @@ export default async function StudioTeamPage(props: PageProps<"/studio/team">) {
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
+      header={<PageHeader title="Team" />}
     >
       {allowed && current.myRole && isTeamManagerRole(current.myRole) ? (
         <TeamScreen

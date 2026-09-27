@@ -1,4 +1,5 @@
 import { getLocale } from "next-intl/server";
+import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
 import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
@@ -41,6 +42,7 @@ export default async function StudioCampaignsPage(props: PageProps<"/studio/camp
         allMemberships={all}
         defaultBusinessId={defaultBusinessId}
         locale={locale}
+        header={<PageHeader title="Campaigns" />}
       >
         <StudioAccessDenied zoneLabel="Campaigns" locale={locale} />
       </StudioChrome>
@@ -55,6 +57,7 @@ export default async function StudioCampaignsPage(props: PageProps<"/studio/camp
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
+      header={<PageHeader title="Campaigns" />}
     >
       <CampaignBuilderScreen
         businessId={current.business.id}

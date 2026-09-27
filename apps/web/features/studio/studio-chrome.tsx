@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { StudioShell } from "@yourtal/ui/studio-shell";
 import { RegionProvider } from "@/features/region/region-context";
 import type { BusinessMembership } from "./studio-data";
-import type { SupportedLocale } from "./studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
 import { StudioIdentityPanel } from "./studio-identity-panel";
 import { StudioZoneNav } from "./studio-zone-nav";
 import { buildStudioNavItems } from "./studio-zone-items";
@@ -48,6 +48,7 @@ export function StudioChrome({
     ? getVisibleZones(current.myRole, current.business.roles)
     : [];
   const navItems = buildStudioNavItems(visibleZones);
+  const t = getStudioTranslator(locale);
 
   return (
     // The BUSINESS's own region, never the viewer's personal one — a client
@@ -58,7 +59,18 @@ export function StudioChrome({
     <RegionProvider region={current.business.region}>
       <StudioShell
         nav={
-          <>
+          // ONE landmark for the whole sidebar (identity + zone links), not
+          // two competing `<nav>`s — `StudioZoneNav` renders its links as
+          // plain children now. This is the shell's one `nav`-slot child, so
+          // it takes on the same responsive direction the shell's own
+          // container would give a plain fragment (mobile: a scrollable
+          // row; `lg`: a stacked column) — no `display: contents` here,
+          // unlike the (removed) inner wrapper, because `tablet-768.spec.ts`
+          // measures this exact element's box, which `contents` erases.
+          <nav
+            aria-label={t("chrome.zoneNav.ariaLabel")}
+            className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:w-full lg:flex-none lg:flex-col lg:items-stretch lg:gap-3"
+          >
             <StudioIdentityPanel
               current={current}
               allMemberships={allMemberships}
@@ -66,9 +78,9 @@ export function StudioChrome({
               locale={locale}
             />
             <StudioZoneNav items={navItems} businessQuery={businessQuery} />
-          </>
+          </nav>
         }
-        header={header}
+        header={header ? <header className="contents">{header}</header> : undefined}
       >
         {children}
       </StudioShell>

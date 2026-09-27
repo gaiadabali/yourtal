@@ -1,4 +1,5 @@
 import { getLocale } from "next-intl/server";
+import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
 import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
@@ -45,6 +46,7 @@ export default async function StudioReportsPage(props: PageProps<"/studio/report
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
+      header={<PageHeader title="Reports" />}
     >
       {allowed && bundle ? (
         <ReportsScreen

@@ -388,6 +388,16 @@ jobs:
           API_INTERNAL_URL: http://127.0.0.1:26344
         run: pnpm test:e2e:offline
 
+      # F50: packages/media's demo-media.test.ts shells out to ffmpeg/ffprobe
+      # directly (execFileSync) to prove the real transcode pipeline, not a
+      # mock — and this runner has neither binary, so it died with `spawnSync
+      # ffmpeg ENOENT` inside "Every remaining suite" below. Installed via
+      # apt rather than a pinned third-party action: one line, no extra
+      # supply-chain trust, and ubuntu-24.04's own repos carry a current
+      # ffmpeg build (ffprobe ships in the same package).
+      - name: Install ffmpeg (F50)
+        run: sudo apt-get update -y && sudo apt-get install -y ffmpeg
+
       # Everything else, now that Postgres and a live PDP are up. The
       # targeted steps above exist for their SKIP guards and their tee'd
       # logs; this runs every suite they did not.

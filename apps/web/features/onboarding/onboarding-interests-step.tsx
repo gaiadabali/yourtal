@@ -61,11 +61,7 @@ export function OnboardingInterestsStep({
 
   return (
     <Section title={t("heading")} description={t("intro")}>
-      <div
-        className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-        role="group"
-        aria-label={t("heading")}
-      >
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" role="group" aria-label={t("heading")}>
         {ME_INTEREST_CATEGORIES.map((category) => {
           const isSelected = selected.includes(category.id);
           const Icon = category.icon;

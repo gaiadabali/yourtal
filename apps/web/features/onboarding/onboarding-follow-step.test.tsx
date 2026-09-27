@@ -15,7 +15,13 @@ vi.mock("./onboarding-actions", () => ({
 }));
 
 const CANDIDATES = [
-  { id: "biz-1", displayName: "Toko Berkah", handle: "toko-berkah", logoUrl: null, region: "ID" as const },
+  {
+    id: "biz-1",
+    displayName: "Toko Berkah",
+    handle: "toko-berkah",
+    logoUrl: null,
+    region: "ID" as const,
+  },
 ];
 
 function renderWithIntl(ui: React.ReactElement) {
@@ -57,9 +63,7 @@ describe("OnboardingFollowStep", () => {
 
   it("never blocks: continuing with nothing followed still advances", async () => {
     const user = userEvent.setup();
-    renderWithIntl(
-      <OnboardingFollowStep candidates={CANDIDATES} returnTo="/watch/campaign-1" />,
-    );
+    renderWithIntl(<OnboardingFollowStep candidates={CANDIDATES} returnTo="/watch/campaign-1" />);
 
     await user.click(screen.getByRole("button", { name: "Skip for now" }));
 

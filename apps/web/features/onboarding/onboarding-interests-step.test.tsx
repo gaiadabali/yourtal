@@ -27,7 +27,10 @@ describe("OnboardingInterestsStep", () => {
   });
 
   it("saves live on toggle (PUT /api/me/interests, reused from Me) and switches to Continue", async () => {
-    vi.mocked(updateInterestsAction).mockResolvedValue({ ok: true, data: { nodeIds: ["fashion"] } });
+    vi.mocked(updateInterestsAction).mockResolvedValue({
+      ok: true,
+      data: { nodeIds: ["fashion"] },
+    });
     const user = userEvent.setup();
     renderWithIntl(<OnboardingInterestsStep initialNodeIds={[]} returnTo={null} />);
 

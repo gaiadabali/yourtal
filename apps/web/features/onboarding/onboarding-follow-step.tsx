@@ -44,7 +44,9 @@ export function OnboardingFollowStep({ candidates, returnTo }: OnboardingFollowS
       }
       return next;
     });
-    run(() => (isFollowing ? unfollowBusinessAction(businessId) : followBusinessAction(businessId)));
+    run(() =>
+      isFollowing ? unfollowBusinessAction(businessId) : followBusinessAction(businessId),
+    );
   }
 
   function handleContinue() {

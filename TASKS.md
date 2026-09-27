@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/16 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/28 | `░░░░░░░░░░`   4% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/29 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **41/87** | **238/400** | `██████░░░░`  60% |
+| **All** | | | **41/87** | **238/401** | `██████░░░░`  59% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1226,6 +1226,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 11.5.c The completion screen: the earn moment, an **Up next** card that needs a tap (never autoplay), and the funder's own vouchers ("Spend at <brand>", docs/23 §1.0b).
   - [ ] 11.5.d In-app channel pages at `/c/[handle]`: cover, logo, Follow, the channel's campaigns and its vouchers.
   - [ ] 11.5.f (requested by A for 10.4.c) Bind the real `deliveryCoverage` reader in `watch.module.ts`, replacing the `"unknown"` stub (5.1.d); a gap flags the session for review. · needs: 10.4.c
+  - [ ] 11.5.g (left by 5.5.d) In `watch.module.ts`, replace the local `NoopWatchCompletionHook` provider with an import of `WatchCompletionHookModule`, so a completed reward session grants the streak bonus at once instead of waiting for the daily backstop job.
   - [ ] 11.5.e **Check:** a full campaign watched on staging pauses for its questions, then shows the earn moment and Up next.
 - [ ] **11.6 Store and checkout** · needs: 4.7, 7.4 (moved from 6.6)
   - [ ] 11.6.a The store is a shoppable grid with images, filters (category, channel, price) and the balance chip. It shows only the viewer's region and audience (7.4.d).

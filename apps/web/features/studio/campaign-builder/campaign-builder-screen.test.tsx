@@ -19,6 +19,7 @@ function renderScreen(canEdit = true, isVerified = true) {
           merchantName="Kopi Kenangan"
           initialDrafts={drafts}
           canEdit={canEdit}
+          isLiveMode={false}
           isVerified={isVerified}
         />
       </RegionProvider>

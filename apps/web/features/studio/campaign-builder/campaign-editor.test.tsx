@@ -31,6 +31,7 @@ function StatefulEditor({
           onBack={vi.fn()}
           canEdit={canEdit}
           isVerified={isVerified}
+          isLiveMode={false}
         />
       </RegionProvider>
     </StudioIntlProvider>

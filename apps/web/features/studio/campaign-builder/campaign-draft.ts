@@ -28,6 +28,10 @@ export interface CampaignVideoUpload {
   fileName: string | null;
   status: "idle" | "uploading" | "processing" | "ready" | "failed";
   progressPercent: number;
+  /** The real media asset id (7.2), once `initiate` has returned one — `null` until then, and in mock mode always. */
+  assetId?: string | null;
+  /** Set only on a real `failed` status (7.2's `ready` callback, or a client-side upload error) — never shown for the mock simulation, which never fails. */
+  failureReason?: string | null;
 }
 
 export interface CampaignTargeting {

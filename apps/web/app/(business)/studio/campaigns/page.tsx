@@ -1,4 +1,5 @@
 import { getLocale } from "next-intl/server";
+import { dataSourceMode } from "@yourtal/contracts/mock-source";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
 import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
@@ -65,6 +66,7 @@ export default async function StudioCampaignsPage(props: PageProps<"/studio/camp
         initialDrafts={drafts}
         canEdit={canEdit}
         isVerified={current.business.isVerified}
+        isLiveMode={dataSourceMode === "live"}
       />
     </StudioChrome>
   );

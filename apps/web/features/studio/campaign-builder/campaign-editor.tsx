@@ -26,6 +26,7 @@ export interface CampaignEditorProps {
   onBack: () => void;
   canEdit: boolean;
   isVerified: boolean;
+  isLiveMode: boolean;
 }
 
 /**
@@ -57,6 +58,7 @@ export function CampaignEditor({
   onBack,
   canEdit,
   isVerified,
+  isLiveMode,
 }: CampaignEditorProps) {
   const t = useTranslations("studio");
   const [section, setSection] = useState<CampaignEditorSection>("details");
@@ -96,6 +98,13 @@ export function CampaignEditor({
                   video={draft.video}
                   onChange={(video) => onChange({ ...draft, video })}
                   disabled={!editable}
+                  businessId={draft.businessId}
+                  campaignId={draft.id}
+                  // The teaser picker (7.8.b's own still-open bullet) has no
+                  // field on `CampaignDraft` yet; `0` matches the contract's
+                  // own default until that field exists.
+                  teaserStartSeconds={0}
+                  isLiveMode={isLiveMode}
                 />
                 <CampaignEditorChapters
                   chapters={draft.chapters}

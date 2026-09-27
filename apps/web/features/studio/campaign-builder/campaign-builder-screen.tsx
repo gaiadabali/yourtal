@@ -22,6 +22,8 @@ export interface CampaignBuilderScreenProps {
   canEdit: boolean;
   /** Whether the business has passed KYB review — gates the "Submit for review" action (7.3.d, red line 7). */
   isVerified: boolean;
+  /** `YOURTAL_DATA_SOURCE === "live"` — threaded down to `CampaignEditorUpload`, the one leaf that needs to pick between the real upload (7.8.b) and the mock simulation. */
+  isLiveMode: boolean;
 }
 
 /**
@@ -38,6 +40,7 @@ export function CampaignBuilderScreen({
   initialDrafts,
   canEdit,
   isVerified,
+  isLiveMode,
 }: CampaignBuilderScreenProps) {
   const [drafts, setDrafts] = useState<CampaignDraft[]>(initialDrafts);
   const [openDraftId, setOpenDraftId] = useState<string | null>(null);
@@ -62,6 +65,7 @@ export function CampaignBuilderScreen({
         onBack={() => setOpenDraftId(null)}
         canEdit={canEdit}
         isVerified={isVerified}
+        isLiveMode={isLiveMode}
       />
     );
   }

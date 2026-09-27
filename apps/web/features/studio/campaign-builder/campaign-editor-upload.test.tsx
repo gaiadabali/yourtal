@@ -5,8 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StudioIntlProvider } from "../studio-test-i18n";
 import type { CampaignVideoUpload } from "./campaign-draft";
 import { CampaignEditorUpload } from "./campaign-editor-upload";
+import { uploadCampaignVideo } from "./media-upload-client";
 
-function StatefulUpload() {
+vi.mock("./media-upload-client", () => ({ uploadCampaignVideo: vi.fn() }));
+
+function StatefulUpload({ isLiveMode = false }: { isLiveMode?: boolean }) {
   const [video, setVideo] = useState<CampaignVideoUpload>({
     fileName: null,
     status: "idle",
@@ -14,7 +17,14 @@ function StatefulUpload() {
   });
   return (
     <StudioIntlProvider>
-      <CampaignEditorUpload video={video} onChange={setVideo} />
+      <CampaignEditorUpload
+        video={video}
+        onChange={setVideo}
+        businessId="00000000-0000-4000-8000-000000000601"
+        campaignId="00000000-0000-4000-8000-000000000701"
+        teaserStartSeconds={0}
+        isLiveMode={isLiveMode}
+      />
     </StudioIntlProvider>
   );
 }
@@ -53,5 +63,23 @@ describe("CampaignEditorUpload", () => {
       vi.advanceTimersByTime(1_000);
     });
     expect(screen.getByText("Ready")).toBeInTheDocument();
+  });
+
+  it("calls the real upload client instead of simulating when isLiveMode is true", () => {
+    render(<StatefulUpload isLiveMode />);
+    const input = screen.getByLabelText("Video file");
+    const file = new File(["fake video bytes"], "launch.mp4", { type: "video/mp4" });
+    act(() => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+
+    expect(uploadCampaignVideo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        file,
+        businessId: "00000000-0000-4000-8000-000000000601",
+        campaignId: "00000000-0000-4000-8000-000000000701",
+        teaserStartSeconds: 0,
+      }),
+    );
   });
 });

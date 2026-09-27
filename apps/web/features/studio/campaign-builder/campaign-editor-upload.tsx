@@ -4,27 +4,40 @@ import { useEffect, useId, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import type { CampaignVideoUpload } from "./campaign-draft";
+import { uploadCampaignVideo } from "./media-upload-client";
 
 export interface CampaignEditorUploadProps {
   video: CampaignVideoUpload;
   onChange: (video: CampaignVideoUpload) => void;
   disabled?: boolean;
+  businessId: string;
+  campaignId: string;
+  teaserStartSeconds: number;
+  /** `YOURTAL_DATA_SOURCE === "live"`, resolved server-side and threaded down (mock-source's own switch reads `process.env`, which is server-only — a client component cannot resolve it itself). */
+  isLiveMode: boolean;
 }
 
-const PROGRESS_TICK_MS = 200;
-const PROGRESS_STEP_PERCENT = 8;
-const PROCESSING_DELAY_MS = 800;
+const MOCK_PROGRESS_TICK_MS = 200;
+const MOCK_PROGRESS_STEP_PERCENT = 8;
+const MOCK_PROCESSING_DELAY_MS = 800;
 
 /**
- * Upload with progress (docs/tasks/phase-u-ui.md YT-0441). Phase U is
- * mock-only (no real upload endpoint exists), so choosing a file starts a
- * simulated progress climb — idle -> uploading -> processing -> ready —
- * rather than actually transferring bytes anywhere. The interval is
- * cleaned up on unmount and whenever a new file is chosen mid-upload, so
- * switching files never leaves a stray timer bumping a percentage no
- * longer on screen.
+ * Upload with progress (task 7.8.b). Live: a real presigned multipart
+ * upload against 7.2's media pipeline (`media-upload-client.ts`) — every
+ * byte goes browser-to-MinIO directly, this component only orchestrates
+ * it. Mock: the original `setInterval` simulation, kept as-is (no real
+ * upload endpoint to fake against in mock mode, and Phase 6/7's own local
+ * dev defaults to mock).
  */
-export function CampaignEditorUpload({ video, onChange, disabled }: CampaignEditorUploadProps) {
+export function CampaignEditorUpload({
+  video,
+  onChange,
+  disabled,
+  businessId,
+  campaignId,
+  teaserStartSeconds,
+  isLiveMode,
+}: CampaignEditorUploadProps) {
   const t = useTranslations("studio");
   const inputId = useId();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -39,7 +52,7 @@ export function CampaignEditorUpload({ video, onChange, disabled }: CampaignEdit
 
   const progressRef = useRef(0);
 
-  function handleFileChosen(fileName: string) {
+  function handleFileChosenMock(fileName: string) {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
@@ -47,7 +60,7 @@ export function CampaignEditorUpload({ video, onChange, disabled }: CampaignEdit
     onChange({ fileName, status: "uploading", progressPercent: 0 });
 
     intervalRef.current = setInterval(() => {
-      progressRef.current = Math.min(100, progressRef.current + PROGRESS_STEP_PERCENT);
+      progressRef.current = Math.min(100, progressRef.current + MOCK_PROGRESS_STEP_PERCENT);
       if (progressRef.current >= 100) {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -55,12 +68,26 @@ export function CampaignEditorUpload({ video, onChange, disabled }: CampaignEdit
         onChange({ fileName, status: "processing", progressPercent: 100 });
         setTimeout(
           () => onChange({ fileName, status: "ready", progressPercent: 100 }),
-          PROCESSING_DELAY_MS,
+          MOCK_PROCESSING_DELAY_MS,
         );
         return;
       }
       onChange({ fileName, status: "uploading", progressPercent: progressRef.current });
-    }, PROGRESS_TICK_MS);
+    }, MOCK_PROGRESS_TICK_MS);
+  }
+
+  function handleFileChosen(file: File) {
+    if (!isLiveMode) {
+      handleFileChosenMock(file.name);
+      return;
+    }
+    void uploadCampaignVideo({
+      file,
+      businessId,
+      campaignId,
+      teaserStartSeconds,
+      onUpdate: onChange,
+    });
   }
 
   const statusLabel: Record<CampaignVideoUpload["status"], string> = {
@@ -68,7 +95,9 @@ export function CampaignEditorUpload({ video, onChange, disabled }: CampaignEdit
     uploading: t("campaignBuilder.upload.statusUploading", { percent: video.progressPercent }),
     processing: t("campaignBuilder.upload.statusProcessing"),
     ready: t("campaignBuilder.upload.statusReady"),
-    failed: t("campaignBuilder.upload.statusFailed"),
+    failed: video.failureReason
+      ? t("campaignBuilder.upload.statusFailedWithReason", { reason: video.failureReason })
+      : t("campaignBuilder.upload.statusFailed"),
   };
 
   return (
@@ -84,7 +113,7 @@ export function CampaignEditorUpload({ video, onChange, disabled }: CampaignEdit
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) {
-            handleFileChosen(file.name);
+            handleFileChosen(file);
           }
         }}
         className="text-sm font-sans text-fg file:mr-3 file:rounded-md file:border file:border-border file:bg-surface-raised file:px-3 file:py-1.5 file:text-sm file:font-sans file:text-fg"

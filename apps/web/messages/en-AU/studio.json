@@ -81,6 +81,7 @@
       "statusProcessing": "Processing (encoding, moderation scan)…",
       "statusReady": "Ready",
       "statusFailed": "Upload failed — try again",
+      "statusFailedWithReason": "Upload failed: {reason}",
       "videoFileLabel": "Video file",
       "progressAriaLabel": "Video upload progress",
       "reset": "Reset"

@@ -81,6 +81,7 @@
       "statusProcessing": "Memproses (enkoding, pemindaian moderasi)…",
       "statusReady": "Siap",
       "statusFailed": "Unggah gagal — coba lagi",
+      "statusFailedWithReason": "Unggah gagal: {reason}",
       "videoFileLabel": "Berkas video",
       "progressAriaLabel": "Progres unggah video",
       "reset": "Atur ulang"

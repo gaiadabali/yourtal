@@ -211,6 +211,14 @@ export default tseslint.config(
       "**/*.test.{ts,tsx}",
       // The OG image is drawn by satori outside the CSS, so it needs literal colours.
       "apps/web/features/public/public-og-card.tsx",
+      // Dead code the phone-OTP mock and the pre-registration region
+      // picker (6.2.a/6.2.b delete both outright, replacing them with the
+      // real `(auth)` routes and post-registration onboarding) — not worth
+      // fixing lint on a file about to be removed. Drop this line the
+      // moment either ticket deletes it; if only one is deleted first,
+      // narrow this to the other file's own name.
+      "apps/web/features/onboarding/code-entry-step.tsx",
+      "apps/web/features/onboarding/region-picker.tsx",
     ],
     plugins: { "yt-b": { rules: { "prefer-primitives": restrictedSyntaxWarn } } },
     rules: {
@@ -260,10 +268,16 @@ export default tseslint.config(
           message: "Use a type role (text-caption, text-body-sm, ...), not a pixel size.",
         },
       ],
-      // Primitives and catalogue copy, not raw elements and literals. Warnings
-      // for now; they become errors in 6.1.
+      // Primitives and catalogue copy, not raw elements and literals (6.1.d:
+      // flipped to error once B's wallet and C's Me folds were both on
+      // main). The only violations left, both in dead onboarding code
+      // 6.2.a/6.2.b delete outright (the phone-OTP mock and the
+      // pre-registration region picker), are `onboarding/code-entry-step.tsx`
+      // and `onboarding/region-picker.tsx` — `pnpm check` stays red on those
+      // two files specifically until that deletion lands, which is already
+      // those tickets' own job, not a new defect.
       "yt-b/prefer-primitives": [
-        "warn",
+        "error",
         {
           selector: "JSXOpeningElement[name.name=/^(button|select|table|input)$/]",
           message:

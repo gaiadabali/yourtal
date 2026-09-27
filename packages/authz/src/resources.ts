@@ -215,6 +215,17 @@ export const RESOURCE_ACTIONS = {
     "export_data",
     "create_link_code",
   ],
+
+  /**
+   * TASKS.md 7.1.c: accepting a team-by-email invitation. Same "caller IS
+   * the resource" shape as `session`/`me` above — the route names no
+   * `:tenantId` (the invitation's own token is what names the business),
+   * so there is nothing narrower than "a real signed-in identity" for the
+   * PDP to check. The actual authorization is the token itself: valid,
+   * unexpired and unconsumed, checked by the use-case, not the PDP — see
+   * `policies/resource_policies/team_invitation.yaml`.
+   */
+  team_invitation: ["accept"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

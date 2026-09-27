@@ -233,6 +233,34 @@ describe("GET/PUT/DELETE /api/me/follows/:businessId", () => {
   });
 });
 
+describe("GET /api/me/follows/candidates", () => {
+  it("offers only the caller's own region, and never one already followed", async () => {
+    const session = await sessionFor(app, { jurisdiction: "AU" });
+    const auBusinessId = await seedBusiness("AU");
+    const idBusinessId = await seedBusiness("ID");
+    const alreadyFollowedId = await seedBusiness("AU");
+
+    await app.inject({
+      method: "PUT",
+      url: `/api/me/follows/${alreadyFollowedId}`,
+      headers: { cookie: session.cookie },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/me/follows/candidates",
+      headers: { cookie: session.cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const ids = response
+      .json<{ candidates: { id: string }[] }>()
+      .candidates.map((candidate) => candidate.id);
+    expect(ids).toContain(auBusinessId);
+    expect(ids).not.toContain(idBusinessId);
+    expect(ids).not.toContain(alreadyFollowedId);
+  });
+});
+
 describe("GET/PUT/DELETE /api/me/saves/:campaignId", () => {
   it("saves and unsaves a real campaign", async () => {
     const session = await sessionFor(app, { jurisdiction: "AU" });

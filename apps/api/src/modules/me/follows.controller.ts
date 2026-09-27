@@ -68,6 +68,27 @@ export class FollowsController {
     };
   }
 
+  /**
+   * `GET /api/me/follows/candidates` (6.2.b) — up to `limit` businesses in
+   * the caller's own region, minus ones already followed, for the
+   * onboarding "follow 3 channels" step. A stopgap, not the ranked
+   * discovery feed (Phase 11): no personalisation, just a stable,
+   * region-scoped list a new account can pick from.
+   */
+  @Authorize({ kind: "me", action: "view_follows" })
+  @NotValueMoving("A read over public business listings, scoped to the caller's own region.")
+  @Get("candidates")
+  async candidates(@Req() request: FastifyRequest) {
+    const principal = await this.principals.resolve(request);
+    const [region, existing] = await Promise.all([
+      requireRegion(this.profiles, principal.id),
+      this.follows.listForUser(principal.id),
+    ]);
+    const excludeIds = existing.map((follow) => follow.businessId);
+    const candidates = await this.businesses.listCandidates(region, excludeIds, 12);
+    return { candidates };
+  }
+
   @NotValueMoving("Following twice ends in the same followed state as following once.")
   @Authorize({ kind: "me", action: "update_follows" })
   @Put(":businessId")

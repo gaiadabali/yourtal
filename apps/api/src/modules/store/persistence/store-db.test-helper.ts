@@ -92,6 +92,10 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   await db.delete(settlementDecreaseRequests);
   await db.delete(listingLocations);
   await db.delete(listings);
-  await db.delete(counterDevices);
+  // `store.counter_device` (8.1.a) only grants yourtal_app SELECT/INSERT/
+  // UPDATE -- no DELETE (20260927140000_counter_devices.sql) -- so this one
+  // needs the owner connection too, same reason every voucher.* line above
+  // does. Still child-first: it holds a composite FK to merchant_location.
+  await owner.delete(counterDevices);
   await db.delete(merchantLocations);
 }

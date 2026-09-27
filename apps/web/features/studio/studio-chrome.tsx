@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { StudioShell } from "@yourtal/ui/studio-shell";
 import { RegionProvider } from "@/features/region/region-context";
 import type { BusinessMembership } from "./studio-data";
+import type { SupportedLocale } from "./studio-i18n";
 import { StudioIdentityPanel } from "./studio-identity-panel";
 import { StudioZoneNav } from "./studio-zone-nav";
 import { buildStudioNavItems } from "./studio-zone-items";
@@ -11,6 +12,8 @@ export interface StudioChromeProps {
   current: BusinessMembership;
   allMemberships: readonly BusinessMembership[];
   defaultBusinessId: string;
+  /** The signed-in business owner's real display locale — resolved once per page via `getDisplayLocale()` and threaded down to `StudioIdentityPanel`, the one leaf in this subtree that calls `getStudioTranslator`. */
+  locale: SupportedLocale;
   /** A page-level title/actions row, usually `<PageHeader/>` — passed straight to `StudioShell`'s `header` slot. */
   header?: ReactNode;
   children: ReactNode;
@@ -35,6 +38,7 @@ export function StudioChrome({
   current,
   allMemberships,
   defaultBusinessId,
+  locale,
   header,
   children,
 }: StudioChromeProps) {
@@ -59,6 +63,7 @@ export function StudioChrome({
               current={current}
               allMemberships={allMemberships}
               defaultBusinessId={defaultBusinessId}
+              locale={locale}
             />
             <StudioZoneNav items={navItems} businessQuery={businessQuery} />
           </>

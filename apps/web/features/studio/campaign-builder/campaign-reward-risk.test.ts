@@ -1,5 +1,11 @@
+import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
+import enAU from "@/messages/en-AU/studio.json";
 import { assessRewardToDataCost, describeRewardDataCostRatio } from "./campaign-reward-risk";
+
+// A plain, non-React translator for this pure-logic test — see
+// `studio-test-i18n.tsx` for the RTL-render equivalent.
+const t = createTranslator({ locale: "en-AU", messages: { studio: enAU }, namespace: "studio" });
 
 describe("assessRewardToDataCost", () => {
   it("flags a trivially small reward against a long, data-heavy video (the risk register's insulting-ratio case)", () => {
@@ -40,19 +46,19 @@ describe("assessRewardToDataCost", () => {
 describe("describeRewardDataCostRatio", () => {
   it("names the actual ratio in a failing message, not just pass/fail", () => {
     const assessment = assessRewardToDataCost(600, 180, "IDR");
-    const message = describeRewardDataCostRatio(assessment);
+    const message = describeRewardDataCostRatio(assessment, t);
     expect(message).toContain("below the platform's 20x guideline");
   });
 
   it("confirms the guideline is met in a passing message", () => {
     const assessment = assessRewardToDataCost(15_000, 180, "IDR");
-    const message = describeRewardDataCostRatio(assessment);
+    const message = describeRewardDataCostRatio(assessment, t);
     expect(message).toContain("at or above the platform's 20x guideline");
   });
 
   it("says plainly that the ratio isn't available yet, rather than showing a fabricated number", () => {
     const assessment = assessRewardToDataCost(null, 180, "IDR");
-    const message = describeRewardDataCostRatio(assessment);
+    const message = describeRewardDataCostRatio(assessment, t);
     expect(message).toContain("isn't available yet");
   });
 });

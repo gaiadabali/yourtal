@@ -70,17 +70,25 @@ export function assessRewardToDataCost(
   };
 }
 
+/** A translate function shaped like next-intl's `useTranslations("studio")` — passed in rather than imported, so this stays a plain, dependency-free logic module. */
+export type RewardRiskTranslator = (key: string, values?: Record<string, string | number>) => string;
+
 /** Plain-language summary for the builder's risk banner — the ratio itself, not just a pass/fail badge. */
-export function describeRewardDataCostRatio(assessment: RewardDataCostAssessment): string {
+export function describeRewardDataCostRatio(
+  assessment: RewardDataCostAssessment,
+  t: RewardRiskTranslator,
+): string {
   if (assessment.ratio === null) {
-    return "The reward-to-data-cost ratio needs the campaign API's own reward value and isn't available yet.";
+    return t("campaignBuilder.reward.ratioUnavailable");
   }
   if (!Number.isFinite(assessment.ratio)) {
-    return "This campaign has no measurable data cost to compare against.";
+    return t("campaignBuilder.reward.ratioNoDataCost");
   }
   const roundedRatio = Math.round(assessment.ratio * 10) / 10;
-  if (assessment.meetsGuideline) {
-    return `The reward is worth about ${roundedRatio}x the viewer's estimated data cost — at or above the platform's 20x guideline.`;
-  }
-  return `The reward is worth only about ${roundedRatio}x the viewer's estimated data cost — below the platform's 20x guideline. Asking for this much attention for this little reward reads as insulting to the viewer, and risks low completion and poor reviews.`;
+  return t(
+    assessment.meetsGuideline
+      ? "campaignBuilder.reward.ratioMeetsGuideline"
+      : "campaignBuilder.reward.ratioBelowGuideline",
+    { ratio: roundedRatio },
+  );
 }

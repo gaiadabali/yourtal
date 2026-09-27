@@ -1,5 +1,5 @@
 import { Badge } from "@yourtal/ui/badge";
-import { getStudioTranslator } from "./studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
 import type { BusinessMembership } from "./studio-data";
 import { StudioBusinessSwitcher } from "./studio-business-switcher";
 import { ROLE_LABELS } from "./studio-roles";
@@ -9,6 +9,7 @@ export interface StudioIdentityPanelProps {
   /** Every business the signed-in person holds a role at, for the switcher — omitted entirely (not just hidden) when there is only one. */
   allMemberships: readonly BusinessMembership[];
   defaultBusinessId: string;
+  locale: SupportedLocale;
 }
 
 /**
@@ -22,8 +23,9 @@ export function StudioIdentityPanel({
   current,
   allMemberships,
   defaultBusinessId,
+  locale,
 }: StudioIdentityPanelProps) {
-  const t = getStudioTranslator();
+  const t = getStudioTranslator(locale);
   return (
     <div className="flex w-full min-w-0 shrink-0 flex-col gap-2 border-b border-border-subtle pb-3 lg:mb-2">
       <div className="flex min-w-0 flex-col gap-1">

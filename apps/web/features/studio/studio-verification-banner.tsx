@@ -1,7 +1,7 @@
 import { Button } from "@yourtal/ui/button";
 import { NativeSelect } from "@yourtal/ui/native-select";
 import { Card, CardContent } from "@yourtal/ui/card";
-import { getStudioTranslator } from "./studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
 import { submitKybDocumentAction } from "./onboarding/submit-kyb-action";
 
 const KYB_DOCUMENT_TYPE_VALUES = [
@@ -13,6 +13,7 @@ const KYB_DOCUMENT_TYPE_VALUES = [
 
 export interface StudioVerificationBannerProps {
   justSubmitted: boolean;
+  locale: SupportedLocale;
 }
 
 /**
@@ -21,8 +22,8 @@ export interface StudioVerificationBannerProps {
  * submitting a campaign for the same reason, red line 7). Uploading here
  * does not verify the business itself; see `submit-kyb-action.ts` for why.
  */
-export function StudioVerificationBanner({ justSubmitted }: StudioVerificationBannerProps) {
-  const t = getStudioTranslator();
+export function StudioVerificationBanner({ justSubmitted, locale }: StudioVerificationBannerProps) {
+  const t = getStudioTranslator(locale);
   const kybDocumentTypes = KYB_DOCUMENT_TYPE_VALUES.map((value) => ({
     value,
     label: t(`chrome.verification.documentType.${value}`),

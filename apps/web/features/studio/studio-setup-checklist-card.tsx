@@ -1,16 +1,17 @@
 import { Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { ListRow } from "@yourtal/ui/list-row";
-import { getStudioTranslator } from "./studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
 import type { StudioSetupStep } from "./studio-setup-checklist";
 
 export interface StudioSetupChecklistCardProps {
   steps: readonly StudioSetupStep[];
+  locale: SupportedLocale;
 }
 
 /** The overview's empty state (task 7.8.b): channel → buy points → upload → questions → submit, each a link to where it happens. */
-export function StudioSetupChecklistCard({ steps }: StudioSetupChecklistCardProps) {
-  const t = getStudioTranslator();
+export function StudioSetupChecklistCard({ steps, locale }: StudioSetupChecklistCardProps) {
+  const t = getStudioTranslator(locale);
   const doneCount = steps.filter((step) => step.done).length;
 
   return (

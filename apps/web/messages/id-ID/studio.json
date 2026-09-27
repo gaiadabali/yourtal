@@ -34,7 +34,11 @@
       "scoringRuleLabel": "Aturan penilaian",
       "ratioPending": "Rasio belum tersedia",
       "fairTrade": "Sepadan",
-      "rewardTooSmall": "Reward terlalu kecil"
+      "rewardTooSmall": "Reward terlalu kecil",
+      "ratioUnavailable": "Rasio reward terhadap biaya data memerlukan nilai reward dari API kampanye dan belum tersedia.",
+      "ratioNoDataCost": "Kampanye ini tidak memiliki biaya data yang bisa diukur untuk dibandingkan.",
+      "ratioMeetsGuideline": "Reward ini setara dengan sekitar {ratio}x perkiraan biaya data penonton — sudah memenuhi atau melampaui panduan 20x platform.",
+      "ratioBelowGuideline": "Reward ini hanya setara dengan sekitar {ratio}x perkiraan biaya data penonton — di bawah panduan 20x platform. Meminta perhatian sebesar ini untuk reward sekecil ini terasa tidak menghargai penonton, dan berisiko menurunkan tingkat penyelesaian serta ulasan."
     },
     "sections": {
       "navLabel": "Bagian editor kampanye",

@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { getStudioTranslator } from "./studio-i18n";
+import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
 
 export interface StudioAccessDeniedProps {
   zoneLabel: string;
+  locale: SupportedLocale;
 }
 
 /**
@@ -13,8 +14,8 @@ export interface StudioAccessDeniedProps {
  * render) — but rendering the zone's real content here anyway would be
  * worse than no UI at all, exactly the failure mode this ticket calls out.
  */
-export function StudioAccessDenied({ zoneLabel }: StudioAccessDeniedProps) {
-  const t = getStudioTranslator();
+export function StudioAccessDenied({ zoneLabel, locale }: StudioAccessDeniedProps) {
+  const t = getStudioTranslator(locale);
   return (
     <Card>
       <CardHeader>

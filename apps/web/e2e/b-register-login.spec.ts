@@ -161,6 +161,15 @@ test.describe.serial("6.2.a: register, forgot/reset, login, verify — against a
     request,
     context,
   }) => {
+    // Each test gets its own isolated context, so the session `login` set
+    // two tests ago is gone here — sign in again, in THIS test's context,
+    // through the real form rather than reaching for a cookie nothing set.
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(auAccount.email);
+    await page.getByLabel("Password").fill(auAccount.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/home/);
+
     const token = (await context.cookies()).find((c) => c.name === "yt_session")?.value;
     expect(token).toBeTruthy();
 

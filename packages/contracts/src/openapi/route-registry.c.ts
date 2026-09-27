@@ -9,6 +9,15 @@ import {
   provisionDeviceRequestSchema,
   unlockDeviceRequestSchema,
 } from "../device/counter-device";
+import { campaignKindSchema, campaignScoringRuleSchema } from "../campaign/campaign";
+import { audienceSchema } from "../audience/audience";
+import { campaignLifecycleStateSchema } from "../campaign/campaign-lifecycle";
+import { campaignChapterSchema } from "../campaign/campaign-chapter";
+import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
+import { regionSchema } from "../region/region";
+import { questionSchema } from "../question/question";
+import { questionStatusSchema, piiScreenVerdictSchema } from "../question/question-bank";
+import { CURRENCY_CODES } from "../money/currency";
 import {
   FORBIDDEN,
   SERVICE_UNAVAILABLE,
@@ -663,5 +672,374 @@ export const DEVICE_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "The PIN was correct.",
     successSchema: unlockedResponseSchema,
     errors: [VALIDATION_400, DEVICE_UNAUTHORIZED, SERVICE_UNAVAILABLE],
+  },
+];
+
+// --- studio.module.ts's campaign-draft/question-bank/reward-config controllers (TASKS.md 7.3) ---
+
+const CAMPAIGN_ID_PARAM: RoutePathParam = {
+  name: "campaignId",
+  description: "The draft campaign this route acts on, scoped to the tenant's own business.",
+  schema: { type: "string", format: "uuid" },
+};
+
+const STUDIO_CAMPAIGN_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description:
+    "No campaign with this id belongs to this business (studio.errors.ts's campaign_not_found).",
+  documented: true,
+};
+
+const CAMPAIGN_NOT_DRAFT: RouteErrorResponse = {
+  status: 400,
+  description:
+    "This campaign has left draft; an advertiser edits freely only until submission " +
+    "(studio.errors.ts's campaign_not_draft).",
+  documented: true,
+};
+
+const CAMPAIGN_AUTHORING_400: RouteErrorResponse = {
+  status: 400,
+  description:
+    "One of: prohibited_category (category is prohibited in this business's region), " +
+    "audience_must_be_adult (an adult_only category with a non-adult audience), or " +
+    "open_viewing_requires_all_ages (F8: Open Viewing set on anything but an all_ages campaign) " +
+    "-- studio.errors.ts.",
+  documented: true,
+};
+
+const QUESTION_GUARD_400: RouteErrorResponse = {
+  status: 400,
+  description:
+    "The question text reads as a request for personal information (pii_request) or asks the " +
+    "viewer to predict/guess an outcome (prediction_request) -- both red-line refusals, " +
+    "studio.errors.ts.",
+  documented: true,
+};
+
+const REWARD_CONFIG_400: RouteErrorResponse = {
+  status: 400,
+  description:
+    "One of: allocation_not_owned (allocationId is not one of this business's own), " +
+    "allocation_not_partner_funded (only a partner-funded allocation may fund a reward), " +
+    "reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's " +
+    "reward_ceiling_points_per_minute, scaled to this campaign's duration), or " +
+    "accuracy_bonus_too_high (the bonus exceeds 40% of the base reward) -- studio.errors.ts.",
+  documented: true,
+};
+
+const NOT_KYB_VERIFIED: RouteErrorResponse = {
+  status: 403,
+  description:
+    "This business's KYB has not been verified yet -- submission is refused until it is " +
+    "(studio.errors.ts's not_kyb_verified).",
+  documented: true,
+};
+
+const ILLEGAL_TRANSITION: RouteErrorResponse = {
+  status: 400,
+  description:
+    "The requested lifecycle move is not a legal transition from the campaign's current state " +
+    "(studio.errors.ts's illegal_transition; enforced twice over, by the use-case and by " +
+    "campaign.assert_lifecycle_transition()'s own database trigger).",
+  documented: true,
+};
+
+/** The `CampaignDraft` studio's own authoring view returns -- deliberately NOT `campaignSchema` (B's viewer-facing shape); see campaign-draft.repository.ts's own header comment for why. */
+const campaignDraftResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    id: { type: "string", format: "uuid" },
+    businessId: { type: "string", format: "uuid" },
+    region: inlineSchema(regionSchema),
+    kind: inlineSchema(campaignKindSchema),
+    title: { type: "string" },
+    synopsis: { type: "string" },
+    durationSeconds: { type: "integer" },
+    contentCategory: inlineSchema(contentCategorySchema),
+    audience: inlineSchema(audienceSchema),
+    lifecycleState: inlineSchema(campaignLifecycleStateSchema),
+    rejectionReason: { anyOf: [{ type: "string" }, { type: "null" }] },
+    startsAt: { type: "string", format: "date-time" },
+    endsAt: { type: "string", format: "date-time" },
+    openViewing: { type: "boolean" },
+    teaserStartSeconds: { type: "integer" },
+    posterFrameSeconds: { anyOf: [{ type: "integer" }, { type: "null" }] },
+    declaredInterests: { type: "array", items: { type: "string" } },
+    chapters: { type: "array", items: inlineSchema(campaignChapterSchema) },
+    captionsUrl: { anyOf: [{ type: "string", format: "uri" }, { type: "null" }] },
+    posterUrl: { anyOf: [{ type: "string" }, { type: "null" }] },
+    teaserUrl: { anyOf: [{ type: "string" }, { type: "null" }] },
+    hlsUrl: { anyOf: [{ type: "string" }, { type: "null" }] },
+    rewardPoints: { anyOf: [{ type: "integer" }, { type: "null" }] },
+    questionCount: { anyOf: [{ type: "integer" }, { type: "null" }] },
+    scoringRule: { anyOf: [inlineSchema(campaignScoringRuleSchema), { type: "null" }] },
+    publishedAt: { anyOf: [{ type: "string", format: "date-time" }, { type: "null" }] },
+  },
+  required: [
+    "id",
+    "businessId",
+    "region",
+    "kind",
+    "title",
+    "synopsis",
+    "durationSeconds",
+    "contentCategory",
+    "audience",
+    "lifecycleState",
+    "rejectionReason",
+    "startsAt",
+    "endsAt",
+    "openViewing",
+    "teaserStartSeconds",
+    "posterFrameSeconds",
+    "declaredInterests",
+    "chapters",
+    "captionsUrl",
+    "posterUrl",
+    "teaserUrl",
+    "hlsUrl",
+    "rewardPoints",
+    "questionCount",
+    "scoringRule",
+    "publishedAt",
+  ],
+  additionalProperties: false,
+};
+
+/** `set-reward-config.use-case.ts`'s `SetRewardConfigResult` -- the draft, plus 7.3.h's reward value priced in the business's own currency via `quotePurchase` (P_issue). B, the backing rate, never appears here. */
+const setRewardConfigResponseSchema: Record<string, unknown> = {
+  allOf: [
+    campaignDraftResponseSchema,
+    {
+      type: "object",
+      properties: {
+        rewardValueMinor: { type: "integer", minimum: 0 },
+        currency: { type: "string", enum: [...CURRENCY_CODES] },
+      },
+      required: ["rewardValueMinor", "currency"],
+    },
+  ],
+};
+
+/** `question-bank.controller.ts`'s `BankQuestionRecord` -- the full authored `Question` (answer key included; this is the author's own view) plus the bank's moderation/leak-tracking state. */
+const bankQuestionResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    question: inlineSchema(questionSchema),
+    status: inlineSchema(questionStatusSchema),
+    piiScreen: { anyOf: [inlineSchema(piiScreenVerdictSchema), { type: "null" }] },
+    timesAsked: { type: "integer", minimum: 0 },
+    timesCorrect: { type: "integer", minimum: 0 },
+    retiredReason: { anyOf: [{ type: "string" }, { type: "null" }] },
+  },
+  required: ["question", "status", "piiScreen", "timesAsked", "timesCorrect", "retiredReason"],
+  additionalProperties: false,
+};
+
+const createCampaignDraftRequestBodySchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    kind: inlineSchema(campaignKindSchema),
+    title: { type: "string", minLength: 1, maxLength: 140 },
+    synopsis: { type: "string", minLength: 1, maxLength: 500 },
+    durationSeconds: { type: "integer", minimum: 1, maximum: 3 * 60 * 60 },
+    contentCategory: inlineSchema(contentCategorySchema),
+    audience: inlineSchema(audienceSchema),
+    startsAt: { type: "string", format: "date-time" },
+    endsAt: { type: "string", format: "date-time" },
+    openViewing: { type: "boolean", default: false },
+    teaserStartSeconds: { type: "integer", minimum: 0, default: 0 },
+    declaredInterests: { type: "array", items: { type: "string" }, default: [] },
+  },
+  required: [
+    "kind",
+    "title",
+    "synopsis",
+    "durationSeconds",
+    "contentCategory",
+    "audience",
+    "startsAt",
+    "endsAt",
+  ],
+  additionalProperties: false,
+};
+
+/** A patch (`update-campaign-draft.schema.ts`) -- every field optional; `chapters`/`declaredInterests`, when present, replace the whole set. */
+const updateCampaignDraftRequestBodySchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    title: { type: "string", minLength: 1, maxLength: 140 },
+    synopsis: { type: "string", minLength: 1, maxLength: 500 },
+    durationSeconds: { type: "integer", minimum: 1, maximum: 3 * 60 * 60 },
+    contentCategory: inlineSchema(contentCategorySchema),
+    audience: inlineSchema(audienceSchema),
+    startsAt: { type: "string", format: "date-time" },
+    endsAt: { type: "string", format: "date-time" },
+    openViewing: { type: "boolean" },
+    teaserStartSeconds: { type: "integer", minimum: 0 },
+    posterFrameSeconds: { anyOf: [{ type: "integer", minimum: 0 }, { type: "null" }] },
+    declaredInterests: { type: "array", items: { type: "string" } },
+    chapters: { type: "array", items: inlineSchema(campaignChapterSchema) },
+    captionsUrl: { anyOf: [{ type: "string", format: "uri" }, { type: "null" }] },
+  },
+  additionalProperties: false,
+};
+
+const setRewardConfigRequestBodySchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    allocationId: { type: "string", minLength: 1 },
+    rewardPointsPerCompletion: { type: "integer", minimum: 0 },
+    accuracyBonusPoints: { type: "integer", minimum: 0 },
+    maxPointsForCampaign: { type: "integer", minimum: 0 },
+  },
+  required: [
+    "allocationId",
+    "rewardPointsPerCompletion",
+    "accuracyBonusPoints",
+    "maxPointsForCampaign",
+  ],
+  additionalProperties: false,
+};
+
+export const STUDIO_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  // --- campaign-draft.controller.ts ---
+  {
+    method: "post",
+    path: "/api/{tenantId}/studio/campaigns",
+    summary: "Create a campaign draft",
+    tags: ["studio", "campaign"],
+    pathParams: [TENANT_ID_PARAM],
+    requestBody: {
+      description: "The campaign's shape and targeting; media, reward and questions come later.",
+      schema: createCampaignDraftRequestBodySchema,
+    },
+    successStatus: 201,
+    successDescription: 'The new draft, in lifecycleState "draft".',
+    successSchema: campaignDraftResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, CAMPAIGN_AUTHORING_400, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "get",
+    path: "/api/{tenantId}/studio/campaigns",
+    summary: "List this business's campaign drafts",
+    tags: ["studio", "campaign"],
+    pathParams: [TENANT_ID_PARAM],
+    successStatus: 200,
+    successDescription: "Every campaign this business owns, at any lifecycle state.",
+    successSchema: { type: "array", items: campaignDraftResponseSchema },
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "get",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}",
+    summary: "Get one campaign draft",
+    tags: ["studio", "campaign"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM],
+    successStatus: 200,
+    successDescription: "The campaign, in its authoring shape.",
+    successSchema: campaignDraftResponseSchema,
+    errors: [FORBIDDEN, STUDIO_CAMPAIGN_NOT_FOUND, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "patch",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}",
+    summary: "Patch a campaign draft",
+    tags: ["studio", "campaign"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM],
+    requestBody: {
+      description:
+        "Any subset of fields; chapters/declaredInterests, when present, replace the whole set.",
+      schema: updateCampaignDraftRequestBodySchema,
+    },
+    successStatus: 200,
+    successDescription: "The patched draft.",
+    successSchema: campaignDraftResponseSchema,
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      STUDIO_CAMPAIGN_NOT_FOUND,
+      CAMPAIGN_NOT_DRAFT,
+      CAMPAIGN_AUTHORING_400,
+      SERVICE_UNAVAILABLE,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}/submit",
+    summary: "Submit a campaign draft for review",
+    tags: ["studio", "campaign"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM],
+    successStatus: 200,
+    successDescription:
+      'The campaign, now in lifecycleState "in_review" (or later -- see illegal_transition below for a repeat call).',
+    successSchema: campaignDraftResponseSchema,
+    errors: [
+      FORBIDDEN,
+      STUDIO_CAMPAIGN_NOT_FOUND,
+      NOT_KYB_VERIFIED,
+      ILLEGAL_TRANSITION,
+      SERVICE_UNAVAILABLE,
+    ],
+  },
+
+  // --- question-bank.controller.ts ---
+  {
+    method: "get",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}/questions",
+    summary: "List a campaign's question bank",
+    tags: ["studio", "question"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM],
+    successStatus: 200,
+    successDescription: "Every question authored for this campaign, at any status.",
+    successSchema: { type: "array", items: bankQuestionResponseSchema },
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}/questions",
+    summary: "Author a question",
+    tags: ["studio", "question"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM],
+    requestBody: {
+      description:
+        "One of the five question types (questionSchema's discriminated union); id/campaignId " +
+        "are accepted for the union's shape but ignored -- the server assigns the real id and " +
+        "the route's own :campaignId is authoritative.",
+      schema: inlineSchema(questionSchema),
+    },
+    successStatus: 201,
+    successDescription:
+      "The authored question, screened for PII/prediction requests before being stored.",
+    successSchema: bankQuestionResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, QUESTION_GUARD_400, SERVICE_UNAVAILABLE],
+  },
+
+  // --- reward-config.controller.ts ---
+  {
+    method: "put",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}/reward",
+    summary: "Set a campaign's reward and budget configuration",
+    tags: ["studio", "campaign"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM],
+    requestBody: {
+      description:
+        "A full replacement, not a delta -- funderType/the allocation's balance are validated " +
+        "server-side against the ledger, never trusted from the request.",
+      schema: setRewardConfigRequestBodySchema,
+    },
+    successStatus: 200,
+    successDescription:
+      "The draft, plus the reward's value in the business's own currency (7.3.h) -- never B, the backing rate.",
+    successSchema: setRewardConfigResponseSchema,
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      STUDIO_CAMPAIGN_NOT_FOUND,
+      CAMPAIGN_NOT_DRAFT,
+      REWARD_CONFIG_400,
+      SERVICE_UNAVAILABLE,
+    ],
   },
 ];

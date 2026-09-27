@@ -5,6 +5,8 @@ import {
 } from "@yourtal/contracts/campaign/reward-config";
 import { questionsAskedFor } from "@yourtal/contracts/question/bank";
 import type { Points } from "@yourtal/contracts/money";
+import { toPoints } from "@yourtal/contracts/money";
+import type { Currency } from "@yourtal/contracts/money/currency";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import type {
   CampaignDraft,
@@ -25,6 +27,20 @@ export interface SetRewardConfigInput {
   readonly maxPointsForCampaign: Points;
 }
 
+/**
+ * TASKS.md 7.3.h (requested by D/7.8): one completion's reward (base +
+ * bonus), priced in the business's own currency for Studio's risk banner.
+ * `quotePurchase` (P_issue, the points-PACK price every business already
+ * sees when buying points) is what prices this — never `quote`/B, the
+ * redemption-side backing rate that must never reach a browser.
+ */
+export interface RewardValue {
+  readonly rewardValueMinor: number;
+  readonly currency: Currency;
+}
+
+export type SetRewardConfigResult = CampaignDraft & RewardValue;
+
 const REWARD_CEILING_SETTING_KEY = "reward_ceiling_points_per_minute";
 
 /**
@@ -37,22 +53,27 @@ export function setRewardConfig(
   deps: {
     readonly drafts: CampaignDraftRepository;
     readonly rewardConfigs: RewardConfigRepository;
-    readonly ledger: Pick<LedgerInternalClient, "listAllocations" | "getSettings">;
+    readonly ledger: Pick<
+      LedgerInternalClient,
+      "listAllocations" | "getSettings" | "quotePurchase"
+    >;
   },
   input: SetRewardConfigInput,
-): ResultAsync<CampaignDraft, SetRewardConfigError> {
+): ResultAsync<SetRewardConfigResult, SetRewardConfigError> {
   return wrap(deps.drafts.findById(input.businessId, input.campaignId)).andThen((draft) => {
     if (draft === null) {
-      return errAsync<CampaignDraft, SetRewardConfigError>({
+      return errAsync<SetRewardConfigResult, SetRewardConfigError>({
         type: "campaign_not_found",
         campaignId: input.campaignId,
       });
     }
     if (draft.lifecycleState !== "draft") {
-      return errAsync<CampaignDraft, SetRewardConfigError>({ type: "campaign_not_draft" });
+      return errAsync<SetRewardConfigResult, SetRewardConfigError>({ type: "campaign_not_draft" });
     }
     if (exceedsAccuracyBonusRatio(input)) {
-      return errAsync<CampaignDraft, SetRewardConfigError>({ type: "accuracy_bonus_too_high" });
+      return errAsync<SetRewardConfigResult, SetRewardConfigError>({
+        type: "accuracy_bonus_too_high",
+      });
     }
 
     return deps.ledger
@@ -65,13 +86,13 @@ export function setRewardConfig(
       .andThen((allocations) => {
         const allocation = allocations.find((row) => row.allocationId === input.allocationId);
         if (allocation === undefined) {
-          return errAsync<CampaignDraft, SetRewardConfigError>({
+          return errAsync<SetRewardConfigResult, SetRewardConfigError>({
             type: "allocation_not_owned",
             allocationId: input.allocationId,
           });
         }
         if (allocation.funderType !== "partner") {
-          return errAsync<CampaignDraft, SetRewardConfigError>({
+          return errAsync<SetRewardConfigResult, SetRewardConfigError>({
             type: "allocation_not_partner_funded",
             allocationId: input.allocationId,
           });
@@ -82,13 +103,13 @@ export function setRewardConfig(
             (setting) => setting.key === REWARD_CEILING_SETTING_KEY,
           )?.value;
           if (typeof ceiling !== "number") {
-            return errAsync<CampaignDraft, SetRewardConfigError>({
+            return errAsync<SetRewardConfigResult, SetRewardConfigError>({
               type: "persistence_failed",
               cause: `${REWARD_CEILING_SETTING_KEY} setting missing or malformed for region ${draft.region}`,
             });
           }
           if (exceedsRewardCeiling(input, draft.durationSeconds, ceiling)) {
-            return errAsync<CampaignDraft, SetRewardConfigError>({
+            return errAsync<SetRewardConfigResult, SetRewardConfigError>({
               type: "reward_exceeds_ceiling",
               ceilingPoints: ceiling,
             });
@@ -111,14 +132,34 @@ export function setRewardConfig(
                 scoringRule:
                   input.accuracyBonusPoints > 0 ? "base_plus_accuracy_bonus" : "base_only",
               }),
-            ).andThen((updated) =>
-              updated === null
-                ? errAsync<CampaignDraft, SetRewardConfigError>({
-                    type: "campaign_not_found",
-                    campaignId: input.campaignId,
+            )
+              .andThen((updated) =>
+                updated === null
+                  ? errAsync<CampaignDraft, SetRewardConfigError>({
+                      type: "campaign_not_found",
+                      campaignId: input.campaignId,
+                    })
+                  : ResultAsync.fromSafePromise<CampaignDraft, SetRewardConfigError>(
+                      Promise.resolve(updated),
+                    ),
+              )
+              .andThen((updated) =>
+                deps.ledger
+                  .quotePurchase({
+                    points: toPoints(input.rewardPointsPerCompletion + input.accuracyBonusPoints),
+                    region: updated.region,
                   })
-                : ResultAsync.fromSafePromise(Promise.resolve(updated)),
-            ),
+                  .mapErr((error): SetRewardConfigError => ({
+                    type: "ledger_refused",
+                    code: error.code,
+                    message: error.message,
+                  }))
+                  .map((priced): SetRewardConfigResult => ({
+                    ...updated,
+                    rewardValueMinor: priced.totalMinor,
+                    currency: priced.currency,
+                  })),
+              ),
           );
         });
       });

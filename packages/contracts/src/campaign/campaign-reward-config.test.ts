@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { toPoints } from "../money/money";
 import {
   affordableCompletions,
   campaignRewardConfigSchema,
@@ -11,9 +12,9 @@ const baseConfig = {
   campaignId: "11111111-1111-4111-8111-111111111111",
   allocationId: "alloc-1",
   funderType: "partner" as const,
-  maxPointsForCampaign: 10_000,
-  rewardPointsPerCompletion: 100,
-  accuracyBonusPoints: 20,
+  maxPointsForCampaign: toPoints(10_000),
+  rewardPointsPerCompletion: toPoints(100),
+  accuracyBonusPoints: toPoints(20),
 };
 
 describe("campaignRewardConfigSchema", () => {
@@ -23,7 +24,8 @@ describe("campaignRewardConfigSchema", () => {
 
   it("rejects a completion that cannot fit within the campaign ceiling", () => {
     expect(
-      campaignRewardConfigSchema.safeParse({ ...baseConfig, maxPointsForCampaign: 50 }).success,
+      campaignRewardConfigSchema.safeParse({ ...baseConfig, maxPointsForCampaign: toPoints(50) })
+        .success,
     ).toBe(false);
   });
 });
@@ -59,14 +61,20 @@ describe("exceedsRewardCeiling (F14)", () => {
 
 describe("exceedsAccuracyBonusRatio (7.3.c: bonus <= 40% of base)", () => {
   it("allows a bonus at exactly 40%", () => {
-    expect(exceedsAccuracyBonusRatio({ rewardPointsPerCompletion: 100, accuracyBonusPoints: 40 })).toBe(
-      false,
-    );
+    expect(
+      exceedsAccuracyBonusRatio({
+        rewardPointsPerCompletion: toPoints(100),
+        accuracyBonusPoints: toPoints(40),
+      }),
+    ).toBe(false);
   });
 
   it("refuses a bonus above 40%", () => {
-    expect(exceedsAccuracyBonusRatio({ rewardPointsPerCompletion: 100, accuracyBonusPoints: 41 })).toBe(
-      true,
-    );
+    expect(
+      exceedsAccuracyBonusRatio({
+        rewardPointsPerCompletion: toPoints(100),
+        accuracyBonusPoints: toPoints(41),
+      }),
+    ).toBe(true);
   });
 });

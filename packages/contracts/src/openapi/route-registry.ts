@@ -6,7 +6,11 @@ import {
   DEV_CLOCK_ROUTE_DEFINITIONS,
 } from "./route-registry.a";
 import { CAMPAIGN_ROUTE_DEFINITIONS, WATCH_ROUTE_DEFINITIONS } from "./route-registry.b";
-import { BUSINESS_ROUTE_DEFINITIONS, DEVICE_ROUTE_DEFINITIONS } from "./route-registry.c";
+import {
+  BUSINESS_ROUTE_DEFINITIONS,
+  DEVICE_ROUTE_DEFINITIONS,
+  STUDIO_ROUTE_DEFINITIONS,
+} from "./route-registry.c";
 import { STUDIO_MEDIA_ROUTE_DEFINITIONS } from "./route-registry.c-media";
 import { buildPathsFrom, type RouteDefinition } from "./route-registry-shared";
 
@@ -43,6 +47,7 @@ export {
   WATCH_ROUTE_DEFINITIONS,
   BUSINESS_ROUTE_DEFINITIONS,
   DEVICE_ROUTE_DEFINITIONS,
+  STUDIO_ROUTE_DEFINITIONS,
   STUDIO_MEDIA_ROUTE_DEFINITIONS,
 };
 // `export *` is banned (docs/13b section 5) — named re-exports only, and only
@@ -60,6 +65,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...WATCH_ROUTE_DEFINITIONS,
   ...BUSINESS_ROUTE_DEFINITIONS,
   ...DEVICE_ROUTE_DEFINITIONS,
+  ...STUDIO_ROUTE_DEFINITIONS,
   ...STUDIO_MEDIA_ROUTE_DEFINITIONS,
 ];
 

@@ -34,19 +34,19 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | --- | --- | --- | --- | --- | --- |
 | **Phase 0** Reset | A | ✅ done | 8/8 | 46/46 | `██████████` 100% |
 | **Phase 1** Identity, contracts & plumbing | A | ✅ done | 7/7 | 45/45 | `██████████` 100% |
-| **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 28/30 | `█████████░`  93% |
+| **Phase 2** Staging on Helios | A | 🔄 in progress | 4/5 | 29/32 | `█████████░`  91% |
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/57 | `██████████` 100% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 5/6 | 24/26 | `█████████░`  92% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 0/4 | 1/13 | `█░░░░░░░░░`   8% |
 | **Phase 7** Business studio | C | 🔄 in progress | 0/8 | 1/36 | `░░░░░░░░░░`   3% |
-| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
-| **Phase 9** Staff console | C | · not started | 0/5 | 0/16 | `░░░░░░░░░░`   0% |
+| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/16 | `░░░░░░░░░░`   0% |
+| **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/28 | `░░░░░░░░░░`   4% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **40/87** | **235/396** | `██████░░░░`  59% |
+| **All** | | | **40/87** | **236/400** | `██████░░░░`  59% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **7** Business studio | 2026-09-27 | Four agents. A (`yourtal-1`, `phase/7`, db `yourtal_s1`): 7.1 → 7.3 → 7.7. B (`yourtal-p7-b`, `phase/7-b`, db `yourtal_s4b`, web/api 26410/26411, Valkey /9): 7.4 → 7.5. C (`yourtal-p7-c`, `phase/7-c`, db `yourtal_s4c`, 26420/26421, Valkey /10): 7.2. D (`yourtal-p7-d`, `phase/7-d`, db `yourtal_s4d`, 26440/26441, Valkey /12): 7.8. Helpers share slot 1's Cerbos (26315). 7.6 goes to whoever frees up first. Phase 4 ✅ (4.6.g's D16 moved to 8.2.f; branch `phase/4` kept) |
 | 2 | `yourtal-2` | **5** Watch & earn | 2026-09-26 | 5.1–5.4 ✅. Two agents: C (`yourtal-2`, `phase/5-c`, db `yourtal_s2`) 5.6.a ✅ (0693f67), 5.6.b ✅ (real ledger round trip driven and verified). 5.6.c ⛔ staging deployed but its only campaigns share one missing media object (`NoSuchKey`) — signing/auth verified working, content is not. Fixed three chained main regressions surfaced one after another (73767ec TS, 9009b2b TS, 78d90e4 Go — all one root cause, seed/watch.ts funding every campaign; 5.6.d ✅, Integration green again on main). C stopped here: only 5.6.c left, waiting on staging media, not on this session. D (`yourtal-p5-b`, `phase/5-d`, db `yourtal_s5b`) 5.5.b–d. 5.5.b's expiring and followed-channel feeds moved to 10.2.d and 7.3.g. `phase/5` holds one withdrawn rename commit: never merge it |
 | 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Early slice: 6.1 → 6.2, with 6.5 and 6.7 in parallel. Three agents: A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. 6.3, 6.4, 6.6 and 6.8 moved to Phase 11 (11.4–11.7), so this slice is now all of Phase 6. |
-| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-27 | Reopened per F38: finishing 2.4.h (trim `/business/campaigns` bundle; wait for slot 2's `me.controller` fix). Everything else in Phase 2 ✅ |
+| 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-27 | Reopened per F38: 2.4.j (Contracts Go image), 2.4.k (the `/business/campaigns` trim, merged 04bdee0), then the 2.4.h Check; also 2.3.i. Everything else in Phase 2 ✅ |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). Everything left waits on Phase 7 (7.7); slot free, worktree left in place |
 | 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged |
 
@@ -599,7 +599,9 @@ Deploy early. After this phase every merge to `main` goes to staging within minu
   - [x] 2.4.e Valkey 9. — 9.1.2 (pinned digest) in compose, Helios compose and CI (34d40ca); swapped on the shared dev stack and on Helios 2026-09-26; api Redis suites green on 9.
   - [x] 2.4.f pnpm 12, locally and on Helios. — 12.6.0 (the `latest` tag; 12.7.0 is on `next`), ed57c69. pnpm switches itself per worktree from `packageManager`; Helios needs nothing (the release carries `node_modules`). Every YourTal session was told.
   - [ ] 2.4.g Drop the `browserslist` override once serwist 10 ships. — ✂️ cut: moved to 13.7 (F38); serwist 10 is not stable yet.
-  - [ ] 2.4.h **Check:** `pnpm verify` and every workflow green on `main` after each one. — Status 2026-09-26: Quality and Release green; Contracts fixed (8775d9d: stale Go models, and its Go job ran 1.26 against 2.4.c's go 1.27). Still red and not from 2.4: Integration since acbdf73 (`ledger-client.contract.spec.ts`, handed to slot 2) and Performance budget since at least b70bd37 (`/business/campaigns` initial JS 202.9 KB over its 200 KB budget, Area C). — 🔄 slot 4 (F38): trimming `/business/campaigns`; waiting on slot 2's `me.controller` fix.
+  - [ ] 2.4.j Contracts workflow: its "Build and vet the generated Go" step still runs `golang:1.26.8` against 2.4.c's `go 1.27`, so it has failed on every run since ed57c69 (`go.mod requires go >= 1.27`). Pin the Go 1.27.1 image there too.
+  - [x] 2.4.k (F38) Merge slot 4's trim of `/business/campaigns` under its 200 KB initial-JS budget (202.8 → 171.9 KB). — merged 04bdee0; Performance budget's run on it decides 2.4.h.
+  - [ ] 2.4.h **Check:** after 2.4.j and 2.4.k merge, `pnpm verify` and every workflow are green on `main`. A workflow that later work turns red belongs to that work's phase, not to this Check. — Status 2026-09-27: Integration last finished green on 78d90e4, so slot 2's fix is in; Contracts red on 737a58d (2.4.j); Performance budget red on 737a58d, and its run on 04bdee0 (2.4.k) was still going. The earlier note that 8775d9d fixed Contracts was wrong: that run failed too.
   - [x] 2.4.i (found by 2) `Integration` on `main` has been red since at least 8dbeb15, in the `apps/api` suites: `/dev/clock` tests (agent D, 2.3.f) and `store-device-principal-resolver.e2e.test.ts` ("authorize should be allowed"). `pnpm check` skips `apps/api`, so the merge gate never saw it. Make `main` green again and keep it there. — Green again at c9effbe (Integration, Quality, Release all success). Three causes: five real-Cerbos e2e suites hard-coded slot 3's port 26335 (now `PDP_BASE_URL`); `/dev/clock` tests predated 1.5.h's 401 (agent D); the opt-in `checkout.live.test.ts` counted as "skipped" in the default run (now excluded unless `CHECKOUT_LIVE=1`).
 - [x] **2.5 No account without a profile (F31)** · needs: 1.4 — ✅ 2026-09-26 eabe07e
   - [x] 2.5.a Login and session validation refuse a credential with no `identity.user_profile` row (`AsyncPrincipalResolver` must never fall back to the ID placeholder for a real session). — `AsyncPrincipalResolver` checks the profile first and refuses a signed-in principal with none: 401 `no_profile` (eabe07e).
@@ -981,7 +983,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
 
 - [ ] **7.1 Business accounts** · needs: 1.1, 1.3.a, 1.3.b, 1.6 (fake ok) — 🔄 slot 1
   - [ ] 7.1.a Migration: a tax ID kind and value (ABN for AU, NIB or NPWP for ID) and an address (state and postcode for AU, city for ID). Region, currency and handle came in 1.1. `district` is no longer required.
-  - [ ] 7.1.b `modules/business/my-businesses.controller.ts` provides `GET /api/me/businesses`, plus the create-business flow. KYB documents upload through a presigned MinIO URL, so `storageRef` points to a real upload. Review happens in 9.3.
+  - [ ] 7.1.b `modules/business/my-businesses.controller.ts` provides `GET /api/me/businesses`, plus the create-business flow. KYB documents upload through a presigned MinIO URL, so `storageRef` points to a real upload. (Staff review of them is 9.3.a.)
   - [ ] 7.1.c Team invites by **email**: an invitation token, sent through an `InvitationMailer` port in the business module that is bound to 1.6's simulated email driver once 1.6 is merged (never add a driver to `packages/drivers`), and an accept endpoint that sets `joined_at`. Add transfer ownership.
   - [ ] 7.1.d **Check:** an HTTP round trip creates an AU business with an ABN, and an invite is accepted through the inbox.
 - [ ] **7.2 Media pipeline, self-hosted (replaces Cloudflare Stream)** · needs: 1.3 — 🔄 slot 1
@@ -1015,22 +1017,22 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     - the allocation must be one of the business's own (`listAllocations`) with funder type partner.
     
     Publishing snapshots a terms version that includes the bonus.
-  - [ ] 7.3.d Lifecycle `draft → in_review → live → paused → ended`, enforced by `canTransition` and by a database trigger (EW-17). Submitting is refused while the business is not KYB-verified (red line 7) and sends the campaign to moderation (9.2).
+  - [ ] 7.3.d Lifecycle `draft → in_review → live → paused → ended`, enforced by `canTransition` and by a database trigger (EW-17). Submitting is refused while the business is not KYB-verified (red line 7) and sets `in_review`. (The moderation queue that takes it live is 9.2.)
   - [ ] 7.3.f (requested by B for 5.5.b) A pg-boss event (e.g. `campaign.published`) when a campaign transitions to `live`, carrying at least `campaignId`, `businessId` and `region`. `apps/api/src/modules/me`'s notification worker consumes it to notify a business's followers (`me.follow`) — see 5.5.b's own note on what it built without this.
   - [ ] 7.3.g (moved from 5.5.b) Followers hear about it: a job `apps/worker/src/jobs/campaign-published-notify.ts`, like `points-unlocked-notify.ts`, consumes 7.3.f's event and writes a `me.notification` for each `me.follow` of that business in its region.
-  - [ ] 7.3.e **Check:** an HTTP round trip creates a funded campaign at the F12 ceiling, with a question bank, and submits it to `in_review`; one point per minute above the ceiling is refused.
+  - [ ] 7.3.e **Check:** an HTTP round trip creates a funded campaign at the F12 ceiling, with a question bank, and submits it to `in_review` for a business verified by the test fixture, while an unverified one is refused; one point per minute above the ceiling is refused. (Verifying through staff is 9.3.b.)
 - [ ] **7.4 Inventory (vouchers)** · needs: 7.1, 4.9 (fake ok) — 🔄 slot 1
   - [ ] 7.4.a Locations CRUD. Today only the seed creates `store.merchant_location`, so a new business cannot list anything.
   - [ ] 7.4.b Listing CRUD. The supplier declares face value, S (≤ face value), locations, channel, partial-redemption policy, expiry, minimum spend, `contentCategory` and audience.
     - **Remove `priceInPoints` from `create-listing.schema.ts:16,32`** (EM-01). The price is `ledger-client.priceListing`, read-only for the business, and the set-settlement-value use case calls it too.
     - A decrease to S goes through the existing two-person propose/approve flow with no threshold; keep `settlement-decrease.controller` and its tests.
-  - [ ] 7.4.c Stock: `store.listings.stock_remaining` becomes a read-only projection of unallocated vouchers (4.5.a). A voucher batch request goes to staff approval (9.2) and is then minted through 4.5.
+  - [ ] 7.4.c Stock: `store.listings.stock_remaining` becomes a read-only projection of unallocated vouchers (4.5.a). A business requests a voucher batch, which waits for staff approval. (Staff approval, which mints it through 4.5, is 9.2.c.)
   - [ ] 7.4.d Consumer catalogue reads (`GET /api/store/listings[/:id]`) filter by the caller's region (anonymous visitors: the path region) and audience. They return `imageUrl`, category and channel, and filter by category, channel and price.
   - [ ] 7.4.e **Check:** a request carrying `priceInPoints` is rejected; the listing price equals the ledger quote; an ID user never sees an AU listing through list or get.
   - [x] 7.4.f (requested by A, 4.10) A CHECK on `store.listings` that currency is the region's (AUD with AU, IDR with ID). Vouchers, quotes and listing prices are walled in the database; the listing row itself is not. — `listings_currency_matches_region`, applied clean to `yourtal_s4b` (9b989f4)
 - [ ] **7.5 Billing: buy points** · needs: 7.1, 4.4 (fake ok)
   - [ ] 7.5.a `quotePurchase` shows pack prices (F12; P_issue appears only here, never on consumer surfaces). `POST /api/:tenantId/studio/billing/purchases` goes through the simulated payments driver, with the currency always stated (no IDR default), to a ledger purchase. That funds the region reserve and creates the business's allocation, idempotently.
-  - [ ] 7.5.b Balance, per-campaign spend (`campaignSpend`) and remainder (remaining minus active holds). Unused points stay with the business; there are no cash refunds. Statements and their dispute need 10.1, so they moved to 9.6.c.
+  - [ ] 7.5.b Balance, per-campaign spend (`campaignSpend`) and remainder (remaining minus active holds). Unused points stay with the business; there are no cash refunds. Statements and their dispute need 10.1, so they are 10.6.b.
   - [ ] 7.5.c **Check:** a simulated purchase appears as a ledger purchase with its allocation, and a replay does not charge twice.
 - [ ] **7.6 Reports** · needs: 7.3, 5.3, 4.5 (`merchantCaptureStats` is live; captures can come from device mode, 4.5.c, before the 8.2 counter exists)
   - [ ] 7.6.a Per campaign, **aggregates only**, each suppressed below the F12 cohort floor:
@@ -1061,7 +1063,6 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     - campaigns list and builder: upload with real progress, questions, reward within the ceiling, audience and category, schedule, Open Viewing, teaser picker, captions, preview as a viewer;
     - inventory, with pending S-decrease approvals;
     - billing and reports;
-    - redemptions: today's and recent captures per location and device;
     - team, with working dialogs;
     - channel settings: logo, cover and handle.
   - [ ] 7.8.c Copy pass:
@@ -1070,9 +1071,9 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     - all copy in `messages/*/studio.json` (en-AU and id-ID);
     - the Phase 3 lint rules become errors for `features/{console,studio}`;
     - no statistics or promises about redemption, breakage or ROI (red line 5).
-  - [ ] 7.8.d **Check:** on staging a new business goes from sign-up to a submitted, funded campaign using only the Studio UI.
+  - [ ] 7.8.d **Check:** on staging a new business goes from sign-up to a funded campaign that is ready to submit, using only the Studio UI, with the submit button blocked by the verification banner. (Submitting after staff verify it is 9.3.b.)
 
-**Done when:** a business owner can register, set up a channel, buy points (simulated), upload a video, write questions, fund and submit a campaign, list a voucher, see redemptions and read real reports, all in Studio on staging.
+**Done when:** a business owner can register, set up a channel, buy points (simulated), upload a video, write questions, fund a campaign and submit it once verified, list a voucher and request its stock, and read real reports, all in Studio on staging. Staff approvals are Phase 9; counter redemptions are Phase 8.
 
 ## Phase 8 — Voucher engine for clients · Area C · ~5d
 
@@ -1094,7 +1095,8 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
   - [ ] 8.2.c A counter device can never void or refund.
   - [ ] 8.2.d Move the merchant and provisioning copy into `messages/*/merchant.json`, and delete `merchant-copy.ts`, `merchant-error-copy.ts` and `provisioning-copy.ts`. One language per screen, from the device locale, with no bilingual stacking. The lint rules become errors for `features/merchant`.
   - [ ] 8.2.f (moved from 4.6.g) D16 regression tests: the counter's client bundle holds no voucher catalogue, and a hand-made or unsigned `yt_device` cookie is refused by the page and the BFF.
-  - [ ] 8.2.e **Check:** a voucher bought through `POST /api/checkout` (4.7) is redeemed at a counter on staging, and `GET /api/wallet/vouchers` shows it as redeemed.
+  - [ ] 8.2.g (moved from 7.8.b) Studio → Redemptions: today's and recent captures per location and device.
+  - [ ] 8.2.e **Check:** a voucher bought through `POST /api/checkout` (4.7) is redeemed at a counter on staging, `GET /api/wallet/vouchers` shows it as redeemed, and Studio → Redemptions shows the capture against that device.
 - [ ] **8.3 Client SDK and developer page** · needs: 4.5, 4.6 — 🔄 slot 8 (8.3.b only, F27)
   - [ ] 8.3.a Studio → Developers: issue, rotate and revoke merchant HMAC credentials (4.5.d), with a sandbox credential per business. A documentation page covers the signing spec, authorize / capture / void / refund, errors and idempotency.
   - [ ] 8.3.b `packages/sdk-merchant`: a small TypeScript SDK that signs requests and calls authorize / capture / void / refund, with retries and idempotency keys, plus an example script.
@@ -1109,7 +1111,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
     - set `ActionReceiptScanned.MarketingFunded = true`.
   - [ ] 8.4.b **Check:** a simulated snap-app in e2e links an account, earns receipt points, and redeems a voucher, in both regions.
 
-**Done when:** store staff redeem vouchers on a paired device; a brand can integrate authorize and capture from the SDK and docs alone; and a simulated snap-app earns and redeems through the documented APIs.
+**Done when:** store staff redeem vouchers on a paired device and the business sees each capture in Studio; a brand can integrate authorize and capture from the SDK and docs alone; and a simulated snap-app earns and redeems through the documented APIs.
 
 ## Phase 9 — Staff console · Area C · ~5d
 
@@ -1120,10 +1122,11 @@ The internal team runs the economy and the review queues. Today none of it exist
   - [ ] 9.1.b **Check:** a non-staff account gets 403 on `/staff/*`.
 - [ ] **9.2 Moderation queue** · needs: 9.1, 7.3, 7.7
   - [ ] 9.2.a The queue covers campaign creative, question banks (checked for PII and prediction questions), audience and category (confirm or change, per the 1.1.d policy), listings and voucher batches. The simulated automated screen shows as flags. Approve or reject with a reason.
-  - [ ] 9.2.b **Check:** a submitted campaign goes live only after approval and then appears in `GET /api/feed`, and a rejection shows its reason in Studio.
+  - [ ] 9.2.c (moved from 7.4.c) Approving a voucher batch mints it through 4.5 (`approveBatch`), and the listing's stock rises by the batch size.
+  - [ ] 9.2.b **Check:** a submitted campaign goes live only after approval and then appears in `GET /api/feed`, a rejection shows its reason in Studio, and an approved voucher batch raises the listing's stock.
 - [ ] **9.3 Businesses** · needs: 9.1, 7.1
   - [ ] 9.3.a KYB review (approve or reject documents, setting `is_verified`) and business suspension.
-  - [ ] 9.3.b **Check:** approving KYB unblocks submit, and a suspended business's campaigns leave the feed.
+  - [ ] 9.3.b **Check:** approving KYB unblocks submit, so a business made through the Studio UI on staging submits its funded campaign (moved from 7.8.d), and a suspended business's campaigns leave the feed.
 - [ ] **9.4 Users and support** · needs: 9.1, 4.7
   - [ ] 9.4.a Search users and view their ledger history.
   - [ ] 9.4.b Suspend into **escrow** (never zero a balance), and release.
@@ -1165,7 +1168,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 - [ ] **10.4 Risk rules v1** · needs: 4.4, 5.1
   - [ ] 10.4.a A real `RiskGate` replaces `AlwaysAllow` (`engine.go:62`). It checks velocity per user, device and IP; timing plausibility (answers that come too fast); impossible flows; and the daily and monthly caps (F12).
   - [ ] 10.4.b Trust: every tier earns the full terms (F13); the tier sets only the holdback (F12). Tier promotion follows F12. Flags are written to a manual-review queue table (10.5 shows it), and a suspension moves the balance to escrow.
-  - [ ] 10.4.c Delivery-log cross-check (EW-18): a worker job loads the nginx log into `platform.delivery_log`, and `deliveryCoverage(sessionId)` says whether the signed segments served cover the claimed coverage. B's completion (5.3) calls it; a gap flags the session for review and never fails it silently.
+  - [ ] 10.4.c Delivery-log cross-check (EW-18): a worker job loads the nginx log into `platform.delivery_log`, and `deliveryCoverage(sessionId)` says whether the signed segments served cover the claimed coverage. B binds it into completion in 11.5.f; a gap flags the session for review and never fails it silently.
   - [ ] 10.4.d **Check:** a scripted farming account is flagged and its pending points are held, and a tier-0 account's grant unlocks after 72 h.
 
 - [ ] **10.5 Staff review queues (moved from 9.4)** · C · needs: 9.4, 10.1, 10.4
@@ -1359,6 +1362,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
 - 2026-09-27 · B · 5.6 Earning proven: signed manifest URLs (0693f67), real Go ledger round trip, signature check on staging, integration green again after three shared-fixture fixes (73767ec, b4cf86f, 78d90e4) · 78d90e4
+- 2026-09-27 · plan · Approvals and counter work leave Phase 7: batch approval → 9.2.c, submitting a Studio-made campaign after KYB → 9.3.b, the redemptions screen → 8.2.g; Phase 7's Checks stop at what Phase 7 can prove. 2.4.h split into 2.4.j (Contracts still on Go 1.26.8, from 2.4.c) and 2.4.k (merge slot 4's finished trim), with no wait on other phases
 - 2026-09-27 · plan · Every phase now waits only on lower-numbered phases: Phase 6's feed, watch, store and search (6.3, 6.4, 6.6, 6.8) → Phase 11 as 11.4–11.7 (Phase 11 is now "Viewer feed & public site"); 9.6 and 9.4's review queue and dispute resolution → Phase 10 as 10.6 and 10.5 (C tasks); the two notification sources → 7.3.g and 10.2.d, beside their events; 8.2.e buys through the checkout API, not 6.6; 10.4.c's watch-module swap → 11.5.f. Supersedes the line below for 6.8.d, 6.8.e and 9.6.c
 - 2026-09-27 · plan · Subtasks that waited on a later phase moved to that phase: D16 4.6.g → 8.2.f; 5.5.b's followed-channel and expiring notifications → 6.8.d, 6.8.e; 7.5.b's statements and dispute → 9.6.c; 10.3.d's page check → 11.3.c. 7.6 now needs 4.5, not 8.2; 10.2.a reads 1.2.f, not 9.5.d
 - 2026-09-27 · A · Phase 4 done: 4.6 Voucher hardening closes with D16 moved to 8.2.f (the Check passed on main 8c29713; 4.6.h anchoring merged in 845af2b). Phase 10 can start · 845af2b

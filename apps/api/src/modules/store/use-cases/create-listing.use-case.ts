@@ -4,7 +4,7 @@ import type { Listing } from "@yourtal/contracts/listing";
 import type { CreateListingError } from "../store.errors";
 import type { CreateListingInput, ListingRepository } from "../persistence/listing.repository";
 import type { BusinessRegionLookup } from "../persistence/business-region-lookup";
-import { wrapPersistence } from "../wrap-persistence";
+import { wrapPersistence, wrapPricedPersistence } from "../wrap-persistence";
 
 /**
  * Creates a listing, straight to `active` — there is no draft or
@@ -47,7 +47,7 @@ export function createListing(
             locationIds: input.locationIds,
           });
         }
-        return wrapPersistence(
+        return wrapPricedPersistence(
           listings.create(merchantId, {
             ...input,
             region: business.region,

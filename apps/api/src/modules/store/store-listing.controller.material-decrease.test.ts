@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { stubLedgerClient } from "./persistence/test-ledger-stub";
 import type { FastifyRequest } from "fastify";
 import type { Principal } from "@yourtal/authz/principal";
 import { createPdpClient } from "@yourtal/authz/pdp-client";
@@ -21,7 +22,7 @@ import { StoreListingController } from "./store-listing.controller";
  * than `@Authorize`'s `attrsFrom`.
  */
 const db = testStoreDb();
-const repo = new DrizzleListingRepository(db);
+const repo = new DrizzleListingRepository(db, stubLedgerClient(db));
 const revisions = new DrizzleListingPriceRevisionRepository(db);
 const pdp = createPdpClient({ baseUrl: "http://127.0.0.1:26592" });
 
@@ -74,7 +75,6 @@ async function seedListing(settlementValueMinor: number) {
     currency: "IDR" as const,
     faceValueMinor: 100_000,
     settlementValueMinor,
-    priceInPoints: 1_000,
     stockTotal: 5,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",

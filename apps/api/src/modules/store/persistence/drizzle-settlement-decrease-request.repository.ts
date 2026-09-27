@@ -1,6 +1,7 @@
 import type { Currency } from "@yourtal/contracts/money/currency";
 import { and, desc, eq, ne } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
+import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import { applySettlementValueChange } from "./apply-settlement-value-change";
 import { settlementDecreaseRequests } from "./schema/settlement-decrease-request.table";
 import type { SettlementValueChange } from "./listing.repository";
@@ -19,7 +20,10 @@ import type {
 class ApplyFailedAfterClaim extends Error {}
 
 export class DrizzleSettlementDecreaseRequestRepository implements SettlementDecreaseRequestRepository {
-  constructor(private readonly db: AppDb) {}
+  constructor(
+    private readonly db: AppDb,
+    private readonly ledger: Pick<LedgerInternalClient, "priceListing">,
+  ) {}
 
   async findPendingForListing(listingId: string): Promise<SettlementDecreaseRequest | null> {
     const [row] = await this.db
@@ -106,6 +110,7 @@ export class DrizzleSettlementDecreaseRequestRepository implements SettlementDec
 
         const change = await applySettlementValueChange(
           tx,
+          this.ledger,
           merchantId,
           listingId,
           claimed.proposedSettlementValueMinor,

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { stubLedgerClient } from "./test-ledger-stub";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DrizzleListingRepository } from "./drizzle-listing.repository";
 import { clearStoreTables, testStoreDb } from "./store-db.test-helper";
@@ -10,7 +11,7 @@ import type { CreateListingInput } from "./listing.repository";
  * against real Postgres. YT-0130/YT-0131/YT-0132 backend.
  */
 const db = testStoreDb();
-const repo = new DrizzleListingRepository(db);
+const repo = new DrizzleListingRepository(db, stubLedgerClient(db));
 
 beforeAll(async () => {
   await clearStoreTables(db);
@@ -44,7 +45,6 @@ function baseInput(overrides: Partial<CreateListingInput> = {}): CreateListingIn
     currency: "IDR" as const,
     faceValueMinor: 50_000,
     settlementValueMinor: 15_000,
-    priceInPoints: 2_500,
     stockTotal: 10,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
@@ -88,7 +88,10 @@ describe("create + read round trip", () => {
     expect(created.merchantId).toBe(MERCHANT_A);
     expect(created.locations).toHaveLength(1);
     expect(created.locations[0]?.district).toBe("Senopati");
-    expect(created.stockRemaining).toBe(created.stockTotal);
+    // 7.4.c: stock is a live projection of unallocated (`minted`) vouchers,
+    // never a merchant-declared number -- a brand-new listing has minted
+    // none yet, so it starts at zero regardless of stockTotal.
+    expect(created.stockRemaining).toBe(0);
     expect(created.perUserLimit).toBeUndefined();
 
     const found = await repo.findOwnedById(MERCHANT_A, created.id);
@@ -147,7 +150,7 @@ describe("public visibility follows lifecycle_state, not existence", () => {
     await repo.setLifecycleState(MERCHANT_A, created.id, "retired");
 
     expect(await repo.findPublicById(created.id)).toBeNull();
-    const page = await repo.browsePublic({ limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", limit: 100 });
     expect(page.listings.some((listing) => listing.id === created.id)).toBe(false);
   });
 });

@@ -504,6 +504,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Settlement-value audit trail (YT-0130/131/132). No public contract — a merchant reads the result through listingSchema's settlement value, never this row.",
   "store.settlement_decrease_request":
     "Two-person-approval workflow table for a material settlement decrease (YT-0575). No public contract; its state is surfaced through the approval endpoint's own response.",
+  "store.voucher_batch_request":
+    "7.4.c's voucher-batch request row. No public contract -- its response shape is defined only in apps/api's own store module (VoucherBatchRequestRepository), since approval and minting through 4.5 are Phase 9's (9.2.c) and that surface does not exist yet to publish a stable shape for.",
   "voucher.batch":
     "The issuance batch named in voucherSchema's columnsWithNoField.batch_id above — carries the funding record and two-person approval (YT-0141). No public contract of its own for the same reason: a holder has no business knowing which batch minted their voucher.",
   "voucher.code_custody":

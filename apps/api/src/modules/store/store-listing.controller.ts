@@ -61,7 +61,6 @@ export class StoreListingController {
       locationIds: body.locationIds,
       faceValueMinor: body.faceValueMinor,
       settlementValueMinor: body.settlementValueMinor,
-      priceInPoints: body.priceInPoints,
       stockTotal: body.stockTotal,
       transferable: body.transferable,
       partialRedemptionPolicy: body.partialRedemptionPolicy,

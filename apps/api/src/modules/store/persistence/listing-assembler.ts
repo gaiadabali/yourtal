@@ -2,10 +2,14 @@ import { eq } from "drizzle-orm";
 import type { Listing, PublicListing } from "@yourtal/contracts/listing";
 import { listingSchema, publicListingSchema } from "@yourtal/contracts/listing";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
+import { pricePointsByListing, unallocatedStockByListing } from "./listing-live-values";
 import type { listings } from "./schema/listing.table";
 import { listingLocations, merchantLocations } from "./schema/listing.table";
 
 export type ListingRow = typeof listings.$inferSelect;
+
+/** The subset of `AppDb` assembly needs — satisfied by both a live handle and a transaction. */
+type Db = Pick<AppDb, "select" | "execute">;
 
 export class MalformedListingRowError extends Error {
   constructor(readonly listingId: string | undefined) {
@@ -21,13 +25,23 @@ export class MalformedListingRowError extends Error {
  * `DrizzleCampaignRepository.assemble` (YT-0553) makes for `lifecycle_state`
  * vs `campaignSchema.status`.
  *
+ * `priceInPoints` and `stockRemaining` are OVERRIDDEN with live values
+ * (7.4.b, 7.4.c) rather than trusted from the row -- see
+ * `listing-live-values.ts`. `priceOverride`/`stockOverride` let a caller
+ * that already fetched them for a whole page (`assembleListings`,
+ * `assemblePublicListings`) skip the extra per-row query; a single-row
+ * caller (`findOwnedById`, `create`, `updateSettlementValue`) omits them and
+ * this function fetches its own.
+ *
  * Takes the db/tx explicitly so a caller can run it inside the same
  * transaction as a write (`create`, `updateSettlementValue`) instead of
  * racing a second connection against uncommitted rows.
  */
 export async function assembleListing(
-  db: Pick<AppDb, "select">,
+  db: Db,
   row: ListingRow,
+  priceOverride?: number,
+  stockOverride?: number,
 ): Promise<Listing | null> {
   const locationRows = await db
     .select({
@@ -40,6 +54,11 @@ export async function assembleListing(
     .innerJoin(merchantLocations, eq(merchantLocations.id, listingLocations.locationId))
     .where(eq(listingLocations.listingId, row.id));
 
+  const priceInPoints =
+    priceOverride ?? (await pricePointsByListing(db, [row.id])).get(row.id) ?? row.priceInPoints;
+  const stockRemaining =
+    stockOverride ?? (await unallocatedStockByListing(db, [row.id])).get(row.id) ?? 0;
+
   const parsed = listingSchema.safeParse({
     id: row.id,
     merchantId: row.merchantId,
@@ -51,8 +70,8 @@ export async function assembleListing(
     currency: row.currency,
     faceValueMinor: row.faceValueMinor,
     settlementValueMinor: row.settlementValueMinor,
-    priceInPoints: row.priceInPoints,
-    stockRemaining: row.stockRemaining,
+    priceInPoints,
+    stockRemaining,
     stockTotal: row.stockTotal,
     transferable: row.transferable,
     partialRedemptionPolicy: row.partialRedemptionPolicy,
@@ -71,15 +90,21 @@ export async function assembleListing(
 }
 
 /**
- * `assembleListing` over every row. A row that fails to parse THROWS: dropping
- * it silently is how every price rendered NaN with nothing logged. A bad row
- * is a bug to surface, not a listing to hide.
+ * `assembleListing` over every row, with the price/stock lookups batched
+ * ONE query each for the whole page rather than one per row. A row that
+ * fails to parse THROWS: dropping it silently is how every price rendered
+ * NaN with nothing logged. A bad row is a bug to surface, not a listing to
+ * hide.
  */
-export async function assembleListings(
-  db: Pick<AppDb, "select">,
-  rows: readonly ListingRow[],
-): Promise<Listing[]> {
-  const assembled = await Promise.all(rows.map((row) => assembleListing(db, row)));
+export async function assembleListings(db: Db, rows: readonly ListingRow[]): Promise<Listing[]> {
+  const ids = rows.map((row) => row.id);
+  const [prices, stock] = await Promise.all([
+    pricePointsByListing(db, ids),
+    unallocatedStockByListing(db, ids),
+  ]);
+  const assembled = await Promise.all(
+    rows.map((row) => assembleListing(db, row, prices.get(row.id), stock.get(row.id) ?? 0)),
+  );
   return assembled.map((listing, i) => {
     if (listing === null) throw new MalformedListingRowError(rows[i]?.id);
     return listing;
@@ -101,22 +126,31 @@ export async function assembleListings(
  * arithmetic).
  */
 export async function assemblePublicListing(
-  db: Pick<AppDb, "select">,
+  db: Db,
   row: ListingRow,
+  priceOverride?: number,
+  stockOverride?: number,
 ): Promise<PublicListing | null> {
-  const listing = await assembleListing(db, row);
+  const listing = await assembleListing(db, row, priceOverride, stockOverride);
   if (listing === null) return null;
   const { settlementValueMinor: _withheld, ...rest } = listing;
   const parsed = publicListingSchema.safeParse(rest);
   return parsed.success ? parsed.data : null;
 }
 
-/** `assemblePublicListing` over every row; throws on one that fails to parse. */
+/** `assemblePublicListing` over every row, batched the same way `assembleListings` is; throws on a bad row. */
 export async function assemblePublicListings(
-  db: Pick<AppDb, "select">,
+  db: Db,
   rows: readonly ListingRow[],
 ): Promise<PublicListing[]> {
-  const assembled = await Promise.all(rows.map((row) => assemblePublicListing(db, row)));
+  const ids = rows.map((row) => row.id);
+  const [prices, stock] = await Promise.all([
+    pricePointsByListing(db, ids),
+    unallocatedStockByListing(db, ids),
+  ]);
+  const assembled = await Promise.all(
+    rows.map((row) => assemblePublicListing(db, row, prices.get(row.id), stock.get(row.id) ?? 0)),
+  );
   return assembled.map((listing, i) => {
     if (listing === null) throw new MalformedListingRowError(rows[i]?.id);
     return listing;

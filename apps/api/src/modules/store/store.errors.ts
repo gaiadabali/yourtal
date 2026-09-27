@@ -35,6 +35,23 @@ export interface PersistenceFailedError {
   readonly cause: string;
 }
 
+export interface LocationNotFoundError {
+  readonly type: "location_not_found";
+  readonly locationId: string;
+}
+
+/** A location still named by at least one `store.listing_location` row. */
+export interface LocationInUseError {
+  readonly type: "location_in_use";
+  readonly locationId: string;
+}
+
+/** `ledger-client.priceListing` refused -- e.g. the business's region/currency has no rate in force. */
+export interface ListingPricingFailedError {
+  readonly type: "listing_pricing_failed";
+  readonly cause: string;
+}
+
 /** Proposed value is not a decrease at all, or not a MATERIAL one (YT-0575). */
 export interface NotAMaterialDecreaseError {
   readonly type: "not_a_material_decrease";
@@ -65,11 +82,36 @@ export interface ApprovalRefusedError {
 }
 
 export type CreateListingError =
-  InvalidLocationsError | BusinessNotFoundError | PersistenceFailedError;
+  | InvalidLocationsError
+  | BusinessNotFoundError
+  | ListingPricingFailedError
+  | PersistenceFailedError;
 
 export type EditListingError = ListingNotFoundError | PersistenceFailedError;
 
-export type SetSettlementValueError = ListingNotFoundError | PersistenceFailedError;
+export type SetSettlementValueError =
+  ListingNotFoundError | ListingPricingFailedError | PersistenceFailedError;
+
+export type CreateLocationError = BusinessNotFoundError | PersistenceFailedError;
+
+export type EditLocationError = LocationNotFoundError | PersistenceFailedError;
+
+export type ArchiveLocationError =
+  LocationNotFoundError | LocationInUseError | PersistenceFailedError;
+
+export type ListLocationsError = PersistenceFailedError;
+
+export type CreateVoucherBatchRequestError = ListingNotFoundError | PersistenceFailedError;
+
+export interface VoucherBatchRequestNotFoundError {
+  readonly type: "voucher_batch_request_not_found";
+  readonly requestId: string;
+}
+
+export type GetVoucherBatchRequestError =
+  VoucherBatchRequestNotFoundError | PersistenceFailedError;
+
+export type ListVoucherBatchRequestsError = PersistenceFailedError;
 
 export type ProposeSettlementDecreaseError =
   | ListingNotFoundError
@@ -81,6 +123,7 @@ export type ApproveSettlementDecreaseError =
   | ListingNotFoundError
   | SettlementDecreaseRequestNotFoundError
   | ApprovalRefusedError
+  | ListingPricingFailedError
   | PersistenceFailedError;
 
 export type SetListingLifecycleError =

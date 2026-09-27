@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { Listing, PublicListing } from "@yourtal/contracts/listing";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
+import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import { applySettlementValueChange } from "./apply-settlement-value-change";
+import { priceListingPoints } from "./price-listing";
 import { browseConditions, PUBLIC_LIFECYCLE_STATE } from "./browse-listings-conditions";
 import {
   assembleListing,
@@ -30,7 +32,10 @@ import type {
  * keep this file under the 300-line ceiling (docs/13 section 1).
  */
 export class DrizzleListingRepository implements ListingRepository {
-  constructor(private readonly db: AppDb) {}
+  constructor(
+    private readonly db: AppDb,
+    private readonly ledger: Pick<LedgerInternalClient, "priceListing">,
+  ) {}
 
   async locationsBelongToMerchant(
     merchantId: string,
@@ -93,13 +98,22 @@ export class DrizzleListingRepository implements ListingRepository {
   }
 
   async create(merchantId: string, input: CreateListingInput): Promise<Listing> {
+    // Generated BEFORE the insert (unlike before) so priceListing has a
+    // listingId to key `ledger.listing_price` on -- see price-listing.ts.
+    const id = randomUUID();
+    const priced = await priceListingPoints(this.ledger, {
+      listingId: id,
+      region: input.region,
+      currency: input.currency,
+      settlementMinor: input.settlementValueMinor,
+    });
+
     return this.db.transaction(async (tx) => {
       const [row] = await tx
         .insert(listings)
         .values({
-          // `listings.id` has no DB-side default (see the schema file) --
-          // generated here rather than at the migration's discretion.
-          id: randomUUID(),
+          // `listings.id` has no DB-side default (see the schema file).
+          id,
           merchantId,
           merchantName: input.merchantName,
           title: input.title,
@@ -108,8 +122,12 @@ export class DrizzleListingRepository implements ListingRepository {
           currency: input.currency,
           faceValueMinor: input.faceValueMinor,
           settlementValueMinor: input.settlementValueMinor,
-          priceInPoints: input.priceInPoints,
-          stockRemaining: input.stockTotal,
+          // The ledger's answer, not the caller's (7.4.b, EM-01). Kept in
+          // the column as a cache; assembleListing always re-reads the
+          // live `platform.listing_points` view, which is what 4.9.a's
+          // reprice job actually keeps current after a rate change.
+          priceInPoints: priced,
+          stockRemaining: 0,
           stockTotal: input.stockTotal,
           transferable: input.transferable,
           partialRedemptionPolicy: input.partialRedemptionPolicy,
@@ -134,7 +152,10 @@ export class DrizzleListingRepository implements ListingRepository {
         .insert(listingLocations)
         .values(input.locationIds.map((locationId) => ({ listingId: row.id, locationId })));
 
-      const listing = await assembleListing(tx, row);
+      // Both overrides supplied directly: `priced` already came from this
+      // same `priceListing` call, and a brand-new listing has minted no
+      // vouchers yet, so there is nothing unallocated to count.
+      const listing = await assembleListing(tx, row, priced, 0);
       if (listing === null) {
         throw new Error("newly created listing failed to round-trip through listingSchema");
       }
@@ -152,7 +173,6 @@ export class DrizzleListingRepository implements ListingRepository {
     if (patch.description !== undefined) values.description = patch.description;
     if (patch.category !== undefined) values.category = patch.category;
     if (patch.stockTotal !== undefined) values.stockTotal = patch.stockTotal;
-    if (patch.stockRemaining !== undefined) values.stockRemaining = patch.stockRemaining;
     if (patch.transferable !== undefined) values.transferable = patch.transferable;
     if (patch.partialRedemptionPolicy !== undefined) {
       values.partialRedemptionPolicy = patch.partialRedemptionPolicy;
@@ -190,6 +210,7 @@ export class DrizzleListingRepository implements ListingRepository {
     return this.db.transaction((tx) =>
       applySettlementValueChange(
         tx,
+        this.ledger,
         merchantId,
         listingId,
         newSettlementValueMinor,

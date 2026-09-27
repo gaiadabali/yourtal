@@ -1,17 +1,13 @@
 import { errAsync, ResultAsync } from "neverthrow";
 import type { SetSettlementValueError } from "../store.errors";
 import type { ListingRepository, SettlementValueChange } from "../persistence/listing.repository";
-import { wrapPersistence } from "../wrap-persistence";
+import { wrapPricedPersistence } from "../wrap-persistence";
 
 /**
- * Reprices a listing's settlement value `S` (docs/17 section 2.1). The
- * points price is deliberately NOT recomputed here — `yourtal_app` has no
- * grant on the `ledger` schema at all (`REVOKE ALL ON SCHEMA ledger FROM
- * yourtal_app`, infra/postgres/init/01-schemas.sql), and `points_price = S /
- * B` needs the ledger's backing rate `B`. `store.listings.price_in_points`
- * is left exactly as it was; `store.listing_price_revision` records that a
- * reprice happened and is awaiting the ledger's pricing engine to close it —
- * see this module's migration for the seam this leaves for that work.
+ * Reprices a listing's settlement value `S` (docs/17 section 2.1). Since
+ * 7.4.b, `store.listings.price_in_points` and `store.listing_price_revision`
+ * are both updated with the ledger's real answer -- see
+ * `apply-settlement-value-change.ts`, which `updateSettlementValue` calls.
  */
 export function setSettlementValue(
   listings: ListingRepository,
@@ -21,7 +17,7 @@ export function setSettlementValue(
   requestedBy: string,
   reason: string,
 ): ResultAsync<SettlementValueChange, SetSettlementValueError> {
-  return wrapPersistence(
+  return wrapPricedPersistence(
     listings.updateSettlementValue(
       merchantId,
       listingId,

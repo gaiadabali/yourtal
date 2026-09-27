@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { listingCategorySchema } from "@yourtal/contracts/listing";
+import { regionSchema } from "@yourtal/contracts/region";
 import type { BrowseListingsFilter } from "../persistence/listing.repository";
 
 /**
@@ -9,11 +10,17 @@ import type { BrowseListingsFilter } from "../persistence/listing.repository";
  * independent filters instead of one `limit`, and a malformed value should
  * be rejected (400) rather than silently substituted, since a caller
  * filtering by `minPoints=-5` almost certainly has a bug worth surfacing.
+ *
+ * `region` is REQUIRED, no default (7.4.d, F2) — this route has no
+ * `:tenantId` and no session to read a region from, so the caller (the web
+ * app) must state "the path region" itself. `DEFAULT_REGION = "ID"`
+ * (docs/audit) is exactly the silent-default failure mode this refuses.
  */
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
 export const browseListingsQuerySchema = z.object({
+  region: regionSchema,
   category: listingCategorySchema.optional(),
   merchantId: z.uuid().optional(),
   district: z.string().min(1).max(60).optional(),
@@ -28,6 +35,7 @@ export type BrowseListingsQuery = z.infer<typeof browseListingsQuerySchema>;
 
 export function toBrowseFilter(query: BrowseListingsQuery): BrowseListingsFilter {
   return {
+    region: query.region,
     category: query.category,
     merchantId: query.merchantId,
     district: query.district,

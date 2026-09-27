@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, Param, Query } from "@nestjs/common";
 import { NotFoundException } from "@nestjs/common";
+import { regionSchema } from "@yourtal/contracts/region";
 import { PublicRoute } from "../../shared/authz/authorize.decorator";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { browseListingsQuerySchema, toBrowseFilter } from "./dto/browse-listings-query";
@@ -8,10 +9,18 @@ import type { ListingRepository } from "./persistence/listing.repository";
 import { browseListings } from "./use-cases/browse-listings.use-case";
 import { getListing } from "./use-cases/get-listing.use-case";
 
+/** 7.4.d/F2: no signed-in caller to read an age band from here -- see `browse-listings-conditions.ts`. */
+const ANONYMOUS_AUDIENCE = "all_ages";
+
 /**
  * The public catalogue: Store browse and offer detail
  * (`apps/web/features/store`, `apps/web/features/burn`). No `:tenantId` — a
- * customer browses across every merchant.
+ * customer browses across every merchant, but every read is still
+ * region-walled (F2) by a REQUIRED `region` query param -- "the path
+ * region" (TASKS.md 7.4.d): this route has no session to read a viewer's own
+ * region from, so the caller (the web app, itself on an AU- or ID-scoped
+ * path) states it explicitly. Never defaulted -- `DEFAULT_REGION = "ID"`
+ * (docs/audit) is exactly the failure mode a silent default would repeat.
  *
  * `@PublicRoute` rather than `@Authorize`: this is exactly the "public
  * catalogue page" `authorize.decorator.ts` names as the intended use of that
@@ -45,12 +54,14 @@ export class StoreCatalogueController {
   @PublicRoute("Offer detail is the same public catalogue surface as browse, one listing.")
   @NotValueMoving("A read.")
   @Get(":listingId")
-  async get(@Param("listingId") listingId: string) {
+  async get(@Param("listingId") listingId: string, @Query("region") regionParam: string) {
+    const region = regionSchema.parse(regionParam);
     const result = await getListing(this.listings, listingId);
-    if (result.isErr()) {
-      // 404 whether the listing does not exist or is not active, deliberately
-      // -- same reasoning as `CampaignController.get`: distinguishing them
-      // discloses that a paused/retired listing exists.
+    // 404 for "does not exist", "not active", "wrong region" and "wrong
+    // audience" alike, deliberately -- same reasoning as
+    // `CampaignController.get`: distinguishing them discloses that a
+    // listing outside this caller's region or audience exists at all.
+    if (result.isErr() || result.value.region !== region || result.value.audience !== ANONYMOUS_AUDIENCE) {
       throw new NotFoundException("No such listing.");
     }
     return result.value;

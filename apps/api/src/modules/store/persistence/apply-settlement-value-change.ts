@@ -1,12 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
+import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import { assembleListing } from "./listing-assembler";
+import { priceListingPoints } from "./price-listing";
 import { listingPriceRevisions } from "./schema/listing-price-revision.table";
 import { listings } from "./schema/listing.table";
 import type { SettlementValueChange } from "./listing.repository";
 
 /** The subset of `AppDb` this needs — satisfied by both a live handle and a transaction. */
-type Db = Pick<AppDb, "select" | "update" | "insert">;
+type Db = Pick<AppDb, "select" | "update" | "insert" | "execute">;
 
 /**
  * The one place `store.listings.settlement_value_minor` is written and its
@@ -29,9 +31,16 @@ type Db = Pick<AppDb, "select" | "update" | "insert">;
  *
  * Returns `null` if `listingId` does not belong to `merchantId` — the same
  * "not found" sentinel `updateSettlementValue` always returned, now shared.
+ *
+ * `ledger` reprices the listing at its NEW settlement value (7.4.b) --
+ * `priceListingPoints` can throw `ListingPricingError`, which propagates out
+ * of this transaction (rolling it back) rather than committing a settlement
+ * value with no matching price, and is turned into `listing_pricing_failed`
+ * by the use-case layer's wrap.
  */
 export async function applySettlementValueChange(
   db: Db,
+  ledger: Pick<LedgerInternalClient, "priceListing">,
   merchantId: string,
   listingId: string,
   newSettlementValueMinor: number,
@@ -49,11 +58,16 @@ export async function applySettlementValueChange(
   const previous = await assembleListing(db, existing);
   if (previous === null) return null;
 
-  // price_in_points is deliberately untouched -- see this module's
-  // migration header. Only settlement_value_minor moves here.
+  const newPriceInPoints = await priceListingPoints(ledger, {
+    listingId,
+    region: previous.region,
+    currency: previous.currency,
+    settlementMinor: newSettlementValueMinor,
+  });
+
   const [updatedRow] = await db
     .update(listings)
-    .set({ settlementValueMinor: newSettlementValueMinor })
+    .set({ settlementValueMinor: newSettlementValueMinor, priceInPoints: newPriceInPoints })
     .where(and(eq(listings.id, listingId), eq(listings.merchantId, merchantId)))
     .returning();
   if (updatedRow === undefined) return null;
@@ -67,7 +81,7 @@ export async function applySettlementValueChange(
     previousSettlementValueMinor: existing.settlementValueMinor,
     newSettlementValueMinor,
     previousPriceInPoints: existing.priceInPoints,
-    newPriceInPoints: null,
+    newPriceInPoints,
     requestedBy,
     reason,
     settlementDecreaseRequestId,

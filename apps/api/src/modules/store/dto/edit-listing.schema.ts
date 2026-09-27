@@ -12,13 +12,16 @@ import { minorUnitsSchema } from "@yourtal/contracts/money";
  * `settlementValueMinor` or `priceInPoints` — repricing goes through
  * `set-settlement-value.schema.ts` only, so the one action that must be
  * audit-logged (docs/17 section 2.1) cannot be reached by a plain edit.
+ *
+ * `stockRemaining` is gone too (7.4.c): it is now a read-only projection of
+ * unallocated vouchers (`state = 'minted'`), never a merchant-editable
+ * number. `stockTotal` stays -- the merchant's own declared cap.
  */
 export const editListingSchema = z.object({
   title: z.string().min(1).max(140).optional(),
   description: z.string().min(1).max(500).optional(),
   category: listingCategorySchema.optional(),
   stockTotal: z.number().int().positive().optional(),
-  stockRemaining: z.number().int().min(0).optional(),
   transferable: z.boolean().optional(),
   partialRedemptionPolicy: partialRedemptionPolicySchema.optional(),
   minimumSpendMinor: minorUnitsSchema.nullable().optional(),

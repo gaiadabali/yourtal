@@ -29,7 +29,6 @@ export interface CreateListingInput {
   readonly currency: Currency;
   readonly faceValueMinor: number;
   readonly settlementValueMinor: number;
-  readonly priceInPoints: number;
   readonly stockTotal: number;
   readonly transferable: boolean;
   readonly partialRedemptionPolicy: PartialRedemptionPolicy;
@@ -59,7 +58,6 @@ export interface EditListingInput {
   readonly description?: string | undefined;
   readonly category?: ListingCategory | undefined;
   readonly stockTotal?: number | undefined;
-  readonly stockRemaining?: number | undefined;
   readonly transferable?: boolean | undefined;
   readonly partialRedemptionPolicy?: PartialRedemptionPolicy | undefined;
   readonly minimumSpendMinor?: number | null | undefined;
@@ -69,6 +67,8 @@ export interface EditListingInput {
 }
 
 export interface BrowseListingsFilter {
+  /** 7.4.d/F2: never optional -- an anonymous caller states it (the web app's own path region). */
+  readonly region: Region;
   readonly category?: ListingCategory | undefined;
   readonly merchantId?: string | undefined;
   readonly district?: string | undefined;

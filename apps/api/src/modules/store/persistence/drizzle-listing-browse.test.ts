@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { stubLedgerClient } from "./test-ledger-stub";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DrizzleListingRepository } from "./drizzle-listing.repository";
 import { clearStoreTables, testStoreDb } from "./store-db.test-helper";
@@ -7,7 +8,7 @@ import type { CreateListingInput } from "./listing.repository";
 
 /** Filtering by category, merchant, price band and district; full-text search; cursor paging. */
 const db = testStoreDb();
-const repo = new DrizzleListingRepository(db);
+const repo = new DrizzleListingRepository(db, stubLedgerClient(db));
 
 const MERCHANT_COFFEE = "00000000-0000-4000-8000-0000000d0001";
 const MERCHANT_RETAIL = "00000000-0000-4000-8000-0000000d0002";
@@ -36,7 +37,6 @@ async function seededListing(
     currency: "IDR" as const,
     faceValueMinor: 10_000,
     settlementValueMinor: 3_000,
-    priceInPoints: 500,
     stockTotal: 10,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
@@ -59,7 +59,7 @@ describe("browsePublic filters", () => {
     const coffee = await seededListing(MERCHANT_COFFEE, { category: "food_beverage" });
     const retail = await seededListing(MERCHANT_RETAIL, { category: "retail" });
 
-    const page = await repo.browsePublic({ category: "retail", limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", category: "retail", limit: 100 });
     const ids = page.listings.map((listing) => listing.id);
     expect(ids).toContain(retail.id);
     expect(ids).not.toContain(coffee.id);
@@ -67,16 +67,25 @@ describe("browsePublic filters", () => {
 
   it("filters by merchant", async () => {
     const mine = await seededListing(MERCHANT_COFFEE, { category: "digital_goods" });
-    const page = await repo.browsePublic({ merchantId: MERCHANT_COFFEE, limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", merchantId: MERCHANT_COFFEE, limit: 100 });
     expect(page.listings.every((listing) => listing.merchantId === MERCHANT_COFFEE)).toBe(true);
     expect(page.listings.some((listing) => listing.id === mine.id)).toBe(true);
   });
 
   it("filters by a price band (minPoints/maxPoints)", async () => {
-    const cheap = await seededListing(MERCHANT_COFFEE, { priceInPoints: 100 });
-    const pricey = await seededListing(MERCHANT_COFFEE, { priceInPoints: 9_000 });
+    // The real FakeLedgerClient's F1 ID rate: priceInPoints = ceil(settlementMinor / 6).
+    const cheap = await seededListing(MERCHANT_COFFEE, { settlementValueMinor: 100 }); // 17 pts
+    const pricey = await seededListing(MERCHANT_COFFEE, {
+      faceValueMinor: 50_000,
+      settlementValueMinor: 45_000, // 7,500 pts
+    });
 
-    const page = await repo.browsePublic({ minPoints: 5_000, maxPoints: 10_000, limit: 100 });
+    const page = await repo.browsePublic({
+      region: "ID",
+      minPoints: 5_000,
+      maxPoints: 10_000,
+      limit: 100,
+    });
     const ids = page.listings.map((listing) => listing.id);
     expect(ids).toContain(pricey.id);
     expect(ids).not.toContain(cheap.id);
@@ -86,7 +95,7 @@ describe("browsePublic filters", () => {
     const senopati = await seededListing(MERCHANT_RETAIL, { district: "Senopati" });
     const kemang = await seededListing(MERCHANT_RETAIL, { district: "Kemang" });
 
-    const page = await repo.browsePublic({ district: "Senopati", limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", district: "Senopati", limit: 100 });
     const ids = page.listings.map((listing) => listing.id);
     expect(ids).toContain(senopati.id);
     expect(ids).not.toContain(kemang.id);
@@ -102,7 +111,7 @@ describe("browsePublic filters", () => {
       description: "Diskon untuk pembelian gadget.",
     });
 
-    const page = await repo.browsePublic({ search: "Kopi", limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", search: "Kopi", limit: 100 });
     const ids = page.listings.map((listing) => listing.id);
     expect(ids).toContain(match.id);
     expect(ids).not.toContain(noMatch.id);
@@ -125,7 +134,7 @@ describe("browsePublic filters", () => {
   it("never exposes settlementValueMinor -- S with priceInPoints publishes B (ID-1)", async () => {
     await seededListing(MERCHANT_COFFEE, { title: "Rate leak probe" });
 
-    const page = await repo.browsePublic({ limit: 100 });
+    const page = await repo.browsePublic({ region: "ID", limit: 100 });
     expect(page.listings.length).toBeGreaterThan(0);
     for (const listing of page.listings) {
       expect(listing).not.toHaveProperty("settlementValueMinor");
@@ -137,12 +146,13 @@ describe("browsePublic filters", () => {
       await seededListing(MERCHANT_RETAIL, { title: `Cursor Listing ${String(index)}` });
     }
 
-    const firstPage = await repo.browsePublic({ merchantId: MERCHANT_RETAIL, limit: 1 });
+    const firstPage = await repo.browsePublic({ region: "ID", merchantId: MERCHANT_RETAIL, limit: 1 });
     expect(firstPage.listings).toHaveLength(1);
     expect(firstPage.hasMore).toBe(true);
 
     const cursor = firstPage.listings[0]?.id;
     const secondPage = await repo.browsePublic({
+      region: "ID",
       merchantId: MERCHANT_RETAIL,
       limit: 1,
       startingAfter: cursor,

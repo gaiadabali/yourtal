@@ -2,7 +2,7 @@ import { errAsync, ResultAsync } from "neverthrow";
 import type { ApproveSettlementDecreaseError } from "../store.errors";
 import type { ListingRepository, SettlementValueChange } from "../persistence/listing.repository";
 import type { SettlementDecreaseRequestRepository } from "../persistence/settlement-decrease-request.repository";
-import { wrapPersistence } from "../wrap-persistence";
+import { wrapPersistence, wrapPricedPersistence } from "../wrap-persistence";
 
 /**
  * Approves a pending settlement-decrease request, applying its value change
@@ -32,7 +32,7 @@ export function approveSettlementDecrease(
         listingId,
       });
     }
-    return wrapPersistence(requests.approve(merchantId, listingId, requestId, approverId)).andThen(
+    return wrapPricedPersistence(requests.approve(merchantId, listingId, requestId, approverId)).andThen(
       (change) => {
         if (change === null) {
           return errAsync<SettlementValueChange, ApproveSettlementDecreaseError>({

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { stubLedgerClient } from "../persistence/test-ledger-stub";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DrizzleListingRepository } from "../persistence/drizzle-listing.repository";
 import { DrizzleSettlementDecreaseRequestRepository } from "../persistence/drizzle-settlement-decrease-request.repository";
@@ -21,8 +22,8 @@ import { setSettlementValue } from "./set-settlement-value.use-case";
  * `merchant_location`, which is the constraint that matters.
  */
 const db = testStoreDb();
-const repo = new DrizzleListingRepository(db);
-const decreaseRequests = new DrizzleSettlementDecreaseRequestRepository(db);
+const repo = new DrizzleListingRepository(db, stubLedgerClient(db));
+const decreaseRequests = new DrizzleSettlementDecreaseRequestRepository(db, stubLedgerClient(db));
 const MERCHANT = "00000000-0000-4000-8000-0000000e0001";
 
 /** A fixed ID business — this suite is about location and lifecycle errors, not the lookup itself. */
@@ -55,7 +56,6 @@ async function seedListing() {
     locationIds: [location.id],
     faceValueMinor: 10_000,
     settlementValueMinor: 3_000,
-    priceInPoints: 500,
     stockTotal: 5,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
@@ -83,7 +83,6 @@ describe("createListing", () => {
       locationIds: [randomUUID()],
       faceValueMinor: 1,
       settlementValueMinor: 1,
-      priceInPoints: 1,
       stockTotal: 1,
       transferable: false,
       partialRedemptionPolicy: "single_use_forfeit",

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { stubLedgerClient } from "./test-ledger-stub";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DrizzleListingRepository } from "./drizzle-listing.repository";
 import { DrizzleListingPriceRevisionRepository } from "./drizzle-listing-price-revision.repository";
@@ -15,9 +16,9 @@ import { merchantLocations } from "./schema/listing.table";
  * -- it is the sabotage proof for the ticket's central claim.
  */
 const db = testStoreDb();
-const listings = new DrizzleListingRepository(db);
+const listings = new DrizzleListingRepository(db, stubLedgerClient(db));
 const priceRevisions = new DrizzleListingPriceRevisionRepository(db);
-const requests = new DrizzleSettlementDecreaseRequestRepository(db);
+const requests = new DrizzleSettlementDecreaseRequestRepository(db, stubLedgerClient(db));
 
 const MERCHANT = "00000000-0000-4000-8000-0000000d0001";
 const REQUESTER = "00000000-0000-4000-8000-0000000d0002";
@@ -49,7 +50,6 @@ async function seedListing(settlementValueMinor: number) {
     currency: "IDR" as const,
     faceValueMinor: 100_000,
     settlementValueMinor,
-    priceInPoints: 1_000,
     stockTotal: 5,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",

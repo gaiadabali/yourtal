@@ -184,6 +184,39 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "POST /api/{tenantId}/store/listings/{listingId}/settlement-decrease-requests/{requestId}/approve":
     "SettlementDecreaseController -- YT-0575, the two-person-approval workflow YT-0574's fix made necessary. Same StoreModule scope as the rest of this ledger's store entries.",
 
+  // StoreLocationController -- TASKS.md 7.4.a, this pass's own ticket. Same
+  // "stand the module up first, transcribe the contract later" reasoning as
+  // every other StoreModule entry above.
+  "POST /api/{tenantId}/store/locations": "StoreModule -- TASKS.md 7.4.a, this pass's own ticket.",
+  "GET /api/{tenantId}/store/locations": "StoreModule -- TASKS.md 7.4.a, this pass's own ticket.",
+  "GET /api/{tenantId}/store/locations/{locationId}":
+    "StoreModule -- TASKS.md 7.4.a, this pass's own ticket.",
+  "PATCH /api/{tenantId}/store/locations/{locationId}":
+    "StoreModule -- TASKS.md 7.4.a, this pass's own ticket.",
+  "DELETE /api/{tenantId}/store/locations/{locationId}":
+    "StoreModule -- TASKS.md 7.4.a, this pass's own ticket.",
+
+  // VoucherBatchRequestController -- TASKS.md 7.4.c. Only the request row;
+  // approval and the mint through 4.5 are 9.2.c (staff console, not built).
+  "POST /api/{tenantId}/store/voucher-batch-requests":
+    "StoreModule -- TASKS.md 7.4.c, this pass's own ticket.",
+  "GET /api/{tenantId}/store/voucher-batch-requests":
+    "StoreModule -- TASKS.md 7.4.c, this pass's own ticket.",
+  "GET /api/{tenantId}/store/voucher-batch-requests/{requestId}":
+    "StoreModule -- TASKS.md 7.4.c, this pass's own ticket.",
+
+  // BillingModule -- TASKS.md 7.5, this pass's own ticket. Statements and
+  // their dispute route needed 10.1 and are now 10.6.b (F40) -- not this
+  // controller at all.
+  "GET /api/{tenantId}/studio/billing/purchases/quote":
+    "BillingModule -- TASKS.md 7.5.a, this pass's own ticket.",
+  "POST /api/{tenantId}/studio/billing/purchases":
+    "BillingModule -- TASKS.md 7.5.a, this pass's own ticket.",
+  "GET /api/{tenantId}/studio/billing/balance":
+    "BillingModule -- TASKS.md 7.5.b, this pass's own ticket.",
+  "GET /api/{tenantId}/studio/billing/campaigns/{campaignId}/spend":
+    "BillingModule -- TASKS.md 7.5.b, this pass's own ticket.",
+
   // AuthModule -- YT-0540. No `:tenantId`, matching create-business's own
   // out-of-scope entry pattern: these are account-level, not business-level.
   // Not given a full route-registry entry for the same reason StoreModule

@@ -8,14 +8,23 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { SettlementDecreaseController } from "./settlement-decrease.controller";
 import { StoreCatalogueController } from "./store-catalogue.controller";
 import { StoreListingController } from "./store-listing.controller";
+import { StoreLocationController } from "./store-location.controller";
+import { VoucherBatchRequestController } from "./voucher-batch-request.controller";
 import { DrizzleListingPriceRevisionRepository } from "./persistence/drizzle-listing-price-revision.repository";
 import { DrizzleListingRepository } from "./persistence/drizzle-listing.repository";
+import { DrizzleLocationRepository } from "./persistence/drizzle-location.repository";
 import { DrizzleSettlementDecreaseRequestRepository } from "./persistence/drizzle-settlement-decrease-request.repository";
+import { DrizzleVoucherBatchRequestRepository } from "./persistence/drizzle-voucher-batch-request.repository";
 import { DrizzleBusinessRegionLookup } from "./persistence/drizzle-business-region-lookup";
 import { BUSINESS_REGION_LOOKUP } from "./persistence/business-region-lookup";
 import { LISTING_PRICE_REVISION_REPOSITORY } from "./persistence/listing-price-revision.repository";
 import { LISTING_REPOSITORY } from "./persistence/listing.repository";
+import { LOCATION_REPOSITORY } from "./persistence/location.repository";
 import { SETTLEMENT_DECREASE_REQUEST_REPOSITORY } from "./persistence/settlement-decrease-request.repository";
+import { VOUCHER_BATCH_REQUEST_REPOSITORY } from "./persistence/voucher-batch-request.repository";
+import { WalletModule } from "../wallet/wallet.module";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
+import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 
 export const STORE_DB = Symbol("STORE_DB");
 
@@ -32,25 +41,28 @@ export const STORE_DB = Symbol("STORE_DB");
  * in-memory repository exists, not even behind a flag, because a fallback is
  * the thing tests quietly select.
  *
- * ## What this module deliberately does not do
+ * ## Pricing (7.4.b, EM-01)
  *
- * It never computes a points price. `points_price = S / B` needs the
- * ledger's backing rate `B`, and `yourtal_app` — the role this module
- * connects as — has no grant on the `ledger` schema at all
- * (`REVOKE ALL ON SCHEMA ledger FROM yourtal_app`,
- * infra/postgres/init/01-schemas.sql). That is enforced by the database, not
- * by this module choosing to be polite about it: widening that grant to make
- * pricing convenient here would be the exact hole docs/09's pricing model
- * exists to close. See `use-cases/set-settlement-value.use-case.ts` and this
- * module's migration for where that leaves a deliberate seam.
+ * `yourtal_app` still has no grant on the `ledger` schema at all (`REVOKE
+ * ALL ON SCHEMA ledger FROM yourtal_app`), so this module still cannot
+ * compute `points_price = S / B` itself. Since 4.9 it instead ASKS the
+ * ledger, over `LEDGER_INTERNAL_CLIENT` (`ledger-client.priceListing`) —
+ * never accepts a price the caller supplies. `create-listing.schema.ts` no
+ * longer takes `priceInPoints` at all. See `drizzle-listing.repository.ts`
+ * and `apply-settlement-value-change.ts` for the two places this is called.
  *
- * It also has no burn-saga (reserve stock -> debit points -> issue voucher
- * -> confirm) endpoints. That needs the ledger reachable over HTTP, which is
- * a separate, concurrently-built piece of work — see the ticket report.
+ * It still has no burn-saga (reserve stock -> debit points -> issue voucher
+ * -> confirm) endpoints; that lives in `checkout` (Phase 4).
  */
 @Module({
-  imports: [AuthzModule, PdpClientModule],
-  controllers: [StoreListingController, StoreCatalogueController, SettlementDecreaseController],
+  imports: [AuthzModule, PdpClientModule, WalletModule],
+  controllers: [
+    StoreListingController,
+    StoreLocationController,
+    StoreCatalogueController,
+    SettlementDecreaseController,
+    VoucherBatchRequestController,
+  ],
   providers: [
     {
       provide: STORE_DB,
@@ -59,8 +71,11 @@ export const STORE_DB = Symbol("STORE_DB");
     },
     {
       provide: LISTING_REPOSITORY,
-      useFactory: (db: AppDb) => new DrizzleListingRepository(db),
-      inject: [STORE_DB],
+      // 7.4.b: the ledger client (WalletModule already opens one) prices a
+      // listing on create and on every settlement-value change -- see
+      // apply-settlement-value-change.ts.
+      useFactory: (db: AppDb, ledger: LedgerInternalClient) => new DrizzleListingRepository(db, ledger),
+      inject: [STORE_DB, LEDGER_INTERNAL_CLIENT],
     },
     {
       provide: LISTING_PRICE_REVISION_REPOSITORY,
@@ -69,7 +84,18 @@ export const STORE_DB = Symbol("STORE_DB");
     },
     {
       provide: SETTLEMENT_DECREASE_REQUEST_REPOSITORY,
-      useFactory: (db: AppDb) => new DrizzleSettlementDecreaseRequestRepository(db),
+      useFactory: (db: AppDb, ledger: LedgerInternalClient) =>
+        new DrizzleSettlementDecreaseRequestRepository(db, ledger),
+      inject: [STORE_DB, LEDGER_INTERNAL_CLIENT],
+    },
+    {
+      provide: LOCATION_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleLocationRepository(db),
+      inject: [STORE_DB],
+    },
+    {
+      provide: VOUCHER_BATCH_REQUEST_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleVoucherBatchRequestRepository(db),
       inject: [STORE_DB],
     },
     {

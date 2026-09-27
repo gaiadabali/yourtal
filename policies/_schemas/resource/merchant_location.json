@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "merchant_location",
+  "description": "One of a business's physical outlets (YT-0502): name, address, district. A listing references one or more of these; a voucher names the one that honours it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": {
+    "businessId": { "type": "string" },
+    "region": {
+      "description": "1.5.b's F2 hard wall: the business's own region, compared against P.attr.jurisdiction.",
+      "type": "string",
+      "enum": ["AU", "ID"]
+    }
+  }
+}

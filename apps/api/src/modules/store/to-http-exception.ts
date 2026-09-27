@@ -14,9 +14,13 @@ import type {
   InvalidLifecycleTransitionError,
   InvalidLocationsError,
   ListingNotFoundError,
+  ListingPricingFailedError,
+  LocationInUseError,
+  LocationNotFoundError,
   NotAMaterialDecreaseError,
   PersistenceFailedError,
   SettlementDecreaseRequestNotFoundError,
+  VoucherBatchRequestNotFoundError,
 } from "./store.errors";
 
 const logger = new Logger("StoreErrorMapper");
@@ -34,6 +38,10 @@ export type StoreDomainError =
   | DecreaseAlreadyPendingError
   | SettlementDecreaseRequestNotFoundError
   | ApprovalRefusedError
+  | ListingPricingFailedError
+  | LocationNotFoundError
+  | LocationInUseError
+  | VoucherBatchRequestNotFoundError
   | PersistenceFailedError;
 
 export function mapStoreErrorToHttpException(error: StoreDomainError): HttpException {
@@ -82,6 +90,27 @@ export function mapStoreErrorToHttpException(error: StoreDomainError): HttpExcep
       return new ForbiddenException({
         code: "approval_refused",
         message: `settlement decrease request ${error.requestId} could not be approved -- it may already be resolved, or you may be the person who requested it`,
+      });
+    case "location_not_found":
+      return new NotFoundException({
+        code: "location_not_found",
+        message: `location ${error.locationId} was not found`,
+      });
+    case "location_in_use":
+      return new ConflictException({
+        code: "location_in_use",
+        message: `location ${error.locationId} is still offered by at least one listing`,
+      });
+    case "voucher_batch_request_not_found":
+      return new NotFoundException({
+        code: "voucher_batch_request_not_found",
+        message: `voucher batch request ${error.requestId} was not found`,
+      });
+    case "listing_pricing_failed":
+      logger.error(error.cause);
+      return new ServiceUnavailableException({
+        code: "listing_pricing_unavailable",
+        message: "the listing's points price could not be computed",
       });
     case "persistence_failed":
       logger.error(error.cause);

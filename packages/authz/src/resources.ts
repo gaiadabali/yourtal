@@ -82,6 +82,9 @@ export const RESOURCE_ACTIONS = {
   /** Bulk voucher issuance, two-person approved. */
   voucher_batch: ["view", "request_issuance", "approve_issuance", "void"],
 
+  /** A business's own outlets (YT-0502) -- what a listing's `locationIds` reference. */
+  merchant_location: ["view", "create", "edit", "archive"],
+
   /** A consumer's own balance, history and vouchers. */
   wallet: ["view", "view_history", "redeem", "transfer", "receive_voucher"],
 

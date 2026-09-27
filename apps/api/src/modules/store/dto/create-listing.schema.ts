@@ -7,7 +7,7 @@ import {
   listingChannelSchema,
   partialRedemptionSchema,
 } from "@yourtal/contracts/listing";
-import { minorUnitsSchema, pointsSchema } from "@yourtal/contracts/money";
+import { minorUnitsSchema } from "@yourtal/contracts/money";
 import { audienceSchema } from "@yourtal/contracts/campaign";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 
@@ -24,12 +24,12 @@ import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
  * business has one, asking the caller to name it too would just be a second,
  * potentially-mismatched copy of a fact the business row already states.
  *
- * `priceInPoints` IS a body field, not computed here. The store module
- * cannot derive it (see `store.module.ts`'s doc comment and the ticket
- * report) — a caller supplies the already-priced value, which today can only
- * come from a human copying a mock or a not-yet-built pricing-engine call.
- * This is the seam named explicitly rather than hidden behind a formula this
- * module has no grant to compute.
+ * `priceInPoints` is NOT a body field (7.4.b, EM-01). It used to be a caller-
+ * supplied value -- a business pricing its own reward, the exact defect
+ * EM-01 named. The price is now `ledger-client.priceListing`, called by
+ * `DrizzleListingRepository.create`, and it is read-only for the business:
+ * nothing this module accepts can change it except a settlement-value edit,
+ * which reprices through the same call (`apply-settlement-value-change.ts`).
  */
 export const createListingSchema = z
   .object({
@@ -40,7 +40,6 @@ export const createListingSchema = z
     locationIds: z.array(z.uuid()).min(1),
     faceValueMinor: minorUnitsSchema,
     settlementValueMinor: minorUnitsSchema,
-    priceInPoints: pointsSchema,
     stockTotal: z.number().int().positive(),
     transferable: z.boolean(),
     partialRedemptionPolicy: partialRedemptionPolicySchema,

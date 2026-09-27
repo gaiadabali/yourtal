@@ -1,4 +1,13 @@
-import { bigint, boolean, integer, jsonb, numeric, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  boolean,
+  integer,
+  jsonb,
+  numeric,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { campaignPgSchema } from "./campaign-schema";
 
 /**
@@ -88,4 +97,20 @@ export const campaignTermsVersions = campaignPgSchema.table("terms_version", {
   /** Frozen alongside the other reward-affecting fields (TASKS.md 1.1.f). */
   accuracyBonusPoints: bigint("accuracy_bonus_points", { mode: "number" }).notNull(),
   effectiveFrom: timestamp("effective_from", { withTimezone: true }).notNull(),
+});
+
+/**
+ * `campaign.reward_config` (20260920000012). No Drizzle mirror existed
+ * before TASKS.md 7.3 — B's viewer-facing repository reads it through raw
+ * SQL specifically because this table is Studio's (this file's own
+ * `campaign/persistence/schema/**` ownership), and this is where it
+ * finally gets one.
+ */
+export const campaignRewardConfigs = campaignPgSchema.table("reward_config", {
+  campaignId: uuid("campaign_id").primaryKey(),
+  allocationId: text("allocation_id").notNull(),
+  funderType: text("funder_type").notNull(),
+  maxPointsForCampaign: bigint("max_points_for_campaign", { mode: "number" }).notNull(),
+  rewardPointsPerCompletion: bigint("reward_points_per_completion", { mode: "number" }).notNull(),
+  accuracyBonusPoints: bigint("accuracy_bonus_points", { mode: "number" }).notNull(),
 });

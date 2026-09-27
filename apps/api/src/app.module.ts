@@ -46,6 +46,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     AuthModule,
     BusinessModule,
     CampaignModule,
+    StudioModule,
     StoreModule,
     BillingModule,
     ReportsModule,
@@ -57,7 +58,6 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     CheckoutModule,
     MeModule,
     DevicesModule,
-    StudioModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

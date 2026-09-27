@@ -139,7 +139,7 @@ beforeAll(async () => {
     ) VALUES (
       '${draftId}', 'quick', 'Unpublished draft', '${merchantId}', 'A Merchant',
       'Should never reach a viewer.', 30, 1.5, 100, 0,
-      'base_only', 'draft', now(), '${merchantId}', 'ID', 'all_ages',
+      'base_only', 'draft', NULL, '${merchantId}', 'ID', 'all_ages',
       'food-and-drink', 'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
       'https://cdn.example.com/hls.m3u8', '9:16', 1000000,
       now(), now() + interval '90 days'
@@ -210,6 +210,15 @@ describe("a campaign that is not public is reported as missing, not as forbidden
   it("serves the very same row once it is live, so the 404 was about state", async () => {
     // Without this, every assertion above would also pass on a row that was
     // simply malformed, and the test would be proving the wrong mechanism.
+    //
+    // 20260927140000's lifecycle trigger (EW-17) only allows draft ->
+    // in_review -> live, never a direct jump — this fixture's own media and
+    // reward columns are already fully populated (see the INSERT above), so
+    // both hops satisfy campaigns_media_required_past_draft /
+    // campaigns_reward_required_past_draft along the way.
+    await owner.execute(
+      `UPDATE campaign.campaigns SET lifecycle_state = 'in_review' WHERE id = '${draftId}'`,
+    );
     await owner.execute(
       `UPDATE campaign.campaigns SET lifecycle_state = 'live' WHERE id = '${draftId}'`,
     );
@@ -220,8 +229,24 @@ describe("a campaign that is not public is reported as missing, not as forbidden
       // derived status is what a viewer sees.
       expect(["active", "paused", "ended"]).toContain(served.status);
     } finally {
+      // No legal transition ever leads from `live` back to `draft` (by
+      // design — docs/17, an ended campaign is a historical record). This
+      // fixture needs its ORIGINAL state back for the sibling test below,
+      // which is a test-isolation concern the trigger has no business
+      // refusing, so the trigger is disabled for this one restorative
+      // statement only. `owner` is the table-owning role, not `yourtal_app`,
+      // the same reason this whole `beforeAll` runs on it.
       await owner.execute(
-        `UPDATE campaign.campaigns SET lifecycle_state = 'draft' WHERE id = '${draftId}'`,
+        `ALTER TABLE campaign.campaigns DISABLE TRIGGER campaigns_lifecycle_transition`,
+      );
+      // published_at must go back to NULL in the SAME statement --
+      // campaigns_published_at_iff_live_or_past is a CHECK, not a trigger,
+      // so disabling the trigger above does nothing for it.
+      await owner.execute(
+        `UPDATE campaign.campaigns SET lifecycle_state = 'draft', published_at = NULL WHERE id = '${draftId}'`,
+      );
+      await owner.execute(
+        `ALTER TABLE campaign.campaigns ENABLE TRIGGER campaigns_lifecycle_transition`,
       );
     }
   });

@@ -122,6 +122,10 @@ const BUSINESS_DB = Symbol("BUSINESS_DB");
       inject: [BUSINESS_DB],
     },
   ],
+  // TASKS.md 7.3: StudioModule needs a business's own region/isVerified
+  // (red line 7's KYB gate on submit) without a second copy of this
+  // repository or a cross-schema query of its own.
+  exports: [BUSINESS_ACCOUNT_REPOSITORY],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class BusinessModule {}

@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
-| **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **44/87** | **252/404** | `██████░░░░`  62% |
+| **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
+| **All** | | | **44/86** | **252/403** | `██████░░░░`  63% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1312,8 +1312,8 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **13.6 Founder walkthrough** · founder · needs: 13.2
   - [ ] 13.6.a Walk through `/review` on staging. Every issue becomes a task in this file, either in Phase 13 or in a new Phase 14.
 
-- [ ] **13.7 Drop the `browserslist` override once serwist 10 ships** (moved from 2.4.g by F38) · needs: serwist 10 stable
-  - [ ] 13.7.a Upgrade `serwist`, `@serwist/next` and `@serwist/build` to 10.x and remove the `browserslist@<4.28.7` override from `pnpm-workspace.yaml`; `pnpm verify` green and the service worker still serves a visited voucher page offline.
+- [ ] **13.7 Drop the `browserslist` override once serwist 10 ships** (moved from 2.4.g by F38) · needs: serwist 10 stable — ✂️ cut: F42, ship on the latest stable; upgrade serwist later as routine maintenance, not a gate.
+  - [ ] 13.7.a Upgrade `serwist`, `@serwist/next` and `@serwist/build` to 10.x and remove the `browserslist@<4.28.7` override from `pnpm-workspace.yaml`; `pnpm verify` green and the service worker still serves a visited voucher page offline. — ✂️ cut: F42.
 **Done when:** the founder completes the walkthrough on staging, and every issue raised is either fixed or recorded as a task in this file.
 
 ---
@@ -1361,6 +1361,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **F37** | Phase 2 is done but for 2.4.g (serwist 10 not stable) and the 2.4.h Check (every workflow green on main), which wait on other phases | **Mark both ⛔ and free slot 4.** Whoever next runs Phase 2 ticks 2.4.h once main is green, and does 2.4.g when serwist 10 ships. |
 | **F38** | How Phase 2's last two items close (replaces F37) | **Finish them:** slot 4 trims Area C's `/business/campaigns` under its 200 KB initial-JS budget (behaviour-neutral, their session told), waits for slot 2's `me.controller` fix, ticks 2.4.h once main is green; **2.4.g moves to Phase 13** (the browserslist override already neutralises the advisory). |
 | **F41** | Keep Serwist? It is used only so a voucher and its QR open at a counter without signal (`apps/web/app/sw.ts`, `offline-voucher-detail.spec.ts`) | **Keep Serwist.** Stable is 9.5.12 (10 is preview only). Its `browserslist` pin is build-time and stays until 13.7. No hand-written worker, and offline stays on. |
+| **F42** | 13.7 waited on serwist 10, a release nobody here controls | **Ship on the latest stable** (serwist 9.5.12 with the `browserslist` override, which is still needed: 9.5.12 pins 4.28.6 exactly). Dependency upgrades happen later as routine maintenance, never as a gate. What must hold is that the app works, so the offline voucher e2e runs in CI. |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

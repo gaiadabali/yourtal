@@ -3895,6 +3895,3565 @@
         }
       }
     },
+    "/api/{tenantId}/studio/campaigns": {
+      "post": {
+        "summary": "Create a campaign draft",
+        "tags": [
+          "studio",
+          "campaign"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The campaign's shape and targeting; media, reward and questions come later.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "long_form",
+                      "quick"
+                    ]
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 140
+                  },
+                  "synopsis": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "durationSeconds": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10800
+                  },
+                  "contentCategory": {
+                    "type": "string",
+                    "enum": [
+                      "food-and-drink",
+                      "fashion",
+                      "personal-care",
+                      "electronics",
+                      "telco",
+                      "transport",
+                      "fitness",
+                      "education",
+                      "travel",
+                      "home",
+                      "entertainment",
+                      "games",
+                      "books",
+                      "family",
+                      "toys",
+                      "digital-goods",
+                      "services",
+                      "tobacco",
+                      "vaping",
+                      "gambling",
+                      "alcohol",
+                      "dating",
+                      "financial-products",
+                      "weight-loss",
+                      "cosmetic-procedures",
+                      "energy-drinks"
+                    ]
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "all_ages",
+                      "teen",
+                      "adult",
+                      "parents"
+                    ]
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "openViewing": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "teaserStartSeconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                  },
+                  "declaredInterests": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "default": []
+                  }
+                },
+                "required": [
+                  "kind",
+                  "title",
+                  "synopsis",
+                  "durationSeconds",
+                  "contentCategory",
+                  "audience",
+                  "startsAt",
+                  "endsAt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new draft, in lifecycleState \"draft\".",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "businessId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "long_form",
+                        "quick"
+                      ]
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "synopsis": {
+                      "type": "string"
+                    },
+                    "durationSeconds": {
+                      "type": "integer"
+                    },
+                    "contentCategory": {
+                      "type": "string",
+                      "enum": [
+                        "food-and-drink",
+                        "fashion",
+                        "personal-care",
+                        "electronics",
+                        "telco",
+                        "transport",
+                        "fitness",
+                        "education",
+                        "travel",
+                        "home",
+                        "entertainment",
+                        "games",
+                        "books",
+                        "family",
+                        "toys",
+                        "digital-goods",
+                        "services",
+                        "tobacco",
+                        "vaping",
+                        "gambling",
+                        "alcohol",
+                        "dating",
+                        "financial-products",
+                        "weight-loss",
+                        "cosmetic-procedures",
+                        "energy-drinks"
+                      ]
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "all_ages",
+                        "teen",
+                        "adult",
+                        "parents"
+                      ]
+                    },
+                    "lifecycleState": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "in_review",
+                        "rejected",
+                        "live",
+                        "paused",
+                        "ended"
+                      ]
+                    },
+                    "rejectionReason": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "startsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "endsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "openViewing": {
+                      "type": "boolean"
+                    },
+                    "teaserStartSeconds": {
+                      "type": "integer"
+                    },
+                    "posterFrameSeconds": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "declaredInterests": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "chapters": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "startSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "format": "int64"
+                          },
+                          "rewardWeight": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "startSeconds",
+                          "rewardWeight"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "captionsUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "posterUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "teaserUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hlsUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "rewardPoints": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "questionCount": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "scoringRule": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "base_only",
+                            "base_plus_accuracy_bonus"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "publishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "businessId",
+                    "region",
+                    "kind",
+                    "title",
+                    "synopsis",
+                    "durationSeconds",
+                    "contentCategory",
+                    "audience",
+                    "lifecycleState",
+                    "rejectionReason",
+                    "startsAt",
+                    "endsAt",
+                    "openViewing",
+                    "teaserStartSeconds",
+                    "posterFrameSeconds",
+                    "declaredInterests",
+                    "chapters",
+                    "captionsUrl",
+                    "posterUrl",
+                    "teaserUrl",
+                    "hlsUrl",
+                    "rewardPoints",
+                    "questionCount",
+                    "scoringRule",
+                    "publishedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: One of: prohibited_category (category is prohibited in this business's region), audience_must_be_adult (an adult_only category with a non-adult audience), or open_viewing_requires_all_ages (F8: Open Viewing set on anything but an all_ages campaign) -- studio.errors.ts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List this business's campaign drafts",
+        "tags": [
+          "studio",
+          "campaign"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every campaign this business owns, at any lifecycle state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "businessId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "region": {
+                        "type": "string",
+                        "enum": [
+                          "AU",
+                          "ID"
+                        ]
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "long_form",
+                          "quick"
+                        ]
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "synopsis": {
+                        "type": "string"
+                      },
+                      "durationSeconds": {
+                        "type": "integer"
+                      },
+                      "contentCategory": {
+                        "type": "string",
+                        "enum": [
+                          "food-and-drink",
+                          "fashion",
+                          "personal-care",
+                          "electronics",
+                          "telco",
+                          "transport",
+                          "fitness",
+                          "education",
+                          "travel",
+                          "home",
+                          "entertainment",
+                          "games",
+                          "books",
+                          "family",
+                          "toys",
+                          "digital-goods",
+                          "services",
+                          "tobacco",
+                          "vaping",
+                          "gambling",
+                          "alcohol",
+                          "dating",
+                          "financial-products",
+                          "weight-loss",
+                          "cosmetic-procedures",
+                          "energy-drinks"
+                        ]
+                      },
+                      "audience": {
+                        "type": "string",
+                        "enum": [
+                          "all_ages",
+                          "teen",
+                          "adult",
+                          "parents"
+                        ]
+                      },
+                      "lifecycleState": {
+                        "type": "string",
+                        "enum": [
+                          "draft",
+                          "in_review",
+                          "rejected",
+                          "live",
+                          "paused",
+                          "ended"
+                        ]
+                      },
+                      "rejectionReason": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "endsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "openViewing": {
+                        "type": "boolean"
+                      },
+                      "teaserStartSeconds": {
+                        "type": "integer"
+                      },
+                      "posterFrameSeconds": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "declaredInterests": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "chapters": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 120
+                            },
+                            "startSeconds": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "rewardWeight": {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "startSeconds",
+                            "rewardWeight"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "captionsUrl": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "posterUrl": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "teaserUrl": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "hlsUrl": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "rewardPoints": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "questionCount": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "scoringRule": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "base_only",
+                              "base_plus_accuracy_bonus"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "publishedAt": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "businessId",
+                      "region",
+                      "kind",
+                      "title",
+                      "synopsis",
+                      "durationSeconds",
+                      "contentCategory",
+                      "audience",
+                      "lifecycleState",
+                      "rejectionReason",
+                      "startsAt",
+                      "endsAt",
+                      "openViewing",
+                      "teaserStartSeconds",
+                      "posterFrameSeconds",
+                      "declaredInterests",
+                      "chapters",
+                      "captionsUrl",
+                      "posterUrl",
+                      "teaserUrl",
+                      "hlsUrl",
+                      "rewardPoints",
+                      "questionCount",
+                      "scoringRule",
+                      "publishedAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/campaigns/{campaignId}": {
+      "get": {
+        "summary": "Get one campaign draft",
+        "tags": [
+          "studio",
+          "campaign"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The draft campaign this route acts on, scoped to the tenant's own business.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The campaign, in its authoring shape.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "businessId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "long_form",
+                        "quick"
+                      ]
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "synopsis": {
+                      "type": "string"
+                    },
+                    "durationSeconds": {
+                      "type": "integer"
+                    },
+                    "contentCategory": {
+                      "type": "string",
+                      "enum": [
+                        "food-and-drink",
+                        "fashion",
+                        "personal-care",
+                        "electronics",
+                        "telco",
+                        "transport",
+                        "fitness",
+                        "education",
+                        "travel",
+                        "home",
+                        "entertainment",
+                        "games",
+                        "books",
+                        "family",
+                        "toys",
+                        "digital-goods",
+                        "services",
+                        "tobacco",
+                        "vaping",
+                        "gambling",
+                        "alcohol",
+                        "dating",
+                        "financial-products",
+                        "weight-loss",
+                        "cosmetic-procedures",
+                        "energy-drinks"
+                      ]
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "all_ages",
+                        "teen",
+                        "adult",
+                        "parents"
+                      ]
+                    },
+                    "lifecycleState": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "in_review",
+                        "rejected",
+                        "live",
+                        "paused",
+                        "ended"
+                      ]
+                    },
+                    "rejectionReason": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "startsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "endsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "openViewing": {
+                      "type": "boolean"
+                    },
+                    "teaserStartSeconds": {
+                      "type": "integer"
+                    },
+                    "posterFrameSeconds": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "declaredInterests": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "chapters": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "startSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "format": "int64"
+                          },
+                          "rewardWeight": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "startSeconds",
+                          "rewardWeight"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "captionsUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "posterUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "teaserUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hlsUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "rewardPoints": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "questionCount": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "scoringRule": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "base_only",
+                            "base_plus_accuracy_bonus"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "publishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "businessId",
+                    "region",
+                    "kind",
+                    "title",
+                    "synopsis",
+                    "durationSeconds",
+                    "contentCategory",
+                    "audience",
+                    "lifecycleState",
+                    "rejectionReason",
+                    "startsAt",
+                    "endsAt",
+                    "openViewing",
+                    "teaserStartSeconds",
+                    "posterFrameSeconds",
+                    "declaredInterests",
+                    "chapters",
+                    "captionsUrl",
+                    "posterUrl",
+                    "teaserUrl",
+                    "hlsUrl",
+                    "rewardPoints",
+                    "questionCount",
+                    "scoringRule",
+                    "publishedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No campaign with this id belongs to this business (studio.errors.ts's campaign_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Patch a campaign draft",
+        "tags": [
+          "studio",
+          "campaign"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The draft campaign this route acts on, scoped to the tenant's own business.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Any subset of fields; chapters/declaredInterests, when present, replace the whole set.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 140
+                  },
+                  "synopsis": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "durationSeconds": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10800
+                  },
+                  "contentCategory": {
+                    "type": "string",
+                    "enum": [
+                      "food-and-drink",
+                      "fashion",
+                      "personal-care",
+                      "electronics",
+                      "telco",
+                      "transport",
+                      "fitness",
+                      "education",
+                      "travel",
+                      "home",
+                      "entertainment",
+                      "games",
+                      "books",
+                      "family",
+                      "toys",
+                      "digital-goods",
+                      "services",
+                      "tobacco",
+                      "vaping",
+                      "gambling",
+                      "alcohol",
+                      "dating",
+                      "financial-products",
+                      "weight-loss",
+                      "cosmetic-procedures",
+                      "energy-drinks"
+                    ]
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "all_ages",
+                      "teen",
+                      "adult",
+                      "parents"
+                    ]
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "endsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "openViewing": {
+                    "type": "boolean"
+                  },
+                  "teaserStartSeconds": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "posterFrameSeconds": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "declaredInterests": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "chapters": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "startSeconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991,
+                          "format": "int64"
+                        },
+                        "rewardWeight": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "startSeconds",
+                        "rewardWeight"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "captionsUrl": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The patched draft.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "businessId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "long_form",
+                        "quick"
+                      ]
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "synopsis": {
+                      "type": "string"
+                    },
+                    "durationSeconds": {
+                      "type": "integer"
+                    },
+                    "contentCategory": {
+                      "type": "string",
+                      "enum": [
+                        "food-and-drink",
+                        "fashion",
+                        "personal-care",
+                        "electronics",
+                        "telco",
+                        "transport",
+                        "fitness",
+                        "education",
+                        "travel",
+                        "home",
+                        "entertainment",
+                        "games",
+                        "books",
+                        "family",
+                        "toys",
+                        "digital-goods",
+                        "services",
+                        "tobacco",
+                        "vaping",
+                        "gambling",
+                        "alcohol",
+                        "dating",
+                        "financial-products",
+                        "weight-loss",
+                        "cosmetic-procedures",
+                        "energy-drinks"
+                      ]
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "all_ages",
+                        "teen",
+                        "adult",
+                        "parents"
+                      ]
+                    },
+                    "lifecycleState": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "in_review",
+                        "rejected",
+                        "live",
+                        "paused",
+                        "ended"
+                      ]
+                    },
+                    "rejectionReason": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "startsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "endsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "openViewing": {
+                      "type": "boolean"
+                    },
+                    "teaserStartSeconds": {
+                      "type": "integer"
+                    },
+                    "posterFrameSeconds": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "declaredInterests": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "chapters": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "startSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "format": "int64"
+                          },
+                          "rewardWeight": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "startSeconds",
+                          "rewardWeight"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "captionsUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "posterUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "teaserUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hlsUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "rewardPoints": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "questionCount": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "scoringRule": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "base_only",
+                            "base_plus_accuracy_bonus"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "publishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "businessId",
+                    "region",
+                    "kind",
+                    "title",
+                    "synopsis",
+                    "durationSeconds",
+                    "contentCategory",
+                    "audience",
+                    "lifecycleState",
+                    "rejectionReason",
+                    "startsAt",
+                    "endsAt",
+                    "openViewing",
+                    "teaserStartSeconds",
+                    "posterFrameSeconds",
+                    "declaredInterests",
+                    "chapters",
+                    "captionsUrl",
+                    "posterUrl",
+                    "teaserUrl",
+                    "hlsUrl",
+                    "rewardPoints",
+                    "questionCount",
+                    "scoringRule",
+                    "publishedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This campaign has left draft; an advertiser edits freely only until submission (studio.errors.ts's campaign_not_draft). OR: One of: prohibited_category (category is prohibited in this business's region), audience_must_be_adult (an adult_only category with a non-adult audience), or open_viewing_requires_all_ages (F8: Open Viewing set on anything but an all_ages campaign) -- studio.errors.ts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No campaign with this id belongs to this business (studio.errors.ts's campaign_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/campaigns/{campaignId}/submit": {
+      "post": {
+        "summary": "Submit a campaign draft for review",
+        "tags": [
+          "studio",
+          "campaign"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The draft campaign this route acts on, scoped to the tenant's own business.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The campaign, now in lifecycleState \"in_review\" (or later -- see illegal_transition below for a repeat call).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "businessId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "long_form",
+                        "quick"
+                      ]
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "synopsis": {
+                      "type": "string"
+                    },
+                    "durationSeconds": {
+                      "type": "integer"
+                    },
+                    "contentCategory": {
+                      "type": "string",
+                      "enum": [
+                        "food-and-drink",
+                        "fashion",
+                        "personal-care",
+                        "electronics",
+                        "telco",
+                        "transport",
+                        "fitness",
+                        "education",
+                        "travel",
+                        "home",
+                        "entertainment",
+                        "games",
+                        "books",
+                        "family",
+                        "toys",
+                        "digital-goods",
+                        "services",
+                        "tobacco",
+                        "vaping",
+                        "gambling",
+                        "alcohol",
+                        "dating",
+                        "financial-products",
+                        "weight-loss",
+                        "cosmetic-procedures",
+                        "energy-drinks"
+                      ]
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "all_ages",
+                        "teen",
+                        "adult",
+                        "parents"
+                      ]
+                    },
+                    "lifecycleState": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "in_review",
+                        "rejected",
+                        "live",
+                        "paused",
+                        "ended"
+                      ]
+                    },
+                    "rejectionReason": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "startsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "endsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "openViewing": {
+                      "type": "boolean"
+                    },
+                    "teaserStartSeconds": {
+                      "type": "integer"
+                    },
+                    "posterFrameSeconds": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "declaredInterests": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "chapters": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "startSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991,
+                            "format": "int64"
+                          },
+                          "rewardWeight": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "startSeconds",
+                          "rewardWeight"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "captionsUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "posterUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "teaserUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hlsUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "rewardPoints": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "questionCount": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "scoringRule": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "base_only",
+                            "base_plus_accuracy_bonus"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "publishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "businessId",
+                    "region",
+                    "kind",
+                    "title",
+                    "synopsis",
+                    "durationSeconds",
+                    "contentCategory",
+                    "audience",
+                    "lifecycleState",
+                    "rejectionReason",
+                    "startsAt",
+                    "endsAt",
+                    "openViewing",
+                    "teaserStartSeconds",
+                    "posterFrameSeconds",
+                    "declaredInterests",
+                    "chapters",
+                    "captionsUrl",
+                    "posterUrl",
+                    "teaserUrl",
+                    "hlsUrl",
+                    "rewardPoints",
+                    "questionCount",
+                    "scoringRule",
+                    "publishedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The requested lifecycle move is not a legal transition from the campaign's current state (studio.errors.ts's illegal_transition; enforced twice over, by the use-case and by campaign.assert_lifecycle_transition()'s own database trigger).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time. OR: This business's KYB has not been verified yet -- submission is refused until it is (studio.errors.ts's not_kyb_verified).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No campaign with this id belongs to this business (studio.errors.ts's campaign_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/campaigns/{campaignId}/questions": {
+      "get": {
+        "summary": "List a campaign's question bank",
+        "tags": [
+          "studio",
+          "question"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The draft campaign this route acts on, scoped to the tenant's own business.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every question authored for this campaign, at any status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "question": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "campaignId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "prompt": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "timerSeconds": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 120
+                              },
+                              "answerableAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "type": {
+                                "type": "string",
+                                "const": "multiple_choice"
+                              },
+                              "options": {
+                                "minItems": 2,
+                                "maxItems": 6,
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "label"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "correctOptionId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "campaignId",
+                              "prompt",
+                              "timerSeconds",
+                              "answerableAfterSeconds",
+                              "type",
+                              "options",
+                              "correctOptionId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "campaignId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "prompt": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "timerSeconds": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 120
+                              },
+                              "answerableAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "type": {
+                                "type": "string",
+                                "const": "true_false"
+                              },
+                              "correctAnswer": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "campaignId",
+                              "prompt",
+                              "timerSeconds",
+                              "answerableAfterSeconds",
+                              "type",
+                              "correctAnswer"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "campaignId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "prompt": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "timerSeconds": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 120
+                              },
+                              "answerableAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "type": {
+                                "type": "string",
+                                "const": "likert"
+                              },
+                              "scaleMin": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "scaleMax": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "scaleLowLabel": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "scaleHighLabel": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "campaignId",
+                              "prompt",
+                              "timerSeconds",
+                              "answerableAfterSeconds",
+                              "type",
+                              "scaleMin",
+                              "scaleMax",
+                              "scaleLowLabel",
+                              "scaleHighLabel"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "campaignId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "prompt": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "timerSeconds": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 120
+                              },
+                              "answerableAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "type": {
+                                "type": "string",
+                                "const": "ranked"
+                              },
+                              "items": {
+                                "minItems": 2,
+                                "maxItems": 6,
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "label"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "campaignId",
+                              "prompt",
+                              "timerSeconds",
+                              "answerableAfterSeconds",
+                              "type",
+                              "items"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "campaignId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "prompt": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 300
+                              },
+                              "timerSeconds": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 120
+                              },
+                              "answerableAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "type": {
+                                "type": "string",
+                                "const": "short_text"
+                              },
+                              "maxLength": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 500
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "campaignId",
+                              "prompt",
+                              "timerSeconds",
+                              "answerableAfterSeconds",
+                              "type",
+                              "maxLength"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "draft",
+                          "approved",
+                          "retired"
+                        ]
+                      },
+                      "piiScreen": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "clear",
+                              "needs_review",
+                              "rejected"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "timesAsked": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "timesCorrect": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "retiredReason": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "question",
+                      "status",
+                      "piiScreen",
+                      "timesAsked",
+                      "timesCorrect",
+                      "retiredReason"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Author a question",
+        "tags": [
+          "studio",
+          "question"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The draft campaign this route acts on, scoped to the tenant's own business.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "One of the five question types (questionSchema's discriminated union); id/campaignId are accepted for the union's shape but ignored -- the server assigns the real id and the route's own :campaignId is authoritative.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "campaignId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      },
+                      "timerSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 120
+                      },
+                      "answerableAfterSeconds": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991,
+                        "format": "int64"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "multiple_choice"
+                      },
+                      "options": {
+                        "minItems": 2,
+                        "maxItems": 6,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "label": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "label"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "correctOptionId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "campaignId",
+                      "prompt",
+                      "timerSeconds",
+                      "answerableAfterSeconds",
+                      "type",
+                      "options",
+                      "correctOptionId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "campaignId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      },
+                      "timerSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 120
+                      },
+                      "answerableAfterSeconds": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991,
+                        "format": "int64"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "true_false"
+                      },
+                      "correctAnswer": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "campaignId",
+                      "prompt",
+                      "timerSeconds",
+                      "answerableAfterSeconds",
+                      "type",
+                      "correctAnswer"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "campaignId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      },
+                      "timerSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 120
+                      },
+                      "answerableAfterSeconds": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991,
+                        "format": "int64"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "likert"
+                      },
+                      "scaleMin": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991,
+                        "format": "int64"
+                      },
+                      "scaleMax": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991,
+                        "format": "int64"
+                      },
+                      "scaleLowLabel": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      "scaleHighLabel": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "campaignId",
+                      "prompt",
+                      "timerSeconds",
+                      "answerableAfterSeconds",
+                      "type",
+                      "scaleMin",
+                      "scaleMax",
+                      "scaleLowLabel",
+                      "scaleHighLabel"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "campaignId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      },
+                      "timerSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 120
+                      },
+                      "answerableAfterSeconds": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991,
+                        "format": "int64"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "ranked"
+                      },
+                      "items": {
+                        "minItems": 2,
+                        "maxItems": 6,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "label": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "label"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "campaignId",
+                      "prompt",
+                      "timerSeconds",
+                      "answerableAfterSeconds",
+                      "type",
+                      "items"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "campaignId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 300
+                      },
+                      "timerSeconds": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 120
+                      },
+                      "answerableAfterSeconds": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991,
+                        "format": "int64"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "short_text"
+                      },
+                      "maxLength": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 500
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "campaignId",
+                      "prompt",
+                      "timerSeconds",
+                      "answerableAfterSeconds",
+                      "type",
+                      "maxLength"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The authored question, screened for PII/prediction requests before being stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "campaignId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "prompt": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300
+                            },
+                            "timerSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 120
+                            },
+                            "answerableAfterSeconds": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "multiple_choice"
+                            },
+                            "options": {
+                              "minItems": 2,
+                              "maxItems": 6,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "label"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "correctOptionId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "campaignId",
+                            "prompt",
+                            "timerSeconds",
+                            "answerableAfterSeconds",
+                            "type",
+                            "options",
+                            "correctOptionId"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "campaignId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "prompt": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300
+                            },
+                            "timerSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 120
+                            },
+                            "answerableAfterSeconds": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "true_false"
+                            },
+                            "correctAnswer": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "campaignId",
+                            "prompt",
+                            "timerSeconds",
+                            "answerableAfterSeconds",
+                            "type",
+                            "correctAnswer"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "campaignId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "prompt": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300
+                            },
+                            "timerSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 120
+                            },
+                            "answerableAfterSeconds": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "likert"
+                            },
+                            "scaleMin": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "scaleMax": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "scaleLowLabel": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "scaleHighLabel": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "campaignId",
+                            "prompt",
+                            "timerSeconds",
+                            "answerableAfterSeconds",
+                            "type",
+                            "scaleMin",
+                            "scaleMax",
+                            "scaleLowLabel",
+                            "scaleHighLabel"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "campaignId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "prompt": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300
+                            },
+                            "timerSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 120
+                            },
+                            "answerableAfterSeconds": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "ranked"
+                            },
+                            "items": {
+                              "minItems": 2,
+                              "maxItems": 6,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  "label": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "label"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "campaignId",
+                            "prompt",
+                            "timerSeconds",
+                            "answerableAfterSeconds",
+                            "type",
+                            "items"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "campaignId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "prompt": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 300
+                            },
+                            "timerSeconds": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 120
+                            },
+                            "answerableAfterSeconds": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991,
+                              "format": "int64"
+                            },
+                            "type": {
+                              "type": "string",
+                              "const": "short_text"
+                            },
+                            "maxLength": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 500
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "campaignId",
+                            "prompt",
+                            "timerSeconds",
+                            "answerableAfterSeconds",
+                            "type",
+                            "maxLength"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "approved",
+                        "retired"
+                      ]
+                    },
+                    "piiScreen": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "clear",
+                            "needs_review",
+                            "rejected"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timesAsked": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "timesCorrect": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "retiredReason": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "status",
+                    "piiScreen",
+                    "timesAsked",
+                    "timesCorrect",
+                    "retiredReason"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: The question text reads as a request for personal information (pii_request) or asks the viewer to predict/guess an outcome (prediction_request) -- both red-line refusals, studio.errors.ts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/campaigns/{campaignId}/reward": {
+      "put": {
+        "summary": "Set a campaign's reward and budget configuration",
+        "tags": [
+          "studio",
+          "campaign"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The draft campaign this route acts on, scoped to the tenant's own business.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "A full replacement, not a delta -- funderType/the allocation's balance are validated server-side against the ledger, never trusted from the request.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "allocationId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rewardPointsPerCompletion": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "accuracyBonusPoints": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "maxPointsForCampaign": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "allocationId",
+                  "rewardPointsPerCompletion",
+                  "accuracyBonusPoints",
+                  "maxPointsForCampaign"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The draft, plus the reward's value in the business's own currency (7.3.h) -- never B, the backing rate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "businessId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "region": {
+                          "type": "string",
+                          "enum": [
+                            "AU",
+                            "ID"
+                          ]
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "long_form",
+                            "quick"
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "synopsis": {
+                          "type": "string"
+                        },
+                        "durationSeconds": {
+                          "type": "integer"
+                        },
+                        "contentCategory": {
+                          "type": "string",
+                          "enum": [
+                            "food-and-drink",
+                            "fashion",
+                            "personal-care",
+                            "electronics",
+                            "telco",
+                            "transport",
+                            "fitness",
+                            "education",
+                            "travel",
+                            "home",
+                            "entertainment",
+                            "games",
+                            "books",
+                            "family",
+                            "toys",
+                            "digital-goods",
+                            "services",
+                            "tobacco",
+                            "vaping",
+                            "gambling",
+                            "alcohol",
+                            "dating",
+                            "financial-products",
+                            "weight-loss",
+                            "cosmetic-procedures",
+                            "energy-drinks"
+                          ]
+                        },
+                        "audience": {
+                          "type": "string",
+                          "enum": [
+                            "all_ages",
+                            "teen",
+                            "adult",
+                            "parents"
+                          ]
+                        },
+                        "lifecycleState": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "in_review",
+                            "rejected",
+                            "live",
+                            "paused",
+                            "ended"
+                          ]
+                        },
+                        "rejectionReason": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "startsAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "endsAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "openViewing": {
+                          "type": "boolean"
+                        },
+                        "teaserStartSeconds": {
+                          "type": "integer"
+                        },
+                        "posterFrameSeconds": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "declaredInterests": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "chapters": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 120
+                              },
+                              "startSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991,
+                                "format": "int64"
+                              },
+                              "rewardWeight": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": [
+                              "title",
+                              "startSeconds",
+                              "rewardWeight"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "captionsUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "posterUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "teaserUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "hlsUrl": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "rewardPoints": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "questionCount": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "scoringRule": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "base_only",
+                                "base_plus_accuracy_bonus"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "publishedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "businessId",
+                        "region",
+                        "kind",
+                        "title",
+                        "synopsis",
+                        "durationSeconds",
+                        "contentCategory",
+                        "audience",
+                        "lifecycleState",
+                        "rejectionReason",
+                        "startsAt",
+                        "endsAt",
+                        "openViewing",
+                        "teaserStartSeconds",
+                        "posterFrameSeconds",
+                        "declaredInterests",
+                        "chapters",
+                        "captionsUrl",
+                        "posterUrl",
+                        "teaserUrl",
+                        "hlsUrl",
+                        "rewardPoints",
+                        "questionCount",
+                        "scoringRule",
+                        "publishedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "rewardValueMinor": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "currency": {
+                          "type": "string",
+                          "enum": [
+                            "AUD",
+                            "IDR"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "rewardValueMinor",
+                        "currency"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This campaign has left draft; an advertiser edits freely only until submission (studio.errors.ts's campaign_not_draft). OR: One of: allocation_not_owned (allocationId is not one of this business's own), allocation_not_partner_funded (only a partner-funded allocation may fund a reward), reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to this campaign's duration), or accuracy_bonus_too_high (the bonus exceeds 40% of the base reward) -- studio.errors.ts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No campaign with this id belongs to this business (studio.errors.ts's campaign_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/{tenantId}/studio/media/initiate": {
       "post": {
         "summary": "Start a presigned multipart upload of a campaign's video",

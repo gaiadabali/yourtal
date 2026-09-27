@@ -32,7 +32,8 @@ describe("CampaignBuilderScreen", () => {
     renderScreen();
     const draftTitle = "Kopi Kenangan — Cold Brew Launch";
     await userEvent.click(screen.getByRole("button", { name: new RegExp(draftTitle) }));
-    expect(screen.getByRole("textbox", { name: "Campaign title" })).toHaveValue(draftTitle);
+    // The editor is loaded on open (next/dynamic), so wait for it.
+    expect(await screen.findByRole("textbox", { name: "Campaign title" })).toHaveValue(draftTitle);
 
     await userEvent.click(screen.getByRole("button", { name: "← Back to campaigns" }));
     expect(screen.getByRole("heading", { name: "Campaigns" })).toBeInTheDocument();
@@ -41,7 +42,7 @@ describe("CampaignBuilderScreen", () => {
   it("creates a new draft and opens it directly into the editor", async () => {
     renderScreen();
     await userEvent.click(screen.getByRole("button", { name: "New campaign" }));
-    expect(screen.getByRole("textbox", { name: "Campaign title" })).toHaveValue("");
+    expect(await screen.findByRole("textbox", { name: "Campaign title" })).toHaveValue("");
   });
 
   it("read-only viewers never see New campaign and cannot open the editor's edit controls", () => {

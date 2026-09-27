@@ -22,7 +22,10 @@ function handleFrom(displayName: string, disambiguator: string): string {
   return `${slug}-${disambiguator}`;
 }
 
-const AU_CITIES_BY_STATE: Record<(typeof AU_STATES)[number], { city: string; postcodePrefix: string }> = {
+const AU_CITIES_BY_STATE: Record<
+  (typeof AU_STATES)[number],
+  { city: string; postcodePrefix: string }
+> = {
   NSW: { city: "Sydney", postcodePrefix: "2" },
   VIC: { city: "Melbourne", postcodePrefix: "3" },
   QLD: { city: "Brisbane", postcodePrefix: "4" },

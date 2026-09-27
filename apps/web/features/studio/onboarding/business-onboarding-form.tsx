@@ -74,21 +74,23 @@ export function BusinessOnboardingForm({ region, errorField }: BusinessOnboardin
             inputMode="numeric"
           />
 
-          <Input name="addressLine" label={t("onboarding.addressLabel")} required maxLength={200} />
-          <Input name="city" label={t("onboarding.cityLabel")} required maxLength={60} />
           {region === "AU" ? (
-            <NativeSelect name="state" label={t("onboarding.stateLabel")} required defaultValue="">
-              <option value="" disabled>
-                {t("onboarding.selectState")}
-              </option>
-              {AU_STATES.map((state) => (
-                <option key={state.value} value={state.value}>
-                  {state.label}
+            <>
+              <NativeSelect name="state" label={t("onboarding.stateLabel")} required defaultValue="">
+                <option value="" disabled>
+                  {t("onboarding.selectState")}
                 </option>
-              ))}
-            </NativeSelect>
-          ) : null}
-          <Input name="postcode" label={t("onboarding.postcodeLabel")} required maxLength={12} />
+                {AU_STATES.map((state) => (
+                  <option key={state.value} value={state.value}>
+                    {state.label}
+                  </option>
+                ))}
+              </NativeSelect>
+              <Input name="postcode" label={t("onboarding.postcodeLabel")} required maxLength={4} />
+            </>
+          ) : (
+            <Input name="city" label={t("onboarding.cityLabel")} required maxLength={120} />
+          )}
 
           <Button type="submit" className="w-fit">
             {t("onboarding.createBusiness")}

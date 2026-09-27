@@ -31,12 +31,12 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
 
   const [drafts, balance] = await Promise.all([
     listCampaignDrafts(business.id, business.displayName),
-    getBalance(business.id, business.currency),
+    getBalance(business.id),
   ]);
 
   const setupStatus = {
     channelSet: business.logoUrl !== null,
-    pointsBought: balance.availablePoints > 0,
+    pointsBought: balance.remainingPoints > 0,
     campaignUploaded: drafts.some((draft) => draft.video.status === "ready"),
     questionsWritten: drafts.some((draft) => draft.questionBank.length > 0),
     campaignSubmitted: drafts.some((draft) => draft.status !== "draft"),

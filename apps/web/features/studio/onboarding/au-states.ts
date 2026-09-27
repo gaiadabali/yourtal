@@ -1,11 +1,17 @@
-/** Australian state/territory abbreviations, for the onboarding address form's state field. */
-export const AU_STATES: readonly { value: string; label: string }[] = [
-  { value: "NSW", label: "New South Wales" },
-  { value: "VIC", label: "Victoria" },
-  { value: "QLD", label: "Queensland" },
-  { value: "WA", label: "Western Australia" },
-  { value: "SA", label: "South Australia" },
-  { value: "TAS", label: "Tasmania" },
-  { value: "ACT", label: "Australian Capital Territory" },
-  { value: "NT", label: "Northern Territory" },
-];
+import { AU_STATES as AU_STATE_CODES } from "@yourtal/contracts/business";
+
+const AU_STATE_NAMES: Record<(typeof AU_STATE_CODES)[number], string> = {
+  NSW: "New South Wales",
+  VIC: "Victoria",
+  QLD: "Queensland",
+  WA: "Western Australia",
+  SA: "South Australia",
+  TAS: "Tasmania",
+  ACT: "Australian Capital Territory",
+  NT: "Northern Territory",
+};
+
+/** State/territory options for the onboarding address form — the codes come from the contract, not a second hand-kept list. */
+export const AU_STATES: readonly { value: string; label: string }[] = AU_STATE_CODES.map(
+  (code) => ({ value: code, label: AU_STATE_NAMES[code] }),
+);

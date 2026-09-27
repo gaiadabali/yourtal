@@ -11,7 +11,6 @@ export interface StudioZoneGridProps {
 const ZONE_BLURBS: Record<StudioNavItem["zone"], string> = {
   campaigns: "Video campaigns, chapters, question banks, targeting and budget.",
   inventory: "Listings, settlement value, stock and redemption policy.",
-  redemption: "Recent captures, per location and device.",
   reports: "Completion, accuracy, recall and redemption attribution.",
   billing: "Buy points, balance and purchase history.",
   team: "Members, roles, invitations and the audit trail.",

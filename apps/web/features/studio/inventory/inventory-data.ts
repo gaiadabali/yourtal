@@ -1,15 +1,21 @@
-import type { Currency } from "@yourtal/contracts/money/currency";
+import { z } from "zod";
+import { listingSchema } from "@yourtal/contracts/listing";
+import { merchantLocationSchema } from "@yourtal/contracts/listing/merchant-location";
 import type { Listing } from "@yourtal/contracts/listing";
 import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
+import type { Currency } from "@yourtal/contracts/money/currency";
 import type { Region } from "@yourtal/contracts/region";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
+import { apiFetch } from "@/lib/api/api-fetch";
 
 /**
  * A pending settlement-value decrease (7.4.b's two-person propose/approve
- * flow). No shared contract type exists for this yet — the real endpoints
- * (`SettlementDecreaseController`, already on `main`) return their own DTO
- * shape, which this type should be replaced by once `apps/web/lib/api`
- * gains a wrapper for it.
+ * flow). `SettlementDecreaseController` (already on main) only exposes
+ * per-listing propose/approve — there is no "list every pending request for
+ * this business" route yet, so both data sources below always return `[]`
+ * rather than an N+1 guess. (requested by D/7.8, for whoever owns 7.4.b
+ * next: a list endpoint would let this section show real data.)
  */
 export interface SettlementDecreaseRequest {
   id: string;
@@ -22,7 +28,50 @@ export interface SettlementDecreaseRequest {
   proposedAt: string;
 }
 
-function location(businessId: string, name: string, address: string, district: string): MerchantLocation {
+const listingsResponseSchema = z.object({ listings: z.array(listingSchema) });
+const locationsResponseSchema = z.object({ locations: z.array(merchantLocationSchema) });
+
+interface InventoryDataSource {
+  listListings: (
+    businessId: string,
+    merchantName: string,
+    region: Region,
+    currency: Currency,
+  ) => Promise<Listing[]>;
+  listLocations: (
+    businessId: string,
+    merchantName: string,
+    region: Region,
+    currency: Currency,
+  ) => Promise<MerchantLocation[]>;
+  listPendingDecreaseRequests: (businessId: string) => Promise<SettlementDecreaseRequest[]>;
+}
+
+/**
+ * `businessId` doubles as `:tenantId` — a business only ever manages its
+ * own inventory, same rule `StoreListingController`'s own doc comment
+ * states server-side.
+ */
+const liveDataSource: InventoryDataSource = {
+  listListings: async (businessId) => {
+    const result = await apiFetch(`/api/${businessId}/store/listings`, listingsResponseSchema);
+    if (!result.ok) throw new Error(`Could not load listings: ${result.error.message}`);
+    return result.data.listings;
+  },
+  listLocations: async (businessId) => {
+    const result = await apiFetch(`/api/${businessId}/store/locations`, locationsResponseSchema);
+    if (!result.ok) throw new Error(`Could not load locations: ${result.error.message}`);
+    return result.data.locations;
+  },
+  listPendingDecreaseRequests: () => Promise.resolve([]),
+};
+
+function mockLocation(
+  businessId: string,
+  name: string,
+  address: string,
+  district: string,
+): MerchantLocation {
   return {
     id: `${businessId}-loc-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
     name,
@@ -31,7 +80,7 @@ function location(businessId: string, name: string, address: string, district: s
   };
 }
 
-function fixtureListing(input: {
+function mockListing(input: {
   businessId: string;
   merchantName: string;
   region: Region;
@@ -53,9 +102,9 @@ function fixtureListing(input: {
     category: "food_beverage",
     locations: input.locations,
     currency: input.currency,
-    faceValueMinor: input.faceValueMinor,
-    settlementValueMinor: input.settlementValueMinor,
-    priceInPoints: input.priceInPoints,
+    faceValueMinor: toMinorUnits(input.faceValueMinor),
+    settlementValueMinor: toMinorUnits(input.settlementValueMinor),
+    priceInPoints: toPoints(input.priceInPoints),
     stockRemaining: input.stockRemaining,
     stockTotal: input.stockTotal,
     transferable: false,
@@ -72,62 +121,43 @@ function fixtureListing(input: {
   };
 }
 
-function fixturesFor(businessId: string, merchantName: string, region: Region, currency: Currency) {
-  const outlet = location(businessId, "Main outlet", "1 Example St", "Central");
-  const listings = [
-    fixtureListing({
-      businessId,
-      merchantName,
-      region,
-      currency,
-      title: "Signature combo",
-      faceValueMinor: currency === "AUD" ? 2_500 : 45_000,
-      settlementValueMinor: currency === "AUD" ? 1_800 : 32_000,
-      priceInPoints: 1_800,
-      stockTotal: 100,
-      stockRemaining: 62,
-      locations: [outlet],
-    }),
-  ];
-  const decreaseRequests: SettlementDecreaseRequest[] = [];
-  return { listings, decreaseRequests, locations: [outlet] };
-}
-
-const stateByBusinessId = new Map<
+const mockStateByBusinessId = new Map<
   string,
-  { listings: Listing[]; locations: MerchantLocation[]; decreaseRequests: SettlementDecreaseRequest[] }
+  { listings: Listing[]; locations: MerchantLocation[] }
 >();
 
-function stateFor(businessId: string, merchantName: string, region: Region, currency: Currency) {
-  const existing = stateByBusinessId.get(businessId);
+function mockStateFor(businessId: string, merchantName: string, region: Region, currency: Currency) {
+  const existing = mockStateByBusinessId.get(businessId);
   if (existing) return existing;
-  const created = fixturesFor(businessId, merchantName, region, currency);
-  stateByBusinessId.set(businessId, created);
+  const outlet = mockLocation(businessId, "Main outlet", "1 Example St", "Central");
+  const created = {
+    listings: [
+      mockListing({
+        businessId,
+        merchantName,
+        region,
+        currency,
+        title: "Signature combo",
+        faceValueMinor: currency === "AUD" ? 2_500 : 45_000,
+        settlementValueMinor: currency === "AUD" ? 1_800 : 32_000,
+        priceInPoints: 1_800,
+        stockTotal: 100,
+        stockRemaining: 62,
+        locations: [outlet],
+      }),
+    ],
+    locations: [outlet],
+  };
+  mockStateByBusinessId.set(businessId, created);
   return created;
-}
-
-interface InventoryDataSource {
-  listListings: (businessId: string, merchantName: string, region: Region, currency: Currency) => Promise<Listing[]>;
-  listLocations: (businessId: string, merchantName: string, region: Region, currency: Currency) => Promise<MerchantLocation[]>;
-  listPendingDecreaseRequests: (businessId: string) => Promise<SettlementDecreaseRequest[]>;
 }
 
 const mockDataSource: InventoryDataSource = {
   listListings: (businessId, merchantName, region, currency) =>
-    Promise.resolve(stateFor(businessId, merchantName, region, currency).listings),
+    Promise.resolve(mockStateFor(businessId, merchantName, region, currency).listings),
   listLocations: (businessId, merchantName, region, currency) =>
-    Promise.resolve(stateFor(businessId, merchantName, region, currency).locations),
-  listPendingDecreaseRequests: (businessId) =>
-    Promise.resolve(stateByBusinessId.get(businessId)?.decreaseRequests ?? []),
-};
-
-const NOT_IMPLEMENTED_MESSAGE =
-  "Live inventory data source is not implemented yet — this screen has not been wired to the real (already-merged) store/listings API.";
-
-const liveDataSource: InventoryDataSource = {
-  listListings: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
-  listLocations: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
-  listPendingDecreaseRequests: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
+    Promise.resolve(mockStateFor(businessId, merchantName, region, currency).locations),
+  listPendingDecreaseRequests: () => Promise.resolve([]),
 };
 
 const inventoryDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });

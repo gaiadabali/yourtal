@@ -6,6 +6,7 @@ import { StudioChrome } from "@/features/studio/studio-chrome";
 import { canViewZone } from "@/features/studio/studio-zone-access";
 import {
   listListings,
+  listLocations,
   listPendingDecreaseRequests,
 } from "@/features/studio/inventory/inventory-data";
 import { InventoryScreen } from "@/features/studio/inventory/inventory-screen";
@@ -32,8 +33,9 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
   }
 
   const { id: businessId, displayName, region, currency } = current.business;
-  const [listings, pendingDecreaseRequests] = await Promise.all([
+  const [listings, locations, pendingDecreaseRequests] = await Promise.all([
     listListings(businessId, displayName, region, currency),
+    listLocations(businessId, displayName, region, currency),
     listPendingDecreaseRequests(businessId),
   ]);
 
@@ -44,7 +46,11 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
       defaultBusinessId={defaultBusinessId}
       header={<PageHeader title="Inventory" />}
     >
-      <InventoryScreen listings={listings} pendingDecreaseRequests={pendingDecreaseRequests} />
+      <InventoryScreen
+        listings={listings}
+        locations={locations}
+        pendingDecreaseRequests={pendingDecreaseRequests}
+      />
     </StudioChrome>
   );
 }

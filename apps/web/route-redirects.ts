@@ -39,7 +39,10 @@ export const routeRedirects: readonly RouteRedirectRule[] = [
   { path: "/business", resolve: movedToStudio("/studio") },
   { path: "/business/campaigns", resolve: movedToStudio("/studio/campaigns") },
   { path: "/business/inventory", resolve: movedToStudio("/studio/inventory") },
-  { path: "/business/redemption", resolve: movedToStudio("/studio/redemptions") },
+  // No redemptions zone exists in Studio (F40 moved it to 8.2.g) — the old
+  // redemption tab was only ever a placeholder, so this sends a signed-in
+  // visitor to the overview rather than a route that no longer exists.
+  { path: "/business/redemption", resolve: movedToStudio("/studio") },
   { path: "/business/reports", resolve: movedToStudio("/studio/reports") },
   { path: "/business/team", resolve: movedToStudio("/studio/team") },
   { path: "/business/billing", resolve: movedToStudio("/studio/billing") },

@@ -2,14 +2,18 @@ import type { BusinessRole as BusinessRelationship } from "@yourtal/contracts/bu
 import type { BusinessTeamRole as StudioRole } from "@yourtal/contracts/business/team-role";
 
 /**
- * Studio's seven dashboard zones (docs/17-surfaces-and-roles.md §2). Every
+ * Studio's six dashboard zones (docs/17-surfaces-and-roles.md §2). Every
  * zone renders honestly even when the API behind it is still mock-only —
  * see each zone's own `*-data.ts` for its `resolveDataSource` seam.
+ *
+ * No "redemption"/"redemptions" zone here: F40 moved that screen to 8.2.g
+ * (Phase 8, once the counter-device and voucher-engine APIs exist) — a
+ * business holding the `redeemer` relationship simply has no Studio zone
+ * of its own yet, rather than a placeholder tab that leads nowhere.
  */
 export const STUDIO_ZONES = [
   "campaigns",
   "inventory",
-  "redemption",
   "reports",
   "billing",
   "team",
@@ -17,11 +21,9 @@ export const STUDIO_ZONES = [
 ] as const;
 export type StudioZone = (typeof STUDIO_ZONES)[number];
 
-/** User-facing zone names — "Redemptions" (plural) reads better than the internal `redemption` zone id. */
 export const ZONE_LABELS: Record<StudioZone, string> = {
   campaigns: "Campaigns",
   inventory: "Inventory",
-  redemption: "Redemptions",
   reports: "Reports",
   billing: "Billing",
   team: "Team",
@@ -56,7 +58,6 @@ interface ZoneAccessRule {
  * |------------|--------------|--------------------------------------------------|-------------------------------|
  * | campaigns  | advertiser   | owner, admin, marketer, analyst                  | owner, admin, marketer        |
  * | inventory  | supplier     | owner, admin, merchandiser, analyst              | owner, admin, merchandiser    |
- * | redemption | redeemer     | owner, admin                                     | owner, admin                  |
  * | reports    | —            | owner, admin, marketer, merchandiser, finance, analyst | (view only, no edit action)   |
  * | billing    | —            | owner, admin, finance                            | owner, finance                |
  * | team       | —            | owner, admin                                     | owner, admin                  |
@@ -71,11 +72,6 @@ export const ZONE_ACCESS: Record<StudioZone, ZoneAccessRule> = {
     relationship: "supplier",
     view: ["owner", "admin", "merchandiser", "analyst"],
     edit: ["owner", "admin", "merchandiser"],
-  },
-  redemption: {
-    relationship: "redeemer",
-    view: ["owner", "admin"],
-    edit: ["owner", "admin"],
   },
   reports: {
     relationship: null,

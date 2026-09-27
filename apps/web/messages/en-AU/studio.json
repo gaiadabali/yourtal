@@ -344,6 +344,9 @@
     "save": "Save"
   },
   "inventory": {
+    "locationsTitle": "Locations",
+    "locationsEmptyTitle": "No locations yet",
+    "locationsEmptyDescription": "Add an outlet before you list a voucher against it.",
     "pendingDecreasesTitle": "Pending settlement-value decreases",
     "awaitingSecondApproval": "Awaiting second approval",
     "listingsTitle": "Listings",

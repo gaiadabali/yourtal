@@ -8,7 +8,6 @@ describe("studio-zone-access", () => {
     expect(getVisibleZones("owner", ALL_RELATIONSHIPS)).toEqual([
       "campaigns",
       "inventory",
-      "redemption",
       "reports",
       "billing",
       "team",
@@ -17,7 +16,6 @@ describe("studio-zone-access", () => {
     expect(getVisibleZones("admin", ALL_RELATIONSHIPS)).toEqual([
       "campaigns",
       "inventory",
-      "redemption",
       "reports",
       "billing",
       "team",
@@ -36,7 +34,6 @@ describe("studio-zone-access", () => {
       "team",
       "channel",
     ]);
-    expect(canViewZone("redemption", "owner", relationships)).toBe(false);
   });
 
   it("mirrors team_test.yaml: only owner and admin may even view Team", () => {
@@ -62,10 +59,9 @@ describe("studio-zone-access", () => {
     expect(canEditZone("inventory", "analyst", ALL_RELATIONSHIPS)).toBe(false);
   });
 
-  it("gives marketer campaigns edit but no inventory or redemption access at all", () => {
+  it("gives marketer campaigns edit but no inventory access at all", () => {
     expect(canEditZone("campaigns", "marketer", ALL_RELATIONSHIPS)).toBe(true);
     expect(canViewZone("inventory", "marketer", ALL_RELATIONSHIPS)).toBe(false);
-    expect(canViewZone("redemption", "marketer", ALL_RELATIONSHIPS)).toBe(false);
   });
 
   it("gives finance billing edit and report view, nothing else", () => {

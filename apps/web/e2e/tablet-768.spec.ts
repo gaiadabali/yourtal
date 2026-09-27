@@ -26,7 +26,6 @@ const BUSINESS_ROUTES: readonly string[] = [
   "/studio",
   "/studio/campaigns",
   "/studio/inventory",
-  "/studio/redemptions",
   "/studio/reports",
   "/studio/team",
   "/studio/billing",

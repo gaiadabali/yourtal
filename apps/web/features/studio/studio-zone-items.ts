@@ -11,7 +11,6 @@ export type ZonePath =
   | "/studio"
   | "/studio/campaigns"
   | "/studio/inventory"
-  | "/studio/redemptions"
   | "/studio/reports"
   | "/studio/billing"
   | "/studio/team"
@@ -20,7 +19,6 @@ export type ZonePath =
 const ZONE_PATHS: Record<StudioZone, ZonePath> = {
   campaigns: "/studio/campaigns",
   inventory: "/studio/inventory",
-  redemption: "/studio/redemptions",
   reports: "/studio/reports",
   billing: "/studio/billing",
   team: "/studio/team",

@@ -344,6 +344,9 @@
     "save": "Simpan"
   },
   "inventory": {
+    "locationsTitle": "Lokasi",
+    "locationsEmptyTitle": "Belum ada lokasi",
+    "locationsEmptyDescription": "Tambahkan gerai sebelum membuat listing voucher untuknya.",
     "pendingDecreasesTitle": "Penurunan nilai penyelesaian tertunda",
     "awaitingSecondApproval": "Menunggu persetujuan kedua",
     "listingsTitle": "Listing",

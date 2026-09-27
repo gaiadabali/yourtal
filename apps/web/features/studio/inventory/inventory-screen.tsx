@@ -1,4 +1,5 @@
 import type { Listing } from "@yourtal/contracts/listing";
+import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
 import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
@@ -8,6 +9,7 @@ import type { SettlementDecreaseRequest } from "./inventory-data";
 
 export interface InventoryScreenProps {
   listings: readonly Listing[];
+  locations: readonly MerchantLocation[];
   pendingDecreaseRequests: readonly SettlementDecreaseRequest[];
 }
 
@@ -18,10 +20,39 @@ export interface InventoryScreenProps {
  * lists come from `inventory-data.ts`'s mock seam — see that file's comment
  * on the real, already-merged API this should flip to.
  */
-export function InventoryScreen({ listings, pendingDecreaseRequests }: InventoryScreenProps) {
+export function InventoryScreen({
+  listings,
+  locations,
+  pendingDecreaseRequests,
+}: InventoryScreenProps) {
   const t = getStudioTranslator();
   return (
     <div className="flex flex-col gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle as="h2">{t("inventory.locationsTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {locations.length === 0 ? (
+            <EmptyState
+              title={t("inventory.locationsEmptyTitle")}
+              description={t("inventory.locationsEmptyDescription")}
+            />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {locations.map((location) => (
+                <li key={location.id} className="text-body-sm text-fg">
+                  <span className="font-sans font-medium">{location.name}</span>{" "}
+                  <span className="text-fg-muted">
+                    — {location.address}, {location.district}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       {pendingDecreaseRequests.length > 0 ? (
         <Card>
           <CardHeader>

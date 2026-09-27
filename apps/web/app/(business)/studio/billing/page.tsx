@@ -4,10 +4,15 @@ import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
 import { canEditZone, canViewZone } from "@/features/studio/studio-zone-access";
-import { getBalance, listPacks, listPurchases } from "@/features/studio/billing/billing-data";
+import {
+  PRESET_POINT_AMOUNTS,
+  getBalance,
+  listPurchases,
+  quotePoints,
+} from "@/features/studio/billing/billing-data";
 import { BillingScreen } from "@/features/studio/billing/billing-screen";
 
-/** `/studio/billing` (task 7.5 / 7.8.b): pack prices, a simulated purchase, balance and purchase history. */
+/** `/studio/billing` (task 7.5 / 7.8.b): real quotes, a real purchase, real balance. */
 export default async function StudioBillingPage(props: PageProps<"/studio/billing">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
@@ -31,12 +36,14 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
     );
   }
 
-  const { currency } = current.business;
-  const [balance, packs, purchases] = await Promise.all([
-    getBalance(current.business.id, currency),
-    listPacks(currency),
-    listPurchases(current.business.id),
+  const { id: businessId, currency } = current.business;
+  const [balance, quotes, purchases] = await Promise.all([
+    getBalance(businessId),
+    Promise.all(PRESET_POINT_AMOUNTS.map((points) => quotePoints(businessId, points, currency))),
+    listPurchases(businessId),
   ]);
+  // Minted once per render, not per submit — see `billing-screen.tsx`'s doc comment.
+  const idempotencyKey = crypto.randomUUID();
 
   return (
     <StudioChrome
@@ -46,11 +53,12 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
       header={<PageHeader title="Billing" />}
     >
       <BillingScreen
-        businessId={current.business.id}
+        businessId={businessId}
         balance={balance}
-        packs={packs}
+        quotes={quotes}
         purchases={purchases}
         canPurchase={canPurchase}
+        idempotencyKey={idempotencyKey}
       />
     </StudioChrome>
   );

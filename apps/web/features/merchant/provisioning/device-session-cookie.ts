@@ -1,47 +1,41 @@
 import "server-only";
-// YT-0589: the enforcement this module's doc comment says does not exist.
-// Importing this file from a client graph is now a BUILD FAILURE rather
-// than a review catch. See apps/web/features/README-server-only.md.
+// YT-0589: importing this file from a client graph is a build failure, not
+// a review catch. See apps/web/features/README-server-only.md.
 
 import { cookies } from "next/headers";
 import { deviceBindingSchema, type DeviceBinding } from "./device-binding-schema";
 
 /**
- * The counter device's actual "session", per docs/17-surfaces-and-roles.md
- * section 2.2: "Device sessions, not personal accounts... a long-lived
- * refresh credential on that device only." A cookie is a much closer model
- * of that than `localStorage` would be: it is httpOnly (client JS,
- * including a compromised third-party script in the page, can never read
- * it), it is sent automatically on every request so a Server Component can
- * make the provisioned/locked/unlocked decision before rendering anything,
- * and it is the one storage mechanism `apps/web/features/region/get-region.ts`
- * and `apps/web/features/onboarding/commit-region-action.ts` already use for
- * exactly this "server-resolved, client-opaque" shape — this file mirrors
- * their pattern deliberately rather than inventing a second one.
+ * The counter device's real session, backed by `POST /api/devices/pair`'s
+ * bearer credential (TASKS.md 8.1.a/8.2.b). `DEVICE_COOKIE` is named
+ * `yt_device` to match `apps/web/proxy.ts`'s own coarse presence check
+ * (Area A's edge redirect to `/merchant/pair`) — same name, same cookie,
+ * never two sources of truth about whether this browser is paired.
  *
- * Two separate cookies, two separate lifetimes, because they answer two
- * different questions:
- *  - `DEVICE_COOKIE` — "has this browser been paired to a merchant at all?"
- *    Long-lived (1 year), matching "long-lived refresh credential."
- *  - `UNLOCK_COOKIE` — "is this shift's PIN unlock still in effect?" Short
- *    ceiling (5 minutes) as a hard backstop even if a client-side auto-lock
- *    listener fails to fire (`use-auto-lock.ts`) — the real, fast lock path
- *    is still that client-side listener calling `lockDeviceAction`
- *    immediately on inactivity or the tab going hidden, not this cookie's
- *    expiry.
+ * Two separate cookies, two separate lifetimes, same reasoning this file
+ * has always used:
+ *  - `DEVICE_COOKIE` — "has this browser been paired at all?" Long-lived
+ *    (1 year, docs/17 §2.2's "long-lived refresh credential").
+ *  - `UNLOCK_COOKIE` — "is this shift's PIN unlock still in effect?" A short
+ *    ceiling (5 minutes) as a hard backstop even if `use-auto-lock.ts`'s
+ *    client-side listener fails to fire — the real, fast lock path is still
+ *    that listener calling `lockDeviceAction` immediately on inactivity or
+ *    the tab going hidden.
  *
- * SERVER-ONLY: value-imports `next/headers` (throws in the browser) and
- * `device-binding-schema.ts` (full `zod`). No "use client" file may import
- * this module — only `provisioning-actions.ts` (`"use server"`) and Server
- * Components (`page.tsx`, `device-provisioning-form.tsx`,
- * `pin-unlock-screen.tsx`, `merchant-session-chrome.tsx`,
- * `app/(merchant)/merchant/devices/page.tsx`, and, since task 0.5,
- * `app/(merchant)/layout.tsx`, which reads `locale` for `lang`). The repo
- * has no `server-only` package installed to enforce this at build time
- * (same gap `get-region.ts` notes); this comment is the only guard until
- * one is added.
+ * Unlocking is a CLIENT-SIDE UX lock only — it never substitutes for the
+ * bearer credential, which is presented on every single device-authenticated
+ * call (`counter-redemption-data.ts`) regardless of whether this shift
+ * happens to be "unlocked". A revoked credential is caught the moment ANY
+ * such call 401s, not by anything read here.
+ *
+ * SERVER-ONLY: value-imports `next/headers` (throws in the browser) and the
+ * full `zod` (via `device-binding-schema.ts`). No "use client" file may
+ * import this module — only `provisioning-actions.ts` (`"use server"`) and
+ * Server Components (`page.tsx`, `pin-unlock-screen.tsx`,
+ * `merchant-session-chrome.tsx`, and `app/(merchant)/layout.tsx`, which
+ * reads `locale` for `lang`).
  */
-const DEVICE_COOKIE = "yourtal-merchant-device";
+const DEVICE_COOKIE = "yt_device";
 const UNLOCK_COOKIE = "yourtal-merchant-unlocked";
 
 const DEVICE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
@@ -59,8 +53,12 @@ function decodeBinding(raw: string): unknown {
  * Reads and validates the device binding cookie. Never throws — a missing,
  * corrupt, truncated or schema-invalid cookie all resolve to `null`, which
  * `merchant-data.ts`'s `getMerchantDevice()` treats identically to "never
- * provisioned": show the provisioning form again rather than crash the
- * page.
+ * paired": show the pairing form again rather than crash the page. This is
+ * also the enforcement half of D16 (8.2.f): a hand-made or unsigned cookie
+ * value fails `safeParse` (it is not valid base64url JSON matching the
+ * schema) exactly like a missing one, and the real credential inside a
+ * genuine cookie is verified again, for real, by the API on every call —
+ * this function alone grants nothing.
  */
 export async function readDeviceBinding(): Promise<DeviceBinding | null> {
   try {
@@ -76,23 +74,19 @@ export async function readDeviceBinding(): Promise<DeviceBinding | null> {
   }
 }
 
-/** Writes the device binding cookie — the one moment a device is "paired." Only `submitProvisioningCode` calls this. */
+/** Writes the device binding cookie — the one moment a device is "paired." Only `submitPairingCode` calls this. */
 export async function writeDeviceBinding(binding: DeviceBinding): Promise<void> {
   const store = await cookies();
   store.set(DEVICE_COOKIE, encodeBinding(binding), {
     httpOnly: true,
+    secure: true,
     sameSite: "lax",
     path: "/merchant",
     maxAge: DEVICE_COOKIE_MAX_AGE_SECONDS,
   });
 }
 
-/**
- * Un-pairs this browser entirely — used when a device is found to be
- * revoked (`getMerchantDevice()`) and by `revokeDeviceAction` when the
- * device being revoked from `/merchant/devices` is this same browser.
- * Also clears the unlock cookie: an un-paired device is never "unlocked."
- */
+/** Un-pairs this browser entirely — used when a device-authenticated call 401s (revoked or unknown credential). Also clears the unlock cookie: an un-paired device is never "unlocked." */
 export async function clearDeviceBinding(): Promise<void> {
   const store = await cookies();
   store.delete(DEVICE_COOKIE);
@@ -110,6 +104,7 @@ export async function markUnlocked(): Promise<void> {
   const store = await cookies();
   store.set(UNLOCK_COOKIE, "1", {
     httpOnly: true,
+    secure: true,
     sameSite: "lax",
     path: "/merchant",
     maxAge: UNLOCK_COOKIE_MAX_AGE_SECONDS,

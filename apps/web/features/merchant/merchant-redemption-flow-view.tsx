@@ -1,8 +1,8 @@
+import type { CounterLogEntry } from "@yourtal/contracts/device/counter-redemption";
 import { Button } from "@yourtal/ui/button";
 import type { MerchantDevice } from "./merchant-device";
 import type { MerchantCopy } from "./merchant-i18n";
 import type { MerchantRedemptionStep } from "./merchant-redemption-state";
-import type { MerchantLogEntry } from "./merchant-today-log";
 import type { MerchantOutcome } from "./merchant-outcome-panel";
 import { MerchantIdentifyPanel } from "./merchant-identify-panel";
 import { MerchantReviewForm } from "./merchant-review-form";
@@ -15,8 +15,7 @@ export interface MerchantRedemptionFlowViewProps {
   device: MerchantDevice;
   copy: MerchantCopy;
   isOnline: boolean;
-  isSyncing: boolean;
-  logEntries: MerchantLogEntry[];
+  logEntries: readonly CounterLogEntry[];
   onSubmitCode: (code: string) => void;
   onScanDetect: (payload: string) => void;
   onAmountChange: (amountMinor: number) => void;
@@ -30,14 +29,9 @@ export interface MerchantRedemptionFlowViewProps {
 function outcomeFor(step: MerchantRedemptionStep): MerchantOutcome | null {
   switch (step.step) {
     case "success":
-      return { kind: "success", receipt: step.receipt };
-    case "queued":
-      return {
-        kind: "queued",
-        voucherCode: step.voucher.code,
-        amountMinor: step.amountMinor,
-        queuedAt: step.queuedAt,
-      };
+      return { kind: "success", capture: step.capture };
+    case "offline":
+      return { kind: "offline" };
     case "failed":
       return { kind: "failed", error: step.error };
     default:
@@ -49,19 +43,17 @@ function outcomeFor(step: MerchantRedemptionStep): MerchantOutcome | null {
  * The whole flow's presentation, one screen per `MerchantRedemptionStep`
  * — kept separate from `merchant-redemption-screen.tsx` (which owns the
  * state machine, effects and handlers) purely to stay under the 300-line
- * file limit (docs/13b-typescript-standards.md); this component holds no
- * state of its own, only the render for whichever `step` it is handed.
+ * file limit. This component holds no state of its own.
  *
- * There is no branch here that shows a voucher as redeemed before
- * `processing` resolves to `success` — see `merchant-redemption-screen.tsx`'s
- * doc comment for why that ordering is the ticket's central requirement.
+ * TASKS.md 8.1's device-info gap (`merchant-i18n.ts`'s doc comment) means
+ * there is no device label or location to show in the header yet — only a
+ * generic device badge.
  */
 export function MerchantRedemptionFlowView({
   step,
   device,
   copy,
   isOnline,
-  isSyncing,
   logEntries,
   onSubmitCode,
   onScanDetect,
@@ -79,18 +71,10 @@ export function MerchantRedemptionFlowView({
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-sans font-semibold text-fg">{copy.portalHeading}</h1>
         <p className="text-sm font-sans text-fg-muted">
-          {copy.deviceBadgePrefix}: {device.label}
-        </p>
-        {/* YT-0583: which outlet this device stands in. `label` is the
-            counter, not the shop, and a merchant with two branches has
-            counters in both — so staff could previously see the till they
-            were on but not the store, while the wrong_merchant error told
-            them to check "the store named on the voucher". */}
-        <p className="text-sm font-sans text-fg-muted">
-          {copy.deviceLocationPrefix}: {device.location.name} — {device.location.district}
+          {copy.deviceBadgePrefix}: {device.id.slice(0, 8)}
         </p>
       </header>
-      <MerchantConnectivityBanner isOnline={isOnline} isSyncing={isSyncing} copy={copy} />
+      <MerchantConnectivityBanner isOnline={isOnline} copy={copy} />
       {step.step === "identify" ? (
         <MerchantIdentifyPanel
           copy={copy}
@@ -125,11 +109,9 @@ export function MerchantRedemptionFlowView({
       ) : null}
       {step.step === "reviewing" ? (
         <MerchantReviewForm
-          voucher={step.voucher}
+          preview={step.preview}
           amountMinor={step.amountMinor}
           effectiveRemainingMinor={step.effectiveRemainingMinor}
-          locale={device.locale}
-          currency={device.currency}
           copy={copy}
           onAmountChange={onAmountChange}
           onConfirm={onConfirm}
@@ -149,19 +131,20 @@ export function MerchantRedemptionFlowView({
         <MerchantOutcomePanel
           outcome={outcome}
           locale={device.locale}
-          currency={device.currency}
+          currency={
+            step.step === "success"
+              ? step.capture.currency
+              : step.step === "offline" || step.step === "failed"
+                ? step.preview.currency
+                : "AUD"
+          }
           copy={copy}
           onRetry={onRetry}
           onEditAmount={onEditAmount}
           onNewRedemption={onNewRedemption}
         />
       ) : null}
-      <MerchantTodayLogPanel
-        entries={logEntries}
-        locale={device.locale}
-        currency={device.currency}
-        copy={copy}
-      />
+      <MerchantTodayLogPanel entries={logEntries} locale={device.locale} copy={copy} />
     </div>
   );
 }

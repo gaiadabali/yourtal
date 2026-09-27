@@ -1,19 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { Voucher } from "@yourtal/contracts/voucher";
+import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { MerchantVoucherSummary } from "./merchant-voucher-summary";
 import type { MerchantCopy } from "./merchant-i18n";
-import type { MerchantCurrency, MerchantLocale } from "./merchant-device";
 
 export interface MerchantReviewFormProps {
-  voucher: Voucher;
+  preview: CounterVoucherPreview;
   amountMinor: number;
   effectiveRemainingMinor: number;
-  locale: MerchantLocale;
-  currency: MerchantCurrency;
   copy: MerchantCopy;
   onAmountChange: (amountMinor: number) => void;
   onConfirm: () => void;
@@ -21,20 +18,16 @@ export interface MerchantReviewFormProps {
 }
 
 /**
- * Tap 2 of the ticket's "enter a code, confirm, done, in two taps": the
- * amount defaults to the voucher's full effective remaining value (the
- * common case — a full-value redemption needs no typing at all, just a
- * tap on "Confirm redemption"), editable for a genuine partial spend.
- * Large touch targets throughout (`size="lg"`, generous input height) per
- * this ticket's "huge touch targets... one-handed" brief — this is a
+ * Tap 2 of "enter a code, confirm, done, in two taps": the amount defaults
+ * to the voucher's full remaining value (a full-value redemption needs no
+ * typing at all, just a tap on "Confirm redemption"), editable for a
+ * genuine partial spend. Large touch targets throughout — this is a
  * shared, standing-up shop device, not a desk.
  */
 export function MerchantReviewForm({
-  voucher,
+  preview,
   amountMinor,
   effectiveRemainingMinor,
-  locale,
-  currency,
   copy,
   onAmountChange,
   onConfirm,
@@ -51,10 +44,8 @@ export function MerchantReviewForm({
   return (
     <div className="flex flex-col gap-4">
       <MerchantVoucherSummary
-        voucher={voucher}
+        preview={preview}
         effectiveRemainingMinor={effectiveRemainingMinor}
-        locale={locale}
-        currency={currency}
         copy={copy}
       />
       <Input

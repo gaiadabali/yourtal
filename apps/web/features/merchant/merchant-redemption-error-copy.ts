@@ -1,7 +1,8 @@
+import type { Currency } from "@yourtal/contracts/money/currency";
 import { formatMerchantMoney } from "./merchant-money";
 import { getMerchantTranslator } from "./merchant-i18n";
 import type { MerchantRedemptionError } from "./merchant-redemption-errors";
-import type { MerchantCurrency, MerchantLocale } from "./merchant-device";
+import type { MerchantLocale } from "./merchant-device";
 
 export interface MerchantErrorCopy {
   heading: string;
@@ -16,32 +17,22 @@ function formatDateTime(iso: string, locale: MerchantLocale): string {
 
 /**
  * Plain-language copy, in the device's own locale, for every reason a
- * redemption can be blocked (this ticket's brief: "'Invalid' alone is
- * useless — a customer is standing there"). Every message says what
- * happened AND what the cashier should do next, never just a status word.
- * Exhaustive `switch` with a `never` default (docs/13b §4): a new
- * `MerchantRedemptionError` variant without a matching `merchant.error.*`
- * case fails the build.
- *
- * Money is formatted via `formatMerchantMoney` (`merchant-money.ts`), a
- * thin wrapper around `@yourtal/contracts/money/format`'s `formatMoney` —
- * safe in client code by design (that module is kept dependency-free
- * specifically so client components can format without paying for Zod).
- * `currency` is resolved once, server-side, in `merchant-data.ts`; this
- * function never imports the region contract.
+ * redemption can be blocked. Keyed by `error.code` rather than an
+ * exhaustive switch (see `merchant-redemption-errors.ts`'s doc comment for
+ * why: most codes now come from the server, which this feature cannot
+ * enumerate at compile time) — an unrecognised code falls back to the
+ * server's own `message` (or a generic network-error copy if there is
+ * none), never a blank screen.
  */
 export function errorCopyFor(
   error: MerchantRedemptionError,
   locale: MerchantLocale,
-  currency: MerchantCurrency,
+  currency: Currency,
 ): MerchantErrorCopy {
   const t = getMerchantTranslator(locale);
-  switch (error.type) {
+  switch (error.code) {
     case "voucher_not_found":
-      return {
-        heading: t("error.voucherNotFound.heading"),
-        body: t("error.voucherNotFound.body"),
-      };
+      return { heading: t("error.voucherNotFound.heading"), body: t("error.voucherNotFound.body") };
     case "already_redeemed":
       return {
         heading: t("error.alreadyRedeemed.heading"),
@@ -50,14 +41,8 @@ export function errorCopyFor(
     case "expired":
       return {
         heading: t("error.expired.heading"),
-        body: t("error.expired.body", { date: formatDateTime(error.expiresAt, locale) }),
-      };
-    case "wrong_merchant":
-      return {
-        heading: t("error.wrongMerchant.heading"),
-        body: t("error.wrongMerchant.body", {
-          voucherMerchantName: error.voucherMerchantName,
-          deviceMerchantName: error.deviceMerchantName,
+        body: t("error.expired.body", {
+          date: formatDateTime(error.expiresAt ?? new Date().toISOString(), locale),
         }),
       };
     case "amount_not_positive":
@@ -69,24 +54,22 @@ export function errorCopyFor(
       return {
         heading: t("error.amountExceedsRemainingValue.heading"),
         body: t("error.amountExceedsRemainingValue.body", {
-          remaining: formatMerchantMoney(error.remainingValueMinor, currency),
+          remaining: formatMerchantMoney(error.remainingValueMinor ?? 0, currency),
         }),
       };
     case "requires_full_value_redemption":
       return {
         heading: t("error.requiresFullValueRedemption.heading"),
         body: t("error.requiresFullValueRedemption.body", {
-          remaining: formatMerchantMoney(error.remainingValueMinor, currency),
+          remaining: formatMerchantMoney(error.remainingValueMinor ?? 0, currency),
         }),
       };
     case "network_error":
+      return { heading: t("error.networkError.heading"), body: t("error.networkError.body") };
+    default:
       return {
         heading: t("error.networkError.heading"),
-        body: t("error.networkError.body"),
+        body: error.fallbackMessage ?? t("error.networkError.body"),
       };
-    default: {
-      const exhaustive: never = error;
-      return exhaustive;
-    }
   }
 }

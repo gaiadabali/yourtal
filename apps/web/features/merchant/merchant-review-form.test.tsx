@@ -2,47 +2,29 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { Voucher } from "@yourtal/contracts/voucher";
+import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
 import { getMerchantCopy } from "./merchant-i18n";
 import { MerchantReviewForm } from "./merchant-review-form";
 import { rupiah } from "@yourtal/contracts/money";
 
 const copy = getMerchantCopy("en-AU");
 
-const voucher: Voucher = {
-  id: "v1",
-  listingId: "l1",
-  ownerId: "o1",
-  code: "GOODCODE1",
-  merchantId: "m1",
+const preview: CounterVoucherPreview = {
+  voucherId: "00000000-0000-4000-8000-000000000101",
   merchantName: "Toko Berkah",
-  location: {
-    id: "loc1",
-    name: "Toko Berkah Kemang",
-    address: "Jl. Kemang Raya 1",
-    district: "Kemang",
-  },
-  title: "Voucher Toko Berkah",
-  currency: "IDR",
-  faceValueMinor: rupiah(80_000),
+  offerTitle: "Voucher Toko Berkah",
   remainingValueMinor: rupiah(80_000),
-  minimumSpendMinor: null,
+  currency: "IDR",
   partialRedemptionPolicy: "balance_carrying",
-  transferable: true,
-  status: "active",
-  issuedAt: "2026-09-01T00:00:00.000Z",
-  expiresAt: "2026-12-01T00:00:00.000Z",
 };
 
 describe("MerchantReviewForm", () => {
   it("defaults the amount to the full effective remaining value", () => {
     render(
       <MerchantReviewForm
-        voucher={voucher}
+        preview={preview}
         amountMinor={80_000}
         effectiveRemainingMinor={80_000}
-        locale="en-AU"
-        currency="AUD"
         copy={copy}
         onAmountChange={vi.fn()}
         onConfirm={vi.fn()}
@@ -57,11 +39,9 @@ describe("MerchantReviewForm", () => {
     const onConfirm = vi.fn();
     render(
       <MerchantReviewForm
-        voucher={voucher}
+        preview={preview}
         amountMinor={80_000}
         effectiveRemainingMinor={80_000}
-        locale="en-AU"
-        currency="AUD"
         copy={copy}
         onAmountChange={vi.fn()}
         onConfirm={onConfirm}
@@ -77,11 +57,9 @@ describe("MerchantReviewForm", () => {
     const onAmountChange = vi.fn();
     render(
       <MerchantReviewForm
-        voucher={voucher}
+        preview={preview}
         amountMinor={80_000}
         effectiveRemainingMinor={80_000}
-        locale="en-AU"
-        currency="AUD"
         copy={copy}
         onAmountChange={onAmountChange}
         onConfirm={vi.fn()}
@@ -99,11 +77,9 @@ describe("MerchantReviewForm", () => {
     const onCancel = vi.fn();
     render(
       <MerchantReviewForm
-        voucher={voucher}
+        preview={preview}
         amountMinor={80_000}
         effectiveRemainingMinor={80_000}
-        locale="en-AU"
-        currency="AUD"
         copy={copy}
         onAmountChange={vi.fn()}
         onConfirm={vi.fn()}

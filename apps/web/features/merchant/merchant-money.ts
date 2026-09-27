@@ -1,5 +1,5 @@
 import { asDisplayIdr, formatMoney } from "@yourtal/contracts/money/format";
-import type { MerchantCurrency } from "./merchant-device";
+import type { Currency } from "@yourtal/contracts/money/currency";
 
 /**
  * `formatMoney`'s first parameter is branded `IdrMinorUnits`
@@ -18,6 +18,6 @@ import type { MerchantCurrency } from "./merchant-device";
  * there is exactly one place carrying that justification instead of one
  * per call site.
  */
-export function formatMerchantMoney(amountMinor: number, currency: MerchantCurrency): string {
+export function formatMerchantMoney(amountMinor: number, currency: Currency): string {
   return formatMoney(asDisplayIdr(amountMinor), currency);
 }

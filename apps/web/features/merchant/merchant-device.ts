@@ -1,42 +1,30 @@
 /**
- * Plain, UI-level shape of a provisioned counter device (YT-0445; device
- * provisioning and PIN unlock itself is YT-0446, a separate, dependent
- * ticket — this feature assumes a device identity already exists and
- * renders against it).
+ * Plain, UI-level shape of a paired counter device (TASKS.md 8.1/8.2).
  *
- * Deliberately NOT a `@yourtal/contracts` type: there is no wire contract
- * for a store device yet (see `docs/17-surfaces-and-roles.md` section 2.2
- * and `policies/resource_policies/redemption.yaml`'s `store_device_of`
- * derived role for the authorization shape this will eventually bind to).
- * `locale`/`currency`/`countryName` are plain string literals — resolved
- * once, server-side, in `merchant-region-source.ts` from the real
- * `@yourtal/contracts/region` contract — so this type and every client leaf
- * that consumes it stays completely decoupled from that package. If the
- * region contract is not yet installed, only `merchant-region-source.ts`
- * (and `merchant-data.ts`, which calls it) is affected; nothing here is.
+ * REWRITE: this used to carry a whole mock profile (merchant name, label,
+ * location, currency, country name) because there was no real backend to
+ * ask. There is now (`apps/api/src/modules/devices`), but pairing
+ * (`POST /api/devices/pair`) and unlocking (`POST /api/devices/unlock`)
+ * both return only an opaque credential/deviceId — neither the studio
+ * provisioning record's `label`/`locationId`/`region` reaches the paired
+ * device itself. There is no endpoint yet for a paired device to read its
+ * OWN display info back (`(requested by B)` on TASKS.md 8.1 asks for one:
+ * extending `unlockDeviceResultSchema` with the device's own
+ * `CounterDevice`, since `device-unlock.controller.ts` already loads that
+ * row before calling `unlockDevice`).
+ *
+ * Until that lands, `locale` is a fixed `"en-AU"` default for this
+ * portal's CHROME text only (heading, buttons, error copy) — it never
+ * decides a redemption's currency, which always comes fresh off that
+ * voucher's own lookup response (`CounterVoucherPreview.currency`,
+ * `@yourtal/contracts/device/counter-redemption`). A wrong chrome
+ * language is a UX gap; a wrong money currency would be a real defect —
+ * this design cannot produce the second kind.
  */
-import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
-
 export type MerchantLocale = "en-AU" | "id-ID";
-export type MerchantCurrency = "AUD" | "IDR";
 
 export interface MerchantDevice {
-  /** Stable id for this device, e.g. "counter-kemang-2" — used to scope the local today log (docs/17 §2.2: "every redemption records the device"). */
+  /** The paired device's own id — used to scope the today log's key, not for display (there is nothing to display it as yet). */
   id: string;
-  /** Staff-facing name, e.g. "Kemang counter 2". */
-  label: string;
-  merchantId: string;
-  merchantName: string;
-  /**
-   * YT-0583: the outlet this device stands in. `label` is the counter
-   * ("Kemang counter 2"); this is the branch, and they are different facts
-   * — a merchant with two shops has counters in both. Without it the portal
-   * could tell staff which till they were on but not which shop, and the
-   * `wrong_merchant` error already told them to "direct the customer to the
-   * store named on the voucher" at a time when no voucher named a store.
-   */
-  location: MerchantLocation;
   locale: MerchantLocale;
-  currency: MerchantCurrency;
-  countryName: string;
 }

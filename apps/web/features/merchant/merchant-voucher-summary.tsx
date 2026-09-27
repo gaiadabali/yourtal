@@ -1,68 +1,47 @@
-import { formatMerchantMoney } from "./merchant-money";
-import type { Voucher } from "@yourtal/contracts/voucher";
-import { Badge } from "@yourtal/ui/badge";
+import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { getMerchantTranslator, type MerchantCopy } from "./merchant-i18n";
-import type { MerchantCurrency, MerchantLocale } from "./merchant-device";
+import { formatMerchantMoney } from "./merchant-money";
+import type { MerchantCopy } from "./merchant-i18n";
 
 export interface MerchantVoucherSummaryProps {
-  voucher: Voucher;
+  preview: CounterVoucherPreview;
   effectiveRemainingMinor: number;
-  locale: MerchantLocale;
-  currency: MerchantCurrency;
   copy: MerchantCopy;
 }
 
-const NEAR_EXPIRY_WINDOW_MS = 60 * 60 * 1000;
-
 /**
- * The voucher review card — merchant name, code and remaining value in
- * large type (this ticket's "readable in bright light" brief), plus a
- * near-expiry warning when under an hour remains, so
- * `expiringWithinHourVoucherFixture` renders as a visible, legible edge
- * case rather than an indistinguishable "active" voucher (the brief: this
- * fixture and `expiredVoucherFixture` "are built to break assumptions").
+ * The voucher review card — merchant name, offer and remaining value in
+ * large type (this ticket's "readable in bright light" brief).
+ *
+ * TASKS.md 8.2 REWRITE: this used to read a full consumer `Voucher` and
+ * show its `code` and an expiry countdown. The server-shaped
+ * `CounterVoucherPreview` (`@yourtal/contracts/device/counter-redemption`)
+ * carries neither — the code was already consumed at lookup time, and
+ * there is no expiry field on the preview — so both are dropped here
+ * rather than faked.
  */
 export function MerchantVoucherSummary({
-  voucher,
+  preview,
   effectiveRemainingMinor,
-  locale,
-  currency,
   copy,
 }: MerchantVoucherSummaryProps) {
-  const msUntilExpiry = new Date(voucher.expiresAt).getTime() - Date.now();
-  const isNearExpiry = msUntilExpiry > 0 && msUntilExpiry <= NEAR_EXPIRY_WINDOW_MS;
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">{voucher.merchantName}</CardTitle>
-        <p className="font-mono text-lg tracking-wide text-fg-muted">{voucher.code}</p>
+        <CardTitle className="text-xl">{preview.merchantName}</CardTitle>
+        <p className="text-sm font-sans text-fg-muted">{preview.offerTitle}</p>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm font-sans text-fg-muted">{voucher.title}</span>
+          <span className="text-sm font-sans text-fg-muted">{copy.remainingValueLabel}</span>
           <span className="text-2xl font-sans font-semibold tabular-nums text-fg">
-            {formatMerchantMoney(effectiveRemainingMinor, currency)}
+            {formatMerchantMoney(effectiveRemainingMinor, preview.currency)}
           </span>
         </div>
-        {isNearExpiry ? (
-          <Badge variant="warning" className="w-fit">
-            {formatExpiryWarning(voucher.expiresAt, locale)}
-          </Badge>
-        ) : null}
-        {voucher.partialRedemptionPolicy === "minimum_spend" ? (
+        {preview.partialRedemptionPolicy === "single_use" ? (
           <p className="text-xs font-sans text-fg-subtle">{copy.amountHelp}</p>
         ) : null}
       </CardContent>
     </Card>
   );
-}
-
-function formatExpiryWarning(expiresAt: string, locale: MerchantLocale): string {
-  const minutesLeft = Math.max(
-    0,
-    Math.round((new Date(expiresAt).getTime() - Date.now()) / 60_000),
-  );
-  return getMerchantTranslator(locale)("portal.expiresInMinutes", { minutes: minutesLeft });
 }

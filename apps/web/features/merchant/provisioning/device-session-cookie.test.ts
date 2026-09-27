@@ -22,22 +22,9 @@ function createCookieJar() {
 }
 
 const validBinding: DeviceBinding = {
-  deviceId: "device-toko-berkah-1",
-  merchantId: "00000000-0000-4000-8000-000000000601",
-  merchantName: "Toko Berkah",
-  label: "Toko Berkah — Kasir 1",
-  locale: "id-ID",
-  currency: "IDR",
-  countryName: "Indonesia",
-  location: {
-    id: "00000000-0000-4000-8000-0000000006a1",
-    name: "Test Merchant — Surry Hills",
-    address: "1 Surry Hills Street",
-    district: "Surry Hills",
-  },
-  pinHash: "abc123",
-  pinSalt: "deadbeef",
-  provisionedAt: "2026-09-19T00:00:00.000Z",
+  deviceId: "3f9a2b10-1111-4000-8000-000000000001",
+  credential: "dc_live_abcdef1234567890",
+  pairedAt: "2026-09-19T00:00:00.000Z",
 };
 
 async function loadModuleWithFreshCookieJar() {
@@ -66,14 +53,14 @@ describe("device-session-cookie", () => {
 
   it("returns null (never throws) for a corrupt cookie value", async () => {
     const { mod, jar } = await loadModuleWithFreshCookieJar();
-    jar.set("yourtal-merchant-device", "not-valid-base64url-json-at-all!!");
+    jar.set("yt_device", "not-valid-base64url-json-at-all!!");
     expect(await mod.readDeviceBinding()).toBeNull();
   });
 
-  it("returns null for a well-formed but schema-invalid payload", async () => {
+  it("returns null for a well-formed but schema-invalid payload (D16: a hand-made cookie value grants nothing)", async () => {
     const { mod, jar } = await loadModuleWithFreshCookieJar();
     const malformed = Buffer.from(JSON.stringify({ deviceId: "x" }), "utf8").toString("base64url");
-    jar.set("yourtal-merchant-device", malformed);
+    jar.set("yt_device", malformed);
     expect(await mod.readDeviceBinding()).toBeNull();
   });
 

@@ -2,7 +2,6 @@
   "portal": {
     "portalHeading": "Redeem Voucher",
     "deviceBadgePrefix": "Perangkat",
-    "deviceLocationPrefix": "Lokasi",
     "tabScan": "Pindai QR",
     "tabManual": "Masukkan kode",
     "manualCodeLabel": "Kode voucher",
@@ -26,20 +25,12 @@
     "processingAuthorize": "Memverifikasi voucher…",
     "processingCapture": "Menyelesaikan redeem…",
     "successHeading": "Berhasil di-redeem",
-    "queuedHeading": "Menunggu koneksi",
-    "queuedBody": "Perangkat sedang offline. Redeem ini disimpan dan akan dikonfirmasi otomatis begitu koneksi kembali — belum berhasil sampai saat itu.",
     "newRedemptionButton": "Redeem voucher lain",
-    "offlineLabel": "Offline",
-    "syncingLabel": "Menyinkronkan",
-    "offlineBanner": "Offline — redeem baru akan disimpan dan menunggu sinkronisasi.",
-    "backOnlineBanner": "Koneksi kembali. Menyinkronkan redeem yang tertunda…",
-    "syncingBanner": "Menyinkronkan…",
+    "cantRedeemOfflineHeading": "Tidak bisa redeem saat offline",
+    "cantRedeemOfflineBody": "Perangkat ini sedang tidak terhubung. Belum ada yang terpotong — coba lagi setelah terhubung.",
     "todayHeading": "Redeem hari ini",
     "todayTotalLabel": "Total terkonfirmasi",
-    "todayPendingLabel": "menunggu sinkronisasi",
     "todayEmpty": "Belum ada redeem hari ini.",
-    "todayStatusPending": "Menunggu",
-    "todayStatusFailed": "Gagal",
     "remainingValueLabel": "Sisa nilai voucher: ",
     "expiresInMinutes": "Kedaluwarsa dalam {minutes} menit"
   },
@@ -56,10 +47,6 @@
       "heading": "Voucher sudah kedaluwarsa",
       "body": "Voucher ini kedaluwarsa pada {date} dan tidak bisa dipakai. Beri tahu pelanggan bahwa voucher ini sudah tidak berlaku."
     },
-    "wrongMerchant": {
-      "heading": "Voucher untuk toko lain",
-      "body": "Voucher ini untuk {voucherMerchantName}, bukan {deviceMerchantName}. Arahkan pelanggan ke toko yang tertera pada voucher."
-    },
     "amountNotPositive": {
       "heading": "Jumlah tidak valid",
       "body": "Masukkan jumlah belanja yang lebih besar dari nol."
@@ -70,7 +57,7 @@
     },
     "requiresFullValueRedemption": {
       "heading": "Voucher ini harus dipakai penuh",
-      "body": "Voucher ini punya minimum belanja dan harus di-redeem senilai penuh {remaining}."
+      "body": "Voucher ini harus di-redeem senilai penuh {remaining}."
     },
     "networkError": {
       "heading": "Redeem gagal diproses",
@@ -86,24 +73,14 @@
     "lockedByDeviceLabel": "Perangkat",
     "errorWrongPin": "PIN salah. Coba lagi.",
     "errorTooManyAttempts": "Terlalu banyak percobaan salah. Tunggu sebentar lalu coba lagi.",
-    "revokedHeading": "Perangkat ini telah dicabut",
-    "revokedBody": "Admin toko telah mencabut akses perangkat ini. Hubungi Admin untuk mendapatkan kode pemasangan baru.",
-    "devicesHeading": "Perangkat yang terdaftar",
-    "devicesThisDevice": "(perangkat ini)",
-    "revokeButton": "Cabut akses",
-    "revokedBadge": "Dicabut",
     "form": {
-      "heading": "Siapkan perangkat ini",
-      "intro": "Minta kode pemasangan dari Admin bisnis kamu — kode ini dibuat dari zona Tim di konsol bisnis dan mengikat perangkat ini ke satu lokasi toko.",
+      "heading": "Pasangkan perangkat ini",
+      "intro": "Minta kode pemasangan dari Admin bisnis kamu — kode ini dibuat dari Studio → Tim → Perangkat dan mengikat perangkat ini ke satu lokasi toko. Admin kamu juga mengatur PIN perangkat ini di sana.",
       "codeLabel": "Kode pemasangan",
-      "pinLabel": "Pilih PIN 4–6 digit",
-      "pinHelp": "PIN ini hanya mengunci layar untuk shift ini — siapa pun yang bertugas di kasir ini boleh memakainya. Ini bukan kata sandi.",
-      "confirmPinLabel": "Konfirmasi PIN",
       "submitButton": "Pasangkan perangkat ini",
       "errors": {
         "invalidCode": "Kode tidak dikenali. Periksa kembali dengan Admin.",
-        "pinInvalid": "PIN harus 4–6 digit.",
-        "pinMismatch": "Kedua PIN tidak cocok."
+        "revoked": "Admin bisnis kamu telah mencabut akses perangkat ini. Minta kode pemasangan baru."
       }
     }
   }

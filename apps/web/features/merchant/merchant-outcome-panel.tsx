@@ -1,22 +1,23 @@
+import type { CounterCapture } from "@yourtal/contracts/device/counter-redemption";
+import type { Currency } from "@yourtal/contracts/money/currency";
 import { formatMerchantMoney } from "./merchant-money";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
-import type { RedemptionReceipt } from "./merchant-redemption";
 import { errorCopyFor } from "./merchant-redemption-error-copy";
 import { recoveryForRedemptionError } from "./merchant-redemption-errors";
 import type { MerchantRedemptionError } from "./merchant-redemption-errors";
 import type { MerchantCopy } from "./merchant-i18n";
-import type { MerchantCurrency, MerchantLocale } from "./merchant-device";
+import type { MerchantLocale } from "./merchant-device";
 
 export type MerchantOutcome =
-  | { kind: "success"; receipt: RedemptionReceipt }
-  | { kind: "queued"; voucherCode: string; amountMinor: number; queuedAt: string }
+  | { kind: "success"; capture: CounterCapture }
+  | { kind: "offline" }
   | { kind: "failed"; error: MerchantRedemptionError };
 
 export interface MerchantOutcomePanelProps {
   outcome: MerchantOutcome;
   locale: MerchantLocale;
-  currency: MerchantCurrency;
+  currency: Currency;
   copy: MerchantCopy;
   onRetry: () => void;
   onEditAmount: () => void;
@@ -25,12 +26,11 @@ export interface MerchantOutcomePanelProps {
 
 /**
  * The end of one redemption attempt, rendered as exactly one of three
- * honest outcomes (this ticket's central requirement, docs/09 §8 /
- * docs/23-critique.md): a confirmed capture ("success", green), a locally
- * saved attempt still waiting to actually happen ("queued", amber — never
- * styled or worded like success), or a refusal/failure with a specific
- * next step ("failed", red). `role="status"`/`role="alert"` so each
- * outcome is announced.
+ * honest outcomes (docs/09 §8 / docs/23-critique.md): a confirmed capture
+ * ("success", green), a refusal because there is no connection right now
+ * ("offline", amber — TASKS.md 8.2.b: never queued, never styled like
+ * success), or a refusal/failure with a specific next step ("failed",
+ * red). `role="status"`/`role="alert"` so each outcome is announced.
  */
 export function MerchantOutcomePanel({
   outcome,
@@ -50,17 +50,8 @@ export function MerchantOutcomePanel({
         <Badge variant="success" className="w-fit text-sm">
           {copy.successHeading}
         </Badge>
-        <p className="text-lg font-sans text-fg">
-          <span className="font-mono">{outcome.receipt.voucherCode}</span> —{" "}
-          <span className="font-semibold tabular-nums">
-            {formatMerchantMoney(outcome.receipt.amountCapturedMinor, currency)}
-          </span>
-        </p>
-        <p className="text-sm font-sans text-fg-muted">
-          {copy.remainingValueLabel}
-          <span className="tabular-nums">
-            {formatMerchantMoney(outcome.receipt.remainingValueMinor, currency)}
-          </span>
+        <p className="text-lg font-sans font-semibold tabular-nums text-fg">
+          {formatMerchantMoney(outcome.capture.amountMinor, currency)}
         </p>
         <Button type="button" size="lg" onClick={onNewRedemption} className="h-14 text-base">
           {copy.newRedemptionButton}
@@ -69,24 +60,18 @@ export function MerchantOutcomePanel({
     );
   }
 
-  if (outcome.kind === "queued") {
+  if (outcome.kind === "offline") {
     return (
       <div
-        role="status"
+        role="alert"
         className="flex flex-col gap-3 rounded-lg border border-warning bg-warning/10 p-4"
       >
         <Badge variant="warning" className="w-fit text-sm">
-          {copy.queuedHeading}
+          {copy.cantRedeemOfflineHeading}
         </Badge>
-        <p className="text-lg font-sans text-fg">
-          <span className="font-mono">{outcome.voucherCode}</span> —{" "}
-          <span className="font-semibold tabular-nums">
-            {formatMerchantMoney(outcome.amountMinor, currency)}
-          </span>
-        </p>
-        <p className="text-sm font-sans text-fg">{copy.queuedBody}</p>
-        <Button type="button" size="lg" onClick={onNewRedemption} className="h-14 text-base">
-          {copy.newRedemptionButton}
+        <p className="text-sm font-sans text-fg">{copy.cantRedeemOfflineBody}</p>
+        <Button type="button" size="lg" onClick={onRetry} className="h-14 text-base">
+          {copy.tryAgainButton}
         </Button>
       </div>
     );

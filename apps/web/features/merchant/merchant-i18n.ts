@@ -38,7 +38,6 @@ export function getMerchantTranslator(locale: MerchantLocale) {
 export interface MerchantCopy {
   portalHeading: string;
   deviceBadgePrefix: string;
-  deviceLocationPrefix: string;
   tabScan: string;
   tabManual: string;
   manualCodeLabel: string;
@@ -62,20 +61,13 @@ export interface MerchantCopy {
   processingAuthorize: string;
   processingCapture: string;
   successHeading: string;
-  queuedHeading: string;
-  queuedBody: string;
   newRedemptionButton: string;
-  offlineLabel: string;
-  syncingLabel: string;
-  offlineBanner: string;
-  backOnlineBanner: string;
-  syncingBanner: string;
+  /** TASKS.md 8.2.b: no offline redemption — shown instead of a queued state. */
+  cantRedeemOfflineHeading: string;
+  cantRedeemOfflineBody: string;
   todayHeading: string;
   todayTotalLabel: string;
-  todayPendingLabel: string;
   todayEmpty: string;
-  todayStatusPending: string;
-  todayStatusFailed: string;
   /** YT-0583 follow-up: the outcome panel's "remaining voucher value" prefix — previously a hardcoded `locale === "id-ID" ? … : …` ternary in `merchant-outcome-panel.tsx`. */
   remainingValueLabel: string;
 }
@@ -85,7 +77,6 @@ export function getMerchantCopy(locale: MerchantLocale): MerchantCopy {
   return {
     portalHeading: t("portal.portalHeading"),
     deviceBadgePrefix: t("portal.deviceBadgePrefix"),
-    deviceLocationPrefix: t("portal.deviceLocationPrefix"),
     tabScan: t("portal.tabScan"),
     tabManual: t("portal.tabManual"),
     manualCodeLabel: t("portal.manualCodeLabel"),
@@ -109,20 +100,12 @@ export function getMerchantCopy(locale: MerchantLocale): MerchantCopy {
     processingAuthorize: t("portal.processingAuthorize"),
     processingCapture: t("portal.processingCapture"),
     successHeading: t("portal.successHeading"),
-    queuedHeading: t("portal.queuedHeading"),
-    queuedBody: t("portal.queuedBody"),
     newRedemptionButton: t("portal.newRedemptionButton"),
-    offlineLabel: t("portal.offlineLabel"),
-    syncingLabel: t("portal.syncingLabel"),
-    offlineBanner: t("portal.offlineBanner"),
-    backOnlineBanner: t("portal.backOnlineBanner"),
-    syncingBanner: t("portal.syncingBanner"),
+    cantRedeemOfflineHeading: t("portal.cantRedeemOfflineHeading"),
+    cantRedeemOfflineBody: t("portal.cantRedeemOfflineBody"),
     todayHeading: t("portal.todayHeading"),
     todayTotalLabel: t("portal.todayTotalLabel"),
-    todayPendingLabel: t("portal.todayPendingLabel"),
     todayEmpty: t("portal.todayEmpty"),
-    todayStatusPending: t("portal.todayStatusPending"),
-    todayStatusFailed: t("portal.todayStatusFailed"),
     remainingValueLabel: t("portal.remainingValueLabel"),
   };
 }

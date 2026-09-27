@@ -2,7 +2,6 @@
   "portal": {
     "portalHeading": "Redeem Voucher",
     "deviceBadgePrefix": "Device",
-    "deviceLocationPrefix": "Location",
     "tabScan": "Scan QR",
     "tabManual": "Enter code",
     "manualCodeLabel": "Voucher code",
@@ -26,20 +25,12 @@
     "processingAuthorize": "Verifying voucher…",
     "processingCapture": "Completing redemption…",
     "successHeading": "Redeemed",
-    "queuedHeading": "Waiting for connection",
-    "queuedBody": "This device is offline. The redemption is saved and will confirm automatically once the connection returns — it has not succeeded yet.",
     "newRedemptionButton": "Redeem another voucher",
-    "offlineLabel": "Offline",
-    "syncingLabel": "Syncing",
-    "offlineBanner": "Offline — new redemptions will be saved and wait to sync.",
-    "backOnlineBanner": "Connection restored. Syncing pending redemptions…",
-    "syncingBanner": "Syncing…",
+    "cantRedeemOfflineHeading": "Can't redeem offline",
+    "cantRedeemOfflineBody": "This device has no connection right now. Nothing has been charged — try again when connected.",
     "todayHeading": "Today's redemptions",
     "todayTotalLabel": "Confirmed total",
-    "todayPendingLabel": "waiting to sync",
     "todayEmpty": "No redemptions yet today.",
-    "todayStatusPending": "Pending",
-    "todayStatusFailed": "Failed",
     "remainingValueLabel": "Remaining voucher value: ",
     "expiresInMinutes": "Expires in {minutes} min"
   },
@@ -56,10 +47,6 @@
       "heading": "Voucher expired",
       "body": "This voucher expired on {date} and can't be redeemed. Let the customer know it's no longer valid."
     },
-    "wrongMerchant": {
-      "heading": "Voucher is for a different store",
-      "body": "This voucher is for {voucherMerchantName}, not {deviceMerchantName}. Direct the customer to the store named on the voucher."
-    },
     "amountNotPositive": {
       "heading": "Invalid amount",
       "body": "Enter an amount greater than zero."
@@ -70,7 +57,7 @@
     },
     "requiresFullValueRedemption": {
       "heading": "This voucher must be redeemed in full",
-      "body": "This voucher has a minimum-spend policy and must be redeemed for its full remaining value of {remaining}."
+      "body": "This voucher must be redeemed for its full remaining value of {remaining}."
     },
     "networkError": {
       "heading": "Redemption couldn't be processed",
@@ -86,24 +73,14 @@
     "lockedByDeviceLabel": "Device",
     "errorWrongPin": "Wrong PIN. Try again.",
     "errorTooManyAttempts": "Too many wrong attempts. Wait a moment and try again.",
-    "revokedHeading": "This device has been revoked",
-    "revokedBody": "Your business's Admin has revoked this device's access. Contact your Admin for a new pairing code.",
-    "devicesHeading": "Registered devices",
-    "devicesThisDevice": "(this device)",
-    "revokeButton": "Revoke access",
-    "revokedBadge": "Revoked",
     "form": {
-      "heading": "Set up this device",
-      "intro": "Ask your business's Admin for a provisioning code — it's generated from the Team zone of the business console and binds this device to one shop location.",
-      "codeLabel": "Provisioning code",
-      "pinLabel": "Choose a 4–6 digit PIN",
-      "pinHelp": "This PIN just locks the screen for this shift — anyone who works this counter should be comfortable using it. It is not a password.",
-      "confirmPinLabel": "Confirm PIN",
+      "heading": "Pair this device",
+      "intro": "Ask your business's Admin for a pairing code — it's generated from Studio → Team → Devices and binds this device to one shop location. Your Admin also sets this device's PIN there.",
+      "codeLabel": "Pairing code",
       "submitButton": "Pair this device",
       "errors": {
         "invalidCode": "That code wasn't recognised. Check it with your Admin.",
-        "pinInvalid": "PIN must be 4–6 digits.",
-        "pinMismatch": "The two PINs don't match."
+        "revoked": "Your business's Admin has revoked this device's access. Ask them for a new pairing code."
       }
     }
   }

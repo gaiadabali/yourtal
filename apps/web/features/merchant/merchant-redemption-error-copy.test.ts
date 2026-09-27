@@ -1,61 +1,46 @@
 import { describe, expect, it } from "vitest";
 import { errorCopyFor } from "./merchant-redemption-error-copy";
-import type { MerchantRedemptionError } from "./merchant-redemption-errors";
-
-const ERRORS: MerchantRedemptionError[] = [
-  { type: "voucher_not_found" },
-  { type: "already_redeemed" },
-  { type: "expired", expiresAt: "2026-09-01T00:00:00.000Z" },
-  { type: "wrong_merchant", voucherMerchantName: "A", deviceMerchantName: "B" },
-  { type: "amount_not_positive" },
-  { type: "amount_exceeds_remaining_value", remainingValueMinor: 5_000 },
-  { type: "requires_full_value_redemption", remainingValueMinor: 5_000 },
-  { type: "network_error" },
-];
 
 describe("errorCopyFor", () => {
-  it("returns a non-empty heading and body for every error type, in both locales", () => {
-    for (const error of ERRORS) {
-      for (const locale of ["en-AU", "id-ID"] as const) {
-        const copy = errorCopyFor(error, locale, "AUD");
-        expect(copy.heading.length).toBeGreaterThan(0);
-        expect(copy.body.length).toBeGreaterThan(0);
-      }
-    }
+  it("resolves each known code, in the given locale", () => {
+    expect(errorCopyFor({ code: "voucher_not_found" }, "en-AU", "AUD").heading).toMatch(/not found/i);
+    expect(errorCopyFor({ code: "voucher_not_found" }, "id-ID", "AUD").heading).toMatch(
+      /tidak ditemukan/i,
+    );
+    expect(errorCopyFor({ code: "already_redeemed" }, "en-AU", "AUD").heading).toMatch(/already/i);
+    expect(errorCopyFor({ code: "amount_not_positive" }, "en-AU", "AUD").body).toMatch(/greater than zero/i);
   });
 
-  it("never says just 'invalid' — every message is specific to what happened", () => {
-    for (const error of ERRORS) {
-      const copy = errorCopyFor(error, "en-AU", "AUD");
-      expect(copy.heading.toLowerCase()).not.toBe("invalid");
-    }
-  });
-
-  it("names the actual merchants for a wrong_merchant error", () => {
+  it("interpolates the remaining value into amount-related copy", () => {
     const copy = errorCopyFor(
-      {
-        type: "wrong_merchant",
-        voucherMerchantName: "Kopi Kenangan",
-        deviceMerchantName: "Toko Berkah",
-      },
+      { code: "amount_exceeds_remaining_value", remainingValueMinor: 500 },
       "en-AU",
       "AUD",
     );
-    expect(copy.body).toContain("Kopi Kenangan");
-    expect(copy.body).toContain("Toko Berkah");
+    expect(copy.body).toContain("$5.00");
   });
 
-  it("formats the remaining value through formatMoney, never a hardcoded currency symbol string", () => {
-    const aud = errorCopyFor(
-      { type: "amount_exceeds_remaining_value", remainingValueMinor: 1_500 },
+  it("formats the expiry date when given, and degrades gracefully without one", () => {
+    const withDate = errorCopyFor(
+      { code: "expired", expiresAt: "2026-01-01T00:00:00.000Z" },
       "en-AU",
       "AUD",
     );
-    const idr = errorCopyFor(
-      { type: "amount_exceeds_remaining_value", remainingValueMinor: 1_500 },
-      "id-ID",
-      "IDR",
+    expect(withDate.body).toMatch(/2026/);
+    expect(() => errorCopyFor({ code: "expired" }, "en-AU", "AUD")).not.toThrow();
+  });
+
+  it("falls back to the server's own message for an unmapped code", () => {
+    const copy = errorCopyFor(
+      { code: "some_future_server_code", fallbackMessage: "a brand-new refusal" },
+      "en-AU",
+      "AUD",
     );
-    expect(aud.body).not.toBe(idr.body);
+    expect(copy.body).toBe("a brand-new refusal");
+  });
+
+  it("falls back to a generic network-error message when there is no server message either", () => {
+    const copy = errorCopyFor({ code: "some_future_server_code" }, "en-AU", "AUD");
+    expect(copy.body.length).toBeGreaterThan(0);
   });
 });

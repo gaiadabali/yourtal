@@ -16,6 +16,14 @@ import type { MerchantLocale } from "../merchant-device";
  * (see YT-0446's original comment, and `region-picker.tsx`, which still
  * does that for the one screen that predates any locale AND any region).
  */
+/**
+ * TASKS.md 8.1/8.2 REWRITE: revocation and the devices roster moved to
+ * Studio → Team → Devices (`apps/web/features/studio/studio-devices-*`) —
+ * `/merchant/devices`'s unauthenticated revoke is deleted outright, not
+ * replaced, so the copy that screen used (`revokedHeading`/`revokedBody`/
+ * `devicesHeading`/`devicesThisDevice`/`revokeButton`/`revokedBadge`) is
+ * gone with it.
+ */
 export interface ProvisioningCopy {
   unlockHeading: string;
   unlockPinHelp: string;
@@ -25,12 +33,6 @@ export interface ProvisioningCopy {
   lockedByDeviceLabel: string;
   errorWrongPin: string;
   errorTooManyAttempts: string;
-  revokedHeading: string;
-  revokedBody: string;
-  devicesHeading: string;
-  devicesThisDevice: string;
-  revokeButton: string;
-  revokedBadge: string;
 }
 
 export function getProvisioningCopy(locale: MerchantLocale): ProvisioningCopy {
@@ -44,32 +46,30 @@ export function getProvisioningCopy(locale: MerchantLocale): ProvisioningCopy {
     lockedByDeviceLabel: t("provisioning.lockedByDeviceLabel"),
     errorWrongPin: t("provisioning.errorWrongPin"),
     errorTooManyAttempts: t("provisioning.errorTooManyAttempts"),
-    revokedHeading: t("provisioning.revokedHeading"),
-    revokedBody: t("provisioning.revokedBody"),
-    devicesHeading: t("provisioning.devicesHeading"),
-    devicesThisDevice: t("provisioning.devicesThisDevice"),
-    revokeButton: t("provisioning.revokeButton"),
-    revokedBadge: t("provisioning.revokedBadge"),
   };
 }
 
-export type ProvisioningFormErrorCode = "invalid_code" | "pin_invalid" | "pin_mismatch";
+export type ProvisioningFormErrorCode = "invalid_code" | "revoked";
 
 export interface ProvisioningFormCopy {
   heading: string;
   intro: string;
   codeLabel: string;
-  pinLabel: string;
-  pinHelp: string;
-  confirmPinLabel: string;
   submitButton: string;
   errors: Record<ProvisioningFormErrorCode, string>;
 }
 
 /**
- * Copy for the pre-pairing form, always in a single language — see this
- * file's doc comment for why the caller passes `"en-AU"`, not a device
- * locale that does not exist yet.
+ * Copy for the pairing form (`/merchant/pair`), always in a single
+ * language — see this file's doc comment for why the caller passes
+ * `"en-AU"`, not a device locale that does not exist yet.
+ *
+ * TASKS.md 8.1/8.2 REWRITE: the PIN is chosen by the Admin who provisions
+ * the device in Studio (`ProvisionDeviceRequest.pin`), not by whoever
+ * physically pairs it — this form now asks only for the pairing code
+ * itself. `revoked` covers the one case `unlockWithPin` can discover after
+ * the fact: a credential that was valid at pairing time but has since been
+ * revoked from Studio, which un-pairs this browser and sends it back here.
  */
 export function getProvisioningFormCopy(locale: MerchantLocale): ProvisioningFormCopy {
   const t = getMerchantTranslator(locale);
@@ -77,14 +77,10 @@ export function getProvisioningFormCopy(locale: MerchantLocale): ProvisioningFor
     heading: t("provisioning.form.heading"),
     intro: t("provisioning.form.intro"),
     codeLabel: t("provisioning.form.codeLabel"),
-    pinLabel: t("provisioning.form.pinLabel"),
-    pinHelp: t("provisioning.form.pinHelp"),
-    confirmPinLabel: t("provisioning.form.confirmPinLabel"),
     submitButton: t("provisioning.form.submitButton"),
     errors: {
       invalid_code: t("provisioning.form.errors.invalidCode"),
-      pin_invalid: t("provisioning.form.errors.pinInvalid"),
-      pin_mismatch: t("provisioning.form.errors.pinMismatch"),
+      revoked: t("provisioning.form.errors.revoked"),
     },
   };
 }

@@ -40,13 +40,13 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 3/5 | 14/19 | `███████░░░`  74% |
 | **Phase 7** Business studio | C | 🔄 in progress | 3/8 | 16/38 | `████░░░░░░`  42% |
-| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 2/16 | `█░░░░░░░░░`  13% |
+| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 4/16 | `███░░░░░░░`  25% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **48/87** | **272/411** | `███████░░░`  66% |
+| **All** | | | **48/87** | **274/411** | `███████░░░`  67% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -83,7 +83,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 3 | `yourtal-3` (agent A's slot free) | **6** Viewer app (early slice, F36) | 2026-09-27 | 6.7 ✅ (c8d0dab); 6.5 ✅ (aae765a, incl. 4.8.c requested of A); 6.1 ✅ (63cc61b, agent A — done, slot freed). Three agents remain: B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b, Valkey /13): 6.9 (F43); D (`yourtal-p6-d`, `phase/6-d`, db `yourtal_s3d`, web/api/Playwright 26450/26451/26454, Valkey /5): 6.2.a ✅ (5be3f898, incl. 1.7.f requested of A); 6.2.b is on main now (1041a900) — clear to run the 6.2.c Check; E (`yourtal-p6-e`, `phase/6-e`, db `yourtal_s3e`, 26460/26461/26464, Valkey /6): 6.2.b ✅ (1041a900) — worktree left in place, slot 3's E seat free for the next task. C's worktree `yourtal-p6-c` is done; its db `yourtal_s3c` has stale revision rows for the renamed watch migrations (repoint like `yourtal_s2`, or leave: nothing else uses it). Slot 3b's own db `yourtal_s3b` hit the SAME stale-revision issue (F34/F36 watch migration rename) mid-6.5 — resolved by drop+recreate (it holds no long-lived data, only this session's own fixtures). Also fixed while verifying 6.1.e (own commit on main, not this row's own subtask): `features/me/me-section-states.tsx` was missing `"use client"`, crashing all of Me on any real section error — see 6.1.e's own note. |
 | 4 | `yourtal-4` | free | 2026-09-27 | Phase 2 ✅ (all five tasks). Slot db `yourtal_s4`, ports 26360–26366 stay for the next phase |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). **Phase 11 is now "Viewer feed & public site" (F40)** and also holds the feed, watch page, store and search (11.4–11.7, from Phase 6), in the order 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. Everything left needs Phase 7 (7.4, 7.7); slot free, worktree left in place |
-| 8 | `yourtal-p8` | **8** Voucher engine for clients | 2026-09-27 | Full phase now (Phases 4 and 5 ✅). Two agents. A (`yourtal-p8`, `phase/8`, db `yourtal_s8`, api 26372): server side of 8.1 → 8.2 (b, c, g API) → 8.3.a/c → 8.4.a; it also makes the small edit to the shared device-credential port 8.1.b needs. B (`yourtal-p8-b`, `phase/8-b`, db `yourtal_s8b`, web/api 26381/26382, Valkey /15): 8.2.d ✅ and 8.3.b ✅ (both merged eec197b) — stopped 2026-09-27, every remaining B subtask ⛔: 8.2.a/b/f need 8.1 (no `apps/api/src/modules/devices` or counter-device contract in `packages/contracts/src/device/` on `main` yet — only the unrelated `device-signals.ts` fraud contract), and B's UI half of 8.1.a/8.2.g/8.3.a needs 7.8.a (Studio shell, not on `main`). Slot 8 stays taken: A is still running. B's worktree, `.env` and `yourtal_s8b` left ready — resume B here once A notes 8.1's SHA or 7.8.a lands. Checks 8.2.e, 8.3.d, 8.4.b last |
+| 8 | `yourtal-p8` | **8** Voucher engine for clients | 2026-09-27 | Full phase now (Phases 4 and 5 ✅). Two agents. A (`yourtal-p8`, `phase/8`, db `yourtal_s8`, api 26372): **counter contracts merged 2317e40a** — `packages/contracts/src/device/{counter-device,counter-redemption,studio-redemptions,partner-action}.ts` + `packages/contracts/src/merchant/merchant-developer-credential.ts`, and `apps/api/src/modules/devices` (provision/list/revoke/pair/unlock) + the real `store_device` credential verifier (8.1.a/8.1.b done; B's UI half of 8.1.a stays ⛔ 7.8.a). 8.1.c's e2e proof is `apps/api/src/modules/devices/device-authentication.e2e.test.ts` (paired device → ALLOW at its own business, DENY void/refund; revoked device → 401), real Cerbos — Check tick left to the lead. A continues: 8.2 (b, c, g API) → 8.3.a/c → 8.4.a. B (`yourtal-p8-b`, `phase/8-b`, db `yourtal_s8b`, web/api 26381/26382, Valkey /15): 8.2.d ✅ and 8.3.b ✅ (both merged eec197b) — unblocked now that the contracts are on `main`; resume 8.2.a/b/f here. B's UI half of 8.1.a/8.2.g/8.3.a still needs 7.8.a (Studio shell, not on `main`). Checks 8.2.e, 8.3.d, 8.4.b last |
 
 **Ready to start, no slot yet:** Phase 10 (Phase 4 ✅). Its A tasks 10.1–10.4 can start now; its C tasks 10.5–10.6 wait for 9.1 and 9.4.
 
@@ -1099,14 +1099,14 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
 F11: vouchers must really work for YourTal, brands and users. That means generation (4.5), redemption at the counter and online, and a secure SDK brands can integrate. Tamper evidence is the voucher hash chain anchored in the daily proof, whose root is published (10.3). No blockchain for now.
 
 - [ ] **8.1 Counter devices** · needs: 1.5, 4.5 — 🔄 slot 8
-  - [ ] 8.1.a Studio → Team → Devices provisions a counter device: — B's UI half ⛔ 7.8.a (Studio shell not on `main` as of 2026-09-27)
+  - [x] 8.1.a Studio → Team → Devices provisions a counter device: — server half done 2317e40a (`apps/api/src/modules/devices`: provision/list/revoke, argon2id PIN, hashed pairing code + credential, composite-FK-enforced region/location match); B's UI half stays ⛔ 7.8.a (Studio shell not on `main` as of 2026-09-27)
     - a server-side device record;
     - a one-time pairing code;
     - a device credential, stored hashed;
     - a PIN per device, hashed with argon2id (not the unsalted SHA-256 in `pin-hash.ts`).
     
     Devices are revoked from Studio only; today `/merchant/devices` revokes with no auth.
-  - [ ] 8.1.b The `store_device` principal comes from the device credential (1.5.c), so the Cerbos `redemption.yaml` device rules take effect.
+  - [x] 8.1.b The `store_device` principal comes from the device credential (1.5.c), so the Cerbos `redemption.yaml` device rules take effect. — done 2317e40a: `DeviceCredential` now carries the bearer secret; `CounterDeviceCredentialVerifier` (real, Postgres-backed) bound in `authz.module.ts` in place of `NoDeviceCredentialVerifier`
   - [ ] 8.1.c **Check:** a paired device gets a principal, and a revoked one gets 401.
 - [ ] **8.2 Redeeming at the counter** · needs: 8.1, 4.6 — 🔄 slot 8
   - [ ] 8.2.a CounterShell flow: pair → PIN unlock → scan the QR (camera) or type the code → server-side lookup → authorize (amount, order ref, order total) → capture → receipt on both sides. Today's log stays. — ⛔ 8.1 (B checked 2026-09-27: `apps/api/src/modules/devices` and a real counter-device contract in `packages/contracts/src/device/` don't exist yet — only the unrelated `device-signals.ts` fraud-signal contract is there. The current mock (cookie-bound device, client-side voucher catalogue) is what 8.2.b asks to delete, and there is nothing real to replace it with yet; rewriting against an invented contract would be thrown away once A's real shape lands.)

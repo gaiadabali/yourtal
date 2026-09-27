@@ -38,7 +38,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 3** Design language | B | ✅ done | 6/6 | 32/32 | `██████████` 100% |
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/57 | `██████████` 100% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
-| **Phase 6** Viewer app | B | 🔄 in progress | 0/4 | 1/13 | `█░░░░░░░░░`   8% |
+| **Phase 6** Viewer app | B | 🔄 in progress | 0/4 | 2/13 | `██░░░░░░░░`  15% |
 | **Phase 7** Business studio | C | 🔄 in progress | 0/8 | 1/36 | `░░░░░░░░░░`   3% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/16 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
@@ -46,7 +46,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/30 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **41/87** | **238/402** | `██████░░░░`  59% |
+| **All** | | | **41/87** | **239/402** | `██████░░░░`  59% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -83,7 +83,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 3 | `yourtal-3` | **6** Viewer app (early slice, F36) | 2026-09-26 | Three agents. A (`yourtal-3`, `phase/6`, db `yourtal_s3`): 6.1 then 6.2; B (`yourtal-p6-b`, `phase/6-b`, db `yourtal_s3b`, ports as 3b in `infra/PORTS.md`, Valkey /13): 6.5; C (`yourtal-p6-c`, `phase/6-c`, db `yourtal_s3c`, ports as 3c, Valkey /14): 6.7. B and C fold their own features' copy into the catalogues. **Phase 6 is now exactly this slice (F40):** 6.3, 6.4, 6.6 and 6.8 moved to Phase 11 (11.4–11.7); 6.7.b's feed half is 11.4.f, so 6.7.b can close on logout and a persisting autoplay setting |
 | 4 | `yourtal-4` | **2** Staging on Helios | 2026-09-27 | Reopened per F38: 2.4.j (the Contracts workflow still builds on Go 1.26.8, so it has failed since ed57c69), then the 2.4.h Check. 2.4.k ✅ (trim merged 04bdee0, Performance budget green). 2.3.i code merged f1d2f86: verify its playback Check once staging deploys it. Everything else in Phase 2 ✅ |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). **Phase 11 is now "Viewer feed & public site" (F40)** and also holds the feed, watch page, store and search (11.4–11.7, from Phase 6), in the order 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. Everything left needs Phase 7 (7.4, 7.7); slot free, worktree left in place |
-| 8 | `yourtal-p8` | **8** Voucher engine for clients (early slice, F27) | 2026-09-26 | Paused 2026-09-26: all three agents cut off by the session quota. A (`yourtal-p8`, 8.1.a) has nothing written yet; B (`yourtal-p8-b`, 8.2.d) and C (`yourtal-p8-c`, 8.3.b) have unfinished WIP committed locally (ca6e6db, 666729d), not merged. **Added 2026-09-27 (F40):** 8.2.f (D16 tests, from 4.6.g) and 8.2.g (Studio → Redemptions, from 7.8.b); 8.2.e now buys through `POST /api/checkout` |
+| 8 | `yourtal-p8` | **8** Voucher engine for clients | 2026-09-27 | Full phase now (Phases 4 and 5 ✅). Two agents. A (`yourtal-p8`, `phase/8`, db `yourtal_s8`, api 26372): server side of 8.1 → 8.2 (b, c, g API) → 8.3.a/c → 8.4.a; it also makes the small edit to the shared device-credential port 8.1.b needs. B (`yourtal-p8-b`, `phase/8-b`, db `yourtal_s8b`, web/api 26381/26382, Valkey /15): 8.2.d → 8.3.b → counter UI 8.2.a/b/f → the Studio Devices, Redemptions and Developers pages once 7.8.a lands. Checks 8.2.e, 8.3.d, 8.4.b last |
 
 **Ready to start, no slot yet:** Phase 10 (Phase 4 ✅). Its A tasks 10.1–10.4 can start now; its C tasks 10.5–10.6 wait for 9.1 and 9.4.
 
@@ -975,8 +975,8 @@ Rebuild and wire the viewer's account screens on the Phase 3 primitives: languag
   - [ ] 6.5.c **Check:** the QR changes every window and shows with the network off, and a dispute on an unused voucher returns its points exactly once.
 - [ ] **6.6 Store and checkout** — ✂️ cut: moved to 11.6 (it needs Phase 7's listings); each 6.6.x is now 11.6.x
 - [ ] **6.7 Me** · needs: 5.4 — 🔄 slot 3
-  - [x] 6.7.a Profile, language, interests, follows, per-purpose consent (withdrawal takes effect), password change, log out, delete account, download my data, notification settings, linked apps (5.4.c) and an autoplay setting (Always / Wi-Fi only / Never; Wi-Fi only by default in ID). — `apps/web/app/(app)/me/page.tsx` + `apps/web/features/me/**` rebuilt wholesale on live `apiFetch` data and Phase 3 primitives (every old localStorage-backed widget deleted). New backend: `apps/api/src/modules/me/settings.controller.ts` (`GET`/`PUT /api/me/settings/autoplay`), `viewer-setting.repository.ts` (+`AutoplaySettingReader`, exported from `MeModule` for 6.3's feed to inject), migration `20260926160000_me_viewer_setting.sql`, Cerbos `view_settings`/`update_settings` (`me.yaml`, `me_test.yaml` 62 OK). `follows.controller.ts` now returns each channel's displayName/handle/logoUrl (narrow read over C's table). Interests use the real taxonomy's root categories (`me-interest-catalogue.ts`), not the old hand-duplicated list (which included "beauty"/"health" -- blocked terms `defineTaxonomy` would reject as real nodes). Password change re-issues the session cookie after `changePassword` revokes every prior session. Delete account calls the real 5.4.b DSAR deletion, not a local-storage clear.
-  - [ ] 6.7.b **Check:** logging out ends the session on the server, and the autoplay setting persists (holding it on the feed moved to 11.4.f). — First half done: real HTTP round trip, pre-logout `GET /api/me` 200, `POST /api/auth/logout` `{loggedOut:true}`, post-logout `GET /api/me` with the same token 401, and `identity.session`'s row has a real `revoked_at` (verified against Postgres directly). The feed half moved to 11.4.f; `GET`/`PUT /api/me/settings/autoplay` itself is proven to persist and read back correctly (e2e test + a manual round trip), which is as much of this check as can run today.
+  - [x] 6.7.a Profile, language, interests, follows, per-purpose consent (withdrawal takes effect), password change, log out, delete account, download my data, notification settings, linked apps (5.4.c) and an autoplay setting (Always / Wi-Fi only / Never; Wi-Fi only by default in ID). — `apps/web/app/(app)/me/page.tsx` + `apps/web/features/me/**` rebuilt wholesale on live `apiFetch` data and Phase 3 primitives (every old localStorage-backed widget deleted). New backend: `apps/api/src/modules/me/settings.controller.ts` (`GET`/`PUT /api/me/settings/autoplay`), `viewer-setting.repository.ts` (+`AutoplaySettingReader`, exported from `MeModule` for 6.3's feed to inject), migration `20260926161000_me_viewer_setting.sql` (renamed after rebasing past main's own …160000/160100/160200 watch-migration rename), Cerbos `view_settings`/`update_settings` (`me.yaml`, `me_test.yaml` 62 OK). `follows.controller.ts` now returns each channel's displayName/handle/logoUrl (narrow read over C's table). Interests use the real taxonomy's root categories (`me-interest-catalogue.ts`), not the old hand-duplicated list (which included "beauty"/"health" -- blocked terms `defineTaxonomy` would reject as real nodes). Password change re-issues the session cookie after `changePassword` revokes every prior session. Delete account calls the real 5.4.b DSAR deletion, not a local-storage clear.
+  - [x] 6.7.b **Check:** logging out ends the session on the server, and the autoplay setting persists (holding it on the feed moved to 11.4.f). — Real HTTP round trip: pre-logout `GET /api/me` 200, `POST /api/auth/logout` `{loggedOut:true}`, post-logout `GET /api/me` with the same token 401, and `identity.session`'s row has a real `revoked_at` (verified against Postgres directly). Autoplay persists: `settings.controller.e2e.test.ts` (region default before any write, AU→always/ID→wifi_only; a write is read back; an out-of-enum value is rejected; anonymous gets 401) plus the same manual round trip. F40 moved "holds on the feed" to 11.4.f, which this closes on.
 - [ ] **6.8 Notifications and search** — ✂️ cut: moved to 11.7 (it needs Phase 7's search); each 6.8.x is now 11.7.x
 
 **Done when:** a new viewer registers and onboards in either region and language, sees pending points and voucher passes in the wallet (the QR works offline, a dispute returns points once), and manages everything on Me, on staging, on the new design, with no mock data and no hard-coded strings.
@@ -1083,7 +1083,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
 
 F11: vouchers must really work for YourTal, brands and users. That means generation (4.5), redemption at the counter and online, and a secure SDK brands can integrate. Tamper evidence is the voucher hash chain anchored in the daily proof, whose root is published (10.3). No blockchain for now.
 
-- [ ] **8.1 Counter devices** · needs: 1.5, 4.5 — 🔄 slot 8 (8.1.a server side, F27)
+- [ ] **8.1 Counter devices** · needs: 1.5, 4.5 — 🔄 slot 8
   - [ ] 8.1.a Studio → Team → Devices provisions a counter device:
     - a server-side device record;
     - a one-time pairing code;
@@ -1093,7 +1093,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
     Devices are revoked from Studio only; today `/merchant/devices` revokes with no auth.
   - [ ] 8.1.b The `store_device` principal comes from the device credential (1.5.c), so the Cerbos `redemption.yaml` device rules take effect.
   - [ ] 8.1.c **Check:** a paired device gets a principal, and a revoked one gets 401.
-- [ ] **8.2 Redeeming at the counter** · needs: 8.1, 4.6 — 🔄 slot 8 (8.2.d only, F27)
+- [ ] **8.2 Redeeming at the counter** · needs: 8.1, 4.6 — 🔄 slot 8
   - [ ] 8.2.a CounterShell flow: pair → PIN unlock → scan the QR (camera) or type the code → server-side lookup → authorize (amount, order ref, order total) → capture → receipt on both sides. Today's log stays.
   - [ ] 8.2.b **No offline redemption.** With no network the counter says "Can't redeem offline — try again when connected" and queues nothing; delete the pending queue. The BFF calls the voucher service in device mode (4.5.c). Delete the client-side catalogue of every merchant's vouchers and the unsigned device cookie (D16).
   - [ ] 8.2.c A counter device can never void or refund.
@@ -1101,7 +1101,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
   - [ ] 8.2.f (moved from 4.6.g) D16 regression tests: the counter's client bundle holds no voucher catalogue, and a hand-made or unsigned `yt_device` cookie is refused by the page and the BFF.
   - [ ] 8.2.g (moved from 7.8.b) Studio → Redemptions: today's and recent captures per location and device.
   - [ ] 8.2.e **Check:** a voucher bought through `POST /api/checkout` (4.7) is redeemed at a counter on staging, `GET /api/wallet/vouchers` shows it as redeemed, and Studio → Redemptions shows the capture against that device.
-- [ ] **8.3 Client SDK and developer page** · needs: 4.5, 4.6 — 🔄 slot 8 (8.3.b only, F27)
+- [ ] **8.3 Client SDK and developer page** · needs: 4.5, 4.6 — 🔄 slot 8
   - [ ] 8.3.a Studio → Developers: issue, rotate and revoke merchant HMAC credentials (4.5.d), with a sandbox credential per business. A documentation page covers the signing spec, authorize / capture / void / refund, errors and idempotency.
   - [ ] 8.3.b `packages/sdk-merchant`: a small TypeScript SDK that signs requests and calls authorize / capture / void / refund, with retries and idempotency keys, plus an example script.
   - [ ] 8.3.c Webhooks: signed `voucher.captured`, `voucher.refunded` and `voucher.expired` events to a URL the business registers, delivered by a worker job with retries (simulated on staging).

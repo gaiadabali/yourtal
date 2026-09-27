@@ -13,7 +13,7 @@ import { DeviceProvisioningForm } from "./device-provisioning-form";
  * a plain `<form>`).
  */
 describe("DeviceProvisioningForm", () => {
-  it("renders the code and PIN fields with accessible, bilingual labels", () => {
+  it("renders the code and PIN fields with accessible labels", () => {
     render(<DeviceProvisioningForm />);
     expect(screen.getByLabelText(/Provisioning code/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Choose a 4–6 digit PIN/i)).toBeInTheDocument();

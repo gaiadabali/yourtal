@@ -1,7 +1,11 @@
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { submitProvisioningCode } from "./provisioning-actions";
-import { PROVISIONING_FORM_TEXT, type ProvisioningFormErrorCode } from "./provisioning-copy";
+import { getProvisioningFormCopy, type ProvisioningFormErrorCode } from "./provisioning-i18n";
+
+// One language, the project default — see `provisioning-i18n.ts`'s doc
+// comment: no device (and therefore no device locale) exists yet here.
+const FORM_TEXT = getProvisioningFormCopy("en-AU");
 
 export interface DeviceProvisioningFormProps {
   // `| undefined` is explicit, not redundant: tsconfig sets
@@ -39,29 +43,25 @@ function isKnownError(value: string | undefined): value is ProvisioningFormError
  * first use.
  */
 export function DeviceProvisioningForm({ error }: DeviceProvisioningFormProps) {
-  const knownError = isKnownError(error) ? PROVISIONING_FORM_TEXT.errors[error] : null;
+  const knownError = isKnownError(error) ? FORM_TEXT.errors[error] : null;
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-4">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-sans font-semibold text-fg">
-          {PROVISIONING_FORM_TEXT.heading.en}
-        </h1>
-        <p className="text-sm font-sans text-fg-muted">{PROVISIONING_FORM_TEXT.heading.id}</p>
+        <h1 className="text-2xl font-sans font-semibold text-fg">{FORM_TEXT.heading}</h1>
       </header>
-      <p className="text-sm font-sans text-fg-muted">{PROVISIONING_FORM_TEXT.intro.en}</p>
-      <p className="text-sm font-sans text-fg-muted">{PROVISIONING_FORM_TEXT.intro.id}</p>
+      <p className="text-sm font-sans text-fg-muted">{FORM_TEXT.intro}</p>
       {knownError ? (
         <p
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-3 text-sm font-sans text-danger"
         >
-          {knownError.en} / {knownError.id}
+          {knownError}
         </p>
       ) : null}
       <form action={submitProvisioningCode} className="flex flex-col gap-4">
         <Input
-          label={`${PROVISIONING_FORM_TEXT.codeLabel.en} / ${PROVISIONING_FORM_TEXT.codeLabel.id}`}
+          label={FORM_TEXT.codeLabel}
           name="code"
           required
           autoCapitalize="characters"
@@ -69,8 +69,8 @@ export function DeviceProvisioningForm({ error }: DeviceProvisioningFormProps) {
           className="h-14 text-xl uppercase tracking-wide"
         />
         <Input
-          label={`${PROVISIONING_FORM_TEXT.pinLabel.en} / ${PROVISIONING_FORM_TEXT.pinLabel.id}`}
-          helpText={`${PROVISIONING_FORM_TEXT.pinHelp.en} / ${PROVISIONING_FORM_TEXT.pinHelp.id}`}
+          label={FORM_TEXT.pinLabel}
+          helpText={FORM_TEXT.pinHelp}
           name="pin"
           type="password"
           inputMode="numeric"
@@ -79,7 +79,7 @@ export function DeviceProvisioningForm({ error }: DeviceProvisioningFormProps) {
           className="h-14 text-xl tracking-widest"
         />
         <Input
-          label={`${PROVISIONING_FORM_TEXT.confirmPinLabel.en} / ${PROVISIONING_FORM_TEXT.confirmPinLabel.id}`}
+          label={FORM_TEXT.confirmPinLabel}
           name="confirmPin"
           type="password"
           inputMode="numeric"
@@ -88,7 +88,7 @@ export function DeviceProvisioningForm({ error }: DeviceProvisioningFormProps) {
           className="h-14 text-xl tracking-widest"
         />
         <Button type="submit" size="lg" className="h-14 text-base">
-          {PROVISIONING_FORM_TEXT.submitButton.en} / {PROVISIONING_FORM_TEXT.submitButton.id}
+          {FORM_TEXT.submitButton}
         </Button>
       </form>
     </div>

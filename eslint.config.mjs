@@ -282,5 +282,59 @@ export default tseslint.config(
     },
   },
 
+  // Area C, 8.2.d: the counter's merchant feature copy lives entirely in
+  // `messages/*/merchant.json` (see `merchant-i18n.ts`), so the same
+  // hardcoded-string and raw-style rules B carries as warnings apply here
+  // as hard errors from day one — a staff-facing counter screen with a
+  // stray literal is exactly the D16-adjacent regression this phase exists
+  // to close off.
+  {
+    files: ["apps/web/features/merchant/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    plugins: { "yt-c": { rules: { "prefer-primitives": restrictedSyntaxWarn } } },
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ExportAllDeclaration",
+          message: "`export *` is banned (13b §5) — it defeats tree-shaking.",
+        },
+        {
+          selector: "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+          message: "Use a colour token, not a raw hex value.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/#[0-9a-fA-F]{3,8}\\b/]",
+          message: "Use a colour token, not a raw hex value.",
+        },
+        {
+          selector: "Literal[value=/text-\\[[0-9.]+px\\]/]",
+          message: "Use a type role (text-caption, text-body-sm, ...), not a pixel size.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/text-\\[[0-9.]+px\\]/]",
+          message: "Use a type role (text-caption, text-body-sm, ...), not a pixel size.",
+        },
+      ],
+      "yt-c/prefer-primitives": [
+        "error",
+        {
+          selector: "JSXOpeningElement[name.name=/^(button|select|table|input)$/]",
+          message:
+            "Use the @yourtal/ui primitive (Button, NativeSelect, DataTable, Input) instead.",
+        },
+        {
+          selector: "JSXText[value=/[A-Za-z]/]",
+          message: "User-facing copy comes from the message catalogues, not a JSX literal.",
+        },
+        {
+          selector:
+            "JSXAttribute[name.name=/^(aria-label|title|placeholder|alt)$/] > Literal[value=/[A-Za-z]/]",
+          message: "User-facing copy comes from the message catalogues, not a JSX literal.",
+        },
+      ],
+    },
+  },
+
   prettier,
 );

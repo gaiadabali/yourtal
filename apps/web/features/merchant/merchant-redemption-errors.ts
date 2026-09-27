@@ -6,8 +6,9 @@ import type { Voucher } from "@yourtal/contracts/voucher";
  * never a bare string. `docs/23-critique.md` and this ticket's brief are
  * both explicit that "Invalid" alone is useless when a customer is
  * standing at the counter: every variant here carries what a
- * plain-language message needs to say *why*, and `merchant-error-copy.ts`
- * switches over `type` exhaustively (`never` default) so a new variant
+ * plain-language message needs to say *why*, and
+ * `merchant-redemption-error-copy.ts` switches over `type` exhaustively
+ * (`never` default) so a new variant
  * without matching copy is a compile error, not a blank message.
  *
  * `already_redeemed`, `expired` and `wrong_merchant` are read straight off

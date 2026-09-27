@@ -86,6 +86,16 @@ export async function assembleListing(
     channel: row.channel,
     partialRedemption: row.partialRedemption,
   });
+  if (!parsed.success) {
+    // A bad row is a bug to surface (see assembleListings' own comment) --
+    // logged here, at the one place the actual Zod issues are still in
+    // scope, since MalformedListingRowError's own message cannot carry them
+    // without every call site threading a reason through.
+    console.error(
+      `store.listings row ${row.id} failed listingSchema:`,
+      JSON.stringify(parsed.error.issues),
+    );
+  }
   return parsed.success ? parsed.data : null;
 }
 

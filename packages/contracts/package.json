@@ -33,6 +33,7 @@
     "./wallet/history/mock": "./src/wallet/wallet-history.mock.ts",
     "./billing": "./src/billing/billing.ts",
     "./report": "./src/report/campaign-report.ts",
+    "./feed": "./src/feed/feed.ts",
     "./business": "./src/business/business.ts",
     "./business/team-role": "./src/business/business-team-role.ts",
     "./business/mock": "./src/business/business.mock.ts",

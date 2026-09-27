@@ -5,6 +5,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { BillingModule } from "./modules/billing/billing.module";
 import { BusinessModule } from "./modules/business/business.module";
 import { CampaignModule } from "./modules/campaign/campaign.module";
+import { FeedModule } from "./modules/feed/feed.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { StoreModule } from "./modules/store/store.module";
 import { WatchModule } from "./modules/watch/watch.module";
@@ -48,6 +49,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     StoreModule,
     BillingModule,
     ReportsModule,
+    FeedModule,
     WatchModule,
     CheckpointModule,
     DevModule,

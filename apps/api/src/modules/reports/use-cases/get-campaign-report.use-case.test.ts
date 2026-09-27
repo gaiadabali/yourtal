@@ -21,16 +21,22 @@ function fakeRepo(overrides: {
   questions?: QuestionAggregates | null;
 }): CampaignReportRepository {
   return {
-    findOwnedCampaign: async () =>
-      overrides.campaign === undefined
-        ? { campaignId: CAMPAIGN_ID, audience: "all_ages" }
-        : overrides.campaign,
-    sessionAggregates: async () =>
-      overrides.sessions ?? { rewardedViews: 20, completions: 10, averageWatchTimeSeconds: 25 },
-    questionAggregates: async () =>
-      overrides.questions === undefined
-        ? { timesAsked: 40, timesCorrect: 30 }
-        : overrides.questions,
+    findOwnedCampaign: () =>
+      Promise.resolve(
+        overrides.campaign === undefined
+          ? { campaignId: CAMPAIGN_ID, audience: "all_ages" as const }
+          : overrides.campaign,
+      ),
+    sessionAggregates: () =>
+      Promise.resolve(
+        overrides.sessions ?? { rewardedViews: 20, completions: 10, averageWatchTimeSeconds: 25 },
+      ),
+    questionAggregates: () =>
+      Promise.resolve(
+        overrides.questions === undefined
+          ? { timesAsked: 40, timesCorrect: 30 }
+          : overrides.questions,
+      ),
   };
 }
 

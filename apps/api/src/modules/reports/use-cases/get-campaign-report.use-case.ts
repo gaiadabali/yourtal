@@ -1,4 +1,5 @@
-import { errAsync, okAsync, ResultAsync } from "neverthrow";
+import { errAsync, okAsync } from "neverthrow";
+import type { ResultAsync } from "neverthrow";
 import { toPoints } from "@yourtal/contracts/money";
 import type { CampaignReportResult } from "@yourtal/contracts/report";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";

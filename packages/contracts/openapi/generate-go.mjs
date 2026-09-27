@@ -43,7 +43,7 @@ const checkOnly = process.argv.includes("--check");
 const verifyOnly = process.argv.includes("--verify");
 
 const GO_IMAGE =
-  "golang:1.26.8-alpine3.24@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c";
+  "golang:1.27.1-alpine3.24@sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414";
 
 if (verifyOnly) {
   // Copied out of the read-only mount because `go mod tidy` writes go.sum.

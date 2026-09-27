@@ -39,14 +39,14 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 4** The bank is correct | A | ⛔ blocked | 9/10 | 56/57 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | 🔄 in progress | 4/6 | 22/26 | `█████████░`  85% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 0/8 | 1/29 | `░░░░░░░░░░`   3% |
-| **Phase 7** Business studio | C | 🔄 in progress | 0/8 | 0/35 | `░░░░░░░░░░`   0% |
+| **Phase 7** Business studio | C | 🔄 in progress | 0/8 | 1/35 | `░░░░░░░░░░`   3% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 9** Staff console | C | · not started | 0/6 | 0/18 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A | · not started | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
 | **Phase 11** Public site | B | 🔄 in progress | 0/3 | 1/10 | `█░░░░░░░░░`  10% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/17 | `░░░░░░░░░░`   0% |
-| **All** | | | **38/86** | **231/387** | `██████░░░░`  60% |
+| **All** | | | **38/86** | **232/387** | `██████░░░░`  60% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1046,7 +1046,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
   - [ ] 7.4.c Stock: `store.listings.stock_remaining` becomes a read-only projection of unallocated vouchers (4.5.a). A voucher batch request goes to staff approval (9.2) and is then minted through 4.5.
   - [ ] 7.4.d Consumer catalogue reads (`GET /api/store/listings[/:id]`) filter by the caller's region (anonymous visitors: the path region) and audience. They return `imageUrl`, category and channel, and filter by category, channel and price.
   - [ ] 7.4.e **Check:** a request carrying `priceInPoints` is rejected; the listing price equals the ledger quote; an ID user never sees an AU listing through list or get.
-  - [ ] 7.4.f (requested by A, 4.10) A CHECK on `store.listings` that currency is the region's (AUD with AU, IDR with ID). Vouchers, quotes and listing prices are walled in the database; the listing row itself is not.
+  - [x] 7.4.f (requested by A, 4.10) A CHECK on `store.listings` that currency is the region's (AUD with AU, IDR with ID). Vouchers, quotes and listing prices are walled in the database; the listing row itself is not. — `listings_currency_matches_region`, applied clean to `yourtal_s4b` (9b989f4)
 - [ ] **7.5 Billing: buy points** · needs: 7.1, 4.4 (fake ok)
   - [ ] 7.5.a `quotePurchase` shows pack prices (F12; P_issue appears only here, never on consumer surfaces). `POST /api/:tenantId/studio/billing/purchases` goes through the simulated payments driver, with the currency always stated (no IDR default), to a ledger purchase. That funds the region reserve and creates the business's allocation, idempotently.
   - [ ] 7.5.b Balance, per-campaign spend (`campaignSpend`) and remainder (remaining minus active holds). Unused points stay with the business; there are no cash refunds. Statements come from 10.1, and `POST …/statements/:id/dispute` holds the payout.

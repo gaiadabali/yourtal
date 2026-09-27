@@ -15,7 +15,9 @@ function windowsOf(qr: Pick<WalletQrDetail, "token" | "expiresAt" | "tokens">): 
   // `tokens` is 4.5.b's full twelve-window batch (once Area A's wallet route
   // widens to carry it, see wallet-data.ts) — fall back to the one window
   // `token`/`expiresAt` always carries today.
-  return qr.tokens && qr.tokens.length > 0 ? qr.tokens : [{ token: qr.token, expiresAt: qr.expiresAt }];
+  return qr.tokens && qr.tokens.length > 0
+    ? qr.tokens
+    : [{ token: qr.token, expiresAt: qr.expiresAt }];
 }
 
 /**
@@ -46,7 +48,11 @@ export function useVoucherQrRotation(
       if (cancelled) return;
       const initial = windowsOf(initialQr);
       if (cached === null) {
-        void writeCachedQrWindows({ voucherId, windows: initial, cachedAt: new Date().toISOString() });
+        void writeCachedQrWindows({
+          voucherId,
+          windows: initial,
+          cachedAt: new Date().toISOString(),
+        });
         return;
       }
       const cachedWindows = cached.windows;
@@ -59,7 +65,11 @@ export function useVoucherQrRotation(
       if (cachedIsFresher) {
         setWindows(cachedWindows);
       } else {
-        void writeCachedQrWindows({ voucherId, windows: initial, cachedAt: new Date().toISOString() });
+        void writeCachedQrWindows({
+          voucherId,
+          windows: initial,
+          cachedAt: new Date().toISOString(),
+        });
       }
     });
     return () => {
@@ -91,7 +101,11 @@ export function useVoucherQrRotation(
         setWindows(fresh);
         setRefreshFailed(false);
         refreshAttempted.current = false;
-        void writeCachedQrWindows({ voucherId, windows: fresh, cachedAt: new Date().toISOString() });
+        void writeCachedQrWindows({
+          voucherId,
+          windows: fresh,
+          cachedAt: new Date().toISOString(),
+        });
       } else {
         setRefreshFailed(true);
       }

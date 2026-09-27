@@ -36,7 +36,8 @@ export async function WalletHistoryList({ entries, locale }: WalletHistoryListPr
         // (points-price-from-settlement.ts and wallet-mapping.ts use the
         // same pattern for the same reason — a signed delta is a display
         // concern, not something the branded type itself needs to allow).
-        const signedAmount = entry.direction === "debit" ? -Number(entry.points) : Number(entry.points);
+        const signedAmount =
+          entry.direction === "debit" ? -Number(entry.points) : Number(entry.points);
         return (
           <li
             key={entry.id}

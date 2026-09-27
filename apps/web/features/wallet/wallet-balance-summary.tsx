@@ -47,7 +47,10 @@ export async function WalletBalanceSummary({ balance, nowMs, locale }: WalletBal
           </Heading>
           <ul className="flex flex-col gap-2">
             {balance.pending.map((grant) => (
-              <li key={grant.unlockAt} className="flex items-center justify-between gap-3 text-body-sm">
+              <li
+                key={grant.unlockAt}
+                className="flex items-center justify-between gap-3 text-body-sm"
+              >
                 <PointsChip
                   value={grant.points}
                   size="sm"

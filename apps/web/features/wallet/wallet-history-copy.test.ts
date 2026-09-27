@@ -11,7 +11,9 @@ describe("describeHistoryEntry", () => {
     expect(describeHistoryEntry("reversal", "500 points", t)).toBe(
       "500 points returned to your wallet",
     );
-    expect(describeHistoryEntry("adjustment", "50 points", t)).toBe("Balance adjusted by 50 points");
+    expect(describeHistoryEntry("adjustment", "50 points", t)).toBe(
+      "Balance adjusted by 50 points",
+    );
   });
 
   it("never contains a bare transaction code, merchant name, or ledger reference", () => {

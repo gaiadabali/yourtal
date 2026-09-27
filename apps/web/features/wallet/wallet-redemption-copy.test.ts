@@ -9,7 +9,9 @@ describe("describePartialRedemptionPolicy", () => {
   const t = walletTestTranslator("id-ID");
 
   it("explains balance-carrying in plain Indonesian", () => {
-    expect(describePartialRedemptionPolicy("balance_carrying", t)).toMatch(/sisanya tetap tersimpan/);
+    expect(describePartialRedemptionPolicy("balance_carrying", t)).toMatch(
+      /sisanya tetap tersimpan/,
+    );
   });
 
   it("explains single-use-forfeit in plain Indonesian, including that the remainder is lost", () => {

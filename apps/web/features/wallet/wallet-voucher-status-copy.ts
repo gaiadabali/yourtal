@@ -23,7 +23,10 @@ export interface VoucherStatusClassification {
 /** The `wallet` catalogue key for each status — shared so a Server and a Client caller translate the exact same key. */
 export const VOUCHER_STATUS_MESSAGE_KEY: Record<
   VoucherStatusKind,
-  "voucher.statusHeld" | "voucher.statusPending" | "voucher.statusReleased" | "voucher.statusExpired"
+  | "voucher.statusHeld"
+  | "voucher.statusPending"
+  | "voucher.statusReleased"
+  | "voucher.statusExpired"
 > = {
   held: "voucher.statusHeld",
   pending: "voucher.statusPending",

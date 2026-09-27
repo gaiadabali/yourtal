@@ -9,8 +9,7 @@ import {
 import type { ApiError } from "@/lib/api/api-fetch";
 
 export type DisputeVoucherResult =
-  | { ok: true; result: DisputeResult }
-  | { ok: false; error: ApiError };
+  { ok: true; result: DisputeResult } | { ok: false; error: ApiError };
 
 /**
  * 6.5.b/4.7.c: "This voucher didn't work" — the viewer reports a voucher the

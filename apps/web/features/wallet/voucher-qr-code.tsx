@@ -32,7 +32,13 @@ export interface VoucherQrCodeProps {
  * (docs/13b-typescript-standards.md §8; the YT-0424 brief's "qrcode is
  * heavy... never in the initial chunk").
  */
-export function VoucherQrCode({ payload, label, code, caption, fallbackLabel }: VoucherQrCodeProps) {
+export function VoucherQrCode({
+  payload,
+  label,
+  code,
+  caption,
+  fallbackLabel,
+}: VoucherQrCodeProps) {
   return (
     <VoucherQrCanvas
       payload={payload}

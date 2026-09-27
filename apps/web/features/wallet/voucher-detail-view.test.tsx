@@ -226,7 +226,9 @@ describe("VoucherDetailView", () => {
     await flushMicrotasks();
 
     expect(
-      screen.getByText("Kamu sedang offline — menampilkan salinan voucher yang tersimpan terakhir."),
+      screen.getByText(
+        "Kamu sedang offline — menampilkan salinan voucher yang tersimpan terakhir.",
+      ),
     ).toBeInTheDocument();
     onLineSpy.mockRestore();
   });

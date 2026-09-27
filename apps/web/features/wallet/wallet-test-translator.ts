@@ -17,7 +17,10 @@ export function walletTestTranslator(locale: "en-AU" | "id-ID"): Translator {
   return (key: string, values?: Record<string, string | number>) => {
     const raw = key
       .split(".")
-      .reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], catalogue);
+      .reduce<unknown>(
+        (node, part) => (node as Record<string, unknown> | undefined)?.[part],
+        catalogue,
+      );
     if (typeof raw !== "string") {
       throw new Error(`wallet-test-translator: missing key "${key}" for ${locale}`);
     }

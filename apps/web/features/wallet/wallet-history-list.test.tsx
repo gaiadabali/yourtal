@@ -15,8 +15,20 @@ vi.mock("next-intl/server", () => ({
 // `direction` only, no `description` and no merchant name — the web words
 // each entry itself (`wallet-history-copy.ts`).
 const entries: WalletHistoryEntry[] = [
-  { id: "earn-1", kind: "earn", occurredAt: "2026-09-18T09:00:00.000Z", points: asDisplayPoints(2_400), direction: "credit" },
-  { id: "burn-1", kind: "burn", occurredAt: "2026-09-17T09:00:00.000Z", points: asDisplayPoints(3_000), direction: "debit" },
+  {
+    id: "earn-1",
+    kind: "earn",
+    occurredAt: "2026-09-18T09:00:00.000Z",
+    points: asDisplayPoints(2_400),
+    direction: "credit",
+  },
+  {
+    id: "burn-1",
+    kind: "burn",
+    occurredAt: "2026-09-17T09:00:00.000Z",
+    points: asDisplayPoints(3_000),
+    direction: "debit",
+  },
 ];
 
 describe("WalletHistoryList", () => {

@@ -54,7 +54,10 @@ describe("VoucherDisputeButton", () => {
   });
 
   it("reports a failed submission without throwing", async () => {
-    disputeVoucherActionMock.mockResolvedValue({ ok: false, error: { kind: "network", message: "offline" } });
+    disputeVoucherActionMock.mockResolvedValue({
+      ok: false,
+      error: { kind: "network", message: "offline" },
+    });
     const user = userEvent.setup();
     const onResolved = renderButton();
 

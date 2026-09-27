@@ -26,7 +26,13 @@ export interface VoucherQrCanvasProps {
  * Regenerating the image on every `payload` change is the whole point —
  * `payload` changes each rotation window, and the new QR must render.
  */
-export function VoucherQrCanvas({ payload, label, code, caption, fallbackLabel }: VoucherQrCanvasProps) {
+export function VoucherQrCanvas({
+  payload,
+  label,
+  code,
+  caption,
+  fallbackLabel,
+}: VoucherQrCanvasProps) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -51,9 +57,17 @@ export function VoucherQrCanvas({ payload, label, code, caption, fallbackLabel }
   }, [payload]);
 
   return (
-    <QRPanel src={dataUrl ?? undefined} alt={label} code={code} caption={failed ? fallbackLabel : caption}>
+    <QRPanel
+      src={dataUrl ?? undefined}
+      alt={label}
+      code={code}
+      caption={failed ? fallbackLabel : caption}
+    >
       {dataUrl || failed ? null : (
-        <div aria-hidden="true" className="size-44 animate-pulse rounded-control bg-surface-sunken" />
+        <div
+          aria-hidden="true"
+          className="size-44 animate-pulse rounded-control bg-surface-sunken"
+        />
       )}
     </QRPanel>
   );

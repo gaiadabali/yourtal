@@ -9,7 +9,10 @@ import { walletTestTranslator } from "./wallet-test-translator";
 describe("isVoucherEffectivelyExpired", () => {
   it("is false before the expiry instant", () => {
     expect(
-      isVoucherEffectivelyExpired("2026-09-19T10:00:00.000Z", Date.parse("2026-09-19T09:00:00.000Z")),
+      isVoucherEffectivelyExpired(
+        "2026-09-19T10:00:00.000Z",
+        Date.parse("2026-09-19T09:00:00.000Z"),
+      ),
     ).toBe(false);
   });
 

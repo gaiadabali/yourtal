@@ -40,7 +40,13 @@ describe("WalletScreen (id-ID)", () => {
   it("shows the taught empty state for a genuinely new user — zero balance, zero vouchers", async () => {
     locale = "id-ID";
     render(
-      await WalletScreen({ balance: zeroBalance, vouchers: [], history: [], nowMs, locale: "id-ID" }),
+      await WalletScreen({
+        balance: zeroBalance,
+        vouchers: [],
+        history: [],
+        nowMs,
+        locale: "id-ID",
+      }),
     );
 
     expect(screen.getByText("Belum ada poin di sini")).toBeInTheDocument();
@@ -66,7 +72,13 @@ describe("WalletScreen (id-ID)", () => {
   it("shows the real balance card for a normal, non-empty wallet", async () => {
     locale = "id-ID";
     render(
-      await WalletScreen({ balance: mixedBalance, vouchers: [], history: [], nowMs, locale: "id-ID" }),
+      await WalletScreen({
+        balance: mixedBalance,
+        vouchers: [],
+        history: [],
+        nowMs,
+        locale: "id-ID",
+      }),
     );
 
     expect(screen.getByText("Saldo tersedia")).toBeInTheDocument();
@@ -79,7 +91,13 @@ describe("WalletScreen (en-AU)", () => {
   it("shows every heading in English, with no Indonesian copy leaking through", async () => {
     locale = "en-AU";
     const { container } = render(
-      await WalletScreen({ balance: mixedBalance, vouchers: [], history: [], nowMs, locale: "en-AU" }),
+      await WalletScreen({
+        balance: mixedBalance,
+        vouchers: [],
+        history: [],
+        nowMs,
+        locale: "en-AU",
+      }),
     );
 
     expect(screen.getByText("Available balance")).toBeInTheDocument();

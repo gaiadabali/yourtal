@@ -18,10 +18,7 @@ import { VoucherQrCode } from "./voucher-qr-code";
 import { VoucherValidityCountdown } from "./voucher-validity-countdown";
 import { VoucherArchivedPanel } from "./voucher-archived-panel";
 import { VoucherDisputeButton } from "./voucher-dispute-button";
-import {
-  describeVoucherStatus,
-  isVoucherEffectivelyExpired,
-} from "./wallet-voucher-status-copy";
+import { describeVoucherStatus, isVoucherEffectivelyExpired } from "./wallet-voucher-status-copy";
 import { buildRedemptionInstructions } from "./wallet-redemption-copy";
 import { formatWalletDate } from "./wallet-format";
 
@@ -155,7 +152,9 @@ export function VoucherDetailView({
           <VoucherArchivedPanel
             statusLabel={statusCopy.label}
             dateLabel={
-              detail.expiresAt ? t("voucher.expiresOn", { date: formatWalletDate(detail.expiresAt, locale) }) : ""
+              detail.expiresAt
+                ? t("voucher.expiresOn", { date: formatWalletDate(detail.expiresAt, locale) })
+                : ""
             }
           />
         )}

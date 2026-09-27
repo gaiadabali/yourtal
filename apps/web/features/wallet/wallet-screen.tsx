@@ -44,7 +44,13 @@ function isWalletEmpty(balance: WalletSummary, vouchers: WalletVoucherDetail[]):
  * awaiting explicitly makes the composition work, and be testable, under
  * both.
  */
-export async function WalletScreen({ balance, vouchers, history, nowMs, locale }: WalletScreenProps) {
+export async function WalletScreen({
+  balance,
+  vouchers,
+  history,
+  nowMs,
+  locale,
+}: WalletScreenProps) {
   const t = await getTranslations("wallet");
   const empty = isWalletEmpty(balance, vouchers);
   const [balanceOrEmptyState, voucherList, historyList] = await Promise.all([

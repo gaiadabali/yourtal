@@ -1,0 +1,29 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Opening the internal staff console (TASKS.md 9.1). Every working staff
+  role gets the shell; what each can then do is decided by that screen's
+  own resource kind. `admin` is left out by the admin boundary
+  (policies/README.md): break-glass admin holds no data access, and the
+  console is data. A suspended staff account is refused outright.
+resourcePolicy:
+  version: default
+  resource: staff_console
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/staff_console.json
+  rules:
+    - name: a-suspended-staff-account-opens-nothing
+      actions: ["view"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(P.attr.isSuspended) && P.attr.isSuspended == true
+
+    - name: working-staff-roles-open-the-console
+      actions: ["view"]
+      effect: EFFECT_ALLOW
+      roles: ["support", "moderator", "risk_analyst", "finance", "ops"]

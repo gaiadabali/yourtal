@@ -583,6 +583,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Same redemption-network note as voucher.authorization below -- a merchant-terminal signature replay-protection table (20260925194200), not a row a holder or merchant ever reads directly.",
   "platform.sim_outbox":
     "1.6's shared simulated-driver outbox (red line 11) -- infrastructure a reviewer reads through /dev/inbox, not a domain contract any consumer parses.",
+  "staff.audit_event":
+    "9.1.a's append-only audit trail of every staff console action -- written by the staff module's interceptor, never a domain contract any consumer parses.",
   "platform.dev_clock_audit":
     "2.3.d's append-only audit trail for /dev/clock -- a reviewer's own action log, gated out of production by APP_ENV, never a domain contract any consumer parses.",
   "store.listing_location":

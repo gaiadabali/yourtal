@@ -1,0 +1,34 @@
+---
+name: StaffConsoleSuite
+description: |-
+  TASKS.md 9.1.b: only working staff roles open the console. A viewer, a
+  business owner, anonymous, a break-glass admin and a suspended staff
+  account are all refused.
+tests:
+  - name: every working staff role opens the console
+    input:
+      principals: [support_sari, moderator_tono, risk_umi, finance_yani, ops_zul]
+      resources: [staff_console_self]
+      actions: [view]
+    expected:
+      - { principal: support_sari, resource: staff_console_self, actions: { view: EFFECT_ALLOW } }
+      - { principal: moderator_tono, resource: staff_console_self, actions: { view: EFFECT_ALLOW } }
+      - { principal: risk_umi, resource: staff_console_self, actions: { view: EFFECT_ALLOW } }
+      - { principal: finance_yani, resource: staff_console_self, actions: { view: EFFECT_ALLOW } }
+      - { principal: ops_zul, resource: staff_console_self, actions: { view: EFFECT_ALLOW } }
+
+  - name: non-staff, admin and a suspended staff account are refused
+    input:
+      principals: [anon, wina, budi_owner, admin_root, support_sari_suspended]
+      resources: [staff_console_self]
+      actions: [view]
+    expected:
+      - { principal: anon, resource: staff_console_self, actions: { view: EFFECT_DENY } }
+      - { principal: wina, resource: staff_console_self, actions: { view: EFFECT_DENY } }
+      - { principal: budi_owner, resource: staff_console_self, actions: { view: EFFECT_DENY } }
+      - { principal: admin_root, resource: staff_console_self, actions: { view: EFFECT_DENY } }
+      - {
+          principal: support_sari_suspended,
+          resource: staff_console_self,
+          actions: { view: EFFECT_DENY },
+        }

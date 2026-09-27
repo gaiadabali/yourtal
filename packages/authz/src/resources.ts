@@ -264,6 +264,14 @@ export const RESOURCE_ACTIONS = {
    * (`StoreDevicePrincipalResolver`), proving a PIN rather than an identity.
    */
   device: ["pair", "unlock"],
+
+  /**
+   * TASKS.md 9.1: opening the internal staff console at all. Each screen
+   * inside it is still gated by its own kind (kyb_document, user_account,
+   * platform_setting, ...). `admin` is absent by the admin boundary, so a
+   * break-glass admin also needs a working role to use the console.
+   */
+  staff_console: ["view"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

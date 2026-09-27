@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "staff_console",
+  "description": "The internal staff console itself (TASKS.md 9.1). No attributes: the question is only whether the caller holds a working staff role. See policies/resource_policies/staff_console.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

@@ -361,3 +361,10 @@ resources:
     kind: device
     id: self
     attr: {}
+
+  # TASKS.md 9.1: the staff console itself, same "caller IS the resource"
+  # shape as device_self above -- see resource_policies/staff_console.yaml.
+  staff_console_self:
+    kind: staff_console
+    id: self
+    attr: {}

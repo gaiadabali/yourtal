@@ -14,6 +14,7 @@ import {
 import { STUDIO_MEDIA_ROUTE_DEFINITIONS } from "./route-registry.c-media";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
 import { DEVELOPERS_ROUTE_DEFINITIONS } from "./route-registry.c-developers";
+import { STAFF_ROUTE_DEFINITIONS } from "./route-registry.c-staff";
 import { buildPathsFrom, type RouteDefinition } from "./route-registry-shared";
 
 /**
@@ -53,6 +54,7 @@ export {
   STUDIO_MEDIA_ROUTE_DEFINITIONS,
   COUNTER_ROUTE_DEFINITIONS,
   DEVELOPERS_ROUTE_DEFINITIONS,
+  STAFF_ROUTE_DEFINITIONS,
 };
 // `export *` is banned (docs/13b section 5) — named re-exports only, and only
 // the pieces something outside this file's own siblings actually needs.
@@ -73,6 +75,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...STUDIO_MEDIA_ROUTE_DEFINITIONS,
   ...COUNTER_ROUTE_DEFINITIONS,
   ...DEVELOPERS_ROUTE_DEFINITIONS,
+  ...STAFF_ROUTE_DEFINITIONS,
 ];
 
 /** Builds the `paths` object `build-document.ts` embeds in the document. */

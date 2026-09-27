@@ -68,6 +68,9 @@ const LEDGER_AND_VOUCHER_INTERNAL_REASON =
   "ledger-internal/voucher-internal (1.2.a-c): an internal service-to-service operation type, not a public/business-facing HTTP contract -- see this file's comment above NOT_PUBLISHED.";
 
 const NOT_PUBLISHED: Readonly<Record<string, string>> = {
+  staffRoleSchema:
+    "9.1's staff console session, read only by apps/web's own /staff shell; GET /api/staff/me documents it inline in route-registry.c-staff.ts.",
+  staffSessionSchema: "Same as staffRoleSchema above.",
   regionSettingSchema:
     "1.2.f's ledger-internal settings row (getSettings/proposeSetting/approveSetting). Internal to the ledger and 9.5.d's staff console, not a public/business-facing HTTP contract -- same reason ledger-internal and voucher-internal's own operation types are not routed through this registry.",
 

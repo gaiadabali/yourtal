@@ -191,6 +191,11 @@ principals:
       isSuspended: false
       goodwillCreditCeilingIdr: 50000
 
+  support_sari_suspended:
+    id: sari
+    roles: ["support"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: true }
+
   moderator_tono:
     id: tono
     roles: ["moderator"]

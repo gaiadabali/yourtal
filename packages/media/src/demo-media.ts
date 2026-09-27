@@ -48,7 +48,8 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 // otherwise every release re-fetches and re-transcodes from a cold cache.
 // Correctness never depends on it: the DB check (`hls_url IS NOT NULL`) is
 // what makes a re-run a no-op, a cold cache only costs time.
-const CACHE_DIR = process.env["DEMO_MEDIA_CACHE_DIR"] ?? path.join(REPO_ROOT, ".cache", "demo-media");
+const CACHE_DIR =
+  process.env["DEMO_MEDIA_CACHE_DIR"] ?? path.join(REPO_ROOT, ".cache", "demo-media");
 const MANIFEST_PATH = path.join(REPO_ROOT, "packages", "media", "demo-media.json");
 
 /** F10's own 60s floor, plus margin: every demo campaign lands at exactly this length. */

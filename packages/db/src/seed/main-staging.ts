@@ -142,8 +142,13 @@ async function main(): Promise<void> {
     // TASKS.md 7.2.d/e: the demo media kit's own campaigns (8 AU + 8 ID),
     // real ffmpeg/MinIO, idempotent by campaign id — a re-run after the
     // first successful one just checks 16 rows and does nothing further.
-    const demoMediaResults = await runDemoMedia({ databaseUrl: connectionString, log: console.log });
-    const demoMediaSeeded = demoMediaResults.filter((r: DemoMediaResult) => r.status === "seeded").length;
+    const demoMediaResults = await runDemoMedia({
+      databaseUrl: connectionString,
+      log: console.log,
+    });
+    const demoMediaSeeded = demoMediaResults.filter(
+      (r: DemoMediaResult) => r.status === "seeded",
+    ).length;
     const demoMediaFailed = demoMediaResults.filter((r: DemoMediaResult) => r.status === "failed");
     const demoMediaSummary =
       demoMediaFailed.length > 0

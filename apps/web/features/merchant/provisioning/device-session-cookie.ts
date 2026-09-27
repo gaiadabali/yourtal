@@ -74,12 +74,18 @@ export async function readDeviceBinding(): Promise<DeviceBinding | null> {
   }
 }
 
-/** Writes the device binding cookie — the one moment a device is "paired." Only `submitPairingCode` calls this. */
+/**
+ * Writes the device binding cookie — the one moment a device is "paired."
+ * Only `submitPairingCode` calls this. `secure` follows
+ * `session-cookies.ts`'s own convention: skipped outside production,
+ * where every dev/staging server this actually needs to run against is
+ * still plain HTTP.
+ */
 export async function writeDeviceBinding(binding: DeviceBinding): Promise<void> {
   const store = await cookies();
   store.set(DEVICE_COOKIE, encodeBinding(binding), {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/merchant",
     maxAge: DEVICE_COOKIE_MAX_AGE_SECONDS,
@@ -104,7 +110,7 @@ export async function markUnlocked(): Promise<void> {
   const store = await cookies();
   store.set(UNLOCK_COOKIE, "1", {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/merchant",
     maxAge: UNLOCK_COOKIE_MAX_AGE_SECONDS,

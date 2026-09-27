@@ -67,7 +67,7 @@ export function MerchantRedemptionFlowView({
   const outcome = outcomeFor(step);
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-4 pb-24">
+    <main className="mx-auto flex w-full max-w-xl flex-col gap-4 p-4 pb-24">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-sans font-semibold text-fg">{copy.portalHeading}</h1>
         <p className="text-sm font-sans text-fg-muted">
@@ -145,6 +145,6 @@ export function MerchantRedemptionFlowView({
         />
       ) : null}
       <MerchantTodayLogPanel entries={logEntries} locale={device.locale} copy={copy} />
-    </div>
+    </main>
   );
 }

@@ -39,7 +39,7 @@ export function PinUnlockScreen({ device, error }: PinUnlockScreenProps) {
         : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-col gap-6 p-4 pt-16">
+    <main className="mx-auto flex w-full max-w-sm flex-col gap-6 p-4 pt-16">
       <header className="flex flex-col items-center gap-2 text-center">
         <Badge variant="secondary">
           {copy.lockedByDeviceLabel}: {device.id.slice(0, 8)}
@@ -71,6 +71,6 @@ export function PinUnlockScreen({ device, error }: PinUnlockScreenProps) {
           {copy.unlockButton}
         </Button>
       </form>
-    </div>
+    </main>
   );
 }

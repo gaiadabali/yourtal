@@ -38,7 +38,7 @@ export function DevicePairingForm({ error }: DevicePairingFormProps) {
   const knownError = isKnownError(error) ? FORM_TEXT.errors[error] : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-4">
+    <main className="mx-auto flex w-full max-w-xl flex-col gap-6 p-4">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-sans font-semibold text-fg">{FORM_TEXT.heading}</h1>
       </header>
@@ -64,6 +64,6 @@ export function DevicePairingForm({ error }: DevicePairingFormProps) {
           {FORM_TEXT.submitButton}
         </Button>
       </form>
-    </div>
+    </main>
   );
 }

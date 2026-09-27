@@ -25,14 +25,14 @@ export function MerchantSessionChrome({ device, children }: MerchantSessionChrom
   const copy = getProvisioningCopy(device.locale);
   return (
     <div className="flex flex-col">
-      <div className="mx-auto flex w-full max-w-xl items-center justify-between px-4 pt-3">
+      <header className="mx-auto flex w-full max-w-xl items-center justify-between px-4 pt-3">
         <Badge variant="secondary">{device.id.slice(0, 8)}</Badge>
         <form action={lockDeviceAction}>
           <Button type="submit" variant="outline" size="sm">
             {copy.lockButton}
           </Button>
         </form>
-      </div>
+      </header>
       {children}
       <AutoLockWatcher onIdle={lockDeviceAction} />
     </div>

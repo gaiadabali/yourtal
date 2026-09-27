@@ -1,0 +1,217 @@
+{
+  "musicBed": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/40/Loyalty_Freak_Music_-_Monster_Parade.ogg",
+    "licence": "CC0 1.0 Universal",
+    "attribution": "\"Monster Parade\" by Loyalty Freak Music, via Wikimedia Commons / Free Music Archive",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_Monster_Parade.ogg"
+  },
+  "clips": {
+    "bigBuckBunny": {
+      "url": "https://download.blender.org/peach/trailer/trailer_480p.mov",
+      "licence": "CC-BY 3.0",
+      "attribution": "Blender Foundation — Big Buck Bunny trailer",
+      "sourcePage": "https://peach.blender.org/"
+    },
+    "sintel": {
+      "url": "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4",
+      "licence": "CC-BY 3.0",
+      "attribution": "Blender Foundation — Sintel trailer",
+      "sourcePage": "https://durian.blender.org/"
+    }
+  },
+  "campaigns": [
+    {
+      "slug": "au-southern-cross-coffee",
+      "region": "AU",
+      "brand": "Southern Cross Coffee",
+      "clip": "bigBuckBunny",
+      "teaserStartSeconds": 3,
+      "facts": [
+        { "at": 0.15, "text": "Roasted fresh daily" },
+        { "at": 0.4, "text": "100% Rainforest Alliance beans" },
+        { "at": 0.65, "text": "Free delivery over $40" }
+      ]
+    },
+    {
+      "slug": "au-outback-trail-gear",
+      "region": "AU",
+      "brand": "Outback Trail Gear",
+      "clip": "sintel",
+      "teaserStartSeconds": 2,
+      "facts": [
+        { "at": 0.15, "text": "Built for 40°C to -10°C" },
+        { "at": 0.4, "text": "Lifetime warranty" },
+        { "at": 0.65, "text": "Rated 4.8/5 by hikers" }
+      ]
+    },
+    {
+      "slug": "au-bondi-board-co",
+      "region": "AU",
+      "brand": "Bondi Board Co.",
+      "clip": "bigBuckBunny",
+      "teaserStartSeconds": 5,
+      "facts": [
+        { "at": 0.2, "text": "Hand-shaped in Sydney" },
+        { "at": 0.45, "text": "Recycled foam cores" },
+        { "at": 0.7, "text": "Free wax with every board" }
+      ]
+    },
+    {
+      "slug": "au-melbourne-bicycle-works",
+      "region": "AU",
+      "brand": "Melbourne Bicycle Works",
+      "clip": "sintel",
+      "teaserStartSeconds": 1,
+      "facts": [
+        { "at": 0.15, "text": "Est. 2014" },
+        { "at": 0.4, "text": "Free tune-up for a year" },
+        { "at": 0.65, "text": "Australian steel frames" }
+      ]
+    },
+    {
+      "slug": "au-perth-power-tools",
+      "region": "AU",
+      "brand": "Perth Power Tools",
+      "clip": "bigBuckBunny",
+      "teaserStartSeconds": 8,
+      "facts": [
+        { "at": 0.15, "text": "Trade-grade warranty" },
+        { "at": 0.4, "text": "Same-day click and collect" },
+        { "at": 0.65, "text": "Rated 4.7/5 by tradies" }
+      ]
+    },
+    {
+      "slug": "au-sydney-skyline-tours",
+      "region": "AU",
+      "brand": "Sydney Skyline Tours",
+      "clip": "sintel",
+      "teaserStartSeconds": 4,
+      "facts": [
+        { "at": 0.15, "text": "Small groups, 12 max" },
+        { "at": 0.4, "text": "Local guides only" },
+        { "at": 0.65, "text": "Free reschedule anytime" }
+      ]
+    },
+    {
+      "slug": "au-adelaide-artisan-bakery",
+      "region": "AU",
+      "brand": "Adelaide Artisan Bakery",
+      "clip": "bigBuckBunny",
+      "teaserStartSeconds": 6,
+      "facts": [
+        { "at": 0.15, "text": "Baked before sunrise" },
+        { "at": 0.4, "text": "Sourdough, naturally leavened" },
+        { "at": 0.65, "text": "South Australian flour" }
+      ]
+    },
+    {
+      "slug": "au-tasmania-wool-co",
+      "region": "AU",
+      "brand": "Tasmania Wool Co.",
+      "clip": "sintel",
+      "teaserStartSeconds": 3,
+      "facts": [
+        { "at": 0.15, "text": "Merino from Tasmanian farms" },
+        { "at": 0.4, "text": "Ethically shorn" },
+        { "at": 0.65, "text": "Carbon-neutral shipping" }
+      ]
+    },
+
+    {
+      "slug": "id-kopi-nusantara",
+      "region": "ID",
+      "brand": "Kopi Nusantara",
+      "clip": "bigBuckBunny",
+      "teaserStartSeconds": 3,
+      "facts": [
+        { "at": 0.15, "text": "Disangrai setiap pagi" },
+        { "at": 0.4, "text": "100% biji lokal Nusantara" },
+        { "at": 0.65, "text": "Gratis ongkir di atas Rp150rb" }
+      ]
+    },
+    {
+      "slug": "id-jakarta-jaya-motor",
+      "region": "ID",
+      "brand": "Jakarta Jaya Motor",
+      "clip": "sintel",
+      "teaserStartSeconds": 2,
+      "facts": [
+        { "at": 0.15, "text": "Servis resmi 24 jam" },
+        { "at": 0.4, "text": "Sparepart bergaransi" },
+        { "at": 0.65, "text": "Rating 4.8/5 pelanggan" }
+      ]
+    },
+    {
+      "slug": "id-bali-batik-house",
+      "region": "ID",
+      "brand": "Bali Batik House",
+      "clip": "bigBuckBunny",
+      "teaserStartSeconds": 5,
+      "facts": [
+        { "at": 0.2, "text": "Dibuat tangan di Bali" },
+        { "at": 0.45, "text": "Pewarna alami" },
+        { "at": 0.7, "text": "Motif eksklusif setiap bulan" }
+      ]
+    },
+    {
+      "slug": "id-surabaya-snack-co",
+      "region": "ID",
+      "brand": "Surabaya Snack Co.",
+      "clip": "sintel",
+      "teaserStartSeconds": 1,
+      "facts": [
+        { "at": 0.15, "text": "Berdiri sejak 2016" },
+        { "at": 0.4, "text": "Tanpa pengawet" },
+        { "at": 0.65, "text": "Kemasan bisa didaur ulang" }
+      ]
+    },
+    {
+      "slug": "id-bandung-boba-bar",
+      "region": "ID",
+      "brand": "Bandung Boba Bar",
+      "clip": "bigBuckBunny",
+      "teaserStartSeconds": 8,
+      "facts": [
+        { "at": 0.15, "text": "Boba dimasak tiap 2 jam" },
+        { "at": 0.4, "text": "Gula aren asli" },
+        { "at": 0.65, "text": "Rating 4.7/5 pelanggan" }
+      ]
+    },
+    {
+      "slug": "id-yogyakarta-textiles",
+      "region": "ID",
+      "brand": "Yogyakarta Textiles",
+      "clip": "sintel",
+      "teaserStartSeconds": 4,
+      "facts": [
+        { "at": 0.15, "text": "Tenun tradisional Jawa" },
+        { "at": 0.4, "text": "Penenun lokal bersertifikat" },
+        { "at": 0.65, "text": "Bebas ongkir se-Jawa" }
+      ]
+    },
+    {
+      "slug": "id-medan-spice-traders",
+      "region": "ID",
+      "brand": "Medan Spice Traders",
+      "clip": "bigBuckBunny",
+      "teaserStartSeconds": 6,
+      "facts": [
+        { "at": 0.15, "text": "Rempah pilihan Sumatra" },
+        { "at": 0.4, "text": "Panen langsung petani" },
+        { "at": 0.65, "text": "Tanpa bahan tambahan" }
+      ]
+    },
+    {
+      "slug": "id-makassar-marine-gear",
+      "region": "ID",
+      "brand": "Makassar Marine Gear",
+      "clip": "sintel",
+      "teaserStartSeconds": 3,
+      "facts": [
+        { "at": 0.15, "text": "Tahan air laut" },
+        { "at": 0.4, "text": "Garansi 2 tahun" },
+        { "at": 0.65, "text": "Dipakai nelayan Sulawesi" }
+      ]
+    }
+  ]
+}

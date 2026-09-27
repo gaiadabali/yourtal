@@ -69,6 +69,7 @@ import { BILLING_CONTRACT_COMPONENTS } from "./schema-registry-billing";
 import { BUSINESS_CONTRACT_COMPONENTS } from "./schema-registry-business";
 import { DEVICE_CONTRACT_COMPONENTS } from "./schema-registry-devices";
 import { REPORT_CONTRACT_COMPONENTS } from "./schema-registry-report";
+import { STUDIO_CONTRACT_COMPONENTS } from "./schema-registry-studio";
 
 /**
  * Which Zod schemas become OpenAPI components, and what each one loses on the
@@ -560,4 +561,7 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   // --- devices, counter, studio developers: see schema-registry-devices.ts (TASKS.md 8.1-8.3). ---
   ...DEVICE_CONTRACT_COMPONENTS,
   ...REPORT_CONTRACT_COMPONENTS,
+
+  // --- studio media pipeline: see schema-registry-studio.ts (TASKS.md 7.2).
+  ...STUDIO_CONTRACT_COMPONENTS,
 ];

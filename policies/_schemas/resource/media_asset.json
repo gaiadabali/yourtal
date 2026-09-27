@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "media_asset",
+  "description": "An uploaded campaign video, raw or transcoded (TASKS.md 7.2). Owned by the business that uploaded it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["businessId"],
+  "properties": {
+    "businessId": { "type": "string" },
+    "region": {
+      "description": "1.5.b's F2 hard wall: the owning business's region, compared against P.attr.jurisdiction.",
+      "type": "string",
+      "enum": ["AU", "ID"]
+    }
+  }
+}

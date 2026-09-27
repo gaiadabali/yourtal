@@ -54,6 +54,8 @@ TASKS.md.lock
 .claude/settings.local.json
 # Third-party clips fetched for the design prototypes (TASKS.md 3.2.a); licences in CREDITS.txt
 apps/web/public/lab-media/
+# `pnpm demo:media`'s fetched/processed clips (TASKS.md 7.2.d); licences recorded in demo-media.json
+.cache/demo-media/
 
 # Go build outputs (ledger is covered above)
 services/*/voucher

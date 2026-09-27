@@ -97,6 +97,20 @@ export function resolveOriginEndpoint(): string {
   return readEnv("S3_ENDPOINT") ?? "http://127.0.0.1:26900";
 }
 
+/**
+ * The bucket real (non-fixture) media lives in. `MEDIA_BUCKET` above stays a
+ * hard-coded constant on purpose — the `attention-30s` fixture is shared,
+ * read-only, and the same asset in every environment, so there is nothing to
+ * configure. Studio's uploads (7.2) are real tenant data, and a parallel
+ * phase session isolates its own with its own bucket (`S3_BUCKET` in its
+ * `.env`) so two sessions' `pnpm demo:media` runs never collide. Staging has
+ * exactly one bucket (`yourtal-media`, matching `infra/helios/nginx`'s
+ * hard-coded proxy path), so this and `MEDIA_BUCKET` agree there.
+ */
+export function resolveMediaBucket(): string {
+  return readEnv("S3_BUCKET") ?? MEDIA_BUCKET;
+}
+
 export function resolveCredentials(): { accessKeyId: string; secretAccessKey: string } {
   const isProduction = process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test";
   // In production, require the env var to be set explicitly (do not fall back to .env).

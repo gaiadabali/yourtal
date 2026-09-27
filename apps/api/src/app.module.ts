@@ -14,6 +14,7 @@ import { WalletModule } from "./modules/wallet/wallet.module";
 import { CheckoutModule } from "./modules/checkout/checkout.module";
 import { MeModule } from "./modules/me/me.module";
 import { DevicesModule } from "./modules/devices/devices.module";
+import { StudioModule } from "./modules/studio/studio.module";
 import { WalletAttributeLoader } from "./modules/wallet/wallet-attribute-loader";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
@@ -54,6 +55,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     CheckoutModule,
     MeModule,
     DevicesModule,
+    StudioModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

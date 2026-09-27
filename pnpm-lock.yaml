@@ -472,6 +472,9 @@ importers:
       '@yourtal/jurisdiction':
         specifier: workspace:*
         version: link:../../packages/jurisdiction
+      '@yourtal/media':
+        specifier: workspace:*
+        version: link:../../packages/media
       '@yourtal/queue':
         specifier: workspace:*
         version: link:../../packages/queue
@@ -675,6 +678,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: 3.1139.0
         version: 3.1139.0
+      pg:
+        specifier: 8.23.0
+        version: 8.23.0
     devDependencies:
       '@swc-node/register':
         specifier: ^1.11.1
@@ -682,6 +688,9 @@ importers:
       '@swc/core':
         specifier: ^1.15.2
         version: 1.16.2(@swc/helpers@0.5.23)
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
       '@yourtal/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

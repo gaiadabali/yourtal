@@ -44,6 +44,14 @@ export const RESOURCE_ACTIONS = {
    */
   kyb_document: ["view", "submit", "approve", "reject"],
 
+  /**
+   * Uploaded campaign media (raw source, then its transcoded renditions).
+   * TASKS.md 7.2 -- same editors as `campaign` itself (owner/admin/marketer),
+   * since an asset exists to become a campaign's video and has no separate
+   * lifecycle a different role should govern.
+   */
+  media_asset: ["upload", "view"],
+
   /** Business-side campaign management and its question bank. */
   campaign: [
     "view",

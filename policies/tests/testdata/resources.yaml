@@ -189,6 +189,12 @@ resources:
     attr:
       businessId: "biz-kopi"
 
+  media_asset_kopi:
+    kind: media_asset
+    id: media-1
+    attr:
+      businessId: "biz-kopi"
+
   report_kopi:
     kind: report
     id: rep-1

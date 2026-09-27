@@ -6,22 +6,28 @@
   "exports": {
     "./hls-origin": "./src/hls-origin.ts",
     "./publish-fixture": "./src/publish-fixture.ts",
-    "./kyb-object-storage": "./src/kyb-object-storage.ts"
+    "./kyb-object-storage": "./src/kyb-object-storage.ts",
+    "./studio-media": "./src/studio-media.ts",
+    "./hls-session-url": "./src/hls-session-url.ts",
+    "./ffmpeg-transcode": "./src/ffmpeg-transcode.ts"
   },
   "scripts": {
     "publish:fixture": "node --import @swc-node/register/esm-register src/publish-fixture.ts",
     "fixture:generate": "node scripts/generate-fixture.mjs",
+    "demo:media": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/demo-media.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint ."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1139.0",
-    "@aws-sdk/s3-request-presigner": "3.1139.0"
+    "@aws-sdk/s3-request-presigner": "3.1139.0",
+    "pg": "8.23.0"
   },
   "devDependencies": {
     "@swc-node/register": "^1.11.1",
     "@swc/core": "^1.15.2",
+    "@types/pg": "8.23.1",
     "@yourtal/tsconfig": "workspace:*",
     "typescript": "6.0.3",
     "vitest": "5.0.1"

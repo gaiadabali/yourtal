@@ -42,6 +42,8 @@
     "./business/billing-contact/mock": "./src/business/billing-contact.mock.ts",
     "./business/kyb-document": "./src/business/kyb-document.ts",
     "./business/kyb-document/mock": "./src/business/kyb-document.mock.ts",
+    "./studio/media": "./src/studio/media.ts",
+    "./studio/media-service-signature": "./src/studio/media-service-signature.ts",
     "./question": "./src/question/question.ts",
     "./question/presented": "./src/question/presented-question.ts",
     "./question/bank": "./src/question/question-bank.ts",

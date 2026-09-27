@@ -99,6 +99,15 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   burnForVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   burnSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
+  // --- studio media pipeline (TASKS.md 7.2): worker -> api internal callback ---
+  mediaReadyCallbackRequestSchema:
+    "7.2.b's POST /internal/studio/media/:assetId/ready, called by apps/worker over the loopback " +
+    "media-service-signature HMAC -- never a /api/:tenantId/* route a browser calls, same " +
+    "reasoning as the ledger-internal/voucher-internal types above.",
+  mediaTranscodeJobSchema:
+    "7.2.b's pg-boss job payload (studio.media_transcode) -- a queue message between apps/api " +
+    "and apps/worker, never an HTTP route.",
+
   // --- ledger-internal: captures (4.6.f.2), posted by the voucher service ---
   captureVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   capturePostingSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

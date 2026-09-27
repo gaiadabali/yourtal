@@ -41,7 +41,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
 | **Phase 7** Business studio | C | 🔄 in progress | 5/8 | 27/38 | `███████░░░`  71% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 5/16 | `███░░░░░░░`  31% |
-| **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
+| **Phase 9** Staff console | C | 🔄 in progress | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
@@ -79,7 +79,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
 | 1 | `yourtal-1` | **7** Business studio | 2026-09-27 | Four agents. A (`yourtal-1`, `phase/7`, db `yourtal_s1`): 7.1 ✅, 7.3. B (`yourtal-p7-b`, `phase/7-b`, db `yourtal_s4b`, web/api 26410/26411, Valkey /9): 7.4, 7.5, 7.6, 7.7 all ✅ — merged (`90b76a50`), nothing left assigned; awaiting the coordinator's next task or slot release. C (`yourtal-p7-c`, `phase/7-c`, db `yourtal_s4c`, 26420/26421, Valkey /10): 7.2. D (`yourtal-p7-d`, `phase/7-d`, db `yourtal_s4d`, 26440/26441, Valkey /12): 7.8.a ✅, 7.8.c ✅, 7.8.b ✅ (merged `858f5714`, incl. real upload and live-API verification). 7.8.d's `c-studio-onboarding.spec.ts` e2e and every non-campaign part done and merged (`06497baa`, 3/3 passing live) — ⛔ A's 7.3 (confirmed not on `main`) for the campaign-builder assertion and the staging run; everything else in 7.8 is merged. D stopping here per the coordinator's own instruction (hand back once waiting on 7.3 with everything else merged) — worktree `yourtal-p7-d` left in place for whoever picks 7.8.d back up once 7.3 lands. Helpers share slot 1's Cerbos (26315). **Scope changed 2026-09-27 (F40):** new 7.3.g (followers notified on `campaign.published`, for A); 7.3.e tests submit with a fixture-verified business; 7.4.c only requests a batch (approval is 9.2.c); 7.5.b has no statements (10.6.b); 7.8.b has no redemptions screen (8.2.g); 7.8.d stops at "ready to submit"; 7.6 needs 4.5, not 8.2 |
-| 2 | `yourtal-2` | — free | 2026-09-27 | Phase 5 done (6d79f65); integration green on `c990164`. Left for later phases: 11.5.g (bind the streak completion hook), 11.5.h (streak backstop against the real ledger), 2.3.i (staging media fixture). Worktree, `.env` and `yourtal_s2` ready for the next phase; helper `yourtal-p5-b` (db `yourtal_s5b`) left detached on main |
+| 2 | `yourtal-2` | **9** Staff console (early slice, F52) | 2026-09-27 | `phase/9`, db `yourtal_s2`, web/api 26320/26321, Cerbos 26325. Order: 9.1 → 9.3 → 9.4 → 9.5, with 9.2.c (voucher-batch approval) early; 9.2.a/b wait for 7.3. Carried from Phase 5 for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | free | **6** Viewer app — ✅ done | 2026-09-27 | Phase 6 done: 6.7 ✅ (c8d0dab); 6.5 ✅ (aae765a, incl. 4.8.c requested of A); 6.2 ✅ (e747877f, agent D); 6.1 ✅ (63cc61b, agent A); 6.9 ✅ (53317515, agent B — 6.9.d's CI run also surfaced F49, fixed same session, and F50, unrelated/left for whoever owns `packages/media`'s CI setup). All four agents' worktrees left in place, slot 3 free for the next phase. C's worktree `yourtal-p6-c` is done; its db `yourtal_s3c` has stale revision rows for the renamed watch migrations (repoint like `yourtal_s2`, or leave: nothing else uses it). Slot 3b's own db `yourtal_s3b` hit the SAME stale-revision issue (F34/F36 watch migration rename) mid-6.5 — resolved by drop+recreate (it holds no long-lived data, only this session's own fixtures). Also fixed while verifying 6.1.e (own commit on main, not this row's own subtask): `features/me/me-section-states.tsx` was missing `"use client"`, crashing all of Me on any real section error — see 6.1.e's own note. |
 | 4 | `yourtal-4` | free | 2026-09-27 | Phase 2 ✅ (all five tasks). Slot db `yourtal_s4`, ports 26360–26366 stay for the next phase |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). **Phase 11 is now "Viewer feed & public site" (F40)** and also holds the feed, watch page, store and search (11.4–11.7, from Phase 6), in the order 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. Everything left needs Phase 7 (7.4, 7.7); slot free, worktree left in place |
@@ -145,6 +145,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F39** | 5.6.c was half proven: signed manifest URLs pass nginx on staging and tampered ones get 403, but no staging campaign has media (2.3.i) | **Split it.** 5.6.c is ticked for the signature half; the playback half becomes 2.3.i's own Check, so Phase 5 does not wait on area A. |
 | **F40** | Work sat in earlier phases waiting on later ones (Phase 6 on 7, Phase 9 on 10, and single subtasks elsewhere) | **Move it to the phase it waits on, so every phase waits only on lower-numbered ones.** Phase 6's feed, watch, store and search → Phase 11 (11.4–11.7); 9.6 and 9.4's Phase-10 parts → 10.5–10.6 (area C); notification sources → 7.3.g and 10.2.d; approvals Phase 7 relied on → 9.2.c and 9.3.b; the redemptions screen and D16 → 8.2.g and 8.2.f. Phase 4 closed as a result. |
 | **F36** | Phase 6 was asked to start while its gates (Phase 5, 7.4, 7.7) were unfinished | **Start an early slice now** in slot 3 (`phase/6`), like F21/F26/F27: 6.1 i18n, 6.2 sign-up and onboarding, 6.5 wallet and voucher, 6.7 Me, whose needs are all ✅. 6.3, 6.4, 6.6 and 6.8 wait for 7.4, 7.7 and Phase 5's close. |
+| **F52** | Phase 9 was asked to start while its gate (Phase 7) was unfinished: 7.3 had not merged | **Start an early slice now** in slot 2 (`phase/9`), like F21/F26/F27/F36: 9.1, 9.3, 9.4 and 9.5, whose needs are all ✅, plus 9.2.c (batch approval needs only 7.4). 9.2.a and its Check 9.2.b wait for 7.3. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -1159,7 +1160,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
 
 The internal team runs the economy and the review queues. Today none of it exists.
 
-- [ ] **9.1 Staff shell and access** · needs: 1.5, 3.5
+- [ ] **9.1 Staff shell and access** · needs: 1.5, 3.5 — 🔄 slot 2
   - [ ] 9.1.a A `(staff)` route group at `/staff`, using StudioShell. Staff accounts are created by CLI (`pnpm staff:add <email> <role>`). Every action is audited. All copy lives in `messages/*/staff.json`.
   - [ ] 9.1.b **Check:** a non-staff account gets 403 on `/staff/*`.
 - [ ] **9.2 Moderation queue** · needs: 9.1, 7.3, 7.7

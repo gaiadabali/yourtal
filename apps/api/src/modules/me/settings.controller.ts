@@ -47,7 +47,9 @@ export class SettingsController {
   @Put("autoplay")
   async setAutoplay(@Req() request: FastifyRequest, @Body() body: unknown) {
     const parsed = autoplaySettingSchema.safeParse(
-      typeof body === "object" && body !== null ? (body as Record<string, unknown>)["autoplay"] : undefined,
+      typeof body === "object" && body !== null
+        ? (body as Record<string, unknown>)["autoplay"]
+        : undefined,
     );
     if (!parsed.success) {
       throw new BadRequestException('autoplay must be one of "always", "wifi_only", "never".');

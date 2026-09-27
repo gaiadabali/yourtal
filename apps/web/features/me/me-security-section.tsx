@@ -26,10 +26,13 @@ export function MeSecuritySection() {
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    run(() => changePasswordAction(currentPassword, newPassword), () => {
-      setCurrentPassword("");
-      setNewPassword("");
-    });
+    run(
+      () => changePasswordAction(currentPassword, newPassword),
+      () => {
+        setCurrentPassword("");
+        setNewPassword("");
+      },
+    );
   }
 
   const errorMessage =
@@ -64,9 +67,7 @@ export function MeSecuritySection() {
         <Button type="submit" disabled={status.kind === "pending"} className="self-start">
           {t("saveCta")}
         </Button>
-        {status.kind === "success" ? (
-          <Notice tone="success">{t("successMessage")}</Notice>
-        ) : null}
+        {status.kind === "success" ? <Notice tone="success">{t("successMessage")}</Notice> : null}
       </form>
     </Section>
   );

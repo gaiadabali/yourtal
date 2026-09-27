@@ -103,7 +103,10 @@ export default async function MePage() {
         {notificationPreferences.ok ? (
           <MeNotificationsSection initialPreferences={notificationPreferences.data.preferences} />
         ) : (
-          <MeSectionError title={t("notifications.heading")} error={notificationPreferences.error} />
+          <MeSectionError
+            title={t("notifications.heading")}
+            error={notificationPreferences.error}
+          />
         )}
 
         <MeLinkedAppsSection />

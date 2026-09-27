@@ -45,9 +45,7 @@ export function listFollows(): Promise<ApiResult<FollowsResponse>> {
   return apiFetch("/api/me/follows", followsResponseSchema);
 }
 
-export function getNotificationPreferences(): Promise<
-  ApiResult<NotificationPreferencesResponse>
-> {
+export function getNotificationPreferences(): Promise<ApiResult<NotificationPreferencesResponse>> {
   return apiFetch("/api/me/notifications/preferences", notificationPreferencesResponseSchema);
 }
 

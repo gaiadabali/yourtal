@@ -38,9 +38,7 @@ export type FollowEntry = z.infer<typeof followEntrySchema>;
 export const notificationPreferencesResponseSchema = z.object({
   preferences: z.record(z.string(), z.boolean()),
 });
-export type NotificationPreferencesResponse = z.infer<
-  typeof notificationPreferencesResponseSchema
->;
+export type NotificationPreferencesResponse = z.infer<typeof notificationPreferencesResponseSchema>;
 
 export const autoplayResponseSchema = z.object({ autoplay: autoplaySettingSchema });
 export type AutoplayResponse = z.infer<typeof autoplayResponseSchema>;

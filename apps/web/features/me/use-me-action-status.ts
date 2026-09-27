@@ -30,7 +30,9 @@ export function useMeActionStatus() {
         } else {
           const code = result.error.kind === "http" ? result.error.code : result.error.kind;
           const message =
-            result.error.kind === "http" ? result.error.message : "The request couldn't reach YourTal.";
+            result.error.kind === "http"
+              ? result.error.message
+              : "The request couldn't reach YourTal.";
           setStatus({ kind: "error", code, message });
         }
       });

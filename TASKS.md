@@ -39,14 +39,14 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/58 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | 🔄 in progress | 4/5 | 18/19 | `██████████`  95% |
-| **Phase 7** Business studio | C | 🔄 in progress | 4/8 | 20/38 | `█████░░░░░`  53% |
+| **Phase 7** Business studio | C | 🔄 in progress | 4/8 | 22/38 | `██████░░░░`  58% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 4/16 | `███░░░░░░░`  25% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **50/87** | **282/412** | `███████░░░`  68% |
+| **All** | | | **50/87** | **284/412** | `███████░░░`  69% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1078,7 +1078,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     - a followed channel ranks higher;
     - without consent, interests do not change the order.
 - [ ] **7.8 Studio UI** · needs: 3.5 — 🔄 slot 1
-  - [ ] 7.8.a The `(business)` route group at `/studio` with StudioShell (studio theme). In the same merge, add `/business/:path*` → `/studio/:path*` to `route-redirects.ts`.
+  - [x] 7.8.a The `(business)` route group at `/studio` with StudioShell (studio theme). In the same merge, add `/business/:path*` → `/studio/:path*` to `route-redirects.ts`. — Done: `apps/web/app/(business)/studio/**` (7 zones + onboarding), `features/console` renamed to `features/studio`, `StudioChrome` composes the real `StudioShell` primitive (3.5.c); 7 `route-redirects.ts` rules, each conditional on `signedIn` so `proxy.test.ts`'s signed-out expectations still hold. Verified: `pnpm check` green (typecheck/lint/1010+ tests), live Playwright + axe-core across all 8 routes × 390/1280px × light/dark = 0 violations, and a real 768px no-overflow + measurable-nav-box check (`tablet-768.spec.ts`'s own assertions, run manually against the dev server). Merged `057562be`.
   - [ ] 7.8.b Screens:
     - onboarding: create a business (region fixed, tax ID by region, address), KYB upload, and a verification banner that blocks submit;
     - the overview, whose empty state is a setup checklist: channel → buy points → upload → questions → submit;
@@ -1087,12 +1087,16 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
     - billing and reports;
     - team, with working dialogs;
     - channel settings: logo, cover and handle.
-  - [ ] 7.8.c Copy pass:
+
+    Built and screenshotted: onboarding (region-fixed, real 7.1.a taxIdKind/taxIdValue/address fields), overview checklist, campaigns (pre-existing, moved), inventory (live listings/locations via 7.4, live pending-approvals via 7.4.g), billing (live quote/purchase/balance via 7.5), reports (live per-campaign metrics via 7.6.a; campaign listing/question-bank/redemption-ledger sections stay mock — no live campaign-listing endpoint exists until 7.3 merges), team (pre-existing, moved), channel settings. **Not done:** campaign builder's video upload still shows a `setInterval`-simulated progress bar (`campaign-editor-upload.tsx`), not a real presigned-MinIO upload against 7.2's now-merged endpoints — leaving this subtask unticked until that's wired for real.
+  - [x] 7.8.c Copy pass:
     - delete the ticket IDs and doc references (`console-zone-placeholder.tsx:23`, `reports-provenance-legend.tsx`, `question-editor.tsx:73`);
     - (requested by A) `campaign-reward-risk.ts` uses a server-computed ratio, with B removed (4.9.d);
     - all copy in `messages/*/studio.json` (en-AU and id-ID);
     - the Phase 3 lint rules become errors for `features/{console,studio}`;
     - no statistics or promises about redemption, breakage or ROI (red line 5).
+
+    Done: all 4 ticket/doc citations removed (found a 5th, `question-fields-short-text.tsx`, and 2 more in `report-provenance.ts`/`reports-unavailable-metrics.ts`, fixed too). `campaign-reward-risk.ts` takes a server-computed `rewardValueMinorUnits: number | null` and a translator, shows an honest "ratio pending" state (a `(requested by D/7.8)` subtask for A under 7.3 — 7.3.h — asks for the real endpoint); B's mock-backing-rate import removed, `eslint-rules/no-mock-backing-rate.mjs` updated. Full i18n sweep of `features/studio/**` into `messages/{en-AU,id-ID}/studio.json` (191 tests green). `eslint.config.mjs`'s Area C block is `error` severity from the start (no B-style warn period), covering hex/px/raw-element/JSX-literal bans. No redemption/breakage/ROI copy anywhere (grepped clean).
   - [ ] 7.8.d **Check:** on staging a new business goes from sign-up to a funded campaign that is ready to submit, using only the Studio UI, with the submit button blocked by the verification banner. (Submitting after staff verify it is 9.3.b.)
 
 **Done when:** a business owner can register, set up a channel, buy points (simulated), upload a video, write questions, fund a campaign and submit it once verified, list a voucher and request its stock, and read real reports, all in Studio on staging. Staff approvals are Phase 9; counter redemptions are Phase 8.

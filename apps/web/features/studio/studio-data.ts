@@ -1,6 +1,10 @@
+import { z } from "zod";
+import { businessSchema } from "@yourtal/contracts/business";
 import type { Business } from "@yourtal/contracts/business";
+import { businessTeamRoleSchema } from "@yourtal/contracts/business/team-role";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import { apiFetch } from "@/lib/api/api-fetch";
 import {
   AU_BUSINESS,
   AU_BUSINESS_ROSTER,
@@ -96,17 +100,58 @@ const mockDataSource: StudioDataSource = {
   },
 };
 
+const myBusinessMembershipsResponseSchema = z.array(
+  z.object({ business: businessSchema, role: businessTeamRoleSchema, joinedAt: z.iso.datetime() }),
+);
+
 const NOT_IMPLEMENTED_MESSAGE =
-  "Live Studio data source is not implemented yet — 7.1's business-account API has not landed on main.";
+  "Live Studio data source does not support this yet — no channel-settings-update endpoint exists on main (7.1 only covers create, list and team management).";
 
 /**
- * Fails loudly and specifically rather than silently falling back to mock
- * data under a "live" flag — see `store-data.ts` for the same reasoning.
+ * Live: `GET /api/me/businesses` (7.1.b) and `POST /api/businesses`
+ * (7.1.b). `updateChannelSettings` has no real endpoint yet — fails
+ * loudly and specifically rather than silently falling back to mock data,
+ * same reasoning `store-data.ts` gives. The team roster (`getBusinessMembership`)
+ * has its own endpoint (`GET /api/:tenantId/business/team`, 7.1's team
+ * directory) not wired here yet — Team stays mock-only until that lands
+ * (out of this pass's scope; see the TASKS.md note this leaves).
  */
 const liveDataSource: StudioDataSource = {
-  listMyBusinesses: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
-  getBusinessMembership: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
-  createBusiness: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
+  listMyBusinesses: async () => {
+    const result = await apiFetch("/api/me/businesses", myBusinessMembershipsResponseSchema);
+    if (!result.ok) throw new Error(`Could not load your businesses: ${result.error.message}`);
+    return result.data.map((entry) => ({
+      business: entry.business,
+      myRole: entry.role,
+      roster: [],
+    }));
+  },
+  getBusinessMembership: async (businessId) => {
+    const memberships = await liveDataSource.listMyBusinesses();
+    return memberships.find((membership) => membership.business.id === businessId);
+  },
+  createBusiness: async (input) => {
+    const result = await apiFetch("/api/businesses", businessSchema, {
+      method: "POST",
+      headers: { "idempotency-key": crypto.randomUUID() },
+      body: {
+        legalName: input.legalName,
+        displayName: input.displayName,
+        taxIdKind: input.taxIdKind,
+        taxIdValue: input.taxIdValue,
+        addressState: input.state ?? null,
+        addressPostcode: input.postcode ?? null,
+        addressCity: input.city ?? null,
+        roles: ["advertiser"],
+        logoUrl: null,
+        region: input.region,
+        handle: input.handle,
+        coverUrl: null,
+      },
+    });
+    if (!result.ok) throw new Error(`Could not create the business: ${result.error.message}`);
+    return result.data;
+  },
   updateChannelSettings: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
 };
 

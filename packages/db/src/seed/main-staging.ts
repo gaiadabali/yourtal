@@ -173,7 +173,11 @@ async function main(): Promise<void> {
         `${grantSummary}; ${voucherSummary}; ${mediaSummary}; ${demoMediaSummary}.`,
     );
 
-    if (result.pendingGrant === "failed" || result.demoVoucher === "failed" || media?.status === "failed") {
+    if (
+      result.pendingGrant === "failed" ||
+      result.demoVoucher === "failed" ||
+      media?.status === "failed"
+    ) {
       // set -Eeuo pipefail in infra/helios/pre-reload.sh turns this into a
       // failed deploy, on purpose — see this file's own header.
       console.error(

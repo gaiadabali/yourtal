@@ -55,6 +55,10 @@ export async function createFixtureBusinessAndCampaign(
       `test-biz-${businessId.slice(0, 8)}`,
     ],
   );
+  // published_at is NULL here on purpose: campaigns_published_at_iff_live_or_past
+  // (20260927160200_campaign_authoring_draft.sql) requires it unset while
+  // lifecycle_state is 'draft' — set only once the lifecycle trigger stamps
+  // it on a real transition to 'live'.
   await pool.query(
     `INSERT INTO campaign.campaigns
        (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
@@ -63,7 +67,7 @@ export async function createFixtureBusinessAndCampaign(
         poster_url, teaser_url, hls_url, aspect, estimated_bytes, starts_at, ends_at)
      VALUES ($1, 'long_form', 'Test Campaign', $2, 'Test Business', 'A test campaign.', 180,
              40, 100, 3, 'base_plus_accuracy_bonus', 'draft',
-             $3, $2, 'AU', 'all_ages', 'food-and-drink',
+             NULL, $2, 'AU', 'all_ages', 'food-and-drink',
              '/media/posters/placeholder.jpg', '/media/teasers/placeholder.mp4',
              '/media/hls/placeholder/index.m3u8', '16:9', 40000000, $3, $4)`,
     [campaignId, businessId, now.toISOString(), later.toISOString()],

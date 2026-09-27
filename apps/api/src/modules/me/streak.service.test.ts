@@ -181,6 +181,41 @@ describe("StreakService.sync", () => {
     expect(stored?.day3Granted).toBe(true);
   });
 
+  it("5.5.d: two concurrent syncs for the same user grant at most once (real Postgres row lock)", async () => {
+    const campaign = await seededCampaign();
+    const userId = randomUUID();
+    const ledger = new StubLedger();
+    // Two independent `StreakService` instances (as a hook-triggered sync and
+    // a GET-triggered sync would each be, in separate request contexts),
+    // sharing the SAME repositories/database — the row lock lives in
+    // Postgres, not in either instance, so this is a real test of that lock,
+    // not of one object's own internal state.
+    const serviceA = new StreakService(
+      streakStates,
+      completedDays,
+      ledger as unknown as LedgerInternalClient,
+      ADULT_PROFILES as never,
+    );
+    const serviceB = new StreakService(
+      streakStates,
+      completedDays,
+      ledger as unknown as LedgerInternalClient,
+      ADULT_PROFILES as never,
+    );
+
+    await seedCompletedSession(userId, new Date("2026-08-01T04:00:00Z"), campaign);
+    await seedCompletedSession(userId, new Date("2026-08-02T04:00:00Z"), campaign);
+    await seedCompletedSession(userId, new Date("2026-08-03T04:00:00Z"), campaign);
+
+    const [resultA, resultB] = await Promise.all([serviceA.sync(userId), serviceB.sync(userId)]);
+    const totalGranted = resultA.grantsIssued.length + resultB.grantsIssued.length;
+    expect(totalGranted).toBe(1);
+    expect(ledger.granted).toHaveLength(1);
+
+    const stored = await streakStates.find(userId);
+    expect(stored?.day3Granted).toBe(true);
+  });
+
   it("pauses the bonus while coverage is below 1.1, and retries once it recovers", async () => {
     const campaign = await seededCampaign();
     const userId = randomUUID();

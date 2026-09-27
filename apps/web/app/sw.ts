@@ -76,7 +76,11 @@ async function clearSessionScopedCaches(): Promise<void> {
 /** `clear-session-cache.ts`'s `postMessage({ type: "yt-clear-session-cache" })` — see this file's own doc comment for why a message, not a network hook, is the only thing that can actually see a session boundary. */
 self.addEventListener("message", (event: ExtendableMessageEvent) => {
   const data: unknown = event.data;
-  if (typeof data === "object" && data !== null && (data as { type?: unknown }).type === "yt-clear-session-cache") {
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    (data as { type?: unknown }).type === "yt-clear-session-cache"
+  ) {
     event.waitUntil(clearSessionScopedCaches());
   }
 });

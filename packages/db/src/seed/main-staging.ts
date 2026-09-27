@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import pg from "pg";
+import { runDemoMedia } from "@yourtal/media/demo-media";
+import type { DemoMediaResult } from "@yourtal/media/demo-media";
 import { seedStaging } from "./staging";
 import { ensureStagingMedia } from "./staging-media";
 
@@ -137,15 +139,27 @@ async function main(): Promise<void> {
           ? `demo video: ${media.status} (${String(media.uploaded)}/${String(media.total)} uploaded)`
           : `demo video: ${media.status}: ${media.detail}`;
 
+    // TASKS.md 7.2.d/e: the demo media kit's own campaigns (8 AU + 8 ID),
+    // real ffmpeg/MinIO, idempotent by campaign id — a re-run after the
+    // first successful one just checks 16 rows and does nothing further.
+    const demoMediaResults = await runDemoMedia({ databaseUrl: connectionString, log: console.log });
+    const demoMediaSeeded = demoMediaResults.filter((r: DemoMediaResult) => r.status === "seeded").length;
+    const demoMediaFailed = demoMediaResults.filter((r: DemoMediaResult) => r.status === "failed");
+    const demoMediaSummary =
+      demoMediaFailed.length > 0
+        ? `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaFailed.length)} FAILED (${demoMediaFailed.map((r: DemoMediaResult) => r.slug).join(", ")})`
+        : `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaResults.length - demoMediaSeeded)} already present`;
+
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
-        `${grantSummary}; ${voucherSummary}; ${mediaSummary}.`,
+        `${grantSummary}; ${voucherSummary}; ${mediaSummary}; ${demoMediaSummary}.`,
     );
 
     if (
       result.pendingGrant === "failed" ||
       result.demoVoucher === "failed" ||
-      media?.status === "failed"
+      media?.status === "failed" ||
+      demoMediaFailed.length > 0
     ) {
       // set -Eeuo pipefail in infra/helios/pre-reload.sh turns this into a
       // failed deploy, on purpose — see this file's own header.

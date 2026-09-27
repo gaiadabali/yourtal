@@ -29,12 +29,50 @@ export const businessHandleSchema = z
     "handle must be lowercase letters, digits and single hyphens only",
   );
 
+/**
+ * TASKS.md 7.1.a: the tax ID a business registers with, by region — ABN for
+ * AU, NIB (Nomor Induk Berusaha) or NPWP (Nomor Pokok Wajib Pajak) for ID.
+ * `district` (a free-text field with no region behind it) is gone; this and
+ * `businessAddressSchema` below are what replace it (docs/audit/2026-09-25/
+ * business-merchant.md's own recommendation, "Drop district as the address
+ * model").
+ */
+export const auTaxIdKindSchema = z.literal("ABN");
+export const idTaxIdKindSchema = z.enum(["NIB", "NPWP"]);
+export const taxIdKindSchema = z.enum(["ABN", "NIB", "NPWP"]);
+export type TaxIdKind = z.infer<typeof taxIdKindSchema>;
+
+/**
+ * Digit-count only, not a checksum — an ABN's real check-digit algorithm
+ * (and NPWP's) is a compliance detail for whoever actually integrates ABR/
+ * DJP lookups (9.3's KYB review), not something this contract should assert
+ * on the founder's behalf.
+ */
+const TAX_ID_VALUE_PATTERN: Record<TaxIdKind, RegExp> = {
+  ABN: /^\d{11}$/,
+  NIB: /^\d{13}$/,
+  NPWP: /^\d{15,16}$/,
+};
+
+export const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"] as const;
+export const auStateSchema = z.enum(AU_STATES);
+export type AuState = z.infer<typeof auStateSchema>;
+
+const auPostcodeSchema = z.string().regex(/^\d{4}$/, "postcode must be 4 digits");
+
 export const businessSchema = z
   .object({
     id: z.uuid(),
     legalName: z.string().min(1).max(MAX_LEGAL_NAME_LENGTH),
     displayName: z.string().min(1).max(MAX_DISPLAY_NAME_LENGTH),
-    district: z.string().min(1).max(60),
+    taxIdKind: taxIdKindSchema,
+    taxIdValue: z.string().min(1).max(32),
+    /** AU only; `null` for an ID business. */
+    addressState: auStateSchema.nullable(),
+    /** AU only; `null` for an ID business. */
+    addressPostcode: auPostcodeSchema.nullable(),
+    /** ID only; `null` for an AU business. */
+    addressCity: z.string().min(1).max(120).nullable(),
     roles: z.array(businessRoleSchema).min(1),
     isVerified: z.boolean(),
     logoUrl: z.url().nullable(),
@@ -59,6 +97,34 @@ export const businessSchema = z
   .refine((business) => business.currency === REGION_CONFIG[business.region].currency, {
     message: "currency must match the business's own region (F2: regions never cross)",
     path: ["currency"],
-  });
+  })
+  .refine(
+    (business) =>
+      business.region === "AU"
+        ? business.taxIdKind === "ABN"
+        : business.taxIdKind === "NIB" || business.taxIdKind === "NPWP",
+    {
+      message: "taxIdKind must match the business's region (ABN for AU; NIB or NPWP for ID)",
+      path: ["taxIdKind"],
+    },
+  )
+  .refine((business) => TAX_ID_VALUE_PATTERN[business.taxIdKind].test(business.taxIdValue), {
+    message: "taxIdValue does not match the expected shape for its taxIdKind",
+    path: ["taxIdValue"],
+  })
+  .refine(
+    (business) =>
+      business.region === "AU"
+        ? business.addressState !== null &&
+          business.addressPostcode !== null &&
+          business.addressCity === null
+        : business.addressCity !== null &&
+          business.addressState === null &&
+          business.addressPostcode === null,
+    {
+      message: "address must match the business's region (AU: state + postcode; ID: city)",
+      path: ["addressState"],
+    },
+  );
 
 export type Business = z.infer<typeof businessSchema>;

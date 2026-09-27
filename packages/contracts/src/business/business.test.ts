@@ -11,7 +11,11 @@ const validBusiness = {
   id: "11111111-1111-4111-8111-111111111111",
   legalName: "PT Kopi Kenangan Indonesia",
   displayName: "Kopi Kenangan",
-  district: "Kemang",
+  taxIdKind: "NPWP",
+  taxIdValue: "1234567890123456",
+  addressState: null,
+  addressPostcode: null,
+  addressCity: "Jakarta",
   roles: ["advertiser", "supplier"],
   isVerified: true,
   logoUrl: "https://example.com/logo.png",
@@ -21,8 +25,21 @@ const validBusiness = {
   coverUrl: "https://example.com/cover.png",
 };
 
+const validAuBusiness = {
+  ...validBusiness,
+  legalName: "Wharf Espresso Pty Ltd",
+  taxIdKind: "ABN",
+  taxIdValue: "12345678901",
+  addressState: "NSW",
+  addressPostcode: "2000",
+  addressCity: null,
+  region: "AU",
+  currency: "AUD",
+  handle: "wharf-espresso",
+};
+
 describe("businessSchema", () => {
-  it("round-trips a valid business", () => {
+  it("round-trips a valid ID business", () => {
     const parsed = businessSchema.parse(validBusiness);
     expect(parsed).toMatchObject({
       displayName: "Kopi Kenangan",
@@ -34,15 +51,8 @@ describe("businessSchema", () => {
     expect(businessSchema.safeParse({ ...validBusiness, logoUrl: null }).success).toBe(true);
   });
 
-  it("round-trips an AU business whose currency matches its region", () => {
-    expect(
-      businessSchema.safeParse({
-        ...validBusiness,
-        region: "AU",
-        currency: "AUD",
-        handle: "wharf-espresso",
-      }).success,
-    ).toBe(true);
+  it("round-trips a valid AU business whose currency matches its region", () => {
+    expect(businessSchema.safeParse(validAuBusiness).success).toBe(true);
   });
 
   const rejectionTable: Array<{ name: string; overrides: Record<string, unknown> }> = [
@@ -51,7 +61,6 @@ describe("businessSchema", () => {
     { name: "duplicate roles", overrides: { roles: ["advertiser", "advertiser"] } },
     { name: "empty legal name", overrides: { legalName: "" } },
     { name: "empty display name", overrides: { displayName: "" } },
-    { name: "empty district", overrides: { district: "" } },
     { name: "non-boolean isVerified", overrides: { isVerified: "yes" } },
     { name: "non-url logoUrl", overrides: { logoUrl: "not-a-url" } },
     { name: "non-uuid id", overrides: { id: "not-a-uuid" } },
@@ -64,6 +73,37 @@ describe("businessSchema", () => {
     { name: "uppercase handle", overrides: { handle: "Kopi-Kenangan" } },
     { name: "handle with an underscore", overrides: { handle: "kopi_kenangan" } },
     { name: "handle too short", overrides: { handle: "ab" } },
+    {
+      name: "ABN tax id kind on an ID business",
+      overrides: { taxIdKind: "ABN", taxIdValue: "12345678901" },
+    },
+    {
+      name: "NPWP tax id kind on an AU business",
+      overrides: {
+        region: "AU",
+        currency: "AUD",
+        handle: "wharf-espresso",
+        taxIdKind: "NPWP",
+        addressState: "NSW",
+        addressPostcode: "2000",
+        addressCity: null,
+      },
+    },
+    { name: "ABN with the wrong digit count", overrides: { taxIdKind: "ABN", taxIdValue: "123" } },
+    {
+      name: "AU business missing a postcode",
+      overrides: {
+        region: "AU",
+        currency: "AUD",
+        handle: "wharf-espresso",
+        taxIdKind: "ABN",
+        taxIdValue: "12345678901",
+        addressState: "NSW",
+        addressPostcode: null,
+        addressCity: null,
+      },
+    },
+    { name: "ID business carrying an AU address", overrides: { addressState: "NSW" } },
   ];
 
   it.each(rejectionTable)("rejects $name", ({ overrides }) => {
@@ -81,6 +121,14 @@ describe("generateBusiness determinism", () => {
 
   it("generates a batch that is itself deterministic", () => {
     expect(generateBusinesses(12, 4_000)).toStrictEqual(mockBusinesses);
+  });
+
+  it("generates a valid AU business on request", () => {
+    const business = generateBusiness({ seed: 7, region: "AU" });
+    expect(business.region).toBe("AU");
+    expect(business.taxIdKind).toBe("ABN");
+    expect(business.addressCity).toBeNull();
+    expect(business.addressState).not.toBeNull();
   });
 });
 

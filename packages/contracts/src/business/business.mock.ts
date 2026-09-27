@@ -1,10 +1,13 @@
 import type { Business, BusinessRole } from "./business";
-import { businessSchema } from "./business";
+import { AU_STATES, businessSchema } from "./business";
 import { createSeededFaker } from "../internal/seeded-faker";
-import { LONG_MERCHANT_NAME, generateMerchantName, pickDistrict } from "../internal/jakarta";
+import { LONG_MERCHANT_NAME, generateMerchantName } from "../internal/jakarta";
+import type { Region } from "../region/region";
 
 export interface GenerateBusinessParams {
   seed: number;
+  /** Defaults to "ID" — this roster started Jakarta-only; 7.1 adds the AU side alongside it. */
+  region?: Region;
 }
 
 const ALL_ROLES: readonly BusinessRole[] = ["advertiser", "supplier", "redeemer"];
@@ -19,18 +22,58 @@ function handleFrom(displayName: string, disambiguator: string): string {
   return `${slug}-${disambiguator}`;
 }
 
-/** Generates one deterministic, realistic Jakarta business for the given seed. This roster is ID-only; an AU counterpart is C's to add alongside the AU studio surfaces (Phase 7). */
+const AU_CITIES_BY_STATE: Record<(typeof AU_STATES)[number], { city: string; postcodePrefix: string }> = {
+  NSW: { city: "Sydney", postcodePrefix: "2" },
+  VIC: { city: "Melbourne", postcodePrefix: "3" },
+  QLD: { city: "Brisbane", postcodePrefix: "4" },
+  WA: { city: "Perth", postcodePrefix: "6" },
+  SA: { city: "Adelaide", postcodePrefix: "5" },
+  TAS: { city: "Hobart", postcodePrefix: "7" },
+  ACT: { city: "Canberra", postcodePrefix: "0" },
+  NT: { city: "Darwin", postcodePrefix: "0" },
+};
+
+/** Generates one deterministic, realistic business for the given seed and region (ID by default). */
 export function generateBusiness(params: GenerateBusinessParams): Business {
   const faker = createSeededFaker(params.seed);
+  const region = params.region ?? "ID";
   const displayName = generateMerchantName(faker);
   const roles = faker.helpers.arrayElements(ALL_ROLES, { min: 1, max: ALL_ROLES.length });
   const id = faker.string.uuid();
 
+  if (region === "AU") {
+    const state = faker.helpers.arrayElement(AU_STATES);
+    const { postcodePrefix } = AU_CITIES_BY_STATE[state];
+    const postcode = `${postcodePrefix}${faker.string.numeric(3)}`;
+    return businessSchema.parse({
+      id,
+      legalName: `${displayName} Pty Ltd`,
+      displayName,
+      taxIdKind: "ABN",
+      taxIdValue: faker.string.numeric(11),
+      addressState: state,
+      addressPostcode: postcode,
+      addressCity: null,
+      roles,
+      isVerified: faker.datatype.boolean({ probability: 0.8 }),
+      logoUrl: faker.datatype.boolean({ probability: 0.6 }) ? faker.image.urlPicsumPhotos() : null,
+      region: "AU",
+      currency: "AUD",
+      handle: handleFrom(displayName, id.slice(0, 8)),
+      coverUrl: faker.datatype.boolean({ probability: 0.5 }) ? faker.image.urlPicsumPhotos() : null,
+    });
+  }
+
+  const idTaxIdKind = faker.helpers.arrayElement(["NIB", "NPWP"] as const);
   return businessSchema.parse({
     id,
     legalName: `PT ${displayName} Indonesia`,
     displayName,
-    district: pickDistrict(faker),
+    taxIdKind: idTaxIdKind,
+    taxIdValue: idTaxIdKind === "NIB" ? faker.string.numeric(13) : faker.string.numeric(16),
+    addressState: null,
+    addressPostcode: null,
+    addressCity: "Jakarta",
     roles,
     isVerified: faker.datatype.boolean({ probability: 0.8 }),
     logoUrl: faker.datatype.boolean({ probability: 0.6 }) ? faker.image.urlPicsumPhotos() : null,
@@ -53,7 +96,11 @@ export const longNameBusinessFixture: Business = businessSchema.parse({
   id: "00000000-0000-4000-8000-000000000601",
   legalName: `PT ${LONG_MERCHANT_NAME} Indonesia`,
   displayName: LONG_MERCHANT_NAME,
-  district: "Kebayoran Baru",
+  taxIdKind: "NPWP",
+  taxIdValue: "1234567890123456",
+  addressState: null,
+  addressPostcode: null,
+  addressCity: "Jakarta",
   roles: ["advertiser", "supplier"],
   isVerified: true,
   logoUrl: null,

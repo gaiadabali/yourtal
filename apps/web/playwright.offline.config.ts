@@ -81,16 +81,34 @@ export default defineConfig({
     },
   ],
 
+  // F49: both commands below run the underlying binary directly rather than
+  // through `pnpm --filter ... <script>` — CI (36324078873) hung for the
+  // job's entire remaining 35-minute budget with zero further log output
+  // once "Running 1 test using 1 worker" printed, and never reproduced
+  // locally. `pnpm run <script>` forks a shell to run the script, which
+  // forks the real process; killing the PID Playwright holds (pnpm's own)
+  // does not reliably reach that grandchild on Linux, so a hung teardown
+  // (Playwright waiting for the port to free) reads identically to a hung
+  // test. Running `node .../src/main.ts` and `next build && ... && next
+  // start` directly puts the real server process in the tail position of
+  // its own shell, which bash/sh exec-replaces rather than forking again —
+  // the PID Playwright manages IS the server, so its kill reaches it.
   webServer: [
     {
-      command: "pnpm --filter @yourtal/api dev",
+      command:
+        "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/main.ts",
       url: `http://127.0.0.1:${apiPort}/api/health`,
-      reuseExistingServer: true,
+      // F49: unconditional `true` here (unlike the web entry below) left a
+      // zombie api process running after every CI test run — reused-or-not,
+      // Playwright never tears down a server this flag marks as "external".
+      // Local dev still gets the convenience (reuse whatever's already up
+      // on this port); CI never has one, so CI now always owns and kills it.
+      reuseExistingServer: !process.env["CI"],
       timeout: 60_000,
-      cwd: "../..",
+      cwd: "../api",
     },
     {
-      command: `pnpm build && next start --port ${port}`,
+      command: `next build && node scripts/build-service-worker.mjs && next start --port ${port}`,
       url: `http://127.0.0.1:${port}`,
       reuseExistingServer: !process.env["CI"],
       timeout: 300_000,

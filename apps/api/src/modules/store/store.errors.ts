@@ -108,8 +108,7 @@ export interface VoucherBatchRequestNotFoundError {
   readonly requestId: string;
 }
 
-export type GetVoucherBatchRequestError =
-  VoucherBatchRequestNotFoundError | PersistenceFailedError;
+export type GetVoucherBatchRequestError = VoucherBatchRequestNotFoundError | PersistenceFailedError;
 
 export type ListVoucherBatchRequestsError = PersistenceFailedError;
 

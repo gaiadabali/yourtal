@@ -69,7 +69,8 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   {
     id: "BillingCampaignSpend",
     schema: billingCampaignSpendSchema,
-    description: "One campaign's own spend: points granted to viewers and how many completions earned them.",
+    description:
+      "One campaign's own spend: points granted to viewers and how many completions earned them.",
     crossFieldRules: [],
   },
 ];

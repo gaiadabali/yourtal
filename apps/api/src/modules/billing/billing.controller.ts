@@ -45,7 +45,12 @@ export class BillingController {
     @Query() query: Record<string, string | string[] | undefined>,
   ) {
     const parsed = quotePurchaseQuerySchema.parse(query);
-    const result = await quotePurchase(this.ledger, this.businessRegionLookup, tenantId, parsed.points);
+    const result = await quotePurchase(
+      this.ledger,
+      this.businessRegionLookup,
+      tenantId,
+      parsed.points,
+    );
     if (result.isErr()) throw mapBillingErrorToHttpException(result.error);
     return result.value;
   }

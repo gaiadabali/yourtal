@@ -48,7 +48,9 @@ describe("POST /api/:tenantId/studio/billing/purchases", () => {
       payload: { points: 1_000, currency: "AUD" },
     });
     expect(first.statusCode).toBe(201);
-    const firstBody = first.json<{ allocation: { remainingPoints: number; totalPoints: number } }>();
+    const firstBody = first.json<{
+      allocation: { remainingPoints: number; totalPoints: number };
+    }>();
     expect(firstBody.allocation.totalPoints).toBe(1_000);
     expect(firstBody.allocation.remainingPoints).toBe(1_000);
 

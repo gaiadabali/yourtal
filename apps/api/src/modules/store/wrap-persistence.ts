@@ -22,9 +22,11 @@ export function wrapPersistence<T>(promise: Promise<T>): ResultAsync<T, Persiste
 export function wrapPricedPersistence<T>(
   promise: Promise<T>,
 ): ResultAsync<T, ListingPricingFailedError | PersistenceFailedError> {
-  return ResultAsync.fromPromise(promise, (cause): ListingPricingFailedError | PersistenceFailedError =>
-    cause instanceof ListingPricingError
-      ? { type: "listing_pricing_failed", cause: cause.message }
-      : { type: "persistence_failed", cause: String(cause) },
+  return ResultAsync.fromPromise(
+    promise,
+    (cause): ListingPricingFailedError | PersistenceFailedError =>
+      cause instanceof ListingPricingError
+        ? { type: "listing_pricing_failed", cause: cause.message }
+        : { type: "persistence_failed", cause: String(cause) },
   );
 }

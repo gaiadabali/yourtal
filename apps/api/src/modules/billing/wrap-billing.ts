@@ -14,7 +14,9 @@ export function wrapPersistence<T>(promise: Promise<T>): ResultAsync<T, Persiste
 export function wrapLedgerCall<T>(
   result: ResultAsync<T, LedgerError>,
 ): ResultAsync<T, LedgerRefusedError> {
-  return result.mapErr(
-    (error): LedgerRefusedError => ({ type: "ledger_refused", code: error.code, message: error.message }),
-  );
+  return result.mapErr((error): LedgerRefusedError => ({
+    type: "ledger_refused",
+    code: error.code,
+    message: error.message,
+  }));
 }

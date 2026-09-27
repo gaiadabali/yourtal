@@ -116,9 +116,7 @@ describe("the public catalogue reads a signed-in caller's own region and audienc
       url: "/api/store/listings?region=AU",
     });
     expect(anonymousList.statusCode).toBe(200);
-    const anonymousIds = anonymousList
-      .json<{ data: { id: string }[] }>()
-      .data.map((row) => row.id);
+    const anonymousIds = anonymousList.json<{ data: { id: string }[] }>().data.map((row) => row.id);
     expect(anonymousIds).not.toContain(auAdultOnlyListing.id);
 
     const anonymousGet = await app.inject({

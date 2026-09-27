@@ -32,16 +32,16 @@ export function approveSettlementDecrease(
         listingId,
       });
     }
-    return wrapPricedPersistence(requests.approve(merchantId, listingId, requestId, approverId)).andThen(
-      (change) => {
-        if (change === null) {
-          return errAsync<SettlementValueChange, ApproveSettlementDecreaseError>({
-            type: "approval_refused",
-            requestId,
-          });
-        }
-        return ResultAsync.fromSafePromise(Promise.resolve(change));
-      },
-    );
+    return wrapPricedPersistence(
+      requests.approve(merchantId, listingId, requestId, approverId),
+    ).andThen((change) => {
+      if (change === null) {
+        return errAsync<SettlementValueChange, ApproveSettlementDecreaseError>({
+          type: "approval_refused",
+          requestId,
+        });
+      }
+      return ResultAsync.fromSafePromise(Promise.resolve(change));
+    });
   });
 }

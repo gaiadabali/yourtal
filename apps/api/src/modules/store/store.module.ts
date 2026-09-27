@@ -74,7 +74,8 @@ export const STORE_DB = Symbol("STORE_DB");
       // 7.4.b: the ledger client (WalletModule already opens one) prices a
       // listing on create and on every settlement-value change -- see
       // apply-settlement-value-change.ts.
-      useFactory: (db: AppDb, ledger: LedgerInternalClient) => new DrizzleListingRepository(db, ledger),
+      useFactory: (db: AppDb, ledger: LedgerInternalClient) =>
+        new DrizzleListingRepository(db, ledger),
       inject: [STORE_DB, LEDGER_INTERNAL_CLIENT],
     },
     {

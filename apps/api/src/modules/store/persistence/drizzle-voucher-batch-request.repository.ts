@@ -43,7 +43,10 @@ export class DrizzleVoucherBatchRequestRepository implements VoucherBatchRequest
       .select()
       .from(voucherBatchRequests)
       .where(
-        and(eq(voucherBatchRequests.id, requestId), eq(voucherBatchRequests.merchantId, merchantId)),
+        and(
+          eq(voucherBatchRequests.id, requestId),
+          eq(voucherBatchRequests.merchantId, merchantId),
+        ),
       )
       .limit(1);
     return row === undefined ? null : toRecord(row);

@@ -23,9 +23,13 @@ export function quotePurchase(
         });
       }
       const pointsBranded = toPoints(points);
-      return wrapLedgerCall(ledger.quotePurchase({ points: pointsBranded, region: business.region })).map(
-        (quote) => ({ points: pointsBranded, totalMinor: quote.totalMinor, currency: quote.currency }),
-      );
+      return wrapLedgerCall(
+        ledger.quotePurchase({ points: pointsBranded, region: business.region }),
+      ).map((quote) => ({
+        points: pointsBranded,
+        totalMinor: quote.totalMinor,
+        currency: quote.currency,
+      }));
     },
   );
 }

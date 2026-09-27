@@ -12,7 +12,9 @@ import type {
 
 export class MalformedLocationRowError extends Error {
   constructor(readonly locationId: string | undefined) {
-    super(`store.merchant_location row ${String(locationId)} does not match merchantLocationSchema`);
+    super(
+      `store.merchant_location row ${String(locationId)} does not match merchantLocationSchema`,
+    );
     this.name = "MalformedLocationRowError";
   }
 }
@@ -44,7 +46,9 @@ export class DrizzleLocationRepository implements LocationRepository {
     const [row] = await this.db
       .select()
       .from(merchantLocations)
-      .where(and(eq(merchantLocations.id, locationId), eq(merchantLocations.merchantId, merchantId)))
+      .where(
+        and(eq(merchantLocations.id, locationId), eq(merchantLocations.merchantId, merchantId)),
+      )
       .limit(1);
     return row === undefined ? null : assemble(row);
   }
@@ -52,7 +56,13 @@ export class DrizzleLocationRepository implements LocationRepository {
   async create(merchantId: string, input: CreateLocationInput): Promise<MerchantLocation> {
     const [row] = await this.db
       .insert(merchantLocations)
-      .values({ id: randomUUID(), merchantId, name: input.name, address: input.address, district: input.district })
+      .values({
+        id: randomUUID(),
+        merchantId,
+        name: input.name,
+        address: input.address,
+        district: input.district,
+      })
       .returning();
     if (row === undefined) throw new Error("insert into store.merchant_location returned no row");
     return assemble(row);
@@ -75,7 +85,9 @@ export class DrizzleLocationRepository implements LocationRepository {
     const [row] = await this.db
       .update(merchantLocations)
       .set(values)
-      .where(and(eq(merchantLocations.id, locationId), eq(merchantLocations.merchantId, merchantId)))
+      .where(
+        and(eq(merchantLocations.id, locationId), eq(merchantLocations.merchantId, merchantId)),
+      )
       .returning();
     return row === undefined ? null : assemble(row);
   }
@@ -93,7 +105,9 @@ export class DrizzleLocationRepository implements LocationRepository {
 
     await this.db
       .delete(merchantLocations)
-      .where(and(eq(merchantLocations.id, locationId), eq(merchantLocations.merchantId, merchantId)));
+      .where(
+        and(eq(merchantLocations.id, locationId), eq(merchantLocations.merchantId, merchantId)),
+      );
     return "ok";
   }
 }

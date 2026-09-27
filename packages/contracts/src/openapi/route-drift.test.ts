@@ -245,6 +245,8 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "GET /api/me/follows": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "PUT /api/me/follows/{businessId}": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "DELETE /api/me/follows/{businessId}": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  "GET /api/me/follows/candidates":
+    "MeModule -- TASKS.md 6.2.b, same reasoning as the other /me/follows routes above.",
   "GET /api/me/saves": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "PUT /api/me/saves/{campaignId}": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "DELETE /api/me/saves/{campaignId}": "MeModule -- TASKS.md 5.4, this pass's own ticket.",

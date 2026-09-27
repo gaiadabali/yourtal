@@ -1,6 +1,9 @@
 import { errAsync, ResultAsync } from "neverthrow";
 import type { GetVoucherBatchRequestError } from "../store.errors";
-import type { VoucherBatchRequest, VoucherBatchRequestRepository } from "../persistence/voucher-batch-request.repository";
+import type {
+  VoucherBatchRequest,
+  VoucherBatchRequestRepository,
+} from "../persistence/voucher-batch-request.repository";
 import { wrapPersistence } from "../wrap-persistence";
 
 export function getVoucherBatchRequest(

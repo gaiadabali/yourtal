@@ -1,28 +1,37 @@
+import { OnboardingConsentStep } from "@/features/onboarding/onboarding-consent-step";
+import { OnboardingLoadError } from "@/features/onboarding/onboarding-load-error";
+import { OnboardingProgress } from "@/features/onboarding/onboarding-progress";
+import { ONBOARDING_STEPS, onboardingStepIndex } from "@/features/onboarding/onboarding-steps";
 import { OnboardingTimingMark } from "@/features/onboarding/onboarding-timing-mark";
-import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
-import { RegionPicker } from "@/features/onboarding/region-picker";
+import { parseReturnTo, withReturnTo } from "@/features/onboarding/onboarding-return-to";
+import { getOnboardingConsents } from "@/features/onboarding/onboarding-data";
 
 export interface OnboardingPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 /**
- * `/onboarding` — the region step and the flow's entry point (YT-0430).
- * Server Component per docs/13b-typescript-standards.md section 8: the
- * only client code on this screen is the timing beacon, a leaf that
- * renders nothing.
- *
- * `?returnTo=` (YT-0432: Open Viewing's sign-up prompt links here so a
- * finished anonymous viewer lands back on the same campaign, rewarded,
- * after signing up) is read once here and threaded through every later
- * step by `onboarding-return-to.ts`.
+ * `/onboarding` — the flow's entry point and its first step, per-purpose
+ * consent (6.2.b). D's `/register` redirects here with `?returnTo=`, which
+ * is read once and threaded through every later step
+ * (`onboarding-return-to.ts`). Region is chosen at register now, so there is
+ * no region step, and no `[region]` URL segment — every page below reads
+ * the caller's own account (region, consent, interests, follows) live
+ * through `apiFetch`, never a URL param.
  */
 export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
   const returnTo = parseReturnTo((await searchParams).returnTo);
+  const consents = await getOnboardingConsents();
+
   return (
-    <>
+    <div className="flex flex-col gap-6">
       <OnboardingTimingMark mark="signup-start" />
-      <RegionPicker returnTo={returnTo} />
-    </>
+      <OnboardingProgress steps={ONBOARDING_STEPS} currentIndex={onboardingStepIndex("consent")} />
+      {consents.ok ? (
+        <OnboardingConsentStep initialConsents={consents.data.consents} returnTo={returnTo} />
+      ) : (
+        <OnboardingLoadError retryHref={withReturnTo("/onboarding", returnTo)} />
+      )}
+    </div>
   );
 }

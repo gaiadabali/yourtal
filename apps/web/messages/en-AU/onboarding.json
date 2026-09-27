@@ -1,0 +1,74 @@
+{
+  "common": {
+    "loadingLabel": "Loading",
+    "errorTitle": "Couldn't load this",
+    "errorBody": "Check your connection and try again.",
+    "retryCta": "Try again"
+  },
+  "progress": {
+    "consent": "Consent",
+    "interests": "Interests",
+    "follow": "Follow",
+    "done": "Done"
+  },
+  "boundary": {
+    "title": "Something went wrong",
+    "body": "Please try again.",
+    "retryCta": "Try again"
+  },
+  "consent": {
+    "heading": "Before you start",
+    "intro": "Three separate choices, each in plain language. Only the first is required.",
+    "essentialTitle": "Account and fraud prevention",
+    "essentialBody": "Keeps your account working and protects it from abuse. Required to create an account.",
+    "essentialLockedBadge": "Required",
+    "personalizeTitle": "Personalise which campaigns I see",
+    "personalizeBody": "Uses interests you tell us, next, to sort what you see. Off, and you still see everything — just not sorted for you.",
+    "marketingTitle": "Send me marketing messages",
+    "marketingBody": "Messages about new campaigns or promotions, separate from the notifications about points you've actually earned.",
+    "continueCta": "Continue",
+    "errorTitle": "Couldn't save that",
+    "errorBody": "Check your connection and try again."
+  },
+  "interests": {
+    "heading": "What are you into?",
+    "intro": "You turned on personalising which campaigns you see, so pick a few interests to sort what's shown. Change these any time on Me.",
+    "selectedSuffix": "selected",
+    "continueCta": "Continue",
+    "skipCta": "Skip for now",
+    "categories": {
+      "food-and-drink": "Food and drink",
+      "personal-care": "Personal care",
+      "fashion": "Fashion",
+      "electronics": "Electronics",
+      "telco": "Telco",
+      "transport": "Transport",
+      "finance": "Finance",
+      "fitness": "Fitness",
+      "education": "Education",
+      "travel": "Travel",
+      "home": "Home",
+      "entertainment": "Entertainment",
+      "family": "Family",
+      "services": "Services",
+      "digital-goods": "Digital goods"
+    }
+  },
+  "follow": {
+    "heading": "Follow a few channels",
+    "intro": "A private list that helps sort what you see — nobody else can see who you follow. Unfollow any time on Me.",
+    "followCta": "Follow",
+    "followingCta": "Following",
+    "continueCta": "Continue",
+    "skipCta": "Skip for now",
+    "emptyTitle": "Nothing to follow yet",
+    "emptyBody": "There aren't any channels in your region yet. You can follow one later from Me.",
+    "errorTitle": "Couldn't load channels",
+    "errorBody": "Check your connection and try again."
+  },
+  "done": {
+    "heading": "You're all set",
+    "body": "Your account is ready. Start earning points by watching campaigns.",
+    "cta": "Start watching"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "common": {
+    "loadingLabel": "Memuat",
+    "errorTitle": "Gagal memuat",
+    "errorBody": "Periksa koneksimu dan coba lagi.",
+    "retryCta": "Coba lagi"
+  },
+  "progress": {
+    "consent": "Persetujuan",
+    "interests": "Minat",
+    "follow": "Ikuti",
+    "done": "Selesai"
+  },
+  "boundary": {
+    "title": "Terjadi kesalahan",
+    "body": "Silakan coba lagi.",
+    "retryCta": "Coba lagi"
+  },
+  "consent": {
+    "heading": "Sebelum kamu mulai",
+    "intro": "Tiga pilihan terpisah, masing-masing dalam bahasa yang jelas. Hanya yang pertama yang wajib.",
+    "essentialTitle": "Akun dan pencegahan kecurangan",
+    "essentialBody": "Menjaga akunmu tetap berfungsi dan melindunginya dari penyalahgunaan. Wajib untuk membuat akun.",
+    "essentialLockedBadge": "Wajib",
+    "personalizeTitle": "Personalisasi kampanye yang saya lihat",
+    "personalizeBody": "Menggunakan minat yang kamu pilih berikutnya untuk mengurutkan apa yang kamu lihat. Jika nonaktif, kamu tetap melihat semuanya — hanya saja tidak diurutkan khusus untukmu.",
+    "marketingTitle": "Kirimi saya pesan promosi",
+    "marketingBody": "Pesan tentang kampanye atau promosi baru, terpisah dari notifikasi tentang poin yang benar-benar sudah kamu dapatkan.",
+    "continueCta": "Lanjutkan",
+    "errorTitle": "Gagal menyimpan",
+    "errorBody": "Periksa koneksimu dan coba lagi."
+  },
+  "interests": {
+    "heading": "Kamu suka apa?",
+    "intro": "Kamu mengaktifkan personalisasi kampanye yang kamu lihat, jadi pilih beberapa minat untuk mengurutkan apa yang ditampilkan. Ubah ini kapan saja di Saya.",
+    "selectedSuffix": "dipilih",
+    "continueCta": "Lanjutkan",
+    "skipCta": "Lewati dulu",
+    "categories": {
+      "food-and-drink": "Makanan dan minuman",
+      "personal-care": "Perawatan diri",
+      "fashion": "Fashion",
+      "electronics": "Elektronik",
+      "telco": "Telekomunikasi",
+      "transport": "Transportasi",
+      "finance": "Keuangan",
+      "fitness": "Kebugaran",
+      "education": "Pendidikan",
+      "travel": "Traveling",
+      "home": "Rumah",
+      "entertainment": "Hiburan",
+      "family": "Keluarga",
+      "services": "Layanan",
+      "digital-goods": "Barang digital"
+    }
+  },
+  "follow": {
+    "heading": "Ikuti beberapa channel",
+    "intro": "Daftar pribadi yang membantu mengurutkan apa yang kamu lihat — tidak ada orang lain yang bisa melihat siapa yang kamu ikuti. Berhenti mengikuti kapan saja di Saya.",
+    "followCta": "Ikuti",
+    "followingCta": "Diikuti",
+    "continueCta": "Lanjutkan",
+    "skipCta": "Lewati dulu",
+    "emptyTitle": "Belum ada yang bisa diikuti",
+    "emptyBody": "Belum ada channel di wilayahmu. Kamu bisa mengikuti salah satunya nanti dari Saya.",
+    "errorTitle": "Gagal memuat channel",
+    "errorBody": "Periksa koneksimu dan coba lagi."
+  },
+  "done": {
+    "heading": "Semua siap",
+    "body": "Akunmu sudah siap. Mulai kumpulkan poin dengan menonton kampanye.",
+    "cta": "Mulai menonton"
+  }
+}

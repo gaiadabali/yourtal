@@ -1,29 +1,28 @@
-import { Progress } from "@yourtal/ui/progress";
-import type { Region } from "@yourtal/contracts/region";
-import { regionDisplayConfig } from "@/features/region/region-config";
-import { getOnboardingCopy } from "./onboarding-copy";
+import { useTranslations } from "next-intl";
+import { Stepper } from "@yourtal/ui/stepper";
+
+export type OnboardingStepKey = "consent" | "interests" | "follow" | "done";
 
 export interface OnboardingProgressProps {
-  current: number;
-  total: number;
-  region: Region;
+  /** The steps this run of the flow actually has — "interests" is left out entirely when ad-targeting consent was not granted, rather than shown and skipped. */
+  steps: readonly OnboardingStepKey[];
+  currentIndex: number;
 }
 
 /**
- * "Step N of 4" orientation, shown on every screen after the region picker.
- * A visible sense of remaining steps matters for the 60-second signup
- * budget (docs/tasks/phase-u-ui.md YT-0430) — perceived speed, not just
- * actual speed. Mirrors `features/checkpoint/checkpoint-progress.tsx`'s
- * label-plus-bar pattern.
+ * "Step N of M" (docs/tasks/phase-u-ui.md YT-0430's 60-second signup budget:
+ * a visible sense of remaining steps matters for perceived speed as much as
+ * actual speed) — now the shared `Stepper` primitive instead of a bespoke
+ * label-plus-bar, and locale comes from next-intl rather than a `region`
+ * prop (6.1.b: display language is independent of region).
  */
-export function OnboardingProgress({ current, total, region }: OnboardingProgressProps) {
-  const { locale } = regionDisplayConfig(region);
-  const { stepPrefix, stepJoiner } = getOnboardingCopy(locale).common;
-  const label = `${stepPrefix} ${current} ${stepJoiner} ${total}`;
+export function OnboardingProgress({ steps, currentIndex }: OnboardingProgressProps) {
+  const t = useTranslations("onboarding.progress");
   return (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-sans font-medium text-fg-muted">{label}</p>
-      <Progress value={current} max={total} aria-label={label} />
-    </div>
+    <Stepper
+      steps={steps.map((key) => ({ key, label: t(key) }))}
+      currentIndex={currentIndex}
+      aria-label={t(steps[currentIndex] ?? "consent")}
+    />
   );
 }

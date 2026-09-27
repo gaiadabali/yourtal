@@ -161,7 +161,15 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       scoringRule: row.scoringRule,
       // The one place the authoring state becomes a public one.
       status: publicStatusOf(row.lifecycleState as CampaignLifecycleState),
-      publishedAt: row.publishedAt.toISOString(),
+      // TASKS.md 7.3 (20260927140000): published_at is nullable at the
+      // column now (a draft/in_review campaign has none) -- this repository
+      // only ever reads publicly-visible rows, which the database's own
+      // campaigns_published_at_iff_live_or_past CHECK guarantees always
+      // have one, but the column type no longer says so. Passed through as
+      // `null` rather than asserted non-null: a row that broke that
+      // guarantee should fail campaignSchema's parse below like any other
+      // malformed row, not throw a TypeError first.
+      publishedAt: row.publishedAt === null ? null : row.publishedAt.toISOString(),
       businessId: row.businessId,
       region: row.region,
       audience: row.audience,

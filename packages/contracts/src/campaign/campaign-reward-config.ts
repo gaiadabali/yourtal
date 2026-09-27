@@ -111,3 +111,29 @@ export function affordableCompletions(
   const withinAllocation = Math.floor(Math.max(0, remainingAllocationPoints) / perViewer);
   return Math.min(withinCampaignCap, withinAllocation);
 }
+
+/**
+ * F14 (TASKS.md 7.3.c): the per-minute reward ceiling is a config value
+ * (`reward_ceiling_points_per_minute`, read through `ledger.getSettings` —
+ * 1.2.f), never a constant here, and it covers base **plus** the maximum
+ * accuracy bonus together — a campaign cannot dodge the ceiling by moving
+ * points from the base into the bonus.
+ */
+export function exceedsRewardCeiling(
+  config: Pick<CampaignRewardConfig, "rewardPointsPerCompletion" | "accuracyBonusPoints">,
+  durationSeconds: number,
+  ceilingPointsPerMinute: number,
+): boolean {
+  const minutes = durationSeconds / 60;
+  const ceiling = ceilingPointsPerMinute * minutes;
+  return config.rewardPointsPerCompletion + config.accuracyBonusPoints > ceiling;
+}
+
+/** TASKS.md 7.3.c: an accuracy bonus may never exceed 40% of the base reward. */
+export const MAX_ACCURACY_BONUS_RATIO = 0.4;
+
+export function exceedsAccuracyBonusRatio(
+  config: Pick<CampaignRewardConfig, "rewardPointsPerCompletion" | "accuracyBonusPoints">,
+): boolean {
+  return config.accuracyBonusPoints > config.rewardPointsPerCompletion * MAX_ACCURACY_BONUS_RATIO;
+}

@@ -263,6 +263,10 @@ const MAPPINGS: readonly Mapping[] = [
         "The AUTHORING state, which no viewer-facing contract carries — draft, in_review and rejected have no public form. `campaignSchema.status` is derived from it.",
       rejection_reason:
         "Console-only, and null unless the campaign is rejected. A viewer is never shown why a campaign they cannot see was refused.",
+      declared_interests:
+        "TASKS.md 7.3/7.7 (20260927140000, requested by C): authoring-only targeting input for the feed's ranking match, not something a viewer-facing campaign envelope carries. Tracked here rather than added to campaignSchema, which is B's file.",
+      poster_frame_seconds:
+        "TASKS.md 7.3 (20260927140000, requested by C): an authoring input (which video second the poster is grabbed from), superseded for a viewer by the rendered posterUrl. Same reasoning as declared_interests above.",
     },
   },
   {

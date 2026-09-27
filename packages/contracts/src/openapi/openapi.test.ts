@@ -71,6 +71,9 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   regionSettingSchema:
     "1.2.f's ledger-internal settings row (getSettings/proposeSetting/approveSetting). Internal to the ledger and 9.5.d's staff console, not a public/business-facing HTTP contract -- same reason ledger-internal and voucher-internal's own operation types are not routed through this registry.",
 
+  campaignPublishedEventSchema:
+    "TASKS.md 7.3.f: a pg-boss job payload (campaign.published), consumed by apps/worker/src/jobs/campaign-published-notify.ts -- a queue message between two server processes, never an HTTP request/response body a client sends or receives.",
+
   // --- ledger-internal (1.2.a): pricing ---
   quoteRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   quoteSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

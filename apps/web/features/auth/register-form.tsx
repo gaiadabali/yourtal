@@ -113,7 +113,9 @@ export function RegisterForm({
       />
 
       {blockedByAge ? (
-        <Notice tone="warning">{isTooYoung ? t("tooYoungNotice") : t("belowMinimumAgeNotice")}</Notice>
+        <Notice tone="warning">
+          {isTooYoung ? t("tooYoungNotice") : t("belowMinimumAgeNotice")}
+        </Notice>
       ) : null}
 
       {showGuardianField ? (

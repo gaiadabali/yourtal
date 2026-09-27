@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { BrandWordmark } from "@yourtal/ui/brand/wordmark";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@yourtal/ui/card";
+import { Card, CardContent, CardHeader } from "@yourtal/ui/card";
+import { Heading } from "@yourtal/ui/heading";
+import { Text } from "@yourtal/ui/text";
 
 export interface AuthCardProps {
   title: string;
@@ -18,17 +19,24 @@ export interface AuthCardProps {
 export function AuthCard({ title, description, children, footer }: AuthCardProps) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 px-gutter-sm py-12">
-      <Link href="/" aria-label="YourTal">
-        <BrandWordmark size="md" />
-      </Link>
+      {/* Not a link: "/" resolves through `route-redirects.ts` depending on
+          sign-in state, and every (auth) screen is reached in exactly the
+          state that redirect is for — nothing here to navigate to instead. */}
+      <BrandWordmark size="md" />
       <Card variant="plain" className="w-full max-w-md">
         <CardHeader>
-          <CardTitle as="h1">{title}</CardTitle>
-          {description ? <CardDescription>{description}</CardDescription> : null}
+          {/* A real <h1>: this card IS the page's content, so its title is
+              the page's own heading, not CardTitle's default h3. */}
+          <Heading level={1} size="headline">
+            {title}
+          </Heading>
+          {description ? <Text tone="muted">{description}</Text> : null}
         </CardHeader>
         <CardContent className="flex flex-col gap-5">{children}</CardContent>
       </Card>
-      {footer ? <div className="text-center text-body-sm font-sans text-fg-muted">{footer}</div> : null}
+      {footer ? (
+        <div className="text-center text-body-sm font-sans text-fg-muted">{footer}</div>
+      ) : null}
     </div>
   );
 }

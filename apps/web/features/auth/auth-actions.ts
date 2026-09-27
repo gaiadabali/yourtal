@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { apiFetch } from "@/lib/api/api-fetch";
@@ -78,6 +79,12 @@ export async function registerAction(formData: FormData): Promise<void> {
 
   const result = await apiFetch("/api/auth/register", loginResponseSchema, {
     method: "POST",
+    // `@Idempotent` on `POST /api/auth/register` requires this header — a
+    // fresh key per submission, since a genuine retry (the person clicking
+    // submit twice) reaching the SAME key is exactly what `withoutToken`'s
+    // redacted replay is for; this action has no earlier attempt to key
+    // against, so a new one every call is correct, not a workaround.
+    headers: { "idempotency-key": randomUUID() },
     body,
   });
   if (!result.ok) {
@@ -145,7 +152,7 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
     headers: { authorization: `Bearer ${result.data.token}` },
   });
   if (!meResult.ok) {
-    redirect("/login" as Route);
+    redirect("/login");
   }
 
   await setSessionCookies({

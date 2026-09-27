@@ -206,6 +206,10 @@ export default tseslint.config(
   {
     files: [
       "apps/web/features/{auth,campaign,player,checkpoint,quick,store,burn,wallet,me,streak,shell,onboarding,region,open-view,public,notifications,rum}/**/*.{ts,tsx}",
+      // 6.2.a: the (auth) route group's own page.tsx files are B-owned too
+      // (TASKS.md "Areas and ownership") and hold the same hidden-field/
+      // catalogue-copy conventions as the features above.
+      "apps/web/app/(auth)/**/*.{ts,tsx}",
     ],
     ignores: [
       "**/*.test.{ts,tsx}",

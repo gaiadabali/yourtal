@@ -16,6 +16,14 @@ import { DrizzleMerchantLocationLookup } from "./persistence/drizzle-merchant-lo
 import { DevicesBusinessRegionLookup } from "./persistence/drizzle-business-region-lookup";
 import { CounterDeviceCredentialVerifier } from "./counter-device-credential-verifier";
 import { DeviceAuthorize } from "./device-authorize";
+import { createVoucherClient } from "../../shared/voucher-client/create-voucher-client";
+import { VOUCHER_INTERNAL_CLIENT } from "../../shared/voucher-client/voucher-internal-client";
+import { AUTHORIZATION_META_REPOSITORY } from "./persistence/authorization-meta.repository";
+import { DrizzleAuthorizationMetaRepository } from "./persistence/drizzle-authorization-meta.repository";
+import { CAPTURE_LOG_REPOSITORY } from "./persistence/capture-log.repository";
+import { DrizzleCaptureLogRepository } from "./persistence/drizzle-capture-log.repository";
+import { CounterController } from "./counter/counter.controller";
+import { StudioRedemptionsController } from "./studio-redemptions.controller";
 
 export const DEVICES_DB = Symbol("DEVICES_DB");
 

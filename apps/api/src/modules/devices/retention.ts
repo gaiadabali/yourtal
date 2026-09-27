@@ -5,3 +5,9 @@ export const PROVISION_DEVICE_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 /** Pairing and unlocking: short-lived, single-attempt operations a client retries within seconds. */
 export const PAIR_DEVICE_RETENTION_MS = 5 * 60 * 1000;
+
+/** Matches the 5-minute hold `authorizeAsDevice` places (services/voucher's `deviceAuthorizationTTL`). */
+export const COUNTER_AUTHORIZE_RETENTION_MS = 5 * 60 * 1000;
+
+/** A capture is permanent; docs/14 §6 replays a merchant redemption for 24h. */
+export const COUNTER_CAPTURE_RETENTION_MS = 24 * 60 * 60 * 1000;

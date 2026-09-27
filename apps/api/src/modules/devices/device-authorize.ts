@@ -34,15 +34,28 @@ export class DeviceAuthorize {
     private readonly devicePrincipals: StoreDevicePrincipalResolver,
   ) {}
 
-  /** Throws 401 (invalid/revoked credential) or 403 (a valid device denied the action) — never returns on refusal. */
+  /**
+   * Throws 401 (invalid/revoked credential) or 403 (a valid device denied
+   * the action) — never returns on refusal.
+   *
+   * `resourceFrom` takes the ALREADY-RESOLVED principal, not the request —
+   * a device's own `businessId` (for `redemption.yaml`'s `store_device_of`)
+   * comes only from its credential (`principal.attr.deviceBusinessId`,
+   * provisioning-time truth), which is not known until `resolve()` below has
+   * run. Building the resource before that would either need a second,
+   * earlier credential check or trust something request-supplied — the
+   * exact "a stolen device names a different merchant" shape this whole
+   * split exists to close.
+   */
   async requireDevice<K extends ResourceKind>(
     request: FastifyRequest,
-    resource: { kind: K; id: string; attr?: Readonly<Record<string, unknown>> },
+    resourceFrom: (principal: Principal) => { kind: K; id: string; attr?: Readonly<Record<string, unknown>> },
     action: ActionFor<K>,
   ): Promise<Principal> {
     // Resolve() itself throws UnauthorizedException for an unknown, expired
     // or revoked credential (8.1.c) — that 401 propagates unchanged.
     const principal = await this.devicePrincipals.resolve(request);
+    const resource = resourceFrom(principal);
 
     const result = await this.pdp.requireAction(
       principal,

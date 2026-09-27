@@ -33,7 +33,7 @@ export class DeviceUnlockController {
   async unlock(@Body() body: UnlockDeviceDto, @Req() request: FastifyRequest) {
     const principal = await this.authorize.requireDevice(
       request,
-      { kind: "device", id: "self" },
+      () => ({ kind: "device", id: "self" }),
       "unlock",
     );
     const device = await this.devices.findById(deviceIdOf(principal));

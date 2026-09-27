@@ -237,6 +237,19 @@ export const RESOURCE_ACTIONS = {
    * `policies/resource_policies/team_invitation.yaml`.
    */
   team_invitation: ["accept"],
+
+  /**
+   * TASKS.md 8.1: a counter device's own lifecycle actions, distinct from
+   * `team`'s `provision_device`/`revoke_device` (which are a BUSINESS
+   * person's actions on their roster). Neither route here names a
+   * `:tenantId` the caller could claim: `pair` is a bare physical device
+   * presenting a one-time code with no identity at all yet (same
+   * "caller IS the resource" shape as `team_invitation.accept` — the real
+   * gate is the hashed, single-use code, checked by the use-case, not the
+   * PDP); `unlock` is called by an ALREADY-verified `store_device` principal
+   * (`StoreDevicePrincipalResolver`), proving a PIN rather than an identity.
+   */
+  device: ["pair", "unlock"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

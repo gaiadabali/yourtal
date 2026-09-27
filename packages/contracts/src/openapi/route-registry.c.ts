@@ -4,6 +4,12 @@ import { businessTeamRoleSchema } from "../business/business-team-role";
 import { billingContactSchema } from "../business/billing-contact";
 import { kybDocumentTypeSchema } from "../business/kyb-document";
 import {
+  counterDeviceSchema,
+  pairDeviceRequestSchema,
+  provisionDeviceRequestSchema,
+  unlockDeviceRequestSchema,
+} from "../device/counter-device";
+import {
   FORBIDDEN,
   SERVICE_UNAVAILABLE,
   VALIDATION_400,
@@ -507,5 +513,150 @@ export const BUSINESS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       STORAGE_REF_NOT_UPLOADED,
       SERVICE_UNAVAILABLE,
     ],
+  },
+];
+
+// --- devices.module.ts (TASKS.md 8.1) ---
+
+const DEVICE_ID_PARAM: RoutePathParam = {
+  name: "deviceId",
+  description: "A counter device, targeted by its own id.",
+  schema: { type: "string" },
+};
+
+const LOCATION_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description: "locationId is not one of this business's own (devices.errors.ts's location_not_found).",
+  documented: true,
+};
+
+const DEVICE_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description: "No such device on this business (devices.errors.ts's device_not_found).",
+  documented: true,
+};
+
+const PAIRING_CODE_INVALID: RouteErrorResponse = {
+  status: 400,
+  description:
+    "Unknown, already-used, revoked or expired — all answer identically, deliberately " +
+    "(devices.errors.ts's pairing_code_invalid; see pair-device.use-case.ts's own comment).",
+  documented: true,
+};
+
+const DEVICE_UNAUTHORIZED: RouteErrorResponse = {
+  status: 401,
+  description:
+    "No credential presented, or the credential is unknown/revoked (store-device-principal-" +
+    "resolver.ts's invalid_device_credential), or the device is PIN-locked (devices.errors.ts's " +
+    "device_locked), or the PIN was wrong (pin_incorrect).",
+  documented: true,
+};
+
+const provisionDeviceRequestBodySchema = inlineSchema(provisionDeviceRequestSchema);
+const pairDeviceRequestBodySchema = inlineSchema(pairDeviceRequestSchema);
+const unlockDeviceRequestBodySchema = inlineSchema(unlockDeviceRequestSchema);
+
+/** `studio-devices.controller.ts`'s `provision` — the pairing code and its expiry, returned once only. */
+const provisionDeviceResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    device: inlineSchema(counterDeviceSchema),
+    pairingCode: { type: "string" },
+    pairingExpiresAt: { type: "string", format: "date-time" },
+  },
+  required: ["device", "pairingCode", "pairingExpiresAt"],
+  additionalProperties: false,
+};
+
+const revokedResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: { revoked: { const: true } },
+  required: ["revoked"],
+  additionalProperties: false,
+};
+
+/** `device-pairing.controller.ts`'s `pair` — the bearer credential, returned exactly once. */
+const pairDeviceResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: { deviceId: { type: "string", format: "uuid" }, credential: { type: "string" } },
+  required: ["deviceId", "credential"],
+  additionalProperties: false,
+};
+
+const unlockedResponseSchema: Record<string, unknown> = {
+  type: "object",
+  properties: { unlocked: { const: true } },
+  required: ["unlocked"],
+  additionalProperties: false,
+};
+
+export const DEVICE_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  // --- studio-devices.controller.ts ---
+  {
+    method: "get",
+    path: "/api/{tenantId}/studio/devices",
+    summary: "List a business's counter devices",
+    tags: ["devices", "studio"],
+    pathParams: [TENANT_ID_PARAM],
+    successStatus: 200,
+    successDescription: "Every counter device this business has provisioned, paired or not.",
+    successSchema: arrayOf("CounterDevice"),
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/{tenantId}/studio/devices",
+    summary: "Provision a counter device",
+    tags: ["devices", "studio"],
+    pathParams: [TENANT_ID_PARAM],
+    requestBody: {
+      description: "The location it belongs to, a label, and the PIN staff share to unlock it.",
+      schema: provisionDeviceRequestBodySchema,
+    },
+    successStatus: 201,
+    successDescription:
+      "The device record, plus a one-time pairing code (15 minutes) shown only this once.",
+    successSchema: provisionDeviceResponseSchema,
+    errors: [VALIDATION_400, FORBIDDEN, LOCATION_NOT_FOUND, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "delete",
+    path: "/api/{tenantId}/studio/devices/{deviceId}",
+    summary: "Revoke a counter device",
+    tags: ["devices", "studio"],
+    pathParams: [TENANT_ID_PARAM, DEVICE_ID_PARAM],
+    successStatus: 200,
+    successDescription: "The device is revoked; its credential stops authenticating immediately.",
+    successSchema: revokedResponseSchema,
+    errors: [FORBIDDEN, DEVICE_NOT_FOUND, SERVICE_UNAVAILABLE],
+  },
+
+  // --- device-pairing.controller.ts ---
+  {
+    method: "post",
+    path: "/api/devices/pair",
+    summary: "Claim a provisioned device's credential with its one-time pairing code",
+    tags: ["devices"],
+    pathParams: [],
+    requestBody: { description: "The pairing code shown in Studio.", schema: pairDeviceRequestBodySchema },
+    successStatus: 200,
+    successDescription: "The device's bearer credential — shown exactly once; there is no later read.",
+    successSchema: pairDeviceResponseSchema,
+    errors: [VALIDATION_400, PAIRING_CODE_INVALID, SERVICE_UNAVAILABLE],
+  },
+
+  // --- device-unlock.controller.ts ---
+  {
+    method: "post",
+    path: "/api/devices/unlock",
+    summary: "Unlock a paired counter device with its shared PIN",
+    tags: ["devices"],
+    pathParams: [],
+    requestBody: { description: "The PIN.", schema: unlockDeviceRequestBodySchema },
+    successStatus: 200,
+    successDescription: "The PIN was correct.",
+    successSchema: unlockedResponseSchema,
+    errors: [VALIDATION_400, DEVICE_UNAUTHORIZED, SERVICE_UNAVAILABLE],
   },
 ];

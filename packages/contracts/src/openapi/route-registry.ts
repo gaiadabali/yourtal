@@ -6,7 +6,7 @@ import {
   DEV_CLOCK_ROUTE_DEFINITIONS,
 } from "./route-registry.a";
 import { CAMPAIGN_ROUTE_DEFINITIONS, WATCH_ROUTE_DEFINITIONS } from "./route-registry.b";
-import { BUSINESS_ROUTE_DEFINITIONS } from "./route-registry.c";
+import { BUSINESS_ROUTE_DEFINITIONS, DEVICE_ROUTE_DEFINITIONS } from "./route-registry.c";
 import { buildPathsFrom, type RouteDefinition } from "./route-registry-shared";
 
 /**
@@ -41,6 +41,7 @@ export {
   CAMPAIGN_ROUTE_DEFINITIONS,
   WATCH_ROUTE_DEFINITIONS,
   BUSINESS_ROUTE_DEFINITIONS,
+  DEVICE_ROUTE_DEFINITIONS,
 };
 // `export *` is banned (docs/13b section 5) — named re-exports only, and only
 // the pieces something outside this file's own siblings actually needs.
@@ -56,6 +57,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...CAMPAIGN_ROUTE_DEFINITIONS,
   ...WATCH_ROUTE_DEFINITIONS,
   ...BUSINESS_ROUTE_DEFINITIONS,
+  ...DEVICE_ROUTE_DEFINITIONS,
 ];
 
 /** Builds the `paths` object `build-document.ts` embeds in the document. */

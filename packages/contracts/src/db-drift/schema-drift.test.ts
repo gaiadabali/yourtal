@@ -15,6 +15,7 @@ import { businessMemberSchema } from "../business/business-member";
 import { billingContactSchema } from "../business/billing-contact";
 import { kybDocumentSchema } from "../business/kyb-document";
 import { userProfileSchema } from "../identity/user-profile";
+import { counterDeviceSchema } from "../device/counter-device";
 
 /**
  * The contracts ↔ migrations drift gate.
@@ -362,6 +363,32 @@ const MAPPINGS: readonly Mapping[] = [
         "Enforced through the PDP's ALLOW/DENY (policies/resource_policies/user_account.yaml), never returned to any client as a field of its own — the same call identity.principal_security_state's freeze makes for itself.",
       created_at: "Audit-only. No contract exposes when an account was created.",
       updated_at: "Audit-only. No contract exposes when a profile was last changed.",
+    },
+  },
+  {
+    name: "counterDeviceSchema",
+    schema: counterDeviceSchema,
+    table: "store.counter_device",
+    fieldsAwaitingStorage: {},
+    fieldsWithNoColumn: {
+      state:
+        "DERIVED, deliberately (TASKS.md 8.1.a) — the same call campaignSchema.status and voucherSchema.status make for their own derived fields. `studio-devices.controller.ts`'s toView computes pending/paired/revoked from paired_at/revoked_at rather than storing a third, redundant copy of that fact.",
+    },
+    columnsWithNoField: {
+      pin_hash:
+        "Argon2id, never returned to any client — the whole point of hashing it (8.1.a).",
+      credential_hash:
+        "sha256 of the device's bearer secret, never returned — the plaintext secret itself is returned exactly once, from POST /api/devices/pair, and never stored at all.",
+      pairing_code_hash:
+        "sha256 of the one-time pairing code, never returned after issuance — same reasoning as credential_hash.",
+      pairing_expires_at:
+        "Internal bookkeeping for the single-use pairing window; a client never reads an unpaired device's pairing state back.",
+      failed_pin_attempts:
+        "Internal lockout bookkeeping (8.1.a's 5-wrong-attempts rule) — no client-facing meaning of its own.",
+      pin_locked_until:
+        "Internal lockout bookkeeping. A locked device learns this only as a 401 on POST /api/devices/unlock (devices.errors.ts's device_locked), never as a readable field.",
+      revoked_by:
+        "Audit-only — who revoked a device, not surfaced on the CounterDevice a business reads back.",
     },
   },
 ];

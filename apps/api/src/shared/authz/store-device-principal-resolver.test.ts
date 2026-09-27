@@ -8,9 +8,12 @@ import type {
   VerifiedDeviceCredential,
 } from "./device-credential-verifier";
 
-function requestWith(deviceId?: string): FastifyRequest {
+function requestWith(deviceId?: string, secret?: string): FastifyRequest {
   return {
-    headers: deviceId === undefined ? {} : { "x-yt-device-id": deviceId },
+    headers: {
+      ...(deviceId === undefined ? {} : { "x-yt-device-id": deviceId }),
+      ...(secret === undefined ? {} : { authorization: `Bearer ${secret}` }),
+    },
   } as unknown as FastifyRequest;
 }
 
@@ -65,5 +68,28 @@ describe("StoreDevicePrincipalResolver (1.5.c)", () => {
     await expect(resolver.resolve(requestWith("stolen-device"))).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it("8.1.b: threads the bearer secret to the verifier, not just the id header", async () => {
+    let seen: { deviceId: string; secret: string | undefined } | undefined;
+    const verifier: DeviceCredentialVerifier = {
+      verify: (credential) => {
+        seen = credential;
+        return Promise.resolve(null);
+      },
+    };
+    const resolver = new StoreDevicePrincipalResolver(verifier);
+    await expect(
+      resolver.resolve(requestWith("device-kemang-2", "the-real-secret")),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(seen).toStrictEqual({ deviceId: "device-kemang-2", secret: "the-real-secret" });
+  });
+
+  it("401s a secret with no device id header — a bare Authorization header is still a credential presented", async () => {
+    const verifier: DeviceCredentialVerifier = { verify: () => Promise.resolve(null) };
+    const resolver = new StoreDevicePrincipalResolver(verifier);
+    await expect(
+      resolver.resolve(requestWith(undefined, "some-secret")),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

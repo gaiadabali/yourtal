@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "device",
+  "description": "A counter device's own lifecycle (TASKS.md 8.1): pairing (no principal exists yet -- the hashed one-time code is the real gate) and PIN unlock (the caller already authenticated as store_device via its credential). No attributes: neither route names a :tenantId. See policies/resource_policies/device.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

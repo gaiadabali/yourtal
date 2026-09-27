@@ -1,0 +1,40 @@
+---
+name: DeviceSuite
+description: |-
+  A counter device's own lifecycle (TASKS.md 8.1). Pairing is reachable by
+  anonymous only -- the hashed one-time code is the real gate, checked by
+  the use-case. Unlock is reachable only by an already-credentialed
+  store_device, never by a signed-in person or an anonymous caller.
+tests:
+  - name: anonymous may attempt pairing; nobody else needs to
+    input:
+      principals: [anon]
+      resources: [device_self]
+      actions: [pair]
+    expected:
+      - principal: anon
+        resource: device_self
+        actions: { pair: EFFECT_ALLOW }
+
+  - name: a paired device's own credential unlocks it
+    input:
+      principals: [counter_kemang]
+      resources: [device_self]
+      actions: [unlock]
+    expected:
+      - principal: counter_kemang
+        resource: device_self
+        actions: { unlock: EFFECT_ALLOW }
+
+  - name: anonymous cannot unlock, and a device cannot re-pair itself
+    input:
+      principals: [anon, counter_kemang]
+      resources: [device_self]
+      actions: [unlock, pair]
+    expected:
+      - principal: anon
+        resource: device_self
+        actions: { unlock: EFFECT_DENY, pair: EFFECT_ALLOW }
+      - principal: counter_kemang
+        resource: device_self
+        actions: { unlock: EFFECT_ALLOW, pair: EFFECT_DENY }

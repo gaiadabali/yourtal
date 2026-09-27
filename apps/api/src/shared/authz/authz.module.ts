@@ -1,12 +1,11 @@
 import { Global, Module } from "@nestjs/common";
 import { IdentityModule } from "../../modules/identity/identity.module";
 import { AuthModule } from "../../modules/auth/auth.module";
+import { DevicesModule } from "../../modules/devices/devices.module";
+import { CounterDeviceCredentialVerifier } from "../../modules/devices/counter-device-credential-verifier";
 import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { PrincipalService } from "./principal.service";
-import {
-  DEVICE_CREDENTIAL_VERIFIER,
-  NoDeviceCredentialVerifier,
-} from "./device-credential-verifier";
+import { DEVICE_CREDENTIAL_VERIFIER } from "./device-credential-verifier";
 import { StoreDevicePrincipalResolver } from "./store-device-principal-resolver";
 
 /**
@@ -26,16 +25,23 @@ import { StoreDevicePrincipalResolver } from "./store-device-principal-resolver"
  * itself now needs: `SessionService.validateAndTouch`. `AuthModule` does not
  * import this module back (`@Global()` already makes everything here
  * visible to it without that), so this is not a cycle.
+ *
+ * 8.1.b: also imports `DevicesModule`, for the same reason — `DevicesModule`
+ * does NOT import this one back (it does not need to: `AsyncPrincipalResolver`,
+ * `StoreDevicePrincipalResolver` and `PDP_CLIENT` are already global), so this
+ * is one edge, not a cycle. `DEVICE_CREDENTIAL_VERIFIER` now binds
+ * `CounterDeviceCredentialVerifier` — the real, Postgres-backed
+ * implementation — in place of the permanently-refusing
+ * `NoDeviceCredentialVerifier`, which stays in `device-credential-verifier.ts`
+ * as the safe default for anything built without this module in scope.
  */
 @Global()
 @Module({
-  imports: [IdentityModule, AuthModule],
+  imports: [IdentityModule, AuthModule, DevicesModule],
   providers: [
     PrincipalService,
     AsyncPrincipalResolver,
-    // 1.5.c: NoDeviceCredentialVerifier until 8.1.b's real device-credential
-    // store lands — swapping the binding is the only change that task needs.
-    { provide: DEVICE_CREDENTIAL_VERIFIER, useClass: NoDeviceCredentialVerifier },
+    { provide: DEVICE_CREDENTIAL_VERIFIER, useExisting: CounterDeviceCredentialVerifier },
     StoreDevicePrincipalResolver,
   ],
   exports: [PrincipalService, AsyncPrincipalResolver, StoreDevicePrincipalResolver],

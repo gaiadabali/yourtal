@@ -1,0 +1,39 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  A counter device's own lifecycle (TASKS.md 8.1), as opposed to `team`'s
+  `provision_device`/`revoke_device` -- those are a business person managing
+  their OWN roster; this is the device itself.
+
+  `pair` has no principal to speak of yet: a bare physical terminal presents
+  a one-time pairing code with no session and no prior credential. Same
+  "caller IS the resource" shape `team_invitation.yaml` documents -- the
+  real authorization is the hashed, single-use, time-limited code, checked
+  by `pair-device.use-case.ts`, not the PDP. This rule is coarse by
+  necessity: it only answers "does anonymous ever reach `pair` at all".
+
+  `unlock` is different: by the time a device calls it, it has already
+  proven its credential (`StoreDevicePrincipalResolver` resolved a
+  `store_device` principal from a valid, unrevoked bearer secret) and is
+  only proving a shared PIN on top of that. So `unlock` is scoped to
+  `store_device`, not `anonymous` -- an already-revoked or unpaired device
+  never reaches this far because the credential check upstream already
+  refused it with a 401.
+resourcePolicy:
+  version: default
+  resource: device
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/device.json
+  rules:
+    - name: an-anonymous-caller-may-attempt-pairing
+      actions: ["pair"]
+      effect: EFFECT_ALLOW
+      roles: ["anonymous"]
+
+    - name: a-paired-devices-own-credential-may-unlock-itself
+      actions: ["unlock"]
+      effect: EFFECT_ALLOW
+      roles: ["store_device"]

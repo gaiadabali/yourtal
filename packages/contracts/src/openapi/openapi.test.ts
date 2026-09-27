@@ -186,6 +186,70 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   // --- me (TASKS.md 6.7.a) ---
   autoplaySettingSchema:
     "MeModule -- TASKS.md 6.7.a, this pass's own ticket. GET/PUT /api/me/settings/autoplay is in route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger (same convention as every other MeModule route from 5.4/5.5) -- no packages/contracts/src/openapi route-registry entry exists for it to be published from.",
+
+  // --- device (TASKS.md 8.1-8.4): request bodies, documented inline via
+  // inlineSchema() in route-registry.c.ts rather than published as their
+  // own component — same convention route-registry.c.ts's own header
+  // states for business's request DTOs, except these ARE exported (apps/api's
+  // nestjs-zod DTOs import them directly rather than route-registry.c.ts
+  // re-typing the shape by hand), so they need a ledger entry here too.
+  provisionDeviceRequestSchema:
+    "device/counter-device.ts's request body for POST /studio/devices — documented inline (route-registry.c.ts).",
+  provisionDeviceResultSchema:
+    "device/counter-device.ts's response for POST /studio/devices — documented inline " +
+    "(route-registry.c.ts's provisionDeviceResponseSchema); CounterDevice, its own nested field, is published.",
+  pairDeviceRequestSchema:
+    "device/counter-device.ts's request body for POST /api/devices/pair — documented inline (route-registry.c.ts).",
+  pairDeviceResultSchema:
+    "device/counter-device.ts's response for POST /api/devices/pair — documented inline " +
+    "(route-registry.c.ts's pairDeviceResponseSchema).",
+  unlockDeviceRequestSchema:
+    "device/counter-device.ts's request body for POST /api/devices/unlock — documented inline (route-registry.c.ts).",
+  unlockDeviceResultSchema:
+    "device/counter-device.ts's response for POST /api/devices/unlock — a literal {unlocked: true}, documented inline.",
+  counterDeviceStateSchema:
+    "device/counter-device.ts's nested enum on the published CounterDevice.state — not a standalone component.",
+
+  // --- device: counter BFF (TASKS.md 8.2) — a paired device only, never a
+  // published/external contract the way the merchant HMAC network's own
+  // signing spec is; request bodies documented inline where a route exists.
+  counterLookupRequestSchema:
+    "device/counter-redemption.ts's request body for POST /api/counter/lookup — B's counter UI consumes it directly; not yet wired into route-registry.c.ts (8.2.b is server-only this phase).",
+  counterAuthorizeRequestSchema:
+    "device/counter-redemption.ts's request body for POST /api/counter/authorize — same as counterLookupRequestSchema above.",
+  counterCaptureRequestSchema:
+    "device/counter-redemption.ts's request body for POST /api/counter/capture — same as counterLookupRequestSchema above.",
+  counterLogResultSchema:
+    "device/counter-redemption.ts's envelope for GET /api/counter/log — CounterLogEntry, its array element, is published.",
+
+  // --- device: studio redemptions (TASKS.md 8.2.g) ---
+  studioRedemptionQuerySchema:
+    "device/studio-redemptions.ts's query params for GET /studio/redemptions — not yet wired into route-registry.c.ts.",
+  studioRedemptionListSchema:
+    "device/studio-redemptions.ts's envelope for GET /studio/redemptions — StudioRedemptionEntry, its array element, is published.",
+
+  // --- device: partner actions (TASKS.md 8.4.a) ---
+  partnerActionTypeSchema:
+    "device/partner-action.ts's nested enum on PartnerActionRequest.action — not a standalone component; the route is not yet wired into route-registry.c.ts.",
+  partnerActionRequestSchema:
+    "device/partner-action.ts's request body for POST /api/partners/actions — not yet wired into route-registry.c.ts.",
+  partnerActionResultSchema:
+    "device/partner-action.ts's response for POST /api/partners/actions — not yet wired into route-registry.c.ts.",
+
+  // --- merchant: Studio Developers (TASKS.md 8.3.a/c) ---
+  merchantCredentialStateSchema:
+    "merchant/merchant-developer-credential.ts's nested enum on the published MerchantDeveloperCredential.state — not a standalone component.",
+  issueDeveloperCredentialRequestSchema:
+    "merchant/merchant-developer-credential.ts's request body for POST /studio/developers/credentials — not yet wired into route-registry.c.ts.",
+  rotateDeveloperCredentialResultSchema:
+    "merchant/merchant-developer-credential.ts's response for the rotate route — a bare alias of the " +
+    "already-published MerchantDeveloperCredential, so it is not a second component.",
+  registerWebhookRequestSchema:
+    "merchant/merchant-developer-credential.ts's request body for POST /studio/developers/webhooks — not yet wired into route-registry.c.ts.",
+  webhookEventTypeSchema:
+    "merchant/merchant-developer-credential.ts's closed event-type union, documented in the webhook delivery worker's own spec, not a request/response component.",
+  webhookSignatureHeaderSchema:
+    "merchant/merchant-developer-credential.ts's header-format regex for packages/sdk-merchant to verify against — not a JSON body component.",
 };
 
 function exportedSchemaNames(): string[] {

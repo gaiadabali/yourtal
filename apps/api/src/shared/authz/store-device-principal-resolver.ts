@@ -2,6 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { principalSchema } from "@yourtal/authz/principal";
 import type { Principal } from "@yourtal/authz/principal";
+import { bearerToken } from "../../modules/auth/bearer-token";
 import { DEVICE_CREDENTIAL_VERIFIER } from "./device-credential-verifier";
 import type { DeviceCredentialVerifier } from "./device-credential-verifier";
 
@@ -28,11 +29,18 @@ export class StoreDevicePrincipalResolver {
 
   async resolve(request: FastifyRequest): Promise<Principal> {
     const deviceId = firstHeaderValue(request.headers["x-yt-device-id"]);
-    if (deviceId === undefined) {
+    // 8.1.b: the bearer secret IS the credential now — `x-yt-device-id`
+    // alone used to be enough to name a principal with no proof at all,
+    // which is exactly the shape this file's own header warns against.
+    const secret = bearerToken(request);
+    if (deviceId === undefined && secret.length === 0) {
       throw invalidDeviceCredential();
     }
 
-    const verified = await this.verifier.verify({ deviceId });
+    const verified = await this.verifier.verify({
+      deviceId: deviceId ?? "",
+      secret: secret.length === 0 ? undefined : secret,
+    });
     if (verified === null) {
       throw invalidDeviceCredential();
     }

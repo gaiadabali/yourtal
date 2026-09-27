@@ -348,3 +348,10 @@ resources:
     kind: team_invitation
     id: self
     attr: {}
+
+  # TASKS.md 8.1: same "caller IS the resource" shape as team_invitation_self
+  # above -- see _schemas/resource/device.json and resource_policies/device.yaml.
+  device_self:
+    kind: device
+    id: self
+    attr: {}

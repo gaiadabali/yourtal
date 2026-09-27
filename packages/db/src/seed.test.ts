@@ -80,7 +80,7 @@ describe("the seed", () => {
     const again = await seed(owner);
     const after = await count("SELECT COUNT(*)::text AS n FROM store.listings");
 
-    expect(again).toEqual({ campaigns: 0, listings: 0, vouchers: 0, questions: 0 });
+    expect(again).toEqual({ businesses: 0, campaigns: 0, listings: 0, vouchers: 0, questions: 0 });
     expect(after).toBe(before);
   });
 

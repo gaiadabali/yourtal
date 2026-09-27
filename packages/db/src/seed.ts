@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import pg from "pg";
 import { seedIdentity } from "./seed/identity";
+import { seedFollowCandidates } from "./seed/follow-candidates";
 import { seedLedger } from "./seed/ledger";
 import { seedStudio } from "./seed/studio";
 import { seedStore } from "./seed/store";
@@ -78,6 +79,7 @@ import { seedWatch } from "./seed/watch";
 const { Pool } = pg;
 
 export interface SeedCounts {
+  readonly businesses: number;
   readonly campaigns: number;
   readonly listings: number;
   readonly vouchers: number;
@@ -86,11 +88,12 @@ export interface SeedCounts {
 
 export async function seed(pool: pg.Pool): Promise<SeedCounts> {
   await seedIdentity(pool);
+  const { businesses } = await seedFollowCandidates(pool);
   await seedLedger(pool);
   const { campaigns, questions } = await seedStudio(pool);
   const { listings, vouchers } = await seedStore(pool);
   await seedWatch(pool);
-  return { campaigns, listings, vouchers, questions };
+  return { businesses, campaigns, listings, vouchers, questions };
 }
 
 /** CLI entry point. Kept separate so tests can seed a pool they control. */
@@ -138,8 +141,9 @@ async function main(): Promise<void> {
   try {
     const counts = await seed(pool);
     console.log(
-      `Seeded ${String(counts.campaigns)} campaigns, ${String(counts.listings)} listings, ` +
-        `${String(counts.vouchers)} vouchers, ${String(counts.questions)} questions. ` +
+      `Seeded ${String(counts.businesses)} businesses, ${String(counts.campaigns)} campaigns, ` +
+        `${String(counts.listings)} listings, ${String(counts.vouchers)} vouchers, ` +
+        `${String(counts.questions)} questions. ` +
         `Re-running is a no-op; use \`pnpm dev:fresh\` for a clean slate.`,
     );
   } finally {

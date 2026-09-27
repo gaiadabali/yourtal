@@ -44,6 +44,8 @@ export interface SettlementDecreaseRequestRepository {
    */
   findPendingForListing(listingId: string): Promise<SettlementDecreaseRequest | null>;
   findById(listingId: string, requestId: string): Promise<SettlementDecreaseRequest | null>;
+  /** 7.4.g: every pending request across every listing this business owns, newest first. */
+  listPendingForBusiness(merchantId: string): Promise<readonly SettlementDecreaseRequest[]>;
   create(input: CreateSettlementDecreaseRequestInput): Promise<SettlementDecreaseRequest>;
   /**
    * Claims the request and applies its settlement-value change in one

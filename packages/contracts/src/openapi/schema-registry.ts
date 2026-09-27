@@ -30,6 +30,8 @@ import {
   partialRedemptionPolicySchema,
   listingChannelSchema,
   partialRedemptionSchema,
+  settlementDecreaseRequestSchema,
+  settlementDecreaseRequestStateSchema,
 } from "../listing/listing";
 import { audienceSchema } from "../audience/audience";
 import { campaignChapterSchema } from "../campaign/campaign-chapter";
@@ -362,6 +364,19 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       "minimumSpendMinor is set if and only if the policy is minimum_spend.",
       "location ids must be unique within a listing.",
     ],
+  },
+  {
+    id: "SettlementDecreaseRequestState",
+    schema: settlementDecreaseRequestStateSchema,
+    description: "no 'rejected' yet -- out of YT-0575's first pass.",
+    crossFieldRules: [],
+  },
+  {
+    id: "SettlementDecreaseRequest",
+    schema: settlementDecreaseRequestSchema,
+    description:
+      "A two-person-approval request to lower a listing's settlement value S (YT-0575, 7.4.g). GET .../store/settlement-decreases?state=pending lists a business's own outstanding ones.",
+    crossFieldRules: [],
   },
 
   // --- voucher ---

@@ -3,6 +3,7 @@ import { and, desc, eq, ne } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import { applySettlementValueChange } from "./apply-settlement-value-change";
+import { listings } from "./schema/listing.table";
 import { settlementDecreaseRequests } from "./schema/settlement-decrease-request.table";
 import type { SettlementValueChange } from "./listing.repository";
 import type {
@@ -52,6 +53,18 @@ export class DrizzleSettlementDecreaseRequestRepository implements SettlementDec
       )
       .limit(1);
     return row === undefined ? null : toRecord(row);
+  }
+
+  async listPendingForBusiness(merchantId: string): Promise<readonly SettlementDecreaseRequest[]> {
+    const rows = await this.db
+      .select({ request: settlementDecreaseRequests })
+      .from(settlementDecreaseRequests)
+      .innerJoin(listings, eq(listings.id, settlementDecreaseRequests.listingId))
+      .where(
+        and(eq(listings.merchantId, merchantId), eq(settlementDecreaseRequests.state, "pending")),
+      )
+      .orderBy(desc(settlementDecreaseRequests.createdAt));
+    return rows.map((row) => toRecord(row.request));
   }
 
   async create(input: CreateSettlementDecreaseRequestInput): Promise<SettlementDecreaseRequest> {

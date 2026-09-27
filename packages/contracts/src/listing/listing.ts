@@ -212,3 +212,27 @@ export const publicListingSchema = listingFields
 export type PublicListing = z.infer<typeof publicListingSchema>;
 
 export type Listing = z.infer<typeof listingSchema>;
+
+/**
+ * 7.4.g: one pending (or resolved) two-person-approval request to lower a
+ * listing's settlement value S (YT-0575). `currentSettlementValueMinor`/
+ * `proposedSettlementValueMinor` share the listing's own `currency` --
+ * carried here too since a caller listing requests across many listings has
+ * no other way to know which currency each amount is in.
+ */
+export const settlementDecreaseRequestStateSchema = z.enum(["pending", "approved"]);
+
+export const settlementDecreaseRequestSchema = z.object({
+  id: z.uuid(),
+  listingId: z.uuid(),
+  currency: currencySchema,
+  currentSettlementValueMinor: minorUnitsSchema,
+  proposedSettlementValueMinor: minorUnitsSchema,
+  requestedBy: z.uuid(),
+  reason: z.string().nullable(),
+  state: settlementDecreaseRequestStateSchema,
+  approvedBy: z.uuid().nullable(),
+  approvedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+});
+export type SettlementDecreaseRequest = z.infer<typeof settlementDecreaseRequestSchema>;

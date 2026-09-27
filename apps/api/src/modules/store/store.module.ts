@@ -6,6 +6,7 @@ import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { SettlementDecreaseController } from "./settlement-decrease.controller";
+import { SettlementDecreaseListController } from "./settlement-decrease-list.controller";
 import { StoreCatalogueController } from "./store-catalogue.controller";
 import { StoreListingController } from "./store-listing.controller";
 import { StoreLocationController } from "./store-location.controller";
@@ -61,6 +62,7 @@ export const STORE_DB = Symbol("STORE_DB");
     StoreLocationController,
     StoreCatalogueController,
     SettlementDecreaseController,
+    SettlementDecreaseListController,
     VoucherBatchRequestController,
   ],
   providers: [

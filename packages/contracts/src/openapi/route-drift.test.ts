@@ -183,6 +183,8 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
     "SettlementDecreaseController -- YT-0575, the two-person-approval workflow YT-0574's fix made necessary. Same StoreModule scope as the rest of this ledger's store entries.",
   "POST /api/{tenantId}/store/listings/{listingId}/settlement-decrease-requests/{requestId}/approve":
     "SettlementDecreaseController -- YT-0575, the two-person-approval workflow YT-0574's fix made necessary. Same StoreModule scope as the rest of this ledger's store entries.",
+  "GET /api/{tenantId}/store/settlement-decreases":
+    "SettlementDecreaseListController -- TASKS.md 7.4.g, this pass's own ticket.",
 
   // StoreLocationController -- TASKS.md 7.4.a, this pass's own ticket. Same
   // "stand the module up first, transcribe the contract later" reasoning as

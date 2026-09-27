@@ -4,7 +4,16 @@ import { useState } from "react";
 import type { CampaignDraft } from "./campaign-draft";
 import { CampaignDraftList } from "./campaign-draft-list";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
-import { CampaignEditor } from "./campaign-editor";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@yourtal/ui/skeleton";
+
+// The editor (form, reward-risk, upload, preview) only renders once a draft is
+// opened, so it loads then instead of in the list's initial JS. It kept
+// /business/campaigns over its 200 KB budget (2.4.h, F38).
+const CampaignEditor = dynamic(
+  () => import("./campaign-editor").then((editorModule) => editorModule.CampaignEditor),
+  { loading: () => <Skeleton className="h-96 w-full rounded-lg" /> },
+);
 
 export interface CampaignBuilderScreenProps {
   businessId: string;

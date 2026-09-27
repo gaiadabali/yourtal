@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ONBOARDING_REGION_COOKIE } from "../onboarding/onboarding-region-cookie";
-import { REGION_COOKIE_NAME } from "./region-cookie";
+import { REGION_COOKIE as REGION_COOKIE_NAME } from "@/lib/api/cookies";
 
 /**
  * Cross-feature invariant: what onboarding WRITES is what the app READS.

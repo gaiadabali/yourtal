@@ -18,7 +18,7 @@ export default function GlobalNotFound() {
   return (
     <RootDocument lang="en-AU">
       <div className="flex min-h-dvh flex-col bg-surface">
-        <PublicHeader locale="en-AU" homeHref="/au" />
+        <PublicHeader locale="en-AU" homeHref="/au" currentPublicLocale="au" />
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
           <PublicNotFound />
         </main>

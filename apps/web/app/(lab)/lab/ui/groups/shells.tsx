@@ -96,7 +96,7 @@ export function ShellsGroup() {
         description="The anonymous chrome every (public) page shares."
       >
         <div className="flex w-full max-w-2xl flex-col overflow-hidden rounded-card border border-border-subtle">
-          <PublicHeader locale="en-AU" homeHref="/au" />
+          <PublicHeader locale="en-AU" homeHref="/au" currentPublicLocale="au" />
           <div className="p-6">
             <p className="text-body-sm text-fg-muted">Public page content renders here.</p>
           </div>

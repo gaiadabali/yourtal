@@ -1,9 +1,10 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { getRequestConfig } from "next-intl/server";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
+import { getDisplayLocale } from "./get-locale";
 
-type Locale = "en-AU" | "id-ID";
+type Locale = DisplayLocale;
 type Messages = Record<string, Record<string, unknown>>;
 
 // Every `messages/<locale>/<namespace>.json` that exists is loaded, so an area can add
@@ -40,6 +41,8 @@ function loadMessages(locale: Locale): Promise<Messages> {
 }
 
 export default getRequestConfig(async () => {
-  const { locale } = await getRegionDisplayConfig();
+  // 6.1.b: display language, read independently of region — never
+  // derived from `yt_region` (F2).
+  const locale = await getDisplayLocale();
   return { locale, messages: await loadMessages(locale) };
 });

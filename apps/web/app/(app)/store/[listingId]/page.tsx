@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { StoreOfferCard } from "@/features/store/store-offer-card";
 import { getCurrentBalance } from "@/features/store/store-balance-data";
 import { getListing } from "@/features/store/store-data";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getDisplayLocale } from "@/i18n/get-locale";
 
 /**
  * The offer detail page (YT-0421) — `/store/[listingId]`. Server Component
@@ -18,7 +18,7 @@ export default async function StoreOfferPage(props: PageProps<"/store/[listingId
     notFound();
   }
 
-  const [balance, { locale }] = await Promise.all([getCurrentBalance(), getRegionDisplayConfig()]);
+  const [balance, locale] = await Promise.all([getCurrentBalance(), getDisplayLocale()]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4">

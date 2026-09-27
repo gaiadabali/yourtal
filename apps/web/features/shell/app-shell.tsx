@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
 import { RumReporterLoader } from "@/features/rum/rum-reporter-loader";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getDisplayLocale } from "@/i18n/get-locale";
 import { ViewerShell } from "./viewer-shell";
 
 export interface AppShellProps {
@@ -11,8 +11,9 @@ export interface AppShellProps {
 /**
  * The real `(app)` route tree's shell (YT-0402). Deliberately stays a
  * Server Component (see `rum-reporter-loader.tsx`'s doc comment on why the
- * RUM mount needs that) so it can resolve the region cookie once and hand a
- * plain `locale` down to `ViewerShell` (task 3.5.c) — which itself has no
+ * RUM mount needs that) so it can resolve the display locale (`yt_locale`,
+ * 6.1.b — independent of region) once and hand it down to `ViewerShell`
+ * (task 3.5.c) — which itself has no
  * server-only import, precisely so the gallery can render the same
  * component tree from a Client Component (see `viewer-shell.tsx`'s doc
  * comment).
@@ -25,7 +26,7 @@ export interface AppShellProps {
  * balance read is threaded through (tracked for a later phase).
  */
 export async function AppShell({ children }: AppShellProps) {
-  const { locale } = await getRegionDisplayConfig();
+  const locale = await getDisplayLocale();
   return (
     <>
       <RumReporterLoader />

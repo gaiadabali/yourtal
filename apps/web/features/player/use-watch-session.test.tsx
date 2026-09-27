@@ -66,7 +66,7 @@ const chapters = playerChapters(campaign);
 const HAND_OFF_TEXT = /You watched the whole video/;
 
 function mountAndReadyVideo(realDurationSeconds: number): HTMLVideoElement {
-  render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+  render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
   const video = document.querySelector("video");
   if (!video) {
     throw new Error("expected the player to render a <video> element");
@@ -283,7 +283,7 @@ describe("useWatchSession seek coalescing (YT-0550)", () => {
    * of them guard the window that is not the problem.
    */
   it("does not issue an uncoalesced seek when metadata arrives mid-seek", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     const video = document.querySelector("video");
     if (!video) throw new Error("expected the player to render a <video> element");
 

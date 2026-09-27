@@ -1,6 +1,7 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import { computeCampaignRewardFacts } from "@/features/public/public-reward-facts";
 import { getPublicTranslator } from "@/features/public/public-i18n";
+import { getPlayerTranslator } from "@/features/player/player-i18n";
 import type { PublicLocaleConfig } from "@/features/public/public-locale";
 
 export interface OpenViewCopy {
@@ -14,6 +15,11 @@ export interface OpenViewCopy {
   chapterWatchedStatus: string;
   chapterWatchingStatus: string;
   chapterUpcomingStatus: string;
+  /** For the shared `PlayerControls`/`SeekSlider` primitives this feature reuses (6.1.d) — computed here, same as every other field, never read ambiently. */
+  playAriaLabel: string;
+  playingStatus: string;
+  pausedStatus: string;
+  chaptersAriaLabel: string;
 }
 
 /**
@@ -35,6 +41,7 @@ export interface OpenViewCopy {
  */
 export function computeOpenViewCopy(campaign: Campaign, locale: PublicLocaleConfig): OpenViewCopy {
   const t = getPublicTranslator(locale.intlLocale);
+  const tPlayer = getPlayerTranslator(locale.intlLocale);
   const facts = computeCampaignRewardFacts(campaign, locale);
 
   const foregoneRewardNotice =
@@ -64,5 +71,9 @@ export function computeOpenViewCopy(campaign: Campaign, locale: PublicLocaleConf
     chapterWatchedStatus: t("openView.chapterWatchedStatus"),
     chapterWatchingStatus: t("openView.chapterWatchingStatus"),
     chapterUpcomingStatus: t("openView.chapterUpcomingStatus"),
+    playAriaLabel: tPlayer("controls.playCampaign", { title: campaign.title }),
+    playingStatus: tPlayer("status.playing"),
+    pausedStatus: tPlayer("status.paused"),
+    chaptersAriaLabel: tPlayer("chapters.ariaLabel"),
   };
 }

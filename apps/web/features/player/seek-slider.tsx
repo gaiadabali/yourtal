@@ -2,12 +2,14 @@
 
 import type { PlayerChapter } from "./player-chapters";
 import { formatClock } from "./format-clock";
+import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 export interface SeekSliderProps {
   currentSeconds: number;
   durationSeconds: number;
   chapters: readonly PlayerChapter[];
   onSeek: (seconds: number) => void;
+  locale: SupportedLocale;
 }
 
 /**
@@ -27,7 +29,14 @@ export interface SeekSliderProps {
  * The purely decorative accrual bar elsewhere in this feature stays on
  * `@yourtal/ui/progress` — that one is not interactive.
  */
-export function SeekSlider({ currentSeconds, durationSeconds, chapters, onSeek }: SeekSliderProps) {
+export function SeekSlider({
+  currentSeconds,
+  durationSeconds,
+  chapters,
+  onSeek,
+  locale,
+}: SeekSliderProps) {
+  const t = getPlayerTranslator(locale);
   const safeDuration = Math.max(durationSeconds, 1);
   const clamped = Math.min(Math.max(currentSeconds, 0), safeDuration);
   const progressPercent = (clamped / safeDuration) * 100;
@@ -51,14 +60,22 @@ export function SeekSlider({ currentSeconds, durationSeconds, chapters, onSeek }
             />
           ))}
         </div>
+        {/* A native `<input type="range">`, not @yourtal/ui's Slider —
+            see this file's own docstring: the native element already
+            gives correct keyboard/aria semantics and a real touch target
+            at a fraction of Radix Slider's bundle cost. */}
+        {/* eslint-disable-next-line yt-b/prefer-primitives */}
         <input
           type="range"
           min={0}
           max={safeDuration}
           step={1}
           value={clamped}
-          aria-label="Seek"
-          aria-valuetext={`${formatClock(clamped)} of ${formatClock(durationSeconds)}`}
+          aria-label={t("seek.ariaLabel")}
+          aria-valuetext={t("seek.valueText", {
+            current: formatClock(clamped),
+            duration: formatClock(durationSeconds),
+          })}
           onChange={(event) => {
             onSeek(Number(event.target.value));
           }}

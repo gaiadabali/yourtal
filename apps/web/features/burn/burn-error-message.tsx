@@ -1,8 +1,8 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { asDisplayPoints, formatPoints } from "@yourtal/contracts/money/format";
-import { useRegion } from "@/features/region/use-region";
+import { useLocale, useTranslations } from "next-intl";
+import { asDisplayPoints, formatPointsIn } from "@yourtal/contracts/money/format";
+import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
 import type { BurnError } from "./burn-errors";
 
 export interface BurnErrorMessageProps {
@@ -29,7 +29,7 @@ function copyFor(error: BurnError, t: BurnTranslator, locale: "en-AU" | "id-ID")
       return {
         heading: t("error.insufficientHeading"),
         body: t("error.insufficientBody", {
-          amount: formatPoints(asDisplayPoints(error.short), locale),
+          amount: formatPointsIn(locale, asDisplayPoints(error.short)),
         }),
       };
     case "holdback_blocks":
@@ -80,15 +80,15 @@ function copyFor(error: BurnError, t: BurnTranslator, locale: "en-AU" | "id-ID")
  * adding copy here fails the build instead of silently rendering a blank
  * message.
  *
- * YT-0405: a Client Component (its only consumer, `burn-flow.tsx`, is
- * already `"use client"`), so it reads the active region and its
- * translations ambiently via `useRegion()`/`useTranslations()` — no locale
- * prop, no prop-drilling, real end-to-end wiring through the
- * `RegionProvider`/`NextIntlClientProvider` pair mounted once in
+ * A Client Component (its only consumer, `burn-flow.tsx`, is already
+ * `"use client"`), so it reads its display language and translations
+ * ambiently via `useLocale()`/`useTranslations()` (6.1.b: the DISPLAY
+ * locale, independent of region) — no locale prop, no prop-drilling, real
+ * end-to-end wiring through the `NextIntlClientProvider` mounted once in
  * `app/(app)/layout.tsx`.
  */
 export function BurnErrorMessage({ error }: BurnErrorMessageProps) {
-  const { locale } = useRegion();
+  const locale = useLocale() as DisplayLocale;
   const t = useTranslations("burn");
   const { heading, body } = copyFor(error, t, locale);
   return (

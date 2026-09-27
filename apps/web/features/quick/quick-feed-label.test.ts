@@ -9,6 +9,7 @@ describe("buildQuickFeedItemLabel", () => {
         title: "Promo Kilat",
         position: 3,
         total: 12,
+        locale: "id-ID",
       }),
     ).toBe("Video 3 dari 12: Toko ABC — Promo Kilat");
   });
@@ -20,6 +21,7 @@ describe("buildQuickFeedItemLabel", () => {
         title: "Satu-satunya",
         position: 1,
         total: 1,
+        locale: "id-ID",
       }),
     ).toBe("Video 1 dari 1: Toko Solo — Satu-satunya");
   });

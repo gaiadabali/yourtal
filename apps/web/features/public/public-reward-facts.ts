@@ -1,6 +1,6 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { PublicListing } from "@yourtal/contracts/listing";
-import { formatMoney, formatPoints } from "@yourtal/contracts/money/format";
+import { formatMoney, formatPointsIn } from "@yourtal/contracts/money/format";
 import { formatDataCost, formatDuration } from "@/features/campaign/campaign-format";
 import { splitCampaignReward } from "@/features/campaign/campaign-reward-split";
 import type { PublicLocaleConfig } from "./public-locale";
@@ -39,9 +39,9 @@ export function computeCampaignRewardFacts(
   const { baseRewardPoints, maxAccuracyBonusPoints } = splitCampaignReward(campaign);
   const durationLabel = formatDuration(campaign.durationSeconds, locale.intlLocale);
   const dataCostLabel = formatDataCost(campaign.estimatedDataMb, locale.intlLocale);
-  const baseRewardLabel = formatPoints(baseRewardPoints, locale.intlLocale);
+  const baseRewardLabel = formatPointsIn(locale.intlLocale, baseRewardPoints);
   const accuracyBonusLabel =
-    maxAccuracyBonusPoints > 0 ? formatPoints(maxAccuracyBonusPoints, locale.intlLocale) : null;
+    maxAccuracyBonusPoints > 0 ? formatPointsIn(locale.intlLocale, maxAccuracyBonusPoints) : null;
 
   const headline =
     accuracyBonusLabel === null
@@ -65,6 +65,6 @@ export function computeOfferRewardFacts(
   // The listing's own currency (YT-0513), never the page's route locale —
   // a listing is always denominated in its own region's currency.
   const worthLabel = formatMoney(listing.faceValueMinor, listing.currency);
-  const pointsLabel = formatPoints(listing.priceInPoints, locale.intlLocale);
+  const pointsLabel = formatPointsIn(locale.intlLocale, listing.priceInPoints);
   return { worthLabel, pointsLabel, headline: `${worthLabel} · ${pointsLabel}` };
 }

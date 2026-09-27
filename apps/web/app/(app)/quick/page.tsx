@@ -4,7 +4,8 @@ import { QuickFeedCard } from "@/features/quick/quick-feed-card";
 import { QuickFeedEmptyState } from "@/features/quick/quick-feed-empty-state";
 import { QuickFeedSkeleton } from "@/features/quick/quick-feed-skeleton";
 import { QuickFeedViewport } from "@/features/quick/quick-feed-viewport";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getDisplayLocale } from "@/i18n/get-locale";
+import { getQuickTranslator } from "@/features/quick/quick-i18n";
 
 /**
  * The Quick feed (YT-0414) — `/quick`.
@@ -24,10 +25,14 @@ import { getRegionDisplayConfig } from "@/features/region/get-region";
  * list on desktop rather than faking a phone" reads, on this screen, as
  * "look like a normal page again," heading included.
  */
-export default function QuickPage() {
+export default async function QuickPage() {
+  const locale = await getDisplayLocale();
+  const t = getQuickTranslator(locale);
   return (
     <div className="flex flex-col gap-4 md:p-4">
-      <h1 className="sr-only md:not-sr-only md:text-2xl md:font-semibold md:text-fg">Quick</h1>
+      <h1 className="sr-only md:not-sr-only md:text-2xl md:font-semibold md:text-fg">
+        {t("pageTitle")}
+      </h1>
       <Suspense fallback={<QuickFeedSkeleton />}>
         <QuickFeedList />
       </Suspense>
@@ -36,10 +41,7 @@ export default function QuickPage() {
 }
 
 async function QuickFeedList() {
-  const [campaigns, { locale }] = await Promise.all([
-    listQuickCampaigns(),
-    getRegionDisplayConfig(),
-  ]);
+  const [campaigns, locale] = await Promise.all([listQuickCampaigns(), getDisplayLocale()]);
 
   if (campaigns.length === 0) {
     return <QuickFeedEmptyState locale={locale} />;

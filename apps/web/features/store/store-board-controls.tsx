@@ -13,8 +13,8 @@ import { storeCategoryFilterOptions, isStoreCategoryFilter } from "./store-categ
 import { storePriceBandFilterOptions, isStorePriceBandFilter } from "./store-price-band";
 import { STORE_LOCATION_ALL, STORE_MERCHANT_ALL } from "./store-facets";
 import type { StoreMerchantOption } from "./store-facets";
-import { useTranslations } from "next-intl";
-import { useRegion } from "@/features/region/use-region";
+import { useLocale, useTranslations } from "next-intl";
+import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
 
 export interface StoreBoardControlsProps {
   /** Locations present in the full catalogue, not the currently-filtered subset, so narrowing one filter never hides another. */
@@ -61,7 +61,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
   const priceBandId = useId();
   const locationId = useId();
   const merchantId = useId();
-  const { locale } = useRegion();
+  const locale = useLocale() as DisplayLocale;
   // YT-0405: this file's own labels were the last hardcoded Indonesian on
   // the store board — the category options it renders were parameterised
   // earlier, the chrome around them was not.
@@ -86,6 +86,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           <label htmlFor={categoryId} className="text-xs text-fg-muted">
             {t("store.filterCategory")}
           </label>
+          {/* eslint-disable-next-line yt-b/prefer-primitives -- native <select>, see this file's docstring */}
           <select
             id={categoryId}
             value={current.category}
@@ -109,6 +110,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           <label htmlFor={priceBandId} className="text-xs text-fg-muted">
             {t("store.filterPrice")}
           </label>
+          {/* eslint-disable-next-line yt-b/prefer-primitives -- native <select>, see this file's docstring */}
           <select
             id={priceBandId}
             value={current.priceBand}
@@ -132,6 +134,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           <label htmlFor={locationId} className="text-xs text-fg-muted">
             {t("store.filterLocation")}
           </label>
+          {/* eslint-disable-next-line yt-b/prefer-primitives -- native <select>, see this file's docstring */}
           <select
             id={locationId}
             value={current.location}
@@ -151,6 +154,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
           <label htmlFor={merchantId} className="text-xs text-fg-muted">
             {t("store.filterMerchant")}
           </label>
+          {/* eslint-disable-next-line yt-b/prefer-primitives -- native <select>, see this file's docstring */}
           <select
             id={merchantId}
             value={current.merchant}

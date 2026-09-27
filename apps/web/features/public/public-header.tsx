@@ -2,10 +2,26 @@ import { BrandWordmark } from "@yourtal/ui/brand/wordmark";
 import type { SupportedLocale } from "./public-i18n";
 import { getPublicTranslator } from "./public-i18n";
 import { PublicCtaLink } from "./public-cta-link";
+import { GENERATED_PUBLIC_LOCALES, type PublicLocale } from "./public-locale";
+
+/**
+ * Each language's own endonym, not a translation of it — the universal
+ * convention for a language switcher (a French visitor looks for
+ * "Français", never "French"). `publicLocaleConfig(...).countryName` is
+ * deliberately NOT reused here: this control is a language switch (F2:
+ * display language, described here as it maps 1:1 onto this static
+ * surface's two region-scoped catalogues), not a country switch.
+ */
+const LANGUAGE_ENDONYM: Record<PublicLocale, string> = {
+  au: "English",
+  id: "Bahasa Indonesia",
+};
 
 export interface PublicHeaderProps {
   locale: SupportedLocale;
   homeHref: string;
+  /** The `[locale]` route segment for THIS page (`"au"`/`"id"`) — lets the language switch link to the other region's home rather than assuming one. */
+  currentPublicLocale: PublicLocale;
 }
 
 /**
@@ -25,7 +41,7 @@ export interface PublicHeaderProps {
  * than `next/link` for the same reason `PublicCtaLink` gives: this group is
  * RSC-only with zero client leaves by design.
  */
-export function PublicHeader({ locale, homeHref }: PublicHeaderProps) {
+export function PublicHeader({ locale, homeHref, currentPublicLocale }: PublicHeaderProps) {
   const t = getPublicTranslator(locale);
   return (
     <header className="flex items-center justify-between gap-4 border-b border-border-subtle px-gutter-sm py-3 md:px-gutter-md">
@@ -33,6 +49,25 @@ export function PublicHeader({ locale, homeHref }: PublicHeaderProps) {
         <BrandWordmark size="sm" />
       </a>
       <div className="flex items-center gap-4">
+        <nav aria-label={t("header.language")} className="flex items-center gap-2">
+          {GENERATED_PUBLIC_LOCALES.map((publicLocale) => {
+            const isCurrent = publicLocale === currentPublicLocale;
+            return (
+              <a
+                key={publicLocale}
+                href={`/${publicLocale}`}
+                aria-current={isCurrent ? "true" : undefined}
+                className={
+                  isCurrent
+                    ? "text-label font-sans font-semibold text-fg"
+                    : "text-label font-sans font-medium text-fg-muted hover:text-fg"
+                }
+              >
+                {LANGUAGE_ENDONYM[publicLocale]}
+              </a>
+            );
+          })}
+        </nav>
         <a href="/au" className="text-label font-sans font-medium text-fg-muted hover:text-fg">
           {t("header.logIn")}
         </a>

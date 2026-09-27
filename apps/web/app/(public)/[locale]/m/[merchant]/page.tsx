@@ -77,6 +77,7 @@ export default async function PublicMerchantPage({ params }: PublicMerchantPageP
   return (
     <>
       <PublicBreadcrumbs
+        navAriaLabel={t("breadcrumbNav.ariaLabel")}
         items={[
           { name: t("breadcrumb.home"), url: publicUrl(locale, "/") },
           { name: merchant.name, url },

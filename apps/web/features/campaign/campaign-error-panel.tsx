@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 
 export interface CampaignErrorPanelProps {
@@ -18,6 +19,7 @@ export interface CampaignErrorPanelProps {
  * recoverable").
  */
 export function CampaignErrorPanel({ title, description, onRetry }: CampaignErrorPanelProps) {
+  const t = useTranslations("campaign");
   return (
     <div
       role="alert"
@@ -25,7 +27,7 @@ export function CampaignErrorPanel({ title, description, onRetry }: CampaignErro
     >
       <p className="text-base font-semibold text-fg">{title}</p>
       <p className="max-w-sm text-sm text-fg-muted">{description}</p>
-      <Button onClick={onRetry}>Coba lagi</Button>
+      <Button onClick={onRetry}>{t("errorPanel.retryLabel")}</Button>
     </div>
   );
 }

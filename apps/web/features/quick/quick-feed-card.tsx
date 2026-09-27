@@ -1,5 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
-import { formatPoints } from "@yourtal/contracts/money/format";
+import { formatPointsIn } from "@yourtal/contracts/money/format";
 import { Badge } from "@yourtal/ui/badge";
 import { cn } from "@yourtal/ui/cn";
 import { formatDataCost, formatDuration } from "@/features/campaign/campaign-format";
@@ -51,8 +51,8 @@ export function QuickFeedCard({ campaign, position, total, locale }: QuickFeedCa
   const t = getQuickTranslator(locale);
   const rewardLabel =
     campaign.scoringRule === "base_plus_accuracy_bonus"
-      ? t("card.upToReward", { amount: formatPoints(campaign.rewardPoints, locale) })
-      : formatPoints(campaign.rewardPoints, locale);
+      ? t("card.upToReward", { amount: formatPointsIn(locale, campaign.rewardPoints) })
+      : formatPointsIn(locale, campaign.rewardPoints);
   const itemLabel = buildQuickFeedItemLabel({
     merchantName: campaign.merchantName,
     title: campaign.title,

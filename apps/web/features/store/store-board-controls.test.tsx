@@ -22,12 +22,14 @@ const merchantOptions = [
 ];
 
 /**
- * `StoreBoardControls` reads the region ambiently via `useRegion()` (YT-0405)
- * for its category-option labels, and — since YT-0405's final pass — its own
- * filter-bar copy via `useTranslations("store")`, so it needs the intl
- * provider too. It is a genuine Client Component (router, `useId`), which is
+ * `StoreBoardControls` reads its display language ambiently via
+ * `useLocale()` (6.1.b) for its category-option labels, and its own
+ * filter-bar copy via `useTranslations("store")` — both need the intl
+ * provider. It is a genuine Client Component (router, `useId`), which is
  * why it uses the hook rather than the synchronous translator its Server
- * Component siblings take a `locale` prop for.
+ * Component siblings take a `locale` prop for. `RegionProvider` is kept
+ * for parity with the rest of the app's provider nesting, even though this
+ * component no longer reads it.
  */
 function renderControls() {
   return render(

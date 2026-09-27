@@ -123,6 +123,8 @@ interface ConsentPurposeProps {
 function ConsentPurpose({ id, title, body, registration, required, hint }: ConsentPurposeProps) {
   return (
     <div className="flex gap-3 rounded-lg border border-border bg-surface p-4">
+      {/* Native, not @yourtal/ui: there is no Checkbox primitive in the design system yet. */}
+      {/* eslint-disable-next-line yt-b/prefer-primitives */}
       <input
         type="checkbox"
         id={id}

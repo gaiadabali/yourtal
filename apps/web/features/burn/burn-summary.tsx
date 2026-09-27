@@ -1,15 +1,15 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { Listing } from "@yourtal/contracts/listing";
 import {
   asDisplayIdr,
   asDisplayPoints,
   formatMoney,
-  formatPoints,
+  formatPointsIn,
 } from "@yourtal/contracts/money/format";
+import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
 import { Badge } from "@yourtal/ui/badge";
-import { useRegion } from "@/features/region/use-region";
 
 export interface BurnSummaryProps {
   listing: Listing;
@@ -31,14 +31,14 @@ export interface BurnSummaryProps {
  * hand-formatted string, and never the full Zod `money` module (that would
  * pull ~100 KB gz into this client-reachable component — docs/13b §8).
  *
- * YT-0405: a Client Component (its only consumer, `burn-flow.tsx`, is
- * already `"use client"`), so it reads the active locale ambiently via
- * `useRegion()`/`useTranslations()` — the face value and minimum spend
- * render via `formatMoney` in the LISTING's own currency (never the
- * viewer's region), never a hardcoded `formatIdr`/`Rp`.
+ * A Client Component (its only consumer, `burn-flow.tsx`, is already
+ * `"use client"`), so it reads its display language ambiently via
+ * `useLocale()`/`useTranslations()` (6.1.b) — the face value and minimum
+ * spend render via `formatMoney` in the LISTING's own currency (never the
+ * viewer's region or display language), never a hardcoded `formatIdr`/`Rp`.
  */
 export function BurnSummary({ listing, variant = "review" }: BurnSummaryProps) {
-  const { locale } = useRegion();
+  const locale = useLocale() as DisplayLocale;
   const t = useTranslations("burn");
   const partialRedemptionCopy: Record<Listing["partialRedemptionPolicy"], string> = {
     balance_carrying: t("summary.balanceCarrying"),
@@ -58,7 +58,7 @@ export function BurnSummary({ listing, variant = "review" }: BurnSummaryProps) {
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm font-sans">
         <dt className="text-fg-muted">{t("summary.pointsCost")}</dt>
         <dd className="text-right font-semibold text-price">
-          {formatPoints(asDisplayPoints(listing.priceInPoints), locale)}
+          {formatPointsIn(locale, asDisplayPoints(listing.priceInPoints))}
         </dd>
         <dt className="text-fg-muted">{t("summary.voucherValue")}</dt>
         <dd className="text-right text-fg">

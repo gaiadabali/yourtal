@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { usePriceLockCountdown } from "./use-price-lock-countdown";
 import { PRICE_LOCK_DURATION_MS } from "./price-lock";
 
@@ -32,6 +33,7 @@ function formatClock(totalSeconds: number): string {
  * even more strongly here.
  */
 export function PriceLockCountdown({ lockExpiresAt, onExpire }: PriceLockCountdownProps) {
+  const t = useTranslations("burn");
   const { secondsRemaining, isExpired, announcement } = usePriceLockCountdown(
     lockExpiresAt,
     onExpire,
@@ -55,16 +57,18 @@ export function PriceLockCountdown({ lockExpiresAt, onExpire }: PriceLockCountdo
         role="timer"
         aria-label={
           isExpired
-            ? "Harga sudah kedaluwarsa"
-            : `Harga terkunci, sisa waktu ${formatClock(secondsRemaining)}`
+            ? t("priceLock.expiredAriaLabel")
+            : t("priceLock.lockedAriaLabel", { time: formatClock(secondsRemaining) })
         }
         className="text-sm font-sans font-medium tabular-nums"
       >
-        {isExpired ? "Harga kedaluwarsa" : `Harga terkunci · ${formatClock(secondsRemaining)}`}
+        {isExpired
+          ? t("priceLock.expiredLabel")
+          : t("priceLock.lockedLabel", { time: formatClock(secondsRemaining) })}
       </span>
       <div
         role="progressbar"
-        aria-label="Sisa waktu kunci harga"
+        aria-label={t("priceLock.progressAriaLabel")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(percentRemaining)}

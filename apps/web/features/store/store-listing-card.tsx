@@ -54,7 +54,7 @@ export function StoreListingCard({ listing, locale }: StoreListingCardProps) {
         <div className="flex items-center gap-1.5 truncate text-xs text-fg-muted">
           <span>{categoryLabel(listing.category, locale)}</span>
           <span aria-hidden="true">·</span>
-          <span className="truncate">{listingDistrictLabel(listing)}</span>
+          <span className="truncate">{listingDistrictLabel(listing, locale)}</span>
         </div>
       }
       footerSlot={

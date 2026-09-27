@@ -18,6 +18,7 @@ const ResumePrompt = dynamic(() => import("./resume-prompt").then((mod) => mod.R
   ssr: false,
 });
 import { SeekSlider } from "./seek-slider";
+import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 // Loaded on intent only (mounted after the user taps play, see below), and
 // never server-rendered — see hls-attacher.tsx's own doc comment for why
@@ -29,11 +30,12 @@ const HlsAttacher = dynamic(() => import("./hls-attacher").then((mod) => mod.Hls
 export interface VideoPlayerProps {
   campaign: Campaign;
   chapters: readonly PlayerChapter[];
-  /** Passed to the point copy, which would otherwise format as `id-ID`. */
-  locale?: "en-AU" | "id-ID";
+  /** No default (6.1.c) — every child's copy and point formatting depends on this. */
+  locale: SupportedLocale;
 }
 
-export function VideoPlayer({ campaign, chapters, locale = "en-AU" }: VideoPlayerProps) {
+export function VideoPlayer({ campaign, chapters, locale }: VideoPlayerProps) {
+  const t = getPlayerTranslator(locale);
   const isVisible = useTabVisibility();
   const session = useWatchSession(campaign, chapters, !isVisible);
   const showStartOverlay = !session.hasStarted && !session.resumeOffer;
@@ -50,10 +52,16 @@ export function VideoPlayer({ campaign, chapters, locale = "en-AU" }: VideoPlaye
         */}
         <video ref={session.videoRef} className="h-full w-full" playsInline aria-hidden="true" />
         {showStartOverlay ? (
+          // A native element, not @yourtal/ui/button: this is a full-bleed
+          // `absolute inset-0` hit target over the video itself, not a
+          // styled button — the primitive's own padding/sizing would fight
+          // that layout for no accessibility gain (it is already a real
+          // <button> with an aria-label).
+          // eslint-disable-next-line yt-b/prefer-primitives
           <button
             type="button"
             onClick={session.handlePlay}
-            aria-label={`Play ${campaign.title}`}
+            aria-label={t("controls.playCampaign", { title: campaign.title })}
             className="absolute inset-0 flex items-center justify-center bg-fg/40 text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <PlayIcon className="h-14 w-14" />
@@ -72,6 +80,7 @@ export function VideoPlayer({ campaign, chapters, locale = "en-AU" }: VideoPlaye
         <ResumePrompt
           positionSeconds={session.resumeOffer.positionSeconds}
           onChoose={session.dismissResumeOffer}
+          locale={locale}
         />
       ) : null}
 
@@ -88,6 +97,7 @@ export function VideoPlayer({ campaign, chapters, locale = "en-AU" }: VideoPlaye
         durationSeconds={campaign.durationSeconds}
         chapters={chapters}
         onSeek={session.handleSeekTo}
+        locale={locale}
       />
 
       <ChapterTrack
@@ -95,6 +105,7 @@ export function VideoPlayer({ campaign, chapters, locale = "en-AU" }: VideoPlaye
         reachedChapterIndex={session.reachedChapterIndex}
         currentSeconds={session.virtualCurrentTime}
         onSelectChapter={session.handleSeekTo}
+        locale={locale}
       />
 
       <PlayerControls
@@ -105,6 +116,7 @@ export function VideoPlayer({ campaign, chapters, locale = "en-AU" }: VideoPlaye
         onPause={session.handlePause}
         qualityTierId={session.qualityTierId}
         onSelectQuality={session.setQualityTierId}
+        locale={locale}
       />
 
       {session.hasEnded ? (
@@ -117,7 +129,7 @@ export function VideoPlayer({ campaign, chapters, locale = "en-AU" }: VideoPlaye
 
       {/* Play/pause state, announced once per transition — not spammed per frame. */}
       <p role="status" aria-live="polite" className="sr-only">
-        {session.isPlaying ? "Playing" : session.hasStarted ? "Paused" : ""}
+        {session.isPlaying ? t("status.playing") : session.hasStarted ? t("status.paused") : ""}
       </p>
     </div>
   );

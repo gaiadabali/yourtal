@@ -8,14 +8,14 @@ import { getCampaignTranslator, type SupportedLocale } from "./campaign-i18n";
  * file to compile, per docs/13b-typescript-standards.md §4's exhaustiveness
  * discipline.
  *
- * YT-0405: takes an optional `locale`, defaulting to `id-ID` so existing
- * callers are unaffected, and reads its copy from the `campaign` message
- * catalogue via `campaign-i18n.ts` rather than a second hand-rolled
- * per-locale string map.
+ * Reads its copy from the `campaign` message catalogue via
+ * `campaign-i18n.ts` rather than a second hand-rolled per-locale string
+ * map. No default `locale` (6.1.c) — a caller that forgets it must fail to
+ * compile, not silently render the wrong region's language.
  */
 export function describeScoringRule(
   scoringRule: Campaign["scoringRule"],
-  locale: SupportedLocale = "id-ID",
+  locale: SupportedLocale,
 ): string {
   const t = getCampaignTranslator(locale);
   switch (scoringRule) {
@@ -30,11 +30,8 @@ export function describeScoringRule(
   }
 }
 
-/** Question-count copy that reads naturally at zero, one, or many questions. */
-export function describeQuestionCount(
-  questionCount: number,
-  locale: SupportedLocale = "id-ID",
-): string {
+/** Question-count copy that reads naturally at zero, one, or many questions. No default `locale` (6.1.c). */
+export function describeQuestionCount(questionCount: number, locale: SupportedLocale): string {
   const t = getCampaignTranslator(locale);
   if (questionCount === 0) {
     return t("entry.zeroQuestions");

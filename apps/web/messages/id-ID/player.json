@@ -1,0 +1,43 @@
+{
+  "accrual": {
+    "rewardIfYouFinish": "Reward jika kamu selesai",
+    "progressAriaLabel": "Progres menuju reward",
+    "paused": "Akumulasi reward dijeda — tab ini di latar belakang.",
+    "pendingUntilFinish": "Tidak ada yang dibayarkan sampai kamu menonton seluruh video dan menjawab pertanyaan checkpoint — lalu kamu menerima {points}."
+  },
+  "completion": {
+    "watchedPending": "Kamu sudah menonton seluruh video. {points} tertunda — jawab pertanyaan checkpoint untuk mengonfirmasi rewardmu."
+  },
+  "quality": {
+    "triggerSummary": "{label} · ~{mb} MB",
+    "sheetTitle": "Kualitas video",
+    "description": "Kualitas lebih tinggi terlihat lebih tajam tapi memakai lebih banyak kuota data. Standarnya 480p.",
+    "ariaLabel": "Kualitas video",
+    "estimatedMb": "≈ {mb} MB untuk video ini"
+  },
+  "resume": {
+    "title": "Lanjutkan menonton?",
+    "description": "Kamu menonton sampai {time} terakhir kali.",
+    "startOver": "Mulai ulang",
+    "resumeFrom": "Lanjutkan dari {time}"
+  },
+  "chapters": {
+    "ariaLabel": "Bab",
+    "watched": "sudah ditonton",
+    "inProgress": "sedang berlangsung",
+    "upcoming": "belum ditonton"
+  },
+  "seek": {
+    "ariaLabel": "Cari",
+    "valueText": "{current} dari {duration}"
+  },
+  "controls": {
+    "play": "Putar",
+    "pause": "Jeda",
+    "playCampaign": "Putar {title}"
+  },
+  "status": {
+    "playing": "Sedang diputar",
+    "paused": "Dijeda"
+  }
+}

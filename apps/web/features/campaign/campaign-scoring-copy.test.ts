@@ -3,25 +3,25 @@ import { describeQuestionCount, describeScoringRule } from "./campaign-scoring-c
 
 describe("describeScoringRule", () => {
   it("describes base_only as unconditional", () => {
-    expect(describeScoringRule("base_only")).toMatch(/tanpa syarat/);
+    expect(describeScoringRule("base_only", "id-ID")).toMatch(/tanpa syarat/);
   });
 
   it("describes base_plus_accuracy_bonus as base plus a bonus", () => {
-    expect(describeScoringRule("base_plus_accuracy_bonus")).toMatch(/bonus/);
+    expect(describeScoringRule("base_plus_accuracy_bonus", "id-ID")).toMatch(/bonus/);
   });
 });
 
 describe("describeQuestionCount", () => {
   it("reads naturally at zero", () => {
-    expect(describeQuestionCount(0)).toBe("Tidak ada pertanyaan");
+    expect(describeQuestionCount(0, "id-ID")).toBe("Tidak ada pertanyaan");
   });
 
   it("reads naturally at one", () => {
-    expect(describeQuestionCount(1)).toBe("1 pertanyaan");
+    expect(describeQuestionCount(1, "id-ID")).toBe("1 pertanyaan");
   });
 
   it("reads naturally at many", () => {
-    expect(describeQuestionCount(4)).toBe("4 pertanyaan");
+    expect(describeQuestionCount(4, "id-ID")).toBe("4 pertanyaan");
   });
 });
 

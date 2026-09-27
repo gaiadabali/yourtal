@@ -11,11 +11,10 @@ describe("AccrualIndicator", () => {
         totalPoints={2_000}
         isPlaying={false}
         isBackgrounded={false}
+        locale="id-ID"
       />,
     );
-    expect(
-      screen.getByRole("progressbar", { name: "Progress toward the reward" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Progres menuju reward" })).toBeInTheDocument();
     // Decision O-1 (docs/16-decisions.md): all-or-nothing — 200 is never
     // shown as if it were already banked. Only the total (2,000) is a
     // number that ever actually gets paid.
@@ -30,6 +29,7 @@ describe("AccrualIndicator", () => {
         totalPoints={2_000}
         isPlaying={true}
         isBackgrounded={false}
+        locale="en-AU"
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent(/Nothing is paid/i);
@@ -40,6 +40,7 @@ describe("AccrualIndicator", () => {
         totalPoints={2_000}
         isPlaying={true}
         isBackgrounded={true}
+        locale="en-AU"
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent(/paused/i);
@@ -52,6 +53,7 @@ describe("AccrualIndicator", () => {
         totalPoints={2_000}
         isPlaying={false}
         isBackgrounded={true}
+        locale="en-AU"
       />,
     );
     expect(screen.getByRole("status")).not.toHaveTextContent(/paused/i);
@@ -64,6 +66,7 @@ describe("AccrualIndicator", () => {
         totalPoints={2_000}
         isPlaying={true}
         isBackgrounded={false}
+        locale="en-AU"
       />,
     );
     expect(screen.getByRole("status")).toHaveTextContent(/finish the whole video/i);

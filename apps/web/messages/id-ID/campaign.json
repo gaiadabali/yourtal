@@ -41,5 +41,21 @@
     "sortReward": "Reward tertinggi",
     "sortDuration": "Durasi tersingkat",
     "sortNewest": "Terbaru"
+  },
+  "errorPanel": {
+    "retryLabel": "Coba lagi"
+  },
+  "boardError": {
+    "title": "Papan earn gagal dimuat",
+    "description": "Terjadi kesalahan saat memuat daftar campaign. Periksa koneksi kamu dan coba lagi."
+  },
+  "entryError": {
+    "title": "Campaign gagal dimuat",
+    "description": "Terjadi kesalahan saat memuat halaman ini. Periksa koneksi kamu dan coba lagi."
+  },
+  "notFound": {
+    "heading": "Campaign tidak ditemukan",
+    "body": "Campaign ini mungkin sudah berakhir atau tautannya salah. Coba kembali ke papan earn untuk melihat campaign yang masih berjalan.",
+    "cta": "Kembali ke Earn"
   }
 }

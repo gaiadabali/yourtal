@@ -9,7 +9,7 @@ import { filterCampaignsByKind } from "@/features/campaign/campaign-filter";
 import { CampaignGrid } from "@/features/campaign/campaign-grid";
 import { CampaignGridSkeleton } from "@/features/campaign/campaign-grid-skeleton";
 import { sortCampaigns } from "@/features/campaign/campaign-sort";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getDisplayLocale } from "@/i18n/get-locale";
 
 /**
  * The Earn board (YT-0410) — `/`, the app's home surface.
@@ -21,7 +21,7 @@ import { getRegionDisplayConfig } from "@/features/region/get-region";
 export default async function EarnBoardPage(props: PageProps<"/home">) {
   const searchParams = await props.searchParams;
   const { sort, kind } = parseCampaignBoardParams(searchParams);
-  const { locale } = await getRegionDisplayConfig();
+  const locale = await getDisplayLocale();
   const labels = getCampaignBoardLabels(locale);
 
   return (
@@ -44,7 +44,7 @@ interface CampaignBoardProps {
 }
 
 async function CampaignBoard({ sort, kind }: CampaignBoardProps) {
-  const [campaigns, { locale }] = await Promise.all([listCampaigns(), getRegionDisplayConfig()]);
+  const [campaigns, locale] = await Promise.all([listCampaigns(), getDisplayLocale()]);
   const visibleCampaigns = sortCampaigns(filterCampaignsByKind(campaigns, kind), sort);
 
   return visibleCampaigns.length === 0 ? (

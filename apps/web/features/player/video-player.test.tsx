@@ -68,7 +68,7 @@ describe("VideoPlayer", () => {
   });
 
   it("shows the tap-to-start overlay and no resume prompt when there is no prior position", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     expect(screen.getByRole("button", { name: "Play Test Campaign" })).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -82,7 +82,7 @@ describe("VideoPlayer", () => {
       positionSeconds: 300,
       updatedAt: "2026-09-19T09:00:00.000Z",
     });
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     expect(await screen.findByRole("dialog", { name: "Continue watching?" })).toBeInTheDocument();
   });
 
@@ -92,17 +92,17 @@ describe("VideoPlayer", () => {
       positionSeconds: 5,
       updatedAt: "2026-09-19T09:00:00.000Z",
     });
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("defaults the quality selector into the 360-480p band", async () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     expect(await screen.findByRole("button", { name: /480p/ })).toBeInTheDocument();
   });
 
   it("shows a marker for each chapter the CAMPAIGN carries, named by its own title (YT-0584)", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     expect(screen.getByRole("list", { name: "Chapters" })).toBeInTheDocument();
 
     // This asserted five markers matching /Chapter \d/ until YT-0584. That
@@ -121,7 +121,7 @@ describe("VideoPlayer", () => {
   });
 
   it("carries only progress status on a marker, never a banked reward (O-1)", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     // O-1: the reward is one grant after the full video and the questions,
     // so a chapter marker must never read as points already earned.
     for (const marker of screen.getAllByRole("button", { name: /Pembuka|Isi|Penutup/ })) {
@@ -130,14 +130,14 @@ describe("VideoPlayer", () => {
   });
 
   it("shows a progress bar toward the total reward before playback starts, never a running figure", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     expect(
       screen.getByRole("progressbar", { name: "Progress toward the reward" }),
     ).toBeInTheDocument();
   });
 
   it("moves past the start state and announces a play/pause status once playback is requested", async () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
 
     // The tap-to-start overlay is gone once hasStarted flips true.
@@ -146,7 +146,7 @@ describe("VideoPlayer", () => {
   });
 
   it("shows the checkpoint hand-off only after the video has ended, never before", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} />);
+    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
     expect(screen.queryByRole("link", { name: "Continue to questions" })).not.toBeInTheDocument();
   });
 });

@@ -1,0 +1,43 @@
+{
+  "accrual": {
+    "rewardIfYouFinish": "Reward if you finish",
+    "progressAriaLabel": "Progress toward the reward",
+    "paused": "Reward accrual paused — this tab is in the background.",
+    "pendingUntilFinish": "Nothing is paid until you finish the whole video and answer the checkpoint questions — then you receive {points}."
+  },
+  "completion": {
+    "watchedPending": "You watched the whole video. {points} pending — answer the checkpoint questions to confirm your reward."
+  },
+  "quality": {
+    "triggerSummary": "{label} · ~{mb} MB",
+    "sheetTitle": "Video quality",
+    "description": "Higher quality looks sharper but uses more of your data plan. Defaults to 480p.",
+    "ariaLabel": "Video quality",
+    "estimatedMb": "≈ {mb} MB for this video"
+  },
+  "resume": {
+    "title": "Continue watching?",
+    "description": "You watched up to {time} last time.",
+    "startOver": "Start over",
+    "resumeFrom": "Resume from {time}"
+  },
+  "chapters": {
+    "ariaLabel": "Chapters",
+    "watched": "watched",
+    "inProgress": "in progress",
+    "upcoming": "upcoming"
+  },
+  "seek": {
+    "ariaLabel": "Seek",
+    "valueText": "{current} of {duration}"
+  },
+  "controls": {
+    "play": "Play",
+    "pause": "Pause",
+    "playCampaign": "Play {title}"
+  },
+  "status": {
+    "playing": "Playing",
+    "paused": "Paused"
+  }
+}

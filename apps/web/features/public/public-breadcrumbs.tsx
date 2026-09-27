@@ -3,6 +3,7 @@ import { PublicJsonLdScript } from "./public-json-ld-script";
 
 export interface PublicBreadcrumbsProps {
   items: readonly JsonLdBreadcrumbItem[];
+  navAriaLabel: string;
 }
 
 /**
@@ -12,11 +13,11 @@ export interface PublicBreadcrumbsProps {
  * `BreadcrumbList` built from different data would be exactly the kind of
  * markup docs/11 warns is worse than none.
  */
-export function PublicBreadcrumbs({ items }: PublicBreadcrumbsProps) {
+export function PublicBreadcrumbs({ items, navAriaLabel }: PublicBreadcrumbsProps) {
   const lastIndex = items.length - 1;
   return (
     <>
-      <nav aria-label="Breadcrumb" className="text-xs text-fg-subtle">
+      <nav aria-label={navAriaLabel} className="text-xs text-fg-subtle">
         <ol className="flex flex-wrap items-center gap-1">
           {items.map((item, index) => (
             <li key={item.url} className="flex items-center gap-1">

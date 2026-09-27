@@ -25,6 +25,17 @@
     "singleUseForfeit": "This voucher is for one transaction only; any unused value is forfeited.",
     "minimumSpendPolicy": "This voucher only applies to purchases meeting a set minimum spend."
   },
+  "priceLock": {
+    "expiredLabel": "Price expired",
+    "expiredAriaLabel": "Price has expired",
+    "lockedLabel": "Price locked · {time}",
+    "lockedAriaLabel": "Price locked, {time} remaining",
+    "progressAriaLabel": "Price lock time remaining",
+    "announceStartMinutes": "This price is locked for about {minutes} minutes.",
+    "announceStartSeconds": "This price is locked for {seconds} seconds.",
+    "announceRemaining": "{seconds} seconds left on the price lock.",
+    "announceExpired": "This price is no longer valid. Reload to get the current price."
+  },
   "flow": {
     "continue": "Continue",
     "back": "Back",

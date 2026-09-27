@@ -65,6 +65,7 @@ export default async function PublicInfoRoute({ params }: PublicInfoRouteProps) 
   return (
     <>
       <PublicBreadcrumbs
+        navAriaLabel={t("breadcrumbNav.ariaLabel")}
         items={[
           { name: t("breadcrumb.home"), url: publicUrl(locale, "/") },
           { name: page.title, url: publicUrl(locale, `/${page.slug}`) },

@@ -6,8 +6,8 @@ export interface QuickFeedItemLabelParams {
   /** 1-based position in the feed. */
   position: number;
   total: number;
-  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
-  locale?: SupportedLocale;
+  /** No default (6.1.c) — a caller that forgets this must fail to compile. */
+  locale: SupportedLocale;
 }
 
 /**
@@ -24,7 +24,7 @@ export function buildQuickFeedItemLabel({
   title,
   position,
   total,
-  locale = "id-ID",
+  locale,
 }: QuickFeedItemLabelParams): string {
   const t = getQuickTranslator(locale);
   return t("feedLabel", { position, total, merchantName, title });

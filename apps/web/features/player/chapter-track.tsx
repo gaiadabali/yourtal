@@ -3,12 +3,14 @@
 import { Button } from "@yourtal/ui/button";
 import type { PlayerChapter } from "./player-chapters";
 import { formatClock } from "./format-clock";
+import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 export interface ChapterTrackProps {
   chapters: readonly PlayerChapter[];
   reachedChapterIndex: number;
   currentSeconds: number;
   onSelectChapter: (startSeconds: number) => void;
+  locale: SupportedLocale;
 }
 
 /**
@@ -38,14 +40,23 @@ export function ChapterTrack({
   reachedChapterIndex,
   currentSeconds,
   onSelectChapter,
+  locale,
 }: ChapterTrackProps) {
+  const t = getPlayerTranslator(locale);
   return (
-    <ol className="flex w-full list-none gap-1.5 overflow-x-auto p-0" aria-label="Chapters">
+    <ol
+      className="flex w-full list-none gap-1.5 overflow-x-auto p-0"
+      aria-label={t("chapters.ariaLabel")}
+    >
       {chapters.map((chapter) => {
         const isReached = chapter.index <= reachedChapterIndex;
         const isCurrent =
           currentSeconds >= chapter.startSeconds && currentSeconds < chapter.endSeconds;
-        const status = isReached ? "watched" : isCurrent ? "in progress" : "upcoming";
+        const status = isReached
+          ? t("chapters.watched")
+          : isCurrent
+            ? t("chapters.inProgress")
+            : t("chapters.upcoming");
 
         return (
           <li key={chapter.index} className="min-w-0 flex-1">

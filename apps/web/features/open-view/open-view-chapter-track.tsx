@@ -12,6 +12,7 @@ export interface OpenViewChapterTrackProps {
   watchedLabel: string;
   watchingLabel: string;
   upcomingLabel: string;
+  chaptersAriaLabel: string;
 }
 
 /**
@@ -37,9 +38,13 @@ export function OpenViewChapterTrack({
   watchedLabel,
   watchingLabel,
   upcomingLabel,
+  chaptersAriaLabel,
 }: OpenViewChapterTrackProps) {
   return (
-    <ol className="flex w-full list-none gap-1.5 overflow-x-auto p-0" aria-label="Chapters">
+    <ol
+      className="flex w-full list-none gap-1.5 overflow-x-auto p-0"
+      aria-label={chaptersAriaLabel}
+    >
       {chapters.map((chapter) => {
         const isReached = chapter.index <= reachedChapterIndex;
         const isCurrent =

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { playerChapters } from "@/features/player/player-chapters";
 import { getWatchCampaign } from "@/features/player/get-watch-campaign";
 import { VideoPlayer } from "@/features/player/video-player";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getDisplayLocale } from "@/i18n/get-locale";
 
 interface WatchPageProps {
   params: Promise<{ campaignId: string }>;
@@ -24,7 +24,7 @@ export default async function WatchPage({ params }: WatchPageProps) {
   const { campaignId } = await params;
   const campaign = getWatchCampaign(campaignId);
   const chapters = playerChapters(campaign);
-  const { locale } = await getRegionDisplayConfig();
+  const locale = await getDisplayLocale();
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { millisecondsUntilLock } from "./price-lock";
 
 export interface PriceLockCountdownState {
@@ -21,15 +22,14 @@ function computeSecondsRemaining(lockExpiresAt: string, nowMs: number): number {
   return Math.ceil(millisecondsUntilLock(lockExpiresAt, nowMs) / 1000);
 }
 
-function startAnnouncement(secondsRemaining: number): string {
+type PriceLockTranslator = ReturnType<typeof useTranslations>;
+
+function startAnnouncement(t: PriceLockTranslator, secondsRemaining: number): string {
   const minutes = Math.floor(secondsRemaining / 60);
   return minutes > 0
-    ? `Harga ini terkunci selama sekitar ${minutes} menit.`
-    : `Harga ini terkunci selama ${secondsRemaining} detik.`;
+    ? t("priceLock.announceStartMinutes", { minutes })
+    : t("priceLock.announceStartSeconds", { seconds: secondsRemaining });
 }
-
-const EXPIRED_ANNOUNCEMENT =
-  "Harga ini sudah tidak berlaku. Muat ulang untuk mendapatkan harga baru.";
 
 /**
  * Ticks a countdown to `lockExpiresAt`, an absolute instant computed
@@ -48,11 +48,12 @@ export function usePriceLockCountdown(
   lockExpiresAt: string,
   onExpire: () => void,
 ): PriceLockCountdownState {
+  const t = useTranslations("burn");
   const [secondsRemaining, setSecondsRemaining] = useState(() =>
     computeSecondsRemaining(lockExpiresAt, Date.now()),
   );
   const [announcement, setAnnouncement] = useState(() =>
-    startAnnouncement(computeSecondsRemaining(lockExpiresAt, Date.now())),
+    startAnnouncement(t, computeSecondsRemaining(lockExpiresAt, Date.now())),
   );
   const onExpireRef = useRef(onExpire);
   onExpireRef.current = onExpire;
@@ -63,13 +64,13 @@ export function usePriceLockCountdown(
   useEffect(() => {
     const initial = computeSecondsRemaining(lockExpiresAt, Date.now());
     setSecondsRemaining(initial);
-    setAnnouncement(startAnnouncement(initial));
+    setAnnouncement(startAnnouncement(t, initial));
     hasFiredExpireRef.current = false;
   }, [lockExpiresAt]);
 
   useEffect(() => {
     if (secondsRemaining <= 0) {
-      setAnnouncement(EXPIRED_ANNOUNCEMENT);
+      setAnnouncement(t("priceLock.announceExpired"));
       if (!hasFiredExpireRef.current) {
         hasFiredExpireRef.current = true;
         onExpireRef.current();
@@ -80,7 +81,7 @@ export function usePriceLockCountdown(
       const next = computeSecondsRemaining(lockExpiresAt, Date.now());
       setSecondsRemaining(next);
       if (FINAL_COUNTDOWN_THRESHOLDS_SECONDS.has(next)) {
-        setAnnouncement(`Kunci harga tersisa ${next} detik.`);
+        setAnnouncement(t("priceLock.announceRemaining", { seconds: next }));
       }
     }, 1000);
     return () => window.clearTimeout(timeoutId);

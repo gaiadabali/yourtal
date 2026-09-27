@@ -64,7 +64,11 @@ export default async function PublicLocaleLayout({ children, params }: PublicLoc
   return (
     <RootDocument lang={config.intlLocale}>
       <div className="flex min-h-dvh flex-col bg-surface">
-        <PublicHeader locale={config.intlLocale} homeHref={`/${locale}`} />
+        <PublicHeader
+          locale={config.intlLocale}
+          homeHref={`/${locale}`}
+          currentPublicLocale={locale}
+        />
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">{children}</main>
         <PublicFooter locale={config.intlLocale}>
           <PublicInfoLinks locale={config.intlLocale} basePath={`/${locale}`} />

@@ -68,6 +68,7 @@ export default async function PublicCampaignPage({ params }: PublicCampaignPageP
   return (
     <>
       <PublicBreadcrumbs
+        navAriaLabel={t("breadcrumbNav.ariaLabel")}
         items={[
           { name: t("breadcrumb.home"), url: publicUrl(locale, "/") },
           { name: campaign.merchantName, url: publicUrl(locale, `/m/${merchantSlug}`) },

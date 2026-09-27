@@ -25,6 +25,17 @@
     "singleUseForfeit": "Voucher hanya untuk satu transaksi; sisa nilai yang tidak terpakai akan hangus.",
     "minimumSpendPolicy": "Voucher hanya berlaku untuk belanja dengan jumlah minimum tertentu."
   },
+  "priceLock": {
+    "expiredLabel": "Harga kedaluwarsa",
+    "expiredAriaLabel": "Harga sudah kedaluwarsa",
+    "lockedLabel": "Harga terkunci · {time}",
+    "lockedAriaLabel": "Harga terkunci, sisa waktu {time}",
+    "progressAriaLabel": "Sisa waktu kunci harga",
+    "announceStartMinutes": "Harga ini terkunci selama sekitar {minutes} menit.",
+    "announceStartSeconds": "Harga ini terkunci selama {seconds} detik.",
+    "announceRemaining": "Kunci harga tersisa {seconds} detik.",
+    "announceExpired": "Harga ini sudah tidak berlaku. Muat ulang untuk mendapatkan harga baru."
+  },
   "flow": {
     "continue": "Lanjutkan",
     "back": "Kembali",

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { Campaign } from "@yourtal/contracts/campaign";
-import { formatPoints } from "@yourtal/contracts/money/format";
+import { formatPointsIn } from "@yourtal/contracts/money/format";
 import { Badge } from "@yourtal/ui/badge";
 import { CampaignCardLayout } from "./campaign-card-layout";
 import { formatDataCost, formatDuration } from "./campaign-format";
@@ -35,8 +35,8 @@ export function CampaignCard({ campaign, locale }: CampaignCardProps) {
   const t = getCampaignTranslator(locale);
   const rewardLabel =
     campaign.scoringRule === "base_plus_accuracy_bonus"
-      ? t("card.upToReward", { amount: formatPoints(campaign.rewardPoints, locale) })
-      : formatPoints(campaign.rewardPoints, locale);
+      ? t("card.upToReward", { amount: formatPointsIn(locale, campaign.rewardPoints) })
+      : formatPointsIn(locale, campaign.rewardPoints);
 
   return (
     <CampaignCardLayout

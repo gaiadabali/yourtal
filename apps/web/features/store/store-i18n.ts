@@ -1,12 +1,10 @@
-import { createTranslator } from "next-intl";
+import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
+import { makeSyncTranslator } from "@/i18n/sync-translator";
 import enAU from "@/messages/en-AU/store.json";
 import idID from "@/messages/id-ID/store.json";
 
-export type SupportedLocale = "en-AU" | "id-ID";
+/** Kept as an alias (6.1.a fold) so existing call sites' imports keep working unchanged. */
+export type SupportedLocale = DisplayLocale;
 
-const CATALOGUES = { "en-AU": enAU, "id-ID": idID } satisfies Record<SupportedLocale, typeof idID>;
-
-/** Synchronous translator for the `store` namespace — see `campaign-i18n.ts` for why this is `createTranslator`, not `getTranslations()`. */
-export function getStoreTranslator(locale: SupportedLocale) {
-  return createTranslator({ locale, messages: { store: CATALOGUES[locale] }, namespace: "store" });
-}
+/** Synchronous translator for the `store` namespace — see `apps/web/i18n/sync-translator.ts`. */
+export const getStoreTranslator = makeSyncTranslator("store", { "en-AU": enAU, "id-ID": idID });

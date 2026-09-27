@@ -4,6 +4,7 @@ import { Button } from "@yourtal/ui/button";
 import { formatClock } from "./format-clock";
 import { PauseIcon, PlayIcon } from "./player-icons";
 import dynamic from "next/dynamic";
+import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 // Lazy: the quality selector is a Radix Sheet that only opens on tap. It has
 // no business in the initial chunk (docs/13b section 8, 170 KB gate).
@@ -23,6 +24,7 @@ export interface PlayerControlsProps {
   onPause: () => void;
   qualityTierId: QualityTierId;
   onSelectQuality: (id: QualityTierId) => void;
+  locale: SupportedLocale;
 }
 
 export function PlayerControls({
@@ -33,14 +35,16 @@ export function PlayerControls({
   onPause,
   qualityTierId,
   onSelectQuality,
+  locale,
 }: PlayerControlsProps) {
+  const t = getPlayerTranslator(locale);
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-3">
         <Button
           type="button"
           size="icon"
-          aria-label={isPlaying ? "Pause" : "Play"}
+          aria-label={isPlaying ? t("controls.pause") : t("controls.play")}
           onClick={isPlaying ? onPause : onPlay}
         >
           {isPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
@@ -53,6 +57,7 @@ export function PlayerControls({
         durationSeconds={durationSeconds}
         selectedTierId={qualityTierId}
         onSelect={onSelectQuality}
+        locale={locale}
       />
     </div>
   );

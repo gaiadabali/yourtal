@@ -12,7 +12,13 @@ const chapters: PlayerChapter[] = [
 describe("SeekSlider", () => {
   it("is a real slider with an accessible name and a human-readable current-time value text", () => {
     render(
-      <SeekSlider currentSeconds={65} durationSeconds={360} chapters={chapters} onSeek={vi.fn()} />,
+      <SeekSlider
+        currentSeconds={65}
+        durationSeconds={360}
+        chapters={chapters}
+        onSeek={vi.fn()}
+        locale="en-AU"
+      />,
     );
     const slider = screen.getByRole("slider", { name: "Seek" });
     expect(slider).toHaveAttribute("aria-valuetext", expect.stringContaining("1:05"));
@@ -41,6 +47,7 @@ describe("SeekSlider", () => {
         durationSeconds={360}
         chapters={chapters}
         onSeek={vi.fn()}
+        locale="en-AU"
       />,
     );
     const slider = screen.getByRole("slider", { name: "Seek" });
@@ -54,7 +61,13 @@ describe("SeekSlider", () => {
   it("reports the new position to onSeek when the value changes", () => {
     const onSeek = vi.fn();
     render(
-      <SeekSlider currentSeconds={100} durationSeconds={360} chapters={chapters} onSeek={onSeek} />,
+      <SeekSlider
+        currentSeconds={100}
+        durationSeconds={360}
+        chapters={chapters}
+        onSeek={onSeek}
+        locale="en-AU"
+      />,
     );
 
     fireEvent.change(screen.getByRole("slider", { name: "Seek" }), { target: { value: "240" } });

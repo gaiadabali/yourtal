@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CampaignEntryCard } from "@/features/campaign/campaign-entry-card";
 import { getCampaign } from "@/features/campaign/campaign-data";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getDisplayLocale } from "@/i18n/get-locale";
 
 /**
  * The campaign entry card (YT-0411) — `/campaign/[campaignId]`, the
@@ -11,10 +11,7 @@ import { getRegionDisplayConfig } from "@/features/region/get-region";
  */
 export default async function CampaignEntryPage(props: PageProps<"/campaign/[campaignId]">) {
   const { campaignId } = await props.params;
-  const [campaign, { locale }] = await Promise.all([
-    getCampaign(campaignId),
-    getRegionDisplayConfig(),
-  ]);
+  const [campaign, locale] = await Promise.all([getCampaign(campaignId), getDisplayLocale()]);
 
   if (!campaign) {
     notFound();

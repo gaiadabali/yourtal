@@ -85,6 +85,12 @@ export function InterestPicker({ region, returnTo }: InterestPickerProps) {
           const Icon = option.icon;
           const label = locale === "id-ID" ? option.labelId : option.labelEn;
           return (
+            // A custom-styled selectable tile, not a text action — the
+            // @yourtal/ui Button primitive's own padding/typography would
+            // fight this fixed aspect-square grid layout for no
+            // accessibility gain (it is already a real <button> with
+            // aria-pressed).
+            // eslint-disable-next-line yt-b/prefer-primitives
             <button
               key={option.id}
               type="button"

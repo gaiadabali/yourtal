@@ -33,10 +33,7 @@ type SupportedLocale = "en-AU" | "id-ID";
 type HasLocations = Pick<Listing, "locations">;
 
 /** Every distinct district this listing can be redeemed in, alphabetised. */
-export function listingDistricts(
-  listing: HasLocations,
-  locale: SupportedLocale = "id-ID",
-): string[] {
+export function listingDistricts(listing: HasLocations, locale: SupportedLocale): string[] {
   return Array.from(new Set(listing.locations.map((location) => location.district))).sort((a, b) =>
     a.localeCompare(b, locale),
   );
@@ -48,10 +45,7 @@ export function listingDistricts(
  * branches in Kemang are one place to go, and inflating that to "+1" would
  * overstate reach.
  */
-export function listingDistrictLabel(
-  listing: HasLocations,
-  locale: SupportedLocale = "id-ID",
-): string {
+export function listingDistrictLabel(listing: HasLocations, locale: SupportedLocale): string {
   const districts = listingDistricts(listing, locale);
   const [first, ...rest] = districts;
   if (first === undefined) {

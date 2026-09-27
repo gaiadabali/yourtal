@@ -79,6 +79,8 @@ export function CampaignBoardControls({ labels }: { labels: CampaignBoardLabels 
           <span aria-hidden="true">{labels.sortLabel}</span>
           <span className="sr-only">{labels.sortAria}</span>
         </label>
+        {/* Native, not @yourtal/ui/select — see this file's own docstring: Radix Select's Popper/floating-ui cost broke this route's initial-JS budget. */}
+        {/* eslint-disable-next-line yt-b/prefer-primitives */}
         <select
           id={sortId}
           value={current.sort}

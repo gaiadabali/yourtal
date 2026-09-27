@@ -1,7 +1,19 @@
+import type { ReactNode } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NextIntlClientProvider } from "next-intl";
+import idID from "@/messages/id-ID/burn.json";
 import { usePriceLockCountdown } from "./use-price-lock-countdown";
 import { computeLockExpiresAt } from "./price-lock";
+
+/** `usePriceLockCountdown` reads `burn` copy via `useTranslations` (6.1.d) — needs a provider ancestor, same as every other burn test. */
+function wrapper({ children }: { children: ReactNode }) {
+  return (
+    <NextIntlClientProvider locale="id-ID" messages={{ burn: idID }}>
+      {children}
+    </NextIntlClientProvider>
+  );
+}
 
 /**
  * Advances fake timers one second at a time, each inside its own `act()`.
@@ -32,7 +44,7 @@ describe("usePriceLockCountdown", () => {
 
   it("starts from the full remaining time, not from a fresh duration counted from mount", () => {
     const lockExpiresAt = new Date(NOW.getTime() + 5_000).toISOString();
-    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, vi.fn()));
+    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, vi.fn()), { wrapper });
     expect(result.current.secondsRemaining).toBe(5);
     expect(result.current.isExpired).toBe(false);
     expect(result.current.announcement).toContain("5 detik");
@@ -41,14 +53,14 @@ describe("usePriceLockCountdown", () => {
   it("if the price was already shown a while ago, reflects the true remaining time immediately (never resets the clock)", () => {
     // The quote was shown 8 minutes ago; only 2 minutes of a 10-minute lock remain.
     const lockExpiresAt = computeLockExpiresAt(new Date(NOW.getTime() - 8 * 60_000));
-    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, vi.fn()));
+    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, vi.fn()), { wrapper });
     expect(result.current.secondsRemaining).toBe(2 * 60);
   });
 
   it("counts down every second and calls onExpire exactly once when it reaches zero", () => {
     const lockExpiresAt = new Date(NOW.getTime() + 3_000).toISOString();
     const onExpire = vi.fn();
-    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, onExpire));
+    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, onExpire), { wrapper });
 
     advanceSeconds(1);
     expect(result.current.secondsRemaining).toBe(2);
@@ -71,7 +83,7 @@ describe("usePriceLockCountdown", () => {
 
   it("announces at the final-minute thresholds without re-announcing every second", () => {
     const lockExpiresAt = new Date(NOW.getTime() + 65_000).toISOString();
-    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, vi.fn()));
+    const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, vi.fn()), { wrapper });
     const seenAnnouncements = [result.current.announcement];
 
     advanceSeconds(65);
@@ -89,6 +101,7 @@ describe("usePriceLockCountdown", () => {
       ({ lockExpiresAt }) => usePriceLockCountdown(lockExpiresAt, onExpire),
       {
         initialProps: { lockExpiresAt: firstLock },
+        wrapper,
       },
     );
 

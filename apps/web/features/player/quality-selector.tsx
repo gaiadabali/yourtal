@@ -16,11 +16,13 @@ import {
   getQualityTier,
   type QualityTierId,
 } from "./quality-tier";
+import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 export interface QualitySelectorProps {
   durationSeconds: number;
   selectedTierId: QualityTierId;
   onSelect: (id: QualityTierId) => void;
+  locale: SupportedLocale;
 }
 
 /**
@@ -34,7 +36,9 @@ export function QualitySelector({
   durationSeconds,
   selectedTierId,
   onSelect,
+  locale,
 }: QualitySelectorProps) {
+  const t = getPlayerTranslator(locale);
   const options = buildQualityOptions(durationSeconds);
   const selectedTier = getQualityTier(selectedTierId);
   const selectedMb = estimateDataCostMb(selectedTier.targetBitrateKbps, durationSeconds);
@@ -43,15 +47,16 @@ export function QualitySelector({
     <Sheet>
       <SheetTrigger asChild>
         <Button type="button" variant="secondary" size="sm">
-          {selectedTier.label} · ~{Math.round(selectedMb)} MB
+          {t("quality.triggerSummary", {
+            label: selectedTier.label,
+            mb: Math.round(selectedMb),
+          })}
         </Button>
       </SheetTrigger>
       <SheetContent side="bottom">
         <SheetHeader>
-          <SheetTitle>Video quality</SheetTitle>
-          <SheetDescription>
-            Higher quality looks sharper but uses more of your data plan. Defaults to 480p.
-          </SheetDescription>
+          <SheetTitle>{t("quality.sheetTitle")}</SheetTitle>
+          <SheetDescription>{t("quality.description")}</SheetDescription>
         </SheetHeader>
         <RadioGroupPrimitive.Root
           value={selectedTierId}
@@ -61,7 +66,7 @@ export function QualitySelector({
           // only ever see one of those three literals back.
           onValueChange={(value) => onSelect(value as QualityTierId)}
           className="flex flex-col gap-2"
-          aria-label="Video quality"
+          aria-label={t("quality.ariaLabel")}
         >
           {options.map((option) => (
             <label
@@ -72,7 +77,7 @@ export function QualitySelector({
               <span className="flex flex-col">
                 <span className="text-sm font-sans font-medium text-fg">{option.label}</span>
                 <span className="text-xs font-sans text-fg-muted">
-                  ≈ {Math.round(option.estimatedMb)} MB for this video
+                  {t("quality.estimatedMb", { mb: Math.round(option.estimatedMb) })}
                 </span>
               </span>
               <RadioGroupPrimitive.Item

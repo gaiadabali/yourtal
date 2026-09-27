@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@yourtal/ui/card";
-import { formatPoints } from "@yourtal/contracts/money/format";
+import { formatPointsIn } from "@yourtal/contracts/money/format";
 import { formatDuration } from "@/features/campaign/campaign-format";
 import { formatListingPrice } from "@/features/store/store-format";
 import { getPublicTranslator } from "./public-i18n";
@@ -56,7 +56,7 @@ export function PublicMerchantContent({
                     {campaign.title}
                   </a>
                   <span className="ml-2 text-xs text-fg-subtle">
-                    {formatPoints(campaign.rewardPoints, localeConfig.intlLocale)} ·{" "}
+                    {formatPointsIn(localeConfig.intlLocale, campaign.rewardPoints)} ·{" "}
                     {formatDuration(campaign.durationSeconds, localeConfig.intlLocale)}
                   </span>
                 </li>

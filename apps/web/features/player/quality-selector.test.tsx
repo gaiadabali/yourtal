@@ -8,12 +8,26 @@ import { QualitySelector } from "./quality-selector";
 
 describe("QualitySelector", () => {
   it("defaults into the 360-480p band and shows that tier's own computed MB estimate on the trigger", () => {
-    render(<QualitySelector durationSeconds={900} selectedTierId="480p" onSelect={vi.fn()} />);
+    render(
+      <QualitySelector
+        durationSeconds={900}
+        selectedTierId="480p"
+        onSelect={vi.fn()}
+        locale="en-AU"
+      />,
+    );
     expect(screen.getByRole("button", { name: /480p/ })).toHaveTextContent(/MB/);
   });
 
   it("opens a radiogroup listing every tier with its OWN distinct, computed MB estimate", async () => {
-    render(<QualitySelector durationSeconds={900} selectedTierId="480p" onSelect={vi.fn()} />);
+    render(
+      <QualitySelector
+        durationSeconds={900}
+        selectedTierId="480p"
+        onSelect={vi.fn()}
+        locale="en-AU"
+      />,
+    );
     fireEvent.click(screen.getByRole("button", { name: /480p/ }));
 
     const group = await screen.findByRole("radiogroup", { name: "Video quality" });
@@ -29,7 +43,14 @@ describe("QualitySelector", () => {
 
   it("calls onSelect with the chosen tier id when a different option is picked", async () => {
     const onSelect = vi.fn();
-    render(<QualitySelector durationSeconds={900} selectedTierId="480p" onSelect={onSelect} />);
+    render(
+      <QualitySelector
+        durationSeconds={900}
+        selectedTierId="480p"
+        onSelect={onSelect}
+        locale="en-AU"
+      />,
+    );
     fireEvent.click(screen.getByRole("button", { name: /480p/ }));
 
     const group = await screen.findByRole("radiogroup", { name: "Video quality" });

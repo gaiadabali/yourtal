@@ -6,9 +6,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { regionSchema, type Region } from "@yourtal/contracts/region";
 import { regionDisplayConfig, type RegionDisplayConfig } from "./region-config";
-import { REGION_COOKIE_NAME } from "./region-cookie";
-
-const DEFAULT_REGION: Region = "AU";
+import { DEFAULT_REGION, REGION_COOKIE } from "@/lib/api/cookies";
 
 /**
  * Resolves the active region for a Server Component, without prop-drilling:
@@ -18,10 +16,9 @@ const DEFAULT_REGION: Region = "AU";
  * (`region-context.tsx`/`use-region.ts`) instead — they cannot call this,
  * since `cookies()` is a server-only API.
  *
- * There is no registration flow yet (YT-0405 is foundation only; region
- * selection at registration is a future ticket), so this defaults to "AU"
- * (task 0.5) — English/AUD for a cookie-less first visit — until something
- * writes a validated value to the `yourtal-region` cookie.
+ * Defaults to "AU" (task 0.5) — English/AUD for a cookie-less first visit —
+ * until registration (6.2) or login writes the account's own region to
+ * `yt_region`.
  *
  * This file is NOT marked `"use client"` and must never be imported from a
  * file that is: it value-imports `regionSchema` (Zod) and calls a
@@ -30,10 +27,15 @@ const DEFAULT_REGION: Region = "AU";
  * (docs/13b-typescript-standards.md §8). The repo has no `server-only`
  * package installed to enforce this at build time (see YT-0405's report);
  * until it is added, this comment is the only guard.
+ *
+ * 6.1.b: reads `yt_region` (`REGION_COOKIE`, set by `loginAction` /
+ * `registerAction` from the account's own profile) — the old
+ * `yourtal-region` cookie, written only by the pre-registration onboarding
+ * picker, is retired.
  */
 export async function getRegion(): Promise<Region> {
   const cookieStore = await cookies();
-  const parsed = regionSchema.safeParse(cookieStore.get(REGION_COOKIE_NAME)?.value);
+  const parsed = regionSchema.safeParse(cookieStore.get(REGION_COOKIE)?.value);
   return parsed.success ? parsed.data : DEFAULT_REGION;
 }
 

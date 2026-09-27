@@ -12,11 +12,12 @@ import { BurnErrorMessage } from "./burn-error-message";
 import type { BurnError } from "./burn-errors";
 
 /**
- * YT-0405: `BurnErrorMessage` is a Client Component that reads its region
- * and translations ambiently (`useRegion()`/`useTranslations()`), exactly
- * as it does inside the real app via `app/(app)/layout.tsx`'s
- * `RegionProvider`/`NextIntlClientProvider` pair — so every render in this
- * file needs both providers, not just the bare component.
+ * `BurnErrorMessage` reads its display language and translations ambiently
+ * (`useLocale()`/`useTranslations()`, 6.1.b), exactly as it does inside the
+ * real app via `app/(app)/layout.tsx`'s `NextIntlClientProvider` — so every
+ * render in this file needs that provider. `RegionProvider` is kept here
+ * too even though this component no longer reads it, matching every other
+ * burn test's `renderWithRegion` helper (see `burn-summary.test.tsx`).
  */
 function renderWithRegion(ui: ReactNode, region: Region = "ID") {
   const { locale } = regionDisplayConfig(region);

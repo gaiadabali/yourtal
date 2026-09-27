@@ -1,14 +1,15 @@
 "use client";
 
-import { asDisplayPoints, formatPoints } from "@yourtal/contracts/money/format";
+import { asDisplayPoints, formatPointsIn } from "@yourtal/contracts/money/format";
+import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 export interface AccrualIndicatorProps {
   accruedPoints: number;
   totalPoints: number;
   isPlaying: boolean;
   isBackgrounded: boolean;
-  /** YT-0405: defaults to "id-ID" so existing callers are unaffected. */
-  locale?: "en-AU" | "id-ID";
+  /** No default (6.1.c) — a caller that forgets this must fail to compile, not silently render the wrong region's language. */
+  locale: SupportedLocale;
 }
 
 /**
@@ -38,16 +39,19 @@ export function AccrualIndicator({
   totalPoints,
   isPlaying,
   isBackgrounded,
-  locale = "id-ID",
+  locale,
 }: AccrualIndicatorProps) {
+  const t = getPlayerTranslator(locale);
   const isAccrualPaused = isPlaying && isBackgrounded;
   const percentComplete = totalPoints > 0 ? Math.min(100, (accruedPoints / totalPoints) * 100) : 0;
-  const totalLabel = formatPoints(asDisplayPoints(totalPoints), locale);
+  const totalLabel = formatPointsIn(locale, asDisplayPoints(totalPoints));
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-sans font-medium text-fg">Reward if you finish</span>
+        <span className="text-sm font-sans font-medium text-fg">
+          {t("accrual.rewardIfYouFinish")}
+        </span>
         <span className="text-sm font-sans font-semibold text-reward">{totalLabel}</span>
       </div>
       {/* A plain element rather than @yourtal/ui/progress: this bar is
@@ -58,7 +62,7 @@ export function AccrualIndicator({
           reader sees no difference. */}
       <div
         role="progressbar"
-        aria-label="Progress toward the reward"
+        aria-label={t("accrual.progressAriaLabel")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(percentComplete)}
@@ -68,8 +72,8 @@ export function AccrualIndicator({
       </div>
       <p role="status" aria-live="polite" className="text-xs font-sans text-fg-muted">
         {isAccrualPaused
-          ? "Reward accrual paused — this tab is in the background."
-          : `Nothing is paid until you finish the whole video and answer the checkpoint questions — then you receive ${totalLabel}.`}
+          ? t("accrual.paused")
+          : t("accrual.pendingUntilFinish", { points: totalLabel })}
       </p>
     </div>
   );

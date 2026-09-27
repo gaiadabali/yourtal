@@ -15,17 +15,17 @@ describe("formatListingPrice", () => {
 
 describe("formatExpiryDate", () => {
   it("formats an ISO instant as an absolute Indonesian date", () => {
-    expect(formatExpiryDate("2026-09-19T12:00:00.000Z")).toMatch(/2026/);
+    expect(formatExpiryDate("2026-09-19T12:00:00.000Z", "id-ID")).toMatch(/2026/);
   });
 });
 
 describe("formatStockRemaining", () => {
   it("shows the remaining count when stock is available", () => {
-    expect(formatStockRemaining(12)).toBe("12 tersisa");
+    expect(formatStockRemaining(12, "id-ID")).toBe("12 tersisa");
   });
 
   it("shows 'Habis' when stock is zero", () => {
-    expect(formatStockRemaining(0)).toBe("Habis");
+    expect(formatStockRemaining(0, "id-ID")).toBe("Habis");
   });
 });
 

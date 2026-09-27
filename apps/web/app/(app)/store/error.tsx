@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { StoreErrorPanel } from "@/features/store/store-error-panel";
 
 export interface StoreBoardErrorProps {
@@ -18,16 +19,17 @@ export interface StoreBoardErrorProps {
  * BFF exists yet (see store-data.ts).
  */
 export default function StoreBoardError({ error, reset }: StoreBoardErrorProps) {
+  const t = useTranslations("store");
   useEffect(() => {
     console.error("Store browse grid failed to load:", error);
   }, [error]);
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold text-fg">Store</h1>
+      <h1 className="text-2xl font-semibold text-fg">{t("pageTitle")}</h1>
       <StoreErrorPanel
-        title="Store gagal dimuat"
-        description="Terjadi kesalahan saat memuat katalog. Periksa koneksi kamu dan coba lagi."
+        title={t("boardError.title")}
+        description={t("boardError.description")}
         onRetry={reset}
       />
     </div>

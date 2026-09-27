@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Points } from "@yourtal/contracts/money";
-import { formatPoints } from "@yourtal/contracts/money/format";
+import { formatPointsIn } from "@yourtal/contracts/money/format";
 import { Button } from "@yourtal/ui/button";
 import { computeBalanceShortfall } from "./store-balance";
 import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
@@ -23,9 +23,9 @@ export interface StoreBalanceNoticeProps {
  * much more is needed and how to earn it"). `shortfallPoints` is a plain
  * arithmetic result, not a value that passed through the ledger's Zod
  * boundary; it is formatted with a plain `Intl.NumberFormat` rather than
- * `formatPoints` (YT-0405) because the `balance.insufficientHeading`
+ * `formatPointsIn` (YT-0405) because the `balance.insufficientHeading`
  * message already supplies its own unit word per locale ("poin" / "points")
- * — `formatPoints` would append a second one.
+ * — `formatPointsIn` would append a second one.
  *
  * "How to earn it" links to Earn (`/`) and Quick (`/quick`) rather than
  * computing a projected number of campaigns/days: that would require this
@@ -44,7 +44,7 @@ export function StoreBalanceNotice({
   if (shortfall.isAffordable) {
     return (
       <p className="text-sm text-success">
-        {t("balance.sufficient", { amount: formatPoints(availablePoints, locale) })}
+        {t("balance.sufficient", { amount: formatPointsIn(locale, availablePoints) })}
       </p>
     );
   }
@@ -58,8 +58,8 @@ export function StoreBalanceNotice({
       </p>
       <p className="text-xs text-fg-muted">
         {t("balance.insufficientDetail", {
-          available: formatPoints(availablePoints, locale),
-          required: formatPoints(priceInPoints, locale),
+          available: formatPointsIn(locale, availablePoints),
+          required: formatPointsIn(locale, priceInPoints),
         })}
       </p>
       <div className="flex flex-wrap gap-2">

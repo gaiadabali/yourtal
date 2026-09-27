@@ -5,7 +5,8 @@ import { StoreEmptyState } from "@/features/store/store-empty-state";
 import { listingLocations, listingMerchants } from "@/features/store/store-facets";
 import { filterListings } from "@/features/store/store-filter";
 import { StoreGrid } from "@/features/store/store-grid";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getDisplayLocale } from "@/i18n/get-locale";
+import { getStoreTranslator } from "@/features/store/store-i18n";
 
 /**
  * The Store browse grid (YT-0420) — `/store`, replacing the YT-0402
@@ -33,11 +34,12 @@ export default async function StorePage(props: PageProps<"/store">) {
   const visibleListings = filterListings(listings, params);
   const locationOptions = listingLocations(listings);
   const merchantOptions = listingMerchants(listings);
-  const { locale } = await getRegionDisplayConfig();
+  const locale = await getDisplayLocale();
+  const t = getStoreTranslator(locale);
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold text-fg">Store</h1>
+      <h1 className="text-2xl font-semibold text-fg">{t("pageTitle")}</h1>
       <StoreBoardControls locationOptions={locationOptions} merchantOptions={merchantOptions} />
       {visibleListings.length === 0 ? (
         <StoreEmptyState hasActiveFilters={hasActiveStoreFilters(params)} locale={locale} />

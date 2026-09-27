@@ -1,7 +1,11 @@
 {
   "header": {
     "signUp": "Daftar gratis",
-    "logIn": "Masuk"
+    "logIn": "Masuk",
+    "language": "Bahasa"
+  },
+  "breadcrumbNav": {
+    "ariaLabel": "Navigasi remah roti"
   },
   "breadcrumb": {
     "home": "Beranda",

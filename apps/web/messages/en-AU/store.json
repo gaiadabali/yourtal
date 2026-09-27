@@ -1,4 +1,5 @@
 {
+  "pageTitle": "Store",
   "balance": {
     "sufficient": "You have enough — {amount} available for this item.",
     "insufficientHeading": "You need {count} more points.",
@@ -63,5 +64,29 @@
     "bandAll": "All prices",
     "emptyFilteredBody": "Try changing or clearing one of the filters to see more.",
     "emptyNoneBody": "This catalogue is refreshed regularly — check back shortly."
+  },
+  "errorPanel": {
+    "retryLabel": "Try again"
+  },
+  "boardError": {
+    "title": "Store failed to load",
+    "description": "Something went wrong loading the catalogue. Check your connection and try again."
+  },
+  "offerError": {
+    "title": "Item failed to load",
+    "description": "Something went wrong loading this page. Check your connection and try again."
+  },
+  "notFound": {
+    "heading": "Item not found",
+    "body": "This item may no longer be available, or the link is wrong. Go back to Store to see what's still available.",
+    "cta": "Back to Store"
+  },
+  "redeem": {
+    "pageTitleWithName": "Redeem {itemTitle}",
+    "pageTitleGeneric": "Redeem points",
+    "loadingAnnouncement": "Loading redemption…",
+    "errorHeading": "The redemption page couldn't load",
+    "errorDescription": "Something went wrong loading this page. Your points have not been deducted — please try again.",
+    "errorRetryLabel": "Try again"
   }
 }

@@ -83,7 +83,7 @@ export function StoreOfferCard({ listing, balance, locale }: StoreOfferCardProps
           />
           <StoreOfferFact
             label={t("offer.locationLabel")}
-            value={listingDistricts(listing).join(", ")}
+            value={listingDistricts(listing, locale).join(", ")}
           />
           <StoreOfferFact
             label={t("offer.stockLabel")}
@@ -97,7 +97,7 @@ export function StoreOfferCard({ listing, balance, locale }: StoreOfferCardProps
 
         <StoreOfferRedeemSteps
           merchantName={listing.merchantName}
-          districts={listingDistricts(listing)}
+          districts={listingDistricts(listing, locale)}
           locale={locale}
         />
 

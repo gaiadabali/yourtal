@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getRedeemData } from "@/features/burn/burn-data";
 import { computeLockExpiresAt } from "@/features/burn/price-lock";
 import { BurnFlow } from "@/features/burn/burn-flow";
+import { getDisplayLocale } from "@/i18n/get-locale";
+import { getStoreTranslator } from "@/features/store/store-i18n";
 
 export interface RedeemPageProps {
   params: Promise<{ listingId: string }>;
@@ -20,8 +22,12 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: RedeemPageProps): Promise<Metadata> {
   const { listingId } = await params;
-  const data = await getRedeemData(listingId);
-  return { title: data ? `Tukar ${data.listing.title} · YourTal` : "Tukar Poin · YourTal" };
+  const [data, locale] = await Promise.all([getRedeemData(listingId), getDisplayLocale()]);
+  const t = getStoreTranslator(locale);
+  const title = data
+    ? t("redeem.pageTitleWithName", { itemTitle: data.listing.title })
+    : t("redeem.pageTitleGeneric");
+  return { title: `${title} · YourTal` };
 }
 
 /**
@@ -39,18 +45,21 @@ export async function generateMetadata({ params }: RedeemPageProps): Promise<Met
  */
 export default async function RedeemPage({ params }: RedeemPageProps) {
   const { listingId } = await params;
-  const data = await getRedeemData(listingId);
+  const [data, locale] = await Promise.all([getRedeemData(listingId), getDisplayLocale()]);
 
   if (!data) {
     notFound();
   }
 
+  const t = getStoreTranslator(locale);
   const lockExpiresAt = computeLockExpiresAt(new Date());
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col gap-4 p-4 pb-24">
       <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-sans font-semibold text-fg">Tukar Poin</h1>
+        <h1 className="text-xl font-sans font-semibold text-fg">
+          {t("redeem.pageTitleGeneric")}
+        </h1>
         <p className="text-sm font-sans text-fg-muted">{data.listing.merchantName}</p>
       </header>
       {/* Keyed by the quote's own expiry: a re-quote (a fresh render after

@@ -15,10 +15,10 @@ export interface CheckpointProgressProps {
  * a screen reader gets it from either the label paragraph or the widget
  * itself, whichever it lands on first.
  *
- * YT-0405: `locale` is required, not defaulted — this is a Server
- * Component reached from `checkpoint-question-step.tsx` (a Client
- * Component), which reads the real region via `useRegion()` and passes it
- * straight through, so there is no silent id-ID fallback here.
+ * `locale` is required, not defaulted — this is a Server Component reached
+ * from `checkpoint-question-step.tsx` (a Client Component), which reads the
+ * display language via `useLocale()` (6.1.b) and passes it straight
+ * through, so there is no silent id-ID fallback here.
  */
 export function CheckpointProgress({ current, total, locale }: CheckpointProgressProps) {
   const t = getCheckpointTranslator(locale);

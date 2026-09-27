@@ -1,7 +1,11 @@
 {
   "header": {
     "signUp": "Sign up free",
-    "logIn": "Log in"
+    "logIn": "Log in",
+    "language": "Language"
+  },
+  "breadcrumbNav": {
+    "ariaLabel": "Breadcrumb"
   },
   "breadcrumb": {
     "home": "Home",

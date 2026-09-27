@@ -41,5 +41,21 @@
     "sortReward": "Highest reward",
     "sortDuration": "Shortest",
     "sortNewest": "Newest"
+  },
+  "errorPanel": {
+    "retryLabel": "Try again"
+  },
+  "boardError": {
+    "title": "The earn board failed to load",
+    "description": "Something went wrong loading the campaign list. Check your connection and try again."
+  },
+  "entryError": {
+    "title": "Campaign failed to load",
+    "description": "Something went wrong loading this page. Check your connection and try again."
+  },
+  "notFound": {
+    "heading": "Campaign not found",
+    "body": "This campaign may have ended, or the link is wrong. Go back to Earn to see what's still running.",
+    "cta": "Back to Earn"
   }
 }

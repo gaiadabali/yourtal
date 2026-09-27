@@ -81,6 +81,7 @@ export default async function PublicOfferPage({ params }: PublicOfferPageProps) 
   return (
     <>
       <PublicBreadcrumbs
+        navAriaLabel={t("breadcrumbNav.ariaLabel")}
         items={[
           { name: t("breadcrumb.home"), url: publicUrl(locale, "/") },
           { name: t("breadcrumb.catalogue"), url: publicUrl(locale, "/rewards") },

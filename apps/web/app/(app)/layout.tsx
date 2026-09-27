@@ -21,9 +21,9 @@ export interface AppLayoutProps {
 // Server Components; see apps/web/features/shell/nav-link.tsx for the one
 // client leaf in the tree and the reasoning for why it exists.
 //
-// YT-0405: `getRegion()` resolves the region server-side (a cookie today,
-// defaulting to "ID" until registration writes a real choice) and
-// `RegionProvider` is the one Client Component boundary this file adds —
+// YT-0405: `getRegion()` resolves the region server-side (the `yt_region`
+// cookie, defaulting to "AU") and `RegionProvider` is the one Client
+// Component boundary this file adds —
 // it takes `children` as a prop and renders them straight through, so
 // `AppShell` and every route below stay Server Components exactly as
 // before. This makes every Phase U tab route dynamic (reading a cookie
@@ -36,11 +36,11 @@ export interface AppLayoutProps {
 // `NextIntlClientProvider` is the second, sibling Client Component boundary
 // (docs/15-stack-locked.md line 28's locked next-intl choice, YT-0405's
 // fourth acceptance criterion): `getLocale()`/`getMessages()` read from
-// `i18n/request.ts`, which itself resolves the locale from the very same
-// region cookie via `getRegionDisplayConfig()` — one source of truth for
-// "which locale/region is active," never two competing ones. This makes
-// `useTranslations()` available to any Client Component leaf the same way
-// `useRegion()` already is, with only the active locale's message
+// `i18n/request.ts`, which (6.1.b) resolves the DISPLAY locale from
+// `yt_locale` — independent of the `yt_region` cookie `getRegion()` reads
+// above, so an Australian account can read Indonesian and vice versa. This
+// makes `useTranslations()` available to any Client Component leaf the same
+// way `useRegion()` already is, with only the active locale's message
 // catalogues ever fetched (see that file's doc comment).
 export default async function AppLayout({ children }: AppLayoutProps) {
   const region = await getRegion();

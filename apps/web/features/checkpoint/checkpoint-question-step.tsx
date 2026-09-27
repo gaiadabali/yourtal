@@ -1,10 +1,10 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import type { Question } from "@yourtal/contracts/question";
-import { useRegion } from "@/features/region/use-region";
+import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
 import { CheckpointProgress } from "./checkpoint-progress";
 import { CheckpointTimer } from "./checkpoint-timer";
 import { isAnswerPresent, type QuestionAnswer } from "./checkpoint-types";
@@ -40,7 +40,7 @@ export function CheckpointQuestionStep({
 }: CheckpointQuestionStepProps) {
   const promptId = useId();
   const [isExpired, setIsExpired] = useState(false);
-  const { locale } = useRegion();
+  const locale = useLocale() as DisplayLocale;
   const t = useTranslations("checkpoint");
 
   function handleExpire() {

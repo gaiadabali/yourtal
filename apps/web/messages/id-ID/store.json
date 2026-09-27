@@ -1,4 +1,5 @@
 {
+  "pageTitle": "Toko",
   "balance": {
     "sufficient": "Saldo kamu cukup — {amount} tersedia untuk item ini.",
     "insufficientHeading": "Poin kamu belum cukup — kurang {count} poin lagi.",
@@ -63,5 +64,29 @@
     "bandAll": "Semua harga",
     "emptyFilteredBody": "Coba ubah atau hapus salah satu filter untuk melihat lebih banyak pilihan.",
     "emptyNoneBody": "Katalog ini diperbarui secara berkala — coba kembali lagi sebentar lagi."
+  },
+  "errorPanel": {
+    "retryLabel": "Coba lagi"
+  },
+  "boardError": {
+    "title": "Store gagal dimuat",
+    "description": "Terjadi kesalahan saat memuat katalog. Periksa koneksi kamu dan coba lagi."
+  },
+  "offerError": {
+    "title": "Item gagal dimuat",
+    "description": "Terjadi kesalahan saat memuat halaman ini. Periksa koneksi kamu dan coba lagi."
+  },
+  "notFound": {
+    "heading": "Item tidak ditemukan",
+    "body": "Item ini mungkin sudah tidak tersedia atau tautannya salah. Coba kembali ke Store untuk melihat katalog yang masih aktif.",
+    "cta": "Kembali ke Store"
+  },
+  "redeem": {
+    "pageTitleWithName": "Tukar {itemTitle}",
+    "pageTitleGeneric": "Tukar Poin",
+    "loadingAnnouncement": "Memuat penukaran…",
+    "errorHeading": "Halaman penukaran tidak dapat dimuat",
+    "errorDescription": "Terjadi kesalahan saat memuat halaman ini. Poin Anda belum dipotong — silakan coba lagi.",
+    "errorRetryLabel": "Coba lagi"
   }
 }

@@ -1,5 +1,5 @@
 import type { MinorUnits, Points } from "@yourtal/contracts/money";
-import { formatMoney, formatPoints } from "@yourtal/contracts/money/format";
+import { formatMoney, formatPointsIn } from "@yourtal/contracts/money/format";
 
 /**
  * Price and date formatting for the Store (YT-0420/YT-0421). Uses
@@ -8,10 +8,10 @@ import { formatMoney, formatPoints } from "@yourtal/contracts/money/format";
  * module's own docstring for why the split exists. Type-only imports of
  * `MinorUnits`/`Points` are free (`verbatimModuleSyntax` erases them).
  *
- * YT-0405/YT-0513: `locale` is optional (defaults to `id-ID`), but
- * `currency` is REQUIRED and never defaulted — an amount is only ever the
- * listing's/voucher's own `currency` field, never a viewer's region, so
- * there is no safe default to fall back to.
+ * `locale` and `currency` are both REQUIRED and never defaulted (6.1.c) —
+ * an amount is only ever the listing's/voucher's own `currency` field,
+ * never a viewer's region, and a caller that forgets `locale` must fail to
+ * compile rather than silently render the wrong region's language.
  */
 type SupportedLocale = "en-AU" | "id-ID";
 type SupportedCurrency = "AUD" | "IDR";
@@ -37,11 +37,11 @@ const WORTH_WORD: Record<SupportedLocale, string> = {
 export function formatListingPrice(
   priceInPoints: Points,
   faceValueMinor: MinorUnits,
-  locale: SupportedLocale = "id-ID",
+  locale: SupportedLocale,
   currency: SupportedCurrency,
 ): ListingPriceDisplay {
   return {
-    pointsLabel: formatPoints(priceInPoints, locale),
+    pointsLabel: formatPointsIn(locale, priceInPoints),
     faceValueLabel: `${WORTH_WORD[locale]} ${formatMoney(faceValueMinor, currency)}`,
   };
 }
@@ -60,7 +60,7 @@ const EXPIRY_DATE_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
  * field (docs/09, `listing.ts`) already carries the "expiring soon" signal
  * for the badge (see store-status.ts).
  */
-export function formatExpiryDate(expiresAtIso: string, locale: SupportedLocale = "id-ID"): string {
+export function formatExpiryDate(expiresAtIso: string, locale: SupportedLocale): string {
   return EXPIRY_DATE_FORMATTERS[locale].format(new Date(expiresAtIso));
 }
 
@@ -80,10 +80,7 @@ const SOLD_OUT_WORD: Record<SupportedLocale, string> = {
 };
 
 /** e.g. "12 tersisa"/"12 left", or "Habis"/"Sold out" for a sold-out listing. */
-export function formatStockRemaining(
-  stockRemaining: number,
-  locale: SupportedLocale = "id-ID",
-): string {
+export function formatStockRemaining(stockRemaining: number, locale: SupportedLocale): string {
   return stockRemaining > 0
     ? `${STOCK_NUMBER_FORMATTERS[locale].format(stockRemaining)} ${STOCK_REMAINING_WORD[locale]}`
     : SOLD_OUT_WORD[locale];

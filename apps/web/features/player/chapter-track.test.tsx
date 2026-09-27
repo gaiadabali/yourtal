@@ -18,6 +18,7 @@ describe("ChapterTrack", () => {
         reachedChapterIndex={0}
         currentSeconds={200}
         onSelectChapter={vi.fn()}
+        locale="en-AU"
       />,
     );
     const buttons = screen.getAllByRole("button");
@@ -40,6 +41,7 @@ describe("ChapterTrack", () => {
         reachedChapterIndex={-1}
         currentSeconds={0}
         onSelectChapter={onSelectChapter}
+        locale="en-AU"
       />,
     );
 
@@ -56,6 +58,7 @@ describe("ChapterTrack", () => {
         reachedChapterIndex={-1}
         currentSeconds={0}
         onSelectChapter={onSelectChapter}
+        locale="en-AU"
       />,
     );
 
@@ -72,6 +75,7 @@ describe("ChapterTrack", () => {
         reachedChapterIndex={0}
         currentSeconds={200}
         onSelectChapter={vi.fn()}
+        locale="en-AU"
       />,
     );
     expect(screen.queryByText(/point|poin/i)).not.toBeInTheDocument();

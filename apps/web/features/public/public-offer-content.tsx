@@ -65,7 +65,7 @@ export function PublicOfferContent({ listing, locale, merchantHref }: PublicOffe
           />
           <PublicFact
             label={t("offer.districtLabel")}
-            value={listingDistricts(listing).join(", ")}
+            value={listingDistricts(listing, locale.intlLocale).join(", ")}
           />
           <PublicFact
             label={t("offer.stockLabel")}

@@ -8,6 +8,7 @@ import { useWatchSession } from "@/features/player/use-watch-session";
 import { PlayerControls } from "@/features/player/player-controls";
 import { PlayIcon } from "@/features/player/player-icons";
 import { SeekSlider } from "@/features/player/seek-slider";
+import type { SupportedLocale } from "@/features/player/player-i18n";
 import { buildOpenViewSignupHref } from "./open-view-signup-href";
 import { OpenViewChapterTrack } from "./open-view-chapter-track";
 import { OpenViewForegoneRewardBanner } from "./open-view-foregone-reward-banner";
@@ -29,6 +30,7 @@ export interface OpenViewPlayerProps {
   campaign: Campaign;
   chapters: readonly PlayerChapter[];
   copy: OpenViewCopy;
+  locale: SupportedLocale;
 }
 
 /**
@@ -51,7 +53,7 @@ export interface OpenViewPlayerProps {
  * `AccrualIndicator`, so `false` is passed literally rather than pulling in
  * `useTabVisibility` for a value nothing here would use.
  */
-export function OpenViewPlayer({ campaign, chapters, copy }: OpenViewPlayerProps) {
+export function OpenViewPlayer({ campaign, chapters, copy, locale }: OpenViewPlayerProps) {
   const session = useWatchSession(campaign, chapters, false);
   const showStartOverlay = !session.hasStarted && !session.resumeOffer;
   const signupHref = buildOpenViewSignupHref(campaign.id);
@@ -66,10 +68,13 @@ export function OpenViewPlayer({ campaign, chapters, copy }: OpenViewPlayerProps
             claim of any kind (YT-0432's first acceptance criterion). */}
         <video ref={session.videoRef} className="h-full w-full" playsInline aria-hidden="true" />
         {showStartOverlay ? (
+          // Same reasoning as features/player/video-player.tsx: a full-bleed
+          // hit target over the video, not a styled button.
+          // eslint-disable-next-line yt-b/prefer-primitives
           <button
             type="button"
             onClick={session.handlePlay}
-            aria-label={`Play ${campaign.title}`}
+            aria-label={copy.playAriaLabel}
             className="absolute inset-0 flex items-center justify-center bg-fg/40 text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <PlayIcon className="h-14 w-14" />
@@ -88,6 +93,7 @@ export function OpenViewPlayer({ campaign, chapters, copy }: OpenViewPlayerProps
         <ResumePrompt
           positionSeconds={session.resumeOffer.positionSeconds}
           onChoose={session.dismissResumeOffer}
+          locale={locale}
         />
       ) : null}
 
@@ -103,6 +109,7 @@ export function OpenViewPlayer({ campaign, chapters, copy }: OpenViewPlayerProps
         durationSeconds={campaign.durationSeconds}
         chapters={chapters}
         onSeek={session.handleSeekTo}
+        locale={locale}
       />
 
       <OpenViewChapterTrack
@@ -113,6 +120,7 @@ export function OpenViewPlayer({ campaign, chapters, copy }: OpenViewPlayerProps
         watchedLabel={copy.chapterWatchedStatus}
         watchingLabel={copy.chapterWatchingStatus}
         upcomingLabel={copy.chapterUpcomingStatus}
+        chaptersAriaLabel={copy.chaptersAriaLabel}
       />
 
       <PlayerControls
@@ -123,6 +131,7 @@ export function OpenViewPlayer({ campaign, chapters, copy }: OpenViewPlayerProps
         onPause={session.handlePause}
         qualityTierId={session.qualityTierId}
         onSelectQuality={session.setQualityTierId}
+        locale={locale}
       />
 
       {session.hasEnded ? (
@@ -135,7 +144,7 @@ export function OpenViewPlayer({ campaign, chapters, copy }: OpenViewPlayerProps
       ) : null}
 
       <p role="status" aria-live="polite" className="sr-only">
-        {session.isPlaying ? "Playing" : session.hasStarted ? "Paused" : ""}
+        {session.isPlaying ? copy.playingStatus : session.hasStarted ? copy.pausedStatus : ""}
       </p>
     </div>
   );

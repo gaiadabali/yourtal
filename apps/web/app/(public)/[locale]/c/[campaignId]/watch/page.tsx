@@ -78,6 +78,7 @@ export default async function OpenViewWatchPage({ params }: OpenViewWatchPagePro
   return (
     <>
       <PublicBreadcrumbs
+        navAriaLabel={t("breadcrumbNav.ariaLabel")}
         items={[
           { name: t("breadcrumb.home"), url: publicUrl(locale, "/") },
           { name: campaign.merchantName, url: publicUrl(locale, `/m/${merchantSlug}`) },
@@ -85,7 +86,12 @@ export default async function OpenViewWatchPage({ params }: OpenViewWatchPagePro
           { name: copy.breadcrumbLabel, url: publicUrl(locale, `/c/${campaign.id}/watch`) },
         ]}
       />
-      <OpenViewPlayer campaign={campaign} chapters={chapters} copy={copy} />
+      <OpenViewPlayer
+        campaign={campaign}
+        chapters={chapters}
+        copy={copy}
+        locale={config.intlLocale}
+      />
     </>
   );
 }

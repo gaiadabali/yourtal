@@ -1,5 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
-import { formatPoints } from "@yourtal/contracts/money/format";
+import { formatPointsIn } from "@yourtal/contracts/money/format";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent } from "@yourtal/ui/card";
@@ -53,13 +53,13 @@ export function CampaignEntryCard({ campaign, locale }: CampaignEntryCardProps) 
           />
           <EntryCardFact
             label={t("entry.baseReward")}
-            value={formatPoints(baseRewardPoints, locale)}
+            value={formatPointsIn(locale, baseRewardPoints)}
             valueClassName="text-reward"
           />
           {maxAccuracyBonusPoints > 0 ? (
             <EntryCardFact
               label={t("entry.accuracyBonus")}
-              value={t("entry.upToBonus", { amount: formatPoints(maxAccuracyBonusPoints, locale) })}
+              value={t("entry.upToBonus", { amount: formatPointsIn(locale, maxAccuracyBonusPoints) })}
               valueClassName="text-reward"
             />
           ) : null}

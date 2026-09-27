@@ -96,7 +96,7 @@ export async function loginAction(formData: FormData): Promise<void> {
 export async function logoutAction(): Promise<void> {
   await apiFetch("/api/auth/logout", logoutResponseSchema, { method: "POST" });
   await clearSessionCookie();
-  redirect("/login" as Route);
+  redirect("/login");
 }
 
 /**

@@ -1,7 +1,10 @@
 import { eq } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { counterAuthorizationMeta } from "./schema/counter-authorization-meta.table";
-import type { AuthorizationMeta, AuthorizationMetaRepository } from "./authorization-meta.repository";
+import type {
+  AuthorizationMeta,
+  AuthorizationMetaRepository,
+} from "./authorization-meta.repository";
 
 export class DrizzleAuthorizationMetaRepository implements AuthorizationMetaRepository {
   constructor(private readonly db: AppDb) {}

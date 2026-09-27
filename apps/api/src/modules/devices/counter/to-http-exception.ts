@@ -12,8 +12,7 @@ import type { PersistenceFailedError } from "../devices.errors";
 const logger = new Logger("CounterErrorMapper");
 
 export type CounterDomainError =
-  | { readonly code: LedgerErrorCode; readonly message: string }
-  | PersistenceFailedError;
+  { readonly code: LedgerErrorCode; readonly message: string } | PersistenceFailedError;
 
 /** `VoucherError` is the closed `LedgerError` enum (1.2.c) — one mapper for both this module's error sources. */
 export function mapCounterErrorToHttpException(error: CounterDomainError): HttpException {

@@ -49,7 +49,11 @@ export class DeviceAuthorize {
    */
   async requireDevice<K extends ResourceKind>(
     request: FastifyRequest,
-    resourceFrom: (principal: Principal) => { kind: K; id: string; attr?: Readonly<Record<string, unknown>> },
+    resourceFrom: (principal: Principal) => {
+      kind: K;
+      id: string;
+      attr?: Readonly<Record<string, unknown>>;
+    },
     action: ActionFor<K>,
   ): Promise<Principal> {
     // Resolve() itself throws UnauthorizedException for an unknown, expired

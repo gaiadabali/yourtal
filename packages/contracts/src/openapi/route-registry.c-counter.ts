@@ -46,7 +46,8 @@ const VOUCHER_NOT_FOUND: RouteErrorResponse = {
 
 const ALREADY_CAPTURED: RouteErrorResponse = {
   status: 409,
-  description: "This authorization was already captured, or the voucher is not in a spendable state.",
+  description:
+    "This authorization was already captured, or the voucher is not in a spendable state.",
   documented: true,
 };
 
@@ -116,7 +117,8 @@ export const COUNTER_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["counter"],
     pathParams: [],
     requestBody: {
-      description: "The voucher code, the amount (omit for the full remaining value), and the order's own reference and total.",
+      description:
+        "The voucher code, the amount (omit for the full remaining value), and the order's own reference and total.",
       schema: counterAuthorizeRequestBodySchema,
     },
     successStatus: 200,
@@ -130,11 +132,20 @@ export const COUNTER_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "Capture a held authorization",
     tags: ["counter"],
     pathParams: [],
-    requestBody: { description: "The authorization to capture.", schema: counterCaptureRequestBodySchema },
+    requestBody: {
+      description: "The authorization to capture.",
+      schema: counterCaptureRequestBodySchema,
+    },
     successStatus: 200,
     successDescription: "The receipt — never reachable for a void or a refund (8.2.c).",
     successSchema: inlineSchema(counterCaptureSchema),
-    errors: [VALIDATION_400, COUNTER_UNAUTHORIZED, ALREADY_CAPTURED, VOUCHER_NOT_FOUND, SERVICE_UNAVAILABLE],
+    errors: [
+      VALIDATION_400,
+      COUNTER_UNAUTHORIZED,
+      ALREADY_CAPTURED,
+      VOUCHER_NOT_FOUND,
+      SERVICE_UNAVAILABLE,
+    ],
   },
   {
     method: "get",

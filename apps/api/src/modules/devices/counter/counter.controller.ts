@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Inject,
-  Post,
-  Req,
-} from "@nestjs/common";
+import { Body, Controller, Get, Inject, Post, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import type { Principal } from "@yourtal/authz/principal";
 import { Idempotent, NotValueMoving } from "../../../shared/idempotency/idempotent.decorator";
@@ -18,10 +11,7 @@ import { CAPTURE_LOG_REPOSITORY } from "../persistence/capture-log.repository";
 import type { CaptureLogRepository } from "../persistence/capture-log.repository";
 import { VOUCHER_INTERNAL_CLIENT } from "../../../shared/voucher-client/voucher-internal-client";
 import type { VoucherInternalClient } from "../../../shared/voucher-client/voucher-internal-client";
-import {
-  COUNTER_AUTHORIZE_RETENTION_MS,
-  COUNTER_CAPTURE_RETENTION_MS,
-} from "../retention";
+import { COUNTER_AUTHORIZE_RETENTION_MS, COUNTER_CAPTURE_RETENTION_MS } from "../retention";
 import { CounterAuthorizeDto, CounterCaptureDto, CounterLookupDto } from "./dto/counter.schema";
 import { lookupVoucher } from "./use-cases/lookup-voucher.use-case";
 import { authorizeVoucher } from "./use-cases/authorize-voucher.use-case";
@@ -65,7 +55,11 @@ export class CounterController {
   async lookup(@Body() body: CounterLookupDto, @Req() request: FastifyRequest) {
     const principal = await this.authorize.requireDevice(
       request,
-      (p) => ({ kind: "redemption", id: `redemption-${deviceScope(p).businessId}`, attr: deviceScope(p) }),
+      (p) => ({
+        kind: "redemption",
+        id: `redemption-${deviceScope(p).businessId}`,
+        attr: deviceScope(p),
+      }),
       "lookup",
     );
     const { businessId } = deviceScope(principal);
@@ -81,7 +75,11 @@ export class CounterController {
   async authorizeRoute(@Body() body: CounterAuthorizeDto, @Req() request: FastifyRequest) {
     const principal = await this.authorize.requireDevice(
       request,
-      (p) => ({ kind: "redemption", id: `redemption-${deviceScope(p).businessId}`, attr: deviceScope(p) }),
+      (p) => ({
+        kind: "redemption",
+        id: `redemption-${deviceScope(p).businessId}`,
+        attr: deviceScope(p),
+      }),
       "authorize",
     );
     const { businessId, locationId } = deviceScope(principal);
@@ -106,7 +104,11 @@ export class CounterController {
   async captureRoute(@Body() body: CounterCaptureDto, @Req() request: FastifyRequest) {
     const principal = await this.authorize.requireDevice(
       request,
-      (p) => ({ kind: "redemption", id: `redemption-${deviceScope(p).businessId}`, attr: deviceScope(p) }),
+      (p) => ({
+        kind: "redemption",
+        id: `redemption-${deviceScope(p).businessId}`,
+        attr: deviceScope(p),
+      }),
       "capture",
     );
     const { businessId, locationId } = deviceScope(principal);

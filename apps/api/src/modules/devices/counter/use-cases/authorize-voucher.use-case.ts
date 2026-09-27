@@ -1,6 +1,12 @@
 import type { ResultAsync } from "neverthrow";
-import type { CounterAuthorizeRequest, CounterAuthorization } from "@yourtal/contracts/device/counter-redemption";
-import type { VoucherError, VoucherInternalClient } from "../../../../shared/voucher-client/voucher-internal-client";
+import type {
+  CounterAuthorizeRequest,
+  CounterAuthorization,
+} from "@yourtal/contracts/device/counter-redemption";
+import type {
+  VoucherError,
+  VoucherInternalClient,
+} from "../../../../shared/voucher-client/voucher-internal-client";
 import type { AuthorizationMetaRepository } from "../../persistence/authorization-meta.repository";
 import type { PersistenceFailedError } from "../../devices.errors";
 import { wrapPersistence } from "../../wrap-persistence";

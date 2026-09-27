@@ -1,7 +1,10 @@
 import type { ResultAsync } from "neverthrow";
 import type { VoucherPreview } from "@yourtal/contracts/voucher-internal/redemption";
 import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
-import type { VoucherError, VoucherInternalClient } from "../../../../shared/voucher-client/voucher-internal-client";
+import type {
+  VoucherError,
+  VoucherInternalClient,
+} from "../../../../shared/voucher-client/voucher-internal-client";
 
 function toView(preview: VoucherPreview): CounterVoucherPreview {
   return {
@@ -21,7 +24,5 @@ export function lookupVoucher(
   businessId: string,
   code: string,
 ): ResultAsync<CounterVoucherPreview, VoucherError> {
-  return vouchers
-    .lookupAsDevice({ voucherCode: code, merchantId: businessId })
-    .map(toView);
+  return vouchers.lookupAsDevice({ voucherCode: code, merchantId: businessId }).map(toView);
 }

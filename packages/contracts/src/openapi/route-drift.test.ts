@@ -217,6 +217,10 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "GET /api/{tenantId}/studio/billing/campaigns/{campaignId}/spend":
     "BillingModule -- TASKS.md 7.5.b, this pass's own ticket.",
 
+  // ReportsModule -- TASKS.md 7.6, this pass's own ticket.
+  "GET /api/{tenantId}/studio/reports/campaigns/{campaignId}":
+    "ReportsModule -- TASKS.md 7.6.a, this pass's own ticket.",
+
   // AuthModule -- YT-0540. No `:tenantId`, matching create-business's own
   // out-of-scope entry pattern: these are account-level, not business-level.
   // Not given a full route-registry entry for the same reason StoreModule

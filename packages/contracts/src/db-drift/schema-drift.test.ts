@@ -375,8 +375,7 @@ const MAPPINGS: readonly Mapping[] = [
         "DERIVED, deliberately (TASKS.md 8.1.a) — the same call campaignSchema.status and voucherSchema.status make for their own derived fields. `studio-devices.controller.ts`'s toView computes pending/paired/revoked from paired_at/revoked_at rather than storing a third, redundant copy of that fact.",
     },
     columnsWithNoField: {
-      pin_hash:
-        "Argon2id, never returned to any client — the whole point of hashing it (8.1.a).",
+      pin_hash: "Argon2id, never returned to any client — the whole point of hashing it (8.1.a).",
       credential_hash:
         "sha256 of the device's bearer secret, never returned — the plaintext secret itself is returned exactly once, from POST /api/devices/pair, and never stored at all.",
       pairing_code_hash:

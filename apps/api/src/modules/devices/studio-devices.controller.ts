@@ -8,7 +8,10 @@ import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { PROVISION_DEVICE_RETENTION_MS } from "./retention";
 import { COUNTER_DEVICE_REPOSITORY } from "./persistence/counter-device.repository";
-import type { CounterDeviceRepository, CounterDeviceRow } from "./persistence/counter-device.repository";
+import type {
+  CounterDeviceRepository,
+  CounterDeviceRow,
+} from "./persistence/counter-device.repository";
 import { MERCHANT_LOCATION_LOOKUP } from "./persistence/merchant-location-lookup";
 import type { MerchantLocationLookup } from "./persistence/merchant-location-lookup";
 import { BUSINESS_REGION_LOOKUP } from "../store/persistence/business-region-lookup";

@@ -98,7 +98,11 @@ export class DrizzleCounterDeviceRepository implements CounterDeviceRepository {
   }
 
   /** Single statement, single-use: two racing pairing attempts cannot both win (8.1.a). */
-  async pair(deviceId: string, credentialHash: string, now: Date): Promise<CounterDeviceRow | null> {
+  async pair(
+    deviceId: string,
+    credentialHash: string,
+    now: Date,
+  ): Promise<CounterDeviceRow | null> {
     const [row] = await this.db
       .update(counterDevices)
       .set({ credentialHash, pairedAt: now })

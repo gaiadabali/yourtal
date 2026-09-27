@@ -526,7 +526,8 @@ const DEVICE_ID_PARAM: RoutePathParam = {
 
 const LOCATION_NOT_FOUND: RouteErrorResponse = {
   status: 404,
-  description: "locationId is not one of this business's own (devices.errors.ts's location_not_found).",
+  description:
+    "locationId is not one of this business's own (devices.errors.ts's location_not_found).",
   documented: true,
 };
 
@@ -639,9 +640,13 @@ export const DEVICE_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "Claim a provisioned device's credential with its one-time pairing code",
     tags: ["devices"],
     pathParams: [],
-    requestBody: { description: "The pairing code shown in Studio.", schema: pairDeviceRequestBodySchema },
+    requestBody: {
+      description: "The pairing code shown in Studio.",
+      schema: pairDeviceRequestBodySchema,
+    },
     successStatus: 200,
-    successDescription: "The device's bearer credential — shown exactly once; there is no later read.",
+    successDescription:
+      "The device's bearer credential — shown exactly once; there is no later read.",
     successSchema: pairDeviceResponseSchema,
     errors: [VALIDATION_400, PAIRING_CODE_INVALID, SERVICE_UNAVAILABLE],
   },

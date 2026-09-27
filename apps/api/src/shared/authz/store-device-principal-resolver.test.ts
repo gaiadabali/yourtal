@@ -88,8 +88,8 @@ describe("StoreDevicePrincipalResolver (1.5.c)", () => {
   it("401s a secret with no device id header — a bare Authorization header is still a credential presented", async () => {
     const verifier: DeviceCredentialVerifier = { verify: () => Promise.resolve(null) };
     const resolver = new StoreDevicePrincipalResolver(verifier);
-    await expect(
-      resolver.resolve(requestWith(undefined, "some-secret")),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(resolver.resolve(requestWith(undefined, "some-secret"))).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 });

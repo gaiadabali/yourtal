@@ -25,7 +25,9 @@ export class CounterDeviceCredentialVerifier implements DeviceCredentialVerifier
 
   async verify(credential: DeviceCredential): Promise<VerifiedDeviceCredential | null> {
     if (credential.secret === undefined) return null;
-    const device = await this.devices.findActiveByCredentialHash(hashDeviceSecret(credential.secret));
+    const device = await this.devices.findActiveByCredentialHash(
+      hashDeviceSecret(credential.secret),
+    );
     if (device === null) return null;
     return {
       deviceId: device.id,

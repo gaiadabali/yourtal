@@ -3,7 +3,10 @@ import type { ResultAsync } from "neverthrow";
 import { hash as argon2Hash } from "@node-rs/argon2";
 import type { Region } from "@yourtal/contracts/region";
 import type { ProvisionDeviceError } from "../devices.errors";
-import type { CounterDeviceRepository, CounterDeviceRow } from "../persistence/counter-device.repository";
+import type {
+  CounterDeviceRepository,
+  CounterDeviceRow,
+} from "../persistence/counter-device.repository";
 import type { MerchantLocationLookup } from "../persistence/merchant-location-lookup";
 import { issuePairingCode } from "../crypto/device-token";
 import { wrapPersistence } from "../wrap-persistence";

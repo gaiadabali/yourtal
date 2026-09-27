@@ -10,7 +10,9 @@ export class DrizzleMerchantLocationLookup implements MerchantLocationLookup {
     const [row] = await this.db
       .select({ id: merchantLocations.id })
       .from(merchantLocations)
-      .where(and(eq(merchantLocations.id, locationId), eq(merchantLocations.merchantId, businessId)))
+      .where(
+        and(eq(merchantLocations.id, locationId), eq(merchantLocations.merchantId, businessId)),
+      )
       .limit(1);
     return row !== undefined;
   }

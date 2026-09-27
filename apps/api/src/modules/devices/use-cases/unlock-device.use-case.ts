@@ -2,7 +2,10 @@ import { errAsync } from "neverthrow";
 import type { ResultAsync } from "neverthrow";
 import { verify as argon2Verify } from "@node-rs/argon2";
 import type { UnlockDeviceError } from "../devices.errors";
-import type { CounterDeviceRepository, CounterDeviceRow } from "../persistence/counter-device.repository";
+import type {
+  CounterDeviceRepository,
+  CounterDeviceRow,
+} from "../persistence/counter-device.repository";
 import { wrapPersistence } from "../wrap-persistence";
 
 const MAX_ATTEMPTS = 5;

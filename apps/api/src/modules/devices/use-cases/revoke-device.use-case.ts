@@ -1,7 +1,10 @@
 import { errAsync, okAsync } from "neverthrow";
 import type { ResultAsync } from "neverthrow";
 import type { RevokeDeviceError } from "../devices.errors";
-import type { CounterDeviceRepository, CounterDeviceRow } from "../persistence/counter-device.repository";
+import type {
+  CounterDeviceRepository,
+  CounterDeviceRow,
+} from "../persistence/counter-device.repository";
 import { wrapPersistence } from "../wrap-persistence";
 
 /** Devices are revoked from Studio only (TASKS.md 8.1.a) — no other route ever calls this. */

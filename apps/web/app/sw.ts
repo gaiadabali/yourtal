@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Serwist } from "serwist";
+import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from "serwist";
+import { NetworkOnly, Serwist } from "serwist";
 
 /**
  * The Serwist service worker (YT-0424: "renders from cache with the network
@@ -29,6 +29,23 @@ import { Serwist } from "serwist";
  * `defaultCache` degrades to `NetworkOnly` for everything — this SW
  * intentionally caches nothing while running `next dev`, only a real
  * production build.
+ *
+ * 6.9.b: `defaultCache`'s page/RSC/API caches key purely by request URL —
+ * there is no cookie in a Cache API key, and a service worker cannot read
+ * the `Cookie` header off an intercepted request either (the platform
+ * strips it before JS ever sees it). So "key the cache per session" is not
+ * reachable; what IS reachable, and is what actually matters for YT-0424's
+ * red line ("no one signed-in user's page is ever handed to another"), is
+ * clearing every runtime-cached page whenever the session itself changes —
+ * a fresh login, a fresh register, or a logout. `sessionBoundaryCaching`
+ * below hooks exactly those three `/api/auth/*` calls (the SAME ones
+ * `defaultCache` already routes `NetworkOnly`, ahead of it in this array so
+ * it wins the match) and, once the network genuinely confirms the boundary
+ * (a non-ok response — a failed login attempt, say — changes nothing),
+ * empties every page/RSC/API runtime cache. The device's very next
+ * navigation for whichever session is now active repopulates them from a
+ * real, fresh, same-session fetch; nothing stale from a DIFFERENT session
+ * is ever left for an offline read to find.
  */
 
 declare global {
@@ -39,12 +56,43 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+/** Every runtime (non-precache) cache `defaultCache` writes an authenticated response into. Static assets (fonts, `_next/static`, images) are left alone — nothing session-specific lives there. */
+const SESSION_SCOPED_CACHE_NAMES = [
+  "pages",
+  "pages-rsc",
+  "pages-rsc-prefetch",
+  "apis",
+  "next-data",
+  "static-data-assets",
+  "others",
+];
+
+async function clearSessionScopedCaches(): Promise<void> {
+  await Promise.all(SESSION_SCOPED_CACHE_NAMES.map((name) => caches.delete(name)));
+}
+
+const sessionBoundaryCaching: RuntimeCaching = {
+  matcher: /\/api\/auth\/(login|register|logout)$/,
+  method: "POST",
+  handler: new NetworkOnly({
+    networkTimeoutSeconds: 10,
+    plugins: [
+      {
+        fetchDidSucceed: async ({ response }) => {
+          if (response.ok) await clearSessionScopedCaches();
+          return response;
+        },
+      },
+    ],
+  }),
+};
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [sessionBoundaryCaching, ...defaultCache],
 });
 
 serwist.addEventListeners();

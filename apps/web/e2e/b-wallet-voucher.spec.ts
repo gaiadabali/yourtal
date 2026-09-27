@@ -1,20 +1,26 @@
 import { randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import type { APIRequestContext, Page } from "@playwright/test";
-import pg from "pg";
+import type { Page } from "@playwright/test";
+import type pg from "pg";
 import {
-  SERVICE_SIGNATURE_HEADER,
-  signServiceRequest,
-} from "@yourtal/contracts/ledger-internal/service-signature";
-import { grantActionRequestSchema } from "@yourtal/contracts/ledger-internal/rewards";
-import { priceListingRequestSchema } from "@yourtal/contracts/ledger-internal/pricing";
-import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
+  apiBaseUrl,
+  checkoutListing,
+  ensureAccount,
+  grantPointsBestEffort,
+  openLiveDbPool,
+  seedListing,
+  walletBalanceViaToken,
+} from "./live-voucher-fixture";
+import type { TestAccount } from "./live-voucher-fixture";
 
 /**
  * 6.5.c's Check, against a LIVE ledger and voucher service (not
  * `LEDGER_MODE=fake`) — see `playwright.b-wallet.config.ts` for why this
  * spec has its own config, same reasoning as `a-identity-plumbing.spec.ts`.
+ * Fixture seeding (accounts, a real priced listing, grants, checkout) is
+ * shared with `offline-voucher-detail.spec.ts` (6.9) via
+ * `live-voucher-fixture.ts` — one recipe, not two drifting copies.
  *
  * `WALLET_VOUCHER_LIVE=1` opt-in gate, same convention as
  * `checkout.live.test.ts`'s `CHECKOUT_LIVE=1`: this spec needs a REAL
@@ -25,7 +31,8 @@ import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
  * migration (Phase 0/1), and `checkout.live.test.ts`'s own `listing()`
  * helper (4.7.d, already ✅ on main) seeds one exactly this way: a raw
  * insert plus the ledger's real `priceListing` and the voucher service's
- * real `requestBatch`/`approveBatch`. This spec reuses that same recipe.
+ * real `requestBatch`/`approveBatch`. `live-voucher-fixture.ts` reuses that
+ * same recipe.
  *
  * Run it like this, from the repo root, with your slot's `.env` sourced:
  *
@@ -70,178 +77,13 @@ import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 const live = process.env["WALLET_VOUCHER_LIVE"] === "1";
 test.skip(!live, "needs a live ledger+voucher — see this file's header for how to run it");
 
-const LEDGER_BASE_URL = process.env["LEDGER_BASE_URL"] ?? "http://127.0.0.1:27110";
-const VOUCHER_BASE_URL = process.env["VOUCHER_BASE_URL"] ?? "http://127.0.0.1:27111";
-const LEDGER_SECRET =
-  process.env["LEDGER_SERVICE_SECRET"] ?? "local-only-ledger-service-secret-not-real";
-const VOUCHER_SECRET =
-  process.env["VOUCHER_SERVICE_SECRET"] ?? "local-only-voucher-service-secret-not-real";
-const DATABASE_OWNER_URL =
-  process.env["DATABASE_OWNER_URL"] ??
-  "postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal_s3b";
-
-function apiBaseUrl(): string {
-  const url = process.env["API_INTERNAL_URL"];
-  if (url === undefined || url === "") {
-    throw new Error("API_INTERNAL_URL is not set — source this worktree's .env first.");
-  }
-  return url;
-}
-
-async function signedPost(
-  baseUrl: string,
-  secret: string,
-  path: string,
-  payload: unknown,
-): Promise<unknown> {
-  const body = JSON.stringify(payload);
-  const response = await fetch(`${baseUrl}${path}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      [SERVICE_SIGNATURE_HEADER]: signServiceRequest({
-        secret,
-        caller: "api",
-        method: "POST",
-        pathAndQuery: path,
-        body,
-      }),
-    },
-    body,
-  });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`${path} -> ${response.status}: ${text}`);
-  return JSON.parse(text);
-}
-
-/** The exact recipe `checkout.live.test.ts`'s `listing()` helper uses (4.7.d, already ✅ on main) — a buyable AU listing, priced and stocked. */
-async function seedListing(pool: pg.Pool): Promise<string> {
-  const listingId = randomUUID();
-  const merchantId = randomUUID();
-  const locationId = randomUUID();
-  const face = 2_000; // AUD $20.00
-  const settlement = 600; // AUD $6.00
-
-  await pool.query(
-    `INSERT INTO store.listings
-       (id, merchant_id, merchant_name, title, description, category,
-        face_value_minor, settlement_value_minor, price_in_points,
-        stock_remaining, stock_total, transferable, partial_redemption_policy,
-        minimum_spend_minor, expires_at, status, lifecycle_state, currency, region, audience,
-        content_category, image_url, channel, partial_redemption)
-     VALUES ($1, $2, 'B Wallet E2E Merchant', 'B Wallet E2E Listing',
-             '6.5.c live check fixture', 'food-and-drink',
-             $3, $4, 1000, 5, 5, false, 'single_use_forfeit',
-             NULL, now() + interval '90 days', 'available', 'active', 'AUD', 'AU',
-             'all_ages', 'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg',
-             'in_store', 'single_use')`,
-    [listingId, merchantId, face, settlement],
-  );
-  await pool.query(
-    `INSERT INTO store.merchant_location (id, merchant_id, name, address, district)
-     VALUES ($1, $2, 'B Wallet E2E Branch', '1 Test St', 'Test District')`,
-    [locationId, merchantId],
-  );
-  await pool.query(`INSERT INTO store.listing_location (listing_id, location_id) VALUES ($1, $2)`, [
-    listingId,
-    locationId,
-  ]);
-
-  await signedPost(
-    LEDGER_BASE_URL,
-    LEDGER_SECRET,
-    "/v1/pricing/listing",
-    priceListingRequestSchema.parse({
-      listingId,
-      region: "AU",
-      currency: "AUD",
-      settlementMinor: toMinorUnits(settlement),
-    }),
-  );
-  const batch = (await signedPost(VOUCHER_BASE_URL, VOUCHER_SECRET, "/internal/v1/batches", {
-    listingId,
-    merchantId,
-    currency: "AUD",
-    faceValueMinor: toMinorUnits(face),
-    quantity: 5,
-    partialRedemptionPolicy: "single_use_forfeit",
-    requestedBy: "staff-1",
-  })) as { batchId: string };
-  await signedPost(VOUCHER_BASE_URL, VOUCHER_SECRET, "/internal/v1/batches/approve", {
-    batchId: batch.batchId,
-    approvedBy: "staff-2",
-  });
-  return listingId;
-}
-
-/** `kind: "goodwill"`, `trustTier: 3` — no holdback (matches `checkout.live.test.ts`'s `earn()`), so the grant is available immediately, no `/api/dev/clock/release-pending` needed. */
-async function grantPoints(userId: string, points: number): Promise<void> {
-  await signedPost(
-    LEDGER_BASE_URL,
-    LEDGER_SECRET,
-    "/v1/actions/grants",
-    grantActionRequestSchema.parse({
-      kind: "goodwill",
-      userId,
-      region: "AU",
-      points: toPoints(points),
-      trustTier: 3,
-      idempotencyKey: `b-wallet-voucher-live-${randomUUID()}`,
-    }),
-  );
-}
-
-interface TestAccount {
-  readonly email: string;
-  readonly password: string;
-  readonly displayName: string;
-}
-
-/** Fixed, not random: `auth.register` is capped at 5/IP/hour (same limit `a-identity-plumbing.spec.ts` documents), and this spec is re-run often while iterating. `ensureAccount` below registers it only the first time this ever runs against a given database. */
+/** Fixed, not random — see `ensureAccount`'s own doc comment for why. */
 const FIXED_ACCOUNT: TestAccount = {
   email: "b-wallet-e2e@example.com",
   password: "correct horse battery staple",
   displayName: "E2E Wallet Tester",
 };
-
-interface AuthResult {
-  readonly userId: string;
-  readonly token: string;
-}
-
-async function registerAccount(
-  request: APIRequestContext,
-  account: TestAccount,
-): Promise<AuthResult> {
-  const response = await request.post(`${apiBaseUrl()}/api/auth/register`, {
-    headers: { "idempotency-key": randomUUID() },
-    data: {
-      email: account.email,
-      password: account.password,
-      region: "AU",
-      locale: "en-AU",
-      displayName: account.displayName,
-      dateOfBirth: "1990-01-01",
-      timezone: "Australia/Sydney",
-    },
-  });
-  expect(response.ok(), `register failed: ${await response.text()}`).toBeTruthy();
-  return (await response.json()) as AuthResult;
-}
-
-/** Logs in first (cheap, no rate limit worth mentioning) and only falls back to registering if the account genuinely does not exist yet. */
-async function ensureAccount(
-  request: APIRequestContext,
-  account: TestAccount,
-): Promise<AuthResult> {
-  const login = await request.post(`${apiBaseUrl()}/api/auth/login`, {
-    data: { email: account.email, password: account.password },
-  });
-  if (login.ok()) {
-    return (await login.json()) as AuthResult;
-  }
-  return registerAccount(request, account);
-}
+const GRANT_POINTS = 500;
 
 async function signInThroughLoginAction(page: Page, account: TestAccount): Promise<void> {
   await page.goto(`/dev/login?returnTo=%2Fwallet`);
@@ -253,45 +95,21 @@ async function signInThroughLoginAction(page: Page, account: TestAccount): Promi
   await expect(page).toHaveURL(/\/wallet$/, { timeout: 30_000 });
 }
 
-let account: TestAccount;
 let token: string;
-let userId: string;
 let listingId: string;
 let voucherId: string;
 let pool: pg.Pool;
-/** The fixed account is reused across runs (see `FIXED_ACCOUNT`'s comment), so every balance assertion below is relative to whatever it already held, never an absolute number. */
+/** The fixed account is reused across runs, so every balance assertion below is relative to whatever it already held, never an absolute number. */
 let balanceBeforeGrant: number;
-const GRANT_POINTS = 500;
-
-async function walletBalanceViaToken(request: APIRequestContext): Promise<number> {
-  const response = await request.get(`${apiBaseUrl()}/api/wallet`, {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  expect(response.ok()).toBeTruthy();
-  return ((await response.json()) as { availablePoints: number }).availablePoints;
-}
-
-/** How much `grantPoints` actually added — 0 when the region's daily earn cap (F12) already had no room left for this reused account, in which case its existing balance (still checked to cover the listing price below) carries the run instead. Grants and burns are on separate caps: only grants touch the daily earn cap, so a capped-out account can still check out and dispute freely. */
 let actuallyGranted = 0;
 
 test.beforeAll(async ({ request, browser }) => {
-  pool = new pg.Pool({ connectionString: DATABASE_OWNER_URL });
-  account = FIXED_ACCOUNT;
-  const auth = await ensureAccount(request, account);
-  userId = auth.userId;
+  pool = openLiveDbPool();
+  const auth = await ensureAccount(request, FIXED_ACCOUNT);
   token = auth.token;
-  balanceBeforeGrant = await walletBalanceViaToken(request);
+  balanceBeforeGrant = await walletBalanceViaToken(request, token);
   listingId = await seedListing(pool);
-  try {
-    await grantPoints(userId, GRANT_POINTS);
-    actuallyGranted = GRANT_POINTS;
-  } catch (error) {
-    if (!String(error).includes("velocity_capped")) throw error;
-    expect(
-      balanceBeforeGrant,
-      "no earn-cap room left today and no existing balance to fall back on",
-    ).toBeGreaterThan(200);
-  }
+  actuallyGranted = await grantPointsBestEffort(auth.userId, GRANT_POINTS, balanceBeforeGrant, 200);
 
   // Warm `next dev`'s JIT compile of the voucher detail route (a fake id
   // 404s, which is fine — only the route bundle needs to exist) before the
@@ -314,8 +132,8 @@ test.describe("6.5.c: wallet and voucher against a live ledger + voucher service
     page,
     request,
   }) => {
-    await signInThroughLoginAction(page, account);
-    const balanceAfterGrant = await walletBalanceViaToken(request);
+    await signInThroughLoginAction(page, FIXED_ACCOUNT);
+    const balanceAfterGrant = await walletBalanceViaToken(request, token);
     expect(balanceAfterGrant).toBe(balanceBeforeGrant + actuallyGranted);
     // The real, live-rendered balance card — its exact aria-label is the
     // number `PointsChip` formats, asserted numerically above; here just
@@ -323,32 +141,22 @@ test.describe("6.5.c: wallet and voucher against a live ledger + voucher service
     await expect(page.locator(`[aria-label="${balanceAfterGrant} available"]`)).toBeVisible();
 
     const cookie = (await page.context().cookies()).map((c) => `${c.name}=${c.value}`).join("; ");
-    const quoted = await request.post(`${apiBaseUrl()}/api/checkout/quote`, {
-      headers: { cookie },
-      data: { listingId },
-    });
-    expect(quoted.ok()).toBeTruthy();
-    const quote = (await quoted.json()) as { checkoutId: string; pricePoints: number };
+    const { voucherId: minted, pricePoints } = await checkoutListing(
+      request,
+      { cookie },
+      listingId,
+    );
+    voucherId = minted;
 
-    const checkedOut = await request.post(`${apiBaseUrl()}/api/checkout`, {
-      headers: { cookie, "idempotency-key": randomUUID() },
-      data: { checkoutId: quote.checkoutId },
-    });
-    expect(checkedOut.ok()).toBeTruthy();
-    const result = (await checkedOut.json()) as { voucherId: string; state: string };
-    expect(result.state).toBe("done");
-    voucherId = result.voucherId;
-
-    const balanceAfterBurn = await walletBalanceViaToken(request);
-    expect(balanceAfterBurn).toBe(balanceAfterGrant - quote.pricePoints);
+    const balanceAfterBurn = await walletBalanceViaToken(request, token);
+    expect(balanceAfterBurn).toBe(balanceAfterGrant - pricePoints);
     await page.reload();
     await expect(page.locator(`[aria-label="${balanceAfterBurn} available"]`)).toBeVisible();
     // The live wallet-voucher read is still the narrow `{voucherId, listingId,
-    // state}` shape (this ticket's "(requested by B)" ask under 4.8 in
-    // TASKS.md) — no merchant name or title yet, so the card shows the
-    // generic placeholder title, not the listing's real name. What IS real
-    // and provable here is that this exact voucher is present and links to
-    // its own detail page.
+    // state}` shape (4.8.c, requested by B) — no merchant name or title yet,
+    // so the card shows the generic placeholder title, not the listing's
+    // real name. What IS real and provable here is that this exact voucher
+    // is present and links to its own detail page.
     await expect(page.locator(`a[href="/wallet/voucher/${voucherId}"]`)).toBeVisible();
   });
 
@@ -376,7 +184,7 @@ test.describe("6.5.c: wallet and voucher against a live ledger + voucher service
   test("the QR renders from a real signed token and keeps showing with the network off", async ({
     page,
   }) => {
-    await signInThroughLoginAction(page, account);
+    await signInThroughLoginAction(page, FIXED_ACCOUNT);
     await page.goto(`/wallet/voucher/${voucherId}`, { waitUntil: "networkidle" });
 
     const qrImage = page.getByRole("img", { name: /Redemption QR code/ });
@@ -416,8 +224,8 @@ test.describe("6.5.c: wallet and voucher against a live ledger + voucher service
     page,
     request,
   }) => {
-    await signInThroughLoginAction(page, account);
-    const beforeBalance = await walletBalanceViaToken(request);
+    await signInThroughLoginAction(page, FIXED_ACCOUNT);
+    const beforeBalance = await walletBalanceViaToken(request, token);
 
     await page.goto(`/wallet/voucher/${voucherId}`);
     await page.getByRole("button", { name: "This voucher didn't work" }).click();
@@ -429,7 +237,7 @@ test.describe("6.5.c: wallet and voucher against a live ledger + voucher service
     await page.getByRole("button", { name: "Send report" }).click();
     await expect(page.getByText("Your points are back in your wallet.")).toBeVisible();
 
-    const afterBalance = await walletBalanceViaToken(request);
+    const afterBalance = await walletBalanceViaToken(request, token);
     expect(afterBalance).toBeGreaterThan(beforeBalance);
     const reinstated = afterBalance - beforeBalance;
     expect(reinstated).toBeGreaterThan(0);
@@ -454,7 +262,7 @@ test.describe("6.5.c: wallet and voucher against a live ledger + voucher service
       },
     );
     expect(secondDispute.ok()).toBeTruthy();
-    expect(await walletBalanceViaToken(request)).toBe(afterBalance);
+    expect(await walletBalanceViaToken(request, token)).toBe(afterBalance);
   });
 });
 
@@ -471,7 +279,7 @@ for (const viewport of VIEWPORTS) {
       test.use({ viewport: { width: viewport.width, height: viewport.height }, colorScheme });
 
       test("/wallet and the voucher pass render and pass axe (WCAG AA)", async ({ page }) => {
-        await signInThroughLoginAction(page, account);
+        await signInThroughLoginAction(page, FIXED_ACCOUNT);
         await expect(page.getByRole("heading", { name: "Wallet", level: 1 })).toBeVisible();
         await page.screenshot({
           path: `test-results/b-wallet-${viewport.name}-${colorScheme}.png`,

@@ -40,13 +40,13 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
 | **Phase 7** Business studio | C | 🔄 in progress | 5/8 | 27/38 | `███████░░░`  71% |
-| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 4/16 | `███░░░░░░░`  25% |
+| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 5/16 | `███░░░░░░░`  31% |
 | **Phase 9** Staff console | C | · not started | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **52/87** | **290/412** | `███████░░░`  70% |
+| **All** | | | **52/87** | **291/412** | `███████░░░`  71% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1130,7 +1130,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
     
     Devices are revoked from Studio only; today `/merchant/devices` revokes with no auth.
   - [x] 8.1.b The `store_device` principal comes from the device credential (1.5.c), so the Cerbos `redemption.yaml` device rules take effect. — done 2317e40a: `DeviceCredential` now carries the bearer secret; `CounterDeviceCredentialVerifier` (real, Postgres-backed) bound in `authz.module.ts` in place of `NoDeviceCredentialVerifier`
-  - [ ] 8.1.c **Check:** a paired device gets a principal, and a revoked one gets 401.
+  - [x] 8.1.c **Check:** a paired device gets a principal, and a revoked one gets 401. — passed 2026-09-27 on 2317e40a+: `device-authentication.e2e.test.ts` 3/3, real Cerbos. Task 8.1 stays open for the Studio half of 8.1.a (⛔ 7.8.a)
 - [ ] **8.2 Redeeming at the counter** · needs: 8.1, 4.6 — 🔄 slot 8
   - [ ] 8.2.a CounterShell flow: pair → PIN unlock → scan the QR (camera) or type the code → server-side lookup → authorize (amount, order ref, order total) → capture → receipt on both sides. Today's log stays. — ⛔ 8.1 (B checked 2026-09-27: `apps/api/src/modules/devices` and a real counter-device contract in `packages/contracts/src/device/` don't exist yet — only the unrelated `device-signals.ts` fraud-signal contract is there. The current mock (cookie-bound device, client-side voucher catalogue) is what 8.2.b asks to delete, and there is nothing real to replace it with yet; rewriting against an invented contract would be thrown away once A's real shape lands.)
   - [ ] 8.2.b **No offline redemption.** With no network the counter says "Can't redeem offline — try again when connected" and queues nothing; delete the pending queue. The BFF calls the voucher service in device mode (4.5.c). Delete the client-side catalogue of every merchant's vouchers and the unsigned device cookie (D16). — ⛔ 8.1, same reason as 8.2.a

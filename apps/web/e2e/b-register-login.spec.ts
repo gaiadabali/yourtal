@@ -3,12 +3,12 @@ import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
 
 /**
- * 6.2.a's own Check plus the live half of 6.2.c (this spec proves the
- * register/login/forgot/reset/verify round trips against a real
- * `apps/api`; "lands on Home in the right language" is 6.2.c's own Check,
- * blocked on agent E's onboarding merging so `/onboarding`'s "done" step
- * actually redirects to `returnTo` — see `playwright.b-auth.config.ts`'s
- * header and this worktree's report for what that leaves open).
+ * 6.2.a's own Check plus 6.2.c's, together: register (through the real
+ * `/register` form) → onboarding (E's 6.2.b flat route chain — consent →
+ * follow, interests skipped since personalize consent is never granted
+ * here → done) → Home, in both regions, asserting Home's own real,
+ * translated heading rather than only a URL. Also covers forgot/reset,
+ * login and email verification against a real `apps/api`.
  *
  * Registers exactly TWO accounts (`auth.register` is capped at 5/IP/hour,
  * `REGISTER_RATE_LIMIT`) — the AU one is reused across the reset, login and
@@ -82,10 +82,53 @@ async function registerThroughUi(
   await page.getByRole("button", { name: "Create account" }).click();
 }
 
+/**
+ * 6.2.c's own copy, per display locale (E's 6.2.b, each locale's own
+ * `onboarding.json`, and Home's `campaign-board-labels.ts`) — enough to
+ * drive the flat
+ * onboarding route chain (consent → follow, interests skipped since
+ * personalize consent is never granted here → done) and recognise Home by
+ * its real, translated heading rather than a URL alone.
+ */
+const ONBOARDING_COPY = {
+  "en-AU": {
+    consentHeading: "Before you start",
+    continueCta: "Continue",
+    followCta: /Continue|Skip for now/,
+    doneCta: "Start watching",
+    homeHeading: "Earn",
+  },
+  "id-ID": {
+    consentHeading: "Sebelum kamu mulai",
+    continueCta: "Lanjutkan",
+    followCta: /Lanjutkan|Lewati dulu/,
+    doneCta: "Mulai menonton",
+    homeHeading: "Dapatkan",
+  },
+} as const;
+
+/** 6.2.c's Check: consent (essential only, so interests is skipped) → follow (skipped) → done → Home, asserting Home's own real heading in the account's display locale. */
+async function completeOnboardingToHome(page: Page, locale: "en-AU" | "id-ID"): Promise<void> {
+  const copy = ONBOARDING_COPY[locale];
+
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByRole("heading", { name: copy.consentHeading })).toBeVisible();
+  await page.getByRole("button", { name: copy.continueCta }).click();
+
+  await expect(page).toHaveURL(/\/onboarding\/follow/);
+  await page.getByRole("button", { name: copy.followCta }).click();
+
+  await expect(page).toHaveURL(/\/onboarding\/done/);
+  await page.getByRole("link", { name: copy.doneCta }).click();
+
+  await expect(page).toHaveURL(/\/home/);
+  await expect(page.getByRole("heading", { level: 1, name: copy.homeHeading })).toBeVisible();
+}
+
 test.describe.serial("6.2.a: register, forgot/reset, login, verify — against a live api", () => {
   let auAccount: NewAccount;
 
-  test("an AU account registered through the real form lands on /onboarding with a real session, region AU, locale en-AU", async ({
+  test("6.2.c: an AU account registered through the real form lands on /onboarding with a real session, region AU, locale en-AU, then reaches Home in English", async ({
     page,
     context,
   }) => {
@@ -97,9 +140,11 @@ test.describe.serial("6.2.a: register, forgot/reset, login, verify — against a
     expect(cookies.find((c) => c.name === "yt_session")?.value).toBeTruthy();
     expect(cookies.find((c) => c.name === "yt_region")?.value).toBe("AU");
     expect(cookies.find((c) => c.name === "yt_locale")?.value).toBe("en-AU");
+
+    await completeOnboardingToHome(page, "en-AU");
   });
 
-  test("an ID account registered through the real form gets region ID, locale id-ID", async ({
+  test("6.2.c: an ID account registered through the real form gets region ID, locale id-ID, then reaches Home in Indonesian", async ({
     page,
     context,
   }) => {
@@ -110,6 +155,8 @@ test.describe.serial("6.2.a: register, forgot/reset, login, verify — against a
     const cookies = await context.cookies();
     expect(cookies.find((c) => c.name === "yt_region")?.value).toBe("ID");
     expect(cookies.find((c) => c.name === "yt_locale")?.value).toBe("id-ID");
+
+    await completeOnboardingToHome(page, "id-ID");
   });
 
   test("forgot password: a real reset link changes the password and signs the account in", async ({

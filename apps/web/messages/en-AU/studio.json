@@ -411,5 +411,84 @@
     "selectState": "Select a state",
     "postcodeLabel": "Postcode",
     "createBusiness": "Create business"
+  },
+  "devices": {
+    "panel": {
+      "title": "Devices",
+      "provision": "Provision device",
+      "empty": "No devices provisioned yet.",
+      "revoke": "Revoke"
+    },
+    "state": {
+      "pending": "Pending",
+      "paired": "Paired",
+      "revoked": "Revoked"
+    },
+    "provision": {
+      "title": "Provision a counter device",
+      "description": "Set the till's shift PIN here — the device itself only ever asks for the pairing code.",
+      "labelField": "Label",
+      "labelPlaceholder": "e.g. Kemang counter 2",
+      "locationField": "Location",
+      "pinField": "PIN (4–8 digits)",
+      "confirmPinField": "Confirm PIN",
+      "errorPinInvalid": "PIN must be 4–8 digits.",
+      "errorPinMismatch": "The two PINs don't match.",
+      "errorNoLocation": "Choose a location.",
+      "submit": "Provision device",
+      "submitting": "Provisioning…",
+      "doneTitle": "Device provisioned",
+      "doneDescription": "Give this pairing code to whoever is setting up the till — it only shows once.",
+      "expires": "Expires {date}.",
+      "done": "Done"
+    }
+  },
+  "redemptions": {
+    "title": "Today's and recent redemptions",
+    "empty": "No redemptions yet.",
+    "caption": "Recent voucher captures, per location and device",
+    "deviceHeader": "Device",
+    "locationHeader": "Location",
+    "orderRefHeader": "Order",
+    "amountHeader": "Amount",
+    "capturedAtHeader": "Captured"
+  },
+  "developers": {
+    "credentials": {
+      "title": "API credentials",
+      "secretRevealed": "New secret for \"{label}\" — copy it now, it won't be shown again:",
+      "secretDismiss": "I've copied it",
+      "labelField": "Label",
+      "sandboxLabel": "Sandbox credential",
+      "issue": "Issue credential",
+      "sandbox": "Sandbox",
+      "live": "Live",
+      "active": "Active",
+      "revoked": "Revoked",
+      "rotate": "Rotate",
+      "revoke": "Revoke"
+    },
+    "webhooks": {
+      "title": "Webhook delivery",
+      "description": "Signed voucher.captured, voucher.refunded and voucher.expired events are delivered to this URL.",
+      "registered": "Currently registered: {url}",
+      "urlField": "Delivery URL",
+      "save": "Save"
+    },
+    "docs": {
+      "title": "Integration docs",
+      "signingTitle": "Signing",
+      "signingBody": "Every request carries <code>X-YourTal-Signature: t=&lt;unix seconds&gt;,k=&lt;key id&gt;,v1=&lt;hex hmac-sha256&gt;</code>. The MAC covers a newline-joined canonical string: the timestamp, your key id, the HTTP method, the path and query, the <code>Idempotency-Key</code> header (or an empty string), and base64(sha256(request body)). Use <code>@yourtal/sdk-merchant</code>'s <code>signRequest</code> directly — it is byte-identical to the server's own verifier.",
+      "callsTitle": "The four calls",
+      "callAuthorize": "<code>authorize</code> — look up a voucher by code and reserve an amount. Does not move value yet.",
+      "callCapture": "<code>capture</code> — finalises a prior authorization for the amount actually charged.",
+      "callVoid": "<code>void</code> — cancels an authorization that was never captured.",
+      "callRefund": "<code>refund</code> — reverses some or all of a capture, identified by your own reference.",
+      "callsDeviceNote": "A device-scoped credential (the one a paired counter uses) can never void or refund — only a merchant-wide key issued here can.",
+      "errorsTitle": "Errors",
+      "errorsBody": "Every failure is a JSON object with <code>code</code> and <code>message</code> fields. Branch on <code>code</code>, never on parsing <code>message</code> — that string is for a human, not your integration.",
+      "idempotencyTitle": "Idempotency",
+      "idempotencyBody": "Send one <code>Idempotency-Key</code> per logical call and reuse it, with the identical body, on every retry. A repeated key and body gets the same answer back rather than a second redemption."
+    }
   }
 }

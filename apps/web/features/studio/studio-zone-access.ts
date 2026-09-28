@@ -2,14 +2,13 @@ import type { BusinessRole as BusinessRelationship } from "@yourtal/contracts/bu
 import type { BusinessTeamRole as StudioRole } from "@yourtal/contracts/business/team-role";
 
 /**
- * Studio's six dashboard zones (docs/17-surfaces-and-roles.md §2). Every
- * zone renders honestly even when the API behind it is still mock-only —
- * see each zone's own `*-data.ts` for its `resolveStudioDataSource` seam.
+ * Studio's dashboard zones (docs/17-surfaces-and-roles.md §2). Every zone
+ * renders honestly even when the API behind it is still mock-only — see
+ * each zone's own `*-data.ts` for its `resolveStudioDataSource` seam.
  *
- * No "redemption"/"redemptions" zone here: F40 moved that screen to 8.2.g
- * (Phase 8, once the counter-device and voucher-engine APIs exist) — a
- * business holding the `redeemer` relationship simply has no Studio zone
- * of its own yet, rather than a placeholder tab that leads nowhere.
+ * `redemptions` and `developers` landed with TASKS.md 8.2.g/8.3.a, once the
+ * counter-device and voucher-engine APIs existed (F40's own note on why
+ * they were not here from the start).
  */
 export const STUDIO_ZONES = [
   "campaigns",
@@ -17,6 +16,8 @@ export const STUDIO_ZONES = [
   "reports",
   "billing",
   "team",
+  "redemptions",
+  "developers",
   "channel",
 ] as const;
 export type StudioZone = (typeof STUDIO_ZONES)[number];
@@ -27,6 +28,8 @@ export const ZONE_LABELS: Record<StudioZone, string> = {
   reports: "Reports",
   billing: "Billing",
   team: "Team",
+  redemptions: "Redemptions",
+  developers: "Developers",
   channel: "Channel settings",
 };
 
@@ -61,6 +64,8 @@ interface ZoneAccessRule {
  * | reports    | —            | owner, admin, marketer, merchandiser, finance, analyst | (view only, no edit action)   |
  * | billing    | —            | owner, admin, finance                            | owner, finance                |
  * | team       | —            | owner, admin                                     | owner, admin                  |
+ * | redemptions| —            | owner, admin (`studio-redemptions.controller.ts`'s `team`/`view`) | (view only, no edit action) |
+ * | developers | —            | owner, admin (`redemption`'s `view_credential`/`rotate_credential`) | owner, admin |
  */
 export const ZONE_ACCESS: Record<StudioZone, ZoneAccessRule> = {
   campaigns: {
@@ -84,6 +89,16 @@ export const ZONE_ACCESS: Record<StudioZone, ZoneAccessRule> = {
     edit: ["owner", "finance"],
   },
   team: {
+    relationship: null,
+    view: ["owner", "admin"],
+    edit: ["owner", "admin"],
+  },
+  redemptions: {
+    relationship: null,
+    view: ["owner", "admin"],
+    edit: [],
+  },
+  developers: {
     relationship: null,
     view: ["owner", "admin"],
     edit: ["owner", "admin"],

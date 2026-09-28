@@ -14,6 +14,8 @@ const ZONE_BLURBS: Record<StudioNavItem["zone"], string> = {
   reports: "Completion, accuracy, recall and redemption attribution.",
   billing: "Buy points, balance and purchase history.",
   team: "Members, roles, invitations and the audit trail.",
+  redemptions: "Today's and recent voucher captures, per location and device.",
+  developers: "API credentials, webhooks and the integration docs.",
   channel: "Logo, cover image and your public handle.",
 };
 

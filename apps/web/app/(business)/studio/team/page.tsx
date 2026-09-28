@@ -1,5 +1,7 @@
 import type { BusinessMember } from "@yourtal/contracts/business/member";
 import type { BusinessTeamRole } from "@yourtal/contracts/business/team-role";
+import type { Region } from "@yourtal/contracts/region";
+import type { Currency } from "@yourtal/contracts/money/currency";
 import { getLocale } from "next-intl/server";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { studioDataSourceMode } from "@/features/studio/studio-data-source";
@@ -12,6 +14,9 @@ import { canViewZone } from "@/features/studio/studio-zone-access";
 import { getCurrentUserId } from "@/features/studio/studio-data";
 import { listTeam } from "@/features/studio/team-data";
 import { TeamScreen } from "@/features/studio/team-screen";
+import { listDevicesLive } from "@/features/studio/devices-data";
+import { listLocations } from "@/features/studio/inventory/inventory-data";
+import { TeamDevicesPanel } from "@/features/studio/team-devices-panel";
 
 function isTeamManagerRole(
   role: BusinessTeamRole,
@@ -48,12 +53,20 @@ export default async function StudioTeamPage(props: PageProps<"/studio/team">) {
       header={<PageHeader title="Team" />}
     >
       {allowed && current.myRole && isTeamManagerRole(current.myRole) ? (
-        <StudioTeamScreenData
-          businessId={current.business.id}
-          businessDisplayName={current.business.displayName}
-          viewerRole={current.myRole}
-          fallbackRoster={current.roster}
-        />
+        <div className="flex flex-col gap-6">
+          <StudioTeamScreenData
+            businessId={current.business.id}
+            businessDisplayName={current.business.displayName}
+            viewerRole={current.myRole}
+            fallbackRoster={current.roster}
+          />
+          <StudioTeamDevicesData
+            businessId={current.business.id}
+            merchantName={current.business.displayName}
+            region={current.business.region}
+            currency={current.business.currency}
+          />
+        </div>
       ) : (
         <StudioAccessDenied zoneLabel="Team" locale={locale} />
       )}
@@ -92,6 +105,40 @@ async function StudioTeamScreenData({
       initialViewerRole={viewerRole}
       initialRoster={roster}
       isLiveMode={studioDataSourceMode === "live"}
+    />
+  );
+}
+
+interface StudioTeamDevicesDataProps {
+  businessId: string;
+  merchantName: string;
+  region: Region;
+  currency: Currency;
+}
+
+/**
+ * TASKS.md 8.1.a's UI half: a real round trip to
+ * `apps/api/src/modules/devices/studio-devices.controller.ts`, unlike
+ * `TeamScreen`'s own mock/live split above — this endpoint has no mock
+ * mode at all (it was built live from the start, TASKS.md 8.2's server
+ * merge). A device list failure degrades to an empty panel rather than
+ * failing the whole page — Team itself already rendered successfully.
+ */
+async function StudioTeamDevicesData({
+  businessId,
+  merchantName,
+  region,
+  currency,
+}: StudioTeamDevicesDataProps) {
+  const [devicesResult, locations] = await Promise.all([
+    listDevicesLive(businessId),
+    listLocations(businessId, merchantName, region, currency),
+  ]);
+  return (
+    <TeamDevicesPanel
+      businessId={businessId}
+      initialDevices={devicesResult.ok ? devicesResult.data : []}
+      locations={locations}
     />
   );
 }

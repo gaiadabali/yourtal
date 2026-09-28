@@ -11,6 +11,8 @@ describe("studio-zone-access", () => {
       "reports",
       "billing",
       "team",
+      "redemptions",
+      "developers",
       "channel",
     ]);
     expect(getVisibleZones("admin", ALL_RELATIONSHIPS)).toEqual([
@@ -19,6 +21,8 @@ describe("studio-zone-access", () => {
       "reports",
       "billing",
       "team",
+      "redemptions",
+      "developers",
       "channel",
     ]);
   });
@@ -32,8 +36,26 @@ describe("studio-zone-access", () => {
       "reports",
       "billing",
       "team",
+      "redemptions",
+      "developers",
       "channel",
     ]);
+  });
+
+  it("gates Redemptions and Developers the same as Team: owner and admin only", () => {
+    for (const zone of ["redemptions", "developers"] as const) {
+      expect(canViewZone(zone, "owner", ALL_RELATIONSHIPS)).toBe(true);
+      expect(canViewZone(zone, "admin", ALL_RELATIONSHIPS)).toBe(true);
+      for (const role of ["marketer", "merchandiser", "finance", "analyst"] as const) {
+        expect(canViewZone(zone, role, ALL_RELATIONSHIPS)).toBe(false);
+      }
+    }
+  });
+
+  it("redemptions has no edit action for anyone — view-only zone", () => {
+    for (const role of ["owner", "admin"] as const) {
+      expect(canEditZone("redemptions", role, ALL_RELATIONSHIPS)).toBe(false);
+    }
   });
 
   it("mirrors team_test.yaml: only owner and admin may even view Team", () => {

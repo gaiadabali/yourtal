@@ -411,5 +411,84 @@
     "selectState": "Pilih negara bagian",
     "postcodeLabel": "Kode pos",
     "createBusiness": "Buat bisnis"
+  },
+  "devices": {
+    "panel": {
+      "title": "Perangkat",
+      "provision": "Siapkan perangkat",
+      "empty": "Belum ada perangkat yang disiapkan.",
+      "revoke": "Cabut"
+    },
+    "state": {
+      "pending": "Menunggu",
+      "paired": "Terpasang",
+      "revoked": "Dicabut"
+    },
+    "provision": {
+      "title": "Siapkan perangkat kasir",
+      "description": "Atur PIN shift kasir di sini — perangkat itu sendiri hanya akan meminta kode pemasangan.",
+      "labelField": "Label",
+      "labelPlaceholder": "mis. Kemang kasir 2",
+      "locationField": "Lokasi",
+      "pinField": "PIN (4–8 digit)",
+      "confirmPinField": "Konfirmasi PIN",
+      "errorPinInvalid": "PIN harus 4–8 digit.",
+      "errorPinMismatch": "Kedua PIN tidak cocok.",
+      "errorNoLocation": "Pilih lokasi.",
+      "submit": "Siapkan perangkat",
+      "submitting": "Menyiapkan…",
+      "doneTitle": "Perangkat disiapkan",
+      "doneDescription": "Berikan kode pemasangan ini kepada yang menyiapkan kasir — hanya tampil satu kali.",
+      "expires": "Kedaluwarsa {date}.",
+      "done": "Selesai"
+    }
+  },
+  "redemptions": {
+    "title": "Redeem hari ini dan terbaru",
+    "empty": "Belum ada redeem.",
+    "caption": "Capture voucher terbaru, per lokasi dan perangkat",
+    "deviceHeader": "Perangkat",
+    "locationHeader": "Lokasi",
+    "orderRefHeader": "Pesanan",
+    "amountHeader": "Jumlah",
+    "capturedAtHeader": "Waktu"
+  },
+  "developers": {
+    "credentials": {
+      "title": "Kredensial API",
+      "secretRevealed": "Secret baru untuk \"{label}\" — salin sekarang, tidak akan ditampilkan lagi:",
+      "secretDismiss": "Sudah disalin",
+      "labelField": "Label",
+      "sandboxLabel": "Kredensial sandbox",
+      "issue": "Terbitkan kredensial",
+      "sandbox": "Sandbox",
+      "live": "Live",
+      "active": "Aktif",
+      "revoked": "Dicabut",
+      "rotate": "Rotasi",
+      "revoke": "Cabut"
+    },
+    "webhooks": {
+      "title": "Pengiriman webhook",
+      "description": "Event voucher.captured, voucher.refunded dan voucher.expired yang ditandatangani dikirim ke URL ini.",
+      "registered": "Terdaftar saat ini: {url}",
+      "urlField": "URL pengiriman",
+      "save": "Simpan"
+    },
+    "docs": {
+      "title": "Dokumentasi integrasi",
+      "signingTitle": "Penandatanganan",
+      "signingBody": "Setiap permintaan membawa <code>X-YourTal-Signature: t=&lt;unix seconds&gt;,k=&lt;key id&gt;,v1=&lt;hex hmac-sha256&gt;</code>. MAC mencakup string kanonis yang digabung baris baru: timestamp, key id kamu, metode HTTP, path dan query, header <code>Idempotency-Key</code> (atau string kosong), dan base64(sha256(body permintaan)). Gunakan <code>signRequest</code> dari <code>@yourtal/sdk-merchant</code> langsung — identik byte-demi-byte dengan verifier server.",
+      "callsTitle": "Empat panggilan",
+      "callAuthorize": "<code>authorize</code> — cari voucher berdasarkan kode dan tahan sejumlah nilai. Belum memindahkan nilai apa pun.",
+      "callCapture": "<code>capture</code> — menyelesaikan otorisasi sebelumnya sesuai jumlah yang benar-benar dibebankan.",
+      "callVoid": "<code>void</code> — membatalkan otorisasi yang belum pernah di-capture.",
+      "callRefund": "<code>refund</code> — mengembalikan sebagian atau seluruh capture, diidentifikasi dengan referensi kamu sendiri.",
+      "callsDeviceNote": "Kredensial khusus perangkat (yang dipakai kasir yang terpasang) tidak pernah bisa void atau refund — hanya key milik merchant yang bisa.",
+      "errorsTitle": "Error",
+      "errorsBody": "Setiap kegagalan berbentuk objek JSON dengan field <code>code</code> dan <code>message</code>. Cabang berdasarkan <code>code</code>, jangan pernah mem-parsing <code>message</code> — string itu untuk manusia, bukan integrasi kamu.",
+      "idempotencyTitle": "Idempotensi",
+      "idempotencyBody": "Kirim satu <code>Idempotency-Key</code> per panggilan logis dan pakai ulang, dengan body yang identik, di setiap percobaan ulang. Key dan body yang sama akan mendapat jawaban yang sama, bukan redeem kedua."
+    }
   }
 }

@@ -478,7 +478,7 @@
     "docs": {
       "title": "Integration docs",
       "signingTitle": "Signing",
-      "signingBody": "Every request carries <code>X-YourTal-Signature: t=&lt;unix seconds&gt;,k=&lt;key id&gt;,v1=&lt;hex hmac-sha256&gt;</code>. The MAC covers a newline-joined canonical string: the timestamp, your key id, the HTTP method, the path and query, the <code>Idempotency-Key</code> header (or an empty string), and base64(sha256(request body)). Use <code>@yourtal/sdk-merchant</code>'s <code>signRequest</code> directly — it is byte-identical to the server's own verifier.",
+      "signingBody": "Every request carries <code>X-YourTal-Signature: t=[unix seconds],k=[key id],v1=[hex hmac-sha256]</code>. The MAC covers a newline-joined canonical string: the timestamp, your key id, the HTTP method, the path and query, the <code>Idempotency-Key</code> header (or an empty string), and base64(sha256(request body)). Use <code>@yourtal/sdk-merchant</code>'s <code>signRequest</code> directly — it is byte-identical to the server's own verifier.",
       "callsTitle": "The four calls",
       "callAuthorize": "<code>authorize</code> — look up a voucher by code and reserve an amount. Does not move value yet.",
       "callCapture": "<code>capture</code> — finalises a prior authorization for the amount actually charged.",

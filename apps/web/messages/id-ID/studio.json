@@ -478,7 +478,7 @@
     "docs": {
       "title": "Dokumentasi integrasi",
       "signingTitle": "Penandatanganan",
-      "signingBody": "Setiap permintaan membawa <code>X-YourTal-Signature: t=&lt;unix seconds&gt;,k=&lt;key id&gt;,v1=&lt;hex hmac-sha256&gt;</code>. MAC mencakup string kanonis yang digabung baris baru: timestamp, key id kamu, metode HTTP, path dan query, header <code>Idempotency-Key</code> (atau string kosong), dan base64(sha256(body permintaan)). Gunakan <code>signRequest</code> dari <code>@yourtal/sdk-merchant</code> langsung — identik byte-demi-byte dengan verifier server.",
+      "signingBody": "Setiap permintaan membawa <code>X-YourTal-Signature: t=[unix seconds],k=[key id],v1=[hex hmac-sha256]</code>. MAC mencakup string kanonis yang digabung baris baru: timestamp, key id kamu, metode HTTP, path dan query, header <code>Idempotency-Key</code> (atau string kosong), dan base64(sha256(body permintaan)). Gunakan <code>signRequest</code> dari <code>@yourtal/sdk-merchant</code> langsung — identik byte-demi-byte dengan verifier server.",
       "callsTitle": "Empat panggilan",
       "callAuthorize": "<code>authorize</code> — cari voucher berdasarkan kode dan tahan sejumlah nilai. Belum memindahkan nilai apa pun.",
       "callCapture": "<code>capture</code> — menyelesaikan otorisasi sebelumnya sesuai jumlah yang benar-benar dibebankan.",

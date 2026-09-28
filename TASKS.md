@@ -41,12 +41,12 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
 | **Phase 7** Business studio | C | ✅ done | 9/9 | 46/46 | `██████████` 100% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 3/4 | 20/22 | `█████████░`  91% |
-| **Phase 9** Staff console | C | 🔄 in progress | 1/5 | 2/17 | `█░░░░░░░░░`  12% |
+| **Phase 9** Staff console | C | 🔄 in progress | 1/5 | 3/17 | `██░░░░░░░░`  18% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **60/90** | **327/431** | `████████░░`  76% |
+| **All** | | | **60/90** | **328/431** | `████████░░`  76% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1233,7 +1233,7 @@ The internal team runs the economy and the review queues. Today none of it exist
   - [ ] 9.2.c (moved from 7.4.c) Approving a voucher batch mints it through 4.5 (`approveBatch`), and the listing's stock rises by the batch size.
   - [ ] 9.2.b **Check:** a submitted campaign goes live only after approval and then appears in `GET /api/feed`, a rejection shows its reason in Studio, and an approved voucher batch raises the listing's stock.
 - [ ] **9.3 Businesses** · needs: 9.1, 7.1 — 🔄 slot 2
-  - [ ] 9.3.a KYB review (approve or reject documents, setting `is_verified`) and business suspension.
+  - [x] 9.3.a KYB review (approve or reject documents, setting `is_verified`) and business suspension. — done 2026-09-29 (64a787cd, merged main): `/api/staff/businesses` (list/search, detail, kyb/approve, kyb/reject, suspend, reinstate), `ops`-only via new `business:suspend`/`reinstate` Cerbos actions plus the existing `kyb_document` grant; add-only migration for `suspended_at/by/reason`. Web UI `/staff/businesses` (list + detail, each review action behind a required-reason dialog). `staff-business-review.e2e.test.ts` 5/5 against real Postgres+Cerbos; `c-staff-businesses.spec.ts` 11/11 live (390/1280px, light/dark, axe clean); `pnpm policy:test` 681/681; contracts suite 853/853; `pnpm check` clean.
   - [ ] 9.3.b **Check:** approving KYB unblocks submit, so a business made through the Studio UI on staging submits its funded campaign (moved from 7.8.d), and a suspended business's campaigns leave the feed.
 - [ ] **9.4 Users and support** · needs: 9.1, 4.7 — 🔄 slot 2
   - [ ] 9.4.a Search users and view their ledger history.

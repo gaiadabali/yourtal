@@ -14,6 +14,7 @@ import pg from "pg";
 // time, so there is no file to find at runtime at all.
 import demoMediaManifestJson from "../demo-media.json" with { type: "json" };
 import { probeInput, renderHlsLadder, renderPoster, renderTeaser } from "./ffmpeg-transcode";
+import { publicMediaUrl } from "./hls-origin";
 import {
   createMediaClient,
   hlsAssetObjectKey,
@@ -29,8 +30,20 @@ import {
  * object-store objects, exactly the pipeline 7.2.a/b/c already proved end to end.
  *
  * Idempotent by campaign id (derived from the manifest slug): a campaign
- * already marked "ready" is left alone, so a normal deploy re-run (2.3.e's
- * own convention) processes nothing. Delete the row to force a rebuild.
+ * already marked "ready" with a valid (absolute) `hls_url` is left alone, so
+ * a normal deploy re-run (2.3.e's own convention) processes nothing further.
+ * Delete the row to force a full rebuild.
+ *
+ * F65-adjacent (found by agent F live-verifying 7.9.d/7.2.f, 2026-09-28):
+ * this used to write `posterUrl`/`teaserUrl`/`hlsUrl` as bare `/media/…`
+ * paths, which fail `campaignSchema`'s `z.url()` and crash
+ * `mint-manifest-url.ts`'s `new URL(hlsUrl)` — every one of these 16
+ * campaigns was silently dropped from the feed/search/`findVisibleById` read
+ * path the moment it reached "ready". Fixed with the same `publicMediaUrl()`
+ * helper `transcode.ts` (7.2.b) uses for the same bug. A row already written
+ * with the old, relative form is REPAIRED in place (URLs rewritten, no
+ * re-transcode) the next time this runs, rather than being permanently
+ * skipped for having a non-null `hls_url` — see `isAbsoluteUrl` below.
  *
  * ## Why every clip is looped/trimmed to one fixed duration
  *
@@ -296,8 +309,19 @@ function svgMonogram(brand: string): string {
 
 export interface DemoMediaResult {
   readonly slug: string;
-  readonly status: "seeded" | "already_present" | "failed";
+  readonly status: "seeded" | "already_present" | "repaired" | "failed";
   readonly detail?: string;
+}
+
+/** A bare `/media/...` path (the old, broken form) has no scheme and fails
+ * `new URL()` with no base; a real `publicMediaUrl()` result always has one. */
+function isAbsoluteUrl(value: string): boolean {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export interface RunDemoMediaOptions {
@@ -370,8 +394,29 @@ async function seedOneCampaign(
     "SELECT lifecycle_state, hls_url FROM campaign.campaigns WHERE id = $1",
     [campaignId],
   );
-  if (existing.rows[0]?.hls_url != null) {
-    return { slug: entry.slug, status: "already_present" };
+  const existingHlsUrl = existing.rows[0]?.hls_url ?? null;
+  if (existingHlsUrl !== null) {
+    if (isAbsoluteUrl(existingHlsUrl)) {
+      return { slug: entry.slug, status: "already_present" };
+    }
+    // Repair only: the objects themselves were already uploaded under
+    // `campaignId` by whichever run first wrote this row, so this just
+    // recomputes the same three URLs `publicMediaUrl()` would have produced
+    // then and rewrites the two rows that carry them — no re-download,
+    // no re-transcode, no re-upload.
+    const posterUrl = publicMediaUrl(posterObjectKey(campaignId));
+    const teaserUrl = publicMediaUrl(teaserObjectKey(campaignId));
+    const hlsUrl = publicMediaUrl(hlsAssetObjectKey(campaignId, "index.m3u8"));
+    await pool.query(
+      "UPDATE campaign.campaigns SET poster_url = $2, teaser_url = $3, hls_url = $4 WHERE id = $1",
+      [campaignId, posterUrl, teaserUrl, hlsUrl],
+    );
+    await pool.query(
+      "UPDATE campaign.video_source SET manifest_url = $2 WHERE campaign_id = $1",
+      [campaignId, hlsUrl],
+    );
+    log(`[demo:media] ${entry.slug}: repaired relative media URLs -> ${hlsUrl}`);
+    return { slug: entry.slug, status: "repaired" };
   }
 
   const clip = manifest.clips[entry.clip];
@@ -421,9 +466,11 @@ async function seedOneCampaign(
   });
   client.destroy();
 
-  const posterUrl = `/media/posters/${campaignId}.jpg`;
-  const teaserUrl = `/media/teasers/${campaignId}.mp4`;
-  const hlsUrl = `/media/hls/${campaignId}/index.m3u8`;
+  // Absolute, per publicMediaUrl's own doc comment (F65-adjacent, 7.2.f) —
+  // same reasoning and same helper transcode.ts (7.2.b) uses for the same bug.
+  const posterUrl = publicMediaUrl(posterObjectKey(campaignId));
+  const teaserUrl = publicMediaUrl(teaserObjectKey(campaignId));
+  const hlsUrl = publicMediaUrl(hlsAssetObjectKey(campaignId, "index.m3u8"));
 
   await ensureBusiness(pool, businessId, entry);
   await ensureCampaign(pool, {
@@ -622,10 +669,11 @@ function resolveDatabaseOwnerUrl(): string {
 async function main(): Promise<void> {
   const results = await runDemoMedia({ databaseUrl: resolveDatabaseOwnerUrl() });
   const seeded = results.filter((r) => r.status === "seeded").length;
+  const repaired = results.filter((r) => r.status === "repaired").length;
   const already = results.filter((r) => r.status === "already_present").length;
   const failed = results.filter((r) => r.status === "failed");
   console.log(
-    `[demo:media] ${String(seeded)} seeded, ${String(already)} already present, ${String(failed.length)} failed (of ${String(results.length)}).`,
+    `[demo:media] ${String(seeded)} seeded, ${String(repaired)} repaired, ${String(already)} already present, ${String(failed.length)} failed (of ${String(results.length)}).`,
   );
   if (failed.length > 0) {
     for (const failure of failed)

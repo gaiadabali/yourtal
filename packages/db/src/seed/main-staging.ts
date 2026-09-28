@@ -164,11 +164,19 @@ async function main(): Promise<void> {
     const demoMediaSeeded = demoMediaResults.filter(
       (r: DemoMediaResult) => r.status === "seeded",
     ).length;
+    // F65-adjacent: a row written with the old, relative media URLs gets its
+    // URLs rewritten in place here, not skipped — see demo-media.ts's own
+    // `isAbsoluteUrl` check for why "already has an hls_url" was never
+    // enough on its own.
+    const demoMediaRepaired = demoMediaResults.filter(
+      (r: DemoMediaResult) => r.status === "repaired",
+    ).length;
     const demoMediaFailed = demoMediaResults.filter((r: DemoMediaResult) => r.status === "failed");
+    const demoMediaAlready = demoMediaResults.length - demoMediaSeeded - demoMediaRepaired - demoMediaFailed.length;
     const demoMediaSummary =
       demoMediaFailed.length > 0
-        ? `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaFailed.length)} FAILED (${demoMediaFailed.map((r: DemoMediaResult) => r.slug).join(", ")}) — not failing the deploy over it`
-        : `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaResults.length - demoMediaSeeded)} already present`;
+        ? `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaRepaired)} repaired, ${String(demoMediaFailed.length)} FAILED (${demoMediaFailed.map((r: DemoMediaResult) => r.slug).join(", ")}) — not failing the deploy over it`
+        : `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaRepaired)} repaired, ${String(demoMediaAlready)} already present`;
 
     // TASKS.md 7.2.e: each of the 16 demo-media businesses above gets one
     // real store listing plus 6 real vouchers, minted through the ledger's

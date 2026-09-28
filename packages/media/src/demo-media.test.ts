@@ -147,6 +147,13 @@ describe("runDemoMedia", () => {
     expect(campaign?.lifecycle_state).toBe("live");
     expect(campaign?.question_count).toBe(1);
 
+    // F65-adjacent: a bare `/media/...` path fails campaignSchema's z.url()
+    // and crashes mint-manifest-url.ts's new URL() — every one of these URLs
+    // must be a real, absolute URL from the moment a campaign is first seeded.
+    for (const url of [campaign?.hls_url, campaign?.poster_url, campaign?.teaser_url]) {
+      expect(() => new URL(url ?? "")).not.toThrow();
+    }
+
     const questions = await pool.query(
       "SELECT answerable_after_seconds FROM campaign.question WHERE campaign_id = $1 ORDER BY answerable_after_seconds",
       [campaign?.id],
@@ -166,9 +173,64 @@ describe("runDemoMedia", () => {
     expect(Buffer.from(manifestFile).toString()).toContain("#EXTM3U");
     client.destroy();
 
-    // Re-running is a no-op (2.3.e's own convention): the same campaign id already has an hls_url.
+    // Re-running is a no-op (2.3.e's own convention): the same campaign id already has an hls_url,
+    // and it is already absolute, so nothing is rewritten.
     const repeated = await runDemoMedia({ databaseUrl: DATABASE_URL ?? "", manifest });
     expect(repeated).toEqual([{ slug, status: "already_present" }]);
+    const unchanged = await pool.query<{ hls_url: string }>(
+      "SELECT hls_url FROM campaign.campaigns WHERE id = $1",
+      [campaign?.id],
+    );
+    expect(unchanged.rows[0]?.hls_url).toBe(campaign?.hls_url);
+
+    // F65-adjacent: a row written by an OLDER version of this pipeline (bare
+    // `/media/...` paths, the exact shape found live on staging) must be
+    // repaired in place next run, not left broken forever just because
+    // `hls_url IS NOT NULL`. No re-transcode: the objects are already at
+    // `campaignId`'s keys from the seed above, so this only proves the URLs
+    // themselves get rewritten and nothing else changes.
+    await ownerPool.query(
+      `UPDATE campaign.campaigns
+         SET hls_url = $2, poster_url = $3, teaser_url = $4
+       WHERE id = $1`,
+      [
+        campaign?.id,
+        `/media/hls/${String(campaign?.id)}/index.m3u8`,
+        `/media/posters/${String(campaign?.id)}.jpg`,
+        `/media/teasers/${String(campaign?.id)}.mp4`,
+      ],
+    );
+    await ownerPool.query(
+      "UPDATE campaign.video_source SET manifest_url = $2 WHERE campaign_id = $1",
+      [campaign?.id, `/media/hls/${String(campaign?.id)}/index.m3u8`],
+    );
+
+    const repairResult = await runDemoMedia({ databaseUrl: DATABASE_URL ?? "", manifest });
+    expect(repairResult).toEqual([{ slug, status: "repaired" }]);
+
+    const repaired = await pool.query<{
+      hls_url: string;
+      poster_url: string;
+      teaser_url: string;
+    }>(
+      "SELECT hls_url, poster_url, teaser_url FROM campaign.campaigns WHERE id = $1",
+      [campaign?.id],
+    );
+    expect(repaired.rows[0]?.hls_url).toBe(campaign?.hls_url);
+    expect(repaired.rows[0]?.poster_url).toBe(campaign?.poster_url);
+    expect(repaired.rows[0]?.teaser_url).toBe(campaign?.teaser_url);
+    for (const url of [
+      repaired.rows[0]?.hls_url,
+      repaired.rows[0]?.poster_url,
+      repaired.rows[0]?.teaser_url,
+    ]) {
+      expect(() => new URL(url ?? "")).not.toThrow();
+    }
+    const videoSource = await pool.query<{ manifest_url: string }>(
+      "SELECT manifest_url FROM campaign.video_source WHERE campaign_id = $1",
+      [campaign?.id],
+    );
+    expect(videoSource.rows[0]?.manifest_url).toBe(campaign?.hls_url);
 
     await ownerPool.query(
       "DELETE FROM campaign.question_answer_key WHERE question_id IN (SELECT id FROM campaign.question WHERE campaign_id = $1)",

@@ -41,12 +41,12 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
 | **Phase 7** Business studio | C | 🔄 in progress | 6/8 | 34/38 | `█████████░`  89% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 6/16 | `████░░░░░░`  38% |
-| **Phase 9** Staff console | C | 🔄 in progress | 0/5 | 0/17 | `░░░░░░░░░░`   0% |
+| **Phase 9** Staff console | C | 🔄 in progress | 0/5 | 1/17 | `█░░░░░░░░░`   6% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
-| **Phase 13** Ready for live review | all | · not started | 0/6 | 0/16 | `░░░░░░░░░░`   0% |
-| **All** | | | **53/87** | **299/412** | `███████░░░`  73% |
+| **Phase 13** Ready for live review | all | · not started | 0/7 | 0/19 | `░░░░░░░░░░`   0% |
+| **All** | | | **53/88** | **300/415** | `███████░░░`  72% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1173,7 +1173,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
 The internal team runs the economy and the review queues. Today none of it exists.
 
 - [ ] **9.1 Staff shell and access** · needs: 1.5, 3.5 — 🔄 slot 2
-  - [ ] 9.1.a A `(staff)` route group at `/staff`, using StudioShell. Staff accounts are created by CLI (`pnpm staff:add <email> <role>`). Every action is audited. All copy lives in `messages/*/staff.json`.
+  - [x] 9.1.a A `(staff)` route group at `/staff`, using StudioShell. Staff accounts are created by CLI (`pnpm staff:add <email> <role>`). Every action is audited. All copy lives in `messages/*/staff.json`. — done on `phase/9` (70042bf1, b839e299): `(staff)` route group on StudioShell, gated by `GET /api/staff/me` (new Cerbos kind `staff_console`: the five working staff roles; `admin` stays out by the admin boundary; suspended staff refused). `pnpm staff:add` already existed (1.5.b). Audit: append-only `staff.audit_event` (trigger refuses UPDATE/DELETE, owner included), written by `StaffAuditInterceptor` for every `@StaffAction` route, succeeded or failed; a unit test fails the build for a staff route with neither `@StaffAction` nor `@StaffUnaudited`. Copy in `messages/{en-AU,id-ID}/staff.json`. Non-staff get a real HTTP 403 via `forbidden()` (F53).
   - [ ] 9.1.b **Check:** a non-staff account gets 403 on `/staff/*`.
 - [ ] **9.2 Moderation queue** · needs: 9.1, 7.3, 7.7
   - [ ] 9.2.a The queue covers campaign creative, question banks (checked for PII and prediction questions), audience and category (confirm or change, per the 1.1.d policy), listings and voucher batches. The simulated automated screen shows as flags. Approve or reject with a reason.
@@ -1364,6 +1364,10 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 
 - [ ] **13.7 Drop the `browserslist` override once serwist 10 ships** (moved from 2.4.g by F38) · needs: serwist 10 stable — ✂️ cut: F42, ship on the latest stable; upgrade serwist later as routine maintenance, not a gate.
   - [ ] 13.7.a Upgrade `serwist`, `@serwist/next` and `@serwist/build` to 10.x and remove the `browserslist@<4.28.7` override from `pnpm-workspace.yaml`; `pnpm verify` green and the service worker still serves a visited voucher page offline. — ✂️ cut: F42.
+- [ ] **13.8 A deploy that crashes on start is not "OK"** · A · needs: —
+  - [ ] 13.8.a (found by slot 1, 2026-09-28) After the pm2 reload, the deploy waits for `/api/health` (and the worker's readiness) and, if either fails, reports DEPLOY FAILED and rolls back to the previous release. On 2026-09-27 release 1191d50 logged `DEPLOY OK` while `yourtal-api` crashed on import (`ERR_MODULE_NOT_FOUND @aws-sdk/client-s3`), leaving `/api` at 502.
+  - [ ] 13.8.b CI builds the release artifact (`pnpm --filter … deploy --prod`) and boots `api/dist/main.js` and the worker once, so a dependency that is only declared by a workspace package fails in CI, not on staging.
+  - [ ] 13.8.c **Check:** a release whose api cannot boot is rolled back automatically, and staging keeps serving the previous one.
 **Done when:** the founder completes the walkthrough on staging, and every issue raised is either fixed or recorded as a task in this file.
 
 ---

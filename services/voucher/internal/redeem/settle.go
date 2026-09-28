@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -262,6 +263,23 @@ func (n *Network) Capture(
 			AmountMinor: finalAmountMinor, Currency: authorization.Currency,
 		}); err != nil {
 			return fmt.Errorf("recording the capture outbox row: %w", err)
+		}
+
+		// 8.3.e: the business's own webhook outbox row, same transaction.
+		if err := RecordWebhookOutbox(ctx, queries, WebhookOutboxEvent{
+			EventType:      "voucher.captured",
+			MerchantID:     merchantID,
+			IdempotencyKey: asUUID(row.ID).String(),
+			Payload: map[string]any{
+				"captureId":   asUUID(row.ID).String(),
+				"voucherId":   asUUID(voucher.ID).String(),
+				"amountMinor": finalAmountMinor,
+				"currency":    authorization.Currency,
+				"capturedAt":  n.now().Format(time.RFC3339),
+				"orderRef":    authorization.MerchantOrderRef,
+			},
+		}); err != nil {
+			return err
 		}
 
 		captured = Capture{

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -119,8 +120,9 @@ func (n *Network) Refund(
 		// The total is bounded by a deferred constraint trigger, which fires
 		// at COMMIT — so this insert can succeed and the transaction still
 		// fail, correctly, if the refunds together exceed the capture.
+		refundID := uuid.New()
 		inserted, err := queries.InsertRefund(ctx, sqlcgen.InsertRefundParams{
-			ID: pgUUID(uuid.New()), CaptureID: capture.ID,
+			ID: pgUUID(refundID), CaptureID: capture.ID,
 			AmountMinor: amountMinor, Reason: reason, RefundRef: &refundRef,
 		})
 		if err != nil {
@@ -154,7 +156,7 @@ func (n *Network) Refund(
 			return fmt.Errorf("%w: voucher %s is %s", ErrRefused, asUUID(voucher.ID), voucher.State)
 		}
 
-		_, err = issue.Move(ctx, queries, issue.MoveRequest{
+		if _, err := issue.Move(ctx, queries, issue.MoveRequest{
 			VoucherID:       asUUID(voucher.ID),
 			From:            lifecycle.Active,
 			To:              lifecycle.Active,
@@ -169,8 +171,25 @@ func (n *Network) Refund(
 				"reason", reason,
 			),
 			At: n.now(),
+		}); err != nil {
+			return err
+		}
+
+		// 8.3.e: the business's own webhook outbox row, same transaction.
+		return RecordWebhookOutbox(ctx, queries, WebhookOutboxEvent{
+			EventType:      "voucher.refunded",
+			MerchantID:     asUUID(authorization.MerchantID),
+			IdempotencyKey: refundID.String(),
+			Payload: map[string]any{
+				"refundId":    refundID.String(),
+				"captureId":   captureID.String(),
+				"voucherId":   asUUID(voucher.ID).String(),
+				"amountMinor": amountMinor,
+				"currency":    authorization.Currency,
+				"reason":      reason,
+				"refundedAt":  n.now().Format(time.RFC3339),
+			},
 		})
-		return err
 	})
 	// The refund total is checked at COMMIT; over-refunding is a refusal,
 	// not a 500 (D14).

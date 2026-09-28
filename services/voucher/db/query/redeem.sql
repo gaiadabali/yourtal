@@ -101,6 +101,27 @@ LIMIT $1;
 UPDATE voucher.capture_outbox SET posted_at = now()
 WHERE capture_id = $1 AND posted_at IS NULL;
 
+-- name: InsertWebhookOutbox :exec
+-- 8.3.e: written in the same transaction as the capture/refund it names.
+-- apps/worker polls unposted rows through /internal/v1 and hands each to
+-- the 8.3.c signer, keyed on idempotency_key.
+INSERT INTO voucher.webhook_outbox (event_type, merchant_id, idempotency_key, payload)
+VALUES ($1, $2, $3, $4);
+
+-- name: ListUnpostedWebhookOutbox :many
+-- apps/worker's backlog, one batch per pass.
+SELECT id, event_type, merchant_id, idempotency_key, payload, created_at
+FROM voucher.webhook_outbox
+WHERE posted_at IS NULL
+ORDER BY created_at
+LIMIT $1;
+
+-- name: MarkWebhookOutboxPosted :execrows
+-- Set only after every row in the batch has been handed to the delivery
+-- queue; a second marker is a no-op.
+UPDATE voucher.webhook_outbox SET posted_at = now()
+WHERE id = ANY(sqlc.arg(ids)::uuid[]) AND posted_at IS NULL;
+
 -- name: GetCapture :one
 -- YT-0571 audit: no merchant predicate, considered rather than silent. The
 -- only caller is Refund (release.go), and its capture id is never

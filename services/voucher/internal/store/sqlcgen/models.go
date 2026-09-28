@@ -204,3 +204,13 @@ type VoucherVoucher struct {
 	ReservedUntil           pgtype.Timestamptz
 	HeadAnchoredVersion     int32
 }
+
+type VoucherWebhookOutbox struct {
+	ID             pgtype.UUID
+	EventType      string
+	MerchantID     pgtype.UUID
+	IdempotencyKey string
+	Payload        []byte
+	CreatedAt      pgtype.Timestamptz
+	PostedAt       pgtype.Timestamptz
+}

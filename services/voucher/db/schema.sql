@@ -146,6 +146,16 @@ CREATE TABLE voucher.refund (
   refund_ref   text
 );
 
+CREATE TABLE voucher.webhook_outbox (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type      text        NOT NULL,
+  merchant_id     uuid        NOT NULL,
+  idempotency_key text        NOT NULL,
+  payload         jsonb       NOT NULL,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  posted_at       timestamptz
+);
+
 CREATE TABLE voucher.merchant_signature_seen (
   key_id  text        NOT NULL,
   mac     bytea       NOT NULL,

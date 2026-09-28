@@ -1,4 +1,4 @@
-h1:/G+uro48ZGwlE5RURGwywCNSsuKUaNtZD6+FXKfmDmk=
+h1:AyQr0/WwE4S9v5Myus2Eh62KQ2leDrU03BNYt9CoJ+U=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -87,3 +87,4 @@ h1:/G+uro48ZGwlE5RURGwywCNSsuKUaNtZD6+FXKfmDmk=
 20260927180100_webhook_subscription.sql h1:Nqv3ZRcm37rRSyNZ4b5bTyFh/VY0GJ9zVWsMUu4FYzU=
 20260927180200_staff_audit.sql h1:Z23c6enOnNk8yZEU7ZIY9TFuRqGuigMFXo+RypHaQrY=
 20260927190000_partner_actions.sql h1:eBNSEmKhenma5Y4jqB3/cXFCrjpMwGBt/Re/avfUcRk=
+20260928095021_voucher_webhook_outbox.sql h1:tyuLo6yEB2y9jOBRK1mzN6/NYhfPSW/4Xc+2c2ObKfU=

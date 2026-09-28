@@ -320,6 +320,26 @@ func (a *API) captureAsDevice(w http.ResponseWriter, r *http.Request) {
 			return fmt.Errorf("recording the capture outbox row: %w", err)
 		}
 
+		// 8.3.e: same outbox redeem.Capture writes for the merchant HMAC path
+		// — one source for voucher.captured whichever route settled it, so
+		// apps/api's counter controller no longer publishes this itself
+		// (double-notify otherwise: this row AND its own direct publish).
+		if err := redeem.RecordWebhookOutbox(r.Context(), queries, redeem.WebhookOutboxEvent{
+			EventType:      "voucher.captured",
+			MerchantID:     merchantID,
+			IdempotencyKey: captureID.String(),
+			Payload: map[string]any{
+				"captureId":   captureID.String(),
+				"voucherId":   asUUID(voucher.ID).String(),
+				"amountMinor": resolved.AmountMinor,
+				"currency":    resolved.Currency,
+				"capturedAt":  time.Now().UTC().Format(time.RFC3339),
+				"orderRef":    resolved.MerchantOrderRef,
+			},
+		}); err != nil {
+			return err
+		}
+
 		view = captureView{
 			CaptureID: captureID.String(), VoucherID: asUUID(voucher.ID).String(),
 			AmountMinor: resolved.AmountMinor, Currency: resolved.Currency, CapturedAt: iso(time.Now().UTC()),

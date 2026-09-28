@@ -47,6 +47,7 @@ var tables = map[string]string{
 	"authorization":       "voucher",
 	"capture":             "voucher",
 	"refund":              "voucher",
+	"webhook_outbox":      "voucher",
 	"merchant_credential": "voucher",
 	"kill_switch":         "voucher",
 	"redemption_attempt":  "voucher",

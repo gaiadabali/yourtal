@@ -530,6 +530,31 @@ func (q *Queries) InsertRefund(ctx context.Context, arg InsertRefundParams) (int
 	return result.RowsAffected(), nil
 }
 
+const insertWebhookOutbox = `-- name: InsertWebhookOutbox :exec
+INSERT INTO voucher.webhook_outbox (event_type, merchant_id, idempotency_key, payload)
+VALUES ($1, $2, $3, $4)
+`
+
+type InsertWebhookOutboxParams struct {
+	EventType      string
+	MerchantID     pgtype.UUID
+	IdempotencyKey string
+	Payload        []byte
+}
+
+// 8.3.e: written in the same transaction as the capture/refund it names.
+// apps/worker polls unposted rows through /internal/v1 and hands each to
+// the 8.3.c signer, keyed on idempotency_key.
+func (q *Queries) InsertWebhookOutbox(ctx context.Context, arg InsertWebhookOutboxParams) error {
+	_, err := q.db.Exec(ctx, insertWebhookOutbox,
+		arg.EventType,
+		arg.MerchantID,
+		arg.IdempotencyKey,
+		arg.Payload,
+	)
+	return err
+}
+
 const isKilled = `-- name: IsKilled :one
 SELECT EXISTS (
   SELECT 1 FROM voucher.kill_switch
@@ -651,6 +676,51 @@ func (q *Queries) ListUnpostedCaptureOutbox(ctx context.Context, limit int32) ([
 	return items, nil
 }
 
+const listUnpostedWebhookOutbox = `-- name: ListUnpostedWebhookOutbox :many
+SELECT id, event_type, merchant_id, idempotency_key, payload, created_at
+FROM voucher.webhook_outbox
+WHERE posted_at IS NULL
+ORDER BY created_at
+LIMIT $1
+`
+
+type ListUnpostedWebhookOutboxRow struct {
+	ID             pgtype.UUID
+	EventType      string
+	MerchantID     pgtype.UUID
+	IdempotencyKey string
+	Payload        []byte
+	CreatedAt      pgtype.Timestamptz
+}
+
+// apps/worker's backlog, one batch per pass.
+func (q *Queries) ListUnpostedWebhookOutbox(ctx context.Context, limit int32) ([]ListUnpostedWebhookOutboxRow, error) {
+	rows, err := q.db.Query(ctx, listUnpostedWebhookOutbox, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUnpostedWebhookOutboxRow
+	for rows.Next() {
+		var i ListUnpostedWebhookOutboxRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventType,
+			&i.MerchantID,
+			&i.IdempotencyKey,
+			&i.Payload,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markCaptureOutboxPosted = `-- name: MarkCaptureOutboxPosted :execrows
 UPDATE voucher.capture_outbox SET posted_at = now()
 WHERE capture_id = $1 AND posted_at IS NULL
@@ -659,6 +729,21 @@ WHERE capture_id = $1 AND posted_at IS NULL
 // Set only after the ledger answered 2xx; a second marker is a no-op.
 func (q *Queries) MarkCaptureOutboxPosted(ctx context.Context, captureID pgtype.UUID) (int64, error) {
 	result, err := q.db.Exec(ctx, markCaptureOutboxPosted, captureID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const markWebhookOutboxPosted = `-- name: MarkWebhookOutboxPosted :execrows
+UPDATE voucher.webhook_outbox SET posted_at = now()
+WHERE id = ANY($1::uuid[]) AND posted_at IS NULL
+`
+
+// Set only after every row in the batch has been handed to the delivery
+// queue; a second marker is a no-op.
+func (q *Queries) MarkWebhookOutboxPosted(ctx context.Context, ids []pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, markWebhookOutboxPosted, ids)
 	if err != nil {
 		return 0, err
 	}

@@ -20,6 +20,7 @@
     "@yourtal/jurisdiction": "workspace:*",
     "@yourtal/media": "workspace:*",
     "@yourtal/queue": "workspace:*",
+    "neverthrow": "8.2.0",
     "pg": "8.23.0",
     "pg-boss": "12.34.0",
     "zod": "4.6.5"

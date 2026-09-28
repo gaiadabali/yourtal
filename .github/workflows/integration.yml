@@ -117,6 +117,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # F62: F50 installed this right before "Every remaining suite", but
+      # `packages/media`'s demo-media.test.ts is not the only suite that
+      # shells out to ffmpeg/ffprobe (execFileSync) to prove a real
+      # transcode, not a mock — `packages/db`'s own `demo-media-vouchers.test.ts`
+      # (7.9's RustFS seed fixtures) does too, and it runs many steps earlier
+      # ("packages/db", well before "Every remaining suite"). This runner has
+      # neither binary otherwise, so whichever suite reached ffmpeg first
+      # died with `spawnSync ffmpeg ENOENT` — F50 only ever covered the
+      # LATER of the two. Moved to the top of the job, right after checkout
+      # and before every step that can reach it, rather than "the one step
+      # that happened to need it first" a second time. Installed via apt
+      # rather than a pinned third-party action: one line, no extra
+      # supply-chain trust, and ubuntu-24.04's own repos carry a current
+      # ffmpeg build (ffprobe ships in the same package).
+      - name: Install ffmpeg (F50/F62)
+        run: sudo apt-get update -y && sudo apt-get install -y ffmpeg
       #
       # It was a service container, and it could never have worked. GitHub
       # creates service containers BEFORE the job's first step — so before
@@ -390,16 +407,6 @@ jobs:
           PORT: "26344"
           API_INTERNAL_URL: http://127.0.0.1:26344
         run: pnpm test:e2e:offline
-
-      # F50: packages/media's demo-media.test.ts shells out to ffmpeg/ffprobe
-      # directly (execFileSync) to prove the real transcode pipeline, not a
-      # mock — and this runner has neither binary, so it died with `spawnSync
-      # ffmpeg ENOENT` inside "Every remaining suite" below. Installed via
-      # apt rather than a pinned third-party action: one line, no extra
-      # supply-chain trust, and ubuntu-24.04's own repos carry a current
-      # ffmpeg build (ffprobe ships in the same package).
-      - name: Install ffmpeg (F50)
-        run: sudo apt-get update -y && sudo apt-get install -y ffmpeg
 
       # Everything else, now that Postgres and a live PDP are up. The
       # targeted steps above exist for their SKIP guards and their tee'd

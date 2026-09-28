@@ -120,6 +120,17 @@ async function main(): Promise<void> {
       result.demoVoucherDetail === undefined
         ? `demo voucher: ${result.demoVoucher}`
         : `demo voucher: ${result.demoVoucher}: ${result.demoVoucherDetail}`;
+    // F74/8.2.i (reopened): one line per region's cheap listing.
+    const affordableListingsSummary =
+      result.affordableListings.length === 0
+        ? "affordable listings: skipped"
+        : result.affordableListings
+            .map((l) =>
+              l.detail === undefined
+                ? `${l.region} affordable listing (${l.listingId}): ${l.status}`
+                : `${l.region} affordable listing (${l.listingId}): ${l.status}: ${l.detail}`,
+            )
+            .join("; ");
     // F74/8.2.i: one line per region this run had a viewer for.
     const redemptionBalanceSummary =
       result.redemptionBalance.length === 0
@@ -225,13 +236,14 @@ async function main(): Promise<void> {
 
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
-        `${grantSummary}; ${voucherSummary}; ${redemptionBalanceSummary}; ${mediaSummary}; ` +
-        `${demoMediaSummary}; ${demoMediaVouchersSummary}.`,
+        `${grantSummary}; ${voucherSummary}; ${affordableListingsSummary}; ` +
+        `${redemptionBalanceSummary}; ${mediaSummary}; ${demoMediaSummary}; ${demoMediaVouchersSummary}.`,
     );
 
     if (
       result.pendingGrant === "failed" ||
       result.demoVoucher === "failed" ||
+      result.affordableListings.some((l) => l.status === "failed") ||
       result.redemptionBalance.some((b) => b.status === "failed") ||
       media?.status === "failed"
     ) {
@@ -239,7 +251,8 @@ async function main(): Promise<void> {
       // failed deploy, on purpose — see this file's own header.
       console.error(
         "Staging seed: a real service call failed (see the line(s) above). Failing the deploy " +
-          "rather than leaving a demo grant, voucher, redemption balance or video silently missing.",
+          "rather than leaving a demo grant, voucher, listing, redemption balance or video " +
+          "silently missing.",
       );
       process.exitCode = 1;
     }

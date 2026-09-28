@@ -177,6 +177,7 @@ async function ensureOneBusiness(
     await insertListing(pool, listing);
     listingFacts = {
       faceValueMinor: listing.faceValueMinor,
+      settlementValueMinor: listing.settlementValueMinor,
       currency: listing.currency,
       partialRedemptionPolicy: listing.partialRedemptionPolicy,
     };

@@ -15,6 +15,8 @@ import {
 import { grantActionRequestSchema } from "@yourtal/contracts/ledger-internal/rewards";
 import type { GrantActionRequest } from "@yourtal/contracts/ledger-internal/rewards";
 import { ledgerErrorSchema } from "@yourtal/contracts/ledger-internal/ledger-error";
+import { quoteRequestSchema } from "@yourtal/contracts/ledger-internal/pricing";
+import type { QuoteRequest } from "@yourtal/contracts/ledger-internal/pricing";
 import {
   approveBatchRequestSchema,
   batchSchema,
@@ -141,13 +143,40 @@ export interface StagingSeedResult {
    * it is `"created"` (F74/8.2.i) — undefined only for `"already_present"`/`"skipped"`. */
   readonly demoVoucherDetail?: string;
   /**
-   * F74/8.2.i: each region's demo viewer topped up, in fixed idempotent
-   * chunks, to afford several demo vouchers at today's LIVE quote (AU) or a
-   * flat headroom (ID — no demo listing exists yet to quote against) — see
-   * `ensureDemoRedemptionBalance`. Empty when the world has no demo viewers
-   * to grant to (the same case `pendingGrant`/`demoVoucher` report `"skipped"` for).
+   * F74/8.2.i: each region's demo viewer topped up, in one safely-sized
+   * idempotent grant attempt per run, to afford several of that region's
+   * OWN cheap demo listing (`affordableListings` below) at today's LIVE
+   * quote — see `ensureDemoRedemptionBalance`. Empty when the world has no
+   * demo viewers to grant to (the same case `pendingGrant`/`demoVoucher`
+   * report `"skipped"` for).
    */
   readonly redemptionBalance: readonly DemoBalanceResult[];
+  /**
+   * F74/8.2.i (reopened) — the two listings this seed derives a LOW price
+   * for at creation, so the loop is actually affordable rather than merely
+   * funded: AU's second listing (`AU_AFFORDABLE_LISTING_ID`, the original
+   * `DEMO_LISTING_ID` is never repriced — see its own doc) and ID's first
+   * one (`ID_LISTING_ID` — no Snap App ID listing existed before this).
+   * `"failed"` here (a real pricing/voucher error) fails the deploy;
+   * `"created"`/`"already_present"` do not. Same "skipped means empty" rule
+   * as `redemptionBalance` — no demo viewer to serve means no reason to
+   * create or reprice these listings either.
+   */
+  readonly affordableListings: readonly AffordableListingResult[];
+}
+
+export interface AffordableListingResult {
+  readonly region: "AU" | "ID";
+  readonly listingId: string;
+  readonly locationId: string;
+  readonly status: "created" | "already_present" | "failed";
+  /** The ledger's/voucher service's own error code, or a network-error
+   * message, when `status` is `"failed"`; a short "had N, minted M more"
+   * summary when it is `"created"` — undefined only for `"already_present"`. */
+  readonly detail?: string;
+  /** Present only when this run actually derived a NEW price (a fresh
+   * listing) — the live quote it landed at. */
+  readonly pricePoints?: number;
 }
 
 export interface DemoBalanceResult {
@@ -223,9 +252,46 @@ const CAMPAIGN_IDS = {
 
 /** 2.3.c's own listing/voucher — the restore rehearsal needs one real,
  * decryptable voucher code to prove a backup restore against, and
- * `voucher.batch` has an FK to `store.listings`, so both are seeded here. */
+ * `voucher.batch` has an FK to `store.listings`, so both are seeded here.
+ * Its settlement value is FIXED forever (`DEMO_SETTLEMENT_VALUE_MINOR`) —
+ * see F74/8.2.i's reopened note on why a redemption-loop-affordable listing
+ * is a SEPARATE one (`AU_AFFORDABLE_LISTING_ID` below), never an edit to
+ * this one. */
 const DEMO_LISTING_ID = "00000000-0000-4000-9000-000000000301";
 const DEMO_LOCATION_ID = "00000000-0000-4000-9000-000000000302";
+
+/**
+ * F74/8.2.i (reopened 2026-09-29) — a SECOND AU listing and the first ID
+ * one, both priced LOW on purpose so the redemption loop actually works,
+ * not just eventually. Not the same listing as `DEMO_LISTING_ID`/2.3.c's:
+ * lowering an EXISTING listing's settlement value is a real business rule
+ * (`store.listing_price_revision`/YT-0575), enforced at the API layer —
+ * `DrizzleListingRepository.updateSettlementValue` takes a decrease only
+ * through `DrizzleSettlementDecreaseRequestRepository`'s two-person
+ * approval (`apps/api/src/modules/store/persistence/apply-settlement-
+ * value-change.ts`'s own header). This seed writes directly to Postgres
+ * and could technically bypass that, but bypassing a control that exists
+ * specifically to stop someone from unilaterally re-pricing a listing
+ * downward is exactly the wrong instinct for a fixture that is meant to
+ * model the real thing — so `DEMO_LISTING_ID` is never touched after
+ * creation, and this is a brand-new listing this seed owns outright
+ * instead, cheap from the moment it is created.
+ */
+const AU_AFFORDABLE_LISTING_ID = "00000000-0000-4000-9000-000000000303";
+const AU_AFFORDABLE_LOCATION_ID = "00000000-0000-4000-9000-000000000304";
+const ID_LISTING_ID = "00000000-0000-4000-9000-000000000305";
+const ID_LOCATION_ID = "00000000-0000-4000-9000-000000000306";
+
+/** The LIVE quote (points) each region's cheap listing is derived to land
+ * at, at creation time — see `deriveAffordableSettlementMinor`. Small on
+ * purpose: AU's is sized against `viewer.au`'s own EXISTING ~600-point
+ * balance (the exact number the reopened 8.2.e Check reported), so the
+ * loop works on the very next deploy, not after days of top-ups; ID's
+ * matches the same ratio against its own daily-cap-affordable target
+ * (`ID_TOPUP_CHUNK_POINTS`). Both leave room for `REDEMPTION_HEADROOM_
+ * VOUCHERS` several times over. */
+const AU_AFFORDABLE_QUOTE_TARGET_POINTS = 150;
+const ID_AFFORDABLE_QUOTE_TARGET_POINTS = 250;
 
 interface DemoAccountSpec {
   readonly email: string;
@@ -842,13 +908,10 @@ const REDEMPTION_HEADROOM_VOUCHERS = 2;
  * lands on `velocity_capped` (F12's own cap, working as designed) is not —
  * see `ensureDemoRedemptionBalance`'s `"capped_for_today"` outcome. */
 const AU_TOPUP_CHUNK_POINTS = 450;
-/** ID's daily cap (5000) comfortably covers `ID_FLAT_TARGET_POINTS` in one
- * grant, so ID reaches its target the very first successful run. */
+/** ID's daily cap (5000) comfortably covers this, and the ID affordable
+ * listing's own target quote (`ID_AFFORDABLE_QUOTE_TARGET_POINTS`) times
+ * `REDEMPTION_HEADROOM_VOUCHERS`, so ID reaches its target in one grant. */
 const ID_TOPUP_CHUNK_POINTS = 1_000;
-/** ID has no demo listing yet (`buildDemoListing` is AU-only — see its own
- * header) — a flat headroom in the same points unit, not a quote against
- * nothing, keeps the ID viewer usable without inventing a fake ID price. */
-const ID_FLAT_TARGET_POINTS = 1_000;
 
 /**
  * One "quick" listing for snap-app AU, the same 1.1.h rule the campaign
@@ -898,6 +961,10 @@ function buildDemoListing(priceInPoints: number): Listing {
 
 export interface ExistingListingFacts {
   readonly faceValueMinor: number;
+  /** F74/8.2.i (reopened) — read back so `ensureDemoRedemptionBalance`'s
+   * target can be re-quoted at TODAY's live rate on every run, without this
+   * seed ever storing or guessing a price itself. */
+  readonly settlementValueMinor: number;
   readonly currency: string;
   readonly partialRedemptionPolicy: string;
 }
@@ -908,10 +975,11 @@ export async function existingListingFacts(
 ): Promise<ExistingListingFacts | null> {
   const result = await pool.query<{
     face_value_minor: string;
+    settlement_value_minor: string;
     currency: string;
     partial_redemption_policy: string;
   }>(
-    `SELECT face_value_minor, currency, partial_redemption_policy
+    `SELECT face_value_minor, settlement_value_minor, currency, partial_redemption_policy
        FROM store.listings WHERE id = $1`,
     [listingId],
   );
@@ -920,6 +988,7 @@ export async function existingListingFacts(
     ? null
     : {
         faceValueMinor: Number(row.face_value_minor),
+        settlementValueMinor: Number(row.settlement_value_minor),
         currency: row.currency,
         partialRedemptionPolicy: row.partial_redemption_policy,
       };
@@ -1077,14 +1146,133 @@ async function priceDemoListing(
   });
 }
 
+/** Re-quotes an EXISTING listing's OWN stored settlement value at TODAY's
+ * live rate — never a second guess at the price, and never the (possibly
+ * stale) stored `priceInPoints` column (F74/8.2.i's reopened note: exactly
+ * this staleness is why the original Check failed — 858 quoted live for a
+ * listing whose price had drifted since it was first created). Used to
+ * size `ensureDemoRedemptionBalance`'s target, every run. */
+async function quoteExistingListing(
+  pool: pg.Pool,
+  ledger: StagingLedgerConfig,
+  listingId: string,
+  region: "AU" | "ID",
+): Promise<{ ok: true; pricePoints: number } | { ok: false; detail: string }> {
+  const facts = await existingListingFacts(pool, listingId);
+  if (facts === null) {
+    return { ok: false, detail: `listing ${listingId} does not exist yet` };
+  }
+  return priceListing(ledger, {
+    listingId,
+    region,
+    currency: facts.currency,
+    settlementMinor: facts.settlementValueMinor,
+  });
+}
+
+/** `POST /v1/pricing/quote` — the SAME real quote route a viewer's own
+ * checkout uses (`quoteCheckout`'s `deps.ledger.quote`,
+ * `apps/api/src/modules/checkout/use-cases/quote-checkout.ts`), unlike
+ * `/v1/pricing/listing` above: it takes no listing id and upserts nothing
+ * keyed to one, so it is safe to call with a SETTLEMENT VALUE THAT HAS NO
+ * LISTING YET — exactly what probing a price to create one needs. Quotes
+ * are stored but expire in 15 minutes and are never locked here, so probing
+ * costs nothing durable. */
+async function quoteSettlement(
+  ledger: StagingLedgerConfig,
+  region: "AU" | "ID",
+  currency: string,
+  settlementMinor: number,
+): Promise<{ ok: true; pricePoints: number } | { ok: false; detail: string }> {
+  const request: QuoteRequest = quoteRequestSchema.parse({ region, currency, settlementMinor });
+  const quoted = await postSigned(ledger, "/v1/pricing/quote", request);
+  if (!quoted.ok) return { ok: false, detail: quoted.detail };
+  const body = quoted.body;
+  const pricePoints =
+    typeof body === "object" && body !== null && "pricePoints" in body
+      ? body.pricePoints
+      : undefined;
+  if (typeof pricePoints !== "number") {
+    return { ok: false, detail: `unexpected /v1/pricing/quote response: ${JSON.stringify(body)}` };
+  }
+  return { ok: true, pricePoints };
+}
+
+/** F74/8.2.i (reopened) — picks a settlement value S whose LIVE quote lands
+ * at or under `targetPoints`, TODAY, by probing the real checkout-quote
+ * route (never the stored `priceInPoints` column, never a mock backing
+ * rate — `eslint-rules/no-mock-backing-rate.mjs` refuses a new one for the
+ * same reason this doesn't reach for one).
+ *
+ * `PriceInPoints` (`services/ledger/internal/pricing/price.go`) is an EXACT
+ * proportion in S for a fixed backing rate and the neutral 1.00x demand
+ * multiplier docs/09 §11 launches with (`points = ceil(S × 1e6 / B)`), so
+ * one probe at a large reference S gives the current ratio; a second real
+ * quote at the derived S confirms the actual price (rounding is always UP,
+ * per that formula's own doc comment, so the derived S can land a touch
+ * over target) — and a third, smaller attempt backs off once more in that
+ * case. Never more than three real ledger calls. */
+async function deriveAffordableSettlementMinor(
+  ledger: StagingLedgerConfig,
+  region: "AU" | "ID",
+  currency: string,
+  targetPoints: number,
+  log: (message: string) => void,
+): Promise<
+  { ok: true; settlementMinor: number; pricePoints: number } | { ok: false; detail: string }
+> {
+  const PROBE_SETTLEMENT_MINOR = 1_000_000;
+  const probe = await quoteSettlement(ledger, region, currency, PROBE_SETTLEMENT_MINOR);
+  if (!probe.ok) {
+    log(
+      `[seed:staging] ledger /v1/pricing/quote (${region} probe) answered an error: ${probe.detail}`,
+    );
+    return { ok: false, detail: probe.detail };
+  }
+
+  let settlementMinor = Math.max(
+    1,
+    Math.floor((targetPoints * PROBE_SETTLEMENT_MINOR) / probe.pricePoints),
+  );
+  let final = await quoteSettlement(ledger, region, currency, settlementMinor);
+  if (!final.ok) {
+    log(
+      `[seed:staging] ledger /v1/pricing/quote (${region} derived) answered an error: ${final.detail}`,
+    );
+    return { ok: false, detail: final.detail };
+  }
+
+  if (final.pricePoints > targetPoints && settlementMinor > 1) {
+    settlementMinor = Math.max(1, Math.floor(settlementMinor * (targetPoints / final.pricePoints)));
+    const retried = await quoteSettlement(ledger, region, currency, settlementMinor);
+    if (retried.ok) final = retried;
+  }
+  return { ok: true, settlementMinor, pricePoints: final.pricePoints };
+}
+
+interface EnsureListingStockParams {
+  readonly listingId: string;
+  readonly merchantId: string;
+  readonly stockTarget: number;
+  /** Called only when the listing does not exist yet — builds and inserts
+   * it (deriving or fixing its price however the caller needs to), and
+   * returns the facts `requestBatch` needs to mint against it. */
+  readonly createIfMissing: () => Promise<
+    { ok: true; facts: ExistingListingFacts } | { ok: false; detail: string }
+  >;
+}
+
 /**
- * Step 4 (2.3.c) — one real, decryptable voucher for the restore rehearsal
- * to prove a backup restore against. `voucher.vouchers` seeded any other
- * way (`seed/store.ts`'s own mock vouchers included) has no
- * `voucher.code_custody` row — no envelope-encrypted code to decrypt — so
- * this goes through the real minting flow, the same way the tier-0 grant
- * goes through the real reward engine: `POST /internal/v1/batches` then
- * `POST /internal/v1/batches/approve` (a DIFFERENT approver than requester
+ * The shared "keep this listing's real, minted-and-unallocated stock
+ * (`voucher.vouchers WHERE state='minted'` — 7.4.c made `store.listings.
+ * stock_remaining` vestigial) topped up to a target" step, factored out of
+ * the original 2.3.c voucher (`ensureDemoVoucher`) so F74/8.2.i's two new
+ * listings (`ensureAffordableDemoListing`) reuse the exact same real
+ * batch/approve mechanics rather than a second copy of them — only WHICH
+ * listing, whose business, and how a missing one gets created differ.
+ *
+ * One real, decryptable voucher per mint (`POST /internal/v1/batches` then
+ * `POST /internal/v1/batches/approve`, a DIFFERENT approver than requester
  * — `Minter.Approve` matches no row, and answers the same error, for a
  * self-approval as for "not awaiting approval" — `services/voucher/
  * internal/issue/issue.go`). Approval mints synchronously.
@@ -1093,7 +1281,7 @@ async function priceDemoListing(
  * handler mints a fresh `uuid.New()` batch id server-side on every call, the
  * same "no caller-supplied key" gap `/economy/marketing/fund` has (this
  * file's own header on step 2) — so idempotency is this function's own:
- * skip entirely if a voucher already exists for this listing.
+ * counts real `state='minted'` rows and only mints the shortfall.
  *
  * Approval can return 200 with the batch merely "approved" rather than
  * "minted" — `approveBatch`'s own handler mints synchronously but only LOGS
@@ -1101,45 +1289,36 @@ async function priceDemoListing(
  * voucher/internal/api/batches_routes.go`) — so this re-checks
  * `voucher.vouchers` afterward rather than trusting the response shape.
  */
-async function ensureDemoVoucher(
+async function ensureListingStock(
   pool: pg.Pool,
-  ledger: StagingLedgerConfig,
   voucher: StagingVoucherConfig,
+  params: EnsureListingStockParams,
   log: (message: string) => void,
 ): Promise<VoucherOutcome> {
   const existingVouchers = async (): Promise<number> => {
     const result = await pool.query<{ count: string }>(
       "SELECT count(*)::text AS count FROM voucher.vouchers WHERE listing_id = $1",
-      [DEMO_LISTING_ID],
+      [params.listingId],
     );
     return Number(result.rows[0]?.count ?? "0");
   };
 
   const had = await existingVouchers();
-  const shortfall = DEMO_VOUCHER_STOCK_TARGET - had;
+  const shortfall = params.stockTarget - had;
   if (shortfall <= 0) {
     return { status: "already_present" };
   }
 
-  let listingFacts = await existingListingFacts(pool, DEMO_LISTING_ID);
+  let listingFacts = await existingListingFacts(pool, params.listingId);
   if (listingFacts === null) {
-    const priced = await priceDemoListing(ledger);
-    if (!priced.ok) {
-      log(`[seed:staging] ledger /v1/pricing/listing answered an error: ${priced.detail}`);
-      return { status: "failed", detail: priced.detail };
-    }
-    const listing = buildDemoListing(priced.pricePoints);
-    await insertListing(pool, listing);
-    listingFacts = {
-      faceValueMinor: listing.faceValueMinor,
-      currency: listing.currency,
-      partialRedemptionPolicy: listing.partialRedemptionPolicy,
-    };
+    const created = await params.createIfMissing();
+    if (!created.ok) return { status: "failed", detail: created.detail };
+    listingFacts = created.facts;
   }
 
   const requestBatchBody: RequestBatchRequest = requestBatchRequestSchema.parse({
-    listingId: DEMO_LISTING_ID,
-    merchantId: SNAP_APP_AU_ID,
+    listingId: params.listingId,
+    merchantId: params.merchantId,
     currency: listingFacts.currency,
     faceValueMinor: listingFacts.faceValueMinor,
     quantity: shortfall,
@@ -1148,7 +1327,9 @@ async function ensureDemoVoucher(
   });
   const requested = await postSigned(voucher, "/internal/v1/batches", requestBatchBody);
   if (!requested.ok) {
-    log(`[seed:staging] voucher /internal/v1/batches answered an error: ${requested.detail}`);
+    log(
+      `[seed:staging] voucher /internal/v1/batches (${params.listingId}) answered an error: ${requested.detail}`,
+    );
     return { status: "failed", detail: requested.detail };
   }
   const requestedBatch = batchSchema.safeParse(requested.body);
@@ -1166,7 +1347,7 @@ async function ensureDemoVoucher(
   const approved = await postSigned(voucher, "/internal/v1/batches/approve", approveBody);
   if (!approved.ok) {
     log(
-      `[seed:staging] voucher /internal/v1/batches/approve answered an error: ${approved.detail}`,
+      `[seed:staging] voucher /internal/v1/batches/approve (${params.listingId}) answered an error: ${approved.detail}`,
     );
     return { status: "failed", detail: approved.detail };
   }
@@ -1181,6 +1362,150 @@ async function ensureDemoVoucher(
     return { status: "failed", detail };
   }
   return { status: "created", detail: `had ${String(had)}, minted ${String(have - had)} more` };
+}
+
+/** Step 4 (2.3.c) — the ORIGINAL demo listing/voucher, price fixed forever
+ * (`DEMO_LISTING_ID`'s own doc comment says why). Its own restore-rehearsal
+ * job only needs ONE real, decryptable voucher to exist — never repriced,
+ * only kept in stock. */
+async function ensureDemoVoucher(
+  pool: pg.Pool,
+  ledger: StagingLedgerConfig,
+  voucher: StagingVoucherConfig,
+  log: (message: string) => void,
+): Promise<VoucherOutcome> {
+  return ensureListingStock(
+    pool,
+    voucher,
+    {
+      listingId: DEMO_LISTING_ID,
+      merchantId: SNAP_APP_AU_ID,
+      stockTarget: DEMO_VOUCHER_STOCK_TARGET,
+      createIfMissing: async () => {
+        const priced = await priceDemoListing(ledger);
+        if (!priced.ok) {
+          log(`[seed:staging] ledger /v1/pricing/listing answered an error: ${priced.detail}`);
+          return { ok: false, detail: priced.detail };
+        }
+        const listing = buildDemoListing(priced.pricePoints);
+        await insertListing(pool, listing);
+        return {
+          ok: true,
+          facts: {
+            faceValueMinor: listing.faceValueMinor,
+            settlementValueMinor: listing.settlementValueMinor,
+            currency: listing.currency,
+            partialRedemptionPolicy: listing.partialRedemptionPolicy,
+          },
+        };
+      },
+    },
+    log,
+  );
+}
+
+interface AffordableListingSpec {
+  readonly listingId: string;
+  readonly locationId: string;
+  readonly merchantId: string;
+  readonly merchantName: string;
+  readonly region: "AU" | "ID";
+  readonly currency: string;
+  readonly title: string;
+  readonly locationName: string;
+  readonly address: string;
+  readonly district: string;
+  readonly targetQuotePoints: number;
+}
+
+/** face = settlement for these: there is no merchant "margin" to model for
+ * a fixture the platform owns outright — `settlementValueMinor <=
+ * faceValueMinor` (docs/09 §3) still holds since they're equal. */
+function buildAffordableListing(
+  spec: AffordableListingSpec,
+  settlementMinor: number,
+  pricePoints: number,
+): Listing {
+  return listingSchema.parse({
+    id: spec.listingId,
+    merchantId: spec.merchantId,
+    merchantName: spec.merchantName,
+    title: spec.title,
+    description:
+      "A demonstration voucher seeded for the staging redemption-loop Check (F74/8.2.i), priced low enough for the demo viewer's own standing balance.",
+    category: "retail",
+    locations: [
+      {
+        id: spec.locationId,
+        name: spec.locationName,
+        address: spec.address,
+        district: spec.district,
+      },
+    ],
+    currency: spec.currency,
+    faceValueMinor: toMinorUnits(settlementMinor),
+    settlementValueMinor: toMinorUnits(settlementMinor),
+    priceInPoints: pricePoints,
+    stockRemaining: DEMO_VOUCHER_STOCK_TARGET,
+    stockTotal: DEMO_VOUCHER_STOCK_TARGET,
+    transferable: false,
+    partialRedemptionPolicy: "single_use_forfeit",
+    minimumSpendMinor: null,
+    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "available",
+    region: spec.region,
+    audience: "all_ages",
+    contentCategory: "services",
+    imageUrl: "http://127.0.0.1:26900/yourtal-media/listings/snap-app-au-demo.jpg",
+    channel: "in_store",
+    partialRedemption: "single_use",
+  });
+}
+
+/** F74/8.2.i (reopened) — the two NEW, cheap-by-construction listings
+ * (`AU_AFFORDABLE_LISTING_ID`/`ID_LISTING_ID`). Priced ONLY once, at
+ * creation, via `deriveAffordableSettlementMinor` — never re-priced on a
+ * later run (this file never edits a listing's settlement value after
+ * creation; see `AU_AFFORDABLE_LISTING_ID`'s own doc for why). Stock is
+ * still kept topped up every run, same as the original 2.3.c listing. */
+async function ensureAffordableDemoListing(
+  pool: pg.Pool,
+  ledger: StagingLedgerConfig,
+  voucher: StagingVoucherConfig,
+  spec: AffordableListingSpec,
+  log: (message: string) => void,
+): Promise<VoucherOutcome> {
+  return ensureListingStock(
+    pool,
+    voucher,
+    {
+      listingId: spec.listingId,
+      merchantId: spec.merchantId,
+      stockTarget: DEMO_VOUCHER_STOCK_TARGET,
+      createIfMissing: async () => {
+        const derived = await deriveAffordableSettlementMinor(
+          ledger,
+          spec.region,
+          spec.currency,
+          spec.targetQuotePoints,
+          log,
+        );
+        if (!derived.ok) return { ok: false, detail: derived.detail };
+        const listing = buildAffordableListing(spec, derived.settlementMinor, derived.pricePoints);
+        await insertListing(pool, listing);
+        return {
+          ok: true,
+          facts: {
+            faceValueMinor: listing.faceValueMinor,
+            settlementValueMinor: listing.settlementValueMinor,
+            currency: listing.currency,
+            partialRedemptionPolicy: listing.partialRedemptionPolicy,
+          },
+        };
+      },
+    },
+    log,
+  );
 }
 
 /** F74/8.2.i — Step 5: each demo viewer's own AVAILABLE balance (trustTier 3,
@@ -1336,9 +1661,15 @@ export async function seedStaging(
     log(
       "[seed:staging] no viewer.au@demo.yourtal.test account exists (a non-empty " +
         "identity.user_profile this seed did not create) — skipping the pending grant, " +
-        "the demo voucher and the redemption balance top-up.",
+        "the demo voucher, the affordable listings and the redemption balance top-up.",
     );
-    return { ...base, pendingGrant: "skipped", demoVoucher: "skipped", redemptionBalance: [] };
+    return {
+      ...base,
+      pendingGrant: "skipped",
+      demoVoucher: "skipped",
+      redemptionBalance: [],
+      affordableListings: [],
+    };
   }
 
   const grant = await ensureTierZeroPendingGrant(
@@ -1349,14 +1680,74 @@ export async function seedStaging(
   );
   const voucher = await ensureDemoVoucher(pool, options.ledger, options.voucher, log);
 
-  // AU's target tracks TODAY's live quote (see `ensureDemoRedemptionBalance`'s
-  // own header) — re-priced every run, never cached from `voucher`'s own
-  // first-mint call, so a later price drift is caught on the very next deploy.
+  // F74/8.2.i (reopened) — a SECOND AU listing and the first ID one, both
+  // cheap by construction (see `AU_AFFORDABLE_LISTING_ID`'s own doc for why
+  // this is a new listing rather than a re-price of `DEMO_LISTING_ID`).
+  const auListing = await ensureAffordableDemoListing(
+    pool,
+    options.ledger,
+    options.voucher,
+    {
+      listingId: AU_AFFORDABLE_LISTING_ID,
+      locationId: AU_AFFORDABLE_LOCATION_ID,
+      merchantId: SNAP_APP_AU_ID,
+      merchantName: "Snap App",
+      region: "AU",
+      currency: "AUD",
+      title: "Snap App — Demo Voucher (affordable)",
+      locationName: "Snap App — Pyrmont",
+      address: "2 Refinery Drive, Pyrmont NSW 2009",
+      district: "Pyrmont",
+      targetQuotePoints: AU_AFFORDABLE_QUOTE_TARGET_POINTS,
+    },
+    log,
+  );
+  const idListing = await ensureAffordableDemoListing(
+    pool,
+    options.ledger,
+    options.voucher,
+    {
+      listingId: ID_LISTING_ID,
+      locationId: ID_LOCATION_ID,
+      merchantId: SNAP_APP_ID_ID,
+      merchantName: "Snap App",
+      region: "ID",
+      currency: "IDR",
+      title: "Snap App — Voucher Demo (terjangkau)",
+      locationName: "Snap App — Kemang",
+      address: "Jl. Kemang Raya No. 8, Jakarta Selatan",
+      district: "Kemang",
+      targetQuotePoints: ID_AFFORDABLE_QUOTE_TARGET_POINTS,
+    },
+    log,
+  );
+  const affordableListings: AffordableListingResult[] = [
+    {
+      region: "AU",
+      listingId: AU_AFFORDABLE_LISTING_ID,
+      locationId: AU_AFFORDABLE_LOCATION_ID,
+      status: auListing.status,
+      ...(auListing.detail === undefined ? {} : { detail: auListing.detail }),
+    },
+    {
+      region: "ID",
+      listingId: ID_LISTING_ID,
+      locationId: ID_LOCATION_ID,
+      status: idListing.status,
+      ...(idListing.detail === undefined ? {} : { detail: idListing.detail }),
+    },
+  ];
+
+  // Each region's target tracks TODAY's live quote of ITS OWN affordable
+  // listing (see `quoteExistingListing`'s own header) — re-quoted every
+  // run, never cached from the listing's own creation call, so a later
+  // price drift is caught on the very next deploy without ever editing the
+  // listing itself.
   const redemptionBalance: DemoBalanceResult[] = [];
-  const auQuote = await priceDemoListing(options.ledger);
+  const auQuote = await quoteExistingListing(pool, options.ledger, AU_AFFORDABLE_LISTING_ID, "AU");
   if (!auQuote.ok) {
     log(
-      "[seed:staging] ledger /v1/pricing/listing answered an error, so the AU viewer's " +
+      "[seed:staging] could not re-quote the AU affordable listing, so the AU viewer's " +
         `redemption balance was not topped up: ${auQuote.detail}`,
     );
     redemptionBalance.push({ region: "AU", status: "failed", detail: auQuote.detail });
@@ -1374,16 +1765,26 @@ export async function seedStaging(
     );
   }
   if (world.viewerIdUserId !== null) {
-    redemptionBalance.push(
-      await ensureDemoRedemptionBalance(
-        options.ledger,
-        world.viewerIdUserId,
-        "ID",
-        ID_FLAT_TARGET_POINTS,
-        ID_TOPUP_CHUNK_POINTS,
-        log,
-      ),
-    );
+    const idQuote = await quoteExistingListing(pool, options.ledger, ID_LISTING_ID, "ID");
+    if (!idQuote.ok) {
+      log(
+        "[seed:staging] could not re-quote the ID affordable listing, so the ID viewer's " +
+          `redemption balance was not topped up: ${idQuote.detail}`,
+      );
+      redemptionBalance.push({ region: "ID", status: "failed", detail: idQuote.detail });
+    } else {
+      const idTargetPoints = idQuote.pricePoints * REDEMPTION_HEADROOM_VOUCHERS;
+      redemptionBalance.push(
+        await ensureDemoRedemptionBalance(
+          options.ledger,
+          world.viewerIdUserId,
+          "ID",
+          idTargetPoints,
+          ID_TOPUP_CHUNK_POINTS,
+          log,
+        ),
+      );
+    }
   }
 
   return {
@@ -1393,5 +1794,6 @@ export async function seedStaging(
     demoVoucher: voucher.status,
     ...(voucher.detail === undefined ? {} : { demoVoucherDetail: voucher.detail }),
     redemptionBalance,
+    affordableListings,
   };
 }

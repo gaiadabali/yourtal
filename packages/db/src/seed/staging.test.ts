@@ -78,6 +78,13 @@ const CAMPAIGN_IDS = [
 /** Same fixed ids `staging.ts`'s own `DEMO_LISTING_ID`/`DEMO_LOCATION_ID` use. */
 const LISTING_ID = "00000000-0000-4000-9000-000000000301";
 const LOCATION_ID = "00000000-0000-4000-9000-000000000302";
+/** F74/8.2.i (reopened) — same fixed ids `staging.ts`'s own
+ * `AU_AFFORDABLE_LISTING_ID`/`AU_AFFORDABLE_LOCATION_ID`/`ID_LISTING_ID`/
+ * `ID_LOCATION_ID` use. */
+const AU_AFFORDABLE_LISTING_ID = "00000000-0000-4000-9000-000000000303";
+const AU_AFFORDABLE_LOCATION_ID = "00000000-0000-4000-9000-000000000304";
+const ID_LISTING_ID = "00000000-0000-4000-9000-000000000305";
+const ID_LOCATION_ID = "00000000-0000-4000-9000-000000000306";
 const DEMO_EMAILS = [
   "viewer.au@demo.yourtal.test",
   "viewer.id@demo.yourtal.test",
@@ -116,11 +123,31 @@ async function cleanStagingRows(): Promise<void> {
   ]);
   await owner.query(`DELETE FROM campaign.campaigns WHERE id = ANY($1)`, [CAMPAIGN_IDS]);
   await owner.query(`DELETE FROM business.business_accounts WHERE id = ANY($1)`, [BUSINESS_IDS]);
-  await owner.query(`DELETE FROM voucher.vouchers WHERE listing_id = $1`, [LISTING_ID]);
-  await owner.query(`DELETE FROM store.listing_location WHERE listing_id = $1`, [LISTING_ID]);
-  await owner.query(`DELETE FROM store.merchant_location WHERE id = $1`, [LOCATION_ID]);
-  await owner.query(`DELETE FROM store.listings WHERE id = $1`, [LISTING_ID]);
+  // F74/8.2.i (reopened): the same cleanup, for all three demo listings —
+  // every test creates the two new ones as a side effect of a healthy
+  // ledger/voucher pair, so a leftover row here would break the NEXT test's
+  // own "does this listing exist yet" idempotency check.
+  for (const [listingId, locationId] of [
+    [LISTING_ID, LOCATION_ID],
+    [AU_AFFORDABLE_LISTING_ID, AU_AFFORDABLE_LOCATION_ID],
+    [ID_LISTING_ID, ID_LOCATION_ID],
+  ]) {
+    await owner.query(`DELETE FROM voucher.vouchers WHERE listing_id = $1`, [listingId]);
+    await owner.query(`DELETE FROM store.listing_location WHERE listing_id = $1`, [listingId]);
+    await owner.query(`DELETE FROM store.merchant_location WHERE id = $1`, [locationId]);
+    await owner.query(`DELETE FROM store.listings WHERE id = $1`, [listingId]);
+  }
 }
+
+/** F74/8.2.i (reopened) — the fake pricing formula's per-region rate
+ * (minor units per point), chosen so `AU_AFFORDABLE_QUOTE_TARGET_POINTS`
+ * (150) and `ID_AFFORDABLE_QUOTE_TARGET_POINTS` (250) — `staging.ts`'s own
+ * constants — divide evenly through `deriveAffordableSettlementMinor`'s
+ * probe (`points = ceil(settlementMinor / rate)` at a 1,000,000-minor-unit
+ * probe): AU derives exactly 150,000 → 150 points; ID derives exactly
+ * 1,250,000 → 250 points. Deliberately different per region, the same way
+ * a real backing rate differs between AUD and IDR. */
+const FAKE_RATE_MINOR_PER_POINT: Record<"AU" | "ID", number> = { AU: 1_000, ID: 5_000 };
 
 async function marketingCashBalance(region: "AU" | "ID"): Promise<number> {
   const { rows } = await owner.query<{ balance: string }>(
@@ -200,17 +227,34 @@ class FakeLedger {
       ];
     }
 
-    if (entry.path === "/v1/pricing/listing") {
-      // A plausible priced-listing response — `priceDemoListing` only reads
-      // `pricePoints`, and the exact formula is the real ledger's, not this
-      // fake's to reproduce. Small on purpose: with AU_TOPUP_CHUNK_POINTS at
-      // 450, a target of pricePoints * REDEMPTION_HEADROOM_VOUCHERS (2) must
-      // stay reachable in ONE chunk so these tests can assert a clean
-      // "topped up once, already sufficient thereafter" — F74/8.2.i's own
-      // real design deliberately does NOT try to reach a large target in one
-      // run (see `ensureDemoRedemptionBalance`'s header), so a fake target
-      // sized to need many runs would only be testing this fake, not staging.
-      return [200, { pricePoints: 200, backingRateId: "rate_test_1" }];
+    // F74/8.2.i (reopened) — the SAME per-region, purely-linear formula
+    // (`points = ceil(settlementMinor / rate)`) backs BOTH pricing routes,
+    // exactly like the real `priceAt` (`services/ledger/internal/pricing/
+    // quotes.go`) is the ONE formula every listing price and quote uses —
+    // so `deriveAffordableSettlementMinor`'s probe-then-solve is exercised
+    // for real here, not against two fakes that quietly disagree. Chosen so
+    // `AU_AFFORDABLE_QUOTE_TARGET_POINTS`/`ID_AFFORDABLE_QUOTE_TARGET_
+    // POINTS` (`staging.ts`) divide evenly — deterministic points, no
+    // rounding-driven retry, so these tests assert exact numbers.
+    if (entry.path === "/v1/pricing/listing" || entry.path === "/v1/pricing/quote") {
+      const body = entry.body as { region: "AU" | "ID"; settlementMinor: number };
+      const rate = FAKE_RATE_MINOR_PER_POINT[body.region];
+      const pricePoints = Math.ceil(body.settlementMinor / rate);
+      return entry.path === "/v1/pricing/listing"
+        ? [200, { pricePoints, backingRateId: "rate_test_1" }]
+        : [
+            200,
+            {
+              quoteId: randomUUID(),
+              pricePoints,
+              settlementMinor: body.settlementMinor,
+              currency: body.region === "AU" ? "AUD" : "IDR",
+              backingRateId: "rate_test_1",
+              demandMultiplierBps: 10_000,
+              expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+              locked: false,
+            },
+          ];
     }
 
     if (entry.path === "/v1/wallet/balance") {
@@ -285,20 +329,45 @@ class FakeLedger {
   }
 }
 
+/** F74/8.2.i (reopened) — which real `store.merchant_location` row each
+ * fixed demo listing's vouchers belong to (`voucher.vouchers.location_id`
+ * FKs there); `insertListing` (`staging.ts`) creates all three for real, so
+ * this fake only needs to pick the right existing one back. */
+const LOCATION_ID_BY_LISTING: Record<string, string> = {
+  [LISTING_ID]: LOCATION_ID,
+  [AU_AFFORDABLE_LISTING_ID]: AU_AFFORDABLE_LOCATION_ID,
+  [ID_LISTING_ID]: ID_LOCATION_ID,
+};
+
 /** A stand-in for the voucher service's `/internal/v1/batches` and
- * `/internal/v1/batches/approve` — the same two routes
- * `ensureDemoVoucher` calls. `"failing"` mode answers the real refusal
+ * `/internal/v1/batches/approve` — the same two routes `ensureListingStock`
+ * calls, for any of the THREE demo listings this file now exercises
+ * (F74/8.2.i reopened added two). `"failing"` mode answers the real refusal
  * shape (`{code, message}`) a service error carries; `"ok"` mode plays
  * requester/approver back exactly like the real two-person check would
  * refuse a mismatch, and — because an "approved" response does not by
- * itself prove a voucher was minted — actually inserts a `voucher.vouchers`
- * row on approve, so `ensureDemoVoucher`'s own database re-check has
- * something real to find, the same way a real mint would leave one. */
+ * itself prove a voucher was minted — actually inserts real
+ * `voucher.vouchers` rows on approve, matching whichever listing/merchant/
+ * currency/face-value/quantity that SPECIFIC batch was requested with (a
+ * `Map`, not one shared slot — the original single-listing fake echoed a
+ * hardcoded listing back regardless of what was asked, which silently
+ * passed until a second, different listing existed to expose it), so
+ * `ensureListingStock`'s own database re-check has something real to find,
+ * the same way a real mint would leave one. */
 class FakeVoucherService {
   mode: "ok" | "failing" = "ok";
   received: { path: string; signatureHeader: string; body: unknown }[] = [];
-  private lastRequestedBy: string | undefined;
-  private lastQuantity = 1;
+  private readonly batches = new Map<
+    string,
+    {
+      listingId: string;
+      merchantId: string;
+      currency: string;
+      faceValueMinor: number;
+      quantity: number;
+      requestedBy: string;
+    }
+  >();
   server: Server = createServer((req, res) => {
     this.answer(req)
       .then(([status, body]) => {
@@ -334,18 +403,25 @@ class FakeVoucherService {
 
     if (path === "/internal/v1/batches") {
       const batchId = randomUUID();
-      this.lastRequestedBy = String(body.requestedBy);
-      this.lastQuantity = typeof body.quantity === "number" ? body.quantity : 1;
+      const record = {
+        listingId: String(body.listingId),
+        merchantId: String(body.merchantId),
+        currency: String(body.currency),
+        faceValueMinor: Number(body.faceValueMinor),
+        quantity: typeof body.quantity === "number" ? body.quantity : 1,
+        requestedBy: String(body.requestedBy),
+      };
+      this.batches.set(batchId, record);
       return [
         200,
         {
           batchId,
-          listingId: body.listingId,
-          merchantId: body.merchantId,
-          currency: body.currency,
-          faceValueMinor: body.faceValueMinor,
-          quantity: body.quantity,
-          requestedBy: body.requestedBy,
+          listingId: record.listingId,
+          merchantId: record.merchantId,
+          currency: record.currency,
+          faceValueMinor: record.faceValueMinor,
+          quantity: record.quantity,
+          requestedBy: record.requestedBy,
           approvedBy: null,
           state: "pending",
         },
@@ -353,18 +429,25 @@ class FakeVoucherService {
     }
 
     if (path === "/internal/v1/batches/approve") {
-      const quantity = this.lastQuantity;
-      for (let i = 0; i < quantity; i += 1) await this.mintOneVoucher();
+      const batchId = String(body.batchId);
+      const record = this.batches.get(batchId);
+      if (record === undefined) {
+        return [
+          404,
+          { error: { type: "invalid_request_error", code: "not_found", message: batchId } },
+        ];
+      }
+      for (let i = 0; i < record.quantity; i += 1) await this.mintVoucher(record);
       return [
         200,
         {
-          batchId: body.batchId,
-          listingId: LISTING_ID,
-          merchantId: BUSINESS_IDS[0],
-          currency: "AUD",
-          faceValueMinor: 4_500,
-          quantity,
-          requestedBy: this.lastRequestedBy ?? "unknown",
+          batchId,
+          listingId: record.listingId,
+          merchantId: record.merchantId,
+          currency: record.currency,
+          faceValueMinor: record.faceValueMinor,
+          quantity: record.quantity,
+          requestedBy: record.requestedBy,
           approvedBy: body.approvedBy,
           state: "approved",
         },
@@ -378,9 +461,22 @@ class FakeVoucherService {
    * `state = 'minted'`), matching `vouchers_owner_iff_issued`'s own CHECK.
    * No `batch_id`: that column FKs to `voucher.batch`, a table only the
    * real service writes to (this fake mocks the HTTP layer, not its DB
-   * writes) — `batch_id` is nullable, and this seed never reads it back. */
-  private async mintOneVoucher(): Promise<void> {
+   * writes) — `batch_id` is nullable, and this seed never reads it back.
+   * `region` is derived from `currency` (AUD -> AU, else ID) — the same
+   * 1:1 mapping the real system enforces everywhere (AU and ID never
+   * cross), not a value this fake is ever handed directly. */
+  private async mintVoucher(record: {
+    listingId: string;
+    merchantId: string;
+    currency: string;
+    faceValueMinor: number;
+  }): Promise<void> {
     const now = new Date();
+    const region = record.currency === "AUD" ? "AU" : "ID";
+    const locationId = LOCATION_ID_BY_LISTING[record.listingId];
+    if (locationId === undefined) {
+      throw new Error(`FakeVoucherService: no known location for listing ${record.listingId}`);
+    }
     await this.pool.query(
       `INSERT INTO voucher.vouchers
          (id, listing_id, merchant_id, merchant_name, title, face_value_minor,
@@ -389,19 +485,19 @@ class FakeVoucherService {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'minted',$13,$14)`,
       [
         randomUUID(),
-        LISTING_ID,
-        BUSINESS_IDS[0],
+        record.listingId,
+        record.merchantId,
         "Snap App",
         "Snap App — Demo Voucher",
-        4_500,
-        4_500,
+        record.faceValueMinor,
+        record.faceValueMinor,
         "single_use_forfeit",
         false,
         now.toISOString(),
         new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        LOCATION_ID,
-        "AUD",
-        "AU",
+        locationId,
+        record.currency,
+        region,
       ],
     );
   }
@@ -471,9 +567,10 @@ describe("seedStaging", () => {
       // design makes one attempt per run, never a tight loop — see
       // `ensureDemoRedemptionBalance`'s own header), each with a
       // region-scoped idempotencyKey and trustTier 3 (available at once,
-      // unlike the tier-0 grant's trustTier 0). The fake's pricePoints (200)
-      // keeps AU's target (400) reachable in that one 450-point chunk, and
-      // ID's flat 1,000-point target IS exactly its own chunk size.
+      // unlike the tier-0 grant's trustTier 0). AU's target (300 — the
+      // affordable listing's own 150-point live quote times
+      // REDEMPTION_HEADROOM_VOUCHERS) is reachable in one 450-point chunk;
+      // ID's (500) in one 1,000-point chunk.
       const auTopups = ledger
         .allRequestsTo("/v1/actions/grants")
         .filter((entry) =>
@@ -505,15 +602,42 @@ describe("seedStaging", () => {
         idempotencyKey: "staging-seed-viewer-ID-topup-1",
       });
 
-      // The redemption balance result itself: both regions topped up past
-      // their targets in that one chunk — AU's a live quote times headroom,
-      // ID's the flat fallback (no ID demo listing exists to quote against).
-      expect(first.redemptionBalance).toStrictEqual([
-        { region: "AU", status: "topped_up", availablePoints: 450, targetPoints: 400 },
-        { region: "ID", status: "topped_up", availablePoints: 1_000, targetPoints: 1_000 },
+      // F74/8.2.i (reopened): the two affordable listings this run derived
+      // a LOW price for, live, and stocked to 20 — AU's second listing and
+      // ID's first.
+      expect(first.affordableListings).toStrictEqual([
+        {
+          region: "AU",
+          listingId: AU_AFFORDABLE_LISTING_ID,
+          locationId: AU_AFFORDABLE_LOCATION_ID,
+          status: "created",
+          detail: "had 0, minted 20 more",
+        },
+        {
+          region: "ID",
+          listingId: ID_LISTING_ID,
+          locationId: ID_LOCATION_ID,
+          status: "created",
+          detail: "had 0, minted 20 more",
+        },
       ]);
 
-      const pricingRequest = ledger.lastRequestTo("/v1/pricing/listing");
+      // The redemption balance result itself: both regions topped up past
+      // their own affordable listing's live quote times headroom.
+      expect(first.redemptionBalance).toStrictEqual([
+        { region: "AU", status: "topped_up", availablePoints: 450, targetPoints: 300 },
+        { region: "ID", status: "topped_up", availablePoints: 1_000, targetPoints: 500 },
+      ]);
+
+      // The original 2.3.c listing's own pricing call is found by its own
+      // listing id, not "the last one" — F74/8.2.i's own two new listings
+      // make several more `/v1/pricing/listing`/`/v1/pricing/quote` calls
+      // afterward, for different listings entirely.
+      const pricingRequest = ledger.received.find(
+        (entry) =>
+          entry.path === "/v1/pricing/listing" &&
+          (entry.body as { listingId?: string }).listingId === LISTING_ID,
+      );
       expect(pricingRequest?.signatureHeader).toMatch(/^t=\d+,c=api,n=.+,v1=[0-9a-f]{64}$/);
       expect(pricingRequest?.body).toMatchObject({
         listingId: LISTING_ID,
@@ -522,13 +646,13 @@ describe("seedStaging", () => {
         settlementMinor: 3_000,
       });
 
-      // Same for the voucher service: two signed calls, request then
-      // approve, with a DIFFERENT requester and approver (the two-person
-      // rule) and the listing's own economics on the wire — quantity 20
-      // (F74/8.2.i's DEMO_VOUCHER_STOCK_TARGET), not 1, since the target
-      // starts unmet on a completely fresh world.
-      expect(voucherService.received).toHaveLength(2);
-      const [requested, approved] = voucherService.received;
+      // Same for the voucher service: SIX signed calls now (request then
+      // approve, times three listings — the original plus F74/8.2.i's two
+      // new ones), in the order `seedStaging` creates them: the original
+      // 2.3.c listing first, then AU's affordable one, then ID's.
+      expect(voucherService.received).toHaveLength(6);
+      const [requested, approved, auRequested, auApproved, idRequested, idApproved] =
+        voucherService.received;
       expect(requested?.path).toBe("/internal/v1/batches");
       expect(requested?.signatureHeader).toMatch(/^t=\d+,c=api,n=.+,v1=[0-9a-f]{64}$/);
       expect(requested?.body).toMatchObject({
@@ -545,19 +669,43 @@ describe("seedStaging", () => {
       const approvedBody = approved?.body as { approvedBy: string };
       expect(approvedBody.approvedBy).not.toBe(requestedBody.requestedBy);
 
-      // 20 real, minted vouchers — enough stock that a repeated staging
-      // Check doesn't run it dry (F74/8.2.i; 2.3.c's own point still holds
-      // for any one of them).
-      const mintedVouchers = await owner.query<{
-        state: string;
-        currency: string;
-        region: string;
-      }>(`SELECT state, currency, region FROM voucher.vouchers WHERE listing_id = $1`, [
-        LISTING_ID,
-      ]);
-      expect(mintedVouchers.rows).toHaveLength(20);
-      for (const row of mintedVouchers.rows) {
-        expect(row).toStrictEqual({ state: "minted", currency: "AUD", region: "AU" });
+      expect(auRequested?.body).toMatchObject({
+        listingId: AU_AFFORDABLE_LISTING_ID,
+        merchantId: BUSINESS_IDS[0],
+        currency: "AUD",
+        // 150 target points * FAKE_RATE_MINOR_PER_POINT.AU (1,000).
+        faceValueMinor: 150_000,
+        quantity: 20,
+      });
+      expect(auApproved?.body).toMatchObject({ approvedBy: "staging-seed-approver" });
+      expect(idRequested?.body).toMatchObject({
+        listingId: ID_LISTING_ID,
+        merchantId: BUSINESS_IDS[1],
+        currency: "IDR",
+        // 250 target points * FAKE_RATE_MINOR_PER_POINT.ID (5,000).
+        faceValueMinor: 1_250_000,
+        quantity: 20,
+      });
+      expect(idApproved?.body).toMatchObject({ approvedBy: "staging-seed-approver" });
+
+      // 20 real, minted vouchers per listing — enough stock that a
+      // repeated staging Check doesn't run any of them dry.
+      for (const [listingId, currency, region] of [
+        [LISTING_ID, "AUD", "AU"],
+        [AU_AFFORDABLE_LISTING_ID, "AUD", "AU"],
+        [ID_LISTING_ID, "IDR", "ID"],
+      ] as const) {
+        const mintedVouchers = await owner.query<{
+          state: string;
+          currency: string;
+          region: string;
+        }>(`SELECT state, currency, region FROM voucher.vouchers WHERE listing_id = $1`, [
+          listingId,
+        ]);
+        expect(mintedVouchers.rows).toHaveLength(20);
+        for (const row of mintedVouchers.rows) {
+          expect(row).toStrictEqual({ state: "minted", currency, region });
+        }
       }
 
       // Whichever it was before this call, the F12 budget is funded now —
@@ -637,22 +785,39 @@ describe("seedStaging", () => {
             region: "AU",
             status: "already_sufficient",
             availablePoints: 450,
-            targetPoints: 400,
+            targetPoints: 300,
           },
           {
             region: "ID",
             status: "already_sufficient",
             availablePoints: 1_000,
-            targetPoints: 1_000,
+            targetPoints: 500,
+          },
+        ],
+        affordableListings: [
+          {
+            region: "AU",
+            listingId: AU_AFFORDABLE_LISTING_ID,
+            locationId: AU_AFFORDABLE_LOCATION_ID,
+            status: "already_present",
+          },
+          {
+            region: "ID",
+            listingId: ID_LISTING_ID,
+            locationId: ID_LOCATION_ID,
+            status: "already_present",
           },
         ],
       });
-      // Still exactly 20 vouchers — the replay minted nothing new (task 5's
-      // own requirement: a second run leaves the same balances and stock).
-      const vouchers = await owner.query(`SELECT 1 FROM voucher.vouchers WHERE listing_id = $1`, [
-        LISTING_ID,
-      ]);
-      expect(vouchers.rowCount).toBe(20);
+      // Still exactly 20 vouchers per listing — the replay minted nothing
+      // new (task 5's own requirement: a second run leaves the same
+      // balances and stock) and re-priced no listing.
+      for (const listingId of [LISTING_ID, AU_AFFORDABLE_LISTING_ID, ID_LISTING_ID]) {
+        const vouchers = await owner.query(`SELECT 1 FROM voucher.vouchers WHERE listing_id = $1`, [
+          listingId,
+        ]);
+        expect(vouchers.rowCount).toBe(20);
+      }
     } finally {
       await ledger.close();
     }
@@ -764,7 +929,15 @@ describe("seedStaging", () => {
     expect(result.pendingGrantDetail).toBeDefined();
     expect(result.demoVoucher).toBe("failed");
     expect(result.demoVoucherDetail).toBeDefined();
-    // The AU quote itself is unreachable, so the top-up never had a target
+    // F74/8.2.i (reopened): the affordable listings can't even be CREATED
+    // (the pricing probe is unreachable too), so they fail as well — never
+    // silently skipped.
+    expect(result.affordableListings).toHaveLength(2);
+    for (const listing of result.affordableListings) {
+      expect(listing.status).toBe("failed");
+      expect(listing.detail).toBeDefined();
+    }
+    // The AU/ID quotes are unreachable, so the top-up never had a target
     // to work toward — reported as failed, not silently skipped.
     expect(result.redemptionBalance).toHaveLength(2);
     for (const balance of result.redemptionBalance) {
@@ -824,20 +997,24 @@ describe("seedStaging", () => {
       });
       expect(first.world).toBe("seeded");
       expect(first.pendingGrant).toBe("granted");
+      // "insufficient_topup" only refuses a trustTier-3 GRANT — pricing and
+      // the voucher service stay healthy, so both affordable listings still
+      // get created and stocked normally on this very first run.
+      expect(first.affordableListings.map((l) => l.status)).toStrictEqual(["created", "created"]);
       expect(first.redemptionBalance).toStrictEqual([
         {
           region: "AU",
           status: "capped_for_today",
           detail: "velocity_capped",
           availablePoints: 0,
-          targetPoints: 400,
+          targetPoints: 300,
         },
         {
           region: "ID",
           status: "capped_for_today",
           detail: "velocity_capped",
           availablePoints: 0,
-          targetPoints: 1_000,
+          targetPoints: 500,
         },
       ]);
 
@@ -856,8 +1033,8 @@ describe("seedStaging", () => {
       });
       expect(second.world).toBe("already_present");
       expect(second.redemptionBalance).toStrictEqual([
-        { region: "AU", status: "topped_up", availablePoints: 450, targetPoints: 400 },
-        { region: "ID", status: "topped_up", availablePoints: 1_000, targetPoints: 1_000 },
+        { region: "AU", status: "topped_up", availablePoints: 450, targetPoints: 300 },
+        { region: "ID", status: "topped_up", availablePoints: 1_000, targetPoints: 500 },
       ]);
       const retriedTopup = ledger.received.find(
         (entry) =>
@@ -876,8 +1053,8 @@ describe("seedStaging", () => {
         replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
       });
       expect(third.redemptionBalance).toStrictEqual([
-        { region: "AU", status: "already_sufficient", availablePoints: 450, targetPoints: 400 },
-        { region: "ID", status: "already_sufficient", availablePoints: 1_000, targetPoints: 1_000 },
+        { region: "AU", status: "already_sufficient", availablePoints: 450, targetPoints: 300 },
+        { region: "ID", status: "already_sufficient", availablePoints: 1_000, targetPoints: 500 },
       ]);
     } finally {
       await ledger.close();

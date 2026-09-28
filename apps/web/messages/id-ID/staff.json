@@ -5,7 +5,9 @@
     "signOut": "Keluar"
   },
   "nav": {
-    "overview": "Ringkasan"
+    "overview": "Ringkasan",
+    "businesses": "Bisnis",
+    "moderation": "Moderasi"
   },
   "overview": {
     "title": "Ringkasan",
@@ -30,5 +32,91 @@
     "title": "Tidak ada akses",
     "body": "Area ini hanya untuk staf YourTal. Jika Anda merasa seharusnya punya akses, hubungi administrator staf.",
     "home": "Kembali ke YourTal"
+  },
+  "dialog": {
+    "close": "Tutup",
+    "cancel": "Batal",
+    "reasonLabel": "Alasan (wajib, untuk catatan)"
+  },
+  "errors": {
+    "actionFailed": "Tindakan itu tidak dapat diselesaikan. Coba lagi."
+  },
+  "businesses": {
+    "pageTitle": "Bisnis",
+    "pageDescription": "Tinjau pengajuan KYB dan kelola penangguhan bisnis.",
+    "searchLabel": "Cari berdasarkan nama atau handle",
+    "searchSubmit": "Cari",
+    "resultCount": "{count, plural, =0 {Tidak ada bisnis} other {# bisnis}}",
+    "emptyTitle": "Tidak ada bisnis ditemukan",
+    "emptyDescription": "Coba kata pencarian lain, atau hapus untuk melihat semua bisnis.",
+    "tableCaption": "Bisnis, wilayah, status KYB, dan status penangguhannya",
+    "columnName": "Bisnis",
+    "columnRegion": "Wilayah",
+    "columnKyb": "KYB",
+    "columnStatus": "Status",
+    "verified": "Terverifikasi",
+    "unverified": "Belum terverifikasi",
+    "active": "Aktif",
+    "suspended": "Ditangguhkan",
+    "backToList": "Kembali ke Bisnis",
+    "profileTitle": "Profil",
+    "legalName": "Nama badan hukum",
+    "handle": "Handle",
+    "taxId": "NPWP/ID pajak",
+    "kybTitle": "Tinjauan KYB",
+    "kybStatus": "Status:",
+    "noDocuments": "Belum ada dokumen yang diajukan.",
+    "noPendingDocuments": "Tidak ada dokumen yang menunggu tinjauan.",
+    "documentType": {
+      "business_registration_certificate": "Sertifikat pendaftaran usaha",
+      "tax_registration_number": "Nomor pokok wajib pajak",
+      "director_identity": "Identitas direktur",
+      "proof_of_address": "Bukti alamat"
+    },
+    "documentStatus": {
+      "submitted": "Menunggu tinjauan",
+      "verified": "Terverifikasi",
+      "rejected": "Ditolak",
+      "expired": "Kedaluwarsa"
+    },
+    "approveKybCta": "Setujui KYB",
+    "approveKybDialogTitle": "Setujui KYB bisnis ini?",
+    "approveKybDialogBody": "Setiap dokumen yang diajukan ditandai terverifikasi dan bisnis menjadi terverifikasi.",
+    "approveKybSubmit": "Setujui KYB",
+    "rejectKybCta": "Tolak KYB",
+    "rejectKybDialogTitle": "Tolak KYB bisnis ini?",
+    "rejectKybDialogBody": "Setiap dokumen yang diajukan ditandai ditolak. Bisnis tetap belum terverifikasi.",
+    "rejectKybSubmit": "Tolak KYB",
+    "suspensionTitle": "Penangguhan",
+    "notSuspended": "Bisnis ini aktif.",
+    "suspendedReason": "Ditangguhkan: {reason}",
+    "suspendCta": "Tangguhkan bisnis",
+    "suspendDialogTitle": "Tangguhkan bisnis ini?",
+    "suspendDialogBody": "Kampanyenya langsung hilang dari feed, dan tidak dapat mengirimkan atau membelanjakan selama ditangguhkan.",
+    "suspendSubmit": "Tangguhkan",
+    "reinstateCta": "Pulihkan bisnis",
+    "reinstateDialogTitle": "Pulihkan bisnis ini?",
+    "reinstateDialogBody": "Kampanyenya kembali memenuhi syarat untuk tampil di feed.",
+    "reinstateSubmit": "Pulihkan"
+  },
+  "moderation": {
+    "pageTitle": "Moderasi",
+    "pageDescription": "Tinjau permintaan batch voucher yang tertunda.",
+    "emptyTitle": "Tidak ada yang tertunda",
+    "emptyDescription": "Semua permintaan batch voucher telah ditinjau.",
+    "tableCaption": "Permintaan batch voucher tertunda, listingnya, jumlah dan alasannya",
+    "columnListing": "Listing",
+    "columnQuantity": "Jumlah",
+    "columnReason": "Alasan merchant",
+    "columnRequested": "Diminta",
+    "columnActions": "Tindakan",
+    "approveCta": "Setujui",
+    "approveDialogTitle": "Setujui batch voucher ini?",
+    "approveDialogBody": "Ini mencetak batch tersebut dan stok listing bertambah sesuai jumlah yang diminta.",
+    "approveSubmit": "Setujui batch",
+    "rejectCta": "Tolak",
+    "rejectDialogTitle": "Tolak batch voucher ini?",
+    "rejectDialogBody": "Tidak ada voucher yang dicetak. Merchant dapat mengajukan permintaan baru.",
+    "rejectSubmit": "Tolak batch"
   }
 }

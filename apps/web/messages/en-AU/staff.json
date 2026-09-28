@@ -5,7 +5,9 @@
     "signOut": "Sign out"
   },
   "nav": {
-    "overview": "Overview"
+    "overview": "Overview",
+    "businesses": "Businesses",
+    "moderation": "Moderation"
   },
   "overview": {
     "title": "Overview",
@@ -30,5 +32,91 @@
     "title": "No access",
     "body": "This area is for YourTal staff only. If you think you should have access, ask a staff administrator.",
     "home": "Back to YourTal"
+  },
+  "dialog": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "reasonLabel": "Reason (required, for the record)"
+  },
+  "errors": {
+    "actionFailed": "That action could not be completed. Try again."
+  },
+  "businesses": {
+    "pageTitle": "Businesses",
+    "pageDescription": "Review KYB submissions and manage business suspensions.",
+    "searchLabel": "Search by name or handle",
+    "searchSubmit": "Search",
+    "resultCount": "{count, plural, =0 {No businesses} one {# business} other {# businesses}}",
+    "emptyTitle": "No businesses found",
+    "emptyDescription": "Try a different search, or clear it to see every business.",
+    "tableCaption": "Businesses, their region, KYB status and suspension status",
+    "columnName": "Business",
+    "columnRegion": "Region",
+    "columnKyb": "KYB",
+    "columnStatus": "Status",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "active": "Active",
+    "suspended": "Suspended",
+    "backToList": "Back to Businesses",
+    "profileTitle": "Profile",
+    "legalName": "Legal name",
+    "handle": "Handle",
+    "taxId": "Tax ID",
+    "kybTitle": "KYB review",
+    "kybStatus": "Status:",
+    "noDocuments": "No documents have been submitted yet.",
+    "noPendingDocuments": "No documents are awaiting review.",
+    "documentType": {
+      "business_registration_certificate": "Business registration certificate",
+      "tax_registration_number": "Tax registration number",
+      "director_identity": "Director identity",
+      "proof_of_address": "Proof of address"
+    },
+    "documentStatus": {
+      "submitted": "Awaiting review",
+      "verified": "Verified",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    },
+    "approveKybCta": "Approve KYB",
+    "approveKybDialogTitle": "Approve this business's KYB?",
+    "approveKybDialogBody": "Every submitted document is marked verified and the business becomes verified.",
+    "approveKybSubmit": "Approve KYB",
+    "rejectKybCta": "Reject KYB",
+    "rejectKybDialogTitle": "Reject this business's KYB?",
+    "rejectKybDialogBody": "Every submitted document is marked rejected. The business stays unverified.",
+    "rejectKybSubmit": "Reject KYB",
+    "suspensionTitle": "Suspension",
+    "notSuspended": "This business is active.",
+    "suspendedReason": "Suspended: {reason}",
+    "suspendCta": "Suspend business",
+    "suspendDialogTitle": "Suspend this business?",
+    "suspendDialogBody": "Its campaigns leave the feed immediately, and it cannot submit or spend while suspended.",
+    "suspendSubmit": "Suspend",
+    "reinstateCta": "Reinstate business",
+    "reinstateDialogTitle": "Reinstate this business?",
+    "reinstateDialogBody": "Its campaigns become eligible for the feed again.",
+    "reinstateSubmit": "Reinstate"
+  },
+  "moderation": {
+    "pageTitle": "Moderation",
+    "pageDescription": "Review pending voucher-batch requests.",
+    "emptyTitle": "Nothing pending",
+    "emptyDescription": "Every voucher-batch request has been reviewed.",
+    "tableCaption": "Pending voucher-batch requests, their listing, quantity and reason",
+    "columnListing": "Listing",
+    "columnQuantity": "Quantity",
+    "columnReason": "Merchant's reason",
+    "columnRequested": "Requested",
+    "columnActions": "Actions",
+    "approveCta": "Approve",
+    "approveDialogTitle": "Approve this voucher batch?",
+    "approveDialogBody": "This mints the batch and the listing's stock rises by the requested quantity.",
+    "approveSubmit": "Approve batch",
+    "rejectCta": "Reject",
+    "rejectDialogTitle": "Reject this voucher batch?",
+    "rejectDialogBody": "No vouchers are minted. The merchant can submit a new request.",
+    "rejectSubmit": "Reject batch"
   }
 }

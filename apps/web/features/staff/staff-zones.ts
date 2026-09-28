@@ -19,6 +19,8 @@ const EVERY_WORKING_ROLE: readonly StaffRole[] = [
 /** One entry per built console section; later Phase 9 tasks add theirs here. */
 export const STAFF_ZONES: readonly StaffZone[] = [
   { key: "overview", href: "/staff", roles: EVERY_WORKING_ROLE },
+  { key: "businesses", href: "/staff/businesses", roles: ["ops"] },
+  { key: "moderation", href: "/staff/moderation", roles: ["moderator"] },
 ];
 
 export function zonesFor(roles: readonly StaffRole[]): readonly StaffZone[] {

@@ -119,10 +119,17 @@ export async function renderHlsLadder(
     "3.1",
     "-pix_fmt",
     "yuv420p",
-    "-g",
-    String(SEGMENT_SECONDS * 30),
-    "-keyint_min",
-    String(SEGMENT_SECONDS * 30),
+    // F66-adjacent (found 2026-09-28, 7.2.f): `-g`/`-keyint_min` as a FRAME
+    // count assumed 30 fps (`SEGMENT_SECONDS * 30`), so a source at any
+    // other frame rate got the wrong keyframe interval and therefore the
+    // wrong segment length -- a real 24 fps clip produced 7.5 s segments,
+    // not 6 s (180 frames / 24 fps), and every test clip here happened to
+    // be a synthetic 30 fps `testsrc`, which hid it. `-force_key_frames`
+    // with a time expression forces a keyframe every SEGMENT_SECONDS of
+    // PLAYBACK TIME regardless of the input's frame rate, so `-hls_time`
+    // always finds one to cut on.
+    "-force_key_frames",
+    `expr:gte(t,n_forced*${String(SEGMENT_SECONDS)})`,
     "-sc_threshold",
     "0",
     "-f",

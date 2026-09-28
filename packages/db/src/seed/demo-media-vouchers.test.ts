@@ -441,6 +441,26 @@ describe("runDemoMediaVouchers", () => {
       true,
     );
 
+    // F69: every demo campaign plays logged-out; a row seeded before F69 is repaired.
+    const campaignIdId = stableId(`demo-media:campaign:${slugId}`);
+    const openViewing = async (id: string) =>
+      (
+        await pool.query<{ open_viewing: boolean }>(
+          "SELECT open_viewing FROM campaign.campaigns WHERE id = $1",
+          [id],
+        )
+      ).rows[0]?.open_viewing;
+    expect(await openViewing(campaignIdAu)).toBe(true);
+    expect(await openViewing(campaignIdId)).toBe(true);
+    await ownerPool.query("UPDATE campaign.campaigns SET open_viewing = false WHERE id = $1", [
+      campaignIdId,
+    ]);
+    expect(await runDemoMedia({ databaseUrl: DATABASE_URL ?? "", manifest })).toEqual([
+      { slug: slugAu, status: "already_present" },
+      { slug: slugId, status: "repaired" },
+    ]);
+    expect(await openViewing(campaignIdId)).toBe(true);
+
     const businesses = listDemoMediaBusinesses(manifest);
     expect(businesses).toHaveLength(2);
 

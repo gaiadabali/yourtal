@@ -390,15 +390,19 @@ async function seedOneCampaign(
   const businessId = stableId(`demo-media:business:${entry.slug}`);
   const campaignId = stableId(`demo-media:campaign:${entry.slug}`);
 
-  const existing = await pool.query<{ lifecycle_state: string; hls_url: string | null }>(
-    "SELECT lifecycle_state, hls_url FROM campaign.campaigns WHERE id = $1",
-    [campaignId],
-  );
+  const existing = await pool.query<{
+    lifecycle_state: string;
+    hls_url: string | null;
+    open_viewing: boolean;
+  }>("SELECT lifecycle_state, hls_url, open_viewing FROM campaign.campaigns WHERE id = $1", [
+    campaignId,
+  ]);
   const existingHlsUrl = existing.rows[0]?.hls_url ?? null;
   if (existingHlsUrl !== null) {
     const urlsOk = isAbsoluteUrl(existingHlsUrl);
     const chapterCount = await existingChapterCount(pool, campaignId);
-    if (urlsOk && chapterCount > 0) {
+    const openViewingOk = existing.rows[0]?.open_viewing === true;
+    if (urlsOk && chapterCount > 0 && openViewingOk) {
       return { slug: entry.slug, status: "already_present" };
     }
 
@@ -428,6 +432,13 @@ async function seedOneCampaign(
     if (chapterCount === 0) {
       await ensureChapters(pool, campaignId, entry.brand);
       repaired.push("missing chapters (1 whole-video chapter added)");
+    }
+    if (!openViewingOk) {
+      // F69: every demo campaign plays logged-out (F8 needs all_ages, which they all are).
+      await pool.query("UPDATE campaign.campaigns SET open_viewing = true WHERE id = $1", [
+        campaignId,
+      ]);
+      repaired.push("Open Viewing switched on");
     }
     log(`[demo:media] ${entry.slug}: repaired ${repaired.join(", ")}`);
     return { slug: entry.slug, status: "repaired" };
@@ -581,7 +592,7 @@ async function ensureCampaign(pool: pg.Pool, input: EnsureCampaignInput): Promis
         region, audience, content_category, poster_url, teaser_url, hls_url, aspect,
         estimated_bytes, starts_at, ends_at, open_viewing, teaser_start_seconds)
      VALUES ($1,'long_form',$2,$3,$4,$5,$6,$7,$8,$9,'base_only','live',$10,$3,$11,'all_ages',
-             'entertainment',$12,$13,$14,'16:9',$15,$10,$16,false,$17)
+             'entertainment',$12,$13,$14,'16:9',$15,$10,$16,true,$17)
      ON CONFLICT (id) DO UPDATE SET
        poster_url = EXCLUDED.poster_url, teaser_url = EXCLUDED.teaser_url,
        hls_url = EXCLUDED.hls_url, estimated_bytes = EXCLUDED.estimated_bytes`,

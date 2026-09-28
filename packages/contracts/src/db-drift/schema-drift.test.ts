@@ -587,6 +587,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "9.1.a's append-only audit trail of every staff console action -- written by the staff module's interceptor, never a domain contract any consumer parses.",
   "platform.dev_clock_audit":
     "2.3.d's append-only audit trail for /dev/clock -- a reviewer's own action log, gated out of production by APP_ENV, never a domain contract any consumer parses.",
+  "platform.partner_credential":
+    "TASKS.md 8.4.a (20260927190000_partner_actions.sql): the HMAC signing secret for a partner integration (snap-app) -- held in plaintext because verification needs the key material itself, not a hash (docs/16, Helios red line 11: simulated/demo-only). Never read back through any endpoint.",
+  "platform.partner_receipt":
+    "TASKS.md 8.4.a: the (partner, receipt hash) dedup/audit row behind grant-partner-action.use-case.ts's duplicate check. No contract mirrors it -- POST /api/partners/actions only ever returns partnerActionResultSchema's {granted, points}.",
   "store.listing_location":
     "The join table behind listingSchema.locations, named in that mapping's fieldsWithNoColumn above. A pure many-to-many join on two foreign keys, with no field of its own to map.",
   "store.listing_price_revision":

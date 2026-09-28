@@ -10006,6 +10006,125 @@
         }
       }
     },
+    "/api/partners/actions": {
+      "post": {
+        "summary": "Grant points for a partner-verified action (snap-app's receipt scan)",
+        "tags": [
+          "partners"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The 5.4.c link code naming the account, the action, and the receipt's own reference.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "receipt_scanned"
+                    ]
+                  },
+                  "externalRef": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evidence": {
+                    "default": {},
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "user",
+                  "action",
+                  "externalRef",
+                  "evidence"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The grant.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "granted": {
+                      "type": "boolean"
+                    },
+                    "points": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "format": "int64"
+                    }
+                  },
+                  "required": [
+                    "granted",
+                    "points"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: The link code is unknown or expired (partners.errors.ts's invalid_link_code).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid partner signature presented (partners/partner-auth.ts).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This (partner, receipt hash) pair was already granted (partners.errors.ts's duplicate_receipt).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/staff/me": {
       "get": {
         "summary": "Who is using the staff console, and as which staff roles",

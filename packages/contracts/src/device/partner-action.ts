@@ -23,6 +23,7 @@ export type PartnerActionRequest = z.infer<typeof partnerActionRequestSchema>;
 
 export const partnerActionResultSchema = z.object({
   granted: z.boolean(),
-  pointsMinor: z.number().int().min(0),
+  /** Points, not money — there is no minor-unit concept for the platform's own points (money.ts's `pointsSchema`). */
+  points: z.number().int().min(0),
 });
 export type PartnerActionResult = z.infer<typeof partnerActionResultSchema>;

@@ -14,6 +14,7 @@ import {
 import { STUDIO_MEDIA_ROUTE_DEFINITIONS } from "./route-registry.c-media";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
 import { DEVELOPERS_ROUTE_DEFINITIONS } from "./route-registry.c-developers";
+import { PARTNERS_ROUTE_DEFINITIONS } from "./route-registry.c-partners";
 import { STAFF_ROUTE_DEFINITIONS } from "./route-registry.c-staff";
 import { buildPathsFrom, type RouteDefinition } from "./route-registry-shared";
 
@@ -54,6 +55,7 @@ export {
   STUDIO_MEDIA_ROUTE_DEFINITIONS,
   COUNTER_ROUTE_DEFINITIONS,
   DEVELOPERS_ROUTE_DEFINITIONS,
+  PARTNERS_ROUTE_DEFINITIONS,
   STAFF_ROUTE_DEFINITIONS,
 };
 // `export *` is banned (docs/13b section 5) — named re-exports only, and only
@@ -75,6 +77,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...STUDIO_MEDIA_ROUTE_DEFINITIONS,
   ...COUNTER_ROUTE_DEFINITIONS,
   ...DEVELOPERS_ROUTE_DEFINITIONS,
+  ...PARTNERS_ROUTE_DEFINITIONS,
   ...STAFF_ROUTE_DEFINITIONS,
 ];
 

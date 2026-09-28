@@ -249,11 +249,11 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
 
   // --- device: partner actions (TASKS.md 8.4.a) ---
   partnerActionTypeSchema:
-    "device/partner-action.ts's nested enum on PartnerActionRequest.action — not a standalone component; the route is not yet wired into route-registry.c.ts.",
+    "device/partner-action.ts's nested enum on PartnerActionRequest.action — not a standalone component.",
   partnerActionRequestSchema:
-    "device/partner-action.ts's request body for POST /api/partners/actions — not yet wired into route-registry.c.ts.",
+    "device/partner-action.ts's request body for POST /api/partners/actions — documented inline (route-registry.c-partners.ts).",
   partnerActionResultSchema:
-    "device/partner-action.ts's response for POST /api/partners/actions — not yet wired into route-registry.c.ts.",
+    "device/partner-action.ts's response for POST /api/partners/actions — documented inline (route-registry.c-partners.ts).",
 
   // --- merchant: Studio Developers (TASKS.md 8.3.a/c) ---
   merchantCredentialStateSchema:

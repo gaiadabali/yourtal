@@ -127,6 +127,18 @@ resources:
       requestedBy: "tono"
       approvalState: "pending"
 
+  # TASKS.md 9.2.c: the staff moderation queue's own routes carry no
+  # :tenantId (unlike every business-side voucher_batch route), so the
+  # coarse @Authorize check PdpGuard builds for them has no businessId to
+  # supply. Carries none here either, on purpose -- see
+  # _schemas/resource/voucher_batch.json's own comment on why it is
+  # optional. Without that fix, Cerbos's enforcement: reject would deny
+  # this resource outright on schema validation, before any rule ran.
+  batch_no_business:
+    kind: voucher_batch
+    id: batch-list
+    attr: {}
+
   wallet_wina:
     kind: wallet
     id: wal-1

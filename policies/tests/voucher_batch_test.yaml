@@ -83,6 +83,31 @@ tests:
         # it is untouched by that rule and still ALLOWs.
         actions: { approve_issuance: EFFECT_DENY, reject_issuance: EFFECT_ALLOW }
 
+  - name: 9.2.c -- a schema check with no businessId at all still resolves (the staff moderation queue's own coarse check)
+    input:
+      principals: [moderator_tono, budi_owner, gita_analyst]
+      resources: [batch_no_business]
+      actions: [view, approve_issuance, reject_issuance]
+    expected:
+      # The regression this guards: voucher_batch.json used to REQUIRE
+      # businessId, and Cerbos's enforcement: reject denies the whole
+      # check on a schema-validation failure before any rule runs -- so
+      # every staff moderation route was a hard 403 for moderator too,
+      # regardless of role. Fixed by making businessId optional there,
+      # the same fix business.json already had for its own no-tenant case.
+      - principal: moderator_tono
+        resource: batch_no_business
+        actions: { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_ALLOW }
+      # A business-side role has nothing to derive from with no businessId
+      # to look up (derived_roles/business.yaml's roleHere is "" when
+      # R.attr.businessId is absent), so every business-side rule misses.
+      - principal: budi_owner
+        resource: batch_no_business
+        actions: { view: EFFECT_DENY, approve_issuance: EFFECT_DENY, reject_issuance: EFFECT_DENY }
+      - principal: gita_analyst
+        resource: batch_no_business
+        actions: { view: EFFECT_DENY, approve_issuance: EFFECT_DENY, reject_issuance: EFFECT_DENY }
+
   - name: a rival owner and a counter device are strangers here
     input:
       principals: [rival_owner, counter_kemang]

@@ -120,12 +120,12 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "staff-economy.ts's closed kind union, nested inside economyProposalSchema's own inline schema -- not a standalone component.",
   economyProposalStatusSchema: "Same as economyProposalKindSchema above.",
   economyProposalSchema:
-    "9.5.b-d's pending-approval row. Documented inline wherever it appears (route-registry.c-staff-economy.ts), not a registered component -- staff.economy_proposal (migration 20260928000000) is a staff-only read model, same tier as regionSettingSchema above.",
+    "9.5.b-d's pending-approval row. Documented inline wherever it appears (route-registry.c-staff-economy.ts), not a registered component -- staff.economy_proposal (migration 20260929050100) is a staff-only read model, same tier as regionSettingSchema above.",
   economyDaySchema: "staff-economy.ts's per-day row, nested inside economyOverviewSchema's own inline schema -- not a standalone component.",
   economyOverviewSchema: "9.5.a's overview response -- documented inline (route-registry.c-staff-economy.ts GET .../overview).",
   rateScreenSchema:
-    "9.5.b's rate screen. Carries B (backingRateMicrosPerPoint) and so is NOT published at all -- see route-registry.c-staff-economy.ts's own comment and route-drift.test.ts's KNOWN_OUT_OF_SCOPE for the live-but-undocumented route this backs, and the decision it is waiting on.",
-  proposeRateBodySchema: "Same as rateScreenSchema above -- carries B, not published.",
+    "9.5.b's rate screen. F54: published inline (route-registry.c-staff-economy.ts GET .../rate), same 'documented but not a registered cross-route component' tier as every other staff-economy schema here -- never a NAMED component, so B can never be referenced from outside the two staff routes that carry it.",
+  proposeRateBodySchema: "Same as rateScreenSchema above -- published inline (POST .../rate/proposals), not a registered component.",
   proposeMarketingFundingBodySchema: "9.5.c's request body -- documented inline (route-registry.c-staff-economy.ts POST .../marketing-fundings).",
   proposeManualPurchaseBodySchema: "9.5.c's request body -- documented inline (route-registry.c-staff-economy.ts POST .../purchases).",
   settingsScreenSchema: "9.5.d's settings screen -- documented inline (route-registry.c-staff-economy.ts GET .../settings).",

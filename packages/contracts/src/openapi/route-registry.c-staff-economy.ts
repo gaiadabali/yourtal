@@ -5,7 +5,9 @@ import {
   economyProposalSchema,
   proposeManualPurchaseBodySchema,
   proposeMarketingFundingBodySchema,
+  proposeRateBodySchema,
   proposeSettingBodySchema,
+  rateScreenSchema,
   settingsScreenSchema,
 } from "../staff/staff-economy";
 import { killSwitchSchema, setKillSwitchRequestSchema } from "../voucher-internal/kill-switch";
@@ -34,7 +36,7 @@ const REGION_PARAM: RoutePathParam = {
 
 const PROPOSAL_ID_PARAM: RoutePathParam = {
   name: "id",
-  description: "A `staff.economy_proposal` row id (migration 20260928000000).",
+  description: "A `staff.economy_proposal` row id (migration 20260929050100).",
   schema: { type: "string" },
 };
 
@@ -152,31 +154,42 @@ export const STAFF_ECONOMY_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
 
   // -- 9.5.b: rate management -- finance only --
   //
-  // `GET .../rate` and `POST .../rate/proposals` are DELIBERATELY NOT
-  // registered here, though both are real, live, Cerbos-gated routes
-  // (staff-economy.controller.ts, proven end to end by
-  // staff-economy.e2e.test.ts): their request/response genuinely carries
-  // `backingRateMicrosPerPoint` (B), because a human has to see and choose
-  // that number to change it. Area A's `money/no-backing-rate-in-api.test.ts`
-  // (4.9.d) forbids ANY property matching `/micros|backing|^b$/i` anywhere
-  // in this published document, with no exemption list and no staff/role
-  // awareness -- it predates this console and reads as written for a
-  // CONSUMER/business browser ("B never reaches a browser"), not an
-  // internal, role-gated staff tool. Renaming the field to dodge that regex
-  // would keep the same secret number flowing while only fooling the one
-  // mechanical check, which is worse than leaving the gap visible. Left out
-  // of `ALL_ROUTE_DEFINITIONS` (and listed in `route-drift.test.ts`'s
-  // `KNOWN_OUT_OF_SCOPE`) until Area A or the founder decides one of: (a)
-  // 4.9.d gets a narrow carve-out for Cerbos-gated `/api/staff/**` routes,
-  // or (b) B must never reach ANY browser including staff's, in which case
-  // 9.5.b needs a different mechanism entirely (an out-of-band/CLI
-  // rate-setter, not a console screen) and TASKS.md 9.5.b's own wording
-  // ("B is never shown outside this screen") needs revising to match.
-  //
-  // `POST .../rate/proposals/{id}/approve` IS registered below: its own
-  // request (`decideProposalBodySchema`, an optional note) and response
-  // (`economyProposalSchema`, which never carries the ledger's raw
-  // `result`) are genuinely B-free, so it needs no exemption.
+  // F54 (2026-09-29, founder-approved): `GET .../rate` and
+  // `POST .../rate/proposals` genuinely carry `backingRateMicrosPerPoint`
+  // (B) -- a human has to see and choose that number to change it. Area A's
+  // `money/no-backing-rate-in-api.test.ts` (4.9.d) now carves out
+  // `/api/staff/**` by path prefix for exactly this reason, with its own
+  // assertion that the carve-out is genuinely exercised here and nowhere
+  // else -- see that file's header. `components.schemas` stays strict
+  // (never exempt), which is why B is inlined with `inlineSchema` below
+  // rather than promoted to a named, cross-route component.
+  {
+    method: "get",
+    path: "/api/staff/economy/{region}/rate",
+    summary: "The current backing rate and any pending rate-change proposals (finance only)",
+    tags: ["staff-economy"],
+    pathParams: [REGION_PARAM],
+    successStatus: 200,
+    successDescription:
+      "B, reverse-derived from coverage() (coverage-math.ts) -- never returned by any other route.",
+    successSchema: inlineSchema(rateScreenSchema),
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/staff/economy/{region}/rate/proposals",
+    summary: "Propose a backing-rate change (9.5.b) -- needs a second staff member to approve",
+    tags: ["staff-economy"],
+    pathParams: [REGION_PARAM],
+    requestBody: {
+      description: "The new backing rate, in micros per point (finance only, F54).",
+      schema: inlineSchema(proposeRateBodySchema),
+    },
+    successStatus: 201,
+    successDescription: "The new, pending rate-change proposal.",
+    successSchema: inlineSchema(economyProposalSchema),
+    errors: [VALIDATION_400, FORBIDDEN, LEDGER_REFUSED, SERVICE_UNAVAILABLE],
+  },
   {
     method: "post",
     path: "/api/staff/economy/{region}/rate/proposals/{id}/approve",
@@ -188,7 +201,8 @@ export const STAFF_ECONOMY_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       schema: inlineSchema(decideProposalBodySchema),
     },
     successStatus: 201,
-    successDescription: "The decided proposal. Never carries B -- see this section's own comment.",
+    successDescription:
+      "The decided proposal. Never carries B -- economyProposalSchema strips the ledger's raw result.",
     successSchema: inlineSchema(economyProposalSchema),
     errors: [
       VALIDATION_400,

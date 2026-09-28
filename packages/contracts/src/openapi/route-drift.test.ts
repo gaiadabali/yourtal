@@ -143,18 +143,6 @@ function key(route: { method: string; path: string }): string {
  * the same commit.
  */
 const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
-  // TASKS.md 9.5.b -- live, Cerbos-gated, two-person-enforced routes
-  // (staff-economy.controller.ts / staff-economy.e2e.test.ts), deliberately
-  // not published: their real request/response carries `backingRateMicrosPerPoint`
-  // (B), which `money/no-backing-rate-in-api.test.ts` (4.9.d, Area A) forbids
-  // ANYWHERE in this document with no staff/role carve-out. See
-  // `route-registry.c-staff-economy.ts`'s own comment for the full
-  // reasoning and the decision this is waiting on (Area A / the founder).
-  "GET /api/staff/economy/{region}/rate":
-    "9.5.b: carries B (backingRateMicrosPerPoint) -- see route-registry.c-staff-economy.ts.",
-  "POST /api/staff/economy/{region}/rate/proposals":
-    "9.5.b: carries B (backingRateMicrosPerPoint) -- see route-registry.c-staff-economy.ts.",
-
   "GET /api/internal/hls-auth":
     "2.1.c: nginx's auth_request target for signed HLS URLs, blocked on the public vhost, so not a published contract.",
   "POST /api/internal/studio/media/{assetId}/ready":

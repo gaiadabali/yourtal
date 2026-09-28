@@ -29,7 +29,7 @@ export interface EconomyProposalRow {
 }
 
 /**
- * `staff.economy_proposal` (migration 20260928000000): the read model for
+ * `staff.economy_proposal` (migration 20260929050100): the read model for
  * "what is awaiting a second approver" across 9.5's four two-person flows.
  * See that migration's own header for why this table exists alongside
  * `ledger-internal`'s own propose/approve rows rather than instead of them.

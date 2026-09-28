@@ -101,6 +101,13 @@ jobs:
       # default, so anything here that boots the app outside the vitest env
       # needs it explicitly — CI does not read .env.example.
       CHECKPOINT_TOKEN_SECRET: ci-only-checkpoint-signing-key-not-a-real-secret
+      # Seals a business's webhook signing secret (TASKS.md 8.3.c). Required
+      # by env.schema.ts with no default, same reasoning as
+      # CHECKPOINT_TOKEN_SECRET immediately above — added here after F54
+      # traced Integration's "pdp unavailable"-shaped failures (every e2e/
+      # boot test failing identically) to loadAppConfig's own ZodError on
+      # this variable, not to Cerbos or a fixture/constraint regression.
+      WEBHOOK_SECRET_ENCRYPTION_KEY: ci-only-webhook-secret-encryption-key-not-a-real-secret
       S3_ACCESS_KEY: yourtal
       S3_SECRET_KEY: yourtal_local_only
       S3_BUCKET: yourtal-media

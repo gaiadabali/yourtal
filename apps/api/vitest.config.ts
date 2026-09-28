@@ -86,6 +86,25 @@ export default defineConfig({
       CHECKPOINT_TOKEN_SECRET:
         process.env.CHECKPOINT_TOKEN_SECRET ??
         "vitest-only-checkpoint-signing-key-not-a-real-secret",
+
+      /**
+       * TASKS.md 8.3.c added `WEBHOOK_SECRET_ENCRYPTION_KEY` to
+       * `env.schema.ts` (`z.string().min(32)`, no default — same reasoning
+       * as `CHECKPOINT_TOKEN_SECRET` above) without adding the matching
+       * fallback here, which is exactly the failure mode the comment above
+       * warns about: every suite that boots `AppModule` went red in CI at
+       * once (F54 — `loadAppConfig`'s own `ZodError` on this one field,
+       * surfacing everywhere as an unrelated-looking `TypeError: Cannot
+       * read properties of undefined (reading 'close')` in each file's own
+       * `afterAll`, since `app` was never assigned). Local dev never saw it
+       * because `.env`/`.env.example` already carry a real-looking value;
+       * CI does not read either file. Same fallback-not-assignment shape as
+       * `CHECKPOINT_TOKEN_SECRET`, same DO-NOT-SHORTEN warning: the string
+       * below must stay comfortably over 32 characters.
+       */
+      WEBHOOK_SECRET_ENCRYPTION_KEY:
+        process.env.WEBHOOK_SECRET_ENCRYPTION_KEY ??
+        "vitest-only-webhook-secret-encryption-key-not-a-real-secret",
     },
 
     /**

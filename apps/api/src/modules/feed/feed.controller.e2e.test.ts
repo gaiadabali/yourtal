@@ -6,6 +6,7 @@ import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../../app.module";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../shared/testing/session-for";
 
 /**
@@ -22,6 +23,23 @@ import { sessionFor } from "../../shared/testing/session-for";
  */
 let app: NestFastifyApplication;
 const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!);
+// F54: `campaign.terms_version` is insert-only for `yourtal_app` (the same
+// role `db` above connects as) -- cleaning up seeded rows needs the owner
+// role, same as every other file's own fixture cleanup (e.g.
+// watch-earn-journey.e2e.test.ts's `owner`).
+const owner: AppDb = createAppDb(process.env["DATABASE_OWNER_URL"] ?? "");
+
+/**
+ * F54: every campaign this file seeds directly as `lifecycle_state = 'live'`
+ * with no matching `campaign.terms_version` row, tracked so `afterAll` can
+ * remove it. Left in the shared `with-test-db.mjs` database (one per WHOLE
+ * run, every file's fixtures included), an orphaned "live, no terms" row
+ * sorts ahead of every properly-seeded campaign in `listVisible`'s `ORDER BY
+ * published_at DESC` for the rest of the run -- exactly the shape of
+ * `streak.service.test.ts`/`watch.controller.test.ts`'s own "expected the
+ * seeded campaign to carry published terms" failures traced back here.
+ */
+const seededCampaignIds: string[] = [];
 
 beforeAll(async () => {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -32,6 +50,18 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await app.close();
+  if (seededCampaignIds.length > 0) {
+    await owner.execute(
+      sql`DELETE FROM campaign.reward_config WHERE campaign_id IN ${seededCampaignIds}`,
+    );
+    await owner.execute(
+      sql`DELETE FROM campaign.terms_version WHERE campaign_id IN ${seededCampaignIds}`,
+    );
+    await owner.execute(
+      sql`DELETE FROM campaign.video_source WHERE campaign_id IN ${seededCampaignIds}`,
+    );
+    await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id IN ${seededCampaignIds}`);
+  }
 });
 
 interface SeedCampaignOptions {
@@ -67,6 +97,16 @@ async function seedCampaign(
     INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
     VALUES (${campaignId}, 'hls', 'https://cdn.example.com/manifest.m3u8')
   `);
+  // F54: `watch.session` (and, transitively, `me.streak_state`) needs a real
+  // terms_version row for any 'live' campaign it touches -- see the module
+  // header note on `seededCampaignIds` for what an orphaned one broke.
+  await db.execute(sql`
+    INSERT INTO campaign.terms_version
+      (campaign_id, version, reward_points, question_count, scoring_rule,
+       duration_seconds, accuracy_bonus_points, effective_from)
+    VALUES (${campaignId}, 1, 100, 0, 'base_only', 30, 0, now())
+  `);
+  seededCampaignIds.push(campaignId);
   return { campaignId, businessId };
 }
 
@@ -314,6 +354,15 @@ describe("GET /api/search", () => {
       INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
       VALUES (${campaignId}, 'hls', 'https://cdn.example.com/manifest.m3u8')
     `);
+    // F54: see `seedCampaign`'s own comment -- this test builds its campaign
+    // inline instead of through that helper, so it needs the same row.
+    await db.execute(sql`
+      INSERT INTO campaign.terms_version
+        (campaign_id, version, reward_points, question_count, scoring_rule,
+         duration_seconds, accuracy_bonus_points, effective_from)
+      VALUES (${campaignId}, 1, 100, 0, 'base_only', 30, 0, now())
+    `);
+    seededCampaignIds.push(campaignId);
     await fundCampaign(campaignId, businessId, "AU");
 
     const response = await app.inject({

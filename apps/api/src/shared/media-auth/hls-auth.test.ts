@@ -72,6 +72,11 @@ describe("loadAppConfig and HLS_SIGNING_SECRET", () => {
   const base = {
     DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
     CHECKPOINT_TOKEN_SECRET: "test-only-checkpoint-signing-key-not-a-real-secret",
+    // F54: TASKS.md 8.3.c added this to env.schema.ts (required, no default)
+    // after this fixture object was written; loadAppConfig here is called
+    // directly with a hand-built source, so it needs its own value rather
+    // than picking one up from vitest.config.ts's process-env fallback.
+    WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
   };
 
   it("refuses the local-only default on staging, allows it in dev", () => {

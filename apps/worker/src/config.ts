@@ -16,6 +16,12 @@ const envSchema = z.object({
   // the same dev defaults as apps/api's.
   LEDGER_BASE_URL: z.url().default("http://127.0.0.1:26910"),
   LEDGER_SERVICE_SECRET: z.string().min(32).default("local-only-ledger-service-secret-not-real"),
+  // TASKS.md 8.3.e: same loopback pattern as the ledger's above, for
+  // services/voucher/internal/serviceauth — the worker drains its webhook
+  // outbox from here. Same env var names and defaults apps/api's
+  // env.schema.ts already declares (both processes read one shared .env).
+  VOUCHER_BASE_URL: z.url().default("http://voucher:8080"),
+  VOUCHER_SERVICE_SECRET: z.string().min(32).default("local-only-voucher-service-secret-not-real"),
   // TASKS.md 8.3.c: the same key apps/api seals a webhook's own signing
   // secret under (env.schema.ts) — this job has to recover it to sign each
   // delivery, so both processes read one shared key, never two.
@@ -29,6 +35,7 @@ export interface WorkerConfig {
   readonly nodeEnv: "development" | "test" | "production";
   readonly databaseUrl: string;
   readonly ledger: { readonly baseUrl: string; readonly serviceSecret: string };
+  readonly voucher: { readonly baseUrl: string; readonly serviceSecret: string };
   readonly webhookSecretEncryptionKey: string;
 }
 
@@ -39,6 +46,7 @@ export function loadWorkerConfig(source: NodeJS.ProcessEnv = process.env): Worke
     nodeEnv: env.NODE_ENV,
     databaseUrl: env.DATABASE_URL,
     ledger: { baseUrl: env.LEDGER_BASE_URL, serviceSecret: env.LEDGER_SERVICE_SECRET },
+    voucher: { baseUrl: env.VOUCHER_BASE_URL, serviceSecret: env.VOUCHER_SERVICE_SECRET },
     webhookSecretEncryptionKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
   };
 }

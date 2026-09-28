@@ -614,6 +614,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "voucher.redemption_attempt": "Same redemption-network note as voucher.authorization above.",
   "voucher.capture_outbox":
     "4.6.f's outbox row, written in the same transaction as the capture it names (voucher.capture, mapped above). apps/worker reads it to post captures to the ledger; no public contract represents it, the same reasoning as the redemption-network tables above.",
+  "voucher.webhook_outbox":
+    "8.3.e's outbox row, written in the same transaction as the capture/refund/expiry it names. apps/worker drains it onto the 8.3.c webhook-delivery queue over voucher-internal/webhook-events.ts's schemas (already NOT_PUBLISHED in openapi.test.ts, same reasoning as releaseSchema) — same shape as voucher.capture_outbox above, no public contract either.",
   "watch.coverage":
     "The raw evidence rows behind watch-coverage.ts's range arithmetic (YT-0120/YT-0551). That module exports functions and types over server-computed ranges, not a persisted object schema, so there is no contract to map.",
   "watch.checkpoint_nonce":

@@ -40,13 +40,13 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
 | **Phase 7** Business studio | C | ✅ done | 9/9 | 46/46 | `██████████` 100% |
-| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 11/18 | `██████░░░░`  61% |
+| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 1/4 | 11/18 | `██████░░░░`  61% |
 | **Phase 9** Staff console | C | 🔄 in progress | 0/5 | 1/17 | `█░░░░░░░░░`   6% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **56/90** | **317/427** | `███████░░░`  74% |
+| **All** | | | **57/90** | **317/427** | `███████░░░`  74% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1177,7 +1177,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
 
 F11: vouchers must really work for YourTal, brands and users. That means generation (4.5), redemption at the counter and online, and a secure SDK brands can integrate. Tamper evidence is the voucher hash chain anchored in the daily proof, whose root is published (10.3). No blockchain for now.
 
-- [ ] **8.1 Counter devices** · needs: 1.5, 4.5 — 🔄 slot 8
+- [x] **8.1 Counter devices** · needs: 1.5, 4.5 — ✅ 2026-09-28 d55d523e
   - [x] 8.1.a Studio → Team → Devices provisions a counter device: — server half done 2317e40a (`apps/api/src/modules/devices`: provision/list/revoke, argon2id PIN, hashed pairing code + credential, composite-FK-enforced region/location match). B's UI half merged `d55d523e`: `team-devices-panel.tsx`/`team-provision-device-dialog.tsx` on Studio → Team, wired to `devices-data.ts`'s live `listDevicesLive`/`provisionDeviceLive`/`revokeDeviceLive`. Verified end to end against the real BFF (not mocked): provisioned a real device via the real endpoint, listed it back, revoked it — real HTTP round trips, not a unit test. Screenshots 390/1280px, light/dark, en-AU/id-ID, axe-clean (0 violations, 24/24 combos across this + 8.2.g + 8.3.a). **(requested by B, still open)** neither `POST /api/devices/pair` nor `POST /api/devices/unlock` returns the device's own label/location/region — a paired counter has no source for its own locale/currency display, so `apps/web/features/merchant`'s portal chrome stays fixed to `en-AU` (never affects a redemption's currency, which always comes from that voucher's own lookup response). Asking for either field added to `unlockDeviceResultSchema` (the controller already loads the device row) or a small `GET /api/devices/self`.
     - a server-side device record;
     - a one-time pairing code;
@@ -1501,6 +1501,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-28 · C · 8.1 Counter devices done (d55d523e): Studio provisions and revokes devices, one-time pairing, hashed credential, argon2id PIN with lockout; the `store_device` principal comes from the credential (8.1.c e2e 3/3, real Cerbos)
 - 2026-09-28 · C · **Phase 7 done: Business studio.** Studio on staging end to end: business accounts with tax ID and address (7.1), campaign authoring with the reward ceiling, question bank and lifecycle (7.3), ledger-priced inventory (7.4), simulated points purchase (7.5), cohort-floored reports (7.6), the region- and audience-walled feed and search (7.7), and the Studio UI, where a new business gets from sign-up to a funded campaign ready to submit (7.8). Media: presigned multipart upload, ffmpeg HLS 360/540/720 in 6 s segments, poster and teaser under 1.5 MB, a 3-minute upload ready in 94 s on staging (7.2); object storage moved to RustFS, MinIO discontinued (7.9, F58/F60). Staging fixes along the way: F51, F54, the missing `@aws-sdk` and `neverthrow` in the release build, F61, F63, F66 and F67. Captions moved to 13.9 · 4c4db45f
 - 2026-09-28 · F (QA) · **7.9.d and 7.2.f both ✅ — 7.2 and 7.9 closed.** After F66 (agent A) deployed, started a real watch session as a demo viewer against the live Southern Cross Coffee campaign — `201`, a real signed `manifestUrl`. Fetched it for real (master + variant + a segment, all `200`) and, in a real Chromium browser with hls.js (same-origin navigation so nginx's un-CORS'd `/media/hls/` still works, inline script content so the site's own CSP `script-src 'self'` doesn't block it), parsed 3 quality levels and played 3+ real seconds. That closes 7.9.d: fresh-upload initiate/complete/ready (already proven), existing demo media loading through nginx off RustFS (already proven), and now signed HLS playback for real. For 7.2.f's captions clause, read the pipeline end to end and proved empirically too: muxed Sintel's own real, published English WebVTT dialogue into a real ~3-minute clip as an embedded subtitle stream, uploaded it through Studio, and `captionsUrl` still came back `null` — no code path anywhere produces one, for any input; the demo kit doesn't either (confirmed by agent A, who owns that file). Filed as **F68**, a genuine gap, not fixed under this Check — recorded rather than papered over. Ticked both Checks, closed 7.2 and 7.9 with ✅ (`7e39e115`), updated the Now table's C row. `yourtal_minio` can now be deleted — 7.9.d has genuinely passed.
 

@@ -41,12 +41,12 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
 | **Phase 7** Business studio | C | ✅ done | 9/9 | 46/46 | `██████████` 100% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 1/4 | 12/18 | `███████░░░`  67% |
-| **Phase 9** Staff console | C | 🔄 in progress | 0/5 | 1/17 | `█░░░░░░░░░`   6% |
+| **Phase 9** Staff console | C | 🔄 in progress | 1/5 | 2/17 | `█░░░░░░░░░`  12% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **57/90** | **318/427** | `███████░░░`  74% |
+| **All** | | | **58/90** | **319/427** | `████████░░`  75% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1218,23 +1218,23 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
 
 The internal team runs the economy and the review queues. Today none of it exists.
 
-- [ ] **9.1 Staff shell and access** · needs: 1.5, 3.5 — 🔄 slot 2
+- [x] **9.1 Staff shell and access** · needs: 1.5, 3.5 — ✅ 2026-09-28 9bac76a3
   - [x] 9.1.a A `(staff)` route group at `/staff`, using StudioShell. Staff accounts are created by CLI (`pnpm staff:add <email> <role>`). Every action is audited. All copy lives in `messages/*/staff.json`. — done on `phase/9` (70042bf1, b839e299): `(staff)` route group on StudioShell, gated by `GET /api/staff/me` (new Cerbos kind `staff_console`: the five working staff roles; `admin` stays out by the admin boundary; suspended staff refused). `pnpm staff:add` already existed (1.5.b). Audit: append-only `staff.audit_event` (trigger refuses UPDATE/DELETE, owner included), written by `StaffAuditInterceptor` for every `@StaffAction` route, succeeded or failed; a unit test fails the build for a staff route with neither `@StaffAction` nor `@StaffUnaudited`. Copy in `messages/{en-AU,id-ID}/staff.json`. Non-staff get a real HTTP 403 via `forbidden()` (F53).
-  - [ ] 9.1.b **Check:** a non-staff account gets 403 on `/staff/*`.
+  - [x] 9.1.b **Check:** a non-staff account gets 403 on `/staff/*`. — passed 2026-09-28 on merged `main` (9bac76a3): `staff-console.e2e.test.ts` (no session 401, viewer 403, admin-only 403, suspended staff 403, staff 200 with own roles) and `apps/web/e2e/c-staff-console.spec.ts` 6/6 live (no session → sign-in, viewer → HTTP 403 page, staff granted through the real `pnpm staff:add` → console at 390/1280 px, light/dark, axe clean).
 - [ ] **9.2 Moderation queue** · needs: 9.1, 7.3, 7.7
   - [ ] 9.2.a The queue covers campaign creative, question banks (checked for PII and prediction questions), audience and category (confirm or change, per the 1.1.d policy), listings and voucher batches. The simulated automated screen shows as flags. Approve or reject with a reason.
   - [ ] 9.2.c (moved from 7.4.c) Approving a voucher batch mints it through 4.5 (`approveBatch`), and the listing's stock rises by the batch size.
   - [ ] 9.2.b **Check:** a submitted campaign goes live only after approval and then appears in `GET /api/feed`, a rejection shows its reason in Studio, and an approved voucher batch raises the listing's stock.
-- [ ] **9.3 Businesses** · needs: 9.1, 7.1
+- [ ] **9.3 Businesses** · needs: 9.1, 7.1 — 🔄 slot 2
   - [ ] 9.3.a KYB review (approve or reject documents, setting `is_verified`) and business suspension.
   - [ ] 9.3.b **Check:** approving KYB unblocks submit, so a business made through the Studio UI on staging submits its funded campaign (moved from 7.8.d), and a suspended business's campaigns leave the feed.
-- [ ] **9.4 Users and support** · needs: 9.1, 4.7
+- [ ] **9.4 Users and support** · needs: 9.1, 4.7 — 🔄 slot 2
   - [ ] 9.4.a Search users and view their ledger history.
   - [ ] 9.4.b Suspend into **escrow** (never zero a balance), and release.
   - [ ] 9.4.c Goodwill through `grantAction(goodwill)`, marketing-funded, within the F12 per-case limit.
   - [ ] 9.4.d Change trust tier, and the K13 dispute queue listing captured-voucher disputes (4.7.c). The risk review queue and resolving a dispute need Phase 10, so they are 10.5.
   - [ ] 9.4.e **Check:** a suspension moves available and pending points to escrow, and a captured-voucher dispute appears in the K13 queue.
-- [ ] **9.5 Economy** · needs: 9.1, 4.9
+- [ ] **9.5 Economy** · needs: 9.1, 4.9 — 🔄 slot 2
   - [ ] 9.5.a Show, per region: coverage; daily issuance, burn and breakage; the reserve; the reported spread (purchase cash − granted points × B); and point purchases.
   - [ ] 9.5.b Rate changes (B and P_issue) through `proposeRate` / `approveRate`, requiring a second staff member. B is never shown outside this screen.
   - [ ] 9.5.c `fundMarketing` (two-person), kill switches, and recording a manual point purchase (bank-transfer reference → ledger purchase, two-person).
@@ -1501,6 +1501,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-28 · C · **9.1 done.** Staff console shell: `(staff)` route group at `/staff` on StudioShell, gated by new Cerbos kind `staff_console` through `GET /api/staff/me` (five working staff roles; `admin` out by the admin boundary; suspended staff refused); a real HTTP 403 page via `forbidden()` (F53); append-only `staff.audit_event` written by `StaffAuditInterceptor` for every `@StaffAction` route, enforced by a build test; `messages/*/staff.json` · 9bac76a3
 - 2026-09-28 · C · 8.1 Counter devices done (d55d523e): Studio provisions and revokes devices, one-time pairing, hashed credential, argon2id PIN with lockout; the `store_device` principal comes from the credential (8.1.c e2e 3/3, real Cerbos)
 - 2026-09-28 · C · **Phase 7 done: Business studio.** Studio on staging end to end: business accounts with tax ID and address (7.1), campaign authoring with the reward ceiling, question bank and lifecycle (7.3), ledger-priced inventory (7.4), simulated points purchase (7.5), cohort-floored reports (7.6), the region- and audience-walled feed and search (7.7), and the Studio UI, where a new business gets from sign-up to a funded campaign ready to submit (7.8). Media: presigned multipart upload, ffmpeg HLS 360/540/720 in 6 s segments, poster and teaser under 1.5 MB, a 3-minute upload ready in 94 s on staging (7.2); object storage moved to RustFS, MinIO discontinued (7.9, F58/F60). Staging fixes along the way: F51, F54, the missing `@aws-sdk` and `neverthrow` in the release build, F61, F63, F66 and F67. Captions moved to 13.9 · 4c4db45f
 - 2026-09-28 · F (QA) · **7.9.d and 7.2.f both ✅ — 7.2 and 7.9 closed.** After F66 (agent A) deployed, started a real watch session as a demo viewer against the live Southern Cross Coffee campaign — `201`, a real signed `manifestUrl`. Fetched it for real (master + variant + a segment, all `200`) and, in a real Chromium browser with hls.js (same-origin navigation so nginx's un-CORS'd `/media/hls/` still works, inline script content so the site's own CSP `script-src 'self'` doesn't block it), parsed 3 quality levels and played 3+ real seconds. That closes 7.9.d: fresh-upload initiate/complete/ready (already proven), existing demo media loading through nginx off RustFS (already proven), and now signed HLS playback for real. For 7.2.f's captions clause, read the pipeline end to end and proved empirically too: muxed Sintel's own real, published English WebVTT dialogue into a real ~3-minute clip as an embedded subtitle stream, uploaded it through Studio, and `captionsUrl` still came back `null` — no code path anywhere produces one, for any input; the demo kit doesn't either (confirmed by agent A, who owns that file). Filed as **F68**, a genuine gap, not fixed under this Check — recorded rather than papered over. Ticked both Checks, closed 7.2 and 7.9 with ✅ (`7e39e115`), updated the Now table's C row. `yourtal_minio` can now be deleted — 7.9.d has genuinely passed.

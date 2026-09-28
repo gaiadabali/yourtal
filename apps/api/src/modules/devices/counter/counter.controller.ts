@@ -132,6 +132,19 @@ export class CounterController {
     // 8.3.c: the capture already happened — an enqueue failure here must
     // never turn into a failed response for it. The queue's own
     // retries/backoff are the delivery job's problem, not this route's.
+    //
+    // 8.3.e TEMPORARY DOUBLE PUBLISHER, guarded not removed: services/voucher's
+    // own captureAsDevice (device_routes.go) now ALSO writes a
+    // voucher.webhook_outbox row for this same capture, drained by
+    // apps/worker's webhook-outbox-drain.ts onto this identical queue. Both
+    // publishers use `idempotencyKey: captureId` — deliberately, so
+    // webhook-delivery.ts's own (boundary, idempotency_key) upsert into
+    // platform.sim_outbox collapses them to ONE delivered row regardless of
+    // which fires first ("a replayed idempotency key returns the ORIGINAL
+    // send, not a second one", packages/drivers/src/boundaries/webhook.test.ts
+    // — the same guarantee, not a new one built for this). Delete THIS
+    // publish once 8.2.h is merged (TASKS.md 8.3.e's own instruction) — the
+    // voucher service is meant to be the single producer.
     try {
       await this.webhookEvents.publish({
         businessId,

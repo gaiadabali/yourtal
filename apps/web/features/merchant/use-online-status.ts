@@ -17,13 +17,23 @@ import { useEffect, useState } from "react";
  * staff and a false "success": `attemptRedemption` still re-classifies
  * eligibility and can still return a `network_error` for the UI to show
  * honestly, and `network_error` is retryable rather than fatal.
+ *
+ * Seeded `true` unconditionally, matching a server render (no `navigator`
+ * there) — reading `navigator.onLine` in the initial state itself, rather
+ * than an effect, is a real hydration mismatch the moment the browser's
+ * OWN first-paint value differs from the server's assumed default (found
+ * live-testing 8.2.a: every headless-Chromium reload of `/merchant`
+ * reproduced this deterministically). The `useEffect` below corrects the
+ * real value immediately after mount, same as any other browser-only
+ * read — a person never sees the wrong banner for longer than one paint,
+ * and the server/client markup for that very first paint now always
+ * agrees.
  */
 export function useOnlineStatus(): boolean {
-  const [isOnline, setIsOnline] = useState<boolean>(() =>
-    typeof navigator === "undefined" ? true : navigator.onLine,
-  );
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
+    setIsOnline(navigator.onLine);
     function handleOnline() {
       setIsOnline(true);
     }

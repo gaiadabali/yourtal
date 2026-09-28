@@ -60,19 +60,31 @@ no vouchers yet; the default is strict (zero rows fails). Run it by hand
 after any bootstrap or restore-affecting change:
 `sudo /opt/yourtal/bin/restore-rehearsal.sh --allow-empty`.
 
-## Storage cut-over: MinIO -> RustFS (7.9.c, F58)
+## Storage cut-over to RustFS (7.9.c, F58/F60)
 
 `infra/helios/rustfs-cutover.sh` is a one-time, reviewed-then-run script
-(never automatic, never part of a deploy): backs up app.env and takes a
-full `backup.sh` run, brings up a temporary RustFS on a scratch port and
-provisions it, mirrors every object from MinIO with `mc mirror` (verifying
-object count and total bytes match before anything switches over), then
-swaps the real `rustfs` compose service onto MinIO's old port, switches
-app.env's `S3_ACCESS_KEY`/`S3_SECRET_KEY` (never `S3_ENDPOINT` — same host,
-same port throughout) and restarts `yourtal-api`/`yourtal-worker`. MinIO is
-left stopped, not deleted, until 7.9.d's Check passes. Run as root, from a
-copy of `main`'s `infra/helios/`: `sudo bash rustfs-cutover.sh migrate`;
-`sudo bash rustfs-cutover.sh rollback` switches straight back to MinIO.
+(never automatic, never part of a deploy). Takes the new
+`docker-compose.helios.yml` as its one argument — it installs that file
+itself, backing up the live one with a timestamp first. Backs up app.env
+and takes a full `backup.sh` run, brings up a temporary RustFS on a
+scratch port attached to the real `yourtal_rustfs` volume and provisions
+it, mirrors every object from the old store with `mc mirror` **twice**
+(the second pass catches most writes made during the first — the runbook
+covers what window remains, acceptable on staging), verifying object count
+and total bytes match before anything switches over. Only then: stops the
+old store, brings up the real `rustfs` service on its former port, and
+verifies again — this time against the real service itself (a live
+`ListObjectsV2` sweep, not the migration container) — before switching
+app.env's `S3_ACCESS_KEY`/`S3_SECRET_KEY` (never `S3_ENDPOINT` — same
+host, same port throughout), restarting `yourtal-api`/`yourtal-worker`
+under the site user's own pm2, and smoke-testing (api health, a real
+public object through nginx, and the full presigned-upload round trip via
+`rustfs-smoke-test.mjs`). F60 (founder, 2026-09-28): the old store is
+genuinely discontinued, not kept as a rollback — once every check above
+passes, its container and `minio.env` are removed; only its data volume is
+left for the coordinator to delete once 7.9.d's Check passes. Run as
+root, from a copy of `main`'s `infra/helios/`:
+`sudo bash rustfs-cutover.sh /path/to/new/docker-compose.helios.yml`.
 
 ## Drift detection (2.2.c)
 

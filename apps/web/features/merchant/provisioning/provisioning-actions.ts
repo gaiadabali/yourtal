@@ -106,6 +106,11 @@ export async function unlockWithPin(formData: FormData): Promise<void> {
     redirect(`/merchant?error=${errorCode}`);
   }
 
+  // Region closes TASKS.md 8.1's device-info gap (device-binding-schema.ts's
+  // own doc comment) — re-write the LONG-LIVED binding, not just the 5-minute
+  // unlock cookie, so the chrome's locale stays correct across "Lock now"
+  // and auto-lock too, not only until this unlock cookie expires.
+  await writeDeviceBinding({ ...binding, region: result.data.region });
   await markUnlocked();
   redirect("/merchant");
 }

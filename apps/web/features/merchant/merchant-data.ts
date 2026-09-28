@@ -1,3 +1,4 @@
+import { regionDisplayConfig } from "@/features/region/region-config";
 import type { MerchantDevice } from "./merchant-device";
 import { readDeviceBinding } from "./provisioning/device-session-cookie";
 
@@ -25,7 +26,10 @@ export async function getMerchantDevice(): Promise<MerchantDevice | null> {
   if (!binding) {
     return null;
   }
-  // Locale defaults to "en-AU" until TASKS.md 8.1's device-info gap closes
-  // (see merchant-i18n.ts) — never affects a redemption's currency.
-  return { id: binding.deviceId, locale: "en-AU" };
+  // Locale follows the region learned at this device's first real
+  // unlock-with-PIN call (device-binding-schema.ts's own doc comment);
+  // falls back to "en-AU" only until that has happened once. Never
+  // affects a redemption's currency.
+  const locale = binding.region ? regionDisplayConfig(binding.region).locale : "en-AU";
+  return { id: binding.deviceId, locale };
 }

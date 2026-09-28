@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { regionSchema } from "@yourtal/contracts/region";
 
 /**
  * What "this browser has been paired as a counter device" means, persisted
@@ -16,18 +17,27 @@ import { z } from "zod";
  * (Studio-side) doesn't require decoding the credential to know which
  * device just failed to unlock.
  *
- * There is currently no endpoint for a paired device to fetch its own
- * label/location/currency/locale (see `merchant-i18n.ts`'s doc comment) —
- * `(requested by B)` on TASKS.md 8.1 asks for one. Until it exists, the
- * portal's chrome copy defaults to `en-AU` (never affects a redemption's
- * currency, which always comes fresh off that voucher's own lookup
- * response).
+ * `region` closes TASKS.md 8.1's device-info gap (`(requested by B)`):
+ * `POST /api/devices/unlock` now returns the device's own `region`
+ * alongside `{label, locationId, locationName}` (it already loaded that
+ * row to check the PIN). `region` is `undefined` from pairing until the
+ * FIRST real unlock-with-PIN call succeeds — `submitPairingCode` marks a
+ * freshly-paired device unlocked WITHOUT calling the unlock endpoint (no
+ * PIN was ever entered to pair, only the code), so region genuinely isn't
+ * known yet at that moment. `unlockWithPin` re-writes this binding with
+ * the learned region on every real unlock, both filling the gap the first
+ * time and keeping it correct if the device is ever re-provisioned to a
+ * different region. Until it is known, the portal's chrome falls back to
+ * `en-AU` (`merchant-data.ts`'s `getMerchantDevice()`) — never affects a
+ * redemption's currency, which always comes fresh off that voucher's own
+ * lookup response.
  */
 export const deviceBindingSchema = z.object({
   deviceId: z.string().min(1),
   /** The bearer secret itself — sent as `Authorization: Bearer <credential>` on every device-authenticated call. Never logged, never rendered. */
   credential: z.string().min(1),
   pairedAt: z.iso.datetime(),
+  region: regionSchema.optional(),
 });
 
 export type DeviceBinding = z.infer<typeof deviceBindingSchema>;

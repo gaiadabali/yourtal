@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
+import { getMerchantDevice } from "@/features/merchant/merchant-data";
 
 /**
  * Root layout for the merchant portal (YT-0181).
@@ -10,10 +11,12 @@ import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
  * for why — so the group needs one, and the only real question it raises
  * is which `lang` to declare.
  *
- * TASKS.md 8.1/8.2 REWRITE: `lang` used to follow the paired device's own
- * locale, read off the binding cookie. Pairing (`POST /api/devices/pair`)
- * no longer returns a locale — see `merchant-i18n.ts`'s doc comment on the
- * device-info gap — so this is a fixed `en-AU` until that endpoint exists.
+ * TASKS.md 8.1/8.2 REWRITE: `lang` follows the paired device's own locale
+ * again, read off the binding cookie (`getMerchantDevice()`,
+ * `merchant-device.ts`'s own doc comment on the now-closed device-info
+ * gap) — `"en-AU"` only for an unpaired browser (the `/merchant/pair`
+ * screens) or a paired device that has not yet had its first real
+ * unlock-with-PIN call.
  */
 
 export const metadata = baseMetadata;
@@ -23,6 +26,7 @@ export interface MerchantLayoutProps {
   children: ReactNode;
 }
 
-export default function MerchantLayout({ children }: MerchantLayoutProps) {
-  return <RootDocument lang="en-AU">{children}</RootDocument>;
+export default async function MerchantLayout({ children }: MerchantLayoutProps) {
+  const device = await getMerchantDevice();
+  return <RootDocument lang={device?.locale ?? "en-AU"}>{children}</RootDocument>;
 }

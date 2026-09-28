@@ -1,5 +1,5 @@
 [Unit]
-Description=YourTal datastores (Postgres, Valkey, Cerbos, MinIO) via docker compose
+Description=YourTal datastores (Postgres, Valkey, Cerbos, RustFS) via docker compose
 Documentation=https://github.com/gaiadabali/yourtal/blob/main/infra/HELIOS.md
 Requires=docker.service
 After=docker.service

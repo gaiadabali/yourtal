@@ -60,6 +60,20 @@ no vouchers yet; the default is strict (zero rows fails). Run it by hand
 after any bootstrap or restore-affecting change:
 `sudo /opt/yourtal/bin/restore-rehearsal.sh --allow-empty`.
 
+## Storage cut-over: MinIO -> RustFS (7.9.c, F58)
+
+`infra/helios/rustfs-cutover.sh` is a one-time, reviewed-then-run script
+(never automatic, never part of a deploy): backs up app.env and takes a
+full `backup.sh` run, brings up a temporary RustFS on a scratch port and
+provisions it, mirrors every object from MinIO with `mc mirror` (verifying
+object count and total bytes match before anything switches over), then
+swaps the real `rustfs` compose service onto MinIO's old port, switches
+app.env's `S3_ACCESS_KEY`/`S3_SECRET_KEY` (never `S3_ENDPOINT` — same host,
+same port throughout) and restarts `yourtal-api`/`yourtal-worker`. MinIO is
+left stopped, not deleted, until 7.9.d's Check passes. Run as root, from a
+copy of `main`'s `infra/helios/`: `sudo bash rustfs-cutover.sh migrate`;
+`sudo bash rustfs-cutover.sh rollback` switches straight back to MinIO.
+
 ## Drift detection (2.2.c)
 
 `GET /api/health` returns `revision`: the release SHA, read once at API boot

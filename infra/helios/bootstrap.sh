@@ -146,6 +146,21 @@ rustfs_sigv4 -X PUT "$rustfs_endpoint/yourtal-media?policy" \
   "Resource":["arn:aws:s3:::yourtal-media/hls/*","arn:aws:s3:::yourtal-media/posters/*",
               "arn:aws:s3:::yourtal-media/teasers/*","arn:aws:s3:::yourtal-media/captions/*"]}]}' \
   >/dev/null
+# Verify what was just set, as root (the only credential that CAN read
+# bucket policy at all — the app's own least-privilege key gets a clean
+# AccessDenied on GetBucketPolicy too, by design; found live, 2026-09-28,
+# `ensureStudioMediaBucket()`'s own check now quietly no-ops on that
+# instead of warning every boot). This is the verification that moved here.
+policy_now=$(rustfs_sigv4 "$rustfs_endpoint/yourtal-media?policy")
+for prefix in hls posters teasers captions; do
+  case "$policy_now" in
+  *"arn:aws:s3:::yourtal-media/$prefix/*"*) ;;
+  *)
+    log "WARNING: bucket policy does not grant public read on $prefix/* after setting it — check RustFS's response above"
+    ;;
+  esac
+done
+log "bucket policy verified: public read on hls/, posters/, teasers/, captions/"
 if ! grep -q '^S3_ACCESS_KEY=' "$app_env"; then
   s3_secret=$(rand)
   rustfs_sigv4 -X PUT "$rustfs_endpoint/rustfs/admin/v3/add-canned-policy?name=yourtal-media-rw" \

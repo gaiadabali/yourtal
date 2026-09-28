@@ -187,6 +187,22 @@ export function bucketPolicyResources(policyJson: string | undefined): ReadonlyS
   return new Set(resources);
 }
 
+/**
+ * Found live on staging (2026-09-28): the app's own least-privilege
+ * canned policy (`infra/helios/bootstrap.sh`'s recipe) grants no
+ * `s3:GetBucketPolicy`/`s3:PutBucketCORS` at all — so a check against
+ * either 403s on EVERY boot in a real deployment, not just when something
+ * is actually missing. Provisioning owns verifying its own policy now
+ * (its own recipe checks what it just set, as root); an `AccessDenied`
+ * here is confirmation the least-privilege split is working as designed,
+ * not a problem worth a warning on every start. Shared by
+ * `studio-media.ts`'s `ensureStudioMediaBucket` and `publish-fixture.ts`'s
+ * `allowAnonymousReadOfHls`.
+ */
+export function isAccessDenied(error: unknown): boolean {
+  return error instanceof Error && error.name === "AccessDenied";
+}
+
 export function resolveCredentials(): { accessKeyId: string; secretAccessKey: string } {
   const isProduction = process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test";
   // In production, require the env var to be set explicitly (do not fall back to .env).

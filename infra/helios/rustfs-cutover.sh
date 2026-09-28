@@ -182,6 +182,17 @@ rustfs_sigv4 -X PUT "http://127.0.0.1:$MIGRATE_PORT/$BUCKET?policy" \
   -H "content-type: application/json" \
   -d "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"PublicReadStudioMedia\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::$BUCKET/hls/*\",\"arn:aws:s3:::$BUCKET/posters/*\",\"arn:aws:s3:::$BUCKET/teasers/*\",\"arn:aws:s3:::$BUCKET/captions/*\"]}]}" \
   >/dev/null || die "PutBucketPolicy failed"
+# Verify what was just set, as root -- the app's own least-privilege key
+# gets a clean AccessDenied on GetBucketPolicy too (found live,
+# 2026-09-28), so this is the one place that can actually confirm it.
+policy_now=$(rustfs_sigv4 "http://127.0.0.1:$MIGRATE_PORT/$BUCKET?policy") || die "GetBucketPolicy (verification) failed"
+for prefix in hls posters teasers captions; do
+  case "$policy_now" in
+  *"arn:aws:s3:::$BUCKET/$prefix/*"*) ;;
+  *) die "bucket policy does not grant public read on $prefix/* after setting it" ;;
+  esac
+done
+log "bucket policy verified: public read on hls/, posters/, teasers/, captions/"
 rustfs_sigv4 -X PUT "http://127.0.0.1:$MIGRATE_PORT/$BUCKET?cors" \
   -H "content-type: application/xml" \
   -d "<?xml version=\"1.0\" encoding=\"UTF-8\"?><CORSConfiguration><CORSRule><AllowedOrigin>$SITE_URL</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedMethod>HEAD</AllowedMethod><AllowedMethod>PUT</AllowedMethod><AllowedHeader>*</AllowedHeader><ExposeHeader>ETag</ExposeHeader></CORSRule></CORSConfiguration>" \

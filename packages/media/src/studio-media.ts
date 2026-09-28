@@ -17,6 +17,7 @@ import {
   contentTypeFor as hlsContentTypeFor,
   HLS_PREFIX,
   objectKey as hlsObjectKey,
+  isAccessDenied,
   resolveCredentials,
   resolveMediaBucket,
   resolveMediaCorsOrigins,
@@ -80,10 +81,15 @@ const policyEnsured = new Set<string>();
  * (`infra/helios/bootstrap.sh`'s own curl+SigV4 recipe; `docker-compose.yml`
  * for local dev). This function used to set that policy itself with the
  * app's own credentials. RustFS's least-privilege split means that 403s
- * outright now, so it only checks the policy already
- * covers what this pipeline needs and warns loudly if it doesn't, rather
- * than trying to fix it — an app process is never the right actor to widen
- * its own bucket's public surface.
+ * outright now — an app process is never the right actor to widen its own
+ * bucket's public surface. It TRIES to check the policy already covers
+ * what this pipeline needs, but the same least-privilege canned policy
+ * grants no `s3:GetBucketPolicy`/`s3:PutBucketCORS` either (found live,
+ * 2026-09-28 — see `isAccessDenied` below), so on a real deployment this
+ * check itself 403s on every boot. Provisioning owns verifying its own
+ * policy now (`infra/helios/bootstrap.sh`'s recipe checks what it just
+ * set); this only still checks for local dev, where the app runs as root
+ * and the check can actually succeed.
  */
 async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
   const bucket = resolveMediaBucket();
@@ -108,10 +114,16 @@ async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
       );
     }
   } catch (error) {
-    console.warn(
-      `[studio-media] could not read bucket "${bucket}"'s policy to verify public read on ${PUBLIC_READ_PREFIXES.join(", ")}: ${error instanceof Error ? error.message : String(error)}. ` +
-        "Provisioning (infra/helios/bootstrap.sh or docker-compose.yml) must have set it; this app never will.",
-    );
+    if (isAccessDenied(error)) {
+      console.info(
+        `[studio-media] bucket "${bucket}"'s policy: provisioning's own job now (least-privilege key, F58) — skipping the check.`,
+      );
+    } else {
+      console.warn(
+        `[studio-media] could not read bucket "${bucket}"'s policy to verify public read on ${PUBLIC_READ_PREFIXES.join(", ")}: ${error instanceof Error ? error.message : String(error)}. ` +
+          "Provisioning (infra/helios/bootstrap.sh or docker-compose.yml) must have set it; this app never will.",
+      );
+    }
   }
 
   // A real browser PUTs presigned upload parts straight from the studio UI's
@@ -144,9 +156,15 @@ async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
       }),
     );
   } catch (error) {
-    console.warn(
-      `[studio-media] could not set bucket "${bucket}"'s CORS config (needed for direct browser uploads): ${error instanceof Error ? error.message : String(error)}.`,
-    );
+    if (isAccessDenied(error)) {
+      console.info(
+        `[studio-media] bucket "${bucket}"'s CORS config: provisioning's own job now (least-privilege key, F58) — skipping the check.`,
+      );
+    } else {
+      console.warn(
+        `[studio-media] could not set bucket "${bucket}"'s CORS config (needed for direct browser uploads): ${error instanceof Error ? error.message : String(error)}.`,
+      );
+    }
   }
   policyEnsured.add(bucket);
 }

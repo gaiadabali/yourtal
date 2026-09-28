@@ -15,6 +15,7 @@ import {
   bucketPolicyResources,
   contentTypeFor,
   fixtureDir,
+  isAccessDenied,
   manifestUrl,
   objectKey,
   resolveCredentials,
@@ -98,9 +99,13 @@ async function ensureBucket(client: S3Client): Promise<void> {
  * F58: this ran with the app's own least-privilege key in staging (this
  * publishes through `ensureStagingMedia`, part of the pre-reload seed) —
  * on RustFS that key cannot set bucket policy at all (by design; see
- * `studio-media.ts`'s `ensureStudioMediaBucket`, same reasoning). Checks and
- * warns instead of setting it; provisioning (`infra/helios/bootstrap.sh` or
- * `docker-compose.yml`) already covers `hls/` in its own public-read grant.
+ * `studio-media.ts`'s `ensureStudioMediaBucket`, same reasoning). Tries to
+ * check and warn instead of setting it, but the same least-privilege
+ * canned policy grants no `s3:GetBucketPolicy` either (found live,
+ * 2026-09-28), so on a real deployment this quietly no-ops
+ * (`isAccessDenied`) — provisioning (`infra/helios/bootstrap.sh` or
+ * `docker-compose.yml`) already covers `hls/` in its own public-read grant
+ * and verifies it itself now.
  */
 async function allowAnonymousReadOfHls(client: S3Client): Promise<void> {
   const resource = `arn:aws:s3:::${MEDIA_BUCKET}/${HLS_PREFIX}/*`;
@@ -114,10 +119,16 @@ async function allowAnonymousReadOfHls(client: S3Client): Promise<void> {
       );
     }
   } catch (error) {
-    console.warn(
-      `[publish-fixture] could not read bucket "${MEDIA_BUCKET}"'s policy to verify public read on ${HLS_PREFIX}/*: ${error instanceof Error ? error.message : String(error)}. ` +
-        "Provisioning (infra/helios/bootstrap.sh or docker-compose.yml) must have set it; this process never will.",
-    );
+    if (isAccessDenied(error)) {
+      console.info(
+        `[publish-fixture] bucket "${MEDIA_BUCKET}"'s policy: provisioning's own job now (least-privilege key, F58) — skipping the check.`,
+      );
+    } else {
+      console.warn(
+        `[publish-fixture] could not read bucket "${MEDIA_BUCKET}"'s policy to verify public read on ${HLS_PREFIX}/*: ${error instanceof Error ? error.message : String(error)}. ` +
+          "Provisioning (infra/helios/bootstrap.sh or docker-compose.yml) must have set it; this process never will.",
+      );
+    }
   }
 
   // A browser plays this fixture cross-origin in dev — same reasoning
@@ -142,9 +153,15 @@ async function allowAnonymousReadOfHls(client: S3Client): Promise<void> {
       }),
     );
   } catch (error) {
-    console.warn(
-      `[publish-fixture] could not set bucket "${MEDIA_BUCKET}"'s CORS config: ${error instanceof Error ? error.message : String(error)}.`,
-    );
+    if (isAccessDenied(error)) {
+      console.info(
+        `[publish-fixture] bucket "${MEDIA_BUCKET}"'s CORS config: provisioning's own job now (least-privilege key, F58) — skipping the check.`,
+      );
+    } else {
+      console.warn(
+        `[publish-fixture] could not set bucket "${MEDIA_BUCKET}"'s CORS config: ${error instanceof Error ? error.message : String(error)}.`,
+      );
+    }
   }
 }
 

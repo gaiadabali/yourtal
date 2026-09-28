@@ -346,7 +346,10 @@ function contentTypeForOutput(kind: MediaOutputKind, file: string): string {
 /**
  * Uploads one produced rendition file to its public prefix.
  *
- * F63: unlike `createRawUpload`, this never called `ensureStudioMediaBucket`
+ * F64 (renumbered from an earlier F63 — that number was independently
+ * claimed on `main` for an unrelated Helios config finding before this one
+ * reached TASKS.md; see TASKS.md's own findings table): unlike
+ * `createRawUpload`, this never called `ensureStudioMediaBucket`
  * — safe under MinIO, whose CI/dev container pre-creates a default bucket
  * on its own, but not under RustFS (F58-60's swap), which does not. A
  * caller that writes output WITHOUT going through `createRawUpload` first

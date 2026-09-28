@@ -181,6 +181,38 @@ jobs:
           docker logs yourtal-rustfs
           exit 1
 
+      # F65: MinIO's own container used to pre-create a default bucket
+      # AND answer public reads permissively enough that nobody noticed no
+      # policy was ever set for real; RustFS (F58-60's swap) does neither.
+      # F64 fixed bucket auto-creation in app code, but the PUBLIC-READ
+      # POLICY is a different gap, and deliberately never app code's job:
+      # `ensureStudioMediaBucket` (studio-media.ts) and
+      # `allowAnonymousReadOfHls` (publish-fixture.ts) both only CHECK and
+      # WARN about a missing policy, by design (least-privilege, F58) — only
+      # root can set it, and `infra/helios/bootstrap.sh` does, once, for
+      # staging. CI's own S3_ACCESS_KEY/S3_SECRET_KEY above happen to equal
+      # RustFS's root credentials here, but nothing was ever calling
+      # PutBucketPolicy with them — so `packages/media`'s `hls-origin.test.ts`
+      # (and anything else fetching HLS/poster/teaser/caption objects back
+      # over plain, unauthenticated HTTP) got a bare 403 Forbidden the whole
+      # time RustFS has been in CI. Same recipe bootstrap.sh already runs for
+      # real on Helios, run here once, right after RustFS is healthy and
+      # before any suite can reach it.
+      - name: Grant public read on RustFS's HLS/poster/teaser/caption prefixes
+        run: |
+          rustfs_sigv4() {
+            curl -fsS --aws-sigv4 "aws:amz:us-east-1:s3" --user "yourtal:yourtal_local_only" "$@"
+          }
+          rustfs_sigv4 -X PUT http://127.0.0.1:26900/yourtal-media >/dev/null 2>&1 || true
+          rustfs_sigv4 -X PUT "http://127.0.0.1:26900/yourtal-media?policy" \
+            -H "content-type: application/json" \
+            -d '{"Version":"2012-10-17","Statement":[
+           {"Sid":"PublicReadStudioMedia","Effect":"Allow","Principal":{"AWS":["*"]},
+            "Action":["s3:GetObject"],
+            "Resource":["arn:aws:s3:::yourtal-media/hls/*","arn:aws:s3:::yourtal-media/posters/*",
+                        "arn:aws:s3:::yourtal-media/teasers/*","arn:aws:s3:::yourtal-media/captions/*"]}]}' \
+            >/dev/null
+
       # YT-0599. apps/api opens a Valkey connection at boot, so without this the
       # PDP boot check dies on `connect ECONNREFUSED 127.0.0.1:26379` before it
       # asks Cerbos anything — and the failure reads as an authorization problem

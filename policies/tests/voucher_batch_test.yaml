@@ -1,0 +1,105 @@
+---
+name: VoucherBatchSuite
+description: |-
+  Bulk voucher issuance (YT-0141). A merchandiser or admin requests, an
+  owner or admin approves, and the two may never be the same principal.
+  TASKS.md 9.2.c adds the staff moderation queue: `moderator` reviews a
+  pending request the same two-person shape applies to -- the platform
+  itself is the second person here, so `nobody-approves-their-own-batch`
+  still has to hold for a moderator too, even though no real request is
+  ever moderator-authored.
+tests:
+  - name: owner, admin and merchandiser request and approve (never their own); an analyst cannot touch it
+    input:
+      principals: [eka_merchandiser, budi_owner, citra_admin, gita_analyst]
+      resources: [batch_kopi]
+      actions: [view, request_issuance, approve_issuance]
+    expected:
+      - principal: eka_merchandiser
+        resource: batch_kopi
+        actions: { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_DENY }
+      - principal: budi_owner
+        resource: batch_kopi
+        # owner is also an inventory editor (derived_roles/business.yaml),
+        # so it can request too -- approve is DENY here only because eka
+        # already requested THIS batch (self-approval), not role scope.
+        actions: { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW }
+      - principal: citra_admin
+        resource: batch_kopi
+        actions: { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW }
+      - principal: gita_analyst
+        resource: batch_kopi
+        actions: { view: EFFECT_DENY, request_issuance: EFFECT_DENY, approve_issuance: EFFECT_DENY }
+
+  - name: nobody approves their own batch, requester included
+    input:
+      principals: [eka_merchandiser, citra_admin]
+      resources: [batch_kopi, batch_kopi_by_citra]
+      actions: [approve_issuance]
+    expected:
+      - principal: eka_merchandiser
+        resource: batch_kopi
+        actions: { approve_issuance: EFFECT_DENY } # eka requested batch_kopi
+      - principal: citra_admin
+        resource: batch_kopi
+        actions: { approve_issuance: EFFECT_ALLOW } # citra did not request it
+      - principal: citra_admin
+        resource: batch_kopi_by_citra
+        actions: { approve_issuance: EFFECT_DENY } # citra requested this one
+
+  - name: 9.2.c -- moderator reviews the moderation queue, and only moderator
+    input:
+      principals: [moderator_tono, support_sari, ops_zul, budi_owner]
+      resources: [batch_kopi]
+      actions: [view, approve_issuance, reject_issuance]
+    expected:
+      - principal: moderator_tono
+        resource: batch_kopi
+        actions: { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_ALLOW }
+      - principal: support_sari
+        resource: batch_kopi
+        actions: { view: EFFECT_DENY, approve_issuance: EFFECT_DENY, reject_issuance: EFFECT_DENY }
+      - principal: ops_zul
+        resource: batch_kopi
+        actions: { view: EFFECT_DENY, approve_issuance: EFFECT_DENY, reject_issuance: EFFECT_DENY }
+      - principal: budi_owner
+        resource: batch_kopi
+        # budi is owner at biz-kopi, so view/approve_issuance already ALLOW
+        # via the business-side rules above -- the point here is
+        # reject_issuance, which is moderator-only and nothing budi holds
+        # reaches.
+        actions: { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_DENY }
+
+  - name: 9.2.c -- a moderator still cannot approve a batch requested in their own name
+    input:
+      principals: [moderator_tono]
+      resources: [batch_kopi_by_tono]
+      actions: [approve_issuance, reject_issuance]
+    expected:
+      - principal: moderator_tono
+        resource: batch_kopi_by_tono
+        # The self-approval DENY has no role condition -- it fires for
+        # moderator too. reject_issuance is not a value-creation action, so
+        # it is untouched by that rule and still ALLOWs.
+        actions: { approve_issuance: EFFECT_DENY, reject_issuance: EFFECT_ALLOW }
+
+  - name: a rival owner and a counter device are strangers here
+    input:
+      principals: [rival_owner, counter_kemang]
+      resources: [batch_kopi]
+      actions: [view, request_issuance, approve_issuance, reject_issuance]
+    expected:
+      - principal: rival_owner
+        resource: batch_kopi
+        actions:
+          view: EFFECT_DENY
+          request_issuance: EFFECT_DENY
+          approve_issuance: EFFECT_DENY
+          reject_issuance: EFFECT_DENY
+      - principal: counter_kemang
+        resource: batch_kopi
+        actions:
+          view: EFFECT_DENY
+          request_issuance: EFFECT_DENY
+          approve_issuance: EFFECT_DENY
+          reject_issuance: EFFECT_DENY

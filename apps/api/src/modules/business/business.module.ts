@@ -12,6 +12,7 @@ import { INVITATION_MAILER } from "./invitation-mailer";
 import { createKybObjectStorage } from "@yourtal/media/kyb-object-storage";
 import { KybDocumentController } from "./kyb-document.controller";
 import { MyBusinessesController } from "./my-businesses.controller";
+import { StaffBusinessReviewController } from "./staff-business-review.controller";
 import { KYB_OBJECT_STORAGE } from "./object-storage/kyb-object-storage";
 import { ACCEPT_TEAM_INVITATION_UNIT_OF_WORK } from "./persistence/accept-team-invitation.unit-of-work";
 import { BILLING_CONTACT_REPOSITORY } from "./persistence/billing-contact.repository";
@@ -29,6 +30,8 @@ import { DrizzleKybDocumentRepository } from "./persistence/drizzle-kyb-document
 import { DrizzleTeamInvitationRepository } from "./persistence/drizzle-team-invitation.repository";
 import { DrizzleTransferOwnershipUnitOfWork } from "./persistence/drizzle-transfer-ownership.unit-of-work";
 import { KYB_DOCUMENT_REPOSITORY } from "./persistence/kyb-document.repository";
+import { DrizzleStaffBusinessReviewRepository } from "./persistence/drizzle-staff-business-review.repository";
+import { STAFF_BUSINESS_REVIEW_REPOSITORY } from "./persistence/staff-business-review.repository";
 import { TEAM_INVITATION_REPOSITORY } from "./persistence/team-invitation.repository";
 import { TRANSFER_OWNERSHIP_UNIT_OF_WORK } from "./persistence/transfer-ownership.unit-of-work";
 import { TeamDirectoryController } from "./team-directory.controller";
@@ -65,6 +68,7 @@ const BUSINESS_DB = Symbol("BUSINESS_DB");
     TeamOwnershipController,
     BillingContactController,
     KybDocumentController,
+    StaffBusinessReviewController,
   ],
   providers: [
     {
@@ -109,6 +113,11 @@ const BUSINESS_DB = Symbol("BUSINESS_DB");
     {
       provide: KYB_DOCUMENT_REPOSITORY,
       useFactory: (db: BusinessDb) => new DrizzleKybDocumentRepository(db),
+      inject: [BUSINESS_DB],
+    },
+    {
+      provide: STAFF_BUSINESS_REVIEW_REPOSITORY,
+      useFactory: (db: BusinessDb) => new DrizzleStaffBusinessReviewRepository(db),
       inject: [BUSINESS_DB],
     },
     {

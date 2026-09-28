@@ -28,4 +28,9 @@ export const businessAccounts = businessPgSchema.table("business_accounts", {
   currency: text("currency").notNull(),
   handle: text("handle").notNull(),
   coverUrl: text("cover_url"),
+  // TASKS.md 9.3.a: staff suspension. A reason accompanies a timestamp
+  // always -- see the migration's CHECK.
+  suspendedAt: timestamp("suspended_at", { withTimezone: true }),
+  suspendedByUserId: text("suspended_by_user_id"),
+  suspendedReason: text("suspended_reason"),
 });

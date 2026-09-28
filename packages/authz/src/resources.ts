@@ -33,8 +33,12 @@ export const RESOURCE_ACTIONS = {
    * businessId to scope against -- the endpoint itself filters to real,
    * joined memberships read from the database -- same "caller IS the
    * resource, nothing narrower to check" shape as `create` below.
+   *
+   * `suspend`/`reinstate` (TASKS.md 9.3.a): staff-only. A suspended business
+   * cannot submit or spend and its campaigns leave the feed -- see
+   * `business.yaml`'s `ops-reviews-and-moderates-any-business` rule.
    */
-  business: ["view", "edit", "create", "list_own"],
+  business: ["view", "edit", "create", "list_own", "suspend", "reinstate"],
 
   /**
    * KYB onboarding documents. Submitted and read by the business
@@ -93,8 +97,12 @@ export const RESOURCE_ACTIONS = {
     "reject_listing",
   ],
 
-  /** Bulk voucher issuance, two-person approved. */
-  voucher_batch: ["view", "request_issuance", "approve_issuance", "void"],
+  /**
+   * Bulk voucher issuance, two-person approved. `reject_issuance` (TASKS.md
+   * 9.2.c): staff-only, the other half of the moderation queue's decision --
+   * see `voucher_batch.yaml`'s `moderator-reviews-a-batch` rule.
+   */
+  voucher_batch: ["view", "request_issuance", "approve_issuance", "reject_issuance", "void"],
 
   /** A business's own outlets (YT-0502) -- what a listing's `locationIds` reference. */
   merchant_location: ["view", "create", "edit", "archive"],

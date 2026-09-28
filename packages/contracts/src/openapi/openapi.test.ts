@@ -71,6 +71,20 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   staffRoleSchema:
     "9.1's staff console session, read only by apps/web's own /staff shell; GET /api/staff/me documents it inline in route-registry.c-staff.ts.",
   staffSessionSchema: "Same as staffRoleSchema above.",
+  staffBusinessSummarySchema:
+    "9.3.a's staff Businesses zone: GET /api/staff/businesses documents its list item inline in route-registry.c-staff-businesses.ts, same as staffSessionSchema above.",
+  staffBusinessDetailSchema:
+    "9.3.a's staff Businesses zone: GET /api/staff/businesses/{businessId} and every review action's response, documented inline in route-registry.c-staff-businesses.ts.",
+  listStaffBusinessesResponseSchema:
+    "9.3.a's staff Businesses zone: GET /api/staff/businesses's response envelope, documented inline in route-registry.c-staff-businesses.ts.",
+  approveBusinessKybRequestSchema:
+    "9.3.a's staff Businesses zone: POST .../kyb/approve's request body, documented inline in route-registry.c-staff-businesses.ts.",
+  rejectBusinessKybRequestSchema:
+    "9.3.a's staff Businesses zone: POST .../kyb/reject's request body, documented inline in route-registry.c-staff-businesses.ts.",
+  suspendBusinessRequestSchema:
+    "9.3.a's staff Businesses zone: POST .../suspend's request body, documented inline in route-registry.c-staff-businesses.ts.",
+  reinstateBusinessRequestSchema:
+    "9.3.a's staff Businesses zone: POST .../reinstate's request body, documented inline in route-registry.c-staff-businesses.ts.",
   regionSettingSchema:
     "1.2.f's ledger-internal settings row (getSettings/proposeSetting/approveSetting). Internal to the ledger and 9.5.d's staff console, not a public/business-facing HTTP contract -- same reason ledger-internal and voucher-internal's own operation types are not routed through this registry.",
 

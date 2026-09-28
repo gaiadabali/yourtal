@@ -70,6 +70,17 @@ resourcePolicy:
       derivedRoles:
         - business_team_editor_of
 
+    - name: ops-reviews-and-moderates-any-business
+      # TASKS.md 9.3.a: the staff console's Businesses zone -- list/search
+      # every business (no single businessId to scope a coarse check
+      # against, same "list" shape `staff_console` uses) and act on one:
+      # view its profile and KYB status, suspend or reinstate it. No
+      # condition, because `ops` is not scoped to one business the way a
+      # business-side derived role is -- see docs/17 section 5.
+      actions: ["view", "suspend", "reinstate"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]
+
     - name: f2-region-wall
       # 1.5.b: AU and ID are separate economies (F2) -- a consumer or
       # business-side caller may never act on a resource governed by the

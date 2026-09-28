@@ -100,6 +100,34 @@ tests:
         resource: business_unborn
         actions: { create: EFFECT_ALLOW, view: EFFECT_DENY, edit: EFFECT_DENY }
 
+  - name: ops reviews and moderates any business, at either business (9.3.a)
+    input:
+      principals: [ops_zul]
+      resources: [business_kopi, business_rival]
+      actions: [view, suspend, reinstate]
+    expected:
+      - principal: ops_zul
+        resource: business_kopi
+        actions: { view: EFFECT_ALLOW, suspend: EFFECT_ALLOW, reinstate: EFFECT_ALLOW }
+      - principal: ops_zul
+        resource: business_rival
+        actions: { view: EFFECT_ALLOW, suspend: EFFECT_ALLOW, reinstate: EFFECT_ALLOW }
+
+  - name: 9.3.a -- suspend/reinstate is ops-only, even for the business's own owner
+    input:
+      principals: [support_sari, budi_owner]
+      resources: [business_kopi]
+      actions: [suspend, reinstate]
+    expected:
+      - principal: support_sari
+        resource: business_kopi
+        actions: { suspend: EFFECT_DENY, reinstate: EFFECT_DENY }
+      - principal: budi_owner
+        resource: business_kopi
+        # budi owns business_kopi and can `view` it (a different rule) but
+        # holds no business role that ever reaches suspend/reinstate.
+        actions: { suspend: EFFECT_DENY, reinstate: EFFECT_DENY }
+
   - name: any signed-in person may list their own businesses (7.1.b)
     # GET /api/me/businesses names no single businessId either -- same
     # "nothing narrower to check" shape as create, above.

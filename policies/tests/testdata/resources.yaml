@@ -115,6 +115,18 @@ resources:
       requestedBy: "citra"
       approvalState: "pending"
 
+  # TASKS.md 9.2.c: a batch the moderation queue's own reviewer requested --
+  # cannot exist for real (only a business role requests a batch), but the
+  # DENY is written as "nobody", not "no business role", so the test proves
+  # the general case rather than assuming it away.
+  batch_kopi_by_tono:
+    kind: voucher_batch
+    id: batch-3
+    attr:
+      businessId: "biz-kopi"
+      requestedBy: "tono"
+      approvalState: "pending"
+
   wallet_wina:
     kind: wallet
     id: wal-1

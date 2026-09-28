@@ -39,6 +39,14 @@ resourcePolicy:
       derivedRoles:
         - business_team_editor_of
 
+    - name: moderator-reviews-a-batch
+      # TASKS.md 9.2.c: the staff moderation queue. `nobody-approves-their-
+      # own-batch` above still guards approve_issuance for every role,
+      # moderator included -- this only grants the review itself.
+      actions: ["view", "approve_issuance", "reject_issuance"]
+      effect: EFFECT_ALLOW
+      roles: ["moderator"]
+
     - name: finance-voids
       # Voiding an issued batch is a value operation, so it belongs to internal
       # finance, not to the business that asked for it.

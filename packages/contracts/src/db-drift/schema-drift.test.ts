@@ -323,6 +323,10 @@ const MAPPINGS: readonly Mapping[] = [
         "An audit timestamp with a database default, the same convention as merchantLocationSchema's created_at above — nothing in the product reads it and putting it on the schema would oblige every caller constructing a Business to invent one.",
       updated_at:
         "Bumped by the persistence layer on every UPDATE; write-side bookkeeping with no reader on the contract side.",
+      suspended_at:
+        "TASKS.md 9.3.a: staff suspension. Deliberately not on the public businessSchema -- it is staff-only state, read and written through @yourtal/contracts/staff/businesses' StaffBusinessDetail (packages/contracts/src/staff/businesses.ts), not through a business's own view of itself.",
+      suspended_by_user_id: "Same as suspended_at -- staff-only, see StaffBusinessDetail.",
+      suspended_reason: "Same as suspended_at -- staff-only, see StaffBusinessDetail.",
     },
   },
   {

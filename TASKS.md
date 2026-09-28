@@ -39,14 +39,14 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/58 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
-| **Phase 7** Business studio | C | 🔄 in progress | 7/9 | 43/45 | `██████████`  96% |
+| **Phase 7** Business studio | C | 🔄 in progress | 7/9 | 43/46 | `█████████░`  93% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 6/16 | `████░░░░░░`  38% |
 | **Phase 9** Staff console | C | 🔄 in progress | 0/5 | 1/17 | `█░░░░░░░░░`   6% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/19 | `░░░░░░░░░░`   0% |
-| **All** | | | **54/89** | **309/422** | `███████░░░`  73% |
+| **All** | | | **54/89** | **309/423** | `███████░░░`  73% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1168,6 +1168,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
       ```
       The fixed `yourtal-media` bucket (the HLS fixture `publish-fixture.ts` always targets) needs the same, once, substituting that bucket name. curl needs `--aws-sigv4` support (curl 7.75+, already what every dev machine and CI runner here has).
   - [x] 7.9.c Staging cut-over (F60: cut over directly, no MinIO rollback path) — ⛔ script written and merged (`d7916bfa`, `infra/helios/rustfs-cutover.sh migrate <new docker-compose.helios.yml>`), NOT run — infra/root-credential change on staging, the coordinator's own call per this task's brief. Backs up app.env + a full `backup.sh` run, installs the new compose file itself (backing up the old one), mirrors every object from MinIO to a temporary RustFS TWICE (closing most of the write-during-migration window), verifies object count+bytes match before switching, switches to the real compose-managed `rustfs` service, verifies AGAIN against the real service (a live `ListObjectsV2` sweep — this is the check that catches a volume-name mismatch, which the coordinator's live-box review of the first draft actually found: the compose service's implicit volume name did not match what the script mounted), switches `S3_ACCESS_KEY`/`S3_SECRET_KEY` (`S3_ENDPOINT` never changes), restarts api/worker under the site user's own pm2, smoke-tests (api health, a real public object through nginx, and the full presigned-upload round trip via `rustfs-smoke-test.mjs`), then removes the MinIO container and `minio.env` — its data volume is left for the coordinator to delete once this Check below passes. Rehearsed for real end to end on a fully isolated stand-in project (`yourtal-cutover-test`, free ports, its own MinIO/Postgres/fake-api, never the shared stack): all 12 steps passed, including the step-8 post-switch verification and the real presigned-upload round trip. Un-ticked until the coordinator runs it on staging and it succeeds. — Run by the coordinator on Helios 2026-09-28 05:28–05:33 UTC (d7916bfa's script): 724 objects / 856,498,662 bytes copied, matched on both passes and by a ListObjectsV2 sweep of the live `yourtal-rustfs` on 26305. The api and worker restarted as uyourtal, `/api/health` returns 200, a demo poster loads through nginx, and the presigned-upload round trip passes with the app's least-privilege key. The MinIO container and `minio.env` are removed; the `yourtal_minio` volume is kept until 7.9.d. The smoke test had three bugs the rehearsal's fake api hid (the 2 s wait after restart, login returns 201, POSTs need an Idempotency-Key); they were patched on the box to finish the run and are fixed in the repo under 7.9.d.
+  - [x] 7.9.e (found 2026-09-28) Staging's worker loaded only 1 of its 5 jobs: `neverthrow` is imported by inlined workspace code but was not declared in `apps/worker`, so `pnpm deploy --prod` left it out, and transcode, both notification jobs and the streak backstop never ran. Declared in a39988e4; a prod deploy booted outside the repo registers 5/5, and staging logs `[worker] 5 job(s) loaded` after DEPLOY OK at 06:35 UTC. 13.8.b's CI boot check would have caught it.
   - [ ] 7.9.d **Check:** on staging a Studio upload initiates, completes and plays back through signed HLS; existing demo media still loads; `nginx`'s public media prefixes serve from RustFS.
 
 **Done when:** a business owner can register, set up a channel, buy points (simulated), upload a video, write questions, fund a campaign and submit it once verified, list a voucher and request its stock, and read real reports, all in Studio on staging. Staff approvals are Phase 9; counter redemptions are Phase 8.
@@ -1177,7 +1178,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
 F11: vouchers must really work for YourTal, brands and users. That means generation (4.5), redemption at the counter and online, and a secure SDK brands can integrate. Tamper evidence is the voucher hash chain anchored in the daily proof, whose root is published (10.3). No blockchain for now.
 
 - [ ] **8.1 Counter devices** · needs: 1.5, 4.5 — 🔄 slot 8
-  - [x] 8.1.a Studio → Team → Devices provisions a counter device: — server half done 2317e40a (`apps/api/src/modules/devices`: provision/list/revoke, argon2id PIN, hashed pairing code + credential, composite-FK-enforced region/location match); B's UI half stays ⛔ 7.8.a (Studio shell not on `main` as of 2026-09-27)
+  - [x] 8.1.a Studio → Team → Devices provisions a counter device: — server half done 2317e40a (`apps/api/src/modules/devices`: provision/list/revoke, argon2id PIN, hashed pairing code + credential, composite-FK-enforced region/location match); B's UI half unblocked (7.8.a merged `057562be`) — in progress. **(requested by B)** neither `POST /api/devices/pair` nor `POST /api/devices/unlock` returns the device's own label/location/region — a paired counter has no source for its own locale/currency display, so `apps/web/features/merchant`'s portal chrome is fixed to `en-AU` for now (never affects a redemption's currency, which always comes from that voucher's own lookup response). Asking for either field added to `unlockDeviceResultSchema` (the controller already loads the device row) or a small `GET /api/devices/self`.
     - a server-side device record;
     - a one-time pairing code;
     - a device credential, stored hashed;

@@ -238,6 +238,31 @@ async function waitForDeliveredRow(idempotencyKey: string, category: string): Pr
   return 0;
 }
 
+async function waitForCondition(check: () => Promise<boolean>, attempts = 75): Promise<void> {
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (await check()) return;
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+}
+
+/**
+ * Mirrors packages/sdk-merchant/src/webhook.ts's verifyWebhookSignature —
+ * a small, disclosed re-implementation (this test does not depend on
+ * @yourtal/sdk-merchant), same algorithm, same "t=<unix>,v1=<hex>" header
+ * webhook-delivery.ts's own signPayload produces.
+ */
+function verifyDeliverySignature(
+  delivery: { event: string; data: Record<string, unknown>; signatureHeader: string },
+  secret: string,
+): void {
+  const match = /^t=(\d+),v1=([0-9a-f]{64})$/u.exec(delivery.signatureHeader);
+  if (!match) throw new Error(`malformed signature header: ${delivery.signatureHeader}`);
+  const [, timestampText, mac] = match;
+  const rawBody = JSON.stringify({ event: delivery.event, data: delivery.data });
+  const expected = createHmac("sha256", secret).update(`${timestampText ?? ""}.${rawBody}`).digest("hex");
+  if (expected !== mac) throw new Error("webhook signature does not match");
+}
+
 describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.3.f), live", () => {
   it.each([
     ["AU" as const, "AUD" as const, 2_000],
@@ -268,6 +293,7 @@ describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.
         payload: { url: `https://example.test/webhooks/8-3-f-${region.toLowerCase()}-${String(Date.now())}` },
       });
       expect(webhookRegistered.statusCode, webhookRegistered.body).toBe(201);
+      const webhookSecret = str(webhookRegistered.json<Record<string, unknown>>(), "secret");
 
       const services = liveServices;
       if (services === undefined) throw new Error("live services were not started");
@@ -341,14 +367,36 @@ describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.
       if (captureId === undefined) throw new Error("no capture row was found");
 
       expect(await waitForDeliveredRow(captureId, "voucher.captured")).toBe(1);
-      const refundRows = await owner.execute<{ id: string }>(sql`
-        SELECT id::text FROM platform.sim_outbox
+      // The refund's own outbox row is written after the capture's, and the
+      // drain job may already have taken its pass by the time it lands —
+      // wait for it separately rather than assuming one drain covers both.
+      await waitForCondition(async () => {
+        const rows = await owner.execute<{ id: string }>(sql`
+          SELECT id::text FROM platform.sim_outbox
+           WHERE boundary = 'webhook' AND category = 'voucher.refunded'
+             AND metadata->'data'->>'captureId' = ${captureId}`);
+        return rows.rows.length > 0;
+      });
+      const refundRows = await owner.execute<{ id: string; body: string }>(sql`
+        SELECT id::text, body FROM platform.sim_outbox
          WHERE boundary = 'webhook' AND category = 'voucher.refunded'
            AND metadata->'data'->>'captureId' = ${captureId}`);
       expect(refundRows.rows).toHaveLength(1);
       expect(voucherId).toBeTruthy();
+
+      // 8.3.d's own requirement: the delivered signature verifies with the
+      // secret THIS Studio route handed back — no DB hack, the real webhook
+      // secret from the real registration call above.
+      const deliveredBody = refundRows.rows[0]?.body;
+      if (deliveredBody === undefined) throw new Error("no refund delivery row was found");
+      const delivered = JSON.parse(deliveredBody) as {
+        event: string;
+        data: Record<string, unknown>;
+        signatureHeader: string;
+      };
+      verifyDeliverySignature(delivered, webhookSecret);
     },
-    60_000,
+    180_000,
   );
 
   it("a device-scoped credential (the explicit, opt-in kind) still gets device_principal_refused over real HTTP", async () => {

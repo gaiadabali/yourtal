@@ -1,14 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "user_account",
-  "description": "A consumer account as seen by internal staff. docs/17 section 5.",
+  "description": "A consumer account as seen by internal staff. docs/17 section 5. `ownerId` is omitted for a list/search action (there is no single account to own it); every per-account action supplies it.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["ownerId"],
   "properties": {
     "ownerId": { "type": "string" },
-    "goodwillAmountIdr": {
-      "description": "Size of the goodwill credit being issued. Support may issue below their own ceiling and no further.",
+    "goodwillAmountPts": {
+      "description": "TASKS.md 9.4.c: the goodwill credit being requested, in points -- the unit F12's per-case limit is stated in. Supplied by the staff controller on every goodwill_credit check, alongside goodwillCeilingPts.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "goodwillCeilingPts": {
+      "description": "F12's goodwill-per-case limit for this account's region, read fresh from platform.region_setting (RegionSettingsReader) on every request -- never a constant. Absent means the rule below denies outright rather than trusting an unbounded amount.",
       "type": "integer",
       "minimum": 0
     }

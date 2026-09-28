@@ -1,0 +1,23 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  TASKS.md 9.4.d, K13: the queue of vouchers a merchant would not honour that
+  were already captured (checkout.dispute, outcome = 'queued', 4.7.c).
+  List-only -- resolving one and posting the merchant recovery line is 10.5,
+  which needs Phase 10 and gets its own resource kind and rule then. Support
+  opens cases (docs/17 section 5) and finance is who eventually posts the
+  recovery line, so both see the queue; risk and ops do not need it for this
+  read-only list.
+resourcePolicy:
+  version: default
+  resource: voucher_dispute
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/voucher_dispute.json
+  rules:
+    - name: support-and-finance-see-the-queue
+      actions: ["view"]
+      effect: EFFECT_ALLOW
+      roles: ["support", "finance"]

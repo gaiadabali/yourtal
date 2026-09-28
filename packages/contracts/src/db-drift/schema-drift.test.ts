@@ -589,6 +589,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "1.6's shared simulated-driver outbox (red line 11) -- infrastructure a reviewer reads through /dev/inbox, not a domain contract any consumer parses.",
   "staff.audit_event":
     "9.1.a's append-only audit trail of every staff console action -- written by the staff module's interceptor, never a domain contract any consumer parses.",
+  "staff.user_suspension":
+    "9.4.b (20260928120000): which ledger escrow a staff suspension moved a user's points into, so `release` can find it again -- the ledger client has no \"active escrow for this user\" query of its own. Internal bookkeeping only; what a client actually sees (`suspendUserResultSchema`/`releaseUserResultSchema`) mirrors the ledger's own Escrow shape, not a row of this table.",
   "platform.dev_clock_audit":
     "2.3.d's append-only audit trail for /dev/clock -- a reviewer's own action log, gated out of production by APP_ENV, never a domain contract any consumer parses.",
   "platform.partner_credential":

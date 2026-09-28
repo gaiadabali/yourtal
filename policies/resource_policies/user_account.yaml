@@ -45,6 +45,10 @@ resourcePolicy:
       effect: EFFECT_DENY
       roles: ["support", "finance"]
 
+    # TASKS.md 9.4.c: the F12 per-case limit, read fresh from
+    # platform.region_setting for the account's own region and sent by the
+    # staff controller as R.attr.goodwillCeilingPts on every check -- never a
+    # constant here or a principal attribute nobody ever populates.
     - name: goodwill-stays-under-the-ceiling
       actions: ["goodwill_credit"]
       effect: EFFECT_DENY
@@ -52,9 +56,9 @@ resourcePolicy:
       condition:
         match:
           expr: |-
-            !has(P.attr.goodwillCreditCeilingIdr)
-              || !has(R.attr.goodwillAmountIdr)
-              || R.attr.goodwillAmountIdr > P.attr.goodwillCreditCeilingIdr
+            !has(R.attr.goodwillCeilingPts)
+              || !has(R.attr.goodwillAmountPts)
+              || R.attr.goodwillAmountPts > R.attr.goodwillCeilingPts
 
     - name: your-own-account
       actions: ["view", "change_phone", "close"]
@@ -69,5 +73,14 @@ resourcePolicy:
 
     - name: risk-suspends
       actions: ["view", "suspend", "reinstate"]
+      effect: EFFECT_ALLOW
+      roles: ["risk_analyst"]
+
+    # TASKS.md 9.4.d: F12's holdback tier, staff-set only and never shown to
+    # the user. Same role as suspend/reinstate -- risk, not support or
+    # finance, which whoever-can-adjust-cannot-suspend already keeps off
+    # anything value-moving.
+    - name: risk-sets-trust-tier
+      actions: ["set_trust_tier"]
       effect: EFFECT_ALLOW
       roles: ["risk_analyst"]

@@ -1,0 +1,122 @@
+---
+name: UserAccountSuite
+description: |-
+  TASKS.md 9.4: a consumer account as internal staff see it. Separation of
+  duties (user_account.yaml's own header): risk suspends and reinstates and
+  sets the trust tier, and touches no value; support opens cases and issues
+  goodwill under the F12 ceiling, and cannot suspend; a consumer reaches only
+  their own account.
+tests:
+  - name: support handles cases; risk suspends, reinstates and sets the trust tier
+    input:
+      principals: [support_sari, risk_umi]
+      resources: [account_wina]
+      actions: [view, open_case, goodwill_credit, suspend, reinstate, set_trust_tier]
+    expected:
+      - principal: support_sari
+        resource: account_wina
+        actions:
+          view: EFFECT_ALLOW
+          open_case: EFFECT_ALLOW
+          goodwill_credit: EFFECT_ALLOW
+          suspend: EFFECT_DENY
+          reinstate: EFFECT_DENY
+          set_trust_tier: EFFECT_DENY
+      - principal: risk_umi
+        resource: account_wina
+        actions:
+          view: EFFECT_ALLOW
+          open_case: EFFECT_DENY
+          goodwill_credit: EFFECT_DENY
+          suspend: EFFECT_ALLOW
+          reinstate: EFFECT_ALLOW
+          set_trust_tier: EFFECT_ALLOW
+
+  - name: finance and ops reach nothing here; a consumer reaches only their own account
+    input:
+      principals: [finance_yani, ops_zul, wina, budi_owner]
+      resources: [account_wina]
+      actions: [view, suspend, goodwill_credit, set_trust_tier]
+    expected:
+      - principal: finance_yani
+        resource: account_wina
+        actions:
+          view: EFFECT_DENY
+          suspend: EFFECT_DENY
+          goodwill_credit: EFFECT_DENY
+          set_trust_tier: EFFECT_DENY
+      - principal: ops_zul
+        resource: account_wina
+        actions:
+          view: EFFECT_DENY
+          suspend: EFFECT_DENY
+          goodwill_credit: EFFECT_DENY
+          set_trust_tier: EFFECT_DENY
+      - principal: wina
+        resource: account_wina
+        actions:
+          view: EFFECT_ALLOW
+          suspend: EFFECT_DENY
+          goodwill_credit: EFFECT_DENY
+          set_trust_tier: EFFECT_DENY
+      - principal: budi_owner
+        resource: account_wina
+        actions:
+          view: EFFECT_DENY
+          suspend: EFFECT_DENY
+          goodwill_credit: EFFECT_DENY
+          set_trust_tier: EFFECT_DENY
+
+  - name: support cannot change a phone number, at all, by any route
+    input:
+      principals: [support_sari]
+      resources: [account_wina]
+      actions: [change_phone]
+    expected:
+      - principal: support_sari
+        resource: account_wina
+        actions: { change_phone: EFFECT_DENY }
+
+  - name: goodwill stays under the F12 ceiling the controller sends
+    input:
+      principals: [support_sari]
+      resources: [account_wina, account_wina_large_goodwill]
+      actions: [goodwill_credit]
+    expected:
+      - principal: support_sari
+        resource: account_wina
+        actions: { goodwill_credit: EFFECT_ALLOW }
+      - principal: support_sari
+        resource: account_wina_large_goodwill
+        actions: { goodwill_credit: EFFECT_DENY }
+
+  - name: a search action carries no ownerId, so a consumer never matches it
+    input:
+      principals: [support_sari, risk_umi, wina]
+      resources: [account_search]
+      actions: [view]
+    expected:
+      - principal: support_sari
+        resource: account_search
+        actions: { view: EFFECT_ALLOW }
+      - principal: risk_umi
+        resource: account_search
+        actions: { view: EFFECT_ALLOW }
+      - principal: wina
+        resource: account_search
+        actions: { view: EFFECT_DENY }
+
+  # A suspended staff account never reaches THIS rule at all: staff_console.yaml's
+  # own "a-suspended-staff-account-opens-nothing" rule is the one place that
+  # is checked -- see staff_console_test.yaml. Every other resource kind in
+  # this policy repo follows the same split (no other *_test.yaml suite
+  # re-checks isSuspended), so this suite only re-proves anonymous.
+  - name: anonymous reaches nothing
+    input:
+      principals: [anon]
+      resources: [account_wina]
+      actions: [view, suspend, goodwill_credit]
+    expected:
+      - principal: anon
+        resource: account_wina
+        actions: { view: EFFECT_DENY, suspend: EFFECT_DENY, goodwill_credit: EFFECT_DENY }

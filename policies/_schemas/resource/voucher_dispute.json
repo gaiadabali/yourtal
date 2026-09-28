@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "voucher_dispute",
+  "description": "The K13 captured-voucher dispute queue (TASKS.md 9.4.d), listed from checkout.dispute where outcome = 'queued'. No attributes: the question is only whether the caller holds the right working role, same shape as staff_console. See policies/resource_policies/voucher_dispute.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

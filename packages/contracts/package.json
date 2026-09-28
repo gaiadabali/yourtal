@@ -63,6 +63,8 @@
     "./money/mock-backing-rate": "./src/money/mock-backing-rate.ts",
     "./region": "./src/region/region.ts",
     "./staff/session": "./src/staff/staff-session.ts",
+    "./staff/users": "./src/staff/users.ts",
+    "./staff/disputes": "./src/staff/disputes.ts",
     "./region/mock": "./src/region/region.mock.ts",
     "./identity/user-profile": "./src/identity/user-profile.ts",
     "./mock-source": "./src/mock-source.ts",

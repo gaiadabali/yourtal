@@ -1,0 +1,27 @@
+---
+name: VoucherDisputeSuite
+description: |-
+  TASKS.md 9.4.d, K13: only support and finance see the captured-voucher
+  dispute queue. Risk, ops, a consumer and a suspended staff account do not.
+tests:
+  - name: support and finance see the queue
+    input:
+      principals: [support_sari, finance_yani]
+      resources: [dispute_queue_self]
+      actions: [view]
+    expected:
+      - { principal: support_sari, resource: dispute_queue_self, actions: { view: EFFECT_ALLOW } }
+      - { principal: finance_yani, resource: dispute_queue_self, actions: { view: EFFECT_ALLOW } }
+
+  # A suspended staff account is refused at staff_console.yaml's own gate
+  # (see staff_console_test.yaml), not re-checked here -- same split every
+  # other resource kind in this policy repo follows.
+  - name: risk, ops and a consumer do not
+    input:
+      principals: [risk_umi, ops_zul, wina]
+      resources: [dispute_queue_self]
+      actions: [view]
+    expected:
+      - { principal: risk_umi, resource: dispute_queue_self, actions: { view: EFFECT_DENY } }
+      - { principal: ops_zul, resource: dispute_queue_self, actions: { view: EFFECT_DENY } }
+      - { principal: wina, resource: dispute_queue_self, actions: { view: EFFECT_DENY } }

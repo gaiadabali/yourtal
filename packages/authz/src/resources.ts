@@ -159,6 +159,11 @@ export const RESOURCE_ACTIONS = {
     "reinstate",
     "change_phone",
     "close",
+    // TASKS.md 9.4.d: F12's holdback tier (0-3), staff-set only, never shown
+    // to the user. risk_analyst only -- the same role that already suspends
+    // and reinstates, and the one role `whoever-can-adjust-cannot-suspend`
+    // keeps away from anything value-moving.
+    "set_trust_tier",
   ],
 
   ledger_adjustment: ["view", "create", "approve"],
@@ -280,6 +285,16 @@ export const RESOURCE_ACTIONS = {
    * break-glass admin also needs a working role to use the console.
    */
   staff_console: ["view"],
+
+  /**
+   * TASKS.md 9.4.d, K13: the queue of captured-voucher disputes
+   * (`checkout.dispute` where `outcome = 'queued'`, 4.7.c). List-only here —
+   * resolving one and posting the merchant recovery line is 10.5, which
+   * needs Phase 10. No per-item ownership to check, same "the question is
+   * only whether the caller holds the right working role" shape as
+   * `staff_console` itself.
+   */
+  voucher_dispute: ["view"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

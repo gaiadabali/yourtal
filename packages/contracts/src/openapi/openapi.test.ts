@@ -93,6 +93,25 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "9.2.c's staff moderation queue: POST .../approve's request body, documented inline in route-registry.c-staff-moderation.ts.",
   rejectVoucherBatchRequestSchema:
     "9.2.c's staff moderation queue: POST .../reject's request body, documented inline in route-registry.c-staff-moderation.ts.",
+
+  // --- staff/users, staff/disputes (9.4): documented inline in
+  // route-registry.c-staff-users.ts via inlineSchema(), same reason
+  // staffSessionSchema above is -- these are the staff console's own
+  // internal screens, not a reusable public component.
+  staffUserSearchQuerySchema: "9.4's staff users screen. See route-registry.c-staff-users.ts.",
+  staffUserSummarySchema: "Same as staffUserSearchQuerySchema above.",
+  staffUserSearchResultSchema: "Same as staffUserSearchQuerySchema above.",
+  staffUserDetailSchema: "Same as staffUserSearchQuerySchema above.",
+  staffUserLedgerHistorySchema: "Same as staffUserSearchQuerySchema above.",
+  suspendUserRequestSchema: "Same as staffUserSearchQuerySchema above.",
+  suspendUserResultSchema: "Same as staffUserSearchQuerySchema above.",
+  releaseUserResultSchema: "Same as staffUserSearchQuerySchema above.",
+  goodwillRequestSchema: "Same as staffUserSearchQuerySchema above.",
+  goodwillResultSchema: "Same as staffUserSearchQuerySchema above.",
+  setTrustTierRequestSchema: "Same as staffUserSearchQuerySchema above.",
+  setTrustTierResultSchema: "Same as staffUserSearchQuerySchema above.",
+  staffDisputeSchema: "Same as staffUserSearchQuerySchema above.",
+  staffDisputeQueueSchema: "Same as staffUserSearchQuerySchema above.",
   regionSettingSchema:
     "1.2.f's ledger-internal settings row (getSettings/proposeSetting/approveSetting). Internal to the ledger and 9.5.d's staff console, not a public/business-facing HTTP contract -- same reason ledger-internal and voucher-internal's own operation types are not routed through this registry.",
 

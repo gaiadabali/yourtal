@@ -291,19 +291,47 @@ resources:
       businessId: "biz-kopi"
       targetPrincipalId: "budi"
 
+  # TASKS.md 9.4.c: goodwillCeilingPts is what the staff controller reads
+  # fresh from platform.region_setting (F12's goodwill-per-case limit) and
+  # sends on every goodwill_credit check -- see user_account.yaml's own
+  # "goodwill-stays-under-the-ceiling" rule for why it is a resource
+  # attribute, not a principal one.
   account_wina:
     kind: user_account
     id: acct-1
     attr:
       ownerId: "wina"
-      goodwillAmountIdr: 25000
+      goodwillAmountPts: 250
+      goodwillCeilingPts: 500
 
   account_wina_large_goodwill:
     kind: user_account
     id: acct-1
     attr:
       ownerId: "wina"
-      goodwillAmountIdr: 500000
+      goodwillAmountPts: 5000
+      goodwillCeilingPts: 500
+
+  # No ownerId: what a search/list action's @Authorize sends -- there is no
+  # single account to own it. See user_account.json's own comment.
+  account_search:
+    kind: user_account
+    id: search
+    attr: {}
+
+  # TASKS.md 9.4.d: staff setting a holdback tier. No goodwill attrs needed.
+  account_wina_trust_tier:
+    kind: user_account
+    id: acct-1
+    attr:
+      ownerId: "wina"
+
+  # TASKS.md 9.4.d, K13: the captured-voucher dispute queue -- same "caller
+  # asks only whether it holds the right role" shape as staff_console_self.
+  dispute_queue_self:
+    kind: voucher_dispute
+    id: self
+    attr: {}
 
   adjustment_by_yani:
     kind: ledger_adjustment

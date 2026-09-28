@@ -18,6 +18,7 @@ import { DevicesModule } from "./modules/devices/devices.module";
 import { PartnersModule } from "./modules/partners/partners.module";
 import { StudioModule } from "./modules/studio/studio.module";
 import { StaffModule } from "./modules/staff/staff.module";
+import { UserAccountAttributeLoader } from "./modules/staff/user-account-attribute-loader";
 import { WalletAttributeLoader } from "./modules/wallet/wallet-attribute-loader";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
@@ -90,8 +91,9 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
       useFactory: (
         campaignView: CampaignViewAttributeLoader,
         wallet: WalletAttributeLoader,
-      ): readonly ResourceAttributeLoader[] => [campaignView, wallet],
-      inject: [CampaignViewAttributeLoader, WalletAttributeLoader],
+        userAccount: UserAccountAttributeLoader,
+      ): readonly ResourceAttributeLoader[] => [campaignView, wallet, userAccount],
+      inject: [CampaignViewAttributeLoader, WalletAttributeLoader, UserAccountAttributeLoader],
     },
   ],
 })

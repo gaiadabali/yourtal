@@ -7,7 +7,9 @@
   "nav": {
     "overview": "Ringkasan",
     "businesses": "Bisnis",
-    "moderation": "Moderasi"
+    "moderation": "Moderasi",
+    "users": "Pengguna",
+    "disputes": "Sengketa"
   },
   "overview": {
     "title": "Ringkasan",
@@ -118,5 +120,79 @@
     "rejectDialogTitle": "Tolak batch voucher ini?",
     "rejectDialogBody": "Tidak ada voucher yang dicetak. Merchant dapat mengajukan permintaan baru.",
     "rejectSubmit": "Tolak batch"
+  },
+  "users": {
+    "title": "Pengguna",
+    "intro": "Cari akun, lihat riwayat ledger-nya, dan lakukan tindakan padanya.",
+    "searchEmail": "Email",
+    "searchUserId": "ID Pengguna",
+    "searchRegion": "Wilayah",
+    "anyRegion": "Semua wilayah",
+    "search": "Cari",
+    "searchPromptTitle": "Cari akun",
+    "searchPromptDescription": "Masukkan email atau ID pengguna di atas.",
+    "emptyTitle": "Tidak ada akun ditemukan",
+    "emptyDescription": "Coba email atau ID pengguna lain.",
+    "resultsCaption": "Akun yang cocok",
+    "columnEmail": "Email",
+    "columnRegion": "Wilayah",
+    "columnTrustTier": "Tingkat kepercayaan",
+    "columnStatus": "Status",
+    "suspended": "Ditangguhkan",
+    "active": "Aktif",
+    "profileTitle": "Profil",
+    "userIdLabel": "ID Pengguna",
+    "availablePoints": "Poin tersedia",
+    "pendingPoints": "Poin tertunda",
+    "pointsLabel": "{formatted} poin",
+    "reasonLabel": "Alasan",
+    "suspendTitle": "Tangguhkan",
+    "suspendSubmit": "Tangguhkan ke eskro",
+    "releaseTitle": "Lepaskan",
+    "releaseDescription": "Melepaskan eskro yang dibuat oleh penangguhan ini, mengembalikan poin tersedia dan tertunda persis seperti semula.",
+    "releaseSubmit": "Lepaskan",
+    "goodwillTitle": "Kredit itikad baik",
+    "goodwillPointsLabel": "Poin",
+    "goodwillSubmit": "Berikan itikad baik",
+    "trustTierTitle": "Tingkat kepercayaan",
+    "trustTierLabel": "Tingkat baru (0-3)",
+    "trustTierSubmit": "Atur tingkat kepercayaan",
+    "ledgerTitle": "Riwayat ledger",
+    "ledgerEmptyTitle": "Belum ada entri ledger",
+    "ledgerKind": "Jenis",
+    "ledgerPoints": "Poin",
+    "ledgerAt": "Kapan",
+    "ledgerKinds": {
+      "grant": "Pemberian",
+      "burn": "Penggunaan",
+      "escrow": "Eskro",
+      "escrow_release": "Pelepasan eskro",
+      "expiry": "Kedaluwarsa",
+      "reinstatement": "Pemulihan"
+    },
+    "flash": {
+      "suspended": "Akun telah ditangguhkan dan poinnya dipindahkan ke eskro.",
+      "released": "Akun telah dilepaskan dan poinnya dikembalikan.",
+      "goodwill": "Kredit itikad baik telah diberikan.",
+      "trust_tier": "Tingkat kepercayaan telah diperbarui.",
+      "error": "Tindakan itu tidak dapat diselesaikan. Periksa status akun dan coba lagi.",
+      "invalid": "Tindakan itu memerlukan alasan."
+    }
+  },
+  "disputes": {
+    "title": "Sengketa",
+    "intro": "Sengketa voucher yang telah ditangkap dan menunggu staf. Menyelesaikannya adalah layar berikutnya -- daftar ini hanya untuk dilihat.",
+    "emptyTitle": "Tidak ada sengketa menunggu",
+    "emptyDescription": "Setiap sengketa voucher yang ditangkap telah ditindaklanjuti.",
+    "columnVoucher": "Voucher",
+    "columnUser": "Pengguna",
+    "columnRegion": "Wilayah",
+    "columnReason": "Alasan",
+    "columnCreatedAt": "Diajukan",
+    "reasons": {
+      "not_honoured": "Tidak dihormati",
+      "merchant_closed": "Pedagang tutup",
+      "other": "Lainnya"
+    }
   }
 }

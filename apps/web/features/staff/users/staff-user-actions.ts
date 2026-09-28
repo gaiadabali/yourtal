@@ -1,5 +1,6 @@
 "use server";
 
+import type { Route } from "next";
 import { redirect } from "next/navigation";
 import {
   goodwillResultSchema,
@@ -28,9 +29,14 @@ function requireField(formData: FormData, name: string): string {
   return value;
 }
 
-function backTo(formData: FormData, flag: string): string {
+/** Every route under `/staff/users/[userId]` is dynamic, so typed routes need the cast. */
+function userRoute(userId: string, flag: string): Route {
+  return `/staff/users/${userId}?${flag}=1` as Route;
+}
+
+function backTo(formData: FormData, flag: string): Route {
   const userId = stringField(formData, "userId") ?? "";
-  return `/staff/users/${userId}?${flag}=1`;
+  return userRoute(userId, flag);
 }
 
 export async function suspendUserAction(formData: FormData): Promise<void> {
@@ -43,7 +49,7 @@ export async function suspendUserAction(formData: FormData): Promise<void> {
     headers: { "idempotency-key": idempotencyKey },
     body: { reason },
   });
-  redirect(`/staff/users/${userId}?${result.ok ? "suspended" : "error"}=1`);
+  redirect(userRoute(userId, result.ok ? "suspended" : "error"));
 }
 
 export async function releaseUserAction(formData: FormData): Promise<void> {
@@ -54,7 +60,7 @@ export async function releaseUserAction(formData: FormData): Promise<void> {
     method: "POST",
     headers: { "idempotency-key": idempotencyKey },
   });
-  redirect(`/staff/users/${userId}?${result.ok ? "released" : "error"}=1`);
+  redirect(userRoute(userId, result.ok ? "released" : "error"));
 }
 
 export async function goodwillAction(formData: FormData): Promise<void> {
@@ -70,7 +76,7 @@ export async function goodwillAction(formData: FormData): Promise<void> {
     headers: { "idempotency-key": idempotencyKey },
     body: { points, reason },
   });
-  redirect(`/staff/users/${userId}?${result.ok ? "goodwill" : "error"}=1`);
+  redirect(userRoute(userId, result.ok ? "goodwill" : "error"));
 }
 
 export async function setTrustTierAction(formData: FormData): Promise<void> {
@@ -90,5 +96,5 @@ export async function setTrustTierAction(formData: FormData): Promise<void> {
       body: { trustTier, reason },
     },
   );
-  redirect(`/staff/users/${userId}?${result.ok ? "trust_tier" : "error"}=1`);
+  redirect(userRoute(userId, result.ok ? "trust_tier" : "error"));
 }

@@ -7,7 +7,9 @@
   "nav": {
     "overview": "Overview",
     "businesses": "Businesses",
-    "moderation": "Moderation"
+    "moderation": "Moderation",
+    "users": "Users",
+    "disputes": "Disputes"
   },
   "overview": {
     "title": "Overview",
@@ -118,5 +120,79 @@
     "rejectDialogTitle": "Reject this voucher batch?",
     "rejectDialogBody": "No vouchers are minted. The merchant can submit a new request.",
     "rejectSubmit": "Reject batch"
+  },
+  "users": {
+    "title": "Users",
+    "intro": "Search an account, view its ledger, and act on it.",
+    "searchEmail": "Email",
+    "searchUserId": "User ID",
+    "searchRegion": "Region",
+    "anyRegion": "Any region",
+    "search": "Search",
+    "searchPromptTitle": "Search for an account",
+    "searchPromptDescription": "Enter an email or a user ID above.",
+    "emptyTitle": "No accounts found",
+    "emptyDescription": "Try a different email or user ID.",
+    "resultsCaption": "Matching accounts",
+    "columnEmail": "Email",
+    "columnRegion": "Region",
+    "columnTrustTier": "Trust tier",
+    "columnStatus": "Status",
+    "suspended": "Suspended",
+    "active": "Active",
+    "profileTitle": "Profile",
+    "userIdLabel": "User ID",
+    "availablePoints": "Available points",
+    "pendingPoints": "Pending points",
+    "pointsLabel": "{formatted} points",
+    "reasonLabel": "Reason",
+    "suspendTitle": "Suspend",
+    "suspendSubmit": "Suspend into escrow",
+    "releaseTitle": "Release",
+    "releaseDescription": "Releases the escrow this suspension created, returning available and pending points exactly as they were.",
+    "releaseSubmit": "Release",
+    "goodwillTitle": "Goodwill credit",
+    "goodwillPointsLabel": "Points",
+    "goodwillSubmit": "Grant goodwill",
+    "trustTierTitle": "Trust tier",
+    "trustTierLabel": "New tier (0-3)",
+    "trustTierSubmit": "Set trust tier",
+    "ledgerTitle": "Ledger history",
+    "ledgerEmptyTitle": "No ledger entries yet",
+    "ledgerKind": "Kind",
+    "ledgerPoints": "Points",
+    "ledgerAt": "When",
+    "ledgerKinds": {
+      "grant": "Grant",
+      "burn": "Burn",
+      "escrow": "Escrow",
+      "escrow_release": "Escrow release",
+      "expiry": "Expiry",
+      "reinstatement": "Reinstatement"
+    },
+    "flash": {
+      "suspended": "The account was suspended and its points moved to escrow.",
+      "released": "The account was released and its points returned.",
+      "goodwill": "The goodwill credit was granted.",
+      "trust_tier": "The trust tier was updated.",
+      "error": "That action could not be completed. Check the account's state and try again.",
+      "invalid": "That action needs a reason."
+    }
+  },
+  "disputes": {
+    "title": "Disputes",
+    "intro": "Captured-voucher disputes waiting for staff. Resolving one is a later screen -- this list is read-only.",
+    "emptyTitle": "No disputes waiting",
+    "emptyDescription": "Every captured-voucher dispute has been picked up.",
+    "columnVoucher": "Voucher",
+    "columnUser": "User",
+    "columnRegion": "Region",
+    "columnReason": "Reason",
+    "columnCreatedAt": "Raised",
+    "reasons": {
+      "not_honoured": "Not honoured",
+      "merchant_closed": "Merchant closed",
+      "other": "Other"
+    }
   }
 }

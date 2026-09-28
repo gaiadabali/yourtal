@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Job } from "pg-boss";
 import type { MediaReadyCallbackRequest, MediaTranscodeJob } from "@yourtal/contracts/studio/media";
 import { verifyMediaServiceRequest } from "@yourtal/contracts/studio/media-service-signature";
+import { campaignVideoSourceSchema } from "@yourtal/contracts/campaign/video-source";
 import {
   completeRawUpload,
   createMediaClient,
@@ -157,6 +158,21 @@ describe("transcode job", () => {
     expect(ready.renditionBytes.v360).toBeGreaterThan(0);
     expect(ready.renditionBytes.v540).toBeGreaterThan(0);
     expect(ready.renditionBytes.v720).toBeGreaterThan(0);
+
+    // F61-adjacent (found 2026-09-28, 7.9.d): a bare `/media/…` path here
+    // fails campaignSchema's own `z.url()` (posterUrl/teaserUrl are the
+    // same schema) and crashes mint-manifest-url.ts's `new URL(hlsUrl)` —
+    // every campaign this job serves was silently unreachable through the
+    // public read path. Absolute and well-formed, not merely non-empty.
+    expect(() => new URL(ready.posterUrl)).not.toThrow();
+    expect(() => new URL(ready.teaserUrl)).not.toThrow();
+    const videoSourceParse = campaignVideoSourceSchema.safeParse({
+      kind: "hls",
+      manifestUrl: ready.hlsUrl,
+    });
+    expect(videoSourceParse.success, JSON.stringify(videoSourceParse)).toBe(true);
+    // The exact check mint-manifest-url.ts's hlsRelativePath performs.
+    expect(new URL(ready.hlsUrl).pathname).toContain("/hls/");
 
     // The master playlist really exists in the object store, at the exact key nginx's
     // /media/hls/ route resolves to (2.1.c, hls-origin.ts's HLS_PREFIX).

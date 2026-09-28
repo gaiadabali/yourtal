@@ -11,6 +11,7 @@ import {
   putMediaOutput,
   teaserObjectKey,
 } from "@yourtal/media/studio-media";
+import { publicMediaUrl } from "@yourtal/media/hls-origin";
 import { defineJob } from "../job";
 import { loadTranscodeConfig } from "./transcode-config";
 import {
@@ -102,9 +103,13 @@ async function transcode(
     status: "ready",
     durationSeconds: probe.durationSeconds,
     aspect: probe.aspect,
-    posterUrl: `/media/posters/${data.assetId}.jpg`,
-    teaserUrl: `/media/teasers/${data.assetId}.mp4`,
-    hlsUrl: `/media/hls/${data.assetId}/index.m3u8`,
+    // Absolute, per publicMediaUrl's own doc comment (F61-adjacent, 7.9.d):
+    // a bare `/media/…` path fails campaignSchema's `z.url()` and crashes
+    // mint-manifest-url.ts's `new URL(hlsUrl)`, so every campaign served by
+    // this job was previously unreachable through the public read path.
+    posterUrl: publicMediaUrl(posterObjectKey(data.assetId)),
+    teaserUrl: publicMediaUrl(teaserObjectKey(data.assetId)),
+    hlsUrl: publicMediaUrl(hlsAssetObjectKey(data.assetId, "index.m3u8")),
     // No caption track for a plain uploaded video (7.2.b: "optional"); the
     // demo media kit (7.2.d) burns in facts and provides its own VTT
     // through a different path.

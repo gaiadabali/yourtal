@@ -116,6 +116,33 @@ export function resolvePresignEndpoint(): string {
 }
 
 /**
+ * The absolute, browser-fetchable URL for an object under one of the
+ * public-read prefixes (`posters/`, `teasers/`, `captions/`, `hls/`) —
+ * F61-adjacent (found 2026-09-28, 7.9.d): both `transcode.ts` (7.2.b) and
+ * `demo-media.ts` (7.2.d) stored these as a bare path (`/media/posters/…`),
+ * which is neither a valid `campaignSchema` URL (`z.url()` requires a
+ * scheme) nor something `mint-manifest-url.ts`'s `new URL(hlsUrl)` can
+ * parse — every campaign whose media reached "ready" was silently dropped
+ * from the feed/search/`findVisibleById` read path, and watching one
+ * directly 500s. One function, so both callers agree.
+ *
+ * Staging/production: `MEDIA_PRESIGN_ENDPOINT` IS the deployed site origin
+ * nginx serves `/media/…` from (the only thing that reaches the
+ * loopback-only object store from outside — same reasoning
+ * `resolvePresignEndpoint`'s own doc comment gives). Local dev sets no
+ * override and has no nginx rewriting `/media/…` at all, so it reads
+ * straight off the bucket `S3_ENDPOINT` already serves, S3-path-style
+ * (`<endpoint>/<bucket>/<key>`) — the same shape `campaign.mock.ts`'s
+ * `MOCK_MEDIA_ORIGIN` already assumes for local/mock data.
+ */
+export function publicMediaUrl(objectKeyPath: string): string {
+  if (readEnv("MEDIA_PRESIGN_ENDPOINT") !== undefined) {
+    return `${resolvePresignEndpoint()}/media/${objectKeyPath}`;
+  }
+  return `${resolveOriginEndpoint()}/${resolveMediaBucket()}/${objectKeyPath}`;
+}
+
+/**
  * The bucket real (non-fixture) media lives in. `MEDIA_BUCKET` above stays a
  * hard-coded constant on purpose — the `attention-30s` fixture is shared,
  * read-only, and the same asset in every environment, so there is nothing to

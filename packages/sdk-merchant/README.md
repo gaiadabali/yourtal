@@ -29,7 +29,9 @@ import { createMerchantClient } from "@yourtal/sdk-merchant/client";
 const client = createMerchantClient({
   baseUrl: "https://voucher.yourtal.example",
   keyId: process.env.MERCHANT_KEY_ID!,
-  secret: process.env.MERCHANT_SECRET!,
+  // Studio issues `secret` as 64 hex characters -- decode to the 32 raw
+  // bytes before signing with it (see "Getting credentials" below).
+  secret: Buffer.from(process.env.MERCHANT_SECRET!, "hex"),
 });
 
 const authorization = await client.authorize({
@@ -56,6 +58,15 @@ voucher catalogue — use the sandbox pair while you integrate, never a live
 one. Credentials can be rotated or revoked from the same page; rotating
 issues a new pair without invalidating the old one until you remove it, so
 a deploy never has a window with no working key.
+
+`secret` is always 64 hex characters — the wire encoding of the 32 raw
+bytes `services/voucher` actually signs with (it cannot return the raw
+bytes as JSON text safely). **Decode it before passing it to
+`createMerchantClient`** — `Buffer.from(secret, "hex")` in Node, or your
+language's equivalent — or every call fails with `invalid_signature`,
+because you'd be signing with the hex string's own UTF-8 bytes rather than
+the key `services/voucher` actually holds. `createMerchantClient`'s
+`secret` option accepts a `Uint8Array` for exactly this reason.
 
 ## The four calls
 

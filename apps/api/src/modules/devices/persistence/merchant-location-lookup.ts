@@ -8,6 +8,9 @@
  */
 export interface MerchantLocationLookup {
   belongsToBusiness(locationId: string, businessId: string): Promise<boolean>;
+
+  /** `null` if the location no longer exists. 8.1.a (requested by B): `POST /api/devices/unlock`'s own display name for the device's paired location. */
+  nameOf(locationId: string): Promise<string | null>;
 }
 
 export const MERCHANT_LOCATION_LOOKUP = Symbol("MERCHANT_LOCATION_LOOKUP");

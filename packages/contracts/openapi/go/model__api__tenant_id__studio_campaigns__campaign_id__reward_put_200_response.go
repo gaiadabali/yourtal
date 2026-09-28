@@ -49,7 +49,7 @@ type ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response struct {
 	ScoringRule NullableString `json:"scoringRule"`
 	PublishedAt NullableTime `json:"publishedAt"`
 	RewardValueMinor NullableInt32 `json:"rewardValueMinor"`
-	Currency string `json:"currency"`
+	Currency NullableString `json:"currency"`
 }
 
 type _ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response
@@ -58,7 +58,7 @@ type _ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response ApiTenantIdStudio
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioCampaignsCampaignIdRewardPut200Response(id string, businessId string, region string, kind string, title string, synopsis string, durationSeconds int32, contentCategory string, audience string, lifecycleState string, rejectionReason NullableString, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int32, posterFrameSeconds NullableInt32, declaredInterests []string, chapters []ApiTenantIdStudioCampaignsPost201ResponseChaptersInner, captionsUrl NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, rewardPoints NullableInt32, questionCount NullableInt32, scoringRule NullableString, publishedAt NullableTime, rewardValueMinor NullableInt32, currency string) *ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response {
+func NewApiTenantIdStudioCampaignsCampaignIdRewardPut200Response(id string, businessId string, region string, kind string, title string, synopsis string, durationSeconds int32, contentCategory string, audience string, lifecycleState string, rejectionReason NullableString, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int32, posterFrameSeconds NullableInt32, declaredInterests []string, chapters []ApiTenantIdStudioCampaignsPost201ResponseChaptersInner, captionsUrl NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, rewardPoints NullableInt32, questionCount NullableInt32, scoringRule NullableString, publishedAt NullableTime, rewardValueMinor NullableInt32, currency NullableString) *ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response {
 	this := ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -770,27 +770,29 @@ func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response) SetRewardValu
 }
 
 // GetCurrency returns the Currency field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response) GetCurrency() string {
-	if o == nil {
+	if o == nil || o.Currency.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Currency
+	return *o.Currency.Get()
 }
 
 // GetCurrencyOk returns a tuple with the Currency field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response) GetCurrencyOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Currency, true
+	return o.Currency.Get(), o.Currency.IsSet()
 }
 
 // SetCurrency sets field value
 func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response) SetCurrency(v string) {
-	o.Currency = v
+	o.Currency.Set(&v)
 }
 
 func (o ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response) MarshalJSON() ([]byte, error) {
@@ -830,7 +832,7 @@ func (o ApiTenantIdStudioCampaignsCampaignIdRewardPut200Response) ToMap() (map[s
 	toSerialize["scoringRule"] = o.ScoringRule.Get()
 	toSerialize["publishedAt"] = o.PublishedAt.Get()
 	toSerialize["rewardValueMinor"] = o.RewardValueMinor.Get()
-	toSerialize["currency"] = o.Currency
+	toSerialize["currency"] = o.Currency.Get()
 	return toSerialize, nil
 }
 

@@ -142,6 +142,15 @@ describe("Studio -> Developers: issue, rotate, revoke (8.3.a)", () => {
     }
   });
 
+  it("has no registration until one exists (requested by B: GET .../webhooks on load)", async () => {
+    const businessId = await seedBusiness();
+    // studio-developers.controller.ts's `currentWebhook` returns exactly
+    // this null-or-row shape over HTTP -- proved at this layer, the same
+    // way this file's other cases prove use-case/repository behaviour
+    // directly rather than through the full HTTP stack.
+    expect(await webhooks.findByBusinessId(businessId)).toBeNull();
+  });
+
   it("registers a webhook, sealing the secret so only the worker can recover it (8.3.c)", async () => {
     const businessId = await seedBusiness();
 

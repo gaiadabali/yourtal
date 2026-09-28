@@ -225,7 +225,7 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   unlockDeviceRequestSchema:
     "device/counter-device.ts's request body for POST /api/devices/unlock — documented inline (route-registry.c.ts).",
   unlockDeviceResultSchema:
-    "device/counter-device.ts's response for POST /api/devices/unlock — a literal {unlocked: true}, documented inline.",
+    "device/counter-device.ts's response for POST /api/devices/unlock — documented inline (route-registry.c.ts).",
   counterDeviceStateSchema:
     "device/counter-device.ts's nested enum on the published CounterDevice.state — not a standalone component.",
 

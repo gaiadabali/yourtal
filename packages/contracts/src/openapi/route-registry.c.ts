@@ -8,6 +8,7 @@ import {
   pairDeviceRequestSchema,
   provisionDeviceRequestSchema,
   unlockDeviceRequestSchema,
+  unlockDeviceResultSchema,
 } from "../device/counter-device";
 import { campaignKindSchema, campaignScoringRuleSchema } from "../campaign/campaign";
 import { audienceSchema } from "../audience/audience";
@@ -594,13 +595,6 @@ const pairDeviceResponseSchema: Record<string, unknown> = {
   additionalProperties: false,
 };
 
-const unlockedResponseSchema: Record<string, unknown> = {
-  type: "object",
-  properties: { unlocked: { const: true } },
-  required: ["unlocked"],
-  additionalProperties: false,
-};
-
 export const DEVICE_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   // --- studio-devices.controller.ts ---
   {
@@ -670,7 +664,7 @@ export const DEVICE_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     requestBody: { description: "The PIN.", schema: unlockDeviceRequestBodySchema },
     successStatus: 200,
     successDescription: "The PIN was correct.",
-    successSchema: unlockedResponseSchema,
+    successSchema: inlineSchema(unlockDeviceResultSchema),
     errors: [VALIDATION_400, DEVICE_UNAUTHORIZED, SERVICE_UNAVAILABLE],
   },
 ];

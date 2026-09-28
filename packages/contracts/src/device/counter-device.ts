@@ -73,5 +73,17 @@ export type PairDeviceResult = z.infer<typeof pairDeviceResultSchema>;
 export const unlockDeviceRequestSchema = z.object({ pin: z.string().min(1) });
 export type UnlockDeviceRequest = z.infer<typeof unlockDeviceRequestSchema>;
 
-export const unlockDeviceResultSchema = z.object({ unlocked: z.literal(true) });
+/**
+ * `region`/`label`/`locationName` (requested by B, 8.1.a): the counter has
+ * no other source for its own locale/currency display or which physical
+ * store it is at — nothing about the caller's own session names either,
+ * since there is no session (`store_device`, not a person).
+ */
+export const unlockDeviceResultSchema = z.object({
+  unlocked: z.literal(true),
+  region: regionSchema,
+  label: z.string().min(1),
+  locationId: z.uuid(),
+  locationName: z.string().min(1),
+});
 export type UnlockDeviceResult = z.infer<typeof unlockDeviceResultSchema>;

@@ -16,4 +16,13 @@ export class DrizzleMerchantLocationLookup implements MerchantLocationLookup {
       .limit(1);
     return row !== undefined;
   }
+
+  async nameOf(locationId: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ name: merchantLocations.name })
+      .from(merchantLocations)
+      .where(eq(merchantLocations.id, locationId))
+      .limit(1);
+    return row?.name ?? null;
+  }
 }

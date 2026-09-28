@@ -105,6 +105,21 @@ export class StudioDevelopersController {
     return { revoked: true as const };
   }
 
+  // (requested by B, 8.3.a): the secret is shown once, at registration
+  // (register-webhook.use-case.ts's own doc comment) — this never returns
+  // it, only what the page needs to show a registered URL on load.
+  @Authorize({ kind: "redemption", action: "view_credential" })
+  @Get("webhooks")
+  async currentWebhook(@Param("tenantId") tenantId: string) {
+    const row = await this.webhooks.findByBusinessId(tenantId);
+    if (row === null) return null;
+    return {
+      businessId: row.businessId,
+      url: row.url,
+      secretIssuedAt: row.createdAt.toISOString(),
+    };
+  }
+
   @Idempotent({ retentionMs: PROVISION_DEVICE_RETENTION_MS })
   @Authorize({ kind: "redemption", action: "rotate_credential" })
   @Post("webhooks")

@@ -2,6 +2,7 @@ import {
   issueDeveloperCredentialRequestSchema,
   merchantDeveloperCredentialSchema,
   registerWebhookRequestSchema,
+  webhookSubscriptionSchema,
 } from "../merchant/merchant-developer-credential";
 import {
   FORBIDDEN,
@@ -112,6 +113,18 @@ export const DEVELOPERS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "The credential is revoked; it stops authenticating immediately.",
     successSchema: revokedResponseSchema,
     errors: [FORBIDDEN, CREDENTIAL_NOT_FOUND, CREDENTIAL_NOT_OWNED, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "get",
+    path: "/api/{tenantId}/studio/developers/webhooks",
+    summary: "The business's current webhook registration, if any",
+    tags: ["devices", "studio"],
+    pathParams: [TENANT_ID_PARAM],
+    successStatus: 200,
+    successDescription:
+      "The registered URL, or null if none — never the secret (only registering returns one).",
+    successSchema: inlineSchema(webhookSubscriptionSchema.nullable()),
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
   },
   {
     method: "post",

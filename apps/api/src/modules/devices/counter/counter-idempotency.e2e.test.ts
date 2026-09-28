@@ -122,6 +122,28 @@ async function seedRedeemableVoucher(
   return { listingId, code };
 }
 
+describe("POST /api/devices/unlock returns the device's own region/label/location (requested by B)", () => {
+  it("so the counter can render in the device's own locale without a session", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation();
+    const { secret } = await provisionAndPairDevice(businessId, locationId);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/devices/unlock",
+      headers: { authorization: `Bearer ${secret}`, "idempotency-key": randomUUID() },
+      payload: { pin: "1234" },
+    });
+    expect(response.statusCode, response.body).toBe(201);
+    expect(response.json()).toEqual({
+      unlocked: true,
+      region: "AU",
+      label: "Front counter",
+      locationId,
+      locationName: "8.2.h Test Store",
+    });
+  });
+});
+
 describe("counter authorize/capture over real HTTP, real device credential (8.2.h/F70)", () => {
   it("authorizes then captures a real voucher; a replay returns the same result", async () => {
     const { businessId, locationId } = await seedBusinessAndLocation();

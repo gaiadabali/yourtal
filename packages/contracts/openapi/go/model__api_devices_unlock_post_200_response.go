@@ -20,7 +20,11 @@ var _ MappedNullable = &ApiDevicesUnlockPost200Response{}
 
 // ApiDevicesUnlockPost200Response struct for ApiDevicesUnlockPost200Response
 type ApiDevicesUnlockPost200Response struct {
-	Unlocked interface{} `json:"unlocked"`
+	Unlocked bool `json:"unlocked"`
+	Region string `json:"region"`
+	Label string `json:"label"`
+	LocationId NullableString `json:"locationId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	LocationName string `json:"locationName"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,9 +34,13 @@ type _ApiDevicesUnlockPost200Response ApiDevicesUnlockPost200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiDevicesUnlockPost200Response(unlocked interface{}) *ApiDevicesUnlockPost200Response {
+func NewApiDevicesUnlockPost200Response(unlocked bool, region string, label string, locationId NullableString, locationName string) *ApiDevicesUnlockPost200Response {
 	this := ApiDevicesUnlockPost200Response{}
 	this.Unlocked = unlocked
+	this.Region = region
+	this.Label = label
+	this.LocationId = locationId
+	this.LocationName = locationName
 	return &this
 }
 
@@ -45,10 +53,9 @@ func NewApiDevicesUnlockPost200ResponseWithDefaults() *ApiDevicesUnlockPost200Re
 }
 
 // GetUnlocked returns the Unlocked field value
-// If the value is explicit nil, the zero value for interface{} will be returned
-func (o *ApiDevicesUnlockPost200Response) GetUnlocked() interface{} {
+func (o *ApiDevicesUnlockPost200Response) GetUnlocked() bool {
 	if o == nil {
-		var ret interface{}
+		var ret bool
 		return ret
 	}
 
@@ -57,17 +64,114 @@ func (o *ApiDevicesUnlockPost200Response) GetUnlocked() interface{} {
 
 // GetUnlockedOk returns a tuple with the Unlocked field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ApiDevicesUnlockPost200Response) GetUnlockedOk() (*interface{}, bool) {
-	if o == nil || IsNil(o.Unlocked) {
+func (o *ApiDevicesUnlockPost200Response) GetUnlockedOk() (*bool, bool) {
+	if o == nil {
 		return nil, false
 	}
 	return &o.Unlocked, true
 }
 
 // SetUnlocked sets field value
-func (o *ApiDevicesUnlockPost200Response) SetUnlocked(v interface{}) {
+func (o *ApiDevicesUnlockPost200Response) SetUnlocked(v bool) {
 	o.Unlocked = v
+}
+
+// GetRegion returns the Region field value
+func (o *ApiDevicesUnlockPost200Response) GetRegion() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Region
+}
+
+// GetRegionOk returns a tuple with the Region field value
+// and a boolean to check if the value has been set.
+func (o *ApiDevicesUnlockPost200Response) GetRegionOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Region, true
+}
+
+// SetRegion sets field value
+func (o *ApiDevicesUnlockPost200Response) SetRegion(v string) {
+	o.Region = v
+}
+
+// GetLabel returns the Label field value
+func (o *ApiDevicesUnlockPost200Response) GetLabel() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Label
+}
+
+// GetLabelOk returns a tuple with the Label field value
+// and a boolean to check if the value has been set.
+func (o *ApiDevicesUnlockPost200Response) GetLabelOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Label, true
+}
+
+// SetLabel sets field value
+func (o *ApiDevicesUnlockPost200Response) SetLabel(v string) {
+	o.Label = v
+}
+
+// GetLocationId returns the LocationId field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *ApiDevicesUnlockPost200Response) GetLocationId() string {
+	if o == nil || o.LocationId.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.LocationId.Get()
+}
+
+// GetLocationIdOk returns a tuple with the LocationId field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiDevicesUnlockPost200Response) GetLocationIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.LocationId.Get(), o.LocationId.IsSet()
+}
+
+// SetLocationId sets field value
+func (o *ApiDevicesUnlockPost200Response) SetLocationId(v string) {
+	o.LocationId.Set(&v)
+}
+
+// GetLocationName returns the LocationName field value
+func (o *ApiDevicesUnlockPost200Response) GetLocationName() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.LocationName
+}
+
+// GetLocationNameOk returns a tuple with the LocationName field value
+// and a boolean to check if the value has been set.
+func (o *ApiDevicesUnlockPost200Response) GetLocationNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.LocationName, true
+}
+
+// SetLocationName sets field value
+func (o *ApiDevicesUnlockPost200Response) SetLocationName(v string) {
+	o.LocationName = v
 }
 
 func (o ApiDevicesUnlockPost200Response) MarshalJSON() ([]byte, error) {
@@ -80,9 +184,11 @@ func (o ApiDevicesUnlockPost200Response) MarshalJSON() ([]byte, error) {
 
 func (o ApiDevicesUnlockPost200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if o.Unlocked != nil {
-		toSerialize["unlocked"] = o.Unlocked
-	}
+	toSerialize["unlocked"] = o.Unlocked
+	toSerialize["region"] = o.Region
+	toSerialize["label"] = o.Label
+	toSerialize["locationId"] = o.LocationId.Get()
+	toSerialize["locationName"] = o.LocationName
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -97,6 +203,10 @@ func (o *ApiDevicesUnlockPost200Response) UnmarshalJSON(data []byte) (err error)
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"unlocked",
+		"region",
+		"label",
+		"locationId",
+		"locationName",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -127,6 +237,10 @@ func (o *ApiDevicesUnlockPost200Response) UnmarshalJSON(data []byte) (err error)
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "unlocked")
+		delete(additionalProperties, "region")
+		delete(additionalProperties, "label")
+		delete(additionalProperties, "locationId")
+		delete(additionalProperties, "locationName")
 		o.AdditionalProperties = additionalProperties
 	}
 

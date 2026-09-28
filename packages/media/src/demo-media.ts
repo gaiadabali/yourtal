@@ -396,26 +396,40 @@ async function seedOneCampaign(
   );
   const existingHlsUrl = existing.rows[0]?.hls_url ?? null;
   if (existingHlsUrl !== null) {
-    if (isAbsoluteUrl(existingHlsUrl)) {
+    const urlsOk = isAbsoluteUrl(existingHlsUrl);
+    const chapterCount = await existingChapterCount(pool, campaignId);
+    if (urlsOk && chapterCount > 0) {
       return { slug: entry.slug, status: "already_present" };
     }
+
     // Repair only: the objects themselves were already uploaded under
     // `campaignId` by whichever run first wrote this row, so this just
     // recomputes the same three URLs `publicMediaUrl()` would have produced
     // then and rewrites the two rows that carry them — no re-download,
-    // no re-transcode, no re-upload.
-    const posterUrl = publicMediaUrl(posterObjectKey(campaignId));
-    const teaserUrl = publicMediaUrl(teaserObjectKey(campaignId));
-    const hlsUrl = publicMediaUrl(hlsAssetObjectKey(campaignId, "index.m3u8"));
-    await pool.query(
-      "UPDATE campaign.campaigns SET poster_url = $2, teaser_url = $3, hls_url = $4 WHERE id = $1",
-      [campaignId, posterUrl, teaserUrl, hlsUrl],
-    );
-    await pool.query("UPDATE campaign.video_source SET manifest_url = $2 WHERE campaign_id = $1", [
-      campaignId,
-      hlsUrl,
-    ]);
-    log(`[demo:media] ${entry.slug}: repaired relative media URLs -> ${hlsUrl}`);
+    // no re-transcode, no re-upload. Independent of the chapter repair below:
+    // F66 found a real demo campaign on staging with URLs already fixed (by
+    // this same repair, an earlier deploy) but STILL zero chapters, so both
+    // repairs are checked and applied on their own, never gated on the other.
+    const repaired: string[] = [];
+    if (!urlsOk) {
+      const posterUrl = publicMediaUrl(posterObjectKey(campaignId));
+      const teaserUrl = publicMediaUrl(teaserObjectKey(campaignId));
+      const hlsUrl = publicMediaUrl(hlsAssetObjectKey(campaignId, "index.m3u8"));
+      await pool.query(
+        "UPDATE campaign.campaigns SET poster_url = $2, teaser_url = $3, hls_url = $4 WHERE id = $1",
+        [campaignId, posterUrl, teaserUrl, hlsUrl],
+      );
+      await pool.query(
+        "UPDATE campaign.video_source SET manifest_url = $2 WHERE campaign_id = $1",
+        [campaignId, hlsUrl],
+      );
+      repaired.push(`relative media URLs -> ${hlsUrl}`);
+    }
+    if (chapterCount === 0) {
+      await ensureChapters(pool, campaignId, entry.brand);
+      repaired.push("missing chapters (1 whole-video chapter added)");
+    }
+    log(`[demo:media] ${entry.slug}: repaired ${repaired.join(", ")}`);
     return { slug: entry.slug, status: "repaired" };
   }
 
@@ -484,6 +498,7 @@ async function seedOneCampaign(
     hlsUrl,
   });
   await ensureQuestions(pool, campaignId, entry.facts);
+  await ensureChapters(pool, campaignId, entry.brand);
 
   log(
     `[demo:media] ${entry.slug}: ${clip.attribution} (${clip.licence}) -> ${hlsUrl}, ${entry.facts.length} facts/questions`,
@@ -602,6 +617,39 @@ async function ensureCampaign(pool: pg.Pool, input: EnsureCampaignInput): Promis
     `INSERT INTO campaign.video_source (campaign_id, kind, manifest_url) VALUES ($1,'hls',$2)
      ON CONFLICT (campaign_id) DO UPDATE SET manifest_url = EXCLUDED.manifest_url`,
     [campaignId, hlsUrl],
+  );
+}
+
+async function existingChapterCount(pool: pg.Pool, campaignId: string): Promise<number> {
+  const result = await pool.query<{ count: string }>(
+    "SELECT count(*)::text AS count FROM campaign.chapter WHERE campaign_id = $1",
+    [campaignId],
+  );
+  return Number(result.rows[0]?.count ?? "0");
+}
+
+/**
+ * F66: `campaignSchema` refines `kind: "long_form"` to require at least one
+ * `campaign.chapter` row (first chapter at second 0, strictly ascending, last
+ * starting before `durationSeconds`) — this seed inserted none, so every demo
+ * campaign failed that parse the moment F63/F65's URL fix stopped hiding it
+ * behind an earlier failure. One whole-video chapter satisfies every rule
+ * cheaply and honestly: these demo campaigns have no real chapter structure
+ * to seed, and the coordinator's own call (2026-09-28) is that a single
+ * chapter is fine here — `rewardWeight` only matters relative to siblings,
+ * so `1` on a lone chapter is exact, not a placeholder. `ON CONFLICT DO
+ * NOTHING` on the `(campaign_id, ordinal)` primary key: idempotent the same
+ * way every other `ensure*` in this file is, and safe to call unconditionally
+ * from the fresh-seed path (nothing to conflict with yet) as well as the
+ * repair path (guarded by `existingChapterCount` there instead, so the log
+ * line only claims a repair when one actually happened).
+ */
+async function ensureChapters(pool: pg.Pool, campaignId: string, brand: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO campaign.chapter (campaign_id, ordinal, title, start_seconds, reward_weight)
+     VALUES ($1, 0, $2, 0, 1)
+     ON CONFLICT (campaign_id, ordinal) DO NOTHING`,
+    [campaignId, `${brand} — full video`],
   );
 }
 

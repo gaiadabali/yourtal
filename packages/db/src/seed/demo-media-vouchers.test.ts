@@ -7,7 +7,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { listDemoMediaBusinesses, runDemoMedia } from "@yourtal/media/demo-media";
+import { campaignSchema } from "@yourtal/contracts/campaign";
+import { publicStatusOf } from "@yourtal/contracts/campaign/lifecycle";
+import type { CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
+import { listDemoMediaBusinesses, runDemoMedia, stableId } from "@yourtal/media/demo-media";
 import type { Manifest } from "@yourtal/media/demo-media";
 import { OWNER_URL } from "../database-urls";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
@@ -291,6 +294,112 @@ afterAll(async () => {
   await ownerPool.end();
 });
 
+/**
+ * F66: rebuilds the exact shape `apps/api`'s `DrizzleCampaignRepository#assemble`
+ * feeds `campaignSchema` from, and runs it through the REAL schema (this
+ * package already depends on both `@yourtal/media` and `@yourtal/contracts`,
+ * unlike `packages/media` itself — `packages/contracts` depends on
+ * `@yourtal/media` for its own fixture test, so a reverse edge there is a
+ * cyclic workspace dependency turbo refuses to build; here it is a plain DAG)
+ * — the real proof that a seeded demo campaign is reachable through the
+ * feed/campaign/watch routes, not just that the right rows exist. Raw `pg`
+ * rather than drizzle (this file already uses raw `pg` throughout), so
+ * bigint columns come back as strings and are unwrapped by hand.
+ */
+interface CampaignRowForSchema {
+  readonly id: string;
+  readonly kind: string;
+  readonly title: string;
+  readonly merchant_id: string;
+  readonly merchant_name: string;
+  readonly synopsis: string;
+  readonly duration_seconds: number;
+  readonly estimated_data_mb: string;
+  readonly reward_points: string;
+  readonly question_count: number;
+  readonly scoring_rule: string;
+  readonly lifecycle_state: string;
+  readonly published_at: Date | null;
+  readonly business_id: string;
+  readonly region: string;
+  readonly audience: string;
+  readonly content_category: string;
+  readonly poster_url: string;
+  readonly teaser_url: string;
+  readonly hls_url: string;
+  readonly captions_url: string | null;
+  readonly aspect: string;
+  readonly estimated_bytes: string;
+  readonly starts_at: Date;
+  readonly ends_at: Date;
+  readonly open_viewing: boolean;
+  readonly teaser_start_seconds: number;
+}
+
+async function assembleForSchema(dbPool: pg.Pool, campaignId: string): Promise<unknown> {
+  const campaignRow = (
+    await dbPool.query<CampaignRowForSchema>(
+      `SELECT id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+              estimated_data_mb, reward_points, question_count, scoring_rule, lifecycle_state,
+              published_at, business_id, region, audience, content_category, poster_url,
+              teaser_url, hls_url, captions_url, aspect, estimated_bytes, starts_at, ends_at,
+              open_viewing, teaser_start_seconds
+         FROM campaign.campaigns WHERE id = $1`,
+      [campaignId],
+    )
+  ).rows[0];
+  if (campaignRow === undefined) throw new Error(`no campaign.campaigns row for ${campaignId}`);
+  const chapterRows = (
+    await dbPool.query<{ title: string; start_seconds: number; reward_weight: string }>(
+      "SELECT title, start_seconds, reward_weight FROM campaign.chapter WHERE campaign_id = $1 ORDER BY ordinal",
+      [campaignId],
+    )
+  ).rows;
+  const videoSourceRow = (
+    await dbPool.query<{ manifest_url: string }>(
+      "SELECT manifest_url FROM campaign.video_source WHERE campaign_id = $1",
+      [campaignId],
+    )
+  ).rows[0];
+
+  return {
+    id: campaignRow.id,
+    kind: campaignRow.kind,
+    title: campaignRow.title,
+    merchantId: campaignRow.merchant_id,
+    merchantName: campaignRow.merchant_name,
+    synopsis: campaignRow.synopsis,
+    durationSeconds: campaignRow.duration_seconds,
+    estimatedDataMb: Number(campaignRow.estimated_data_mb),
+    rewardPoints: Number(campaignRow.reward_points),
+    questionCount: campaignRow.question_count,
+    scoringRule: campaignRow.scoring_rule,
+    status: publicStatusOf(campaignRow.lifecycle_state as CampaignLifecycleState),
+    publishedAt:
+      campaignRow.published_at === null ? null : new Date(campaignRow.published_at).toISOString(),
+    businessId: campaignRow.business_id,
+    region: campaignRow.region,
+    audience: campaignRow.audience,
+    contentCategory: campaignRow.content_category,
+    posterUrl: campaignRow.poster_url,
+    teaserUrl: campaignRow.teaser_url,
+    hlsUrl: campaignRow.hls_url,
+    captionsUrl: campaignRow.captions_url,
+    aspect: campaignRow.aspect,
+    estimatedBytes: Number(campaignRow.estimated_bytes),
+    startsAt: new Date(campaignRow.starts_at).toISOString(),
+    endsAt: new Date(campaignRow.ends_at).toISOString(),
+    openViewing: campaignRow.open_viewing,
+    teaserStartSeconds: campaignRow.teaser_start_seconds,
+    chapters: chapterRows.map((chapter) => ({
+      title: chapter.title,
+      startSeconds: chapter.start_seconds,
+      rewardWeight: Number(chapter.reward_weight),
+    })),
+    videoSource: { kind: "hls", manifestUrl: videoSourceRow?.manifest_url },
+  };
+}
+
 describe("runDemoMediaVouchers", () => {
   it("prices and mints 6 real vouchers per business, region/currency held, idempotent on rerun", async () => {
     const stamp = Date.now();
@@ -303,6 +412,34 @@ describe("runDemoMediaVouchers", () => {
       { slug: slugAu, status: "seeded" },
       { slug: slugId, status: "seeded" },
     ]);
+
+    // F66: end-to-end proof, through the REAL campaignSchema, that a freshly
+    // seeded demo campaign is not just rows but an actually reachable
+    // campaign — campaignSchema refines "long_form" to require at least one
+    // campaign.chapter row, which is what F66 found missing live on staging.
+    const campaignIdAu = stableId(`demo-media:campaign:${slugAu}`);
+    expect(campaignSchema.safeParse(await assembleForSchema(pool, campaignIdAu)).success).toBe(
+      true,
+    );
+
+    // The exact state QA found live on staging: URLs already absolute (an
+    // earlier repair already fixed those) but zero chapters, because an even
+    // earlier version of this seed never wrote any — must self-repair, not
+    // stay broken just because hls_url already looks fine.
+    await ownerPool.query("DELETE FROM campaign.chapter WHERE campaign_id = $1", [campaignIdAu]);
+    const chapterRepair = await runDemoMedia({ databaseUrl: DATABASE_URL ?? "", manifest });
+    expect(chapterRepair).toEqual([
+      { slug: slugAu, status: "repaired" },
+      { slug: slugId, status: "already_present" },
+    ]);
+    const repairedChapters = await pool.query<{ count: string }>(
+      "SELECT count(*)::text AS count FROM campaign.chapter WHERE campaign_id = $1",
+      [campaignIdAu],
+    );
+    expect(Number(repairedChapters.rows[0]?.count ?? "0")).toBeGreaterThan(0);
+    expect(campaignSchema.safeParse(await assembleForSchema(pool, campaignIdAu)).success).toBe(
+      true,
+    );
 
     const businesses = listDemoMediaBusinesses(manifest);
     expect(businesses).toHaveLength(2);

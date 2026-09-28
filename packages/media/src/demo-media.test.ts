@@ -154,6 +154,16 @@ describe("runDemoMedia", () => {
       expect(() => new URL(url ?? "")).not.toThrow();
     }
 
+    // F66: campaignSchema refines "long_form" to require at least one
+    // campaign.chapter row (first at second 0). A freshly seeded campaign
+    // must carry one from the start, not just after a later repair.
+    const freshChapters = await pool.query<{ start_seconds: number }>(
+      "SELECT start_seconds FROM campaign.chapter WHERE campaign_id = $1 ORDER BY ordinal",
+      [campaign?.id],
+    );
+    expect(freshChapters.rows.length).toBeGreaterThan(0);
+    expect(freshChapters.rows[0]?.start_seconds).toBe(0);
+
     const questions = await pool.query(
       "SELECT answerable_after_seconds FROM campaign.question WHERE campaign_id = $1 ORDER BY answerable_after_seconds",
       [campaign?.id],
@@ -230,6 +240,33 @@ describe("runDemoMedia", () => {
       [campaign?.id],
     );
     expect(videoSource.rows[0]?.manifest_url).toBe(campaign?.hls_url);
+
+    // F66: the exact state QA found live on staging — URLs already absolute
+    // (an earlier repair already fixed those) but zero chapters, because an
+    // even earlier version of this seed never wrote any. Must be repaired
+    // independently of the URL check above, not skipped because hls_url
+    // already looks fine.
+    await ownerPool.query("DELETE FROM campaign.chapter WHERE campaign_id = $1", [campaign?.id]);
+    const noChapters = await pool.query("SELECT 1 FROM campaign.chapter WHERE campaign_id = $1", [
+      campaign?.id,
+    ]);
+    expect(noChapters.rowCount).toBe(0);
+
+    const chapterRepairResult = await runDemoMedia({ databaseUrl: DATABASE_URL ?? "", manifest });
+    expect(chapterRepairResult).toEqual([{ slug, status: "repaired" }]);
+
+    const restoredChapters = await pool.query<{ title: string; start_seconds: number }>(
+      "SELECT title, start_seconds FROM campaign.chapter WHERE campaign_id = $1 ORDER BY ordinal",
+      [campaign?.id],
+    );
+    expect(restoredChapters.rows.length).toBeGreaterThan(0);
+    expect(restoredChapters.rows[0]?.start_seconds).toBe(0);
+    // URLs untouched by a chapter-only repair.
+    const urlsAfterChapterRepair = await pool.query<{ hls_url: string }>(
+      "SELECT hls_url FROM campaign.campaigns WHERE id = $1",
+      [campaign?.id],
+    );
+    expect(urlsAfterChapterRepair.rows[0]?.hls_url).toBe(campaign?.hls_url);
 
     await ownerPool.query(
       "DELETE FROM campaign.question_answer_key WHERE question_id IN (SELECT id FROM campaign.question WHERE campaign_id = $1)",

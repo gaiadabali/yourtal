@@ -42,7 +42,8 @@ export async function createCampaignDraftLive(
 export interface CampaignDraftDetailsPatch {
   title: string;
   synopsis: string;
-  durationSeconds: number;
+  /** Omitted while no chapters exist yet — chapters aren't wired live this pass (TASKS.md 7.8.b's note), so a real, server-known duration from creation or a prior real video upload should never be overwritten by a stale "0 chapters" computation. */
+  durationSeconds?: number;
   contentCategory: string;
   audience: string;
   startsAt: string;

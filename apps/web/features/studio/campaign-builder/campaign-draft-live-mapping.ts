@@ -1,7 +1,10 @@
 import type { z } from "zod";
 import type { audienceSchema, campaignKindSchema } from "@yourtal/contracts/campaign";
 import type { ApiCampaignDraft, ApiRewardConfigResult } from "./campaign-draft-live-response";
-import { apiCampaignDraftSchema, apiRewardConfigResultSchema } from "./campaign-draft-live-response";
+import {
+  apiCampaignDraftSchema,
+  apiRewardConfigResultSchema,
+} from "./campaign-draft-live-response";
 import type { CampaignDraft } from "./campaign-draft";
 import type { CampaignDraftStatus } from "./campaign-draft-status";
 

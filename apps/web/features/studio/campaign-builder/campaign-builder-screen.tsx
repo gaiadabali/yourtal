@@ -111,10 +111,15 @@ export function CampaignBuilderScreen({
   async function closeEditor() {
     const current = drafts.find((draft) => draft.id === openDraftId);
     if (isLiveMode && current) {
+      const computedDuration = draftDurationSeconds(current);
       const result = await updateCampaignDraftDetailsLive(businessId, current.id, merchantName, {
         title: current.title,
         synopsis: current.synopsis,
-        durationSeconds: Math.max(1, draftDurationSeconds(current)),
+        // Only send a duration once local chapters actually imply one — an
+        // empty chapter list computes to 0, which would otherwise overwrite
+        // the server's real, already-known duration (from creation or a
+        // real video upload) with a bogus tiny value.
+        ...(computedDuration > 0 ? { durationSeconds: computedDuration } : {}),
         contentCategory: current.contentCategory,
         audience: current.audience,
         startsAt: current.startsAt,

@@ -3,10 +3,27 @@
 import { z } from "zod";
 import { questionSchema } from "@yourtal/contracts/question";
 import type { Question } from "@yourtal/contracts/question";
+import { piiScreenVerdictSchema, questionStatusSchema } from "@yourtal/contracts/question/bank";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiError } from "@/lib/api/api-fetch";
 import type { QuestionDraft } from "./question-draft";
 import { toPublishableQuestionInput } from "./question-draft-to-question";
+
+/**
+ * `apps/api`'s `BankQuestionRecord` (`question-bank.repository.ts`) — the
+ * real `GET`/`POST .../questions` response, one bank row wrapping its own
+ * `Question` rather than the flat question shape itself. Restated here for
+ * the same reason `campaign-draft-live-response.ts` restates its own API
+ * shape: a server can't import another app's types.
+ */
+const bankQuestionRecordSchema = z.object({
+  question: questionSchema,
+  status: questionStatusSchema,
+  piiScreen: piiScreenVerdictSchema.nullable(),
+  timesAsked: z.number(),
+  timesCorrect: z.number(),
+  retiredReason: z.string().nullable(),
+});
 
 /**
  * The real `apps/api/src/modules/studio/question-bank.controller.ts`
@@ -80,10 +97,10 @@ export async function listQuestionsLive(
 ): Promise<QuestionLiveActionResult<QuestionDraft[]>> {
   const result = await apiFetch(
     `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
-    z.array(questionSchema),
+    z.array(bankQuestionRecordSchema),
   );
   if (!result.ok) return { ok: false, message: mapApiError(result.error) };
-  return { ok: true, value: result.data.map(questionToDraft) };
+  return { ok: true, value: result.data.map((record) => questionToDraft(record.question)) };
 }
 
 /**
@@ -105,9 +122,9 @@ export async function createQuestionLive(
   }
   const result = await apiFetch(
     `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
-    questionSchema,
+    bankQuestionRecordSchema,
     { method: "POST", headers: { "idempotency-key": crypto.randomUUID() }, body: publishable },
   );
   if (!result.ok) return { ok: false, message: mapApiError(result.error) };
-  return { ok: true, value: questionToDraft(result.data) };
+  return { ok: true, value: questionToDraft(result.data.question) };
 }

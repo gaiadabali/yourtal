@@ -6,18 +6,25 @@ import type { APIRequestContext, Browser, BrowserContext, Page } from "@playwrig
  * 7.8.d's Check: a new business goes from sign-up through the real Studio
  * UI, against a real `apps/api` + Postgres (`YOURTAL_DATA_SOURCE=live` in
  * this worktree's `.env`; see `playwright.c-studio.config.ts`) — sign-up,
- * onboarding, billing, RBAC, and now (7.3 merged to `main`) a real campaign
- * draft created and edited through `/studio/campaigns`, reaching "ready to
- * submit" with the button correctly blocked by the verification banner
- * (a fresh business is never KYB-verified; that's staff-only, 9.3.b, a
- * later phase — this spec proves the button honours the real, live
+ * onboarding, billing (buying real points), campaign authoring (details,
+ * reward within the real F14 ceiling, a compliant question bank), reaching
+ * "ready to submit" with the button correctly blocked by the verification
+ * banner (a fresh business is never KYB-verified; that's staff-only,
+ * 9.3.b, a later phase — this proves the button honours the real, live
  * `business.isVerified` flag, not that submit itself succeeds).
  *
- * Not yet covered by this spec (this feature's own next slice — see
- * `campaign-draft-live-mapping.ts`'s doc comment): reward config (needs an
- * `allocationId` UX this pass doesn't add), the question bank, and
- * targeting/budget/schedule/audience/category/teaser/captions fields, none
- * of which has an editor field wired to a live PATCH yet.
+ * Video upload itself is NOT re-proven end to end here — 7.8.b's own
+ * earlier pass already proved the real presigned-multipart upload works in
+ * isolation (`media-upload-client.ts`), and re-running a real transcode
+ * through a headless browser on every CI run of this spec would need a
+ * running ffmpeg worker and a real video fixture for no new coverage.
+ * `campaign-editor-upload.tsx`'s Video tab is reachable and wired
+ * regardless of whether a file has been chosen this run.
+ *
+ * Still not covered (this feature's own next slice): targeting.districts
+ * and budget have no live field in the real DTO at all; chapters have no
+ * live PATCH (the real `CampaignChapter` shape genuinely differs — see
+ * `campaign-draft-live-mapping.ts`'s doc comment).
  */
 const WCAG_AA = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
@@ -87,6 +94,7 @@ test.describe
   .serial("7.8.d: Studio — sign-up through onboarding, billing and RBAC, against a live api", () => {
   let account: LiveAccount;
   let businessId: string;
+  let campaignTitle: string;
   const businessHandle = `c-studio-${uniqueSuffix()}`;
 
   test.beforeAll(async ({ request }) => {
@@ -207,22 +215,102 @@ test.describe
     // up front (this editor has no create-time intake form yet).
     await expect(page.getByLabel("Campaign title")).toHaveValue("Untitled campaign");
 
-    const title = `Cold Brew Launch — E2E ${Date.now()}`;
-    await page.getByLabel("Campaign title").fill(title);
+    campaignTitle = `Cold Brew Launch — E2E ${Date.now()}`;
+    await page.getByLabel("Campaign title").fill(campaignTitle);
     await page.getByRole("button", { name: "Back to campaigns" }).click();
 
     // The title/synopsis PATCH flushes on the way out of the editor, not on
     // every keystroke — a fresh reload (not just this same page's own local
     // state) is what proves it actually reached the server.
     await page.reload();
-    await expect(page.getByText(title)).toBeVisible();
+    await expect(page.getByText(campaignTitle)).toBeVisible();
 
-    await page.getByText(title).click();
+    await context.close();
+  });
+
+  test("the campaign is funded (a real allocation), given a compliant question bank, and reaches 'ready to submit' blocked by the verification banner", async ({
+    browser,
+    baseURL,
+  }) => {
+    const { context, page } = await newSessionContext(browser, baseURL as string, account.cookie);
+
+    // Reuses the Billing test's own real purchase — one business, one
+    // funded allocation, the same continuous flow the Check describes
+    // ("sign up -> business -> buy points -> ... -> ready to submit").
+    const balanceResponse = await context.request.get(
+      `${apiBaseUrl()}/api/${businessId}/studio/billing/balance`,
+      { headers: { cookie: account.cookie } },
+    );
+    expect(balanceResponse.ok()).toBeTruthy();
+    const balance = (await balanceResponse.json()) as {
+      allocations: Array<{ allocationId: string; remainingPoints: number }>;
+    };
+    expect(
+      balance.allocations.length,
+      "the Billing test's purchase should have funded an allocation",
+    ).toBeGreaterThan(0);
+
+    await page.goto(`/studio/campaigns?business=${businessId}`);
+    await page.getByText(campaignTitle).click();
+
+    // --- Reward, discovered against the real F14 ceiling rather than a
+    // hardcoded assumption: send an obviously-too-high value first, read
+    // the ceiling straight out of the server's own refusal message, then
+    // save exactly at it (base only, no bonus, to stay clear of the
+    // separate 40%-bonus-ratio rule).
+    await page.getByRole("tab", { name: "Reward" }).click();
+    await page.getByLabel("Reward (points)").fill("999999");
+    const allocationSelect = page.getByLabel("Funded by");
+    await allocationSelect.selectOption({
+      value: balance.allocations[0]?.allocationId as string,
+    });
+    await page.getByRole("button", { name: "Save reward" }).click();
+
+    const ceilingError = page.getByText(/exceeds the \d+-point ceiling/);
+    await expect(ceilingError).toBeVisible();
+    const ceilingText = await ceilingError.textContent();
+    const ceilingMatch = /exceeds the (\d+)-point ceiling/.exec(ceilingText ?? "");
+    expect(
+      ceilingMatch,
+      `expected a "N-point ceiling" refusal, got: ${ceilingText}`,
+    ).not.toBeNull();
+    const ceilingPoints = Number(ceilingMatch?.[1]);
+
+    await page.getByLabel("Reward (points)").fill(String(ceilingPoints));
+    await page.getByRole("button", { name: "Save reward" }).click();
+    // The server's own priced value replaces "ratio pending" — 7.3.h.
+    await expect(page.getByText("Server-priced value (one completion)")).toBeVisible();
+    await expect(page.getByText("Ratio pending")).toBeHidden();
+
+    // --- Question bank: 3 true/false questions (this campaign's real,
+    // server-known duration is short enough that the server's own
+    // questionsAskedFor asks for just 1, so 3 clears the 3x anti-sharing
+    // minimum) — each one a real POST, with the server's own id back.
+    await page.getByRole("tab", { name: "Questions" }).click();
+    for (let i = 0; i < 3; i += 1) {
+      await page.getByRole("button", { name: "Add question" }).click();
+      await page.getByRole("button", { name: "Add true / false" }).click();
+      await page.getByLabel("Question prompt").fill(`Is this fact ${i + 1} true?`);
+      await page.getByRole("radio", { name: "True", exact: true }).check();
+      await page.getByRole("button", { name: "Save question" }).click();
+      await expect(page.getByRole("dialog")).toBeHidden();
+    }
+    // Each saved row is server-confirmed live — no Edit/Remove offered.
+    await expect(page.getByRole("button", { name: "Edit" })).toHaveCount(0);
+
+    // --- Still blocked by the verification banner, exactly as 7.8.d's
+    // Check describes — content-completeness was never the gate here. The
+    // status panel (and its Submit button) sits beside the tabs, not
+    // inside one, so it's already visible without switching sections.
     const submitButton = page.getByRole("button", { name: "Submit for review" });
     await expect(submitButton).toBeDisabled();
     await expect(
       page.getByText("Verify your business on the overview page before you can submit."),
     ).toBeVisible();
+    await page.screenshot({
+      path: "test-results/c-studio-campaign-ready-to-submit.png",
+      fullPage: true,
+    });
 
     await context.close();
   });

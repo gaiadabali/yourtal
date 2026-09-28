@@ -240,9 +240,7 @@ export function CampaignEditorDetails({
         placeholder={t("campaignBuilder.details.captionsUrlPlaceholder")}
         disabled={disabled}
         value={draft.captionsUrl ?? ""}
-        onChange={(event) =>
-          onChange({ ...draft, captionsUrl: event.target.value.trim() || null })
-        }
+        onChange={(event) => onChange({ ...draft, captionsUrl: event.target.value.trim() || null })}
       />
     </div>
   );

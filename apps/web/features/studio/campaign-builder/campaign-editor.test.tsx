@@ -32,7 +32,7 @@ function StatefulEditor({
           canEdit={canEdit}
           isVerified={isVerified}
           isLiveMode={false}
-        allocations={[]}
+          allocations={[]}
         />
       </RegionProvider>
     </StudioIntlProvider>

@@ -162,7 +162,9 @@ export function QuestionBankScreen({
               <QuestionListRow
                 key={draft.id}
                 draft={draft}
-                {...(locked ? {} : { onEdit: () => startEdit(draft), onRemove: () => remove(draft.id) })}
+                {...(locked
+                  ? {}
+                  : { onEdit: () => startEdit(draft), onRemove: () => remove(draft.id) })}
               />
             );
           })}

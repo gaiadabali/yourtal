@@ -66,6 +66,28 @@ export interface PredictionRequestError {
 export type CreateQuestionError =
   CampaignNotFoundError | PiiRequestError | PredictionRequestError | PersistenceFailedError;
 
+export interface QuestionNotFoundError {
+  readonly type: "question_not_found";
+  readonly questionId: string;
+}
+
+/** 7.3.i: a PATCH may edit a question's content, never swap it to a different question type. */
+export interface QuestionTypeImmutableError {
+  readonly type: "question_type_immutable";
+}
+
+export type UpdateQuestionError =
+  | QuestionNotFoundError
+  | QuestionTypeImmutableError
+  | CampaignNotFoundError
+  | CampaignNotDraftError
+  | PiiRequestError
+  | PredictionRequestError
+  | PersistenceFailedError;
+
+export type RetireQuestionError =
+  QuestionNotFoundError | CampaignNotFoundError | CampaignNotDraftError | PersistenceFailedError;
+
 export interface LedgerRefusedError {
   readonly type: "ledger_refused";
   readonly code: string;

@@ -717,6 +717,28 @@ const QUESTION_GUARD_400: RouteErrorResponse = {
   documented: true,
 };
 
+/** TASKS.md 7.3.i. */
+const QUESTION_ID_PARAM: RoutePathParam = {
+  name: "questionId",
+  description: "The question this route acts on, scoped to its own campaign.",
+  schema: { type: "string", format: "uuid" },
+};
+
+const QUESTION_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description:
+    "No question with this id belongs to this campaign (studio.errors.ts's question_not_found).",
+  documented: true,
+};
+
+const QUESTION_TYPE_IMMUTABLE: RouteErrorResponse = {
+  status: 400,
+  description:
+    "A question's type cannot change on edit -- retire it and author a new one instead " +
+    "(studio.errors.ts's question_type_immutable).",
+  documented: true,
+};
+
 const REWARD_CONFIG_400: RouteErrorResponse = {
   status: 400,
   description:
@@ -1016,6 +1038,53 @@ export const STUDIO_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       "The authored question, screened for PII/prediction requests before being stored.",
     successSchema: bankQuestionResponseSchema,
     errors: [VALIDATION_400, FORBIDDEN, QUESTION_GUARD_400, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "patch",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}/questions/{questionId}",
+    summary: "Edit a question",
+    tags: ["studio", "question"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM, QUESTION_ID_PARAM],
+    requestBody: {
+      description:
+        "The full question again (same shape as create) -- `type` must match the stored " +
+        "question's own type; a type change is refused (question_type_immutable). Status " +
+        "resets to draft and the PII/prediction guards re-run. Refused once the campaign has " +
+        "left draft, same as any other draft CRUD in this module.",
+      schema: inlineSchema(questionSchema),
+    },
+    successStatus: 200,
+    successDescription: "The edited question, re-screened and reset to status draft.",
+    successSchema: bankQuestionResponseSchema,
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      QUESTION_NOT_FOUND,
+      QUESTION_TYPE_IMMUTABLE,
+      STUDIO_CAMPAIGN_NOT_FOUND,
+      CAMPAIGN_NOT_DRAFT,
+      QUESTION_GUARD_400,
+      SERVICE_UNAVAILABLE,
+    ],
+  },
+  {
+    method: "delete",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}/questions/{questionId}",
+    summary: "Retire (withdraw) a question",
+    tags: ["studio", "question"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM, QUESTION_ID_PARAM],
+    successStatus: 200,
+    successDescription:
+      "The now-retired question -- a soft-retire (questionStatusSchema's `retired`), never a " +
+      "row delete; refused once the campaign has left draft.",
+    successSchema: bankQuestionResponseSchema,
+    errors: [
+      FORBIDDEN,
+      QUESTION_NOT_FOUND,
+      STUDIO_CAMPAIGN_NOT_FOUND,
+      CAMPAIGN_NOT_DRAFT,
+      SERVICE_UNAVAILABLE,
+    ],
   },
 
   // --- reward-config.controller.ts ---

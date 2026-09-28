@@ -1,8 +1,18 @@
-import { BadRequestException, Body, Controller, Get, Inject, Param, Post } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+} from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { questionSchema } from "@yourtal/contracts/question";
 import { Authorize } from "../../shared/authz/authorize.decorator";
-import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
+import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { ONBOARDING_RETENTION_MS } from "../../shared/idempotency/retention";
 import { CAMPAIGN_DRAFT_REPOSITORY } from "./persistence/campaign-draft.repository";
 import type { CampaignDraftRepository } from "./persistence/campaign-draft.repository";
@@ -10,6 +20,8 @@ import { QUESTION_BANK_REPOSITORY } from "./persistence/question-bank.repository
 import type { QuestionBankRepository } from "./persistence/question-bank.repository";
 import { createQuestion } from "./use-cases/create-question.use-case";
 import { listQuestions } from "./use-cases/list-questions.use-case";
+import { updateQuestion } from "./use-cases/update-question.use-case";
+import { retireQuestion } from "./use-cases/retire-question.use-case";
 import { mapStudioErrorToHttpException } from "./to-http-exception";
 
 /** TASKS.md 7.3.b — the question bank moves server-side, PII guard and all. */
@@ -64,6 +76,67 @@ export class QuestionBankController {
       tenantId,
       campaignId,
       question,
+    );
+    if (result.isErr()) throw mapStudioErrorToHttpException(result.error);
+    return result.value;
+  }
+
+  // Same "no class-based Zod DTO" reasoning as `create` above --
+  // `questionSchema` is a discriminated union with a `.refine()`-wrapped
+  // branch and cannot become a `createZodDto` class.
+  @NotValueMoving(
+    "A patch that repeats the same fields ends at the same row -- nothing to duplicate.",
+  )
+  @Authorize({
+    kind: "campaign",
+    action: "edit_questions",
+    idFrom: (request) => campaignIdOf(request),
+  })
+  @Patch(":questionId")
+  async update(
+    @Param("tenantId") tenantId: string,
+    @Param("campaignId") campaignId: string,
+    @Param("questionId") questionId: string,
+    @Body() rawBody: unknown,
+  ) {
+    const parsed = questionSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      throw new BadRequestException({ code: "validation_failed", message: parsed.error.message });
+    }
+    // Same as `create`: `id`/`campaignId` on the body are required by the
+    // schema's shape but ignored -- the route's own params are authoritative.
+    const { id: _id, campaignId: _campaignId, ...question } = parsed.data;
+    const result = await updateQuestion(
+      { drafts: this.drafts, bank: this.bank },
+      tenantId,
+      campaignId,
+      questionId,
+      question,
+    );
+    if (result.isErr()) throw mapStudioErrorToHttpException(result.error);
+    return result.value;
+  }
+
+  @NotValueMoving(
+    "Soft-retires (updateStatus, an idempotent write): retiring an already-retired " +
+      "question repeats the same end state, nothing duplicates.",
+  )
+  @Authorize({
+    kind: "campaign",
+    action: "edit_questions",
+    idFrom: (request) => campaignIdOf(request),
+  })
+  @Delete(":questionId")
+  async retire(
+    @Param("tenantId") tenantId: string,
+    @Param("campaignId") campaignId: string,
+    @Param("questionId") questionId: string,
+  ) {
+    const result = await retireQuestion(
+      { drafts: this.drafts, bank: this.bank },
+      tenantId,
+      campaignId,
+      questionId,
     );
     if (result.isErr()) throw mapStudioErrorToHttpException(result.error);
     return result.value;

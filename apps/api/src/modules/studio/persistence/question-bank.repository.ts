@@ -35,6 +35,22 @@ export interface QuestionBankRepository {
     status: QuestionStatus,
     retiredReason: string | null,
   ): Promise<BankQuestionRecord | null>;
+  /**
+   * 7.3.i: edits an already-authored question's mutable content. `type` is
+   * assumed to already match the stored row's own type -- the caller
+   * (`update-question.use-case.ts`) refuses a type change before this is
+   * ever invoked, so this method never has to reconcile two different
+   * per-type table shapes for one row. Always re-screens (`piiScreen`) and
+   * resets `status` back to `draft` -- an edited question has not been
+   * re-approved, the same way changing an answer key would invalidate a
+   * prior human review under 9.2 once that exists. `null` if no such
+   * question exists.
+   */
+  update(
+    questionId: string,
+    question: NewQuestion,
+    piiScreen: PiiScreenVerdict,
+  ): Promise<BankQuestionRecord | null>;
 }
 
 export const QUESTION_BANK_REPOSITORY = Symbol("QUESTION_BANK_REPOSITORY");

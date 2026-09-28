@@ -141,6 +141,112 @@ export class DrizzleQuestionBankRepository implements QuestionBankRepository {
     return this.assembleFromRow(row);
   }
 
+  async update(
+    questionId: string,
+    question: NewQuestion,
+    piiScreen: PiiScreenVerdict,
+  ): Promise<BankQuestionRecord | null> {
+    return this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(questions)
+        .set({
+          prompt: question.prompt,
+          timerSeconds: question.timerSeconds,
+          answerableAfterSeconds: question.answerableAfterSeconds,
+          piiScreen,
+          status: "draft",
+          retiredReason: null,
+        })
+        .where(eq(questions.id, questionId))
+        .returning();
+      if (row === undefined) return null;
+
+      // `question_option` may be freely replaced (whole-list, not a
+      // per-item PATCH of one option -- the same rule
+      // `UpdateCampaignDraftInput`'s chapters/declaredInterests use).
+      // `question_answer_key` may NOT: `yourtal_app` holds no DELETE on it
+      // at all (20260920000017's own grant comment -- "a question whose
+      // key vanished would silently score every answer as wrong, and the
+      // viewer who lost a reward would have no evidence anything had
+      // changed"), so an edit UPDATEs the existing key row in place rather
+      // than dropping and re-inserting it. `type` cannot change here (the
+      // use-case refuses that before this is ever called), so the row this
+      // UPDATE targets is guaranteed to already exist in the right shape
+      // from whichever `create()` call first wrote it.
+      await tx.delete(questionOptions).where(eq(questionOptions.questionId, questionId));
+
+      if (question.type === "multiple_choice") {
+        const optionRows = await tx
+          .insert(questionOptions)
+          .values(
+            question.options.map((option, index) => ({
+              id: randomUUID(),
+              questionId,
+              label: option.label,
+              ordinal: index,
+            })),
+          )
+          .returning();
+        const correctRow = optionRows.find(
+          (_option, index) => question.options[index]?.id === question.correctOptionId,
+        );
+        const correctOptionId = correctRow?.id ?? optionRows[0]?.id;
+        if (correctOptionId === undefined) {
+          throw new Error("multiple_choice question has no options to key against");
+        }
+        await tx
+          .update(questionAnswerKeys)
+          .set({ correctOptionId })
+          .where(eq(questionAnswerKeys.questionId, questionId));
+        return assemble(row, piiScreen, {
+          ...question,
+          id: questionId,
+          campaignId: row.campaignId,
+          options: optionRows.map((option) => ({ id: option.id, label: option.label })),
+          correctOptionId,
+        });
+      }
+
+      if (question.type === "true_false") {
+        await tx
+          .update(questionAnswerKeys)
+          .set({ correctAnswer: question.correctAnswer })
+          .where(eq(questionAnswerKeys.questionId, questionId));
+        return assemble(row, piiScreen, {
+          ...question,
+          id: questionId,
+          campaignId: row.campaignId,
+        });
+      }
+
+      if (question.type === "ranked") {
+        const optionRows = await tx
+          .insert(questionOptions)
+          .values(
+            question.items.map((item, index) => ({
+              id: randomUUID(),
+              questionId,
+              label: item.label,
+              ordinal: index,
+            })),
+          )
+          .returning();
+        return assemble(row, piiScreen, {
+          ...question,
+          id: questionId,
+          campaignId: row.campaignId,
+          items: optionRows.map((option) => ({ id: option.id, label: option.label })),
+        });
+      }
+
+      // likert / short_text: same gap create() already has -- these two
+      // types' own per-type fields are not persisted columns today
+      // (assembleFromRow's own comment), so there is nothing further to
+      // write; the base-field update above already applied.
+      return assemble(row, piiScreen, { ...question, id: questionId, campaignId: row.campaignId });
+    });
+  }
+
   private async assembleFromRow(row: typeof questions.$inferSelect): Promise<BankQuestionRecord> {
     const type = row.type as Question["type"];
     const base = {

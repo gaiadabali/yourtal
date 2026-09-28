@@ -22,6 +22,8 @@ import type {
   PiiRequestError,
   PredictionRequestError,
   ProhibitedCategoryError,
+  QuestionNotFoundError,
+  QuestionTypeImmutableError,
   RewardExceedsCeilingError,
 } from "./studio.errors";
 
@@ -36,6 +38,8 @@ export type StudioDomainError =
   | AudienceMustBeAdultError
   | PiiRequestError
   | PredictionRequestError
+  | QuestionNotFoundError
+  | QuestionTypeImmutableError
   | AllocationNotOwnedError
   | AllocationNotPartnerFundedError
   | RewardExceedsCeilingError
@@ -77,6 +81,17 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
       return new BadRequestException({ code: "pii_request", message: error.reason });
     case "prediction_request":
       return new BadRequestException({ code: "prediction_request", message: error.reason });
+    case "question_not_found":
+      return new NotFoundException({
+        code: "question_not_found",
+        message: `no question ${error.questionId} was found for this campaign`,
+      });
+    case "question_type_immutable":
+      return new BadRequestException({
+        code: "question_type_immutable",
+        message:
+          "a question's type cannot change on edit -- retire it and author a new one instead",
+      });
     case "allocation_not_owned":
       return new BadRequestException({
         code: "allocation_not_owned",

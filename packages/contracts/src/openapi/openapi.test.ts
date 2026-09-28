@@ -269,6 +269,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "merchant/merchant-developer-credential.ts's closed event-type union, documented in the webhook delivery worker's own spec, not a request/response component.",
   webhookSignatureHeaderSchema:
     "merchant/merchant-developer-credential.ts's header-format regex for packages/sdk-merchant to verify against — not a JSON body component.",
+
+  // --- device: webhook delivery (TASKS.md 8.3.c) ---
+  webhookDeliveryEventSchema:
+    "device/webhook-delivery-event.ts's internal pg-boss job payload (apps/api's producer to apps/worker's consumer) — not an HTTP request/response shape at all.",
 };
 
 function exportedSchemaNames(): string[] {

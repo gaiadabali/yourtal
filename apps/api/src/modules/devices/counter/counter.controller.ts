@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post, Req } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Logger, Post, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import type { Principal } from "@yourtal/authz/principal";
 import { Idempotent, NotValueMoving } from "../../../shared/idempotency/idempotent.decorator";
@@ -11,6 +11,8 @@ import { CAPTURE_LOG_REPOSITORY } from "../persistence/capture-log.repository";
 import type { CaptureLogRepository } from "../persistence/capture-log.repository";
 import { VOUCHER_INTERNAL_CLIENT } from "../../../shared/voucher-client/voucher-internal-client";
 import type { VoucherInternalClient } from "../../../shared/voucher-client/voucher-internal-client";
+import { WEBHOOK_EVENT_PUBLISHER } from "../developers/webhook-event-publisher";
+import type { WebhookEventPublisher } from "../developers/webhook-event-publisher";
 import { COUNTER_AUTHORIZE_RETENTION_MS, COUNTER_CAPTURE_RETENTION_MS } from "../retention";
 import { CounterAuthorizeDto, CounterCaptureDto, CounterLookupDto } from "./dto/counter.schema";
 import { lookupVoucher } from "./use-cases/lookup-voucher.use-case";
@@ -41,11 +43,14 @@ function deviceScope(principal: Principal): { businessId: string; locationId: st
  */
 @Controller("api/counter")
 export class CounterController {
+  private readonly logger = new Logger(CounterController.name);
+
   constructor(
     private readonly authorize: DeviceAuthorize,
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(AUTHORIZATION_META_REPOSITORY) private readonly authMeta: AuthorizationMetaRepository,
     @Inject(CAPTURE_LOG_REPOSITORY) private readonly captureLog: CaptureLogRepository,
+    @Inject(WEBHOOK_EVENT_PUBLISHER) private readonly webhookEvents: WebhookEventPublisher,
   ) {}
 
   @NotValueMoving("a lookup is a read-only preview; no hold is placed (8.2.a)")
@@ -122,6 +127,26 @@ export class CounterController {
       body.authorizationId,
     );
     if (result.isErr()) throw mapCounterErrorToHttpException(result.error);
+    // 8.3.c: the capture already happened — an enqueue failure here must
+    // never turn into a failed response for it. The queue's own
+    // retries/backoff are the delivery job's problem, not this route's.
+    try {
+      await this.webhookEvents.publish({
+        businessId,
+        eventType: "voucher.captured",
+        payload: {
+          captureId: result.value.captureId,
+          voucherId: result.value.voucherId,
+          amountMinor: result.value.amountMinor,
+          currency: result.value.currency,
+          capturedAt: result.value.capturedAt,
+          orderRef: result.value.orderRef,
+        },
+        idempotencyKey: result.value.captureId,
+      });
+    } catch (cause) {
+      this.logger.error(`failed to enqueue voucher.captured webhook: ${String(cause)}`);
+    }
     return result.value;
   }
 

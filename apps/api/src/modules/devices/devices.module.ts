@@ -1,4 +1,6 @@
-import { Module } from "@nestjs/common";
+import { Injectable, Module, type OnApplicationShutdown } from "@nestjs/common";
+import type { PgBoss } from "pg-boss";
+import { createQueueClient } from "@yourtal/queue/client";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { RateLimitModule } from "../../shared/rate-limit/rate-limit.module";
 import { APP_CONFIG } from "../../config/app-config.module";
@@ -33,9 +35,25 @@ import {
   WEBHOOK_SECRET_ENCRYPTION_KEY,
   requireWebhookSecretEncryptionKey,
 } from "./developers/webhook-secret-encryption-key";
+import {
+  WEBHOOK_EVENT_PUBLISHER,
+  PgBossWebhookEventPublisher,
+} from "./developers/webhook-event-publisher";
 import { DEVICES_DB } from "./devices.tokens";
 
 export { DEVICES_DB };
+
+const DEVICES_QUEUE_CLIENT = Symbol("DEVICES_QUEUE_CLIENT");
+
+/** Same shutdown discipline `studio.module.ts`'s own pg-boss client uses — a process that starts a pool closes it. */
+@Injectable()
+class DevicesQueueShutdown implements OnApplicationShutdown {
+  constructor(private readonly boss: PgBoss) {}
+
+  async onApplicationShutdown(): Promise<void> {
+    await this.boss.stop({ close: true, graceful: false, timeout: 1_000 });
+  }
+}
 
 /**
  * TASKS.md 8.1: counter devices, their pairing/PIN lifecycle, and the two
@@ -124,6 +142,25 @@ export { DEVICES_DB };
     {
       provide: WEBHOOK_SECRET_ENCRYPTION_KEY,
       useFactory: requireWebhookSecretEncryptionKey,
+    },
+    {
+      provide: DEVICES_QUEUE_CLIENT,
+      useFactory: async (config: AppConfig): Promise<PgBoss> => {
+        const boss = createQueueClient({ databaseUrl: config.databaseUrl });
+        await boss.start();
+        return boss;
+      },
+      inject: [APP_CONFIG],
+    },
+    {
+      provide: DevicesQueueShutdown,
+      useFactory: (boss: PgBoss): DevicesQueueShutdown => new DevicesQueueShutdown(boss),
+      inject: [DEVICES_QUEUE_CLIENT],
+    },
+    {
+      provide: WEBHOOK_EVENT_PUBLISHER,
+      useFactory: (boss: PgBoss) => new PgBossWebhookEventPublisher(boss),
+      inject: [DEVICES_QUEUE_CLIENT],
     },
     CounterDeviceCredentialVerifier,
     DeviceAuthorize,

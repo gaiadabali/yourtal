@@ -19,7 +19,7 @@ import (
 // checks if the InitiateMediaUploadRequest type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &InitiateMediaUploadRequest{}
 
-// InitiateMediaUploadRequest Starts a presigned multipart upload of a campaign's video, to MinIO's raw/ prefix.
+// InitiateMediaUploadRequest Starts a presigned multipart upload of a campaign's video, to the object store's raw/ prefix.
 type InitiateMediaUploadRequest struct {
 	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Filename string `json:"filename"`

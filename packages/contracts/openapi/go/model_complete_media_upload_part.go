@@ -19,7 +19,7 @@ import (
 // checks if the CompleteMediaUploadPart type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &CompleteMediaUploadPart{}
 
-// CompleteMediaUploadPart One part's ETag, as MinIO returned it from the client's PUT.
+// CompleteMediaUploadPart One part's ETag, as the object store returned it from the client's PUT.
 type CompleteMediaUploadPart struct {
 	PartNumber int64 `json:"partNumber"`
 	ETag string `json:"eTag"`

@@ -24,7 +24,7 @@ const MOCK_PROCESSING_DELAY_MS = 800;
 /**
  * Upload with progress (task 7.8.b). Live: a real presigned multipart
  * upload against 7.2's media pipeline (`media-upload-client.ts`) — every
- * byte goes browser-to-MinIO directly, this component only orchestrates
+ * byte goes browser-to-object-store directly, this component only orchestrates
  * it. Mock: the original `setInterval` simulation, kept as-is (no real
  * upload endpoint to fake against in mock mode, and Phase 6/7's own local
  * dev defaults to mock).

@@ -44,9 +44,10 @@ function newOrderRef(): string {
  *  1. NEVER shows `success` before capture has actually returned.
  *  2. No offline queue (8.2.b) — an offline confirm is refused outright,
  *     never saved locally to replay later.
- *  3. A retry after `failed` reuses the SAME idempotency key AND, once
- *     minted, the same `authorizationId` — a capture-side failure retries
- *     capture, not authorize, so a hold already placed is never
+ *  3. A retry after `failed` reuses the SAME two idempotency keys (one per
+ *     endpoint — see `merchant-redemption-state.ts`'s own doc comment) AND,
+ *     once minted, the same `authorizationId` — a capture-side failure
+ *     retries capture, not authorize, so a hold already placed is never
  *     re-authorized under a fresh amount.
  */
 export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenProps) {
@@ -104,7 +105,8 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
       preview: CounterVoucherPreview;
       amountMinor: number;
       effectiveRemainingMinor: number;
-      idempotencyKey: string;
+      authorizeIdempotencyKey: string;
+      captureIdempotencyKey: string;
       authorizationId: string | null;
     },
   ) {
@@ -116,7 +118,13 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
       return;
     }
     const { code, orderRef, preview, amountMinor, effectiveRemainingMinor } = step;
-    const idempotencyKey = step.step === "failed" ? step.idempotencyKey : crypto.randomUUID();
+    // Two independent keys — one per endpoint, each reused only across a
+    // retry of ITS OWN call (merchant-redemption-state.ts's own doc
+    // comment on why these can never be the same key).
+    const authorizeIdempotencyKey =
+      step.step === "failed" ? step.authorizeIdempotencyKey : crypto.randomUUID();
+    const captureIdempotencyKey =
+      step.step === "failed" ? step.captureIdempotencyKey : crypto.randomUUID();
     let authorizationId = step.step === "failed" ? step.authorizationId : null;
 
     const amountError = classifyAmount(preview, amountMinor);
@@ -127,7 +135,8 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
         preview,
         amountMinor,
         effectiveRemainingMinor,
-        idempotencyKey,
+        authorizeIdempotencyKey,
+        captureIdempotencyKey,
         authorizationId,
       });
       return;
@@ -147,7 +156,8 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
         amountMinor,
         effectiveRemainingMinor,
         phase: "authorize",
-        idempotencyKey,
+        authorizeIdempotencyKey,
+        captureIdempotencyKey,
         authorizationId: null,
       });
       // NOTE: this counter has no POS integration to source a separate
@@ -159,7 +169,7 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
         currency: preview.currency,
         orderRef,
         orderTotalMinor: amountMinor,
-        idempotencyKey,
+        idempotencyKey: authorizeIdempotencyKey,
       });
       if (!authResult.ok) {
         failWith(fromApiError(authResult.error), {
@@ -168,7 +178,8 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
           preview,
           amountMinor,
           effectiveRemainingMinor,
-          idempotencyKey,
+          authorizeIdempotencyKey,
+          captureIdempotencyKey,
           authorizationId: null,
         });
         return;
@@ -184,10 +195,14 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
       amountMinor,
       effectiveRemainingMinor,
       phase: "capture",
-      idempotencyKey,
+      authorizeIdempotencyKey,
+      captureIdempotencyKey,
       authorizationId,
     });
-    const captureResult = await counterCaptureAction({ authorizationId, idempotencyKey });
+    const captureResult = await counterCaptureAction({
+      authorizationId,
+      idempotencyKey: captureIdempotencyKey,
+    });
     if (!captureResult.ok) {
       failWith(fromApiError(captureResult.error), {
         code,
@@ -195,7 +210,8 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
         preview,
         amountMinor,
         effectiveRemainingMinor,
-        idempotencyKey,
+        authorizeIdempotencyKey,
+        captureIdempotencyKey,
         authorizationId,
       });
       return;

@@ -45,7 +45,17 @@ export type MerchantRedemptionStep =
       amountMinor: number;
       effectiveRemainingMinor: number;
       phase: "authorize" | "capture";
-      idempotencyKey: string;
+      /**
+       * Authorize and capture are two DIFFERENT logical calls, to two
+       * different endpoints with two different request bodies — each needs
+       * its own idempotency key, reused only across a RETRY of that same
+       * call, never shared between the two. Sharing one (this file's own
+       * earlier bug) made a real capture refused outright once F70 stopped
+       * masking it: the server's idempotency table correctly treats "same
+       * key, different body" as a conflict, not a replay.
+       */
+      authorizeIdempotencyKey: string;
+      captureIdempotencyKey: string;
       /** Set once authorize returns, before capture is attempted — needed so a retry after a capture-side failure calls capture again rather than re-authorizing. */
       authorizationId: string | null;
     }
@@ -63,8 +73,8 @@ export type MerchantRedemptionStep =
   /**
    * The attempt was refused or failed; still holds the reviewed context so
    * "retry"/"edit amount" can resume without starting over. Carries the
-   * SAME `idempotencyKey` (and, once minted, the same `authorizationId`) the
-   * failed attempt used, so a retry never looks like a first call.
+   * SAME two keys (and, once minted, the same `authorizationId`) the failed
+   * attempt used, so a retry never looks like a first call for either.
    */
   | {
       step: "failed";
@@ -74,6 +84,7 @@ export type MerchantRedemptionStep =
       preview: CounterVoucherPreview;
       amountMinor: number;
       effectiveRemainingMinor: number;
-      idempotencyKey: string;
+      authorizeIdempotencyKey: string;
+      captureIdempotencyKey: string;
       authorizationId: string | null;
     };

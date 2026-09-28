@@ -202,4 +202,45 @@ describe("MerchantRedemptionScreen", () => {
     ][];
     expect(firstCall?.[0].idempotencyKey).toBe(secondCall?.[0].idempotencyKey);
   });
+
+  it("sends authorize and capture DIFFERENT idempotency keys — real bug, real fix: a shared key made the server refuse capture outright (F70's own follow-up) once the idempotency table actually saw both request bodies", async () => {
+    counterLookupAction.mockResolvedValue({ ok: true, data: healthyPreview });
+    counterAuthorizeAction.mockResolvedValue({
+      ok: true,
+      data: {
+        authorizationId: "auth_1",
+        voucherId: healthyPreview.voucherId,
+        amountMinor: 5000,
+        currency: "AUD",
+        expiresAt: "2026-09-19T09:05:00.000Z",
+      },
+    });
+    counterCaptureAction.mockResolvedValue({
+      ok: true,
+      data: {
+        captureId: "rcpt_1",
+        voucherId: healthyPreview.voucherId,
+        amountMinor: 5000,
+        currency: "AUD",
+        capturedAt: "2026-09-19T09:00:00.000Z",
+        orderRef: "ord_1",
+      },
+    });
+
+    const user = userEvent.setup();
+    render(<MerchantRedemptionScreen device={device} />);
+
+    await user.click(screen.getByRole("tab", { name: "Enter code" }));
+    await user.type(screen.getByLabelText("Voucher code"), "HEALTHY1");
+    await user.click(screen.getByRole("button", { name: "Look up voucher" }));
+    const confirmButton = await screen.findByRole("button", { name: "Confirm redemption" });
+    await user.click(confirmButton);
+
+    await waitFor(() => expect(screen.getByText("Redeemed")).toBeInTheDocument());
+    const authorizeKey = (counterAuthorizeAction.mock.calls[0]?.[0] as { idempotencyKey: string })
+      .idempotencyKey;
+    const captureKey = (counterCaptureAction.mock.calls[0]?.[0] as { idempotencyKey: string })
+      .idempotencyKey;
+    expect(authorizeKey).not.toBe(captureKey);
+  });
 });

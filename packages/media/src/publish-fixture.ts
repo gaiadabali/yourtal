@@ -23,17 +23,16 @@ import {
 } from "./hls-origin";
 
 /**
- * Publishes the HLS fixture to the local RustFS origin (F58; MinIO before
- * it). YT-0521.
+ * Publishes the HLS fixture to the local RustFS origin (F58). YT-0521.
  *
  *   pnpm --filter @yourtal/media publish
  *
  * ## Through the S3 API, not a CLI
  *
- * RustFS ships no CLI of its own (only its `rustfs` server binary; MinIO
- * before it shipped `mc`, and `docker exec … mc cp` would have been three
- * lines). The reason this uses `@aws-sdk/client-s3` instead is the one
- * `docker-compose.yml` gives for running a self-hosted S3 origin at all:
+ * RustFS ships no CLI of its own (only its `rustfs` server binary), so a
+ * `docker exec … <cli> cp` shortcut is not on the table. The reason this
+ * uses `@aws-sdk/client-s3` instead is the one `docker-compose.yml` gives
+ * for running a self-hosted S3 origin at all:
  * *S3-compatible, so the R2 adapter is exercised rather than stubbed.* A
  * publish path that goes through a CLI inside a container exercises nothing
  * that will exist in production. This code is the R2 upload path, pointed at
@@ -79,7 +78,7 @@ export interface PublishResult {
 export function createOriginClient(): S3Client {
   return new S3Client({
     endpoint: resolveOriginEndpoint(),
-    region: "us-east-1", // MinIO ignores it; the SDK refuses to run without one.
+    region: "us-east-1", // RustFS ignores it; the SDK refuses to run without one.
     credentials: resolveCredentials(),
     forcePathStyle: true,
   });
@@ -122,11 +121,11 @@ async function allowAnonymousReadOfHls(client: S3Client): Promise<void> {
   }
 
   // A browser plays this fixture cross-origin in dev — same reasoning
-  // `studio-media.ts`'s own `ensureStudioMediaBucket` documents: MinIO
-  // answered a permissive CORS header by default with no config, RustFS
-  // does not. Best-effort; this is dev/test-only, never staging traffic
-  // that depends on it. `resolveMediaCorsOrigins()`, never `*` (founder,
-  // 2026-09-28) — same allowlist `studio-media.ts` uses, same bucket.
+  // `studio-media.ts`'s own `ensureStudioMediaBucket` documents: RustFS
+  // answers no CORS header at all without an explicit rule. Best-effort;
+  // this is dev/test-only, never staging traffic that depends on it.
+  // `resolveMediaCorsOrigins()`, never `*` (founder, 2026-09-28) — same
+  // allowlist `studio-media.ts` uses, same bucket.
   try {
     await client.send(
       new PutBucketCorsCommand({

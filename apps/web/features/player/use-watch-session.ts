@@ -193,7 +193,7 @@ export function useWatchSession(
 
   /**
    * YT-0550. `Home` was landing at 0.35 s instead of zero, only against the
-   * MinIO origin and never against a same-process static file — a standalone
+   * object-store origin and never against a same-process static file — a standalone
    * probe seeking to 0 lands exactly there, so the arithmetic was never the
    * bug (there is no remap arithmetic left at all post-EW-07).
    *

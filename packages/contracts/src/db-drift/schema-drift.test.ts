@@ -359,9 +359,9 @@ const MAPPINGS: readonly Mapping[] = [
     fieldsWithNoColumn: {},
     columnsWithNoField: {
       raw_object_key:
-        "The MinIO key the multipart upload targets. Storage bookkeeping the worker reads to find the source file; Studio never displays or needs it back.",
+        "The object-store key the multipart upload targets. Storage bookkeeping the worker reads to find the source file; Studio never displays or needs it back.",
       upload_id:
-        "MinIO's own multipart-upload id, needed only to complete or abort it. Write-side bookkeeping, same convention as voucher.saga_id above.",
+        "The object store's own multipart-upload id, needed only to complete or abort it. Write-side bookkeeping, same convention as voucher.saga_id above.",
     },
   },
   {

@@ -23,7 +23,7 @@ import { callReady } from "./transcode-ready-client";
 
 /**
  * 7.2.b: HLS at 360p/540p/720p (6 s segments), a poster, a teaser, and an
- * optional caption track. Runs ffmpeg against the raw upload MinIO holds
+ * optional caption track. Runs ffmpeg against the raw upload the object store holds
  * (`getRawObject`), uploads every rendition, and reports the result to
  * C's internal `/ready` endpoint — this job never touches `campaign.*`
  * tables itself (TASKS.md is explicit that the studio module does).

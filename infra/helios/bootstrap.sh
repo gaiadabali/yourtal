@@ -52,9 +52,7 @@ command -v ffmpeg >/dev/null ||
 stack_env=$Y/stack/secrets.env
 [ -f "$stack_env" ] || { printf 'POSTGRES_USER=yourtal\nPOSTGRES_PASSWORD=%s\n' "$(rand)" >"$stack_env"; chmod 600 "$stack_env"; }
 pg_pass=$(sed -n 's/^POSTGRES_PASSWORD=//p' "$stack_env")
-# F58: RustFS replaces MinIO. RustFS accepts MINIO_ROOT_USER/PASSWORD as a
-# fallback (its own startup warning says so), but the file is named and
-# keyed for its real env vars going forward, not the fallback.
+# F58: RustFS's own root credentials.
 rustfs_env=$Y/stack/rustfs.env
 [ -f "$rustfs_env" ] || { printf 'RUSTFS_ROOT_USER=yourtal\nRUSTFS_ROOT_PASSWORD=%s\n' "$(rand)" >"$rustfs_env"; chmod 600 "$rustfs_env"; }
 

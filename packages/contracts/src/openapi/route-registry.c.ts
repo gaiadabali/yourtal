@@ -490,7 +490,7 @@ export const BUSINESS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "post",
     path: "/api/{tenantId}/business/kyb-documents/upload-url",
-    summary: "Mint a presigned MinIO upload URL for a KYB document",
+    summary: "Mint a presigned object-store upload URL for a KYB document",
     tags: ["business", "kyb"],
     pathParams: [TENANT_ID_PARAM],
     requestBody: {

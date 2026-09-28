@@ -60,7 +60,7 @@ export const STUDIO_MEDIA_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["studio", "media"],
     pathParams: [TENANT_ID_PARAM, ASSET_ID_PARAM],
     requestBody: {
-      description: "Each part's ETag, as MinIO returned it from the client's PUT.",
+      description: "Each part's ETag, as the object store returned it from the client's PUT.",
       schema: ref("CompleteMediaUploadRequest"),
     },
     successStatus: 200,

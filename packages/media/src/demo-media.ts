@@ -26,7 +26,7 @@ import {
  * The demo media kit (TASKS.md 7.2.d/e, F7): `pnpm demo:media` turns
  * `demo-media.json` into real campaigns on whatever database
  * `DATABASE_OWNER_URL` names — a real Postgres write, real ffmpeg, real
- * MinIO objects, exactly the pipeline 7.2.a/b/c already proved end to end.
+ * object-store objects, exactly the pipeline 7.2.a/b/c already proved end to end.
  *
  * Idempotent by campaign id (derived from the manifest slug): a campaign
  * already marked "ready" is left alone, so a normal deploy re-run (2.3.e's

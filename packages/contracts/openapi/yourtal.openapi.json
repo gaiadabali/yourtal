@@ -3313,7 +3313,7 @@
     },
     "/api/{tenantId}/business/kyb-documents/upload-url": {
       "post": {
-        "summary": "Mint a presigned MinIO upload URL for a KYB document",
+        "summary": "Mint a presigned object-store upload URL for a KYB document",
         "tags": [
           "business",
           "kyb"
@@ -8802,7 +8802,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Each part's ETag, as MinIO returned it from the client's PUT.",
+          "description": "Each part's ETag, as the object store returned it from the client's PUT.",
           "content": {
             "application/json": {
               "schema": {
@@ -11146,7 +11146,7 @@
         "additionalProperties": false
       },
       "CompleteMediaUploadPart": {
-        "description": "One part's ETag, as MinIO returned it from the client's PUT.",
+        "description": "One part's ETag, as the object store returned it from the client's PUT.",
         "type": "object",
         "properties": {
           "partNumber": {
@@ -11700,7 +11700,7 @@
         "format": "int64"
       },
       "InitiateMediaUploadRequest": {
-        "description": "Starts a presigned multipart upload of a campaign's video, to MinIO's raw/ prefix.",
+        "description": "Starts a presigned multipart upload of a campaign's video, to the object store's raw/ prefix.",
         "type": "object",
         "properties": {
           "campaignId": {

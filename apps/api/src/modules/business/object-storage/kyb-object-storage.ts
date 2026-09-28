@@ -1,5 +1,5 @@
 /**
- * TASKS.md 7.1.b: "KYB documents upload through a presigned MinIO URL, so
+ * TASKS.md 7.1.b: "KYB documents upload through a presigned object-store URL, so
  * `storageRef` points to a real upload" — before this, `storageRef` was a
  * free string the client typed in, never checked against anything
  * (docs/audit/2026-09-25/business-merchant.md). This port is the business

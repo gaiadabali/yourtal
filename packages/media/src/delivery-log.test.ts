@@ -37,7 +37,7 @@ import { publishFixture } from "./publish-fixture";
  * (`docs/22` option A signs per-session segment URLs); this proves the
  * per-segment record exists to attribute.
  *
- * ## F58: was `yourtal-minio` with `mc admin trace`
+ * ## F58: `mc admin trace` does not work here
  *
  * RustFS ships no `mc` (only its own `rustfs` server binary), and its admin
  * trace API — while reachable over plain SigV4, no client needed — does NOT

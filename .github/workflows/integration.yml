@@ -137,13 +137,10 @@ jobs:
       #
       # None of this was visible until 2026-09-20, because the repository
       # had no remote and this workflow had never executed once.
-      # F58: MinIO replaced with RustFS. Still a manual `docker run`, not an
-      # Actions `services:` entry, for the same reason as before — a
-      # `services:` entry has no way to pass extra env beyond credentials —
-      # though RustFS's entrypoint needs no `server /data` argument at all
-      # (MinIO's own reason for this being a step rather than a service is
-      # now moot). The container name matches docker-compose.yml, matching
-      # local dev's own convention. It stays at RUSTFS_OBS_LOGGER_LEVEL=info
+      # A manual `docker run`, not an Actions `services:` entry: a
+      # `services:` entry has no way to pass extra env beyond credentials.
+      # The container name matches docker-compose.yml, matching local dev's
+      # own convention. It stays at RUSTFS_OBS_LOGGER_LEVEL=info
       # (the coordinator's call, 2026-09-28: not the noisier debug level
       # every request would otherwise cost, on the container every suite
       # shares) — `delivery-log.test.ts` needs debug for its own per-request

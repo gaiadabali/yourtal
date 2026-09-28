@@ -22,7 +22,7 @@ export const MEDIA_UPLOAD_ALLOWED_CONTENT_TYPES = [
   "video/webm",
 ] as const;
 export const MEDIA_UPLOAD_MAX_SIZE_BYTES = 500 * 1024 * 1024; // 500 MB
-/** S3/MinIO's own floor for every part but the last. */
+/** S3's own floor for every part but the last. */
 export const MEDIA_UPLOAD_PART_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB
 
 export const initiateMediaUploadRequestSchema = z.object({

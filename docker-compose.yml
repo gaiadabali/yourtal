@@ -95,11 +95,10 @@ services:
   # --- waits on an account signup. Same interfaces, real protocols.
 
   rustfs:
-    # F58 (founder, 2026-09-28): MinIO replaced with RustFS. MinIO/pgsty's
-    # fork was already a workaround for MinIO's own archived-with-CVEs repo;
-    # RustFS is a from-scratch S3-compatible server, Apache-2.0, one port for
-    # everything (S3 API + admin API + health), no bundled `mc`/console the
-    # app depends on. Pinned by digest, its own 1.0.0 GA (2026-09-16).
+    # F58 (founder, 2026-09-28): a from-scratch S3-compatible server,
+    # Apache-2.0, one port for everything (S3 API + admin API + health), no
+    # bundled `mc`/console the app depends on. Pinned by digest, its own
+    # 1.0.0 GA (2026-09-16).
     image: rustfs/rustfs@sha256:8cc9801755448b71a786705ce76692c77e14936cccd87cf2fc31842e58f4d1ff
     container_name: yourtal-rustfs
     restart: unless-stopped

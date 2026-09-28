@@ -10,7 +10,7 @@ import { listKybDocuments } from "./list-kyb-documents.use-case";
 import { submitKybDocument } from "./submit-kyb-document.use-case";
 
 /**
- * A fake, not the real MinIO client — this file is about the use-case's own
+ * A fake, not the real object-storage client — this file is about the use-case's own
  * logic (business lookup, error mapping), and the real presign/exists round
  * trip already has its own test (`object-storage/s3-kyb-object-storage.test.ts`).
  */

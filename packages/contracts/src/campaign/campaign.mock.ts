@@ -84,7 +84,7 @@ export const MOCK_HLS_MANIFEST_URL =
 const MOCK_VIDEO_SOURCE: CampaignVideoSource = { kind: "hls", manifestUrl: MOCK_HLS_MANIFEST_URL };
 
 /**
- * Same local MinIO origin as `MOCK_HLS_MANIFEST_URL` above, for the poster
+ * Same local object-store origin as `MOCK_HLS_MANIFEST_URL` above, for the poster
  * and teaser fields TASKS.md 1.1.a adds. No file is guaranteed to exist at
  * these paths yet — publishing real posters and teaser clips is 3.2/5.1's
  * job — this only needs to be a well-formed URL for `campaignSchema` today.

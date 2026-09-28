@@ -12,7 +12,7 @@ import { createFixtureBusinessAndCampaign } from "./persistence/media-asset-db.t
 import { mediaAssets } from "./persistence/schema/media-asset.table";
 
 /**
- * 7.2.a/7.2.b/7.2.c, over the real HTTP stack and a real MinIO: a real Nest
+ * 7.2.a/7.2.b/7.2.c, over the real HTTP stack and a real object store: a real Nest
  * app, real Cerbos-gated routes, and a real presigned multipart upload —
  * same shape `watch-earn-journey.e2e.test.ts` uses. The one thing this does
  * NOT run for real is ffmpeg: the `/ready` step is called directly with a
@@ -101,7 +101,7 @@ async function initiateUpload(): Promise<{
 }
 
 describe("studio media pipeline (7.2)", () => {
-  it("uploads through the real HTTP API to a real MinIO object, completes, and queues a real transcode job", async () => {
+  it("uploads through the real HTTP API to a real object-store object, completes, and queues a real transcode job", async () => {
     const initiated = await initiateUpload();
     expect(initiated.parts.length).toBeGreaterThan(0);
 

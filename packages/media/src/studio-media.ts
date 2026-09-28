@@ -78,8 +78,8 @@ const policyEnsured = new Set<string>();
  * `teasers/`, `captions/` is set exactly ONCE, by root, at provisioning time
  * (`infra/helios/bootstrap.sh`'s own curl+SigV4 recipe; `docker-compose.yml`
  * for local dev). This function used to set that policy itself with the
- * app's own credentials — which worked on MinIO before it (no such privilege split)
- * but would 403 outright on RustFS. It now only checks the policy already
+ * app's own credentials. RustFS's least-privilege split means that 403s
+ * outright now, so it only checks the policy already
  * covers what this pipeline needs and warns loudly if it doesn't, rather
  * than trying to fix it — an app process is never the right actor to widen
  * its own bucket's public surface.
@@ -116,10 +116,9 @@ async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
   // A real browser PUTs presigned upload parts straight from the studio UI's
   // origin to this bucket's origin — cross-origin, so it needs the bucket's
   // own CORS config, not the public-read policy above (a separate S3
-  // feature, not gated by F58's "policy set once by root" rule — MinIO
-  // answered a permissive CORS header on every request by default with no
-  // config at all; RustFS does not, so this is required where it wasn't
-  // before). Best-effort: this app's own least-privileged key may not carry
+  // feature, not gated by F58's "policy set once by root" rule — RustFS
+  // answers no CORS header at all without an explicit rule). Best-effort:
+  // this app's own least-privileged key may not carry
   // `s3:PutBucketCORS` either, and a missing CORS config only breaks direct
   // browser uploads, not this process — warn, don't crash.
   //
@@ -159,9 +158,9 @@ export function createMediaClient(): S3Client {
     forcePathStyle: true,
     // F58: the SDK v3's default embeds a CRC32 checksum placeholder into a
     // presigned URL's query string, computed before the real bytes exist.
-    // RustFS validates that checksum strictly (MinIO and R2 both special-
-    // case around this well-known SDK-v3-vs-non-AWS-S3 incompatibility;
-    // RustFS did not, as of its 1.0.0 GA) and rejects the real PUT with
+    // RustFS validates that checksum strictly (a well-known SDK-v3-vs-
+    // non-AWS-S3 incompatibility other S3-compatible stores special-case
+    // around; RustFS did not, as of its 1.0.0 GA) and rejects the real PUT with
     // `400 BadDigest`. Confirmed empirically: with this option, the
     // presigned URL carries no checksum param and the full
     // create-multipart -> presign -> PUT -> complete cycle succeeds.

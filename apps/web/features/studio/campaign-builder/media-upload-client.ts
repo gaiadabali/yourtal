@@ -9,7 +9,7 @@ const POLL_INTERVAL_MS = 2_000;
 const MAX_POLL_ATTEMPTS = 150; // 5 minutes at 2s — well past 7.2.f's own ~2-minute Check.
 
 /**
- * PUTs one part straight from the browser to its presigned MinIO URL — the
+ * PUTs one part straight from the browser to its presigned object-store URL — the
  * whole reason `initiate` hands back a URL per part rather than proxying
  * the bytes through this app's own server. `XMLHttpRequest`, not `fetch`:
  * only `xhr.upload.onprogress` gives real upload-progress events: fetch's
@@ -57,7 +57,7 @@ export interface UploadCampaignVideoParams {
 
 /**
  * The real upload (task 7.8.b): initiate -> PUT every part (browser to
- * MinIO directly) -> complete -> poll `GET .../media/:assetId` until the
+ * object store directly) -> complete -> poll `GET .../media/:assetId` until the
  * worker's `/ready` callback (7.2.b) lands a terminal status. Every step
  * reports through `onUpdate`, mirroring the old simulated-progress
  * component's own state shape so the rest of the UI needed no other

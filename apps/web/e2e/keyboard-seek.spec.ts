@@ -47,7 +47,7 @@ const LONG_FORM_CAMPAIGN_ID = zeroRewardCampaignFixture.id;
  * This fetches the manifest directly, from Node, before any browser is
  * involved, and fails immediately naming the origin and the fix. Proved to
  * actually fire: run this file with the origin down (stop `pnpm dev:up`'s
- * MinIO container, or point `S3_ENDPOINT` at a closed port) and confirm
+ * object-store container, or point `S3_ENDPOINT` at a closed port) and confirm
  * every test fails here, not fifty seconds later inside the page.
  */
 // `get-region.ts`'s cookie-less default is now "AU". Nothing this
@@ -103,7 +103,7 @@ async function startPlaybackAndWaitForDuration(page: Page): Promise<void> {
  * assertions below can finally run.
  *
  * PREREQUISITE: `pnpm dev:up` and `pnpm media:publish`. The ladder is served
- * by the local MinIO origin (YT-0521), not from `public/` — deliberately,
+ * by the local object-store origin (YT-0521), not from `public/` — deliberately,
  * because production serves video from object storage and a player only ever
  * tested against static files is never exercised against an origin. `pnpm
  * dev:fresh` does both steps.
@@ -118,7 +118,7 @@ const realTime = (page: Page) =>
 /**
  * Waits until the media position stops moving.
  *
- * Needed because the fixture is served by the local MinIO origin (YT-0521),
+ * Needed because the fixture is served by the local object-store origin (YT-0521),
  * not from `public/`. A seek against an origin has to fetch the segment for
  * the new position, so it lands measurably later than one against a
  * same-process static file — and a key pressed before the previous seek
@@ -191,7 +191,7 @@ test("seek bar responds to ArrowRight, moving playback forwards", async ({ page 
  * rounding artefact like the "presses don't accumulate" note above — 0.35 s
  * is 7+ frames at 30 fps, and it is bit-for-bit the same number every time
  * it fails, which points at a specific race (most likely: seeking back to
- * segment 0 after the local MinIO origin has already advanced past it,
+ * segment 0 after the local object-store origin has already advanced past it,
  * `settle()`'s 20*100ms poll window landing before the re-fetch resolves)
  * rather than ordinary jitter.
  *
@@ -214,12 +214,12 @@ test("seek bar responds to ArrowRight, moving playback forwards", async ({ page 
  * presses above collapse into far fewer real seeks against the origin
  * before `Home` is pressed. The coalescing mechanism itself is unit-tested
  * (`features/player/use-watch-session.test.tsx`), but **not verified
- * against this real MinIO origin in that pass** — a `next build` here
+ * against this real object-store origin in that pass** — a `next build` here
  * would have shared `.next` with another session's live `next dev`
  * UPDATE 2026-09-21 (YT-0550), CORRECTED SAME DAY. It was flipped to
  * `test(` on three consecutive green full-suite runs and flipped BACK here,
  * because three greens were luck rather than evidence. Measured over nine
- * further full-suite runs against the real MinIO origin: roughly one run in
+ * further full-suite runs against the real object-store origin: roughly one run in
  * three fails with `Error: Home must seek to the start`, a real assertion
  * failure and not infrastructure. The defect is intermittent, so any small
  * number of green runs can be produced on demand.

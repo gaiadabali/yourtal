@@ -12,13 +12,13 @@ import { runDemoMedia } from "./demo-media";
 import type { Manifest } from "./demo-media";
 
 /**
- * 7.2.d, against real ffmpeg, a real MinIO and a real Postgres — the
+ * 7.2.d, against real ffmpeg, a real object store and a real Postgres — the
  * committed `demo-media.json`'s two real internet clips are NOT fetched
  * here (no external network dependency in the test suite, and no minutes-
  * long ffmpeg pass per CI run); instead this serves its own tiny generated
  * clip and a tiny generated tone from a local HTTP server, so the WHOLE
  * pipeline (fetch, burn facts, mux-if-silent, HLS/poster/teaser render,
- * MinIO upload, business/campaign/question rows, idempotency) runs for
+ * object-store upload, business/campaign/question rows, idempotency) runs for
  * real end to end.
  */
 const DATABASE_URL = process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
@@ -157,7 +157,7 @@ describe("runDemoMedia", () => {
       { answerable_after_seconds: 72 },
     ]);
 
-    // Real objects, really in MinIO, at the exact keys nginx's /media/hls/ route resolves to.
+    // Real objects, really in the object store, at the exact keys nginx's /media/hls/ route resolves to.
     const client = createMediaClient();
     const manifestFile = await getRawObject(
       client,

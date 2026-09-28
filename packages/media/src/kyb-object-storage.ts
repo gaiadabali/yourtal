@@ -86,7 +86,7 @@ export function createKybObjectStorage(config: KybObjectStorageConfig) {
   const client = new S3Client({
     endpoint: config.endpoint,
     region: "auto",
-    // RustFS (and MinIO before it) needs path-style addressing
+    // RustFS needs path-style addressing
     // (`endpoint/bucket/key`), not the virtual-hosted style AWS itself
     // defaults to (`bucket.endpoint/key`) — same reasoning `hls-origin.ts`'s
     // own client construction documents.

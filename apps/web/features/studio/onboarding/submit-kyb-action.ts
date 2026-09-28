@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 /**
  * KYB document submission (task 7.8.b). No live upload/review API exists
- * yet — the real presigned-MinIO upload is 7.1.b, and the ops review queue
+ * yet — the real presigned object-store upload is 7.1.b, and the ops review queue
  * that actually flips `Business.isVerified` is 9.3 (docs/tasks note "the
  * policy grant exists and nothing calls it yet" for `kyb_document` review).
  * This action is honest about that: it does not fake an instant verify, it

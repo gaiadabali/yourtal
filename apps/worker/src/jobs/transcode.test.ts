@@ -20,7 +20,7 @@ import {
 import { job } from "./transcode";
 
 /**
- * 7.2.b, against real ffmpeg and a real MinIO — a short generated clip (not
+ * 7.2.b, against real ffmpeg and a real object store — a short generated clip (not
  * committed; built fresh in a temp dir, same convention
  * `packages/media/scripts/generate-fixture.mjs` uses for its own fixture),
  * transcoded for real, uploaded for real, and reported through a fake HTTP
@@ -158,7 +158,7 @@ describe("transcode job", () => {
     expect(ready.renditionBytes.v540).toBeGreaterThan(0);
     expect(ready.renditionBytes.v720).toBeGreaterThan(0);
 
-    // The master playlist really exists in MinIO, at the exact key nginx's
+    // The master playlist really exists in the object store, at the exact key nginx's
     // /media/hls/ route resolves to (2.1.c, hls-origin.ts's HLS_PREFIX).
     const client = createMediaClient();
     const manifest = await getRawObject(client, hlsAssetObjectKey(assetId, "index.m3u8"));

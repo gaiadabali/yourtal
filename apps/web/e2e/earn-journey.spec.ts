@@ -44,7 +44,7 @@ const BONUS_ACCURACY_CAMPAIGN_ID = findBonusAccuracyCampaign().id;
  * this test cannot shortcut the ~20 real seconds of playback with a seek.
  *
  * PREREQUISITE: `pnpm dev:up` and `pnpm media:publish` (or `pnpm dev:fresh`).
- * The fixture is served by the local MinIO origin, not from `public/`.
+ * The fixture is served by the local object-store origin, not from `public/`.
  */
 test.describe("Earn journey", () => {
   // `get-region.ts`'s cookie-less default is now "AU", so this

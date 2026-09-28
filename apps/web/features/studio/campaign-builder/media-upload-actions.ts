@@ -35,7 +35,7 @@ export interface InitiateMediaUploadInput {
  * Server Actions wrapping 7.2's real media endpoints (task 7.8.b's real
  * upload). The actual bytes never pass through this server: this only
  * starts and finishes the upload — `campaign-editor-upload.tsx` PUTs each
- * part straight from the browser to the presigned MinIO URLs this
+ * part straight from the browser to the presigned object-store URLs this
  * `initiate` call returns, exactly what a presigned multipart upload is
  * for. Every result is a plain serialisable object (never a thrown
  * exception across the server/client boundary), so the client component

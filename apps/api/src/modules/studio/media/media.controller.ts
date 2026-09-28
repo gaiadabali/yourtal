@@ -31,7 +31,7 @@ export class MediaController {
 
   @NotValueMoving(
     "Starts a new multipart upload against a fresh id; a duplicate call abandons the first " +
-      "(MinIO expires unfinished multipart uploads, and an un-completed media_assets row spends " +
+      "(an abandoned multipart upload is harmless dangling storage, and an un-completed media_assets row spends " +
       "no money and reaches no campaign). Nothing to replay: the response IS the new state.",
   )
   @Authorize({ kind: "media_asset", action: "upload" })

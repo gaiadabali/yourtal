@@ -41,7 +41,7 @@ export class KybDocumentController {
     return result.value;
   }
 
-  // TASKS.md 7.1.b: a presigned MinIO PUT — the same "submit" gate as the
+  // TASKS.md 7.1.b: a presigned object-store PUT — the same "submit" gate as the
   // real submission below, since minting an upload URL is a pre-step to it,
   // not a separate capability.
   @NotValueMoving(

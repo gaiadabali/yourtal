@@ -17,7 +17,7 @@ const channelSettingsFormSchema = z.object({
  * Saves channel settings (task 7.8.b) — a plain form action, same
  * zero-client-JS convention as `create-business-action.ts`. `logoUrl`
  * and `coverUrl` are plain URL fields for now: the real upload (a
- * presigned MinIO PUT, matching 7.2's media pipeline) is future work once
+ * presigned object-store PUT, matching 7.2's media pipeline) is future work once
  * this screen needs images uploaded rather than linked.
  */
 export async function updateChannelAction(formData: FormData): Promise<void> {

@@ -38,7 +38,7 @@ export const STUDIO_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "InitiateMediaUploadRequest",
     schema: initiateMediaUploadRequestSchema,
     description:
-      "Starts a presigned multipart upload of a campaign's video, to MinIO's raw/ prefix.",
+      "Starts a presigned multipart upload of a campaign's video, to the object store's raw/ prefix.",
     crossFieldRules: [],
   },
   {
@@ -56,7 +56,7 @@ export const STUDIO_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   {
     id: "CompleteMediaUploadPart",
     schema: completeMediaUploadPartSchema,
-    description: "One part's ETag, as MinIO returned it from the client's PUT.",
+    description: "One part's ETag, as the object store returned it from the client's PUT.",
     crossFieldRules: [],
   },
   {

@@ -70,10 +70,10 @@ services:
       retries: 20
 
   rustfs:
-    # F58: MinIO replaced with RustFS (see docker-compose.yml's own comment
-    # for the full reasoning). Production stays at the image's default log
-    # level (WARN) — the INFO-level per-request log is a dev/CI-only aid
-    # for delivery-log.test.ts, not something Helios needs to carry.
+    # F58 (see docker-compose.yml's own comment for the full reasoning).
+    # Production stays at the image's default log level (WARN) — the
+    # INFO-level per-request log is a dev/CI-only aid for
+    # delivery-log.test.ts, not something Helios needs to carry.
     image: rustfs/rustfs@sha256:8cc9801755448b71a786705ce76692c77e14936cccd87cf2fc31842e58f4d1ff
     container_name: yourtal-rustfs
     restart: unless-stopped
@@ -91,4 +91,10 @@ services:
 
 volumes:
   pgdata18:
+  # Explicit rather than implicit (`<project>_rustfs`) — F60/rustfs-cutover.sh
+  # mounts this exact name for its temporary migration container, on the same
+  # volume this service uses, so a name that only worked by convention (and
+  # would silently start the real service on an EMPTY volume if anyone ever
+  # ran this file under a different project name) is not good enough here.
   rustfs:
+    name: yourtal_rustfs

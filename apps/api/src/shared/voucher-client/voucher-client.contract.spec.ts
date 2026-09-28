@@ -237,6 +237,46 @@ describe("device-authorized redemption", () => {
     expect(authorization.voucherId).toBe(voucherId);
   });
 
+  it("8.2.a (found by 8.2.e): the counter also accepts a scanned QR token, not only a typed code", async () => {
+    const { voucherId, ownerId, merchantId } = await activeVoucher();
+    // The viewer's own wallet path (4.5.b/4.8.a) -- never the merchant-only
+    // reveal() this file's other cases use to get a typed code.
+    const { token } = (await client.qrToken({ voucherId, ownerId }))._unsafeUnwrap();
+
+    const preview = (
+      await client.lookupAsDevice({ voucherCode: token, merchantId })
+    )._unsafeUnwrap();
+    expect(preview.voucherId).toBe(voucherId);
+
+    // Same audience check a typed code already gets: a token that resolves
+    // to a real voucher still 401/409s at the wrong merchant, not a silent
+    // cross-merchant preview.
+    const wrongMerchant = await client.lookupAsDevice({
+      voucherCode: token,
+      merchantId: randomUUID(),
+    });
+    expect(wrongMerchant.isErr()).toBe(true);
+
+    // A lookup places no hold: authorize still sees the voucher spendable,
+    // same as the typed-code case above.
+    const authorization = (
+      await client.authorizeAsDevice({
+        voucherCode: token,
+        deviceId: "device-1",
+        merchantId,
+        currency: "IDR",
+      })
+    )._unsafeUnwrap();
+    expect(authorization.voucherId).toBe(voucherId);
+
+    const captured = await client.captureAsDevice({
+      authorizationId: authorization.authorizationId,
+      deviceId: "device-1",
+      merchantId,
+    });
+    expect(captured._unsafeUnwrap().voucherId).toBe(voucherId);
+  });
+
   it("authorizeAsDevice then captureAsDevice, refusing a second capture", async () => {
     const { voucherId, ownerId, merchantId } = await activeVoucher();
     const revealed = (await client.reveal({ voucherId, ownerId }))._unsafeUnwrap();

@@ -12,14 +12,42 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"context"
+
 	"github.com/yourtal/services/voucher/internal/chain"
 	"github.com/yourtal/services/voucher/internal/code"
 	"github.com/yourtal/services/voucher/internal/httpx"
 	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/lifecycle"
+	"github.com/yourtal/services/voucher/internal/qrtoken"
 	"github.com/yourtal/services/voucher/internal/redeem"
 	"github.com/yourtal/services/voucher/internal/store/sqlcgen"
 )
+
+// TASKS.md 8.2.a (found running 8.2.e's Check, this ticket's own report):
+// "scan the QR (camera) or type the code" names two ways to present a
+// voucher, but only the typed code ever reached the counter -- a token
+// minted by qrToken (4.5.b/4.8.a) had nowhere in this file to be verified.
+// Both prove possession the same way, so both resolve here identically:
+// code.Parse first (the existing, narrower format), then qrtoken.Verify as
+// a fallback -- never a caller-supplied id trusted on its own (see
+// db/query/issue.sql's own note on GetVoucher for why that distinction
+// matters), only an id a signed token just proved. pgx.ErrNoRows on a bad
+// token reuses the exact "no voucher matches this code" path a bad code
+// already takes -- one caller-facing refusal for either kind of miss.
+func (a *API) resolveDeviceVoucher(
+	ctx context.Context, queries *sqlcgen.Queries, presented string,
+) (sqlcgen.VoucherVoucher, error) {
+	if canonical, err := code.Parse(presented); err == nil {
+		digest := sha256.Sum256([]byte(canonical))
+		return queries.FindVoucherByCodeHash(ctx, hex.EncodeToString(digest[:]))
+	}
+	voucherID, err := qrtoken.Verify(a.keys, presented, time.Now())
+	if err != nil {
+		return sqlcgen.VoucherVoucher{}, pgx.ErrNoRows
+	}
+	return queries.GetVoucher(ctx, pgUUID(voucherID))
+}
 
 // 4.5's device-authorized path: apps/api (a web counter, 8.x) authorizing
 // and capturing a voucher on a device's behalf, over serviceauth rather
@@ -67,16 +95,8 @@ func (a *API) lookupAsDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	canonical, err := code.Parse(body.VoucherCode)
-	if err != nil {
-		a.fail(w, fmt.Errorf("%w: no voucher matches this code", errAudienceBlocked))
-		return
-	}
-	digest := sha256.Sum256([]byte(canonical))
-	hash := hex.EncodeToString(digest[:])
-
 	queries := sqlcgen.New(a.pool)
-	voucher, err := queries.FindVoucherByCodeHash(r.Context(), hash)
+	voucher, err := a.resolveDeviceVoucher(r.Context(), queries, body.VoucherCode)
 	if errors.Is(err, pgx.ErrNoRows) {
 		a.fail(w, fmt.Errorf("%w: no voucher matches this code", errAudienceBlocked))
 		return
@@ -131,19 +151,11 @@ func (a *API) authorizeAsDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	canonical, err := code.Parse(body.VoucherCode)
-	if err != nil {
-		a.fail(w, fmt.Errorf("%w: no voucher matches this code", errAudienceBlocked))
-		return
-	}
-	digest := sha256.Sum256([]byte(canonical))
-	hash := hex.EncodeToString(digest[:])
-
 	var view authorizationView
 	txErr := pgx.BeginTxFunc(r.Context(), a.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		queries := sqlcgen.New(tx)
 
-		voucher, err := queries.FindVoucherByCodeHash(r.Context(), hash)
+		voucher, err := a.resolveDeviceVoucher(r.Context(), queries, body.VoucherCode)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("%w: no voucher matches this code", errAudienceBlocked)
 		}

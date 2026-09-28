@@ -155,10 +155,8 @@ async function main() {
       `OWNER_PASSWORD='${password}'`,
       `LISTING_ID='${listingId}'`,
       `LOCATION_ID='${locationId}'`,
-      `REVEAL_MODE=fake`,
-      `DATABASE_URL='${DATABASE_URL}'`,
       `API_BASE='${API_BASE}'`,
-      `pnpm --filter @yourtal/api exec node ../../scripts/check-8.2.e-counter-redemption.mjs`,
+      `node scripts/check-8.2.e-counter-redemption.mjs`,
     ].join(" \\\n  "),
   );
 }

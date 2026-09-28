@@ -1,84 +1,67 @@
 #!/usr/bin/env node
 // TASKS.md 8.2.e's Check, over the real HTTP stack, same shape
 // infra/helios/rustfs-smoke-test.mjs uses (plain Node, built-in fetch, one
-// RESULT: line). Drives the whole loop for real:
+// RESULT: line). Drives the whole loop for real, the way an actual viewer
+// and an actual cashier do it -- no voucher-service secret, no direct DB
+// read:
 //
 //   1. a viewer buys a voucher through POST /api/checkout (quote -> confirm);
-//   2. a Studio user provisions a counter device and pairs it;
-//   3. the counter redeems the voucher: lookup -> authorize -> capture;
-//   4. GET /api/wallet/vouchers/:id still returns it (state);
-//   5. GET /api/:tenantId/studio/redemptions shows the capture against
+//   2. the SAME viewer fetches GET /api/wallet/vouchers/:id/qr (4.5.b/4.8.a)
+//      -- the actual QR a wallet screen shows at a till;
+//   3. a Studio user provisions a counter device and pairs it;
+//   4. the counter redeems the voucher with that QR token: lookup ->
+//      authorize -> capture (8.2.a, widened by this same ticket -- see
+//      below);
+//   5. GET /api/wallet/vouchers/:id still returns it (state);
+//   6. GET /api/:tenantId/studio/redemptions shows the capture against
 //      that device;
-//   6. the device is revoked (F72: record what was created so it can be
+//   7. the device is revoked (F72: record what was created so it can be
 //      cleaned up -- the device row stays as `revoked`, never deleted, the
 //      same audit-trail reasoning `studio-devices.controller.ts`'s own
 //      revoke route already gives).
+//
+// Found running this Check the first time: the counter never accepted a QR
+// token at all, only a typed code -- `GET .../qr` mints one (4.5.b/4.8.a)
+// but nothing on the redemption side could verify it, a real 8.2.a gap.
+// Fixed in the same commit as this rewrite: services/voucher's
+// lookupAsDevice/authorizeAsDevice (device_routes.go) now try a plain code
+// first, then a signed QR token (qrtoken.Verify) as a fallback -- mirrored
+// in the fake client for local parity, and covered by a new case in
+// voucher-client.contract.spec.ts (run against both the fake AND, via
+// `pnpm test:voucher-live`, a real Go service). This script no longer needs
+// any REVEAL_MODE, VOUCHER_BASE_URL, VOUCHER_SERVICE_SECRET or DATABASE_URL
+// -- it proves the actual user path, not a bridge around a gap.
 //
 // Usage:
 //   node scripts/check-8.2.e-counter-redemption.mjs
 //
 // Env (all required unless noted):
 //   API_BASE        default http://127.0.0.1:3001 (local). Staging:
-//                    http://127.0.0.1:26301, run from the Helios box.
+//                    http://127.0.0.1:26301, run from the Helios box, or
+//                    https://yourtal.gaiada.com directly (no jump needed
+//                    for plain HTTP -- only :22/:8443 are IP-allowlisted).
 //   VIEWER_EMAIL / VIEWER_PASSWORD   a real signed-in viewer with enough
 //                    available points, or release-pending will be tried
 //                    once (staging only -- see RELEASE_PENDING below).
 //   OWNER_EMAIL / OWNER_PASSWORD     a real Studio owner/staff of the
 //                    business that owns LISTING_ID.
-//   LISTING_ID       a real, available listing belonging to that business.
-//   REVEAL_MODE      "fake" (default) or "live". The counter's lookup/
-//                    authorize take the voucher's PLAIN redemption code,
-//                    which nothing in the public API surfaces today (a
-//                    known, tracked gap -- TASKS.md 4.8.c, requested by B,
-//                    not yet done: `GET /api/wallet/vouchers/:id` collapses
-//                    every post-purchase state into `activated` and has no
-//                    `code` field). Until 4.8.c ships, this script bridges
-//                    the one missing link itself:
-//                      - "fake" reads `platform.voucher_fake_voucher.code`
-//                        directly (DATABASE_URL, LEDGER_MODE=fake -- the
-//                        default for a local dev slot, no Go voucher
-//                        service running to ask instead);
-//                      - "live" signs `POST /internal/v1/vouchers/reveal`
-//                        itself (VOUCHER_BASE_URL, VOUCHER_SERVICE_SECRET)
-//                        -- the same call `HttpVoucherClient.reveal` makes,
-//                        replicated in ~15 lines because this script has no
-//                        access to apps/api's own TS module graph. Run
-//                        "live" FROM the box the secret already lives on
-//                        (`ssh helios-j`, sourcing /opt/yourtal/secrets/app.env
-//                        in that same shell) -- it must never be copied
-//                        anywhere else.
+//   LISTING_ID       a real, available listing belonging to that business,
+//                    affordable at ITS CURRENT LIVE QUOTE -- checkout
+//                    re-prices from the listing's face/settlement value at
+//                    today's backing rate, not the stored priceInPoints
+//                    column (found running this script: a listing "priced"
+//                    at 500 quoted 1000).
+//   LOCATION_ID      a real location belonging to that same business.
 //   RELEASE_PENDING  "1" to call POST /api/dev/clock/release-pending if the
 //                    viewer's available balance is short (staging-only
-//                    route; refuses outside dev/staging). Default off.
+//                    route; refuses outside dev/staging). Default off --
+//                    and it only helps if the shortfall is actually
+//                    PENDING, not just below the listing's price.
 //
 // Prints exactly one line starting "RESULT:" with a JSON summary. Non-zero
 // exit on any failure, with the reason on stderr.
 
-import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
-import { createRequire } from "node:module";
-import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-
-// Only REVEAL_MODE=fake needs pg at all (REVEAL_MODE=live signs its own
-// fetch call, no DB driver) -- loaded lazily inside revealCode() so a live
-// run never has to resolve it. This file normally lives at the repo's
-// top-level scripts/, which pnpm's strict node_modules does not give a bare
-// `import "pg"` access to (only each workspace package's own tree has it)
-// -- apps/api already depends on pg, so resolve it from there. On Helios
-// the release artifact flattens apps/api to a bare `api/` with its own
-// node_modules (infra/HELIOS.md's manifest); running this script copied
-// straight into that directory finds pg immediately by the normal upward
-// node_modules walk, so try that first and only reach for the
-// repo-relative apps/api/package.json otherwise.
-async function loadPg() {
-  try {
-    return (await import("pg")).default;
-  } catch {
-    const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-    const apiRequire = createRequire(pathToFileURL(path.join(repoRoot, "apps/api/package.json")));
-    return apiRequire("pg");
-  }
-}
+import { randomUUID } from "node:crypto";
 
 const API_BASE = process.env.API_BASE ?? "http://127.0.0.1:3001";
 const VIEWER_EMAIL = requireEnv("VIEWER_EMAIL");
@@ -87,7 +70,6 @@ const OWNER_EMAIL = requireEnv("OWNER_EMAIL");
 const OWNER_PASSWORD = requireEnv("OWNER_PASSWORD");
 const LISTING_ID = requireEnv("LISTING_ID");
 const LOCATION_ID = requireEnv("LOCATION_ID");
-const REVEAL_MODE = process.env.REVEAL_MODE ?? "fake";
 const RELEASE_PENDING = process.env.RELEASE_PENDING === "1";
 const RUN_ID = randomUUID().slice(0, 8);
 
@@ -140,53 +122,6 @@ async function login(email, password) {
   return { token: login.json.token, userId: login.json.userId };
 }
 
-async function revealCode(voucherId, ownerId) {
-  if (REVEAL_MODE === "fake") {
-    // Its own short-lived pool, opened and closed around this one query --
-    // never held open while the rest of the script runs, so an unrelated
-    // later failure's process.exit(1) never has to race a live connection
-    // closed (a real crash found running this script on Windows: libuv's
-    // "handle->flags & UV_HANDLE_CLOSING" assertion).
-    const pg = await loadPg();
-    const pool = new pg.Pool({ connectionString: requireEnv("DATABASE_URL") });
-    try {
-      const { rows } = await pool.query(
-        "SELECT code FROM platform.voucher_fake_voucher WHERE id = $1 AND owner_id = $2",
-        [voucherId, ownerId],
-      );
-      if (rows.length === 0) {
-        fail(`REVEAL_MODE=fake: no platform.voucher_fake_voucher row for ${voucherId}/${ownerId}`);
-      }
-      return rows[0].code;
-    } finally {
-      await pool.end();
-    }
-  }
-
-  const voucherBase = requireEnv("VOUCHER_BASE_URL");
-  const secret = requireEnv("VOUCHER_SERVICE_SECRET");
-  const path = "/internal/v1/vouchers/reveal";
-  const bodyObj = { voucherId, ownerId };
-  const bodyStr = JSON.stringify(bodyObj);
-  const at = Math.floor(Date.now() / 1000);
-  const nonce = randomBytes(8).toString("hex");
-  const bodyDigestB64 = createHash("sha256").update(bodyStr).digest("base64");
-  const canonical = [String(at), "api", nonce, "POST", path, bodyDigestB64].join("\n");
-  const mac = createHmac("sha256", secret).update(canonical).digest("hex");
-  const header = `t=${at},c=api,n=${nonce},v1=${mac}`;
-
-  const response = await fetch(`${voucherBase}${path}`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "X-YourTal-Service-Signature": header },
-    body: bodyStr,
-  });
-  const json = await response.json();
-  if (!response.ok || !json.code) {
-    fail(`REVEAL_MODE=live: reveal failed: ${response.status} ${JSON.stringify(json)}`);
-  }
-  return json.code;
-}
-
 async function main() {
   const created = { runId: RUN_ID };
 
@@ -229,7 +164,16 @@ async function main() {
   const voucherId = confirm.json.voucherId;
   created.voucherId = voucherId;
 
-  // 2. A Studio user provisions and pairs a counter device.
+  // 2. The SAME viewer fetches the QR a wallet screen would show at a till
+  // (4.5.b/4.8.a) -- the actual credential the counter now accepts (see
+  // this file's own header for the 8.2.a gap this ticket closed).
+  const qr = await req("GET", `/api/wallet/vouchers/${voucherId}/qr`, viewer.token);
+  if (qr.status !== 200 || !qr.json.token) {
+    fail(`GET .../qr failed: ${qr.status} ${JSON.stringify(qr.json)}`);
+  }
+  const qrToken = qr.json.token;
+
+  // 3. A Studio user provisions and pairs a counter device.
   const owner = await login(OWNER_EMAIL, OWNER_PASSWORD);
   const businesses = await req("GET", "/api/me/businesses", owner.token);
   const membership = businesses.json.find?.((m) => m.business?.id !== undefined);
@@ -260,9 +204,11 @@ async function main() {
   }
   const deviceCredential = paired.json.credential;
 
-  // 3. The counter redeems the voucher: lookup -> authorize -> capture.
-  const code = await revealCode(voucherId, viewer.userId);
-
+  // 4. The counter redeems the voucher with the QR token: lookup ->
+  // authorize -> capture. Same `code` field the typed-code path always
+  // used -- device_routes.go's resolveDeviceVoucher (8.2.a, this ticket)
+  // tries a plain code first, then a signed QR token, so no request-shape
+  // change was needed here.
   const deviceHeaders = (idempotencyKey) => ({
     authorization: `Bearer ${deviceCredential}`,
     "content-type": "application/json",
@@ -272,7 +218,7 @@ async function main() {
   const lookup = await fetch(`${API_BASE}/api/counter/lookup`, {
     method: "POST",
     headers: deviceHeaders(),
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code: qrToken }),
   }).then(async (r) => ({ status: r.status, json: await r.json() }));
   // 201, not 200: counter.controller.ts's routes carry no @HttpCode
   // override, so Nest's own @Post default applies -- a pre-existing,
@@ -286,7 +232,7 @@ async function main() {
     method: "POST",
     headers: deviceHeaders(randomUUID()),
     body: JSON.stringify({
-      code,
+      code: qrToken,
       // Explicit, not omitted: the fake and live voucher clients default a
       // missing amountMinor differently (fake -> 0, live -> the voucher's
       // full remaining value), and this Check redeems the full value in
@@ -312,13 +258,13 @@ async function main() {
   }
   created.captureId = capture.json.captureId;
 
-  // 4. The viewer's wallet still lists it.
+  // 5. The viewer's wallet still lists it.
   const walletVoucher = await req("GET", `/api/wallet/vouchers/${voucherId}`, viewer.token);
   if (walletVoucher.status !== 200) {
     fail(`GET /api/wallet/vouchers/:id failed: ${walletVoucher.status}`);
   }
 
-  // 5. Studio -> Redemptions shows the capture against this device.
+  // 6. Studio -> Redemptions shows the capture against this device.
   const redemptions = await req(
     "GET",
     `/api/${businessId}/studio/redemptions?deviceId=${deviceId}`,
@@ -337,7 +283,7 @@ async function main() {
     );
   }
 
-  // 6. Cleanup: revoke the device this run provisioned (F72).
+  // 7. Cleanup: revoke the device this run provisioned (F72).
   const revoke = await req("DELETE", `/api/${businessId}/studio/devices/${deviceId}`, owner.token);
   if (revoke.status !== 200) {
     console.error(

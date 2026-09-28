@@ -17,10 +17,30 @@ import type { AppDb } from "../../persistence/drizzle-client";
 
 const AUTHORIZATION_TTL_MS = 5 * 60 * 1000;
 
-type VoucherLookupRow = {
-  readonly id: string;
-  readonly code_hash: string;
-};
+const QR_TOKEN_VOUCHER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
+/**
+ * TASKS.md 8.2.a (found running 8.2.e's Check): mirrors
+ * services/voucher's own `resolveDeviceVoucher` (device_routes.go) -- a
+ * plain code first, then a scanned QR token (`qrToken`'s own
+ * `${voucherId}.${nonce}` shape, 4.5.b/4.8.a) as a fallback, never a
+ * caller-supplied id trusted on its own. Returns `undefined` for neither
+ * matching, the same single "no voucher matches this code" shape both
+ * callers already gave a bad code.
+ */
+async function resolveVoucherId(db: AppDb, presented: string): Promise<string | undefined> {
+  const byCode = await db.execute<{ id: string }>(sql`
+    SELECT id FROM platform.voucher_fake_voucher WHERE code = ${presented}
+  `);
+  if (byCode.rows[0] !== undefined) return byCode.rows[0].id;
+
+  const [voucherId] = presented.split(".");
+  if (voucherId === undefined || !QR_TOKEN_VOUCHER_ID.test(voucherId)) return undefined;
+  const byToken = await db.execute<{ id: string }>(sql`
+    SELECT id FROM platform.voucher_fake_voucher WHERE id = ${voucherId}
+  `);
+  return byToken.rows[0]?.id;
+}
 
 type VoucherPreviewRow = {
   readonly id: string;
@@ -45,12 +65,16 @@ export function lookupAsDevice(
 ): ResultAsync<VoucherPreview, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<VoucherPreview, VoucherError>> => {
+      const voucherId = await resolveVoucherId(db, request.voucherCode);
+      if (voucherId === undefined) {
+        return err(ledgerError("audience_blocked", "no voucher matches this code"));
+      }
       const result = await db.execute<VoucherPreviewRow>(sql`
         SELECT v.id, l.merchant_id, l.merchant_name, l.title, l.face_value_minor,
                l.currency, l.partial_redemption_policy
           FROM platform.voucher_fake_voucher v
           JOIN store.listings l ON l.id = v.listing_id
-         WHERE v.code = ${request.voucherCode}
+         WHERE v.id = ${voucherId}
       `);
       const row = result.rows[0];
       if (row === undefined) {
@@ -78,11 +102,8 @@ export function authorizeAsDevice(
 ): ResultAsync<Authorization, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<Authorization, VoucherError>> => {
-      const result = await db.execute<VoucherLookupRow>(sql`
-        SELECT id, code_hash FROM platform.voucher_fake_voucher WHERE code = ${request.voucherCode}
-      `);
-      const row = result.rows[0];
-      if (row === undefined) {
+      const voucherId = await resolveVoucherId(db, request.voucherCode);
+      if (voucherId === undefined) {
         return err(ledgerError("audience_blocked", "no voucher matches this code"));
       }
       const id = randomUUID();
@@ -90,12 +111,12 @@ export function authorizeAsDevice(
       await db.execute(sql`
         INSERT INTO platform.voucher_fake_authorization
           (id, voucher_id, merchant_id, device_id, amount_minor, currency, expires_at)
-        VALUES (${id}, ${row.id}, ${request.merchantId}, ${request.deviceId}, ${amountMinor}, ${request.currency},
+        VALUES (${id}, ${voucherId}, ${request.merchantId}, ${request.deviceId}, ${amountMinor}, ${request.currency},
                 ${new Date(Date.now() + AUTHORIZATION_TTL_MS).toISOString()})
       `);
       return ok({
         authorizationId: id,
-        voucherId: row.id,
+        voucherId,
         amountMinor,
         currency: request.currency,
         expiresAt: new Date(Date.now() + AUTHORIZATION_TTL_MS).toISOString(),

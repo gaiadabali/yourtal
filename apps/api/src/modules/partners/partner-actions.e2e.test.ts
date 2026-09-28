@@ -154,6 +154,133 @@ describe("POST /api/partners/actions (8.4.a)", () => {
     expect(response.statusCode).toBe(401);
   });
 
+  it("scopes idempotency per partner (8.4.c): the same key from two partners grants twice", async () => {
+    const partnerA = await seedPartner();
+    const partnerB = await seedPartner();
+    const sessionA = await sessionFor(app, { jurisdiction: "AU" });
+    const sessionB = await sessionFor(app, { jurisdiction: "AU" });
+
+    const codeFor = async (session: { cookie: string }): Promise<string> => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/me/linked-apps/code",
+        headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
+      });
+      return response.json<{ code: string }>().code;
+    };
+    const codeA = await codeFor(sessionA);
+    const codeB = await codeFor(sessionB);
+
+    // The literal SAME Idempotency-Key, reused by two DIFFERENT partners --
+    // before 8.4.c this scoped to the shared `principal:anonymous`, so B's
+    // call here would have collided with A's already-claimed key (either a
+    // stolen replay of A's result, or a 409 fingerprint_mismatch since the
+    // bodies differ).
+    const sharedKey = randomUUID();
+    const bodyA = JSON.stringify({
+      user: codeA,
+      action: "receipt_scanned",
+      externalRef: `receipt-${randomUUID()}`,
+      evidence: {},
+    });
+    const bodyB = JSON.stringify({
+      user: codeB,
+      action: "receipt_scanned",
+      externalRef: `receipt-${randomUUID()}`,
+      evidence: {},
+    });
+
+    const grantedA = await app.inject({
+      method: "POST",
+      url: "/api/partners/actions",
+      headers: signedHeaders(partnerA.partnerId, partnerA.secret, bodyA, sharedKey),
+      payload: bodyA,
+    });
+    expect(grantedA.statusCode, grantedA.body).toBe(200);
+    expect(grantedA.json()).toEqual({ granted: true, points: 10 });
+
+    const grantedB = await app.inject({
+      method: "POST",
+      url: "/api/partners/actions",
+      headers: signedHeaders(partnerB.partnerId, partnerB.secret, bodyB, sharedKey),
+      payload: bodyB,
+    });
+    expect(grantedB.statusCode, grantedB.body).toBe(200);
+    expect(grantedB.json()).toEqual({ granted: true, points: 10 });
+
+    // Both wallets moved -- two real, independent grants, not one shared
+    // (or stolen) response.
+    const walletA = await app.inject({
+      method: "GET",
+      url: "/api/wallet",
+      headers: { cookie: sessionA.cookie },
+    });
+    const walletB = await app.inject({
+      method: "GET",
+      url: "/api/wallet",
+      headers: { cookie: sessionB.cookie },
+    });
+    expect(walletA.json<{ availablePoints: number }>().availablePoints).toBe(10);
+    expect(walletB.json<{ availablePoints: number }>().availablePoints).toBe(10);
+
+    // A replays its OWN call (same key, same body, A's signature) -- gets
+    // its own result back, not B's.
+    const replayA = await app.inject({
+      method: "POST",
+      url: "/api/partners/actions",
+      headers: signedHeaders(partnerA.partnerId, partnerA.secret, bodyA, sharedKey),
+      payload: bodyA,
+    });
+    expect(replayA.statusCode, replayA.body).toBe(200);
+    expect(replayA.json()).toEqual({ granted: true, points: 10 });
+    const walletAAfterReplay = await app.inject({
+      method: "GET",
+      url: "/api/wallet",
+      headers: { cookie: sessionA.cookie },
+    });
+    expect(walletAAfterReplay.json<{ availablePoints: number }>().availablePoints).toBe(10);
+  });
+
+  it("a bad signature never touches the idempotency table (8.4.c: guard runs before the interceptor)", async () => {
+    const { partnerId, secret } = await seedPartner();
+    const session = await sessionFor(app, { jurisdiction: "AU" });
+    const codeResponse = await app.inject({
+      method: "POST",
+      url: "/api/me/linked-apps/code",
+      headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
+    });
+    const { code } = codeResponse.json<{ code: string }>();
+
+    const rawBody = JSON.stringify({
+      user: code,
+      action: "receipt_scanned",
+      externalRef: `receipt-${randomUUID()}`,
+      evidence: {},
+    });
+    const key = randomUUID();
+
+    const badSignature = await app.inject({
+      method: "POST",
+      url: "/api/partners/actions",
+      headers: signedHeaders(partnerId, "not-the-real-secret", rawBody, key),
+      payload: rawBody,
+    });
+    expect(badSignature.statusCode).toBe(401);
+
+    // The SAME key, now correctly signed: if the bad-signature attempt had
+    // reached `begin()` under any scope this key could land in, this would
+    // 409 (fingerprint_mismatch, or in_progress) instead of granting --
+    // proving the guard refused it before the interceptor ever ran.
+    const correctlySigned = await app.inject({
+      method: "POST",
+      url: "/api/partners/actions",
+      headers: signedHeaders(partnerId, secret, rawBody, key),
+      payload: rawBody,
+    });
+    expect(correctlySigned.statusCode, correctlySigned.body).toBe(200);
+    expect(correctlySigned.json()).toEqual({ granted: true, points: 10 });
+  });
+
   it("refuses an unknown or expired link code", async () => {
     const { partnerId, secret } = await seedPartner();
 

@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   HttpException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import type { CallHandler, ExecutionContext, NestInterceptor } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -200,7 +201,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
    */
   private async scopeFor(
     request: FastifyRequest,
-    scopeBy: "session" | "device" | undefined,
+    scopeBy: "session" | "device" | "partner" | undefined,
   ): Promise<string> {
     const params: unknown = request.params;
     if (typeof params === "object" && params !== null && "tenantId" in params) {
@@ -211,6 +212,24 @@ export class IdempotencyInterceptor implements NestInterceptor {
     }
     if (scopeBy === "device") {
       return `principal:${(await this.devicePrincipals.resolve(request)).id}`;
+    }
+    if (scopeBy === "partner") {
+      // Never re-verifies: a guard ahead of this interceptor already did
+      // (8.4.c) and refused with 401 if it could not, so this never reaches
+      // the idempotency table for an unverified caller. Reading the
+      // property by its plain string name, not an import — see
+      // IdempotentOptions.scopeBy's own doc comment for why.
+      const partnerId: unknown = Reflect.get(request, "verifiedPartnerId");
+      if (typeof partnerId !== "string" || partnerId.length === 0) {
+        // Unreachable if the route's own guard is wired correctly — fails
+        // closed rather than falling through to a shared scope, which is
+        // exactly the bug 8.4.c fixes.
+        throw new UnauthorizedException({
+          code: "invalid_request_error",
+          message: "no verified partner id on this request",
+        });
+      }
+      return `principal:partner:${partnerId}`;
     }
     return `principal:${(await this.principals.resolve(request)).id}`;
   }

@@ -8,6 +8,7 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import { PartnerActionsController } from "./partner-actions.controller";
+import { PartnerAuthGuard } from "./partner-auth.guard";
 import { PARTNER_CREDENTIAL_REPOSITORY } from "./persistence/partner-credential.repository";
 import { DrizzlePartnerCredentialRepository } from "./persistence/drizzle-partner-credential.repository";
 import { PARTNER_RECEIPT_REPOSITORY } from "./persistence/partner-receipt.repository";
@@ -27,6 +28,7 @@ const PARTNERS_DB = Symbol("PARTNERS_DB");
   imports: [PdpClientModule, RateLimitModule],
   controllers: [PartnerActionsController],
   providers: [
+    PartnerAuthGuard,
     {
       provide: PARTNERS_DB,
       useFactory: (config: AppConfig): AppDb => createAppDb(config.databaseUrl),

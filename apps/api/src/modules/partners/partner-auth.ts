@@ -45,6 +45,24 @@ export async function verifyPartnerSignature(
 }
 
 /**
+ * TASKS.md 8.4.c: the request-property name `PartnerAuthGuard` (this
+ * module) writes the verified partner id under, and
+ * `IdempotencyInterceptor`'s `scopeBy: "partner"` reads it back from — a
+ * plain string-key convention, not an import, which is the point: it is
+ * how `shared/idempotency` gets a per-partner scope without ever depending
+ * on `modules/partners` (the wrong dependency direction for a shared
+ * module). Same `Reflect`-on-request idiom `rawBodyOf` below already uses
+ * for Fastify's own dynamically-attached `rawBody`.
+ */
+export const VERIFIED_PARTNER_REQUEST_KEY = "verifiedPartnerId";
+
+/** Reads back what `PartnerAuthGuard` already verified — never re-verifies. */
+export function verifiedPartnerIdOf(request: FastifyRequest): string | undefined {
+  const value: unknown = Reflect.get(request, VERIFIED_PARTNER_REQUEST_KEY);
+  return typeof value === "string" ? value : undefined;
+}
+
+/**
  * Same `Reflect.get` shape `shared/idempotency/idempotency.interceptor.ts`'s
  * own `rawBodyOf` uses — Fastify's `rawBody: true` (main.ts) attaches it
  * dynamically, so the type does not appear on `FastifyRequest` itself.

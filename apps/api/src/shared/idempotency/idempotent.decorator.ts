@@ -62,8 +62,20 @@ export interface IdempotentOptions {
    * invariant this file's own header states still holds — it is just
    * satisfied by a different, already-established resolver than the
    * session one, not skipped.
+   *
+   * 8.4.c: `"partner"` scopes by a verified partner id
+   * (`partner-actions.controller.ts`) instead — read off the request under
+   * `VERIFIED_PARTNER_REQUEST_KEY` (`modules/partners/partner-auth.ts`), a
+   * plain request-property NAME, never an import: `shared/idempotency` must
+   * never depend on `modules/partners`. The id is only ever there because a
+   * guard (Nest guards run before every interceptor) already verified the
+   * caller's HMAC signature and refused an invalid one with 401 before this
+   * interceptor's own `begin()` could run — same invariant as `"device"`,
+   * a different resolver again. Missing when it should not be is a bug in
+   * that guard's own wiring, not something this interceptor works around:
+   * see its `scopeFor`'s own handling.
    */
-  readonly scopeBy?: "session" | "device";
+  readonly scopeBy?: "session" | "device" | "partner";
 }
 
 export const Idempotent = (options: IdempotentOptions) => SetMetadata(IDEMPOTENT_METADATA, options);

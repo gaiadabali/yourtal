@@ -343,11 +343,22 @@ function contentTypeForOutput(kind: MediaOutputKind, file: string): string {
   return hlsContentTypeFor(file);
 }
 
-/** Uploads one produced rendition file to its public prefix. */
+/**
+ * Uploads one produced rendition file to its public prefix.
+ *
+ * F63: unlike `createRawUpload`, this never called `ensureStudioMediaBucket`
+ * — safe under MinIO, whose CI/dev container pre-creates a default bucket
+ * on its own, but not under RustFS (F58-60's swap), which does not. A
+ * caller that writes output WITHOUT going through `createRawUpload` first
+ * (`runDemoMedia`'s own seed pipeline, which produces renditions directly
+ * rather than through a browser's presigned multipart upload) hit
+ * `NoSuchBucket` the moment MinIO's implicit pre-creation was gone.
+ */
 export async function putMediaOutput(
   client: S3Client,
   input: { readonly kind: MediaOutputKind; readonly key: string; readonly body: Uint8Array },
 ): Promise<void> {
+  await ensureStudioMediaBucket(client);
   await client.send(
     new PutObjectCommand({
       Bucket: resolveMediaBucket(),

@@ -5,9 +5,11 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { SettingsModule } from "../../shared/settings/settings.module";
 import { WalletModule } from "../wallet/wallet.module";
+import { StoreModule } from "../store/store.module";
 import { StaffConsoleController } from "./staff-console.controller";
 import { StaffUsersController } from "./staff-users.controller";
 import { StaffDisputesController } from "./staff-disputes.controller";
+import { StaffEconomyController } from "./economy/staff-economy.controller";
 import { StaffAuditInterceptor } from "./staff-audit.interceptor";
 import { UserAccountAttributeLoader } from "./user-account-attribute-loader";
 import {
@@ -25,6 +27,10 @@ import {
   STAFF_SUSPENSION_REPOSITORY,
 } from "./persistence/staff-suspension-repository";
 import { PostgresStaffDisputeQueue, STAFF_DISPUTE_QUEUE } from "./persistence/staff-dispute-queue";
+import {
+  ECONOMY_PROPOSAL_REPOSITORY,
+  PostgresEconomyProposalRepository,
+} from "./economy/persistence/economy-proposal.repository";
 
 class StaffPoolShutdown implements OnApplicationShutdown {
   constructor(@Inject(STAFF_DB_POOL) private readonly pool: Pool) {}
@@ -40,8 +46,13 @@ class StaffPoolShutdown implements OnApplicationShutdown {
  * The audit interceptor is global but acts only on `@StaffAction` routes.
  */
 @Module({
-  imports: [WalletModule, SettingsModule],
-  controllers: [StaffConsoleController, StaffUsersController, StaffDisputesController],
+  imports: [WalletModule, SettingsModule, StoreModule],
+  controllers: [
+    StaffConsoleController,
+    StaffUsersController,
+    StaffDisputesController,
+    StaffEconomyController,
+  ],
   providers: [
     {
       provide: STAFF_DB_POOL,
@@ -71,6 +82,14 @@ class StaffPoolShutdown implements OnApplicationShutdown {
     {
       provide: STAFF_DISPUTE_QUEUE,
       useFactory: (pool: Pool) => new PostgresStaffDisputeQueue(pool),
+      inject: [STAFF_DB_POOL],
+    },
+    {
+      // 9.5: the economy console's own pending-approvals read model, same
+      // pool as the audit trail -- staff tooling shares no connections with
+      // a domain module (this file's own header).
+      provide: ECONOMY_PROPOSAL_REPOSITORY,
+      useFactory: (pool: Pool) => new PostgresEconomyProposalRepository(pool),
       inject: [STAFF_DB_POOL],
     },
     UserAccountAttributeLoader,

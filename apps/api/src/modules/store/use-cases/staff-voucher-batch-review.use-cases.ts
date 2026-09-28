@@ -1,4 +1,5 @@
-import { errAsync, okAsync, ResultAsync } from "neverthrow";
+import { errAsync, okAsync } from "neverthrow";
+import type { ResultAsync } from "neverthrow";
 import type { VoucherBatchRequest } from "../persistence/voucher-batch-request.repository";
 import type { VoucherBatchRequestRepository } from "../persistence/voucher-batch-request.repository";
 import type { ListingRepository } from "../persistence/listing.repository";
@@ -61,34 +62,29 @@ export function approveVoucherBatchRequest(
             partialRedemptionPolicy: listing.partialRedemptionPolicy,
             requestedBy: request.requestedBy,
           })
-          .mapErr(
-            (error): StaffApproveVoucherBatchError => ({
-              type: "voucher_mint_failed",
-              code: error.code,
-              message: error.message,
-            }),
-          )
+          .mapErr((error): StaffApproveVoucherBatchError => ({
+            type: "voucher_mint_failed",
+            code: error.code,
+            message: error.message,
+          }))
           .andThen((batch) =>
             vouchers
               .approveBatch({ batchId: batch.batchId, approvedBy: staffUserId })
-              .mapErr(
-                (error): StaffApproveVoucherBatchError => ({
-                  type: "voucher_mint_failed",
-                  code: error.code,
-                  message: error.message,
-                }),
-              ),
+              .mapErr((error): StaffApproveVoucherBatchError => ({
+                type: "voucher_mint_failed",
+                code: error.code,
+                message: error.message,
+              })),
           )
           .andThen((batch) =>
-            wrapPersistence(
-              requests.approve(requestId, staffUserId, batch.batchId),
-            ).andThen((updated) =>
-              updated === null
-                ? errAsync<VoucherBatchRequest, StaffApproveVoucherBatchError>({
-                    type: "voucher_batch_request_not_found",
-                    requestId,
-                  })
-                : okAsync(updated),
+            wrapPersistence(requests.approve(requestId, staffUserId, batch.batchId)).andThen(
+              (updated) =>
+                updated === null
+                  ? errAsync<VoucherBatchRequest, StaffApproveVoucherBatchError>({
+                      type: "voucher_batch_request_not_found",
+                      requestId,
+                    })
+                  : okAsync(updated),
             ),
           );
       },

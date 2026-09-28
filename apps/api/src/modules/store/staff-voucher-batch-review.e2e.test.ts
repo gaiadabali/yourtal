@@ -92,7 +92,12 @@ async function createListing(ownerCookie: string, businessId: string, stockTotal
   return listing.json<{ id: string }>().id;
 }
 
-async function requestBatch(ownerCookie: string, businessId: string, listingId: string, quantity = 5) {
+async function requestBatch(
+  ownerCookie: string,
+  businessId: string,
+  listingId: string,
+  quantity = 5,
+) {
   const requested = await app.inject({
     method: "POST",
     url: `/api/${businessId}/store/voucher-batch-requests`,
@@ -140,7 +145,10 @@ describe("9.2.c: staff voucher-batch approval", () => {
     );
     await owner2.end();
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ outcome: "succeeded", reason: "stock request looks legitimate" });
+    expect(rows[0]).toMatchObject({
+      outcome: "succeeded",
+      reason: "stock request looks legitimate",
+    });
   });
 
   it("a moderator rejects a pending request", async () => {
@@ -215,7 +223,9 @@ describe("9.2.c: staff voucher-batch approval", () => {
       headers: { cookie: staff.cookie },
     });
     expect(list.statusCode, list.body).toBe(200);
-    const ids = list.json<{ requests: Array<{ id: string; state: string }> }>().requests.map((r) => r.id);
+    const ids = list
+      .json<{ requests: Array<{ id: string; state: string }> }>()
+      .requests.map((r) => r.id);
     expect(ids).toContain(requested.id);
   });
 });

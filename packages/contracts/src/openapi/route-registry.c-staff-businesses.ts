@@ -33,7 +33,8 @@ const BUSINESS_ID_PARAM: RoutePathParam = {
 
 const BUSINESS_NOT_FOUND: RouteErrorResponse = {
   status: 404,
-  description: "No business exists with this id (business/to-http-exception.ts's business_not_found).",
+  description:
+    "No business exists with this id (business/to-http-exception.ts's business_not_found).",
   documented: true,
 };
 
@@ -77,7 +78,10 @@ export const STAFF_BUSINESSES_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "A page of businesses and the total matching count.",
     successSchema: {
       type: "object",
-      properties: { businesses: { type: "array", items: summarySchema }, total: { type: "integer" } },
+      properties: {
+        businesses: { type: "array", items: summarySchema },
+        total: { type: "integer" },
+      },
       required: ["businesses", "total"],
     },
     errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
@@ -104,7 +108,8 @@ export const STAFF_BUSINESSES_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       schema: inlineSchema(approveBusinessKybRequestSchema),
     },
     successStatus: 201,
-    successDescription: "The business, now verified, with every submitted document marked verified.",
+    successDescription:
+      "The business, now verified, with every submitted document marked verified.",
     successSchema: detailSchema,
     errors: [VALIDATION_400, FORBIDDEN, BUSINESS_NOT_FOUND, SERVICE_UNAVAILABLE],
   },
@@ -119,14 +124,16 @@ export const STAFF_BUSINESSES_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       schema: inlineSchema(rejectBusinessKybRequestSchema),
     },
     successStatus: 201,
-    successDescription: "The business, still unverified, with every submitted document marked rejected.",
+    successDescription:
+      "The business, still unverified, with every submitted document marked rejected.",
     successSchema: detailSchema,
     errors: [VALIDATION_400, FORBIDDEN, BUSINESS_NOT_FOUND, SERVICE_UNAVAILABLE],
   },
   {
     method: "post",
     path: "/api/staff/businesses/{businessId}/suspend",
-    summary: "Suspend a business (ops only): its campaigns leave the feed, submit and spend are blocked",
+    summary:
+      "Suspend a business (ops only): its campaigns leave the feed, submit and spend are blocked",
     tags: ["staff"],
     pathParams: [BUSINESS_ID_PARAM],
     requestBody: {

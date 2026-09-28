@@ -40,6 +40,8 @@ const owner: AppDb = createAppDb(process.env["DATABASE_OWNER_URL"] ?? "");
  * seeded campaign to carry published terms" failures traced back here.
  */
 const seededCampaignIds: string[] = [];
+/** 9.3.b's own fixture: real `business.business_accounts` rows this file inserts to test suspension. */
+const seededBusinessAccountIds: string[] = [];
 
 beforeAll(async () => {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -61,6 +63,11 @@ afterAll(async () => {
       sql`DELETE FROM campaign.video_source WHERE campaign_id IN ${seededCampaignIds}`,
     );
     await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id IN ${seededCampaignIds}`);
+  }
+  if (seededBusinessAccountIds.length > 0) {
+    await owner.execute(
+      sql`DELETE FROM business.business_accounts WHERE id IN ${seededBusinessAccountIds}`,
+    );
   }
 });
 
@@ -204,6 +211,42 @@ describe("GET /api/feed", () => {
     });
     expect(response.statusCode).toBe(200);
     expect(itemIds(response.json())).toEqual([]);
+  });
+
+  it("9.3.b: a suspended business's campaign leaves the feed", async () => {
+    const user = await sessionFor(app, { jurisdiction: "AU" });
+    const { campaignId, businessId } = await seedCampaign({ region: "AU" });
+    await fundCampaign(campaignId, businessId, "AU");
+
+    const beforeSuspension = await app.inject({
+      method: "GET",
+      url: "/api/feed",
+      headers: { cookie: user.cookie },
+    });
+    expect(itemIds(beforeSuspension.json())).toContain(campaignId);
+
+    // A real business_accounts row for this campaign's businessId -- 9.3.a's
+    // own staff suspend endpoint is what a real caller would use; this test
+    // only needs the resulting database state, the same "write the state
+    // directly" shape every other fixture in this file already follows.
+    await db.execute(sql`
+      INSERT INTO business.business_accounts
+        (id, legal_name, display_name, tax_id_kind, tax_id_value, roles,
+         address_state, address_postcode, region, currency, handle,
+         suspended_at, suspended_by_user_id, suspended_reason)
+      VALUES (${businessId}, 'Feed e2e Suspended Pty Ltd', 'Feed e2e Suspended', 'ABN', '12345678901',
+              '["advertiser"]'::jsonb, 'NSW', '2000', 'AU', 'AUD', ${`feed-e2e-suspended-${businessId}`},
+              now(), 'staff-1', 'fraudulent listings reported')
+    `);
+    seededBusinessAccountIds.push(businessId);
+
+    const afterSuspension = await app.inject({
+      method: "GET",
+      url: "/api/feed",
+      headers: { cookie: user.cookie },
+    });
+    expect(afterSuspension.statusCode).toBe(200);
+    expect(itemIds(afterSuspension.json())).not.toContain(campaignId);
   });
 
   it("ranks a followed channel's campaign above an equally-funded stranger's", async () => {

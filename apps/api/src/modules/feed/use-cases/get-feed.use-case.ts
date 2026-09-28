@@ -9,6 +9,7 @@ import type { RegionSettingsReader } from "../../../shared/settings/region-setti
 import { resolveCatalogueScope } from "../../store/catalogue-scope";
 import type { FeedSignalsRepository } from "../persistence/feed-signals.repository";
 import type { PacingStateRepository } from "../persistence/pacing-state.repository";
+import type { SuspendedBusinessLookup } from "../persistence/suspended-business-lookup";
 import { buildFeed } from "../ranking";
 import { fetchFundedCampaigns } from "../candidates";
 
@@ -36,6 +37,7 @@ export async function getFeed(
   pacing: PacingStateRepository,
   signals: FeedSignalsRepository,
   settings: RegionSettingsReader,
+  suspendedBusinesses: SuspendedBusinessLookup,
   principal: Principal,
   surface: FeedSurface,
   queryRegion: Region | undefined,
@@ -53,7 +55,9 @@ export async function getFeed(
   const ageBand = anonymous ? undefined : principal.attr.ageBand;
 
   const candidates =
-    region === undefined ? [] : await fetchFundedCampaigns(campaigns, ledger, region);
+    region === undefined
+      ? []
+      : await fetchFundedCampaigns(campaigns, ledger, suspendedBusinesses, region);
 
   const canServeMap = new Map(
     await Promise.all(

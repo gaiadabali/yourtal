@@ -30,7 +30,9 @@ export type StaffVoucherBatchRequest = z.infer<typeof staffVoucherBatchRequestSc
 export const listPendingVoucherBatchesResponseSchema = z
   .object({ requests: z.array(staffVoucherBatchRequestSchema) })
   .strict();
-export type ListPendingVoucherBatchesResponse = z.infer<typeof listPendingVoucherBatchesResponseSchema>;
+export type ListPendingVoucherBatchesResponse = z.infer<
+  typeof listPendingVoucherBatchesResponseSchema
+>;
 
 const staffReasonSchema = z.object({ reason: z.string().min(1).max(500) });
 

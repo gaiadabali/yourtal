@@ -127,9 +127,7 @@ export type StaffApproveVoucherBatchError =
   | PersistenceFailedError;
 
 export type StaffRejectVoucherBatchError =
-  | VoucherBatchRequestNotFoundError
-  | ApprovalRefusedError
-  | PersistenceFailedError;
+  VoucherBatchRequestNotFoundError | ApprovalRefusedError | PersistenceFailedError;
 
 export type ProposeSettlementDecreaseError =
   | ListingNotFoundError

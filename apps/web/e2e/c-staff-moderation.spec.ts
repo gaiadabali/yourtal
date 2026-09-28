@@ -183,7 +183,9 @@ test.describe.serial("9.2.c: staff moderation of voucher-batch requests", () => 
           viewport: { width, height: 900 },
           colorScheme,
         });
-        await context.addCookies([{ name: "yt_session", value: staff.token, url: baseURL as string }]);
+        await context.addCookies([
+          { name: "yt_session", value: staff.token, url: baseURL as string },
+        ]);
         const page = await context.newPage();
         const response = await page.goto("/staff/moderation");
         expect(response?.status()).toBe(200);
@@ -218,7 +220,9 @@ test.describe.serial("9.2.c: staff moderation of voucher-batch requests", () => 
     // instance closes over that row's id), so `.first()` is enough.
     const row = page.locator("tr, li").filter({ hasText: reason }).first();
     await row.getByRole("button", { name: "Approve" }).click();
-    await page.getByLabel("Reason (required, for the record)").fill("Stock request looks legitimate.");
+    await page
+      .getByLabel("Reason (required, for the record)")
+      .fill("Stock request looks legitimate.");
     await page.getByRole("button", { name: "Approve batch" }).click();
 
     // Not "Nothing pending": other runs' rows may still be pending in this

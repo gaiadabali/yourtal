@@ -2,6 +2,7 @@ import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Region } from "@yourtal/contracts/region";
 import type { CampaignRepository } from "../campaign/persistence/campaign.repository";
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
+import type { SuspendedBusinessLookup } from "./persistence/suspended-business-lookup";
 import type { CandidateCampaign } from "./ranking";
 
 const CANDIDATE_FETCH_LIMIT = 300;
@@ -15,14 +16,23 @@ const CANDIDATE_FETCH_LIMIT = 300;
  * resolves, is simply absent from the result -- see the try/catch note
  * inline, which mirrors `fake-ledger-funding.ts`'s own "not found is a
  * caller bug, not a client-input case" contract.
+ *
+ * TASKS.md 9.3.b: a suspended business's campaigns leave the feed too --
+ * filtered out before the reward-config/allocation lookups below, so a
+ * suspended business costs this function no extra ledger calls.
  */
 export async function fetchFundedCampaigns(
   campaigns: CampaignRepository,
   ledger: Pick<LedgerInternalClient, "getAllocation">,
+  suspendedBusinesses: SuspendedBusinessLookup,
   region: Region,
 ): Promise<CandidateCampaign[]> {
   const visible = await campaigns.listVisible(CANDIDATE_FETCH_LIMIT);
-  const regionCandidates = visible.filter((campaign) => campaign.region === region);
+  const inRegion = visible.filter((campaign) => campaign.region === region);
+  const suspendedIds = await suspendedBusinesses.suspendedIds(
+    inRegion.map((campaign) => campaign.businessId),
+  );
+  const regionCandidates = inRegion.filter((campaign) => !suspendedIds.has(campaign.businessId));
 
   const rewardConfigs = await Promise.all(
     regionCandidates.map((campaign) => campaigns.rewardConfigFor(campaign.id)),

@@ -79,7 +79,12 @@ async function auditRowsFor(action: string, targetId: string) {
     [action, targetId],
   );
   await owner.end();
-  return rows as Array<{ action: string; outcome: string; reason: string | null; target_id: string }>;
+  return rows as Array<{
+    action: string;
+    outcome: string;
+    reason: string | null;
+    target_id: string;
+  }>;
 }
 
 describe("9.3.a: staff KYB review", () => {
@@ -102,7 +107,10 @@ describe("9.3.a: staff KYB review", () => {
     }>();
     expect(body.isVerified).toBe(true);
     expect(body.kybDocuments).toHaveLength(1);
-    expect(body.kybDocuments[0]).toMatchObject({ status: "verified", verifiedByUserId: staff.userId });
+    expect(body.kybDocuments[0]).toMatchObject({
+      status: "verified",
+      verifiedByUserId: staff.userId,
+    });
 
     const audit = await auditRowsFor("business.kyb.approve", businessId);
     expect(audit).toHaveLength(1);
@@ -174,7 +182,10 @@ describe("9.3.a: staff business suspension", () => {
       payload: { reason: "fraudulent listings reported" },
     });
     expect(suspended.statusCode, suspended.body).toBe(201);
-    const suspendedBody = suspended.json<{ suspendedAt: string | null; suspendedReason: string | null }>();
+    const suspendedBody = suspended.json<{
+      suspendedAt: string | null;
+      suspendedReason: string | null;
+    }>();
     expect(suspendedBody.suspendedAt).not.toBeNull();
     expect(suspendedBody.suspendedReason).toBe("fraudulent listings reported");
 
@@ -196,7 +207,10 @@ describe("9.3.a: staff business suspension", () => {
     expect(reinstated.json<{ suspendedAt: string | null }>().suspendedAt).toBeNull();
 
     const audit = await auditRowsFor("business.suspend", businessId);
-    expect(audit[0]).toMatchObject({ outcome: "succeeded", reason: "fraudulent listings reported" });
+    expect(audit[0]).toMatchObject({
+      outcome: "succeeded",
+      reason: "fraudulent listings reported",
+    });
   });
 
   it("lists and searches businesses for staff", async () => {

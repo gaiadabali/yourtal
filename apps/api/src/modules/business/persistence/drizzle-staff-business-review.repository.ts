@@ -42,7 +42,10 @@ function toDocument(row: KybDocumentRow): KybDocument {
   };
 }
 
-function toDetail(row: BusinessAccountRow, documents: readonly KybDocumentRow[]): StaffBusinessDetail {
+function toDetail(
+  row: BusinessAccountRow,
+  documents: readonly KybDocumentRow[],
+): StaffBusinessDetail {
   return {
     ...toSummary(row),
     taxIdKind: row.taxIdKind as Business["taxIdKind"],
@@ -166,8 +169,8 @@ export class DrizzleStaffBusinessReviewRepository implements StaffBusinessReview
     return toDetail(row, documents);
   }
 
-  async reinstate(businessId: string, staffUserId: string): Promise<StaffBusinessDetail | null> {
-    void staffUserId; // recorded in the staff audit trail, not on the row itself once cleared
+  // staffUserId is recorded in the staff audit trail, not on the row itself once cleared.
+  async reinstate(businessId: string, _staffUserId: string): Promise<StaffBusinessDetail | null> {
     const [row] = await this.db
       .update(businessAccounts)
       .set({

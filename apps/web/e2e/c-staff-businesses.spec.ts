@@ -102,10 +102,13 @@ async function submitKybDocument(
   owner: LiveAccount,
   businessId: string,
 ): Promise<void> {
-  const minted = await request.post(`${apiBaseUrl()}/api/${businessId}/business/kyb-documents/upload-url`, {
-    headers: { cookie: `yt_session=${owner.token}`, "idempotency-key": crypto.randomUUID() },
-    data: { contentType: "application/pdf" },
-  });
+  const minted = await request.post(
+    `${apiBaseUrl()}/api/${businessId}/business/kyb-documents/upload-url`,
+    {
+      headers: { cookie: `yt_session=${owner.token}`, "idempotency-key": crypto.randomUUID() },
+      data: { contentType: "application/pdf" },
+    },
+  );
   expect(minted.ok(), await minted.text()).toBeTruthy();
   const { storageRef, uploadUrl } = (await minted.json()) as {
     storageRef: string;
@@ -159,7 +162,9 @@ test.describe.serial("9.3.a: staff review of businesses", () => {
   }) => {
     const page = await pageAs(browser, baseURL as string, staff.token);
     await page.goto(`/staff/businesses/${businessId}`);
-    await expect(page.getByRole("heading", { level: 1, name: "Staff Businesses E2E Co" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Staff Businesses E2E Co" }),
+    ).toBeVisible();
     await expect(page.getByText("Awaiting review")).toBeVisible();
 
     await page.getByRole("button", { name: "Approve KYB" }).click();
@@ -175,7 +180,9 @@ test.describe.serial("9.3.a: staff review of businesses", () => {
     await page.goto(`/staff/businesses/${businessId}`);
 
     await page.getByRole("button", { name: "Suspend business" }).click();
-    await page.getByLabel("Reason (required, for the record)").fill("Fraudulent listings reported.");
+    await page
+      .getByLabel("Reason (required, for the record)")
+      .fill("Fraudulent listings reported.");
     await page.getByRole("button", { name: "Suspend", exact: true }).click();
     await expect(page.getByText("Suspended: Fraudulent listings reported.")).toBeVisible();
 
@@ -196,7 +203,9 @@ test.describe.serial("9.3.a: staff review of businesses", () => {
           viewport: { width, height: 900 },
           colorScheme,
         });
-        await context.addCookies([{ name: "yt_session", value: staff.token, url: baseURL as string }]);
+        await context.addCookies([
+          { name: "yt_session", value: staff.token, url: baseURL as string },
+        ]);
         const page = await context.newPage();
         const response = await page.goto("/staff/businesses");
         expect(response?.status()).toBe(200);
@@ -217,7 +226,9 @@ test.describe.serial("9.3.a: staff review of businesses", () => {
           viewport: { width, height: 900 },
           colorScheme,
         });
-        await context.addCookies([{ name: "yt_session", value: staff.token, url: baseURL as string }]);
+        await context.addCookies([
+          { name: "yt_session", value: staff.token, url: baseURL as string },
+        ]);
         const page = await context.newPage();
         const response = await page.goto(`/staff/businesses/${businessId}`);
         expect(response?.status()).toBe(200);

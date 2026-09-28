@@ -33,7 +33,7 @@ const REQUEST_NOT_FOUND: RouteErrorResponse = {
     "No PENDING request exists with this id (store/to-http-exception.ts's " +
     "voucher_batch_request_not_found) -- also returned for an already-decided or self-requested " +
     "one, since the repository's own claiming WHERE clause cannot tell those apart from " +
-    "\"not found\" (docs/13c, mirroring settlement-decrease's approval_refused).",
+    '"not found" (docs/13c, mirroring settlement-decrease\'s approval_refused).',
   documented: true,
 };
 

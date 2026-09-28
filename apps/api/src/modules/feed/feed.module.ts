@@ -14,6 +14,8 @@ import { PACING_STATE_REPOSITORY } from "./persistence/pacing-state.repository";
 import { DrizzlePacingStateRepository } from "./persistence/drizzle-pacing-state.repository";
 import { CHANNEL_SEARCH_REPOSITORY } from "./persistence/channel-search.repository";
 import { DrizzleChannelSearchRepository } from "./persistence/drizzle-channel-search.repository";
+import { SUSPENDED_BUSINESS_LOOKUP } from "./persistence/suspended-business-lookup";
+import { DrizzleSuspendedBusinessLookup } from "./persistence/drizzle-suspended-business-lookup";
 
 export const FEED_DB = Symbol("FEED_DB");
 
@@ -52,6 +54,11 @@ export const FEED_DB = Symbol("FEED_DB");
     {
       provide: CHANNEL_SEARCH_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleChannelSearchRepository(db),
+      inject: [FEED_DB],
+    },
+    {
+      provide: SUSPENDED_BUSINESS_LOOKUP,
+      useFactory: (db: AppDb) => new DrizzleSuspendedBusinessLookup(db),
       inject: [FEED_DB],
     },
   ],

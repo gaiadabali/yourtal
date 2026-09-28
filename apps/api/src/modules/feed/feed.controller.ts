@@ -26,6 +26,8 @@ import { PACING_STATE_REPOSITORY } from "./persistence/pacing-state.repository";
 import type { PacingStateRepository } from "./persistence/pacing-state.repository";
 import { CHANNEL_SEARCH_REPOSITORY } from "./persistence/channel-search.repository";
 import type { ChannelSearchRepository } from "./persistence/channel-search.repository";
+import { SUSPENDED_BUSINESS_LOOKUP } from "./persistence/suspended-business-lookup";
+import type { SuspendedBusinessLookup } from "./persistence/suspended-business-lookup";
 import { feedQuerySchema } from "./dto/feed-query";
 import { searchQuerySchema } from "./dto/search-query";
 import { getFeed } from "./use-cases/get-feed.use-case";
@@ -55,6 +57,8 @@ export class FeedController {
     @Inject(FEED_SIGNALS_REPOSITORY) private readonly signals: FeedSignalsRepository,
     @Inject(REGION_SETTINGS_READER) private readonly settings: RegionSettingsReader,
     @Inject(CHANNEL_SEARCH_REPOSITORY) private readonly channels: ChannelSearchRepository,
+    @Inject(SUSPENDED_BUSINESS_LOOKUP)
+    private readonly suspendedBusinesses: SuspendedBusinessLookup,
     private readonly principals: AsyncPrincipalResolver,
   ) {}
 
@@ -76,6 +80,7 @@ export class FeedController {
       this.pacing,
       this.signals,
       this.settings,
+      this.suspendedBusinesses,
       principal,
       parsed.surface,
       parsed.region,
@@ -105,6 +110,7 @@ export class FeedController {
       this.ledger,
       this.channels,
       this.listings,
+      this.suspendedBusinesses,
       principal,
       parsed.q,
       parsed.region,

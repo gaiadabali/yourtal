@@ -6,6 +6,7 @@ import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-
 import type { ListingRepository } from "../../store/persistence/listing.repository";
 import { resolveCatalogueScope } from "../../store/catalogue-scope";
 import type { ChannelSearchRepository } from "../persistence/channel-search.repository";
+import type { SuspendedBusinessLookup } from "../persistence/suspended-business-lookup";
 import { fetchFundedCampaigns } from "../candidates";
 import { passesFilter, signalsFor, toFeedItem } from "../ranking";
 import type { RankingContext } from "../ranking";
@@ -25,6 +26,7 @@ export async function search(
   ledger: Pick<LedgerInternalClient, "getAllocation">,
   channels: ChannelSearchRepository,
   listings: Pick<ListingRepository, "browsePublic">,
+  suspendedBusinesses: SuspendedBusinessLookup,
   principal: Principal,
   query: string,
   queryRegion: Region | undefined,
@@ -41,7 +43,7 @@ export async function search(
   const anonymous = principal.id === "anonymous";
   const needle = query.toLowerCase();
 
-  const candidates = await fetchFundedCampaigns(campaigns, ledger, region);
+  const candidates = await fetchFundedCampaigns(campaigns, ledger, suspendedBusinesses, region);
   const ctx: RankingContext = {
     now: new Date(),
     viewerRegion: region,

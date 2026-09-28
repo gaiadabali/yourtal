@@ -12,6 +12,7 @@ export async function listPendingVoucherBatches(): Promise<readonly StaffVoucher
     "/api/staff/moderation/voucher-batches",
     listPendingVoucherBatchesResponseSchema,
   );
-  if (!result.ok) throw new Error(`Could not load pending voucher batches: ${result.error.message}`);
+  if (!result.ok)
+    throw new Error(`Could not load pending voucher batches: ${result.error.message}`);
   return result.data.requests;
 }

@@ -17,16 +17,19 @@ tests:
     expected:
       - principal: eka_merchandiser
         resource: batch_kopi
-        actions: { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_DENY }
+        actions:
+          { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_DENY }
       - principal: budi_owner
         resource: batch_kopi
         # owner is also an inventory editor (derived_roles/business.yaml),
         # so it can request too -- approve is DENY here only because eka
         # already requested THIS batch (self-approval), not role scope.
-        actions: { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW }
+        actions:
+          { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW }
       - principal: citra_admin
         resource: batch_kopi
-        actions: { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW }
+        actions:
+          { view: EFFECT_ALLOW, request_issuance: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW }
       - principal: gita_analyst
         resource: batch_kopi
         actions: { view: EFFECT_DENY, request_issuance: EFFECT_DENY, approve_issuance: EFFECT_DENY }
@@ -55,7 +58,8 @@ tests:
     expected:
       - principal: moderator_tono
         resource: batch_kopi
-        actions: { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_ALLOW }
+        actions:
+          { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_ALLOW }
       - principal: support_sari
         resource: batch_kopi
         actions: { view: EFFECT_DENY, approve_issuance: EFFECT_DENY, reject_issuance: EFFECT_DENY }
@@ -68,7 +72,8 @@ tests:
         # via the business-side rules above -- the point here is
         # reject_issuance, which is moderator-only and nothing budi holds
         # reaches.
-        actions: { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_DENY }
+        actions:
+          { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_DENY }
 
   - name: 9.2.c -- a moderator still cannot approve a batch requested in their own name
     input:
@@ -97,7 +102,8 @@ tests:
       # the same fix business.json already had for its own no-tenant case.
       - principal: moderator_tono
         resource: batch_no_business
-        actions: { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_ALLOW }
+        actions:
+          { view: EFFECT_ALLOW, approve_issuance: EFFECT_ALLOW, reject_issuance: EFFECT_ALLOW }
       # A business-side role has nothing to derive from with no businessId
       # to look up (derived_roles/business.yaml's roleHere is "" when
       # R.attr.businessId is absent), so every business-side rule misses.

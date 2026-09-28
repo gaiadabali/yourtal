@@ -27,11 +27,17 @@ export function StaffBusinessDetailScreen({ initial }: StaffBusinessDetailScreen
   const [business, setBusiness] = useState(initial);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(action: (id: string, reason: string) => Promise<{
-    ok: boolean;
-    business?: StaffBusinessDetail;
-    error?: { message: string };
-  }>, reason: string): Promise<boolean> {
+  async function run(
+    action: (
+      id: string,
+      reason: string,
+    ) => Promise<{
+      ok: boolean;
+      business?: StaffBusinessDetail;
+      error?: { message: string };
+    }>,
+    reason: string,
+  ): Promise<boolean> {
     const result = await action(business.id, reason);
     if (result.ok && result.business !== undefined) {
       setBusiness(result.business);
@@ -57,7 +63,11 @@ export function StaffBusinessDetailScreen({ initial }: StaffBusinessDetailScreen
             items={[
               { key: "legalName", label: t("businesses.legalName"), value: business.legalName },
               { key: "handle", label: t("businesses.handle"), value: business.handle },
-              { key: "region", label: t("businesses.columnRegion"), value: t(`regions.${business.region}`) },
+              {
+                key: "region",
+                label: t("businesses.columnRegion"),
+                value: t(`regions.${business.region}`),
+              },
               {
                 key: "taxId",
                 label: t("businesses.taxId"),

@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Inject, Param, Post, Query, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
-import type { Region } from "@yourtal/contracts/region";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
@@ -54,10 +53,12 @@ export class StaffBusinessReviewController {
     const offset = Math.max(0, Number(query["offset"] ?? 0) || 0);
     const region = query["region"] === "AU" || query["region"] === "ID" ? query["region"] : null;
     const search =
-      query["search"] === undefined || query["search"].trim() === "" ? null : query["search"].trim();
+      query["search"] === undefined || query["search"].trim() === ""
+        ? null
+        : query["search"].trim();
     const result = await listBusinessesForStaff(this.businesses, {
       search,
-      region: region as Region | null,
+      region,
       limit,
       offset,
     });

@@ -28,7 +28,10 @@ export function StaffVoucherBatchList({ initial }: StaffVoucherBatchListProps) {
 
   async function decide(
     requestId: string,
-    action: (id: string, reason: string) => Promise<{
+    action: (
+      id: string,
+      reason: string,
+    ) => Promise<{
       ok: boolean;
       error?: { message: string };
     }>,
@@ -69,7 +72,11 @@ export function StaffVoucherBatchList({ initial }: StaffVoucherBatchListProps) {
             {
               key: "reason",
               header: t("moderation.columnReason"),
-              cell: (row) => <Text size="body-sm" tone="muted">{row.reason ?? "—"}</Text>,
+              cell: (row) => (
+                <Text size="body-sm" tone="muted">
+                  {row.reason ?? "—"}
+                </Text>
+              ),
             },
             {
               key: "requested",

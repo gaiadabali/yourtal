@@ -21,6 +21,7 @@ import {
   resolveMediaBucket,
   resolveMediaCorsOrigins,
   resolveOriginEndpoint,
+  resolvePresignEndpoint,
 } from "./hls-origin";
 
 /**
@@ -169,6 +170,27 @@ export function createMediaClient(): S3Client {
 }
 
 /**
+ * A second client, presigning-only, for the ONE call a real browser has to
+ * reach directly: the upload part PUT (found live on staging, 2026-09-28 —
+ * `createMediaClient()`'s own endpoint is `S3_ENDPOINT`, loopback-only on
+ * Helios). `createRawUpload()` still runs `CreateMultipartUploadCommand`/
+ * `CompleteMultipartUploadCommand` server-to-server against the real
+ * client; only the presigned URL itself is signed against
+ * `resolvePresignEndpoint()`. Same credentials, same bucket — a different
+ * endpoint is the only thing that needs to differ, so this is deliberately
+ * not just `createMediaClient()` with a flag.
+ */
+export function createPresignClient(): S3Client {
+  return new S3Client({
+    endpoint: resolvePresignEndpoint(),
+    region: "us-east-1",
+    credentials: resolveCredentials(),
+    forcePathStyle: true,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+  });
+}
+
+/**
  * Public URL builder, for a rendition the studio module records on an
  * asset. Relative by default (`/media/<prefix>/<file>`) so it works behind
  * whatever origin actually serves it (nginx in every real environment);
@@ -206,9 +228,16 @@ const PART_URL_TTL_SECONDS = 3600;
  * (7.2.a). The client PUTs bytes straight to RustFS/R2 — this process never
  * sees the video — and returns each part's ETag for `completeRawUpload`.
  */
+/**
+ * `presignClient` defaults to `client` — local dev's own browser reaches
+ * `S3_ENDPOINT` directly, so a single client suffices there. Staging/
+ * production pass `createPresignClient()` (a real browser cannot reach
+ * `S3_ENDPOINT`, loopback-only there) — found live, 2026-09-28.
+ */
 export async function createRawUpload(
   client: S3Client,
   input: CreateRawUploadInput,
+  presignClient: S3Client = client,
 ): Promise<CreatedRawUpload> {
   await ensureStudioMediaBucket(client);
   const bucket = resolveMediaBucket();
@@ -228,7 +257,7 @@ export async function createRawUpload(
   const parts: RawUploadPart[] = [];
   for (let partNumber = 1; partNumber <= input.partCount; partNumber++) {
     const url = await getSignedUrl(
-      client,
+      presignClient,
       new UploadPartCommand({
         Bucket: bucket,
         Key: key,

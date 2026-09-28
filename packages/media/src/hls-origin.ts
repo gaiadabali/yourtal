@@ -98,6 +98,24 @@ export function resolveOriginEndpoint(): string {
 }
 
 /**
+ * The endpoint a real BROWSER's presigned PUT is signed against — found
+ * live on staging (2026-09-28): the api signs upload parts using its own
+ * `S3_ENDPOINT`, which on Helios is `http://127.0.0.1:26305`, loopback and
+ * unreachable from outside the box. Local dev needs no override (a
+ * developer's own browser reaches `S3_ENDPOINT` directly), so this only
+ * differs from `resolveOriginEndpoint()` where `MEDIA_PRESIGN_ENDPOINT` is
+ * explicitly set — staging/production, pointed at the deployed origin
+ * (e.g. `https://yourtal.gaiada.com`), with nginx passing the bucket path
+ * straight through to RustFS unchanged (SigV4 signs the request path, so
+ * nginx must not rewrite or strip it — only forward the original `Host`
+ * header, since `SignedHeaders` covers that too). See
+ * `infra/helios/nginx/yourtal.gaiada.com.conf`'s own `/<bucket>/` location.
+ */
+export function resolvePresignEndpoint(): string {
+  return readEnv("MEDIA_PRESIGN_ENDPOINT") ?? resolveOriginEndpoint();
+}
+
+/**
  * The bucket real (non-fixture) media lives in. `MEDIA_BUCKET` above stays a
  * hard-coded constant on purpose — the `attention-30s` fixture is shared,
  * read-only, and the same asset in every environment, so there is nothing to

@@ -17,6 +17,8 @@
 // caller (rustfs-cutover.sh) greps for that line. Non-zero exit on any
 // failure, with the reason on stderr.
 
+import { randomUUID } from "node:crypto";
+
 const API_BASE = process.env.API_BASE ?? "http://127.0.0.1:26301";
 const EMAIL = process.env.DEMO_EMAIL ?? "owner.au@demo.yourtal.test";
 const PASSWORD = process.env.DEMO_PASSWORD;
@@ -26,11 +28,19 @@ function fail(message) {
   process.exit(1);
 }
 
+// Every mutating route (`@Post`/`@Put`/`@Patch`/`@Delete`) in this api is
+// either `@Idempotent` (needs the header) or `@NotValueMoving` (ignores it)
+// -- `mutating-routes.test.ts` enforces every route is one or the other.
+// Sending it unconditionally on every POST is harmless on an exempt route
+// and correct on the one that needs it (campaign draft create) -- found
+// live (2026-09-28): the smoke test's own campaign-draft POST 400'd for
+// missing it.
 async function req(method, path, token, body) {
   const response = await fetch(`${API_BASE}${path}`, {
     method,
     headers: {
       "content-type": "application/json",
+      ...(method === "POST" ? { "idempotency-key": randomUUID() } : {}),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -48,11 +58,19 @@ async function req(method, path, token, body) {
 async function main() {
   if (!PASSWORD) fail("DEMO_PASSWORD env var is required");
 
-  const login = await req("POST", "/api/auth/login", undefined, {
-    email: EMAIL,
-    password: PASSWORD,
-  });
-  if (login.status !== 200 || !login.json.token) {
+  // Login can 503 (`authorization_unavailable`) for a few seconds right
+  // after a pm2 restart while the PDP connection warms back up -- found
+  // live (2026-09-28), transient. rustfs-cutover.sh already polls
+  // /api/health first, but that alone did not guarantee this call's own
+  // dependency was ready too, so retry here as well.
+  let login;
+  for (let attempt = 1; attempt <= 15; attempt += 1) {
+    login = await req("POST", "/api/auth/login", undefined, { email: EMAIL, password: PASSWORD });
+    if (login.status === 201) break;
+    if (attempt === 15) break;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  if (login.status !== 201 || !login.json.token) {
     fail(`login failed: ${login.status} ${JSON.stringify(login.json)}`);
   }
   const token = login.json.token;

@@ -13,7 +13,12 @@ import {
   MEDIA_TRANSCODE_QUEUE,
   MEDIA_UPLOAD_PART_SIZE_BYTES,
 } from "@yourtal/contracts/studio/media";
-import { completeRawUpload, createMediaClient, createRawUpload } from "@yourtal/media/studio-media";
+import {
+  completeRawUpload,
+  createMediaClient,
+  createPresignClient,
+  createRawUpload,
+} from "@yourtal/media/studio-media";
 import { defineQueue } from "@yourtal/queue/define-queue";
 import {
   MEDIA_ASSET_REPOSITORY,
@@ -52,14 +57,20 @@ export class MediaService {
   ): Promise<InitiateMediaUploadResponse> {
     const assetId = randomUUID();
     const client = createMediaClient();
+    const presignClient = createPresignClient();
     const partCount = Math.max(1, Math.ceil(input.sizeBytes / MEDIA_UPLOAD_PART_SIZE_BYTES));
-    const upload = await createRawUpload(client, {
-      assetId,
-      extension: extensionFor(input.contentType),
-      contentType: input.contentType,
-      partCount,
-    });
+    const upload = await createRawUpload(
+      client,
+      {
+        assetId,
+        extension: extensionFor(input.contentType),
+        contentType: input.contentType,
+        partCount,
+      },
+      presignClient,
+    );
     client.destroy();
+    presignClient.destroy();
 
     await this.assets.create({
       id: assetId,

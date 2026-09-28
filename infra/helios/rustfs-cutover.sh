@@ -285,8 +285,14 @@ sudo -u "$SITE_USER" pm2 restart yourtal-api yourtal-worker
 
 # --- 11: smoke tests ---
 log "11/12 smoke tests"
-sleep 2
-curl -fsS "$API_BASE/api/health" >/dev/null || die "api health check failed after cut-over"
+# A pm2 restart is not instant — a fixed 2s wait was too short on a real
+# run (found live, 2026-09-28): poll instead, up to ~60s.
+api_healthy=""
+for _ in $(seq 1 30); do
+  curl -fsS "$API_BASE/api/health" >/dev/null 2>&1 && { api_healthy=1; break; }
+  sleep 2
+done
+[ -n "$api_healthy" ] || die "api health check failed after cut-over (waited ~60s)"
 
 raw_path=$(docker exec "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
   "SELECT poster_url FROM campaign.campaigns WHERE poster_url IS NOT NULL ORDER BY (poster_url LIKE '/media/%') DESC LIMIT 1;" | tr -d '[:space:]')

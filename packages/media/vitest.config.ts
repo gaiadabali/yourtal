@@ -5,7 +5,7 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     passWithNoTests: false,
-    // These talk to the real MinIO from docker-compose and assert on what it
+    // These talk to the real RustFS from docker-compose and assert on what it
     // serves, so they share one origin and must not race each other.
     fileParallelism: false,
     testTimeout: 20_000,

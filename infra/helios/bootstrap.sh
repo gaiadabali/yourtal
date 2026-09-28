@@ -52,8 +52,11 @@ command -v ffmpeg >/dev/null ||
 stack_env=$Y/stack/secrets.env
 [ -f "$stack_env" ] || { printf 'POSTGRES_USER=yourtal\nPOSTGRES_PASSWORD=%s\n' "$(rand)" >"$stack_env"; chmod 600 "$stack_env"; }
 pg_pass=$(sed -n 's/^POSTGRES_PASSWORD=//p' "$stack_env")
-minio_env=$Y/stack/minio.env
-[ -f "$minio_env" ] || { printf 'MINIO_ROOT_USER=yourtal\nMINIO_ROOT_PASSWORD=%s\n' "$(rand)" >"$minio_env"; chmod 600 "$minio_env"; }
+# F58: RustFS replaces MinIO. RustFS accepts MINIO_ROOT_USER/PASSWORD as a
+# fallback (its own startup warning says so), but the file is named and
+# keyed for its real env vars going forward, not the fallback.
+rustfs_env=$Y/stack/rustfs.env
+[ -f "$rustfs_env" ] || { printf 'RUSTFS_ROOT_USER=yourtal\nRUSTFS_ROOT_PASSWORD=%s\n' "$(rand)" >"$rustfs_env"; chmod 600 "$rustfs_env"; }
 
 app_env=$Y/secrets/app.env
 if ! grep -q '^LEDGER_SERVICE_SECRET=' "$app_env" 2>/dev/null; then
@@ -116,27 +119,51 @@ install -m 644 "$SRC/infra/helios/yourtal-backup.timer" /etc/systemd/system/your
 systemctl daemon-reload
 systemctl enable --now yourtal-backup.timer
 
-# --- media bucket and the app's own MinIO user (2.3.i) ---
-# Anonymous read is safe only because MinIO is loopback-only: nginx decides
-# what is public, and gates /media/hls/ on a signature. The app never gets the
-# root key; its user can touch this one bucket and nothing else.
-minio_pass=$(sed -n 's/^MINIO_ROOT_PASSWORD=//p' "$minio_env")
-mc() { docker exec yourtal-minio mc "$@"; }
-mc alias set local http://127.0.0.1:9000 yourtal "$minio_pass" >/dev/null
-mc mb --ignore-existing local/yourtal-media >/dev/null
-mc anonymous set download local/yourtal-media >/dev/null
+# --- media bucket and the app's own RustFS user (2.3.i, F58) ---
+# Anonymous read is safe only because RustFS is loopback-only: nginx decides
+# what is public, and gates /media/hls/ on a signature. The app never gets
+# the root key; its user can touch this one bucket and nothing else.
+#
+# RustFS ships no `mc`/CLI (only its own `rustfs` server binary) and does
+# not implement the AWS IAM REST API — its admin surface is its own
+# `/rustfs/admin/v3/` API, on the same S3 port, authenticated with plain
+# SigV4 (service `s3`, same credential scope as everything else). No
+# official client needed: plain `curl --aws-sigv4` works, confirmed against
+# a real container. Root sets the public-read policy ONCE here; the app's
+# own key can never touch bucket policy again (`ensureStudioMediaBucket()`
+# in studio-media.ts only checks it and warns, per this same task).
+rustfs_pass=$(sed -n 's/^RUSTFS_ROOT_PASSWORD=//p' "$rustfs_env")
+rustfs_endpoint=http://127.0.0.1:9000
+rustfs_sigv4() {
+  curl -fsS --aws-sigv4 "aws:amz:us-east-1:s3" --user "yourtal:$rustfs_pass" "$@"
+}
+# Bucket create is plain S3 (PUT the bucket URL); idempotent (already-owned
+# by us answers 409/200 depending on version, either way harmless here).
+rustfs_sigv4 -X PUT "$rustfs_endpoint/yourtal-media" >/dev/null 2>&1 || true
+rustfs_sigv4 -X PUT "$rustfs_endpoint/yourtal-media?policy" \
+  -H "content-type: application/json" \
+  -d '{"Version":"2012-10-17","Statement":[
+ {"Sid":"PublicReadStudioMedia","Effect":"Allow","Principal":{"AWS":["*"]},
+  "Action":["s3:GetObject"],
+  "Resource":["arn:aws:s3:::yourtal-media/hls/*","arn:aws:s3:::yourtal-media/posters/*",
+              "arn:aws:s3:::yourtal-media/teasers/*","arn:aws:s3:::yourtal-media/captions/*"]}]}' \
+  >/dev/null
 if ! grep -q '^S3_ACCESS_KEY=' "$app_env"; then
   s3_secret=$(rand)
-  docker exec -i yourtal-minio sh -c 'cat > /tmp/yourtal-media-rw.json' <<'JSON'
-{"Version":"2012-10-17","Statement":[
+  rustfs_sigv4 -X PUT "$rustfs_endpoint/rustfs/admin/v3/add-canned-policy?name=yourtal-media-rw" \
+    -H "content-type: application/json" \
+    -d '{"Version":"2012-10-17","Statement":[
  {"Effect":"Allow","Action":["s3:ListBucket","s3:GetBucketLocation"],"Resource":["arn:aws:s3:::yourtal-media"]},
- {"Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:DeleteObject"],"Resource":["arn:aws:s3:::yourtal-media/*"]}]}
-JSON
-  mc admin policy create local yourtal-media-rw /tmp/yourtal-media-rw.json >/dev/null
-  mc admin user add local yourtal-app "$s3_secret" >/dev/null
-  mc admin policy attach local yourtal-media-rw --user yourtal-app >/dev/null
+ {"Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:DeleteObject"],"Resource":["arn:aws:s3:::yourtal-media/*"]}]}' \
+    >/dev/null
+  rustfs_sigv4 -X PUT "$rustfs_endpoint/rustfs/admin/v3/add-user?accessKey=yourtal-app" \
+    -H "content-type: application/json" \
+    -d "{\"secretKey\":\"$s3_secret\",\"status\":\"enabled\"}" \
+    >/dev/null
+  rustfs_sigv4 -X PUT "$rustfs_endpoint/rustfs/admin/v3/set-user-or-group-policy?policyName=yourtal-media-rw&userOrGroup=yourtal-app&isGroup=false" \
+    >/dev/null
   printf 'S3_ENDPOINT=http://127.0.0.1:26305\nS3_BUCKET=yourtal-media\nS3_ACCESS_KEY=yourtal-app\nS3_SECRET_KEY=%s\n' "$s3_secret" >>"$app_env"
-  log "created MinIO user yourtal-app for yourtal-media"
+  log "created RustFS user yourtal-app for yourtal-media"
 fi
 
 log "done. Next: the first release, then 'pm2 start' per infra/HELIOS.md"

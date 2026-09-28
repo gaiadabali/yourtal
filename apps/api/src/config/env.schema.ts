@@ -200,7 +200,7 @@ export const envSchema = z.object({
    * Local object storage (YT-0521, shared with `packages/media`'s HLS
    * origin). TASKS.md 7.1.b: the business module's own presigned-PUT KYB
    * upload reads these too, rather than a private copy, so both consumers
-   * of the one MinIO instance agree on where it is. Defaults match
+   * of the one RustFS instance agree on where it is. Defaults match
    * `.env.example` and `packages/media/src/hls-origin.ts`'s own fallbacks —
    * a loopback dev sidecar and its well-known local-only credential, not a
    * production secret, so defaulting it here carries the same reasoning

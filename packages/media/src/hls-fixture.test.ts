@@ -12,7 +12,7 @@ import { FIXTURE_SHAPE, contentTypeFor, fixtureDir } from "./hls-origin";
  * parameters are asserted here, and a regenerate with different settings
  * fails until somebody updates both.
  *
- * Needs nothing running; `hls-origin.test.ts` is the one that needs MinIO.
+ * Needs nothing running; `hls-origin.test.ts` is the one that needs RustFS.
  */
 
 const directory = fixtureDir();

@@ -31,7 +31,7 @@ log "role passwords"
 # 3. The minimal demo world (2.3.e), each step a no-op once done: the world,
 #    marketing cash, the tier-0 viewer's pending grant and a real voucher go
 #    through the live ledger and voucher services (still the previous
-#    release's, and running), and the demo video goes into MinIO (2.3.i).
+#    release's, and running), and the demo video goes into RustFS (2.3.i, F58).
 log "staging seed"
 MEDIA_FIXTURE_DIR="$release/media-fixtures/attention-30s" \
   /opt/yourtal/node/bin/node "$release/api/dist/seed-staging.js"

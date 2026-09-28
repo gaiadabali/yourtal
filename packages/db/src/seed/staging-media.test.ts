@@ -11,7 +11,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ensureStagingMedia } from "./staging-media";
 
-// The local compose MinIO (and CI's, on the same port) with its local-only
+// The local compose RustFS (and CI's, on the same port) with its local-only
 // root credentials; a throwaway bucket so the dev `yourtal-media` is untouched.
 const endpoint = process.env.S3_ENDPOINT ?? "http://127.0.0.1:26900";
 const accessKeyId = process.env.S3_ACCESS_KEY ?? "yourtal";

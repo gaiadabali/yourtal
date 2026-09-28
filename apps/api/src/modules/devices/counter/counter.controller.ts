@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Logger, Post, Req } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Post, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import type { Principal } from "@yourtal/authz/principal";
 import { Idempotent, NotValueMoving } from "../../../shared/idempotency/idempotent.decorator";
@@ -11,8 +11,6 @@ import { CAPTURE_LOG_REPOSITORY } from "../persistence/capture-log.repository";
 import type { CaptureLogRepository } from "../persistence/capture-log.repository";
 import { VOUCHER_INTERNAL_CLIENT } from "../../../shared/voucher-client/voucher-internal-client";
 import type { VoucherInternalClient } from "../../../shared/voucher-client/voucher-internal-client";
-import { WEBHOOK_EVENT_PUBLISHER } from "../developers/webhook-event-publisher";
-import type { WebhookEventPublisher } from "../developers/webhook-event-publisher";
 import { COUNTER_AUTHORIZE_RETENTION_MS, COUNTER_CAPTURE_RETENTION_MS } from "../retention";
 import { CounterAuthorizeDto, CounterCaptureDto, CounterLookupDto } from "./dto/counter.schema";
 import { lookupVoucher } from "./use-cases/lookup-voucher.use-case";
@@ -43,14 +41,11 @@ function deviceScope(principal: Principal): { businessId: string; locationId: st
  */
 @Controller("api/counter")
 export class CounterController {
-  private readonly logger = new Logger(CounterController.name);
-
   constructor(
     private readonly authorize: DeviceAuthorize,
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(AUTHORIZATION_META_REPOSITORY) private readonly authMeta: AuthorizationMetaRepository,
     @Inject(CAPTURE_LOG_REPOSITORY) private readonly captureLog: CaptureLogRepository,
-    @Inject(WEBHOOK_EVENT_PUBLISHER) private readonly webhookEvents: WebhookEventPublisher,
   ) {}
 
   @NotValueMoving("a lookup is a read-only preview; no hold is placed (8.2.a)")
@@ -129,39 +124,14 @@ export class CounterController {
       body.authorizationId,
     );
     if (result.isErr()) throw mapCounterErrorToHttpException(result.error);
-    // 8.3.c: the capture already happened — an enqueue failure here must
-    // never turn into a failed response for it. The queue's own
-    // retries/backoff are the delivery job's problem, not this route's.
-    //
-    // 8.3.e TEMPORARY DOUBLE PUBLISHER, guarded not removed: services/voucher's
-    // own captureAsDevice (device_routes.go) now ALSO writes a
-    // voucher.webhook_outbox row for this same capture, drained by
-    // apps/worker's webhook-outbox-drain.ts onto this identical queue. Both
-    // publishers use `idempotencyKey: captureId` — deliberately, so
-    // webhook-delivery.ts's own (boundary, idempotency_key) upsert into
-    // platform.sim_outbox collapses them to ONE delivered row regardless of
-    // which fires first ("a replayed idempotency key returns the ORIGINAL
-    // send, not a second one", packages/drivers/src/boundaries/webhook.test.ts
-    // — the same guarantee, not a new one built for this). Delete THIS
-    // publish once 8.2.h is merged (TASKS.md 8.3.e's own instruction) — the
-    // voucher service is meant to be the single producer.
-    try {
-      await this.webhookEvents.publish({
-        businessId,
-        eventType: "voucher.captured",
-        payload: {
-          captureId: result.value.captureId,
-          voucherId: result.value.voucherId,
-          amountMinor: result.value.amountMinor,
-          currency: result.value.currency,
-          capturedAt: result.value.capturedAt,
-          orderRef: result.value.orderRef,
-        },
-        idempotencyKey: result.value.captureId,
-      });
-    } catch (cause) {
-      this.logger.error(`failed to enqueue voucher.captured webhook: ${String(cause)}`);
-    }
+    // 8.3.e: services/voucher's own captureAsDevice (device_routes.go) is
+    // now the single producer of voucher.captured for this route too — it
+    // writes a voucher.webhook_outbox row in the SAME transaction as the
+    // capture, drained by apps/worker's webhook-outbox-drain.ts onto the
+    // 8.3.c delivery queue. This route used to publish here directly
+    // (8.3.c); now that 8.2.h is merged (this route's own idempotency fix,
+    // the precondition TASKS.md 8.3.e set for removing it), a second
+    // publish from here would double-notify a business for one capture.
     return result.value;
   }
 

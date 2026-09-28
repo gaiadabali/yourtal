@@ -299,112 +299,115 @@ describe.skipIf(!live)("snap-app link, earn and redeem (8.4.b), live", () => {
   it.each([
     ["AU" as const, "AUD" as const],
     ["ID" as const, "IDR" as const],
-  ])("%s: links, earns through the real partner action, buys and redeems at a real counter", async (region, currency) => {
-    const devices = new DrizzleCounterDeviceRepository(owner);
+  ])(
+    "%s: links, earns through the real partner action, buys and redeems at a real counter",
+    async (region, currency) => {
+      const devices = new DrizzleCounterDeviceRepository(owner);
 
-    // 1. A real consumer session (5.4.c link code needs one).
-    const session = await sessionFor(app, { jurisdiction: region, dateOfBirth: "1990-01-01" });
+      // 1. A real consumer session (5.4.c link code needs one).
+      const session = await sessionFor(app, { jurisdiction: region, dateOfBirth: "1990-01-01" });
 
-    // 2. The listing this consumer will buy, and its business (for pairing a counter later).
-    const { listingId, merchantId } = await listing(region);
-    const { businessId, locationId } = await seedBusinessAndLocation(merchantId, region);
+      // 2. The listing this consumer will buy, and its business (for pairing a counter later).
+      const { listingId, merchantId } = await listing(region);
+      const { businessId, locationId } = await seedBusinessAndLocation(merchantId, region);
 
-    // 3. 5.4.c: a one-time link code.
-    const codeResponse = await app.inject({
-      method: "POST",
-      url: "/api/me/linked-apps/code",
-      headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
-    });
-    expect(codeResponse.statusCode, codeResponse.body).toBe(201);
-    const { code: linkCode } = codeResponse.json<{ code: string }>();
+      // 3. 5.4.c: a one-time link code.
+      const codeResponse = await app.inject({
+        method: "POST",
+        url: "/api/me/linked-apps/code",
+        headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
+      });
+      expect(codeResponse.statusCode, codeResponse.body).toBe(201);
+      const { code: linkCode } = codeResponse.json<{ code: string }>();
 
-    // 4. 8.4.a: snap-app scans a receipt, signed with the seeded partner secret.
-    const { partnerId, secret: partnerSecret } = await seedPartner();
-    const rawBody = JSON.stringify({
-      user: linkCode,
-      action: "receipt_scanned",
-      externalRef: `receipt-${randomUUID()}`,
-      evidence: { ocr: `${currency} coffee` },
-    });
-    const earned = await app.inject({
-      method: "POST",
-      url: "/api/partners/actions",
-      headers: signedPartnerHeaders(partnerId, partnerSecret, rawBody),
-      payload: rawBody,
-    });
-    expect(earned.statusCode, earned.body).toBe(200);
-    const grant = earned.json<{ granted: boolean; points: number }>();
-    expect(grant.granted).toBe(true);
-    expect(grant.points).toBeGreaterThan(0);
+      // 4. 8.4.a: snap-app scans a receipt, signed with the seeded partner secret.
+      const { partnerId, secret: partnerSecret } = await seedPartner();
+      const rawBody = JSON.stringify({
+        user: linkCode,
+        action: "receipt_scanned",
+        externalRef: `receipt-${randomUUID()}`,
+        evidence: { ocr: `${currency} coffee` },
+      });
+      const earned = await app.inject({
+        method: "POST",
+        url: "/api/partners/actions",
+        headers: signedPartnerHeaders(partnerId, partnerSecret, rawBody),
+        payload: rawBody,
+      });
+      expect(earned.statusCode, earned.body).toBe(200);
+      const grant = earned.json<{ granted: boolean; points: number }>();
+      expect(grant.granted).toBe(true);
+      expect(grant.points).toBeGreaterThan(0);
 
-    // 5. 4.7: buy the listing with the points that receipt scan just granted.
-    const quoted = await app.inject({
-      method: "POST",
-      url: "/api/checkout/quote",
-      headers: { cookie: session.cookie },
-      payload: { listingId },
-    });
-    expect(quoted.statusCode, quoted.body).toBe(201);
-    const quote = checkoutQuoteSchema.parse(quoted.json());
-    expect(quote.pricePoints).toBeLessThanOrEqual(grant.points);
+      // 5. 4.7: buy the listing with the points that receipt scan just granted.
+      const quoted = await app.inject({
+        method: "POST",
+        url: "/api/checkout/quote",
+        headers: { cookie: session.cookie },
+        payload: { listingId },
+      });
+      expect(quoted.statusCode, quoted.body).toBe(201);
+      const quote = checkoutQuoteSchema.parse(quoted.json());
+      expect(quote.pricePoints).toBeLessThanOrEqual(grant.points);
 
-    const confirmed = await app.inject({
-      method: "POST",
-      url: "/api/checkout",
-      headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
-      payload: { checkoutId: quote.checkoutId },
-    });
-    expect(confirmed.statusCode, confirmed.body).toBe(200);
-    const result = checkoutResultSchema.parse(confirmed.json());
-    expect(result.state).toBe("done");
-    const voucherId = result.voucherId;
+      const confirmed = await app.inject({
+        method: "POST",
+        url: "/api/checkout",
+        headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
+        payload: { checkoutId: quote.checkoutId },
+      });
+      expect(confirmed.statusCode, confirmed.body).toBe(200);
+      const result = checkoutResultSchema.parse(confirmed.json());
+      expect(result.state).toBe("done");
+      const voucherId = result.voucherId;
 
-    // 6. Redeem at a real, paired counter device (8.2.h is merged; the
-    // documented device path, per this Check's own instruction).
-    const revealed = await deps.vouchers.reveal({ voucherId, ownerId: session.userId });
-    const { code } = revealed._unsafeUnwrap();
+      // 6. Redeem at a real, paired counter device (8.2.h is merged; the
+      // documented device path, per this Check's own instruction).
+      const revealed = await deps.vouchers.reveal({ voucherId, ownerId: session.userId });
+      const { code } = revealed._unsafeUnwrap();
 
-    const { secret: deviceSecret } = await provisionAndPairDevice(
-      devices,
-      businessId,
-      locationId,
-      region,
-    );
-    const deviceHeaders = { authorization: `Bearer ${deviceSecret}` };
+      const { secret: deviceSecret } = await provisionAndPairDevice(
+        devices,
+        businessId,
+        locationId,
+        region,
+      );
+      const deviceHeaders = { authorization: `Bearer ${deviceSecret}` };
 
-    const authorized = await app.inject({
-      method: "POST",
-      url: "/api/counter/authorize",
-      headers: { ...deviceHeaders, "idempotency-key": randomUUID() },
-      payload: {
-        code,
-        currency,
-        orderRef: `8-4-b-${randomUUID()}`,
-        orderTotalMinor: toMinorUnits(region === "AU" ? 60 : 1_200),
-      },
-    });
-    expect(authorized.statusCode, authorized.body).toBe(201);
-    const authorization = authorized.json<{ authorizationId: string; voucherId: string }>();
-    expect(authorization.voucherId).toBe(voucherId);
+      const authorized = await app.inject({
+        method: "POST",
+        url: "/api/counter/authorize",
+        headers: { ...deviceHeaders, "idempotency-key": randomUUID() },
+        payload: {
+          code,
+          currency,
+          orderRef: `8-4-b-${randomUUID()}`,
+          orderTotalMinor: toMinorUnits(region === "AU" ? 60 : 1_200),
+        },
+      });
+      expect(authorized.statusCode, authorized.body).toBe(201);
+      const authorization = authorized.json<{ authorizationId: string; voucherId: string }>();
+      expect(authorization.voucherId).toBe(voucherId);
 
-    const captured = await app.inject({
-      method: "POST",
-      url: "/api/counter/capture",
-      headers: { ...deviceHeaders, "idempotency-key": randomUUID() },
-      payload: { authorizationId: authorization.authorizationId },
-    });
-    expect(captured.statusCode, captured.body).toBe(201);
-    const capture = captured.json<{ captureId: string; voucherId: string }>();
-    expect(capture.voucherId).toBe(voucherId);
+      const captured = await app.inject({
+        method: "POST",
+        url: "/api/counter/capture",
+        headers: { ...deviceHeaders, "idempotency-key": randomUUID() },
+        payload: { authorizationId: authorization.authorizationId },
+      });
+      expect(captured.statusCode, captured.body).toBe(201);
+      const capture = captured.json<{ captureId: string; voucherId: string }>();
+      expect(capture.voucherId).toBe(voucherId);
 
-    // The whole loop closed: bought through checkout, captured at the
-    // counter. `deps.vouchers.get()` reports the RESERVATION saga's own
-    // terminal state ("activated", voucher-internal/lifecycle.ts) which
-    // never changes after a capture — the voucher's own lifecycle state
-    // (voucher.vouchers.state) is the one that actually moves to
-    // "redeemed", so that is what proves the capture really landed.
-    const voucherRow = await owner.execute<{ state: string }>(sql`
+      // The whole loop closed: bought through checkout, captured at the
+      // counter. `deps.vouchers.get()` reports the RESERVATION saga's own
+      // terminal state ("activated", voucher-internal/lifecycle.ts) which
+      // never changes after a capture — the voucher's own lifecycle state
+      // (voucher.vouchers.state) is the one that actually moves to
+      // "redeemed", so that is what proves the capture really landed.
+      const voucherRow = await owner.execute<{ state: string }>(sql`
       SELECT state FROM voucher.vouchers WHERE id = ${voucherId}`);
-    expect(voucherRow.rows[0]?.state).toBe("redeemed");
-  });
+      expect(voucherRow.rows[0]?.state).toBe("redeemed");
+    },
+  );
 });

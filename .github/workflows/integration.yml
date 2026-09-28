@@ -142,18 +142,13 @@ jobs:
       # `services:` entry has no way to pass extra env beyond credentials —
       # though RustFS's entrypoint needs no `server /data` argument at all
       # (MinIO's own reason for this being a step rather than a service is
-      # now moot, but the container-name reasoning below still applies, so
-      # this stays a manual step rather than reverting to `services:`).
-      # The container name matches docker-compose.yml exactly, and that is
-      # load-bearing rather than tidy: `delivery-log.test.ts` reads RustFS's
-      # own structured JSON log (`docker exec yourtal-rustfs cat
-      # /logs/rustfs.log`) for the per-request delivery record docs/22
-      # needs, since the S3 API itself does not expose it (and RustFS's own
-      # admin trace API, while reachable, does not populate S3-operation
-      # events — confirmed empirically, see that file's own header). Named
-      # anything else here, that test fails with `No such container:
-      # yourtal-rustfs`. One canonical name per service beats teaching the
-      # test a second way to find it.
+      # now moot). The container name matches docker-compose.yml, matching
+      # local dev's own convention. It stays at RUSTFS_OBS_LOGGER_LEVEL=info
+      # (the coordinator's call, 2026-09-28: not the noisier debug level
+      # every request would otherwise cost, on the container every suite
+      # shares) — `delivery-log.test.ts` needs debug for its own per-request
+      # evidence (docs/22), so it starts and tears down its own separate,
+      # disposable RustFS container rather than reconfiguring this one.
       - name: Start RustFS
         run: |
           docker run -d --name yourtal-rustfs \

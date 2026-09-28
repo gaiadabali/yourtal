@@ -111,6 +111,64 @@ export function resolveMediaBucket(): string {
   return readEnv("S3_BUCKET") ?? MEDIA_BUCKET;
 }
 
+/**
+ * The bucket's CORS allowlist (F58): a browser PUTs presigned upload parts,
+ * and reads the HLS fixture, straight from this origin — cross-origin from
+ * the studio UI / player's own origin. `*` is refused on purpose (the
+ * founder's call, 2026-09-28): an object store one config typo away from
+ * `s3:GetObject` on `*` is not the place for a wildcard CORS rule too.
+ *
+ * `MEDIA_CORS_ORIGINS` (comma-separated) wins if set; else a single
+ * `SITE_URL` (the deployed web origin, `apps/web`'s own build-time var);
+ * else the two local dev addresses `apps/web` actually runs on.
+ */
+export function resolveMediaCorsOrigins(): readonly string[] {
+  const configured = readEnv("MEDIA_CORS_ORIGINS");
+  if (configured !== undefined) {
+    const origins = configured
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+    if (origins.length > 0) return origins;
+  }
+  const siteUrl = readEnv("SITE_URL");
+  if (siteUrl !== undefined && siteUrl.length > 0) return [siteUrl];
+  return ["http://localhost:3000", "http://127.0.0.1:3000"];
+}
+
+interface BucketPolicyStatement {
+  readonly Resource?: readonly string[] | string;
+}
+interface BucketPolicyDocument {
+  readonly Statement?: readonly BucketPolicyStatement[];
+}
+
+function isBucketPolicyDocument(value: unknown): value is BucketPolicyDocument {
+  return typeof value === "object" && value !== null;
+}
+
+/**
+ * The full set of ARNs a bucket policy's statements grant `Resource` on —
+ * shared by `studio-media.ts`'s `ensureStudioMediaBucket` and
+ * `publish-fixture.ts`'s `allowAnonymousReadOfHls`, both of which only
+ * CHECK a policy is already present (F58) rather than setting one.
+ */
+export function bucketPolicyResources(policyJson: string | undefined): ReadonlySet<string> {
+  if (!policyJson) return new Set();
+  const parsed: unknown = JSON.parse(policyJson);
+  if (!isBucketPolicyDocument(parsed) || !parsed.Statement) return new Set();
+  const resources: string[] = [];
+  for (const statement of parsed.Statement) {
+    const resource: unknown = statement.Resource;
+    if (Array.isArray(resource)) {
+      for (const entry of resource) if (typeof entry === "string") resources.push(entry);
+    } else if (typeof resource === "string") {
+      resources.push(resource);
+    }
+  }
+  return new Set(resources);
+}
+
 export function resolveCredentials(): { accessKeyId: string; secretAccessKey: string } {
   const isProduction = process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test";
   // In production, require the env var to be set explicitly (do not fall back to .env).

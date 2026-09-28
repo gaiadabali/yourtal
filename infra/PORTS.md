@@ -39,14 +39,15 @@ Every entry below is bound `127.0.0.1` explicitly in the compose file. There
 are **no bare `host:container` port lines** — a bare mapping binds all
 interfaces, which on a laptop on a café network is the whole problem.
 
-| Host  | Container | Service         |
-| ----- | --------- | --------------- |
-| 26379 | 6379      | redis (Valkey)  |
-| 26432 | 5432      | postgres        |
-| 26592 | 3592      | cerbos          |
-| 26900 | 9000      | rustfs (S3 + admin API + health) — F58, replaces MinIO. One port for everything; no console. |
-| 26910 | 3010      | ledger          |
-| 26911 | 3011      | voucher         |
+| Host  | Container | Service                                                                                                                                                                                                                                                                                                   |
+| ----- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 26379 | 6379      | redis (Valkey)                                                                                                                                                                                                                                                                                            |
+| 26432 | 5432      | postgres                                                                                                                                                                                                                                                                                                  |
+| 26592 | 3592      | cerbos                                                                                                                                                                                                                                                                                                    |
+| 26900 | 9000      | rustfs (S3 + admin API + health) — F58, replaces MinIO. One port for everything; no console.                                                                                                                                                                                                              |
+| 26902 |           | reserved, not part of the compose stack: `delivery-log.test.ts`'s own disposable RustFS container (`yourtal-rustfs-delivery-log-test`), started and torn down by the test itself, at `RUSTFS_OBS_LOGGER_LEVEL=debug` (the shared 26900 instance stays at `info`; debug is too noisy to run all the time). |
+| 26910 | 3010      | ledger                                                                                                                                                                                                                                                                                                    |
+| 26911 | 3011      | voucher                                                                                                                                                                                                                                                                                                   |
 
 `apps/api` defaults to `PORT=3001` and `apps/web` to `3000` locally; neither
 is in the `26xxx` scheme because neither is containerised.
@@ -95,16 +96,16 @@ main checkout runs compose. The ports are set in each worktree's `.env`.
 Surveyed live 2026-09-21 ~23:5x. **Both YourTal listeners bind `127.0.0.1`.
 Nothing of ours binds `0.0.0.0`.**
 
-| Port  | Bound     | Process        | Notes                                                                  |
-| ----- | --------- | -------------- | ---------------------------------------------------------------------- |
-| 26300 | 127.0.0.1 | `next-server`  | `apps/web`, run by PM2 under the `uyourtal` account. Fronted by nginx. |
-| 26432 | 127.0.0.1 | `docker-proxy` | Postgres container, same host port as local — the scheme transferred.  |
-| 26301 | 127.0.0.1 | `node`         | `apps/api` (pm2, `uyourtal`). nginx sends `/api` here. Planned in 2.1. |
-| 26302 | 127.0.0.1 | `ledger`       | Go ledger (pm2, `uyourtal`). Called only by api and worker.            |
-| 26303 | 127.0.0.1 | `voucher`      | Go voucher service (pm2, `uyourtal`). Called only by api and worker.   |
-| 26304 | 127.0.0.1 | `docker-proxy` | Cerbos container.                                                      |
+| Port  | Bound     | Process        | Notes                                                                                        |
+| ----- | --------- | -------------- | -------------------------------------------------------------------------------------------- |
+| 26300 | 127.0.0.1 | `next-server`  | `apps/web`, run by PM2 under the `uyourtal` account. Fronted by nginx.                       |
+| 26432 | 127.0.0.1 | `docker-proxy` | Postgres container, same host port as local — the scheme transferred.                        |
+| 26301 | 127.0.0.1 | `node`         | `apps/api` (pm2, `uyourtal`). nginx sends `/api` here. Planned in 2.1.                       |
+| 26302 | 127.0.0.1 | `ledger`       | Go ledger (pm2, `uyourtal`). Called only by api and worker.                                  |
+| 26303 | 127.0.0.1 | `voucher`      | Go voucher service (pm2, `uyourtal`). Called only by api and worker.                         |
+| 26304 | 127.0.0.1 | `docker-proxy` | Cerbos container.                                                                            |
 | 26305 | 127.0.0.1 | `docker-proxy` | RustFS S3 + admin API (F58, replaces MinIO). nginx serves the public media prefixes from it. |
-| 26379 | 127.0.0.1 | `docker-proxy` | Valkey container.                                                      |
+| 26379 | 127.0.0.1 | `docker-proxy` | Valkey container.                                                                            |
 
 Both processes sit inside `yourtal.slice`, confirmed from
 `/proc/<pid>/cgroup` rather than from the unit file: the Next server reports

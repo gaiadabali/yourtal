@@ -106,19 +106,14 @@ services:
     environment:
       RUSTFS_ROOT_USER: yourtal
       RUSTFS_ROOT_PASSWORD: yourtal_local_only
-      # INFO, not the image's WARN default: at INFO, RustFS's own structured
-      # JSON log (/logs/rustfs.log in the container) emits one
-      # "http_request_completed" record per request (method, uri, status,
-      # duration) — delivery-log.test.ts's replacement for `mc admin trace`,
-      # which RustFS's own admin API accepts but never actually populates
-      # for S3-level operations (confirmed empirically against a real
-      # container: the endpoint streams real internal scanner events under
-      # `all=true`, and the real `mc` client connects fine, but neither ever
-      # emits a GetObject/PutObject record). DEBUG would also carry the
-      # object's byte size, but at ~900 lines per request it is too noisy
-      # for a healthcheck-adjacent log; the client's own Content-Length
-      # response header is delivery-log.test.ts's byte-count evidence
-      # instead (see that file's own header comment).
+      # INFO, not the image's WARN default — visible request-level events
+      # without DEBUG's ~900-lines-per-request internal spans. The
+      # coordinator's call (2026-09-28): this shared instance runs at info;
+      # `delivery-log.test.ts` needs `RUSTFS_OBS_LOGGER_LEVEL=debug` for its
+      # own per-request delivery evidence (its own header comment explains
+      # why `mc admin trace` doesn't work against RustFS), so it starts and
+      # tears down its own separate, disposable container instead of
+      # reconfiguring this one.
       RUSTFS_OBS_LOGGER_LEVEL: info
     # S3-compatible, so the R2 adapter is exercised rather than stubbed.
     ports:

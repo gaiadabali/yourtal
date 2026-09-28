@@ -13,11 +13,13 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
+  bucketPolicyResources,
   contentTypeFor as hlsContentTypeFor,
   HLS_PREFIX,
   objectKey as hlsObjectKey,
   resolveCredentials,
   resolveMediaBucket,
+  resolveMediaCorsOrigins,
   resolveOriginEndpoint,
 } from "./hls-origin";
 
@@ -94,19 +96,7 @@ async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
 
   try {
     const { Policy } = await client.send(new GetBucketPolicyCommand({ Bucket: bucket }));
-    const parsed: unknown = Policy ? JSON.parse(Policy) : null;
-    const resources = new Set<string>(
-      parsed && typeof parsed === "object" && "Statement" in parsed
-        ? (parsed as { Statement: readonly { Resource?: readonly string[] | string }[] }).Statement.flatMap(
-            (statement) =>
-              Array.isArray(statement.Resource)
-                ? statement.Resource
-                : statement.Resource
-                  ? [statement.Resource]
-                  : [],
-          )
-        : [],
-    );
+    const resources = bucketPolicyResources(Policy);
     const missing = PUBLIC_READ_PREFIXES.filter(
       (prefix) => !resources.has(`arn:aws:s3:::${bucket}/${prefix}/*`),
     );
@@ -132,6 +122,11 @@ async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
   // before). Best-effort: this app's own least-privileged key may not carry
   // `s3:PutBucketCORS` either, and a missing CORS config only breaks direct
   // browser uploads, not this process — warn, don't crash.
+  //
+  // `*` is refused on purpose (founder, 2026-09-28): `resolveMediaCorsOrigins()`
+  // names the real web origin(s), never a wildcard. `ETag` is exposed
+  // because `completeRawUpload` below needs each part's ETag back from the
+  // browser's own PUT response to complete the multipart upload.
   try {
     await client.send(
       new PutBucketCorsCommand({
@@ -139,9 +134,10 @@ async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
         CORSConfiguration: {
           CORSRules: [
             {
-              AllowedOrigins: ["*"],
-              AllowedMethods: ["GET", "HEAD", "PUT", "POST"],
+              AllowedOrigins: [...resolveMediaCorsOrigins()],
+              AllowedMethods: ["GET", "HEAD", "PUT"],
               AllowedHeaders: ["*"],
+              ExposeHeaders: ["ETag"],
             },
           ],
         },

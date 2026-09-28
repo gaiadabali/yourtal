@@ -95,14 +95,11 @@ describe("the local HLS origin", () => {
     // fetch fails in the browser and nowhere else, so it is invisible to
     // every test that is not this one.
     const response = await fetchOrThrow(manifestUrl(), { Origin: "http://localhost:3000" });
-    // MinIO reflected the request's own Origin; RustFS answers the
-    // configured rule's literal value instead (F58) — a bucket CORS rule of
-    // `AllowedOrigins: ["*"]` on a real GET, so `*` is exactly as valid a
-    // browser-facing answer as an echoed origin (this request carries no
-    // credentials, the only case where `*` would be insufficient).
-    expect(["http://localhost:3000", "*"]).toContain(
-      response.headers.get("access-control-allow-origin"),
-    );
+    // The bucket's CORS allowlist names real origins, never `*` (founder,
+    // 2026-09-28) — `resolveMediaCorsOrigins()`'s own dev default includes
+    // this one, and RustFS reflects the exact matched origin back (unlike a
+    // wildcard rule, which would answer the literal `*`).
+    expect(response.headers.get("access-control-allow-origin")).toBe("http://localhost:3000");
   });
 
   it("caches segments hard and the manifest not at all", async () => {

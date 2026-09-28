@@ -12,11 +12,13 @@ import {
   FIXTURE_ASSET_ID,
   HLS_PREFIX,
   MEDIA_BUCKET,
+  bucketPolicyResources,
   contentTypeFor,
   fixtureDir,
   manifestUrl,
   objectKey,
   resolveCredentials,
+  resolveMediaCorsOrigins,
   resolveOriginEndpoint,
 } from "./hls-origin";
 
@@ -105,19 +107,7 @@ async function allowAnonymousReadOfHls(client: S3Client): Promise<void> {
   const resource = `arn:aws:s3:::${MEDIA_BUCKET}/${HLS_PREFIX}/*`;
   try {
     const { Policy } = await client.send(new GetBucketPolicyCommand({ Bucket: MEDIA_BUCKET }));
-    const parsed: unknown = Policy ? JSON.parse(Policy) : null;
-    const resources = new Set<string>(
-      parsed && typeof parsed === "object" && "Statement" in parsed
-        ? (parsed as { Statement: readonly { Resource?: readonly string[] | string }[] }).Statement.flatMap(
-            (statement) =>
-              Array.isArray(statement.Resource)
-                ? statement.Resource
-                : statement.Resource
-                  ? [statement.Resource]
-                  : [],
-          )
-        : [],
-    );
+    const resources = bucketPolicyResources(Policy);
     if (!resources.has(resource)) {
       console.warn(
         `[publish-fixture] bucket "${MEDIA_BUCKET}"'s policy does not grant public read on ${HLS_PREFIX}/*. ` +
@@ -135,14 +125,19 @@ async function allowAnonymousReadOfHls(client: S3Client): Promise<void> {
   // `studio-media.ts`'s own `ensureStudioMediaBucket` documents: MinIO
   // answered a permissive CORS header by default with no config, RustFS
   // does not. Best-effort; this is dev/test-only, never staging traffic
-  // that depends on it.
+  // that depends on it. `resolveMediaCorsOrigins()`, never `*` (founder,
+  // 2026-09-28) — same allowlist `studio-media.ts` uses, same bucket.
   try {
     await client.send(
       new PutBucketCorsCommand({
         Bucket: MEDIA_BUCKET,
         CORSConfiguration: {
           CORSRules: [
-            { AllowedOrigins: ["*"], AllowedMethods: ["GET", "HEAD"], AllowedHeaders: ["*"] },
+            {
+              AllowedOrigins: [...resolveMediaCorsOrigins()],
+              AllowedMethods: ["GET", "HEAD"],
+              AllowedHeaders: ["*"],
+            },
           ],
         },
       }),

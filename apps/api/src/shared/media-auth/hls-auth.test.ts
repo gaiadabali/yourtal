@@ -77,6 +77,8 @@ describe("loadAppConfig and HLS_SIGNING_SECRET", () => {
     // directly with a hand-built source, so it needs its own value rather
     // than picking one up from vitest.config.ts's process-env fallback.
     WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
+    // Same F54 reasoning: TASKS.md 8.4.d added this required-no-default too.
+    SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
   };
 
   it("refuses the local-only default on staging, allows it in dev", () => {

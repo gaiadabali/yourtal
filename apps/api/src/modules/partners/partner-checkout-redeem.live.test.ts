@@ -82,10 +82,13 @@ afterAll(async () => {
   await liveServices?.stop();
 });
 
+/** Same reference-not-value scheme as partner-actions.e2e.test.ts (8.4.d). */
 async function seedPartner(): Promise<{ partnerId: string; secret: string }> {
   const partnerId = `test-partner-${randomUUID()}`;
   const secret = `test-only-partner-secret-${randomUUID()}`;
-  await owner.insert(partnerCredentials).values({ partnerId, secret });
+  const secretEnvVar = `TEST_PARTNER_SECRET_${randomUUID().replaceAll("-", "_")}`;
+  process.env[secretEnvVar] = secret;
+  await owner.insert(partnerCredentials).values({ partnerId, secretEnvVar });
   return { partnerId, secret };
 }
 

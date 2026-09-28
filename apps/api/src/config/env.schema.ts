@@ -72,6 +72,20 @@ export const envSchema = z.object({
   WEBHOOK_SECRET_ENCRYPTION_KEY: z.string().min(32),
 
   /**
+   * TASKS.md 8.4.d (F73, security): the shared HMAC key `POST /api/partners
+   * /actions` verifies a partner's signature against — snap-app's, today,
+   * the only partner. `platform.partner_credential` holds this var's NAME
+   * (`secret_env_var`), never a value: HMAC verification needs the actual
+   * key material to recompute a caller's MAC, so a database row can only
+   * ever be as safe as "nobody who can read this repo's migrations can also
+   * read it" — which used to be false (the value was a literal in a public,
+   * unappealable migration). Required, no default, same reasoning as
+   * `CHECKPOINT_TOKEN_SECRET` above: a value committed here is one every
+   * reader of this public repo already holds.
+   */
+  SNAP_APP_PARTNER_SECRET: z.string().min(16),
+
+  /**
    * Valkey (Redis-compatible), YT-0540 — server-side session lookup and the
    * login throttle counters (account and source, kept separately). Already
    * named in `.env.example`/`.env` ("sessions, rate limits, checkpoint

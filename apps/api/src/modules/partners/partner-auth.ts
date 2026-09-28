@@ -31,9 +31,13 @@ export async function verifyPartnerSignature(
   const credential = await credentials.findById(partnerId);
   if (credential === null) return null;
 
-  const expected = createHmac("sha256", credential.secret)
-    .update(rawBodyOf(request), "utf8")
-    .digest("hex");
+  // TASKS.md 8.4.d: the row names the env var, never the key — a
+  // misconfigured/missing env var refuses the same way an unknown partner
+  // does, not a 500 (the operator's own mistake is not the caller's to see).
+  const secret = process.env[credential.secretEnvVar];
+  if (secret === undefined || secret.length === 0) return null;
+
+  const expected = createHmac("sha256", secret).update(rawBodyOf(request), "utf8").digest("hex");
 
   // Constant-time: both sides are hex strings of the same fixed length
   // (a sha256 digest), so this never leaks a length difference either.

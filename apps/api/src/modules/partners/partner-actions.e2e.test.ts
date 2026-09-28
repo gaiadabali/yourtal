@@ -39,10 +39,19 @@ afterAll(async () => {
   await app.close();
 });
 
+/**
+ * TASKS.md 8.4.d: the table holds an env var NAME, not a value, so seeding a
+ * fixture here means both writing that row AND setting the var it names —
+ * a fresh, unique var per partner (not a shared name) so two partners
+ * seeded in the same test (the 8.4.c cases below) never share one secret,
+ * same as they never shared one DB row before this change.
+ */
 async function seedPartner(): Promise<{ partnerId: string; secret: string }> {
   const partnerId = `test-partner-${randomUUID()}`;
   const secret = `test-only-partner-secret-${randomUUID()}`;
-  await owner.insert(partnerCredentials).values({ partnerId, secret });
+  const secretEnvVar = `TEST_PARTNER_SECRET_${randomUUID().replaceAll("-", "_")}`;
+  process.env[secretEnvVar] = secret;
+  await owner.insert(partnerCredentials).values({ partnerId, secretEnvVar });
   return { partnerId, secret };
 }
 

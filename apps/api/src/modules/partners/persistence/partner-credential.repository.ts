@@ -1,6 +1,7 @@
 export interface PartnerCredentialRow {
   readonly partnerId: string;
-  readonly secret: string;
+  /** TASKS.md 8.4.d: the env var NAME holding this partner's HMAC key — never the key itself. */
+  readonly secretEnvVar: string;
 }
 
 export interface PartnerCredentialRepository {

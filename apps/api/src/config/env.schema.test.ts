@@ -26,6 +26,7 @@ describe("PDP_BASE_URL's default agrees with docker-compose and .env.example", (
     DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
     CHECKPOINT_TOKEN_SECRET: "test-only-checkpoint-signing-key-not-a-real-secret",
     WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
+    SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
   }).PDP_BASE_URL;
 
   it("matches the host port docker-compose.yml maps Cerbos to", () => {
@@ -58,6 +59,7 @@ describe("REDIS_URL's default agrees with docker-compose and .env.example", () =
     DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
     CHECKPOINT_TOKEN_SECRET: "test-only-checkpoint-signing-key-not-a-real-secret",
     WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
+    SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
   }).REDIS_URL;
 
   it("matches the host port docker-compose.yml maps Valkey to", () => {

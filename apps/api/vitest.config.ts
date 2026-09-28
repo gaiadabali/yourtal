@@ -105,6 +105,17 @@ export default defineConfig({
       WEBHOOK_SECRET_ENCRYPTION_KEY:
         process.env.WEBHOOK_SECRET_ENCRYPTION_KEY ??
         "vitest-only-webhook-secret-encryption-key-not-a-real-secret",
+
+      /**
+       * TASKS.md 8.4.d added `SNAP_APP_PARTNER_SECRET` to `env.schema.ts`
+       * (required, no default — same reasoning as `CHECKPOINT_TOKEN_SECRET`
+       * above, and the exact same F54/F55 failure mode this fallback exists
+       * to prevent: added here in the SAME commit as the schema change,
+       * not after CI goes red everywhere `AppModule` boots).
+       */
+      SNAP_APP_PARTNER_SECRET:
+        process.env.SNAP_APP_PARTNER_SECRET ??
+        "vitest-only-snap-app-partner-secret-not-a-real-secret",
     },
 
     /**

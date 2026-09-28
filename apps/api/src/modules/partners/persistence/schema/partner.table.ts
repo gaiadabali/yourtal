@@ -12,9 +12,15 @@ import { pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
  */
 const platformPgSchema = pgSchema("platform");
 
+/**
+ * TASKS.md 8.4.d (F73): `secretEnvVar` names the env var that holds this
+ * partner's actual HMAC key — never the key itself. See the migration
+ * that added it (20260928143835) for why a reference, not a hash or a
+ * sealed value.
+ */
 export const partnerCredentials = platformPgSchema.table("partner_credential", {
   partnerId: text("partner_id").primaryKey(),
-  secret: text("secret").notNull(),
+  secretEnvVar: text("secret_env_var").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -2,8 +2,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import pg from "pg";
-import { runDemoMedia } from "@yourtal/media/demo-media";
+import { listDemoMediaBusinesses, runDemoMedia } from "@yourtal/media/demo-media";
 import type { DemoMediaResult } from "@yourtal/media/demo-media";
+import { runDemoMediaVouchers } from "./demo-media-vouchers";
+import type { DemoMediaVoucherResult } from "./demo-media-vouchers";
 import { seedStaging } from "./staging";
 import { ensureStagingMedia } from "./staging-media";
 
@@ -168,9 +170,42 @@ async function main(): Promise<void> {
         ? `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaFailed.length)} FAILED (${demoMediaFailed.map((r: DemoMediaResult) => r.slug).join(", ")}) — not failing the deploy over it`
         : `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaResults.length - demoMediaSeeded)} already present`;
 
+    // TASKS.md 7.2.e: each of the 16 demo-media businesses above gets one
+    // real store listing plus 6 real vouchers, minted through the ledger's
+    // real pricing route and the voucher service's real batch/approve path
+    // (demo-media-vouchers.ts) — never seed/store.ts's mock generator, which
+    // mints no decryptable code. Same non-fatal reasoning as demoMediaSummary
+    // just above: a transient failure in one of 16 cosmetic listings must
+    // never hold the deploy hostage, but must be loud, not silent.
+    let demoMediaVoucherResults: readonly DemoMediaVoucherResult[] = [];
+    try {
+      demoMediaVoucherResults = await runDemoMediaVouchers(
+        pool,
+        listDemoMediaBusinesses(),
+        { baseUrl: ledgerBaseUrl, serviceSecret: ledgerServiceSecret },
+        { baseUrl: voucherBaseUrl, serviceSecret: voucherServiceSecret },
+        console.log,
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      console.error(
+        `[seed:staging] demo media vouchers threw rather than returning results: ${detail}`,
+      );
+    }
+    const demoMediaVouchersSeeded = demoMediaVoucherResults.filter(
+      (r: DemoMediaVoucherResult) => r.status === "seeded",
+    ).length;
+    const demoMediaVouchersFailed = demoMediaVoucherResults.filter(
+      (r: DemoMediaVoucherResult) => r.status === "failed",
+    );
+    const demoMediaVouchersSummary =
+      demoMediaVouchersFailed.length > 0
+        ? `demo media vouchers: ${String(demoMediaVouchersSeeded)} seeded, ${String(demoMediaVouchersFailed.length)} FAILED (${demoMediaVouchersFailed.map((r: DemoMediaVoucherResult) => r.slug).join(", ")}) — not failing the deploy over it`
+        : `demo media vouchers: ${String(demoMediaVouchersSeeded)} seeded, ${String(demoMediaVoucherResults.length - demoMediaVouchersSeeded)} already present`;
+
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
-        `${grantSummary}; ${voucherSummary}; ${mediaSummary}; ${demoMediaSummary}.`,
+        `${grantSummary}; ${voucherSummary}; ${mediaSummary}; ${demoMediaSummary}; ${demoMediaVouchersSummary}.`,
     );
 
     if (

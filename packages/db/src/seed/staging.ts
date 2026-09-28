@@ -810,13 +810,13 @@ function buildDemoListing(priceInPoints: number): Listing {
   });
 }
 
-interface ExistingListingFacts {
+export interface ExistingListingFacts {
   readonly faceValueMinor: number;
   readonly currency: string;
   readonly partialRedemptionPolicy: string;
 }
 
-async function existingListingFacts(
+export async function existingListingFacts(
   pool: pg.Pool,
   listingId: string,
 ): Promise<ExistingListingFacts | null> {
@@ -839,7 +839,7 @@ async function existingListingFacts(
       };
 }
 
-async function insertListing(pool: pg.Pool, listing: Listing): Promise<void> {
+export async function insertListing(pool: pg.Pool, listing: Listing): Promise<void> {
   const location = listing.locations[0];
   if (location === undefined) throw new Error(`listing ${listing.id} has no locations`);
 
@@ -899,7 +899,7 @@ interface VoucherOutcome {
  * identical shape on the real request path); reused via `signServiceRequest`
  * rather than copied a third time, because the algorithm — unlike the two
  * Go services themselves — has no reason to differ between them. */
-async function postSigned(
+export async function postSigned(
   config: { readonly baseUrl: string; readonly serviceSecret: string },
   path: string,
   request: unknown,
@@ -949,15 +949,20 @@ async function postSigned(
  * only ever does once, when the listing does not exist yet (see
  * `ensureDemoVoucher`).
  */
-async function priceDemoListing(
+export interface PriceListingRequest {
+  readonly listingId: string;
+  readonly region: "AU" | "ID";
+  readonly currency: string;
+  readonly settlementMinor: number;
+}
+
+/** Generalized so 7.2.e's own demo-media listings (`demo-media-vouchers.ts`)
+ * price through the exact same real ledger call as this file's own demo
+ * listing, rather than a second copy of this request/response handling. */
+export async function priceListing(
   ledger: StagingLedgerConfig,
+  request: PriceListingRequest,
 ): Promise<{ ok: true; pricePoints: number } | { ok: false; detail: string }> {
-  const request = {
-    listingId: DEMO_LISTING_ID,
-    region: "AU",
-    currency: "AUD",
-    settlementMinor: DEMO_SETTLEMENT_VALUE_MINOR,
-  };
   const priced = await postSigned(ledger, "/v1/pricing/listing", request);
   if (!priced.ok) return { ok: false, detail: priced.detail };
 
@@ -973,6 +978,17 @@ async function priceDemoListing(
     };
   }
   return { ok: true, pricePoints };
+}
+
+async function priceDemoListing(
+  ledger: StagingLedgerConfig,
+): Promise<{ ok: true; pricePoints: number } | { ok: false; detail: string }> {
+  return priceListing(ledger, {
+    listingId: DEMO_LISTING_ID,
+    region: "AU",
+    currency: "AUD",
+    settlementMinor: DEMO_SETTLEMENT_VALUE_MINOR,
+  });
 }
 
 /**

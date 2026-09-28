@@ -602,6 +602,9 @@ importers:
       '@yourtal/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@yourtal/jurisdiction':
+        specifier: workspace:*
+        version: link:../jurisdiction
       '@yourtal/media':
         specifier: workspace:*
         version: link:../media

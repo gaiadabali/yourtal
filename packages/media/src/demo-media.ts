@@ -106,8 +106,8 @@ function loadManifest(): Manifest {
   return demoMediaManifestJson as Manifest;
 }
 
-/** A stable UUID from a string (SHA-256, shaped as a version-5 UUID) — same technique `unlockJobId` (apps/worker/src/jobs/points-unlocked.ts) uses, so re-running this script always names the same rows. */
-function stableId(seed: string): string {
+/** A stable UUID from a string (SHA-256, shaped as a version-5 UUID) — same technique `unlockJobId` (apps/worker/src/jobs/points-unlocked.ts) uses, so re-running this script always names the same rows. Exported so a caller that needs to name a row against ONE of these businesses (7.2.e's own listing/voucher seed) derives the SAME id rather than inventing a second scheme. */
+export function stableId(seed: string): string {
   const hex = createHash("sha256").update(seed).digest("hex");
   const variant = ((parseInt(hex.charAt(16), 16) & 0x3) | 0x8).toString(16);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
@@ -305,6 +305,29 @@ export interface RunDemoMediaOptions {
   readonly log?: (message: string) => void;
   /** Overrides the committed `demo-media.json` — how `demo-media.test.ts` runs a real but tiny manifest. */
   readonly manifest?: Manifest;
+}
+
+export interface DemoMediaBusiness {
+  readonly slug: string;
+  readonly region: "AU" | "ID";
+  readonly brand: string;
+  /** Same id `ensureBusiness` below inserts under — a caller names a row
+   * against one of these businesses (7.2.e's listing/voucher seed) without
+   * re-deriving `stableId`'s scheme or re-reading the manifest itself. */
+  readonly businessId: string;
+}
+
+/** Every business `runDemoMedia` creates (or will create), independent of
+ * whether it has actually run yet — `main-staging.ts` calls this AFTER
+ * `runDemoMedia` in the same seed, so by the time a caller uses this list
+ * every id it names is a real `business.business_accounts` row. */
+export function listDemoMediaBusinesses(manifest?: Manifest): readonly DemoMediaBusiness[] {
+  return (manifest ?? loadManifest()).campaigns.map((entry) => ({
+    slug: entry.slug,
+    region: entry.region,
+    brand: entry.brand,
+    businessId: stableId(`demo-media:business:${entry.slug}`),
+  }));
 }
 
 export async function runDemoMedia(

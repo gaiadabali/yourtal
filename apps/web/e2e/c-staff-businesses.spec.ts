@@ -146,8 +146,10 @@ test.describe.serial("9.3.a: staff review of businesses", () => {
     const page = await pageAs(browser, baseURL as string, staff.token);
     await page.goto("/staff/businesses");
     await expect(page.getByRole("heading", { level: 1, name: "Businesses" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Staff Businesses E2E Co" })).toBeVisible();
-    await expect(page.getByText("Unverified")).toBeVisible();
+    // DataTable renders both a desktop <table> and a mobile <ul> at once
+    // (CSS picks which is visible), so every cell's content matches twice.
+    await expect(page.getByRole("link", { name: "Staff Businesses E2E Co" }).first()).toBeVisible();
+    await expect(page.getByText("Unverified").first()).toBeVisible();
     await page.close();
   });
 

@@ -132,25 +132,34 @@ async function createListing(
   return listingId;
 }
 
+/**
+ * The reason carries a run-unique tag: `/staff/moderation` is a live,
+ * shared dev-mode list with no per-test isolation, so a stray row left
+ * behind by an earlier, interrupted run (this spec's own past attempts,
+ * say) would otherwise make a plain-text assertion here ambiguous.
+ */
 async function requestVoucherBatch(
   request: APIRequestContext,
   owner: LiveAccount,
   businessId: string,
   listingId: string,
-): Promise<void> {
+): Promise<string> {
+  const reason = `Restocking for a promotion (${Date.now()}).`;
   const requested = await request.post(
     `${apiBaseUrl()}/api/${businessId}/store/voucher-batch-requests`,
     {
       headers: { cookie: `yt_session=${owner.token}`, "idempotency-key": crypto.randomUUID() },
-      data: { listingId, quantity: 5, reason: "Restocking for a promotion." },
+      data: { listingId, quantity: 5, reason },
     },
   );
   expect(requested.ok(), await requested.text()).toBeTruthy();
+  return reason;
 }
 
 test.describe.serial("9.2.c: staff moderation of voucher-batch requests", () => {
   let owner: LiveAccount;
   let staff: LiveAccount;
+  let reason: string;
 
   test.beforeAll(async ({ request }) => {
     owner = await registerAndLogIn(request, "owner");
@@ -158,7 +167,7 @@ test.describe.serial("9.2.c: staff moderation of voucher-batch requests", () => 
     staffAdd(staff.email, "moderator");
     const businessId = await createBusiness(request, owner);
     const listingId = await createListing(request, owner, businessId);
-    await requestVoucherBatch(request, owner, businessId, listingId);
+    reason = await requestVoucherBatch(request, owner, businessId, listingId);
   });
 
   // Screenshots first, while the pending request still exists -- the
@@ -179,7 +188,13 @@ test.describe.serial("9.2.c: staff moderation of voucher-batch requests", () => 
         const response = await page.goto("/staff/moderation");
         expect(response?.status()).toBe(200);
         await expect(page.getByRole("heading", { level: 1, name: "Moderation" })).toBeVisible();
-        await expect(page.getByText("Restocking for a promotion.")).toBeVisible();
+        // DataTable renders both a desktop <table> and a mobile <ul> at
+        // once (CSS picks which is visible) -- ":visible" picks whichever
+        // one actually is, at this viewport. The reason carries a
+        // run-unique tag so a stale row from an earlier run (this is a
+        // live, shared dev-mode list, not per-test isolated) is never
+        // mistaken for this run's own.
+        await expect(page.locator(":visible", { hasText: reason }).first()).toBeVisible();
         await expectAxeClean(page);
         await page.screenshot({
           path: `test-results/c-staff-moderation-${String(width)}-${colorScheme}.png`,
@@ -194,14 +209,21 @@ test.describe.serial("9.2.c: staff moderation of voucher-batch requests", () => 
     const page = await pageAs(browser, baseURL as string, staff.token);
     await page.goto("/staff/moderation");
     await expect(page.getByRole("heading", { level: 1, name: "Moderation" })).toBeVisible();
-    await expect(page.getByText("Restocking for a promotion.")).toBeVisible();
+    await expect(page.locator(":visible", { hasText: reason }).first()).toBeVisible();
 
-    await page.getByRole("button", { name: "Approve" }).click();
+    // Scoped to THIS run's own row (by its unique reason) -- the live
+    // dev-mode list can carry other pending rows too. DataTable renders
+    // both a desktop and mobile copy of the row; either's Approve button
+    // opens the same row's own dialog (each StaffReasonDialogButton
+    // instance closes over that row's id), so `.first()` is enough.
+    const row = page.locator("tr, li").filter({ hasText: reason }).first();
+    await row.getByRole("button", { name: "Approve" }).click();
     await page.getByLabel("Reason (required, for the record)").fill("Stock request looks legitimate.");
     await page.getByRole("button", { name: "Approve batch" }).click();
 
-    await expect(page.getByText("Restocking for a promotion.")).toHaveCount(0);
-    await expect(page.getByText("Nothing pending")).toBeVisible();
+    // Not "Nothing pending": other runs' rows may still be pending in this
+    // shared dev-mode list. Only this run's own row is guaranteed gone.
+    await expect(page.getByText(reason)).toHaveCount(0);
     await page.close();
   });
 });

@@ -12,7 +12,11 @@ import {
   updateQuestionInBank,
 } from "./question-bank-actions";
 import type { QuestionBankActionError } from "./question-bank-actions";
-import { createQuestionLive } from "./question-live-actions";
+import {
+  createQuestionLive,
+  deleteQuestionLive,
+  updateQuestionLive,
+} from "./question-live-actions";
 import { evaluateBankSize } from "./question-bank-rules";
 import type { QuestionDraft, QuestionDraftType } from "./question-draft";
 import { createEmptyQuestionDraft } from "./question-draft";
@@ -30,7 +34,7 @@ export interface QuestionBankScreenProps {
   /** Lets the campaign editor keep its own `questionCount`/preview in sync without duplicating this state. */
   onBankChange?: (bank: QuestionDraft[]) => void;
   readOnly?: boolean;
-  /** Live mode: `save()` calls the real `POST .../questions` (7.3.b), and a question already confirmed by the server can no longer be edited or removed — see this module's own doc comment. */
+  /** Live mode: `save()`/`remove()` call the real `POST`/`PATCH`/`DELETE .../questions` (7.3.b/7.3.i). */
   isLiveMode?: boolean;
 }
 
@@ -42,15 +46,13 @@ type EditorState = { open: false } | { open: true; draft: QuestionDraft; isNew: 
  * leaf for this whole sub-feature, mounted inside `campaign-editor.tsx`'s
  * "Questions" section.
  *
- * Live mode's real controller (7.3.b) is list/create only — there is no
- * `PATCH`/`DELETE` for an individual question yet (flagged as a
- * `(requested by D/7.8)` subtask under 7.3 in TASKS.md). So in live mode,
- * `confirmedIds` tracks which rows the server has actually accepted (came
- * back from `initialBank`, itself sourced from a real `GET`, or from a
- * successful `createQuestionLive`) — those rows lose their Edit/Remove
- * actions rather than pretending a local edit changed anything server-side.
- * A brand-new, not-yet-saved draft can still be edited freely before its
- * first save.
+ * Live mode: `bank` only ever holds server-confirmed rows (a not-yet-saved
+ * new draft lives in `editor.draft`, never committed to `bank` until a real
+ * `createQuestionLive` succeeds), so every row's Edit/Remove goes straight
+ * to the real `PATCH`/`DELETE .../questions/:questionId` (7.3.i). The
+ * server's own refusals (PII, prediction, `question_type_immutable`,
+ * `campaign_not_draft`) surface inline — for Edit in the same dialog error
+ * slot `create`'s refusals already use; for Remove, `removeError` below.
  */
 export function QuestionBankScreen({
   businessId,
@@ -63,12 +65,10 @@ export function QuestionBankScreen({
 }: QuestionBankScreenProps) {
   const t = useTranslations("studio");
   const [bank, setBank] = useState<QuestionDraft[]>(initialBank);
-  const [confirmedIds, setConfirmedIds] = useState<Set<string>>(
-    () => new Set(isLiveMode ? initialBank.map((draft) => draft.id) : []),
-  );
   const [editor, setEditor] = useState<EditorState>({ open: false });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saveError, setSaveError] = useState<QuestionBankActionError | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   const completeCount = bank.filter((draft) => toPublishableQuestionInput(draft) !== null).length;
   const evaluation = evaluateBankSize(durationSeconds, completeCount);
@@ -93,22 +93,23 @@ export function QuestionBankScreen({
     if (!editor.open) {
       return;
     }
-    if (isLiveMode && editor.isNew) {
-      const liveResult = await createQuestionLive(businessId, campaignId, editor.draft);
+    if (isLiveMode) {
+      const liveResult = editor.isNew
+        ? await createQuestionLive(businessId, campaignId, editor.draft)
+        : await updateQuestionLive(businessId, campaignId, editor.draft);
       if (!liveResult.ok) {
         setSaveError({ type: "api_error", message: liveResult.message });
         return;
       }
-      commitBank([...bank, liveResult.value]);
-      setConfirmedIds((current) => new Set(current).add(liveResult.value.id));
+      commitBank(
+        editor.isNew
+          ? [...bank, liveResult.value]
+          : bank.map((draft) => (draft.id === liveResult.value.id ? liveResult.value : draft)),
+      );
       setEditor({ open: false });
       setSaveError(null);
       return;
     }
-    // Live edit of an already-confirmed question has no real endpoint yet
-    // (this component's own doc comment) — `QuestionListRow` below never
-    // offers Edit for a confirmed row in live mode, so this branch is only
-    // ever mock mode or a live, not-yet-saved new draft.
     const result = editor.isNew
       ? addQuestionToBank(bank, editor.draft)
       : updateQuestionInBank(bank, editor.draft);
@@ -121,13 +122,23 @@ export function QuestionBankScreen({
     setSaveError(null);
   }
 
-  function remove(questionId: string) {
-    // No live DELETE exists yet — `QuestionListRow` never offers Remove for
-    // a confirmed row in live mode, so this only ever runs in mock mode or
-    // against a (never-reached, since it would already be confirmed) live
-    // draft.
+  async function remove(questionId: string) {
+    if (isLiveMode) {
+      const liveResult = await deleteQuestionLive(businessId, campaignId, questionId);
+      if (!liveResult.ok) {
+        setRemoveError(liveResult.message);
+        return;
+      }
+      setRemoveError(null);
+      // The server soft-retires (status -> "retired", never deleted — docs/06
+      // §4.1) but this bank view still drops the row: a business asking to
+      // "remove" a question wants it gone from what they see.
+      commitBank(bank.filter((draft) => draft.id !== questionId));
+      return;
+    }
     const result = removeQuestionFromBank(bank, questionId);
     if (result.ok) {
+      setRemoveError(null);
       commitBank(result.value);
     }
   }
@@ -152,22 +163,24 @@ export function QuestionBankScreen({
         <p className="text-xs font-sans text-fg-muted">{evaluation.message}</p>
       </div>
 
+      {removeError ? (
+        <p role="alert" className="text-xs font-sans text-danger">
+          {removeError}
+        </p>
+      ) : null}
+
       {bank.length === 0 ? (
         <p className="text-sm font-sans text-fg-muted">{t("questionBank.empty")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {bank.map((draft) => {
-            const locked = isLiveMode && confirmedIds.has(draft.id);
-            return (
-              <QuestionListRow
-                key={draft.id}
-                draft={draft}
-                {...(locked
-                  ? {}
-                  : { onEdit: () => startEdit(draft), onRemove: () => remove(draft.id) })}
-              />
-            );
-          })}
+          {bank.map((draft) => (
+            <QuestionListRow
+              key={draft.id}
+              draft={draft}
+              onEdit={() => startEdit(draft)}
+              onRemove={() => void remove(draft.id)}
+            />
+          ))}
         </ul>
       )}
 

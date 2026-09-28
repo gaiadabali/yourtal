@@ -94,6 +94,7 @@ test.describe
   .serial("7.8.d: Studio — sign-up through onboarding, billing and RBAC, against a live api", () => {
   let account: LiveAccount;
   let businessId: string;
+  let campaignId: string;
   let campaignTitle: string;
   const businessHandle = `c-studio-${uniqueSuffix()}`;
 
@@ -225,6 +226,22 @@ test.describe
     await page.reload();
     await expect(page.getByText(campaignTitle)).toBeVisible();
 
+    // `campaignId` for the next tests' own direct API calls (question
+    // add/edit/remove) — the same "confirm via the real GET, not just this
+    // page's own local state" reasoning as `businessId` above.
+    const campaignsResponse = await context.request.get(
+      `${apiBaseUrl()}/api/${businessId}/studio/campaigns`,
+      { headers: { cookie: account.cookie } },
+    );
+    expect(campaignsResponse.ok()).toBeTruthy();
+    const campaigns = (await campaignsResponse.json()) as Array<{ id: string; title: string }>;
+    const createdCampaign = campaigns.find((entry) => entry.title === campaignTitle);
+    expect(
+      createdCampaign,
+      "the campaign renamed through the editor should exist via GET .../studio/campaigns",
+    ).toBeDefined();
+    campaignId = createdCampaign?.id as string;
+
     await context.close();
   });
 
@@ -295,8 +312,46 @@ test.describe
       await page.getByRole("button", { name: "Save question" }).click();
       await expect(page.getByRole("dialog")).toBeHidden();
     }
-    // Each saved row is server-confirmed live — no Edit/Remove offered.
-    await expect(page.getByRole("button", { name: "Edit" })).toHaveCount(0);
+    // Each saved row is server-confirmed live — 7.3.i's real PATCH/DELETE
+    // means Edit and Remove are both real now, not locked.
+    await expect(page.getByRole("button", { name: "Edit" })).toHaveCount(3);
+
+    // --- Edit the first question through the real PATCH.
+    await page
+      .locator("li", { hasText: "Is this fact 1 true?" })
+      .getByRole("button", { name: "Edit" })
+      .click();
+    await page.getByLabel("Question prompt").fill("Is this EDITED fact true?");
+    await page.getByRole("button", { name: "Save question" }).click();
+    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(page.getByText("Is this EDITED fact true?")).toBeVisible();
+
+    // --- Remove a different question through the real DELETE (soft-retire
+    // server-side, gone from this bank view — see question-live-actions.ts's
+    // own doc comment on why).
+    await page
+      .locator("li", { hasText: "Is this fact 2 true?" })
+      .getByRole("button", { name: "Remove" })
+      .click();
+    await expect(page.getByText("Is this fact 2 true?")).toBeHidden();
+
+    // The real server state: the edited question survives with its new
+    // prompt and stays "draft"; the removed one is "retired", not gone
+    // outright (docs/06 §4.1 — evidence is never deleted); the untouched
+    // third question is unaffected.
+    const questionsAfter = (await (
+      await context.request.get(
+        `${apiBaseUrl()}/api/${businessId}/studio/campaigns/${campaignId}/questions`,
+        { headers: { cookie: account.cookie } },
+      )
+    ).json()) as Array<{ question: { prompt: string }; status: string }>;
+    expect(questionsAfter).toHaveLength(3);
+    const edited = questionsAfter.find((q) => q.question.prompt === "Is this EDITED fact true?");
+    const removed = questionsAfter.find((q) => q.question.prompt === "Is this fact 2 true?");
+    const untouched = questionsAfter.find((q) => q.question.prompt === "Is this fact 3 true?");
+    expect(edited?.status).toBe("draft");
+    expect(removed?.status).toBe("retired");
+    expect(untouched?.status).toBe("draft");
 
     // --- Still blocked by the verification banner, exactly as 7.8.d's
     // Check describes — content-completeness was never the gate here. The

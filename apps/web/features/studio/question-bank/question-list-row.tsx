@@ -7,7 +7,7 @@ import { questionTypeLabel, questionTypeScoreLabel } from "./question-type-catal
 
 export interface QuestionListRowProps {
   draft: QuestionDraft;
-  /** Omitted (not just disabled) when the server has already confirmed this question and no live edit endpoint exists yet — see `question-bank-screen.tsx`'s own doc comment. */
+  /** Optional so a future read-only rendering can omit it outright rather than merely disable it; `question-bank-screen.tsx` currently always passes both, live mode included since 7.3.i. */
   onEdit?: () => void;
   onRemove?: () => void;
 }

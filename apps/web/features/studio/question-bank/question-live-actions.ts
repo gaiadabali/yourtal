@@ -33,13 +33,14 @@ const bankQuestionRecordSchema = z.object({
  * `question-bank-screen.tsx` calls this file instead when `isLiveMode`,
  * mirroring `team-live-actions.ts`'s split.
  *
- * There is no live `PATCH`/`DELETE` for an individual question — the real
- * controller is list/create only (append-only bank, matching docs/06 §4.1's
- * "retired, never deleted" model for a PUBLISHED question; there is
- * currently no route to edit or remove a DRAFT one either). Flagged as a
- * `(requested by D/7.8)` subtask under 7.3 in TASKS.md rather than faked
- * here — `question-bank-screen.tsx` disables edit/remove for any question
- * this file has already confirmed the server holds.
+ * `PATCH`/`DELETE .../questions/:questionId` (7.3.i) round out list/create:
+ * `PATCH` re-validates the full question (same shape as `create`, same PII/
+ * prediction guards) and refuses a type change (`question_type_immutable`);
+ * `DELETE` soft-retires it server-side (`status` becomes `"retired"`,
+ * docs/06 §4.1's "evidence is never deleted" model) but this feature still
+ * removes it from the author's own bank view — a business asking to
+ * "remove" a question wants it gone from what they see, not merely marked.
+ * Both refuse once the campaign has left `draft` (`campaign_not_draft`).
  */
 export type QuestionLiveActionResult<T> = { ok: true; value: T } | { ok: false; message: string };
 
@@ -127,4 +128,51 @@ export async function createQuestionLive(
   );
   if (!result.ok) return { ok: false, message: mapApiError(result.error) };
   return { ok: true, value: questionToDraft(result.data.question) };
+}
+
+/**
+ * `PATCH /api/:tenantId/studio/campaigns/:campaignId/questions/:questionId`
+ * (7.3.i) — `@NotValueMoving`, no idempotency key needed. The server's own
+ * refusals (`pii_request`, `prediction_request`, `question_type_immutable`,
+ * `campaign_not_draft`) come back as this same `ok:false` shape with the
+ * server's own message, shown inline exactly where `createQuestionLive`'s
+ * already are.
+ */
+export async function updateQuestionLive(
+  businessId: string,
+  campaignId: string,
+  draft: QuestionDraft,
+): Promise<QuestionLiveActionResult<QuestionDraft>> {
+  const publishable = toPublishableQuestionInput(draft);
+  if (publishable === null) {
+    return { ok: false, message: "This question is not finished yet." };
+  }
+  const result = await apiFetch(
+    `/api/${businessId}/studio/campaigns/${campaignId}/questions/${draft.id}`,
+    bankQuestionRecordSchema,
+    { method: "PATCH", body: publishable },
+  );
+  if (!result.ok) return { ok: false, message: mapApiError(result.error) };
+  return { ok: true, value: questionToDraft(result.data.question) };
+}
+
+/**
+ * `DELETE /api/:tenantId/studio/campaigns/:campaignId/questions/:questionId`
+ * (7.3.i) — `@NotValueMoving`, no idempotency key needed. Soft-retires
+ * server-side; this action's own caller (`question-bank-screen.tsx`) is
+ * what actually removes the row from the author's own bank view — see this
+ * file's own doc comment.
+ */
+export async function deleteQuestionLive(
+  businessId: string,
+  campaignId: string,
+  questionId: string,
+): Promise<QuestionLiveActionResult<null>> {
+  const result = await apiFetch(
+    `/api/${businessId}/studio/campaigns/${campaignId}/questions/${questionId}`,
+    bankQuestionRecordSchema,
+    { method: "DELETE" },
+  );
+  if (!result.ok) return { ok: false, message: mapApiError(result.error) };
+  return { ok: true, value: null };
 }

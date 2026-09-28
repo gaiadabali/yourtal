@@ -21,6 +21,7 @@ import type {
   PersistenceFailedError,
   SettlementDecreaseRequestNotFoundError,
   VoucherBatchRequestNotFoundError,
+  VoucherMintFailedError,
 } from "./store.errors";
 
 const logger = new Logger("StoreErrorMapper");
@@ -42,6 +43,7 @@ export type StoreDomainError =
   | LocationNotFoundError
   | LocationInUseError
   | VoucherBatchRequestNotFoundError
+  | VoucherMintFailedError
   | PersistenceFailedError;
 
 export function mapStoreErrorToHttpException(error: StoreDomainError): HttpException {
@@ -105,6 +107,12 @@ export function mapStoreErrorToHttpException(error: StoreDomainError): HttpExcep
       return new NotFoundException({
         code: "voucher_batch_request_not_found",
         message: `voucher batch request ${error.requestId} was not found`,
+      });
+    case "voucher_mint_failed":
+      logger.error(`voucher-internal refused the mint: ${error.code} -- ${error.message}`);
+      return new ServiceUnavailableException({
+        code: "voucher_mint_failed",
+        message: "the voucher batch could not be minted",
       });
     case "listing_pricing_failed":
       logger.error(error.cause);

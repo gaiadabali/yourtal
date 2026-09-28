@@ -10,6 +10,7 @@ import { SettlementDecreaseListController } from "./settlement-decrease-list.con
 import { StoreCatalogueController } from "./store-catalogue.controller";
 import { StoreListingController } from "./store-listing.controller";
 import { StoreLocationController } from "./store-location.controller";
+import { StaffVoucherBatchReviewController } from "./staff-voucher-batch-review.controller";
 import { VoucherBatchRequestController } from "./voucher-batch-request.controller";
 import { DrizzleListingPriceRevisionRepository } from "./persistence/drizzle-listing-price-revision.repository";
 import { DrizzleListingRepository } from "./persistence/drizzle-listing.repository";
@@ -64,6 +65,7 @@ export const STORE_DB = Symbol("STORE_DB");
     SettlementDecreaseController,
     SettlementDecreaseListController,
     VoucherBatchRequestController,
+    StaffVoucherBatchReviewController,
   ],
   providers: [
     {

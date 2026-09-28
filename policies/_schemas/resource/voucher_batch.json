@@ -4,9 +4,11 @@
   "description": "A bulk voucher issuance request (YT-0141). Two-person approval, always.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["businessId"],
   "properties": {
-    "businessId": { "type": "string" },
+    "businessId": {
+      "description": "NOT required, unlike a business-side route on this kind: TASKS.md 9.2.c's staff moderation queue names no single business in its URL (a list has none at all; approve/reject name a requestId, not a businessId) -- see business.json's own comment for the same reasoning. Cerbos runs with enforcement: reject, so requiring it would fail schema validation, and therefore deny, every staff moderation route before any rule ran. Absence is safe: `nobody-approves-their-own-batch` and the business-side derived roles all begin with has(R.attr.businessId) / has(R.attr.requestedBy).",
+      "type": "string"
+    },
     "requestedBy": { "type": "string" },
     "approvalState": { "type": "string", "enum": ["none", "pending", "approved"] },
     "region": {

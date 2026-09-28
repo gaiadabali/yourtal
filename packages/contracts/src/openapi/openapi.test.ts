@@ -85,6 +85,14 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "9.3.a's staff Businesses zone: POST .../suspend's request body, documented inline in route-registry.c-staff-businesses.ts.",
   reinstateBusinessRequestSchema:
     "9.3.a's staff Businesses zone: POST .../reinstate's request body, documented inline in route-registry.c-staff-businesses.ts.",
+  staffVoucherBatchRequestSchema:
+    "9.2.c's staff moderation queue: documented inline in route-registry.c-staff-moderation.ts, same treatment as staffSessionSchema above.",
+  listPendingVoucherBatchesResponseSchema:
+    "9.2.c's staff moderation queue: GET .../voucher-batches's response envelope, documented inline in route-registry.c-staff-moderation.ts.",
+  approveVoucherBatchRequestSchema:
+    "9.2.c's staff moderation queue: POST .../approve's request body, documented inline in route-registry.c-staff-moderation.ts.",
+  rejectVoucherBatchRequestSchema:
+    "9.2.c's staff moderation queue: POST .../reject's request body, documented inline in route-registry.c-staff-moderation.ts.",
   regionSettingSchema:
     "1.2.f's ledger-internal settings row (getSettings/proposeSetting/approveSetting). Internal to the ledger and 9.5.d's staff console, not a public/business-facing HTTP contract -- same reason ledger-internal and voucher-internal's own operation types are not routed through this registry.",
 

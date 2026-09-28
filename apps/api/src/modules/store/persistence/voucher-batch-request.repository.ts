@@ -32,6 +32,29 @@ export interface VoucherBatchRequestRepository {
     merchantId: string,
     input: CreateVoucherBatchRequestInput,
   ): Promise<VoucherBatchRequest | null>;
+
+  // --- TASKS.md 9.2.c: the staff moderation queue. Cross-merchant, unlike everything above. ---
+
+  /** Every request still `pending`, newest first. */
+  listPending(): Promise<VoucherBatchRequest[]>;
+  /** No merchant scoping -- a moderator reviews any business's request. */
+  findById(requestId: string): Promise<VoucherBatchRequest | null>;
+  /**
+   * Claims a pending request for minting: `null` if it is not `pending`, or
+   * if `approvedBy` is the same principal who requested it (the WHERE
+   * clause that protects the data, docs/13c -- the same shape
+   * `SettlementDecreaseRequestRepository.approve` uses). The caller mints
+   * through 4.5's `VoucherInternalClient` BEFORE calling this, then records
+   * the real `mintedBatchId` here in the same breath as flipping the state,
+   * so a request is never left `approved` with no batch to show for it.
+   */
+  approve(
+    requestId: string,
+    approvedBy: string,
+    mintedBatchId: string,
+  ): Promise<VoucherBatchRequest | null>;
+  /** `null` if the request is not `pending`. */
+  reject(requestId: string, decidedBy: string): Promise<VoucherBatchRequest | null>;
 }
 
 export const VOUCHER_BATCH_REQUEST_REPOSITORY = Symbol("VOUCHER_BATCH_REQUEST_REPOSITORY");

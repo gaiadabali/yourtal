@@ -112,6 +112,25 @@ export type GetVoucherBatchRequestError = VoucherBatchRequestNotFoundError | Per
 
 export type ListVoucherBatchRequestsError = PersistenceFailedError;
 
+/** TASKS.md 9.2.c: `VoucherInternalClient.requestBatch`/`approveBatch` (4.5) refused the mint. */
+export interface VoucherMintFailedError {
+  readonly type: "voucher_mint_failed";
+  readonly code: string;
+  readonly message: string;
+}
+
+export type StaffApproveVoucherBatchError =
+  | VoucherBatchRequestNotFoundError
+  | ListingNotFoundError
+  | ApprovalRefusedError
+  | VoucherMintFailedError
+  | PersistenceFailedError;
+
+export type StaffRejectVoucherBatchError =
+  | VoucherBatchRequestNotFoundError
+  | ApprovalRefusedError
+  | PersistenceFailedError;
+
 export type ProposeSettlementDecreaseError =
   | ListingNotFoundError
   | NotAMaterialDecreaseError

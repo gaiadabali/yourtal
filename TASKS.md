@@ -39,14 +39,14 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 4** The bank is correct | A | ✅ done | 10/10 | 57/58 | `██████████`  98% |
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
-| **Phase 7** Business studio | C | 🔄 in progress | 7/9 | 38/44 | `█████████░`  86% |
+| **Phase 7** Business studio | C | 🔄 in progress | 7/9 | 38/45 | `████████░░`  84% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 0/4 | 6/16 | `████░░░░░░`  38% |
 | **Phase 9** Staff console | C | 🔄 in progress | 0/5 | 1/17 | `█░░░░░░░░░`   6% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/7 | 0/19 | `░░░░░░░░░░`   0% |
-| **All** | | | **54/89** | **304/421** | `███████░░░`  72% |
+| **All** | | | **54/89** | **304/422** | `███████░░░`  72% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1141,6 +1141,7 @@ The business console becomes **YourTal Studio**, in the spirit of YouTube Studio
 
     Done: all 4 ticket/doc citations removed (found a 5th, `question-fields-short-text.tsx`, and 2 more in `report-provenance.ts`/`reports-unavailable-metrics.ts`, fixed too). `campaign-reward-risk.ts` takes a server-computed `rewardValueMinorUnits: number | null` and a translator, shows an honest "ratio pending" state (a `(requested by D/7.8)` subtask for A under 7.3 — 7.3.h — asks for the real endpoint); B's mock-backing-rate import removed, `eslint-rules/no-mock-backing-rate.mjs` updated. Full i18n sweep of `features/studio/**` into `messages/{en-AU,id-ID}/studio.json` (191 tests green). `eslint.config.mjs`'s Area C block is `error` severity from the start (no B-style warn period), covering hex/px/raw-element/JSX-literal bans. No redemption/breakage/ROI copy anywhere (grepped clean).
   - [x] 7.8.d **Check:** on staging a new business goes from sign-up to a funded campaign that is ready to submit, using only the Studio UI, with the submit button blocked by the verification banner. (Submitting after staff verify it is 9.3.b.)
+  - [ ] 7.8.e (after 7.3.i) Studio's question bank re-enables Edit and Remove on server-confirmed questions through 7.3.i's real `PATCH`/`DELETE`, showing the server's PII, prediction, type-change and not-draft refusals inline. Covered in `c-studio-onboarding.spec.ts`.
 
     **The `YOURTAL_DATA_SOURCE=mock`-on-Helios blocker is fixed properly, not by flipping the shared switch.** A global `live` would have broken `campaign-data`/`quick-data`/`store-data`/`store-balance-data`/`merchant-data`/`provisioning-data` on staging (all still reject "not implemented" in live mode). Instead: `apps/web/features/studio/studio-data-source.ts` is a Studio-scoped `resolveStudioDataSourceMode`/`resolveStudioDataSource`, separate from `@yourtal/contracts/mock-source`'s shared one. Resolution order: an explicit `YOURTAL_DATA_SOURCE` always wins (local dev's existing override, unchanged); otherwise `APP_ENV === "staging" | "production"` resolves to `live` (confirmed the pm2 process on Helios already gets `APP_ENV` from `/opt/yourtal/secrets/app.env` via Node's `--env-file`, the same mechanism `features/shell/app-env.ts`'s `isStaging()` reads); otherwise `mock`, unchanged from today. Every Studio `*-data.ts` and the two `page.tsx` that read the mode directly now import from this file instead of the shared one — mechanical, no behaviour change for local dev or tests (neither sets `APP_ENV`). 12 new unit tests on the resolution function. Merged `539db07c`; released and deployed (workflow run `36370719590`, `/api/health` revision `539db07c` confirmed live on Helios).
 

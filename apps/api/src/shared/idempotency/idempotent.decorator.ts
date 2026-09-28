@@ -44,6 +44,26 @@ export interface IdempotentOptions {
    * general-purpose transform.
    */
   readonly redact?: (value: unknown) => unknown;
+
+  /**
+   * F70/8.2.h: which principal `IdempotencyInterceptor` scopes the key by
+   * (ahead of the `tenantId` shortcut, which still wins when present).
+   * Defaults to `"session"` (`AsyncPrincipalResolver`) — every route except a
+   * device route wants that. `"device"` resolves through
+   * `StoreDevicePrincipalResolver` instead: a `@PublicRoute` device route
+   * (`counter.controller.ts`) authenticates inside its own handler body,
+   * which runs AFTER this interceptor, so the session resolver has nothing
+   * to resolve and throws "sign in again" for a caller that was never
+   * signed in to begin with. `StoreDevicePrincipalResolver.resolve()` is
+   * itself a real authentication step (it verifies the bearer credential
+   * against the database and throws 401 for anything invalid or revoked)
+   * before this option lets it anywhere near the idempotency table, so the
+   * "an unauthenticated caller must never write to platform.idempotency"
+   * invariant this file's own header states still holds — it is just
+   * satisfied by a different, already-established resolver than the
+   * session one, not skipped.
+   */
+  readonly scopeBy?: "session" | "device";
 }
 
 export const Idempotent = (options: IdempotentOptions) => SetMetadata(IDEMPOTENT_METADATA, options);

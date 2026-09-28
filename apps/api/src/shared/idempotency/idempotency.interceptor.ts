@@ -16,6 +16,7 @@ import { IDEMPOTENT_METADATA } from "./idempotent.decorator";
 import type { IdempotentOptions } from "./idempotent.decorator";
 import { IDEMPOTENCY_STORE } from "./idempotency.module";
 import { AsyncPrincipalResolver } from "../authz/async-principal-resolver";
+import { StoreDevicePrincipalResolver } from "../authz/store-device-principal-resolver";
 
 /**
  * Applies `@yourtal/idempotency` to routes marked `@Idempotent`. YT-0039.
@@ -33,6 +34,17 @@ import { AsyncPrincipalResolver } from "../authz/async-principal-resolver";
  * security property — an unauthenticated caller must not be able to write to
  * the idempotency table at all, or they could pre-poison a key and have a
  * legitimate request replay their stored response.
+ *
+ * F70/8.2.h: `@PublicRoute` device routes (`counter.controller.ts`) bypass
+ * the global `PdpGuard`, authenticating instead inside their own handler
+ * body — which runs AFTER this interceptor, so the ordering above does not
+ * hold for them the way it holds for a session route. `IdempotentOptions.scopeBy`
+ * is how such a route says so: `"device"` resolves through
+ * `StoreDevicePrincipalResolver` here, ahead of the handler's own
+ * `DeviceAuthorize.requireDevice()` PDP check, rather than through
+ * `AsyncPrincipalResolver` (which has no session to find and throws "sign in
+ * again" for a caller that was never signed in). See that option's own doc
+ * comment for why this does not weaken the invariant above.
  */
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {
@@ -40,6 +52,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
     private readonly reflector: Reflector,
     @Inject(IDEMPOTENCY_STORE) private readonly store: IdempotencyStore,
     private readonly principals: AsyncPrincipalResolver,
+    private readonly devicePrincipals: StoreDevicePrincipalResolver,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -67,7 +80,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
       });
     }
 
-    return from(this.scopeFor(request)).pipe(
+    return from(this.scopeFor(request, options.scopeBy)).pipe(
       switchMap((scope) =>
         from(
           begin(this.store, {
@@ -185,13 +198,19 @@ export class IdempotencyInterceptor implements NestInterceptor {
    * change what is trusted, only what the resolver is capable of knowing
    * about the id it already trusted.
    */
-  private async scopeFor(request: FastifyRequest): Promise<string> {
+  private async scopeFor(
+    request: FastifyRequest,
+    scopeBy: "session" | "device" | undefined,
+  ): Promise<string> {
     const params: unknown = request.params;
     if (typeof params === "object" && params !== null && "tenantId" in params) {
       const tenantId: unknown = Reflect.get(params, "tenantId");
       if (typeof tenantId === "string" && tenantId.length > 0) {
         return `tenant:${tenantId}`;
       }
+    }
+    if (scopeBy === "device") {
+      return `principal:${(await this.devicePrincipals.resolve(request)).id}`;
     }
     return `principal:${(await this.principals.resolve(request)).id}`;
   }

@@ -8,6 +8,8 @@ import { IdempotencyInterceptor } from "./idempotency.interceptor";
 import { IDEMPOTENT_METADATA } from "./idempotent.decorator";
 import { ONBOARDING_RETENTION_MS } from "./retention";
 import { AsyncPrincipalResolver } from "../authz/async-principal-resolver";
+import { StoreDevicePrincipalResolver } from "../authz/store-device-principal-resolver";
+import { NoDeviceCredentialVerifier } from "../authz/device-credential-verifier";
 import { PrincipalService } from "./../authz/principal.service";
 import { alwaysValidSessionValidator } from "../testing/fake-session-validator";
 import type { PrincipalSecurityStateRepository } from "../../modules/identity/persistence/principal-security-state.repository";
@@ -73,6 +75,10 @@ beforeEach(() => {
       NO_MEMBERSHIPS,
       NO_STAFF_ROLES,
     ),
+    // F70/8.2.h: `scopeBy: "device"` is what would reach this — every
+    // context in this suite carries a tenantId or the default "session"
+    // scope, so `NoDeviceCredentialVerifier` (always refuses) is never hit.
+    new StoreDevicePrincipalResolver(new NoDeviceCredentialVerifier()),
   );
 });
 

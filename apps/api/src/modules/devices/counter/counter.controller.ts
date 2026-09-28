@@ -73,7 +73,8 @@ export class CounterController {
     return result.value;
   }
 
-  @Idempotent({ retentionMs: COUNTER_AUTHORIZE_RETENTION_MS })
+  // F70/8.2.h: a device route, never a session — see IdempotentOptions.scopeBy's own doc comment.
+  @Idempotent({ retentionMs: COUNTER_AUTHORIZE_RETENTION_MS, scopeBy: "device" })
   @RateLimit({ routeId: "counter.authorize", ip: { max: 60, windowSeconds: 60 } })
   @PublicRoute("device-credential authenticated; the PDP check runs explicitly below")
   @Post("authorize")
@@ -102,7 +103,8 @@ export class CounterController {
     return result.value;
   }
 
-  @Idempotent({ retentionMs: COUNTER_CAPTURE_RETENTION_MS })
+  // F70/8.2.h: a device route, never a session — see IdempotentOptions.scopeBy's own doc comment.
+  @Idempotent({ retentionMs: COUNTER_CAPTURE_RETENTION_MS, scopeBy: "device" })
   @RateLimit({ routeId: "counter.capture", ip: { max: 60, windowSeconds: 60 } })
   @PublicRoute("device-credential authenticated; the PDP check runs explicitly below")
   @Post("capture")

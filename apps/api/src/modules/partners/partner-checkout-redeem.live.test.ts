@@ -1,8 +1,4 @@
-import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
-import { mkdirSync, mkdtempSync, openSync, writeFileSync } from "node:fs";
-import { createServer } from "node:net";
-import { tmpdir } from "node:os";
+import { createHmac, randomUUID } from "node:crypto";
 import path from "node:path";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -20,6 +16,7 @@ import { DrizzleCounterDeviceRepository } from "../devices/persistence/drizzle-c
 import { businessAccounts } from "../business/persistence/schema/business-account.table";
 import { merchantLocations } from "../store/persistence/schema/listing.table";
 import { issueDeviceCredential, issuePairingCode } from "../devices/crypto/device-token";
+import { startLiveServices, type LiveServices } from "../devices/testing/live-services";
 import { partnerCredentials } from "./persistence/schema/partner.table";
 
 /**
@@ -32,9 +29,11 @@ import { partnerCredentials } from "./persistence/schema/partner.table";
  * both regions.
  *
  * Self-contained rather than reusing scripts/checkout-live.mjs (Area A's
- * path): builds and spawns its OWN ledger and voucher binaries in
- * beforeAll/afterAll, the same way checkout.live.test.ts spawns its own
- * voucher process mid-suite. Gated behind the SAME CHECKOUT_LIVE=1 flag
+ * path): builds and spawns its own ledger and voucher binaries in
+ * beforeAll/afterAll via `../devices/testing/live-services.ts` (shared with
+ * `studio-credential-redeem.live.test.ts`, 8.3.f's own live test, so the
+ * spawn/build logic exists once rather than duplicated a third time).
+ * Gated behind the SAME CHECKOUT_LIVE=1 flag
  * apps/api/vitest.config.ts already reads to decide whether *.live.test.ts
  * files are excluded — one flag for every live-services test in this app,
  * not a second one this file would otherwise need its own config-file
@@ -50,97 +49,12 @@ const live = process.env["CHECKOUT_LIVE"] === "1";
 let app: NestFastifyApplication;
 let deps: SagaDeps;
 let owner: AppDb;
-let ledger: ChildProcess | undefined;
-let voucher: ChildProcess | undefined;
-
-async function healthy(url: string): Promise<boolean> {
-  return fetch(`${url}/healthz`).then(
-    (r) => r.ok,
-    () => false,
-  );
-}
+let liveServices: LiveServices | undefined;
 
 beforeAll(async () => {
   if (!live) return;
-  for (const name of ["LEDGER_DATABASE_URL", "VOUCHER_DATABASE_URL"]) {
-    if (!/yourtal_test_/.test(process.env[name] ?? "")) {
-      throw new Error(
-        "partner-checkout-redeem.live.test.ts: run me through packages/db/scripts/with-test-db.mjs",
-      );
-    }
-  }
   const root = path.resolve(process.cwd(), "..", "..");
-  const scratch = mkdtempSync(path.join(tmpdir(), "partner-checkout-live-"));
-  const exe = process.platform === "win32" ? ".exe" : "";
-  const secrets = {
-    ledger: process.env["LEDGER_SERVICE_SECRET"] ?? "local-only-ledger-service-secret-not-real",
-    voucher: process.env["VOUCHER_SERVICE_SECRET"] ?? "local-only-voucher-service-secret-not-real",
-    attestation:
-      process.env["REWARD_ATTESTATION_SECRET"] ?? "local-only-reward-attestation-secret-not-real",
-  };
-  const binaries: Record<string, string> = {};
-  for (const service of ["ledger", "voucher"]) {
-    binaries[service] = path.join(scratch, `${service}${exe}`);
-    const build = spawnSync("go", ["build", "-o", binaries[service], `./cmd/${service}`], {
-      cwd: path.join(root, "services", service),
-      stdio: "inherit",
-    });
-    if (build.status !== 0) throw new Error(`building ${service} failed`);
-  }
-  const keyDir = path.join(scratch, "keys");
-  mkdirSync(keyDir);
-  for (const purpose of ["voucher_code", "merchant_hmac", "voucher_qr"]) {
-    writeFileSync(path.join(keyDir, `${purpose}.v1.key`), randomBytes(32).toString("hex"));
-  }
-
-  const freePort = (): Promise<number> =>
-    new Promise((resolve) => {
-      const probe = createServer().listen(0, "127.0.0.1", () => {
-        const address = probe.address();
-        const port = typeof address === "object" && address !== null ? address.port : 0;
-        probe.close(() => resolve(port));
-      });
-    });
-  const ledgerPort = await freePort();
-  const voucherPort = await freePort();
-  const ledgerUrl = `http://127.0.0.1:${ledgerPort}`;
-  const voucherUrl = `http://127.0.0.1:${voucherPort}`;
-
-  ledger = spawn(binaries["ledger"]!, [], {
-    env: {
-      ...process.env,
-      LEDGER_ADDR: `127.0.0.1:${ledgerPort}`,
-      LEDGER_SERVICE_SECRET: secrets.ledger,
-      REWARD_ATTESTATION_SECRET: secrets.attestation,
-    },
-    stdio: ["ignore", openSync(path.join(scratch, "ledger.log"), "w"), "inherit"],
-  });
-  voucher = spawn(binaries["voucher"]!, [], {
-    env: {
-      ...process.env,
-      VOUCHER_ADDR: `127.0.0.1:${voucherPort}`,
-      VOUCHER_SERVICE_SECRET: secrets.voucher,
-      VOUCHER_KEY_DIR: keyDir,
-      LEDGER_BASE_URL: ledgerUrl,
-      LEDGER_SERVICE_SECRET: secrets.ledger,
-    },
-    stdio: ["ignore", openSync(path.join(scratch, "voucher.log"), "w"), "inherit"],
-  });
-  for (const url of [ledgerUrl, voucherUrl]) {
-    let ready = false;
-    for (let attempt = 0; attempt < 100 && !ready; attempt++) {
-      ready = await healthy(url);
-      if (!ready) await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    if (!ready) throw new Error(`${url} never became ready`);
-  }
-
-  process.env["LEDGER_MODE"] = "live";
-  process.env["LEDGER_BASE_URL"] = ledgerUrl;
-  process.env["VOUCHER_BASE_URL"] = voucherUrl;
-  process.env["LEDGER_SERVICE_SECRET"] = secrets.ledger;
-  process.env["VOUCHER_SERVICE_SECRET"] = secrets.voucher;
-  process.env["REWARD_ATTESTATION_SECRET"] = secrets.attestation;
+  liveServices = await startLiveServices(root);
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter(), {
@@ -165,12 +79,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!live) return;
   await app.close();
-  for (const child of [voucher, ledger]) {
-    if (child === undefined) continue;
-    const exited = new Promise((resolve) => child.once("exit", resolve));
-    child.kill("SIGKILL");
-    await exited;
-  }
+  await liveServices?.stop();
 });
 
 async function seedPartner(): Promise<{ partnerId: string; secret: string }> {

@@ -18,7 +18,19 @@ export interface IssueCredentialInput {
   readonly issuedBy: string;
 }
 
-/** TASKS.md 8.3.a: issues through the voucher service (4.5.d), then indexes it by business for Studio -> Developers. */
+/**
+ * TASKS.md 8.3.a: issues through the voucher service (4.5.d), then indexes
+ * it by business for Studio -> Developers.
+ *
+ * 8.3.f: deliberately never sends `deviceId`. This used to pass
+ * `input.label` there, which is a human-readable name for the credential
+ * ("Web checkout integration"), not an actual device — but a non-empty
+ * `deviceId` is what makes services/voucher treat a credential as
+ * device-scoped, and a device-scoped credential can never void or refund
+ * (routes_release.go's refuseDevicePrincipal). Every credential Studio
+ * issues is meant to be able to do everything 8.3.b/8.3.a's own docs sell a
+ * brand on, including refund, so it must be merchant-wide.
+ */
 export function issueCredential(
   vouchers: VoucherInternalClient,
   credentials: DeveloperCredentialRepository,
@@ -27,7 +39,6 @@ export function issueCredential(
   return vouchers
     .issueMerchantCredential({
       merchantId: input.businessId,
-      deviceId: input.label,
       issuedBy: input.issuedBy,
     })
     .andThen((issued) => {

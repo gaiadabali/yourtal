@@ -33,16 +33,17 @@ func MerchantID(ctx context.Context) (uuid.UUID, bool) {
 	return id, ok
 }
 
-// WithDeviceID attaches the device a verified signature's credential names
-// (4.5.d: every credential issued through the internal API is device-scoped).
-// Called only by Middleware, alongside WithMerchantID.
+// WithDeviceID attaches the device a verified signature's credential names,
+// when it has one (8.3.f: a credential is merchant-wide by default; a
+// caller opts into device-scoping explicitly, at issuance). Called only by
+// Middleware, alongside WithMerchantID.
 func WithDeviceID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, deviceIDKey, id)
 }
 
 // DeviceID reports whether the credential that signed this request is
-// device-scoped, and its device id. False for a legacy merchant-wide
-// credential — the only kind void and refund (4.5.c) still allow.
+// device-scoped, and its device id. False for the ordinary merchant-wide
+// credential — the only kind void and refund (4.5.c) allow.
 func DeviceID(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(deviceIDKey).(string)
 	return id, ok

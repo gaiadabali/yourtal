@@ -28,14 +28,18 @@ export function issueMerchantCredential(
     (async (): Promise<Result<MerchantCredential, VoucherError>> => {
       const id = randomUUID();
       const secret = newSecret();
+      // 8.3.f: absent (or "") means an ordinary merchant-wide credential —
+      // stored as NULL, never the empty string, matching the real
+      // voucher.merchant_credential table's own convention.
+      const deviceId = request.deviceId === undefined || request.deviceId === "" ? null : request.deviceId;
       await db.execute(sql`
         INSERT INTO platform.voucher_fake_credential (id, merchant_id, device_id, secret_hash)
-        VALUES (${id}, ${request.merchantId}, ${request.deviceId}, ${sha256(secret)})
+        VALUES (${id}, ${request.merchantId}, ${deviceId}, ${sha256(secret)})
       `);
       return ok({
         credentialId: id,
         merchantId: request.merchantId,
-        deviceId: request.deviceId,
+        ...(deviceId === null ? {} : { deviceId }),
         secret,
         state: "active",
         issuedAt: new Date().toISOString(),
@@ -47,7 +51,7 @@ export function issueMerchantCredential(
 type CredentialRow = {
   readonly id: string;
   readonly merchant_id: string;
-  readonly device_id: string;
+  readonly device_id: string | null;
   readonly state: string;
   readonly issued_at: string;
 };
@@ -76,7 +80,7 @@ export function rotate(
       return ok({
         credentialId: row.id,
         merchantId: row.merchant_id,
-        deviceId: row.device_id,
+        ...(row.device_id === null ? {} : { deviceId: row.device_id }),
         secret,
         state: row.state as MerchantCredential["state"],
         issuedAt: new Date(row.issued_at).toISOString(),

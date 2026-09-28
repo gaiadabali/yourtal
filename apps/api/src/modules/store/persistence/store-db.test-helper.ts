@@ -4,6 +4,12 @@ import { createAppDb } from "../../../shared/persistence/drizzle-client";
 import { listingPriceRevisions } from "./schema/listing-price-revision.table";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
 import { settlementDecreaseRequests } from "./schema/settlement-decrease-request.table";
+// TASKS.md 9.2.c: store.voucher_batch_request holds a NOT NULL FK to
+// store.listings (20260927130000) -- a staff-review test that leaves one
+// pending or decided breaks every later suite's own `DELETE FROM listings`
+// the same way voucher.vouchers etc. below already do, so it is cleared
+// child-first here too.
+import { voucherBatchRequests } from "./schema/voucher-batch-request.table";
 // TASKS.md 8.1.a: store.counter_device (a devices module table, `store`
 // schema) holds a composite FK to store.merchant_location — cleared here,
 // child-first, for the same reason listingLocations/listings are.
@@ -97,6 +103,10 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   // listing.
   await db.delete(listingPriceRevisions);
   await db.delete(settlementDecreaseRequests);
+  // No DELETE grant for yourtal_app on store.voucher_batch_request
+  // (20260927130000_voucher_batch_request.sql grants SELECT/INSERT/UPDATE
+  // only) -- the owner connection, same reason every line above it is.
+  await owner.delete(voucherBatchRequests);
   await db.delete(listingLocations);
   await db.delete(listings);
   // Child-first ahead of counter_device itself (see the import's own

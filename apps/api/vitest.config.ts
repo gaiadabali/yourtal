@@ -10,12 +10,14 @@ export default defineConfig({
     // `voucher-client.contract.spec.ts`) — run against the fake today, against
     // the live services once 4.1/4.5 land.
     include: ["src/**/*.test.ts", "src/**/*.contract.spec.ts"],
-    // `*.live.test.ts` needs the live services and runs only through its own
-    // script (scripts/checkout-live.mjs sets CHECKOUT_LIVE=1). Left in the
-    // default run it only ever reports "skipped", which Integration rightly
-    // refuses to treat as a pass.
+    // `*.live.test.ts` needs the live services and runs only when its own
+    // gate env var is set (scripts/checkout-live.mjs sets CHECKOUT_LIVE=1;
+    // TASKS.md 9.2.c's staff-voucher-batch-review.live.test.ts sets
+    // VOUCHER_BATCH_LIVE=1 itself, self-contained rather than through a
+    // root script). Left in the default run it only ever reports "skipped",
+    // which Integration rightly refuses to treat as a pass.
     exclude:
-      process.env.CHECKOUT_LIVE === "1"
+      process.env.CHECKOUT_LIVE === "1" || process.env.VOUCHER_BATCH_LIVE === "1"
         ? configDefaults.exclude
         : [...configDefaults.exclude, "src/**/*.live.test.ts"],
     environment: "node",

@@ -8,6 +8,13 @@ import { settlementDecreaseRequests } from "./schema/settlement-decrease-request
 // schema) holds a composite FK to store.merchant_location — cleared here,
 // child-first, for the same reason listingLocations/listings are.
 import { counterDevices } from "../../devices/persistence/schema/counter-device.table";
+// TASKS.md 8.2.b/8.2.h: an INSERT-only audit trail (no DELETE grant for
+// yourtal_app, 20260927170000_counter_capture_log.sql) with a FK to
+// counter_device — a suite that drives a real capture (e.g.
+// counter-idempotency.e2e.test.ts, 8.2.h) leaves a row here the
+// counterDevices delete below then violates. Found live: this file's own
+// FK-graph comment predates 8.2.h's first real capture in a shared test DB.
+import { counterCaptureLog } from "../../devices/persistence/schema/counter-capture-log.table";
 
 /**
  * A real Postgres handle for this module's tests, following the pattern
@@ -92,6 +99,9 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   await db.delete(settlementDecreaseRequests);
   await db.delete(listingLocations);
   await db.delete(listings);
+  // Child-first ahead of counter_device itself (see the import's own
+  // comment): also owner-only, no DELETE grant for yourtal_app.
+  await owner.delete(counterCaptureLog);
   // `store.counter_device` (8.1.a) only grants yourtal_app SELECT/INSERT/
   // UPDATE -- no DELETE (20260927140000_counter_devices.sql) -- so this one
   // needs the owner connection too, same reason every voucher.* line above

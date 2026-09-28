@@ -120,6 +120,17 @@ async function main(): Promise<void> {
       result.demoVoucherDetail === undefined
         ? `demo voucher: ${result.demoVoucher}`
         : `demo voucher: ${result.demoVoucher}: ${result.demoVoucherDetail}`;
+    // F74/8.2.i: one line per region this run had a viewer for.
+    const redemptionBalanceSummary =
+      result.redemptionBalance.length === 0
+        ? "redemption balance: skipped"
+        : result.redemptionBalance
+            .map((b) =>
+              b.detail === undefined
+                ? `${b.region} redemption balance: ${b.status} (${String(b.availablePoints)}/${String(b.targetPoints)})`
+                : `${b.region} redemption balance: ${b.status}: ${b.detail}`,
+            )
+            .join("; ");
     // 2.3.i: only where a fixture ships (the Helios release sets
     // MEDIA_FIXTURE_DIR); a laptop publishes its own with packages/media.
     const fixtureDir = process.env.MEDIA_FIXTURE_DIR;
@@ -214,19 +225,21 @@ async function main(): Promise<void> {
 
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
-        `${grantSummary}; ${voucherSummary}; ${mediaSummary}; ${demoMediaSummary}; ${demoMediaVouchersSummary}.`,
+        `${grantSummary}; ${voucherSummary}; ${redemptionBalanceSummary}; ${mediaSummary}; ` +
+        `${demoMediaSummary}; ${demoMediaVouchersSummary}.`,
     );
 
     if (
       result.pendingGrant === "failed" ||
       result.demoVoucher === "failed" ||
+      result.redemptionBalance.some((b) => b.status === "failed") ||
       media?.status === "failed"
     ) {
       // set -Eeuo pipefail in infra/helios/pre-reload.sh turns this into a
       // failed deploy, on purpose — see this file's own header.
       console.error(
         "Staging seed: a real service call failed (see the line(s) above). Failing the deploy " +
-          "rather than leaving a demo grant, voucher or video silently missing.",
+          "rather than leaving a demo grant, voucher, redemption balance or video silently missing.",
       );
       process.exitCode = 1;
     }

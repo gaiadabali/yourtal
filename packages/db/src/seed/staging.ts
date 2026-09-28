@@ -132,11 +132,38 @@ export interface StagingSeedResult {
   readonly pendingGrantDetail?: string;
   /** 2.3.c's restore rehearsal needs a real, decryptable voucher code — see
    * `ensureDemoVoucher`. `"skipped"` for the same reason `pendingGrant` can
-   * be: no business this seed created to hang a listing off. */
+   * be: no business this seed created to hang a listing off. `"created"`
+   * covers both a first mint AND a later top-up (F74/8.2.i) — see
+   * `demoVoucherDetail` for which. */
   readonly demoVoucher: "created" | "already_present" | "failed" | "skipped";
-  /** Present only when `demoVoucher` is `"failed"` — the voucher service's
-   * own error code, or a network-error message. */
+  /** The voucher service's own error code (or a network-error message) when
+   * `demoVoucher` is `"failed"`; a short "had N, minted M more" summary when
+   * it is `"created"` (F74/8.2.i) — undefined only for `"already_present"`/`"skipped"`. */
   readonly demoVoucherDetail?: string;
+  /**
+   * F74/8.2.i: each region's demo viewer topped up, in fixed idempotent
+   * chunks, to afford several demo vouchers at today's LIVE quote (AU) or a
+   * flat headroom (ID — no demo listing exists yet to quote against) — see
+   * `ensureDemoRedemptionBalance`. Empty when the world has no demo viewers
+   * to grant to (the same case `pendingGrant`/`demoVoucher` report `"skipped"` for).
+   */
+  readonly redemptionBalance: readonly DemoBalanceResult[];
+}
+
+export interface DemoBalanceResult {
+  readonly region: "AU" | "ID";
+  /** `"capped_for_today"` is F12's OWN daily earn cap refusing a grant
+   * (`velocity_capped`) — expected, not a bug: this run made no progress,
+   * but the NEXT real day's deploy gets a fresh daily allowance and tries
+   * again with the same idempotencyKey (never stored, since the ledger
+   * refused it before writing anything) — see `ensureDemoRedemptionBalance`'s
+   * own header. Never fails the deploy, unlike `"failed"`. */
+  readonly status: "topped_up" | "already_sufficient" | "capped_for_today" | "failed";
+  /** The ledger's own error code, or a network-error message, when `status`
+   * is `"failed"` or `"capped_for_today"`. */
+  readonly detail?: string;
+  readonly availablePoints?: number;
+  readonly targetPoints?: number;
 }
 
 export interface StagingLedgerConfig {
@@ -219,6 +246,14 @@ function demoAccounts(): readonly DemoAccountSpec[] {
       region: "AU",
       displayName: "Viewer Demo",
       timezone: TIMEZONE_AU,
+    },
+    // F74/8.2.i: the redemption-loop Check needs a viewer in EACH region,
+    // not only AU — same tier-0-by-default reasoning as viewer.au above.
+    {
+      email: "viewer.id@demo.yourtal.test",
+      region: "ID",
+      displayName: "Viewer Demo (ID)",
+      timezone: TIMEZONE_ID,
     },
     {
       email: "owner.au@demo.yourtal.test",
@@ -530,6 +565,8 @@ interface WorldResult {
    * to look up) — a world this seed did not create and should not touch
    * further than it already has. */
   readonly viewerUserId: string | null;
+  /** F74/8.2.i: the ID region's own demo viewer, same nullability reasoning as `viewerUserId`. */
+  readonly viewerIdUserId: string | null;
 }
 
 async function lookupUserId(pool: pg.Pool, email: string): Promise<string | null> {
@@ -554,7 +591,15 @@ async function seedWorldIfEmpty(
   if (Number(existing.rows[0]?.count ?? "0") > 0) {
     log("[seed:staging] identity.user_profile is not empty — the world is already seeded.");
     const viewerUserId = await lookupUserId(pool, "viewer.au@demo.yourtal.test");
-    return { status: "already_present", businesses: 0, campaigns: 0, accounts: 0, viewerUserId };
+    const viewerIdUserId = await lookupUserId(pool, "viewer.id@demo.yourtal.test");
+    return {
+      status: "already_present",
+      businesses: 0,
+      campaigns: 0,
+      accounts: 0,
+      viewerUserId,
+      viewerIdUserId,
+    };
   }
 
   const now = new Date();
@@ -623,6 +668,7 @@ async function seedWorldIfEmpty(
     campaigns: campaigns.length,
     accounts: userIdByEmail.size,
     viewerUserId: idOf("viewer.au@demo.yourtal.test"),
+    viewerIdUserId: idOf("viewer.id@demo.yourtal.test"),
   };
 }
 
@@ -763,6 +809,46 @@ async function ensureTierZeroPendingGrant(
  * for real, the same way a business's own listing gets priced. */
 const DEMO_FACE_VALUE_MINOR = 4_500;
 const DEMO_SETTLEMENT_VALUE_MINOR = 3_000;
+
+/** F74/8.2.i — keeps the demo listing's live, minted-and-unallocated stock
+ * (`voucher.vouchers WHERE state='minted'` — 7.4.c made `store.listings.
+ * stock_remaining` vestigial) topped up so repeated staging Checks don't run
+ * it dry the way 2.3.c's original "mint one, ever" idempotency did. */
+const DEMO_VOUCHER_STOCK_TARGET = 20;
+
+/** How many demo vouchers, at today's LIVE quote, the AU viewer's balance
+ * should afford — see `ensureDemoRedemptionBalance`'s own header for why
+ * more than one, and for why this is 2, not something larger: F12's own
+ * daily earn cap (`platform.ledger_setting`'s `daily_earn_cap`, currently
+ * AU 500 / ID 5000 — `packages/db/migrations/20260925193000_platform_
+ * region_setting.sql`) bounds how much of any target is reachable per
+ * calendar day, discovered the hard way by running this seed against a
+ * REAL ledger (F74/8.2.i's own verification, not the fake): an AU live
+ * quote of ~858-1000 needs several real days to reach at 2x headroom
+ * already; 5x would take twice as long for no correctness gain. */
+const REDEMPTION_HEADROOM_VOUCHERS = 2;
+/** One grant attempt per region per run — NOT several small chunks. F12's
+ * `checkCaps` (`services/ledger/internal/reward/caps.go`) enforces TWO
+ * limits per user per DAY, across every action and funding source alike
+ * (confirmed against the real ledger, not assumed): a POINTS sum
+ * (`daily_earn_cap`) and, for `kind: "goodwill"` specifically, a COUNT of
+ * 3 grants. Many small chunks in one run waste count-cap slots for no
+ * benefit — the points cap alone already bounds one day's progress — so
+ * this attempts ONE grant per run, sized safely under each region's known
+ * daily cap, and lets consecutive DEPLOYS (real days apart) make further
+ * progress, the same way `viewer.au`'s own balance organically reached 600
+ * over staging's real history before this fix ever ran. A grant that lands
+ * on `insufficient_available` (marketing cash) is a real failure; one that
+ * lands on `velocity_capped` (F12's own cap, working as designed) is not —
+ * see `ensureDemoRedemptionBalance`'s `"capped_for_today"` outcome. */
+const AU_TOPUP_CHUNK_POINTS = 450;
+/** ID's daily cap (5000) comfortably covers `ID_FLAT_TARGET_POINTS` in one
+ * grant, so ID reaches its target the very first successful run. */
+const ID_TOPUP_CHUNK_POINTS = 1_000;
+/** ID has no demo listing yet (`buildDemoListing` is AU-only — see its own
+ * header) — a flat headroom in the same points unit, not a quote against
+ * nothing, keeps the ID viewer usable without inventing a fake ID price. */
+const ID_FLAT_TARGET_POINTS = 1_000;
 
 /**
  * One "quick" listing for snap-app AU, the same 1.1.h rule the campaign
@@ -1029,7 +1115,9 @@ async function ensureDemoVoucher(
     return Number(result.rows[0]?.count ?? "0");
   };
 
-  if ((await existingVouchers()) > 0) {
+  const had = await existingVouchers();
+  const shortfall = DEMO_VOUCHER_STOCK_TARGET - had;
+  if (shortfall <= 0) {
     return { status: "already_present" };
   }
 
@@ -1054,7 +1142,7 @@ async function ensureDemoVoucher(
     merchantId: SNAP_APP_AU_ID,
     currency: listingFacts.currency,
     faceValueMinor: listingFacts.faceValueMinor,
-    quantity: 1,
+    quantity: shortfall,
     partialRedemptionPolicy: listingFacts.partialRedemptionPolicy,
     requestedBy: "staging-seed-requester",
   });
@@ -1084,14 +1172,147 @@ async function ensureDemoVoucher(
   }
 
   // Approval can 200 without actually minting (see this function's own
-  // header) — the only trustworthy confirmation is a real row.
-  if ((await existingVouchers()) === 0) {
+  // header) — the only trustworthy confirmation is a real row count.
+  const have = await existingVouchers();
+  if (have <= had) {
     const detail =
-      "batches/approve answered 200 but no voucher.vouchers row exists for the listing";
+      "batches/approve answered 200 but voucher.vouchers gained no rows for the listing";
     log(`[seed:staging] ${detail}`);
     return { status: "failed", detail };
   }
-  return { status: "created" };
+  return { status: "created", detail: `had ${String(had)}, minted ${String(have - had)} more` };
+}
+
+/** F74/8.2.i — Step 5: each demo viewer's own AVAILABLE balance (trustTier 3,
+ * so `contractGrant` posts it straight to `available`, never `pending` — the
+ * tier-0 grant above is deliberately the opposite), topped up until it
+ * affords several vouchers at TODAY's live quote. Never minted without cash:
+ * `kind: "goodwill"` is the exact same marketing-cash-backed `GrantAction`
+ * step 3 already uses — there is no separate "business allocation" grant
+ * kind for demo balances, and this file never writes a `ledger.entry` row
+ * directly (see the file header's "no raw SQL" rule).
+ *
+ * Why several vouchers, not one: `platform.listing_points` reprices
+ * continuously (4.9.a) — a balance sized for exactly one quote goes stale
+ * the moment the price drifts up, which is exactly how 8.2.e's own staging
+ * Check failed (858 points quoted live, viewer.au had 600).
+ *
+ * # ONE grant attempt per run, never a tight loop of small chunks
+ *
+ * Verified against a REAL ledger (not the fake `staging.test.ts` uses):
+ * `checkCaps` (`services/ledger/internal/reward/caps.go`) enforces F12's
+ * daily earn cap — a POINTS sum, per user, across every action and funding
+ * source, region-wide — regardless of `kind` or trust tier. A tight loop of
+ * many small grants in one run does not "make more progress" once that
+ * day's allowance is used; it only burns `kind: "goodwill"`'s own 3-per-day
+ * COUNT cap for nothing. So this makes exactly one attempt, sized to
+ * `chunkPoints` (kept safely under each region's known daily cap — see
+ * `AU_TOPUP_CHUNK_POINTS`/`ID_TOPUP_CHUNK_POINTS`), and lets FURTHER
+ * deploys — real days apart — make the rest of the progress, the same way
+ * `viewer.au`'s own balance organically reached 600 over staging's real
+ * history before this function ever ran.
+ *
+ * The idempotencyKey is DERIVED from the observed balance
+ * (`floor(available / chunkPoints) + 1`), not a locally-incremented
+ * counter: a capped attempt is never stored (the ledger refuses before
+ * writing anything), so the NEXT run recomputes the SAME index and retries
+ * the identical key; a grant that actually landed moves `available` up by
+ * `chunkPoints`, so the next run derives the NEXT index on its own — no
+ * separate progress row to keep in sync.
+ *
+ * `velocity_capped` (F12's cap doing exactly its job) is reported as
+ * `"capped_for_today"`, never `"failed"` — see `DemoBalanceResult`'s own
+ * doc. Anything else (`insufficient_available`, a network error, an
+ * unexpected response) is a real problem and stays `"failed"`. */
+async function ensureDemoRedemptionBalance(
+  ledger: StagingLedgerConfig,
+  userId: string,
+  region: "AU" | "ID",
+  targetPoints: number,
+  chunkPoints: number,
+  log: (message: string) => void,
+): Promise<DemoBalanceResult> {
+  const before = await walletAvailablePoints(ledger, userId);
+  if (!before.ok) {
+    log(`[seed:staging] ledger /v1/wallet/balance answered an error: ${before.detail}`);
+    return { region, status: "failed", detail: before.detail };
+  }
+  if (before.availablePoints >= targetPoints) {
+    return {
+      region,
+      status: "already_sufficient",
+      availablePoints: before.availablePoints,
+      targetPoints,
+    };
+  }
+
+  const chunkIndex = Math.floor(before.availablePoints / chunkPoints) + 1;
+  const request: GrantActionRequest = grantActionRequestSchema.parse({
+    kind: "goodwill",
+    userId,
+    region,
+    points: toPoints(chunkPoints),
+    trustTier: 3,
+    idempotencyKey: `staging-seed-viewer-${region}-topup-${String(chunkIndex)}`,
+  });
+  const granted = await postSigned(ledger, "/v1/actions/grants", request);
+  if (!granted.ok) {
+    if (granted.detail === "velocity_capped") {
+      log(
+        `[seed:staging] ${region} redemption balance top-up hit today's F12 earn cap — ` +
+          `expected, not a failure; it tries again on a later day ` +
+          `(available ${String(before.availablePoints)}/${String(targetPoints)}).`,
+      );
+      return {
+        region,
+        status: "capped_for_today",
+        detail: granted.detail,
+        availablePoints: before.availablePoints,
+        targetPoints,
+      };
+    }
+    log(
+      `[seed:staging] ledger /v1/actions/grants (${region} topup) answered an error: ${granted.detail}`,
+    );
+    return {
+      region,
+      status: "failed",
+      detail: granted.detail,
+      availablePoints: before.availablePoints,
+      targetPoints,
+    };
+  }
+
+  const after = await walletAvailablePoints(ledger, userId);
+  if (!after.ok) {
+    log(`[seed:staging] ledger /v1/wallet/balance (post-topup) answered an error: ${after.detail}`);
+    return { region, status: "failed", detail: after.detail, targetPoints };
+  }
+  return { region, status: "topped_up", availablePoints: after.availablePoints, targetPoints };
+}
+
+/** `POST /v1/wallet/balance` — the same real ledger route `apps/api`'s own
+ * wallet module reads (`services/ledger/internal/api/earning_routes.go`'s
+ * `balance`), reused here rather than a raw SQL balance query for the same
+ * reason step 3 makes a real grant call instead of a raw insert. */
+async function walletAvailablePoints(
+  ledger: StagingLedgerConfig,
+  userId: string,
+): Promise<{ ok: true; availablePoints: number } | { ok: false; detail: string }> {
+  const result = await postSigned(ledger, "/v1/wallet/balance", { userId });
+  if (!result.ok) return { ok: false, detail: result.detail };
+  const body = result.body;
+  const availablePoints =
+    typeof body === "object" && body !== null && "availablePoints" in body
+      ? body.availablePoints
+      : undefined;
+  if (typeof availablePoints !== "number") {
+    return {
+      ok: false,
+      detail: `unexpected /v1/wallet/balance response: ${JSON.stringify(body)}`,
+    };
+  }
+  return { ok: true, availablePoints };
 }
 
 export async function seedStaging(
@@ -1114,10 +1335,10 @@ export async function seedStaging(
   if (world.viewerUserId === null) {
     log(
       "[seed:staging] no viewer.au@demo.yourtal.test account exists (a non-empty " +
-        "identity.user_profile this seed did not create) — skipping the pending grant " +
-        "and the demo voucher.",
+        "identity.user_profile this seed did not create) — skipping the pending grant, " +
+        "the demo voucher and the redemption balance top-up.",
     );
-    return { ...base, pendingGrant: "skipped", demoVoucher: "skipped" };
+    return { ...base, pendingGrant: "skipped", demoVoucher: "skipped", redemptionBalance: [] };
   }
 
   const grant = await ensureTierZeroPendingGrant(
@@ -1128,11 +1349,49 @@ export async function seedStaging(
   );
   const voucher = await ensureDemoVoucher(pool, options.ledger, options.voucher, log);
 
+  // AU's target tracks TODAY's live quote (see `ensureDemoRedemptionBalance`'s
+  // own header) — re-priced every run, never cached from `voucher`'s own
+  // first-mint call, so a later price drift is caught on the very next deploy.
+  const redemptionBalance: DemoBalanceResult[] = [];
+  const auQuote = await priceDemoListing(options.ledger);
+  if (!auQuote.ok) {
+    log(
+      "[seed:staging] ledger /v1/pricing/listing answered an error, so the AU viewer's " +
+        `redemption balance was not topped up: ${auQuote.detail}`,
+    );
+    redemptionBalance.push({ region: "AU", status: "failed", detail: auQuote.detail });
+  } else {
+    const auTargetPoints = auQuote.pricePoints * REDEMPTION_HEADROOM_VOUCHERS;
+    redemptionBalance.push(
+      await ensureDemoRedemptionBalance(
+        options.ledger,
+        world.viewerUserId,
+        "AU",
+        auTargetPoints,
+        AU_TOPUP_CHUNK_POINTS,
+        log,
+      ),
+    );
+  }
+  if (world.viewerIdUserId !== null) {
+    redemptionBalance.push(
+      await ensureDemoRedemptionBalance(
+        options.ledger,
+        world.viewerIdUserId,
+        "ID",
+        ID_FLAT_TARGET_POINTS,
+        ID_TOPUP_CHUNK_POINTS,
+        log,
+      ),
+    );
+  }
+
   return {
     ...base,
     pendingGrant: grant.status,
     ...(grant.detail === undefined ? {} : { pendingGrantDetail: grant.detail }),
     demoVoucher: voucher.status,
     ...(voucher.detail === undefined ? {} : { demoVoucherDetail: voucher.detail }),
+    redemptionBalance,
   };
 }

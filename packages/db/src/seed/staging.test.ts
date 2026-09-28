@@ -80,6 +80,7 @@ const LISTING_ID = "00000000-0000-4000-9000-000000000301";
 const LOCATION_ID = "00000000-0000-4000-9000-000000000302";
 const DEMO_EMAILS = [
   "viewer.au@demo.yourtal.test",
+  "viewer.id@demo.yourtal.test",
   "owner.au@demo.yourtal.test",
   "member.au@demo.yourtal.test",
   "owner.id@demo.yourtal.test",
@@ -130,18 +131,37 @@ async function marketingCashBalance(region: "AU" | "ID"): Promise<number> {
   return Number(rows[0]?.balance ?? "0");
 }
 
-/** A stand-in for `POST /v1/actions/grants` — records the request it
- * received and answers either with a plausible grant view (replaying the
- * SAME `grantedAt` on every success, exactly like the real reward engine's
- * replay rule does) or, in `"insufficient"` mode, the real 409 body staging
- * actually got. */
+/** A stand-in for `POST /v1/actions/grants` and `POST /v1/wallet/balance` —
+ * records every request it received and answers either with a plausible
+ * grant/balance view or, in `"insufficient"` mode, the real 409 body
+ * staging actually got. Keyed per `idempotencyKey` (not one shared slot),
+ * because F74/8.2.i's own topup calls make MANY distinct grants
+ * (`staging-seed-viewer-AU-topup-1`, `-2`, ...), each independently
+ * replayable, alongside the ORIGINAL fixed-key tier-0 grant.
+ *
+ * `"insufficient_topup"` refuses ONLY a trustTier-3 (top-up) grant, with F12's
+ * OWN `velocity_capped` code, leaving pricing, the wallet-balance read and
+ * the tier-0 (trustTier 0) grant healthy — the shape of the REAL ledger's
+ * daily earn cap discovered by running this seed live (F74/8.2.i's own
+ * verification): AU's cap is small enough that the mandatory tier-0 grant
+ * alone can exhaust it. The only way to prove `"capped_for_today"` and the
+ * "tops up further on a later run" behaviour without duplicating
+ * `"insufficient"`'s all-paths refusal. */
 class FakeLedger {
-  mode: "ok" | "insufficient" = "ok";
+  mode: "ok" | "insufficient" | "insufficient_topup" = "ok";
   /** Every request this ledger has answered — a list, not a single slot,
-   * because one `seedStaging` call makes TWO real ledger calls now
-   * (`/v1/pricing/listing` then `/v1/actions/grants`), not one. */
+   * because one `seedStaging` call makes several real ledger calls now
+   * (pricing, the tier-0 grant, one or more balance reads, and one or more
+   * topup grants), not one. */
   received: { path: string; signatureHeader: string; body: unknown }[] = [];
-  private grantedAt: string | undefined;
+  private readonly grantedAtByKey = new Map<string, string>();
+  /** Only a `trustTier >= 3` grant's points land here — the same "tier 3
+   * lands in available at once" rule `contract_test.go` pins on the real
+   * reward engine, reproduced here because F74/8.2.i's balance top-up
+   * READS this back through `/v1/wallet/balance` to decide whether to grant
+   * more; a fake that credited every tier equally would never exercise
+   * that read/decide loop the way the real ledger does. */
+  private readonly availableByUser = new Map<string, number>();
   server: Server = createServer((req, res) => {
     void this.answer(req).then(([status, body]) => {
       res.writeHead(status, { "content-type": "application/json" }).end(JSON.stringify(body));
@@ -153,6 +173,11 @@ class FakeLedger {
     path: string,
   ): { path: string; signatureHeader: string; body: unknown } | undefined {
     return [...this.received].reverse().find((entry) => entry.path === path);
+  }
+
+  /** Every request to this exact path, oldest first. */
+  allRequestsTo(path: string): { path: string; signatureHeader: string; body: unknown }[] {
+    return this.received.filter((entry) => entry.path === path);
   }
 
   private async answer(req: IncomingMessage): Promise<[number, unknown]> {
@@ -178,8 +203,23 @@ class FakeLedger {
     if (entry.path === "/v1/pricing/listing") {
       // A plausible priced-listing response — `priceDemoListing` only reads
       // `pricePoints`, and the exact formula is the real ledger's, not this
-      // fake's to reproduce.
-      return [200, { pricePoints: 1_000, backingRateId: "rate_test_1" }];
+      // fake's to reproduce. Small on purpose: with AU_TOPUP_CHUNK_POINTS at
+      // 450, a target of pricePoints * REDEMPTION_HEADROOM_VOUCHERS (2) must
+      // stay reachable in ONE chunk so these tests can assert a clean
+      // "topped up once, already sufficient thereafter" — F74/8.2.i's own
+      // real design deliberately does NOT try to reach a large target in one
+      // run (see `ensureDemoRedemptionBalance`'s header), so a fake target
+      // sized to need many runs would only be testing this fake, not staging.
+      return [200, { pricePoints: 200, backingRateId: "rate_test_1" }];
+    }
+
+    if (entry.path === "/v1/wallet/balance") {
+      const body = entry.body as { userId: string };
+      const availablePoints = this.availableByUser.get(body.userId) ?? 0;
+      return [
+        200,
+        { userId: body.userId, availablePoints, pending: [], expiringPoints: 0, expiringAt: null },
+      ];
     }
 
     const body = entry.body as {
@@ -187,22 +227,49 @@ class FakeLedger {
       kind: string;
       region: string;
       points: number;
+      trustTier: number;
+      idempotencyKey: string;
     };
+    if (this.mode === "insufficient_topup" && body.trustTier >= 3) {
+      // F12's own error code (`ErrUserCapReached`/`ErrEarnCapReached`, both
+      // mapped to `velocity_capped` — `services/ledger/internal/api/
+      // routes.go`), not `insufficient_available` — a DIFFERENT refusal than
+      // `"insufficient"` mode's, and the one `ensureDemoRedemptionBalance`
+      // treats as benign (`"capped_for_today"`), not a failure.
+      return [
+        409,
+        {
+          code: "velocity_capped",
+          message: "reward: per-user daily cap reached: 500 of 500 for goodwill",
+        },
+      ];
+    }
     // The real reward engine's replay rule returns the STORED grantedAt on
-    // a repeat, not a fresh one — reproduced here so the "just created vs
-    // already there" heuristic under test sees the same shape it would in
-    // production.
-    this.grantedAt ??= new Date().toISOString();
+    // a repeat, not a fresh one — reproduced here, per idempotencyKey, so
+    // the "just created vs already there" heuristic under test sees the
+    // same shape it would in production, and a replay never double-credits
+    // `availableByUser`.
+    const alreadyGranted = this.grantedAtByKey.has(body.idempotencyKey);
+    if (!alreadyGranted) {
+      this.grantedAtByKey.set(body.idempotencyKey, new Date().toISOString());
+      if (body.trustTier >= 3) {
+        this.availableByUser.set(
+          body.userId,
+          (this.availableByUser.get(body.userId) ?? 0) + body.points,
+        );
+      }
+    }
+    const grantedAt = this.grantedAtByKey.get(body.idempotencyKey);
     return [
       200,
       {
-        grantId: "grant_test_1",
+        grantId: `grant_${body.idempotencyKey}`,
         kind: body.kind,
         userId: body.userId,
         region: body.region,
         points: body.points,
         unlockAt: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
-        grantedAt: this.grantedAt,
+        grantedAt,
       },
     ];
   }
@@ -231,6 +298,7 @@ class FakeVoucherService {
   mode: "ok" | "failing" = "ok";
   received: { path: string; signatureHeader: string; body: unknown }[] = [];
   private lastRequestedBy: string | undefined;
+  private lastQuantity = 1;
   server: Server = createServer((req, res) => {
     this.answer(req)
       .then(([status, body]) => {
@@ -267,6 +335,7 @@ class FakeVoucherService {
     if (path === "/internal/v1/batches") {
       const batchId = randomUUID();
       this.lastRequestedBy = String(body.requestedBy);
+      this.lastQuantity = typeof body.quantity === "number" ? body.quantity : 1;
       return [
         200,
         {
@@ -284,7 +353,8 @@ class FakeVoucherService {
     }
 
     if (path === "/internal/v1/batches/approve") {
-      await this.mintOneVoucher();
+      const quantity = this.lastQuantity;
+      for (let i = 0; i < quantity; i += 1) await this.mintOneVoucher();
       return [
         200,
         {
@@ -293,7 +363,7 @@ class FakeVoucherService {
           merchantId: BUSINESS_IDS[0],
           currency: "AUD",
           faceValueMinor: 4_500,
-          quantity: 1,
+          quantity,
           requestedBy: this.lastRequestedBy ?? "unknown",
           approvedBy: body.approvedBy,
           state: "approved",
@@ -370,17 +440,24 @@ describe("seedStaging", () => {
       expect(first.world).toBe("seeded");
       expect(first.businesses).toBe(2);
       expect(first.campaigns).toBe(4);
-      expect(first.accounts).toBe(10);
+      expect(first.accounts).toBe(11);
       expect(["funded", "already_funded"]).toContain(first.marketingFunding);
       expect(first.pendingGrant).toBe("granted");
       expect(first.pendingGrantDetail).toBeUndefined();
       expect(first.demoVoucher).toBe("created");
-      expect(first.demoVoucherDetail).toBeUndefined();
+      expect(first.demoVoucherDetail).toBe("had 0, minted 20 more");
 
       // The ledger calls really were the signed, shaped requests the real
-      // service expects — both the pricing call (step 4) and the grant
-      // (step 3).
-      const grantRequest = ledger.lastRequestTo("/v1/actions/grants");
+      // service expects — the tier-0 grant (step 3) is found by its own
+      // fixed idempotencyKey, not "the last grant call", because F74/8.2.i's
+      // own balance top-up (step 5) also calls `/v1/actions/grants` many
+      // more times, afterward, for both regions.
+      const grantRequest = ledger.received.find(
+        (entry) =>
+          entry.path === "/v1/actions/grants" &&
+          (entry.body as { idempotencyKey?: string }).idempotencyKey ===
+            "staging-seed-tier0-viewer-pending-grant",
+      );
       expect(grantRequest?.signatureHeader).toMatch(/^t=\d+,c=api,n=.+,v1=[0-9a-f]{64}$/);
       expect(grantRequest?.body).toMatchObject({
         kind: "goodwill",
@@ -389,6 +466,53 @@ describe("seedStaging", () => {
         trustTier: 0,
         idempotencyKey: "staging-seed-tier0-viewer-pending-grant",
       });
+
+      // Step 5's own topup calls: exactly ONE per region (F74/8.2.i's real
+      // design makes one attempt per run, never a tight loop — see
+      // `ensureDemoRedemptionBalance`'s own header), each with a
+      // region-scoped idempotencyKey and trustTier 3 (available at once,
+      // unlike the tier-0 grant's trustTier 0). The fake's pricePoints (200)
+      // keeps AU's target (400) reachable in that one 450-point chunk, and
+      // ID's flat 1,000-point target IS exactly its own chunk size.
+      const auTopups = ledger
+        .allRequestsTo("/v1/actions/grants")
+        .filter((entry) =>
+          ((entry.body as { idempotencyKey?: string }).idempotencyKey ?? "").startsWith(
+            "staging-seed-viewer-AU-topup-",
+          ),
+        );
+      const idTopups = ledger
+        .allRequestsTo("/v1/actions/grants")
+        .filter((entry) =>
+          ((entry.body as { idempotencyKey?: string }).idempotencyKey ?? "").startsWith(
+            "staging-seed-viewer-ID-topup-",
+          ),
+        );
+      expect(auTopups).toHaveLength(1);
+      expect(idTopups).toHaveLength(1);
+      expect(auTopups[0]?.body).toMatchObject({
+        kind: "goodwill",
+        region: "AU",
+        points: 450,
+        trustTier: 3,
+        idempotencyKey: "staging-seed-viewer-AU-topup-1",
+      });
+      expect(idTopups[0]?.body).toMatchObject({
+        kind: "goodwill",
+        region: "ID",
+        points: 1_000,
+        trustTier: 3,
+        idempotencyKey: "staging-seed-viewer-ID-topup-1",
+      });
+
+      // The redemption balance result itself: both regions topped up past
+      // their targets in that one chunk — AU's a live quote times headroom,
+      // ID's the flat fallback (no ID demo listing exists to quote against).
+      expect(first.redemptionBalance).toStrictEqual([
+        { region: "AU", status: "topped_up", availablePoints: 450, targetPoints: 400 },
+        { region: "ID", status: "topped_up", availablePoints: 1_000, targetPoints: 1_000 },
+      ]);
+
       const pricingRequest = ledger.lastRequestTo("/v1/pricing/listing");
       expect(pricingRequest?.signatureHeader).toMatch(/^t=\d+,c=api,n=.+,v1=[0-9a-f]{64}$/);
       expect(pricingRequest?.body).toMatchObject({
@@ -400,7 +524,9 @@ describe("seedStaging", () => {
 
       // Same for the voucher service: two signed calls, request then
       // approve, with a DIFFERENT requester and approver (the two-person
-      // rule) and the listing's own economics on the wire.
+      // rule) and the listing's own economics on the wire — quantity 20
+      // (F74/8.2.i's DEMO_VOUCHER_STOCK_TARGET), not 1, since the target
+      // starts unmet on a completely fresh world.
       expect(voucherService.received).toHaveLength(2);
       const [requested, approved] = voucherService.received;
       expect(requested?.path).toBe("/internal/v1/batches");
@@ -410,7 +536,7 @@ describe("seedStaging", () => {
         merchantId: BUSINESS_IDS[0],
         currency: "AUD",
         faceValueMinor: 4_500,
-        quantity: 1,
+        quantity: 20,
         requestedBy: "staging-seed-requester",
       });
       expect(approved?.path).toBe("/internal/v1/batches/approve");
@@ -419,7 +545,9 @@ describe("seedStaging", () => {
       const approvedBody = approved?.body as { approvedBy: string };
       expect(approvedBody.approvedBy).not.toBe(requestedBody.requestedBy);
 
-      // A real, minted voucher — the whole point (2.3.c).
+      // 20 real, minted vouchers — enough stock that a repeated staging
+      // Check doesn't run it dry (F74/8.2.i; 2.3.c's own point still holds
+      // for any one of them).
       const mintedVouchers = await owner.query<{
         state: string;
         currency: string;
@@ -427,9 +555,10 @@ describe("seedStaging", () => {
       }>(`SELECT state, currency, region FROM voucher.vouchers WHERE listing_id = $1`, [
         LISTING_ID,
       ]);
-      expect(mintedVouchers.rows).toStrictEqual([
-        { state: "minted", currency: "AUD", region: "AU" },
-      ]);
+      expect(mintedVouchers.rows).toHaveLength(20);
+      for (const row of mintedVouchers.rows) {
+        expect(row).toStrictEqual({ state: "minted", currency: "AUD", region: "AU" });
+      }
 
       // Whichever it was before this call, the F12 budget is funded now —
       // the invariant that actually matters, not the state-transition label.
@@ -503,12 +632,27 @@ describe("seedStaging", () => {
         marketingFunding: "already_funded",
         pendingGrant: "already_present",
         demoVoucher: "already_present",
+        redemptionBalance: [
+          {
+            region: "AU",
+            status: "already_sufficient",
+            availablePoints: 450,
+            targetPoints: 400,
+          },
+          {
+            region: "ID",
+            status: "already_sufficient",
+            availablePoints: 1_000,
+            targetPoints: 1_000,
+          },
+        ],
       });
-      // Still exactly one voucher — the replay minted nothing new.
+      // Still exactly 20 vouchers — the replay minted nothing new (task 5's
+      // own requirement: a second run leaves the same balances and stock).
       const vouchers = await owner.query(`SELECT 1 FROM voucher.vouchers WHERE listing_id = $1`, [
         LISTING_ID,
       ]);
-      expect(vouchers.rowCount).toBe(1);
+      expect(vouchers.rowCount).toBe(20);
     } finally {
       await ledger.close();
     }
@@ -530,7 +674,7 @@ describe("seedStaging", () => {
         replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
       });
       expect(first.world).toBe("seeded");
-      expect(first.accounts).toBe(10);
+      expect(first.accounts).toBe(11);
       expect(first.pendingGrant).toBe("failed");
       expect(first.pendingGrantDetail).toBe("insufficient_available");
 
@@ -591,11 +735,11 @@ describe("seedStaging", () => {
       });
       expect(second.world).toBe("already_present");
       expect(second.demoVoucher).toBe("created");
-      expect(second.demoVoucherDetail).toBeUndefined();
+      expect(second.demoVoucherDetail).toBe("had 0, minted 20 more");
       const vouchers = await owner.query(`SELECT 1 FROM voucher.vouchers WHERE listing_id = $1`, [
         LISTING_ID,
       ]);
-      expect(vouchers.rowCount).toBe(1);
+      expect(vouchers.rowCount).toBe(20);
     } finally {
       await ledger.close();
     }
@@ -614,12 +758,19 @@ describe("seedStaging", () => {
     // Everything else this seed writes is unaffected by the ledger/voucher
     // service being unreachable — only those two steps report the failure.
     expect(result.world).toBe("seeded");
-    expect(result.accounts).toBe(10);
+    expect(result.accounts).toBe(11);
     expect(["funded", "already_funded"]).toContain(result.marketingFunding);
     expect(result.pendingGrant).toBe("failed");
     expect(result.pendingGrantDetail).toBeDefined();
     expect(result.demoVoucher).toBe("failed");
     expect(result.demoVoucherDetail).toBeDefined();
+    // The AU quote itself is unreachable, so the top-up never had a target
+    // to work toward — reported as failed, not silently skipped.
+    expect(result.redemptionBalance).toHaveLength(2);
+    for (const balance of result.redemptionBalance) {
+      expect(balance.status).toBe("failed");
+      expect(balance.detail).toBeDefined();
+    }
   });
 
   it("funds marketing exactly once across repeated runs", async () => {
@@ -649,6 +800,85 @@ describe("seedStaging", () => {
       expect([await marketingCashBalance("AU"), await marketingCashBalance("ID")]).toStrictEqual(
         balanceAfterFirst,
       );
+    } finally {
+      await ledger.close();
+    }
+  });
+
+  it("tops up the redemption balance further on a later run, once F12's own daily earn cap capped a previous one", async () => {
+    const ledger = new FakeLedger();
+    const baseUrl = await ledger.listen();
+    try {
+      // The exact incident this guards against, discovered running this
+      // seed against a REAL ledger (F74/8.2.i's own verification, not the
+      // fake): F12's daily earn cap refuses a top-up chunk — expected, not a
+      // failure, and this must say so per region (`"capped_for_today"`),
+      // not silently retry forever within one run or fail the deploy.
+      ledger.mode = "insufficient_topup";
+      const first = await seedStaging(owner, {
+        demoPassword: DEMO_PASSWORD,
+        ledger: { baseUrl, serviceSecret: LEDGER_SECRET },
+        voucher: { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+        log: () => undefined,
+        replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
+      });
+      expect(first.world).toBe("seeded");
+      expect(first.pendingGrant).toBe("granted");
+      expect(first.redemptionBalance).toStrictEqual([
+        {
+          region: "AU",
+          status: "capped_for_today",
+          detail: "velocity_capped",
+          availablePoints: 0,
+          targetPoints: 400,
+        },
+        {
+          region: "ID",
+          status: "capped_for_today",
+          detail: "velocity_capped",
+          availablePoints: 0,
+          targetPoints: 1_000,
+        },
+      ]);
+
+      // The next deploy (a later real day, in production): a fresh daily
+      // allowance. The world, the tier-0 grant and the voucher stock are
+      // already there — only the still-short balance makes progress, and
+      // the SAME derived idempotencyKey (`...-topup-1`) is retried, not a
+      // new one, because the capped attempt above was never stored.
+      ledger.mode = "ok";
+      const second = await seedStaging(owner, {
+        demoPassword: DEMO_PASSWORD,
+        ledger: { baseUrl, serviceSecret: LEDGER_SECRET },
+        voucher: { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+        log: () => undefined,
+        replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
+      });
+      expect(second.world).toBe("already_present");
+      expect(second.redemptionBalance).toStrictEqual([
+        { region: "AU", status: "topped_up", availablePoints: 450, targetPoints: 400 },
+        { region: "ID", status: "topped_up", availablePoints: 1_000, targetPoints: 1_000 },
+      ]);
+      const retriedTopup = ledger.received.find(
+        (entry) =>
+          entry.path === "/v1/actions/grants" &&
+          (entry.body as { idempotencyKey?: string }).idempotencyKey ===
+            "staging-seed-viewer-AU-topup-1",
+      );
+      expect(retriedTopup).toBeDefined();
+
+      // A third run finds the target already met and grants nothing further.
+      const third = await seedStaging(owner, {
+        demoPassword: DEMO_PASSWORD,
+        ledger: { baseUrl, serviceSecret: LEDGER_SECRET },
+        voucher: { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+        log: () => undefined,
+        replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
+      });
+      expect(third.redemptionBalance).toStrictEqual([
+        { region: "AU", status: "already_sufficient", availablePoints: 450, targetPoints: 400 },
+        { region: "ID", status: "already_sufficient", availablePoints: 1_000, targetPoints: 1_000 },
+      ]);
     } finally {
       await ledger.close();
     }

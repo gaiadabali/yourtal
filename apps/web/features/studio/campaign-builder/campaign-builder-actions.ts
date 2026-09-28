@@ -5,6 +5,8 @@ import type { CampaignDraft } from "./campaign-draft";
 import {
   apiCampaignDraftSchema,
   apiDraftToWebDraft,
+  apiRewardConfigResultSchema,
+  apiRewardResultToWebDraft,
   newCampaignDraftDefaults,
 } from "./campaign-draft-live-mapping";
 
@@ -40,9 +42,17 @@ export async function createCampaignDraftLive(
 export interface CampaignDraftDetailsPatch {
   title: string;
   synopsis: string;
+  durationSeconds: number;
+  contentCategory: string;
+  audience: string;
+  startsAt: string;
+  endsAt: string;
+  openViewing: boolean;
+  teaserStartSeconds: number;
+  captionsUrl: string | null;
 }
 
-/** `PATCH /api/:tenantId/studio/campaigns/:campaignId` (7.3.a) — title/synopsis only this pass; see this feature's own next-slice note in TASKS.md for the rest of the editor's fields. */
+/** `PATCH /api/:tenantId/studio/campaigns/:campaignId` (7.3.a) — every field the real DTO accepts that this editor has a control for (see TASKS.md 7.8.b's note for `targeting.districts`/`budget`, which the DTO has no field for at all). */
 export async function updateCampaignDraftDetailsLive(
   businessId: string,
   campaignId: string,
@@ -70,6 +80,45 @@ export async function updateCampaignDraftDetailsLive(
  * Left real and ready for whoever wires the button itself as this
  * feature's own next slice.
  */
+export interface RewardConfigPatch {
+  allocationId: string;
+  rewardPointsPerCompletion: number;
+  accuracyBonusPoints: number;
+  maxPointsForCampaign: number;
+}
+
+/**
+ * `PUT /api/:tenantId/studio/campaigns/:campaignId/reward` (7.3.c) — a full
+ * replacement, safe to repeat. Every refusal (`reward_exceeds_ceiling`, the
+ * 40% bonus ratio, `allocation_not_owned`, `allocation_not_partner_funded`)
+ * comes back as this same `ok:false` shape with the server's own message —
+ * shown inline in `campaign-editor-reward.tsx`, never silently swallowed.
+ * On success, the server's own priced `rewardValueMinor`/`currency`
+ * replaces the "ratio pending" state (7.3.h).
+ */
+export async function setRewardConfigLive(
+  businessId: string,
+  campaignId: string,
+  merchantName: string,
+  patch: RewardConfigPatch,
+): Promise<CampaignBuilderActionResult<CampaignDraft>> {
+  const result = await apiFetch(
+    `/api/${businessId}/studio/campaigns/${campaignId}/reward`,
+    apiRewardConfigResultSchema,
+    { method: "PUT", body: patch },
+  );
+  if (!result.ok) return { ok: false, message: result.error.message };
+  return {
+    ok: true,
+    value: apiRewardResultToWebDraft(
+      result.data,
+      merchantName,
+      patch.allocationId,
+      patch.accuracyBonusPoints,
+    ),
+  };
+}
+
 export async function submitCampaignDraftLive(
   businessId: string,
   campaignId: string,

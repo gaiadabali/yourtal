@@ -61,6 +61,25 @@ export interface CampaignDraft {
   status: CampaignDraftStatus;
   rejectionReason: string | null;
   updatedAt: string;
+  /** 7.3's real fields (`update-campaign-draft.schema.ts`) — mock mode carries sensible defaults for all of these; live mode maps them from/to the real API. Free-form strings (not the real Zod enums) so this client-reachable module never imports `@yourtal/jurisdiction`/`@yourtal/contracts` enum VALUES — see `campaign-draft-live-mapping.ts`'s doc comment. */
+  contentCategory: string;
+  audience: string;
+  startsAt: string;
+  endsAt: string;
+  openViewing: boolean;
+  teaserStartSeconds: number;
+  captionsUrl: string | null;
+  /**
+   * The reward config's own half (`campaignRewardConfigSchema`), not
+   * returned by `GET`/list — only by a successful `PUT .../reward`
+   * (7.3.c). `null`/`0` on a fresh load (mock or a live page reload) is
+   * the honest "not set this session" state, not a fabricated zero.
+   */
+  allocationId: string | null;
+  accuracyBonusPoints: number;
+  /** The server's own priced value for one completion (base + bonus), in the business's own currency — 7.3.h. `null` until a real `PUT .../reward` has returned one this session. */
+  rewardValueMinorUnits: number | null;
+  rewardCurrency: string | null;
 }
 
 export function draftDurationSeconds(draft: CampaignDraft): number {

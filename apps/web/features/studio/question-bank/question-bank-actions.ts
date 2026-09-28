@@ -18,7 +18,9 @@ import { detectPiiRequest } from "./question-pii-guard";
 export type QuestionBankActionError =
   | { type: "pii_request"; category: string; reason: string }
   | { type: "empty_prompt" }
-  | { type: "not_found" };
+  | { type: "not_found" }
+  /** A real `POST .../questions` refusal (7.3.b) with no closer match above — the server's own message, including its own PII/prediction-guard refusals. */
+  | { type: "api_error"; message: string };
 
 export type QuestionBankActionResult<T> =
   { ok: true; value: T } | { ok: false; error: QuestionBankActionError };
@@ -80,6 +82,8 @@ export function questionBankActionErrorMessage(error: QuestionBankActionError): 
       return "Write the question prompt before saving it.";
     case "not_found":
       return "That question is no longer in the bank — it may already have been removed.";
+    case "api_error":
+      return error.message;
     default: {
       const exhaustive: never = error;
       throw new Error(`Unhandled question bank action error: ${JSON.stringify(exhaustive)}`);

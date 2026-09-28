@@ -3,7 +3,7 @@ import {
   purchaseQuoteSchema,
   purchaseResultSchema,
 } from "@yourtal/contracts/billing";
-import type { PurchaseQuote, PurchaseResult } from "@yourtal/contracts/billing";
+import type { BillingAllocation, PurchaseQuote, PurchaseResult } from "@yourtal/contracts/billing";
 import type { Currency } from "@yourtal/contracts/money/currency";
 import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
@@ -20,6 +20,8 @@ export const PRESET_POINT_AMOUNTS: readonly number[] = [50_000, 250_000, 1_000_0
 export interface BillingBalance {
   totalPoints: number;
   remainingPoints: number;
+  /** This business's own funded point allocations — a reward config names one of these (7.3.c). `GET .../billing/balance` returns them alongside the totals, no separate list-allocations endpoint needed (per the coordinator: F14/7.8.b). */
+  allocations: BillingAllocation[];
 }
 
 export interface PurchaseHistoryEntry {
@@ -61,7 +63,11 @@ const liveDataSource: BillingDataSource = {
       billingBalanceSchema,
     );
     if (!result.ok) throw new Error(`Could not load balance: ${result.error.message}`);
-    return { totalPoints: result.data.totalPoints, remainingPoints: result.data.remainingPoints };
+    return {
+      totalPoints: result.data.totalPoints,
+      remainingPoints: result.data.remainingPoints,
+      allocations: [...result.data.allocations],
+    };
   },
   // No statements/purchase-history endpoint exists yet (10.6.b, F40) — an
   // honestly empty list, not an invented one.
@@ -85,6 +91,7 @@ interface MockState {
   totalPoints: number;
   remainingPoints: number;
   purchases: PurchaseHistoryEntry[];
+  allocations: BillingAllocation[];
 }
 
 const mockStateByBusinessId = new Map<string, MockState>();
@@ -92,7 +99,7 @@ const mockStateByBusinessId = new Map<string, MockState>();
 function mockStateFor(businessId: string): MockState {
   const existing = mockStateByBusinessId.get(businessId);
   if (existing) return existing;
-  const created: MockState = { totalPoints: 0, remainingPoints: 0, purchases: [] };
+  const created: MockState = { totalPoints: 0, remainingPoints: 0, purchases: [], allocations: [] };
   mockStateByBusinessId.set(businessId, created);
   return created;
 }
@@ -114,6 +121,7 @@ const mockDataSource: BillingDataSource = {
     return Promise.resolve({
       totalPoints: state.totalPoints,
       remainingPoints: state.remainingPoints,
+      allocations: state.allocations,
     });
   },
   listPurchases: (businessId) => Promise.resolve(mockStateFor(businessId).purchases),
@@ -132,15 +140,17 @@ const mockDataSource: BillingDataSource = {
       },
       ...state.purchases,
     ];
+    const allocation: BillingAllocation = {
+      allocationId: crypto.randomUUID(),
+      region: currency === "AUD" ? ("AU" as const) : ("ID" as const),
+      funderType: "partner" as const,
+      totalPoints: toPoints(points),
+      remainingPoints: toPoints(points),
+      createdAt: new Date().toISOString(),
+    };
+    state.allocations = [...state.allocations, allocation];
     return Promise.resolve({
-      allocation: {
-        allocationId: crypto.randomUUID(),
-        region: currency === "AUD" ? ("AU" as const) : ("ID" as const),
-        funderType: "partner" as const,
-        totalPoints: toPoints(state.totalPoints),
-        remainingPoints: toPoints(state.remainingPoints),
-        createdAt: new Date().toISOString(),
-      },
+      allocation,
       paidMinor: toMinorUnits(paidMinor),
       currency,
       providerReference: `mock_${crypto.randomUUID()}`,

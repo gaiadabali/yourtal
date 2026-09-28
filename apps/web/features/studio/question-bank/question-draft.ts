@@ -48,6 +48,8 @@ export interface MultipleChoiceQuestionDraft {
   type: "multiple_choice";
   prompt: string;
   timerSeconds: number;
+  /** The earliest second of the video this question may be asked at (TASKS.md 1.1.f) — see `question.ts`'s own contract field this mirrors. */
+  answerableAfterSeconds: number;
   options: QuestionDraftOption[];
   correctOptionId: string | null;
 }
@@ -58,6 +60,7 @@ export interface TrueFalseQuestionDraft {
   type: "true_false";
   prompt: string;
   timerSeconds: number;
+  answerableAfterSeconds: number;
   correctAnswer: boolean | null;
 }
 
@@ -67,6 +70,7 @@ export interface LikertQuestionDraft {
   type: "likert";
   prompt: string;
   timerSeconds: number;
+  answerableAfterSeconds: number;
   scaleMin: number;
   scaleMax: number;
   scaleLowLabel: string;
@@ -79,6 +83,7 @@ export interface RankedQuestionDraft {
   type: "ranked";
   prompt: string;
   timerSeconds: number;
+  answerableAfterSeconds: number;
   items: QuestionDraftOption[];
 }
 
@@ -88,6 +93,7 @@ export interface ShortTextQuestionDraft {
   type: "short_text";
   prompt: string;
   timerSeconds: number;
+  answerableAfterSeconds: number;
   maxLength: number;
 }
 
@@ -134,7 +140,15 @@ export function createEmptyQuestionDraft<T extends QuestionDraftType>(
   idFactory: () => string = () => crypto.randomUUID(),
 ): QuestionDraftOfType<T> {
   const id = idFactory();
-  const shared = { id, campaignId, prompt: "", timerSeconds: DEFAULT_TIMER_SECONDS };
+  const shared = {
+    id,
+    campaignId,
+    prompt: "",
+    timerSeconds: DEFAULT_TIMER_SECONDS,
+    // Askable from the start by default — a per-question timing control is
+    // this feature's own next slice; 0 is a real, valid value, not a stub.
+    answerableAfterSeconds: 0,
+  };
   // `type` is the generic `T`, not a literal the switch can narrow — each
   // branch below is provably the right shape for its own `case`, so the
   // cast to `QuestionDraftOfType<T>` only restates what the switch already

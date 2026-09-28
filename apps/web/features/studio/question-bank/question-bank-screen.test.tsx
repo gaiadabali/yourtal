@@ -17,6 +17,7 @@ describe("QuestionBankScreen", () => {
   it("shows the empty state and the bank-size explanation for a 15-minute video (asks 3, needs 9)", () => {
     renderWithIntl(
       <QuestionBankScreen
+        businessId="00000000-0000-4000-8000-000000000800"
         campaignId={CAMPAIGN_ID}
         durationSeconds={FIFTEEN_MINUTES}
         initialBank={[]}
@@ -30,6 +31,7 @@ describe("QuestionBankScreen", () => {
     const onBankChange = vi.fn();
     renderWithIntl(
       <QuestionBankScreen
+        businessId="00000000-0000-4000-8000-000000000800"
         campaignId={CAMPAIGN_ID}
         durationSeconds={FIFTEEN_MINUTES}
         initialBank={[]}
@@ -56,6 +58,7 @@ describe("QuestionBankScreen", () => {
   it("refuses to save a PII-harvesting question, with the reason shown inline", async () => {
     renderWithIntl(
       <QuestionBankScreen
+        businessId="00000000-0000-4000-8000-000000000800"
         campaignId={CAMPAIGN_ID}
         durationSeconds={FIFTEEN_MINUTES}
         initialBank={[]}
@@ -82,6 +85,7 @@ describe("QuestionBankScreen", () => {
   it("removes a question from the bank", async () => {
     renderWithIntl(
       <QuestionBankScreen
+        businessId="00000000-0000-4000-8000-000000000800"
         campaignId={CAMPAIGN_ID}
         durationSeconds={FIFTEEN_MINUTES}
         initialBank={[]}
@@ -104,6 +108,7 @@ describe("QuestionBankScreen", () => {
   it("hides the add/edit/remove controls in read-only mode", () => {
     renderWithIntl(
       <QuestionBankScreen
+        businessId="00000000-0000-4000-8000-000000000800"
         campaignId={CAMPAIGN_ID}
         durationSeconds={FIFTEEN_MINUTES}
         initialBank={[]}

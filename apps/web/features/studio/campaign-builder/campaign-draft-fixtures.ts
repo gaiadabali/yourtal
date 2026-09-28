@@ -25,6 +25,17 @@ export function createEmptyCampaignDraft(
     status: "draft",
     rejectionReason: null,
     updatedAt: new Date(0).toISOString(),
+    contentCategory: "entertainment",
+    audience: "all_ages",
+    startsAt: new Date(0).toISOString(),
+    endsAt: new Date(0).toISOString(),
+    openViewing: false,
+    teaserStartSeconds: 0,
+    captionsUrl: null,
+    allocationId: null,
+    accuracyBonusPoints: 0,
+    rewardValueMinorUnits: null,
+    rewardCurrency: null,
   };
 }
 

@@ -31,7 +31,14 @@ function StatefulReward({ initial }: { initial: CampaignDraft }) {
   return (
     <StudioIntlProvider>
       <RegionProvider region="ID">
-        <CampaignEditorReward draft={draft} form={form} onChange={setDraft} />
+        <CampaignEditorReward
+          draft={draft}
+          form={form}
+          onChange={setDraft}
+          isLiveMode={false}
+          merchantName="Kopi Kenangan"
+          allocations={[]}
+        />
       </RegionProvider>
     </StudioIntlProvider>
   );

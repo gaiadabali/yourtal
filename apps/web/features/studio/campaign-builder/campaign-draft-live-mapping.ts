@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import type { audienceSchema, campaignKindSchema } from "@yourtal/contracts/campaign";
-import type { ApiCampaignDraft } from "./campaign-draft-live-response";
-import { apiCampaignDraftSchema } from "./campaign-draft-live-response";
+import type { ApiCampaignDraft, ApiRewardConfigResult } from "./campaign-draft-live-response";
+import { apiCampaignDraftSchema, apiRewardConfigResultSchema } from "./campaign-draft-live-response";
 import type { CampaignDraft } from "./campaign-draft";
 import type { CampaignDraftStatus } from "./campaign-draft-status";
 
@@ -26,15 +26,20 @@ import type { CampaignDraftStatus } from "./campaign-draft-status";
  *     "same reward every chapter" but loses a real, unequal weighting if
  *     the server ever returns one. Reconciling the two shapes for real is
  *     this ticket's own next slice, not invented here.
- *   - `rewardPoints`/`scoringRule`: real reward config is base + a
- *     separate accuracy bonus (`campaignRewardConfigSchema`); this
- *     feature's `rewardPoints` is one flat number. Read-mapped as
- *     `rewardPoints ?? 0` and NOT yet written back through the real
- *     `PUT .../reward` endpoint (see `campaign-builder-data.ts`'s own doc
- *     comment on why reward/questions stay mock-only this pass).
+ *   - `rewardPoints`/`scoringRule` ARE round-tripped (the draft row's own
+ *     "mirror" fields, kept in sync by `PUT .../reward`'s use-case), but
+ *     `allocationId`/`accuracyBonusPoints`/the server's priced
+ *     `rewardValueMinorUnits` are NOT — `GET`/list never returns them (only
+ *     a successful `PUT .../reward` response does, per
+ *     `SetRewardConfigResult`). So they read back `null`/`0` on every fresh
+ *     load (mock or a live page reload) — the honest "not set THIS
+ *     session" state, not a fabricated zero. See
+ *     `campaign-builder-actions.ts`'s `setRewardConfigLive`.
  *   - `questionBank`: the real question bank lives at its own endpoint
  *     (`GET .../questions`), not embedded in the draft response — left `[]`
- *     here; wiring it is the same next slice as reward config.
+ *     here; `campaign-builder-screen.tsx`'s `openDraft` fetches it
+ *     separately when live, the same reason `team-data.ts` fetches Team's
+ *     roster separately from the cheap per-zone membership read.
  */
 
 const CAMPAIGN_DRAFT_STATUS_SET = new Set<CampaignDraftStatus>([
@@ -85,10 +90,21 @@ export function apiDraftToWebDraft(api: ApiCampaignDraft, merchantName: string):
     status: toDraftStatus(api.lifecycleState),
     rejectionReason: api.rejectionReason,
     updatedAt: api.publishedAt ?? new Date(0).toISOString(),
+    contentCategory: api.contentCategory,
+    audience: api.audience,
+    startsAt: api.startsAt,
+    endsAt: api.endsAt,
+    openViewing: api.openViewing,
+    teaserStartSeconds: api.teaserStartSeconds,
+    captionsUrl: api.captionsUrl,
+    allocationId: null,
+    accuracyBonusPoints: 0,
+    rewardValueMinorUnits: null,
+    rewardCurrency: null,
   };
 }
 
-/** A safe, always-valid starting point for `POST .../studio/campaigns` (7.3.a) — every field the create endpoint requires that this feature's "New campaign" button collects none of yet. The author edits title/synopsis immediately afterward; the rest (category/audience/schedule) becomes a real field in the editor's own next slice. */
+/** A safe, always-valid starting point for `POST .../studio/campaigns` (7.3.a) — this editor still has no CREATE-TIME intake form for the fields the endpoint requires up front (category/audience/schedule); the author edits them immediately afterward in the Details tab instead, through the real `PATCH`. */
 export interface NewCampaignDraftDefaults {
   readonly kind: z.infer<typeof campaignKindSchema>;
   readonly title: string;
@@ -128,4 +144,20 @@ export function newCampaignDraftDefaults(): NewCampaignDraftDefaults {
   };
 }
 
-export { apiCampaignDraftSchema };
+/** `allocationId`/`accuracyBonusPoints` come from the caller's own form, not the response — `SetRewardConfigResult` doesn't carry them back (see this file's own doc comment). */
+export function apiRewardResultToWebDraft(
+  api: ApiRewardConfigResult,
+  merchantName: string,
+  allocationId: string,
+  accuracyBonusPoints: number,
+): CampaignDraft {
+  return {
+    ...apiDraftToWebDraft(api, merchantName),
+    allocationId,
+    accuracyBonusPoints,
+    rewardValueMinorUnits: api.rewardValueMinor,
+    rewardCurrency: api.currency,
+  };
+}
+
+export { apiCampaignDraftSchema, apiRewardConfigResultSchema };

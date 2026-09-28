@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
+import type { BillingAllocation } from "@yourtal/contracts/billing";
 import { Button } from "@yourtal/ui/button";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
 import { draftDurationSeconds, draftFormValues } from "./campaign-draft";
@@ -27,6 +28,7 @@ export interface CampaignEditorProps {
   canEdit: boolean;
   isVerified: boolean;
   isLiveMode: boolean;
+  allocations: BillingAllocation[];
 }
 
 /**
@@ -59,6 +61,7 @@ export function CampaignEditor({
   canEdit,
   isVerified,
   isLiveMode,
+  allocations,
 }: CampaignEditorProps) {
   const t = useTranslations("studio");
   const [section, setSection] = useState<CampaignEditorSection>("details");
@@ -100,10 +103,7 @@ export function CampaignEditor({
                   disabled={!editable}
                   businessId={draft.businessId}
                   campaignId={draft.id}
-                  // The teaser picker (7.8.b's own still-open bullet) has no
-                  // field on `CampaignDraft` yet; `0` matches the contract's
-                  // own default until that field exists.
-                  teaserStartSeconds={0}
+                  teaserStartSeconds={draft.teaserStartSeconds}
                   isLiveMode={isLiveMode}
                 />
                 <CampaignEditorChapters
@@ -119,6 +119,9 @@ export function CampaignEditor({
                 form={form}
                 onChange={onChange}
                 disabled={!editable}
+                isLiveMode={isLiveMode}
+                merchantName={draft.merchantName}
+                allocations={allocations}
               />
             ) : null}
             {section === "targeting" ? (
@@ -138,11 +141,13 @@ export function CampaignEditor({
             ) : null}
             {section === "questions" ? (
               <QuestionBankScreen
+                businessId={draft.businessId}
                 campaignId={draft.id}
                 durationSeconds={draftDurationSeconds(draft)}
                 initialBank={draft.questionBank}
                 onBankChange={(questionBank) => onChange({ ...draft, questionBank })}
                 readOnly={!editable}
+                isLiveMode={isLiveMode}
               />
             ) : null}
           </div>

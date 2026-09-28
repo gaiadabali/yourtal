@@ -25,7 +25,19 @@
     "details": {
       "titleLabel": "Judul kampanye",
       "synopsisLabel": "Sinopsis",
-      "synopsisHelp": "Ini yang dibaca penonton sebelum mulai — sisa {remaining} karakter."
+      "synopsisHelp": "Ini yang dibaca penonton sebelum mulai — sisa {remaining} karakter.",
+      "categoryLabel": "Kategori",
+      "audienceLabel": "Audiens",
+      "audienceAllAges": "Semua usia",
+      "audienceTeen": "Remaja",
+      "audienceAdult": "Dewasa",
+      "audienceParents": "Orang tua",
+      "startsAtLabel": "Mulai",
+      "endsAtLabel": "Berakhir",
+      "openViewingLabel": "Tontonan Terbuka (tidak perlu hadiah untuk menonton)",
+      "captionsUrlLabel": "URL Teks",
+      "captionsUrlPlaceholder": "https://…",
+      "teaserStartLabel": "Teaser dimulai pada (detik)"
     },
     "reward": {
       "scoringRuleBaseOnly": "Reward tetap — sama untuk setiap penonton yang menonton dan menjawab",
@@ -38,7 +50,14 @@
       "ratioUnavailable": "Rasio reward terhadap biaya data memerlukan nilai reward dari API kampanye dan belum tersedia.",
       "ratioNoDataCost": "Kampanye ini tidak memiliki biaya data yang bisa diukur untuk dibandingkan.",
       "ratioMeetsGuideline": "Reward ini setara dengan sekitar {ratio}x perkiraan biaya data penonton — sudah memenuhi atau melampaui panduan 20x platform.",
-      "ratioBelowGuideline": "Reward ini hanya setara dengan sekitar {ratio}x perkiraan biaya data penonton — di bawah panduan 20x platform. Meminta perhatian sebesar ini untuk reward sekecil ini terasa tidak menghargai penonton, dan berisiko menurunkan tingkat penyelesaian serta ulasan."
+      "ratioBelowGuideline": "Reward ini hanya setara dengan sekitar {ratio}x perkiraan biaya data penonton — di bawah panduan 20x platform. Meminta perhatian sebesar ini untuk reward sekecil ini terasa tidak menghargai penonton, dan berisiko menurunkan tingkat penyelesaian serta ulasan.",
+      "accuracyBonusLabel": "Bonus akurasi (poin)",
+      "allocationLabel": "Didanai oleh",
+      "allocationNone": "Tidak ada poin yang didanai — beli poin di Billing terlebih dahulu.",
+      "saveReward": "Simpan hadiah",
+      "rewardSaved": "Tersimpan — nilai hadiah sebenarnya ditampilkan di atas.",
+      "rewardValueLabel": "Nilai yang dihitung server (satu penyelesaian)",
+      "allocationOption": "{points} poin — {shortId}"
     },
     "sections": {
       "navLabel": "Bagian editor kampanye",
@@ -179,7 +198,8 @@
       "true": "Benar",
       "false": "Salah",
       "markWarning": "Tandai apakah jawaban benar adalah benar atau salah sebelum menyimpan pertanyaan ini."
-    }
+    },
+    "saved": "Tersimpan"
   },
   "reports": {
     "metrics": {

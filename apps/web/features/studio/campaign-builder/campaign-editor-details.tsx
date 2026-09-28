@@ -5,6 +5,8 @@ import { useId } from "react";
 import { useTranslations } from "next-intl";
 import type { UseFormReturn } from "react-hook-form";
 import { Input } from "@yourtal/ui/input";
+import { NativeSelect } from "@yourtal/ui/native-select";
+import { Switch } from "@yourtal/ui/switch";
 import { cn } from "@yourtal/ui/cn";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
 
@@ -16,6 +18,55 @@ export interface CampaignEditorDetailsProps {
 }
 
 const MAX_SYNOPSIS_LENGTH = 500;
+
+/**
+ * Restated from `@yourtal/jurisdiction`'s own `contentCategorySchema` —
+ * that package is not an `apps/web` dependency (this client-reachable
+ * module must not pull in its Zod runtime), so the values are copied here
+ * as plain strings, the same way `studio-roles.ts` restates
+ * `businessTeamRoleSchema`'s members. The real enum is still enforced
+ * server-side on every `PATCH`; a typo here fails loudly there, not
+ * silently here.
+ */
+const CONTENT_CATEGORIES = [
+  "food-and-drink",
+  "fashion",
+  "personal-care",
+  "electronics",
+  "telco",
+  "transport",
+  "fitness",
+  "education",
+  "travel",
+  "home",
+  "entertainment",
+  "games",
+  "books",
+  "family",
+  "toys",
+  "digital-goods",
+  "services",
+  "tobacco",
+  "vaping",
+  "gambling",
+  "alcohol",
+  "dating",
+  "financial-products",
+  "weight-loss",
+  "cosmetic-procedures",
+  "energy-drinks",
+] as const;
+
+/** Restated from `@yourtal/contracts/campaign`'s `audienceSchema` — this module only ever `import type`s that package's schemas (see this file's own doc comment on why). */
+const AUDIENCES = ["all_ages", "teen", "adult", "parents"] as const;
+
+/** `YYYY-MM-DD` for a `type="date"` input from a full ISO datetime, and back — schedule fields are dates in this editor, never a time of day. */
+function toDateInputValue(iso: string): string {
+  return iso.slice(0, 10);
+}
+function fromDateInputValue(value: string): string {
+  return new Date(`${value}T00:00:00.000Z`).toISOString();
+}
 
 /**
  * Title and synopsis — the two fields the entry-card preview renders
@@ -48,6 +99,14 @@ export function CampaignEditorDetails({
   const synopsis = form.watch("synopsis");
   const synopsisError = form.formState.errors.synopsis?.message;
   const remaining = MAX_SYNOPSIS_LENGTH - synopsis.length;
+  const categoryId = useId();
+  const audienceId = useId();
+  const audienceLabels: Record<(typeof AUDIENCES)[number], string> = {
+    all_ages: t("campaignBuilder.details.audienceAllAges"),
+    teen: t("campaignBuilder.details.audienceTeen"),
+    adult: t("campaignBuilder.details.audienceAdult"),
+    parents: t("campaignBuilder.details.audienceParents"),
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -95,6 +154,96 @@ export function CampaignEditorDetails({
           </p>
         )}
       </div>
+
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="flex-1">
+          <NativeSelect
+            label={t("campaignBuilder.details.categoryLabel")}
+            id={categoryId}
+            value={draft.contentCategory}
+            disabled={disabled}
+            onChange={(event) => onChange({ ...draft, contentCategory: event.target.value })}
+          >
+            {CONTENT_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="flex-1">
+          <NativeSelect
+            label={t("campaignBuilder.details.audienceLabel")}
+            id={audienceId}
+            value={draft.audience}
+            disabled={disabled}
+            onChange={(event) => onChange({ ...draft, audience: event.target.value })}
+          >
+            {AUDIENCES.map((audience) => (
+              <option key={audience} value={audience}>
+                {audienceLabels[audience]}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="flex-1">
+          <Input
+            label={t("campaignBuilder.details.startsAtLabel")}
+            type="date"
+            disabled={disabled}
+            value={toDateInputValue(draft.startsAt)}
+            onChange={(event) =>
+              onChange({ ...draft, startsAt: fromDateInputValue(event.target.value) })
+            }
+          />
+        </div>
+        <div className="flex-1">
+          <Input
+            label={t("campaignBuilder.details.endsAtLabel")}
+            type="date"
+            disabled={disabled}
+            value={toDateInputValue(draft.endsAt)}
+            onChange={(event) =>
+              onChange({ ...draft, endsAt: fromDateInputValue(event.target.value) })
+            }
+          />
+        </div>
+      </div>
+
+      <Switch
+        label={t("campaignBuilder.details.openViewingLabel")}
+        checked={draft.openViewing}
+        disabled={disabled}
+        onCheckedChange={(checked) => onChange({ ...draft, openViewing: checked })}
+      />
+
+      <Input
+        label={t("campaignBuilder.details.teaserStartLabel")}
+        type="number"
+        min={0}
+        disabled={disabled}
+        value={draft.teaserStartSeconds}
+        onChange={(event) => {
+          const parsed = Number(event.target.value);
+          if (Number.isFinite(parsed) && parsed >= 0) {
+            onChange({ ...draft, teaserStartSeconds: Math.round(parsed) });
+          }
+        }}
+      />
+
+      <Input
+        label={t("campaignBuilder.details.captionsUrlLabel")}
+        type="url"
+        placeholder={t("campaignBuilder.details.captionsUrlPlaceholder")}
+        disabled={disabled}
+        value={draft.captionsUrl ?? ""}
+        onChange={(event) =>
+          onChange({ ...draft, captionsUrl: event.target.value.trim() || null })
+        }
+      />
     </div>
   );
 }

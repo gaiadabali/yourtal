@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import type { BillingAllocation } from "@yourtal/contracts/billing";
+import { draftDurationSeconds } from "./campaign-draft";
 import type { CampaignDraft } from "./campaign-draft";
 import { CampaignDraftList } from "./campaign-draft-list";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
@@ -8,6 +10,7 @@ import {
   createCampaignDraftLive,
   updateCampaignDraftDetailsLive,
 } from "./campaign-builder-actions";
+import { listQuestionsLive } from "../question-bank/question-live-actions";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@yourtal/ui/skeleton";
 
@@ -26,8 +29,10 @@ export interface CampaignBuilderScreenProps {
   canEdit: boolean;
   /** Whether the business has passed KYB review — gates the "Submit for review" action (7.3.d, red line 7). */
   isVerified: boolean;
-  /** `YOURTAL_DATA_SOURCE === "live"` — threaded down to `CampaignEditorUpload`, the one leaf that needs to pick between the real upload (7.8.b) and the mock simulation. */
+  /** `YOURTAL_DATA_SOURCE === "live"` — threaded down to every leaf that needs to pick between a real call and the mock simulation. */
   isLiveMode: boolean;
+  /** The business's own funded point allocations (`GET .../billing/balance`, live only) — a reward config names one of these (7.3.c). Empty in mock mode. */
+  allocations: BillingAllocation[];
 }
 
 /**
@@ -45,6 +50,7 @@ export function CampaignBuilderScreen({
   canEdit,
   isVerified,
   isLiveMode,
+  allocations,
 }: CampaignBuilderScreenProps) {
   const [drafts, setDrafts] = useState<CampaignDraft[]>(initialDrafts);
   const [openDraftId, setOpenDraftId] = useState<string | null>(null);
@@ -72,12 +78,35 @@ export function CampaignBuilderScreen({
   }
 
   /**
-   * Flushes the details tab's title/synopsis to the real draft on the way
-   * out of the editor, rather than on every keystroke (`@NotValueMoving`,
-   * so a repeat is harmless, but a PATCH per character is still wasted
-   * work). The rest of the editor's fields (reward, targeting, budget,
-   * questions, schedule/audience/category/teaser/captions) stay local-only
-   * this pass — see `campaign-draft-live-mapping.ts`'s own doc comment.
+   * Fetches the real question bank once, opening a draft live — the same
+   * reason `team-data.ts` fetches Team's roster separately from the cheap
+   * per-zone read: the list endpoint (`campaign-builder-data.ts`) never
+   * embeds it.
+   */
+  async function openDraft(draftId: string) {
+    if (isLiveMode) {
+      const result = await listQuestionsLive(businessId, draftId);
+      if (result.ok) {
+        setDrafts((current) =>
+          current.map((draft) =>
+            draft.id === draftId ? { ...draft, questionBank: result.value } : draft,
+          ),
+        );
+      }
+    }
+    setOpenDraftId(draftId);
+  }
+
+  /**
+   * Flushes the details tab's fields to the real draft on the way out of
+   * the editor, rather than on every keystroke (`@NotValueMoving`, so a
+   * repeat is harmless, but a PATCH per character is still wasted work).
+   * Reward and questions save immediately from their own tabs instead (the
+   * author needs to see the server's refusal/priced value, or the PII
+   * guard's refusal, right there — see `campaign-editor-reward.tsx` and
+   * `question-bank-screen.tsx`). `targeting.districts`/`budget` have no
+   * live field in the real DTO at all (TASKS.md 7.8.b's note) and stay
+   * local-only.
    */
   async function closeEditor() {
     const current = drafts.find((draft) => draft.id === openDraftId);
@@ -85,9 +114,20 @@ export function CampaignBuilderScreen({
       const result = await updateCampaignDraftDetailsLive(businessId, current.id, merchantName, {
         title: current.title,
         synopsis: current.synopsis,
+        durationSeconds: Math.max(1, draftDurationSeconds(current)),
+        contentCategory: current.contentCategory,
+        audience: current.audience,
+        startsAt: current.startsAt,
+        endsAt: current.endsAt,
+        openViewing: current.openViewing,
+        teaserStartSeconds: current.teaserStartSeconds,
+        captionsUrl: current.captionsUrl,
       });
       if (result.ok) {
-        updateDraft(result.value);
+        // The PATCH response has no question bank of its own (see
+        // campaign-builder-data.ts) — keep the one already fetched into
+        // local state rather than overwrite it with the mapper's `[]`.
+        updateDraft({ ...result.value, questionBank: current.questionBank });
       }
       // A save hiccup on the way out is not worth trapping the author in
       // the editor over — the list's own next live fetch shows whatever
@@ -96,17 +136,18 @@ export function CampaignBuilderScreen({
     setOpenDraftId(null);
   }
 
-  const openDraft = drafts.find((draft) => draft.id === openDraftId);
+  const openDraftValue = drafts.find((draft) => draft.id === openDraftId);
 
-  if (openDraft) {
+  if (openDraftValue) {
     return (
       <CampaignEditor
-        draft={openDraft}
+        draft={openDraftValue}
         onChange={updateDraft}
         onBack={() => void closeEditor()}
         canEdit={canEdit}
         isVerified={isVerified}
         isLiveMode={isLiveMode}
+        allocations={allocations}
       />
     );
   }
@@ -120,7 +161,7 @@ export function CampaignBuilderScreen({
       ) : null}
       <CampaignDraftList
         drafts={drafts}
-        onOpen={setOpenDraftId}
+        onOpen={(draftId) => void openDraft(draftId)}
         onCreate={() => void createDraft()}
         canEdit={canEdit}
       />

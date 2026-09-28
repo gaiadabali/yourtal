@@ -50,3 +50,11 @@ export const apiCampaignDraftSchema = z.object({
 });
 
 export type ApiCampaignDraft = z.infer<typeof apiCampaignDraftSchema>;
+
+/** `SetRewardConfigResult` (`apps/api`'s `set-reward-config.use-case.ts`) — the draft's own fields plus the server-priced value for one completion, 7.3.h. */
+export const apiRewardConfigResultSchema = apiCampaignDraftSchema.extend({
+  rewardValueMinor: z.number(),
+  currency: z.string(),
+});
+
+export type ApiRewardConfigResult = z.infer<typeof apiRewardConfigResultSchema>;

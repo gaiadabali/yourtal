@@ -7,8 +7,9 @@ import { questionTypeLabel, questionTypeScoreLabel } from "./question-type-catal
 
 export interface QuestionListRowProps {
   draft: QuestionDraft;
-  onEdit: () => void;
-  onRemove: () => void;
+  /** Omitted (not just disabled) when the server has already confirmed this question and no live edit endpoint exists yet — see `question-bank-screen.tsx`'s own doc comment. */
+  onEdit?: () => void;
+  onRemove?: () => void;
 }
 
 /** One row in the bank list: prompt preview, type and scored/opinion badges, completeness, edit/remove. No local state — rendered inside `question-bank-screen.tsx`'s already-client tree. */
@@ -29,12 +30,19 @@ export function QuestionListRow({ draft, onEdit, onRemove }: QuestionListRowProp
         </div>
       </div>
       <div className="flex shrink-0 gap-1">
-        <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
-          {t("questionBank.edit")}
-        </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
-          {t("questionBank.remove")}
-        </Button>
+        {onEdit ? (
+          <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
+            {t("questionBank.edit")}
+          </Button>
+        ) : null}
+        {onRemove ? (
+          <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
+            {t("questionBank.remove")}
+          </Button>
+        ) : null}
+        {!onEdit && !onRemove ? (
+          <span className="text-xs font-sans text-fg-subtle">{t("questionBank.saved")}</span>
+        ) : null}
       </div>
     </li>
   );

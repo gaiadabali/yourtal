@@ -20,6 +20,7 @@ function renderScreen(canEdit = true, isVerified = true) {
           initialDrafts={drafts}
           canEdit={canEdit}
           isLiveMode={false}
+          allocations={[]}
           isVerified={isVerified}
         />
       </RegionProvider>

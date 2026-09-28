@@ -40,13 +40,13 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 5** Watch & earn | B | ✅ done | 6/6 | 26/26 | `██████████` 100% |
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
 | **Phase 7** Business studio | C | ✅ done | 9/9 | 46/46 | `██████████` 100% |
-| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 1/4 | 13/18 | `███████░░░`  72% |
+| **Phase 8** Voucher engine for clients | C | 🔄 in progress | 1/4 | 13/19 | `███████░░░`  68% |
 | **Phase 9** Staff console | C | 🔄 in progress | 1/5 | 2/17 | `█░░░░░░░░░`  12% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **58/90** | **320/427** | `████████░░`  75% |
+| **All** | | | **58/90** | **320/428** | `████████░░`  75% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1210,6 +1210,7 @@ F11: vouchers must really work for YourTal, brands and users. That means generat
     - it grants through `grantAction` from the region's marketing allocation at the F12 rate and cap;
     - set `ActionReceiptScanned.MarketingFunded = true`.
     — Merged d6ab132a. `Authorization: Partner <partnerId>:<hex hmac-sha256 over the raw body>` verified with `timingSafeEqual` (`partner-auth.ts`); `@PublicRoute`, never a session or Cerbos principal. `user` resolves through `me.link_code` (`link-code-lookup.ts`), never a raw platform user id. `platform.partner_receipt`'s `(partner_id, receipt_hash)` primary key is the dedup, independent of the idempotency-key replay path. Calls `ledger.grantAction({kind: "receipt", ...})` -- confirmed against `services/ledger/internal/reward/contract.go`'s `GrantAction`/`taxonomy.go` that `ActionReceiptScanned.MarketingFunded` is a fixed taxonomy default never overridden by that call path (only `.Points`/`.Evidence` are), so "drawn from the region's marketing allocation" and the F12 daily cap (`MaxPerUserPerDay: 10`, enforced server-side in `checkCaps`) are automatic for `kind: "receipt"` -- nothing else to wire. Points read from `platform.region_setting`'s `receipt_points` (10 AU / 100 ID), trust tier 3 (lands available, no holdback). `platform.partner_credential` stores the signing secret in plaintext (HMAC needs the key material, not a hash -- docs/16, Helios red line 11, same reasoning as `services/voucher`'s own reversible merchant-credential envelope). `partner-actions.e2e.test.ts` (3/3): a real link code issued through its own endpoint, a real partner signature, the wallet balance it lands in, an idempotent replay, a same-receipt-different-key duplicate refusal (409), wrong-secret refusal (401), unknown-link-code refusal (400). `@yourtal/contracts` 838/838, `@yourtal/api` typecheck/lint clean, `pnpm check` green.
+  - [ ] 8.4.c (found by 8.2.h) Partner idempotency is scoped per partner: `POST /api/partners/actions` resolves to `principal:anonymous` today, so two partners sending the same Idempotency-Key would share one stored response. Scope it by the verified partner, and test that the same key from two partners grants twice.
   - [ ] 8.4.b **Check:** a simulated snap-app in e2e links an account, earns receipt points, and redeems a voucher, in both regions.
 
 **Done when:** store staff redeem vouchers on a paired device and the business sees each capture in Studio; a brand can integrate authorize and capture from the SDK and docs alone; and a simulated snap-app earns and redeems through the documented APIs.

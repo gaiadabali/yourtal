@@ -6,7 +6,7 @@ import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
 import { canViewZone } from "@/features/studio/studio-zone-access";
-import { listCredentialsLive } from "@/features/studio/developer-credentials-data";
+import { getWebhookLive, listCredentialsLive } from "@/features/studio/developer-credentials-data";
 import { DeveloperCredentialsScreen } from "@/features/studio/developer-credentials-screen";
 import { DeveloperDocsPanel } from "@/features/studio/developer-docs-panel";
 
@@ -49,12 +49,15 @@ export default async function StudioDevelopersPage(props: PageProps<"/studio/dev
 }
 
 async function StudioDevelopersData({ businessId }: { businessId: string }) {
-  const result = await listCredentialsLive(businessId);
+  const [credentials, webhook] = await Promise.all([
+    listCredentialsLive(businessId),
+    getWebhookLive(businessId),
+  ]);
   return (
     <DeveloperCredentialsScreen
       businessId={businessId}
-      initialCredentials={result.ok ? result.data : []}
-      initialWebhook={null}
+      initialCredentials={credentials.ok ? credentials.data : []}
+      initialWebhook={webhook.ok ? webhook.data : null}
     />
   );
 }

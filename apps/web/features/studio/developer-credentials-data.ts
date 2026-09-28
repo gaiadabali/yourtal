@@ -60,6 +60,20 @@ export async function revokeCredentialLive(
   );
 }
 
+const webhookOrNullSchema = webhookSubscriptionSchema.nullable();
+
+/**
+ * TASKS.md 8.3.a (requested by B): `GET /api/:tenantId/studio/developers/webhooks`
+ * (A's merged `88da7059`) — the current registration, never the secret
+ * (that endpoint's own comment: shown once, at registration). `null` means
+ * no webhook is registered yet, not an error.
+ */
+export async function getWebhookLive(
+  businessId: string,
+): Promise<ApiResult<WebhookSubscription | null>> {
+  return apiFetch(`/api/${businessId}/studio/developers/webhooks`, webhookOrNullSchema);
+}
+
 export async function registerWebhookLive(
   businessId: string,
   url: string,

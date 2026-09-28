@@ -124,6 +124,35 @@ describe("DrizzleBusinessOnboardingUnitOfWork — real Postgres transaction", ()
       .from(businessAccounts)
       .where(eq(businessAccounts.legalName, legalName));
     expect(row).toBeUndefined();
+
+    // 7.1.e (reopened): a NUL byte is a class-22 data exception (22021), not
+    // an ambiguous one -- isAmbiguousCommitError must say so, or this would
+    // have been a candidate for reconciliation too.
+    try {
+      await unitOfWork.createBusinessWithOwner(
+        {
+          legalName: "PT Rollback Casualty Indonesia (second attempt)",
+          displayName: "Rollback Casualty",
+          taxIdKind: "NPWP",
+          taxIdValue: "1234567890123456",
+          addressState: null,
+          addressPostcode: null,
+          addressCity: "Jakarta",
+          roles: ["advertiser"],
+          logoUrl: null,
+          region: "ID" as const,
+          currency: "IDR" as const,
+          handle: `test-business-${randomUUID().slice(0, 8)}`,
+          coverUrl: null,
+        },
+        "user-\u0000-poison",
+      );
+      expect.unreachable("expected the NUL byte to reject");
+    } catch (error) {
+      // drizzle-orm wraps every query error in its own DrizzleQueryError --
+      // the real SQLSTATE is one level down, at `.cause.code`.
+      expect((error as { cause?: { code?: unknown } }).cause?.code).toBe("22021");
+    }
   });
 
   /**
@@ -194,5 +223,78 @@ describe("DrizzleBusinessOnboardingUnitOfWork — real Postgres transaction", ()
     } finally {
       transactionSpy.mockRestore();
     }
+  });
+
+  /**
+   * 7.1.e (reopened): the FIRST version of this fix reconciled by `handle`
+   * alone, so an owner who reused a handle they already had would have
+   * their EARLIER business handed back for a SECOND, rightly-refused
+   * request — masking the real 409 with a false 201 for a write that never
+   * happened. Reconciliation now matches on the id THIS call itself
+   * generates, which cannot collide with the first business's id, and
+   * `23505` (the handle's own unique index) is a class-23 error
+   * `isAmbiguousCommitError` never reconciles regardless.
+   */
+  it("refuses a duplicate handle for the same owner rather than returning their earlier business", async () => {
+    const db = testBusinessDb();
+    const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(db);
+    const handle = `test-business-${randomUUID().slice(0, 8)}`;
+
+    const first = await unitOfWork.createBusinessWithOwner(
+      {
+        legalName: "PT Handle Owner One Indonesia",
+        displayName: "Handle Owner One",
+        taxIdKind: "NPWP",
+        taxIdValue: "1234567890123456",
+        addressState: null,
+        addressPostcode: null,
+        addressCity: "Jakarta",
+        roles: ["advertiser"],
+        logoUrl: null,
+        region: "ID" as const,
+        currency: "IDR" as const,
+        handle,
+        coverUrl: null,
+      },
+      COMMIT_OWNER_ID,
+    );
+
+    let secondError: unknown;
+    try {
+      await unitOfWork.createBusinessWithOwner(
+        {
+          legalName: "PT Handle Owner Two Indonesia",
+          displayName: "Handle Owner Two",
+          taxIdKind: "NPWP",
+          taxIdValue: "1234567890123456",
+          addressState: null,
+          addressPostcode: null,
+          addressCity: "Jakarta",
+          roles: ["advertiser"],
+          logoUrl: null,
+          region: "ID" as const,
+          currency: "IDR" as const,
+          // Same owner, same handle -- unique on business_accounts.handle.
+          handle,
+          coverUrl: null,
+        },
+        COMMIT_OWNER_ID,
+      );
+      expect.unreachable("expected the duplicate handle to reject");
+    } catch (error) {
+      secondError = error;
+    }
+
+    expect((secondError as { cause?: { code?: unknown } }).cause?.code).toBe("23505");
+
+    // Only the FIRST business exists under this handle -- the second
+    // attempt neither created a row of its own nor got the first one back.
+    const rows = await db
+      .select()
+      .from(businessAccounts)
+      .where(eq(businessAccounts.handle, handle));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.id).toBe(first.business.id);
+    expect(rows[0]?.displayName).toBe("Handle Owner One");
   });
 });

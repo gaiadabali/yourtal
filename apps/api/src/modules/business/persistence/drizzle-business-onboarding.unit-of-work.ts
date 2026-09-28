@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { businessSchema } from "@yourtal/contracts/business";
 import type { Business } from "@yourtal/contracts/business";
@@ -34,15 +35,26 @@ import { businessMembers } from "./schema/business-member.table";
  * persistence_failed", this reports 503 for a write that already committed
  * — the exact bug D's live-verify found twice.
  *
- * The fix is a reconciliation read, not a retry or a different transaction
- * shape: on ANY error from `db.transaction`, re-check reality by `handle`
- * (unique) joined to a `business_members` row naming THIS caller as owner.
- * That join can only exist if THIS call's own two inserts both landed — no
- * other request could have produced it — so finding it means the write is
- * real regardless of what the exception said, and the caller gets its 201
- * (or the idempotency interceptor's replay of one) instead of a false 503.
- * If nothing matches, the error is genuine (a real rollback, or someone
- * else's handle) and is rethrown unchanged.
+ * The fix is a reconciliation read, gated two ways so it can only ever
+ * confirm THIS attempt's own write, never mask a genuine refusal:
+ *
+ *   1. The business id is generated here, before the transaction, and
+ *      inserted explicitly (overriding the column's own `defaultRandom()`).
+ *      Reconciliation matches on THAT id, not on `handle` — an owner who
+ *      reuses a handle they already used for an EARLIER business would, if
+ *      matched by handle alone, have that earlier business's row handed
+ *      back as if this new (rightly-refused) request had succeeded. A
+ *      fresh, client-generated UUID cannot collide with any pre-existing
+ *      row, by construction, so a match is possible only when this exact
+ *      call's own two inserts both landed.
+ *   2. Reconciliation only runs for errors `isAmbiguousCommitError` calls
+ *      ambiguous — connection/timeout/unknown-commit-state, no recognisable
+ *      Postgres SQLSTATE, or one outside classes 22 (data exception) and 23
+ *      (integrity constraint violation). A genuine 23505 on the `handle`
+ *      unique index (or the class-22 NUL-byte case below) means Postgres
+ *      definitely rejected the write — there is no ambiguity to resolve,
+ *      and reconciling anyway is exactly how a real conflict would get
+ *      mistaken for success.
  */
 export class DrizzleBusinessOnboardingUnitOfWork implements BusinessOnboardingUnitOfWork {
   constructor(private readonly db: BusinessDb) {}
@@ -51,6 +63,7 @@ export class DrizzleBusinessOnboardingUnitOfWork implements BusinessOnboardingUn
     input: CreateBusinessAccountInput,
     ownerUserId: string,
   ): Promise<CreateBusinessResult> {
+    const businessId = randomUUID();
     try {
       // The transaction docs/13b section 7 asks for — see this unit-of-work's
       // interface doc comment for why it lives here rather than literally in
@@ -59,6 +72,7 @@ export class DrizzleBusinessOnboardingUnitOfWork implements BusinessOnboardingUn
         const [businessRow] = await tx
           .insert(businessAccounts)
           .values({
+            id: businessId,
             legalName: input.legalName,
             displayName: input.displayName,
             taxIdKind: input.taxIdKind,
@@ -95,21 +109,22 @@ export class DrizzleBusinessOnboardingUnitOfWork implements BusinessOnboardingUn
         return toResult(businessRow, memberRow);
       });
     } catch (error) {
-      const reconciled = await this.findOwnCommit(input.handle, ownerUserId);
-      if (reconciled !== null) return reconciled;
+      if (isAmbiguousCommitError(error)) {
+        const reconciled = await this.findOwnCommit(businessId, ownerUserId);
+        if (reconciled !== null) return reconciled;
+      }
       throw error;
     }
   }
 
   /**
    * Ground truth for "did MY OWN write actually commit", asked only after
-   * `db.transaction` has already reported failure. A plain `SELECT`, on
-   * whatever connection the pool hands back — the ambiguity this recovers
-   * from is specific to the ORIGINAL transaction's commit round trip, not to
-   * reads in general.
+   * `db.transaction` has already reported an AMBIGUOUS failure. Matched by
+   * the id this call itself generated — see the class doc comment for why
+   * that, and not `handle`, is what makes this safe to trust unconditionally.
    */
   private async findOwnCommit(
-    handle: string,
+    businessId: string,
     ownerUserId: string,
   ): Promise<CreateBusinessResult | null> {
     const [row] = await this.db
@@ -118,7 +133,7 @@ export class DrizzleBusinessOnboardingUnitOfWork implements BusinessOnboardingUn
       .innerJoin(businessMembers, eq(businessMembers.businessId, businessAccounts.id))
       .where(
         and(
-          eq(businessAccounts.handle, handle),
+          eq(businessAccounts.id, businessId),
           eq(businessMembers.userId, ownerUserId),
           eq(businessMembers.role, "owner"),
         ),
@@ -159,4 +174,39 @@ function toResult(
     joinedAt: memberRow.joinedAt === null ? null : memberRow.joinedAt.toISOString(),
   };
   return { business, owner };
+}
+
+/**
+ * The Postgres SQLSTATE, when the driver attached one. `node-postgres` puts
+ * it on `.code` for a real server-side error, but `drizzle-orm` wraps every
+ * query error in its own `DrizzleQueryError` first (confirmed by hand
+ * against this same container: `.code` is `undefined`, `.cause.code` is the
+ * real SQLSTATE) — one level of `.cause` is where it actually lives.
+ */
+function pgErrorCode(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const direct = (error as { code?: unknown }).code;
+  if (typeof direct === "string") return direct;
+  const cause = (error as { cause?: unknown }).cause;
+  if (typeof cause !== "object" || cause === null) return undefined;
+  const causeCode = (cause as { code?: unknown }).code;
+  return typeof causeCode === "string" ? causeCode : undefined;
+}
+
+/**
+ * Whether re-checking the database for this attempt's own row is safe to
+ * try. See the class doc comment (point 2) for the reasoning: classes 22
+ * (data exception — e.g. `22021`, the NUL-byte case
+ * `drizzle-business-onboarding.unit-of-work.test.ts` already exercises) and
+ * 23 (integrity constraint violation — e.g. `23505` on the `handle` unique
+ * index) are genuine, unambiguous refusals with nothing to reconcile.
+ * Anything else — no SQLSTATE at all (a connection reset, a client-side
+ * timeout), or a SQLSTATE outside those two classes — is exactly the
+ * "we don't know if our own commit landed" case this exists for.
+ */
+function isAmbiguousCommitError(error: unknown): boolean {
+  const code = pgErrorCode(error);
+  if (code === undefined) return true;
+  const sqlstateClass = code.slice(0, 2);
+  return sqlstateClass !== "22" && sqlstateClass !== "23";
 }

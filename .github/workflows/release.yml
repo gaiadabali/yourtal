@@ -138,7 +138,7 @@ jobs:
           (cd services/voucher && CGO_ENABLED=0 GOOS=linux GOARCH=amd64             go build -trimpath -ldflags="-s -w" -o "$STAGE/bin/voucher-verify-backup" ./cmd/voucher-verify-backup)
           cp -r packages/db/migrations "$STAGE/migrations"
           cp -r policies "$STAGE/policies"
-          # The demo video the staging seed publishes to MinIO (2.3.i).
+          # The demo video the staging seed publishes to RustFS (2.3.i, F58).
           mkdir -p "$STAGE/media-fixtures" && cp -r packages/media/fixtures/attention-30s "$STAGE/media-fixtures/"
           cp infra/helios/pre-reload.sh infra/helios/set-role-passwords.mjs             infra/helios/run-with-env.sh infra/helios/ecosystem.config.cjs "$STAGE/deploy/"
           chmod 755 "$STAGE/deploy/"*.sh "$STAGE/bin/"*

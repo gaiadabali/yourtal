@@ -44,8 +44,7 @@ interfaces, which on a laptop on a café network is the whole problem.
 | 26379 | 6379      | redis (Valkey)  |
 | 26432 | 5432      | postgres        |
 | 26592 | 3592      | cerbos          |
-| 26900 | 9000      | minio (S3 API)  |
-| 26901 | 9001      | minio (console) |
+| 26900 | 9000      | rustfs (S3 + admin API + health) — F58, replaces MinIO. One port for everything; no console. |
 | 26910 | 3010      | ledger          |
 | 26911 | 3011      | voucher         |
 
@@ -55,7 +54,7 @@ is in the `26xxx` scheme because neither is containerised.
 ### Slot worktrees — `../yourtal-1|2|3`
 
 Parallel sessions each run in a slot worktree with its own database
-(`yourtal_s1|s2|s3`), Valkey DB index (`/1|2|3`) and MinIO bucket
+(`yourtal_s1|s2|s3`), Valkey DB index (`/1|2|3`) and RustFS bucket
 (`yourtal-media-1|2|3`), all on the shared compose stack above. Only the
 main checkout runs compose. The ports are set in each worktree's `.env`.
 
@@ -84,7 +83,7 @@ main checkout runs compose. The ports are set in each worktree's `.env`.
   duration of one Playwright run — but do not run slot 3's offline e2e suite
   and slot 3b's `next dev` at the exact same moment.
 - Slot 3c (agent C, F23: per-region settings, 1.2.f) is its own isolated
-  worktree, database (`yourtal_s3c`), Valkey index (`/5`) and MinIO bucket
+  worktree, database (`yourtal_s3c`), Valkey index (`/5`) and RustFS bucket
   (`yourtal-media-3c`), alongside slots 3 and 3b. It shares slot 3's Cerbos
   container the same way 3b does, since its only policy work is one resource
   file (`platform_setting.yaml`) shipped through the main checkout.
@@ -104,8 +103,7 @@ Nothing of ours binds `0.0.0.0`.**
 | 26302 | 127.0.0.1 | `ledger`       | Go ledger (pm2, `uyourtal`). Called only by api and worker.            |
 | 26303 | 127.0.0.1 | `voucher`      | Go voucher service (pm2, `uyourtal`). Called only by api and worker.   |
 | 26304 | 127.0.0.1 | `docker-proxy` | Cerbos container.                                                      |
-| 26305 | 127.0.0.1 | `docker-proxy` | MinIO S3 API. nginx serves the public media prefixes from it.          |
-| 26306 | 127.0.0.1 | `docker-proxy` | MinIO console. Reach it over an SSH tunnel only.                       |
+| 26305 | 127.0.0.1 | `docker-proxy` | RustFS S3 + admin API (F58, replaces MinIO). nginx serves the public media prefixes from it. |
 | 26379 | 127.0.0.1 | `docker-proxy` | Valkey container.                                                      |
 
 Both processes sit inside `yourtal.slice`, confirmed from

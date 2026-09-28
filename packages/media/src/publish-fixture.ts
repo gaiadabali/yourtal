@@ -2,8 +2,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import {
   CreateBucketCommand,
+  GetBucketPolicyCommand,
   HeadBucketCommand,
-  PutBucketPolicyCommand,
+  PutBucketCorsCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -20,22 +21,24 @@ import {
 } from "./hls-origin";
 
 /**
- * Publishes the HLS fixture to the local MinIO origin. YT-0521.
+ * Publishes the HLS fixture to the local RustFS origin (F58; MinIO before
+ * it). YT-0521.
  *
  *   pnpm --filter @yourtal/media publish
  *
- * ## Through the S3 API, not `mc`
+ * ## Through the S3 API, not a CLI
  *
- * MinIO ships `mc` in its own container and `docker exec … mc cp` would have
- * been three lines. The reason this uses `@aws-sdk/client-s3` instead is the
- * one `docker-compose.yml` gives for running MinIO at all: *S3-compatible, so
- * the R2 adapter is exercised rather than stubbed.* A publish path that goes
- * through a CLI inside a container exercises nothing that will exist in
- * production. This code is the R2 upload path, pointed at a different
- * endpoint.
+ * RustFS ships no CLI of its own (only its `rustfs` server binary; MinIO
+ * before it shipped `mc`, and `docker exec … mc cp` would have been three
+ * lines). The reason this uses `@aws-sdk/client-s3` instead is the one
+ * `docker-compose.yml` gives for running a self-hosted S3 origin at all:
+ * *S3-compatible, so the R2 adapter is exercised rather than stubbed.* A
+ * publish path that goes through a CLI inside a container exercises nothing
+ * that will exist in production. This code is the R2 upload path, pointed at
+ * a different endpoint.
  *
- * `forcePathStyle` is required: MinIO serves `endpoint/bucket/key`, while the
- * SDK defaults to virtual-hosted `bucket.endpoint/key`, which does not
+ * `forcePathStyle` is required: RustFS serves `endpoint/bucket/key`, while
+ * the SDK defaults to virtual-hosted `bucket.endpoint/key`, which does not
  * resolve against an IP address.
  *
  * ## Anonymous read on one prefix
@@ -90,24 +93,65 @@ async function ensureBucket(client: S3Client): Promise<void> {
   await client.send(new CreateBucketCommand({ Bucket: MEDIA_BUCKET }));
 }
 
+/**
+ * F58: this ran with the app's own least-privilege key in staging (this
+ * publishes through `ensureStagingMedia`, part of the pre-reload seed) —
+ * on RustFS that key cannot set bucket policy at all (by design; see
+ * `studio-media.ts`'s `ensureStudioMediaBucket`, same reasoning). Checks and
+ * warns instead of setting it; provisioning (`infra/helios/bootstrap.sh` or
+ * `docker-compose.yml`) already covers `hls/` in its own public-read grant.
+ */
 async function allowAnonymousReadOfHls(client: S3Client): Promise<void> {
-  await client.send(
-    new PutBucketPolicyCommand({
-      Bucket: MEDIA_BUCKET,
-      Policy: JSON.stringify({
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Sid: "PublicReadHlsOnly",
-            Effect: "Allow",
-            Principal: { AWS: ["*"] },
-            Action: ["s3:GetObject"],
-            Resource: [`arn:aws:s3:::${MEDIA_BUCKET}/${HLS_PREFIX}/*`],
-          },
-        ],
+  const resource = `arn:aws:s3:::${MEDIA_BUCKET}/${HLS_PREFIX}/*`;
+  try {
+    const { Policy } = await client.send(new GetBucketPolicyCommand({ Bucket: MEDIA_BUCKET }));
+    const parsed: unknown = Policy ? JSON.parse(Policy) : null;
+    const resources = new Set<string>(
+      parsed && typeof parsed === "object" && "Statement" in parsed
+        ? (parsed as { Statement: readonly { Resource?: readonly string[] | string }[] }).Statement.flatMap(
+            (statement) =>
+              Array.isArray(statement.Resource)
+                ? statement.Resource
+                : statement.Resource
+                  ? [statement.Resource]
+                  : [],
+          )
+        : [],
+    );
+    if (!resources.has(resource)) {
+      console.warn(
+        `[publish-fixture] bucket "${MEDIA_BUCKET}"'s policy does not grant public read on ${HLS_PREFIX}/*. ` +
+          "This process's own credentials cannot set it (least-privilege, F58) — provisioning must.",
+      );
+    }
+  } catch (error) {
+    console.warn(
+      `[publish-fixture] could not read bucket "${MEDIA_BUCKET}"'s policy to verify public read on ${HLS_PREFIX}/*: ${error instanceof Error ? error.message : String(error)}. ` +
+        "Provisioning (infra/helios/bootstrap.sh or docker-compose.yml) must have set it; this process never will.",
+    );
+  }
+
+  // A browser plays this fixture cross-origin in dev — same reasoning
+  // `studio-media.ts`'s own `ensureStudioMediaBucket` documents: MinIO
+  // answered a permissive CORS header by default with no config, RustFS
+  // does not. Best-effort; this is dev/test-only, never staging traffic
+  // that depends on it.
+  try {
+    await client.send(
+      new PutBucketCorsCommand({
+        Bucket: MEDIA_BUCKET,
+        CORSConfiguration: {
+          CORSRules: [
+            { AllowedOrigins: ["*"], AllowedMethods: ["GET", "HEAD"], AllowedHeaders: ["*"] },
+          ],
+        },
       }),
-    }),
-  );
+    );
+  } catch (error) {
+    console.warn(
+      `[publish-fixture] could not set bucket "${MEDIA_BUCKET}"'s CORS config: ${error instanceof Error ? error.message : String(error)}.`,
+    );
+  }
 }
 
 export async function publishFixture(assetId: string = FIXTURE_ASSET_ID): Promise<PublishResult> {

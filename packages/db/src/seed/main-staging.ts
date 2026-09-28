@@ -142,7 +142,7 @@ async function main(): Promise<void> {
           : `demo video: ${media.status}: ${media.detail}`;
 
     // TASKS.md 7.2.d/e: the demo media kit's own campaigns (8 AU + 8 ID),
-    // real ffmpeg/MinIO, idempotent by campaign id — a re-run after the
+    // real ffmpeg/RustFS, idempotent by campaign id — a re-run after the
     // first successful one just checks 16 rows and does nothing further.
     //
     // Deliberately NEVER fails the deploy (unlike pendingGrant/demoVoucher/

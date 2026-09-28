@@ -69,24 +69,26 @@ services:
       timeout: 3s
       retries: 20
 
-  minio:
-    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372
-    container_name: yourtal-minio
+  rustfs:
+    # F58: MinIO replaced with RustFS (see docker-compose.yml's own comment
+    # for the full reasoning). Production stays at the image's default log
+    # level (WARN) — the INFO-level per-request log is a dev/CI-only aid
+    # for delivery-log.test.ts, not something Helios needs to carry.
+    image: rustfs/rustfs@sha256:8cc9801755448b71a786705ce76692c77e14936cccd87cf2fc31842e58f4d1ff
+    container_name: yourtal-rustfs
     restart: unless-stopped
     cgroup_parent: yourtal.slice
-    env_file: [minio.env]
-    command: ["server", "/data", "--console-address", ":9001"]
+    env_file: [rustfs.env]
     ports:
       - "127.0.0.1:26305:9000"
-      - "127.0.0.1:26306:9001"
     volumes:
-      - minio:/data
+      - rustfs:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/health"]
       interval: 5s
       timeout: 3s
       retries: 20
 
 volumes:
   pgdata18:
-  minio:
+  rustfs:

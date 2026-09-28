@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { createKybObjectStorage, resolveKybObjectStorageConfig } from "./kyb-object-storage";
 
 /**
- * Against the real MinIO from `pnpm dev:up` (YT-0521's origin) — fails
+ * Against the real RustFS from `pnpm dev:up` (YT-0521's origin) — fails
  * rather than skips when it is down, matching `hls-origin.test.ts` and
  * `packages/db`'s own real-Postgres-or-fail discipline. A presigned URL is
  * only proven by actually PUTting through it with plain `fetch`, no SDK,
  * exactly what a browser does — asserting through the S3 client's own
  * PutObjectCommand would prove the SDK works, not that the signature this
- * module hands a client is one MinIO accepts.
+ * module hands a client is one RustFS accepts.
  */
 function storage() {
   return createKybObjectStorage(resolveKybObjectStorageConfig());

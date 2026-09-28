@@ -94,28 +94,42 @@ services:
   # --- YT-0520 / YT-0521: local substitutes for cloud services, so nothing
   # --- waits on an account signup. Same interfaces, real protocols.
 
-  minio:
-    # Upstream MinIO stopped publishing images and its repo is archived with
-    # unpatched critical CVEs (e.g. GHSA-5cx5-wh4m-82fh), and
-    # quay.io/minio/minio:latest no longer pulls. pgsty/minio is the
-    # maintained drop-in fork: same API, same `mc` for the healthcheck.
-    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z@sha256:b6bfe7239bfc83fb90d31612d9704d86039dd714f7904b3f1ad68f211e602372
-    container_name: yourtal-minio
+  rustfs:
+    # F58 (founder, 2026-09-28): MinIO replaced with RustFS. MinIO/pgsty's
+    # fork was already a workaround for MinIO's own archived-with-CVEs repo;
+    # RustFS is a from-scratch S3-compatible server, Apache-2.0, one port for
+    # everything (S3 API + admin API + health), no bundled `mc`/console the
+    # app depends on. Pinned by digest, its own 1.0.0 GA (2026-09-16).
+    image: rustfs/rustfs@sha256:8cc9801755448b71a786705ce76692c77e14936cccd87cf2fc31842e58f4d1ff
+    container_name: yourtal-rustfs
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: yourtal
-      MINIO_ROOT_PASSWORD: yourtal_local_only
-    # S3-compatible, so the R2 adapter is exercised rather than stubbed —
-    # and per-object access logs give us the per-segment delivery data that
-    # Cloudflare Stream does not expose (docs/22).
-    command: ["server", "/data", "--console-address", ":9001"]
+      RUSTFS_ROOT_USER: yourtal
+      RUSTFS_ROOT_PASSWORD: yourtal_local_only
+      # INFO, not the image's WARN default: at INFO, RustFS's own structured
+      # JSON log (/logs/rustfs.log in the container) emits one
+      # "http_request_completed" record per request (method, uri, status,
+      # duration) — delivery-log.test.ts's replacement for `mc admin trace`,
+      # which RustFS's own admin API accepts but never actually populates
+      # for S3-level operations (confirmed empirically against a real
+      # container: the endpoint streams real internal scanner events under
+      # `all=true`, and the real `mc` client connects fine, but neither ever
+      # emits a GetObject/PutObject record). DEBUG would also carry the
+      # object's byte size, but at ~900 lines per request it is too noisy
+      # for a healthcheck-adjacent log; the client's own Content-Length
+      # response header is delivery-log.test.ts's byte-count evidence
+      # instead (see that file's own header comment).
+      RUSTFS_OBS_LOGGER_LEVEL: info
+    # S3-compatible, so the R2 adapter is exercised rather than stubbed.
     ports:
       - "127.0.0.1:26900:9000"
-      - "127.0.0.1:26901:9001"
     volumes:
-      - yourtal-minio:/data
+      - yourtal-rustfs:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      # RustFS ships no `mc` (no CLI at all beyond its own `rustfs` binary),
+      # but does answer an unauthenticated GET /health — needs `curl`,
+      # confirmed present in the image.
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/health"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -250,8 +264,8 @@ services:
 volumes:
   yourtal-pgdata18:
     name: yourtal-pgdata18
-  yourtal-minio:
-    name: yourtal-minio
+  yourtal-rustfs:
+    name: yourtal-rustfs
   # The voucher master keyring. Deliberately its own volume rather than a
   # path under yourtal-pgdata or anything bind-mounted from this repo — see
   # the voucher-keygen service above for why "outside the git working tree"

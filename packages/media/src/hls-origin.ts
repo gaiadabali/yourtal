@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
  * viewer, session, IP or segment dimension exists to cross-check against.**
  *
  * `docs/22`'s option A is to self-host HLS on object storage and log every
- * segment fetch. This is that, locally: MinIO speaks S3, so the same adapter
+ * segment fetch. This is that, locally: RustFS speaks S3, so the same adapter
  * runs against R2 later, and every segment GET is a request the origin can
  * account for.
  *

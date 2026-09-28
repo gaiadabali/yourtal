@@ -63,7 +63,7 @@ export async function ensureStagingMedia(config: StagingMediaConfig): Promise<St
 
   const client = new S3Client({
     endpoint: config.endpoint,
-    region: "us-east-1", // MinIO ignores it; the SDK refuses to run without one.
+    region: "us-east-1", // RustFS ignores it; the SDK refuses to run without one.
     credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
     forcePathStyle: true,
   });

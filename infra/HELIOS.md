@@ -9,7 +9,7 @@ everything it runs sits in `yourtal.slice` (2 cores, 4 GB).
 
 | Part                                 | Runs as          | How                                                                          | Updated by            |
 | ------------------------------------ | ---------------- | ---------------------------------------------------------------------------- | --------------------- |
-| Postgres 18, Valkey, Cerbos, MinIO   | root (docker)    | `docker-compose.helios.yml` in `/opt/yourtal/stack`, `yourtal-stack.service` | `bootstrap.sh` (rare) |
+| Postgres 18, Valkey, Cerbos, RustFS   | root (docker)    | `docker-compose.helios.yml` in `/opt/yourtal/stack`, `yourtal-stack.service` | `bootstrap.sh` (rare) |
 | web, api, worker                     | `uyourtal` (pm2) | `infra/helios/ecosystem.config.cjs`, Node 24 from `/opt/yourtal/node`        | every release         |
 | ledger, voucher                      | `uyourtal` (pm2) | static Go binaries in the release's `bin/`                                   | every release         |
 | migrations, role passwords, policies | `uyourtal`       | the release's `deploy/pre-reload.sh`                                         | every release         |
@@ -76,7 +76,7 @@ window) if the poller has stopped picking up releases.
 - `/opt/yourtal/secrets/keyring/` (0400 files): the voucher master keys.
   Generated once; losing them makes every stored voucher code unreadable, so
   they are backed up with the database (2.3.c).
-- `/opt/yourtal/stack/{secrets,minio}.env` (0600, root): container credentials.
+- `/opt/yourtal/stack/{secrets,rustfs}.env` (0600, root): container credentials.
 
 The migrations create roles with passwords that are public in this repo; every
 deploy replaces them with the ones in `app.env`.

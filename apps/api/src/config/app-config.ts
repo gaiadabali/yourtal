@@ -44,7 +44,7 @@ export interface AppConfig {
     readonly consumerAbsoluteTtlMs: number;
     readonly staffAbsoluteTtlMs: number;
   };
-  /** TASKS.md 7.1.b — the presigned KYB upload's own MinIO/S3 client config. */
+  /** TASKS.md 7.1.b — the presigned KYB upload's own RustFS/S3 client config. */
   readonly objectStorage: {
     readonly endpoint: string;
     readonly accessKeyId: string;

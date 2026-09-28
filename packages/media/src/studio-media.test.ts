@@ -12,11 +12,11 @@ import {
 } from "./studio-media";
 
 /**
- * Against the real local MinIO (YT-0521's convention: `hls-fixture.test.ts`
+ * Against the real local RustFS (YT-0521's convention: `hls-fixture.test.ts`
  * and `delivery-log.test.ts` already do the same). Not mocked: the point of
  * self-hosting is that the multipart-upload and presigned-URL code paths are
  * exercised against the actual S3 API this pipeline runs against in
- * production, not a client library's idea of what MinIO does.
+ * production, not a client library's idea of what RustFS does.
  */
 describe("studio media object store", () => {
   const client = createMediaClient();
@@ -26,9 +26,9 @@ describe("studio media object store", () => {
     client.destroy();
   });
 
-  it("round-trips a raw multipart upload through MinIO", async () => {
+  it("round-trips a raw multipart upload through RustFS", async () => {
     const assetId = randomUUID();
-    const body = Buffer.from("x".repeat(6 * 1024 * 1024)); // one part, under MinIO's 5 MiB floor+
+    const body = Buffer.from("x".repeat(6 * 1024 * 1024)); // one part, under the S3 multipart 5 MiB floor+
     const created = await createRawUpload(client, {
       assetId,
       extension: "mp4",

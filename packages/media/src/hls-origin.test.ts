@@ -10,7 +10,7 @@ import {
 import { publishFixture } from "./publish-fixture";
 
 /**
- * The origin, against the real MinIO from `pnpm dev:up`. YT-0521.
+ * The origin, against the real RustFS from `pnpm dev:up`. YT-0521.
  *
  * Every request here is **anonymous** — no SDK, no credentials, plain
  * `fetch`, exactly what a player does. Asserting through the S3 client would
@@ -18,7 +18,7 @@ import { publishFixture } from "./publish-fixture";
  * consumer that matters, and the bucket policy is the part most likely to be
  * wrong.
  *
- * Fails rather than skips when MinIO is down, matching `packages/db`. A media
+ * Fails rather than skips when RustFS is down, matching `packages/db`. A media
  * origin test that passes on a machine with no origin is worth nothing.
  */
 
@@ -95,7 +95,14 @@ describe("the local HLS origin", () => {
     // fetch fails in the browser and nowhere else, so it is invisible to
     // every test that is not this one.
     const response = await fetchOrThrow(manifestUrl(), { Origin: "http://localhost:3000" });
-    expect(response.headers.get("access-control-allow-origin")).toBe("http://localhost:3000");
+    // MinIO reflected the request's own Origin; RustFS answers the
+    // configured rule's literal value instead (F58) — a bucket CORS rule of
+    // `AllowedOrigins: ["*"]` on a real GET, so `*` is exactly as valid a
+    // browser-facing answer as an echoed origin (this request carries no
+    // credentials, the only case where `*` would be insufficient).
+    expect(["http://localhost:3000", "*"]).toContain(
+      response.headers.get("access-control-allow-origin"),
+    );
   });
 
   it("caches segments hard and the manifest not at all", async () => {

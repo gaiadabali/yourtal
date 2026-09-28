@@ -3,9 +3,10 @@ import {
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
   GetObjectCommand,
+  GetBucketPolicyCommand,
   HeadBucketCommand,
   CreateBucketCommand,
-  PutBucketPolicyCommand,
+  PutBucketCorsCommand,
   PutObjectCommand,
   S3Client,
   UploadPartCommand,
@@ -28,7 +29,7 @@ import {
  * and read-only, `hls/` is proxied behind the per-session signature, and
  * anything else under `/media/` 404s — which is why raw uploads live under
  * `raw/` and are never served through nginx at all, only read by the worker
- * directly off MinIO (loopback-only in production).
+ * directly off RustFS (loopback-only in production).
  */
 export const RAW_PREFIX = "raw";
 export const POSTER_PREFIX = "posters";
@@ -55,7 +56,7 @@ export function hlsAssetObjectKey(assetId: string, file: string): string {
 /**
  * `posters/`, `teasers/`, `captions/` and `hls/` are the exact prefixes
  * `infra/helios/nginx/yourtal.gaiada.com.conf` (2.1.c) proxies publicly, with
- * NO S3 credentials attached to that proxy — MinIO/R2 has to allow
+ * NO S3 credentials attached to that proxy — RustFS/R2 has to allow
  * anonymous `GetObject` on all four, or nginx serves a 403 for every asset
  * this pipeline produces. `publish-fixture.ts`'s own `allowAnonymousReadOfHls`
  * only ever covered `hls/`, because it predates uploaded (non-fixture)
@@ -64,9 +65,23 @@ export function hlsAssetObjectKey(assetId: string, file: string): string {
  */
 const PUBLIC_READ_PREFIXES = [HLS_PREFIX, POSTER_PREFIX, TEASER_PREFIX, CAPTIONS_PREFIX];
 
-/** Memoised per bucket name: called on every upload, but the PUT itself only needs to happen once. */
+/** Memoised per bucket name: called on every upload, but the check itself only needs to happen once. */
 const policyEnsured = new Set<string>();
 
+/**
+ * F58 (founder, 2026-09-28): on RustFS, the app's own key is
+ * least-privilege — object CRUD + bucket-level list, no `PutBucketPolicy`
+ * (confirmed empirically: the app key gets a clean `AccessDenied` on that
+ * call, by design). The public-read policy for `hls/`, `posters/`,
+ * `teasers/`, `captions/` is set exactly ONCE, by root, at provisioning time
+ * (`infra/helios/bootstrap.sh`'s own curl+SigV4 recipe; `docker-compose.yml`
+ * for local dev). This function used to set that policy itself with the
+ * app's own credentials — which worked on MinIO before it (no such privilege split)
+ * but would 403 outright on RustFS. It now only checks the policy already
+ * covers what this pipeline needs and warns loudly if it doesn't, rather
+ * than trying to fix it — an app process is never the right actor to widen
+ * its own bucket's public surface.
+ */
 async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
   const bucket = resolveMediaBucket();
   if (policyEnsured.has(bucket)) return;
@@ -76,32 +91,85 @@ async function ensureStudioMediaBucket(client: S3Client): Promise<void> {
   } catch {
     await client.send(new CreateBucketCommand({ Bucket: bucket }));
   }
-  await client.send(
-    new PutBucketPolicyCommand({
-      Bucket: bucket,
-      Policy: JSON.stringify({
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Sid: "PublicReadStudioMedia",
-            Effect: "Allow",
-            Principal: { AWS: ["*"] },
-            Action: ["s3:GetObject"],
-            Resource: PUBLIC_READ_PREFIXES.map((prefix) => `arn:aws:s3:::${bucket}/${prefix}/*`),
-          },
-        ],
+
+  try {
+    const { Policy } = await client.send(new GetBucketPolicyCommand({ Bucket: bucket }));
+    const parsed: unknown = Policy ? JSON.parse(Policy) : null;
+    const resources = new Set<string>(
+      parsed && typeof parsed === "object" && "Statement" in parsed
+        ? (parsed as { Statement: readonly { Resource?: readonly string[] | string }[] }).Statement.flatMap(
+            (statement) =>
+              Array.isArray(statement.Resource)
+                ? statement.Resource
+                : statement.Resource
+                  ? [statement.Resource]
+                  : [],
+          )
+        : [],
+    );
+    const missing = PUBLIC_READ_PREFIXES.filter(
+      (prefix) => !resources.has(`arn:aws:s3:::${bucket}/${prefix}/*`),
+    );
+    if (missing.length > 0) {
+      console.warn(
+        `[studio-media] bucket "${bucket}"'s policy does not grant public read on: ${missing.join(", ")}. ` +
+          "This app's own credentials cannot set it (least-privilege, F58) — provisioning must (infra/helios/bootstrap.sh or docker-compose.yml).",
+      );
+    }
+  } catch (error) {
+    console.warn(
+      `[studio-media] could not read bucket "${bucket}"'s policy to verify public read on ${PUBLIC_READ_PREFIXES.join(", ")}: ${error instanceof Error ? error.message : String(error)}. ` +
+        "Provisioning (infra/helios/bootstrap.sh or docker-compose.yml) must have set it; this app never will.",
+    );
+  }
+
+  // A real browser PUTs presigned upload parts straight from the studio UI's
+  // origin to this bucket's origin — cross-origin, so it needs the bucket's
+  // own CORS config, not the public-read policy above (a separate S3
+  // feature, not gated by F58's "policy set once by root" rule — MinIO
+  // answered a permissive CORS header on every request by default with no
+  // config at all; RustFS does not, so this is required where it wasn't
+  // before). Best-effort: this app's own least-privileged key may not carry
+  // `s3:PutBucketCORS` either, and a missing CORS config only breaks direct
+  // browser uploads, not this process — warn, don't crash.
+  try {
+    await client.send(
+      new PutBucketCorsCommand({
+        Bucket: bucket,
+        CORSConfiguration: {
+          CORSRules: [
+            {
+              AllowedOrigins: ["*"],
+              AllowedMethods: ["GET", "HEAD", "PUT", "POST"],
+              AllowedHeaders: ["*"],
+            },
+          ],
+        },
       }),
-    }),
-  );
+    );
+  } catch (error) {
+    console.warn(
+      `[studio-media] could not set bucket "${bucket}"'s CORS config (needed for direct browser uploads): ${error instanceof Error ? error.message : String(error)}.`,
+    );
+  }
   policyEnsured.add(bucket);
 }
 
 export function createMediaClient(): S3Client {
   return new S3Client({
     endpoint: resolveOriginEndpoint(),
-    region: "us-east-1", // MinIO ignores it; the SDK refuses to run without one.
+    region: "us-east-1", // RustFS ignores it; the SDK refuses to run without one.
     credentials: resolveCredentials(),
     forcePathStyle: true,
+    // F58: the SDK v3's default embeds a CRC32 checksum placeholder into a
+    // presigned URL's query string, computed before the real bytes exist.
+    // RustFS validates that checksum strictly (MinIO and R2 both special-
+    // case around this well-known SDK-v3-vs-non-AWS-S3 incompatibility;
+    // RustFS did not, as of its 1.0.0 GA) and rejects the real PUT with
+    // `400 BadDigest`. Confirmed empirically: with this option, the
+    // presigned URL carries no checksum param and the full
+    // create-multipart -> presign -> PUT -> complete cycle succeeds.
+    requestChecksumCalculation: "WHEN_REQUIRED",
   });
 }
 
@@ -140,7 +208,7 @@ const PART_URL_TTL_SECONDS = 3600;
 
 /**
  * Starts a real S3 multipart upload and presigns one PUT URL per part
- * (7.2.a). The client PUTs bytes straight to MinIO/R2 — this process never
+ * (7.2.a). The client PUTs bytes straight to RustFS/R2 — this process never
  * sees the video — and returns each part's ETag for `completeRawUpload`.
  */
 export async function createRawUpload(

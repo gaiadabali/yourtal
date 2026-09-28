@@ -63,3 +63,29 @@ export const quotePurchaseResultSchema = z.object({
   currency: currencySchema,
 });
 export type QuotePurchaseResult = z.infer<typeof quotePurchaseResultSchema>;
+
+/**
+ * F61/TASKS.md 7.3.h: any positive point count, priced at P_issue — never
+ * B. Deliberately NOT `quotePurchaseRequestSchema`/`quotePurchaseResultSchema`
+ * reused under a new name: `quotePurchase` prices a POINTS-PACK PURCHASE
+ * (the ledger's own `PackPoints` multiple-of-1,000 requirement), and a
+ * per-completion reward (base + accuracy bonus) is a small number that will
+ * only ever coincidentally be a multiple of 1,000 — calling `quotePurchase`
+ * for it is exactly F61's bug (`ErrNotAPack` on every real reward). Same
+ * shape as `quotePurchaseRequestSchema`/`quotePurchaseResultSchema` on
+ * purpose (a valuation call must not be distinguishable from a purchase
+ * quote by shape, which would let a caller infer something about how each
+ * is priced), but a distinct operation because the ledger applies a
+ * different validation rule to it.
+ */
+export const valuePointsRequestSchema = z.object({
+  points: pointsSchema,
+  region: regionSchema,
+});
+export type ValuePointsRequest = z.infer<typeof valuePointsRequestSchema>;
+
+export const valuePointsResultSchema = z.object({
+  totalMinor: minorUnitsSchema,
+  currency: currencySchema,
+});
+export type ValuePointsResult = z.infer<typeof valuePointsResultSchema>;

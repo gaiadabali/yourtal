@@ -8640,14 +8640,28 @@
                       "type": "object",
                       "properties": {
                         "rewardValueMinor": {
-                          "type": "integer",
-                          "minimum": 0
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "currency": {
-                          "type": "string",
-                          "enum": [
-                            "AUD",
-                            "IDR"
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "AUD",
+                                "IDR"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
                           ]
                         }
                       },

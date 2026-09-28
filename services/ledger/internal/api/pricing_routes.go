@@ -122,3 +122,30 @@ func (a *API) quotePurchase(w http.ResponseWriter, r *http.Request) {
 		"totalMinor": quoted.AmountMinor, "currency": quoted.Currency,
 	})
 }
+
+// valuePoints prices ANY positive point count at P_issue (F61/TASKS.md
+// 7.3.h) — no pack-multiple requirement, unlike quotePurchase above. Never
+// returns B, the backing rate: same response shape as quotePurchase, on
+// purpose, so a caller cannot tell the two apart by shape and infer B from
+// the difference.
+func (a *API) valuePoints(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Points int64  `json:"points"`
+		Region string `json:"region"`
+	}
+	if !a.decode(w, r, &body) {
+		return
+	}
+	_, region, ok := a.engineFor(w, body.Region)
+	if !ok {
+		return
+	}
+	valued, err := a.pricing.ValuePoints(r.Context(), region, body.Points)
+	if err != nil {
+		a.fail(w, fmt.Errorf("%w: %w", errBadRequest, err))
+		return
+	}
+	httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]any{
+		"totalMinor": valued.AmountMinor, "currency": valued.Currency,
+	})
+}

@@ -51,10 +51,18 @@ export const apiCampaignDraftSchema = z.object({
 
 export type ApiCampaignDraft = z.infer<typeof apiCampaignDraftSchema>;
 
-/** `SetRewardConfigResult` (`apps/api`'s `set-reward-config.use-case.ts`) — the draft's own fields plus the server-priced value for one completion, 7.3.h. */
+/**
+ * `SetRewardConfigResult` (`apps/api`'s `set-reward-config.use-case.ts`) —
+ * the draft's own fields plus the server-priced value for one completion,
+ * 7.3.h. `rewardValueMinor`/`currency` are nullable (F61): the reward config
+ * itself always saves; the ledger valuation behind these two fields is
+ * best-effort DISPLAY data for Studio's risk banner and never blocks or
+ * half-commits the save if it fails — `campaign-reward-risk.ts`'s own
+ * "ratio pending" state is exactly this `null` case.
+ */
 export const apiRewardConfigResultSchema = apiCampaignDraftSchema.extend({
-  rewardValueMinor: z.number(),
-  currency: z.string(),
+  rewardValueMinor: z.number().nullable(),
+  currency: z.string().nullable(),
 });
 
 export type ApiRewardConfigResult = z.infer<typeof apiRewardConfigResultSchema>;

@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { ResultAsync, err, errAsync, ok, okAsync } from "neverthrow";
+import { ResultAsync, err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import { ledgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
+import type { MinorUnits } from "@yourtal/contracts/money";
 import type {
   LockQuoteRequest,
   PriceListingRequest,
@@ -13,6 +14,8 @@ import type {
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
+  ValuePointsRequest,
+  ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
 import type { AppDb } from "../../persistence/drizzle-client";
 
@@ -172,16 +175,42 @@ export function priceListing(
   );
 }
 
+/**
+ * ceil(points × P_issue ÷ 1,000), from the same fixed F12 pack price both
+ * `quotePurchase` (packs only) and `valuePoints` (any positive count) price
+ * against — the fake's stand-in for the real ledger's `IssuePriceMicrosPerPoint`,
+ * since `platform.ledger_fake_backing_rate` only carries B, not P_issue.
+ */
+function priceAtIssueRate(
+  region: string,
+  points: number,
+): Result<{ readonly totalMinor: MinorUnits; readonly currency: "AUD" | "IDR" }, LedgerError> {
+  const packPriceMinor = PACK_PRICE_MINOR_PER_1000_POINTS[region];
+  if (packPriceMinor === undefined) {
+    return err(ledgerError("region_mismatch", `no points-pack price for region ${region}`));
+  }
+  const totalMinor = toMinorUnits(Math.ceil((points * packPriceMinor) / 1_000));
+  const currency = region === "AU" ? "AUD" : "IDR";
+  return ok({ totalMinor, currency });
+}
+
 export function quotePurchase(
   request: QuotePurchaseRequest,
 ): ResultAsync<QuotePurchaseResult, LedgerError> {
-  const packPriceMinor = PACK_PRICE_MINOR_PER_1000_POINTS[request.region];
-  if (packPriceMinor === undefined) {
-    return errAsync(
-      ledgerError("region_mismatch", `no points-pack price for region ${request.region}`),
-    );
-  }
-  const totalMinor = toMinorUnits(Math.ceil((request.points * packPriceMinor) / 1_000));
-  const currency = request.region === "AU" ? "AUD" : "IDR";
-  return okAsync({ totalMinor, currency });
+  return new ResultAsync(Promise.resolve(priceAtIssueRate(request.region, request.points)));
+}
+
+/**
+ * F61/TASKS.md 7.3.h: any positive point count, priced at P_issue — no
+ * pack-multiple requirement (unlike `quotePurchase`; see the contract's own
+ * doc comment for why they are separate operations even though the fake's
+ * arithmetic happens to be identical). `points <= 0` has no fake-side check,
+ * the same as `quotePurchase`'s own `ErrNotAPack` has none here either —
+ * `pointsSchema` already guarantees non-negative, and the real ledger's
+ * `ErrPointsNotPositive` is the actual enforcement point for exactly zero.
+ */
+export function valuePoints(
+  request: ValuePointsRequest,
+): ResultAsync<ValuePointsResult, LedgerError> {
+  return new ResultAsync(Promise.resolve(priceAtIssueRate(request.region, request.points)));
 }

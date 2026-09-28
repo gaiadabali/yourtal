@@ -829,15 +829,22 @@ const campaignDraftResponseSchema: Record<string, unknown> = {
   additionalProperties: false,
 };
 
-/** `set-reward-config.use-case.ts`'s `SetRewardConfigResult` -- the draft, plus 7.3.h's reward value priced in the business's own currency via `quotePurchase` (P_issue). B, the backing rate, never appears here. */
+/**
+ * `set-reward-config.use-case.ts`'s `SetRewardConfigResult` -- the draft,
+ * plus 7.3.h's reward value priced in the business's own currency via
+ * `valuePoints` (P_issue). B, the backing rate, never appears here.
+ * `rewardValueMinor`/`currency` are nullable (F61): the reward config
+ * itself always saves; a ledger valuation failure after that save degrades
+ * to null/null (display-only data) rather than failing the response.
+ */
 const setRewardConfigResponseSchema: Record<string, unknown> = {
   allOf: [
     campaignDraftResponseSchema,
     {
       type: "object",
       properties: {
-        rewardValueMinor: { type: "integer", minimum: 0 },
-        currency: { type: "string", enum: [...CURRENCY_CODES] },
+        rewardValueMinor: { anyOf: [{ type: "integer", minimum: 0 }, { type: "null" }] },
+        currency: { anyOf: [{ type: "string", enum: [...CURRENCY_CODES] }, { type: "null" }] },
       },
       required: ["rewardValueMinor", "currency"],
     },

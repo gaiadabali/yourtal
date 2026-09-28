@@ -9,6 +9,8 @@ import type {
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
+  ValuePointsRequest,
+  ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
 import type {
   Allocation,
@@ -76,6 +78,8 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   lockQuote(request: LockQuoteRequest): ResultAsync<Quote, LedgerError>;
   priceListing(request: PriceListingRequest): ResultAsync<PriceListingResult, LedgerError>;
   quotePurchase(request: QuotePurchaseRequest): ResultAsync<QuotePurchaseResult, LedgerError>;
+  /** F61/TASKS.md 7.3.h: prices any positive point count at P_issue — no pack-multiple requirement. See the contract's own doc comment for why this is not `quotePurchase`. */
+  valuePoints(request: ValuePointsRequest): ResultAsync<ValuePointsResult, LedgerError>;
 
   // --- funding and allocations ---
   purchasePoints(request: PurchasePointsRequest): ResultAsync<Allocation, LedgerError>;

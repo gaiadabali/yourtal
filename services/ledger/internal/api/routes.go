@@ -92,6 +92,7 @@ func (a *API) platformRoutes(r chi.Router) {
 	r.Post("/pricing/quote/lock", a.lockQuote)
 	r.Post("/pricing/listing", a.priceListing)
 	r.Post("/pricing/purchase-quote", a.quotePurchase)
+	r.Post("/pricing/points-value", a.valuePoints)
 
 	r.Post("/allocations/purchase", a.purchasePoints)
 	r.Post("/allocations/list", a.listAllocations)

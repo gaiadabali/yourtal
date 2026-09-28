@@ -1,4 +1,5 @@
-import { errAsync, ResultAsync } from "neverthrow";
+import { Logger } from "@nestjs/common";
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import {
   exceedsAccuracyBonusRatio,
   exceedsRewardCeiling,
@@ -18,6 +19,8 @@ import type {
 } from "../persistence/reward-config.repository";
 import type { SetRewardConfigError } from "../studio.errors";
 
+const logger = new Logger("SetRewardConfig");
+
 export interface SetRewardConfigInput {
   readonly businessId: string;
   readonly campaignId: string;
@@ -30,13 +33,26 @@ export interface SetRewardConfigInput {
 /**
  * TASKS.md 7.3.h (requested by D/7.8): one completion's reward (base +
  * bonus), priced in the business's own currency for Studio's risk banner.
- * `quotePurchase` (P_issue, the points-PACK price every business already
- * sees when buying points) is what prices this — never `quote`/B, the
- * redemption-side backing rate that must never reach a browser.
+ * `ledger.valuePoints` (P_issue, the points-PACK price every business
+ * already sees when buying points, applied to ANY point count — F61 fixed
+ * `quotePurchase` being the wrong operation, since it only prices multiples
+ * of 1,000) is what prices this — never `quote`/B, the redemption-side
+ * backing rate that must never reach a browser.
+ *
+ * F61: nullable, deliberately, and this is a DECISION, not an oversight —
+ * the reward config itself is the thing that must save or refuse; its cash
+ * VALUE is display data for Studio's risk banner, computed from a second,
+ * independent ledger call after the save already committed. Failing the
+ * whole request over a valuation hiccup would report a false failure for a
+ * write that succeeded (the exact class of bug 7.1.e fixed elsewhere) — so
+ * a valuation failure logs and degrades to `null`/`null` (the UI's own
+ * `campaign-reward-risk.ts` already renders this as "ratio pending")
+ * instead. A caller that actually wants to retry pricing can PUT the same
+ * config again.
  */
 export interface RewardValue {
-  readonly rewardValueMinor: number;
-  readonly currency: Currency;
+  readonly rewardValueMinor: number | null;
+  readonly currency: Currency | null;
 }
 
 export type SetRewardConfigResult = CampaignDraft & RewardValue;
@@ -53,10 +69,7 @@ export function setRewardConfig(
   deps: {
     readonly drafts: CampaignDraftRepository;
     readonly rewardConfigs: RewardConfigRepository;
-    readonly ledger: Pick<
-      LedgerInternalClient,
-      "listAllocations" | "getSettings" | "quotePurchase"
-    >;
+    readonly ledger: Pick<LedgerInternalClient, "listAllocations" | "getSettings" | "valuePoints">;
   },
   input: SetRewardConfigInput,
 ): ResultAsync<SetRewardConfigResult, SetRewardConfigError> {
@@ -143,22 +156,28 @@ export function setRewardConfig(
                       Promise.resolve(updated),
                     ),
               )
+              // The save above already committed. Everything from here on is
+              // a SECOND, independent ledger call for display data only --
+              // see this file's RewardValue doc comment for why its failure
+              // degrades to null/null instead of failing this response.
               .andThen((updated) =>
                 deps.ledger
-                  .quotePurchase({
+                  .valuePoints({
                     points: toPoints(input.rewardPointsPerCompletion + input.accuracyBonusPoints),
                     region: updated.region,
                   })
-                  .mapErr((error): SetRewardConfigError => ({
-                    type: "ledger_refused",
-                    code: error.code,
-                    message: error.message,
-                  }))
                   .map((priced): SetRewardConfigResult => ({
                     ...updated,
                     rewardValueMinor: priced.totalMinor,
                     currency: priced.currency,
-                  })),
+                  }))
+                  .orElse((error): ResultAsync<SetRewardConfigResult, SetRewardConfigError> => {
+                    logger.warn(
+                      `valuePoints failed for campaign ${input.campaignId} after the reward config` +
+                        ` already saved -- degrading to a null reward value (${error.code}: ${error.message})`,
+                    );
+                    return okAsync({ ...updated, rewardValueMinor: null, currency: null });
+                  }),
               ),
           );
         });

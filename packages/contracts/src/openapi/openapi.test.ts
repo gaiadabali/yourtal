@@ -85,6 +85,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   priceListingResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   quotePurchaseRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   quotePurchaseResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  valuePointsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  valuePointsResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- ledger-internal: funding and allocations ---
   funderTypeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

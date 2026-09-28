@@ -224,6 +224,25 @@ describe("pricing", () => {
     const result = await client.quotePurchase({ points: toPoints(1_000), region: "AU" });
     expect(result._unsafeUnwrap()).toMatchObject({ totalMinor: 4_500, currency: "AUD" });
   });
+
+  /**
+   * F61/TASKS.md 7.3.h: `quotePurchase` above refuses anything that is not a
+   * multiple of 1,000 points -- exactly what broke every real reward save
+   * (an 8-point or 150-point completion is never a pack). `valuePoints` is
+   * the correct operation for a single completion's cash value: same P_issue
+   * rate, no pack-multiple requirement.
+   */
+  it("valuePoints prices an 8-point AU reward and a 150-point ID reward at P_issue", async () => {
+    // AU: F1's rate_f1_aud is 4,500,000 micros/point (AUD 0.045) -- 8 × 4.5c
+    // = 36c exactly, no rounding.
+    const au = await client.valuePoints({ points: toPoints(8), region: "AU" });
+    expect(au._unsafeUnwrap()).toMatchObject({ totalMinor: 36, currency: "AUD" });
+
+    // ID: rate_f1_idr is 9,000,000 micros/point (Rp 9) -- 150 × 9 = 1,350
+    // exactly.
+    const id = await client.valuePoints({ points: toPoints(150), region: "ID" });
+    expect(id._unsafeUnwrap()).toMatchObject({ totalMinor: 1_350, currency: "IDR" });
+  });
 });
 
 describe("funding and allocations", () => {

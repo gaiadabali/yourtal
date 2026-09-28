@@ -58,12 +58,9 @@ func QuotePurchaseIn(ctx context.Context, q *sqlcgen.Queries, region ledger.Regi
 	if err != nil {
 		return PurchaseQuote{}, fmt.Errorf("reading the rate in force: %w", err)
 	}
-	// ceil(points × P_issue ÷ 1e6), in big.Int: never undercharge by rounding.
-	amount := new(big.Int).Mul(big.NewInt(points), big.NewInt(rate.IssuePriceMicrosPerPoint))
-	amount.Add(amount, big.NewInt(MicrosPerMinorUnit-1))
-	amount.Quo(amount, big.NewInt(MicrosPerMinorUnit))
-	if !amount.IsInt64() {
-		return PurchaseQuote{}, fmt.Errorf("%w: %d points", ErrPriceOutOfRange, points)
+	amountMinor, err := priceAtIssueRate(points, rate.IssuePriceMicrosPerPoint)
+	if err != nil {
+		return PurchaseQuote{}, err
 	}
-	return PurchaseQuote{Points: points, AmountMinor: amount.Int64(), Currency: currency, RateID: rate.ID}, nil
+	return PurchaseQuote{Points: points, AmountMinor: amountMinor, Currency: currency, RateID: rate.ID}, nil
 }

@@ -8,6 +8,8 @@ import type {
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
+  ValuePointsRequest,
+  ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
 import type {
   Allocation,
@@ -91,6 +93,10 @@ export class FakeLedgerClient implements LedgerInternalClient {
 
   quotePurchase(request: QuotePurchaseRequest): ResultAsync<QuotePurchaseResult, LedgerError> {
     return pricing.quotePurchase(request);
+  }
+
+  valuePoints(request: ValuePointsRequest): ResultAsync<ValuePointsResult, LedgerError> {
+    return pricing.valuePoints(request);
   }
 
   purchasePoints(request: PurchasePointsRequest): ResultAsync<Allocation, LedgerError> {

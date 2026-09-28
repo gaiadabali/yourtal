@@ -28,7 +28,9 @@ export function MerchantVoucherSummary({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">{preview.merchantName}</CardTitle>
+        <CardTitle as="h2" className="text-xl">
+          {preview.merchantName}
+        </CardTitle>
         <p className="text-sm font-sans text-fg-muted">{preview.offerTitle}</p>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

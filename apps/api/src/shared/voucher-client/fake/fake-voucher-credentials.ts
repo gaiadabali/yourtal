@@ -31,7 +31,8 @@ export function issueMerchantCredential(
       // 8.3.f: absent (or "") means an ordinary merchant-wide credential —
       // stored as NULL, never the empty string, matching the real
       // voucher.merchant_credential table's own convention.
-      const deviceId = request.deviceId === undefined || request.deviceId === "" ? null : request.deviceId;
+      const deviceId =
+        request.deviceId === undefined || request.deviceId === "" ? null : request.deviceId;
       await db.execute(sql`
         INSERT INTO platform.voucher_fake_credential (id, merchant_id, device_id, secret_hash)
         VALUES (${id}, ${request.merchantId}, ${deviceId}, ${sha256(secret)})

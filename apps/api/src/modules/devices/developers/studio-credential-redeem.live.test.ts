@@ -83,9 +83,14 @@ function merchantSign(
 ): string {
   const unixSeconds = Math.floor(at.getTime() / 1000);
   const digest = createHash("sha256").update(body).digest("base64");
-  const canonical = [unixSeconds, keyId, method.toUpperCase(), pathAndQuery, idempotencyKey, digest].join(
-    "\n",
-  );
+  const canonical = [
+    unixSeconds,
+    keyId,
+    method.toUpperCase(),
+    pathAndQuery,
+    idempotencyKey,
+    digest,
+  ].join("\n");
   const mac = createHmac("sha256", secret).update(canonical).digest("hex");
   return `t=${String(unixSeconds)},k=${keyId},v1=${mac}`;
 }
@@ -97,7 +102,13 @@ function merchantSign(
  * still offers, the same way apps/api itself would. Never used to call a
  * merchant-facing route.
  */
-function serviceSign(secret: string, caller: string, method: string, pathAndQuery: string, body: string): string {
+function serviceSign(
+  secret: string,
+  caller: string,
+  method: string,
+  pathAndQuery: string,
+  body: string,
+): string {
   const t = Math.floor(Date.now() / 1000);
   const nonce = randomUUID();
   const digest = createHash("sha256").update(body).digest("base64");
@@ -135,7 +146,8 @@ async function callVoucherService(
 /** Narrows a decoded JSON field to a string for the small set of fields these tests read back. */
 function str(json: Record<string, unknown>, key: string): string {
   const value = json[key];
-  if (typeof value !== "string") throw new Error(`expected ${key} to be a string, got ${JSON.stringify(value)}`);
+  if (typeof value !== "string")
+    throw new Error(`expected ${key} to be a string, got ${JSON.stringify(value)}`);
   return value;
 }
 
@@ -213,7 +225,9 @@ async function mintOwnedVoucher(
       requestedBy: "staff-1",
     })
   )._unsafeUnwrap();
-  (await deps.vouchers.approveBatch({ batchId: batch.batchId, approvedBy: "staff-2" }))._unsafeUnwrap();
+  (
+    await deps.vouchers.approveBatch({ batchId: batch.batchId, approvedBy: "staff-2" })
+  )._unsafeUnwrap();
 
   const sagaId = randomUUID();
   const reserved = (await deps.vouchers.reserve({ listingId, sagaId }))._unsafeUnwrap();
@@ -259,7 +273,9 @@ function verifyDeliverySignature(
   if (!match) throw new Error(`malformed signature header: ${delivery.signatureHeader}`);
   const [, timestampText, mac] = match;
   const rawBody = JSON.stringify({ event: delivery.event, data: delivery.data });
-  const expected = createHmac("sha256", secret).update(`${timestampText ?? ""}.${rawBody}`).digest("hex");
+  const expected = createHmac("sha256", secret)
+    .update(`${timestampText ?? ""}.${rawBody}`)
+    .digest("hex");
   if (expected !== mac) throw new Error("webhook signature does not match");
 }
 
@@ -290,7 +306,9 @@ describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.
         method: "POST",
         url: `/api/${businessId}/studio/developers/webhooks`,
         headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
-        payload: { url: `https://example.test/webhooks/8-3-f-${region.toLowerCase()}-${String(Date.now())}` },
+        payload: {
+          url: `https://example.test/webhooks/8-3-f-${region.toLowerCase()}-${String(Date.now())}`,
+        },
       });
       expect(webhookRegistered.statusCode, webhookRegistered.body).toBe(201);
       const webhookSecret = str(webhookRegistered.json<Record<string, unknown>>(), "secret");
@@ -305,7 +323,12 @@ describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.
         credential.credentialId,
         credential.secret,
         "/v1/vouchers/authorize",
-        { code: voidCode, amount: faceValueMinor, currency, merchant_order_ref: `8-3-f-void-${randomUUID()}` },
+        {
+          code: voidCode,
+          amount: faceValueMinor,
+          currency,
+          merchant_order_ref: `8-3-f-void-${randomUUID()}`,
+        },
       );
       expect(authorizedForVoid.status, JSON.stringify(authorizedForVoid.json)).toBe(200);
       const voided = await callVoucherService(
@@ -331,7 +354,12 @@ describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.
         credential.credentialId,
         credential.secret,
         "/v1/vouchers/authorize",
-        { code, amount: captureAmount, currency, merchant_order_ref: `8-3-f-capture-${randomUUID()}` },
+        {
+          code,
+          amount: captureAmount,
+          currency,
+          merchant_order_ref: `8-3-f-capture-${randomUUID()}`,
+        },
       );
       expect(authorized.status, JSON.stringify(authorized.json)).toBe(200);
       const captured = await callVoucherService(
@@ -413,7 +441,11 @@ describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.
     // the running service's own keyring, so its signature genuinely
     // verifies — a DB insert could not produce that).
     const issuePath = "/internal/v1/credentials";
-    const issueBody = JSON.stringify({ merchantId: businessId, deviceId: "8.3.f-terminal-1", issuedBy: "test" });
+    const issueBody = JSON.stringify({
+      merchantId: businessId,
+      deviceId: "8.3.f-terminal-1",
+      issuedBy: "test",
+    });
     const issueSignature = serviceSign(
       services.voucherSecret,
       "worker",
@@ -423,7 +455,10 @@ describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.
     );
     const issueResponse = await fetch(`${services.voucherUrl}${issuePath}`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-yourtal-service-signature": issueSignature },
+      headers: {
+        "content-type": "application/json",
+        "x-yourtal-service-signature": issueSignature,
+      },
       body: issueBody,
     });
     expect(issueResponse.status).toBe(200);
@@ -444,7 +479,9 @@ describe.skipIf(!live)("Studio-issued merchant credentials are merchant-wide (8.
     expect(refused.status, JSON.stringify(refused.json)).toBe(403);
     const errorBody = refused.json["error"];
     expect(
-      typeof errorBody === "object" && errorBody !== null ? (errorBody as Record<string, unknown>)["code"] : undefined,
+      typeof errorBody === "object" && errorBody !== null
+        ? (errorBody as Record<string, unknown>)["code"]
+        : undefined,
     ).toBe("device_principal_refused");
   });
 

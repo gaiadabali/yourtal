@@ -9,7 +9,8 @@
     "./types": "./src/types.ts",
     "./errors": "./src/errors.ts",
     "./retry": "./src/retry.ts",
-    "./idempotency-key": "./src/idempotency-key.ts"
+    "./idempotency-key": "./src/idempotency-key.ts",
+    "./webhook": "./src/webhook.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

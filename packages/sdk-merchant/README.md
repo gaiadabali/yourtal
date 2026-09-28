@@ -215,9 +215,79 @@ for a human, not your integration.
 
 ## Webhooks
 
-Not yet — `voucher.captured`/`voucher.refunded`/`voucher.expired` webhook
-signature verification lands here once the webhook contract (TASKS.md
-8.3.c) is on `main`.
+Register a delivery URL from Studio → Developers (TASKS.md 8.3.a) and a
+worker job (`apps/worker/src/jobs/webhook-delivery.ts`) signs and sends you
+a `voucher.captured`, `voucher.refunded` or `voucher.expired` event after
+each one happens — `{ event, data }`, plus a signature.
+
+The signature is a **different, simpler** scheme than request signing
+above: there is no method, path or key id to bind for an inbound delivery,
+only a body your server reads once.
+
+```
+t=<unix seconds>,v1=<hex hmac-sha256>
+```
+
+`HMAC-SHA256(secret, "${t}.${rawBody}")`, hex-encoded, where `rawBody` is
+the exact bytes of `JSON.stringify({ event, data })` — signed before
+anything else was added to what you receive, so verify against exactly
+those two keys, in that order, not against whatever else your transport
+wraps them in.
+
+```ts
+import { verifyWebhookSignature, WebhookSignatureError } from "@yourtal/sdk-merchant/webhook";
+
+// rawBody: the exact request body bytes your server received, as a string.
+// signatureHeader: wherever your receiver read the "t=...,v1=..." value from.
+try {
+  verifyWebhookSignature({
+    rawBody,
+    signatureHeader,
+    secret: process.env.MERCHANT_WEBHOOK_SECRET!,
+  });
+  // verified — safe to act on the event now
+} catch (error) {
+  if (error instanceof WebhookSignatureError) {
+    // bad signature, tampered body, or a stale/future timestamp outside
+    // the tolerance window (5 minutes by default; pass toleranceSeconds
+    // to change it) — refuse the delivery, do not act on it
+  }
+}
+```
+
+`verifyWebhookSignature` throws `WebhookSignatureError` on any failure —
+wrong secret, a body edited after signing, a malformed header, or a
+timestamp too far from your server's own clock — rather than returning a
+boolean a caller could forget to check. The MAC comparison is constant-time
+(`crypto.timingSafeEqual`), so a timing side-channel cannot leak the correct
+signature one byte at a time.
+
+8.2's webhook driver is simulated-only (docs/23, red line 11: no real
+outbound HTTP call ever leaves YourTal's worker), so on staging there is no
+real HTTP receiver to test against yet — a delivery is inspectable as a row
+in `platform.sim_outbox` instead, shaped `{ event, data, signatureHeader }`.
+`verifySimulatedWebhookDelivery(delivery, secret)` reconstructs `rawBody`
+from that shape for you, so you can verify a simulated delivery the same
+way you'll verify a real one once a live receiver exists:
+
+```ts
+import { verifySimulatedWebhookDelivery } from "@yourtal/sdk-merchant/webhook";
+
+verifySimulatedWebhookDelivery(
+  {
+    event: row.category,
+    data: JSON.parse(row.body).data,
+    signatureHeader: JSON.parse(row.body).signatureHeader,
+  },
+  secret,
+);
+```
+
+If you're implementing this in another language, `verifyWebhookSignature`
+in `src/webhook.ts` is under 40 lines of actual logic and is the
+reference — port it directly. `src/webhook.test.ts` cross-checks it
+against a transcribed copy of the worker's own signing function, so a
+drift between the two would fail that test first.
 
 ## Known gaps
 

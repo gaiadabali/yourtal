@@ -41,12 +41,12 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 6** Viewer app | B | ✅ done | 5/5 | 19/19 | `██████████` 100% |
 | **Phase 7** Business studio | C | ✅ done | 9/9 | 46/46 | `██████████` 100% |
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 3/4 | 20/22 | `█████████░`  91% |
-| **Phase 9** Staff console | C | 🔄 in progress | 1/5 | 4/17 | `██░░░░░░░░`  24% |
+| **Phase 9** Staff console | C | 🔄 in progress | 2/5 | 9/17 | `█████░░░░░`  53% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **60/90** | **329/431** | `████████░░`  76% |
+| **All** | | | **61/90** | **334/431** | `████████░░`  77% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1235,12 +1235,12 @@ The internal team runs the economy and the review queues. Today none of it exist
 - [ ] **9.3 Businesses** · needs: 9.1, 7.1 — 🔄 slot 2
   - [x] 9.3.a KYB review (approve or reject documents, setting `is_verified`) and business suspension. — done 2026-09-29 (64a787cd, merged main): `/api/staff/businesses` (list/search, detail, kyb/approve, kyb/reject, suspend, reinstate), `ops`-only via new `business:suspend`/`reinstate` Cerbos actions plus the existing `kyb_document` grant; add-only migration for `suspended_at/by/reason`. Web UI `/staff/businesses` (list + detail, each review action behind a required-reason dialog). `staff-business-review.e2e.test.ts` 5/5 against real Postgres+Cerbos; `c-staff-businesses.spec.ts` 11/11 live (390/1280px, light/dark, axe clean); `pnpm policy:test` 681/681; contracts suite 853/853; `pnpm check` clean.
   - [x] 9.3.b **Check:** approving KYB unblocks submit, so a business made through the Studio UI on staging submits its funded campaign (moved from 7.8.d), and a suspended business's campaigns leave the feed. — proved the half that does not need 7.3, 2026-09-29 (93abd868, merged main): `staff-business-review.e2e.test.ts`'s own KYB-approve test shows `is_verified` flip to true through the real staff endpoint; `feed.controller.e2e.test.ts` gained a case where a funded campaign is in `GET /api/feed`, its business is then suspended (a real `business_accounts` row), and it leaves the feed — 12/12 green, no extra ledger calls for a suspended business's campaigns (filtered before reward-config/allocation lookups). Submitting a Studio-made campaign after KYB approval — ⛔ 7.3, not built yet; task 9.3 stays open for it, same shape as 8.1's own note on 8.1.c.
-- [ ] **9.4 Users and support** · needs: 9.1, 4.7 — 🔄 slot 2
-  - [ ] 9.4.a Search users and view their ledger history.
-  - [ ] 9.4.b Suspend into **escrow** (never zero a balance), and release.
-  - [ ] 9.4.c Goodwill through `grantAction(goodwill)`, marketing-funded, within the F12 per-case limit.
-  - [ ] 9.4.d Change trust tier, and the K13 dispute queue listing captured-voucher disputes (4.7.c). The risk review queue and resolving a dispute need Phase 10, so they are 10.5.
-  - [ ] 9.4.e **Check:** a suspension moves available and pending points to escrow, and a captured-voucher dispute appears in the K13 queue.
+- [x] **9.4 Users and support** · needs: 9.1, 4.7 — ✅ 2026-09-29 a98a7b05
+  - [x] 9.4.a `GET /api/staff/users` (search by email/userId/region) and `GET /api/staff/users/:userId` + `/ledger`; `/staff/users` search + detail screens — a98a7b05
+  - [x] 9.4.b `POST .../suspend` and `/release`; escrows available+pending via the ledger (nullable escrowId for a zero-balance account), tracked in new `staff.user_suspension` (20260929050000) so release finds it again — a98a7b05
+  - [x] 9.4.c `POST .../goodwill`; F12 ceiling read fresh from `platform.region_setting` via a `UserAccountAttributeLoader` into Cerbos (`R.attr.goodwillCeilingPts`), never a principal attribute or a constant — a98a7b05
+  - [x] 9.4.d `POST .../trust-tier` (risk_analyst only, new `set_trust_tier` action); `GET /api/staff/disputes` (new `voucher_dispute` kind, support+finance) lists `checkout.dispute` where queued — a98a7b05
+  - [x] 9.4.e **Check:** proved live, through the UI, in `apps/web/e2e/c-staff-users.spec.ts` (13/13): a suspension moves available AND pending points to 0/0 and release restores them exactly; a captured-voucher dispute appears in the staff queue. Screenshots 390/1280px, light/dark, axe clean — a98a7b05
 - [ ] **9.5 Economy** · needs: 9.1, 4.9 — 🔄 slot 2
   - [ ] 9.5.a Show, per region: coverage; daily issuance, burn and breakage; the reserve; the reported spread (purchase cash − granted points × B); and point purchases.
   - [ ] 9.5.b Rate changes (B and P_issue) through `proposeRate` / `approveRate`, requiring a second staff member. B is never shown outside this screen.
@@ -1512,6 +1512,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-29 · C · **9.4 done.** Staff users and support: `/staff/users` search and detail (ledger history, suspend into escrow and release, goodwill within the F12 per-case limit read live from region settings, trust tier) and `/staff/disputes` (K13 queue of captured-voucher disputes, list only; resolving is 10.5). New `staff.user_suspension` records which escrow a suspension made; Cerbos `user_account` gains `set_trust_tier` (risk_analyst) and the goodwill ceiling moves from a never-populated principal attribute to a per-request resource attribute; new `voucher_dispute` kind (support, finance). Verified on merged main: 39/39 staff API e2e, 723/723 policy tests, live `c-staff-users.spec.ts` 13/13 incl. the 9.4.e Check through the browser at 390/1280 px light/dark, axe clean. Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check (`fake-ledger-rewards.ts`) · a98a7b05
 - 2026-09-29 · C · **8.2.i reopened-then-fixed again (F74), not yet ticked**: funding the viewer's balance wasn't enough while the listings themselves were priced for production — two NEW, cheap-by-construction demo listings (AU's second, ID's first) derived from a real `/v1/pricing/quote` probe, never a re-price of the original (that needs two-person approval at the API layer; bypassing it in the seed was the wrong instinct). Verified over real HTTP for both regions: fresh DB, real ledger+voucher+apps/api, seeded once, `scripts/check-8.2.e-counter-redemption.mjs` passed for AU and ID · `ebc90105`
 - 2026-09-28 · C · **8.2.i done (F74)**: staging's demo redemption loop funded/stocked through the ledger's and voucher service's own real routes, never a raw write. Real-ledger verification (not the fake) found a genuine conflict with F12's daily earn cap — the mandatory tier-0 grant alone exhausts AU's 500/day — so top-ups make one capped-safe attempt per region per run and treat `velocity_capped` as `"capped_for_today"`, never a deploy failure; it converges over real days the same way `viewer.au` already had organically. Confirmed live: two runs stable, ledger invariants hold · `ed7b43d7`
 - 2026-09-28 · C · 8.3 Client SDK and developer page done (90b550d9): Studio → Developers issues merchant-scoped HMAC credentials that authorize, capture, void and refund; `packages/sdk-merchant` signs byte-identically to the voucher service and verifies webhooks; signed `voucher.captured`/`voucher.refunded` webhooks come from the voucher service's outbox for every channel (`voucher.expired` waits on 10.2.b)

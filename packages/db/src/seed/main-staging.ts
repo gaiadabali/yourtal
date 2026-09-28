@@ -172,7 +172,8 @@ async function main(): Promise<void> {
       (r: DemoMediaResult) => r.status === "repaired",
     ).length;
     const demoMediaFailed = demoMediaResults.filter((r: DemoMediaResult) => r.status === "failed");
-    const demoMediaAlready = demoMediaResults.length - demoMediaSeeded - demoMediaRepaired - demoMediaFailed.length;
+    const demoMediaAlready =
+      demoMediaResults.length - demoMediaSeeded - demoMediaRepaired - demoMediaFailed.length;
     const demoMediaSummary =
       demoMediaFailed.length > 0
         ? `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaRepaired)} repaired, ${String(demoMediaFailed.length)} FAILED (${demoMediaFailed.map((r: DemoMediaResult) => r.slug).join(", ")}) — not failing the deploy over it`

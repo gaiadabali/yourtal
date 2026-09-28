@@ -212,10 +212,9 @@ describe("runDemoMedia", () => {
       hls_url: string;
       poster_url: string;
       teaser_url: string;
-    }>(
-      "SELECT hls_url, poster_url, teaser_url FROM campaign.campaigns WHERE id = $1",
-      [campaign?.id],
-    );
+    }>("SELECT hls_url, poster_url, teaser_url FROM campaign.campaigns WHERE id = $1", [
+      campaign?.id,
+    ]);
     expect(repaired.rows[0]?.hls_url).toBe(campaign?.hls_url);
     expect(repaired.rows[0]?.poster_url).toBe(campaign?.poster_url);
     expect(repaired.rows[0]?.teaser_url).toBe(campaign?.teaser_url);

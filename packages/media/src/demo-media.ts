@@ -411,10 +411,10 @@ async function seedOneCampaign(
       "UPDATE campaign.campaigns SET poster_url = $2, teaser_url = $3, hls_url = $4 WHERE id = $1",
       [campaignId, posterUrl, teaserUrl, hlsUrl],
     );
-    await pool.query(
-      "UPDATE campaign.video_source SET manifest_url = $2 WHERE campaign_id = $1",
-      [campaignId, hlsUrl],
-    );
+    await pool.query("UPDATE campaign.video_source SET manifest_url = $2 WHERE campaign_id = $1", [
+      campaignId,
+      hlsUrl,
+    ]);
     log(`[demo:media] ${entry.slug}: repaired relative media URLs -> ${hlsUrl}`);
     return { slug: entry.slug, status: "repaired" };
   }

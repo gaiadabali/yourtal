@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import { resolveStudioDataSource } from "../studio-data-source";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { CampaignDraft } from "./campaign-draft";
 import { buildDemoCampaignDrafts } from "./campaign-draft-fixtures";
@@ -49,7 +49,10 @@ const liveDataSource: CampaignBuilderDataSource = {
   },
 };
 
-const campaignBuilderDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
+const campaignBuilderDataSource = resolveStudioDataSource({
+  mock: mockDataSource,
+  live: liveDataSource,
+});
 
 /** Every campaign draft belonging to one business, seeded once per business id so repeated navigation within a session sees the same demo set. */
 export function listCampaignDrafts(

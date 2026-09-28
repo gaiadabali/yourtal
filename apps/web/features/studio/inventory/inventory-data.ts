@@ -5,7 +5,7 @@ import type { Listing, SettlementDecreaseRequest } from "@yourtal/contracts/list
 import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
 import type { Currency } from "@yourtal/contracts/money/currency";
 import type { Region } from "@yourtal/contracts/region";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import { resolveStudioDataSource } from "../studio-data-source";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
 
@@ -160,7 +160,7 @@ const mockDataSource: InventoryDataSource = {
   listPendingDecreaseRequests: () => Promise.resolve([]),
 };
 
-const inventoryDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
+const inventoryDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
 
 export function listListings(
   businessId: string,

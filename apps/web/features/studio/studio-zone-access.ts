@@ -4,7 +4,7 @@ import type { BusinessTeamRole as StudioRole } from "@yourtal/contracts/business
 /**
  * Studio's six dashboard zones (docs/17-surfaces-and-roles.md §2). Every
  * zone renders honestly even when the API behind it is still mock-only —
- * see each zone's own `*-data.ts` for its `resolveDataSource` seam.
+ * see each zone's own `*-data.ts` for its `resolveStudioDataSource` seam.
  *
  * No "redemption"/"redemptions" zone here: F40 moved that screen to 8.2.g
  * (Phase 8, once the counter-device and voucher-engine APIs exist) — a

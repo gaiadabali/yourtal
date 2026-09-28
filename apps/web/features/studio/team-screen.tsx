@@ -35,7 +35,7 @@ export interface TeamScreenProps {
   /** The viewer's role when this screen mounted. Team-zone view already requires owner or admin (`studio-zone-access.ts`), enforced one level up in `page.tsx` before this component ever renders. */
   initialViewerRole: Extract<BusinessTeamRole, "owner" | "admin">;
   initialRoster: BusinessMember[];
-  /** `dataSourceMode === "live"` (`page.tsx`) — every mutation below calls `team-live-actions.ts`'s real endpoints instead of `team-actions.ts`'s in-memory functions. */
+  /** `studioDataSourceMode === "live"` (`page.tsx`) — every mutation below calls `team-live-actions.ts`'s real endpoints instead of `team-actions.ts`'s in-memory functions. */
   isLiveMode: boolean;
 }
 

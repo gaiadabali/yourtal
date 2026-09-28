@@ -5,7 +5,7 @@ import {
 } from "@yourtal/contracts/billing";
 import type { BillingAllocation, PurchaseQuote, PurchaseResult } from "@yourtal/contracts/billing";
 import type { Currency } from "@yourtal/contracts/money/currency";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import { resolveStudioDataSource } from "../studio-data-source";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
 
@@ -158,7 +158,7 @@ const mockDataSource: BillingDataSource = {
   },
 };
 
-const billingDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
+const billingDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
 
 export function quotePoints(
   businessId: string,

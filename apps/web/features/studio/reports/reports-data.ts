@@ -1,6 +1,6 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Listing } from "@yourtal/contracts/listing";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import { resolveStudioDataSource } from "../studio-data-source";
 import type { Question } from "@yourtal/contracts/question";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { campaignReportResultSchema } from "@yourtal/contracts/report";
@@ -94,7 +94,7 @@ const liveReportsDataSource: ReportsDataSource = {
   },
 };
 
-const reportsDataSource = resolveDataSource({
+const reportsDataSource = resolveStudioDataSource({
   mock: mockReportsDataSource,
   live: liveReportsDataSource,
 });

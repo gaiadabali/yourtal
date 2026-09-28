@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { businessMemberSchema } from "@yourtal/contracts/business/member";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import { resolveStudioDataSource } from "./studio-data-source";
 import { apiFetch } from "@/lib/api/api-fetch";
 
 /**
@@ -37,7 +37,7 @@ const liveDataSource: TeamDataSource = {
   },
 };
 
-const teamDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
+const teamDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
 
 /** The business's real roster (live) or its existing mock roster, unchanged (mock). */
 export function listTeam(

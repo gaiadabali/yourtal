@@ -1,6 +1,6 @@
 import { getLocale } from "next-intl/server";
-import { dataSourceMode } from "@yourtal/contracts/mock-source";
 import { PageHeader } from "@yourtal/ui/page-header";
+import { studioDataSourceMode } from "@/features/studio/studio-data-source";
 import { resolveStudioContext } from "@/features/studio/studio-context";
 import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
@@ -80,7 +80,7 @@ export default async function StudioCampaignsPage(props: PageProps<"/studio/camp
         initialDrafts={drafts}
         canEdit={canEdit}
         isVerified={current.business.isVerified}
-        isLiveMode={dataSourceMode === "live"}
+        isLiveMode={studioDataSourceMode === "live"}
         allocations={allocations}
       />
     </StudioChrome>

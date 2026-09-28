@@ -3,9 +3,9 @@ import { businessSchema } from "@yourtal/contracts/business";
 import type { Business } from "@yourtal/contracts/business";
 import { businessTeamRoleSchema } from "@yourtal/contracts/business/team-role";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { meResponseSchema } from "@/lib/api/me-schema";
+import { resolveStudioDataSource } from "./studio-data-source";
 import {
   AU_BUSINESS,
   AU_BUSINESS_ROSTER,
@@ -165,7 +165,7 @@ const liveDataSource: StudioDataSource = {
   },
 };
 
-const studioDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
+const studioDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
 
 /** Every business the signed-in person holds any role at, with their own role and its full roster. */
 export function listMyBusinesses(): Promise<BusinessMembership[]> {

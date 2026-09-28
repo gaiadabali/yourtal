@@ -41,7 +41,10 @@ export default async function StaffUsersPage(props: PageProps<"/staff/users">) {
       {hasQuery ? (
         <StaffUsersResults t={t} results={results} />
       ) : (
-        <EmptyState title={t("users.searchPromptTitle")} description={t("users.searchPromptDescription")} />
+        <EmptyState
+          title={t("users.searchPromptTitle")}
+          description={t("users.searchPromptDescription")}
+        />
       )}
     </div>
   );

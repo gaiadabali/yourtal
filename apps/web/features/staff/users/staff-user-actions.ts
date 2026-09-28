@@ -87,14 +87,10 @@ export async function setTrustTierAction(formData: FormData): Promise<void> {
   const trustTier = Number(trustTierRaw);
   if (![0, 1, 2, 3].includes(trustTier)) redirect(backTo(formData, "invalid"));
 
-  const result = await apiFetch(
-    `/api/staff/users/${userId}/trust-tier`,
-    setTrustTierResultSchema,
-    {
-      method: "POST",
-      headers: { "idempotency-key": idempotencyKey },
-      body: { trustTier, reason },
-    },
-  );
+  const result = await apiFetch(`/api/staff/users/${userId}/trust-tier`, setTrustTierResultSchema, {
+    method: "POST",
+    headers: { "idempotency-key": idempotencyKey },
+    body: { trustTier, reason },
+  });
   redirect(userRoute(userId, result.ok ? "trust_tier" : "error"));
 }

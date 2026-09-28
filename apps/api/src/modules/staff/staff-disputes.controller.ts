@@ -14,9 +14,7 @@ import type { StaffDisputeQueue as DisputeQueueReader } from "./persistence/staf
  */
 @Controller("api/staff/disputes")
 export class StaffDisputesController {
-  constructor(
-    @Inject(STAFF_DISPUTE_QUEUE) private readonly disputes: DisputeQueueReader,
-  ) {}
+  constructor(@Inject(STAFF_DISPUTE_QUEUE) private readonly disputes: DisputeQueueReader) {}
 
   @StaffAction("dispute.view_queue")
   @Authorize({ kind: "voucher_dispute", action: "view", idFrom: () => "self" })

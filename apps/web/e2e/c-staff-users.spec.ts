@@ -92,7 +92,10 @@ async function authedApi(
     },
     ...(data === undefined ? {} : { data }),
   });
-  expect(response.ok(), `${method} ${path} -> ${response.status()}: ${await response.text()}`).toBeTruthy();
+  expect(
+    response.ok(),
+    `${method} ${path} -> ${response.status()}: ${await response.text()}`,
+  ).toBeTruthy();
   return response.json() as Promise<unknown>;
 }
 
@@ -222,7 +225,10 @@ test.describe.serial("9.4: users and support", () => {
     await pool.end();
   });
 
-  test("staff search a user by email and open their detail screen", async ({ browser, baseURL }) => {
+  test("staff search a user by email and open their detail screen", async ({
+    browser,
+    baseURL,
+  }) => {
     const page = await pageAs(browser, baseURL as string, support.token);
     await page.goto(`/staff/users?email=${encodeURIComponent(escrowTarget.email)}`);
     // DataTable renders a table AND a stacked mobile-card copy of every row
@@ -244,7 +250,9 @@ test.describe.serial("9.4: users and support", () => {
           viewport: { width, height: 900 },
           colorScheme,
         });
-        await context.addCookies([{ name: "yt_session", value: support.token, url: baseURL as string }]);
+        await context.addCookies([
+          { name: "yt_session", value: support.token, url: baseURL as string },
+        ]);
         const page = await context.newPage();
         await page.goto("/staff/users");
         await expect(page.getByRole("heading", { level: 1, name: "Users" })).toBeVisible();
@@ -297,9 +305,7 @@ test.describe.serial("9.4: users and support", () => {
 
     await page.getByRole("button", { name: "Release" }).click();
     await expect(page).toHaveURL(/[?&]released=1/);
-    await expect(
-      page.getByText("The account was released and its points returned."),
-    ).toBeVisible();
+    await expect(page.getByText("The account was released and its points returned.")).toBeVisible();
     await expect(status).toContainText("Active");
     await expect(available).toContainText("40");
     await expect(pending).toContainText("25");
@@ -315,18 +321,24 @@ test.describe.serial("9.4: users and support", () => {
     await page.goto(`/staff/users/${escrowTarget.userId}`);
 
     await page.getByRole("spinbutton", { name: "Points" }).fill("50");
-    await page.getByRole("textbox", { name: "Reason" }).fill("goodwill for a bad experience -- e2e check");
+    await page
+      .getByRole("textbox", { name: "Reason" })
+      .fill("goodwill for a bad experience -- e2e check");
     await page.getByRole("button", { name: "Grant goodwill" }).click();
 
     await expect(page).toHaveURL(/[?&]goodwill=1/);
     await expect(page.getByText("The goodwill credit was granted.")).toBeVisible();
 
     await page.getByRole("spinbutton", { name: "Points" }).fill("5000");
-    await page.getByRole("textbox", { name: "Reason" }).fill("over the region's own cap -- e2e check");
+    await page
+      .getByRole("textbox", { name: "Reason" })
+      .fill("over the region's own cap -- e2e check");
     await page.getByRole("button", { name: "Grant goodwill" }).click();
     await expect(page).toHaveURL(/[?&]error=1/);
     await expect(
-      page.getByText("That action could not be completed. Check the account's state and try again."),
+      page.getByText(
+        "That action could not be completed. Check the account's state and try again.",
+      ),
     ).toBeVisible();
 
     await page.context().close();
@@ -351,7 +363,9 @@ test.describe.serial("9.4: users and support", () => {
           viewport: { width, height: 900 },
           colorScheme,
         });
-        await context.addCookies([{ name: "yt_session", value: support.token, url: baseURL as string }]);
+        await context.addCookies([
+          { name: "yt_session", value: support.token, url: baseURL as string },
+        ]);
         const page = await context.newPage();
         await page.goto("/staff/disputes");
         // DataTable renders both a desktop <table> and a stacked mobile <ul>

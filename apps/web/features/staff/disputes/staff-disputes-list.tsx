@@ -11,7 +11,9 @@ export interface StaffDisputesListProps {
 /** TASKS.md 9.4.d, K13: the queue, oldest first -- list-only, resolving one is 10.5. */
 export function StaffDisputesList({ t, disputes }: StaffDisputesListProps) {
   if (disputes.length === 0) {
-    return <EmptyState title={t("disputes.emptyTitle")} description={t("disputes.emptyDescription")} />;
+    return (
+      <EmptyState title={t("disputes.emptyTitle")} description={t("disputes.emptyDescription")} />
+    );
   }
 
   return (

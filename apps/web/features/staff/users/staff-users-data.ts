@@ -32,7 +32,9 @@ export interface StaffUserSearchInput {
   readonly region?: "AU" | "ID";
 }
 
-export async function searchStaffUsers(query: StaffUserSearchInput): Promise<StaffUserSearchResult> {
+export async function searchStaffUsers(
+  query: StaffUserSearchInput,
+): Promise<StaffUserSearchResult> {
   const params = new URLSearchParams();
   if (query.email !== undefined && query.email.length > 0) params.set("email", query.email);
   if (query.userId !== undefined && query.userId.length > 0) params.set("userId", query.userId);
@@ -54,10 +56,7 @@ export async function getStaffUser(userId: string): Promise<StaffUserDetail | nu
 }
 
 export async function getStaffUserLedger(userId: string): Promise<StaffUserLedgerHistory> {
-  const result = await apiFetch(
-    `/api/staff/users/${userId}/ledger`,
-    staffUserLedgerHistorySchema,
-  );
+  const result = await apiFetch(`/api/staff/users/${userId}/ledger`, staffUserLedgerHistorySchema);
   if (!result.ok) throwOrForbid("load ledger", result.error);
   return result.data;
 }

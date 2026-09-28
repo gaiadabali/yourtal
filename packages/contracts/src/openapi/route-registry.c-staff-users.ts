@@ -120,12 +120,22 @@ export const STAFF_USERS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "Suspend an account into escrow (TASKS.md 9.4.b)",
     tags: ["staff"],
     pathParams: [USER_ID_PARAM],
-    requestBody: { description: "Why the account is being suspended.", schema: inlineSchema(suspendUserRequestSchema) },
+    requestBody: {
+      description: "Why the account is being suspended.",
+      schema: inlineSchema(suspendUserRequestSchema),
+    },
     successStatus: 201,
     successDescription:
       "Available and pending points moved to a ledger escrow (never zeroed), and the account marked suspended.",
     successSchema: inlineSchema(suspendUserResultSchema),
-    errors: [VALIDATION_400, FORBIDDEN, USER_NOT_FOUND, ALREADY_SUSPENDED, LEDGER_CONFLICT, SERVICE_UNAVAILABLE],
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      USER_NOT_FOUND,
+      ALREADY_SUSPENDED,
+      LEDGER_CONFLICT,
+      SERVICE_UNAVAILABLE,
+    ],
   },
   {
     method: "post",
@@ -134,14 +144,16 @@ export const STAFF_USERS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["staff"],
     pathParams: [USER_ID_PARAM],
     successStatus: 201,
-    successDescription: "The escrow released, points returned to available and pending exactly as they were.",
+    successDescription:
+      "The escrow released, points returned to available and pending exactly as they were.",
     successSchema: inlineSchema(releaseUserResultSchema),
     errors: [FORBIDDEN, USER_NOT_FOUND, NOT_SUSPENDED, LEDGER_CONFLICT, SERVICE_UNAVAILABLE],
   },
   {
     method: "post",
     path: "/api/staff/users/{userId}/goodwill",
-    summary: "Issue a marketing-funded goodwill credit within the F12 per-case limit (TASKS.md 9.4.c)",
+    summary:
+      "Issue a marketing-funded goodwill credit within the F12 per-case limit (TASKS.md 9.4.c)",
     tags: ["staff"],
     pathParams: [USER_ID_PARAM],
     requestBody: {

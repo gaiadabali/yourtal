@@ -16,7 +16,10 @@ import {
   STAFF_DB_POOL,
 } from "./persistence/staff-audit.repository";
 import { PostgresStaffDirectory, STAFF_DIRECTORY } from "./persistence/staff-directory";
-import { PostgresStaffUserDirectory, STAFF_USER_DIRECTORY } from "./persistence/staff-user-directory";
+import {
+  PostgresStaffUserDirectory,
+  STAFF_USER_DIRECTORY,
+} from "./persistence/staff-user-directory";
 import {
   PostgresStaffSuspensionRepository,
   STAFF_SUSPENSION_REPOSITORY,

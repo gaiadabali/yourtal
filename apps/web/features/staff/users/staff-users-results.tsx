@@ -31,7 +31,11 @@ export function StaffUsersResults({ t, results }: StaffUsersResultsProps) {
             </Link>
           ),
         },
-        { key: "region", header: t("users.columnRegion"), cell: (row) => t(`regions.${row.region}`) },
+        {
+          key: "region",
+          header: t("users.columnRegion"),
+          cell: (row) => t(`regions.${row.region}`),
+        },
         {
           key: "trustTier",
           header: t("users.columnTrustTier"),

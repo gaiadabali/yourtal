@@ -207,7 +207,11 @@ export function StaffUserDetailScreen({
               rows={ledger}
               getRowKey={(row) => row.id}
               columns={[
-                { key: "kind", header: t("users.ledgerKind"), cell: (row) => t(`users.ledgerKinds.${row.kind}`) },
+                {
+                  key: "kind",
+                  header: t("users.ledgerKind"),
+                  cell: (row) => t(`users.ledgerKinds.${row.kind}`),
+                },
                 {
                   key: "points",
                   header: t("users.ledgerPoints"),

@@ -2,8 +2,12 @@ import "@testing-library/jest-dom/vitest";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { campaignSchema } from "@yourtal/contracts/campaign";
+import type { Campaign } from "@yourtal/contracts/campaign";
 import { playerChapters } from "./player-chapters";
-import { VideoPlayer } from "./video-player";
+import type { PlayerChapter } from "./player-chapters";
+import { useWatchSession } from "./use-watch-session";
+import { CompletionHandoff } from "./completion-handoff";
+import { SeekSlider } from "./seek-slider";
 
 /**
  * YT-0551's sabotage proof, at the level the ticket actually asks about:
@@ -14,16 +18,46 @@ import { VideoPlayer } from "./video-player";
  * actually reached the code." The two attacks named in the ticket —
  * scrubbing to the end, and dispatching a synthetic `ended` — are each
  * their own test below, and each asserts the hand-off does NOT mount.
- * `video-player.test.tsx` covers this hook's other behaviour; this file is
- * `use-watch-session.ts`'s own, since a hook change is what YT-0551 asks
- * for, and testing it through the rendered player is how jsdom can observe
- * it — jsdom's `<video>` has no real playback (see that file's top
- * comment), but it does support the events and properties this fix reads,
- * which is exactly what's under test here.
+ *
+ * This exercises `useWatchSession` through a small local harness rather than
+ * the real `video-player.tsx` (11.5.b: that component now runs the real
+ * server watch session instead of this hook — see `use-watch-earn-session.ts`
+ * — but `useWatchSession` itself is unchanged and still runs the anonymous
+ * Open Viewing player, `features/open-view/open-view-player.tsx`, so its own
+ * seek-coalescing and coverage-gating behaviour still needs exactly this
+ * proof). The harness renders only what these tests read: the `<video>`,
+ * the seek slider, and the completion hand-off gated on `hasEnded`.
  */
-vi.mock("./hls-attacher", () => ({
-  HlsAttacher: () => null,
-}));
+function WatchSessionHarness({
+  campaign,
+  chapters,
+  locale,
+}: {
+  campaign: Campaign;
+  chapters: readonly PlayerChapter[];
+  locale: "en-AU";
+}) {
+  const session = useWatchSession(campaign, chapters, false);
+  return (
+    <div>
+      <video ref={session.videoRef} />
+      <SeekSlider
+        currentSeconds={session.virtualCurrentTime}
+        durationSeconds={campaign.durationSeconds}
+        chapters={chapters}
+        onSeek={session.handleSeekTo}
+        locale={locale}
+      />
+      {session.hasEnded ? (
+        <CompletionHandoff
+          campaignId={campaign.id}
+          provisionalPoints={session.accruedPoints}
+          locale={locale}
+        />
+      ) : null}
+    </div>
+  );
+}
 
 beforeAll(() => {
   window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
@@ -66,7 +100,7 @@ const chapters = playerChapters(campaign);
 const HAND_OFF_TEXT = /You watched the whole video/;
 
 function mountAndReadyVideo(realDurationSeconds: number): HTMLVideoElement {
-  render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
+  render(<WatchSessionHarness campaign={campaign} chapters={chapters} locale="en-AU" />);
   const video = document.querySelector("video");
   if (!video) {
     throw new Error("expected the player to render a <video> element");
@@ -283,7 +317,7 @@ describe("useWatchSession seek coalescing (YT-0550)", () => {
    * of them guard the window that is not the problem.
    */
   it("does not issue an uncoalesced seek when metadata arrives mid-seek", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
+    render(<WatchSessionHarness campaign={campaign} chapters={chapters} locale="en-AU" />);
     const video = document.querySelector("video");
     if (!video) throw new Error("expected the player to render a <video> element");
 

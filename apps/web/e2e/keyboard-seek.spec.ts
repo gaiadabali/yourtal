@@ -112,6 +112,20 @@ async function startPlaybackAndWaitForDuration(page: Page): Promise<void> {
  * belongs to the browser, not to us — which is why this can only ever be
  * proven here and not in jsdom.
  */
+/**
+ * All four tests below are `test.fixme` as of 11.5.b: `/watch/[campaignId]`
+ * now runs a real, authenticated server watch session
+ * (`use-watch-earn-session.ts`) instead of playing a mock campaign fixture
+ * with no login required, so `LONG_FORM_CAMPAIGN_ID` (a mock-catalogue id)
+ * 404s against the real API and none of these can reach a player at all.
+ *
+ * `useWatchSession`'s own seek-coalescing (YT-0550/YT-0586) is unchanged
+ * and still runs the anonymous Open Viewing player
+ * (`features/open-view/open-view-player.tsx`,
+ * `/[locale]/c/[campaignId]/watch`) — this suite's real regression coverage
+ * belongs there now (no login, a real local HLS ladder, the same seek bar),
+ * not deleted. Rehoming it is Area B's open-view work, not this pass.
+ */
 const realTime = (page: Page) =>
   page.evaluate(() => document.querySelector("video")?.currentTime ?? -1);
 
@@ -152,7 +166,7 @@ async function openPausedPlayer(page: Page) {
   return seekBar;
 }
 
-test("seek bar responds to ArrowRight, moving playback forwards", async ({ page }) => {
+test.fixme("seek bar responds to ArrowRight, moving playback forwards", async ({ page }) => {
   const seekBar = await openPausedPlayer(page);
   const duration = await page.evaluate(() => document.querySelector("video")?.duration ?? 0);
   expect(duration, "the fixture must report a real duration").toBeGreaterThan(0);
@@ -257,7 +271,7 @@ test.fixme("seek bar responds to Home, seeking to the start", async ({ page }) =
     .toBeLessThanOrEqual(0.05);
 });
 
-test("seek bar responds to End, seeking to the end of the media", async ({ page }) => {
+test.fixme("seek bar responds to End, seeking to the end of the media", async ({ page }) => {
   const seekBar = await openPausedPlayer(page);
 
   // End is asserted by reading the media position, not by waiting for the
@@ -299,7 +313,7 @@ test("seek bar responds to End, seeking to the end of the media", async ({ page 
     .toBeLessThanOrEqual(0.05);
 });
 
-test("seek bar's aria-valuetext tracks keyboard-driven position", async ({ page }) => {
+test.fixme("seek bar's aria-valuetext tracks keyboard-driven position", async ({ page }) => {
   const seekBar = await openPausedPlayer(page);
 
   // A screen-reader user hears `aria-valuetext`, not the raw number, so it

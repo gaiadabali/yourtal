@@ -56,4 +56,31 @@ export class CampaignController {
     }
     return campaign;
   }
+
+  /**
+   * The terms currently in force (11.5.a): the same frozen numbers a watch
+   * session would enter under (`rewardPoints`, `accuracyBonusPoints`,
+   * `questionCount`, `durationSeconds`), so the campaign page's terms card
+   * shows absolute points rather than re-deriving them from a ratio.
+   * `findVisibleById` first, same as `get`, so a draft's terms are exactly as
+   * invisible as the draft itself.
+   */
+  @Authorize({ kind: "campaign_view", action: "watch_open" })
+  @NotValueMoving("A read.")
+  @Get(":campaignId/terms")
+  async terms(@Param("campaignId") campaignId: string) {
+    const campaign = await this.campaigns.findVisibleById(campaignId);
+    if (campaign === null) {
+      throw new NotFoundException("No such campaign.");
+    }
+    const version = await this.campaigns.currentTermsVersion(campaignId);
+    if (version === null) {
+      throw new NotFoundException("This campaign has no published terms.");
+    }
+    const terms = await this.campaigns.termsVersionDetails(campaignId, version);
+    if (terms === null) {
+      throw new NotFoundException("This campaign has no published terms.");
+    }
+    return terms;
+  }
 }

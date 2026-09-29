@@ -39,5 +39,29 @@
   "status": {
     "playing": "Playing",
     "paused": "Paused"
+  },
+  "checkpoint": {
+    "progress": "Question {current} of {total}",
+    "timeRemaining": "{seconds}s left",
+    "unsupported": "This question type isn't ready yet — it will be skipped.",
+    "submitting": "Submitting your answer…"
+  },
+  "errors": {
+    "startFailed": "This video couldn't start. Check your connection and try again."
+  },
+  "earn": {
+    "claiming": "Checking your answers…",
+    "earnedAriaLabel": "Plus {points} points",
+    "unlocks": "Unlocks {date}",
+    "notEarningGeneric": "This watch didn't earn points."
+  },
+  "terms": {
+    "ariaLabel": "Reward terms",
+    "points": "Up to {points}",
+    "pointsWithBonus": "Up to {points} with a full-accuracy bonus",
+    "questionCount": "{count, plural, one {# question} other {# questions}} along the way",
+    "noQuestions": "No questions — just watch the whole thing",
+    "stoppingEarly": "Stopping early earns nothing — you're paid only once you finish",
+    "newAccountHold": "New accounts' points unlock after up to 3 days"
   }
 }

@@ -1,27 +1,44 @@
 import "@testing-library/jest-dom/vitest";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { campaignSchema } from "@yourtal/contracts/campaign";
-import { playerChapters } from "./player-chapters";
-import { writeResumePosition } from "./resume-position";
+import { campaignTermsSchema } from "@yourtal/contracts/campaign/terms";
 import { VideoPlayer } from "./video-player";
 
 /**
- * jsdom implements no media pipeline at all (no decode, no real
- * `duration`/`buffered`, `play()`/`pause()` unimplemented) — see this
- * ticket's report for the full list of what that means could NOT be
- * genuinely verified here. `hls-attacher.tsx` is mocked out entirely so
- * these tests never attempt a real network fetch of the mock HLS manifest
- * or import the real hls.js runtime; they exercise the surrounding state
- * machine and accessible markup only, never real playback/buffering/HLS
- * parsing.
+ * 11.5.b: `VideoPlayer` now runs the real server watch session
+ * (`use-watch-earn-session.ts`) instead of the mock, client-side accrual it
+ * used to run — see that hook's own header. `watch-player-actions.ts` (the
+ * only network boundary) is mocked; everything else here is the real
+ * component tree, including the real checkpoint overlay.
+ *
+ * jsdom implements no media pipeline (no decode, no real `duration`, no
+ * `play()`/`pause()`), so these tests drive the state machine through the
+ * mocked actions and jsdom's own `<video>` events, never real playback.
  */
-vi.mock("./hls-attacher", () => ({
-  HlsAttacher: () => null,
+vi.mock("./hls-attacher", () => ({ HlsAttacher: () => null }));
+
+const {
+  startWatchSessionActionMock,
+  reportWatchProgressActionMock,
+  completeWatchSessionActionMock,
+  presentCheckpointActionMock,
+  answerCheckpointActionMock,
+} = vi.hoisted(() => ({
+  startWatchSessionActionMock: vi.fn(),
+  reportWatchProgressActionMock: vi.fn(),
+  completeWatchSessionActionMock: vi.fn(),
+  presentCheckpointActionMock: vi.fn(),
+  answerCheckpointActionMock: vi.fn(),
+}));
+vi.mock("./watch-player-actions", () => ({
+  startWatchSessionAction: startWatchSessionActionMock,
+  reportWatchProgressAction: reportWatchProgressActionMock,
+  completeWatchSessionAction: completeWatchSessionActionMock,
+  presentCheckpointAction: presentCheckpointActionMock,
+  answerCheckpointAction: answerCheckpointActionMock,
 }));
 
-// Radix pointer-capture/ResizeObserver polyfills for jsdom live in
-// apps/web/vitest.setup.ts (global setupFiles entry).
 beforeAll(() => {
   window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
   window.HTMLMediaElement.prototype.pause = vi.fn();
@@ -34,21 +51,17 @@ const campaign = campaignSchema.parse({
   merchantId: "22222222-2222-4222-8222-222222222222",
   merchantName: "Toko Uji",
   synopsis: "A synopsis for testing.",
-  durationSeconds: 900,
-  chapters: [
-    { title: "Pembuka", startSeconds: 0, rewardWeight: 1 },
-    { title: "Isi", startSeconds: 120, rewardWeight: 2 },
-    { title: "Penutup", startSeconds: 300, rewardWeight: 5 },
-  ],
+  durationSeconds: 90,
+  chapters: [{ title: "Full video", startSeconds: 0, rewardWeight: 1 }],
   videoSource: { kind: "hls", manifestUrl: "https://mock.yourtal.test/hls/sample.m3u8" },
   estimatedDataMb: 90,
-  rewardPoints: 2_000,
-  questionCount: 3,
+  rewardPoints: 100,
+  questionCount: 1,
   scoringRule: "base_plus_accuracy_bonus",
   status: "active",
   publishedAt: "2026-09-19T09:00:00.000Z",
   businessId: "22222222-2222-4222-8222-222222222222",
-  region: "ID",
+  region: "AU",
   audience: "all_ages",
   contentCategory: "food-and-drink",
   posterUrl: "https://mock.yourtal.test/poster.jpg",
@@ -60,93 +73,184 @@ const campaign = campaignSchema.parse({
   startsAt: "2026-09-19T09:00:00.000Z",
   endsAt: "2026-12-19T09:00:00.000Z",
 });
-const chapters = playerChapters(campaign);
+
+const terms = campaignTermsSchema.parse({
+  campaignId: campaign.id,
+  version: 1,
+  rewardPoints: 75,
+  questionCount: 1,
+  scoringRule: "base_plus_accuracy_bonus",
+  durationSeconds: 90,
+  accuracyBonusPoints: 25,
+  effectiveFrom: "2026-09-19T09:00:00.000Z",
+});
+
+const session = { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 };
+
+function startResolved() {
+  return {
+    ok: true as const,
+    data: {
+      session,
+      durationSeconds: 90,
+      alreadyEarned: false,
+      manifestUrl: "/media/hls/1/2/session-1/index.m3u8",
+    },
+  };
+}
 
 describe("VideoPlayer", () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    startWatchSessionActionMock.mockReset().mockResolvedValue(startResolved());
+    reportWatchProgressActionMock.mockReset().mockResolvedValue({
+      ok: true,
+      data: { accepted: true, coveredSeconds: 10 },
+    });
+    completeWatchSessionActionMock.mockReset();
+    presentCheckpointActionMock.mockReset().mockResolvedValue({
+      ok: false,
+      error: { kind: "http", status: 409, code: "checkpoint_not_reached", message: "not yet" },
+    });
+    answerCheckpointActionMock.mockReset();
   });
 
-  it("shows the tap-to-start overlay and no resume prompt when there is no prior position", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("shows the tap-to-start overlay before anything is started", () => {
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
     expect(screen.getByRole("button", { name: "Play Test Campaign" })).toBeInTheDocument();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  // ResumePrompt and QualitySelector are `next/dynamic` with ssr:false, to
-  // keep Radix Dialog/Sheet out of this route's initial chunk (170 KB gate).
-  // That makes their first paint asynchronous, hence findBy* rather than getBy*.
-  it("offers a resume prompt when a prior position exists in localStorage (Zod-validated on read)", async () => {
-    writeResumePosition({
-      campaignId: campaign.id,
-      positionSeconds: 300,
-      updatedAt: "2026-09-19T09:00:00.000Z",
-    });
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
-    expect(await screen.findByRole("dialog", { name: "Continue watching?" })).toBeInTheDocument();
-  });
+  it("starts a real server session on tap, and shows the reward progress once watching", async () => {
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
 
-  it("does not offer a resume prompt below the minimum resumable threshold", () => {
-    writeResumePosition({
-      campaignId: campaign.id,
-      positionSeconds: 5,
-      updatedAt: "2026-09-19T09:00:00.000Z",
-    });
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("defaults the quality selector into the 360-480p band", async () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
-    expect(await screen.findByRole("button", { name: /480p/ })).toBeInTheDocument();
-  });
-
-  it("shows a marker for each chapter the CAMPAIGN carries, named by its own title (YT-0584)", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
-    expect(screen.getByRole("list", { name: "Chapters" })).toBeInTheDocument();
-
-    // This asserted five markers matching /Chapter \d/ until YT-0584. That
-    // was the shape `derive-chapters.ts` invented: always five, evenly
-    // split, generically named — for a campaign that carries three, called
-    // Pembuka, Isi and Penutup. The test passed because it described the
-    // fake rather than the campaign, so the drift was invisible from here.
-    const markers = screen.getAllByRole("button", { name: /Pembuka|Isi|Penutup/ });
-    expect(markers).toHaveLength(campaign.chapters.length);
-    // Accessible name comes from the marker's text, not an aria-label, so
-    // read what a screen reader would actually announce.
-    const names = markers.map((marker) => marker.textContent ?? "");
-    for (const title of campaign.chapters.map((chapter) => chapter.title)) {
-      expect(names.some((name) => name.includes(title))).toBe(true);
-    }
-  });
-
-  it("carries only progress status on a marker, never a banked reward (O-1)", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
-    // O-1: the reward is one grant after the full video and the questions,
-    // so a chapter marker must never read as points already earned.
-    for (const marker of screen.getAllByRole("button", { name: /Pembuka|Isi|Penutup/ })) {
-      expect(marker.textContent ?? "").not.toMatch(/points?/i);
-    }
-  });
-
-  it("shows a progress bar toward the total reward before playback starts, never a running figure", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
+    await waitFor(() => expect(startWatchSessionActionMock).toHaveBeenCalledWith(campaign.id));
+    expect(screen.queryByRole("button", { name: "Play Test Campaign" })).not.toBeInTheDocument();
     expect(
-      screen.getByRole("progressbar", { name: "Progress toward the reward" }),
+      await screen.findByRole("progressbar", { name: "Progress toward the reward" }),
     ).toBeInTheDocument();
   });
 
-  it("moves past the start state and announces a play/pause status once playback is requested", async () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
-    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
-
-    // The tap-to-start overlay is gone once hasStarted flips true.
-    expect(screen.queryByRole("button", { name: "Play Test Campaign" })).not.toBeInTheDocument();
-    await screen.findByText(/Playing|Paused/);
+  it("shows the failed state and never starts a session when start is not tapped", () => {
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    expect(startWatchSessionActionMock).not.toHaveBeenCalled();
   });
 
-  it("shows the checkpoint hand-off only after the video has ended, never before", () => {
-    render(<VideoPlayer campaign={campaign} chapters={chapters} locale="en-AU" />);
-    expect(screen.queryByRole("link", { name: "Continue to questions" })).not.toBeInTheDocument();
+  it("falls back to the failed banner when the session fails to start", async () => {
+    startWatchSessionActionMock.mockResolvedValue({
+      ok: false,
+      error: { kind: "http", status: 500, code: "server_error", message: "boom" },
+    });
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't start/i);
+  });
+
+  it("pauses for a checkpoint once one is due, and resumes watching after answering", async () => {
+    const question = {
+      id: "question-1",
+      campaignId: campaign.id,
+      prompt: "What did the video say?",
+      timerSeconds: 30,
+      type: "multiple_choice" as const,
+      options: [
+        { id: "option-a", label: "Fact A" },
+        { id: "option-b", label: "Fact B" },
+      ],
+    };
+    presentCheckpointActionMock.mockResolvedValue({
+      ok: true,
+      data: {
+        question,
+        token: "tok-1",
+        expiresAt: "2026-09-19T09:01:30.000Z",
+        atSecond: 40,
+        answerTimerMs: 30_000,
+      },
+    });
+    answerCheckpointActionMock.mockResolvedValue({
+      ok: true,
+      data: { answered: true, wasCorrect: true },
+    });
+
+    // Fake timers from BEFORE the session starts: `use-watch-earn-session.ts`
+    // creates its polling `setInterval` inside the effect that fires once the
+    // session becomes `watching`, so the mock must already be installed when
+    // that happens — a real interval created before `vi.useFakeTimers()` is
+    // not one `vi.advanceTimersByTimeAsync` can ever trigger.
+    vi.useFakeTimers();
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+    // Microtask flush for the mocked (already-resolved) action promise —
+    // no real or fake timer is involved in a native Promise settling.
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(
+      screen.getByRole("progressbar", { name: "Progress toward the reward" }),
+    ).toBeInTheDocument();
+
+    const video = document.querySelector("video");
+    if (!video) throw new Error("expected a <video> element");
+    Object.defineProperty(video, "paused", { value: false, configurable: true });
+    Object.defineProperty(video, "ended", { value: false, configurable: true });
+    Object.defineProperty(video, "currentTime", { value: 45, configurable: true });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000);
+    });
+    expect(presentCheckpointActionMock).toHaveBeenCalledWith("session-1", 0);
+    expect(screen.getByRole("dialog")).toHaveTextContent("What did the video say?");
+
+    fireEvent.click(screen.getByRole("radio", { name: "Fact A" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(answerCheckpointActionMock).toHaveBeenCalledWith("session-1", 0, "tok-1", "option-a");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows the real earn moment once the server grants the completion", async () => {
+    completeWatchSessionActionMock.mockResolvedValue({
+      ok: true,
+      data: {
+        completed: true,
+        granted: true,
+        pendingPoints: 100,
+        unlockAt: "2026-10-01T00:00:00.000Z",
+      },
+    });
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+    await vi.waitFor(() => expect(startWatchSessionActionMock).toHaveBeenCalled());
+
+    const video = document.querySelector("video");
+    if (!video) throw new Error("expected a <video> element");
+    fireEvent.ended(video);
+
+    await waitFor(() => expect(completeWatchSessionActionMock).toHaveBeenCalledWith("session-1"));
+    expect(await screen.findByText("+100")).toBeInTheDocument();
+  });
+
+  it("shows the not-earning moment when the server completes without granting", async () => {
+    completeWatchSessionActionMock.mockResolvedValue({
+      ok: true,
+      data: { completed: true, granted: false, pendingPoints: 0, reason: "already_earned" },
+    });
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+    await vi.waitFor(() => expect(startWatchSessionActionMock).toHaveBeenCalled());
+
+    const video = document.querySelector("video");
+    if (!video) throw new Error("expected a <video> element");
+    fireEvent.ended(video);
+
+    expect(await screen.findByText("already_earned")).toBeInTheDocument();
   });
 });

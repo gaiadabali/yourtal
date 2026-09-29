@@ -190,6 +190,46 @@ describe("the limit is clamped, because it is an unauthenticated cost", () => {
   });
 });
 
+describe("the terms endpoint (11.5.a) mirrors the campaign's own visibility", () => {
+  it("404s a draft's terms the same way it 404s the draft itself", async () => {
+    await expect(controller.terms(draftId)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it("404s a genuinely absent campaign", async () => {
+    await expect(controller.terms(randomUUID())).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it("returns the current terms version for a real campaign, once live", async () => {
+    await owner.execute(`DELETE FROM campaign.terms_version WHERE campaign_id = '${draftId}'`);
+    await owner.execute(`
+      INSERT INTO campaign.terms_version
+        (campaign_id, version, reward_points, question_count, scoring_rule, duration_seconds, accuracy_bonus_points, effective_from)
+      VALUES ('${draftId}', 1, 100, 0, 'base_only', 30, 0, now())`);
+    await owner.execute(
+      `UPDATE campaign.campaigns SET lifecycle_state = 'in_review' WHERE id = '${draftId}'`,
+    );
+    await owner.execute(
+      `UPDATE campaign.campaigns SET lifecycle_state = 'live' WHERE id = '${draftId}'`,
+    );
+    try {
+      const terms = await controller.terms(draftId);
+      expect(terms.campaignId).toBe(draftId);
+      expect(terms.version).toBeGreaterThanOrEqual(1);
+      expect(terms.rewardPoints).toBeGreaterThan(0);
+    } finally {
+      await owner.execute(
+        `ALTER TABLE campaign.campaigns DISABLE TRIGGER campaigns_lifecycle_transition`,
+      );
+      await owner.execute(
+        `UPDATE campaign.campaigns SET lifecycle_state = 'draft', published_at = NULL WHERE id = '${draftId}'`,
+      );
+      await owner.execute(
+        `ALTER TABLE campaign.campaigns ENABLE TRIGGER campaigns_lifecycle_transition`,
+      );
+    }
+  });
+});
+
 describe("a campaign that is not public is reported as missing, not as forbidden", () => {
   it("404s a draft that exists", async () => {
     // Distinguishing "no such campaign" from "not published yet" would tell

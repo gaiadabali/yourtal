@@ -39,5 +39,29 @@
   "status": {
     "playing": "Sedang diputar",
     "paused": "Dijeda"
+  },
+  "checkpoint": {
+    "progress": "Pertanyaan {current} dari {total}",
+    "timeRemaining": "Sisa {seconds} dtk",
+    "unsupported": "Jenis pertanyaan ini belum didukung — akan dilewati.",
+    "submitting": "Mengirim jawabanmu…"
+  },
+  "errors": {
+    "startFailed": "Video ini gagal dimulai. Periksa koneksimu dan coba lagi."
+  },
+  "earn": {
+    "claiming": "Memeriksa jawabanmu…",
+    "earnedAriaLabel": "Plus {points} poin",
+    "unlocks": "Terbuka {date}",
+    "notEarningGeneric": "Tontonan ini tidak menghasilkan poin."
+  },
+  "terms": {
+    "ariaLabel": "Syarat reward",
+    "points": "Hingga {points}",
+    "pointsWithBonus": "Hingga {points} dengan bonus akurasi penuh",
+    "questionCount": "{count, plural, one {# pertanyaan} other {# pertanyaan}} di sepanjang video",
+    "noQuestions": "Tidak ada pertanyaan — cukup tonton sampai selesai",
+    "stoppingEarly": "Berhenti di tengah jalan tidak menghasilkan apa pun — reward hanya dibayar setelah kamu selesai",
+    "newAccountHold": "Poin akun baru terbuka setelah maksimal 3 hari"
   }
 }

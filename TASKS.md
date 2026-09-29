@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 4/7 | 23/26 | `█████████░`  88% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 6/36 | `██░░░░░░░░`  17% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 9/36 | `███░░░░░░░`  25% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **69/91** | **374/441** | `█████████░`  85% |
+| **All** | | | **69/91** | **377/441** | `█████████░`  85% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1321,9 +1321,9 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **11.4 Home: the For You feed** · needs: 3.5, 7.7, 5.3, 6.2 (moved from 6.3) — 🔄 slot 4
   - [x] 11.4.a A vertical feed of campaign teasers from C's feed API. Each item shows the channel avatar, the title and honest terms before any action: "18 min · 3 questions · up to 112 pts · ~120 MB · finish to earn" (AU; F12).
   - [x] 11.4.b **Quick campaigns (under 60 s, so they have no questions; F15) earn inside the feed.** Tapping Earn starts a reward session in place, and the earn moment lands in the item before the user swipes on. Longer campaigns show a teaser and **Watch & earn**. `/quick` redirects to Home.
-  - [ ] 11.4.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.
-  - [ ] 11.4.d Each item offers Share (Web Share API to the public campaign page, with no reward), Save, Not interested, and "Why am I seeing this?", which explains the 7.7 ranking.
-  - [ ] 11.4.f (moved from 6.7.b) The autoplay setting from Me (6.7.a) holds on the feed.
+  - [x] 11.4.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.
+  - [x] 11.4.d Each item offers Share (Web Share API to the public campaign page, with no reward), Save, Not interested, and "Why am I seeing this?", which explains the 7.7 ranking.
+  - [x] 11.4.f (moved from 6.7.b) The autoplay setting from Me (6.7.a) holds on the feed.
   - [x] 11.4.g (F78; C's file) Feed items carry `kind`, `questionCount`, `maxRewardPoints` (base + accuracy bonus from the reward config), and `estimatedDataMb`, mapped in `apps/api/src/modules/feed/ranking.ts`'s `toFeedItem`.
   - [x] 11.4.h (shared seed file) Fund every demo campaign: the staging seed buys points per demo business through the ledger's `/v1/allocations/purchase` and writes each campaign's `reward_config` at the F12 demo rates (5 / 80 pts per minute, 25% accuracy bonus), idempotently on every deploy. Today no campaign has a reward config, so the feed is empty on staging and locally. — ✅ 2026-09-29 0e0a87a1 (`packages/db/src/seed/demo-campaign-funding.ts`, called from `main-staging.ts` after `runDemoMedia`; verified live: 20/20 campaigns funded, re-run is a no-op, signed-in feed returns 10 items/region, anonymous open-viewing feed returns 8 items/region)
   - [x] 11.4.i (C's file, copy rules) Demo campaigns say "Get to know <brand>" / "Kenalan dengan <brand>" instead of citing a ticket and tooling, and the seed repairs rows already written. Found with 11.4.h: the funded terms version also has to match the funding (4c2fe52f).

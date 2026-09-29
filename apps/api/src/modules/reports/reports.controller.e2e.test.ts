@@ -33,7 +33,10 @@ afterAll(async () => {
   await app.close();
 });
 
-async function seedCampaign(businessId: string): Promise<string> {
+async function seedCampaign(
+  businessId: string,
+  audience: "all_ages" | "teen" = "all_ages",
+): Promise<string> {
   const campaignId = randomUUID();
   await db.execute(sql`
     INSERT INTO campaign.campaigns
@@ -45,7 +48,7 @@ async function seedCampaign(businessId: string): Promise<string> {
     VALUES
       (${campaignId}, 'long_form', 'Reports e2e Campaign', ${businessId}, 'Reports e2e Merchant',
        'Exercises 7.6.b end to end.', 30, 10, 100, 1, 'base_only', 'live',
-       now(), ${businessId}, 'AU', 'all_ages', 'food-and-drink',
+       now(), ${businessId}, 'AU', ${audience}, 'food-and-drink',
        'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
        'https://cdn.example.com/manifest.m3u8', '9:16', 1000000, now(), now() + interval '30 days',
        false, 0)
@@ -119,6 +122,47 @@ describe("GET /api/:tenantId/studio/reports/campaigns/:campaignId", () => {
     const body = response.json<{ suppressed: boolean; floor?: number }>();
     expect(body.suppressed).toBe(true);
     expect(body.floor).toBe(10);
+  });
+
+  it("12.3.c: suppresses a teen-audience campaign's report at 19 viewers, one below the F12 teen floor", async () => {
+    const session = await sessionFor(app, { jurisdiction: "AU" });
+    const businessId = await seedBusinessMembership(db, { userId: session.userId, role: "owner" });
+    const campaignId = await seedCampaign(businessId, "teen");
+    await insertSessions(campaignId, 19, 10);
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/${businessId}/studio/reports/campaigns/${campaignId}`,
+      headers: { cookie: session.cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json<{ suppressed: boolean; floor?: number }>();
+    expect(body.suppressed).toBe(true);
+    expect(body.floor).toBe(20);
+
+    // The real row count behind the suppression, proven against Postgres
+    // directly -- the API's 19 is not a fabrication.
+    const rows = await db.execute<{ count: string }>(
+      sql`SELECT count(*) FROM watch.session WHERE campaign_id = ${campaignId}`,
+    );
+    expect(Number(rows.rows[0]?.count)).toBe(19);
+  });
+
+  it("12.3.c: shows a teen-audience campaign's report at exactly 20 viewers, the F12 teen floor itself", async () => {
+    const session = await sessionFor(app, { jurisdiction: "AU" });
+    const businessId = await seedBusinessMembership(db, { userId: session.userId, role: "owner" });
+    const campaignId = await seedCampaign(businessId, "teen");
+    await insertSessions(campaignId, 20, 10);
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/${businessId}/studio/reports/campaigns/${campaignId}`,
+      headers: { cookie: session.cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json<{ suppressed: boolean; rewardedViews?: number }>();
+    expect(body.suppressed).toBe(false);
+    expect(body.rewardedViews).toBe(20);
   });
 
   it("404s for a campaign belonging to another business", async () => {

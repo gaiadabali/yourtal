@@ -44,9 +44,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 6/7 | 41/42 | `██████████`  98% |
-| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 1/4 | 10/17 | `██████░░░░`  59% |
+| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 1/4 | 11/17 | `███████░░░`  65% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **79/91** | **423/453** | `█████████░`  93% |
+| **All** | | | **79/91** | **424/453** | `█████████░`  94% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1390,7 +1390,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - quiet hours in the profile's timezone (F12);
     - a watch-time reminder;
     - teen-appropriate vouchers only.
-  - [ ] 12.2.c (requested by A) `/guardian/[token]`: the guardian confirms they are 18 or over and approves; the same link later revokes. There is no guardian account.
+  - [x] 12.2.c (requested by A) `/guardian/[token]`: the guardian confirms they are 18 or over and approves; the same link later revokes. There is no guardian account. — ✅ a32200ca: `app/(guardian)/guardian/[token]`, no session and no locale prefix, in the teen's language; checkbox-gated approve, withdraw behind a confirm (straight there on `?action=revoke`), final withdrawn notice, 404 for an unknown link. Also fixed: withdrawing an approved consent 500d (it kept `approved_at`, breaking the table's own CHECK). On staging, an ID teen: page 200 "Setujui akun…", approve 201, "Anda telah menyetujui…", withdraw 201, "Persetujuan ditarik", unknown link 404. Screenshots 390/1280 light/dark for all three states, axe clean.
   - [ ] 12.2.d **Check:** a teen demo account gets no notification between 21:00 and 07:00 in its timezone and sees only teen and all_ages items.
 - [ ] **12.3 Studio and data** · C · needs: 12.1, 7.6 — 🔄 slot 1
   - [x] 12.3.a Audience and category pickers with the 1.1.d policy shown. Teen-rated question banks may not ask personal questions. — ✅ 919a75af: Studio category/audience pickers restate the 1.1.d policy (an adult-only category locks the audience to Adult, a prohibited one cannot be chosen); the server re-checks on create, update and publish. `detectTeenPersonalQuestion` refuses personal questions (age, school, location, appearance, family, social handles) for teen campaigns, server side and inline. Screenshots 390/1280 light/dark, axe clean.

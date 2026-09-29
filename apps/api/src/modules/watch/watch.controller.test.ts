@@ -289,6 +289,7 @@ describe("completion is decided by coverage, not by the client", () => {
         "complete",
         "constructor",
         "decideEarningOutcome",
+        "listActive",
         "loadOwnSession",
         "progress",
         "resume",
@@ -299,6 +300,17 @@ describe("completion is decided by coverage, not by the client", () => {
 });
 
 describe("a session belongs to one user", () => {
+  it("lists only the caller's own unfinished sessions for Continue watching", async () => {
+    const started = await controller.start(request, { campaignId: longFormId });
+    const mine = await controller.listActive(request);
+    expect(mine.sessions.map((row) => row.sessionId)).toContain(started.session.id);
+
+    principals.resolve.mockReturnValueOnce({ ...principal, id: randomUUID() });
+    const theirs = await controller.listActive(request);
+    expect(theirs.sessions.map((row) => row.sessionId)).not.toContain(started.session.id);
+  });
+
+
   it("reports someone else's session as missing, not forbidden", async () => {
     // A 403 would confirm the id exists.
     const started = await controller.start(request, { campaignId: longFormId });

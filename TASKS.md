@@ -44,9 +44,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 6/7 | 41/42 | `██████████`  98% |
-| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 1/4 | 6/16 | `████░░░░░░`  38% |
+| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 1/4 | 10/17 | `██████░░░░`  59% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **79/91** | **419/452** | `█████████░`  93% |
+| **All** | | | **79/91** | **423/453** | `█████████░`  93% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1393,10 +1393,11 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 12.2.c (requested by A) `/guardian/[token]`: the guardian confirms they are 18 or over and approves; the same link later revokes. There is no guardian account.
   - [ ] 12.2.d **Check:** a teen demo account gets no notification between 21:00 and 07:00 in its timezone and sees only teen and all_ages items.
 - [ ] **12.3 Studio and data** · C · needs: 12.1, 7.6 — 🔄 slot 1
-  - [ ] 12.3.a Audience and category pickers with the 1.1.d policy shown. Teen-rated question banks may not ask personal questions.
-  - [ ] 12.3.b Reports apply the teen cohort floor (F12), with no teen breakdown below it.
-  - [ ] 12.3.d (found by 12.1) Three value-moving staff routes declare no idempotency stance, so `mutating-routes.test.ts` is red on main: `staff-disputes.controller.ts` resolve and `staff-risk-queue.controller.ts` release/suspend. Mark them `@Idempotent` and have the staff risk and dispute actions send an `Idempotency-Key`, as the other staff actions do.
-  - [ ] 12.3.c **Check:** a report for a campaign with fewer than 20 teen viewers shows no teen breakdown.
+  - [x] 12.3.a Audience and category pickers with the 1.1.d policy shown. Teen-rated question banks may not ask personal questions. — ✅ 919a75af: Studio category/audience pickers restate the 1.1.d policy (an adult-only category locks the audience to Adult, a prohibited one cannot be chosen); the server re-checks on create, update and publish. `detectTeenPersonalQuestion` refuses personal questions (age, school, location, appearance, family, social handles) for teen campaigns, server side and inline. Screenshots 390/1280 light/dark, axe clean.
+  - [x] 12.3.b Reports apply the teen cohort floor (F12), with no teen breakdown below it. — ✅ 919a75af: the floors (10, teens 20) were already built in `reports/cohort-floor.ts`; boundary tests added (19 teen viewers suppressed, 20 shown).
+  - [x] 12.3.d (found by 12.1) Three value-moving staff routes declare no idempotency stance, so `mutating-routes.test.ts` is red on main: `staff-disputes.controller.ts` resolve and `staff-risk-queue.controller.ts` release/suspend. Mark them `@Idempotent` and have the staff risk and dispute actions send an `Idempotency-Key`, as the other staff actions do. — ✅ 919a75af: the three routes are `@Idempotent`; `mutating-routes.test.ts` is green. The disputes screen had no resolve action at all, so it gained one (reason dialog, `Idempotency-Key`).
+  - [ ] 12.3.e (found by 12.3.c) Studio Reports has no live data: `getReportsBundle` in `features/studio/reports/reports-data.ts` is mock-only, so the screen never shows the API's real (and suppressed) numbers. Wire it to `GET /api/:businessId/studio/reports/*`. Also: the category picker shows raw values (`alcohol`) instead of translated labels.
+  - [x] 12.3.c **Check:** a report for a campaign with fewer than 20 teen viewers shows no teen breakdown. — ✅ 919a75af, over HTTP with Postgres: a teen campaign with 19 `watch.session` rows returns `{suppressed: true, floor: 20}` and 20 rows return `rewardedViews: 20` (`reports.controller.e2e.test.ts`, and live against the slot api). The Studio screen shows "Not enough viewers" for that shape, but only from a mock, since 12.3.e is open.
 - [ ] **12.4 Legal review (not engineering)** · founder
   - [ ] 12.4.a Counsel reviews teen mode.
     - **AU:** Privacy Act child provisions and the coming Children's Online Privacy Code, the AANA code on advertising to children, minors' contractual capacity, and the under-16 social media law.

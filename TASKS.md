@@ -42,7 +42,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 7** Business studio | C | ✅ done | 9/9 | 46/46 | `██████████` 100% |
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | 🔄 in progress | 3/5 | 14/17 | `████████░░`  82% |
-| **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/23 | `░░░░░░░░░░`   0% |
+| **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 0/6 | 0/23 | `░░░░░░░░░░`   0% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/32 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
@@ -78,14 +78,14 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | free | 2026-09-28 | Phase 7 done (all 9 tasks ✅). Helper worktrees `yourtal-p7-b`, `-c`, `-d` stay in place with dbs `yourtal_s4b`, `_s4c`, `_s4d`. Follow-ups outside Phase 7: 13.8 (a deploy whose api or worker can't boot must not report OK), 13.9 (captions), F56/F57 (Phase 9/8 test failures) |
+| 1 | `yourtal-1` | **10** Settlement, lifecycle & risk | 2026-09-29 | Two agents. A (`yourtal-1`, `phase/10`, db `yourtal_s1`, api 26311, Cerbos 26315): 10.1 → 10.3 → 10.6. B (`yourtal-p7-b`, `phase/10-b`, db `yourtal_s4b`, api 26411, Cerbos `yourtal-cerbos-p10b` 26415): 10.4 → 10.2 → 10.5 (10.5 after 10.1 merges) |
 | 2 | `yourtal-2` | **9** Staff console | 2026-09-29 | Resumed: Phase 7 ✅, so 7.3's blocks are gone. 9.1, 9.4, 9.5 ✅; 9.2.c, 9.3.a merged. Two agents (Sonnet): B (`yourtal-p9-b`, `phase/9-b`, db `yourtal_s9b`, 26470/26471, Cerbos 26475) finishes 9.3.b's submit half on staging; E (`yourtal-p9-c`, `phase/9-e`, db `yourtal_s9c`, 26480/26481, Cerbos 26485) builds 9.2.a and 9.2.b. Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check, and its burns are not region-tagged. Carried for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | free | **6** Viewer app — ✅ done | 2026-09-27 | Phase 6 done: 6.7 ✅ (c8d0dab); 6.5 ✅ (aae765a, incl. 4.8.c requested of A); 6.2 ✅ (e747877f, agent D); 6.1 ✅ (63cc61b, agent A); 6.9 ✅ (53317515, agent B — 6.9.d's CI run also surfaced F49, fixed same session, and F50, unrelated/left for whoever owns `packages/media`'s CI setup). All four agents' worktrees left in place, slot 3 free for the next phase. C's worktree `yourtal-p6-c` is done; its db `yourtal_s3c` has stale revision rows for the renamed watch migrations (repoint like `yourtal_s2`, or leave: nothing else uses it). Slot 3b's own db `yourtal_s3b` hit the SAME stale-revision issue (F34/F36 watch migration rename) mid-6.5 — resolved by drop+recreate (it holds no long-lived data, only this session's own fixtures). Also fixed while verifying 6.1.e (own commit on main, not this row's own subtask): `features/me/me-section-states.tsx` was missing `"use client"`, crashing all of Me on any real section error — see 6.1.e's own note. |
 | 4 | `yourtal-4` | free | 2026-09-27 | Phase 2 ✅ (all five tasks). Slot db `yourtal_s4`, ports 26360–26366 stay for the next phase |
 | 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). **Phase 11 is now "Viewer feed & public site" (F40)** and also holds the feed, watch page, store and search (11.4–11.7, from Phase 6), in the order 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. Everything left needs Phase 7 (7.4, 7.7); slot free, worktree left in place |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
-**Ready to start, no slot yet:** Phase 10 (Phase 4 ✅). Its A tasks 10.1–10.4 can start now; its C tasks 10.5–10.6 wait for 9.1 and 9.4.
+**Ready to start, no slot yet:** none.
 
 ## Decisions for the founder
 
@@ -1255,7 +1255,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 
 10.1–10.4 are A. 10.5 and 10.6 are C's staff and Studio screens for them, done last, after Phase 9's 9.1 and 9.4.
 
-- [ ] **10.1 Clearing & settlement** · needs: 4.6, 4.7
+- [ ] **10.1 Clearing & settlement** · needs: 4.6, 4.7 — 🔄 slot 1
   - [ ] 10.1.a A worker job posts each `capture_outbox` row to the ledger with idempotency key = capture ID: voucher liability → merchant payable, at ceil(S × captured ÷ face value), capped so the total never exceeds S. Test: Σ captures = Σ payable postings.
   - [ ] 10.1.b A weekly statement per partner per region: opening payable + captures − refunds − K13 recoveries = amount payable. Point purchases appear as information lines only, never netted (J1). It is reproducible from ledger entries, exportable as CSV, and takes an explicit [from, to) period.
   - [ ] 10.1.c `approvePayout`, after the dispute window (F12), leads to a simulated payout: merchant payable → reserve. A single-use remainder, an expiry or a dead hold releases the remaining voucher liability.
@@ -1270,7 +1270,7 @@ The internal team runs the economy and the review queues. Today none of it exist
   - [ ] 10.3.b A exposes `GET /api/proof/roots`. (requested by A) B builds `/[locale]/transparency` in `(public)` under 11.3, listing each day's root so anyone can verify later (F11, without a blockchain).
   - [ ] 10.3.c Alerts go through a simulated pager, with a "hasn't run" check for every scheduled job.
   - [ ] 10.3.d **Check:** tampering with one past ledger entry or voucher event fails verification, and `GET /api/proof/roots` returns that day's root. (The public page is 11.3.c.)
-- [ ] **10.4 Risk rules v1** · needs: 4.4, 5.1
+- [ ] **10.4 Risk rules v1** · needs: 4.4, 5.1 — 🔄 slot 1
   - [ ] 10.4.a A real `RiskGate` replaces `AlwaysAllow` (`engine.go:62`). It checks velocity per user, device and IP; timing plausibility (answers that come too fast); impossible flows; and the daily and monthly caps (F12).
   - [ ] 10.4.b Trust: every tier earns the full terms (F13); the tier sets only the holdback (F12). Tier promotion follows F12. Flags are written to a manual-review queue table (10.5 shows it), and a suspension moves the balance to escrow.
   - [ ] 10.4.c Delivery-log cross-check (EW-18): a worker job loads the nginx log into `platform.delivery_log`, and `deliveryCoverage(sessionId)` says whether the signed segments served cover the claimed coverage. B binds it into completion in 11.5.f; a gap flags the session for review and never fails it silently.

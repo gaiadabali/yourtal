@@ -28,6 +28,10 @@ export const STAFF_ZONES: readonly StaffZone[] = [
   // TASKS.md 9.4.d, K13: the captured-voucher dispute queue -- support and
   // finance, per voucher_dispute.yaml.
   { key: "disputes", href: "/staff/disputes", roles: ["support", "finance"] },
+  // TASKS.md 9.5: coverage/rate/marketing/purchases/settings -- finance and
+  // ops both see the zone; the rate screen inside it (B) is finance-only,
+  // enforced by ledger_adjustment.yaml, not this courtesy list.
+  { key: "economy", href: "/staff/economy", roles: ["finance", "ops"] },
 ];
 
 export function zonesFor(roles: readonly StaffRole[]): readonly StaffZone[] {

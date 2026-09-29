@@ -3,6 +3,7 @@ package proof_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -62,6 +63,62 @@ func TestRecordDailyProofRespectsTheGracePeriod(t *testing.T) {
 	cleanupProof(t, time.Date(dayBefore.Year(), dayBefore.Month(), dayBefore.Day(), 0, 0, 0, 0, time.UTC))
 	if _, err := checker.RecordDailyProof(context.Background(), dayBefore); err != nil {
 		t.Errorf("recording the day before yesterday (its own grace period long past): %v, want success", err)
+	}
+}
+
+// 10.3.a's "verify every proved day", not merely the freshest one:
+// runChecker's own per-tick check (VerifyDay against "yesterday") would
+// never look at this older day again once a newer one exists.
+func TestVerifyAllProvedDaysCatchesTamperingInAnOlderDayNotJustTheLatest(t *testing.T) {
+	checker, _ := newChecker(t, &recordingAlerter{})
+	super := superuser(t)
+	ctx := context.Background()
+
+	olderDay := exclusiveDay(t, super)
+	olderTransfer := backdatedTransfer(t, super, olderDay, 1_000)
+	if _, err := checker.RecordDailyProof(ctx, olderDay); err != nil {
+		t.Fatalf("record proof (older day): %v", err)
+	}
+
+	newerDay := exclusiveDay(t, super)
+	backdatedTransfer(t, super, newerDay, 500)
+	if _, err := checker.RecordDailyProof(ctx, newerDay); err != nil {
+		t.Fatalf("record proof (newer day): %v", err)
+	}
+
+	// Tamper ONLY the older day, keeping the transfer balanced (the
+	// invariant checker's own overdraft/imbalance check stays silent).
+	if _, err := super.Exec(ctx,
+		`UPDATE ledger.entry SET amount_minor = amount_minor + 1
+		  WHERE transfer_id = $1 AND amount_minor < 0`, olderTransfer); err != nil {
+		t.Fatalf("tamper: %v", err)
+	}
+	if _, err := super.Exec(ctx,
+		`UPDATE ledger.entry SET amount_minor = amount_minor - 1
+		  WHERE transfer_id = $1 AND amount_minor > 0`, olderTransfer); err != nil {
+		t.Fatalf("tamper: %v", err)
+	}
+
+	findings, err := checker.VerifyAllProvedDays(ctx)
+	if err != nil {
+		t.Fatalf("VerifyAllProvedDays: %v", err)
+	}
+	olderDate := olderDay.Format(time.DateOnly)
+	newerDate := newerDay.Format(time.DateOnly)
+	foundOlder, foundNewer := false, false
+	for _, finding := range findings {
+		if strings.Contains(finding.Detail, "day="+olderDate) {
+			foundOlder = true
+		}
+		if strings.Contains(finding.Detail, "day="+newerDate) {
+			foundNewer = true
+		}
+	}
+	if !foundOlder {
+		t.Errorf("findings = %+v, want the tampered older day (%s) among them", findings, olderDate)
+	}
+	if foundNewer {
+		t.Errorf("findings = %+v, want the untouched newer day (%s) absent", findings, newerDate)
 	}
 }
 

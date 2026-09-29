@@ -302,6 +302,20 @@ CREATE TABLE campaign.campaign_terms (
   accuracy_bonus_points bigint  NOT NULL
 );
 
+-- Added by packages/db/migrations/20260929070900_ledger_incident_and_heartbeat.sql (10.3.c).
+CREATE TABLE ledger.incident (
+  id        bigserial   PRIMARY KEY,
+  summary   text        NOT NULL,
+  detail    text        NOT NULL,
+  raised_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ledger.job_heartbeat (
+  job_name         text        PRIMARY KEY,
+  last_run_at      timestamptz NOT NULL DEFAULT now(),
+  interval_seconds bigint      NOT NULL
+);
+
 -- Added by packages/db/migrations/20260929070000_ledger_settlement.sql (10.1).
 CREATE TABLE ledger.statement (
   id                     text        PRIMARY KEY,

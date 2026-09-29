@@ -501,9 +501,13 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "platform.ledger_fake_capture":
     "1.2.d's FakeLedgerClient backing store for captureVoucher -- same reason as platform.ledger_fake_allocation above.",
   "ledger.statement":
-    "10.1.b (20260929070000_ledger_settlement.sql): the weekly statement's stored snapshot, computed once from ledger.entry at generation time. Same ledger-internals note as ledger.account above -- `Statement` (ledger-internal/economy.ts) is the public projection, not a row mirror, returned by statements/disputeStatement/resolveStatementDispute/approvePayout rather than read directly.",
+    "10.1.b (20260929070700_ledger_settlement.sql): the weekly statement's stored snapshot, computed once from ledger.entry at generation time. Same ledger-internals note as ledger.account above -- `Statement` (ledger-internal/economy.ts) is the public projection, not a row mirror, returned by statements/disputeStatement/resolveStatementDispute/approvePayout rather than read directly.",
   "ledger.capture_recovery":
     "10.5.b (same migration): the K13 recovery line a captured-voucher dispute posts, keyed on the capture so it cannot post twice. Same ledger-internals note as ledger.account above -- CaptureRecoveryPosting (ledger-internal/capture.ts) is the public projection.",
+  "ledger.incident":
+    "10.3.c (20260929070900_ledger_incident_and_heartbeat.sql): the simulated pager's raised-incident row, written by SimulatedPager.Page when a background job goes stale. Same ledger-internals note as ledger.account above -- there is no HTTP route that reads a row of it back; it exists for an operator tailing the table directly, the same way a real pager tool would.",
+  "ledger.job_heartbeat":
+    "10.3.c (same migration): one row per scheduled ledger job (checker/repricer/proof verifier), touched every tick so ListStaleHeartbeats can tell a job that stopped running from one that is merely between ticks. Same ledger-internals note as ledger.account above.",
   "platform.ledger_fake_statement":
     "1.2.d's FakeLedgerClient backing store for statements/disputeStatement/resolveStatementDispute/approvePayout (10.1) -- same reason as platform.ledger_fake_capture above.",
   "platform.ledger_fake_capture_recovery":

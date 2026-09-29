@@ -167,6 +167,39 @@ func (c *Checker) ListRoots(ctx context.Context) ([]ProvedDay, error) {
 	return roots, nil
 }
 
+// VerifyAllProvedDays is 10.3.a's "verify every proved day", not merely
+// yesterday's — Run()'s own per-tick check only re-derives the freshest day
+// (cheap, catches drift within the hour), so a tamper to an OLDER day would
+// sit undetected between runs of this. Meant for a slower, once-a-day
+// schedule (cmd/ledger/main.go), not the 15-minute loop: it recomputes a
+// full Merkle tree per day on the ledger's whole history.
+func (c *Checker) VerifyAllProvedDays(ctx context.Context) ([]Finding, error) {
+	roots, err := c.ListRoots(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("listing proved days to verify: %w", err)
+	}
+	var findings []Finding
+	for _, root := range roots {
+		day, err := time.Parse(time.DateOnly, root.Date)
+		if err != nil {
+			return findings, fmt.Errorf("parsing proved day %q: %w", root.Date, err)
+		}
+		finding, mismatched, err := c.VerifyDay(ctx, day)
+		if err != nil {
+			return findings, fmt.Errorf("verifying %s: %w", root.Date, err)
+		}
+		if mismatched {
+			findings = append(findings, finding)
+		}
+		if externalFinding, externalMismatch, err := c.VerifyExternalStore(ctx, day); err != nil {
+			return findings, fmt.Errorf("verifying %s against the external store: %w", root.Date, err)
+		} else if externalMismatch {
+			findings = append(findings, externalFinding)
+		}
+	}
+	return findings, nil
+}
+
 // RecordDailyProofIfMissing is what a scheduled loop calls: it is safe to
 // call every tick, because a day already recorded is answered from storage,
 // never re-derived and never an error — only ErrDayNotClosed (too early) or

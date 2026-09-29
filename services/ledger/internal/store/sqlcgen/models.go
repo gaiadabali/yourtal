@@ -201,6 +201,19 @@ type LedgerGrantRelease struct {
 	CreatedAt  pgtype.Timestamptz
 }
 
+type LedgerIncident struct {
+	ID       int64
+	Summary  string
+	Detail   string
+	RaisedAt pgtype.Timestamptz
+}
+
+type LedgerJobHeartbeat struct {
+	JobName         string
+	LastRunAt       pgtype.Timestamptz
+	IntervalSeconds int64
+}
+
 type LedgerListingPrice struct {
 	ListingID       pgtype.UUID
 	Region          string

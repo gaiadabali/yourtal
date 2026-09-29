@@ -5,9 +5,9 @@
 //
 // internal/api serves packages/contracts' ledger-internal contract on /v1,
 // behind internal/serviceauth: only apps/api and apps/worker, signing with
-// LEDGER_SERVICE_SECRET, can call it. The operations whose tasks are still
-// open (escrow, statements, payouts, economyDaily, and the settings apps/api
-// serves itself) answer 501.
+// LEDGER_SERVICE_SECRET, can call it. Settings are apps/api's own store
+// (1.2.f) and answer 501 here; everything else — including 10.1's
+// statements/payouts and economyDaily — is live.
 //
 // The shape below is docs/13a section 7's: chi, one httpx pair for every
 // response, slog injected rather than global, and the middleware order
@@ -33,6 +33,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/api"
+	"github.com/yourtal/services/ledger/internal/heartbeat"
 	"github.com/yourtal/services/ledger/internal/httpx"
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
@@ -51,6 +52,16 @@ const (
 	checkInterval = 15 * time.Minute
 	// A newly effective rate reprices listings within a minute (4.9.a).
 	repriceInterval = time.Minute
+	// 10.3.a: how often EVERY proved day (not just yesterday) is
+	// recomputed and compared, both against ledger.daily_proof and against
+	// the external root store. Hourly, not daily, so a demo/staging
+	// environment can actually see it run and page within a session
+	// rather than needing a real day to pass first.
+	verifyAllInterval = time.Hour
+	// 10.3.c: a job whose heartbeat is older than 2x its own declared
+	// interval is "hasn't run" (heartbeat.Recorder.Check) — this is how
+	// often that check itself runs, not a job's own interval.
+	heartbeatCheckInterval = 5 * time.Minute
 
 	defaultAddr     = "127.0.0.1:3010"
 	requestTimeout  = 10 * time.Second
@@ -130,10 +141,16 @@ func run(logger *slog.Logger) error {
 		if rootStoreDir == "" {
 			rootStoreDir = "./data/proof-roots"
 		}
-		checker := proof.New(pool, proof.LoggingAlerter{Logger: logger}).
-			WithRootStore(proof.NewFileRootStore(rootStoreDir))
-		go runChecker(ctx, logger, checker, sqlcgen.New(pool), proof.LoggingAlerter{Logger: logger})
-		go runRepricer(ctx, logger, pricing.New(pool))
+		// 10.3.c: the simulated pager, replacing LoggingAlerter everywhere
+		// a page actually matters — every Page call below is now a real
+		// ledger.incident row, not only a log line.
+		pager := heartbeat.NewSimulatedPager(pool)
+		hb := heartbeat.New(pool)
+		checker := proof.New(pool, pager).WithRootStore(proof.NewFileRootStore(rootStoreDir))
+		go runChecker(ctx, logger, checker, sqlcgen.New(pool), pager, hb)
+		go runRepricer(ctx, logger, pricing.New(pool), hb)
+		go runProofVerifier(ctx, logger, checker, pager, hb)
+		go runHeartbeatCheck(ctx, logger, pager, hb)
 	} else {
 		logger.Warn("no LEDGER_DATABASE_URL: the invariant checker is NOT running " +
 			"and /v1 routes will report the database as unconfigured")
@@ -268,8 +285,10 @@ func run(logger *slog.Logger) error {
 // pages. Below 1.1 marketing-funded grants already stop, checked live inside
 // each grant, so the monitor is the warning and never the control.
 func runChecker(
-	ctx context.Context, logger *slog.Logger, checker *proof.Checker, queries *sqlcgen.Queries, alerter proof.Alerter,
+	ctx context.Context, logger *slog.Logger, checker *proof.Checker, queries *sqlcgen.Queries,
+	alerter proof.Alerter, hb *heartbeat.Recorder,
 ) {
+	const jobName = "ledger.invariant_checker"
 	ticker := time.NewTicker(checkInterval)
 	defer ticker.Stop()
 
@@ -318,6 +337,71 @@ func runChecker(
 			logger.Info("ledger invariants hold", "checked_at", time.Now().UTC())
 		}
 
+		if err := hb.Touch(ctx, jobName, checkInterval); err != nil {
+			logger.Error("touching this job's own heartbeat failed", "job", jobName, "error", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// runProofVerifier is 10.3.a's "verify every proved day" — every already-
+// recorded day, not only the freshest one runChecker's own loop re-derives.
+func runProofVerifier(ctx context.Context, logger *slog.Logger, checker *proof.Checker, alerter proof.Alerter, hb *heartbeat.Recorder) {
+	const jobName = "ledger.proof_verifier"
+	ticker := time.NewTicker(verifyAllInterval)
+	defer ticker.Stop()
+
+	for {
+		findings, err := checker.VerifyAllProvedDays(ctx)
+		if err != nil {
+			logger.Error("verifying every proved day failed to complete", "error", err)
+		} else {
+			for _, finding := range findings {
+				if pageErr := alerter.Page(ctx, "a proved day failed verification: "+finding.Kind, finding.Detail); pageErr != nil {
+					logger.Error("paging on a proof mismatch failed", "error", pageErr)
+				}
+			}
+			if len(findings) == 0 {
+				logger.Info("every proved day still verifies", "checked_at", time.Now().UTC())
+			}
+		}
+
+		if err := hb.Touch(ctx, jobName, verifyAllInterval); err != nil {
+			logger.Error("touching this job's own heartbeat failed", "job", jobName, "error", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// runHeartbeatCheck is 10.3.c's "hasn't run" check: a job whose own
+// heartbeat has gone stale (twice its declared interval) pages, rather than
+// a silent gap nobody notices until something downstream breaks.
+func runHeartbeatCheck(ctx context.Context, logger *slog.Logger, alerter proof.Alerter, hb *heartbeat.Recorder) {
+	ticker := time.NewTicker(heartbeatCheckInterval)
+	defer ticker.Stop()
+
+	for {
+		stale, err := hb.Check(ctx)
+		if err != nil {
+			logger.Error("checking for stale job heartbeats failed", "error", err)
+		}
+		for _, job := range stale {
+			if pageErr := alerter.Page(ctx, "a scheduled job hasn't run: "+job.JobName,
+				fmt.Sprintf("last heartbeat %s ago, own interval %s", time.Since(job.LastRunAt), job.Interval)); pageErr != nil {
+				logger.Error("paging on a stale job failed", "job", job.JobName, "error", pageErr)
+			}
+		}
+
 		select {
 		case <-ctx.Done():
 			return
@@ -328,7 +412,8 @@ func runChecker(
 
 // runRepricer reprices every listing whose rate was superseded (4.9.a).
 // Errors are logged and the loop continues, as runChecker does.
-func runRepricer(ctx context.Context, logger *slog.Logger, engine *pricing.Engine) {
+func runRepricer(ctx context.Context, logger *slog.Logger, engine *pricing.Engine, hb *heartbeat.Recorder) {
+	const jobName = "ledger.repricer"
 	ticker := time.NewTicker(repriceInterval)
 	defer ticker.Stop()
 	for {
@@ -336,6 +421,9 @@ func runRepricer(ctx context.Context, logger *slog.Logger, engine *pricing.Engin
 			logger.Error("repricing listings failed", "error", err)
 		} else if n > 0 {
 			logger.Info("repriced listings at the rate in force", "count", n)
+		}
+		if err := hb.Touch(ctx, jobName, repriceInterval); err != nil {
+			logger.Error("touching this job's own heartbeat failed", "job", jobName, "error", err)
 		}
 		select {
 		case <-ctx.Done():

@@ -159,6 +159,10 @@ export function CampaignEditor({
             onChange={onChange}
             canEdit={canEdit}
             isVerified={isVerified}
+            isLiveMode={isLiveMode}
+            businessId={draft.businessId}
+            campaignId={draft.id}
+            merchantName={draft.merchantName}
           />
           <CampaignEntryPreview draft={draft} />
         </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent } from "@yourtal/ui/card";
+import { submitCampaignDraftLive } from "./campaign-builder-actions";
 import {
   campaignDraftActionErrorMessage,
   pauseCampaign,
@@ -22,6 +23,11 @@ export interface CampaignEditorStatusPanelProps {
   canEdit: boolean;
   /** 7.3.d/red line 7: submitting is refused server-side while the business is not KYB-verified. This panel blocks the button for the same reason, rather than only finding out from a rejected request. */
   isVerified: boolean;
+  /** `YOURTAL_DATA_SOURCE === "live"` — submit calls the real `POST .../submit` (7.3.d) rather than the mock's local transition. */
+  isLiveMode: boolean;
+  businessId: string;
+  campaignId: string;
+  merchantName: string;
 }
 
 /**
@@ -36,9 +42,15 @@ export function CampaignEditorStatusPanel({
   onChange,
   canEdit,
   isVerified,
+  isLiveMode,
+  businessId,
+  campaignId,
+  merchantName,
 }: CampaignEditorStatusPanelProps) {
   const t = useTranslations("studio");
   const [error, setError] = useState<CampaignDraftActionError | null>(null);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   function run(action: (draft: CampaignDraft) => ReturnType<typeof submitForReview>) {
     const result = action(draft);
@@ -47,6 +59,19 @@ export function CampaignEditorStatusPanel({
       return;
     }
     setError(null);
+    onChange(result.value);
+  }
+
+  /** 7.3.d, wired for real (was left unwired -- see campaign-builder-actions.ts's own note). */
+  async function submitLive() {
+    setLiveError(null);
+    setSubmitting(true);
+    const result = await submitCampaignDraftLive(businessId, campaignId, merchantName);
+    setSubmitting(false);
+    if (!result.ok) {
+      setLiveError(result.message);
+      return;
+    }
     onChange(result.value);
   }
 
@@ -75,6 +100,12 @@ export function CampaignEditorStatusPanel({
           </p>
         ) : null}
 
+        {liveError ? (
+          <p role="alert" className="text-xs font-sans text-danger">
+            {liveError}
+          </p>
+        ) : null}
+
         {!isVerified && canSubmitForReview(draft.status) ? (
           <p className="text-xs font-sans text-fg-muted">
             {t("campaignBuilder.status.verifyBeforeSubmit")}
@@ -97,9 +128,10 @@ export function CampaignEditorStatusPanel({
               <Button
                 type="button"
                 size="sm"
-                disabled={!isVerified}
+                disabled={!isVerified || submitting}
+                loading={submitting}
                 title={isVerified ? undefined : t("campaignBuilder.status.verifyBeforeSubmitTitle")}
-                onClick={() => run(submitForReview)}
+                onClick={() => (isLiveMode ? void submitLive() : run(submitForReview))}
               >
                 {t("campaignBuilder.status.submitForReview")}
               </Button>

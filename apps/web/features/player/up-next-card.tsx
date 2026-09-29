@@ -26,16 +26,13 @@ export function UpNextCard({ campaign, locale }: UpNextCardProps) {
           {t("upNext.heading")}
         </p>
         <div className="flex items-center gap-3">
-          {/* eslint-disable-next-line yt-b/prefer-primitives -- a plain poster thumbnail, not a styled control */}
           <img
             src={campaign.posterUrl}
             alt=""
             className="h-16 w-28 shrink-0 rounded-md object-cover"
           />
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate text-sm font-sans font-medium text-fg">
-              {campaign.title}
-            </span>
+            <span className="truncate text-sm font-sans font-medium text-fg">{campaign.title}</span>
             <span className="text-xs font-sans text-fg-muted">
               {campaign.merchantName} · {formatDuration(campaign.durationSeconds, locale)}
             </span>

@@ -56,7 +56,10 @@ export async function reportWatchProgressAction(
   });
 }
 
-const gapSchema = z.object({ fromSecond: z.number().int().min(0), toSecond: z.number().int().min(0) });
+const gapSchema = z.object({
+  fromSecond: z.number().int().min(0),
+  toSecond: z.number().int().min(0),
+});
 const sessionDetailSchema = z.object({
   session: sessionSchema,
   durationSeconds: z.number().int().positive(),

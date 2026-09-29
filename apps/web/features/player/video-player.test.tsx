@@ -109,7 +109,12 @@ describe("VideoPlayer", () => {
     // visit, never the resume prompt (its own test below covers that).
     getWatchSessionActionMock.mockReset().mockResolvedValue({
       ok: true,
-      data: { session, durationSeconds: 90, coveredSeconds: 0, gaps: [{ fromSecond: 0, toSecond: 90 }] },
+      data: {
+        session,
+        durationSeconds: 90,
+        coveredSeconds: 0,
+        gaps: [{ fromSecond: 0, toSecond: 90 }],
+      },
     });
     reportWatchProgressActionMock.mockReset().mockResolvedValue({
       ok: true,
@@ -141,6 +146,32 @@ describe("VideoPlayer", () => {
     expect(
       await screen.findByRole("progressbar", { name: "Progress toward the reward" }),
     ).toBeInTheDocument();
+  });
+
+  it("offers to resume at the first gap when the server already has real coverage, and never auto-resumes", async () => {
+    getWatchSessionActionMock.mockResolvedValue({
+      ok: true,
+      data: {
+        session,
+        durationSeconds: 90,
+        coveredSeconds: 40,
+        gaps: [{ fromSecond: 40, toSecond: 90 }],
+      },
+    });
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+
+    expect(await screen.findByRole("dialog")).toHaveTextContent("Continue watching?");
+    // Not resumed yet — no reward UI until a choice is made.
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Resume from/ }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(
+      await screen.findByRole("progressbar", { name: "Progress toward the reward" }),
+    ).toBeInTheDocument();
+    const video = document.querySelector("video");
+    expect(video?.currentTime).toBe(40);
   });
 
   it("shows the failed state and never starts a session when start is not tapped", () => {

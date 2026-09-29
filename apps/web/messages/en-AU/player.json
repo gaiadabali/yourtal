@@ -55,7 +55,8 @@
   "channel": {
     "follow": "Follow",
     "following": "Following",
-    "moreFromChannel": "More from {name}"
+    "moreFromChannel": "More from {name}",
+    "noCampaigns": "No campaigns live right now."
   },
   "upNext": {
     "heading": "Up next",

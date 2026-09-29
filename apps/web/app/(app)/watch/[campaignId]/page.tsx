@@ -35,7 +35,18 @@ export default async function WatchPage({ params }: WatchPageProps) {
     notFound();
   }
   const { campaign, terms } = found;
-  const locale = await getDisplayLocale();
+  const [locale, channelData, isFollowing] = await Promise.all([
+    getDisplayLocale(),
+    getWatchChannel(campaign.businessId),
+    isFollowingBusiness(campaign.businessId),
+  ]);
+
+  // `channelData` is `null` only on a lookup failure (business not found,
+  // suspended, or the API unreachable) — the player and terms card still
+  // render either way; only the channel-specific pieces disappear.
+  const otherCampaigns =
+    channelData?.campaigns.filter((candidate) => candidate.id !== campaign.id) ?? [];
+  const upNext = otherCampaigns[0] ?? null;
 
   return (
     // A plain `<div>`, not `<main>`: `viewer-shell.tsx` already renders the
@@ -45,8 +56,31 @@ export default async function WatchPage({ params }: WatchPageProps) {
         <h1 className="text-xl font-sans font-semibold text-fg">{campaign.title}</h1>
         <p className="text-sm font-sans text-fg-muted">{campaign.merchantName}</p>
       </header>
-      <VideoPlayer campaign={campaign} terms={terms} locale={locale} />
+      <VideoPlayer
+        campaign={campaign}
+        terms={terms}
+        locale={locale}
+        upNext={upNext}
+        vouchers={channelData?.listings ?? []}
+      />
+      {channelData !== null ? (
+        <ChannelRow
+          businessId={channelData.channel.businessId}
+          displayName={channelData.channel.displayName}
+          handle={channelData.channel.handle}
+          logoUrl={channelData.channel.logoUrl}
+          isFollowing={isFollowing}
+          locale={locale}
+        />
+      ) : null}
       <TermsCard terms={terms} locale={locale} />
+      {channelData !== null ? (
+        <MoreFromChannel
+          displayName={channelData.channel.displayName}
+          campaigns={otherCampaigns}
+          locale={locale}
+        />
+      ) : null}
     </div>
   );
 }

@@ -55,7 +55,8 @@
   "channel": {
     "follow": "Ikuti",
     "following": "Diikuti",
-    "moreFromChannel": "Lainnya dari {name}"
+    "moreFromChannel": "Lainnya dari {name}",
+    "noCampaigns": "Belum ada kampanye yang aktif."
   },
   "upNext": {
     "heading": "Berikutnya",

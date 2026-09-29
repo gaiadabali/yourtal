@@ -32,7 +32,6 @@ export function MoreFromChannel({ displayName, campaigns, locale }: MoreFromChan
             <a href={`/watch/${campaign.id}`} className="block">
               <Card>
                 <CardContent className="flex items-center gap-3 p-3">
-                  {/* eslint-disable-next-line yt-b/prefer-primitives -- a plain poster thumbnail, not a styled control */}
                   <img
                     src={campaign.posterUrl}
                     alt=""

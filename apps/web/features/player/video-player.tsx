@@ -60,9 +60,7 @@ export function VideoPlayer({
   vouchers = [],
 }: VideoPlayerProps) {
   const t = getPlayerTranslator(locale);
-  const { phase, videoRef, start, chooseResume, answer, finish } = useWatchEarnSession(
-    campaign.id,
-  );
+  const { phase, videoRef, start, chooseResume, answer, finish } = useWatchEarnSession(campaign.id);
   const [nativeHls, setNativeHls] = useState<boolean | null>(null);
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const [videoError, setVideoError] = useState(false);

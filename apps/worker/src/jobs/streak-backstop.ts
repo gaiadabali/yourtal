@@ -309,6 +309,11 @@ async function processCandidate(
           // 11.5.h: LEDGER_MODE=live — the real ledger's own RiskGate/
           // solvency check is what gates this, not the local fake-table
           // math above. A refusal is deferred exactly like `paused`.
+          //
+          // 11.5.j: `ageBand` is required by the real ledger's `grantAction`
+          // (12.1.c). Always "adult" here — the `!isTeen` guard a few lines
+          // up already excludes teens from ANY streak bonus, so this branch
+          // never sees one (eslint's no-unnecessary-condition agrees).
           try {
             await liveLedger.grantAction({
               kind: "streak",
@@ -317,6 +322,7 @@ async function processCandidate(
               points: toPoints(points),
               trustTier: candidate.trustTier,
               idempotencyKey: streakGrantIdempotencyKey(candidate.userId, bonus),
+              ageBand: "adult",
             });
           } catch (error) {
             finalState =

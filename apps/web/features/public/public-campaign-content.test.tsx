@@ -53,7 +53,31 @@ describe("PublicCampaignContent", () => {
     ).toBeInTheDocument();
   });
 
-  it("links the honest secondary path into anonymous Open Viewing (YT-0432), for a live campaign only", () => {
+  it("links the honest secondary path into anonymous Open Viewing (YT-0432), for an open_viewing all_ages campaign", () => {
+    // 11.2.b: F8's own rule — the link only ever appears for a campaign that
+    // has opted in AND is rated all_ages. `longMerchantNameCampaignFixture`
+    // does not (its own next test covers that "sign in to watch" case).
+    const eligibleCampaign: Campaign = {
+      ...longMerchantNameCampaignFixture,
+      openViewing: true,
+      audience: "all_ages",
+    };
+    render(
+      <PublicCampaignContent
+        campaign={eligibleCampaign}
+        accuracyBonusPoints={0}
+        locale={publicLocaleConfig("id")}
+        merchantHref="/id/m/x"
+        watchHref={`/id/c/${eligibleCampaign.id}/watch`}
+      />,
+    );
+    expect(screen.getByRole("link", { name: /tonton tanpa mendaftar/i })).toHaveAttribute(
+      "href",
+      `/id/c/${eligibleCampaign.id}/watch`,
+    );
+  });
+
+  it("shows a sign-in note instead of the anonymous link for a campaign that has not opted into Open Viewing", () => {
     render(
       <PublicCampaignContent
         campaign={longMerchantNameCampaignFixture}
@@ -63,10 +87,8 @@ describe("PublicCampaignContent", () => {
         watchHref={`/id/c/${longMerchantNameCampaignFixture.id}/watch`}
       />,
     );
-    expect(screen.getByRole("link", { name: /tonton tanpa mendaftar/i })).toHaveAttribute(
-      "href",
-      `/id/c/${longMerchantNameCampaignFixture.id}/watch`,
-    );
+    expect(screen.queryByRole("link", { name: /tonton tanpa mendaftar/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/hanya tersedia untuk pengguna yang sudah masuk/i)).toBeInTheDocument();
   });
 
   it("still states a zero reward plainly rather than hiding the row", () => {

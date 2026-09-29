@@ -41,7 +41,9 @@ describe("parseDeliveryLine", () => {
 
   it("ignores a request that is not the signed HLS path", () => {
     expect(
-      parseDeliveryLine(`127.0.0.1 - - [10/Oct/2026:13:55:36 +0000] "GET /health HTTP/1.1" 200 2 "-" "-"`),
+      parseDeliveryLine(
+        `127.0.0.1 - - [10/Oct/2026:13:55:36 +0000] "GET /health HTTP/1.1" 200 2 "-" "-"`,
+      ),
     ).toBeNull();
   });
 
@@ -63,7 +65,9 @@ describe("ingestDeliveryLog", () => {
   });
 
   it("does nothing when the log has not been rotated in yet", async () => {
-    expect(await ingestDeliveryLog(pool, path.join(tmpdir(), `no-such-file-${randomUUID()}.log`))).toBe(0);
+    expect(
+      await ingestDeliveryLog(pool, path.join(tmpdir(), `no-such-file-${randomUUID()}.log`)),
+    ).toBe(0);
   });
 
   it("writes each HLS line once, and re-ingesting the same file inserts nothing new", async () => {

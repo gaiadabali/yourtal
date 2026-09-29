@@ -44,7 +44,12 @@ export function parseDeliveryLine(line: string): ParsedDeliveryLine | null {
   if (trimmed === "") return null;
   const combined = COMBINED_LOG_LINE.exec(trimmed);
   if (combined === null) return null;
-  const [, dateRaw, requestPath, statusRaw] = combined as unknown as [string, string, string, string];
+  const [, dateRaw, requestPath, statusRaw] = combined as unknown as [
+    string,
+    string,
+    string,
+    string,
+  ];
 
   const hls = HLS_PATH.exec(requestPath.split("?")[0] ?? "");
   if (hls === null) return null;
@@ -112,7 +117,14 @@ export async function ingestDeliveryLog(pool: Pool, logPath: string): Promise<nu
          (session_id, segment_index, path, status_code, served_at, line_hash)
        VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (line_hash) DO NOTHING`,
-      [parsed.sessionId, parsed.segmentIndex, parsed.path, parsed.statusCode, parsed.servedAt, parsed.lineHash],
+      [
+        parsed.sessionId,
+        parsed.segmentIndex,
+        parsed.path,
+        parsed.statusCode,
+        parsed.servedAt,
+        parsed.lineHash,
+      ],
     );
     inserted += result.rowCount ?? 0;
   }

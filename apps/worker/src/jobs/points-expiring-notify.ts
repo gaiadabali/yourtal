@@ -32,7 +32,8 @@ export const job = defineJob<PointsExpiringEvent>({
     const client = poolFor(config.databaseUrl);
 
     const category = "points_expiring";
-    const title = event.milestoneDays === 30 ? "Points expiring in 30 days" : "Points expiring in 7 days";
+    const title =
+      event.milestoneDays === 30 ? "Points expiring in 30 days" : "Points expiring in 7 days";
     const body = `${String(event.points)} pts will expire on ${event.expiringAt.slice(0, 10)} unless you use them.`;
 
     await client.query(

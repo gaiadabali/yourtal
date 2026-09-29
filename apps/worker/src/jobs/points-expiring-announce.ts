@@ -21,7 +21,11 @@ const MAX_PAGES = 20;
 const defined = new WeakSet<PgBoss>();
 
 /** A stable UUID per (account, milestone, expiringAt) — the same triple that is this notice's own identity. */
-export function expiringJobId(accountId: string, milestoneDays: number, expiringAt: string): string {
+export function expiringJobId(
+  accountId: string,
+  milestoneDays: number,
+  expiringAt: string,
+): string {
   const hex = createHash("sha256")
     .update(`${POINTS_EXPIRING_QUEUE}:${accountId}:${String(milestoneDays)}:${expiringAt}`)
     .digest("hex");

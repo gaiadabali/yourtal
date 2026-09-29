@@ -1,5 +1,8 @@
 import type { Pool } from "pg";
-import type { DeliveryCoverageReader, DeliveryCoverageVerdict } from "../../modules/watch/delivery-coverage";
+import type {
+  DeliveryCoverageReader,
+  DeliveryCoverageVerdict,
+} from "../../modules/watch/delivery-coverage";
 
 /**
  * TASKS.md 10.4.c (EW-18): the real `DeliveryCoverageReader` —
@@ -45,7 +48,10 @@ function mergeSpans(spans: readonly Span[]): Span[] {
 }
 
 /** True when every claimed span is covered by the served spans. */
-export function claimedIsCoveredByServed(claimed: readonly Span[], served: readonly Span[]): boolean {
+export function claimedIsCoveredByServed(
+  claimed: readonly Span[],
+  served: readonly Span[],
+): boolean {
   const mergedServed = mergeSpans(served);
   return mergeSpans(claimed).every(([from, to]) =>
     mergedServed.some(([servedFrom, servedTo]) => servedFrom <= from && to <= servedTo),

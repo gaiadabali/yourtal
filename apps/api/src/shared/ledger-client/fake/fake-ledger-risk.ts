@@ -52,7 +52,10 @@ function toRiskFlag(row: RiskFlagRow): RiskFlag {
   };
 }
 
-export function riskQueueList(db: AppDb, request: RiskQueueListRequest): ResultAsync<RiskQueueList, LedgerError> {
+export function riskQueueList(
+  db: AppDb,
+  request: RiskQueueListRequest,
+): ResultAsync<RiskQueueList, LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<RiskQueueList, LedgerError>> => {
       const limit = request.limit ?? 50;
@@ -78,11 +81,15 @@ async function readFlag(db: AppDb, id: string): Promise<RiskFlagRow | undefined>
   return result.rows[0];
 }
 
-export function riskQueueRelease(db: AppDb, request: RiskQueueResolveRequest): ResultAsync<RiskFlag, LedgerError> {
+export function riskQueueRelease(
+  db: AppDb,
+  request: RiskQueueResolveRequest,
+): ResultAsync<RiskFlag, LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<RiskFlag, LedgerError>> => {
       const flag = await readFlag(db, request.id);
-      if (flag === undefined) return err(ledgerError("idempotency_conflict", `no risk flag ${request.id}`));
+      if (flag === undefined)
+        return err(ledgerError("idempotency_conflict", `no risk flag ${request.id}`));
       if (flag.status !== "pending") {
         return err(ledgerError("idempotency_conflict", `risk flag ${request.id} is not pending`));
       }
@@ -103,11 +110,15 @@ export function riskQueueRelease(db: AppDb, request: RiskQueueResolveRequest): R
   );
 }
 
-export function riskQueueSuspend(db: AppDb, request: RiskQueueResolveRequest): ResultAsync<RiskFlag, LedgerError> {
+export function riskQueueSuspend(
+  db: AppDb,
+  request: RiskQueueResolveRequest,
+): ResultAsync<RiskFlag, LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<RiskFlag, LedgerError>> => {
       const flag = await readFlag(db, request.id);
-      if (flag === undefined) return err(ledgerError("idempotency_conflict", `no risk flag ${request.id}`));
+      if (flag === undefined)
+        return err(ledgerError("idempotency_conflict", `no risk flag ${request.id}`));
       if (flag.status !== "pending") {
         return err(ledgerError("idempotency_conflict", `risk flag ${request.id} is not pending`));
       }

@@ -10,13 +10,7 @@ import { QuestionEditor } from "./question-editor";
 
 const CAMPAIGN_ID = "00000000-0000-4000-8000-000000000900";
 
-function StatefulEditor({
-  initial,
-  audience,
-}: {
-  initial: QuestionDraft;
-  audience?: string;
-}) {
+function StatefulEditor({ initial, audience }: { initial: QuestionDraft; audience?: string }) {
   const [draft, setDraft] = useState(initial);
   return (
     <StudioIntlProvider>

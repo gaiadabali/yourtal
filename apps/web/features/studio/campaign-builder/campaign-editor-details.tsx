@@ -257,11 +257,7 @@ export function CampaignEditorDetails({
             })}
           </NativeSelect>
           {categoryStatus === "allowed" ? null : (
-            <p
-              id={categoryStatusId}
-              role="note"
-              className="mt-1.5 text-xs font-sans text-fg-muted"
-            >
+            <p id={categoryStatusId} role="note" className="mt-1.5 text-xs font-sans text-fg-muted">
               {categoryStatus === "adult_only"
                 ? t("campaignBuilder.details.categoryStatusAdultOnly", { region: countryName })
                 : t("campaignBuilder.details.categoryStatusProhibited", { region: countryName })}

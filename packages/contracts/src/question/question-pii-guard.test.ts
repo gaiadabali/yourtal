@@ -107,9 +107,7 @@ describe("detectTeenPersonalQuestion", () => {
   });
 
   it("returns null for an ordinary opinion question, same as detectPiiRequest", () => {
-    expect(
-      detectTeenPersonalQuestion("How likely are you to recommend this product?"),
-    ).toBeNull();
+    expect(detectTeenPersonalQuestion("How likely are you to recommend this product?")).toBeNull();
   });
 
   it("returns null for an empty or whitespace-only prompt", () => {
@@ -120,7 +118,11 @@ describe("detectTeenPersonalQuestion", () => {
   const rejectionTable: Array<{ name: string; prompt: string; category: string }> = [
     { name: "English age", prompt: "How old are you?", category: "age or date of birth" },
     { name: "Indonesian age", prompt: "Berapa umur kamu?", category: "age or date of birth" },
-    { name: "date of birth", prompt: "What is your date of birth?", category: "age or date of birth" },
+    {
+      name: "date of birth",
+      prompt: "What is your date of birth?",
+      category: "age or date of birth",
+    },
     { name: "English school", prompt: "What school do you go to?", category: "school" },
     { name: "Indonesian school", prompt: "Sekolah kamu di mana?", category: "school" },
     {

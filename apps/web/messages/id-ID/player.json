@@ -34,7 +34,8 @@
   "controls": {
     "play": "Putar",
     "pause": "Jeda",
-    "playCampaign": "Putar {title}"
+    "playCampaign": "Putar {title}",
+    "captions": "Teks"
   },
   "status": {
     "playing": "Sedang diputar",
@@ -47,7 +48,21 @@
     "submitting": "Mengirim jawabanmu…"
   },
   "errors": {
-    "startFailed": "Video ini gagal dimulai. Periksa koneksimu dan coba lagi."
+    "startFailed": "Video ini gagal dimulai. Periksa koneksimu dan coba lagi.",
+    "playbackFailed": "Pemutaran mengalami kendala. Coba lagi.",
+    "retry": "Coba lagi"
+  },
+  "channel": {
+    "follow": "Ikuti",
+    "following": "Diikuti",
+    "moreFromChannel": "Lainnya dari {name}"
+  },
+  "upNext": {
+    "heading": "Berikutnya",
+    "play": "Putar"
+  },
+  "vouchers": {
+    "heading": "Belanja di {name}"
   },
   "earn": {
     "claiming": "Memeriksa jawabanmu…",

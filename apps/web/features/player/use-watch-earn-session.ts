@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
 import { questionsAskedFor } from "./question-schedule";
+import { MIN_RESUMABLE_SECONDS } from "./resume-position";
 import {
   answerCheckpointAction,
   completeWatchSessionAction,
+  getWatchSessionAction,
   presentCheckpointAction,
   reportWatchProgressAction,
   startWatchSessionAction,
@@ -24,6 +26,16 @@ export type WatchEarnPhase =
       earning: boolean;
       /** Server-confirmed coverage (EW-15) — never the raw playhead. */
       coveredSeconds: number;
+    }
+  | {
+      kind: "resume_prompt";
+      sessionId: string;
+      manifestUrl: string;
+      durationSeconds: number;
+      totalQuestions: number;
+      earning: boolean;
+      /** The first uncovered gap's start (server coverage, 11.5.b) — never a client-remembered playhead. */
+      resumeAtSeconds: number;
     }
   | {
       kind: "checkpoint";
@@ -70,6 +82,8 @@ export function useWatchEarnSession(campaignId: string) {
   const questionsAsked = useRef(0);
   const checkpointBusy = useRef(false);
   const pendingReport = useRef<Promise<unknown> | null>(null);
+  /** Set only when the viewer chose "resume" — applied once the video element (re-)mounts into the "watching" phase. */
+  const pendingSeekRef = useRef<number | null>(null);
 
   const start = useCallback(async () => {
     setPhase({ kind: "starting" });
@@ -82,11 +96,31 @@ export function useWatchEarnSession(campaignId: string) {
     sessionIdRef.current = session.id;
     manifestUrlRef.current = manifestUrl;
     durationRef.current = durationSeconds;
-    reportedTo.current = 0;
     questionsAsked.current = session.questionsAsked;
     const earning = !session.nonEarning;
     earningRef.current = earning;
     totalQuestionsRef.current = earning ? questionsAskedFor(durationSeconds) : 0;
+
+    // A resumed session (this is not the viewer's first visit) may already
+    // have real server coverage. `detail.ok === false` degrades to "start
+    // fresh" — a resume prompt is a nicety, never a blocker.
+    const detail = await getWatchSessionAction(session.id);
+    const coveredSoFar = detail.ok ? detail.data.coveredSeconds : 0;
+    reportedTo.current = coveredSoFar;
+    const firstGap = detail.ok ? detail.data.gaps[0] : undefined;
+
+    if (coveredSoFar >= MIN_RESUMABLE_SECONDS && firstGap !== undefined) {
+      setPhase({
+        kind: "resume_prompt",
+        sessionId: session.id,
+        manifestUrl,
+        durationSeconds,
+        totalQuestions: totalQuestionsRef.current,
+        earning,
+        resumeAtSeconds: firstGap.fromSecond,
+      });
+      return;
+    }
 
     setPhase({
       kind: "watching",
@@ -95,9 +129,27 @@ export function useWatchEarnSession(campaignId: string) {
       durationSeconds,
       totalQuestions: totalQuestionsRef.current,
       earning,
-      coveredSeconds: 0,
+      coveredSeconds: coveredSoFar,
     });
   }, [campaignId]);
+
+  /** The resume prompt's own choice — never auto-resumes (resume-prompt.tsx's own rule). */
+  const chooseResume = useCallback(
+    (choice: "resume" | "restart") => {
+      if (phase.kind !== "resume_prompt") return;
+      pendingSeekRef.current = choice === "resume" ? phase.resumeAtSeconds : 0;
+      setPhase({
+        kind: "watching",
+        sessionId: phase.sessionId,
+        manifestUrl: phase.manifestUrl,
+        durationSeconds: phase.durationSeconds,
+        totalQuestions: phase.totalQuestions,
+        earning: phase.earning,
+        coveredSeconds: reportedTo.current,
+      });
+    },
+    [phase],
+  );
 
   const backToWatching = useCallback(() => {
     const sessionId = sessionIdRef.current;
@@ -194,6 +246,19 @@ export function useWatchEarnSession(campaignId: string) {
     };
   }, [phase.kind, report, tryPresentCheckpoint]);
 
+  // Applies the resume prompt's choice once the video element mounts with
+  // this session's manifest — setting `currentTime` before that would have
+  // no element to set it on. Runs once per resume/restart choice, never on
+  // an ordinary fresh start (pendingSeekRef stays null then).
+  useEffect(() => {
+    if (phase.kind !== "watching") return;
+    const seekTo = pendingSeekRef.current;
+    if (seekTo === null) return;
+    pendingSeekRef.current = null;
+    const video = videoRef.current;
+    if (video) video.currentTime = seekTo;
+  }, [phase.kind]);
+
   const answer = useCallback(
     async (selectedOptionId: string | null) => {
       if (phase.kind !== "checkpoint") return;
@@ -245,7 +310,7 @@ export function useWatchEarnSession(campaignId: string) {
     );
   }, [report]);
 
-  return { phase, videoRef, start, answer, finish };
+  return { phase, videoRef, start, chooseResume, answer, finish };
 }
 
 export type UseWatchEarnSession = ReturnType<typeof useWatchEarnSession>;

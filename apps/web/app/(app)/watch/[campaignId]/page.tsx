@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ChannelRow } from "@/features/player/channel-row";
+import { isFollowingBusiness } from "@/features/player/follow-actions";
 import { getWatchCampaign } from "@/features/player/get-watch-campaign";
+import { getWatchChannel } from "@/features/player/get-watch-channel";
+import { MoreFromChannel } from "@/features/player/more-from-channel";
 import { TermsCard } from "@/features/player/terms-card";
 import { VideoPlayer } from "@/features/player/video-player";
 import { getDisplayLocale } from "@/i18n/get-locale";

@@ -20,12 +20,14 @@ vi.mock("./hls-attacher", () => ({ HlsAttacher: () => null }));
 
 const {
   startWatchSessionActionMock,
+  getWatchSessionActionMock,
   reportWatchProgressActionMock,
   completeWatchSessionActionMock,
   presentCheckpointActionMock,
   answerCheckpointActionMock,
 } = vi.hoisted(() => ({
   startWatchSessionActionMock: vi.fn(),
+  getWatchSessionActionMock: vi.fn(),
   reportWatchProgressActionMock: vi.fn(),
   completeWatchSessionActionMock: vi.fn(),
   presentCheckpointActionMock: vi.fn(),
@@ -33,6 +35,7 @@ const {
 }));
 vi.mock("./watch-player-actions", () => ({
   startWatchSessionAction: startWatchSessionActionMock,
+  getWatchSessionAction: getWatchSessionActionMock,
   reportWatchProgressAction: reportWatchProgressActionMock,
   completeWatchSessionAction: completeWatchSessionActionMock,
   presentCheckpointAction: presentCheckpointActionMock,
@@ -102,6 +105,12 @@ function startResolved() {
 describe("VideoPlayer", () => {
   beforeEach(() => {
     startWatchSessionActionMock.mockReset().mockResolvedValue(startResolved());
+    // No prior coverage by default — every existing test exercises a first
+    // visit, never the resume prompt (its own test below covers that).
+    getWatchSessionActionMock.mockReset().mockResolvedValue({
+      ok: true,
+      data: { session, durationSeconds: 90, coveredSeconds: 0, gaps: [{ fromSecond: 0, toSecond: 90 }] },
+    });
     reportWatchProgressActionMock.mockReset().mockResolvedValue({
       ok: true,
       data: { accepted: true, coveredSeconds: 10 },

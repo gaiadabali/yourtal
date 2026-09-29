@@ -56,6 +56,27 @@ export async function reportWatchProgressAction(
   });
 }
 
+const gapSchema = z.object({ fromSecond: z.number().int().min(0), toSecond: z.number().int().min(0) });
+const sessionDetailSchema = z.object({
+  session: sessionSchema,
+  durationSeconds: z.number().int().positive(),
+  coveredSeconds: z.number(),
+  gaps: z.array(gapSchema),
+});
+export type WatchSessionDetail = z.infer<typeof sessionDetailSchema>;
+
+/**
+ * `GET /api/watch/sessions/:id` (11.5.b) — what the server has actually
+ * recorded so far, for the resume prompt: "resume at the first gap" reads
+ * `gaps[0]`, never a client-remembered playhead position (the whole point
+ * of coverage being server-side, EW-15).
+ */
+export async function getWatchSessionAction(
+  sessionId: string,
+): Promise<ApiResult<WatchSessionDetail>> {
+  return apiFetch(`/api/watch/sessions/${sessionId}`, sessionDetailSchema);
+}
+
 const completeSchema = z.object({
   completed: z.boolean(),
   granted: z.boolean(),

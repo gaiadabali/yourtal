@@ -34,7 +34,8 @@
   "controls": {
     "play": "Play",
     "pause": "Pause",
-    "playCampaign": "Play {title}"
+    "playCampaign": "Play {title}",
+    "captions": "Captions"
   },
   "status": {
     "playing": "Playing",
@@ -47,7 +48,21 @@
     "submitting": "Submitting your answer…"
   },
   "errors": {
-    "startFailed": "This video couldn't start. Check your connection and try again."
+    "startFailed": "This video couldn't start. Check your connection and try again.",
+    "playbackFailed": "Playback hit a snag. Try again.",
+    "retry": "Retry"
+  },
+  "channel": {
+    "follow": "Follow",
+    "following": "Following",
+    "moreFromChannel": "More from {name}"
+  },
+  "upNext": {
+    "heading": "Up next",
+    "play": "Play"
+  },
+  "vouchers": {
+    "heading": "Spend at {name}"
   },
   "earn": {
     "claiming": "Checking your answers…",

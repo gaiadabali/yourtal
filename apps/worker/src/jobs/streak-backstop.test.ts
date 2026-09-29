@@ -20,9 +20,13 @@ afterAll(async () => {
 });
 
 async function seededCampaign(): Promise<{ campaignId: string; termsVersion: number }> {
+  // Only a campaign with terms: other suites sharing this database insert
+  // campaigns without any, and the newest overall may be one of them.
   const campaigns = await pool.query<{ id: string }>(
-    `SELECT id FROM campaign.campaigns WHERE lifecycle_state IN ('live','paused','ended')
-      ORDER BY published_at DESC LIMIT 1`,
+    `SELECT c.id FROM campaign.campaigns c
+      WHERE c.lifecycle_state IN ('live','paused','ended')
+        AND EXISTS (SELECT 1 FROM campaign.terms_version t WHERE t.campaign_id = c.id)
+      ORDER BY c.published_at DESC LIMIT 1`,
   );
   const campaignId = campaigns.rows[0]?.id;
   if (campaignId === undefined) throw new Error("expected at least one seeded campaign");

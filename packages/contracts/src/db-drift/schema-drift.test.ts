@@ -678,6 +678,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "YT-0540. The server-side session record behind AuthService/SessionService — id is a SHA-256 hash of an opaque bearer token, never readable back through any endpoint (see auth.service.test.ts's own proof of that). AuthController's own responses carry the raw token once, at issuance; this row is never serialised.",
   "identity.verification_token":
     "YT-0540. Password-reset and email-verification tokens, hashed at rest like identity.session.id above. Single-use via consumed_at (see the migration's own header); no public contract represents a row of it, only the confirm endpoints' generic ok/token_invalid outcome.",
+  "identity.guardian_consent":
+    "TASKS.md 12.1.a. token_hash is hashed at rest like identity.verification_token above and never returned; guardian_email is never returned either (12.1.a's own instruction: the guardian-facing GET carries no email address). GuardianConsentView (identity/guardian.ts) is a DERIVED, cross-table projection — status is computed from this row's own approved_at/revoked_at, but displayName/locale are identity.user_profile's, not this table's — so there is no 1:1 MAPPINGS row for it, the same reason identity.staff_role's own note gives for a derived-not-mirrored response.",
   "business.team_invitations":
     "TASKS.md 7.1.c. Email-invite tokens, hashed at rest like identity.verification_token above (token_hash, not the token). No public contract represents a row of it — the invite endpoint returns only the created invitation's business-facing fields (never token_hash), and acceptance is the same generic ok/refusal outcome identity.verification_token's confirm endpoints use.",
   "identity.staff_role":

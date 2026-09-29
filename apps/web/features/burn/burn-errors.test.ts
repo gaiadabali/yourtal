@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toPoints } from "@yourtal/contracts/money";
-import {
-  burnErrorFromApiError,
-  classifyBalanceEligibility,
-  recoveryForError,
-} from "./burn-errors";
+import { burnErrorFromApiError, classifyBalanceEligibility, recoveryForError } from "./burn-errors";
 import { makeBalanceFixture as makeBalance } from "./burn-test-fixtures";
 
 describe("classifyBalanceEligibility", () => {
@@ -119,9 +115,9 @@ describe("burnErrorFromApiError", () => {
         LOCK_EXPIRES_AT,
       ),
     ).toEqual({ type: "checkout_failed" });
-    expect(
-      burnErrorFromApiError({ kind: "network", message: "offline" }, LOCK_EXPIRES_AT),
-    ).toEqual({ type: "checkout_failed" });
+    expect(burnErrorFromApiError({ kind: "network", message: "offline" }, LOCK_EXPIRES_AT)).toEqual(
+      { type: "checkout_failed" },
+    );
     expect(
       burnErrorFromApiError(
         { kind: "invalid_response", message: "did not match its contract" },

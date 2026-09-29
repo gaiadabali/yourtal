@@ -48,7 +48,11 @@ const BASE_LISTING = {
 } as const;
 
 export function makeListingFixture(overrides: Record<string, unknown> = {}): PublicListing {
-  return publicListingSchema.parse({ ...BASE_LISTING, priceInPoints: toPoints(5_000), ...overrides });
+  return publicListingSchema.parse({
+    ...BASE_LISTING,
+    priceInPoints: toPoints(5_000),
+    ...overrides,
+  });
 }
 
 export interface BalanceFixtureOverrides {
@@ -74,9 +78,10 @@ export function makeBalanceFixture(overrides: BalanceFixtureOverrides = {}): Wal
     region: overrides.region ?? "ID",
     availablePoints: toPoints(overrides.availablePoints ?? 0),
     pendingPoints,
-    pending: pendingPoints > 0 && pendingUnlockAt !== null
-      ? [{ points: pendingPoints, unlockAt: pendingUnlockAt }]
-      : [],
+    pending:
+      pendingPoints > 0 && pendingUnlockAt !== null
+        ? [{ points: pendingPoints, unlockAt: pendingUnlockAt }]
+        : [],
     expiringPoints: toPoints(overrides.expiringPoints ?? 0),
     expiringAt: overrides.expiringAt ?? null,
   });

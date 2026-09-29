@@ -115,7 +115,12 @@ describe("BurnFlow", () => {
   it("walks reviewing -> confirming -> success, restating the same locked price at confirmation, and calls the server exactly once", async () => {
     mockConfirm.mockResolvedValue({
       ok: true,
-      result: { checkoutId: CHECKOUT_ID, state: "done", voucherId: VOUCHER_ID, pricePoints: toPoints(1_000) },
+      result: {
+        checkoutId: CHECKOUT_ID,
+        state: "done",
+        voucherId: VOUCHER_ID,
+        pricePoints: toPoints(1_000),
+      },
     });
     const user = userEvent.setup();
     const listing = makeListingFixture({ priceInPoints: toPoints(1_000) });
@@ -251,7 +256,12 @@ describe("BurnFlow (en-AU, YT-0405)", () => {
   it("walks reviewing -> confirming -> success in English, with no Indonesian copy leaking through", async () => {
     mockConfirm.mockResolvedValue({
       ok: true,
-      result: { checkoutId: CHECKOUT_ID, state: "done", voucherId: VOUCHER_ID, pricePoints: toPoints(1_000) },
+      result: {
+        checkoutId: CHECKOUT_ID,
+        state: "done",
+        voucherId: VOUCHER_ID,
+        pricePoints: toPoints(1_000),
+      },
     });
     const user = userEvent.setup();
     const listing = makeListingFixture({ priceInPoints: toPoints(1_000), currency: "AUD" });

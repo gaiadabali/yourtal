@@ -100,26 +100,22 @@ describe("describeVoucherStatus", () => {
   });
 
   it("11.6.d: labels a voucher spent at a counter as redeemed, in both locales", () => {
-    expect(describeVoucherStatus("activated", false, walletTestTranslator("en-AU"), "redeemed").label).toBe(
-      "Redeemed",
-    );
-    expect(describeVoucherStatus("activated", false, walletTestTranslator("id-ID"), "redeemed").label).toBe(
-      "Sudah Ditukar",
-    );
+    expect(
+      describeVoucherStatus("activated", false, walletTestTranslator("en-AU"), "redeemed").label,
+    ).toBe("Redeemed");
+    expect(
+      describeVoucherStatus("activated", false, walletTestTranslator("id-ID"), "redeemed").label,
+    ).toBe("Sudah Ditukar");
   });
 });
 
 describe("isVoucherRedeemable", () => {
   it("prefers the real status: only status active (which folds in a mid-hold voucher) is redeemable", () => {
-    expect(
-      isVoucherRedeemable({ state: "activated", status: "active" }, Date.now()),
-    ).toBe(true);
-    expect(
-      isVoucherRedeemable({ state: "activated", status: "redeemed" }, Date.now()),
-    ).toBe(false);
-    expect(
-      isVoucherRedeemable({ state: "activated", status: "transferred" }, Date.now()),
-    ).toBe(false);
+    expect(isVoucherRedeemable({ state: "activated", status: "active" }, Date.now())).toBe(true);
+    expect(isVoucherRedeemable({ state: "activated", status: "redeemed" }, Date.now())).toBe(false);
+    expect(isVoucherRedeemable({ state: "activated", status: "transferred" }, Date.now())).toBe(
+      false,
+    );
   });
 
   it("falls back to state === activated when no status is known", () => {

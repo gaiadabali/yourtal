@@ -37,7 +37,13 @@ export interface BurnFlowProps {
  * scratch with a brand-new lock, checkout id and price, instead of a stale
  * `failed`/`lock_expired` state surviving across the new quote.
  */
-export function BurnFlow({ listing, balance, checkoutId, pricePoints, lockExpiresAt }: BurnFlowProps) {
+export function BurnFlow({
+  listing,
+  balance,
+  checkoutId,
+  pricePoints,
+  lockExpiresAt,
+}: BurnFlowProps) {
   const router = useRouter();
   const [state, setState] = useState<BurnFlowState>(() => {
     const initialError = classifyBalanceEligibility(pricePoints, balance);

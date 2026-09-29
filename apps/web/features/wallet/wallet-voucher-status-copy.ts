@@ -17,12 +17,7 @@ export type WalletVoucherState = "reserved" | "activated" | "released";
 export type WalletVoucherStatus = "active" | "redeemed" | "expired" | "transferred";
 
 export type VoucherStatusKind =
-  | "held"
-  | "pending"
-  | "released"
-  | "expired"
-  | "redeemed"
-  | "transferred";
+  "held" | "pending" | "released" | "expired" | "redeemed" | "transferred";
 
 /** Matches `@yourtal/ui/status-badge`'s `status` variant. */
 export type BadgeStatus = "success" | "warning" | "danger" | "info" | "neutral";

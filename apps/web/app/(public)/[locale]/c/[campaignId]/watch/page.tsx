@@ -107,6 +107,11 @@ export default async function OpenViewWatchPage({ params }: OpenViewWatchPagePro
           { name: copy.breadcrumbLabel, url: publicUrl(locale, `/c/${campaign.id}/watch`) },
         ]}
       />
+      {/* axe's page-has-heading-one: this route is its own indexable page
+          (docs/11-seo-aeo-geo.md §4.5), not merely a sub-view of
+          `../page.tsx`, so it needs its own document outline rather than
+          relying on the parent page's <h1>. */}
+      <h1 className="text-xl font-semibold text-fg">{campaign.title}</h1>
       <OpenViewSessionGate
         campaign={campaign}
         chapters={chapters}

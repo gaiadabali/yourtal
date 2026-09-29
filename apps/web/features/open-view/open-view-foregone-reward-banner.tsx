@@ -31,9 +31,13 @@ export function OpenViewForegoneRewardBanner({
     <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface-raised p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-fg-subtle">{eyebrow}</p>
       <p className="text-sm text-fg-muted">{notice}</p>
+      {/* `text-primary` measured 4.14:1 on this card's `bg-surface-raised`
+          (axe color-contrast, 11.2.b) — under the 4.5:1 a normal-weight
+          link needs. `text-fg` is this same surface's proven body-text
+          color; the underline still marks it as a link. */}
       <a
         href={signupHref}
-        className="text-sm font-medium text-primary underline decoration-dotted underline-offset-2"
+        className="text-sm font-medium text-fg underline decoration-dotted underline-offset-2"
       >
         {signupLinkLabel}
       </a>

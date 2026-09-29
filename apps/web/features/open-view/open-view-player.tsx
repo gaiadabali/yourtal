@@ -69,19 +69,29 @@ export function OpenViewPlayer({ campaign, chapters, copy, locale, sessionId }: 
   // same cadence the rewarded flow reports on — never against
   // `campaign.durationSeconds` directly, so a viewer who seeks backwards
   // never reports a negative span (`reportOpenViewProgress` drops those).
+  //
+  // `virtualCurrentTimeRef` mirrors `session.virtualCurrentTime` into a ref
+  // on every render WITHOUT being a dependency of the interval effect below
+  // — `timeupdate` (via `useVideoEventWiring`) fires many times a second,
+  // and an effect keyed on that value would tear down and recreate its
+  // `setInterval` before a single tick ever elapsed, so no report would
+  // ever fire. The interval instead reads the ref at each tick.
   const lastReportedRef = useRef(0);
+  const virtualCurrentTimeRef = useRef(session.virtualCurrentTime);
+  virtualCurrentTimeRef.current = session.virtualCurrentTime;
+
   useEffect(() => {
     if (sessionId === undefined || !session.isPlaying) return;
     const interval = setInterval(() => {
       const from = lastReportedRef.current;
-      const to = session.virtualCurrentTime;
+      const to = virtualCurrentTimeRef.current;
       if (to > from) {
         reportOpenViewProgress(sessionId, campaign.id, from, to);
         lastReportedRef.current = to;
       }
     }, OPEN_VIEW_REPORT_EVERY_MS);
     return () => clearInterval(interval);
-  }, [sessionId, campaign.id, session.isPlaying, session.virtualCurrentTime]);
+  }, [sessionId, campaign.id, session.isPlaying]);
 
   // Flushes the span since the last periodic report the moment playback
   // stops (paused or ended) — otherwise up to OPEN_VIEW_REPORT_EVERY_MS of
@@ -89,7 +99,7 @@ export function OpenViewPlayer({ campaign, chapters, copy, locale, sessionId }: 
   useEffect(() => {
     if (sessionId === undefined || session.isPlaying) return;
     const from = lastReportedRef.current;
-    const to = session.virtualCurrentTime;
+    const to = virtualCurrentTimeRef.current;
     if (to > from) {
       reportOpenViewProgress(sessionId, campaign.id, from, to);
       lastReportedRef.current = to;

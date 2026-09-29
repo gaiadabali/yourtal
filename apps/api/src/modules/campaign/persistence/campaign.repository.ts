@@ -43,11 +43,7 @@ export interface CampaignRepository {
    * `audiences` is: `fetchFundedCampaigns` filters its own candidates
    * downstream instead.
    */
-  listVisible(
-    limit: number,
-    audiences?: readonly Audience[],
-    region?: Region,
-  ): Promise<Campaign[]>;
+  listVisible(limit: number, audiences?: readonly Audience[], region?: Region): Promise<Campaign[]>;
   /** One campaign, or `null` if it does not exist or is not public. */
   findVisibleById(campaignId: string): Promise<Campaign | null>;
   /**

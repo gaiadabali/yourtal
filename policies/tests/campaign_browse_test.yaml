@@ -18,7 +18,17 @@ description: |-
 tests:
   - name: browse is granted to every signed-in principal and to anonymous, regardless of age band, guardian consent or suspension
     input:
-      principals: [anon, wina, wina_suspended, adi_adult, teo_pending, teo_granted, teo_revoked, wina_no_ageband]
+      principals:
+        [
+          anon,
+          wina,
+          wina_suspended,
+          adi_adult,
+          teo_pending,
+          teo_granted,
+          teo_revoked,
+          wina_no_ageband,
+        ]
       resources: [campaign_view_list]
       actions: [browse]
     expected:

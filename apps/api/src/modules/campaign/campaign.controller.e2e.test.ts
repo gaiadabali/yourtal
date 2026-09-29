@@ -234,12 +234,7 @@ afterAll(async () => {
     await owner.execute(sql`DELETE FROM campaign.reward_config WHERE campaign_id = ${id}`);
     await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);
   }
-  for (const id of [
-    auAdultCampaignId,
-    auAllAgesCampaignId,
-    auTeenCampaignId,
-    idAdultCampaignId,
-  ]) {
+  for (const id of [auAdultCampaignId, auAllAgesCampaignId, auTeenCampaignId, idAdultCampaignId]) {
     await owner.execute(sql`DELETE FROM campaign.video_source WHERE campaign_id = ${id}`);
     await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);
   }
@@ -347,9 +342,9 @@ describe("GET /api/campaigns -- region and audience scoping (12.1.f, defect #2)"
   });
 
   it("anonymous with no region query param is a 400, not a silent default (there is no session to read one from)", async () => {
-    await expect(
-      controller.list(undefined, undefined, requestFor(null)),
-    ).rejects.toMatchObject({ status: 400 });
+    await expect(controller.list(undefined, undefined, requestFor(null))).rejects.toMatchObject({
+      status: 400,
+    });
   });
 
   it("a signed-in caller whose `?region=` query disagrees with their own jurisdiction gets an empty list, not the other region's data", async () => {

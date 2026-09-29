@@ -95,6 +95,7 @@ afterEach(() => {
 async function insertLiveCampaign(params: {
   region: "AU" | "ID";
   durationSeconds: number;
+  questionCount?: number;
 }): Promise<{ campaignId: string; businessId: string }> {
   const campaignId = randomUUID();
   const businessId = randomUUID();
@@ -106,7 +107,7 @@ async function insertLiveCampaign(params: {
         poster_url, teaser_url, hls_url, captions_url, aspect, estimated_bytes,
         starts_at, ends_at, open_viewing, teaser_start_seconds)
      VALUES ($1,'long_form',$2,$3,'Test Merchant','A test campaign',$4,
-             10.5, 0, 0, 'base_only',
+             10.5, 0, $6, 'base_only',
              'live', now(), $3, $5, 'all_ages', 'entertainment',
              'http://127.0.0.1:26900/x/poster.jpg', 'http://127.0.0.1:26900/x/teaser.mp4',
              'http://127.0.0.1:26900/x/index.m3u8', null, '9:16', 1000,
@@ -117,6 +118,7 @@ async function insertLiveCampaign(params: {
       businessId,
       params.durationSeconds,
       params.region,
+      params.questionCount ?? 1,
     ],
   );
   return { campaignId, businessId };
@@ -144,6 +146,22 @@ async function rewardConfigRow(campaignId: string): Promise<RewardConfigRow | un
 }
 
 describe("runDemoCampaignFunding", () => {
+  it("holds no accuracy bonus for a campaign with no questions to be accurate on", async () => {
+    const quick = await insertLiveCampaign({ region: "AU", durationSeconds: 65, questionCount: 0 });
+    try {
+      await runDemoCampaignFunding(
+        owner,
+        { baseUrl: ledgerBaseUrl, serviceSecret: LEDGER_SECRET },
+        () => undefined,
+      );
+      const config = await rewardConfigRow(quick.campaignId);
+      expect(config?.reward_points_per_completion).toBe("5");
+      expect(config?.accuracy_bonus_points).toBe("0");
+    } finally {
+      await cleanupCampaign(quick.campaignId);
+    }
+  });
+
   it("funds an unfunded AU and ID campaign at the F12 demo rates, and is a no-op the second time", async () => {
     const au = await insertLiveCampaign({ region: "AU", durationSeconds: 65 });
     const id = await insertLiveCampaign({ region: "ID", durationSeconds: 65 });

@@ -148,7 +148,8 @@ export function toFeedItem(candidate: CandidateCampaign, signals: Signals): Feed
     posterUrl: campaign.posterUrl,
     teaserUrl: campaign.teaserUrl,
     durationSeconds: campaign.durationSeconds,
-    rewardPoints: campaign.rewardPoints,
+    // The funded base, not the campaign row's display number: the terms line must match the hold.
+    rewardPoints: toPoints(candidate.rewardConfig.rewardPointsPerCompletion),
     kind: campaign.kind,
     questionCount: campaign.questionCount,
     maxRewardPoints: toPoints(

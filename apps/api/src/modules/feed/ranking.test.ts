@@ -240,6 +240,7 @@ describe("buildFeed", () => {
       kind: withBonus.campaign.kind,
       questionCount: 3,
       estimatedDataMb: 120,
+      rewardPoints: 90,
       maxRewardPoints: 112,
       whyReason: "popular",
     });

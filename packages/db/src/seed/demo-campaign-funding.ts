@@ -100,12 +100,13 @@ interface UnfundedCampaignRow {
   readonly business_id: string;
   readonly region: string;
   readonly duration_seconds: number;
+  readonly question_count: number | null;
   readonly title: string;
 }
 
 async function unfundedCampaigns(pool: pg.Pool): Promise<UnfundedCampaignRow[]> {
   const result = await pool.query<UnfundedCampaignRow>(
-    `SELECT c.id, c.business_id, c.region, c.duration_seconds, c.title
+    `SELECT c.id, c.business_id, c.region, c.duration_seconds, c.question_count, c.title
        FROM campaign.campaigns c
        LEFT JOIN campaign.reward_config rc ON rc.campaign_id = c.id
       WHERE c.lifecycle_state = 'live' AND rc.campaign_id IS NULL
@@ -205,10 +206,10 @@ export async function runDemoCampaignFunding(
       continue;
     }
 
-    const { rewardPointsPerCompletion, accuracyBonusPoints } = rewardShapeFor(
-      campaign.duration_seconds,
-      economy,
-    );
+    const shape = rewardShapeFor(campaign.duration_seconds, economy);
+    const rewardPointsPerCompletion = shape.rewardPointsPerCompletion;
+    // No questions, no accuracy to reward: holding a bonus nobody can earn wastes funding.
+    const accuracyBonusPoints = (campaign.question_count ?? 0) > 0 ? shape.accuracyBonusPoints : 0;
     const perViewer = rewardPointsPerCompletion + accuracyBonusPoints;
     // A multiple of 1,000 by construction (perViewer * 1,000), CLAUDE.md's
     // points-pack rule ("multiples of 1,000") without a second rounding step.

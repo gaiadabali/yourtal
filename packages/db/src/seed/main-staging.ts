@@ -5,6 +5,7 @@ import pg from "pg";
 import { listDemoMediaBusinesses, runDemoMedia } from "@yourtal/media/demo-media";
 import type { DemoMediaResult } from "@yourtal/media/demo-media";
 import { runDemoCampaignFunding } from "./demo-campaign-funding";
+import { alignDemoCampaignTerms } from "./demo-campaign-terms";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
 import type { DemoMediaVoucherResult } from "./demo-media-vouchers";
@@ -219,6 +220,8 @@ async function main(): Promise<void> {
         { baseUrl: ledgerBaseUrl, serviceSecret: ledgerServiceSecret },
         console.log,
       );
+      // Funding and the paid terms must agree, or a completed watch outruns its hold.
+      await alignDemoCampaignTerms(pool, console.log);
     } catch (error) {
       const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
       console.error(

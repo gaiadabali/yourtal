@@ -1,6 +1,9 @@
 import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
-import { getPublicCampaign, listPublicCampaigns } from "@/features/public/public-campaign-data";
+import {
+  getPublicCampaignForLocale,
+  listPublicCampaigns,
+} from "@/features/public/public-campaign-data";
 import {
   GENERATED_PUBLIC_LOCALES,
   publicLocaleConfig,
@@ -23,7 +26,11 @@ export function generateStaticParams() {
   );
 }
 
-export const dynamicParams = false;
+// 11.2.a: matches page.tsx's own dynamicParams=true — a real seeded
+// campaign id needs a real OG image too, not a 404 on the share card while
+// the page itself renders fine.
+export const dynamicParams = true;
+export const revalidate = 60;
 
 interface CampaignOgImageProps {
   params: Promise<{ locale: string; campaignId: string }>;
@@ -39,7 +46,7 @@ interface CampaignOgImageProps {
 export default async function CampaignOgImage({ params }: CampaignOgImageProps) {
   const { locale: rawLocale, campaignId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const campaign = getPublicCampaign(campaignId, locale);
+  const campaign = await getPublicCampaignForLocale(campaignId, locale);
   if (!campaign) {
     notFound();
   }

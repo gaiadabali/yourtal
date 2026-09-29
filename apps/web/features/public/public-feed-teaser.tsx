@@ -69,12 +69,20 @@ export function PublicFeedTeaser({
             </span>
           </div>
           <div className="pointer-events-auto absolute inset-x-3 bottom-3 flex flex-col gap-2">
-            <span className="line-clamp-2 font-display text-title font-bold text-balance text-white [text-shadow:0_1px_3px_rgb(0_0_0_/_0.7)]">
-              {item.title}
-            </span>
-            <span className="text-body-sm text-white/90 [text-shadow:0_1px_2px_rgb(0_0_0_/_0.6)]">
-              {item.termsLabel}
-            </span>
+            {/* Opens the real campaign page (`/[locale]/c/[campaignId]`) —
+                the terms and full facts live there; this teaser only ever
+                plays muted and never earns. A separate `<a>`, not nested
+                inside the sign-up link below, and stacked above
+                `VerticalFeedVideo`'s own play/pause hit target by DOM order
+                so a tap here opens the page rather than toggling playback. */}
+            <a href={item.href} className="flex flex-col gap-1 no-underline">
+              <span className="line-clamp-2 font-display text-title font-bold text-balance text-white [text-shadow:0_1px_3px_rgb(0_0_0_/_0.7)]">
+                {item.title}
+              </span>
+              <span className="text-body-sm text-white/90 [text-shadow:0_1px_2px_rgb(0_0_0_/_0.6)]">
+                {item.termsLabel}
+              </span>
+            </a>
             <a
               href={signUpHref}
               className="inline-flex h-9 w-fit items-center justify-center rounded-pill bg-accent px-4 text-label font-sans font-bold text-fg-on-accent"

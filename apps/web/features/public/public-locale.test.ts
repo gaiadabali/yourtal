@@ -4,6 +4,7 @@ import {
   isPublicLocale,
   publicLanguageAlternates,
   publicLocaleConfig,
+  publicLocaleRegion,
   publicUrl,
   requirePublicLocale,
   siteUrl,
@@ -35,6 +36,13 @@ describe("publicLocaleConfig", () => {
       currency: "AUD",
       countryName: "Australia",
     });
+  });
+});
+
+describe("publicLocaleRegion (11.2.a)", () => {
+  it("maps au to AU and id to ID", () => {
+    expect(publicLocaleRegion("au")).toBe("AU");
+    expect(publicLocaleRegion("id")).toBe("ID");
   });
 });
 

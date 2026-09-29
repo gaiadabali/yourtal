@@ -67,17 +67,21 @@ export function ViewerShell({
   signedOut,
   children,
 }: ViewerShellProps) {
+  // Built as spreads, not `prop={signedOut?.x}`: `exactOptionalPropertyTypes`
+  // treats an explicitly-assigned `undefined` as different from an omitted
+  // key, so an inline `| undefined` value fails the optional prop's own
+  // type even though the prop is optional (TopBar/SideNav/BottomNav's own
+  // `signedOutHrefs?`/`homeHref?`). Omitting the key entirely when there is
+  // no `signedOut` is what those types actually ask for.
+  const topBarSignedOutProps = signedOut
+    ? { homeHref: signedOut.homeHref, signedOutCta: { href: signedOut.signUpHref, label: signedOut.signUpLabel } }
+    : {};
+  const navSignedOutProps = signedOut ? { signedOutHrefs: signedOut.hrefs } : {};
+
   return (
     <div data-surface="viewer" data-theme={theme} className="min-h-dvh bg-canvas text-fg">
-      <TopBar
-        locale={locale}
-        availablePoints={availablePoints}
-        homeHref={signedOut?.homeHref}
-        signedOutCta={
-          signedOut ? { href: signedOut.signUpHref, label: signedOut.signUpLabel } : undefined
-        }
-      />
-      <SideNav locale={locale} signedOutHrefs={signedOut?.hrefs} />
+      <TopBar locale={locale} availablePoints={availablePoints} {...topBarSignedOutProps} />
+      <SideNav locale={locale} {...navSignedOutProps} />
       <main
         className={cn(
           "min-h-dvh pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",
@@ -86,7 +90,7 @@ export function ViewerShell({
       >
         {children}
       </main>
-      <BottomNav locale={locale} signedOutHrefs={signedOut?.hrefs} />
+      <BottomNav locale={locale} {...navSignedOutProps} />
     </div>
   );
 }

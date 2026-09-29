@@ -36,6 +36,13 @@ export interface SessionForOptions {
   readonly jurisdiction?: "AU" | "ID";
   /** Defaults to an obviously-adult date of birth — pass a recent one to test the age policy. */
   readonly dateOfBirth?: string;
+  /**
+   * Required by `AuthService.register` when `dateOfBirth` is 13-17 and
+   * `TEEN_ACCOUNTS` is on (1.4.b/12.1.a) — a caller registering a teen fixture
+   * must pass one, or `POST /api/auth/register` refuses with
+   * `guardian_email_required`. Ignored for an adult date of birth.
+   */
+  readonly guardianEmail?: string;
 }
 
 /** en-AU for AU, id-ID for ID — same pairing `RegionConfig` in `@yourtal/contracts/region` uses. */
@@ -82,6 +89,7 @@ export async function sessionFor(
       displayName: "Session For",
       dateOfBirth,
       timezone: "Australia/Sydney",
+      ...(options.guardianEmail === undefined ? {} : { guardianEmail: options.guardianEmail }),
     },
   });
   if (registered.statusCode >= 400) {

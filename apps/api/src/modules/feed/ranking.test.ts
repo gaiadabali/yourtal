@@ -150,6 +150,16 @@ describe("buildFeed", () => {
     expect(items[0]?.why).toContain("follow");
   });
 
+  it("12.2.a: ranks a teen-audience campaign above an equivalent all_ages one for a teen viewer", () => {
+    const teenItem = candidate({ campaign: campaign({ audience: "teen" }) });
+    const allAgesItem = candidate({ campaign: campaign({ audience: "all_ages" }) });
+    const ctx = baseContext({ audiences: ["all_ages", "teen"], ageBand: "teen" });
+
+    const items = buildFeed([allAgesItem, teenItem], ctx);
+    expect(items[0]?.campaignId).toBe(teenItem.campaign.id);
+    expect(items[0]?.whyReason).toBe("audience");
+  });
+
   it("does not boost a matching declared interest without consent, even above the segment floor", () => {
     const category = "food-and-drink";
     const matching = candidate({ campaign: campaign({ contentCategory: category }) });

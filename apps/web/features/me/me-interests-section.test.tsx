@@ -19,7 +19,7 @@ function renderWithIntl(ui: React.ReactElement) {
 
 describe("MeInterestsSection", () => {
   it("renders every real taxonomy root category and reflects the initial selection", () => {
-    renderWithIntl(<MeInterestsSection initialNodeIds={["travel"]} />);
+    renderWithIntl(<MeInterestsSection initialNodeIds={["travel"]} ageBand="adult" />);
     expect(screen.getByRole("checkbox", { name: "Travel" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Food and drink" })).not.toBeChecked();
     expect(screen.getByText("1 selected")).toBeInTheDocument();
@@ -31,10 +31,20 @@ describe("MeInterestsSection", () => {
       data: { nodeIds: ["travel", "fashion"] },
     });
     const user = userEvent.setup();
-    renderWithIntl(<MeInterestsSection initialNodeIds={["travel"]} />);
+    renderWithIntl(<MeInterestsSection initialNodeIds={["travel"]} ageBand="adult" />);
 
     await user.click(screen.getByRole("checkbox", { name: "Fashion" }));
 
     expect(updateInterestsAction).toHaveBeenCalledWith(["travel", "fashion"]);
+  });
+
+  // 12.2.a: a teen sees only the six teen-relevant leaf nodes, never an
+  // adult root like "Food and drink" or "Travel".
+  it("offers only the teen allowlist for a teen account", () => {
+    renderWithIntl(<MeInterestsSection initialNodeIds={["games"]} ageBand="teen" />);
+    expect(screen.getByRole("checkbox", { name: "Games" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Books" })).not.toBeChecked();
+    expect(screen.queryByRole("checkbox", { name: "Food and drink" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Travel" })).not.toBeInTheDocument();
   });
 });

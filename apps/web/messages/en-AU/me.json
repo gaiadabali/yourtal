@@ -51,7 +51,13 @@
       "entertainment": "Entertainment",
       "family": "Family",
       "services": "Services",
-      "digital-goods": "Digital goods"
+      "digital-goods": "Digital goods",
+      "games": "Games",
+      "books": "Books",
+      "school-supplies": "School supplies",
+      "sportswear": "Sportswear",
+      "streaming": "Streaming",
+      "cinema": "Cinema"
     }
   },
   "follows": {
@@ -113,5 +119,10 @@
   },
   "logout": {
     "cta": "Log out"
+  },
+  "teenCap": {
+    "heading": "Today's points",
+    "intro": "A friendly cap keeps earning balanced -- it resets every day.",
+    "progress": "{earned} of {cap} pts earned today"
   }
 }

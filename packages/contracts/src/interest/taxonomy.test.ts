@@ -15,7 +15,9 @@ import {
   INTEREST_TAXONOMY,
   INTEREST_TAXONOMY_VERSION,
   isKnownInterestNode,
+  isTeenInterestNode,
   SensitiveInterestNodeError,
+  TEEN_INTEREST_NODE_IDS,
 } from "./taxonomy";
 
 describe("the taxonomy loads and is well formed", () => {
@@ -111,6 +113,22 @@ describe("malformed trees are rejected at construction", () => {
     expect(() =>
       defineTaxonomy([{ id: "child", label: "Child", parent: "parent-declared-later" }]),
     ).toThrow(/not declared before it/u);
+  });
+});
+
+describe("TASKS.md 12.2.a's teen interest allowlist", () => {
+  it("every teen node id names a real, known node", () => {
+    for (const id of TEEN_INTEREST_NODE_IDS) {
+      expect(isKnownInterestNode(id)).toBe(true);
+    }
+  });
+
+  it("isTeenInterestNode agrees with the list, and refuses everything else", () => {
+    for (const id of TEEN_INTEREST_NODE_IDS) {
+      expect(isTeenInterestNode(id)).toBe(true);
+    }
+    expect(isTeenInterestNode("travel")).toBe(false);
+    expect(isTeenInterestNode("finance")).toBe(false);
   });
 });
 

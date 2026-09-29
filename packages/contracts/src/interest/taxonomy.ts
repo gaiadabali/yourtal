@@ -258,3 +258,24 @@ export function ancestorsOf(nodeId: string): readonly string[] {
 export function isKnownInterestNode(nodeId: string): boolean {
   return INTEREST_TAXONOMY.has(nodeId);
 }
+
+/**
+ * TASKS.md 12.2.a: the only nodes a teen account may declare or be offered
+ * on Me's interest picker -- games, books, school supplies, sportswear,
+ * streaming, cinema, TASKS.md's own list, mapped onto real leaf ids in the
+ * taxonomy above rather than a second hand-written list. Every id here is
+ * asserted to exist by `taxonomy.test.ts`, so a future rename of one of
+ * these nodes fails a test rather than quietly emptying a teen's picker.
+ */
+export const TEEN_INTEREST_NODE_IDS = [
+  "games",
+  "books",
+  "school-supplies",
+  "sportswear",
+  "streaming",
+  "cinema",
+] as const;
+
+export function isTeenInterestNode(nodeId: string): boolean {
+  return (TEEN_INTEREST_NODE_IDS as readonly string[]).includes(nodeId);
+}

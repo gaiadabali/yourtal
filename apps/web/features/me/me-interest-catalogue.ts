@@ -1,6 +1,10 @@
 import {
+  Backpack,
   Baby,
+  BookOpen,
   Car,
+  Clapperboard,
+  Dumbbell,
   Film,
   GraduationCap,
   Gamepad2,
@@ -10,13 +14,14 @@ import {
   Smartphone,
   Sparkles,
   Trophy,
+  Tv,
   UtensilsCrossed,
   Wallet,
   Wifi,
   Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { INTEREST_TAXONOMY } from "@yourtal/contracts/interest/taxonomy";
+import { INTEREST_TAXONOMY, TEEN_INTEREST_NODE_IDS } from "@yourtal/contracts/interest/taxonomy";
 
 /**
  * The interest picker on Me shows the taxonomy's ROOT categories only
@@ -66,3 +71,28 @@ export const ME_INTEREST_CATEGORIES: readonly MeInterestCategory[] = [...INTERES
     fallbackLabel: node.label,
     icon: ICONS[node.id] ?? Sparkles,
   }));
+
+const TEEN_ICONS: Record<string, LucideIcon> = {
+  games: Gamepad2,
+  books: BookOpen,
+  "school-supplies": Backpack,
+  sportswear: Dumbbell,
+  streaming: Tv,
+  cinema: Clapperboard,
+};
+
+/**
+ * 12.2.a: a teen's picker offers ONLY these six leaf nodes, never the adult
+ * picker's ~15 roots — `TEEN_INTEREST_NODE_IDS` is the taxonomy's own list
+ * (`packages/contracts`), so this stays derived rather than a second
+ * hand-duplicated set. `interests.controller.ts`'s `PUT` refuses anything
+ * else for a teen regardless, the same "the UI offers, the server decides"
+ * shape `ME_INTEREST_CATEGORIES` already follows for `isKnownInterestNode`.
+ */
+export const ME_TEEN_INTEREST_CATEGORIES: readonly MeInterestCategory[] = TEEN_INTEREST_NODE_IDS.map(
+  (id) => {
+    const node = INTEREST_TAXONOMY.get(id);
+    if (node === undefined) throw new Error(`Teen interest node "${id}" is not in the taxonomy.`);
+    return { id: node.id, fallbackLabel: node.label, icon: TEEN_ICONS[node.id] ?? Sparkles };
+  },
+);

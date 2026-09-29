@@ -51,7 +51,13 @@
       "entertainment": "Hiburan",
       "family": "Keluarga",
       "services": "Layanan",
-      "digital-goods": "Barang digital"
+      "digital-goods": "Barang digital",
+      "games": "Gim",
+      "books": "Buku",
+      "school-supplies": "Perlengkapan sekolah",
+      "sportswear": "Pakaian olahraga",
+      "streaming": "Streaming",
+      "cinema": "Bioskop"
     }
   },
   "follows": {
@@ -113,5 +119,10 @@
   },
   "logout": {
     "cta": "Keluar"
+  },
+  "teenCap": {
+    "heading": "Poin hari ini",
+    "intro": "Batas harian yang ramah menjaga perolehan tetap seimbang -- direset setiap hari.",
+    "progress": "{earned} dari {cap} poin diperoleh hari ini"
   }
 }

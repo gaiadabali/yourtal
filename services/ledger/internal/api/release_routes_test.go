@@ -49,7 +49,7 @@ func TestReleasedGrantsAreListedUntilAcknowledged(t *testing.T) {
 			GrantID string `json:"grantId"`
 		}
 		s.mustCall("/actions/grants", map[string]any{"kind": "streak", "userId": uuid(), "region": "AU",
-			"points": 40, "trustTier": tier, "idempotencyKey": unique("streak")}, &g)
+			"points": 40, "trustTier": tier, "idempotencyKey": unique("streak"), "ageBand": "adult"}, &g)
 		return g.GrantID
 	}
 	held, immediate := grant(0), grant(3)

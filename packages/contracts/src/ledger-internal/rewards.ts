@@ -9,6 +9,21 @@ export const trustTierSchema = z.union([z.literal(0), z.literal(1), z.literal(2)
 export type TrustTier = z.infer<typeof trustTierSchema>;
 
 /**
+ * 12.1.c: F12's teen earn cap needs the principal's real age band on every
+ * grant. `services/ledger` refuses a grant whose `ageBand` is missing or not
+ * one of these two values — an unknown age must never fall back to the
+ * (larger) adult cap. Optional here (not on the Go side — see
+ * `earning_routes.go`'s `ageBandFor`): a caller like
+ * `watch.controller.ts`/`streak.service.ts` never sets this field itself,
+ * because `apps/api/src/shared/ledger-client`'s enrichment layer derives it
+ * from the user's own profile date of birth and sets it centrally, on every
+ * `grantReward`/`grantAction`, before the request reaches the wire — the
+ * server owns the truth, never a caller further up.
+ */
+export const ageBandSchema = z.enum(["teen", "adult"]);
+export type AgeBand = z.infer<typeof ageBandSchema>;
+
+/**
  * F12 default holdback hours, indexed by trust tier — 72/48/24/0. A fixed
  * constant here until 1.2.f's `platform.region_setting` makes it a per-region
  * value `ledger-internal.getSettings` can read instead (that task is a
@@ -51,6 +66,7 @@ export const grantRewardRequestSchema = z.object({
   /** The reward session's hold (`hold` at session start), which this grant consumes (4.4.e). */
   holdId: z.string().min(1).optional(),
   attestation: rewardAttestationSchema,
+  ageBand: ageBandSchema.optional(),
 });
 export type GrantRewardRequest = z.infer<typeof grantRewardRequestSchema>;
 
@@ -62,6 +78,7 @@ export const grantActionRequestSchema = z.object({
   points: pointsSchema,
   trustTier: trustTierSchema,
   idempotencyKey: z.string().min(1),
+  ageBand: ageBandSchema.optional(),
 });
 export type GrantActionRequest = z.infer<typeof grantActionRequestSchema>;
 

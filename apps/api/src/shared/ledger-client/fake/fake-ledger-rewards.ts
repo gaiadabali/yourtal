@@ -8,15 +8,67 @@ import { toPoints } from "@yourtal/contracts/money";
 import type { Points } from "@yourtal/contracts/money";
 import {
   DEFAULT_HOLDBACK_HOURS_BY_TIER,
+  type AgeBand,
   type Burn,
   type BurnForVoucherRequest,
   type Grant,
   type GrantActionRequest,
   type GrantRewardRequest,
 } from "@yourtal/contracts/ledger-internal/rewards";
+import { REGION_TIMEZONE } from "@yourtal/contracts/me/streak";
 import type { AppDb } from "../../persistence/drizzle-client";
 import { LedgerNotFoundError } from "../ledger-not-found";
 import { availablePoints } from "./fake-ledger-balance";
+
+/**
+ * 12.1.c: the teen half of F12's earn cap, so fake-mode e2e refuses a
+ * teen's grant the same way the real Go ledger's `reward.Engine.checkCaps`
+ * does. Deliberately narrow — the fake has never enforced the ADULT daily
+ * or monthly caps either (a pre-existing gap this task did not open), so
+ * this checks only `ageBand === "teen"` against `teen_daily_earn_cap`, read
+ * with a direct query rather than through `DrizzleRegionSettingsReader`:
+ * `grantAction`'s own check must run inside its transaction (`tx`, not the
+ * outer `db` that class is typed for), so plain SQL avoids a type mismatch
+ * for one query in exchange for a second copy of "read the current
+ * setting" (the same shape `apps/worker`'s `streak-backstop.ts` already
+ * accepts for the same reason).
+ */
+async function teenCapRefusal(
+  executor: Pick<AppDb, "execute">,
+  request: { userId: string; region: "AU" | "ID"; points: number; ageBand?: AgeBand | undefined },
+): Promise<LedgerError | null> {
+  if (request.ageBand !== "teen") return null;
+
+  const capRows = await executor.execute<{ value: unknown }>(sql`
+    SELECT value FROM platform.region_setting
+     WHERE region = ${request.region} AND key = 'teen_daily_earn_cap'
+       AND approved_by IS NOT NULL AND effective_from <= now()
+     ORDER BY effective_from DESC LIMIT 1
+  `);
+  const cap = capRows.rows[0]?.value;
+  if (typeof cap !== "number") {
+    return ledgerError(
+      "velocity_capped",
+      `no teen_daily_earn_cap is configured for ${request.region}`,
+    );
+  }
+
+  const tz = REGION_TIMEZONE[request.region];
+  const earnedRows = await executor.execute<{ total: string }>(sql`
+    SELECT COALESCE(SUM(points), 0) AS total
+      FROM platform.ledger_fake_grant
+     WHERE user_id = ${request.userId} AND region = ${request.region}
+       AND granted_at >= (date_trunc('day', now() AT TIME ZONE ${tz})) AT TIME ZONE ${tz}
+  `);
+  const earned = Number(earnedRows.rows[0]?.total ?? 0);
+  if (earned + request.points > cap) {
+    return ledgerError(
+      "velocity_capped",
+      `${String(earned)} + ${String(request.points)} over the teen daily cap of ${String(cap)} for ${request.region}`,
+    );
+  }
+  return null;
+}
 
 type GrantRow = {
   readonly id: string;
@@ -51,6 +103,7 @@ async function insertGrant(
     points: Points;
     trustTier: 0 | 1 | 2 | 3;
     idempotencyKey: string;
+    ageBand?: AgeBand | undefined;
   },
 ): Promise<Result<Grant, LedgerError>> {
   const existing = await db.execute<GrantRow>(sql`
@@ -73,6 +126,14 @@ async function insertGrant(
     }
     return ok(toGrant(prior));
   }
+
+  const refusal = await teenCapRefusal(db, {
+    userId: request.userId,
+    region: request.region as "AU" | "ID",
+    points: request.points,
+    ageBand: request.ageBand,
+  });
+  if (refusal !== null) return err(refusal);
 
   const id = randomUUID();
   const holdbackHours = DEFAULT_HOLDBACK_HOURS_BY_TIER[request.trustTier];
@@ -145,6 +206,14 @@ export function grantAction(
         }
         return ok(toGrant(prior));
       }
+
+      const refusal = await teenCapRefusal(tx, {
+        userId: request.userId,
+        region: request.region,
+        points: request.points,
+        ageBand: request.ageBand,
+      });
+      if (refusal !== null) return err(refusal);
 
       const rateRows = await tx.execute<{ backing_rate_micros_per_pt: string }>(sql`
         SELECT backing_rate_micros_per_pt FROM platform.ledger_fake_backing_rate

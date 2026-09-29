@@ -112,6 +112,7 @@ func (e *Engine) campaignGrant(ctx context.Context, req RewardRequest) (GrantReq
 		IdempotencyKey: req.IdempotencyKey, def: &def, completion: &c,
 		campaignMax:      config.MaxPointsForCampaign,
 		TimingSuspicious: req.TimingSuspicious,
+		AgeBand:          req.AgeBand,
 	}, nil
 }
 

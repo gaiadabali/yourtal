@@ -54,7 +54,7 @@ func (s *server) fundPendingGrant(t *testing.T, points int) string {
 		"points": 10_000, "paidMinor": 45_000, "idempotencyKey": unique("buy")}, nil)
 	user := uuid()
 	s.mustCall("/actions/grants", map[string]any{"kind": "goodwill", "userId": user, "region": "AU",
-		"points": points, "trustTier": 0, "idempotencyKey": unique("goodwill")}, nil)
+		"points": points, "trustTier": 0, "idempotencyKey": unique("goodwill"), "ageBand": "adult"}, nil)
 	return user
 }
 
@@ -146,7 +146,7 @@ func TestAdvanceHoldbackSkipsAUserWithHeldEscrow(t *testing.T) {
 	user := s.fundPendingGrant(t, 50)
 	// A tier-3 (no holdback) grant funds something to escrow.
 	s.mustCall("/actions/grants", map[string]any{"kind": "goodwill", "userId": user, "region": "AU",
-		"points": 10, "trustTier": 3, "idempotencyKey": unique("goodwill")}, nil)
+		"points": 10, "trustTier": 3, "idempotencyKey": unique("goodwill"), "ageBand": "adult"}, nil)
 
 	var held struct {
 		EscrowID string `json:"escrowId"`

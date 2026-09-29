@@ -38,6 +38,7 @@ func (a *API) grantReward(w http.ResponseWriter, r *http.Request) {
 		TrustTier      int    `json:"trustTier"`
 		IdempotencyKey string `json:"idempotencyKey"`
 		HoldID         string `json:"holdId,omitempty"`
+		AgeBand        string `json:"ageBand"`
 		Attestation    struct {
 			SessionID    string `json:"sessionId"`
 			TermsVersion int    `json:"termsVersion"`
@@ -54,6 +55,10 @@ func (a *API) grantReward(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	ageBand, ok := a.ageBandFor(w, body.AgeBand)
+	if !ok {
+		return
+	}
 	completedAt, err := time.Parse(time.RFC3339, body.Attestation.CompletedAt)
 	if err != nil {
 		a.fail(w, fmt.Errorf("%w: attestation.completedAt is not RFC3339", errBadRequest))
@@ -61,7 +66,7 @@ func (a *API) grantReward(w http.ResponseWriter, r *http.Request) {
 	}
 	granted, err := engine.GrantReward(r.Context(), reward.RewardRequest{
 		CampaignID: body.CampaignID, UserID: body.UserID, Points: body.Points, TrustTier: body.TrustTier,
-		IdempotencyKey: body.IdempotencyKey, HoldID: body.HoldID,
+		IdempotencyKey: body.IdempotencyKey, HoldID: body.HoldID, AgeBand: ageBand,
 		Completion: attest.Completion{
 			SessionID: body.Attestation.SessionID, UserID: body.UserID, CampaignID: body.CampaignID,
 			TermsVersion: body.Attestation.TermsVersion, CompletedAt: completedAt,
@@ -84,6 +89,7 @@ func (a *API) grantAction(w http.ResponseWriter, r *http.Request) {
 		Points         int64  `json:"points"`
 		TrustTier      int    `json:"trustTier"`
 		IdempotencyKey string `json:"idempotencyKey"`
+		AgeBand        string `json:"ageBand"`
 	}
 	if !a.decode(w, r, &body) {
 		return
@@ -92,15 +98,34 @@ func (a *API) grantAction(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	ageBand, ok := a.ageBandFor(w, body.AgeBand)
+	if !ok {
+		return
+	}
 	granted, err := engine.GrantAction(r.Context(), reward.ActionRequest{
 		Kind: body.Kind, UserID: body.UserID, Points: body.Points, TrustTier: body.TrustTier,
-		IdempotencyKey: body.IdempotencyKey,
+		IdempotencyKey: body.IdempotencyKey, AgeBand: ageBand,
 	})
 	if err != nil {
 		a.fail(w, err)
 		return
 	}
 	httpx.WriteJSON(w, a.logger, http.StatusOK, grantView(body.Kind, body.UserID, granted))
+}
+
+// ageBandFor validates 12.1.c's required ageBand field: "teen" or "adult",
+// nothing else. Refused rather than defaulted — an absent or malformed value
+// must never quietly become the (larger) adult cap, which is exactly what a
+// teen account spoofing this field would be trying to reach.
+func (a *API) ageBandFor(w http.ResponseWriter, value string) (reward.AgeBand, bool) {
+	switch reward.AgeBand(value) {
+	case reward.AgeBandTeen, reward.AgeBandAdult:
+		return reward.AgeBand(value), true
+	default:
+		httpx.WriteError(w, a.logger, http.StatusBadRequest, "invalid_request_error", "unknown_age_band",
+			"ageBand must be teen or adult")
+		return "", false
+	}
 }
 
 func burnView(b burn.Burn) map[string]any {

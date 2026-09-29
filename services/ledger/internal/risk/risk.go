@@ -5,7 +5,9 @@
 // The daily and monthly earn caps are NOT this package's job — those are
 // already enforced live from platform.region_setting by
 // reward.Engine.checkCaps (9.5.e), independently of whatever this gate
-// decides.
+// decides. That includes the teen half of the cap (12.1.c): checkCaps reads
+// RiskCheck.AgeBand's own copy of GrantRequest.AgeBand, not anything this
+// gate computes.
 //
 // A flag is written to ledger.risk_flag whenever a signal fires (10.4.b).
 // The severe case ("block") also refuses the grant AND auto-holds the

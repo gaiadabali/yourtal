@@ -19,10 +19,14 @@ var (
 )
 
 // Caps are a region's earn caps in points (F12): per calendar day and per
-// calendar month on the region's clock.
+// calendar month on the region's clock. TeenDailyPoints is F12's teen half
+// of DailyPoints, stored explicitly rather than derived (the migration's own
+// comment on teen_daily_earn_cap) — see effectiveCaps for how it and
+// MonthlyPoints combine into the teen ceiling (12.1.c).
 type Caps struct {
-	DailyPoints   int64
-	MonthlyPoints int64
+	DailyPoints     int64
+	MonthlyPoints   int64
+	TeenDailyPoints int64
 }
 
 // Caps reads the region's approved earn caps from platform.ledger_setting
@@ -33,7 +37,11 @@ func (e *Engine) Caps(ctx context.Context) (Caps, error) {
 	}
 	reader := settings.New(e.pool)
 	var caps Caps
-	for key, dst := range map[string]*int64{"daily_earn_cap": &caps.DailyPoints, "monthly_earn_cap": &caps.MonthlyPoints} {
+	fields := map[string]*int64{
+		"daily_earn_cap": &caps.DailyPoints, "monthly_earn_cap": &caps.MonthlyPoints,
+		"teen_daily_earn_cap": &caps.TeenDailyPoints,
+	}
+	for key, dst := range fields {
 		raw, err := reader.Get(ctx, string(e.region), key)
 		if err != nil {
 			return Caps{}, err
@@ -46,6 +54,23 @@ func (e *Engine) Caps(ctx context.Context) (Caps, error) {
 		}
 	}
 	return caps, nil
+}
+
+// effectiveCaps (12.1.c) is the daily/monthly ceiling AgeBand actually gets:
+// an adult gets the region's own caps unchanged. A teen gets the region's
+// teen_daily_earn_cap as their daily ceiling, and — since there is no
+// separate teen monthly key (F12 only defines the daily half) — a monthly
+// ceiling of 30x that teen daily cap, floored by the adult monthly cap so a
+// teen is never MORE generous than an adult would be.
+func effectiveCaps(caps Caps, ageBand AgeBand) (daily, monthly int64) {
+	if ageBand != AgeBandTeen {
+		return caps.DailyPoints, caps.MonthlyPoints
+	}
+	teenMonthly := caps.TeenDailyPoints * 30
+	if teenMonthly > caps.MonthlyPoints {
+		teenMonthly = caps.MonthlyPoints
+	}
+	return caps.TeenDailyPoints, teenMonthly
 }
 
 // WithCaps fixes the engine's caps instead of reading them. Tests only.
@@ -89,10 +114,11 @@ func (e *Engine) checkCaps(ctx context.Context, q *sqlcgen.Queries, req GrantReq
 		}
 	}
 
+	dailyLimit, monthlyLimit := effectiveCaps(caps, req.AgeBand)
 	for _, period := range []struct {
 		name  string
 		limit int64
-	}{{"day", caps.DailyPoints}, {"month", caps.MonthlyPoints}} {
+	}{{"day", dailyLimit}, {"month", monthlyLimit}} {
 		earned, err := q.SumPointsEarnedThisPeriod(ctx, sqlcgen.SumPointsEarnedThisPeriodParams{
 			UserID: req.UserID, Period: period.name, Tz: e.region.TimeZone(),
 		})

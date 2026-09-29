@@ -211,6 +211,7 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
 
   // --- ledger-internal: earning and spending ---
   trustTierSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  ageBandSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   grantKindSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   grantRewardRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   rewardAttestationSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

@@ -194,7 +194,7 @@ func TestTheLedgerRoutesEndToEnd(t *testing.T) {
 		completion := attest.Completion{SessionID: unique("session"), UserID: user, CampaignID: campaign,
 			TermsVersion: terms, CompletedAt: time.Now().UTC().Truncate(time.Second)}
 		return map[string]any{"campaignId": campaign, "userId": user, "region": "ID", "points": 450,
-			"trustTier": 3, "idempotencyKey": key, "attestation": map[string]any{
+			"trustTier": 3, "idempotencyKey": key, "ageBand": "adult", "attestation": map[string]any{
 				"sessionId": completion.SessionID, "termsVersion": terms,
 				"completedAt": completion.CompletedAt.Format(time.RFC3339), "asked": 0, "correct": 0,
 				"signature": attest.Sign(attestationSecret, completion)}}

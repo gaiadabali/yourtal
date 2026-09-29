@@ -16,7 +16,7 @@ func TestEscrowRoundTrip(t *testing.T) {
 	user := uuid()
 	for _, tier := range []int{3, 0} {
 		s.mustCall("/actions/grants", map[string]any{"kind": "goodwill", "userId": user, "region": "AU",
-			"points": 100, "trustTier": tier, "idempotencyKey": unique("goodwill")}, nil)
+			"points": 100, "trustTier": tier, "idempotencyKey": unique("goodwill"), "ageBand": "adult"}, nil)
 	}
 
 	type escrowed struct {

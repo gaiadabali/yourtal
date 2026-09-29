@@ -59,6 +59,7 @@ describe("grantAction debits the region's marketing fund by exactly its backing 
       points: toPoints(points),
       trustTier: 3 as const,
       idempotencyKey,
+      ageBand: "adult" as const,
     };
 
     const grant = await grantAction(db, request);
@@ -89,6 +90,7 @@ describe("grantAction debits the region's marketing fund by exactly its backing 
       points: toPoints(10_000_000_000),
       trustTier: 3,
       idempotencyKey: randomUUID(),
+      ageBand: "adult",
     });
     expect(refused.isErr() && refused.error.code).toBe("insufficient_available");
 

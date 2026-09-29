@@ -255,6 +255,9 @@ function reward(campaign: PayingCampaign, userId: string, trustTier: 0 | 1 | 2 |
     points: toPoints(500),
     trustTier,
     idempotencyKey: randomUUID(),
+    // 12.1.c: none of these fixtures exercise the teen cap, so "adult" —
+    // the enriching ledger-client layer is what derives it for real callers.
+    ageBand: "adult" as const,
     attestation: signRewardAttestation(attestationSecret, {
       sessionId: randomUUID(),
       userId,
@@ -481,6 +484,7 @@ describe("earning and spending", () => {
           points: toPoints(100),
           trustTier: 3,
           idempotencyKey: randomUUID(),
+          ageBand: "adult",
         })
       ).isOk(),
     ).toBe(true);
@@ -501,6 +505,7 @@ describe("earning and spending", () => {
           points: toPoints(10),
           trustTier: 3,
           idempotencyKey,
+          ageBand: "adult",
         })
       ).isOk(),
     ).toBe(true);
@@ -511,6 +516,7 @@ describe("earning and spending", () => {
       points: toPoints(99),
       trustTier: 3,
       idempotencyKey,
+      ageBand: "adult",
     });
     expect(conflict._unsafeUnwrapErr().code).toBe("idempotency_conflict");
   });
@@ -526,6 +532,7 @@ describe("earning and spending", () => {
           points: toPoints(100),
           trustTier: 3,
           idempotencyKey: randomUUID(),
+          ageBand: "adult",
         })
       ).isOk(),
     ).toBe(true);
@@ -565,6 +572,7 @@ describe("earning and spending", () => {
           points: toPoints(100),
           trustTier: 3,
           idempotencyKey: randomUUID(),
+          ageBand: "adult",
         })
       ).isOk(),
     ).toBe(true);
@@ -610,6 +618,7 @@ describe("earning and spending", () => {
       points: toPoints(100),
       trustTier: 3,
       idempotencyKey: randomUUID(),
+      ageBand: "adult",
     });
     expect(withinFund.isOk()).toBe(true);
 
@@ -622,6 +631,7 @@ describe("earning and spending", () => {
       points: toPoints(1_000_000_000),
       trustTier: 3,
       idempotencyKey: randomUUID(),
+      ageBand: "adult",
     });
     expect(tooMuch._unsafeUnwrapErr().code).toBe("insufficient_available");
   });
@@ -660,6 +670,7 @@ describe("earning and spending", () => {
           points: toPoints(points),
           trustTier: 3,
           idempotencyKey: randomUUID(),
+          ageBand: "adult",
         })
       ).isOk(),
     ).toBe(true);
@@ -762,6 +773,7 @@ describe("users", () => {
         points: toPoints(trustTier === 3 ? 100 : 50),
         trustTier,
         idempotencyKey: randomUUID(),
+        ageBand: "adult",
       });
       expect(granted.isOk()).toBe(true);
     }
@@ -802,6 +814,7 @@ describe("users", () => {
           points: toPoints(100),
           trustTier: 3,
           idempotencyKey: randomUUID(),
+          ageBand: "adult",
         })
       ).isOk(),
     ).toBe(true);
@@ -997,6 +1010,7 @@ describe("dev/staging holdback (2.3.d/2.3.f)", () => {
       points: toPoints(40),
       trustTier: 0, // F12: 72h holdback, still pending
       idempotencyKey: randomUUID(),
+      ageBand: "adult",
     });
     expect(granted.isOk()).toBe(true);
     expect((await fake.balance(userId))._unsafeUnwrap().availablePoints).toBe(0);
@@ -1019,6 +1033,7 @@ describe("dev/staging holdback (2.3.d/2.3.f)", () => {
       points: toPoints(25),
       trustTier: 0, // 72h holdback
       idempotencyKey: randomUUID(),
+      ageBand: "adult",
     });
     expect(granted.isOk()).toBe(true);
 
@@ -1036,6 +1051,7 @@ describe("dev/staging holdback (2.3.d/2.3.f)", () => {
       points: toPoints(25),
       trustTier: 0, // 72h holdback
       idempotencyKey: randomUUID(),
+      ageBand: "adult",
     });
     expect(granted.isOk()).toBe(true);
 

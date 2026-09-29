@@ -61,6 +61,21 @@ type RiskGate interface {
 	Allow(ctx context.Context, check RiskCheck) (bool, error)
 }
 
+// AgeBand is 12.1.c's principal age band (F12: teens earn at half the adult
+// daily cap, and at 30x their OWN daily cap per month rather than the
+// adult's — see checkCaps). Carried on every grant request rather than
+// looked up here: this package holds no profile table, and never will (docs/18
+// §9 — the engine gets smarter only in its inputs). apps/api's ledger-client
+// layer derives it from the user's own date of birth and is the one place
+// trusted to set it; a caller-supplied value further up is never trusted
+// (12.1.c's "the server owns the truth").
+type AgeBand string
+
+const (
+	AgeBandAdult AgeBand = "adult"
+	AgeBandTeen  AgeBand = "teen"
+)
+
 // RiskCheck is everything a real gate needs to score one grant attempt.
 // AlwaysAllow ignores every field, which is exactly why it cannot be
 // mistaken for a real control in a stack trace or a wiring diagram.
@@ -77,6 +92,11 @@ type RiskCheck struct {
 	// caller that does not yet pass it — (requested by B): wire it from
 	// watch.controller.ts's own completion path into GrantRequest.
 	TimingSuspicious bool
+	// AgeBand: 12.1.c's spec asks that the risk gate sees it too, even
+	// though risk.Gate's own v1 thresholds (risk.go) do not yet vary by it —
+	// carried through so a future risk signal can, without a second plumbing
+	// pass.
+	AgeBand AgeBand
 }
 
 // AlwaysAllow is the placeholder gate. Still used wherever a test's subject
@@ -117,6 +137,12 @@ type GrantRequest struct {
 	// TimingSuspicious forwards to RiskCheck (10.4.a). False unless the
 	// caller has a real signal to give.
 	TimingSuspicious bool
+	// AgeBand (12.1.c) picks the daily/monthly earn cap in checkCaps and
+	// forwards to RiskCheck. Required by the contract's own grantReward/
+	// grantAction handlers (earning_routes.go) — refused there rather than
+	// defaulted, so an unknown age can never fall back to the (larger)
+	// adult cap.
+	AgeBand AgeBand
 
 	// def replaces the taxonomy entry, for the contract's grants whose
 	// points are set per request (GrantReward, GrantAction).
@@ -199,6 +225,7 @@ func (e *Engine) Grant(ctx context.Context, req GrantRequest) (GrantResult, erro
 	allowed, err := e.risk.Allow(ctx, RiskCheck{
 		UserID: req.UserID, Action: req.Action, Region: e.region,
 		DeviceID: req.DeviceID, IPAddress: req.IPAddress, TimingSuspicious: req.TimingSuspicious,
+		AgeBand: req.AgeBand,
 	})
 	if err != nil {
 		return GrantResult{}, fmt.Errorf("risk gate: %w", err)

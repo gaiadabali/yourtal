@@ -236,6 +236,27 @@ func (n *Network) Capture(
 		remaining, state := afterCapture(
 			voucher.PartialRedemptionPolicy, voucher.RemainingValueMinor, finalAmountMinor)
 
+		// 10.1.a: the ledger owes the merchant at S (the batch's settlement
+		// value), never at the voucher's face value — a burn only ever put S
+		// into voucher_liability (burn.go's BurnLiability), so paying out the
+		// full face value on a discounted voucher would debit that account
+		// past zero. payableMinor is this capture's SHARE of
+		// ceil(S × captured ÷ face value), found by telescoping (this
+		// capture's cumulative share minus the share already paid for prior
+		// captures on the same voucher) rather than scaling this capture's
+		// own amount in isolation: that is what "capped so the total never
+		// exceeds S" means for a balance-carrying voucher captured more than
+		// once, and for the ordinary one-shot capture it reduces to exactly
+		// F12's "ceil(S × captured ÷ face value)", since capturedBefore = 0.
+		batch, err := queries.GetBatch(ctx, voucher.BatchID)
+		if err != nil {
+			return fmt.Errorf("reading the voucher's batch for its settlement value: %w", err)
+		}
+		capturedBefore := voucher.FaceValueMinor - voucher.RemainingValueMinor
+		capturedAfter := voucher.FaceValueMinor - remaining
+		payableMinor := ceilShare(batch.SettlementValueMinor, capturedAfter, voucher.FaceValueMinor) -
+			ceilShare(batch.SettlementValueMinor, capturedBefore, voucher.FaceValueMinor)
+
 		if _, err := issue.Move(ctx, queries, issue.MoveRequest{
 			VoucherID:      asUUID(voucher.ID),
 			From:           lifecycle.Held,
@@ -255,14 +276,24 @@ func (n *Network) Capture(
 			return err
 		}
 
-		// 4.6.f: the outbox row, in the SAME transaction as the capture —
-		// see the migration's own comment for why. internal/ledgerpost
-		// posts it to the ledger keyed on capture_id (4.6.f.2).
-		if err := queries.InsertCaptureOutbox(ctx, sqlcgen.InsertCaptureOutboxParams{
-			CaptureID: row.ID, Region: voucher.Region, MerchantID: pgUUID(merchantID),
-			AmountMinor: finalAmountMinor, Currency: authorization.Currency,
-		}); err != nil {
-			return fmt.Errorf("recording the capture outbox row: %w", err)
+		// 4.6.f/10.1.a: the outbox row, in the SAME transaction as the
+		// capture — see the migration's own comment for why. internal/
+		// ledgerpost posts it to the ledger keyed on capture_id (4.6.f.2),
+		// at payableMinor, not finalAmountMinor (that stays the merchant's
+		// own webhook figure below). payableMinor is 0 only when this
+		// capture's telescoped share rounds to nothing yet (a very fine
+		// partial draw against a heavily discounted voucher) — the next
+		// capture on the same voucher folds it in, via capturedBefore, so
+		// skipping the row here loses nothing: there would be nothing to
+		// post and the outbox's own CHECK (amount_minor > 0) refuses a zero
+		// row anyway.
+		if payableMinor > 0 {
+			if err := queries.InsertCaptureOutbox(ctx, sqlcgen.InsertCaptureOutboxParams{
+				CaptureID: row.ID, Region: voucher.Region, MerchantID: pgUUID(merchantID),
+				AmountMinor: payableMinor, Currency: authorization.Currency,
+			}); err != nil {
+				return fmt.Errorf("recording the capture outbox row: %w", err)
+			}
 		}
 
 		// 8.3.e: the business's own webhook outbox row, same transaction.
@@ -334,6 +365,19 @@ func afterCapture(policy string, remaining, captured int64) (int64, lifecycle.St
 		// single_use_forfeit and minimum_spend both consume the voucher.
 		return 0, lifecycle.Redeemed
 	}
+}
+
+// ceilShare is F12's "ceil(S × captured ÷ face value)": the platform's
+// share of a voucher's settlement value S owed once `captured` of its
+// `faceValueMinor` has been drawn down. faceValueMinor is always > 0 (the
+// listing and batch both enforce it); captured is always in [0,
+// faceValueMinor], so the result is always in [0, settlementMinor].
+func ceilShare(settlementMinor, captured, faceValueMinor int64) int64 {
+	if captured <= 0 {
+		return 0
+	}
+	product := settlementMinor * captured
+	return (product + faceValueMinor - 1) / faceValueMinor
 }
 
 func ptr[T any](v T) *T { return &v }

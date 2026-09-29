@@ -52,17 +52,24 @@ import type {
   ApproveRateRequest,
   ApprovePayoutRequest,
   Coverage,
+  DisputeStatementRequest,
   EconomyDailyRequest,
   EconomyDayRow,
   FundMarketingRequest,
   ProposeRateRequest,
   RateProposal,
+  ReleaseVoucherLiabilityRequest,
+  ResolveStatementDisputeRequest,
+  Statement,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
 import type {
+  CaptureRecoveryPosting,
   CapturePosting,
   CaptureVoucherRequest,
+  RecoverCaptureRequest,
 } from "@yourtal/contracts/ledger-internal/capture";
+import type { ProvedDay } from "@yourtal/contracts/ledger-internal/proof";
 import type { Region } from "@yourtal/contracts/region";
 import type {
   ApproveSettingInput,
@@ -278,12 +285,42 @@ export class HttpLedgerClient implements LedgerInternalClient {
     return this.post("/v1/economy/marketing/fund", request);
   }
 
-  statements(request: StatementsRequest): ResultAsync<never, LedgerError> {
+  statements(request: StatementsRequest): ResultAsync<readonly Statement[], LedgerError> {
     return this.post("/v1/economy/statements", request);
   }
 
-  approvePayout(request: ApprovePayoutRequest): ResultAsync<never, LedgerError> {
+  disputeStatement(request: DisputeStatementRequest): ResultAsync<Statement, LedgerError> {
+    return this.post("/v1/economy/statements/dispute", request);
+  }
+
+  resolveStatementDispute(
+    request: ResolveStatementDisputeRequest,
+  ): ResultAsync<Statement, LedgerError> {
+    return this.post("/v1/economy/statements/resolve", request);
+  }
+
+  statementQueue(region: string): ResultAsync<readonly Statement[], LedgerError> {
+    return this.post("/v1/economy/statements/queue", { region });
+  }
+
+  approvePayout(request: ApprovePayoutRequest): ResultAsync<Statement, LedgerError> {
     return this.post("/v1/economy/payouts/approve", request);
+  }
+
+  recoverCapture(request: RecoverCaptureRequest): ResultAsync<CaptureRecoveryPosting, LedgerError> {
+    return this.post("/v1/economy/captures/recover", request);
+  }
+
+  releaseVoucherLiability(
+    request: ReleaseVoucherLiabilityRequest,
+  ): ResultAsync<{ transferId: string }, LedgerError> {
+    return this.post("/v1/economy/vouchers/release-liability", request);
+  }
+
+  proofRoots(): ResultAsync<readonly ProvedDay[], LedgerError> {
+    return this.post<{ roots: readonly ProvedDay[] }>("/v1/proof/roots", {}).map(
+      (body) => body.roots,
+    );
   }
 
   advanceHoldback(

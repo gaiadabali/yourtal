@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   HttpException,
   HttpStatus,
   Logger,
@@ -43,6 +44,12 @@ export function mapBillingErrorToHttpException(error: BillingDomainError): HttpE
         HttpStatus.PAYMENT_REQUIRED,
       );
     case "ledger_refused":
+      // 10.1.c/10.6.c: a state conflict (the F12 dispute window is still
+      // open, or the statement is not `open` any more), not a malformed
+      // request -- the same 409 services/ledger itself answers with.
+      if (error.code === "dispute_window_open" || error.code === "statement_not_open") {
+        return new ConflictException({ code: error.code, message: error.message });
+      }
       return new BadRequestException({ code: error.code, message: error.message });
     // 404, not 403: a campaign whose spend belongs to another business
     // should look exactly like one that does not exist -- same reasoning

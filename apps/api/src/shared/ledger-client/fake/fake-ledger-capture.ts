@@ -7,8 +7,10 @@ import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-erro
 import { REGION_CONFIG } from "@yourtal/contracts/region";
 import { toMinorUnits } from "@yourtal/contracts/money";
 import type {
+  CaptureRecoveryPosting,
   CapturePosting,
   CaptureVoucherRequest,
+  RecoverCaptureRequest,
 } from "@yourtal/contracts/ledger-internal/capture";
 import type { AppDb } from "../../persistence/drizzle-client";
 
@@ -95,6 +97,77 @@ export function captureVoucher(
         );
       }
       return ok(toPosting(row));
+    })(),
+  );
+}
+
+type RecoveryRow = {
+  readonly id: string;
+  readonly capture_id: string;
+  readonly region: string;
+  readonly merchant_id: string;
+  readonly amount_minor: string;
+  readonly currency: string;
+  readonly reason: string;
+  readonly transfer_id: string;
+  readonly created_at: string;
+};
+
+function toRecoveryPosting(row: RecoveryRow): CaptureRecoveryPosting {
+  return {
+    id: row.id,
+    captureId: row.capture_id,
+    region: row.region as CaptureRecoveryPosting["region"],
+    merchantId: row.merchant_id,
+    amountMinor: toMinorUnits(Number(row.amount_minor)),
+    currency: row.currency as CaptureRecoveryPosting["currency"],
+    reason: row.reason,
+    transferId: row.transfer_id,
+    postedAt: new Date(row.created_at).toISOString(),
+  };
+}
+
+/**
+ * 10.5.b: resolving a captured-voucher K13 dispute in the user's favour
+ * posts a recovery line against the merchant that captured it. Idempotent
+ * per captureId — a capture can be recovered at most once.
+ */
+export function recoverCapture(
+  db: AppDb,
+  request: RecoverCaptureRequest,
+): ResultAsync<CaptureRecoveryPosting, LedgerError> {
+  return new ResultAsync(
+    (async (): Promise<Result<CaptureRecoveryPosting, LedgerError>> => {
+      const existing = await db.execute<RecoveryRow>(sql`
+        SELECT id, capture_id, region, merchant_id, amount_minor, currency, reason, transfer_id, created_at
+          FROM platform.ledger_fake_capture_recovery WHERE capture_id = ${request.captureId}
+      `);
+      if (existing.rows[0] !== undefined) return ok(toRecoveryPosting(existing.rows[0]));
+
+      const captured = await db.execute<CaptureRow>(sql`
+        SELECT capture_id, region, merchant_id, amount_minor, currency, transfer_id, posted_at
+          FROM platform.ledger_fake_capture WHERE capture_id = ${request.captureId}
+      `);
+      const capture = captured.rows[0];
+      if (capture === undefined) throw new Error(`no capture ${request.captureId} exists`);
+
+      const id = `rec_fake_${randomUUID()}`;
+      const transferId = `xfer_fake_recovery_${randomUUID()}`;
+      await db.execute(sql`
+        INSERT INTO platform.ledger_fake_capture_recovery
+          (id, capture_id, region, merchant_id, amount_minor, currency, reason, transfer_id)
+        VALUES (${id}, ${request.captureId}, ${capture.region}, ${capture.merchant_id},
+                ${capture.amount_minor}, ${capture.currency}, ${request.reason}, ${transferId})
+        ON CONFLICT (capture_id) DO NOTHING
+      `);
+      const stored = await db.execute<RecoveryRow>(sql`
+        SELECT id, capture_id, region, merchant_id, amount_minor, currency, reason, transfer_id, created_at
+          FROM platform.ledger_fake_capture_recovery WHERE capture_id = ${request.captureId}
+      `);
+      const row = stored.rows[0];
+      if (row === undefined)
+        throw new Error("ledger_fake_capture_recovery lost a row it just wrote");
+      return ok(toRecoveryPosting(row));
     })(),
   );
 }

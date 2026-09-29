@@ -121,6 +121,18 @@ type LedgerCapture struct {
 	CreatedAt   pgtype.Timestamptz
 }
 
+type LedgerCaptureRecovery struct {
+	ID          string
+	CaptureID   string
+	Region      string
+	MerchantID  string
+	AmountMinor int64
+	Currency    string
+	Reason      string
+	TransferID  string
+	CreatedAt   pgtype.Timestamptz
+}
+
 type LedgerDailyProof struct {
 	ProofDate        pgtype.Date
 	MerkleRoot       string
@@ -262,6 +274,32 @@ type LedgerRiskFlag struct {
 	ResolvedAt     pgtype.Timestamptz
 	ResolvedBy     *string
 	ResolutionNote *string
+}
+
+type LedgerStatement struct {
+	ID                   string
+	BusinessID           string
+	Region               string
+	Currency             string
+	PeriodFrom           pgtype.Timestamptz
+	PeriodTo             pgtype.Timestamptz
+	OpeningPayableMinor  int64
+	CapturesMinor        int64
+	RefundsMinor         int64
+	RecoveriesMinor      int64
+	ClosingPayableMinor  int64
+	PointPurchasesMinor  int64
+	PointPurchasesPoints int64
+	Status               string
+	DisputeReason        *string
+	DisputedAt           pgtype.Timestamptz
+	ResolutionNote       *string
+	ResolvedAt           pgtype.Timestamptz
+	DisputeWindowEndsAt  pgtype.Timestamptz
+	GeneratedAt          pgtype.Timestamptz
+	ApprovedBy           *string
+	ApprovedAt           pgtype.Timestamptz
+	PayoutTransferID     *string
 }
 
 type LedgerTransfer struct {

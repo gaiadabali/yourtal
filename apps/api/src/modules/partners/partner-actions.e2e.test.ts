@@ -3,8 +3,11 @@ import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { toMinorUnits } from "@yourtal/contracts/money";
 import { AppModule } from "../../app.module";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
+import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import { sessionFor } from "../../shared/testing/session-for";
 import { partnerCredentials } from "./persistence/schema/partner.table";
 
@@ -33,6 +36,21 @@ beforeAll(async () => {
   });
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
+
+  // 10.7.a, K6: a partner action's receipt/goodwill grant is
+  // marketing-funded like any other `grantAction` call, so this suite
+  // needs the region backed before it can grant anything — same as
+  // checkout/wallet/staff's own suites already do.
+  const ledger = app.get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT);
+  for (const region of ["AU", "ID"] as const) {
+    const funded = await ledger.fundMarketing({
+      region,
+      amountMinor: toMinorUnits(region === "AU" ? 500_000 : 50_000_000),
+      proposedBy: "staff-1",
+      approvedBy: "staff-2",
+    });
+    if (funded.isErr()) throw new Error(`funding ${region}: ${funded.error.message}`);
+  }
 });
 
 afterAll(async () => {

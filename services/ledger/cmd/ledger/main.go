@@ -122,7 +122,16 @@ func run(logger *slog.Logger) error {
 			}
 		}
 
-		checker := proof.New(pool, proof.LoggingAlerter{Logger: logger})
+		// 10.3.a: PROOF_ROOT_STORE_DIR is the append-only copy outside the
+		// database — a missing value still boots (a local relative
+		// directory, created on first write), so a dev running `go run`
+		// straight from this directory never has to set it.
+		rootStoreDir := os.Getenv("PROOF_ROOT_STORE_DIR")
+		if rootStoreDir == "" {
+			rootStoreDir = "./data/proof-roots"
+		}
+		checker := proof.New(pool, proof.LoggingAlerter{Logger: logger}).
+			WithRootStore(proof.NewFileRootStore(rootStoreDir))
 		go runChecker(ctx, logger, checker, sqlcgen.New(pool), proof.LoggingAlerter{Logger: logger})
 		go runRepricer(ctx, logger, pricing.New(pool))
 	} else {
@@ -286,6 +295,20 @@ func runChecker(
 			logger.Error("releasing expired allocation holds failed", "error", err)
 		} else if released > 0 {
 			logger.Info("released expired allocation holds", "count", released)
+		}
+
+		// 10.3.a: yesterday's proof, recorded once and only once it has
+		// closed (RecordDailyProofIfMissing is a no-op on every later
+		// tick). ErrDayNotClosed is expected right after a restart near
+		// midnight — logged, not paged, since it self-resolves within
+		// GracePeriod.
+		yesterday := time.Now().UTC().AddDate(0, 0, -1)
+		if _, err := checker.RecordDailyProofIfMissing(ctx, yesterday); err != nil {
+			if errors.Is(err, proof.ErrDayNotClosed) {
+				logger.Info("yesterday's proof is not closed yet", "error", err)
+			} else if pageErr := alerter.Page(ctx, "recording yesterday's daily proof failed", err.Error()); pageErr != nil {
+				logger.Error("paging on a failed daily proof failed too", "error", pageErr)
+			}
 		}
 
 		findings, err := checker.Run(ctx)

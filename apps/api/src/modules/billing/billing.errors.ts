@@ -47,3 +47,6 @@ export type GetBalanceError = BusinessNotFoundError | LedgerRefusedError | Persi
 
 export type GetCampaignSpendError =
   CampaignSpendNotOwnedError | LedgerRefusedError | PersistenceFailedError;
+
+/** 10.1.b/10.6.b: listing a business's own statements never fails on anything but the ledger call itself. */
+export type ListStatementsError = LedgerRefusedError;

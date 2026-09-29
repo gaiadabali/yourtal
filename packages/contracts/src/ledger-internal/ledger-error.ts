@@ -21,6 +21,10 @@ export const ledgerErrorCodeSchema = z.enum([
   "idempotency_conflict",
   "kill_switch",
   "currency_mismatch",
+  /** 10.1.c: `approvePayout` before a statement's F12 dispute window has closed. */
+  "dispute_window_open",
+  /** 10.1/10.6: an action that needs a statement `open` (approve, dispute) found one disputed or already paid. */
+  "statement_not_open",
 ]);
 
 export type LedgerErrorCode = z.infer<typeof ledgerErrorCodeSchema>;

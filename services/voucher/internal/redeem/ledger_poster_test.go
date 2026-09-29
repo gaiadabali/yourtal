@@ -110,8 +110,11 @@ func TestTheOutboxIsPostedToTheLedgerOnceAndSurvivesItBeingDown(t *testing.T) {
 	if !postedAt(t, f, captureID) {
 		t.Fatal("the row was never marked posted")
 	}
+	// 10.1.a: posted at the payable share of S (settlement_value_minor =
+	// 50_000/3 = 16_666), not the 20_000 actually captured: ceil(16_666 *
+	// 20_000 / 50_000) = 6_667.
 	body := ledger.bodies[captureID]
-	if body["region"] != "ID" || body["currency"] != "IDR" || body["amountMinor"] != float64(20_000) ||
+	if body["region"] != "ID" || body["currency"] != "IDR" || body["amountMinor"] != float64(6_667) ||
 		body["merchantId"] != f.merchantID.String() {
 		t.Fatalf("posted %v", body)
 	}

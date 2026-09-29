@@ -47,3 +47,22 @@ func (a *API) anchorVoucherHeads(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]any{"received": len(heads), "anchored": added})
 	}
 }
+
+// proofRoots is 10.3.b: every day proved so far, oldest first — apps/api's
+// GET /api/proof/roots publishes this with no auth of its own (F11: anyone
+// can verify later, without a blockchain).
+func (a *API) proofRoots(w http.ResponseWriter, r *http.Request) {
+	roots, err := a.proof.ListRoots(r.Context())
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+	answer := make([]map[string]any, 0, len(roots))
+	for _, root := range roots {
+		answer = append(answer, map[string]any{
+			"date": root.Date, "merkleRoot": root.MerkleRoot,
+			"entryCount": root.EntryCount, "computedAt": iso(root.ComputedAt),
+		})
+	}
+	httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]any{"roots": answer})
+}

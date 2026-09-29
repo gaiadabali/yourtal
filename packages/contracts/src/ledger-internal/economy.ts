@@ -66,7 +66,7 @@ export const fundMarketingRequestSchema = z.object({
 });
 export type FundMarketingRequest = z.infer<typeof fundMarketingRequestSchema>;
 
-/** `statements` and `approvePayout` return `not_implemented` until 10.1 — declared for callers to depend on the shape now. */
+/** 10.1: `statements` lists what apps/worker's weekly job has already generated — it never generates. */
 export const statementsRequestSchema = z.object({
   businessId: z.uuid(),
   from: z.iso.date(),
@@ -74,8 +74,81 @@ export const statementsRequestSchema = z.object({
 });
 export type StatementsRequest = z.infer<typeof statementsRequestSchema>;
 
+/**
+ * 10.1.b's weekly statement: opening payable + captures − refunds − K13
+ * recoveries = closingPayableMinor (the amount payable). Point purchases are
+ * informational only (J1), never folded into the figures above.
+ *
+ * opening/closingPayableMinor are plain signed integers, not `minorUnitsSchema`
+ * — an over-recovery (rare, and only ever a temporary state until the next
+ * statement) can in principle leave a balance below zero, and a UI must be
+ * able to show that rather than fail to parse it.
+ */
+export const statementSchema = z.object({
+  id: z.string().min(1),
+  businessId: z.uuid(),
+  region: regionSchema,
+  currency: currencySchema,
+  periodFrom: z.iso.datetime(),
+  periodTo: z.iso.datetime(),
+  openingPayableMinor: z.number().int(),
+  capturesMinor: minorUnitsSchema,
+  refundsMinor: minorUnitsSchema,
+  recoveriesMinor: minorUnitsSchema,
+  closingPayableMinor: z.number().int(),
+  pointPurchasesMinor: minorUnitsSchema,
+  pointPurchasesPoints: pointsSchema,
+  status: z.enum(["open", "disputed", "paid"]),
+  disputeReason: z.string().nullable(),
+  disputedAt: z.iso.datetime().nullable(),
+  resolutionNote: z.string().nullable(),
+  resolvedAt: z.iso.datetime().nullable(),
+  disputeWindowEndsAt: z.iso.datetime(),
+  generatedAt: z.iso.datetime(),
+  approvedBy: z.string().nullable(),
+  approvedAt: z.iso.datetime().nullable(),
+  payoutTransferId: z.string().nullable(),
+});
+export type Statement = z.infer<typeof statementSchema>;
+
+/** apps/worker-only (10.1.b): the one caller that knows a business's region without inferring it. */
+export const generateStatementRequestSchema = z.object({
+  businessId: z.uuid(),
+  region: regionSchema,
+  from: z.iso.date(),
+  to: z.iso.date(),
+});
+export type GenerateStatementRequest = z.infer<typeof generateStatementRequestSchema>;
+
+/** 10.6.b: the studio's own dispute — holds the payout until staff resolve it (10.6.a). */
+export const disputeStatementRequestSchema = z.object({
+  statementId: z.string().min(1),
+  reason: z.string().min(1),
+});
+export type DisputeStatementRequest = z.infer<typeof disputeStatementRequestSchema>;
+
+/** 10.5.a: staff releases a disputed statement back to `open`. */
+export const resolveStatementDisputeRequestSchema = z.object({
+  statementId: z.string().min(1),
+  note: z.string().min(1),
+});
+export type ResolveStatementDisputeRequest = z.infer<typeof resolveStatementDisputeRequestSchema>;
+
 export const approvePayoutRequestSchema = z.object({
   statementId: z.string().min(1),
   approvedBy: z.string().min(1),
 });
 export type ApprovePayoutRequest = z.infer<typeof approvePayoutRequestSchema>;
+
+/**
+ * 10.1.c/10.2.b: an expired voucher or a forfeited remainder never captured
+ * releases its own settlement value back — no merchant was ever paid, so
+ * there is no payable leg. The caller owns idempotencyKey (one per
+ * voucher/event), so a retried sweep cannot release the same liability twice.
+ */
+export const releaseVoucherLiabilityRequestSchema = z.object({
+  idempotencyKey: z.string().min(1),
+  region: regionSchema,
+  amountMinor: minorUnitsSchema,
+});
+export type ReleaseVoucherLiabilityRequest = z.infer<typeof releaseVoucherLiabilityRequestSchema>;

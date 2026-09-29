@@ -17204,6 +17204,105 @@
         ],
         "additionalProperties": false
       },
+      "BillingStatement": {
+        "description": "10.1.b/10.6.b: a weekly settlement statement, the Studio-facing view -- opening payable + captures - refunds - recoveries = closingPayableMinor.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "periodFrom": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "periodTo": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "openingPayableMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "capturesMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "refundsMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "recoveriesMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "closingPayableMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "pointPurchasesPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "disputed",
+              "paid"
+            ]
+          },
+          "disputeReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "disputeWindowEndsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "payoutTransferId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "region",
+          "currency",
+          "periodFrom",
+          "periodTo",
+          "openingPayableMinor",
+          "capturesMinor",
+          "refundsMinor",
+          "recoveriesMinor",
+          "closingPayableMinor",
+          "pointPurchasesPoints",
+          "status",
+          "disputeReason",
+          "disputeWindowEndsAt",
+          "generatedAt",
+          "payoutTransferId"
+        ],
+        "additionalProperties": false
+      },
       "Business": {
         "description": "An advertiser, supplier and/or redeemer.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - roles must not contain duplicates.\n  - currency must match the business's own region (F2: regions never cross).\n  - taxIdKind must match the business's region (ABN for AU; NIB or NPWP for ID).\n  - taxIdValue must match the expected shape for its taxIdKind.\n  - address must match the business's region (AU: state + postcode; ID: city).",
         "type": "object",
@@ -19578,6 +19677,39 @@
           }
         ]
       },
+      "ProvedDay": {
+        "description": "One day's Merkle root over that day's ledger entries and voucher chain heads (4.6.h) -- recomputable by anyone from their own copy of that day's data, without a blockchain.",
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "merkleRoot": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entryCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "computedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "date",
+          "merkleRoot",
+          "entryCount",
+          "computedAt"
+        ],
+        "additionalProperties": false
+      },
       "PublicListing": {
         "description": "A store listing as the PUBLIC catalogue serves it. Identical to Listing except that settlementValueMinor is absent: S beside priceInPoints publishes the backing rate B by arithmetic, and docs/24 ID-1 rests on there being no published fixed cash rate. Consumers of the public catalogue must generate against this, never Listing.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - stockRemaining cannot exceed stockTotal.\n  - A sold_out listing must have zero stockRemaining.\n  - minimumSpendMinor is set if and only if the policy is minimum_spend.\n  - location ids must be unique within a listing.",
         "type": "object",
@@ -20121,6 +20253,20 @@
           "approved",
           "retired"
         ]
+      },
+      "RaiseStatementDisputeRequest": {
+        "description": "10.6.b: disputing a statement holds its payout until staff resolve it (10.6.a/10.5.a).",
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
       },
       "Region": {
         "description": "AU or ID — the region a user account belongs to, chosen once at registration. Determines locale, currency, and tax/regulatory setup; Australia is the real market, Indonesia is the proving ground.",

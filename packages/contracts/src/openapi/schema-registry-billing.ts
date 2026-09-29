@@ -2,10 +2,12 @@ import {
   billingAllocationSchema,
   billingBalanceSchema,
   billingCampaignSpendSchema,
+  billingStatementSchema,
   funderTypeSchema,
   purchasePointsRequestSchema,
   purchaseQuoteSchema,
   purchaseResultSchema,
+  raiseStatementDisputeRequestSchema,
 } from "../billing/billing";
 import type { ContractComponent } from "./schema-registry";
 
@@ -71,6 +73,20 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: billingCampaignSpendSchema,
     description:
       "One campaign's own spend: points granted to viewers and how many completions earned them.",
+    crossFieldRules: [],
+  },
+  {
+    id: "BillingStatement",
+    schema: billingStatementSchema,
+    description:
+      "10.1.b/10.6.b: a weekly settlement statement, the Studio-facing view -- opening payable + captures - refunds - recoveries = closingPayableMinor.",
+    crossFieldRules: [],
+  },
+  {
+    id: "RaiseStatementDisputeRequest",
+    schema: raiseStatementDisputeRequestSchema,
+    description:
+      "10.6.b: disputing a statement holds its payout until staff resolve it (10.6.a/10.5.a).",
     crossFieldRules: [],
   },
 ];

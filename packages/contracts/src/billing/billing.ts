@@ -72,3 +72,36 @@ export const billingCampaignSpendSchema = z.object({
   completions: z.number().int().min(0),
 });
 export type BillingCampaignSpend = z.infer<typeof billingCampaignSpendSchema>;
+
+/**
+ * 10.1.b/10.6.b: the Studio-facing view of a weekly settlement statement --
+ * the same figures `ledger-internal/economy.ts`'s `Statement` carries, under
+ * this module's own name (this folder is the BFF <-> Studio contract,
+ * distinct from ledger-internal's apps/api <-> ledger one, same reasoning
+ * as this file's own module comment above).
+ */
+export const billingStatementSchema = z.object({
+  id: z.string().min(1),
+  region: regionSchema,
+  currency: currencySchema,
+  periodFrom: z.iso.datetime(),
+  periodTo: z.iso.datetime(),
+  openingPayableMinor: z.number().int(),
+  capturesMinor: minorUnitsSchema,
+  refundsMinor: minorUnitsSchema,
+  recoveriesMinor: minorUnitsSchema,
+  closingPayableMinor: z.number().int(),
+  pointPurchasesPoints: pointsSchema,
+  status: z.enum(["open", "disputed", "paid"]),
+  disputeReason: z.string().nullable(),
+  disputeWindowEndsAt: z.iso.datetime(),
+  generatedAt: z.iso.datetime(),
+  payoutTransferId: z.string().nullable(),
+});
+export type BillingStatement = z.infer<typeof billingStatementSchema>;
+
+/** 10.6.b: holds the payout until staff resolve it in the staff console's queue (10.6.a/10.5.a). */
+export const raiseStatementDisputeRequestSchema = z.object({
+  reason: z.string().min(1),
+});
+export type RaiseStatementDisputeRequest = z.infer<typeof raiseStatementDisputeRequestSchema>;

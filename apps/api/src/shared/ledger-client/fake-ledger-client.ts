@@ -1,4 +1,5 @@
 import type { ResultAsync } from "neverthrow";
+import { okAsync } from "neverthrow";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type {
   LockQuoteRequest,
@@ -47,17 +48,24 @@ import type {
   ApproveRateRequest,
   ApprovePayoutRequest,
   Coverage,
+  DisputeStatementRequest,
   EconomyDailyRequest,
   EconomyDayRow,
   FundMarketingRequest,
   ProposeRateRequest,
   RateProposal,
+  ReleaseVoucherLiabilityRequest,
+  ResolveStatementDisputeRequest,
+  Statement,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
 import type {
+  CaptureRecoveryPosting,
   CapturePosting,
   CaptureVoucherRequest,
+  RecoverCaptureRequest,
 } from "@yourtal/contracts/ledger-internal/capture";
+import type { ProvedDay } from "@yourtal/contracts/ledger-internal/proof";
 import type { Region } from "@yourtal/contracts/region";
 import type {
   ApproveSettingInput,
@@ -210,12 +218,45 @@ export class FakeLedgerClient implements LedgerInternalClient {
     return economy.fundMarketing(this.db, request);
   }
 
-  statements(request: StatementsRequest): ResultAsync<never, LedgerError> {
-    return economy.statements(request);
+  statements(request: StatementsRequest): ResultAsync<readonly Statement[], LedgerError> {
+    return economy.statements(this.db, request);
   }
 
-  approvePayout(request: ApprovePayoutRequest): ResultAsync<never, LedgerError> {
-    return economy.approvePayout(request);
+  disputeStatement(request: DisputeStatementRequest): ResultAsync<Statement, LedgerError> {
+    return economy.disputeStatement(this.db, request);
+  }
+
+  resolveStatementDispute(
+    request: ResolveStatementDisputeRequest,
+  ): ResultAsync<Statement, LedgerError> {
+    return economy.resolveStatementDispute(this.db, request);
+  }
+
+  statementQueue(region: string): ResultAsync<readonly Statement[], LedgerError> {
+    return economy.statementQueue(this.db, region);
+  }
+
+  approvePayout(request: ApprovePayoutRequest): ResultAsync<Statement, LedgerError> {
+    return economy.approvePayout(this.db, request);
+  }
+
+  recoverCapture(request: RecoverCaptureRequest): ResultAsync<CaptureRecoveryPosting, LedgerError> {
+    return capture.recoverCapture(this.db, request);
+  }
+
+  releaseVoucherLiability(
+    request: ReleaseVoucherLiabilityRequest,
+  ): ResultAsync<{ transferId: string }, LedgerError> {
+    return economy.releaseVoucherLiability(this.db, request);
+  }
+
+  /**
+   * 10.3.b: the fake never computes a Merkle root at all (that machinery is
+   * services/ledger's own, 10.3.a) — always empty, same tier as `coverage`'s
+   * "illustrative, not the real books" note on this file's economy module.
+   */
+  proofRoots(): ResultAsync<readonly ProvedDay[], LedgerError> {
+    return okAsync([]);
   }
 
   advanceHoldback(

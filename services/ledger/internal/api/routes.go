@@ -30,21 +30,23 @@ import (
 	"github.com/yourtal/services/ledger/internal/reward"
 	"github.com/yourtal/services/ledger/internal/risk"
 	"github.com/yourtal/services/ledger/internal/serviceauth"
+	"github.com/yourtal/services/ledger/internal/settlement"
 )
 
 // API holds the engines. One reward engine per region: AU and ID never share
 // an account or a transfer.
 type API struct {
-	logger   *slog.Logger
-	pool     *pgxpool.Pool
-	ledger   *ledger.Ledger
-	pricing  *pricing.Engine
-	rewards  map[ledger.Region]*reward.Engine
-	burns    *burn.Engine
-	escrows  *escrow.Engine
-	captures *capture.Engine
-	proof    *proof.Checker
-	risk     *risk.Gate
+	logger     *slog.Logger
+	pool       *pgxpool.Pool
+	ledger     *ledger.Ledger
+	pricing    *pricing.Engine
+	rewards    map[ledger.Region]*reward.Engine
+	burns      *burn.Engine
+	escrows    *escrow.Engine
+	captures   *capture.Engine
+	proof      *proof.Checker
+	risk       *risk.Gate
+	settlement *settlement.Engine
 	// devEnabled gates /dev/* (2.3.f's /dev/clock). false unless main.go
 	// calls EnableDevRoutes, which it only does when APP_ENV is dev or
 	// staging — unset or production means disabled, the same fail-closed
@@ -72,7 +74,7 @@ func New(logger *slog.Logger, pool *pgxpool.Pool, attestationSecret []byte) *API
 	return &API{
 		logger: logger, pool: pool, ledger: book, pricing: pricing.New(pool), burns: burn.New(pool, book),
 		escrows: escrows, captures: capture.New(pool, book), proof: proof.New(pool, proof.LoggingAlerter{Logger: logger}),
-		risk: gate,
+		risk: gate, settlement: settlement.New(pool, book),
 		rewards: map[ledger.Region]*reward.Engine{
 			ledger.RegionAU: reward.New(pool, book, gate, ledger.RegionAU).WithAttestationSecret(attestationSecret),
 			ledger.RegionID: reward.New(pool, book, gate, ledger.RegionID).WithAttestationSecret(attestationSecret),
@@ -142,15 +144,31 @@ func (a *API) platformRoutes(r chi.Router) {
 	r.Post("/economy/rates/approve", a.approveRate)
 	r.Post("/economy/marketing/fund", a.fundMarketing)
 
+	// 10.1: statements are generated only by apps/worker's weekly job (it is
+	// the one caller that knows a business's region without inferring it);
+	// everyone else only lists, disputes, resolves or approves what already
+	// exists.
+	r.With(a.onlyCaller("worker")).Post("/economy/statements/generate", a.generateStatement)
+	r.Post("/economy/statements", a.statements)
+	r.Post("/economy/statements/queue", a.statementQueue)
+	r.Post("/economy/statements/dispute", a.disputeStatement)
+	r.Post("/economy/statements/resolve", a.resolveStatementDispute)
+	r.Post("/economy/payouts/approve", a.approvePayout)
+	// 10.5.b's K13 recovery line and 10.1.c/10.2.b's expiry release.
+	r.Post("/economy/captures/recover", a.recoverCapture)
+	r.Post("/economy/vouchers/release-liability", a.releaseVoucherLiability)
+
+	// 10.3.b: every day proved so far — apps/api republishes this with no
+	// auth of its own at GET /api/proof/roots (F11).
+	r.Post("/proof/roots", a.proofRoots)
+
 	// Dev/staging only (2.3.f); the handler itself 404s unless
 	// EnableDevRoutes(true) was called, so this line is safe to register
 	// unconditionally.
 	r.Post("/dev/advance-holdback", a.advanceHoldback)
 
-	// Not the ledger's yet: statements and payouts wait for 10.1. Settings are
-	// apps/api's own store (1.2.f); the ledger only reads them.
-	for _, path := range []string{"/economy/statements",
-		"/economy/payouts/approve", "/settings/list", "/settings/propose", "/settings/approve"} {
+	// Settings are apps/api's own store (1.2.f); the ledger only reads them.
+	for _, path := range []string{"/settings/list", "/settings/propose", "/settings/approve"} {
 		r.Post(path, a.notImplemented)
 	}
 }
@@ -246,6 +264,8 @@ var contractCodes = []struct {
 	{reward.ErrSameApprover, "already_granted"},
 	{pricing.ErrCurrencyMismatch, "currency_mismatch"},
 	{capture.ErrRegionMismatch, "region_mismatch"},
+	{settlement.ErrDisputeWindowOpen, "dispute_window_open"},
+	{settlement.ErrNotOpen, "statement_not_open"},
 }
 
 // fail answers an engine error: a contract code as 409, a missing thing as
@@ -260,7 +280,7 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, pricing.ErrQuoteNotFound), errors.Is(err, burn.ErrNotFound),
 		errors.Is(err, burn.ErrListingNotPriced), errors.Is(err, escrow.ErrNotFound),
-		errors.Is(err, capture.ErrNotFound), errors.Is(err, errNotFound):
+		errors.Is(err, capture.ErrNotFound), errors.Is(err, settlement.ErrNotFound), errors.Is(err, errNotFound):
 		httpx.WriteError(w, a.logger, http.StatusNotFound, "invalid_request_error", "not_found", err.Error())
 	case errors.Is(err, pricing.ErrNotAPack), errors.Is(err, pricing.ErrNoRateInForce),
 		errors.Is(err, pricing.ErrMarginTooThin), errors.Is(err, pricing.ErrSameApprover),
@@ -268,7 +288,9 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 		errors.Is(err, reward.ErrUnderpriced), errors.Is(err, reward.ErrWrongFunder),
 		errors.Is(err, reward.ErrUnknownAction), errors.Is(err, reward.ErrAttestation),
 		errors.Is(err, reward.ErrCampaignNotLive), errors.Is(err, reward.ErrPointsMismatch),
-		errors.Is(err, escrow.ErrInvalid), errors.Is(err, errBadRequest):
+		errors.Is(err, escrow.ErrInvalid), errors.Is(err, settlement.ErrInvalid),
+		errors.Is(err, settlement.ErrInvalidPeriod), errors.Is(err, settlement.ErrNotDisputed),
+		errors.Is(err, errBadRequest):
 		httpx.WriteError(w, a.logger, http.StatusBadRequest, "invalid_request_error", "refused", err.Error())
 	default:
 		a.logger.Error("ledger request failed", "error", err)

@@ -161,6 +161,10 @@ services:
       # Local-only; matches .env.example so host-run api and worker can sign.
       LEDGER_SERVICE_SECRET: local-only-ledger-service-secret-not-real
       REWARD_ATTESTATION_SECRET: local-only-reward-attestation-secret-not-real
+      # 10.3.a's "append-only store outside the database" — a simulated
+      # driver (CLAUDE.md), container-local and ephemeral on recreation,
+      # same as everything else this compose file does not give a volume.
+      PROOF_ROOT_STORE_DIR: /data/proof-roots
     ports:
       - "127.0.0.1:26910:3010"
     healthcheck:

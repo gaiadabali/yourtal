@@ -301,3 +301,42 @@ CREATE TABLE campaign.campaign_terms (
   scoring_rule          text    NOT NULL,
   accuracy_bonus_points bigint  NOT NULL
 );
+
+-- Added by packages/db/migrations/20260929070000_ledger_settlement.sql (10.1).
+CREATE TABLE ledger.statement (
+  id                     text        PRIMARY KEY,
+  business_id            text        NOT NULL,
+  region                 text        NOT NULL,
+  currency               char(3)     NOT NULL,
+  period_from            timestamptz NOT NULL,
+  period_to              timestamptz NOT NULL,
+  opening_payable_minor  bigint      NOT NULL,
+  captures_minor         bigint      NOT NULL,
+  refunds_minor          bigint      NOT NULL,
+  recoveries_minor       bigint      NOT NULL,
+  closing_payable_minor  bigint      NOT NULL,
+  point_purchases_minor  bigint      NOT NULL DEFAULT 0,
+  point_purchases_points bigint      NOT NULL DEFAULT 0,
+  status                 text        NOT NULL DEFAULT 'open',
+  dispute_reason         text,
+  disputed_at            timestamptz,
+  resolution_note        text,
+  resolved_at            timestamptz,
+  dispute_window_ends_at timestamptz NOT NULL,
+  generated_at           timestamptz NOT NULL DEFAULT now(),
+  approved_by            text,
+  approved_at            timestamptz,
+  payout_transfer_id     text REFERENCES ledger.transfer (id)
+);
+
+CREATE TABLE ledger.capture_recovery (
+  id           text        PRIMARY KEY,
+  capture_id   text        NOT NULL UNIQUE REFERENCES ledger.capture (capture_id),
+  region       text        NOT NULL,
+  merchant_id  text        NOT NULL,
+  amount_minor bigint      NOT NULL,
+  currency     char(3)     NOT NULL,
+  reason       text        NOT NULL,
+  transfer_id  text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
+  created_at   timestamptz NOT NULL DEFAULT now()
+);

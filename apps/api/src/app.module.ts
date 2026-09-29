@@ -16,6 +16,7 @@ import { CheckoutModule } from "./modules/checkout/checkout.module";
 import { MeModule } from "./modules/me/me.module";
 import { DevicesModule } from "./modules/devices/devices.module";
 import { PartnersModule } from "./modules/partners/partners.module";
+import { ProofModule } from "./modules/proof/proof.module";
 import { StudioModule } from "./modules/studio/studio.module";
 import { StaffModule } from "./modules/staff/staff.module";
 import { UserAccountAttributeLoader } from "./modules/staff/user-account-attribute-loader";
@@ -63,6 +64,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     DevicesModule,
     PartnersModule,
     StaffModule,
+    ProofModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

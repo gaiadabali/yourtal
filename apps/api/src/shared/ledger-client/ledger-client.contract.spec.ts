@@ -2,9 +2,18 @@ import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
+import type {
+  GenerateStatementRequest,
+  Statement,
+} from "@yourtal/contracts/ledger-internal/economy";
+import {
+  SERVICE_SIGNATURE_HEADER,
+  signServiceRequest,
+} from "@yourtal/contracts/ledger-internal/service-signature";
 import { testDb } from "../testing/test-db";
 import { FakeLedgerClient } from "./fake-ledger-client";
 import { HttpLedgerClient } from "./http-ledger-client";
+import { generateStatementFake } from "./fake/fake-ledger-economy";
 import { signRewardAttestation } from "./reward-attestation";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 
@@ -16,14 +25,47 @@ import type { LedgerInternalClient } from "./ledger-internal-client";
  */
 const db = testDb();
 const liveUrl = process.env["LEDGER_CONTRACT_LIVE_URL"];
+const ledgerSecret =
+  process.env["LEDGER_SERVICE_SECRET"] ?? "local-only-ledger-service-secret-not-real";
 const client: LedgerInternalClient =
   liveUrl === undefined
     ? new FakeLedgerClient(db)
-    : new HttpLedgerClient(
-        liveUrl,
-        process.env["LEDGER_SERVICE_SECRET"] ?? "local-only-ledger-service-secret-not-real",
-        db,
-      );
+    : new HttpLedgerClient(liveUrl, ledgerSecret, db);
+
+/**
+ * 10.1.b: `generateStatement` is deliberately NOT on `LedgerInternalClient`
+ * — the live route only answers apps/worker's own signed caller, since it is
+ * the one caller that knows a business's region without inferring it.
+ * `apps/worker/src/ledger-client.ts` is its real caller; this signs the same
+ * way, standing in for that worker-only client so this one spec can still
+ * set up a statement to list, dispute, resolve and approve against both a
+ * fake and a live ledger.
+ */
+async function generateStatement(request: GenerateStatementRequest): Promise<Statement> {
+  if (liveUrl === undefined) return generateStatementFake(db, request);
+  const path = "/v1/economy/statements/generate";
+  const body = JSON.stringify(request);
+  const response = await fetch(`${liveUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      [SERVICE_SIGNATURE_HEADER]: signServiceRequest({
+        secret: ledgerSecret,
+        caller: "worker",
+        method: "POST",
+        pathAndQuery: path,
+        body,
+      }),
+    },
+    body,
+  });
+  if (!response.ok) {
+    throw new Error(
+      `generateStatement answered ${String(response.status)}: ${await response.text()}`,
+    );
+  }
+  return (await response.json()) as Statement;
+}
 
 // Marketing-funded grants (streak, receipt, goodwill) are backed by marketing
 // cash at issue (K6), so the region has some before any test grants one.
@@ -41,17 +83,40 @@ beforeAll(async () => {
 
 /**
  * A listing the ledger has priced at `points`, so a burn can read its S and
- * region: at the ID backing rate of IDR 6 a point, S = 6 × points.
+ * region: at the ID backing rate of IDR 6 a point, S = 6 × points (AU: 3
+ * cents a point). Also a real, throwaway `store.listings` row in the same
+ * region — 10.7.b's `burnForVoucher` (fake) reads a burn's region from
+ * there, the same denormalised-at-mint-time shape `voucher.vouchers.region`
+ * already uses (4.5.e); merchant_id carries no foreign key, so any UUID
+ * does, and this test owns the row (nothing else reads it).
  */
-async function pricedListing(points: number): Promise<string> {
+async function pricedListing(points: number, region: "AU" | "ID" = "ID"): Promise<string> {
   const listingId = randomUUID();
+  const currency = region === "AU" ? "AUD" : "IDR";
+  const backingMinorPerPoint = region === "AU" ? 3 : 6;
   const priced = await client.priceListing({
     listingId,
-    region: "ID",
-    currency: "IDR",
-    settlementMinor: toMinorUnits(6 * points),
+    region,
+    currency,
+    settlementMinor: toMinorUnits(backingMinorPerPoint * points),
   });
   expect(priced._unsafeUnwrap().pricePoints).toBe(points);
+
+  await db.execute(sql`
+    INSERT INTO store.listings
+      (id, merchant_id, merchant_name, title, description, category,
+       face_value_minor, settlement_value_minor, price_in_points,
+       stock_remaining, stock_total, transferable, partial_redemption_policy,
+       minimum_spend_minor, expires_at, status, currency, region, audience,
+       content_category, image_url, channel, partial_redemption)
+    VALUES
+      (${listingId}, ${randomUUID()}, 'Contract spec listing', 'Contract spec listing',
+       'a listing minted for the ledger contract spec', 'food-and-drink',
+       ${backingMinorPerPoint * points}, ${backingMinorPerPoint * points}, ${points},
+       1, 1, false, 'single_use_forfeit',
+       NULL, now() + interval '90 days', 'available', ${currency}, ${region}, 'all_ages',
+       'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg', 'both', 'single_use')
+  `);
   return listingId;
 }
 
@@ -489,6 +554,80 @@ describe("earning and spending", () => {
     expect(reinstated._unsafeUnwrap().state).toBe("reinstated");
     expect((await client.balance(userId))._unsafeUnwrap().availablePoints).toBe(100);
   });
+
+  // 10.7: fake-ledger parity with the real one's K6 rule (4.4.h) and its
+  // region-tagged burns.
+  it("10.7.a: a grant the region's marketing fund cannot back is refused; one comfortably within it succeeds", async () => {
+    // A dedicated top-up, so "within it" does not depend on how much other
+    // tests in this file have already drawn from AU's marketing fund.
+    expect(
+      (
+        await client.fundMarketing({
+          region: "AU",
+          amountMinor: toMinorUnits(9_000),
+          proposedBy: "staff-1",
+          approvedBy: "staff-2",
+        })
+      ).isOk(),
+    ).toBe(true);
+
+    // 100 pts × 3¢ = 300¢, comfortably inside the 9,000¢ top-up above.
+    const withinFund = await client.grantAction({
+      kind: "goodwill",
+      userId: randomUUID(),
+      region: "AU",
+      points: toPoints(100),
+      trustTier: 3,
+      idempotencyKey: randomUUID(),
+    });
+    expect(withinFund.isOk()).toBe(true);
+
+    // Far beyond anything this file funds anywhere, in either region:
+    // refused regardless of leftover state from earlier tests.
+    const tooMuch = await client.grantAction({
+      kind: "goodwill",
+      userId: randomUUID(),
+      region: "AU",
+      points: toPoints(1_000_000_000),
+      trustTier: 3,
+      idempotencyKey: randomUUID(),
+    });
+    expect(tooMuch._unsafeUnwrapErr().code).toBe("insufficient_available");
+  });
+
+  it("10.7.b: a burn in AU shows in AU's pointsRedeemed and never in ID's", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const redeemedToday = async (region: "AU" | "ID"): Promise<number> => {
+      const rows = (await client.economyDaily({ region, from: today, to: today }))._unsafeUnwrap();
+      return rows.find((row) => row.date === today)?.pointsRedeemed ?? 0;
+    };
+    const auBefore = await redeemedToday("AU");
+    const idBefore = await redeemedToday("ID");
+
+    const userId = randomUUID();
+    expect(
+      (
+        await client.grantAction({
+          kind: "goodwill",
+          userId,
+          region: "AU",
+          points: toPoints(500),
+          trustTier: 3,
+          idempotencyKey: randomUUID(),
+        })
+      ).isOk(),
+    ).toBe(true);
+    const burned = await client.burnForVoucher({
+      userId,
+      listingId: await pricedListing(500, "AU"),
+      points: toPoints(500),
+      sagaId: randomUUID(),
+    });
+    expect(burned._unsafeUnwrap().state).toBe("burned");
+
+    expect((await redeemedToday("AU")) - auBefore).toBe(500);
+    expect(await redeemedToday("ID")).toBe(idBefore);
+  });
 });
 
 describe("captures (4.6.f.2)", () => {
@@ -671,13 +810,93 @@ describe("economy", () => {
     expect(result._unsafeUnwrapErr().code).toBe("already_granted");
   });
 
-  it("statements and approvePayout are not implemented until 10.1", async () => {
-    await expect(
-      client.statements({ businessId: randomUUID(), from: "2026-01-01", to: "2026-01-31" }),
-    ).rejects.toThrow(/not implemented/);
-    await expect(
-      client.approvePayout({ statementId: randomUUID(), approvedBy: "staff-1" }),
-    ).rejects.toThrow(/not implemented/);
+  it("statements: apps/worker generates, everyone else only lists, disputes, resolves and approves (10.1)", async () => {
+    const businessId = randomUUID();
+    const captureId = randomUUID();
+    (
+      await client.captureVoucher({
+        captureId,
+        region: "AU",
+        merchantId: businessId,
+        amountMinor: toMinorUnits(80),
+        currency: "AUD",
+      })
+    )._unsafeUnwrap();
+
+    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const to = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const stmt = await generateStatement({ businessId, region: "AU", from, to });
+    expect(stmt).toMatchObject({ capturesMinor: 80, closingPayableMinor: 80, status: "open" });
+
+    const listed = (
+      await client.statements({ businessId, from: "2020-01-01", to: "2030-01-01" })
+    )._unsafeUnwrap();
+    expect(listed.map((s) => s.id)).toContain(stmt.id);
+
+    const queued = (await client.statementQueue("AU"))._unsafeUnwrap();
+    expect(queued.map((s) => s.id)).toContain(stmt.id);
+
+    const early = await client.approvePayout({ statementId: stmt.id, approvedBy: "staff-1" });
+    expect(early._unsafeUnwrapErr().code).toBe("dispute_window_open");
+
+    const disputed = (
+      await client.disputeStatement({ statementId: stmt.id, reason: "amount looks wrong" })
+    )._unsafeUnwrap();
+    expect(disputed.status).toBe("disputed");
+
+    const stillDisputed = await client.approvePayout({
+      statementId: stmt.id,
+      approvedBy: "staff-1",
+    });
+    expect(stillDisputed._unsafeUnwrapErr().code).toBe("statement_not_open");
+
+    const resolved = (
+      await client.resolveStatementDispute({ statementId: stmt.id, note: "reviewed, releasing" })
+    )._unsafeUnwrap();
+    expect(resolved.status).toBe("open");
+  });
+
+  it("recoverCapture posts a K13 recovery line once, and replays idempotently (10.5.b)", async () => {
+    const merchantId = randomUUID();
+    const captureId = randomUUID();
+    (
+      await client.captureVoucher({
+        captureId,
+        region: "AU",
+        merchantId,
+        amountMinor: toMinorUnits(50),
+        currency: "AUD",
+      })
+    )._unsafeUnwrap();
+
+    const first = (
+      await client.recoverCapture({ captureId, reason: "K13: voucher not honoured" })
+    )._unsafeUnwrap();
+    expect(first.amountMinor).toBe(50);
+
+    const replay = (
+      await client.recoverCapture({ captureId, reason: "K13: voucher not honoured" })
+    )._unsafeUnwrap();
+    expect(replay.transferId).toBe(first.transferId);
+  });
+
+  it("releaseVoucherLiability replays idempotently on the same key (10.1.c/10.2.b)", async () => {
+    const idempotencyKey = `expire_${randomUUID()}`;
+    const first = (
+      await client.releaseVoucherLiability({
+        idempotencyKey,
+        region: "AU",
+        amountMinor: toMinorUnits(20),
+      })
+    )._unsafeUnwrap();
+    const replay = (
+      await client.releaseVoucherLiability({
+        idempotencyKey,
+        region: "AU",
+        amountMinor: toMinorUnits(20),
+      })
+    )._unsafeUnwrap();
+    expect(replay.transferId).toBe(first.transferId);
   });
 });
 

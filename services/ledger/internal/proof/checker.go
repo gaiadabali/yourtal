@@ -25,7 +25,18 @@ import (
 type Checker struct {
 	pool    *pgxpool.Pool
 	alerter Alerter
+	store   RootStore
+	// now is the clock RecordDailyProof checks "today or future" against —
+	// injectable so a test can prove the guard without waiting for a real
+	// day to close. Defaults to time.Now in New.
+	now func() time.Time
 }
+
+// GracePeriod (10.3.a): a day closes GracePeriod after its own midnight
+// UTC, not exactly at it — an entry still landing in the last seconds of a
+// day (a request that started just before midnight and committed just
+// after) gets a window to arrive before the day is closed under it.
+const GracePeriod = 1 * time.Hour
 
 // Alerter raises an incident. Deliberately not a logger: a logger has a
 // method for every severity and the quiet ones are always available.
@@ -37,7 +48,21 @@ type Alerter interface {
 }
 
 func New(pool *pgxpool.Pool, alerter Alerter) *Checker {
-	return &Checker{pool: pool, alerter: alerter}
+	return &Checker{pool: pool, alerter: alerter, now: time.Now}
+}
+
+// WithRootStore adds 10.3.a's external append-only copy. Without one,
+// RecordDailyProof still writes ledger.daily_proof — the store is a second
+// witness, not the only record.
+func (c *Checker) WithRootStore(store RootStore) *Checker {
+	c.store = store
+	return c
+}
+
+// WithClock overrides the "is this day closed yet" clock — tests only.
+func (c *Checker) WithClock(now func() time.Time) *Checker {
+	c.now = now
+	return c
 }
 
 // Finding is one thing wrong with the ledger.
@@ -56,13 +81,25 @@ var (
 	ErrProofMismatch = errors.New("ledger: a past day's Merkle root no longer matches")
 )
 
+// ErrDayNotClosed — today or a future day, or one still inside its grace
+// period, cannot be proved yet: entries could still land in it.
+var ErrDayNotClosed = errors.New("proof: today or a future day cannot be proved yet")
+
 // RecordDailyProof computes and stores the root for one UTC day.
 //
 // Storing is INSERT-only by grant, so a day can be proved once. Re-running
 // for a day already recorded fails rather than overwriting — an attacker who
 // can edit an entry AND recompute its day's root has defeated the entire
 // scheme, so the ability to recompute is the thing being denied.
+//
+// 10.3.a: refuses today and any future day, and gives yesterday its own
+// GracePeriod before closing it — this is the "after day close with a grace
+// period" the task asks for, not merely a caller convention.
 func (c *Checker) RecordDailyProof(ctx context.Context, day time.Time) (string, error) {
+	if !startOfDay(day).Add(24 * time.Hour).Add(GracePeriod).Before(c.now()) {
+		return "", fmt.Errorf("%w: %s", ErrDayNotClosed, startOfDay(day).Format(time.DateOnly))
+	}
+
 	leaves, heads, err := c.dayFor(ctx, day)
 	if err != nil {
 		return "", err
@@ -91,7 +128,92 @@ func (c *Checker) RecordDailyProof(ctx context.Context, day time.Time) (string, 
 		return "", fmt.Errorf("recording proof for %s: %w", startOfDay(day).Format(time.DateOnly), err)
 	}
 
+	// 10.3.a's outside-the-database copy. Best-effort in the sense that a
+	// store outage does not lose the day's own proof (already committed
+	// above) — but it is not silent: the caller gets the error and can page
+	// on it, same as any other write that mattered failing.
+	if c.store != nil {
+		if err := c.store.Append(ctx, day, root); err != nil {
+			return root, fmt.Errorf("recording proof for %s in the external store: %w", startOfDay(day).Format(time.DateOnly), err)
+		}
+	}
+
 	return root, nil
+}
+
+// ProvedDay is one proved day, as 10.3.b's GET /api/proof/roots publishes
+// it — F11's "without a blockchain": anyone can recompute this from their
+// own copy of the day's entries and compare.
+type ProvedDay struct {
+	Date       string
+	MerkleRoot string
+	EntryCount int64
+	ComputedAt time.Time
+}
+
+// ListRoots answers every day proved so far, oldest first.
+func (c *Checker) ListRoots(ctx context.Context) ([]ProvedDay, error) {
+	rows, err := sqlcgen.New(c.pool).ListDailyProofs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("listing daily proofs: %w", err)
+	}
+	roots := make([]ProvedDay, 0, len(rows))
+	for _, row := range rows {
+		roots = append(roots, ProvedDay{
+			Date: row.ProofDate.Time.Format(time.DateOnly), MerkleRoot: row.MerkleRoot,
+			EntryCount: row.EntryCount, ComputedAt: row.ComputedAt.Time,
+		})
+	}
+	return roots, nil
+}
+
+// RecordDailyProofIfMissing is what a scheduled loop calls: it is safe to
+// call every tick, because a day already recorded is answered from storage,
+// never re-derived and never an error — only ErrDayNotClosed (too early) or
+// an actual failure to write are.
+func (c *Checker) RecordDailyProofIfMissing(ctx context.Context, day time.Time) (string, error) {
+	existing, err := sqlcgen.New(c.pool).GetDailyProof(ctx, pgtype.Date{Time: startOfDay(day), Valid: true})
+	if err == nil {
+		return existing.MerkleRoot, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", fmt.Errorf("reading proof for %s: %w", startOfDay(day).Format(time.DateOnly), err)
+	}
+	return c.RecordDailyProof(ctx, day)
+}
+
+// VerifyExternalStore compares a day's database root against its external
+// copy — a mismatch means one of the two was edited after the fact, and
+// which one takes a human to decide, so this pages rather than picking.
+func (c *Checker) VerifyExternalStore(ctx context.Context, day time.Time) (Finding, bool, error) {
+	if c.store == nil {
+		return Finding{}, false, nil
+	}
+	stored, err := sqlcgen.New(c.pool).GetDailyProof(ctx, pgtype.Date{Time: startOfDay(day), Valid: true})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Finding{}, false, nil
+		}
+		return Finding{}, false, fmt.Errorf("reading proof: %w", err)
+	}
+	external, err := c.store.Read(ctx, day)
+	if errors.Is(err, ErrRootNotStored) {
+		return Finding{
+			Kind:   "proof_external_store_missing",
+			Detail: fmt.Sprintf("day=%s has a database root but none in the external store", startOfDay(day).Format(time.DateOnly)),
+		}, true, nil
+	}
+	if err != nil {
+		return Finding{}, false, fmt.Errorf("reading the external root store: %w", err)
+	}
+	if external != stored.MerkleRoot {
+		return Finding{
+			Kind: "proof_external_store_mismatch",
+			Detail: fmt.Sprintf("day=%s database_root=%s external_root=%s — one of the two was edited after the fact",
+				startOfDay(day).Format(time.DateOnly), stored.MerkleRoot, external),
+		}, true, nil
+	}
+	return Finding{}, false, nil
 }
 
 // VerifyDay recomputes a past day's root and compares it to what was stored.
@@ -157,13 +279,18 @@ func (c *Checker) Run(ctx context.Context) ([]Finding, error) {
 
 	// Yesterday, because today is still being written to and its root is not
 	// final until the day closes.
-	yesterday := time.Now().UTC().AddDate(0, 0, -1)
+	yesterday := c.now().UTC().AddDate(0, 0, -1)
 	finding, mismatched, err := c.VerifyDay(ctx, yesterday)
 	if err != nil {
 		return nil, err
 	}
 	if mismatched {
 		findings = append(findings, finding)
+	}
+	if externalFinding, externalMismatch, err := c.VerifyExternalStore(ctx, yesterday); err != nil {
+		return nil, err
+	} else if externalMismatch {
+		findings = append(findings, externalFinding)
 	}
 
 	for _, found := range findings {

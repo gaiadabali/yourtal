@@ -500,6 +500,16 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "4.6.h (D6, F11, 20260926121000_voucher_head_anchor.sql): voucher chain heads the voucher service anchors, folded into ledger.daily_proof's root. Same ledger-internals note as ledger.account above.",
   "platform.ledger_fake_capture":
     "1.2.d's FakeLedgerClient backing store for captureVoucher -- same reason as platform.ledger_fake_allocation above.",
+  "ledger.statement":
+    "10.1.b (20260929070000_ledger_settlement.sql): the weekly statement's stored snapshot, computed once from ledger.entry at generation time. Same ledger-internals note as ledger.account above -- `Statement` (ledger-internal/economy.ts) is the public projection, not a row mirror, returned by statements/disputeStatement/resolveStatementDispute/approvePayout rather than read directly.",
+  "ledger.capture_recovery":
+    "10.5.b (same migration): the K13 recovery line a captured-voucher dispute posts, keyed on the capture so it cannot post twice. Same ledger-internals note as ledger.account above -- CaptureRecoveryPosting (ledger-internal/capture.ts) is the public projection.",
+  "platform.ledger_fake_statement":
+    "1.2.d's FakeLedgerClient backing store for statements/disputeStatement/resolveStatementDispute/approvePayout (10.1) -- same reason as platform.ledger_fake_capture above.",
+  "platform.ledger_fake_capture_recovery":
+    "1.2.d's FakeLedgerClient backing store for recoverCapture (10.5.b) -- same reason as platform.ledger_fake_capture above.",
+  "platform.ledger_fake_liability_release":
+    "1.2.d's FakeLedgerClient backing store for releaseVoucherLiability (10.1.c/10.2.b) -- idempotency only, since the fake does not model a full voucher_liability balance. Same reason as platform.ledger_fake_capture above.",
   "ledger.marketing_funding":
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
   "checkout.dispute":

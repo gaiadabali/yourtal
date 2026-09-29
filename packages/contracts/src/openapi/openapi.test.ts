@@ -232,6 +232,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   // --- ledger-internal: captures (4.6.f.2), posted by the voucher service ---
   captureVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   capturePostingSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  recoverCaptureRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  captureRecoveryPostingSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- ledger-internal: dev/staging holdback control (2.3.d/2.3.f) ---
   advanceHoldbackRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
@@ -263,7 +265,12 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   approveRateRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   fundMarketingRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   statementsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  statementSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  generateStatementRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  disputeStatementRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  resolveStatementDisputeRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   approvePayoutRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  releaseVoucherLiabilityRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- ledger-internal/voucher-internal (1.2.c): the shared closed error enum ---
   ledgerErrorCodeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

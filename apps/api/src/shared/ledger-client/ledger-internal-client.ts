@@ -48,17 +48,24 @@ import type {
   ApproveRateRequest,
   ApprovePayoutRequest,
   Coverage,
+  DisputeStatementRequest,
   EconomyDailyRequest,
   EconomyDayRow,
   FundMarketingRequest,
   ProposeRateRequest,
   RateProposal,
+  ReleaseVoucherLiabilityRequest,
+  ResolveStatementDisputeRequest,
+  Statement,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
 import type {
+  CaptureRecoveryPosting,
   CapturePosting,
   CaptureVoucherRequest,
+  RecoverCaptureRequest,
 } from "@yourtal/contracts/ledger-internal/capture";
+import type { ProvedDay } from "@yourtal/contracts/ledger-internal/proof";
 
 /**
  * TASKS.md 1.2.a. One interface, two implementations: `FakeLedgerClient`
@@ -126,10 +133,30 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   proposeRate(request: ProposeRateRequest): ResultAsync<RateProposal, LedgerError>;
   approveRate(request: ApproveRateRequest): ResultAsync<RateProposal, LedgerError>;
   fundMarketing(request: FundMarketingRequest): ResultAsync<void, LedgerError>;
-  /** `not_implemented` (as a `LedgerError`-shaped rejection) until 10.1. */
-  statements(request: StatementsRequest): ResultAsync<never, LedgerError>;
-  /** `not_implemented` until 10.1. */
-  approvePayout(request: ApprovePayoutRequest): ResultAsync<never, LedgerError>;
+  /** 10.1.b: every statement apps/worker's weekly job has already generated for this business in [from, to). Never generates one itself. */
+  statements(request: StatementsRequest): ResultAsync<readonly Statement[], LedgerError>;
+  /** 10.6.b: the studio's own dispute — holds the payout until staff resolve it (10.6.a). */
+  disputeStatement(request: DisputeStatementRequest): ResultAsync<Statement, LedgerError>;
+  /** 10.5.a: staff releases a disputed statement back to `open`, e.g. after posting a recovery line. */
+  resolveStatementDispute(
+    request: ResolveStatementDisputeRequest,
+  ): ResultAsync<Statement, LedgerError>;
+  /** 10.5/10.6: every open or disputed statement in a region, oldest first — the staff queue. */
+  statementQueue(region: string): ResultAsync<readonly Statement[], LedgerError>;
+  /** 10.1.c: after the F12 dispute window, the statement's closing payable moves from the merchant's payable to the reserve. */
+  approvePayout(request: ApprovePayoutRequest): ResultAsync<Statement, LedgerError>;
+  /**
+   * 10.5.b: resolving a captured-voucher K13 dispute in the user's favour
+   * posts a recovery line against the merchant that captured it. Idempotent
+   * per captureId — a capture can be recovered at most once.
+   */
+  recoverCapture(request: RecoverCaptureRequest): ResultAsync<CaptureRecoveryPosting, LedgerError>;
+  /** 10.1.c/10.2.b: an expired voucher or a forfeited remainder never captured releases its own settlement value back. */
+  releaseVoucherLiability(
+    request: ReleaseVoucherLiabilityRequest,
+  ): ResultAsync<{ transferId: string }, LedgerError>;
+  /** 10.3.b: every day proved so far, oldest first (F11) — GET /api/proof/roots publishes this verbatim. */
+  proofRoots(): ResultAsync<readonly ProvedDay[], LedgerError>;
 
   // --- dev/staging only (2.3.d/2.3.f) ---
   advanceHoldback(request: AdvanceHoldbackRequest): ResultAsync<AdvanceHoldbackResult, LedgerError>;

@@ -295,7 +295,14 @@ func TestRatesAndMarketingNeedTwoPeople(t *testing.T) {
 		"proposedBy": "alice", "approvedBy": "alice"}, &p); code != http.StatusConflict || p.Code != "already_granted" {
 		t.Errorf("one-person marketing funding answered %d %s, want 409 already_granted", code, p.Code)
 	}
-	if code := s.call("/economy/statements", map[string]any{}, nil); code != http.StatusNotImplemented {
-		t.Errorf("statements answered %d, want 501 until 10.1", code)
+	// 10.1: statements lists what apps/worker's weekly job has generated —
+	// nothing has, for a business nobody has captured a voucher for yet, so
+	// an empty list, not the 501 this route answered before 10.1.
+	var statements []map[string]any
+	s.mustCall("/economy/statements", map[string]any{
+		"businessId": "00000000-0000-0000-0000-000000000001", "from": "2026-01-01", "to": "2026-02-01",
+	}, &statements)
+	if len(statements) != 0 {
+		t.Errorf("statements = %+v, want none for a business with no captures", statements)
 	}
 }

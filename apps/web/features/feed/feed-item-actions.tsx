@@ -106,8 +106,8 @@ export function FeedItemActions({
             <BottomSheetDescription>
               {t(`why.${item.whyReason}`, { merchantName: item.merchantName })}
             </BottomSheetDescription>
+            <p className="pt-2 text-body-sm font-sans text-fg-muted">{t("why.footer")}</p>
           </BottomSheetHeader>
-          <p className="px-4 pb-6 text-body-sm font-sans text-fg-muted">{t("why.footer")}</p>
         </BottomSheetContent>
       </BottomSheet>
     </div>

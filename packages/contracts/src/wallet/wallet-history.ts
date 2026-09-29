@@ -33,7 +33,8 @@ const MAX_DESCRIPTION_LENGTH = 200;
 
 export const walletHistoryEntrySchema = z
   .object({
-    id: z.string().min(1).max(80),
+    // Ledger ids like grt_<user>_watch_completed_<campaign> run past 80 characters.
+    id: z.string().min(1).max(200),
     kind: walletHistoryEntryKindSchema,
     occurredAt: z.iso.datetime(),
     description: z.string().min(1).max(MAX_DESCRIPTION_LENGTH).optional(),

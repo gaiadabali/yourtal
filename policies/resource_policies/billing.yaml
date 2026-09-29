@@ -32,6 +32,15 @@ resourcePolicy:
       effect: EFFECT_ALLOW
       roles: ["finance"]
 
+    - name: staff-work-the-settlement-queue
+      # TASKS.md 10.6.a: the staff console's own statement queue and dispute
+      # resolution -- finance runs it day to day, ops can see and act on it
+      # too (same "ops looks after finance where it needs a second pair of
+      # hands" shape 9.5's kill switches use), neither is a business role.
+      actions: ["view_statement_queue", "resolve_dispute"]
+      effect: EFFECT_ALLOW
+      roles: ["finance", "ops"]
+
     - name: f2-region-wall
       # 1.5.b: AU and ID are separate economies (F2) -- a consumer or
       # business-side caller may never act on a resource governed by the

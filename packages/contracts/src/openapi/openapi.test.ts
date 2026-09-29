@@ -164,6 +164,18 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   decideProposalBodySchema:
     "9.5's shared approve-route request body -- documented inline everywhere an approve route appears (route-registry.c-staff-economy.ts).",
 
+  // --- staff/staff-settlement.ts (TASKS.md 10.6.a) ---
+  settlementQueueSchema:
+    "10.6.a's settlement queue -- documented inline (route-registry.c-staff-settlement.ts GET .../queue), same 'not a registered component' tier as every other staff screen above.",
+  resolveStatementDisputeBodySchema:
+    "10.6.a's request body -- documented inline (route-registry.c-staff-settlement.ts POST .../resolve-dispute).",
+  proposePayoutBodySchema:
+    "10.6.a's request body -- documented inline (route-registry.c-staff-settlement.ts POST .../payout-proposals).",
+  decideSettlementProposalBodySchema:
+    "Same shape as decideProposalBodySchema above, its own type so 10.6's own module never imports 9.5's economy DTOs -- documented inline (route-registry.c-staff-settlement.ts POST .../payout-proposals/{proposalId}/approve).",
+  payoutProposalListSchema:
+    "10.6.a's payout-proposals list response -- a plain array of economyProposalSchema, documented inline the same way STAFF_ECONOMY_ROUTE_DEFINITIONS' own list routes build their array schema by hand (route-registry.c-staff-settlement.ts GET .../payout-proposals).",
+
   campaignPublishedEventSchema:
     "TASKS.md 7.3.f: a pg-boss job payload (campaign.published), consumed by apps/worker/src/jobs/campaign-published-notify.ts -- a queue message between two server processes, never an HTTP request/response body a client sends or receives.",
 

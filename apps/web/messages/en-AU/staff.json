@@ -11,7 +11,8 @@
     "users": "Users",
     "disputes": "Disputes",
     "risk": "Risk",
-    "economy": "Economy"
+    "economy": "Economy",
+    "settlement": "Settlement"
   },
   "overview": {
     "title": "Overview",
@@ -363,6 +364,34 @@
       "proposed": "The change was proposed and is awaiting a second approver.",
       "approved": "The change was approved.",
       "killSwitch": "The kill switch was updated.",
+      "error": "That action could not be completed.",
+      "invalid": "Check the form -- something was missing or not valid."
+    }
+  },
+  "settlement": {
+    "pageTitle": "Settlement",
+    "pageDescription": "Weekly statements, disputes and payout approval -- one region at a time.",
+    "queueTitle": "Settlement queue",
+    "queueEmptyTitle": "Nothing open or disputed right now",
+    "columnBusiness": "Business",
+    "columnStatus": "Status",
+    "columnClosing": "Closing payable",
+    "columnDisputeWindow": "Dispute window ends",
+    "columnActions": "Actions",
+    "status": {
+      "open": "Open",
+      "disputed": "Disputed",
+      "paid": "Paid"
+    },
+    "resolveNoteLabel": "Resolution note (required)",
+    "resolveCta": "Resolve dispute",
+    "proposePayoutCta": "Propose payout",
+    "approvePayoutCta": "Approve payout",
+    "awaitingSecondApprover": "Awaiting a second approver",
+    "flash": {
+      "resolved": "The dispute was resolved. The statement is open again.",
+      "proposed": "The payout was proposed and is awaiting a second approver.",
+      "approved": "The payout was approved.",
       "error": "That action could not be completed.",
       "invalid": "Check the form -- something was missing or not valid."
     }

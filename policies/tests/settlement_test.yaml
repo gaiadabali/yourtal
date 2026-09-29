@@ -1,0 +1,80 @@
+---
+name: SettlementSuite
+description: |-
+  TASKS.md 10.6.a: the staff console's settlement screens. Two things to
+  prove -- the queue and dispute resolution are finance/ops, not a business
+  role or a consumer (`billing.yaml`'s new `view_statement_queue`/
+  `resolve_dispute` actions); and payout approval is dual-approved exactly
+  like every other `ledger_adjustment` action (`ledger_adjustment.yaml`'s new
+  `propose_payout`/`approve_payout` actions, covered by the SAME
+  `nobody-approves-their-own-adjustment` rule 9.5's rate/marketing/purchase
+  flows already rely on -- see `points_issuance_test.yaml` for those).
+tests:
+  - name: finance and ops work the settlement queue; a business role and a consumer do not
+    input:
+      principals: [finance_yani, ops_zul, budi_owner, wina, anon]
+      resources: [billing_kopi]
+      actions: [view_statement_queue, resolve_dispute]
+    expected:
+      - principal: finance_yani
+        resource: billing_kopi
+        actions: { view_statement_queue: EFFECT_ALLOW, resolve_dispute: EFFECT_ALLOW }
+      - principal: ops_zul
+        resource: billing_kopi
+        actions: { view_statement_queue: EFFECT_ALLOW, resolve_dispute: EFFECT_ALLOW }
+      - principal: budi_owner
+        resource: billing_kopi
+        actions: { view_statement_queue: EFFECT_DENY, resolve_dispute: EFFECT_DENY }
+      - principal: wina
+        resource: billing_kopi
+        actions: { view_statement_queue: EFFECT_DENY, resolve_dispute: EFFECT_DENY }
+      - principal: anon
+        resource: billing_kopi
+        actions: { view_statement_queue: EFFECT_DENY, resolve_dispute: EFFECT_DENY }
+
+  - name: moderator and risk_analyst are working staff roles too, but this is not their queue
+    input:
+      principals: [moderator_tono, risk_umi, support_sari]
+      resources: [billing_kopi]
+      actions: [view_statement_queue, resolve_dispute]
+    expected:
+      - principal: moderator_tono
+        resource: billing_kopi
+        actions: { view_statement_queue: EFFECT_DENY, resolve_dispute: EFFECT_DENY }
+      - principal: risk_umi
+        resource: billing_kopi
+        actions: { view_statement_queue: EFFECT_DENY, resolve_dispute: EFFECT_DENY }
+      # Support runs 9.4.d's voucher-dispute queue, not this one.
+      - principal: support_sari
+        resource: billing_kopi
+        actions: { view_statement_queue: EFFECT_DENY, resolve_dispute: EFFECT_DENY }
+
+  - name: payout approval is the same dual-approval shape as every other ledger_adjustment action
+    input:
+      principals: [finance_yani, finance_zaki, ops_zul, risk_umi, budi_owner, wina, anon]
+      resources: [adjustment_by_yani]
+      actions: [propose_payout, approve_payout]
+    expected:
+      # yani raised this one (adjustment_by_yani's createdBy), so yani cannot approve it.
+      - principal: finance_yani
+        resource: adjustment_by_yani
+        actions: { propose_payout: EFFECT_ALLOW, approve_payout: EFFECT_DENY }
+      - principal: finance_zaki
+        resource: adjustment_by_yani
+        actions: { propose_payout: EFFECT_ALLOW, approve_payout: EFFECT_ALLOW }
+      # Ops sees the queue (billing.yaml above) but never approves a payout.
+      - principal: ops_zul
+        resource: adjustment_by_yani
+        actions: { propose_payout: EFFECT_DENY, approve_payout: EFFECT_DENY }
+      - principal: risk_umi
+        resource: adjustment_by_yani
+        actions: { propose_payout: EFFECT_DENY, approve_payout: EFFECT_DENY }
+      - principal: budi_owner
+        resource: adjustment_by_yani
+        actions: { propose_payout: EFFECT_DENY, approve_payout: EFFECT_DENY }
+      - principal: wina
+        resource: adjustment_by_yani
+        actions: { propose_payout: EFFECT_DENY, approve_payout: EFFECT_DENY }
+      - principal: anon
+        resource: adjustment_by_yani
+        actions: { propose_payout: EFFECT_DENY, approve_payout: EFFECT_DENY }

@@ -11,7 +11,8 @@
     "users": "Pengguna",
     "disputes": "Sengketa",
     "risk": "Risiko",
-    "economy": "Ekonomi"
+    "economy": "Ekonomi",
+    "settlement": "Penyelesaian"
   },
   "overview": {
     "title": "Ringkasan",
@@ -363,6 +364,34 @@
       "proposed": "Perubahan diajukan dan menunggu penyetuju kedua.",
       "approved": "Perubahan telah disetujui.",
       "killSwitch": "Tombol darurat telah diperbarui.",
+      "error": "Tindakan tersebut tidak dapat diselesaikan.",
+      "invalid": "Periksa formulir -- ada yang kosong atau tidak valid."
+    }
+  },
+  "settlement": {
+    "pageTitle": "Penyelesaian",
+    "pageDescription": "Laporan mingguan, sengketa dan persetujuan pencairan -- satu wilayah pada satu waktu.",
+    "queueTitle": "Antrean penyelesaian",
+    "queueEmptyTitle": "Tidak ada yang terbuka atau disengketakan saat ini",
+    "columnBusiness": "Bisnis",
+    "columnStatus": "Status",
+    "columnClosing": "Utang penutupan",
+    "columnDisputeWindow": "Jendela sengketa berakhir",
+    "columnActions": "Tindakan",
+    "status": {
+      "open": "Terbuka",
+      "disputed": "Disengketakan",
+      "paid": "Dibayar"
+    },
+    "resolveNoteLabel": "Catatan penyelesaian (wajib)",
+    "resolveCta": "Selesaikan sengketa",
+    "proposePayoutCta": "Ajukan pencairan",
+    "approvePayoutCta": "Setujui pencairan",
+    "awaitingSecondApprover": "Menunggu penyetuju kedua",
+    "flash": {
+      "resolved": "Sengketa telah diselesaikan. Laporan kembali terbuka.",
+      "proposed": "Pencairan diajukan dan menunggu penyetuju kedua.",
+      "approved": "Pencairan telah disetujui.",
       "error": "Tindakan tersebut tidak dapat diselesaikan.",
       "invalid": "Periksa formulir -- ada yang kosong atau tidak valid."
     }

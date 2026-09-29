@@ -35,6 +35,11 @@ export const STAFF_ZONES: readonly StaffZone[] = [
   // ops both see the zone; the rate screen inside it (B) is finance-only,
   // enforced by ledger_adjustment.yaml, not this courtesy list.
   { key: "economy", href: "/staff/economy", roles: ["finance", "ops"] },
+  // TASKS.md 10.6.a: weekly statements, disputes and payout approval --
+  // finance runs it, ops can see and act on the queue too, per
+  // billing.yaml's own `staff-work-the-settlement-queue` rule. Payout
+  // approval itself is finance-only (ledger_adjustment.yaml).
+  { key: "settlement", href: "/staff/settlement", roles: ["finance", "ops"] },
 ];
 
 export function zonesFor(roles: readonly StaffRole[]): readonly StaffZone[] {

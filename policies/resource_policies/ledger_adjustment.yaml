@@ -32,7 +32,11 @@ resourcePolicy:
       roles: ["business_user", "store_device", "user", "anonymous"]
 
     - name: nobody-approves-their-own-adjustment
-      actions: ["approve"]
+      # TASKS.md 10.6.a: `approve_payout` is the same dual-approval shape as
+      # `approve` (a statement payout, proposed by one finance staffer and
+      # approved by a different one) -- covered by the same rule rather than
+      # a second one, so there is only ever one place this check can drift.
+      actions: ["approve", "approve_payout"]
       effect: EFFECT_DENY
       roles: ["*"]
       condition:
@@ -41,6 +45,15 @@ resourcePolicy:
 
     - name: finance-adjusts
       actions: ["create", "approve", "view"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]
+
+    - name: finance-approves-payouts
+      # TASKS.md 10.6.a: proposing a payout is bookkeeping only (no ledger
+      # call -- see `staff-settlement.controller.ts`'s own header); approving
+      # is what actually calls `ledger.approvePayout`. Dual-approved by the
+      # rule above, same as every other action on this resource.
+      actions: ["propose_payout", "approve_payout"]
       effect: EFFECT_ALLOW
       roles: ["finance"]
 

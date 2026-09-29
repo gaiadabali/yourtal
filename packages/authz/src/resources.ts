@@ -137,7 +137,18 @@ export const RESOURCE_ACTIONS = {
 
   report: ["view", "export"],
 
-  billing: ["view", "view_statement", "purchase_points", "raise_dispute", "update_payment_method"],
+  billing: [
+    "view",
+    "view_statement",
+    "purchase_points",
+    "raise_dispute",
+    "update_payment_method",
+    // TASKS.md 10.6.a: the staff console's own settlement queue and dispute
+    // resolution -- finance/ops, never a business role (billing.yaml's own
+    // `staff-work-the-settlement-queue` rule).
+    "view_statement_queue",
+    "resolve_dispute",
+  ],
 
   team: [
     "view",
@@ -166,7 +177,16 @@ export const RESOURCE_ACTIONS = {
     "set_trust_tier",
   ],
 
-  ledger_adjustment: ["view", "create", "approve"],
+  ledger_adjustment: [
+    "view",
+    "create",
+    "approve",
+    // TASKS.md 10.6.a: statement payout approval, dual-approved the same way
+    // as `approve` above (ledger_adjustment.yaml's own
+    // `nobody-approves-their-own-adjustment` rule covers both actions).
+    "propose_payout",
+    "approve_payout",
+  ],
 
   moderation_item: ["view", "approve", "reject"],
 

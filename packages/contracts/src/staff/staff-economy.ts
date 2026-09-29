@@ -25,6 +25,8 @@ export const economyProposalKindSchema = z.enum([
   "fund_marketing",
   "manual_purchase",
   "setting_change",
+  /** 10.6.a: a statement payout, proposed here and approved through `ledger.approvePayout` -- see `staff/staff-settlement.ts`. */
+  "approve_payout",
 ]);
 export type EconomyProposalKind = z.infer<typeof economyProposalKindSchema>;
 

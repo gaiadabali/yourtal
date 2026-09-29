@@ -276,6 +276,8 @@ export const TEEN_INTEREST_NODE_IDS = [
   "cinema",
 ] as const;
 
+const TEEN_INTEREST_NODE_ID_SET: ReadonlySet<string> = new Set(TEEN_INTEREST_NODE_IDS);
+
 export function isTeenInterestNode(nodeId: string): boolean {
-  return (TEEN_INTEREST_NODE_IDS as readonly string[]).includes(nodeId);
+  return TEEN_INTEREST_NODE_ID_SET.has(nodeId);
 }

@@ -44,9 +44,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 3/7 | 29/39 | `███████░░░`  74% |
-| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 0/4 | 0/15 | `░░░░░░░░░░`   0% |
+| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 0/4 | 3/15 | `██░░░░░░░░`  20% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **75/91** | **401/447** | `█████████░`  90% |
+| **All** | | | **75/91** | **404/447** | `█████████░`  90% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1366,9 +1366,9 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 **Founder decision 2026-09-25 (F4), reversing C4 ("18+ only"):** teens aged 13–17 get their own age-appropriate YourTal, like YouTube Kids. It suits companies that sell to teenagers (games, books). Products for young children (strollers and the like) are aimed at **parents**, who are adult users; under-13s never get accounts. Teen mode is built fully and switched on in staging for review. It is switched on for real minors only after the legal review in 12.4. The platform is already free of user-to-user interaction (Phase 3), so teens need no special handling there.
 
 - [ ] **12.1 Guardians and enforcement** · A · needs: 1.4, 1.5, 10.4 — 🔄 slot 1
-  - [ ] 12.1.a Register a 13–17 account (1.4.b), and the guardian email carries approve and revoke links to `/guardian/[token]`. B builds that page (12.2.c). Revoking sets the teen back to restricted and escrows its balance. A pending teen may browse teen and all_ages campaigns but cannot start a reward session.
-  - [ ] 12.1.b The Cerbos `campaign_view` and `listing` policies deny when the resource's audience is not allowed for the principal's `ageBand` (1.1.c). Every read, watch start, checkout, notification, search and public page is gated in one place.
-  - [ ] 12.1.c The teen cap from F12 goes into `RiskGate`. Minors get declared interests only, never inferred ones.
+  - [x] 12.1.a Register a 13–17 account (1.4.b), and the guardian email carries approve and revoke links to `/guardian/[token]`. B builds that page (12.2.c). Revoking sets the teen back to restricted and escrows its balance. A pending teen may browse teen and all_ages campaigns but cannot start a reward session. — 594790a9: `identity.guardian_consent` (reusable hashed token), guardian email with approve/revoke links, `GET/POST /api/guardian/:token[/approve|/revoke]`; revoke escrows the balance. The "pending teen cannot earn" half is Cerbos, in 12.1.b.
+  - [x] 12.1.b The Cerbos `campaign_view` and `listing` policies deny when the resource's audience is not allowed for the principal's `ageBand` (1.1.c). Every read, watch start, checkout, notification, search and public page is gated in one place. — 236d1e21: `audience-wall` and teen-consent rules in `campaign_view`, a consumer `browse` action on `listing`, principal attribute `guardianConsent`, one `reachableAudiences` helper for the campaign list, channel page, store, feed, search and the follower notify job; 72-case parity test against live Cerbos, 826/826 policy tests.
+  - [x] 12.1.c The teen cap from F12 goes into `RiskGate`. Minors get declared interests only, never inferred ones. — 096a2972 (cap: `teen_daily_earn_cap`, monthly ≤ 30×; ageBand set from the DOB in the api's ledger client; the Go ledger refuses a grant without one) and 236d1e21 (`behavioural_profiling` and `purchase_history_targeting` refused for teens in `packages/consent`).
   - [ ] 12.1.d Turn `TEEN_ACCOUNTS` on for `APP_ENV=staging`, in the same merge that passes this task's Check.
   - [ ] 12.1.f (found by 12.1.b) `GET /api/campaigns` has no region filter: the F2 wall there rests only on Cerbos per-campaign reads. Filter `listVisible` by the principal's region, anonymous by the page's region.
   - [ ] 12.1.e **Check:**

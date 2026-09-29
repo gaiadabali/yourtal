@@ -39,8 +39,14 @@ async function guardianFetch(path: string, init: RequestInit): Promise<Response 
   // construction avoids the same trap the same way).
   const headers = new Headers(init.headers);
   headers.set("accept", "application/json");
+  // `apiInternalUrl()` OUTSIDE the try, same as `apiFetch`'s own header
+  // comment on this: a missing `API_INTERNAL_URL` is a boot-time
+  // misconfiguration, not a request-time network failure, and should throw
+  // rather than be swallowed into a generic "network" `ApiError` a caller
+  // would render as an ordinary connectivity blip.
+  const url = `${apiInternalUrl()}${path}`;
   try {
-    return await fetch(`${apiInternalUrl()}${path}`, { ...init, headers, cache: "no-store" });
+    return await fetch(url, { ...init, headers, cache: "no-store" });
   } catch (cause) {
     return { ok: false, error: { kind: "network", message: networkErrorMessage(cause) } };
   }

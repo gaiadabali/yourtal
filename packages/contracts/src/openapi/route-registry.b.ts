@@ -107,6 +107,31 @@ export const CAMPAIGN_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       PDP_UNAVAILABLE,
     ],
   },
+  {
+    // Found blocking 10.6's own release (route-drift.test.ts): 11.5.a added
+    // this route without a registry entry. Fixed here rather than left for
+    // Area B, since it was failing `pnpm check` for every push to main.
+    method: "get",
+    path: "/api/campaigns/{campaignId}/terms",
+    summary:
+      "The campaign's currently-in-force terms (11.5.a) -- absolute reward points, question count and duration",
+    tags: ["campaign"],
+    pathParams: [CAMPAIGN_ID_PARAM],
+    successStatus: 200,
+    successDescription:
+      "The same frozen numbers a watch session would enter under, so the campaign page's terms " +
+      "card shows absolute points rather than re-deriving them from a ratio.",
+    successSchema: ref("CampaignTerms"),
+    errors: [
+      nestDefaultError(
+        404,
+        "No such campaign (the same answer for a missing id or an unpublished draft), or this " +
+          "campaign has no published terms yet.",
+      ),
+      FORBIDDEN,
+      PDP_UNAVAILABLE,
+    ],
+  },
 ];
 
 // --- watch.controller.ts ---

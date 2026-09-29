@@ -1,9 +1,11 @@
 import { BadRequestException, Controller, Get, Inject, Param, Query, Req } from "@nestjs/common";
 import { NotFoundException } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
+import type { PdpClient } from "@yourtal/authz/pdp-client";
 import { regionSchema } from "@yourtal/contracts/region";
 import { PublicRoute } from "../../shared/authz/authorize.decorator";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
+import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { resolveCatalogueScope } from "./catalogue-scope";
 import { browseListingsQuerySchema, toBrowseFilter } from "./dto/browse-listings-query";
@@ -19,21 +21,28 @@ import { getListing } from "./use-cases/get-listing.use-case";
  * region- and audience-walled (F2, 7.4.d -- reopened 2026-09-27).
  *
  * `@PublicRoute` rather than `@Authorize`: this route is reachable both
- * signed in and anonymous, and docs/17 has no consumer-facing `listing_view`
- * resource kind (the way `campaign_view` exists opposite `campaign`) to ask
- * a real PDP question with -- see the ticket report. Adding one is a
- * policy-repo decision outside this module's path allowlist, not a call
- * this controller should make unilaterally. That does NOT mean the session
- * is ignored, which is what tripped 7.4.e's own Check the first time: this
- * controller resolves whatever principal IS there (`AsyncPrincipalResolver`,
- * same as `CampaignController`'s `watch_open` route reads through
- * `@Authorize`) and uses it -- see `catalogue-scope.ts` for the actual rule.
+ * signed in and anonymous, and `getListing`'s own region-mismatch branch
+ * deliberately 404s rather than 403/401s a caller outside the listing's
+ * audience or region -- distinguishing "wrong audience" from "does not
+ * exist" discloses that a listing outside this caller's own reach exists at
+ * all. `@Authorize`'s `PdpGuard` cannot honour that: a Cerbos DENY there
+ * always maps to 403 (401 for anonymous, F30), so `get()` below still asks
+ * Cerbos itself -- 12.1.b's `listing.yaml` `consumer-browse-is-audience-gated`
+ * rule now answers `browse` for this kind -- but folds a DENY into the same
+ * `NotFoundException` the manual scope check above it already throws. That
+ * does NOT mean the session is ignored, which is what tripped 7.4.e's own
+ * Check the first time: this controller resolves whatever principal IS
+ * there (`AsyncPrincipalResolver`, same as `CampaignController`'s
+ * `watch_open` route reads through `@Authorize`) and uses it -- see
+ * `catalogue-scope.ts` for the list-side rule, which `browse` below now
+ * agrees with by construction.
  */
 @Controller("api/store/listings")
 export class StoreCatalogueController {
   constructor(
     @Inject(LISTING_REPOSITORY) private readonly listings: ListingRepository,
     private readonly principals: AsyncPrincipalResolver,
+    @Inject(PDP_CLIENT) private readonly pdp: PdpClient,
   ) {}
 
   @PublicRoute(
@@ -107,6 +116,25 @@ export class StoreCatalogueController {
       result.value.region !== scope.region ||
       !scope.audiences.includes(result.value.audience)
     ) {
+      throw new NotFoundException("No such listing.");
+    }
+
+    // 12.1.b: a second, PDP-backed opinion -- `listing.yaml`'s own
+    // `consumer-browse-is-audience-gated` rule, asked directly rather than
+    // through `@Authorize` so a DENY still 404s (this class's own doc
+    // comment). This is what makes the TS-side scope check above and the
+    // policy repo's truth table PROVABLY the same thing on every real
+    // request, not just in the parity test that compares them offline.
+    const authz = await this.pdp.requireAction(
+      principal,
+      {
+        kind: "listing",
+        id: listingId,
+        attr: { region: result.value.region, audience: result.value.audience },
+      },
+      "browse",
+    );
+    if (authz.isErr()) {
       throw new NotFoundException("No such listing.");
     }
     return result.value;

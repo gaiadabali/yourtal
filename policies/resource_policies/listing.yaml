@@ -104,6 +104,26 @@ resourcePolicy:
       derivedRoles:
         - business_inventory_viewer_of
 
+    - name: consumer-browse-is-audience-gated
+      # 12.1.b: the public storefront's offer detail (StoreCatalogueController
+      # -- `@PublicRoute`, checked manually rather than via `@Authorize` so a
+      # DENY here still 404s like "does not exist" rather than 403/401,
+      # exactly as `getListing`'s own region-mismatch branch already does).
+      # Mirrors `campaign_view.yaml`'s `audience-wall` rule -- see that
+      # file's own comment for why the truth table is written out inline
+      # rather than trusted to stay in sync by convention.
+      actions: ["browse"]
+      effect: EFFECT_ALLOW
+      roles: ["user", "anonymous"]
+      condition:
+        match:
+          expr: |-
+            !has(R.attr.audience) || R.attr.audience == "all_ages" ||
+            (R.attr.audience == "teen" &&
+              has(P.attr.ageBand) && P.attr.ageBand == "teen") ||
+            ((R.attr.audience == "adult" || R.attr.audience == "parents") &&
+              has(P.attr.ageBand) && P.attr.ageBand == "adult")
+
     - name: ops-approves-listings
       # docs/17 section 5: Ops owns merchant onboarding, KYB and listing approval.
       actions: ["view", "approve_listing", "reject_listing"]
@@ -120,8 +140,7 @@ resourcePolicy:
       # its own credential (1.5.c). has(R.attr.region) makes this a no-op
       # for an action with no resource yet (a create) or a kind whose
       # controller does not populate region yet.
-      actions:
-        [
+      actions: [
           "view",
           "create",
           "edit",
@@ -131,6 +150,11 @@ resourcePolicy:
           "approve_settlement_decrease",
           "approve_listing",
           "reject_listing",
+          # 12.1.b: `browse` is scoped to "user" only here, not "anonymous" --
+          # an anonymous visitor has no registered region to wall in the
+          # first place (same exemption campaign_view.yaml's own
+          # f2-region-wall states for watch_open).
+          "browse",
         ]
       effect: EFFECT_DENY
       roles: ["user", "business_user"]

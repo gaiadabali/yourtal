@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import type { Campaign } from "@yourtal/contracts/campaign";
+import type { Audience, Campaign } from "@yourtal/contracts/campaign";
 import { campaignSchema } from "@yourtal/contracts/campaign";
 import type { CampaignTerms } from "@yourtal/contracts/campaign/campaign-terms";
 import { publicStatusOf, type CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
@@ -19,11 +19,23 @@ const VISIBLE_STATES = ["live", "paused", "ended"];
 export class DrizzleCampaignRepository implements CampaignRepository {
   constructor(private readonly db: AppDb) {}
 
-  async listVisible(limit: number): Promise<Campaign[]> {
+  async listVisible(limit: number, audiences?: readonly Audience[]): Promise<Campaign[]> {
     const rows = await this.db
       .select()
       .from(campaigns)
-      .where(inArray(campaigns.lifecycleState, VISIBLE_STATES))
+      .where(
+        and(
+          inArray(campaigns.lifecycleState, VISIBLE_STATES),
+          // 12.1.b: `undefined` (feed/search's own `fetchFundedCampaigns`
+          // call, which filters downstream instead) or an empty list both
+          // skip this filter entirely -- an empty `inArray` would otherwise
+          // match nothing, which is "audiences" spelling "region_mismatch"
+          // rather than an actual empty scope.
+          audiences === undefined || audiences.length === 0
+            ? undefined
+            : inArray(campaigns.audience, audiences),
+        ),
+      )
       .orderBy(desc(campaigns.publishedAt))
       .limit(limit);
 

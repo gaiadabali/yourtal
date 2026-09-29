@@ -49,6 +49,14 @@ export type ConsentDenyReason =
       readonly availableFromPhase: ConsentPhase;
       readonly currentPhase: ConsentPhase;
     }
+  /**
+   * 12.1.c: minors get declared interests only, never inferred ones --
+   * `behavioural_profiling` and `purchase_history_targeting` are refused
+   * outright for a teen, regardless of jurisdiction, phase or any consent
+   * record. There is nothing the product could show a teen to make the
+   * answer yes, same shape as `prohibited_in_jurisdiction`.
+   */
+  | { readonly type: "minors_declared_interests_only" }
   /** No record at all. The honest default for anything consent-based. */
   | { readonly type: "consent_not_given" }
   /** They said yes and then said no. */
@@ -72,6 +80,8 @@ export function describeConsentDenyReason(reason: ConsentDenyReason): string {
       return `unknown jurisdiction "${reason.jurisdiction}"`;
     case "prohibited_in_jurisdiction":
       return `prohibited in ${reason.jurisdiction} regardless of consent`;
+    case "minors_declared_interests_only":
+      return "minors get declared interests only -- this purpose is refused regardless of consent";
     case "not_available_yet":
       return `not available until ${reason.availableFromPhase} (current ${reason.currentPhase})`;
     case "consent_not_given":

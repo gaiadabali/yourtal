@@ -1,0 +1,135 @@
+---
+name: AudienceWallSuite
+description: |-
+  TASKS.md 1.1.c/12.1.b: `campaign_view.yaml`'s `audience-wall` rule mirrors
+  `packages/contracts/src/audience/audience.ts`'s `reachesAudience` exactly
+  -- `all_ages` reaches everyone, `teen` reaches only the teen band,
+  `adult`/`parents` reach only the adult band, and no ageBand at all (an
+  anonymous visitor, or a signed-in principal missing one) reaches only
+  `all_ages`. `teen-earns-only-with-guardian-consent` is the second, separate
+  wall: a teen may always browse once the audience wall admits them, but
+  never earn without an active guardian consent grant.
+tests:
+  - name: all_ages reaches everyone, regardless of ageBand
+    input:
+      principals: [anon, wina, adi_adult, teo_granted, wina_no_ageband]
+      resources: [view_all_ages]
+      actions: [watch_open]
+    expected:
+      - principal: anon
+        resource: view_all_ages
+        actions: { watch_open: EFFECT_ALLOW }
+      - principal: wina
+        resource: view_all_ages
+        actions: { watch_open: EFFECT_ALLOW }
+      - principal: adi_adult
+        resource: view_all_ages
+        actions: { watch_open: EFFECT_ALLOW }
+      - principal: teo_granted
+        resource: view_all_ages
+        actions: { watch_open: EFFECT_ALLOW }
+      - principal: wina_no_ageband
+        resource: view_all_ages
+        actions: { watch_open: EFFECT_ALLOW }
+
+  - name: teen-only reaches a teen and denies an adult, an anonymous visitor and a no-ageBand principal
+    input:
+      principals: [teo_granted, adi_adult, anon, wina_no_ageband]
+      resources: [view_teen_only]
+      actions: [watch_open]
+    expected:
+      - principal: teo_granted
+        resource: view_teen_only
+        actions: { watch_open: EFFECT_ALLOW }
+      - principal: adi_adult
+        resource: view_teen_only
+        actions: { watch_open: EFFECT_DENY }
+      - principal: anon
+        resource: view_teen_only
+        actions: { watch_open: EFFECT_DENY }
+      - principal: wina_no_ageband
+        resource: view_teen_only
+        actions: { watch_open: EFFECT_DENY }
+
+  - name: adult-only reaches an adult and denies a teen and an anonymous visitor
+    input:
+      principals: [adi_adult, teo_granted, anon]
+      resources: [view_adult_only]
+      actions: [watch_open]
+    expected:
+      - principal: adi_adult
+        resource: view_adult_only
+        actions: { watch_open: EFFECT_ALLOW }
+      - principal: teo_granted
+        resource: view_adult_only
+        actions: { watch_open: EFFECT_DENY }
+      - principal: anon
+        resource: view_adult_only
+        actions: { watch_open: EFFECT_DENY }
+
+  - name: parents reaches the adult band the same way adult does, and still denies a teen
+    input:
+      principals: [adi_adult, teo_granted]
+      resources: [view_parents]
+      actions: [watch_open]
+    expected:
+      - principal: adi_adult
+        resource: view_parents
+        actions: { watch_open: EFFECT_ALLOW }
+      - principal: teo_granted
+        resource: view_parents
+        actions: { watch_open: EFFECT_DENY }
+
+  - name: a teen may browse a teen campaign but never earn without guardian consent granted
+    input:
+      principals: [teo_pending, teo_granted, teo_revoked]
+      resources: [view_teen_only]
+      actions: [watch_open, watch_rewarded, earn, answer_scored, resume_session]
+    expected:
+      - principal: teo_pending
+        resource: view_teen_only
+        actions:
+          watch_open: EFFECT_ALLOW
+          watch_rewarded: EFFECT_DENY
+          earn: EFFECT_DENY
+          answer_scored: EFFECT_DENY
+          resume_session: EFFECT_DENY
+      - principal: teo_granted
+        resource: view_teen_only
+        actions:
+          watch_open: EFFECT_ALLOW
+          watch_rewarded: EFFECT_ALLOW
+          earn: EFFECT_ALLOW
+          answer_scored: EFFECT_ALLOW
+          resume_session: EFFECT_ALLOW
+      - principal: teo_revoked
+        resource: view_teen_only
+        actions:
+          watch_open: EFFECT_ALLOW
+          watch_rewarded: EFFECT_DENY
+          earn: EFFECT_DENY
+          answer_scored: EFFECT_DENY
+          resume_session: EFFECT_DENY
+
+  - name: an adult is unaffected by the guardian-consent rule even with no explicit guardianConsent attribute
+    input:
+      principals: [adi_adult]
+      resources: [view_adult_only]
+      actions: [watch_open, watch_rewarded, earn]
+    expected:
+      - principal: adi_adult
+        resource: view_adult_only
+        actions: { watch_open: EFFECT_ALLOW, watch_rewarded: EFFECT_ALLOW, earn: EFFECT_ALLOW }
+
+  - name: the audience wall and the f2 region wall are independent -- a teen from the OTHER region is denied by the region wall regardless of audience
+    input:
+      principals: [teo_granted, teo_au]
+      resources: [view_teen_only_au]
+      actions: [watch_open]
+    expected:
+      - principal: teo_granted
+        resource: view_teen_only_au
+        actions: { watch_open: EFFECT_DENY }
+      - principal: teo_au
+        resource: view_teen_only_au
+        actions: { watch_open: EFFECT_ALLOW }

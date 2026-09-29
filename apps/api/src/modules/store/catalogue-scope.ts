@@ -1,5 +1,5 @@
 import type { Principal } from "@yourtal/authz/principal";
-import { audienceSchema, reachesAudience } from "@yourtal/contracts/audience/audience";
+import { reachableAudiences } from "@yourtal/contracts/audience/audience";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { Region } from "@yourtal/contracts/region";
 
@@ -40,11 +40,9 @@ export function resolveCatalogueScope(
   // (from identity.user_profile.date_of_birth); the schema still carries it
   // as optional (packages/authz/src/principal.ts), so this stays defensive
   // rather than asserting a fact that lives in a different package.
-  const ageBand = principal.attr.ageBand;
-  const audiences =
-    ageBand === undefined
-      ? (["all_ages"] as const)
-      : audienceSchema.options.filter((candidate) => reachesAudience(candidate, { ageBand }));
+  // 12.1.b: `reachableAudiences` is the ONE place this truth table lives now
+  // (audience.ts's own comment) -- every other list path derives from it too.
+  const audiences = reachableAudiences(principal.attr.ageBand);
 
   return { kind: "ok", region, audiences };
 }

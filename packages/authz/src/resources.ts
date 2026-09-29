@@ -95,6 +95,15 @@ export const RESOURCE_ACTIONS = {
     "approve_settlement_decrease",
     "approve_listing",
     "reject_listing",
+    // 12.1.b: the PUBLIC consumer read (StoreCatalogueController) -- a
+    // DIFFERENT action from `view` on purpose. `view` above is the
+    // merchant's own back-office read (business_inventory_viewer_of/ops
+    // derived roles); every signed-in principal also carries the plain
+    // "user" role (AsyncPrincipalResolver), so an audience-gated ALLOW
+    // scoped to roles ["user","anonymous"] on the SAME action would let any
+    // consumer pass the merchant's own inventory-view check merely by
+    // matching a listing's audience. Same split as campaign/campaign_view.
+    "browse",
   ],
 
   /**

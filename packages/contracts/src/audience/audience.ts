@@ -59,6 +59,24 @@ export function reachesAudience(
 }
 
 /**
+ * Every audience this viewer's `ageBand` reaches — 12.1.b's single source
+ * for every LIST path (a per-resource Cerbos check cannot filter a list):
+ * the campaign list, the store catalogue, feed and search all derive their
+ * audience filter from this function rather than re-deriving the same
+ * truth table, so there is exactly one place `reachesAudience`'s rule can
+ * drift from what a list actually returns.
+ *
+ * `undefined` (anonymous, or a signed-in principal missing one — fail
+ * closed) reaches only `all_ages`, same as `resolveCatalogueScope` decided
+ * before this was pulled out into one place.
+ */
+export function reachableAudiences(ageBand: AgeBand | undefined): readonly Audience[] {
+  return ageBand === undefined
+    ? (["all_ages"] as const)
+    : audienceSchema.options.filter((candidate) => reachesAudience(candidate, { ageBand }));
+}
+
+/**
  * Whether a `parents`-audience item should rank higher for this viewer.
  * Never widens reach — an adult with neither the interest nor consent still
  * sees `parents` content, just unboosted.

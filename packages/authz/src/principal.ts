@@ -71,6 +71,18 @@ export const principalAttrSchema = z
      * profile.
      */
     ageBand: z.enum(["teen", "adult"]).optional(),
+
+    /**
+     * 12.1.a/12.1.c: the guardian consent grant a teen's own reward-earning
+     * actions gate on (`campaign_view.yaml`'s `teen-earns-only-with-
+     * guardian-consent` rule) -- from `identity.user_profile
+     * .parent_consent_status`. Absent for `anonymous`/`store_device`
+     * (neither has a profile) and for an adult, whose earning is never
+     * gated on it -- the resolver still sets it for every signed-in
+     * principal regardless, the same "always set, only some rules read it"
+     * shape `ageBand` already uses.
+     */
+    guardianConsent: z.enum(["not_required", "pending", "granted", "revoked"]).optional(),
   })
   .strict();
 

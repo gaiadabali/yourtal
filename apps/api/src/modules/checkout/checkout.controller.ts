@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { createZodDto } from "nestjs-zod";
+import type { PdpClient } from "@yourtal/authz/pdp-client";
 import {
   checkoutQuoteRequestSchema,
   checkoutRequestSchema,
@@ -17,7 +18,9 @@ import {
   type CheckoutResult,
 } from "@yourtal/contracts/checkout/checkout";
 import { Authorize } from "../../shared/authz/authorize.decorator";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { PrincipalService } from "../../shared/authz/principal.service";
+import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
@@ -42,9 +45,11 @@ const CHECKOUT_RETENTION_MS = 30 * 24 * 60 * 60_000;
 export class CheckoutController {
   constructor(
     private readonly principals: PrincipalService,
+    private readonly asyncPrincipals: AsyncPrincipalResolver,
     @Inject(SAGA_DEPS) private readonly deps: SagaDeps,
     @Inject(CHECKOUT_DB) private readonly db: AppDb,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
+    @Inject(PDP_CLIENT) private readonly pdp: PdpClient,
   ) {}
 
   @NotValueMoving(
@@ -60,6 +65,34 @@ export class CheckoutController {
     const userId = (await this.principals.resolve(request)).id;
     const profile = await this.profiles.findByUserId(userId);
     if (profile === null) throw new NotFoundException("No such account.");
+    const listing = await findListingForCheckout(this.db, body.listingId);
+
+    // 12.1.b: a second, PDP-backed opinion alongside `quoteCheckout`'s own
+    // `reachesAudience` check below -- both read the SAME truth table
+    // (audience.ts), so this is defence in depth against the two ever
+    // drifting, not a different rule. `listing.yaml`'s
+    // `consumer-browse-is-audience-gated` rule is what a teen's own
+    // `AsyncPrincipalResolver`-derived `ageBand` is checked against here;
+    // `PrincipalService.resolve()` above never carries one, which is why
+    // this needs its own principal read rather than reusing `userId`'s.
+    if (listing !== null) {
+      const authz = await this.pdp.requireAction(
+        await this.asyncPrincipals.resolve(request),
+        {
+          kind: "listing",
+          id: listing.id,
+          attr: { region: listing.region, audience: listing.audience },
+        },
+        "browse",
+      );
+      if (authz.isErr()) {
+        throw refusal({
+          code: "audience_blocked",
+          message: "this reward is not available for your account",
+        });
+      }
+    }
+
     const quoted = await quoteCheckout(
       this.deps,
       {
@@ -68,7 +101,7 @@ export class CheckoutController {
         dateOfBirth: profile.dateOfBirth,
         trustTier: profile.trustTier,
       },
-      await findListingForCheckout(this.db, body.listingId),
+      listing,
     );
     if (quoted.isErr()) throw refusal(quoted.error);
     return quoted.value;

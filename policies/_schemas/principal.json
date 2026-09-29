@@ -48,6 +48,11 @@
       "description": "1.5.b, computed from identity.user_profile.date_of_birth. Absent for anonymous and store_device.",
       "type": "string",
       "enum": ["teen", "adult"]
+    },
+    "guardianConsent": {
+      "description": "12.1.a/12.1.c: from identity.user_profile.parent_consent_status. A teen may only earn (campaign_view.yaml's teen-earns-only-with-guardian-consent) once this is 'granted' -- pending or revoked both deny. Absent for anonymous and store_device.",
+      "type": "string",
+      "enum": ["not_required", "pending", "granted", "revoked"]
     }
   }
 }

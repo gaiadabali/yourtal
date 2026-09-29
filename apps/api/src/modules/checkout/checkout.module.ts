@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
+import { AuthzModule } from "../../shared/authz/authz.module";
+import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import {
   LEDGER_INTERNAL_CLIENT,
   type LedgerInternalClient,
@@ -22,7 +24,7 @@ import type { SagaDeps } from "./use-cases/run-saga";
 
 /** The burn saga (4.7). Uses the wallet module's ledger and voucher clients. */
 @Module({
-  imports: [IdentityModule, WalletModule],
+  imports: [IdentityModule, WalletModule, AuthzModule, PdpClientModule],
   controllers: [CheckoutController, DisputeController],
   providers: [
     {

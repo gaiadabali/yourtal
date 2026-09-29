@@ -64,6 +64,48 @@ resourcePolicy:
         match:
           expr: P.attr.isSuspended
 
+    - name: audience-wall
+      # 1.1.c/1.5.b: mirrors packages/contracts/src/audience/audience.ts's
+      # `reachesAudience` exactly -- `all_ages` reaches everyone; `teen`
+      # needs P.attr.ageBand == "teen"; `adult`/`parents` need "adult". No
+      # ageBand at all (anonymous, or a signed-in principal missing one)
+      # reaches only `all_ages` -- fail closed, the same choice
+      # `resolveCatalogueScope`/`reachableAudiences` make for every list.
+      # `has(R.attr.audience)` makes this a no-op for anything the loader
+      # has not populated (there is none today -- CampaignViewAttributeLoader
+      # always sends it -- but a future caller that forgets to would DENY
+      # everything rather than allow, which is the safe direction to fail
+      # missing on).
+      actions: ["watch_open", "watch_rewarded", "earn", "answer_scored", "resume_session"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: |-
+            has(R.attr.audience) && R.attr.audience != "all_ages" &&
+            (
+              (R.attr.audience == "teen" &&
+                (!has(P.attr.ageBand) || P.attr.ageBand != "teen")) ||
+              ((R.attr.audience == "adult" || R.attr.audience == "parents") &&
+                (!has(P.attr.ageBand) || P.attr.ageBand != "adult"))
+            )
+
+    - name: teen-earns-only-with-guardian-consent
+      # 12.1.a/12.1.c: a teen may browse (watch_open) freely once
+      # audience-wall above admits them, but never earn without an ACTIVE
+      # guardian consent grant. Pending (never yet granted) and revoked
+      # (granted, then withdrawn) both deny -- only "granted" opens
+      # watch_rewarded/earn/answer_scored/resume_session. An adult is
+      # unaffected: this rule only ever matches P.attr.ageBand == "teen".
+      actions: ["watch_rewarded", "earn", "answer_scored", "resume_session"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: |-
+            has(P.attr.ageBand) && P.attr.ageBand == "teen" &&
+            (!has(P.attr.guardianConsent) || P.attr.guardianConsent != "granted")
+
     - name: f2-region-wall
       # 1.5.b: a signed-in viewer never watches a campaign from the OTHER
       # region — 1.5.d's CampaignViewAttributeLoader already supplies

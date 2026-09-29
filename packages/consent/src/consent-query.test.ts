@@ -274,3 +274,64 @@ describe("failing closed", () => {
     }
   });
 });
+
+describe("12.1.c: minors get declared interests only, never inferred ones", () => {
+  it.each(["behavioural_profiling", "purchase_history_targeting"] as const)(
+    "denies a teen %s even with a current, granted record",
+    (purpose) => {
+      const decision = mayUseSignalFor({
+        purpose,
+        jurisdiction: "ID",
+        records: [granted(purpose, { jurisdiction: "ID" })],
+        currentPhase: "P3",
+        ageBand: "teen",
+      });
+
+      expect(decision).toEqual({
+        allowed: false,
+        reason: { type: "minors_declared_interests_only" },
+      });
+    },
+  );
+
+  it("does not touch an adult's own decision for the same purposes", () => {
+    const decision = mayUseSignalFor({
+      purpose: "behavioural_profiling",
+      jurisdiction: "ID",
+      records: [granted("behavioural_profiling")],
+      currentPhase: "P3",
+      ageBand: "adult",
+    });
+
+    expect(decision).toEqual({
+      allowed: true,
+      basis: { type: "consent", policyVersionId: ID_VERSION },
+    });
+  });
+
+  it("leaves declared_interest_targeting open to a teen -- only the inferred purposes are refused", () => {
+    const decision = mayUseSignalFor({
+      purpose: "declared_interest_targeting",
+      jurisdiction: "ID",
+      records: [granted("declared_interest_targeting")],
+      currentPhase: "P1",
+      ageBand: "teen",
+    });
+
+    expect(decision).toEqual({
+      allowed: true,
+      basis: { type: "consent", policyVersionId: ID_VERSION },
+    });
+  });
+
+  it("does not restrict anything when ageBand is omitted (an existing caller unaware of this field)", () => {
+    const decision = mayUseSignalFor({
+      purpose: "behavioural_profiling",
+      jurisdiction: "ID",
+      records: [granted("behavioural_profiling")],
+      currentPhase: "P3",
+    });
+
+    expect(decision.allowed).toBe(true);
+  });
+});

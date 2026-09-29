@@ -71,6 +71,75 @@ principals:
       hasPasskey: true
       valueFrozenUntil: "2026-09-22T00:00:00Z"
 
+  # --- 12.1: teen accounts (TASKS.md 1.1.c/12.1.a/12.1.c) ---
+  teo_pending:
+    # Signed up, guardian invited, consent not yet given.
+    id: teo
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      ageBand: "teen"
+      guardianConsent: "pending"
+
+  teo_granted:
+    id: teo
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      ageBand: "teen"
+      guardianConsent: "granted"
+
+  teo_revoked:
+    # A guardian who granted, then withdrew -- earning stops the same as
+    # pending, never a partial or grandfathered state.
+    id: teo
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      ageBand: "teen"
+      guardianConsent: "revoked"
+
+  teo_au:
+    # AU teen, granted -- for the f2 region wall alongside the audience wall.
+    id: teo
+    roles: ["user"]
+    attr:
+      jurisdiction: "AU"
+      businessRoles: {}
+      isSuspended: false
+      ageBand: "teen"
+      guardianConsent: "granted"
+
+  adi_adult:
+    # A plain adult consumer, distinct from `wina` only so a suite can name
+    # "the adult" without implying anything about wina's own fixtures.
+    id: adi
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+      ageBand: "adult"
+      guardianConsent: "not_required"
+
+  # A signed-in principal missing ageBand entirely -- the fail-closed case
+  # 1.5.b's own audience-wall comment names (never produced by
+  # AsyncPrincipalResolver for a real account, but the schema still allows
+  # it, so the policy must still answer it safely).
+  wina_no_ageband:
+    id: wina
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: false
+
   # --- biz-kopi, one principal per role in docs/17 section 2.1 ---
   budi_owner:
     id: budi

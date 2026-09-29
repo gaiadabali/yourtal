@@ -1,4 +1,4 @@
-import type { Campaign } from "@yourtal/contracts/campaign";
+import type { Audience, Campaign } from "@yourtal/contracts/campaign";
 import type { CampaignTerms } from "@yourtal/contracts/campaign/campaign-terms";
 
 /**
@@ -20,8 +20,21 @@ import type { CampaignTerms } from "@yourtal/contracts/campaign/campaign-terms";
  * stronger than remembering to filter in each controller.
  */
 export interface CampaignRepository {
-  /** Campaigns a viewer may see, newest first. Never drafts. */
-  listVisible(limit: number): Promise<Campaign[]>;
+  /**
+   * Campaigns a viewer may see, newest first. Never drafts.
+   *
+   * `audiences` (12.1.b), when given, additionally filters to campaigns
+   * whose `audience` this viewer's `ageBand` reaches --
+   * `@yourtal/contracts/audience`'s `reachableAudiences`, the same list
+   * every other consumer surface derives from. Omitted by
+   * `fetchFundedCampaigns` (feed/search): those already filter downstream
+   * in `ranking.ts`'s own `passesFilter`, against candidates that also need
+   * ranking signals this repository does not have -- filtering here too
+   * would just be the same check twice. `CampaignController.list` (a plain,
+   * unranked read with no ranking context) is the one caller that filters
+   * here instead, because there is nothing downstream of it that would.
+   */
+  listVisible(limit: number, audiences?: readonly Audience[]): Promise<Campaign[]>;
   /** One campaign, or `null` if it does not exist or is not public. */
   findVisibleById(campaignId: string): Promise<Campaign | null>;
   /**

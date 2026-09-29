@@ -1,0 +1,102 @@
+---
+name: ConsumerBrowseSuite
+description: |-
+  12.1.b: `listing.yaml`'s `consumer-browse-is-audience-gated` rule --
+  the public storefront's offer detail (`StoreCatalogueController`). Mirrors
+  `AudienceWallSuite` (campaign_view's own audience wall) on a different
+  resource kind and a DIFFERENT action name (`browse`, never `view` --
+  see that rule's own comment for why conflating the two would let any
+  signed-in consumer pass the merchant's own inventory-view check).
+tests:
+  - name: all_ages reaches everyone, signed in or anonymous
+    input:
+      principals: [anon, adi_adult, teo_granted]
+      resources: [listing_all_ages]
+      actions: [browse]
+    expected:
+      - principal: anon
+        resource: listing_all_ages
+        actions: { browse: EFFECT_ALLOW }
+      - principal: adi_adult
+        resource: listing_all_ages
+        actions: { browse: EFFECT_ALLOW }
+      - principal: teo_granted
+        resource: listing_all_ages
+        actions: { browse: EFFECT_ALLOW }
+
+  - name: teen-only reaches a teen and denies an adult and an anonymous visitor
+    input:
+      principals: [teo_granted, adi_adult, anon]
+      resources: [listing_teen_only]
+      actions: [browse]
+    expected:
+      - principal: teo_granted
+        resource: listing_teen_only
+        actions: { browse: EFFECT_ALLOW }
+      - principal: adi_adult
+        resource: listing_teen_only
+        actions: { browse: EFFECT_DENY }
+      - principal: anon
+        resource: listing_teen_only
+        actions: { browse: EFFECT_DENY }
+
+  - name: adult-only reaches an adult and denies a teen
+    input:
+      principals: [adi_adult, teo_granted, anon]
+      resources: [listing_adult_only]
+      actions: [browse]
+    expected:
+      - principal: adi_adult
+        resource: listing_adult_only
+        actions: { browse: EFFECT_ALLOW }
+      - principal: teo_granted
+        resource: listing_adult_only
+        actions: { browse: EFFECT_DENY }
+      - principal: anon
+        resource: listing_adult_only
+        actions: { browse: EFFECT_DENY }
+
+  - name: guardian consent state is irrelevant to browse -- a pending or revoked teen still browses
+    input:
+      principals: [teo_pending, teo_revoked]
+      resources: [listing_teen_only]
+      actions: [browse]
+    expected:
+      - principal: teo_pending
+        resource: listing_teen_only
+        actions: { browse: EFFECT_ALLOW }
+      - principal: teo_revoked
+        resource: listing_teen_only
+        actions: { browse: EFFECT_ALLOW }
+
+  - name: the f2 region wall applies to a signed-in browse, never to anonymous
+    input:
+      principals: [teo_granted, teo_au, anon]
+      resources: [listing_teen_only_au]
+      actions: [browse]
+    expected:
+      - principal: teo_granted
+        resource: listing_teen_only_au
+        actions: { browse: EFFECT_DENY }
+      - principal: teo_au
+        resource: listing_teen_only_au
+        actions: { browse: EFFECT_ALLOW }
+      - principal: anon
+        # No jurisdiction to wall in the first place (region_wall's own
+        # exemption for anonymous) -- audience alone denies: an anonymous
+        # visitor has no ageBand to reach `teen`.
+        resource: listing_teen_only_au
+        actions: { browse: EFFECT_DENY }
+
+  - name: browse never grants the merchant's own back-office view action
+    input:
+      principals: [adi_adult, anon]
+      resources: [listing_all_ages]
+      actions: [view]
+    expected:
+      - principal: adi_adult
+        resource: listing_all_ages
+        actions: { view: EFFECT_DENY }
+      - principal: anon
+        resource: listing_all_ages
+        actions: { view: EFFECT_DENY }

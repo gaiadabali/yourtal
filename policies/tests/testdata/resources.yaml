@@ -67,6 +67,64 @@ resources:
       openViewingEnabled: false
       openViewingBudgetRemaining: 500
 
+  # --- 12.1.b: the audience wall, one campaign_view per audience value ---
+  view_all_ages:
+    kind: campaign_view
+    id: camp-6
+    attr:
+      campaignId: "camp-6"
+      state: "live"
+      region: "ID"
+      audience: "all_ages"
+      openViewingEnabled: true
+      openViewingBudgetRemaining: 500
+
+  view_teen_only:
+    kind: campaign_view
+    id: camp-7
+    attr:
+      campaignId: "camp-7"
+      state: "live"
+      region: "ID"
+      audience: "teen"
+      openViewingEnabled: true
+      openViewingBudgetRemaining: 500
+
+  view_adult_only:
+    kind: campaign_view
+    id: camp-8
+    attr:
+      campaignId: "camp-8"
+      state: "live"
+      region: "ID"
+      audience: "adult"
+      openViewingEnabled: true
+      openViewingBudgetRemaining: 500
+
+  view_parents:
+    kind: campaign_view
+    id: camp-9
+    attr:
+      campaignId: "camp-9"
+      state: "live"
+      region: "ID"
+      audience: "parents"
+      openViewingEnabled: true
+      openViewingBudgetRemaining: 500
+
+  # AU version of the teen-only campaign, for a suite that needs the
+  # audience wall and the f2 region wall to disagree on the same principal.
+  view_teen_only_au:
+    kind: campaign_view
+    id: camp-10
+    attr:
+      campaignId: "camp-10"
+      state: "live"
+      region: "AU"
+      audience: "teen"
+      openViewingEnabled: true
+      openViewingBudgetRemaining: 500
+
   listing_kopi:
     kind: listing
     id: list-1
@@ -98,6 +156,35 @@ resources:
     id: list-3
     attr:
       businessId: "biz-kopi"
+
+  # --- 12.1.b: the `browse` action (StoreCatalogueController) ---
+  listing_all_ages:
+    kind: listing
+    id: list-4
+    attr:
+      region: "ID"
+      audience: "all_ages"
+
+  listing_teen_only:
+    kind: listing
+    id: list-5
+    attr:
+      region: "ID"
+      audience: "teen"
+
+  listing_adult_only:
+    kind: listing
+    id: list-6
+    attr:
+      region: "ID"
+      audience: "adult"
+
+  listing_teen_only_au:
+    kind: listing
+    id: list-7
+    attr:
+      region: "AU"
+      audience: "teen"
 
   batch_kopi:
     kind: voucher_batch

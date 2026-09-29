@@ -121,6 +121,15 @@ export async function getFeed(
     jurisdiction: region,
     records: consentRecords,
     currentPhase: CURRENT_CONSENT_PHASE,
+    // 12.1.c: unaffected for THIS purpose (declared interests stay open to
+    // a teen) -- passed through so this call site already agrees with
+    // `mayUseSignalFor`'s own contract the day a caller here asks about
+    // `behavioural_profiling`/`purchase_history_targeting` instead.
+    // Conditionally spread, not `ageBand,` directly -- `exactOptionalPropertyTypes`
+    // (docs/13b §1) treats a key present with value `undefined` differently
+    // from an absent key, and `ConsentQuery.ageBand` is typed to require the
+    // latter.
+    ...(ageBand === undefined ? {} : { ageBand }),
   }).allowed;
 
   const segmentCache = new Map<string, number>();

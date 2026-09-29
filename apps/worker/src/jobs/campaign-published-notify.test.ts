@@ -114,4 +114,72 @@ describe("campaign-published-notify job", () => {
     const rows = await pool.query(`SELECT 1 FROM me.notification WHERE user_id = $1`, [follower]);
     expect(rows.rows).toHaveLength(1);
   });
+
+  // 12.1.b: the audience wall reaches this fan-out too. Minimal
+  // `campaign.campaigns` row, same columns `feed.controller.e2e.test.ts`'s
+  // own `seedCampaign` helper inserts.
+  it("skips a follower whose age band the campaign's audience does not reach", async () => {
+    const businessId = randomUUID();
+    const campaignId = randomUUID();
+    const adultFollower = randomUUID();
+    const teenFollower = randomUUID();
+    // No `identity.user_profile` row at all -- an ageBand nobody can prove.
+    const noProfileFollower = randomUUID();
+
+    await pool.query(
+      `INSERT INTO identity.user_profile (user_id, region, display_name, date_of_birth, timezone)
+       VALUES ($1, 'AU', 'Adult Follower', '1990-01-01', 'Australia/Sydney'),
+              ($2, 'AU', 'Teen Follower', $3, 'Australia/Sydney')`,
+      [adultFollower, teenFollower, fifteenYearsAgo()],
+    );
+    await pool.query(
+      `INSERT INTO me.follow (user_id, business_id, region) VALUES ($1, $2, 'AU'), ($3, $2, 'AU'), ($4, $2, 'AU')`,
+      [adultFollower, businessId, teenFollower, noProfileFollower],
+    );
+    await pool.query(
+      `INSERT INTO campaign.campaigns
+        (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+         estimated_data_mb, reward_points, question_count, scoring_rule, lifecycle_state,
+         published_at, business_id, region, audience, content_category, poster_url,
+         teaser_url, hls_url, aspect, estimated_bytes, starts_at, ends_at, open_viewing,
+         teaser_start_seconds)
+       VALUES
+        ($1, 'quick', 'Adult-only notify test', $2, 'Notify Test Merchant',
+         'Exercises 12.1.b.', 30, 10, 100, 0, 'base_only', 'live',
+         now(), $2, 'AU', 'adult', 'food-and-drink',
+         'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
+         'https://cdn.example.com/manifest.m3u8', '9:16', 1000000, now() - interval '1 day',
+         now() + interval '30 days', false, 0)`,
+      [campaignId, businessId],
+    );
+
+    try {
+      await job.handle(
+        fakeJob({
+          campaignId,
+          businessId,
+          region: "AU",
+          idempotencyKey: `campaign_published_${campaignId}`,
+        }),
+        { boss: undefined as never, config },
+      );
+
+      const rows = await pool.query<{ user_id: string }>(
+        `SELECT user_id FROM me.notification WHERE user_id = ANY($1)`,
+        [[adultFollower, teenFollower, noProfileFollower]],
+      );
+      expect(rows.rows.map((row) => row.user_id)).toStrictEqual([adultFollower]);
+    } finally {
+      await pool.query(`DELETE FROM campaign.campaigns WHERE id = $1`, [campaignId]);
+    }
+  });
 });
+
+/** ISO date (`YYYY-MM-DD`) for someone who turned 15 sometime in the last year. */
+function fifteenYearsAgo(): string {
+  const now = new Date();
+  const dob = new Date(Date.UTC(now.getUTCFullYear() - 15, now.getUTCMonth(), now.getUTCDate()));
+  const iso = dob.toISOString().split("T")[0];
+  if (iso === undefined) throw new Error("unreachable: toISOString always has a date part");
+  return iso;
+}

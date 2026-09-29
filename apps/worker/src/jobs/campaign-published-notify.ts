@@ -2,6 +2,9 @@ import { Pool } from "pg";
 import type { Job } from "pg-boss";
 import { CAMPAIGN_PUBLISHED_QUEUE } from "@yourtal/contracts/studio/campaign-published-event";
 import type { CampaignPublishedEvent } from "@yourtal/contracts/studio/campaign-published-event";
+import { reachesAudience } from "@yourtal/contracts/audience/audience";
+import type { Audience } from "@yourtal/contracts/audience/audience";
+import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
 import type { JobContext } from "../job";
@@ -34,16 +37,44 @@ export const job = defineJob<CampaignPublishedEvent>({
     // unambiguous (F2: a business belongs to exactly one region) — matching
     // the same defensive double-key every other cross-schema query in this
     // codebase uses rather than trusting the join to be enough on its own.
-    const followers = await client.query<{ user_id: string }>(
-      `SELECT user_id FROM me.follow WHERE business_id = $1 AND region = $2`,
+    const followers = await client.query<{ user_id: string; date_of_birth: string | null }>(
+      `SELECT f.user_id, p.date_of_birth
+         FROM me.follow f
+         LEFT JOIN identity.user_profile p ON p.user_id = f.user_id
+        WHERE f.business_id = $1 AND f.region = $2`,
       [event.businessId, event.region],
     );
     if (followers.rows.length === 0) return;
 
+    // 12.1.b: the audience wall reaches notifications too -- a follower who
+    // cannot see an `adult`/`teen`/`parents` campaign must not be told it
+    // exists. `audience` defaults to `"all_ages"` when the campaign row is
+    // gone by the time this runs (a race with a later unpublish, not a real
+    // production path for an event that only fires once a campaign IS
+    // live) -- the safe direction for a DEFAULT to fail is "notify", since
+    // this is a convenience, not an authorization boundary the way
+    // `campaign_view.yaml`'s own wall is.
+    const campaignRow = await client.query<{ audience: Audience }>(
+      `SELECT audience FROM campaign.campaigns WHERE id = $1`,
+      [event.campaignId],
+    );
+    const audience = campaignRow.rows[0]?.audience ?? "all_ages";
+    const now = new Date();
+    const reachable = followers.rows.filter((follower) => {
+      if (audience === "all_ages") return true;
+      // No profile row (a test fixture, or a race with account deletion) --
+      // fail closed: cannot prove this follower's ageBand reaches a
+      // narrower audience, so they are skipped rather than guessed at.
+      if (follower.date_of_birth === null) return false;
+      const ageBand = ageBandFrom(ageYearsFrom(follower.date_of_birth, now));
+      return reachesAudience(audience, { ageBand });
+    });
+    if (reachable.length === 0) return;
+
     const title = "New from a channel you follow";
     const body = "A business you follow just published a new campaign to watch and earn.";
 
-    for (const follower of followers.rows) {
+    for (const follower of reachable) {
       await client.query(
         `INSERT INTO me.notification (user_id, region, category, title, body, metadata)
          VALUES ($1, $2, $3, $4, $5, $6)`,

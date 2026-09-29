@@ -1,6 +1,6 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { principalSchema } from "@yourtal/authz/principal";
-import type { Principal } from "@yourtal/authz/principal";
+import type { Principal, PrincipalAttr } from "@yourtal/authz/principal";
 import { businessRoleSchema } from "@yourtal/authz/roles";
 import type { PrincipalRole } from "@yourtal/authz/roles";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
@@ -121,6 +121,7 @@ export class AsyncPrincipalResolver {
       ageBand: ageBandFrom(ageYearsFrom(profile.dateOfBirth, new Date())),
       isSuspended: profile.suspendedAt !== null,
       businessRoles,
+      guardianConsent: guardianConsentFrom(profile.parentConsentStatus),
     };
 
     let roles: readonly PrincipalRole[] = withoutRole(base.roles, "business_user");
@@ -158,4 +159,31 @@ function withoutRole(
 
 function dedupeRoles(roles: readonly PrincipalRole[]): readonly PrincipalRole[] {
   return [...new Set(roles)];
+}
+
+/**
+ * 12.1.b: maps `identity.user_profile.parent_consent_status` onto
+ * `PrincipalAttr["guardianConsent"]`.
+ *
+ * Written defensively on purpose: agent A (12.1.a) is adding `"revoked"` to
+ * `ParentConsentStatus` and the DB CHECK constraint in parallel, on a
+ * different branch. Until that lands here, the TYPE this function's
+ * parameter carries is still the 3-value union -- but nothing stops the
+ * ACTUAL STRING the identity module hands back from already being
+ * `"revoked"` once both land and merge, so this compares the raw string
+ * rather than exhaustively switching over the (currently narrower) type.
+ * Anything this function does not recognise fails closed to `"pending"` --
+ * safe for the one thing `guardianConsent` gates (a teen's own earning,
+ * `campaign_view.yaml`), never `"granted"` or `"not_required"`.
+ */
+function guardianConsentFrom(status: string): NonNullable<PrincipalAttr["guardianConsent"]> {
+  switch (status) {
+    case "not_required":
+    case "pending":
+    case "granted":
+    case "revoked":
+      return status;
+    default:
+      return "pending";
+  }
 }

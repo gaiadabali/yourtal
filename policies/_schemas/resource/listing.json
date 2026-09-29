@@ -22,6 +22,11 @@
       "description": "1.5.b's F2 hard wall: the business's own region, compared against P.attr.jurisdiction.",
       "type": "string",
       "enum": ["AU", "ID"]
+    },
+    "audience": {
+      "description": "12.1.b's audience-targeting wall for the `browse` action (StoreCatalogueController) -- same status as campaign_view.json's own `audience`. Not required: every WRITE action on this kind (create/edit/set_settlement_value/...) never populates it, and requiring it would refuse those before any rule ran, same reasoning as `businessId` above.",
+      "type": "string",
+      "enum": ["all_ages", "teen", "adult", "parents"]
     }
   }
 }

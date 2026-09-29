@@ -11,7 +11,14 @@ import type { Region } from "@yourtal/contracts/region";
  */
 export async function seedUserProfile(
   db: AppDb,
-  args: { readonly userId: string; readonly region?: Region },
+  args: {
+    readonly userId: string;
+    readonly region?: Region;
+    /** ISO date. Default is comfortably adult; 12.1.b's own tests pass a teen's. */
+    readonly dateOfBirth?: string;
+    /** Default `"not_required"` (an adult). 12.1.b's own tests pass a teen's grant state. */
+    readonly parentConsentStatus?: "not_required" | "pending" | "granted";
+  },
 ): Promise<void> {
   const region = args.region ?? "AU";
   await new DrizzleUserProfileRepository(db).create({
@@ -19,9 +26,9 @@ export async function seedUserProfile(
     region,
     displayLocale: region === "AU" ? "en-AU" : "id-ID",
     displayName: "1.5.a Test User",
-    dateOfBirth: "1990-01-01",
+    dateOfBirth: args.dateOfBirth ?? "1990-01-01",
     timezone: "Australia/Sydney",
     guardianEmail: null,
-    parentConsentStatus: "not_required",
+    parentConsentStatus: args.parentConsentStatus ?? "not_required",
   });
 }

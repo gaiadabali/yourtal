@@ -1,11 +1,26 @@
 import { randomUUID } from "node:crypto";
+import type { FastifyRequest } from "fastify";
 import type { Campaign } from "@yourtal/contracts/campaign";
+import { anonymousPrincipal } from "@yourtal/authz/principal";
 import { NotFoundException } from "@nestjs/common";
 import { beforeAll, describe, expect, it } from "vitest";
+import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { CampaignController } from "./campaign.controller";
 import type { CampaignRepository } from "./persistence/campaign.repository";
 import { DrizzleCampaignRepository } from "./persistence/drizzle-campaign.repository";
+
+/**
+ * 12.1.b: every route on this controller now resolves a principal (the
+ * audience filter on `list`), so every call site below needs one too. An
+ * anonymous ID principal reaches exactly `all_ages` -- every fixture
+ * campaign in this file already is one, so this changes nothing any test
+ * here was asserting.
+ */
+const anonymousResolver: PrincipalResolver = {
+  resolve: () => Promise.resolve(anonymousPrincipal("ID")),
+};
+const fakeRequest = {} as FastifyRequest;
 
 /**
  * `CampaignController`. YT-0553.
@@ -81,7 +96,7 @@ import { DrizzleCampaignRepository } from "./persistence/drizzle-campaign.reposi
 const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!);
 const owner = createAppDb(process.env["DATABASE_OWNER_URL"]!);
 const campaigns = new DrizzleCampaignRepository(db);
-const controller = new CampaignController(campaigns);
+const controller = new CampaignController(campaigns, anonymousResolver);
 
 /**
  * Records the limit it was handed and returns nothing.
@@ -159,13 +174,13 @@ beforeAll(async () => {
 describe("the limit is clamped, because it is an unauthenticated cost", () => {
   it("defaults when absent", async () => {
     const repo = new LimitRecordingRepository();
-    await new CampaignController(repo).list(undefined);
+    await new CampaignController(repo, anonymousResolver).list(undefined, fakeRequest);
     expect(repo.lastLimit).toBe(30);
   });
 
   it("CLAMPS a caller asking for a million rows", async () => {
     const repo = new LimitRecordingRepository();
-    await new CampaignController(repo).list("1000000");
+    await new CampaignController(repo, anonymousResolver).list("1000000", fakeRequest);
     // The whole point of the guard. Delete the `Math.min` and this is the
     // only test in the repository that goes red.
     expect(repo.lastLimit).toBe(100);
@@ -173,22 +188,25 @@ describe("the limit is clamped, because it is an unauthenticated cost", () => {
 
   it("raises a zero or negative limit to one, rather than passing it through", async () => {
     const repo = new LimitRecordingRepository();
-    await new CampaignController(repo).list("0");
+    await new CampaignController(repo, anonymousResolver).list("0", fakeRequest);
     expect(repo.lastLimit).toBe(1);
 
     const negative = new LimitRecordingRepository();
-    await new CampaignController(negative).list("-5");
+    await new CampaignController(negative, anonymousResolver).list("-5", fakeRequest);
     expect(negative.lastLimit).toBe(1);
   });
 
   it("falls back to the default for a limit that is not a number", async () => {
     const repo = new LimitRecordingRepository();
-    await new CampaignController(repo).list("; DROP TABLE campaigns");
+    await new CampaignController(repo, anonymousResolver).list(
+      "; DROP TABLE campaigns",
+      fakeRequest,
+    );
     expect(repo.lastLimit).toBe(30);
   });
 
   it("returns the list under a `campaigns` key", async () => {
-    const result = await controller.list(undefined);
+    const result = await controller.list(undefined, fakeRequest);
     expect(Array.isArray(result.campaigns)).toBe(true);
   });
 });
@@ -295,7 +313,7 @@ describe("a campaign that is not public is reported as missing, not as forbidden
   });
 
   it("keeps the draft off the list as well as out of a direct read", async () => {
-    const { campaigns: listed } = await controller.list("100");
+    const { campaigns: listed } = await controller.list("100", fakeRequest);
     expect(listed.map((campaign) => campaign.id)).not.toContain(draftId);
   });
 });

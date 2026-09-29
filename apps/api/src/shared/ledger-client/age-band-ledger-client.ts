@@ -34,33 +34,10 @@ function resolveAgeBand(
 }
 
 /**
- * 12.1.c: F12's teen earn cap needs the principal's REAL age band on every
- * `grantReward`/`grantAction` — and a caller-supplied one can never be
- * trusted, since a spoofed "adult" is exactly what a teen account reaching
- * for the larger cap would send. This is the ONE place that derives it, so
- * no grant call site (`watch.controller.ts`, `streak.service.ts`,
- * `staff-users.controller.ts`, `grant-partner-action.use-case.ts`) has to
- * know this field exists, let alone set it correctly — `createLedgerClient`
- * wraps every `LEDGER_INTERNAL_CLIENT` this way, so it happens once.
- *
- * The returned object's PROTOTYPE is `inner` — so every method neither
- * override below defines (quote, balance, escrow, the settings trio, ...)
- * resolves straight through the prototype chain to the inner client's own
- * implementation, unedited and un-retyped here. Only `grantReward` and
- * `grantAction` are the wrapper's OWN properties, shadowing the inner ones;
- * an inner method reading its own fields (e.g. `this.db`) still resolves
- * them correctly, since those fields live on `inner` itself, further up the
- * SAME prototype chain the wrapper's `this` walks.
- *
- * Fails closed (12.1.c): no `identity.user_profile` row for the grant's
- * `userId` refuses with `region_mismatch` — the closed enum's existing code
- * for "this account is not who/where a grant expects" — rather than
- * defaulting to adult. In practice this should be unreachable for a real
- * signed-in user: every caller that reaches a grant has already loaded that
- * same profile for itself (e.g. `watch.controller.ts`'s own
- * `this.profiles.findByUserId` a few lines earlier, and
- * `apps/api/src/shared/authz`'s own "no profile row, no principal" rule) —
- * this is a second, independent check, not the first one.
+ * Sets every grant's ageBand from the user's own DOB, so the ledger applies the
+ * teen cap; a caller-supplied value is ignored, since a spoofed "adult" is the
+ * attack. Only the two grant methods are overridden; the rest resolve to
+ * `inner` through the prototype. No profile refuses rather than defaults.
  */
 export function withAgeBandEnrichment(
   inner: LedgerInternalClient,

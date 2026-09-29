@@ -221,6 +221,18 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "GET /api/{tenantId}/studio/billing/campaigns/{campaignId}/spend":
     "BillingModule -- TASKS.md 7.5.b, this pass's own ticket.",
 
+  // BillingModule's statements -- TASKS.md 10.1.b/10.6.b, this pass's own
+  // ticket, landing exactly where the note above said they would.
+  "GET /api/{tenantId}/studio/billing/statements":
+    "BillingModule -- TASKS.md 10.1.b/10.6.b, this pass's own ticket.",
+  "POST /api/{tenantId}/studio/billing/statements/{id}/dispute":
+    "BillingModule -- TASKS.md 10.6.b, this pass's own ticket.",
+
+  // ProofModule -- TASKS.md 10.3.b, this pass's own ticket. A single public,
+  // no-auth GET (F11); the same "stand the route up first, transcribe the
+  // contract later" deferral every other fresh module above uses.
+  "GET /api/proof/roots": "ProofModule -- TASKS.md 10.3.b, this pass's own ticket.",
+
   // ReportsModule -- TASKS.md 7.6, this pass's own ticket.
   "GET /api/{tenantId}/studio/reports/campaigns/{campaignId}":
     "ReportsModule -- TASKS.md 7.6.a, this pass's own ticket.",

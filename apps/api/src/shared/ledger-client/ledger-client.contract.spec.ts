@@ -107,7 +107,9 @@ async function pricedListing(points: number): Promise<string> {
  * `pricePoints` it actually prices to, rather than insisting the caller's
  * own requested amount survives two roundings intact.
  */
-async function pricedAuListing(targetPoints: number): Promise<{ listingId: string; points: number }> {
+async function pricedAuListing(
+  targetPoints: number,
+): Promise<{ listingId: string; points: number }> {
   const listingId = randomUUID();
   const rateRows = await db.execute<{ backing_rate_micros_per_pt: string }>(sql`
     SELECT backing_rate_micros_per_pt FROM platform.ledger_fake_backing_rate

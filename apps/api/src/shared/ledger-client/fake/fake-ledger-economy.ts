@@ -118,15 +118,13 @@ export function economyDaily(
       return ok(
         [...byDay.entries()]
           .sort(([a], [b]) => a.localeCompare(b))
-          .map(
-            ([day, totals]): EconomyDayRow => ({
-              date: day,
-              region: request.region,
-              pointsIssued: toPoints(totals.issued),
-              pointsRedeemed: toPoints(totals.burned),
-              reserveMinor: toMinorUnits(reserveMinor),
-            }),
-          ),
+          .map(([day, totals]): EconomyDayRow => ({
+            date: day,
+            region: request.region,
+            pointsIssued: toPoints(totals.issued),
+            pointsRedeemed: toPoints(totals.burned),
+            reserveMinor: toMinorUnits(reserveMinor),
+          })),
       );
     })(),
   );

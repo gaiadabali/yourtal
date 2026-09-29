@@ -510,6 +510,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "1.2.d's FakeLedgerClient backing store for recoverCapture (10.5.b) -- same reason as platform.ledger_fake_capture above.",
   "platform.ledger_fake_liability_release":
     "1.2.d's FakeLedgerClient backing store for releaseVoucherLiability (10.1.c/10.2.b) -- idempotency only, since the fake does not model a full voucher_liability balance. Same reason as platform.ledger_fake_capture above.",
+  "platform.ledger_fake_marketing_backing":
+    "10.7.a's K6 parity: the debit side of platform.ledger_fake_marketing_fund, one row per grantAction call, so a region's remaining marketing cash is SUM(fund) - SUM(backing). Same reason as platform.ledger_fake_capture above -- no public contract mirrors a row of it, only the region's own remaining balance the K6 refusal reads.",
   "ledger.marketing_funding":
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
   "checkout.dispute":

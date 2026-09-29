@@ -190,7 +190,10 @@ export function grantAction(
 
       const id = randomUUID();
       const holdbackHours = DEFAULT_HOLDBACK_HOURS_BY_TIER[request.trustTier];
-      const inserted = await tx.execute<{ granted_at: string | Date; unlock_at: string | Date }>(sql`
+      const inserted = await tx.execute<{
+        granted_at: string | Date;
+        unlock_at: string | Date;
+      }>(sql`
         INSERT INTO platform.ledger_fake_grant
           (id, kind, user_id, region, points, unlock_at, granted_at, idempotency_key, campaign_id)
         VALUES (${id}, ${request.kind}, ${request.userId}, ${request.region}, ${request.points},

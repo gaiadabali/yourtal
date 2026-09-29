@@ -131,7 +131,8 @@ export class BillingController {
     // business is likely to want without asking every caller to state a
     // range just to see "the recent ones".
     const to = toQuery ?? new Date().toISOString().slice(0, 10);
-    const from = fromQuery ?? new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const from =
+      fromQuery ?? new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     const result = await listStatements(this.ledger, tenantId, from, to);
     if (result.isErr()) throw mapBillingErrorToHttpException(result.error);

@@ -37,7 +37,8 @@ async function currentBackingMicros(region: "AU" | "ID"): Promise<number> {
      WHERE region = ${region} ORDER BY effective_from DESC LIMIT 1
   `);
   const rate = rows.rows[0];
-  if (rate === undefined) throw new Error(`no backing rate is in force for region ${region} — cannot run this test`);
+  if (rate === undefined)
+    throw new Error(`no backing rate is in force for region ${region} — cannot run this test`);
   return Number(rate.backing_rate_micros_per_pt);
 }
 

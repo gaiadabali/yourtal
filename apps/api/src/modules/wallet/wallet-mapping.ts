@@ -6,8 +6,18 @@ import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
 import { toPoints } from "@yourtal/contracts/money";
 import { publicVoucherStatusOf } from "@yourtal/contracts/voucher/voucher-lifecycle";
 
-/** The ledger's balance as the viewer reads it: pending summed, soonest unlock first. */
-export function toWalletSummary(region: Region, balance: LedgerBalance): WalletSummary {
+/**
+ * The ledger's balance as the viewer reads it: pending summed, soonest
+ * unlock first. `dailyCapPoints` (12.2.b) is the caller's own concern to
+ * supply — this function has no principal or settings reader of its own —
+ * omitted entirely (not sent as `undefined`) when the caller has none to
+ * give, e.g. an adult viewer.
+ */
+export function toWalletSummary(
+  region: Region,
+  balance: LedgerBalance,
+  dailyCapPoints?: number,
+): WalletSummary {
   const pending = [...balance.pending].sort((a, b) => a.unlockAt.localeCompare(b.unlockAt));
   return {
     region,
@@ -16,6 +26,7 @@ export function toWalletSummary(region: Region, balance: LedgerBalance): WalletS
     pending,
     expiringPoints: balance.expiringPoints,
     expiringAt: balance.expiringAt,
+    ...(dailyCapPoints === undefined ? {} : { dailyCapPoints: toPoints(dailyCapPoints) }),
   };
 }
 

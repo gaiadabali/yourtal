@@ -22,8 +22,13 @@ import { sessionFor } from "../../shared/testing/session-for";
 let app: NestFastifyApplication;
 let ledger: LedgerInternalClient;
 let vouchers: VoucherInternalClient;
+// 12.2.b's teen-cap test registers a 14-year-old -- forced on for this
+// suite's OWN moduleRef only, same isolated-container reasoning
+// `guardian-consent.e2e.test.ts` documents, restored in `afterAll`.
+const originalTeenAccounts = process.env["TEEN_ACCOUNTS"];
 
 beforeAll(async () => {
+  process.env["TEEN_ACCOUNTS"] = "true";
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
   await app.init();
@@ -41,6 +46,11 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await app.close();
+  if (originalTeenAccounts === undefined) {
+    delete process.env["TEEN_ACCOUNTS"];
+  } else {
+    process.env["TEEN_ACCOUNTS"] = originalTeenAccounts;
+  }
 });
 
 async function get(url: string, headers: Record<string, string>) {
@@ -75,6 +85,31 @@ describe("GET /api/wallet", () => {
     const response = await get("/api/wallet", {});
     expect(response.statusCode).toBe(401);
     expect(response.json()).toMatchObject({ code: "no_session" });
+  });
+
+  // 12.2.b: the teen daily-cap meter reads this same summary. An adult gets
+  // no such field at all -- no adult-facing meter exists to read it.
+  it("carries the region's teen daily earn cap for a teen viewer, and omits it for an adult", async () => {
+    const fourteenYearsAgo = (() => {
+      const now = new Date();
+      const dob = new Date(Date.UTC(now.getUTCFullYear() - 14, now.getUTCMonth(), now.getUTCDate()));
+      return dob.toISOString().slice(0, 10);
+    })();
+
+    const teen = await sessionFor(app, {
+      jurisdiction: "AU",
+      dateOfBirth: fourteenYearsAgo,
+      guardianEmail: `guardian+${randomUUID()}@example.test`,
+    });
+    const teenResponse = await get("/api/wallet", { cookie: teen.cookie });
+    expect(teenResponse.statusCode).toBe(200);
+    // AU's F12 default (packages/db migration 20260925193000).
+    expect(walletSummarySchema.parse(teenResponse.json()).dailyCapPoints).toBe(250);
+
+    const adult = await sessionFor(app, { jurisdiction: "AU", dateOfBirth: "1990-01-01" });
+    const adultResponse = await get("/api/wallet", { cookie: adult.cookie });
+    expect(adultResponse.statusCode).toBe(200);
+    expect(walletSummarySchema.parse(adultResponse.json()).dailyCapPoints).toBeUndefined();
   });
 });
 

@@ -4,6 +4,7 @@ import { CAMPAIGN_PUBLISHED_QUEUE } from "@yourtal/contracts/studio/campaign-pub
 import type { CampaignPublishedEvent } from "@yourtal/contracts/studio/campaign-published-event";
 import { reachesAudience } from "@yourtal/contracts/audience/audience";
 import type { Audience } from "@yourtal/contracts/audience/audience";
+import { isQuietHours } from "@yourtal/contracts/me/quiet-hours";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
@@ -37,8 +38,12 @@ export const job = defineJob<CampaignPublishedEvent>({
     // unambiguous (F2: a business belongs to exactly one region) — matching
     // the same defensive double-key every other cross-schema query in this
     // codebase uses rather than trusting the join to be enough on its own.
-    const followers = await client.query<{ user_id: string; date_of_birth: string | null }>(
-      `SELECT f.user_id, p.date_of_birth
+    const followers = await client.query<{
+      user_id: string;
+      date_of_birth: string | null;
+      timezone: string | null;
+    }>(
+      `SELECT f.user_id, p.date_of_birth, p.timezone
          FROM me.follow f
          LEFT JOIN identity.user_profile p ON p.user_id = f.user_id
         WHERE f.business_id = $1 AND f.region = $2`,
@@ -60,7 +65,7 @@ export const job = defineJob<CampaignPublishedEvent>({
     );
     const audience = campaignRow.rows[0]?.audience ?? "all_ages";
     const now = new Date();
-    const reachable = followers.rows.filter((follower) => {
+    const audienceReachable = followers.rows.filter((follower) => {
       if (audience === "all_ages") return true;
       // No profile row (a test fixture, or a race with account deletion) --
       // fail closed: cannot prove this follower's ageBand reaches a
@@ -68,6 +73,15 @@ export const job = defineJob<CampaignPublishedEvent>({
       if (follower.date_of_birth === null) return false;
       const ageBand = ageBandFrom(ageYearsFrom(follower.date_of_birth, now));
       return reachesAudience(audience, { ageBand });
+    });
+
+    // 12.2.b: quiet hours (21:00-07:00 in the FOLLOWER's own profile
+    // timezone) silence a teen entirely -- no notification row, no push.
+    // No profile/timezone to check means nothing to silence (send).
+    const reachable = audienceReachable.filter((follower) => {
+      if (follower.date_of_birth === null || follower.timezone === null) return true;
+      const ageBand = ageBandFrom(ageYearsFrom(follower.date_of_birth, now));
+      return !(ageBand === "teen" && isQuietHours(now, follower.timezone));
     });
     if (reachable.length === 0) return;
 

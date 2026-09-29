@@ -6,11 +6,11 @@ import type { FeedItem } from "@yourtal/contracts/feed";
 import { feedResponseSchema } from "@yourtal/contracts/feed";
 import type { Region } from "@yourtal/contracts/region";
 import { continueWatchingResponseSchema } from "@yourtal/contracts/watch/continue-watching";
-import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
 import type { WalletPending } from "@yourtal/contracts/wallet/wallet";
+import type { AgeBand } from "@yourtal/contracts/identity/user-profile";
 import { apiFetch } from "@/lib/api/api-fetch";
-import { getAutoplaySetting, listFollows } from "@/features/me/me-data";
-import { getWalletBalance, listWalletHistory } from "@/features/wallet/wallet-data";
+import { getAutoplaySetting, getMeProfile, listFollows } from "@/features/me/me-data";
+import { earnedToday, getWalletBalance } from "@/features/wallet/wallet-data";
 import type { AutoplaySetting } from "@yourtal/contracts/me/autoplay-setting";
 
 /** A campaign shown in a Home row: enough for a poster card, from the feed or the campaign read. */
@@ -37,21 +37,17 @@ export interface HomeFeedData {
   readonly pending: readonly WalletPending[];
   readonly earnedToday: number;
   readonly autoplay: AutoplaySetting;
+  /**
+   * 12.2.b: no streak counter for a teen, anywhere -- `HomeFeed` reads this
+   * to decide whether `StreakStrip` renders at all. Defaults to `"adult"`
+   * when the profile read itself fails, which only ever WIDENS what
+   * already rendered before this field existed, never narrows it.
+   */
+  readonly ageBand: AgeBand;
 }
 
 const savesResponseSchema = z.object({ campaignIds: z.array(z.uuid()) });
 const streakResponseSchema = z.object({ currentLength: z.number().int().min(0) });
-
-// F16: one clock per region decides what "today" is.
-const REGION_TIME_ZONE: Record<Region, string> = {
-  AU: "Australia/Sydney",
-  ID: "Asia/Jakarta",
-};
-const HISTORY_PAGES_FOR_TODAY = 5;
-
-function dayIn(timeZone: string, instant: Date): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(instant);
-}
 
 function fromFeedItem(item: FeedItem): FeedRowItem {
   return {
@@ -87,42 +83,22 @@ async function rowItemsFor(
   return rows.filter((row): row is FeedRowItem => row !== null);
 }
 
-async function earnedToday(region: Region): Promise<number> {
-  const timeZone = REGION_TIME_ZONE[region];
-  const today = dayIn(timeZone, new Date());
-  let total = 0;
-  let cursor: string | undefined;
-  for (let page = 0; page < HISTORY_PAGES_FOR_TODAY; page++) {
-    const result = await listWalletHistory(cursor);
-    if (!result.ok) return total;
-    let reachedYesterday = false;
-    for (const entry of result.data.entries as readonly WalletHistoryEntry[]) {
-      if (dayIn(timeZone, new Date(entry.occurredAt)) !== today) {
-        reachedYesterday = true;
-        break;
-      }
-      if (entry.kind === "earn") total += entry.points;
-    }
-    if (reachedYesterday || result.data.nextCursor === null) return total;
-    cursor = result.data.nextCursor;
-  }
-  return total;
-}
-
 /** Everything the signed-in Home needs, in parallel. Only the feed itself is required. */
 export async function getHomeFeed(
   region: Region,
 ): Promise<{ ok: true; data: HomeFeedData } | { ok: false }> {
-  const [feed, saves, follows, sessions, streak, wallet, autoplay, today] = await Promise.all([
-    apiFetch("/api/feed?surface=home", feedResponseSchema),
-    apiFetch("/api/me/saves", savesResponseSchema),
-    listFollows(),
-    apiFetch("/api/watch/sessions", continueWatchingResponseSchema),
-    apiFetch("/api/me/streak", streakResponseSchema),
-    getWalletBalance(),
-    getAutoplaySetting(),
-    earnedToday(region),
-  ]);
+  const [feed, saves, follows, sessions, streak, wallet, autoplay, today, profile] =
+    await Promise.all([
+      apiFetch("/api/feed?surface=home", feedResponseSchema),
+      apiFetch("/api/me/saves", savesResponseSchema),
+      listFollows(),
+      apiFetch("/api/watch/sessions", continueWatchingResponseSchema),
+      apiFetch("/api/me/streak", streakResponseSchema),
+      getWalletBalance(),
+      getAutoplaySetting(),
+      earnedToday(region),
+      getMeProfile(),
+    ]);
   if (!feed.ok) return { ok: false };
 
   const items = feed.data.items;
@@ -158,6 +134,7 @@ export async function getHomeFeed(
       pending: wallet.ok ? wallet.data.pending : [],
       earnedToday: today,
       autoplay: autoplay.ok ? autoplay.data.autoplay : "always",
+      ageBand: profile.ok ? profile.data.profile.ageBand : "adult",
     },
   };
 }

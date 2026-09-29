@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyRequest } from "fastify";
 import type { Principal } from "@yourtal/authz/principal";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { coveredSeconds } from "@yourtal/contracts/watch/coverage";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { FakeLedgerClient } from "../../shared/ledger-client/fake-ledger-client";
@@ -299,6 +299,88 @@ describe("completion is decided by coverage, not by the client", () => {
         "start",
       ].sort(),
     );
+  });
+});
+
+describe("12.2.b: a teen's quiet hours refuse a new reward session", () => {
+  /** A teen profile in Australia/Sydney -- ageBandFrom(dateOfBirth) resolves "teen" for any test run this decade. */
+  class FakeTeenProfiles implements UserProfileRepository {
+    create(): Promise<void> {
+      return Promise.resolve();
+    }
+    findByUserId(userId: string): Promise<StoredUserProfile | null> {
+      return Promise.resolve({
+        userId,
+        region: "AU",
+        displayLocale: "en-AU",
+        displayName: "Teen viewer",
+        dateOfBirth: "2012-01-01",
+        timezone: "Australia/Sydney",
+        guardianEmail: "guardian@example.test",
+        parentConsentStatus: "granted",
+        trustTier: 3,
+        suspendedAt: null,
+      });
+    }
+    update(): Promise<void> {
+      return Promise.resolve();
+    }
+    setParentConsentStatus(): Promise<void> {
+      return Promise.resolve();
+    }
+  }
+
+  const teenUserId = "00000000-0000-4000-8000-0000000f0002";
+  const teenPrincipal: Principal = {
+    id: teenUserId,
+    roles: ["user"],
+    attr: { jurisdiction: "AU", businessRoles: {}, isSuspended: false },
+  };
+  const teenPrincipals = { resolve: vi.fn().mockReturnValue(teenPrincipal) };
+  const teenController = new WatchController(
+    teenPrincipals,
+    sessions,
+    campaigns,
+    new FakeLedgerClient(db),
+    new FakeTeenProfiles(),
+    "test-attestation-secret-not-a-real-one",
+    "test-checkpoint-secret-not-a-real-one",
+    "test-manifest-signing-secret-not-a-real-one",
+    new StubDeliveryCoverageReader(),
+    new NoopWatchCompletionHook(),
+  );
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("refuses with a plain error at 21:00 local", async () => {
+    vi.useFakeTimers();
+    // 21:00 AEST (UTC+10, July has no DST) = 11:00Z.
+    vi.setSystemTime(new Date("2026-07-01T11:00:00.000Z"));
+
+    await expect(teenController.start(request, { campaignId: longFormId })).rejects.toThrow(
+      /quiet hours/i,
+    );
+  });
+
+  it("stays refused through the night and clears at 07:00 local", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-01T14:00:00.000Z")); // 00:00 AEST
+    await expect(teenController.start(request, { campaignId: longFormId })).rejects.toThrow(
+      /quiet hours/i,
+    );
+
+    vi.setSystemTime(new Date("2026-07-01T21:00:00.000Z")); // 07:00 AEST
+    const started = await teenController.start(request, { campaignId: longFormId });
+    expect(started.session.state).toBe("active");
+  });
+
+  it("does not refuse outside quiet hours", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-01T00:00:00.000Z")); // 10:00 AEST
+    const started = await teenController.start(request, { campaignId: longFormId });
+    expect(started.session.state).toBe("active");
   });
 });
 

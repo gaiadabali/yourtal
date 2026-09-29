@@ -5,6 +5,7 @@ import type { PointsExpiringEvent } from "@yourtal/contracts/ledger-internal/exp
 import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
 import type { JobContext } from "../job";
+import { isTeenInQuietHours } from "../teen-quiet-hours";
 
 /**
  * TASKS.md 10.2.d: turns each `ledger.points_expiring` event into an in-app
@@ -30,6 +31,10 @@ export const job = defineJob<PointsExpiringEvent>({
   async handle(jobRecord: Job<PointsExpiringEvent>, { config }: JobContext) {
     const event = jobRecord.data;
     const client = poolFor(config.databaseUrl);
+
+    // 12.2.b: quiet hours (21:00-07:00, the recipient's own profile
+    // timezone) silence a teen entirely -- no notification row, no push.
+    if (await isTeenInQuietHours(client, event.userId, new Date())) return;
 
     const category = "points_expiring";
     const title =

@@ -7,6 +7,7 @@ import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { createVoucherClient } from "../../shared/voucher-client/create-voucher-client";
 import { VOUCHER_INTERNAL_CLIENT } from "../../shared/voucher-client/voucher-internal-client";
+import { SettingsModule } from "../../shared/settings/settings.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletAttributeLoader } from "./wallet-attribute-loader";
 import { WalletController } from "./wallet.controller";
@@ -16,9 +17,11 @@ export const WALLET_DB = Symbol("WALLET_DB");
 /**
  * The viewer's wallet (4.8). Owns this app's ledger and voucher clients;
  * checkout (4.7) imports them from here rather than opening a second pair.
+ * Imports `SettingsModule` as of 12.2.b, for `WalletController.summary`'s
+ * teen daily-cap read.
  */
 @Module({
-  imports: [IdentityModule],
+  imports: [IdentityModule, SettingsModule],
   controllers: [WalletController],
   providers: [
     {

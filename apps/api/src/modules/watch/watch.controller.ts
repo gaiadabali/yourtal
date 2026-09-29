@@ -28,6 +28,8 @@ import { questionsAskedFor } from "@yourtal/contracts/question/question-bank";
 import { checkpointSchedule } from "@yourtal/contracts/watch/checkpoint-token";
 import { toPoints } from "@yourtal/contracts/money";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
+import { isQuietHours } from "@yourtal/contracts/me/quiet-hours";
+import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { RateLimit } from "../../shared/rate-limit/rate-limit.decorator";
@@ -105,6 +107,26 @@ export class WatchController {
     }
     const campaignId = parsed.data.campaignId;
 
+    // 12.2.b: F12's teen quiet hours (21:00-07:00 in the PROFILE's own
+    // timezone, never the region's) refuse a new reward session outright --
+    // checked before anything else in this handler, so a teen never even
+    // reaches the campaign/terms lookups below during quiet hours. Resolved
+    // here (not via `AsyncPrincipalResolver`) because this controller
+    // already reads the profile row directly a few lines down for the same
+    // reason `require-region.ts` gives for the rest of this module: read
+    // the profile, not a principal attribute cached at session time.
+    const userId = (await this.principals.resolve(request)).id;
+    const profile = await this.profiles.findByUserId(userId);
+    if (profile !== null) {
+      const ageBand = ageBandFrom(ageYearsFrom(profile.dateOfBirth, new Date()));
+      if (ageBand === "teen" && isQuietHours(new Date(), profile.timezone)) {
+        throw new ForbiddenException({
+          code: "teen_quiet_hours",
+          message: "Reward sessions pause during quiet hours (21:00-07:00). Try again in the morning.",
+        });
+      }
+    }
+
     const campaign = await this.campaigns.findVisibleById(campaignId);
     if (campaign === null) {
       throw new NotFoundException("No such campaign.");
@@ -125,7 +147,6 @@ export class WatchController {
       throw new ForbiddenException("This campaign's current terms could not be read.");
     }
 
-    const userId = (await this.principals.resolve(request)).id;
     const { session: started, resumed } = await this.sessions.startOrResume({
       userId,
       campaignId,

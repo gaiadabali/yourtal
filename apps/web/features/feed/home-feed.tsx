@@ -84,10 +84,17 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
     />
   ));
 
+  // 12.2.b: no streak counter for a teen, anywhere -- the whole strip is
+  // streak-first UI (days count, pending-grant dates framed against it), so
+  // it does not render at all rather than showing a half-empty version.
+  const isTeen = data.ageBand === "teen";
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
       <div className="flex flex-col gap-3 lg:hidden">
-        <StreakStrip days={data.streakDays} pending={data.pending} locale={locale} />
+        {isTeen ? null : (
+          <StreakStrip days={data.streakDays} pending={data.pending} locale={locale} />
+        )}
         <SegmentedControl
           label={t("tabs.label")}
           value={tab}
@@ -109,7 +116,9 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
       {tab === "forYou" ? null : <div className="lg:hidden">{rows[ROW_KEYS.indexOf(tab)]}</div>}
 
       <div className="hidden min-w-0 flex-1 flex-col gap-6 lg:flex">
-        <StreakStrip days={data.streakDays} pending={data.pending} locale={locale} />
+        {isTeen ? null : (
+          <StreakStrip days={data.streakDays} pending={data.pending} locale={locale} />
+        )}
         {rows}
       </div>
     </div>

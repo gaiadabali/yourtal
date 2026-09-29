@@ -9,6 +9,7 @@ import {
   listFollows,
   listInterests,
 } from "@/features/me/me-data";
+import { earnedToday, getWalletBalance } from "@/features/wallet/wallet-data";
 import { LogoutButton } from "@/features/me/logout-button";
 import { MeProfileSection } from "@/features/me/me-profile-section";
 import { MeLanguageSection } from "@/features/me/me-language-section";
@@ -21,6 +22,7 @@ import { MeNotificationsSection } from "@/features/me/me-notifications-section";
 import { MeLinkedAppsSection } from "@/features/me/me-linked-apps-section";
 import { MeDataExportSection } from "@/features/me/me-data-export-section";
 import { MeDeleteAccountSection } from "@/features/me/me-delete-account-section";
+import { MeTeenCapSection } from "@/features/me/me-teen-cap-section";
 import { MeSectionError } from "@/features/me/me-section-states";
 
 /**
@@ -49,6 +51,13 @@ export default async function MePage() {
       getAutoplaySetting(),
     ]);
 
+  // 12.2.b: the teen daily-cap meter is its own, teen-only read -- most
+  // viewers are adults and never pay for this round trip at all.
+  const isTeen = profile.ok && profile.data.profile.ageBand === "teen";
+  const [wallet, todayPoints] = isTeen
+    ? await Promise.all([getWalletBalance(), earnedToday(profile.data.profile.region)])
+    : [null, 0];
+
   return (
     <PageContainer width="narrow">
       <div className="flex flex-col gap-8 py-6">
@@ -73,8 +82,18 @@ export default async function MePage() {
           <MeSectionError title={t("autoplay.heading")} error={autoplay.error} />
         )}
 
+        {isTeen && wallet?.ok === true && wallet.data.dailyCapPoints !== undefined ? (
+          <MeTeenCapSection
+            earnedTodayPoints={todayPoints}
+            dailyCapPoints={wallet.data.dailyCapPoints}
+          />
+        ) : null}
+
         {interests.ok ? (
-          <MeInterestsSection initialNodeIds={interests.data.nodeIds} />
+          <MeInterestsSection
+            initialNodeIds={interests.data.nodeIds}
+            ageBand={profile.ok ? profile.data.profile.ageBand : "adult"}
+          />
         ) : (
           <MeSectionError title={t("interests.heading")} error={interests.error} />
         )}

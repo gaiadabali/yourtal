@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import type { Job } from "pg-boss";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { PointsExpiringEvent } from "@yourtal/contracts/ledger-internal/expiry";
 import { toPoints } from "@yourtal/contracts/money";
 import { loadWorkerConfig } from "../config";
@@ -77,5 +77,40 @@ describe("points-expiring-notify job", () => {
 
     const rows = await pool.query(`SELECT 1 FROM me.notification WHERE user_id = $1`, [userId]);
     expect(rows.rows).toHaveLength(1);
+  });
+
+  // 12.2.b: quiet hours (21:00-07:00, the teen's own profile timezone)
+  // silence this notification entirely -- no row, no push.
+  it("silences a teen during quiet hours", async () => {
+    const userId = randomUUID();
+    const accountId = `usr_${userId}_available`;
+    await pool.query(
+      `INSERT INTO identity.user_profile (user_id, region, display_name, date_of_birth, timezone)
+       VALUES ($1, 'AU', 'Quiet Hours Teen', '2012-01-01', 'Australia/Sydney')`,
+      [userId],
+    );
+
+    try {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-07-01T11:00:00.000Z")); // 21:00 AEST
+      await job.handle(
+        fakeJob({
+          accountId,
+          userId,
+          region: "AU",
+          milestoneDays: 7,
+          expiringAt: "2026-11-01T00:00:00.000Z",
+          points: toPoints(50),
+          idempotencyKey: `points_expiring_${accountId}_7_2026-11-01T00:00:00.000Z`,
+        }),
+        { boss: undefined as never, config },
+      );
+
+      const rows = await pool.query(`SELECT 1 FROM me.notification WHERE user_id = $1`, [userId]);
+      expect(rows.rows).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+      await pool.query(`DELETE FROM identity.user_profile WHERE user_id = $1`, [userId]);
+    }
   });
 });

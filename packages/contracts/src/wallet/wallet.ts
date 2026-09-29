@@ -27,6 +27,15 @@ export const walletSummarySchema = z
     pending: z.array(walletPendingSchema),
     expiringPoints: pointsSchema,
     expiringAt: z.iso.datetime().nullable(),
+    /**
+     * 12.2.b: the region's teen daily earn cap (`teen_daily_earn_cap`),
+     * present only for a `teen` viewer — an adult's own cap is not this
+     * field's concern (no adult-facing meter exists), so it stays absent
+     * rather than sent as a number nothing reads. Never hardcoded: read from
+     * `platform.region_setting` at request time, same as every other F12
+     * economy number.
+     */
+    dailyCapPoints: pointsSchema.optional(),
   })
   .refine(
     (wallet) => wallet.pendingPoints === wallet.pending.reduce((sum, p) => sum + p.points, 0),

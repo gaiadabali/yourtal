@@ -6,7 +6,9 @@ import {
   type WalletHistoryPage,
   type WalletSummary,
 } from "@yourtal/contracts/wallet/wallet";
+import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
 import { voucherStatusSchema } from "@yourtal/contracts/voucher/voucher";
+import type { Region } from "@yourtal/contracts/region";
 
 /**
  * The Wallet's one data-access seam (6.5, replacing Phase U's mock-only
@@ -122,6 +124,47 @@ export function getWalletBalance(): Promise<ApiResult<WalletSummary>> {
 export function listWalletHistory(startingAfter?: string): Promise<ApiResult<WalletHistoryPage>> {
   const query = startingAfter ? `?startingAfter=${encodeURIComponent(startingAfter)}` : "";
   return apiFetch(`/api/wallet/history${query}`, walletHistoryPageSchema);
+}
+
+// F16: one clock per region decides what "today" is -- same table
+// `feed-data.ts` used to keep a private copy of before this moved here.
+const REGION_TIME_ZONE: Record<Region, string> = {
+  AU: "Australia/Sydney",
+  ID: "Asia/Jakarta",
+};
+const HISTORY_PAGES_FOR_TODAY = 5;
+
+function dayIn(timeZone: string, instant: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(instant);
+}
+
+/**
+ * Sums today's `earn` entries in the region's own calendar day (F16) by
+ * paging `/api/wallet/history` until it reaches yesterday. Shared by the
+ * feed's "earned today" line (11.4) and 12.2.b's teen daily-cap meter, so
+ * both read the exact same number rather than two call sites each summing
+ * history their own way.
+ */
+export async function earnedToday(region: Region): Promise<number> {
+  const timeZone = REGION_TIME_ZONE[region];
+  const today = dayIn(timeZone, new Date());
+  let total = 0;
+  let cursor: string | undefined;
+  for (let page = 0; page < HISTORY_PAGES_FOR_TODAY; page++) {
+    const result = await listWalletHistory(cursor);
+    if (!result.ok) return total;
+    let reachedYesterday = false;
+    for (const entry of result.data.entries as readonly WalletHistoryEntry[]) {
+      if (dayIn(timeZone, new Date(entry.occurredAt)) !== today) {
+        reachedYesterday = true;
+        break;
+      }
+      if (entry.kind === "earn") total += entry.points;
+    }
+    if (reachedYesterday || result.data.nextCursor === null) return total;
+    cursor = result.data.nextCursor;
+  }
+  return total;
 }
 
 /** Every voucher the user holds. */

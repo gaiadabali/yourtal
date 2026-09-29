@@ -5,6 +5,7 @@ import type { PointsUnlockedEvent } from "@yourtal/contracts/ledger-internal/rel
 import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
 import type { JobContext } from "../job";
+import { isTeenInQuietHours } from "../teen-quiet-hours";
 
 /**
  * 5.5.b: turns each `ledger.points_unlocked` event (real today — 4.4.g's
@@ -34,6 +35,10 @@ export const job = defineJob<PointsUnlockedEvent>({
   async handle(jobRecord: Job<PointsUnlockedEvent>, { config }: JobContext) {
     const event = jobRecord.data;
     const client = poolFor(config.databaseUrl);
+
+    // 12.2.b: quiet hours (21:00-07:00, the recipient's own profile
+    // timezone) silence a teen entirely -- no notification row, no push.
+    if (await isTeenInQuietHours(client, event.userId, new Date())) return;
 
     const category = "points_unlocked";
     const title = "Points unlocked";

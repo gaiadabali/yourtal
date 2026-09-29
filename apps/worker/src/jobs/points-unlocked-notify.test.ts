@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import type { Job } from "pg-boss";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { PointsUnlockedEvent } from "@yourtal/contracts/ledger-internal/releases";
 import { toPoints } from "@yourtal/contracts/money";
 import { loadWorkerConfig } from "../config";
@@ -84,5 +84,57 @@ describe("points-unlocked-notify job", () => {
     // module-private to points-unlocked-notify.ts; the preference gate
     // itself (the `if (!pushEnabled) return` branch) is what this proves by
     // not throwing and still recording the in-app row above it.
+  });
+
+  // 12.2.b: quiet hours (21:00-07:00, the teen's own profile timezone)
+  // silence this notification entirely -- no row, no push.
+  it("silences a teen during quiet hours, but not the same teen outside them", async () => {
+    const userId = randomUUID();
+    await pool.query(
+      `INSERT INTO identity.user_profile (user_id, region, display_name, date_of_birth, timezone)
+       VALUES ($1, 'AU', 'Quiet Hours Teen', '2012-01-01', 'Australia/Sydney')`,
+      [userId],
+    );
+
+    try {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-07-01T11:00:00.000Z")); // 21:00 AEST
+      await job.handle(
+        fakeJob({
+          grantId: randomUUID(),
+          userId,
+          region: "AU",
+          points: toPoints(5),
+          unlockedAt: new Date().toISOString(),
+          idempotencyKey: `points_unlocked_${randomUUID()}`,
+        }),
+        { boss: undefined as never, config },
+      );
+      const duringQuietHours = await pool.query(`SELECT 1 FROM me.notification WHERE user_id = $1`, [
+        userId,
+      ]);
+      expect(duringQuietHours.rows).toHaveLength(0);
+
+      vi.setSystemTime(new Date("2026-07-01T00:00:00.000Z")); // 10:00 AEST
+      await job.handle(
+        fakeJob({
+          grantId: randomUUID(),
+          userId,
+          region: "AU",
+          points: toPoints(5),
+          unlockedAt: new Date().toISOString(),
+          idempotencyKey: `points_unlocked_${randomUUID()}`,
+        }),
+        { boss: undefined as never, config },
+      );
+      const outsideQuietHours = await pool.query(
+        `SELECT 1 FROM me.notification WHERE user_id = $1`,
+        [userId],
+      );
+      expect(outsideQuietHours.rows).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+      await pool.query(`DELETE FROM identity.user_profile WHERE user_id = $1`, [userId]);
+    }
   });
 });

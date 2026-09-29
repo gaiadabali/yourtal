@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import type { Job } from "pg-boss";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import type { CampaignPublishedEvent } from "@yourtal/contracts/studio/campaign-published-event";
 import { loadWorkerConfig } from "../config";
 import { job } from "./campaign-published-notify";
@@ -171,6 +171,67 @@ describe("campaign-published-notify job", () => {
       expect(rows.rows.map((row) => row.user_id)).toStrictEqual([adultFollower]);
     } finally {
       await pool.query(`DELETE FROM campaign.campaigns WHERE id = $1`, [campaignId]);
+    }
+  });
+
+  // 12.2.b / 12.2.d's Check: a teen follower gets no notification between
+  // 21:00 and 07:00 in THEIR OWN profile timezone, even though the same
+  // audience wall above would otherwise let this campaign reach them.
+  it("silences a teen follower during quiet hours, but not the same teen outside them, and not an adult follower either way", async () => {
+    const businessId = randomUUID();
+    const campaignId = randomUUID();
+    const teenFollower = randomUUID();
+    const adultFollower = randomUUID();
+
+    await pool.query(
+      `INSERT INTO identity.user_profile (user_id, region, display_name, date_of_birth, timezone)
+       VALUES ($1, 'AU', 'Quiet Hours Teen', '2012-01-01', 'Australia/Sydney'),
+              ($2, 'AU', 'Quiet Hours Adult', '1990-01-01', 'Australia/Sydney')`,
+      [teenFollower, adultFollower],
+    );
+    await pool.query(
+      `INSERT INTO me.follow (user_id, business_id, region) VALUES ($1, $2, 'AU'), ($3, $2, 'AU')`,
+      [teenFollower, businessId, adultFollower],
+    );
+
+    const event = {
+      campaignId,
+      businessId,
+      region: "AU" as const,
+      idempotencyKey: `campaign_published_${campaignId}`,
+    };
+
+    try {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-07-01T11:00:00.000Z")); // 21:00 AEST
+      await job.handle(fakeJob(event), { boss: undefined as never, config });
+
+      const duringQuietHours = await pool.query<{ user_id: string }>(
+        `SELECT user_id FROM me.notification WHERE user_id = ANY($1)`,
+        [[teenFollower, adultFollower]],
+      );
+      // The adult is notified; the teen, mid quiet-hours, is not.
+      expect(duringQuietHours.rows.map((row) => row.user_id)).toStrictEqual([adultFollower]);
+
+      vi.setSystemTime(new Date("2026-07-01T00:00:00.000Z")); // 10:00 AEST, next day
+      await job.handle(
+        fakeJob({ ...event, idempotencyKey: `${event.idempotencyKey}_2` }),
+        { boss: undefined as never, config },
+      );
+      const outsideQuietHours = await pool.query<{ user_id: string }>(
+        `SELECT DISTINCT user_id FROM me.notification WHERE user_id = ANY($1)`,
+        [[teenFollower, adultFollower]],
+      );
+      // Now both have been notified at least once -- the teen's silence
+      // during the first run was quiet-hours, not a permanent refusal.
+      expect(outsideQuietHours.rows.map((row) => row.user_id).sort()).toStrictEqual(
+        [teenFollower, adultFollower].sort(),
+      );
+    } finally {
+      vi.useRealTimers();
+      await pool.query(`DELETE FROM identity.user_profile WHERE user_id = ANY($1)`, [
+        [teenFollower, adultFollower],
+      ]);
     }
   });
 });

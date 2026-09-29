@@ -19,6 +19,7 @@ import type {
   WalletVoucher,
   WalletVoucherPage,
 } from "@yourtal/contracts/wallet/wallet";
+import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
 import {
@@ -29,9 +30,14 @@ import {
   VOUCHER_INTERNAL_CLIENT,
   type VoucherInternalClient,
 } from "../../shared/voucher-client/voucher-internal-client";
+import { REGION_SETTINGS_READER } from "../../shared/settings/region-settings-reader";
+import type { RegionSettingsReader } from "../../shared/settings/region-settings-reader";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { toWalletHistoryEntry, toWalletSummary, toWalletVoucher } from "./wallet-mapping";
+
+/** F12's key in `platform.region_setting` for a teen's own daily earn cap. */
+const TEEN_DAILY_EARN_CAP_SETTING = "teen_daily_earn_cap";
 
 const HISTORY_PAGE = 20;
 
@@ -46,6 +52,7 @@ export class WalletController {
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
+    @Inject(REGION_SETTINGS_READER) private readonly settings: RegionSettingsReader,
   ) {}
 
   @Authorize({ kind: "wallet", action: "view" })
@@ -54,7 +61,17 @@ export class WalletController {
     const userId = (await this.principals.resolve(request)).id;
     const profile = await this.profiles.findByUserId(userId);
     if (profile === null) throw new NotFoundException("No such wallet.");
-    return toWalletSummary(profile.region, await unwrap(this.ledger.balance(userId)));
+    const balance = await unwrap(this.ledger.balance(userId));
+
+    // 12.2.b: a teen's own daily-cap meter reads this same summary — never
+    // hardcoded, read from the region's own settings, and simply absent for
+    // an adult (no such meter exists for one).
+    const isTeen = ageBandFrom(ageYearsFrom(profile.dateOfBirth, new Date())) === "teen";
+    const dailyCapPoints = isTeen
+      ? await this.settings.getSetting<number>(profile.region, TEEN_DAILY_EARN_CAP_SETTING)
+      : null;
+
+    return toWalletSummary(profile.region, balance, dailyCapPoints ?? undefined);
   }
 
   @Authorize({ kind: "wallet", action: "view_history" })

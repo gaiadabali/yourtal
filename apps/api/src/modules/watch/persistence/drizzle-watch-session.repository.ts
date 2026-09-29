@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import type { CoverageInterval } from "@yourtal/contracts/watch/coverage";
 import type { ReportRefusal } from "@yourtal/contracts/watch/progress-report";
 import { judgeProgressReport } from "@yourtal/contracts/watch/progress-report";
@@ -46,6 +46,8 @@ export interface WatchSessionRepository {
   /** Sets the real earning outcome on a freshly-created session. Never call this on a resumed one. */
   finalizeEarningOutcome(sessionId: string, outcome: EarningOutcome): Promise<void>;
   findById(sessionId: string): Promise<WatchSession | null>;
+  /** The viewer's unfinished sessions, most recently watched first (Continue watching, 11.4.c). */
+  listActiveForUser(userId: string, limit: number): Promise<WatchSession[]>;
   coverageFor(sessionId: string): Promise<CoverageInterval[]>;
   /**
    * Judges and (if accepted) records one progress report, under a
@@ -254,6 +256,16 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
       .limit(1);
     const row = rows[0];
     return row === undefined ? null : toWatchSession(row);
+  }
+
+  async listActiveForUser(userId: string, limit: number): Promise<WatchSession[]> {
+    const rows = await this.db
+      .select()
+      .from(watchSessions)
+      .where(and(eq(watchSessions.userId, userId), eq(watchSessions.state, "active")))
+      .orderBy(desc(watchSessions.lastProgressAt))
+      .limit(limit);
+    return rows.map(toWatchSession);
   }
 
   async coverageFor(sessionId: string): Promise<CoverageInterval[]> {

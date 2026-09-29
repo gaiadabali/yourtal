@@ -1539,6 +1539,45 @@
             }
           }
         }
+      },
+      "get": {
+        "summary": "List the caller's unfinished watch sessions (Continue watching)",
+        "tags": [
+          "watch"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Active sessions on campaigns still in the catalogue, most recently watched first, at most 20.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContinueWatchingResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/watch/sessions/{sessionId}": {
@@ -17992,6 +18031,59 @@
         },
         "required": [
           "parts"
+        ],
+        "additionalProperties": false
+      },
+      "ContinueWatchingResponse": {
+        "description": "GET /api/watch/sessions: the caller's unfinished sessions on campaigns still in the catalogue, most recently watched first.",
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sessionId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "campaignId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "lastProgressAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "coveredSeconds": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991,
+                  "format": "int64"
+                },
+                "durationSeconds": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "format": "int64"
+                }
+              },
+              "required": [
+                "sessionId",
+                "campaignId",
+                "lastProgressAt",
+                "coveredSeconds",
+                "durationSeconds"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "sessions"
         ],
         "additionalProperties": false
       },

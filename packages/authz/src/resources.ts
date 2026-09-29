@@ -242,6 +242,7 @@ export const RESOURCE_ACTIONS = {
     "view_follows",
     "update_follows",
     "view_saves",
+    "view_continue_watching",
     "update_saves",
     "view_sessions",
     "view_streak",

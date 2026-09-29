@@ -9,6 +9,7 @@ import {
 } from "../campaign/campaign-reward-config";
 import { watchSessionSchema, watchSessionStateSchema } from "../watch/watch-session";
 import { watchProgressReportSchema } from "../watch/watch-progress-report";
+import { continueWatchingResponseSchema } from "../watch/continue-watching";
 import { presentedQuestionSchema } from "../question/presented-question";
 import {
   bankQuestionSchema,
@@ -156,6 +157,13 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: watchSessionStateSchema,
     description:
       "A watch attempt's state (YT-0120). `superseded` is kept rather than deleted because an abandoned attempt's coverage is evidence; `void` is terminal and never pays.",
+    crossFieldRules: [],
+  },
+  {
+    id: "ContinueWatchingResponse",
+    schema: continueWatchingResponseSchema,
+    description:
+      "GET /api/watch/sessions: the caller's unfinished sessions on campaigns still in the catalogue, most recently watched first.",
     crossFieldRules: [],
   },
   {

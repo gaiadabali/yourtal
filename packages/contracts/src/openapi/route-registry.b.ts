@@ -252,6 +252,18 @@ export const WATCH_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   },
   {
     method: "get",
+    path: "/api/watch/sessions",
+    summary: "List the caller's unfinished watch sessions (Continue watching)",
+    tags: ["watch"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription:
+      "Active sessions on campaigns still in the catalogue, most recently watched first, at most 20.",
+    successSchema: ref("ContinueWatchingResponse"),
+    errors: [FORBIDDEN, PDP_UNAVAILABLE],
+  },
+  {
+    method: "get",
     path: "/api/watch/sessions/{sessionId}",
     summary: "Resume a watch session",
     tags: ["watch"],

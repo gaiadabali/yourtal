@@ -60,6 +60,8 @@ const progressBody = z.object({
 /** A day. A watch session is resumable while its campaign runs; a retry is not. */
 const SESSION_START_RETENTION_MS = 24 * 60 * 60 * 1_000;
 
+const CONTINUE_WATCHING_LIMIT = 20;
+
 /** 4.4.e's own formula: twice the video's length, plus an hour of slack. */
 function holdTtlSeconds(durationSeconds: number): number {
   return durationSeconds * 2 + 60 * 60;
@@ -183,6 +185,30 @@ export class WatchController {
       };
     }
     return { nonEarning: false, nonEarningReason: null, holdId: held.value.holdId };
+  }
+
+  @Authorize({ kind: "me", action: "view_continue_watching" })
+  @NotValueMoving("A read of the caller's own unfinished sessions.")
+  @Get()
+  async listActive(@Req() request: FastifyRequest) {
+    const userId = (await this.principals.resolve(request)).id;
+    const active = await this.sessions.listActiveForUser(userId, CONTINUE_WATCHING_LIMIT);
+    const rows = await Promise.all(
+      active.map(async (session) => {
+        // A campaign that left the catalogue is not worth resuming.
+        const campaign = await this.campaigns.findVisibleById(session.campaignId);
+        if (campaign === null) return null;
+        const coverage = await this.sessions.coverageFor(session.id);
+        return {
+          sessionId: session.id,
+          campaignId: session.campaignId,
+          lastProgressAt: session.lastProgressAt,
+          coveredSeconds: coveredSeconds(coverage),
+          durationSeconds: campaign.durationSeconds,
+        };
+      }),
+    );
+    return { sessions: rows.filter((row) => row !== null) };
   }
 
   @Authorize({ kind: "campaign_view", action: "resume_session" })

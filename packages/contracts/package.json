@@ -17,6 +17,7 @@
     "./watch/coverage": "./src/watch/watch-coverage.ts",
     "./watch/progress-report": "./src/watch/watch-progress-report.ts",
     "./watch/checkpoint-token": "./src/watch/watch-checkpoint-token.ts",
+    "./watch/continue-watching": "./src/watch/continue-watching.ts",
     "./listing": "./src/listing/listing.ts",
     "./interest/taxonomy": "./src/interest/taxonomy.ts",
     "./interest/category-map": "./src/interest/category-map.ts",

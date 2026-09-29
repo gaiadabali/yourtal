@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | 🔄 in progress | 3/5 | 16/18 | `█████████░`  89% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 0/6 | 0/23 | `░░░░░░░░░░`   0% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/32 | `░░░░░░░░░░`   3% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/33 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **63/90** | **344/434** | `████████░░`  79% |
+| **All** | | | **63/90** | **344/435** | `████████░░`  79% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1318,6 +1318,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 11.4.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.
   - [ ] 11.4.d Each item offers Share (Web Share API to the public campaign page, with no reward), Save, Not interested, and "Why am I seeing this?", which explains the 7.7 ranking.
   - [ ] 11.4.f (moved from 6.7.b) The autoplay setting from Me (6.7.a) holds on the feed.
+  - [ ] 11.4.g (F78; C's file) Feed items carry `kind`, `questionCount`, `maxRewardPoints` (base + accuracy bonus from the reward config), `estimatedDataMb` and the channel's handle, mapped in `apps/api/src/modules/feed/ranking.ts`'s `toFeedItem`.
   - [ ] 11.4.e **Check:** on staging (after 7.2.e media), a new user scrolls the feed, earns a Quick campaign in place, and the wallet shows it pending.
 - [ ] **11.5 Watch: campaign page and player** · needs: 11.4 (moved from 6.4)
   - [ ] 11.5.a The campaign page works like a YouTube watch page: player, channel row with Follow, the terms card, chapters, and more from this channel. The terms card states the question count, "stopping early earns nothing" and "new accounts' points unlock after up to 3 days", and shows absolute points from the terms. **Delete `campaign-reward-split.ts`** (its `BASE_REWARD_RATIO = 0.6` is not what gets paid).
@@ -1505,6 +1506,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **F75** | 8.4.d made the API require `SNAP_APP_PARTNER_SECRET`, which staging did not have, so the deploying release would not boot | **The lead generates it on Helios** (founder, 2026-09-28): a random 32-byte value appended to the secrets file as the app user, never printed or copied off the box. Done before 0d74bc06 went live; staging booted healthy. |
 | **F76** | 9.3.b's staging run needs an `ops` staff account on staging's database, and granting one only works over SSH on Helios | **The lead session runs it once** (founder, 2026-09-29), like F73: `pnpm staff:add <demo email> ops` inside `/opt/yourtal` only, then the Studio → KYB approve → submit flow against the staging URL. Nothing else on the box is touched, and no secret leaves it. |
 | **F77** | Every staging deploy since 1ca6dfb0 (9.5) failed: `20260929050100_staff_economy_proposal.sql` reached main after staging had applied `20260929060000` (Atlas out-of-order), so staging stayed on 15f56dc | **Renamed it to `20260929060100`** (bae7ef26), like F34/F51: staging never applied the old name; `yourtal_s9b/c/d`'s revision rows were repointed. The 9.5 agent had missed the rename-before-merge rule. |
+| **F78** | 11.4.a's terms line needs question count, max reward (base + bonus), data size, kind and channel handle on each feed item; the mapping is Area C's `feed/ranking.ts` and Phase 7 is closed | **Phase 11 writes it.** B extends its `feed` contract and the mapping in C's `toFeedItem` (11.4.g), additive only, with C's feed tests kept green. |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

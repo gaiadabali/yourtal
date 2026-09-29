@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 2/7 | 22/38 | `██████░░░░`  58% |
-| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 2/7 | 22/39 | `██████░░░░`  56% |
+| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 0/4 | 0/14 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **74/91** | **394/444** | `█████████░`  89% |
+| **All** | | | **74/91** | **394/446** | `█████████░`  88% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1346,6 +1346,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 11.5.g (left by 5.5.d) In `watch.module.ts`, replace the local `NoopWatchCompletionHook` provider with an import of `WatchCompletionHookModule`, so a completed reward session grants the streak bonus at once instead of waiting for the daily backstop job.
   - [ ] 11.5.h (left by 5.5.d) `apps/worker/src/jobs/streak-backstop.ts` grants through the fake ledger only; its `LEDGER_MODE=http` path to `/v1/actions/grants` was never exercised. Run it against the Go ledger (as 5.6.b did for rewards) and show one streak grant row, before staging relies on it.
   - [ ] 11.5.i (requested by A for 10.4.a) Pass the real per-question timing signal (`question-response-signals`) from `watch.controller.ts` into the reward grant as `TimingSuspicious`; the RiskGate's timing-plausibility check reads `false` until then.
+  - [ ] 11.5.j (requested by A for 12.1.c) `streak-backstop.ts` writes grant rows directly, bypassing the ledger client, so the teen earn cap never sees them. When 11.5.h moves it to `/v1/actions/grants`, send it through `createLedgerClient` (which now sets `ageBand` from the DOB), or pass `ageBand` itself; the Go ledger refuses a grant without one.
   - [ ] 11.5.e **Check:** a full campaign watched on staging pauses for its questions, then shows the earn moment and Up next.
 - [x] **11.6 Store and checkout** · needs: 4.7, 7.4 (moved from 6.6) — ✅ 2026-09-29 e166bfab
   - [x] 11.6.a The store is a shoppable grid with images, filters (category, channel, price) and the balance chip. It shows only the viewer's region and audience (7.4.d). — `store-data.ts`/`store-balance-data.ts`'s offer-page balance stay as-is (11.6.b territory); `store-data.ts` is now live (`GET /api/store/listings*`, `PublicListing`, no mock branch), a `channel` filter joins category/price/location/merchant, cards gained an image slot, and the page's own `StoreBalanceChip` reads the real `GET /api/wallet` balance (the shell's own top-bar chip is still the Phase 6 mock fixture — out of this task's file scope, `features/shell/app-shell.tsx`, flagged for whoever owns it). Screenshots (390/1280, light/dark — light forced via `data-theme`, no real toggle exists yet) + axe clean for an AU and an ID account, each seeing only its own region. **Found and worked around, not fixed (Area C's files):** slot 4's long-running `yourtal_s4` is missing migration `20260929070000_listing_moderation.sql` (`store.listings.rejection_reason`), so `GET /api/store/listings` 500s there for every region — verified against a fresh `yourtal_s11e` (own `pnpm db:migrate` + local seed, api on 26531, both dropped/stopped after) instead, per this task's own fallback instruction. Recommend `pnpm db:migrate` (or a restart past it) against `yourtal_s4`. Separately: none of the seeded listings' images resolve (403 from the `yourtal-media` bucket — the mock listing generator's image path was never uploaded/never made public, unrelated to the per-slot `yourtal-media-4` bucket that serves real campaign posters); the Store grid renders the broken-image gracefully but has nothing real to show yet.
@@ -1369,6 +1370,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 12.1.b The Cerbos `campaign_view` and `listing` policies deny when the resource's audience is not allowed for the principal's `ageBand` (1.1.c). Every read, watch start, checkout, notification, search and public page is gated in one place.
   - [ ] 12.1.c The teen cap from F12 goes into `RiskGate`. Minors get declared interests only, never inferred ones.
   - [ ] 12.1.d Turn `TEEN_ACCOUNTS` on for `APP_ENV=staging`, in the same merge that passes this task's Check.
+  - [ ] 12.1.f (found by 12.1.b) `GET /api/campaigns` has no region filter: the F2 wall there rests only on Cerbos per-campaign reads. Filter `listVisible` by the principal's region, anonymous by the page's region.
   - [ ] 12.1.e **Check:**
     - a 14-year-old registration waits for approval, and calling the guardian link's approve endpoint activates it (HTTP round trip);
     - an adult-only campaign is denied to a teen principal on every endpoint;
@@ -1386,6 +1388,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **12.3 Studio and data** · C · needs: 12.1, 7.6
   - [ ] 12.3.a Audience and category pickers with the 1.1.d policy shown. Teen-rated question banks may not ask personal questions.
   - [ ] 12.3.b Reports apply the teen cohort floor (F12), with no teen breakdown below it.
+  - [ ] 12.3.d (found by 12.1) Three value-moving staff routes declare no idempotency stance, so `mutating-routes.test.ts` is red on main: `staff-disputes.controller.ts` resolve and `staff-risk-queue.controller.ts` release/suspend. Mark them `@Idempotent` and have the staff risk and dispute actions send an `Idempotency-Key`, as the other staff actions do.
   - [ ] 12.3.c **Check:** a report for a campaign with fewer than 20 teen viewers shows no teen breakdown.
 - [ ] **12.4 Legal review (not engineering)** · founder
   - [ ] 12.4.a Counsel reviews teen mode.

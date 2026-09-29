@@ -37,6 +37,11 @@ export async function publicApiFetch<T>(
   schema: z.ZodType<T>,
   init: PublicApiFetchInit,
 ): Promise<ApiResult<T>> {
+  // The CI build prerenders public pages with no API to reach. Render the empty
+  // state then; revalidation fills the page once the server has the API.
+  if (!process.env["API_INTERNAL_URL"]) {
+    return { ok: false, error: { kind: "network", message: "API_INTERNAL_URL is not set" } };
+  }
   const url = new URL(`${apiInternalUrl()}${path}`);
   for (const [key, value] of Object.entries(init.searchParams ?? {})) {
     url.searchParams.set(key, value);

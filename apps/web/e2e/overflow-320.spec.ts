@@ -76,7 +76,6 @@ const ROUTES: readonly string[] = [
   "/store",
   `/store/${LONG_MERCHANT_LISTING_ID}`,
   "/wallet",
-  "/quick",
   "/merchant",
   "/business",
   "/onboarding",
@@ -99,23 +98,6 @@ for (const route of ROUTES) {
     ).toBeLessThanOrEqual(overflow.clientWidth);
   });
 }
-
-test("earn board renders the 78-char long merchant name without overflow", async ({ page }) => {
-  await page.goto("/");
-  await page.waitForLoadState("networkidle");
-
-  const card = page.getByText(/Warung Kopi Kenangan Manis Nusantara Jaya Abadi Sentosa/i).first();
-  await expect(card).toBeVisible();
-
-  const box = await card.boundingBox();
-  expect(box, "long merchant name element should have a layout box").not.toBeNull();
-  if (box) {
-    expect(
-      box.x + box.width,
-      "long merchant name must stay within the 320px viewport",
-    ).toBeLessThanOrEqual(320);
-  }
-});
 
 test("campaign entry card for the long-merchant-name fixture stays in-bounds", async ({ page }) => {
   await page.goto(`/campaign/${LONG_MERCHANT_CAMPAIGN_ID}`);

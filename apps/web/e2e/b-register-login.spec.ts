@@ -84,7 +84,7 @@ async function registerThroughUi(
 
 /**
  * 6.2.c's own copy, per display locale (E's 6.2.b, each locale's own
- * `onboarding.json`, and Home's `campaign-board-labels.ts`) — enough to
+ * `onboarding.json`, and Home's `feed.json`) — enough to
  * drive the flat
  * onboarding route chain (consent → follow, interests skipped since
  * personalize consent is never granted here → done) and recognise Home by
@@ -96,14 +96,14 @@ const ONBOARDING_COPY = {
     continueCta: "Continue",
     followCta: /Continue|Skip for now/,
     doneCta: "Start watching",
-    homeHeading: "Earn",
+    homeHeading: "Home",
   },
   "id-ID": {
     consentHeading: "Sebelum kamu mulai",
     continueCta: "Lanjutkan",
     followCta: /Lanjutkan|Lewati dulu/,
     doneCta: "Mulai menonton",
-    homeHeading: "Dapatkan",
+    homeHeading: "Beranda",
   },
 } as const;
 

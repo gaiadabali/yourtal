@@ -63,7 +63,13 @@ async function seedBusiness(business: (typeof businesses)[number]): Promise<void
              'http://127.0.0.1:26900/x/poster.jpg', 'http://127.0.0.1:26900/x/teaser.mp4',
              'http://127.0.0.1:26900/x/index.m3u8', null, '9:16', 1000,
              now(), now() + interval '90 days', true, 0)`,
-    [campaignId, `Demo audiences test ${business.slug}`, business.businessId, business.brand, business.region],
+    [
+      campaignId,
+      `Demo audiences test ${business.slug}`,
+      business.businessId,
+      business.brand,
+      business.region,
+    ],
   );
   await owner.query(
     `INSERT INTO campaign.reward_config
@@ -86,7 +92,15 @@ async function seedBusiness(business: (typeof businesses)[number]): Promise<void
              20,false,'single_use_forfeit',null,
              now() + interval '365 days','available',$6,$7,'all_ages','entertainment',
              'http://127.0.0.1:26900/x/listing.jpg','in_store','single_use')`,
-    [listingId, business.businessId, business.brand, `Voucher ${business.brand}`, currencyMinor, currency, business.region],
+    [
+      listingId,
+      business.businessId,
+      business.brand,
+      `Voucher ${business.brand}`,
+      currencyMinor,
+      currency,
+      business.region,
+    ],
   );
 }
 
@@ -97,7 +111,9 @@ async function cleanup(): Promise<void> {
     await owner.query(`DELETE FROM store.listings WHERE id = $1`, [listingId]);
     await owner.query(`DELETE FROM campaign.reward_config WHERE campaign_id = $1`, [campaignId]);
     await owner.query(`DELETE FROM campaign.campaigns WHERE id = $1`, [campaignId]);
-    await owner.query(`DELETE FROM business.business_accounts WHERE id = $1`, [business.businessId]);
+    await owner.query(`DELETE FROM business.business_accounts WHERE id = $1`, [
+      business.businessId,
+    ]);
   }
 }
 
@@ -155,9 +171,9 @@ describe("runDemoAudiences", () => {
 
       // Re-running finds every row already at its target audience.
       const second = await runDemoAudiences(owner, () => undefined);
-      expect(
-        second.every((r) => r.campaign === "already_set" && r.listing === "already_set"),
-      ).toBe(true);
+      expect(second.every((r) => r.campaign === "already_set" && r.listing === "already_set")).toBe(
+        true,
+      );
     } finally {
       await cleanup();
     }

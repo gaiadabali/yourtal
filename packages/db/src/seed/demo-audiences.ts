@@ -1,7 +1,6 @@
 import type pg from "pg";
 import { categoryPolicy } from "@yourtal/jurisdiction/content-category";
 import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
-import type { JurisdictionCode } from "@yourtal/jurisdiction/jurisdiction-code";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import { stableId } from "@yourtal/media/demo-media";
 
@@ -91,7 +90,7 @@ async function reRateCampaign(
   if (row === undefined) return "not_found";
 
   if (pick.audience === "teen") {
-    const status = categoryPolicy(pick.region as JurisdictionCode, row.content_category as ContentCategory);
+    const status = categoryPolicy(pick.region, row.content_category as ContentCategory);
     if (status !== "allowed") {
       // A future edit to this picks table (or to CATEGORY_POLICY) must fail
       // the deploy loudly here rather than silently show a teen an
@@ -123,7 +122,10 @@ async function reRateListing(
   const row = result.rows[0];
   if (row === undefined) return "not_found";
   if (row.audience === pick.audience) return "already_set";
-  await pool.query(`UPDATE store.listings SET audience = $2 WHERE id = $1`, [row.id, pick.audience]);
+  await pool.query(`UPDATE store.listings SET audience = $2 WHERE id = $1`, [
+    row.id,
+    pick.audience,
+  ]);
   return "updated";
 }
 
@@ -142,7 +144,13 @@ export async function runDemoAudiences(
     log(
       `[seed:demo-audiences] ${pick.slug} -> ${pick.audience}: campaign ${campaign}, listing ${listing}`,
     );
-    results.push({ slug: pick.slug, region: pick.region, audience: pick.audience, campaign, listing });
+    results.push({
+      slug: pick.slug,
+      region: pick.region,
+      audience: pick.audience,
+      campaign,
+      listing,
+    });
   }
   return results;
 }

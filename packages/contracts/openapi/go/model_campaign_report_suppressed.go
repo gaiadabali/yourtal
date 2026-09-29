@@ -24,6 +24,7 @@ type CampaignReportSuppressed struct {
 	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Suppressed bool `json:"suppressed"`
 	Floor int64 `json:"floor"`
+	OpenViews NullableInt64 `json:"openViews"`
 }
 
 type _CampaignReportSuppressed CampaignReportSuppressed
@@ -32,11 +33,12 @@ type _CampaignReportSuppressed CampaignReportSuppressed
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignReportSuppressed(campaignId string, suppressed bool, floor int64) *CampaignReportSuppressed {
+func NewCampaignReportSuppressed(campaignId string, suppressed bool, floor int64, openViews NullableInt64) *CampaignReportSuppressed {
 	this := CampaignReportSuppressed{}
 	this.CampaignId = campaignId
 	this.Suppressed = suppressed
 	this.Floor = floor
+	this.OpenViews = openViews
 	return &this
 }
 
@@ -120,6 +122,32 @@ func (o *CampaignReportSuppressed) SetFloor(v int64) {
 	o.Floor = v
 }
 
+// GetOpenViews returns the OpenViews field value
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *CampaignReportSuppressed) GetOpenViews() int64 {
+	if o == nil || o.OpenViews.Get() == nil {
+		var ret int64
+		return ret
+	}
+
+	return *o.OpenViews.Get()
+}
+
+// GetOpenViewsOk returns a tuple with the OpenViews field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *CampaignReportSuppressed) GetOpenViewsOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.OpenViews.Get(), o.OpenViews.IsSet()
+}
+
+// SetOpenViews sets field value
+func (o *CampaignReportSuppressed) SetOpenViews(v int64) {
+	o.OpenViews.Set(&v)
+}
+
 func (o CampaignReportSuppressed) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -133,6 +161,7 @@ func (o CampaignReportSuppressed) ToMap() (map[string]interface{}, error) {
 	toSerialize["campaignId"] = o.CampaignId
 	toSerialize["suppressed"] = o.Suppressed
 	toSerialize["floor"] = o.Floor
+	toSerialize["openViews"] = o.OpenViews.Get()
 	return toSerialize, nil
 }
 
@@ -144,6 +173,7 @@ func (o *CampaignReportSuppressed) UnmarshalJSON(data []byte) (err error) {
 		"campaignId",
 		"suppressed",
 		"floor",
+		"openViews",
 	}
 
 	allProperties := make(map[string]interface{})

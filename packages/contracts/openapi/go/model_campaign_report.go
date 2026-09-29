@@ -30,6 +30,7 @@ type CampaignReport struct {
 	// Platform points. Always a whole number; there is no fractional point.
 	PointsSpent int64 `json:"pointsSpent"`
 	MerchantVouchersRedeemed int64 `json:"merchantVouchersRedeemed"`
+	OpenViews NullableInt64 `json:"openViews"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -39,7 +40,7 @@ type _CampaignReport CampaignReport
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignReport(campaignId NullableString, suppressed bool, rewardedViews int64, completions int64, completionRate float32, averageWatchTimeSeconds NullableFloat32, questionAccuracy NullableFloat32, pointsSpent int64, merchantVouchersRedeemed int64) *CampaignReport {
+func NewCampaignReport(campaignId NullableString, suppressed bool, rewardedViews int64, completions int64, completionRate float32, averageWatchTimeSeconds NullableFloat32, questionAccuracy NullableFloat32, pointsSpent int64, merchantVouchersRedeemed int64, openViews NullableInt64) *CampaignReport {
 	this := CampaignReport{}
 	this.CampaignId = campaignId
 	this.Suppressed = suppressed
@@ -50,6 +51,7 @@ func NewCampaignReport(campaignId NullableString, suppressed bool, rewardedViews
 	this.QuestionAccuracy = questionAccuracy
 	this.PointsSpent = pointsSpent
 	this.MerchantVouchersRedeemed = merchantVouchersRedeemed
+	this.OpenViews = openViews
 	return &this
 }
 
@@ -283,6 +285,32 @@ func (o *CampaignReport) SetMerchantVouchersRedeemed(v int64) {
 	o.MerchantVouchersRedeemed = v
 }
 
+// GetOpenViews returns the OpenViews field value
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *CampaignReport) GetOpenViews() int64 {
+	if o == nil || o.OpenViews.Get() == nil {
+		var ret int64
+		return ret
+	}
+
+	return *o.OpenViews.Get()
+}
+
+// GetOpenViewsOk returns a tuple with the OpenViews field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *CampaignReport) GetOpenViewsOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.OpenViews.Get(), o.OpenViews.IsSet()
+}
+
+// SetOpenViews sets field value
+func (o *CampaignReport) SetOpenViews(v int64) {
+	o.OpenViews.Set(&v)
+}
+
 func (o CampaignReport) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -302,6 +330,7 @@ func (o CampaignReport) ToMap() (map[string]interface{}, error) {
 	toSerialize["questionAccuracy"] = o.QuestionAccuracy.Get()
 	toSerialize["pointsSpent"] = o.PointsSpent
 	toSerialize["merchantVouchersRedeemed"] = o.MerchantVouchersRedeemed
+	toSerialize["openViews"] = o.OpenViews.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -324,6 +353,7 @@ func (o *CampaignReport) UnmarshalJSON(data []byte) (err error) {
 		"questionAccuracy",
 		"pointsSpent",
 		"merchantVouchersRedeemed",
+		"openViews",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -362,6 +392,7 @@ func (o *CampaignReport) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "questionAccuracy")
 		delete(additionalProperties, "pointsSpent")
 		delete(additionalProperties, "merchantVouchersRedeemed")
+		delete(additionalProperties, "openViews")
 		o.AdditionalProperties = additionalProperties
 	}
 

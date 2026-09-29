@@ -19,6 +19,7 @@ function fakeRepo(overrides: {
   campaign?: ReportedCampaign | null;
   sessions?: SessionAggregates;
   questions?: QuestionAggregates | null;
+  openViewCount?: number;
 }): CampaignReportRepository {
   return {
     findOwnedCampaign: () =>
@@ -37,6 +38,7 @@ function fakeRepo(overrides: {
           ? { timesAsked: 40, timesCorrect: 30 }
           : overrides.questions,
       ),
+    openViewCount: () => Promise.resolve(overrides.openViewCount ?? 0),
   };
 }
 
@@ -83,6 +85,9 @@ describe("getCampaignReport", () => {
     expect(report.questionAccuracy).toBe(0.75);
     expect(report.pointsSpent).toBe(5_000);
     expect(report.merchantVouchersRedeemed).toBe(3);
+    // 11.2.d: below its own floor (0 < COHORT_FLOOR), independent of
+    // rewardedViews clearing its own.
+    expect(report.openViews).toBeNull();
   });
 
   it("suppresses the whole report -- not just one number -- below the F12 cohort floor", async () => {
@@ -101,6 +106,7 @@ describe("getCampaignReport", () => {
       campaignId: CAMPAIGN_ID,
       suppressed: true,
       floor: COHORT_FLOOR,
+      openViews: null,
     });
   });
 
@@ -120,6 +126,41 @@ describe("getCampaignReport", () => {
       campaignId: CAMPAIGN_ID,
       suppressed: true,
       floor: TEEN_COHORT_FLOOR,
+      openViews: null,
+    });
+  });
+
+  it("11.2.d: shows open views once they clear the floor, from their OWN query -- never summed with rewardedViews", async () => {
+    const result = await getCampaignReport(
+      fakeRepo({ openViewCount: COHORT_FLOOR + 5 }),
+      fakeLedger(),
+      fakeVouchers(),
+      BUSINESS_ID,
+      CAMPAIGN_ID,
+    );
+    const report = result._unsafeUnwrap();
+    if (report.suppressed) throw new Error("expected an unsuppressed report");
+    expect(report.openViews).toBe(COHORT_FLOOR + 5);
+    expect(report.rewardedViews).toBe(20); // unaffected by openViews
+  });
+
+  it("11.2.d: open views can clear their own floor even while the rest of the report is suppressed", async () => {
+    const result = await getCampaignReport(
+      fakeRepo({
+        sessions: { rewardedViews: COHORT_FLOOR - 1, completions: 0, averageWatchTimeSeconds: null },
+        openViewCount: COHORT_FLOOR + 5,
+      }),
+      fakeLedger(),
+      fakeVouchers(),
+      BUSINESS_ID,
+      CAMPAIGN_ID,
+    );
+    const report = result._unsafeUnwrap();
+    expect(report).toStrictEqual({
+      campaignId: CAMPAIGN_ID,
+      suppressed: true,
+      floor: COHORT_FLOOR,
+      openViews: COHORT_FLOOR + 5,
     });
   });
 

@@ -25,6 +25,14 @@ export interface CampaignReportRepository {
   sessionAggregates(campaignId: string): Promise<SessionAggregates>;
   /** `null` if this campaign has no questions at all. */
   questionAggregates(campaignId: string): Promise<QuestionAggregates | null>;
+  /**
+   * 11.2.d: anonymous Open Viewing sessions on this campaign
+   * (`watch.open_view_session`) — its OWN query, its OWN count, never
+   * folded into `sessionAggregates`'s `rewardedViews`. That table has no
+   * concept of a "completion" (open views are never claimable, 11.2.b), so
+   * this is the one number it has to offer.
+   */
+  openViewCount(campaignId: string): Promise<number>;
 }
 
 export const CAMPAIGN_REPORT_REPOSITORY = Symbol("CAMPAIGN_REPORT_REPOSITORY");

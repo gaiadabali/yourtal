@@ -16,10 +16,10 @@ export const REPORTS_DB = Symbol("REPORTS_DB");
  * (`WalletModule` already opens both — reused rather than a second pair of
  * pools, same move `BillingModule` makes).
  *
- * Owns no write path at all. "Open views" (Open Viewing / anonymous) has no
- * data source yet in this codebase -- see `reports.controller.ts`'s own doc
- * comment and `packages/contracts/src/report/campaign-report.ts` for why
- * that stays a deliberate absence rather than a fabricated zero.
+ * Owns no write path at all. 11.2.d: "open views" (Open Viewing / anonymous,
+ * `watch.open_view_session`) now has a real data source and its own,
+ * independently-suppressed field on the report -- see
+ * `packages/contracts/src/report/campaign-report.ts`'s own doc comment.
  */
 @Module({
   imports: [WalletModule],

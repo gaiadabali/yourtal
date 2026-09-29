@@ -20117,6 +20117,19 @@
             "minimum": 0,
             "maximum": 9007199254740991,
             "format": "int64"
+          },
+          "openViews": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -20128,7 +20141,8 @@
           "averageWatchTimeSeconds",
           "questionAccuracy",
           "pointsSpent",
-          "merchantVouchersRedeemed"
+          "merchantVouchersRedeemed",
+          "openViews"
         ],
         "additionalProperties": false
       },
@@ -20161,12 +20175,26 @@
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991,
             "format": "int64"
+          },
+          "openViews": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "format": "int64"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "campaignId",
           "suppressed",
-          "floor"
+          "floor",
+          "openViews"
         ],
         "additionalProperties": false
       },

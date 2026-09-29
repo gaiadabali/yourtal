@@ -57,6 +57,15 @@ export class DrizzleCampaignReportRepository implements CampaignReportRepository
     };
   }
 
+  async openViewCount(campaignId: string): Promise<number> {
+    const result = await this.db.execute<{ open_views: string }>(sql`
+      SELECT count(*) AS open_views
+        FROM watch.open_view_session
+       WHERE campaign_id = ${campaignId}
+    `);
+    return Number(result.rows[0]?.open_views ?? 0);
+  }
+
   async questionAggregates(campaignId: string): Promise<QuestionAggregates | null> {
     const result = await this.db.execute<{ times_asked: string; times_correct: string }>(sql`
       SELECT COALESCE(SUM(times_asked), 0) AS times_asked,

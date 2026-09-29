@@ -8,17 +8,24 @@ import { pointsSchema } from "../money/money";
  * zone's entire reason to exist as a SEPARATE surface from the ledger's own
  * per-grant rows.
  *
- * Open views (Open Viewing, anonymous, unauthenticated) are deliberately
- * NOT a field here: nothing in this codebase counts them yet (7.7/Open
- * Viewing's own view-tracking is a separate, not-yet-built piece), and a
- * placeholder `0` would misrepresent "not tracked" as "tracked and zero" --
- * see reports.module's own doc comment.
+ * 11.2.d: open views (Open Viewing, anonymous, unauthenticated —
+ * `watch.open_view_session`, from 11.2.b) are their OWN metric,
+ * independently suppressed below the SAME F12 cohort floor as everything
+ * else here, and NEVER summed with `rewardedViews` — the two come from
+ * disjoint populations (one claimable, one never claimable) with different
+ * denominators, and folding them would answer no question a business
+ * actually asked. `openViews` is `null` exactly when this campaign's own
+ * open-view count has not itself cleared the floor — independent of
+ * whether the rest of the report is `suppressed`, since a campaign can
+ * clear one population's floor without the other's.
  */
 export const campaignReportSuppressedSchema = z.object({
   campaignId: z.uuid(),
   suppressed: z.literal(true),
   /** The floor this campaign's audience needed to clear (10, or 20 for `teen`). */
   floor: z.number().int().positive(),
+  /** `null` below the floor; see this file's header. Present even when the rest of the report is suppressed. */
+  openViews: z.number().int().min(0).nullable(),
 });
 export type CampaignReportSuppressed = z.infer<typeof campaignReportSuppressedSchema>;
 
@@ -36,6 +43,8 @@ export const campaignReportSchema = z.object({
   pointsSpent: pointsSchema,
   /** docs/23 §1.0b: "your points bought N views and M of your own vouchers were redeemed." */
   merchantVouchersRedeemed: z.number().int().min(0),
+  /** `null` below the floor; see this file's header. */
+  openViews: z.number().int().min(0).nullable(),
 });
 export type CampaignReport = z.infer<typeof campaignReportSchema>;
 

@@ -72,6 +72,14 @@ async function insertSession(args: {
   `);
 }
 
+async function insertOpenViewSession(watchedSeconds = 30): Promise<void> {
+  await db.execute(sql`
+    INSERT INTO watch.open_view_session
+      (id, campaign_id, region, ip_hash, started_at, last_progress_at, watched_seconds)
+    VALUES (${randomUUID()}, ${CAMPAIGN_ID}, 'AU', ${randomUUID()}, now(), now(), ${watchedSeconds})
+  `);
+}
+
 describe("DrizzleCampaignReportRepository", () => {
   it("findOwnedCampaign returns the campaign's own audience, or null outside the tenant", async () => {
     const found = await repo.findOwnedCampaign(BUSINESS_ID, CAMPAIGN_ID);
@@ -106,5 +114,15 @@ describe("DrizzleCampaignReportRepository", () => {
 
   it("questionAggregates is null for a campaign with no questions at all", async () => {
     expect(await repo.questionAggregates(randomUUID())).toBeNull();
+  });
+
+  it("openViewCount counts watch.open_view_session rows for this campaign, from its OWN table -- 11.2.d", async () => {
+    expect(await repo.openViewCount(CAMPAIGN_ID)).toBe(0);
+    await insertOpenViewSession();
+    await insertOpenViewSession();
+    await insertOpenViewSession();
+    expect(await repo.openViewCount(CAMPAIGN_ID)).toBe(3);
+    // A different campaign's open views never leak in.
+    expect(await repo.openViewCount(randomUUID())).toBe(0);
   });
 });

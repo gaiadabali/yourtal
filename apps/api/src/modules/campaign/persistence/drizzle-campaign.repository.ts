@@ -4,6 +4,7 @@ import { campaignSchema } from "@yourtal/contracts/campaign";
 import type { CampaignTerms } from "@yourtal/contracts/campaign/campaign-terms";
 import { publicStatusOf, type CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
 import { toPoints } from "@yourtal/contracts/money";
+import type { Region } from "@yourtal/contracts/region";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { CampaignRepository, CampaignRewardConfigRow } from "./campaign.repository";
 import {
@@ -19,7 +20,11 @@ const VISIBLE_STATES = ["live", "paused", "ended"];
 export class DrizzleCampaignRepository implements CampaignRepository {
   constructor(private readonly db: AppDb) {}
 
-  async listVisible(limit: number, audiences?: readonly Audience[]): Promise<Campaign[]> {
+  async listVisible(
+    limit: number,
+    audiences?: readonly Audience[],
+    region?: Region,
+  ): Promise<Campaign[]> {
     const rows = await this.db
       .select()
       .from(campaigns)
@@ -34,6 +39,10 @@ export class DrizzleCampaignRepository implements CampaignRepository {
           audiences === undefined || audiences.length === 0
             ? undefined
             : inArray(campaigns.audience, audiences),
+          // 12.1.f (F2): same "undefined skips it" shape as `audiences`
+          // above -- `fetchFundedCampaigns` omits this too, for the same
+          // reason.
+          region === undefined ? undefined : eq(campaigns.region, region),
         ),
       )
       .orderBy(desc(campaigns.publishedAt))

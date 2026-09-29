@@ -1,0 +1,71 @@
+---
+name: CampaignBrowseSuite
+description: |-
+  12.1.f: `campaign_view.yaml`'s `the-list-is-browsable-by-anyone` rule --
+  `GET /api/campaigns` (`CampaignController.list`), which names no single
+  campaign. `CampaignViewAttributeLoader.resolve` returns `undefined` for it
+  (that file's own class comment), so `PdpGuard` asks Cerbos with a
+  synthetic id and only the schema's required `campaignId` placeholder --
+  `campaign_view_list` in `testdata/resources.yaml` is exactly that shape.
+  `browse` is therefore unconditional: region, live state and the audience
+  wall are enforced by the list's own SQL instead
+  (`resolveCatalogueScope` + `reachableAudiences`), never by a per-resource
+  Cerbos condition, because there is no per-resource attribute here to
+  condition on. Mirrors `consumer_browse_test.yaml` (`listing`'s own
+  `browse`, which DOES condition on a real audience -- that action answers
+  a single-item read, not a list; see that file's header for why the two
+  shapes differ).
+tests:
+  - name: browse is granted to every signed-in principal and to anonymous, regardless of age band, guardian consent or suspension
+    input:
+      principals: [anon, wina, wina_suspended, adi_adult, teo_pending, teo_granted, teo_revoked, wina_no_ageband]
+      resources: [campaign_view_list]
+      actions: [browse]
+    expected:
+      - principal: anon
+        resource: campaign_view_list
+        actions: { browse: EFFECT_ALLOW }
+      - principal: wina
+        resource: campaign_view_list
+        actions: { browse: EFFECT_ALLOW }
+      - principal: wina_suspended
+        resource: campaign_view_list
+        actions: { browse: EFFECT_ALLOW }
+      - principal: adi_adult
+        resource: campaign_view_list
+        actions: { browse: EFFECT_ALLOW }
+      - principal: teo_pending
+        resource: campaign_view_list
+        actions: { browse: EFFECT_ALLOW }
+      - principal: teo_granted
+        resource: campaign_view_list
+        actions: { browse: EFFECT_ALLOW }
+      - principal: teo_revoked
+        resource: campaign_view_list
+        actions: { browse: EFFECT_ALLOW }
+      - principal: wina_no_ageband
+        resource: campaign_view_list
+        actions: { browse: EFFECT_ALLOW }
+
+  - name: browse never grants any single-campaign action -- those still need real per-campaign attributes
+    input:
+      principals: [wina, anon]
+      resources: [campaign_view_list]
+      actions: [watch_open, watch_rewarded, earn, answer_scored, resume_session]
+    expected:
+      - principal: wina
+        resource: campaign_view_list
+        actions:
+          watch_open: EFFECT_DENY
+          watch_rewarded: EFFECT_DENY
+          earn: EFFECT_DENY
+          answer_scored: EFFECT_DENY
+          resume_session: EFFECT_DENY
+      - principal: anon
+        resource: campaign_view_list
+        actions:
+          watch_open: EFFECT_DENY
+          watch_rewarded: EFFECT_DENY
+          earn: EFFECT_DENY
+          answer_scored: EFFECT_DENY
+          resume_session: EFFECT_DENY

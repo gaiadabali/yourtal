@@ -1,5 +1,6 @@
 import type { Audience, Campaign } from "@yourtal/contracts/campaign";
 import type { CampaignTerms } from "@yourtal/contracts/campaign/campaign-terms";
+import type { Region } from "@yourtal/contracts/region";
 
 /**
  * Reading campaigns for a viewer. YT-0553.
@@ -33,8 +34,20 @@ export interface CampaignRepository {
    * would just be the same check twice. `CampaignController.list` (a plain,
    * unranked read with no ranking context) is the one caller that filters
    * here instead, because there is nothing downstream of it that would.
+   *
+   * `region` (12.1.f), when given, additionally filters to campaigns in
+   * exactly that region -- F2's hard wall. `CampaignController.list` derives
+   * it from `resolveCatalogueScope` (the caller's own `jurisdiction` when
+   * signed in, the required `region` query param when anonymous), the same
+   * source every other public list already uses. Omitted the same way
+   * `audiences` is: `fetchFundedCampaigns` filters its own candidates
+   * downstream instead.
    */
-  listVisible(limit: number, audiences?: readonly Audience[]): Promise<Campaign[]>;
+  listVisible(
+    limit: number,
+    audiences?: readonly Audience[],
+    region?: Region,
+  ): Promise<Campaign[]>;
   /** One campaign, or `null` if it does not exist or is not public. */
   findVisibleById(campaignId: string): Promise<Campaign | null>;
   /**

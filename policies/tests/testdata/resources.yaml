@@ -126,6 +126,18 @@ resources:
       openViewingEnabled: true
       openViewingBudgetRemaining: 500
 
+  # 12.1.f: the shape `PdpGuard` actually sends for `GET /api/campaigns`
+  # (`CampaignController.list` names no single campaign) -- a synthetic id
+  # and only the schema's required `campaignId` placeholder, no
+  # state/region/audience of any kind. `campaign_view.yaml`'s
+  # `the-list-is-browsable-by-anyone` rule is unconditional precisely so it
+  # answers this shape.
+  campaign_view_list:
+    kind: campaign_view
+    id: "new"
+    attr:
+      campaignId: "list"
+
   listing_kopi:
     kind: listing
     id: list-1

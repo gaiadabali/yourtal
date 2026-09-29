@@ -16,6 +16,11 @@ import { DrizzleCampaignRepository } from "./persistence/drizzle-campaign.reposi
  * anonymous ID principal reaches exactly `all_ages` -- every fixture
  * campaign in this file already is one, so this changes nothing any test
  * here was asserting.
+ *
+ * 12.1.f: `list` now also resolves a REGION scope
+ * (`resolveCatalogueScope`) -- anonymous has no session to read one from,
+ * so it needs the query param every call below now passes ("ID", matching
+ * every fixture campaign's own region).
  */
 const anonymousResolver: PrincipalResolver = {
   resolve: () => Promise.resolve(anonymousPrincipal("ID")),
@@ -174,13 +179,13 @@ beforeAll(async () => {
 describe("the limit is clamped, because it is an unauthenticated cost", () => {
   it("defaults when absent", async () => {
     const repo = new LimitRecordingRepository();
-    await new CampaignController(repo, anonymousResolver).list(undefined, fakeRequest);
+    await new CampaignController(repo, anonymousResolver).list(undefined, "ID", fakeRequest);
     expect(repo.lastLimit).toBe(30);
   });
 
   it("CLAMPS a caller asking for a million rows", async () => {
     const repo = new LimitRecordingRepository();
-    await new CampaignController(repo, anonymousResolver).list("1000000", fakeRequest);
+    await new CampaignController(repo, anonymousResolver).list("1000000", "ID", fakeRequest);
     // The whole point of the guard. Delete the `Math.min` and this is the
     // only test in the repository that goes red.
     expect(repo.lastLimit).toBe(100);
@@ -188,11 +193,11 @@ describe("the limit is clamped, because it is an unauthenticated cost", () => {
 
   it("raises a zero or negative limit to one, rather than passing it through", async () => {
     const repo = new LimitRecordingRepository();
-    await new CampaignController(repo, anonymousResolver).list("0", fakeRequest);
+    await new CampaignController(repo, anonymousResolver).list("0", "ID", fakeRequest);
     expect(repo.lastLimit).toBe(1);
 
     const negative = new LimitRecordingRepository();
-    await new CampaignController(negative, anonymousResolver).list("-5", fakeRequest);
+    await new CampaignController(negative, anonymousResolver).list("-5", "ID", fakeRequest);
     expect(negative.lastLimit).toBe(1);
   });
 
@@ -200,13 +205,14 @@ describe("the limit is clamped, because it is an unauthenticated cost", () => {
     const repo = new LimitRecordingRepository();
     await new CampaignController(repo, anonymousResolver).list(
       "; DROP TABLE campaigns",
+      "ID",
       fakeRequest,
     );
     expect(repo.lastLimit).toBe(30);
   });
 
   it("returns the list under a `campaigns` key", async () => {
-    const result = await controller.list(undefined, fakeRequest);
+    const result = await controller.list(undefined, "ID", fakeRequest);
     expect(Array.isArray(result.campaigns)).toBe(true);
   });
 });
@@ -313,7 +319,7 @@ describe("a campaign that is not public is reported as missing, not as forbidden
   });
 
   it("keeps the draft off the list as well as out of a direct read", async () => {
-    const { campaigns: listed } = await controller.list("100", fakeRequest);
+    const { campaigns: listed } = await controller.list("100", "ID", fakeRequest);
     expect(listed.map((campaign) => campaign.id)).not.toContain(draftId);
   });
 });

@@ -69,8 +69,26 @@ export const RESOURCE_ACTIONS = {
     "view_performance",
   ],
 
-  /** Consumer and anonymous playback. docs/17 section 4, Open Viewing. */
-  campaign_view: ["watch_open", "watch_rewarded", "earn", "answer_scored", "resume_session"],
+  /**
+   * Consumer and anonymous playback. docs/17 section 4, Open Viewing.
+   *
+   * `browse` (12.1.f) is `GET /api/campaigns` alone -- the list names no
+   * single campaign, so it cannot be conditioned on `R.attr.state`/
+   * `region`/`audience` the way `watch_open` and friends are.
+   * `campaign_view.yaml`'s own rule for it is unconditional; the list's SQL
+   * (`resolveCatalogueScope` + `reachableAudiences`, the same pair
+   * `catalogue-scope.ts` already uses for the store's public list) is what
+   * actually enforces region, live state and audience. Same split as
+   * `listing`'s `view`/`browse` below.
+   */
+  campaign_view: [
+    "watch_open",
+    "watch_rewarded",
+    "earn",
+    "answer_scored",
+    "resume_session",
+    "browse",
+  ],
 
   /**
    * Store inventory and settlement values.

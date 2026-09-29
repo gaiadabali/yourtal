@@ -24,6 +24,9 @@ import { CampaignViewAttributeLoader } from "../watch/campaign-view-attribute-lo
 import { CampaignController } from "./campaign.controller";
 import { seedUserProfile } from "../../shared/testing/seed-user-profile";
 
+type FixtureAudience = "all_ages" | "teen" | "adult" | "parents";
+type FixtureRegion = "AU" | "ID";
+
 /**
  * 1.5.d's "one guard-to-real-Cerbos integration test per module".
  *
@@ -151,6 +154,58 @@ async function insertOpenViewingCampaign(remainingPoints: number): Promise<strin
   return campaignId;
 }
 
+/**
+ * 12.1.f: a throwaway, minimal `live` campaign in a given region/audience,
+ * for the region+audience scoping suite below. Mirrors
+ * `teen-audience-wall.e2e.test.ts`'s own `insertCampaign` (down to the
+ * video_source row -- `campaignSchema.videoSource` is REQUIRED, and without
+ * one `DrizzleCampaignRepository.assemble()` silently drops the row from
+ * every list, which is exactly the kind of false negative this suite must
+ * not produce), generalised to a region param since that file's fixtures
+ * are AU-only.
+ */
+async function insertCampaignFixture(
+  region: FixtureRegion,
+  audience: FixtureAudience,
+): Promise<string> {
+  const campaignId = randomUUID();
+  await owner.execute(sql`
+    INSERT INTO campaign.campaigns
+      (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+       estimated_data_mb, reward_points, question_count, scoring_rule,
+       lifecycle_state, published_at, business_id, region, audience, content_category,
+       poster_url, teaser_url, hls_url, aspect, estimated_bytes,
+       starts_at, ends_at, open_viewing, teaser_start_seconds)
+    VALUES
+      (${campaignId}, 'quick', ${`12.1.f e2e fixture (${region}/${audience})`}, ${randomUUID()},
+       'e2e merchant', 'fixture', 30, 5, 10, 0, 'base_only',
+       'live', now(), ${randomUUID()}, ${region}, ${audience}, 'entertainment',
+       'https://example.test/poster.jpg', 'https://example.test/teaser.mp4',
+       'https://example.test/hls.m3u8', '16:9', 1000000,
+       now(), now() + interval '30 days', false, 0)
+  `);
+  await owner.execute(sql`
+    INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
+    VALUES (${campaignId}, 'hls', 'https://example.test/hls.m3u8')
+  `);
+  return campaignId;
+}
+
+let auAdultCampaignId = "";
+let auAllAgesCampaignId = "";
+let auTeenCampaignId = "";
+let idAdultCampaignId = "";
+const auAdultUserId = randomUUID();
+const idAdultUserId = randomUUID();
+const auTeenGrantedUserId = randomUUID();
+
+/** A recent-enough date of birth to land in the teen band (13-17). */
+function teenDateOfBirth(): string {
+  const now = new Date();
+  const dob = new Date(Date.UTC(now.getUTCFullYear() - 15, now.getUTCMonth(), now.getUTCDate()));
+  return dob.toISOString().split("T")[0] ?? "2011-01-01";
+}
+
 beforeAll(async () => {
   const visible = await campaignRepository.listVisible(50);
   expect(visible.length, "the seeded catalogue should be non-empty").toBeGreaterThan(0);
@@ -158,11 +213,34 @@ beforeAll(async () => {
 
   openViewingFundedId = await insertOpenViewingCampaign(500);
   openViewingExhaustedId = await insertOpenViewingCampaign(0);
+
+  auAdultCampaignId = await insertCampaignFixture("AU", "adult");
+  auAllAgesCampaignId = await insertCampaignFixture("AU", "all_ages");
+  auTeenCampaignId = await insertCampaignFixture("AU", "teen");
+  idAdultCampaignId = await insertCampaignFixture("ID", "adult");
+
+  await seedUserProfile(db, { userId: auAdultUserId, region: "AU" });
+  await seedUserProfile(db, { userId: idAdultUserId, region: "ID" });
+  await seedUserProfile(db, {
+    userId: auTeenGrantedUserId,
+    region: "AU",
+    dateOfBirth: teenDateOfBirth(),
+    parentConsentStatus: "granted",
+  });
 });
 
 afterAll(async () => {
   for (const id of [openViewingFundedId, openViewingExhaustedId]) {
     await owner.execute(sql`DELETE FROM campaign.reward_config WHERE campaign_id = ${id}`);
+    await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);
+  }
+  for (const id of [
+    auAdultCampaignId,
+    auAllAgesCampaignId,
+    auTeenCampaignId,
+    idAdultCampaignId,
+  ]) {
+    await owner.execute(sql`DELETE FROM campaign.video_source WHERE campaign_id = ${id}`);
     await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);
   }
 });
@@ -199,5 +277,83 @@ describe("CampaignController.get against real Cerbos", () => {
   it("DENIES an anonymous caller reading a campaign that has not opted into Open Viewing", async () => {
     const context = contextFor(get, { campaignId: liveCampaignId }, null);
     await expect(guard().canActivate(context)).rejects.toMatchObject({ status: 401 });
+  });
+});
+
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const list = CampaignController.prototype.list;
+const controller = new CampaignController(campaignRepository, principals);
+
+/**
+ * Called directly (not through Nest's HTTP layer), so the `region` query
+ * param is passed to `controller.list` as its own argument below, exactly
+ * as `teen-audience-wall.e2e.test.ts`'s own direct calls already do for
+ * `limit` -- this only carries the session cookie a real request would.
+ */
+function requestFor(userId: string | null): FastifyRequest {
+  return { headers: userId === null ? {} : { cookie: `yt_session=${userId}` } } as FastifyRequest;
+}
+
+describe("CampaignController.list against real Cerbos (12.1.f, defect #1)", () => {
+  it("ALLOWS a signed-in viewer, unconditionally -- browse carries no per-campaign attribute", async () => {
+    const context = contextFor(list, {}, auAdultUserId);
+    await expect(guard().canActivate(context)).resolves.toBe(true);
+  });
+
+  it("ALLOWS an anonymous caller too -- the list is public browse, same as the store catalogue", async () => {
+    const context = contextFor(list, {}, null);
+    await expect(guard().canActivate(context)).resolves.toBe(true);
+  });
+});
+
+describe("GET /api/campaigns -- region and audience scoping (12.1.f, defect #2)", () => {
+  it("an AU adult sees the AU adult and AU all_ages campaigns, never the ID one or the AU teen one", async () => {
+    const { campaigns } = await controller.list(undefined, undefined, requestFor(auAdultUserId));
+    const ids = campaigns.map((campaign) => campaign.id);
+    expect(ids).toContain(auAdultCampaignId);
+    expect(ids).toContain(auAllAgesCampaignId);
+    expect(ids).not.toContain(idAdultCampaignId);
+    expect(ids).not.toContain(auTeenCampaignId);
+  });
+
+  it("an ID adult sees only the ID campaign, never any AU one (F2)", async () => {
+    const { campaigns } = await controller.list(undefined, undefined, requestFor(idAdultUserId));
+    const ids = campaigns.map((campaign) => campaign.id);
+    expect(ids).toContain(idAdultCampaignId);
+    expect(ids).not.toContain(auAdultCampaignId);
+    expect(ids).not.toContain(auAllAgesCampaignId);
+    expect(ids).not.toContain(auTeenCampaignId);
+  });
+
+  it("an AU teen sees the AU teen and all_ages campaigns, but never the AU adult one", async () => {
+    const { campaigns } = await controller.list(
+      undefined,
+      undefined,
+      requestFor(auTeenGrantedUserId),
+    );
+    const ids = campaigns.map((campaign) => campaign.id);
+    expect(ids).toContain(auTeenCampaignId);
+    expect(ids).toContain(auAllAgesCampaignId);
+    expect(ids).not.toContain(auAdultCampaignId);
+  });
+
+  it("anonymous, given a region, sees only that region's all_ages campaigns", async () => {
+    const { campaigns } = await controller.list(undefined, "AU", requestFor(null));
+    const ids = campaigns.map((campaign) => campaign.id);
+    expect(ids).toContain(auAllAgesCampaignId);
+    expect(ids).not.toContain(auAdultCampaignId);
+    expect(ids).not.toContain(auTeenCampaignId);
+    expect(ids).not.toContain(idAdultCampaignId);
+  });
+
+  it("anonymous with no region query param is a 400, not a silent default (there is no session to read one from)", async () => {
+    await expect(
+      controller.list(undefined, undefined, requestFor(null)),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("a signed-in caller whose `?region=` query disagrees with their own jurisdiction gets an empty list, not the other region's data", async () => {
+    const { campaigns } = await controller.list(undefined, "ID", requestFor(auAdultUserId));
+    expect(campaigns).toEqual([]);
   });
 });

@@ -319,6 +319,7 @@ describe("GET /api/campaigns -- the list agrees with the single-item wall", () =
     const request = { headers: { cookie: `yt_session=${teenPendingUserId}` } } as FastifyRequest;
     const { campaigns } = await new CampaignController(campaignRepository, principals).list(
       "200",
+      undefined,
       request,
     );
     const ids = campaigns.map((campaign) => campaign.id);
@@ -330,6 +331,7 @@ describe("GET /api/campaigns -- the list agrees with the single-item wall", () =
     const request = { headers: { cookie: `yt_session=${adultUserId}` } } as FastifyRequest;
     const { campaigns } = await new CampaignController(campaignRepository, principals).list(
       "200",
+      undefined,
       request,
     );
     const ids = campaigns.map((campaign) => campaign.id);

@@ -21,6 +21,25 @@ resourcePolicy:
     resourceSchema:
       ref: cerbos:///resource/campaign_view.json
   rules:
+    - name: the-list-is-browsable-by-anyone
+      # 12.1.f: `GET /api/campaigns` (`CampaignController.list`) names no
+      # single campaign -- `CampaignViewAttributeLoader.resolve` returns
+      # `undefined` for it (see that file's own class comment), so `PdpGuard`
+      # asks this action with a synthetic id and a placeholder
+      # `campaignId` (the schema's only required field) and no other
+      # attribute at all. There is therefore nothing here to condition on:
+      # live state, F2 region and the audience wall are enforced by the
+      # list's own SQL instead (`campaign.controller.ts`'s
+      # `resolveCatalogueScope` + `reachableAudiences`), the same pair
+      # `catalogue-scope.ts` already uses for the store's public list.
+      # Deliberately its own action, never `watch_open` -- that action's
+      # rules below all key on real per-campaign attributes this route
+      # cannot supply, which is defect #1 this rule fixes: before it, the
+      # list 403'd for every signed-in caller and 401'd anonymous outright.
+      actions: ["browse"]
+      effect: EFFECT_ALLOW
+      roles: ["user", "anonymous"]
+
     - name: anonymous-can-never-earn
       actions: ["earn", "answer_scored", "resume_session"]
       effect: EFFECT_DENY

@@ -1,10 +1,20 @@
-import { Controller, Get, Inject, NotFoundException, Param, Query, Req } from "@nestjs/common";
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Inject,
+  NotFoundException,
+  Param,
+  Query,
+  Req,
+} from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
-import { reachableAudiences } from "@yourtal/contracts/audience/audience";
+import { regionSchema } from "@yourtal/contracts/region";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
+import { resolveCatalogueScope } from "../store/catalogue-scope";
 import { CAMPAIGN_REPOSITORY } from "./persistence/campaign.repository";
 import type { CampaignRepository } from "./persistence/campaign.repository";
 
@@ -41,10 +51,38 @@ export class CampaignController {
     @Inject(AsyncPrincipalResolver) private readonly principals: PrincipalResolver,
   ) {}
 
-  @Authorize({ kind: "campaign_view", action: "watch_open" })
+  /**
+   * 12.1.f: this route names no single campaign
+   * (`CampaignViewAttributeLoader`'s own doc comment resolves it to
+   * `undefined`), so it asks a DIFFERENT action from every other route here
+   * -- `browse`, not `watch_open`. `campaign_view.yaml`'s
+   * `the-list-is-browsable-by-anyone` rule grants it unconditionally to
+   * `user` and `anonymous` alike (defect #1: before this action existed,
+   * every signed-in caller got 403 here, because `watch_open`'s rules all
+   * key on real per-campaign attributes this route cannot supply).
+   * `attrsFrom` supplies the schema's one required field with a
+   * placeholder, since there is no real campaign to name.
+   *
+   * Region and audience (defect #2, F2) are therefore enforced here in code
+   * instead of by a per-resource Cerbos condition -- `resolveCatalogueScope`
+   * is the exact same helper `StoreCatalogueController.browse` already uses
+   * for the store's public list, so an AU caller never sees an ID campaign
+   * and vice versa, and an adult-rated campaign never reaches a teen or an
+   * anonymous visitor, by the same construction the store list already
+   * proves.
+   */
+  @Authorize({
+    kind: "campaign_view",
+    action: "browse",
+    attrsFrom: () => ({ campaignId: "list" }),
+  })
   @NotValueMoving("A read. Nothing is created, so a replay has nothing to duplicate.")
   @Get()
-  async list(@Query("limit") limit: string | undefined, @Req() request: FastifyRequest) {
+  async list(
+    @Query("limit") limit: string | undefined,
+    @Query("region") regionParam: string | undefined,
+    @Req() request: FastifyRequest,
+  ) {
     // Clamped, not trusted. `?limit=1000000` is a denial-of-service with no
     // authentication required, and a default that a caller can raise without
     // bound is not a default.
@@ -53,16 +91,26 @@ export class CampaignController {
       ? Math.min(Math.max(requested, 1), MAX_LIMIT)
       : DEFAULT_LIMIT;
 
-    // 12.1.b: this route names no single campaign
-    // (`CampaignViewAttributeLoader`'s own doc comment), so Cerbos's
-    // per-resource audience wall cannot filter it -- the list itself has to.
-    // `reachableAudiences` is the same truth table `catalogue-scope.ts`
-    // derives from, so this list and the store catalogue's agree by
-    // construction rather than by two people remembering to match wording.
     const principal = await this.principals.resolve(request);
-    const audiences = reachableAudiences(principal.attr.ageBand);
+    const queryRegion = regionParam === undefined ? undefined : regionSchema.parse(regionParam);
+    const scope = resolveCatalogueScope(principal, queryRegion);
 
-    return { campaigns: await this.campaigns.listVisible(safeLimit, audiences) };
+    if (scope.kind === "anonymous_region_required") {
+      throw new BadRequestException({
+        code: "region_required",
+        message: "an anonymous request must state a region query param",
+      });
+    }
+    if (scope.kind === "region_mismatch") {
+      // Same "show nothing" answer the store catalogue gives a signed-in
+      // caller whose `?region=` disagrees with their own jurisdiction --
+      // not confused about syntax, just looking at a region they are not in.
+      return { campaigns: [] };
+    }
+
+    return {
+      campaigns: await this.campaigns.listVisible(safeLimit, scope.audiences, scope.region),
+    };
   }
 
   @Authorize({ kind: "campaign_view", action: "watch_open" })

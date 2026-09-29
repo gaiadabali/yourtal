@@ -213,7 +213,9 @@
       "questionAccuracy": "Akurasi jawaban",
       "pointsSpent": "Poin terpakai",
       "pointsSpentLabel": "{formatted} poin terpakai",
-      "vouchersRedeemed": "Voucher Anda yang ditukarkan"
+      "vouchersRedeemed": "Voucher Anda yang ditukarkan",
+      "openViews": "Tontonan tanpa akun",
+      "openViewsSuppressedInline": "Masih terlalu sedikit untuk ditampilkan"
     },
     "filter": {
       "ariaLabel": "Filter laporan berdasarkan kampanye",

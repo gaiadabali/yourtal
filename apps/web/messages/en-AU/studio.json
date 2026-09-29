@@ -213,7 +213,9 @@
       "questionAccuracy": "Question accuracy",
       "pointsSpent": "Points spent",
       "pointsSpentLabel": "{formatted} points spent",
-      "vouchersRedeemed": "Your vouchers redeemed"
+      "vouchersRedeemed": "Your vouchers redeemed",
+      "openViews": "Open views (no account)",
+      "openViewsSuppressedInline": "Too few viewers so far to show"
     },
     "filter": {
       "ariaLabel": "Filter reports by campaign",

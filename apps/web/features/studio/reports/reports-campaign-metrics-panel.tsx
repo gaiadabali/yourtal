@@ -19,6 +19,16 @@ function formatSeconds(value: number | null): string {
 }
 
 /**
+ * 11.2.d: `openViews` is `null` below its OWN F12 cohort floor —
+ * independent of whether the rest of the report is `suppressed` — so this
+ * reads the same "too few to show" wording either way rather than a bare
+ * dash, which would look like a real zero.
+ */
+function formatOpenViews(value: number | null, suppressedLabel: string): string {
+  return value === null ? suppressedLabel : String(value);
+}
+
+/**
  * The selected campaign's own performance (task 7.6.a / F40's reports
  * wiring) — aggregates only, real numbers from the server, suppressed
  * below the cohort floor rather than shown with a small, identifiable
@@ -40,9 +50,26 @@ export function ReportsCampaignMetricsPanel({ report, locale }: ReportsCampaignM
         {report === null ? (
           <p className="text-body-sm text-fg-muted">{t("reports.metrics.notFound")}</p>
         ) : report.suppressed ? (
-          <p className="text-body-sm text-fg-muted">
-            {t("reports.metrics.suppressed", { floor: report.floor })}
-          </p>
+          <>
+            <p className="text-body-sm text-fg-muted">
+              {t("reports.metrics.suppressed", { floor: report.floor })}
+            </p>
+            {/* 11.2.d: open views are their OWN metric with their OWN
+                floor — shown even while the rewarded-view numbers above
+                stay suppressed, never folded into them. */}
+            <KeyValue
+              items={[
+                {
+                  key: "openViews",
+                  label: t("reports.metrics.openViews"),
+                  value: formatOpenViews(
+                    report.openViews,
+                    t("reports.metrics.openViewsSuppressedInline"),
+                  ),
+                },
+              ]}
+            />
+          </>
         ) : (
           <KeyValue
             items={[
@@ -88,6 +115,14 @@ export function ReportsCampaignMetricsPanel({ report, locale }: ReportsCampaignM
                 key: "vouchersRedeemed",
                 label: t("reports.metrics.vouchersRedeemed"),
                 value: report.merchantVouchersRedeemed,
+              },
+              {
+                key: "openViews",
+                label: t("reports.metrics.openViews"),
+                value: formatOpenViews(
+                  report.openViews,
+                  t("reports.metrics.openViewsSuppressedInline"),
+                ),
               },
             ]}
           />

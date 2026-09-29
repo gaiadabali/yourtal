@@ -64,6 +64,9 @@ const mockReportsDataSource: ReportsDataSource = {
       questionAccuracy: 0.78,
       pointsSpent: toPoints(42_000),
       merchantVouchersRedeemed: 37,
+      // 11.2.d: a plausible-looking number, same reasoning as the rest of
+      // this fixture — mock mode has no real cohort floor to trip.
+      openViews: 3_180,
     }),
 };
 

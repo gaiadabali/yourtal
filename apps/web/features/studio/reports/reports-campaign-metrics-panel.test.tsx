@@ -18,12 +18,35 @@ describe("ReportsCampaignMetricsPanel", () => {
   it("shows the suppressed-below-floor message with the real floor, not any number", () => {
     render(
       <ReportsCampaignMetricsPanel
-        report={{ campaignId: "00000000-0000-4000-8000-000000000001", suppressed: true, floor: 10 }}
+        report={{
+          campaignId: "00000000-0000-4000-8000-000000000001",
+          suppressed: true,
+          floor: 10,
+          openViews: null,
+        }}
         locale="en-AU"
       />,
     );
     expect(screen.getByText(/at least 10 people/)).toBeInTheDocument();
     expect(screen.queryByText("Rewarded views")).not.toBeInTheDocument();
+    // 11.2.d: the open-views row still renders (its own metric, its own floor).
+    expect(screen.getByText("Open views (no account)")).toBeInTheDocument();
+    expect(screen.getByText("Too few viewers so far to show")).toBeInTheDocument();
+  });
+
+  it("11.2.d: shows a real open-views count even while rewarded views stay suppressed", () => {
+    render(
+      <ReportsCampaignMetricsPanel
+        report={{
+          campaignId: "00000000-0000-4000-8000-000000000001",
+          suppressed: true,
+          floor: 10,
+          openViews: 250,
+        }}
+        locale="en-AU"
+      />,
+    );
+    expect(screen.getByText("250")).toBeInTheDocument();
   });
 
   it("renders the real aggregates when the campaign clears the floor", () => {
@@ -39,6 +62,7 @@ describe("ReportsCampaignMetricsPanel", () => {
           questionAccuracy: 0.78,
           pointsSpent: toPoints(42_000),
           merchantVouchersRedeemed: 37,
+          openViews: 3_500,
         }}
         locale="en-AU"
       />,
@@ -46,5 +70,6 @@ describe("ReportsCampaignMetricsPanel", () => {
     expect(screen.getByText("1240")).toBeInTheDocument();
     expect(screen.getByText("78%")).toBeInTheDocument();
     expect(screen.getByText("96s")).toBeInTheDocument();
+    expect(screen.getByText("3500")).toBeInTheDocument();
   });
 });

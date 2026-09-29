@@ -100,7 +100,8 @@ export function FeedItemActions({
             <span className="sr-only">{t("actions.why")}</span>
           </Button>
         </BottomSheetTrigger>
-        <BottomSheetContent closeLabel={t("actions.close")}>
+        {/* Portalled to <body>, outside the shell: carry the viewer's dark surface along. */}
+        <BottomSheetContent closeLabel={t("actions.close")} data-surface="viewer" data-theme="dark">
           <BottomSheetHeader>
             <BottomSheetTitle>{t("actions.why")}</BottomSheetTitle>
             <BottomSheetDescription>

@@ -29,11 +29,19 @@ type RiskFlagRow = {
   readonly signals: unknown;
   readonly escrow_id: string | null;
   readonly status: string;
-  readonly created_at: Date;
-  readonly resolved_at: Date | null;
+  // `drizzle-orm`'s raw `db.execute` hands back whatever node-postgres's own
+  // type parser produces for a timestamptz column, which is a string here
+  // (not the Date object a typed Drizzle table read would give) -- toISO
+  // below re-parses rather than assuming either shape.
+  readonly created_at: Date | string;
+  readonly resolved_at: Date | string | null;
   readonly resolved_by: string | null;
   readonly resolution_note: string | null;
 };
+
+function toISO(value: Date | string): string {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
 
 function toRiskFlag(row: RiskFlagRow): RiskFlag {
   return {
@@ -45,8 +53,8 @@ function toRiskFlag(row: RiskFlagRow): RiskFlag {
     signals: Array.isArray(row.signals) ? (row.signals as RiskFlag["signals"]) : [],
     escrowId: row.escrow_id ?? undefined,
     status: row.status as RiskFlag["status"],
-    createdAt: row.created_at.toISOString(),
-    resolvedAt: row.resolved_at?.toISOString(),
+    createdAt: toISO(row.created_at),
+    resolvedAt: row.resolved_at === null ? undefined : toISO(row.resolved_at),
     resolvedBy: row.resolved_by ?? undefined,
     resolutionNote: row.resolution_note ?? undefined,
   };

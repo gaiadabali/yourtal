@@ -118,7 +118,7 @@ describe("staff risk queue", () => {
     expect(flags.some((f) => f.id === flagId)).toBe(false);
 
     // A second release attempt finds nothing pending.
-    const again = await post(`/api/staff/risk/queue/${flagId}/release`, risk);
+    const again = await post(`/api/staff/risk/queue/${flagId}/release`, risk, {});
     expect(again.statusCode).toBe(404);
   });
 

@@ -42,13 +42,15 @@ export async function getRateScreen(region: "AU" | "ID"): Promise<RateScreen | n
 
 const economyProposalListSchema = z.array(economyProposalSchema);
 
+/** `[]` on a 403 -- same reasoning as `getKillSwitches`: ops shares this page and has no `ledger_adjustment.view` rule. */
 export async function getMarketingFundings(region: "AU" | "ID"): Promise<readonly EconomyProposal[]> {
   const result = await apiFetch(
     `/api/staff/economy/${region}/marketing-fundings`,
     economyProposalListSchema,
   );
-  if (!result.ok) throwOrForbid("load marketing fundings", result.error);
-  return result.data;
+  if (result.ok) return result.data;
+  if (result.error.kind === "http" && result.error.status === 403) return [];
+  throw new Error(`Could not load marketing fundings: ${result.error.message}`);
 }
 
 /**

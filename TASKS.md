@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | 🔄 in progress | 3/4 | 20/22 | `█████████░`  91% |
 | **Phase 9** Staff console | C | 🔄 in progress | 2/5 | 9/17 | `█████░░░░░`  53% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | · not started | 0/6 | 0/22 | `░░░░░░░░░░`   0% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/31 | `░░░░░░░░░░`   3% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/32 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **61/90** | **335/431** | `████████░░`  78% |
+| **All** | | | **61/90** | **335/432** | `████████░░`  78% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1338,6 +1338,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 11.6.a The store is a shoppable grid with images, filters (category, channel, price) and the balance chip. It shows only the viewer's region and audience (7.4.d).
   - [ ] 11.6.b The offer page shows terms, locations, channel and expiry. **Get it** locks the price with a countdown (4.7) and checks out, with errors in plain language (the 1.2.c enum). (requested by A) Delete `burn-data.ts`'s rate and `wallet-history.ts`'s mock rate (4.9.d).
   - [ ] 11.6.c **Check:** the bought voucher is in the wallet immediately, the balance drops by the locked price, and an ID account never sees an AU listing.
+  - [ ] 11.6.d (requested by C, from 4.8.c) The wallet reads the new `status` field (`active`/`redeemed`/`expired`/`transferred`) and the display fields `GET /api/wallet/vouchers[/:id]` now carries, instead of `state`, so a voucher spent at a counter shows as redeemed with its remaining value; the QR screen cycles all 12 windows. `state` stays for compatibility.
 - [ ] **11.7 Notifications and search** · needs: 5.5, 7.7 (moved from 6.8)
   - [ ] 11.7.a A bell in the top bar showing 5.5.b notifications.
   - [ ] 11.7.b Search results (from 7.7.c) for campaigns, channels and vouchers.

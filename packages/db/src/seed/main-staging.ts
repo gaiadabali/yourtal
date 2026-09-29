@@ -11,6 +11,8 @@ import { SNAP_APP_ASSET_ID, repairSnapAppMedia } from "./snap-app-media";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
 import type { DemoMediaVoucherResult } from "./demo-media-vouchers";
+import { runDemoAudiences } from "./demo-audiences";
+import type { DemoAudienceResult } from "./demo-audiences";
 import { seedStaging } from "./staging";
 import { ensureStagingMedia } from "./staging-media";
 
@@ -296,11 +298,28 @@ async function main(): Promise<void> {
         ? `demo media vouchers: ${String(demoMediaVouchersSeeded)} seeded, ${String(demoMediaVouchersFailed.length)} FAILED (${demoMediaVouchersFailed.map((r: DemoMediaVoucherResult) => r.slug).join(", ")}) — not failing the deploy over it`
         : `demo media vouchers: ${String(demoMediaVouchersSeeded)} seeded, ${String(demoMediaVoucherResults.length - demoMediaVouchersSeeded)} already present`;
 
+    // TASKS.md 12.1.g: re-rates three of the sixteen demo-media campaigns per
+    // region to teen/adult/parents, so staging has something other than
+    // all_ages to prove the audience wall with. Runs after every step above
+    // that could create the campaign/listing rows it re-rates. Never fails
+    // the deploy — same cosmetic-demo-row reasoning as demoMediaSummary.
+    let demoAudienceResults: readonly DemoAudienceResult[] = [];
+    try {
+      demoAudienceResults = await runDemoAudiences(pool, console.log);
+    } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      console.error(`[seed:staging] demo audiences threw rather than returning results: ${detail}`);
+    }
+    const demoAudiencesUpdated = demoAudienceResults.filter(
+      (r) => r.campaign === "updated" || r.listing === "updated",
+    ).length;
+    const demoAudiencesSummary = `demo audiences: ${String(demoAudiencesUpdated)}/${String(demoAudienceResults.length)} re-rated`;
+
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
         `${grantSummary}; ${voucherSummary}; ${affordableListingsSummary}; ` +
         `${redemptionBalanceSummary}; ${mediaSummary}; ${demoMediaSummary}; ` +
-        `${demoCampaignFundingSummary}; ${demoMediaVouchersSummary}.`,
+        `${demoCampaignFundingSummary}; ${demoMediaVouchersSummary}; ${demoAudiencesSummary}.`,
     );
 
     if (

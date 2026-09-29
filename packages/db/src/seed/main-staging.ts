@@ -6,6 +6,7 @@ import { listDemoMediaBusinesses, runDemoMedia } from "@yourtal/media/demo-media
 import type { DemoMediaResult } from "@yourtal/media/demo-media";
 import { runDemoCampaignFunding } from "./demo-campaign-funding";
 import { alignDemoCampaignTerms } from "./demo-campaign-terms";
+import { repairDemoListingImages } from "./demo-listing-images";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
 import type { DemoMediaVoucherResult } from "./demo-media-vouchers";
@@ -261,6 +262,8 @@ async function main(): Promise<void> {
         `[seed:staging] demo media vouchers threw rather than returning results: ${detail}`,
       );
     }
+    // After the vouchers' listings exist: give any placeholder image a real poster.
+    await repairDemoListingImages(pool, console.log);
     const demoMediaVouchersSeeded = demoMediaVoucherResults.filter(
       (r: DemoMediaVoucherResult) => r.status === "seeded",
     ).length;

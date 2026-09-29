@@ -48,7 +48,8 @@ const NOT_FOUND: RouteErrorResponse = {
 
 const ALREADY_DECIDED: RouteErrorResponse = {
   status: 400,
-  description: "This proposal was already approved or rejected (business.errors' `already_decided`).",
+  description:
+    "This proposal was already approved or rejected (business.errors' `already_decided`).",
   documented: true,
 };
 
@@ -62,7 +63,8 @@ const SELF_APPROVAL: RouteErrorResponse = {
 
 const LEDGER_REFUSED: RouteErrorResponse = {
   status: 400,
-  description: "The ledger refused the request (to-http-exception.ts maps its closed LedgerError enum).",
+  description:
+    "The ledger refused the request (to-http-exception.ts maps its closed LedgerError enum).",
   documented: true,
 };
 
@@ -245,7 +247,8 @@ export const STAFF_ECONOMY_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["staff-economy"],
     pathParams: [REGION_PARAM],
     successStatus: 200,
-    successDescription: "F12's whole table, per region -- ceilings, caps, streak, holdback, expiry.",
+    successDescription:
+      "F12's whole table, per region -- ceilings, caps, streak, holdback, expiry.",
     successSchema: inlineSchema(settingsScreenSchema),
     errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
   },
@@ -266,7 +269,8 @@ export const STAFF_ECONOMY_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["staff-economy"],
     pathParams: [],
     successStatus: 200,
-    successDescription: "Merchant/listing/batch/global emergency stops (voucher-internal's own list).",
+    successDescription:
+      "Merchant/listing/batch/global emergency stops (voucher-internal's own list).",
     successSchema: { type: "array", items: inlineSchema(killSwitchSchema) },
     errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
   },

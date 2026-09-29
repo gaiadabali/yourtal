@@ -121,16 +121,24 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   economyProposalStatusSchema: "Same as economyProposalKindSchema above.",
   economyProposalSchema:
     "9.5.b-d's pending-approval row. Documented inline wherever it appears (route-registry.c-staff-economy.ts), not a registered component -- staff.economy_proposal (migration 20260929050100) is a staff-only read model, same tier as regionSettingSchema above.",
-  economyDaySchema: "staff-economy.ts's per-day row, nested inside economyOverviewSchema's own inline schema -- not a standalone component.",
-  economyOverviewSchema: "9.5.a's overview response -- documented inline (route-registry.c-staff-economy.ts GET .../overview).",
+  economyDaySchema:
+    "staff-economy.ts's per-day row, nested inside economyOverviewSchema's own inline schema -- not a standalone component.",
+  economyOverviewSchema:
+    "9.5.a's overview response -- documented inline (route-registry.c-staff-economy.ts GET .../overview).",
   rateScreenSchema:
     "9.5.b's rate screen. F54: published inline (route-registry.c-staff-economy.ts GET .../rate), same 'documented but not a registered cross-route component' tier as every other staff-economy schema here -- never a NAMED component, so B can never be referenced from outside the two staff routes that carry it.",
-  proposeRateBodySchema: "Same as rateScreenSchema above -- published inline (POST .../rate/proposals), not a registered component.",
-  proposeMarketingFundingBodySchema: "9.5.c's request body -- documented inline (route-registry.c-staff-economy.ts POST .../marketing-fundings).",
-  proposeManualPurchaseBodySchema: "9.5.c's request body -- documented inline (route-registry.c-staff-economy.ts POST .../purchases).",
-  settingsScreenSchema: "9.5.d's settings screen -- documented inline (route-registry.c-staff-economy.ts GET .../settings).",
-  proposeSettingBodySchema: "9.5.d's request body -- documented inline (route-registry.c-staff-economy.ts POST .../settings/proposals).",
-  decideProposalBodySchema: "9.5's shared approve-route request body -- documented inline everywhere an approve route appears (route-registry.c-staff-economy.ts).",
+  proposeRateBodySchema:
+    "Same as rateScreenSchema above -- published inline (POST .../rate/proposals), not a registered component.",
+  proposeMarketingFundingBodySchema:
+    "9.5.c's request body -- documented inline (route-registry.c-staff-economy.ts POST .../marketing-fundings).",
+  proposeManualPurchaseBodySchema:
+    "9.5.c's request body -- documented inline (route-registry.c-staff-economy.ts POST .../purchases).",
+  settingsScreenSchema:
+    "9.5.d's settings screen -- documented inline (route-registry.c-staff-economy.ts GET .../settings).",
+  proposeSettingBodySchema:
+    "9.5.d's request body -- documented inline (route-registry.c-staff-economy.ts POST .../settings/proposals).",
+  decideProposalBodySchema:
+    "9.5's shared approve-route request body -- documented inline everywhere an approve route appears (route-registry.c-staff-economy.ts).",
 
   campaignPublishedEventSchema:
     "TASKS.md 7.3.f: a pg-boss job payload (campaign.published), consumed by apps/worker/src/jobs/campaign-published-notify.ts -- a queue message between two server processes, never an HTTP request/response body a client sends or receives.",
@@ -268,6 +276,11 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   unpostedWebhookEventsSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   webhookEventsPostedRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   webhookEventsPostedSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  // 4.8.c landed these two without a NOT_PUBLISHED entry (found while
+  // rebasing 9.5 past it, unrelated to this task) -- same voucher-internal
+  // operation type as every other row in this block.
+  qrTokenWindowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  walletVoucherRowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- me (TASKS.md 6.7.a) ---
   autoplaySettingSchema:

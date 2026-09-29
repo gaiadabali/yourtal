@@ -133,7 +133,9 @@ test.describe.serial("9.5: staff economy console", () => {
 
     await pageA.getByLabel("New backing rate (micros per point)").fill("31000");
     await pageA.getByRole("button", { name: "Propose rate change" }).click();
-    await expect(pageA.getByText("The change was proposed and is awaiting a second approver.")).toBeVisible();
+    await expect(
+      pageA.getByText("The change was proposed and is awaiting a second approver."),
+    ).toBeVisible();
 
     // The proposer cannot approve their own change -- their own row shows
     // no approve button (a self-approval attempt is also proven denied,
@@ -154,7 +156,9 @@ test.describe.serial("9.5: staff economy console", () => {
     await pageA.getByLabel("Amount (minor units)").fill("10000");
     await pageA.getByLabel("Reason (required, for the record)").first().fill("9.5.e check");
     await pageA.getByRole("button", { name: "Propose funding" }).click();
-    await expect(pageA.getByText("The change was proposed and is awaiting a second approver.")).toBeVisible();
+    await expect(
+      pageA.getByText("The change was proposed and is awaiting a second approver."),
+    ).toBeVisible();
     await pageA.close();
 
     const pageB = await pageAs(browser, baseURL as string, financeB.token);
@@ -175,7 +179,9 @@ test.describe.serial("9.5: staff economy console", () => {
     await pageA.getByLabel("Amount paid (minor units)").fill("22500");
     await pageA.getByLabel("Bank-transfer reference").fill("BSB-062-000 REF-9.5.e");
     await pageA.getByRole("button", { name: "Propose purchase" }).click();
-    await expect(pageA.getByText("The change was proposed and is awaiting a second approver.")).toBeVisible();
+    await expect(
+      pageA.getByText("The change was proposed and is awaiting a second approver."),
+    ).toBeVisible();
     await pageA.close();
 
     const pageB = await pageAs(browser, baseURL as string, financeB.token);
@@ -197,7 +203,9 @@ test.describe.serial("9.5: staff economy console", () => {
     await pageA.getByLabel("Setting key").fill("daily_earn_cap");
     await pageA.getByLabel("New value (JSON)").fill("550");
     await pageA.getByRole("button", { name: "Propose change" }).click();
-    await expect(pageA.getByText("The change was proposed and is awaiting a second approver.")).toBeVisible();
+    await expect(
+      pageA.getByText("The change was proposed and is awaiting a second approver."),
+    ).toBeVisible();
     await pageA.close();
 
     const pageB = await pageAs(browser, baseURL as string, financeB.token);
@@ -239,7 +247,9 @@ test.describe.serial("9.5: staff economy console", () => {
     for (const colorScheme of ["light", "dark"] as const) {
       test(`overview at ${String(width)}px, ${colorScheme}`, async ({ browser, baseURL }) => {
         const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme });
-        await context.addCookies([{ name: "yt_session", value: financeA.token, url: baseURL as string }]);
+        await context.addCookies([
+          { name: "yt_session", value: financeA.token, url: baseURL as string },
+        ]);
         const page = await context.newPage();
         const response = await page.goto("/staff/economy?region=AU");
         expect(response?.status()).toBe(200);
@@ -254,7 +264,9 @@ test.describe.serial("9.5: staff economy console", () => {
 
       test(`rate screen at ${String(width)}px, ${colorScheme}`, async ({ browser, baseURL }) => {
         const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme });
-        await context.addCookies([{ name: "yt_session", value: financeA.token, url: baseURL as string }]);
+        await context.addCookies([
+          { name: "yt_session", value: financeA.token, url: baseURL as string },
+        ]);
         const page = await context.newPage();
         const response = await page.goto("/staff/economy/rate?region=AU");
         expect(response?.status()).toBe(200);

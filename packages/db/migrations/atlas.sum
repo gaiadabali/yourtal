@@ -1,4 +1,4 @@
-h1:g3v/k3ZA1uGizE1N453z9X4OCGOnekupPKCqnhs7Fgc=
+h1:WMcBMxOev/1xwfFi76r9okeJ6J1q9TareIfWBpKTXYA=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -92,4 +92,5 @@ h1:g3v/k3ZA1uGizE1N453z9X4OCGOnekupPKCqnhs7Fgc=
 20260928143835_partner_credential_env_reference.sql h1:z8BlSHwJ7M5r0eKsQrMzF8DDWD/txvhiGqBXiDqhyXM=
 20260928143935_business_suspension.sql h1:w3vFEQ9fhoSuJNRfu7hQ7wbdtdQBFRG5PubOlbupr7k=
 20260929050000_staff_user_suspension.sql h1:Gw+nb6t4wCqIIYWRlU+HTzzNg5JNlx4QkQTyQ4xjWWE=
-20260929060000_voucher_fake_wallet_widen.sql h1:/GlMHVGCOZ3TcQpqvFNsP9a2cOmCijuU+aRxMqs3ciE=
+20260929050100_staff_economy_proposal.sql h1:sUBVWJ5ilBBY9IvDtFRktoFQZ+UIOPozLFUtf1x1NGw=
+20260929060000_voucher_fake_wallet_widen.sql h1:bB+vsG7yfgPCPpHaxwR7rqNP43wc+0JsD3NSyXk06Ko=

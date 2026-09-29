@@ -12,7 +12,9 @@ function stringParam(value: string | string[] | undefined): string | undefined {
 }
 
 /** `/staff/economy/settings`, TASKS.md 9.5.d: every F12 setting, per region, including points expiry (F2). */
-export default async function StaffEconomySettingsPage(props: PageProps<"/staff/economy/settings">) {
+export default async function StaffEconomySettingsPage(
+  props: PageProps<"/staff/economy/settings">,
+) {
   const session = await requireStaffSession();
   const searchParams = await props.searchParams;
   const regionParam = stringParam(searchParams.region);

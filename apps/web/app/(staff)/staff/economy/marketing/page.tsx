@@ -1,10 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { requireStaffSession } from "@/features/staff/staff-session";
-import {
-  getKillSwitches,
-  getMarketingFundings,
-} from "@/features/staff/economy/staff-economy-data";
+import { getKillSwitches, getMarketingFundings } from "@/features/staff/economy/staff-economy-data";
 import { flashFrom } from "@/features/staff/economy/staff-economy-flash";
 import { StaffEconomyMarketingScreen } from "@/features/staff/economy/staff-economy-marketing-screen";
 import { StaffEconomySubnav } from "@/features/staff/economy/staff-economy-subnav";
@@ -15,7 +12,9 @@ function stringParam(value: string | string[] | undefined): string | undefined {
 }
 
 /** `/staff/economy/marketing`, TASKS.md 9.5.c: marketing funding (two-person) and kill switches (ops). */
-export default async function StaffEconomyMarketingPage(props: PageProps<"/staff/economy/marketing">) {
+export default async function StaffEconomyMarketingPage(
+  props: PageProps<"/staff/economy/marketing">,
+) {
   const session = await requireStaffSession();
   const searchParams = await props.searchParams;
   const regionParam = stringParam(searchParams.region);

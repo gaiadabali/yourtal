@@ -41,7 +41,10 @@ import {
   TripKillSwitchDto,
 } from "./dto/economy.dto";
 import { currentBackingRateMicros, reportedSpreadMinor } from "./coverage-math";
-import { ECONOMY_PROPOSAL_REPOSITORY, toEconomyProposal } from "./persistence/economy-proposal.repository";
+import {
+  ECONOMY_PROPOSAL_REPOSITORY,
+  toEconomyProposal,
+} from "./persistence/economy-proposal.repository";
 import type {
   EconomyProposalRepository,
   EconomyProposalRow,
@@ -247,7 +250,12 @@ export class StaffEconomyController {
     });
     if (approveResult.isErr()) throw mapLedgerErrorToHttpException(approveResult.error);
 
-    const decided = await this.proposals.approve(row.id, principal.id, approveResult.value, body.note);
+    const decided = await this.proposals.approve(
+      row.id,
+      principal.id,
+      approveResult.value,
+      body.note,
+    );
     setStaffAuditContext(request, { targetKind: "rate_proposal", targetId: row.id, region });
     return toEconomyProposal(decided);
   }
@@ -267,7 +275,9 @@ export class StaffEconomyController {
   @StaffAction("economy.view_marketing_fundings")
   @NotValueMoving("A read.")
   @Get(":region/marketing-fundings")
-  async marketingFundings(@Param("region") regionParam: string): Promise<readonly EconomyProposal[]> {
+  async marketingFundings(
+    @Param("region") regionParam: string,
+  ): Promise<readonly EconomyProposal[]> {
     const region = parseRegion(regionParam);
     const rows = await this.proposals.listAll(region, "fund_marketing");
     return rows.map(toEconomyProposal);
@@ -460,7 +470,12 @@ export class StaffEconomyController {
     });
     if (purchaseResult.isErr()) throw mapLedgerErrorToHttpException(purchaseResult.error);
 
-    const decided = await this.proposals.approve(row.id, principal.id, purchaseResult.value, body.note);
+    const decided = await this.proposals.approve(
+      row.id,
+      principal.id,
+      purchaseResult.value,
+      body.note,
+    );
     setStaffAuditContext(request, { targetKind: "manual_purchase", targetId: row.id, region });
     return toEconomyProposal(decided);
   }
@@ -603,7 +618,10 @@ export class StaffEconomyController {
   ): Promise<EconomyProposalRow> {
     const row = await this.proposals.findById(id);
     if (row === null || row.region !== region || row.kind !== kind) {
-      throw new NotFoundException({ code: "proposal_not_found", message: `no ${kind} proposal ${id}` });
+      throw new NotFoundException({
+        code: "proposal_not_found",
+        message: `no ${kind} proposal ${id}`,
+      });
     }
     if (row.status !== "pending") {
       throw new BadRequestException({

@@ -17,7 +17,12 @@ export interface StaffRegionSwitchProps {
  * (`?region=AU|ID`), so a plain link works with no JS at all, same as
  * `StaffUsersSearchForm`'s region select.
  */
-export function StaffRegionSwitch({ basePath, current, label, regionLabels }: StaffRegionSwitchProps) {
+export function StaffRegionSwitch({
+  basePath,
+  current,
+  label,
+  regionLabels,
+}: StaffRegionSwitchProps) {
   const regions: readonly ("AU" | "ID")[] = ["AU", "ID"];
   return (
     <div

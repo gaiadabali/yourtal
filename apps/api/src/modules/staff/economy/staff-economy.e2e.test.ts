@@ -195,7 +195,11 @@ describe("manual point purchase (9.5.c) -- bank-transfer reference, two-person",
   it("refuses a business from the other region", async () => {
     const proposer = await staffWith("finance");
     const session = await sessionFor(app, { jurisdiction: "ID" });
-    const idBusinessId = await seedBusinessMembership(db, { userId: session.userId, role: "owner", region: "ID" });
+    const idBusinessId = await seedBusinessMembership(db, {
+      userId: session.userId,
+      role: "owner",
+      region: "ID",
+    });
 
     const propose = await app.inject({
       method: "POST",
@@ -376,9 +380,9 @@ describe("kill switches (9.5.c) -- ops only, single action", () => {
     });
     expect(list.statusCode).toBe(200);
     expect(
-      list.json<{ scope: string; targetId: string | null; active: boolean }[]>().some(
-        (k) => k.targetId === "merchant-9-5-e" && k.active,
-      ),
+      list
+        .json<{ scope: string; targetId: string | null; active: boolean }[]>()
+        .some((k) => k.targetId === "merchant-9-5-e" && k.active),
     ).toBe(true);
   });
 });

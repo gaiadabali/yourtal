@@ -67,7 +67,11 @@ export function StaffEconomyMarketingScreen({
               rows={[...fundings]}
               getRowKey={(row) => row.id}
               columns={[
-                { key: "summary", header: t("economy.purchaseSummary"), cell: (row) => row.summary },
+                {
+                  key: "summary",
+                  header: t("economy.purchaseSummary"),
+                  cell: (row) => row.summary,
+                },
                 {
                   key: "status",
                   header: t("economy.columnStatus"),
@@ -85,7 +89,11 @@ export function StaffEconomyMarketingScreen({
                       <form action={approveMarketingFundingAction}>
                         <input type="hidden" name="region" value={region} />
                         <input type="hidden" name="proposalId" value={row.id} />
-                        <input type="hidden" name="idempotencyKey" value={`${idempotencyKey}:${row.id}`} />
+                        <input
+                          type="hidden"
+                          name="idempotencyKey"
+                          value={`${idempotencyKey}:${row.id}`}
+                        />
                         <Button type="submit" size="sm">
                           {t("economy.approveCta")}
                         </Button>
@@ -151,7 +159,12 @@ export function StaffEconomyMarketingScreen({
           {canTripKillSwitch ? (
             <form action={tripKillSwitchAction} className="flex flex-col gap-3">
               <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
-              <NativeSelect name="scope" label={t("economy.killSwitchScope")} className="w-48" required>
+              <NativeSelect
+                name="scope"
+                label={t("economy.killSwitchScope")}
+                className="w-48"
+                required
+              >
                 <option value="merchant">{t("economy.killSwitchScopeMerchant")}</option>
                 <option value="listing">{t("economy.killSwitchScopeListing")}</option>
                 <option value="batch">{t("economy.killSwitchScopeBatch")}</option>
@@ -159,7 +172,12 @@ export function StaffEconomyMarketingScreen({
               </NativeSelect>
               <Input name="targetId" label={t("economy.killSwitchTargetLabel")} className="w-64" />
               <Textarea name="reason" label={t("economy.reasonLabel")} required />
-              <NativeSelect name="active" label={t("economy.killSwitchStateLabel")} className="w-40" required>
+              <NativeSelect
+                name="active"
+                label={t("economy.killSwitchStateLabel")}
+                className="w-40"
+                required
+              >
                 <option value="true">{t("economy.killSwitchStateTrip")}</option>
                 <option value="false">{t("economy.killSwitchStateClear")}</option>
               </NativeSelect>

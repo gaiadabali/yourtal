@@ -42,7 +42,10 @@ export function StaffEconomyRateScreen({
 }: StaffEconomyRateScreenProps) {
   if (rate === null) {
     return (
-      <EmptyState title={t("economy.rateNotAvailableTitle")} description={t("economy.rateNotAvailableBody")} />
+      <EmptyState
+        title={t("economy.rateNotAvailableTitle")}
+        description={t("economy.rateNotAvailableBody")}
+      />
     );
   }
 
@@ -92,8 +95,16 @@ export function StaffEconomyRateScreen({
               rows={rate.pending}
               getRowKey={(row) => row.id}
               columns={[
-                { key: "summary", header: t("economy.purchaseSummary"), cell: (row) => row.summary },
-                { key: "proposedBy", header: t("economy.proposedBy"), cell: (row) => row.proposedBy },
+                {
+                  key: "summary",
+                  header: t("economy.purchaseSummary"),
+                  cell: (row) => row.summary,
+                },
+                {
+                  key: "proposedBy",
+                  header: t("economy.proposedBy"),
+                  cell: (row) => row.proposedBy,
+                },
                 {
                   key: "action",
                   header: t("economy.columnActions"),
@@ -106,7 +117,11 @@ export function StaffEconomyRateScreen({
                       <form action={approveRateAction}>
                         <input type="hidden" name="region" value={region} />
                         <input type="hidden" name="proposalId" value={row.id} />
-                        <input type="hidden" name="idempotencyKey" value={`${idempotencyKey}:${row.id}`} />
+                        <input
+                          type="hidden"
+                          name="idempotencyKey"
+                          value={`${idempotencyKey}:${row.id}`}
+                        />
                         <Button type="submit" size="sm">
                           {t("economy.approveCta")}
                         </Button>

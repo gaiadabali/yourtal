@@ -64,7 +64,12 @@ export function StaffEconomyOverviewScreen({
               {
                 key: "reserve",
                 label: t("economy.reserve"),
-                value: <MoneyAmount amountMinor={coverage.reserveMinor} currency={reportedSpread.currency} />,
+                value: (
+                  <MoneyAmount
+                    amountMinor={coverage.reserveMinor}
+                    currency={reportedSpread.currency}
+                  />
+                ),
               },
               {
                 key: "outstanding",
@@ -75,7 +80,10 @@ export function StaffEconomyOverviewScreen({
                 key: "spread",
                 label: t("economy.reportedSpread"),
                 value: (
-                  <MoneyAmount amountMinor={reportedSpread.amountMinor} currency={reportedSpread.currency} />
+                  <MoneyAmount
+                    amountMinor={reportedSpread.amountMinor}
+                    currency={reportedSpread.currency}
+                  />
                 ),
               },
               {
@@ -136,7 +144,11 @@ export function StaffEconomyOverviewScreen({
               rows={manualPurchases}
               getRowKey={(row) => row.id}
               columns={[
-                { key: "summary", header: t("economy.purchaseSummary"), cell: (row) => row.summary },
+                {
+                  key: "summary",
+                  header: t("economy.purchaseSummary"),
+                  cell: (row) => row.summary,
+                },
                 {
                   key: "status",
                   header: t("economy.columnStatus"),
@@ -150,7 +162,11 @@ export function StaffEconomyOverviewScreen({
                       <form action={approveManualPurchaseAction}>
                         <input type="hidden" name="region" value={region} />
                         <input type="hidden" name="proposalId" value={row.id} />
-                        <input type="hidden" name="idempotencyKey" value={`${idempotencyKey}:${row.id}`} />
+                        <input
+                          type="hidden"
+                          name="idempotencyKey"
+                          value={`${idempotencyKey}:${row.id}`}
+                        />
                         <Button type="submit" size="sm">
                           {t("economy.approveCta")}
                         </Button>
@@ -163,7 +179,9 @@ export function StaffEconomyOverviewScreen({
             />
           )}
           {pendingPurchases.length === 0 ? null : (
-            <p className="text-body-sm text-fg-muted">{t("economy.pendingCount", { count: pendingPurchases.length })}</p>
+            <p className="text-body-sm text-fg-muted">
+              {t("economy.pendingCount", { count: pendingPurchases.length })}
+            </p>
           )}
         </CardContent>
       </Card>
@@ -178,7 +196,13 @@ export function StaffEconomyOverviewScreen({
               <input type="hidden" name="region" value={region} />
               <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
               <Input name="businessId" label={t("economy.purchaseBusinessId")} required />
-              <Input type="number" name="points" label={t("economy.purchasePoints")} min={1} required />
+              <Input
+                type="number"
+                name="points"
+                label={t("economy.purchasePoints")}
+                min={1}
+                required
+              />
               <Input
                 type="number"
                 name="paidMinor"

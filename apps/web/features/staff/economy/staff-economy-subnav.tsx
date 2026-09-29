@@ -12,9 +12,19 @@ export interface StaffEconomySubnavProps {
 /** The economy zone's own four screens (9.5.a-d) -- `staff-nav.tsx` only tracks top-level zones. */
 export function StaffEconomySubnav({ active, region, showRate, t }: StaffEconomySubnavProps) {
   const items: { key: StaffEconomySubnavProps["active"]; href: Route; label: string }[] = [
-    { key: "overview", href: `/staff/economy?region=${region}` as Route, label: t("economy.tabOverview") },
+    {
+      key: "overview",
+      href: `/staff/economy?region=${region}` as Route,
+      label: t("economy.tabOverview"),
+    },
     ...(showRate
-      ? [{ key: "rate" as const, href: `/staff/economy/rate?region=${region}` as Route, label: t("economy.tabRate") }]
+      ? [
+          {
+            key: "rate" as const,
+            href: `/staff/economy/rate?region=${region}` as Route,
+            label: t("economy.tabRate"),
+          },
+        ]
       : []),
     {
       key: "marketing",

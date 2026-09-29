@@ -148,8 +148,16 @@ export function StaffEconomySettingsScreen({
               rows={settings.pending}
               getRowKey={(row) => row.id}
               columns={[
-                { key: "summary", header: t("economy.purchaseSummary"), cell: (row) => row.summary },
-                { key: "proposedBy", header: t("economy.proposedBy"), cell: (row) => row.proposedBy },
+                {
+                  key: "summary",
+                  header: t("economy.purchaseSummary"),
+                  cell: (row) => row.summary,
+                },
+                {
+                  key: "proposedBy",
+                  header: t("economy.proposedBy"),
+                  cell: (row) => row.proposedBy,
+                },
                 {
                   key: "action",
                   header: t("economy.columnActions"),

@@ -44,7 +44,37 @@
       "audienceReachAllAges": "Menjangkau semua penonton.",
       "audienceReachTeen": "Hanya menjangkau penonton berusia 13–17 tahun.",
       "audienceReachAdult": "Hanya menjangkau penonton berusia 18 tahun ke atas.",
-      "audienceReachParents": "Menjangkau penonton berusia 18 tahun ke atas, ditingkatkan untuk yang telah memberi tahu kami bahwa mereka mengasuh anak kecil."
+      "audienceReachParents": "Menjangkau penonton berusia 18 tahun ke atas, ditingkatkan untuk yang telah memberi tahu kami bahwa mereka mengasuh anak kecil.",
+      "category": {
+        "label": {
+          "food-and-drink": "Makanan dan minuman",
+          "fashion": "Fashion",
+          "personal-care": "Perawatan diri",
+          "electronics": "Elektronik",
+          "telco": "Telekomunikasi",
+          "transport": "Transportasi",
+          "fitness": "Kebugaran",
+          "education": "Pendidikan",
+          "travel": "Traveling",
+          "home": "Rumah",
+          "entertainment": "Hiburan",
+          "games": "Permainan",
+          "books": "Buku",
+          "family": "Keluarga",
+          "toys": "Mainan",
+          "digital-goods": "Barang digital",
+          "services": "Layanan",
+          "tobacco": "Tembakau",
+          "vaping": "Vape",
+          "gambling": "Judi",
+          "alcohol": "Alkohol",
+          "dating": "Kencan",
+          "financial-products": "Produk keuangan",
+          "weight-loss": "Penurunan berat badan",
+          "cosmetic-procedures": "Prosedur kosmetik",
+          "energy-drinks": "Minuman berenergi"
+        }
+      }
     },
     "reward": {
       "scoringRuleBaseOnly": "Reward tetap — sama untuk setiap penonton yang menonton dan menjawab",

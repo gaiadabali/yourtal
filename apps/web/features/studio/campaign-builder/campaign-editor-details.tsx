@@ -248,7 +248,7 @@ export function CampaignEditorDetails({
               const status = categoryStatusFor(region, category);
               return (
                 <option key={category} value={category} disabled={status === "prohibited"}>
-                  {category}
+                  {t(`campaignBuilder.details.category.label.${category}`)}
                   {status === "prohibited"
                     ? t("campaignBuilder.details.categoryOptionProhibitedSuffix")
                     : ""}

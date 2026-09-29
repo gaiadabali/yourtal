@@ -44,7 +44,37 @@
       "audienceReachAllAges": "Reaches every viewer.",
       "audienceReachTeen": "Reaches only viewers aged 13–17.",
       "audienceReachAdult": "Reaches only viewers 18 and over.",
-      "audienceReachParents": "Reaches viewers 18 and over, boosted for those who have told us they parent young children."
+      "audienceReachParents": "Reaches viewers 18 and over, boosted for those who have told us they parent young children.",
+      "category": {
+        "label": {
+          "food-and-drink": "Food and drink",
+          "fashion": "Fashion",
+          "personal-care": "Personal care",
+          "electronics": "Electronics",
+          "telco": "Telco",
+          "transport": "Transport",
+          "fitness": "Fitness",
+          "education": "Education",
+          "travel": "Travel",
+          "home": "Home",
+          "entertainment": "Entertainment",
+          "games": "Games",
+          "books": "Books",
+          "family": "Family",
+          "toys": "Toys",
+          "digital-goods": "Digital goods",
+          "services": "Services",
+          "tobacco": "Tobacco",
+          "vaping": "Vaping",
+          "gambling": "Gambling",
+          "alcohol": "Alcohol",
+          "dating": "Dating",
+          "financial-products": "Financial products",
+          "weight-loss": "Weight loss",
+          "cosmetic-procedures": "Cosmetic procedures",
+          "energy-drinks": "Energy drinks"
+        }
+      }
     },
     "reward": {
       "scoringRuleBaseOnly": "Fixed reward — same for every viewer who watches and answers",

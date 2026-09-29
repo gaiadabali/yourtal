@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  ConflictException,
   Controller,
   Get,
   Inject,
@@ -123,9 +124,18 @@ export class WalletController {
 }
 
 // Reads refuse only when a service is down or disagrees; neither is the viewer's fault.
+// The two exceptions are about the voucher itself: not this viewer's, or no
+// longer spendable (a voided voucher asked for a QR).
 async function unwrap<T>(result: ResultAsync<T, LedgerError>): Promise<T> {
   const settled = await result;
   if (settled.isErr()) {
+    const { code } = settled.error;
+    if (code === "audience_blocked") {
+      throw new NotFoundException({ code, message: "No such voucher." });
+    }
+    if (code === "already_granted") {
+      throw new ConflictException({ code, message: "This voucher can no longer be used." });
+    }
     throw new BadGatewayException({
       code: settled.error.code,
       message: "The wallet is unavailable.",

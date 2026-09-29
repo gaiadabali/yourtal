@@ -223,10 +223,8 @@ export function reveal(db: AppDb, request: RevealRequest): ResultAsync<RevealedC
 export function qrToken(db: AppDb, request: QrTokenRequest): ResultAsync<QrToken, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<QrToken, VoucherError>> => {
-      const result = await db.execute<
-        VoucherRow & { readonly void_reason: string | null; readonly remaining_value_minor: string }
-      >(sql`
-        SELECT id, listing_id, saga_id, owner_id, code, state, void_reason, remaining_value_minor
+      const result = await db.execute<VoucherRow & { readonly void_reason: string | null }>(sql`
+        SELECT id, listing_id, saga_id, owner_id, code, state, void_reason
           FROM platform.voucher_fake_voucher WHERE id = ${request.voucherId}
       `);
       const row = result.rows[0];
@@ -239,12 +237,8 @@ export function qrToken(db: AppDb, request: QrTokenRequest): ResultAsync<QrToken
           ),
         );
       }
-      // Same rule as the live engine: nothing to present once voided or spent.
-      if (
-        row.void_reason !== null ||
-        row.state !== "activated" ||
-        Number(row.remaining_value_minor) <= 0
-      ) {
+      // Same rule as the live engine: nothing to present once voided.
+      if (row.void_reason !== null || row.state !== "activated") {
         return err(ledgerError("already_granted", `voucher ${request.voucherId} is not spendable`));
       }
       const token = `${row.id}.${randomUUID()}`;

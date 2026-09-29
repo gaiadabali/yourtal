@@ -160,7 +160,11 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
     region: meResult.data.profile.region,
     displayLocale: meResult.data.profile.displayLocale,
   });
-  redirect("/" as Route);
+  // "/" is now a real page (11.1.a's landing page), so typedRoutes' own
+  // generated `Route` union includes it literally — the cast every other
+  // redirect() call here still needs is redundant for this one exact
+  // literal (F46's own precedent: drop the cast, no behaviour change).
+  redirect("/");
 }
 
 /**

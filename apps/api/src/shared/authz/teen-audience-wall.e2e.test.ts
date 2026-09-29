@@ -59,6 +59,7 @@ const CONFIG: AppConfig = {
     secretAccessKey: "yourtal_local_only",
     bucket: "yourtal-media",
   },
+  webOrigin: "http://localhost:3000",
   port: 3001,
   pdp: { baseUrl: process.env["PDP_BASE_URL"] ?? "http://127.0.0.1:26615", timeoutMs: 500 },
   databaseUrl: process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!,

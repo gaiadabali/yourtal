@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { envSchema } from "./env.schema";
+import { loadAppConfig } from "./app-config";
 
 /**
  * A drift test for the duplicate docs/13 says every unavoidable one needs.
@@ -78,5 +79,36 @@ describe("REDIS_URL's default agrees with docker-compose and .env.example", () =
     const line = /^REDIS_URL=(.+)$/m.exec(envExample);
     expect(line, "could not find REDIS_URL in .env.example").not.toBeNull();
     expect(schemaDefault).toBe(line?.[1]?.trim());
+  });
+});
+
+describe("TEEN_ACCOUNTS (12.1.d)", () => {
+  const base = {
+    DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+    CHECKPOINT_TOKEN_SECRET: "test-only-checkpoint-signing-key-not-a-real-secret",
+    WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
+    SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
+    HLS_SIGNING_SECRET: "test-only-hls-signing-secret-not-a-real-one",
+  };
+
+  it("is on by default on staging and off by default in dev", () => {
+    expect(loadAppConfig({ ...base, APP_ENV: "staging" }).teenAccounts).toBe(true);
+    expect(loadAppConfig({ ...base, APP_ENV: "dev" }).teenAccounts).toBe(false);
+  });
+
+  it("an explicit value wins outside production", () => {
+    expect(
+      loadAppConfig({ ...base, APP_ENV: "staging", TEEN_ACCOUNTS: "false" }).teenAccounts,
+    ).toBe(false);
+    expect(loadAppConfig({ ...base, APP_ENV: "dev", TEEN_ACCOUNTS: "true" }).teenAccounts).toBe(
+      true,
+    );
+  });
+
+  it("refuses to boot production with teen accounts on", () => {
+    expect(() =>
+      loadAppConfig({ ...base, APP_ENV: "production", TEEN_ACCOUNTS: "true" }),
+    ).toThrow();
+    expect(loadAppConfig({ ...base, APP_ENV: "production" }).teenAccounts).toBe(false);
   });
 });

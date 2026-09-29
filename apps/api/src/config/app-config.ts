@@ -64,6 +64,11 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
   if (env.APP_ENV === "staging" && env.HLS_SIGNING_SECRET.startsWith("local-only")) {
     throw new Error("HLS_SIGNING_SECRET is the local-only default; set a real one for staging.");
   }
+  const teenAccounts =
+    env.TEEN_ACCOUNTS === undefined ? env.APP_ENV === "staging" : env.TEEN_ACCOUNTS === "true";
+  if (teenAccounts && env.APP_ENV === "production") {
+    throw new Error("TEEN_ACCOUNTS stays off in production until counsel has reviewed teen mode.");
+  }
 
   return {
     nodeEnv: env.NODE_ENV,
@@ -85,7 +90,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       voucherBaseUrl: env.VOUCHER_BASE_URL,
       voucherServiceSecret: env.VOUCHER_SERVICE_SECRET,
     },
-    teenAccounts: env.TEEN_ACCOUNTS,
+    teenAccounts,
     appEnv: env.APP_ENV,
     session: {
       consumerIdleTtlMs: env.SESSION_CONSUMER_IDLE_TTL_MS,

@@ -20,6 +20,14 @@ export interface OpenViewCopy {
   playingStatus: string;
   pausedStatus: string;
   chaptersAriaLabel: string;
+  /** 11.2.b: the anonymous-session gate's own states — starting, and each way it can be refused. */
+  startingLabel: string;
+  dailyLimitHeading: string;
+  dailyLimitBody: string;
+  concurrentSessionHeading: string;
+  concurrentSessionBody: string;
+  startFailedHeading: string;
+  startFailedBody: string;
 }
 
 /**
@@ -80,5 +88,12 @@ export function computeOpenViewCopy(
     playingStatus: tPlayer("status.playing"),
     pausedStatus: tPlayer("status.paused"),
     chaptersAriaLabel: tPlayer("chapters.ariaLabel"),
+    startingLabel: t("openView.startingLabel"),
+    dailyLimitHeading: t("openView.dailyLimitHeading"),
+    dailyLimitBody: t("openView.dailyLimitBody"),
+    concurrentSessionHeading: t("openView.concurrentSessionHeading"),
+    concurrentSessionBody: t("openView.concurrentSessionBody"),
+    startFailedHeading: t("openView.startFailedHeading"),
+    startFailedBody: t("openView.startFailedBody"),
   };
 }

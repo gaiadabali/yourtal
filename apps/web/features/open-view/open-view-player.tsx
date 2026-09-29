@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { PlayerChapter } from "@/features/player/player-chapters";
@@ -13,7 +14,11 @@ import { buildOpenViewSignupHref } from "./open-view-signup-href";
 import { OpenViewChapterTrack } from "./open-view-chapter-track";
 import { OpenViewForegoneRewardBanner } from "./open-view-foregone-reward-banner";
 import { OpenViewSignupPrompt } from "./open-view-signup-prompt";
+import { reportOpenViewProgress } from "./open-view-session-client";
 import type { OpenViewCopy } from "./open-view-copy";
+
+/** How often a playing anonymous session reports its watched span (11.2.b) — same cadence `use-watch-earn-session.ts` uses for the rewarded flow. */
+const OPEN_VIEW_REPORT_EVERY_MS = 4_000;
 
 // Same lazy-loading discipline as features/player/video-player.tsx, for the
 // same 170 KB initial-JS reason (docs/13b-typescript-standards.md section 8).
@@ -31,6 +36,8 @@ export interface OpenViewPlayerProps {
   chapters: readonly PlayerChapter[];
   copy: OpenViewCopy;
   locale: SupportedLocale;
+  /** 11.2.b: the anonymous session this campaign's manifest URL was minted for — present once `OpenViewSessionGate` has one, absent for a caller (a test, a Storybook-style fixture) with no session concept at all. Reported on, never sent anywhere else. */
+  sessionId?: string;
 }
 
 /**
@@ -53,10 +60,44 @@ export interface OpenViewPlayerProps {
  * `AccrualIndicator`, so `false` is passed literally rather than pulling in
  * `useTabVisibility` for a value nothing here would use.
  */
-export function OpenViewPlayer({ campaign, chapters, copy, locale }: OpenViewPlayerProps) {
+export function OpenViewPlayer({ campaign, chapters, copy, locale, sessionId }: OpenViewPlayerProps) {
   const session = useWatchSession(campaign, chapters, false);
   const showStartOverlay = !session.hasStarted && !session.resumeOffer;
   const signupHref = buildOpenViewSignupHref(campaign.id);
+
+  // 11.2.b: reports watched spans against the anonymous session, on the
+  // same cadence the rewarded flow reports on — never against
+  // `campaign.durationSeconds` directly, so a viewer who seeks backwards
+  // never reports a negative span (`reportOpenViewProgress` drops those).
+  const lastReportedRef = useRef(0);
+  useEffect(() => {
+    if (sessionId === undefined || !session.isPlaying) return;
+    const interval = setInterval(() => {
+      const from = lastReportedRef.current;
+      const to = session.virtualCurrentTime;
+      if (to > from) {
+        reportOpenViewProgress(sessionId, campaign.id, from, to);
+        lastReportedRef.current = to;
+      }
+    }, OPEN_VIEW_REPORT_EVERY_MS);
+    return () => clearInterval(interval);
+  }, [sessionId, campaign.id, session.isPlaying, session.virtualCurrentTime]);
+
+  // Flushes the span since the last periodic report the moment playback
+  // stops (paused or ended) — otherwise up to OPEN_VIEW_REPORT_EVERY_MS of
+  // genuinely watched time is silently dropped every time someone pauses.
+  useEffect(() => {
+    if (sessionId === undefined || session.isPlaying) return;
+    const from = lastReportedRef.current;
+    const to = session.virtualCurrentTime;
+    if (to > from) {
+      reportOpenViewProgress(sessionId, campaign.id, from, to);
+      lastReportedRef.current = to;
+    }
+    // Deliberately keyed on isPlaying's transition, not virtualCurrentTime —
+    // this is the "stopped" flush, not a second periodic reporter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, session.isPlaying]);
 
   return (
     <div className="flex flex-col gap-4">

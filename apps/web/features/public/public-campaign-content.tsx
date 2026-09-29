@@ -4,6 +4,7 @@ import {
   describeQuestionCount,
   describeScoringRule,
 } from "@/features/campaign/campaign-scoring-copy";
+import { buildOpenViewSignupHref } from "@/features/open-view/open-view-signup-href";
 import { getPublicTranslator } from "./public-i18n";
 import { PublicFact } from "./public-fact";
 import { PublicCtaLink } from "./public-cta-link";
@@ -16,7 +17,7 @@ export interface PublicCampaignContentProps {
   accuracyBonusPoints: number;
   locale: PublicLocaleConfig;
   merchantHref: string;
-  /** `/[locale]/c/[campaignId]/watch` — Open Viewing (YT-0432). Only ever rendered as a link when the campaign is live; see `PublicCampaignLiveFacts`. */
+  /** `/[locale]/c/[campaignId]/watch` — Open Viewing (YT-0432/11.2.b). Only ever rendered as a link when the campaign is live, has opted into Open Viewing, AND is rated all_ages; see `PublicCampaignLiveFacts`. */
   watchHref: string;
 }
 
@@ -98,6 +99,16 @@ function PublicCampaignLiveFacts({
 }: PublicCampaignLiveFactsProps) {
   const t = getPublicTranslator(locale.intlLocale);
   const facts = computeCampaignRewardFacts(campaign, accuracyBonusPoints, locale);
+  // 11.2.b: F8's own rule — only an opted-in, all_ages campaign ever plays
+  // logged out. Every other live campaign shows its terms honestly but
+  // offers no anonymous path, only a sign-in prompt.
+  const openViewEligible = campaign.openViewing && campaign.audience === "all_ages";
+  // 11.2.b: "sign-up returns to the same campaign" — the SAME returnTo
+  // Open Viewing's own signup prompts build (`/watch/{campaignId}`, the
+  // real in-app watch route since 11.5.a), reused for the PRIMARY sign-up
+  // CTA too rather than a bare `/onboarding` that lands nowhere in
+  // particular.
+  const signupHref = buildOpenViewSignupHref(campaign.id);
 
   return (
     <>
@@ -145,18 +156,22 @@ function PublicCampaignLiveFacts({
       <p className="text-xs text-fg-subtle">{t("campaign.honestyNote")}</p>
 
       <div className="flex flex-col items-start gap-2">
-        <PublicCtaLink href="/onboarding">{t("campaign.ctaButton")}</PublicCtaLink>
-        {/* Deliberately a plain, less prominent link, not a second
-            PublicCtaLink — signing up stays the one primary action per
-            YT-0411's "single primary action" rule; this is the honest
-            secondary path into Open Viewing (YT-0432), not an equally
-            weighted choice. */}
-        <a
-          href={watchHref}
-          className="text-sm text-fg-muted underline decoration-dotted underline-offset-2 hover:text-fg"
-        >
-          {t("campaign.watchAnonymouslyCta")}
-        </a>
+        <PublicCtaLink href={signupHref}>{t("campaign.ctaButton")}</PublicCtaLink>
+        {openViewEligible ? (
+          // Deliberately a plain, less prominent link, not a second
+          // PublicCtaLink — signing up stays the one primary action per
+          // YT-0411's "single primary action" rule; this is the honest
+          // secondary path into Open Viewing (YT-0432), not an equally
+          // weighted choice.
+          <a
+            href={watchHref}
+            className="text-sm text-fg-muted underline decoration-dotted underline-offset-2 hover:text-fg"
+          >
+            {t("campaign.watchAnonymouslyCta")}
+          </a>
+        ) : (
+          <p className="text-sm text-fg-subtle">{t("campaign.signInToWatchNote")}</p>
+        )}
       </div>
     </>
   );

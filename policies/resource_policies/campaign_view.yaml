@@ -37,6 +37,13 @@ resourcePolicy:
               - expr: has(R.attr.state) && R.attr.state == "live"
               - expr: has(R.attr.openViewingEnabled) && R.attr.openViewingEnabled
               - expr: has(R.attr.openViewingBudgetRemaining) && R.attr.openViewingBudgetRemaining > 0
+              # F8/11.2.b, defence in depth: Studio's own category-policy.ts
+              # already refuses to enable Open Viewing on anything but an
+              # all_ages campaign, so this should be structurally
+              # impossible to fail -- but a policy that plays an adult-rated
+              # campaign logged out for a single bad row is the wrong
+              # failure to leave to "should never happen".
+              - expr: has(R.attr.audience) && R.attr.audience == "all_ages"
 
     - name: signed-in-viewers-watch-and-earn
       actions: ["watch_open", "watch_rewarded", "earn", "answer_scored", "resume_session"]

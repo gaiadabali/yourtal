@@ -25,6 +25,8 @@
     "ctaBodyWithBonus": "Tonton video {duration} ini dan dapatkan {reward}, plus bonus akurasi hingga {bonus}, setelah kamu mendaftar.",
     "ctaButton": "Daftar untuk mulai dapat poin",
     "watchAnonymouslyCta": "Tonton tanpa mendaftar",
+    "signInToWatchCta": "Masuk untuk menonton",
+    "signInToWatchNote": "Video ini hanya tersedia untuk pengguna yang sudah masuk.",
     "honestyNote": "Ketentuan yang ditampilkan di halaman ini adalah ketentuan yang akan dihormati — durasi, reward, dan aturan penilaian tidak berubah setelah kamu mulai menonton.",
     "notLiveNotice": "Campaign ini sedang tidak aktif."
   },
@@ -52,7 +54,14 @@
     "signupCta": "Daftar dan lanjutkan dari sini",
     "chapterWatchedStatus": "sudah ditonton",
     "chapterWatchingStatus": "sedang ditonton",
-    "chapterUpcomingStatus": "belum"
+    "chapterUpcomingStatus": "belum",
+    "startingLabel": "Memulai video…",
+    "dailyLimitHeading": "Kamu sudah mencapai batas menonton hari ini",
+    "dailyLimitBody": "Masuk untuk akses tanpa batas, atau coba lagi besok.",
+    "concurrentSessionHeading": "Hanya satu video tanpa akun dalam satu waktu",
+    "concurrentSessionBody": "Kamu masih punya video lain yang terbuka tanpa akun. Masuk untuk menonton lebih dari satu sekaligus.",
+    "startFailedHeading": "Video ini belum bisa diputar sekarang",
+    "startFailedBody": "Terjadi kesalahan saat memulai tontonan tanpa akun. Masuk untuk menonton, atau coba lagi sebentar lagi."
   },
   "offer": {
     "eyebrow": "Voucher",

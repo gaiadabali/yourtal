@@ -42,7 +42,11 @@ describe("PublicCampaignContent", () => {
       />,
     );
     const cta = screen.getByRole("link", { name: /daftar untuk mulai dapat poin/i });
-    expect(cta).toHaveAttribute("href", "/onboarding");
+    // 11.2.b: sign-up returns to the SAME campaign, never a bare /onboarding.
+    expect(cta).toHaveAttribute(
+      "href",
+      `/onboarding?returnTo=${encodeURIComponent(`/watch/${longMerchantNameCampaignFixture.id}`)}`,
+    );
     // The reward and duration appear together in one sentence in the CTA body, not just the fact table.
     expect(
       screen.getByText("Tonton video 30 detik ini dan dapatkan 150 poin setelah kamu mendaftar."),

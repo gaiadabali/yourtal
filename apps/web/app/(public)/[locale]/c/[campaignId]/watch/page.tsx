@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import type { Campaign } from "@yourtal/contracts/campaign";
 import { notFound } from "next/navigation";
 import { playerChapters } from "@/features/player/player-chapters";
 import { computeOpenViewCopy } from "@/features/open-view/open-view-copy";
-import { OpenViewPlayer } from "@/features/open-view/open-view-player";
+import { OpenViewSessionGate } from "@/features/open-view/open-view-session-gate";
 import {
-  getPublicCampaign,
+  getPublicCampaignForLocale,
   getPublicCampaignTermsFromApi,
   listLivePublicCampaigns,
 } from "@/features/public/public-campaign-data";
@@ -20,30 +21,43 @@ import { PublicBreadcrumbs } from "@/features/public/public-breadcrumbs";
 import { slugify } from "@/features/public/public-slug";
 
 /**
- * `/[locale]/c/[campaignId]/watch` — Open Viewing (YT-0432): anonymous full
- * playback of a campaign's video, no account, no reward UI. Only ever
- * generated for a campaign that is currently `active` —
- * `public-campaign-content.tsx` shows no call to action at all for a
- * non-live campaign (there is nothing to watch honestly), so this route
- * mirrors that and simply does not exist for one. `dynamicParams = false`
- * 404s a direct hit on a paused/ended/unlisted campaign's watch URL rather
- * than quietly reviving a page whose reward promise is no longer real.
+ * `/[locale]/c/[campaignId]/watch` — Open Viewing (F8, TASKS.md 11.2.b):
+ * anonymous full playback, no account, no reward UI, gated to a campaign
+ * that is live, has opted into `openViewing`, AND is rated `all_ages` — the
+ * same three conditions `campaign_view.yaml`'s `open-viewing-is-opt-in-and-
+ * funded` rule (plus its own funding check) enforces server-side for the
+ * anonymous session itself (`open-view-session.controller.ts`). This page
+ * is the honest front door to that: a campaign failing any of the three
+ * never gets this route at all, mirroring `public-campaign-content.tsx`'s
+ * own "no call to action for a non-eligible campaign" rule.
+ *
+ * `dynamicParams = true` (11.2.b, was `false`): a real, seeded campaign —
+ * reached from the live anonymous feed or the public campaign page, same as
+ * `../page.tsx`'s own 11.2.a note — is not in the fixed mock catalogue
+ * `generateStaticParams` below enumerates, and would otherwise 404 outright.
  */
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
-    listLivePublicCampaigns(locale).map((campaign) => ({ locale, campaignId: campaign.id })),
+    listLivePublicCampaigns(locale)
+      .filter(isOpenViewEligible)
+      .map((campaign) => ({ locale, campaignId: campaign.id })),
   );
 }
 
-export const dynamicParams = false;
+export const dynamicParams = true;
+export const revalidate = 60;
 
 interface OpenViewWatchPageProps {
   params: Promise<{ locale: string; campaignId: string }>;
 }
 
-function requireLiveCampaign(campaignId: string, locale: PublicLocale) {
-  const campaign = getPublicCampaign(campaignId, locale);
-  if (!campaign || campaign.status !== "active") {
+function isOpenViewEligible(campaign: Campaign): boolean {
+  return campaign.status === "active" && campaign.openViewing && campaign.audience === "all_ages";
+}
+
+async function requireEligibleCampaign(campaignId: string, locale: PublicLocale): Promise<Campaign> {
+  const campaign = await getPublicCampaignForLocale(campaignId, locale);
+  if (!campaign || !isOpenViewEligible(campaign)) {
     notFound();
   }
   return campaign;
@@ -52,7 +66,7 @@ function requireLiveCampaign(campaignId: string, locale: PublicLocale) {
 export async function generateMetadata({ params }: OpenViewWatchPageProps): Promise<Metadata> {
   const { locale: rawLocale, campaignId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const campaign = requireLiveCampaign(campaignId, locale);
+  const campaign = await requireEligibleCampaign(campaignId, locale);
   const url = publicUrl(locale, `/c/${campaign.id}/watch`);
 
   return {
@@ -71,7 +85,7 @@ export async function generateMetadata({ params }: OpenViewWatchPageProps): Prom
 export default async function OpenViewWatchPage({ params }: OpenViewWatchPageProps) {
   const { locale: rawLocale, campaignId } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const campaign = requireLiveCampaign(campaignId, locale);
+  const campaign = await requireEligibleCampaign(campaignId, locale);
 
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
@@ -93,7 +107,7 @@ export default async function OpenViewWatchPage({ params }: OpenViewWatchPagePro
           { name: copy.breadcrumbLabel, url: publicUrl(locale, `/c/${campaign.id}/watch`) },
         ]}
       />
-      <OpenViewPlayer
+      <OpenViewSessionGate
         campaign={campaign}
         chapters={chapters}
         copy={copy}

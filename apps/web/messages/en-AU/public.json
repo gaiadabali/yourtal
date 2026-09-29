@@ -25,6 +25,8 @@
     "ctaBodyWithBonus": "Watch this {duration} video and earn {reward}, plus an accuracy bonus of up to {bonus}, once you sign up.",
     "ctaButton": "Sign up to start earning",
     "watchAnonymouslyCta": "Watch without signing up",
+    "signInToWatchCta": "Sign in to watch",
+    "signInToWatchNote": "This video is only available to signed-in viewers.",
     "honestyNote": "The terms shown on this page are the terms honoured — duration, reward and the scoring rule never change once you start watching.",
     "notLiveNotice": "This campaign is not currently live."
   },
@@ -52,7 +54,14 @@
     "signupCta": "Sign up and pick up where you left off",
     "chapterWatchedStatus": "watched",
     "chapterWatchingStatus": "watching",
-    "chapterUpcomingStatus": "not yet"
+    "chapterUpcomingStatus": "not yet",
+    "startingLabel": "Starting your video…",
+    "dailyLimitHeading": "You've reached today's viewing limit",
+    "dailyLimitBody": "Sign in for unlimited access, or come back tomorrow.",
+    "concurrentSessionHeading": "Only one video without an account at a time",
+    "concurrentSessionBody": "You already have another video open without an account. Sign in to watch more than one at once.",
+    "startFailedHeading": "This video isn't available right now",
+    "startFailedBody": "Something went wrong starting anonymous playback. Sign in to watch, or try again shortly."
   },
   "offer": {
     "eyebrow": "Voucher",

@@ -416,4 +416,91 @@ export const WATCH_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       PDP_UNAVAILABLE,
     ],
   },
+  {
+    // 11.2.b: Open Viewing's anonymous, non-earning session —
+    // `open-view-session.controller.ts`, deliberately its own controller,
+    // never `WatchController`.
+    method: "post",
+    path: "/api/watch/open-view-sessions",
+    summary: "Start (or resume) an anonymous Open Viewing session",
+    tags: ["watch"],
+    pathParams: [],
+    requestBody: {
+      description: "The campaign to watch anonymously.",
+      schema: inlineSchema(z.object({ campaignId: z.uuid() })),
+    },
+    successStatus: 201,
+    successDescription:
+      "A per-session signed manifest URL (the same scheme as POST /api/watch/sessions), never " +
+      "the raw /media/hls/ path. No ledger hold, no watch.session row — this session can never " +
+      "earn.",
+    successSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string" },
+        durationSeconds: { type: "integer", minimum: 1 },
+        manifestUrl: { type: "string" },
+      },
+      required: ["sessionId", "durationSeconds", "manifestUrl"],
+      additionalProperties: false,
+    },
+    errors: [
+      nestDefaultError(400, "The body is missing campaignId, or it is not a UUID."),
+      nestDefaultError(404, "No such campaign."),
+      {
+        status: 403,
+        description:
+          "One of: the PDP denies `watch_open` for this campaign (not live, not opted into Open " +
+          "Viewing, or its Open Viewing budget is exhausted — ErrorResponse); this campaign is not " +
+          "all_ages (defence in depth, thrown directly, Nest's own body); this IP has spent " +
+          "today's F12 Open Viewing minute cap; or this IP already has an anonymous session open " +
+          "on a different campaign (F12's one-concurrent-session rule).",
+        documented: true,
+        schema: { anyOf: [ref("ErrorResponse"), NEST_DEFAULT_ERROR_SCHEMA] },
+      },
+      PDP_UNAVAILABLE,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/watch/open-view-sessions/{openViewSessionId}/progress",
+    summary: "Report a span of anonymous playback",
+    tags: ["watch"],
+    pathParams: [
+      {
+        name: "openViewSessionId",
+        description: "The anonymous session being progressed.",
+        schema: { type: "string", format: "uuid" },
+      },
+    ],
+    requestBody: {
+      description:
+        "campaignId (so the PDP has one to check, same shape as the start route) plus the span " +
+        "played, in the client's own playback-position seconds.",
+      schema: inlineSchema(
+        z.object({
+          campaignId: z.uuid(),
+          fromSeconds: z.number().min(0),
+          toSeconds: z.number().min(0),
+        }),
+      ),
+    },
+    successStatus: 201,
+    successDescription: "The report was merged into this session's running total.",
+    successSchema: {
+      type: "object",
+      properties: { accepted: { const: true }, watchedSeconds: { type: "integer", minimum: 0 } },
+      required: ["accepted", "watchedSeconds"],
+      additionalProperties: false,
+    },
+    errors: [
+      nestDefaultError(400, "The body is missing campaignId/fromSeconds/toSeconds."),
+      nestDefaultError(
+        404,
+        "No such open-view session for this caller's IP, or its campaignId does not match the body's.",
+      ),
+      FORBIDDEN,
+      PDP_UNAVAILABLE,
+    ],
+  },
 ];

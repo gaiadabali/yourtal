@@ -3,6 +3,7 @@ import { AuthzModule } from "../../shared/authz/authz.module";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
+import { SettingsModule } from "../../shared/settings/settings.module";
 import { CampaignModule, CAMPAIGN_DB } from "../campaign/campaign.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletModule } from "../wallet/wallet.module";
@@ -18,6 +19,14 @@ import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
 import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
 import { MANIFEST_SIGNING_SECRET } from "./media/manifest-signing-secret";
 import { NoopWatchCompletionHook, WATCH_COMPLETION_HOOK } from "./watch-completion-hook";
+// 11.2.b: Open Viewing's anonymous session — its own controller/repository,
+// deliberately never touching WATCH_SESSION_REPOSITORY or the ledger. See
+// open-view-session.controller.ts's own header.
+import { OpenViewSessionController } from "./open-view/open-view-session.controller";
+import {
+  DrizzleOpenViewSessionRepository,
+  OPEN_VIEW_SESSION_REPOSITORY,
+} from "./open-view/open-view-session.repository";
 
 /**
  * Watch sessions. YT-0553, 5.1-5.3.
@@ -35,12 +44,24 @@ import { NoopWatchCompletionHook, WATCH_COMPLETION_HOOK } from "./watch-completi
  * time.
  */
 @Module({
-  imports: [AuthzModule, PdpClientModule, CampaignModule, IdentityModule, WalletModule],
-  controllers: [WatchController],
+  imports: [
+    AuthzModule,
+    PdpClientModule,
+    CampaignModule,
+    IdentityModule,
+    WalletModule,
+    SettingsModule,
+  ],
+  controllers: [WatchController, OpenViewSessionController],
   providers: [
     {
       provide: WATCH_SESSION_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleWatchSessionRepository(db),
+      inject: [CAMPAIGN_DB],
+    },
+    {
+      provide: OPEN_VIEW_SESSION_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleOpenViewSessionRepository(db),
       inject: [CAMPAIGN_DB],
     },
     CampaignViewAttributeLoader,

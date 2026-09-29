@@ -36,13 +36,36 @@ const config: NextConfig = {
   async rewrites() {
     const endpoint = process.env["S3_ENDPOINT"];
     const bucket = process.env["S3_BUCKET"];
-    if (process.env.NODE_ENV !== "development" || !endpoint || !bucket) return [];
-    return [
-      {
+    const rules: { source: string; destination: string }[] = [];
+    if (process.env.NODE_ENV === "development" && endpoint && bucket) {
+      rules.push({
         source: "/media/hls/:expires/:token/:session/:path*",
         destination: `${endpoint}/${bucket}/hls/:path*`,
-      },
-    ];
+      });
+    }
+    // 11.2.b: Open Viewing's anonymous session is called directly from the
+    // BROWSER (never through a Server Action — `apiFetch`'s own header
+    // says "server-only", and a proxied server-to-server hop would replace
+    // the real visitor's IP with the Next.js server's own, defeating the
+    // F12 per-IP cap this route exists to enforce). In staging/production
+    // nginx already routes `/api/` straight to the API
+    // (`infra/helios/nginx/yourtal.gaiada.com.conf`), preserving the real
+    // client IP via X-Forwarded-For; `next dev` has no nginx in front of it,
+    // so this mirrors that one route straight to the local API port.
+    const apiInternalUrl = process.env["API_INTERNAL_URL"];
+    if (process.env.NODE_ENV === "development" && apiInternalUrl) {
+      rules.push(
+        {
+          source: "/api/watch/open-view-sessions",
+          destination: `${apiInternalUrl}/api/watch/open-view-sessions`,
+        },
+        {
+          source: "/api/watch/open-view-sessions/:path*",
+          destination: `${apiInternalUrl}/api/watch/open-view-sessions/:path*`,
+        },
+      );
+    }
+    return rules;
   },
   // Staging is open to reviewers but never indexed, OG images and llms.txt included.
   async headers() {

@@ -1346,7 +1346,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Granted — idempotent if this link already approved.",
             "content": {
               "application/json": {
@@ -1410,7 +1410,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "description": "Revoked — escrowedPoints is 0 when the account already held nothing, or when this link was already revoked.",
             "content": {
               "application/json": {

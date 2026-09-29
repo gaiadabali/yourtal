@@ -15,37 +15,37 @@ import (
 	"fmt"
 )
 
-// checks if the ApiGuardianTokenApprovePost200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ApiGuardianTokenApprovePost200Response{}
+// checks if the ApiGuardianTokenApprovePost201Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiGuardianTokenApprovePost201Response{}
 
-// ApiGuardianTokenApprovePost200Response struct for ApiGuardianTokenApprovePost200Response
-type ApiGuardianTokenApprovePost200Response struct {
+// ApiGuardianTokenApprovePost201Response struct for ApiGuardianTokenApprovePost201Response
+type ApiGuardianTokenApprovePost201Response struct {
 	Approved bool `json:"approved"`
 	AdditionalProperties map[string]interface{}
 }
 
-type _ApiGuardianTokenApprovePost200Response ApiGuardianTokenApprovePost200Response
+type _ApiGuardianTokenApprovePost201Response ApiGuardianTokenApprovePost201Response
 
-// NewApiGuardianTokenApprovePost200Response instantiates a new ApiGuardianTokenApprovePost200Response object
+// NewApiGuardianTokenApprovePost201Response instantiates a new ApiGuardianTokenApprovePost201Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiGuardianTokenApprovePost200Response(approved bool) *ApiGuardianTokenApprovePost200Response {
-	this := ApiGuardianTokenApprovePost200Response{}
+func NewApiGuardianTokenApprovePost201Response(approved bool) *ApiGuardianTokenApprovePost201Response {
+	this := ApiGuardianTokenApprovePost201Response{}
 	this.Approved = approved
 	return &this
 }
 
-// NewApiGuardianTokenApprovePost200ResponseWithDefaults instantiates a new ApiGuardianTokenApprovePost200Response object
+// NewApiGuardianTokenApprovePost201ResponseWithDefaults instantiates a new ApiGuardianTokenApprovePost201Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewApiGuardianTokenApprovePost200ResponseWithDefaults() *ApiGuardianTokenApprovePost200Response {
-	this := ApiGuardianTokenApprovePost200Response{}
+func NewApiGuardianTokenApprovePost201ResponseWithDefaults() *ApiGuardianTokenApprovePost201Response {
+	this := ApiGuardianTokenApprovePost201Response{}
 	return &this
 }
 
 // GetApproved returns the Approved field value
-func (o *ApiGuardianTokenApprovePost200Response) GetApproved() bool {
+func (o *ApiGuardianTokenApprovePost201Response) GetApproved() bool {
 	if o == nil {
 		var ret bool
 		return ret
@@ -56,7 +56,7 @@ func (o *ApiGuardianTokenApprovePost200Response) GetApproved() bool {
 
 // GetApprovedOk returns a tuple with the Approved field value
 // and a boolean to check if the value has been set.
-func (o *ApiGuardianTokenApprovePost200Response) GetApprovedOk() (*bool, bool) {
+func (o *ApiGuardianTokenApprovePost201Response) GetApprovedOk() (*bool, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -64,11 +64,11 @@ func (o *ApiGuardianTokenApprovePost200Response) GetApprovedOk() (*bool, bool) {
 }
 
 // SetApproved sets field value
-func (o *ApiGuardianTokenApprovePost200Response) SetApproved(v bool) {
+func (o *ApiGuardianTokenApprovePost201Response) SetApproved(v bool) {
 	o.Approved = v
 }
 
-func (o ApiGuardianTokenApprovePost200Response) MarshalJSON() ([]byte, error) {
+func (o ApiGuardianTokenApprovePost201Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -76,7 +76,7 @@ func (o ApiGuardianTokenApprovePost200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ApiGuardianTokenApprovePost200Response) ToMap() (map[string]interface{}, error) {
+func (o ApiGuardianTokenApprovePost201Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["approved"] = o.Approved
 
@@ -87,7 +87,7 @@ func (o ApiGuardianTokenApprovePost200Response) ToMap() (map[string]interface{},
 	return toSerialize, nil
 }
 
-func (o *ApiGuardianTokenApprovePost200Response) UnmarshalJSON(data []byte) (err error) {
+func (o *ApiGuardianTokenApprovePost201Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -109,15 +109,15 @@ func (o *ApiGuardianTokenApprovePost200Response) UnmarshalJSON(data []byte) (err
 		}
 	}
 
-	varApiGuardianTokenApprovePost200Response := _ApiGuardianTokenApprovePost200Response{}
+	varApiGuardianTokenApprovePost201Response := _ApiGuardianTokenApprovePost201Response{}
 
-	err = json.Unmarshal(data, &varApiGuardianTokenApprovePost200Response)
+	err = json.Unmarshal(data, &varApiGuardianTokenApprovePost201Response)
 
 	if err != nil {
 		return err
 	}
 
-	*o = ApiGuardianTokenApprovePost200Response(varApiGuardianTokenApprovePost200Response)
+	*o = ApiGuardianTokenApprovePost201Response(varApiGuardianTokenApprovePost201Response)
 
 	additionalProperties := make(map[string]interface{})
 
@@ -129,38 +129,38 @@ func (o *ApiGuardianTokenApprovePost200Response) UnmarshalJSON(data []byte) (err
 	return err
 }
 
-type NullableApiGuardianTokenApprovePost200Response struct {
-	value *ApiGuardianTokenApprovePost200Response
+type NullableApiGuardianTokenApprovePost201Response struct {
+	value *ApiGuardianTokenApprovePost201Response
 	isSet bool
 }
 
-func (v NullableApiGuardianTokenApprovePost200Response) Get() *ApiGuardianTokenApprovePost200Response {
+func (v NullableApiGuardianTokenApprovePost201Response) Get() *ApiGuardianTokenApprovePost201Response {
 	return v.value
 }
 
-func (v *NullableApiGuardianTokenApprovePost200Response) Set(val *ApiGuardianTokenApprovePost200Response) {
+func (v *NullableApiGuardianTokenApprovePost201Response) Set(val *ApiGuardianTokenApprovePost201Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableApiGuardianTokenApprovePost200Response) IsSet() bool {
+func (v NullableApiGuardianTokenApprovePost201Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableApiGuardianTokenApprovePost200Response) Unset() {
+func (v *NullableApiGuardianTokenApprovePost201Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableApiGuardianTokenApprovePost200Response(val *ApiGuardianTokenApprovePost200Response) *NullableApiGuardianTokenApprovePost200Response {
-	return &NullableApiGuardianTokenApprovePost200Response{value: val, isSet: true}
+func NewNullableApiGuardianTokenApprovePost201Response(val *ApiGuardianTokenApprovePost201Response) *NullableApiGuardianTokenApprovePost201Response {
+	return &NullableApiGuardianTokenApprovePost201Response{value: val, isSet: true}
 }
 
-func (v NullableApiGuardianTokenApprovePost200Response) MarshalJSON() ([]byte, error) {
+func (v NullableApiGuardianTokenApprovePost201Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableApiGuardianTokenApprovePost200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableApiGuardianTokenApprovePost201Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

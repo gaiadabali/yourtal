@@ -15,39 +15,39 @@ import (
 	"fmt"
 )
 
-// checks if the ApiGuardianTokenRevokePost200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ApiGuardianTokenRevokePost200Response{}
+// checks if the ApiGuardianTokenRevokePost201Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiGuardianTokenRevokePost201Response{}
 
-// ApiGuardianTokenRevokePost200Response struct for ApiGuardianTokenRevokePost200Response
-type ApiGuardianTokenRevokePost200Response struct {
+// ApiGuardianTokenRevokePost201Response struct for ApiGuardianTokenRevokePost201Response
+type ApiGuardianTokenRevokePost201Response struct {
 	Revoked bool `json:"revoked"`
 	EscrowedPoints int64 `json:"escrowedPoints"`
 	AdditionalProperties map[string]interface{}
 }
 
-type _ApiGuardianTokenRevokePost200Response ApiGuardianTokenRevokePost200Response
+type _ApiGuardianTokenRevokePost201Response ApiGuardianTokenRevokePost201Response
 
-// NewApiGuardianTokenRevokePost200Response instantiates a new ApiGuardianTokenRevokePost200Response object
+// NewApiGuardianTokenRevokePost201Response instantiates a new ApiGuardianTokenRevokePost201Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiGuardianTokenRevokePost200Response(revoked bool, escrowedPoints int64) *ApiGuardianTokenRevokePost200Response {
-	this := ApiGuardianTokenRevokePost200Response{}
+func NewApiGuardianTokenRevokePost201Response(revoked bool, escrowedPoints int64) *ApiGuardianTokenRevokePost201Response {
+	this := ApiGuardianTokenRevokePost201Response{}
 	this.Revoked = revoked
 	this.EscrowedPoints = escrowedPoints
 	return &this
 }
 
-// NewApiGuardianTokenRevokePost200ResponseWithDefaults instantiates a new ApiGuardianTokenRevokePost200Response object
+// NewApiGuardianTokenRevokePost201ResponseWithDefaults instantiates a new ApiGuardianTokenRevokePost201Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewApiGuardianTokenRevokePost200ResponseWithDefaults() *ApiGuardianTokenRevokePost200Response {
-	this := ApiGuardianTokenRevokePost200Response{}
+func NewApiGuardianTokenRevokePost201ResponseWithDefaults() *ApiGuardianTokenRevokePost201Response {
+	this := ApiGuardianTokenRevokePost201Response{}
 	return &this
 }
 
 // GetRevoked returns the Revoked field value
-func (o *ApiGuardianTokenRevokePost200Response) GetRevoked() bool {
+func (o *ApiGuardianTokenRevokePost201Response) GetRevoked() bool {
 	if o == nil {
 		var ret bool
 		return ret
@@ -58,7 +58,7 @@ func (o *ApiGuardianTokenRevokePost200Response) GetRevoked() bool {
 
 // GetRevokedOk returns a tuple with the Revoked field value
 // and a boolean to check if the value has been set.
-func (o *ApiGuardianTokenRevokePost200Response) GetRevokedOk() (*bool, bool) {
+func (o *ApiGuardianTokenRevokePost201Response) GetRevokedOk() (*bool, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -66,12 +66,12 @@ func (o *ApiGuardianTokenRevokePost200Response) GetRevokedOk() (*bool, bool) {
 }
 
 // SetRevoked sets field value
-func (o *ApiGuardianTokenRevokePost200Response) SetRevoked(v bool) {
+func (o *ApiGuardianTokenRevokePost201Response) SetRevoked(v bool) {
 	o.Revoked = v
 }
 
 // GetEscrowedPoints returns the EscrowedPoints field value
-func (o *ApiGuardianTokenRevokePost200Response) GetEscrowedPoints() int64 {
+func (o *ApiGuardianTokenRevokePost201Response) GetEscrowedPoints() int64 {
 	if o == nil {
 		var ret int64
 		return ret
@@ -82,7 +82,7 @@ func (o *ApiGuardianTokenRevokePost200Response) GetEscrowedPoints() int64 {
 
 // GetEscrowedPointsOk returns a tuple with the EscrowedPoints field value
 // and a boolean to check if the value has been set.
-func (o *ApiGuardianTokenRevokePost200Response) GetEscrowedPointsOk() (*int64, bool) {
+func (o *ApiGuardianTokenRevokePost201Response) GetEscrowedPointsOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -90,11 +90,11 @@ func (o *ApiGuardianTokenRevokePost200Response) GetEscrowedPointsOk() (*int64, b
 }
 
 // SetEscrowedPoints sets field value
-func (o *ApiGuardianTokenRevokePost200Response) SetEscrowedPoints(v int64) {
+func (o *ApiGuardianTokenRevokePost201Response) SetEscrowedPoints(v int64) {
 	o.EscrowedPoints = v
 }
 
-func (o ApiGuardianTokenRevokePost200Response) MarshalJSON() ([]byte, error) {
+func (o ApiGuardianTokenRevokePost201Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -102,7 +102,7 @@ func (o ApiGuardianTokenRevokePost200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ApiGuardianTokenRevokePost200Response) ToMap() (map[string]interface{}, error) {
+func (o ApiGuardianTokenRevokePost201Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["revoked"] = o.Revoked
 	toSerialize["escrowedPoints"] = o.EscrowedPoints
@@ -114,7 +114,7 @@ func (o ApiGuardianTokenRevokePost200Response) ToMap() (map[string]interface{}, 
 	return toSerialize, nil
 }
 
-func (o *ApiGuardianTokenRevokePost200Response) UnmarshalJSON(data []byte) (err error) {
+func (o *ApiGuardianTokenRevokePost201Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -137,15 +137,15 @@ func (o *ApiGuardianTokenRevokePost200Response) UnmarshalJSON(data []byte) (err 
 		}
 	}
 
-	varApiGuardianTokenRevokePost200Response := _ApiGuardianTokenRevokePost200Response{}
+	varApiGuardianTokenRevokePost201Response := _ApiGuardianTokenRevokePost201Response{}
 
-	err = json.Unmarshal(data, &varApiGuardianTokenRevokePost200Response)
+	err = json.Unmarshal(data, &varApiGuardianTokenRevokePost201Response)
 
 	if err != nil {
 		return err
 	}
 
-	*o = ApiGuardianTokenRevokePost200Response(varApiGuardianTokenRevokePost200Response)
+	*o = ApiGuardianTokenRevokePost201Response(varApiGuardianTokenRevokePost201Response)
 
 	additionalProperties := make(map[string]interface{})
 
@@ -158,38 +158,38 @@ func (o *ApiGuardianTokenRevokePost200Response) UnmarshalJSON(data []byte) (err 
 	return err
 }
 
-type NullableApiGuardianTokenRevokePost200Response struct {
-	value *ApiGuardianTokenRevokePost200Response
+type NullableApiGuardianTokenRevokePost201Response struct {
+	value *ApiGuardianTokenRevokePost201Response
 	isSet bool
 }
 
-func (v NullableApiGuardianTokenRevokePost200Response) Get() *ApiGuardianTokenRevokePost200Response {
+func (v NullableApiGuardianTokenRevokePost201Response) Get() *ApiGuardianTokenRevokePost201Response {
 	return v.value
 }
 
-func (v *NullableApiGuardianTokenRevokePost200Response) Set(val *ApiGuardianTokenRevokePost200Response) {
+func (v *NullableApiGuardianTokenRevokePost201Response) Set(val *ApiGuardianTokenRevokePost201Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableApiGuardianTokenRevokePost200Response) IsSet() bool {
+func (v NullableApiGuardianTokenRevokePost201Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableApiGuardianTokenRevokePost200Response) Unset() {
+func (v *NullableApiGuardianTokenRevokePost201Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableApiGuardianTokenRevokePost200Response(val *ApiGuardianTokenRevokePost200Response) *NullableApiGuardianTokenRevokePost200Response {
-	return &NullableApiGuardianTokenRevokePost200Response{value: val, isSet: true}
+func NewNullableApiGuardianTokenRevokePost201Response(val *ApiGuardianTokenRevokePost201Response) *NullableApiGuardianTokenRevokePost201Response {
+	return &NullableApiGuardianTokenRevokePost201Response{value: val, isSet: true}
 }
 
-func (v NullableApiGuardianTokenRevokePost200Response) MarshalJSON() ([]byte, error) {
+func (v NullableApiGuardianTokenRevokePost201Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableApiGuardianTokenRevokePost200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableApiGuardianTokenRevokePost201Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
+import { ZodValidationPipe } from "nestjs-zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import { AppModule } from "../../app.module";
@@ -37,6 +38,11 @@ beforeAll(async () => {
   process.env["TEEN_ACCOUNTS"] = "true";
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  // `main.ts`'s own `bootstrap()` registers this imperatively, outside
+  // `AppModule` — a bare `Test.createTestingModule` does not get it for
+  // free, so the confirmAdult-must-be-true test below needs it registered
+  // here too, or every body reaches the handler unvalidated.
+  app.useGlobalPipes(new ZodValidationPipe());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
 
@@ -143,7 +149,10 @@ describe("12.1.a — guardian consent: register -> pending -> outbox -> approve 
       headers: { "idempotency-key": randomUUID() },
       payload: { confirmAdult: true },
     });
-    expect(approve.statusCode).toBe(200);
+    // 201 — NestJS's own default for a bare @Post with no @HttpCode, same
+    // convention `staff-users.controller.ts`'s suspend/release already use
+    // (that file's own e2e test asserts 201 too, not 200).
+    expect(approve.statusCode).toBe(201);
     expect(approve.json()).toStrictEqual({ approved: true });
 
     expect(await parentConsentStatusFor(userId)).toBe("granted");
@@ -209,7 +218,7 @@ describe("12.1.a — guardian consent: revoke", () => {
       remoteAddress: randomTestIp(),
       headers: { "idempotency-key": randomUUID() },
     });
-    expect(revoke.statusCode).toBe(200);
+    expect(revoke.statusCode).toBe(201);
     // A brand-new account has nothing to protect — see this file's own
     // header for where the non-zero-balance escrow case is proven instead.
     expect(revoke.json()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
@@ -234,7 +243,7 @@ describe("12.1.a — guardian consent: revoke", () => {
       remoteAddress: randomTestIp(),
       headers: { "idempotency-key": randomUUID() },
     });
-    expect(revokeAgain.statusCode).toBe(200);
+    expect(revokeAgain.statusCode).toBe(201);
     expect(revokeAgain.json()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
   });
 });

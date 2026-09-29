@@ -485,7 +485,9 @@ export const GUARDIAN_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       description: "confirmAdult must be the literal true — there is no partial approval.",
       schema: inlineSchema(approveGuardianConsentRequestSchema),
     },
-    successStatus: 200,
+    // 201 — NestJS's own default for a bare @Post with no @HttpCode override,
+    // same convention route-registry.c-staff-users.ts's suspend/release use.
+    successStatus: 201,
     successDescription: "Granted — idempotent if this link already approved.",
     successSchema: inlineSchema(approveGuardianConsentResultSchema),
     errors: [VALIDATION_400, GUARDIAN_NOT_FOUND, GUARDIAN_ALREADY_REVOKED],
@@ -496,7 +498,7 @@ export const GUARDIAN_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     summary: "The same link withdraws approval and escrows the teen's balance",
     tags: ["guardian"],
     pathParams: [GUARDIAN_TOKEN_PARAM],
-    successStatus: 200,
+    successStatus: 201,
     successDescription:
       "Revoked — escrowedPoints is 0 when the account already held nothing, or when this link was already revoked.",
     successSchema: inlineSchema(revokeGuardianConsentResultSchema),

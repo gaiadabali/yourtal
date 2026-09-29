@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toPoints } from "@yourtal/contracts/money";
 import { GuardianGrantedPanel } from "./guardian-granted-panel";
 import { revokeGuardianConsentAction } from "./guardian-actions";
 
@@ -32,7 +33,7 @@ describe("GuardianGrantedPanel", () => {
   });
 
   it("opens the withdraw confirm immediately when told to (?action=revoke) and submits on confirm", async () => {
-    revokeMock.mockResolvedValue({ ok: true, data: { revoked: true, escrowedPoints: 0 } });
+    revokeMock.mockResolvedValue({ ok: true, data: { revoked: true, escrowedPoints: toPoints(0) } });
     const user = userEvent.setup();
     render(
       <GuardianGrantedPanel

@@ -32,12 +32,15 @@ import type { ApiResult } from "@/lib/api/api-fetch";
  */
 
 async function guardianFetch(path: string, init: RequestInit): Promise<Response | ApiResult<never>> {
+  // `new Headers(init.headers)`, not an object spread: `init.headers` is
+  // `HeadersInit`, which can be a `Headers` instance or a tuple array as
+  // well as a plain object, and spreading either of those into an object
+  // literal silently drops or mis-copies entries (`apiFetch`'s own header
+  // construction avoids the same trap the same way).
+  const headers = new Headers(init.headers);
+  headers.set("accept", "application/json");
   try {
-    return await fetch(`${apiInternalUrl()}${path}`, {
-      ...init,
-      headers: { accept: "application/json", ...init.headers },
-      cache: "no-store",
-    });
+    return await fetch(`${apiInternalUrl()}${path}`, { ...init, headers, cache: "no-store" });
   } catch (cause) {
     return { ok: false, error: { kind: "network", message: networkErrorMessage(cause) } };
   }

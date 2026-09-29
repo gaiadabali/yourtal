@@ -71,7 +71,7 @@ export function GuardianApproveForm({
       </Text>
 
       <label className="flex items-start gap-2 text-body-sm text-fg">
-        {/* eslint-disable-next-line yt-b/prefer-primitives -- a one-time confirmation gesture (role="checkbox"), same reasoning `me-delete-account-section.tsx` gives for its own raw checkbox */}
+        {/* A raw <input type="checkbox"> — same reasoning `me-delete-account-section.tsx`'s own comment gives for its identical one-time confirmation gesture (role="checkbox", not @yourtal/ui's Switch, which is role="switch" for a persistent setting). That file's `yt-b/prefer-primitives` rule does not reach this folder (`eslint.config.mjs`'s glob lists `features/me/**`, not `features/guardian/**`), so no disable comment is needed here. */}
         <input
           type="checkbox"
           checked={confirmed}

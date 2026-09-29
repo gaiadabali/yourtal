@@ -44,9 +44,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 6/7 | 43/43 | `██████████` 100% |
-| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 2/4 | 12/17 | `███████░░░`  71% |
+| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 2/4 | 14/18 | `████████░░`  78% |
 | **Phase 13** Ready for live review | all | · not started | 0/9 | 0/22 | `░░░░░░░░░░`   0% |
-| **All** | | | **80/92** | **428/456** | `█████████░`  94% |
+| **All** | | | **80/92** | **430/457** | `█████████░`  94% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1385,14 +1385,15 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - an adult-only campaign is denied to a teen principal on every endpoint;
     - a teen's grant above the cap is refused.
 - [ ] **12.2 Teen feed and experience** · B · needs: 12.1, 7.7, 11.4 — 🔄 slot 1
-  - [ ] 12.2.a Teen items get the 1.1.c ranking boost, and teen accounts see only teen-relevant interests (games, books, school supplies, sportswear, streaming, cinema).
-  - [ ] 12.2.b Softer engagement:
+  - [x] 12.2.a Teen items get the 1.1.c ranking boost, and teen accounts see only teen-relevant interests (games, books, school supplies, sportswear, streaming, cinema). — ✅ edb7d69e: the 1.1.c boost already ranked teen items first for teens (now tested); `TEEN_INTEREST_NODE_IDS` in the taxonomy, and `PUT /api/me/interests` refuses anything else for a teen; the Me picker offers only those six.
+  - [x] 12.2.b Softer engagement: — ✅ edb7d69e: no streak strip for teens; `GET /api/wallet` carries `dailyCapPoints` (the region's teen cap) and Me shows a daily-cap meter; quiet hours from the profile's own timezone stop all three notify jobs and refuse `POST /api/watch/sessions` with `teen_quiet_hours`, with kind copy in the feed; a 45-minute watch-time reminder in the feed; the store's teen voucher wall confirmed by test. Light and dark screenshots are identical because signed-in viewer pages are dark-only today (F3).
     - no streak counter and no loss-framed or at-risk messages;
     - a daily-cap meter;
     - quiet hours in the profile's timezone (F12);
     - a watch-time reminder;
     - teen-appropriate vouchers only.
   - [x] 12.2.c (requested by A) `/guardian/[token]`: the guardian confirms they are 18 or over and approves; the same link later revokes. There is no guardian account. — ✅ a32200ca: `app/(guardian)/guardian/[token]`, no session and no locale prefix, in the teen's language; checkbox-gated approve, withdraw behind a confirm (straight there on `?action=revoke`), final withdrawn notice, 404 for an unknown link. Also fixed: withdrawing an approved consent 500d (it kept `approved_at`, breaking the table's own CHECK). On staging, an ID teen: page 200 "Setujui akun…", approve 201, "Anda telah menyetujui…", withdraw 201, "Persetujuan ditarik", unknown link 404. Screenshots 390/1280 light/dark for all three states, axe clean.
+  - [ ] 12.2.e (found by 12.2.b) The long-form player (`features/player/**`) shows a generic failure when a teen starts a reward session in quiet hours; give it the feed's kind "Quiet hours until 7am" state and the watch-time reminder. The server already refuses correctly.
   - [ ] 12.2.d **Check:** a teen demo account gets no notification between 21:00 and 07:00 in its timezone and sees only teen and all_ages items.
 - [x] **12.3 Studio and data** · C · needs: 12.1, 7.6 — ✅ 2026-09-30 56d0d9cd
   - [x] 12.3.a Audience and category pickers with the 1.1.d policy shown. Teen-rated question banks may not ask personal questions. — ✅ 919a75af: Studio category/audience pickers restate the 1.1.d policy (an adult-only category locks the audience to Adult, a prohibited one cannot be chosen); the server re-checks on create, update and publish. `detectTeenPersonalQuestion` refuses personal questions (age, school, location, appearance, family, social handles) for teen campaigns, server side and inline. Screenshots 390/1280 light/dark, axe clean.

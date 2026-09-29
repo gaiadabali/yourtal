@@ -1,5 +1,5 @@
 import type { Balance } from "@yourtal/contracts/balance";
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent } from "@yourtal/ui/card";
@@ -15,7 +15,7 @@ import { StoreOfferTerms } from "./store-offer-terms";
 import { listingStatusPresentation } from "./store-status";
 
 export interface StoreOfferCardProps {
-  listing: Listing;
+  listing: PublicListing;
   balance: Balance;
   /** YT-0405: required, not defaulted — see `campaign-card.tsx`'s report. */
   locale: SupportedLocale;

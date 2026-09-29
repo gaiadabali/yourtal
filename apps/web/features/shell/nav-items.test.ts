@@ -14,20 +14,25 @@ describe("isActiveTab", () => {
     expect(isActiveTab("/walletx", "/wallet")).toBe(false);
   });
 
-  it("matches the Home tab on the campaign entry and watch subtrees", () => {
-    expect(isActiveTab("/campaign/abc-123", "/home", ["/campaign", "/watch"])).toBe(true);
-    expect(isActiveTab("/watch/abc-123", "/home", ["/campaign", "/watch"])).toBe(true);
-    expect(isActiveTab("/watch/abc-123/checkpoint", "/home", ["/campaign", "/watch"])).toBe(true);
+  it("matches the Home tab on the campaign entry subtree", () => {
+    expect(isActiveTab("/campaign/abc-123", "/home", ["/campaign"])).toBe(true);
   });
 
-  it("does not match Home for other tabs' routes", () => {
-    expect(isActiveTab("/quick", "/home", ["/campaign", "/watch"])).toBe(false);
-    expect(isActiveTab("/store", "/home", ["/campaign", "/watch"])).toBe(false);
+  it("does not match Home for other tabs' routes, including Watch's own campaign pages", () => {
+    expect(isActiveTab("/watch", "/home", ["/campaign"])).toBe(false);
+    expect(isActiveTab("/watch/abc-123", "/home", ["/campaign"])).toBe(false);
+    expect(isActiveTab("/store", "/home", ["/campaign"])).toBe(false);
   });
 
   it("matches Home's root path exactly, not every path", () => {
-    expect(isActiveTab("/home", "/home", ["/campaign", "/watch"])).toBe(true);
-    expect(isActiveTab("/me", "/home", ["/campaign", "/watch"])).toBe(false);
+    expect(isActiveTab("/home", "/home", ["/campaign"])).toBe(true);
+    expect(isActiveTab("/me", "/home", ["/campaign"])).toBe(false);
+  });
+
+  it("matches the Watch tab on its own campaign-page subtree (11.7.d)", () => {
+    expect(isActiveTab("/watch", "/watch")).toBe(true);
+    expect(isActiveTab("/watch/abc-123", "/watch")).toBe(true);
+    expect(isActiveTab("/watch/abc-123/checkpoint", "/watch")).toBe(true);
   });
 });
 
@@ -42,11 +47,21 @@ describe("navItems", () => {
     ]);
     expect(navItems.map((item) => item.href)).toStrictEqual([
       "/home",
-      "/quick",
+      "/watch",
       "/store",
       "/wallet",
       "/me",
     ]);
+  });
+
+  it("has no overlap between any two tabs' own match prefixes (11.7.d: Home and Watch used to both claim /watch)", () => {
+    for (const item of navItems) {
+      for (const other of navItems) {
+        if (item === other) continue;
+        const otherPrefixes = [other.href, ...(other.matchPrefixes ?? [])];
+        expect(otherPrefixes).not.toContain(item.href);
+      }
+    }
   });
 
   it("keeps no link to /business anywhere in the tab list (requested by C)", () => {

@@ -9,6 +9,7 @@ describe("parseStoreBoardParams", () => {
   it("defaults every filter to 'all' when no params are given", () => {
     expect(parseStoreBoardParams({})).toEqual({
       category: "all",
+      channel: "all",
       priceBand: "all",
       location: "all",
       merchant: "all",
@@ -19,12 +20,14 @@ describe("parseStoreBoardParams", () => {
     expect(
       parseStoreBoardParams({
         category: "retail",
+        channel: "online",
         priceBand: "over_10000",
         location: "Kemang",
         merchant: "m-1",
       }),
     ).toEqual({
       category: "retail",
+      channel: "online",
       priceBand: "over_10000",
       location: "Kemang",
       merchant: "m-1",
@@ -34,6 +37,7 @@ describe("parseStoreBoardParams", () => {
   it("falls back to the default for an invalid category rather than throwing", () => {
     expect(parseStoreBoardParams({ category: "groceries" })).toEqual({
       category: "all",
+      channel: "all",
       priceBand: "all",
       location: "all",
       merchant: "all",
@@ -42,6 +46,10 @@ describe("parseStoreBoardParams", () => {
 
   it("falls back to the default for an invalid price band rather than throwing", () => {
     expect(parseStoreBoardParams({ priceBand: "cheap" })).toMatchObject({ priceBand: "all" });
+  });
+
+  it("falls back to the default for an invalid channel rather than throwing", () => {
+    expect(parseStoreBoardParams({ channel: "drone_delivery" })).toMatchObject({ channel: "all" });
   });
 
   it("falls back to 'all' for a blank location or merchant value", () => {
@@ -66,7 +74,7 @@ describe("buildStoreBoardQuery", () => {
   it("omits every param when all are at their default", () => {
     expect(
       buildStoreBoardQuery(
-        { category: "all", priceBand: "all", location: "all", merchant: "all" },
+        { category: "all", channel: "all", priceBand: "all", location: "all", merchant: "all" },
         {},
       ),
     ).toBe("");
@@ -74,7 +82,7 @@ describe("buildStoreBoardQuery", () => {
 
   it("preserves untouched fields when updating one", () => {
     const query = buildStoreBoardQuery(
-      { category: "retail", priceBand: "all", location: "all", merchant: "all" },
+      { category: "retail", channel: "all", priceBand: "all", location: "all", merchant: "all" },
       { priceBand: "over_10000" },
     );
     expect(query).toContain("category=retail");
@@ -83,10 +91,18 @@ describe("buildStoreBoardQuery", () => {
 
   it("drops a field from the query once it is reset back to its default", () => {
     const query = buildStoreBoardQuery(
-      { category: "retail", priceBand: "all", location: "all", merchant: "all" },
+      { category: "retail", channel: "all", priceBand: "all", location: "all", merchant: "all" },
       { category: "all" },
     );
     expect(query).toBe("");
+  });
+
+  it("includes channel once it is narrowed", () => {
+    const query = buildStoreBoardQuery(
+      { category: "all", channel: "all", priceBand: "all", location: "all", merchant: "all" },
+      { channel: "online" },
+    );
+    expect(query).toBe("?channel=online");
   });
 });
 
@@ -95,6 +111,7 @@ describe("hasActiveStoreFilters", () => {
     expect(
       hasActiveStoreFilters({
         category: "all",
+        channel: "all",
         priceBand: "all",
         location: "all",
         merchant: "all",
@@ -106,8 +123,21 @@ describe("hasActiveStoreFilters", () => {
     expect(
       hasActiveStoreFilters({
         category: "all",
+        channel: "all",
         priceBand: "all",
         location: "Kemang",
+        merchant: "all",
+      }),
+    ).toBe(true);
+  });
+
+  it("is true when only channel is narrowed", () => {
+    expect(
+      hasActiveStoreFilters({
+        category: "all",
+        channel: "online",
+        priceBand: "all",
+        location: "all",
         merchant: "all",
       }),
     ).toBe(true);

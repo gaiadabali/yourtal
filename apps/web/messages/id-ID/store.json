@@ -49,12 +49,19 @@
   },
   "store": {
     "filterCategory": "Kategori",
+    "filterChannel": "Kanal",
     "filterPrice": "Harga",
     "filterLocation": "Lokasi",
     "filterMerchant": "Merchant",
     "filterAllLocations": "Semua lokasi",
     "filterAllMerchants": "Semua merchant",
     "filterClearAll": "Hapus semua filter",
+    "channelAll": "Semua kanal",
+    "channel": {
+      "in_store": "Di toko",
+      "online": "Online",
+      "both": "Di toko & online"
+    },
     "bandUnder2500": "Di bawah 2.500 poin",
     "band2500to5000": "2.500-5.000 poin",
     "band5000to10000": "5.000-10.000 poin",
@@ -62,6 +69,7 @@
     "emptyFiltered": "Tidak ada item yang cocok dengan filter ini",
     "emptyNone": "Belum ada item di store saat ini",
     "bandAll": "Semua harga",
+    "balanceLabel": "{points} poin tersedia",
     "emptyFilteredBody": "Coba ubah atau hapus salah satu filter untuk melihat lebih banyak pilihan.",
     "emptyNoneBody": "Katalog ini diperbarui secara berkala — coba kembali lagi sebentar lagi."
   },

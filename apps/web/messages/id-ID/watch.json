@@ -1,0 +1,12 @@
+{
+  "title": "Tonton",
+  "empty": {
+    "heading": "Belum ada yang bisa ditonton",
+    "body": "Campaign yang lebih panjang akan muncul di sini begitu tayang. Coba kembali lagi sebentar lagi."
+  },
+  "error": {
+    "heading": "Tonton gagal dimuat",
+    "body": "Periksa koneksi kamu dan coba lagi.",
+    "retry": "Coba lagi"
+  }
+}

@@ -1,4 +1,4 @@
-import type { Listing, ListingCategory } from "@yourtal/contracts/listing";
+import type { ListingCategory, PublicListing } from "@yourtal/contracts/listing";
 import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 
 /**
@@ -57,9 +57,9 @@ export function isStoreCategoryFilter(value: string): value is StoreCategoryFilt
 }
 
 export function filterListingsByCategory(
-  listings: readonly Listing[],
+  listings: readonly PublicListing[],
   category: StoreCategoryFilter,
-): Listing[] {
+): PublicListing[] {
   if (category === "all") {
     return [...listings];
   }

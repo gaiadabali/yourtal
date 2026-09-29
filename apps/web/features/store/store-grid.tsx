@@ -1,9 +1,9 @@
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { StoreListingCard } from "./store-listing-card";
 import type { SupportedLocale } from "./store-i18n";
 
 export interface StoreGridProps {
-  listings: readonly Listing[];
+  listings: readonly PublicListing[];
   locale: SupportedLocale;
 }
 

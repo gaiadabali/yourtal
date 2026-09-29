@@ -10,6 +10,7 @@ import {
   parseStoreBoardParams,
 } from "./store-board-params";
 import { storeCategoryFilterOptions, isStoreCategoryFilter } from "./store-category";
+import { storeChannelFilterOptions, isStoreChannelFilter } from "./store-channel";
 import { storePriceBandFilterOptions, isStorePriceBandFilter } from "./store-price-band";
 import { STORE_LOCATION_ALL, STORE_MERCHANT_ALL } from "./store-facets";
 import type { StoreMerchantOption } from "./store-facets";
@@ -32,13 +33,13 @@ const SELECT_CLASS =
   "w-full max-w-40 rounded-md border border-border bg-surface px-3 py-2 text-sm font-sans text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
- * The Store browse grid's four filters (YT-0420 acceptance: "category,
- * merchant, price-band and location filters"). Mirrors
+ * The Store browse grid's five filters (YT-0420 acceptance: "category,
+ * merchant, price-band and location filters"; 11.6.a adds channel). Mirrors
  * `campaign-board-controls.tsx`: state lives in the URL, this component's
  * whole job is translating a change into a `router.push` with an updated
  * query string, and it holds no state of its own.
  *
- * All four are NATIVE `<select>` elements, not `@yourtal/ui/select`. Each
+ * All five are NATIVE `<select>` elements, not `@yourtal/ui/select`. Each
  * is an independent facet a user picks in any order (unlike the earn
  * board's kind filter, which behaves like a tab and is rendered as links)
  * — a native multi-select control set is the plain-HTML-first choice
@@ -58,6 +59,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const categoryId = useId();
+  const channelId = useId();
   const priceBandId = useId();
   const locationId = useId();
   const merchantId = useId();
@@ -68,6 +70,7 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
   const t = useTranslations("store");
   const priceBandOptions = storePriceBandFilterOptions(locale);
   const categoryOptions = storeCategoryFilterOptions(locale);
+  const channelOptions = storeChannelFilterOptions(locale);
   const current = parseStoreBoardParams(Object.fromEntries(searchParams.entries()));
 
   function navigate(update: Parameters<typeof buildStoreBoardQuery>[1]) {
@@ -99,6 +102,30 @@ export function StoreBoardControls({ locationOptions, merchantOptions }: StoreBo
             className={SELECT_CLASS}
           >
             {categoryOptions.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-1">
+          <label htmlFor={channelId} className="text-xs text-fg-muted">
+            {t("store.filterChannel")}
+          </label>
+          {/* eslint-disable-next-line yt-b/prefer-primitives -- native <select>, see this file's docstring */}
+          <select
+            id={channelId}
+            value={current.channel}
+            onChange={(event) => {
+              const channel = event.target.value;
+              if (isStoreChannelFilter(channel)) {
+                navigate({ channel });
+              }
+            }}
+            className={SELECT_CLASS}
+          >
+            {channelOptions.map((option) => (
               <option key={option.key} value={option.key}>
                 {option.label}
               </option>

@@ -1,70 +1,55 @@
-import type { Listing } from "@yourtal/contracts/listing";
-import {
-  abovePlausibleBalanceListingFixture,
-  expiringSoonListingFixture,
-  mockListings,
-  soldOutListingFixture,
-} from "@yourtal/contracts/listing/mock";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import "server-only";
+// YT-0589: the enforcement this module's doc comment says does not exist.
+// Importing this file from a client graph is now a BUILD FAILURE rather
+// than a review catch. See apps/web/features/README-server-only.md.
+
+import { z } from "zod";
+import type { PublicListing } from "@yourtal/contracts/listing";
+import { publicListingSchema } from "@yourtal/contracts/listing";
+import { apiFetch, type ApiResult } from "@/lib/api/api-fetch";
 
 /**
- * The Store's single data-access seam (YT-0420/YT-0421), mirroring
- * `features/campaign/campaign-data.ts`. Server-data-only per
- * docs/13b-typescript-standards.md §8: only `page.tsx` Server Components in
- * `app/(app)/store/**` import this module. Not marked `server-only` for the
- * same reason as its campaign counterpart — that package is not installed
- * in this workspace and this task may not run `pnpm install` — so the
- * boundary is enforced by review instead (no `"use client"` file here
- * imports it).
+ * The Store's single data-access seam (11.6.a, replacing Phase U's
+ * mock-only `resolveDataSource`). Every read is a real
+ * `GET /api/store/listings*` round trip through `apiFetch` (1.7.a) — no
+ * mock branch, mirroring `wallet-data.ts` (6.5) and per Phase 11's "Done
+ * when: ...with no mock data".
  *
- * The awkward fixtures (`soldOutListingFixture`,
- * `abovePlausibleBalanceListingFixture`, `expiringSoonListingFixture`) are
- * folded into the catalogue rather than kept test-only, per the brief:
- * "use them, they are built to break your layout."
+ * `publicListingSchema`, never `listingSchema`: this is the customer-facing
+ * catalogue and must not be able to carry `settlementValueMinor` even by
+ * mistake (`listing.ts`'s own docstring on why S stays off any public
+ * route). `apps/api/src/modules/store/store-catalogue.controller.ts`
+ * already enforces the region/audience wall server-side from the caller's
+ * own principal — this module passes no region itself, the same way
+ * `wallet-data.ts` never states whose wallet it is asking for.
  */
-const mockListingCatalogue: Listing[] = [
-  ...mockListings,
-  soldOutListingFixture,
-  abovePlausibleBalanceListingFixture,
-  expiringSoonListingFixture,
-];
+const browseListingsResponseSchema = z.object({
+  object: z.literal("list"),
+  data: z.array(publicListingSchema),
+  has_more: z.boolean(),
+  url: z.string(),
+});
 
-interface StoreDataSource {
-  listListings: () => Promise<Listing[]>;
-  getListing: (listingId: string) => Promise<Listing | undefined>;
+// A generous single page rather than cursor pagination: the demo catalogue
+// (16 businesses' listings plus the two affordable ones, 7.2.e/8.2.i) fits
+// well under this, and the browse grid has no "load more" UI yet.
+const BROWSE_LIMIT = 100;
+
+/** All store listings for the caller's own region and audience, unfiltered. */
+export function listListings(): Promise<ApiResult<PublicListing[]>> {
+  return apiFetch(
+    `/api/store/listings?limit=${String(BROWSE_LIMIT)}`,
+    browseListingsResponseSchema,
+  ).then((result) => (result.ok ? { ok: true, data: result.data.data } : result));
 }
 
-const mockDataSource: StoreDataSource = {
-  listListings: () => Promise.resolve(mockListingCatalogue),
-  getListing: (listingId: string) =>
-    Promise.resolve(mockListingCatalogue.find((listing) => listing.id === listingId)),
-};
-
-/**
- * No BFF exists yet (Phase U is mock-only). Rather than silently returning
- * mock data under a "live" flag, the live path fails loudly and
- * specifically, so flipping `YOURTAL_DATA_SOURCE=live` demonstrates this
- * route's `error.tsx` honestly instead of faking a failure for a demo.
- */
-const liveDataSource: StoreDataSource = {
-  listListings: () =>
-    Promise.reject(
-      new Error("Live store data source is not implemented yet (Phase U is mock-only)."),
-    ),
-  getListing: () =>
-    Promise.reject(
-      new Error("Live store data source is not implemented yet (Phase U is mock-only)."),
-    ),
-};
-
-const storeDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
-
-/** All store listings, unfiltered. */
-export function listListings(): Promise<Listing[]> {
-  return storeDataSource.listListings();
-}
-
-/** A single listing for the offer detail page, or `undefined` if no such listing exists. */
-export function getListing(listingId: string): Promise<Listing | undefined> {
-  return storeDataSource.getListing(listingId);
+/** A single listing for the offer detail page, or `undefined` if no such listing exists (or it is outside the caller's region/audience — the API 404s both alike, YT-0513). */
+export async function getListing(listingId: string): Promise<PublicListing | undefined> {
+  const result = await apiFetch(
+    `/api/store/listings/${encodeURIComponent(listingId)}`,
+    publicListingSchema,
+  );
+  if (result.ok) return result.data;
+  if (result.error.kind === "http" && result.error.status === 404) return undefined;
+  throw new Error(`GET /api/store/listings/${listingId} failed: ${result.error.message}`);
 }

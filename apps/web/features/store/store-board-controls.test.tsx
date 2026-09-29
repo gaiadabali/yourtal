@@ -47,9 +47,10 @@ beforeEach(() => {
 });
 
 describe("StoreBoardControls", () => {
-  it("renders all four filters as labelled comboboxes", () => {
+  it("renders all five filters as labelled comboboxes", () => {
     renderControls();
     expect(screen.getByRole("combobox", { name: "Kategori" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Kanal" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Harga" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Lokasi" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Merchant" })).toBeInTheDocument();

@@ -1,8 +1,10 @@
 import * as z from "zod/mini";
 import { DEFAULT_STORE_CATEGORY_FILTER, isStoreCategoryFilter } from "./store-category";
+import { DEFAULT_STORE_CHANNEL_FILTER, isStoreChannelFilter } from "./store-channel";
 import { DEFAULT_STORE_PRICE_BAND_FILTER, isStorePriceBandFilter } from "./store-price-band";
 import { STORE_LOCATION_ALL, STORE_MERCHANT_ALL } from "./store-facets";
 import type { StoreCategoryFilter } from "./store-category";
+import type { StoreChannelFilter } from "./store-channel";
 import type { StorePriceBandFilter } from "./store-price-band";
 
 /**
@@ -26,6 +28,7 @@ const rawSearchParamValueSchema = z.optional(z.union([z.string(), z.array(z.stri
 
 const storeBoardSearchParamsSchema = z.object({
   category: rawSearchParamValueSchema,
+  channel: rawSearchParamValueSchema,
   priceBand: rawSearchParamValueSchema,
   location: rawSearchParamValueSchema,
   merchant: rawSearchParamValueSchema,
@@ -33,6 +36,7 @@ const storeBoardSearchParamsSchema = z.object({
 
 export interface StoreBoardParams {
   category: StoreCategoryFilter;
+  channel: StoreChannelFilter;
   priceBand: StorePriceBandFilter;
   location: string;
   merchant: string;
@@ -40,6 +44,7 @@ export interface StoreBoardParams {
 
 const DEFAULT_STORE_BOARD_PARAMS: StoreBoardParams = {
   category: DEFAULT_STORE_CATEGORY_FILTER,
+  channel: DEFAULT_STORE_CHANNEL_FILTER,
   priceBand: DEFAULT_STORE_PRICE_BAND_FILTER,
   location: STORE_LOCATION_ALL,
   merchant: STORE_MERCHANT_ALL,
@@ -67,6 +72,11 @@ export function parseStoreBoardParams(
     ? categoryCandidate
     : DEFAULT_STORE_CATEGORY_FILTER;
 
+  const channelCandidate = firstValue(raw.channel) ?? "";
+  const channel = isStoreChannelFilter(channelCandidate)
+    ? channelCandidate
+    : DEFAULT_STORE_CHANNEL_FILTER;
+
   const priceBandCandidate = firstValue(raw.priceBand) ?? "";
   const priceBand = isStorePriceBandFilter(priceBandCandidate)
     ? priceBandCandidate
@@ -75,7 +85,7 @@ export function parseStoreBoardParams(
   const location = sanitiseFacetParam(firstValue(raw.location), STORE_LOCATION_ALL);
   const merchant = sanitiseFacetParam(firstValue(raw.merchant), STORE_MERCHANT_ALL);
 
-  return { category, priceBand, location, merchant };
+  return { category, channel, priceBand, location, merchant };
 }
 
 /**
@@ -91,6 +101,9 @@ export function buildStoreBoardQuery(
   const params = new URLSearchParams();
   if (next.category !== DEFAULT_STORE_BOARD_PARAMS.category) {
     params.set("category", next.category);
+  }
+  if (next.channel !== DEFAULT_STORE_BOARD_PARAMS.channel) {
+    params.set("channel", next.channel);
   }
   if (next.priceBand !== DEFAULT_STORE_BOARD_PARAMS.priceBand) {
     params.set("priceBand", next.priceBand);
@@ -109,6 +122,7 @@ export function buildStoreBoardQuery(
 export function hasActiveStoreFilters(params: StoreBoardParams): boolean {
   return (
     params.category !== DEFAULT_STORE_BOARD_PARAMS.category ||
+    params.channel !== DEFAULT_STORE_BOARD_PARAMS.channel ||
     params.priceBand !== DEFAULT_STORE_BOARD_PARAMS.priceBand ||
     params.location !== DEFAULT_STORE_BOARD_PARAMS.location ||
     params.merchant !== DEFAULT_STORE_BOARD_PARAMS.merchant

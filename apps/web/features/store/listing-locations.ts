@@ -59,6 +59,6 @@ export function listingDistrictLabel(listing: HasLocations, locale: SupportedLoc
 }
 
 /** Whether this listing can be redeemed in `district` at any of its locations. */
-export function listingHasDistrict(listing: Listing, district: string): boolean {
+export function listingHasDistrict(listing: HasLocations, district: string): boolean {
   return listing.locations.some((location) => location.district === district);
 }

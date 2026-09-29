@@ -7,8 +7,16 @@ import type { SupportedLocale } from "./nav-i18n";
  * relabelled Home · Watch · Store · Wallet · Me by task 3.5.c (was Earn ·
  * Quick). `href` is the tab's own route; `matchPrefixes` lists additional
  * route subtrees that belong to this tab without living under its path —
- * Home's entry (`/campaign/[id]`) and watch (`/watch/[id]`) flows are
- * reached from the home board but are not themselves tab routes.
+ * Home's entry (`/campaign/[id]`) is reached from the home board but is not
+ * itself a tab route.
+ *
+ * Watch points at `/watch` (11.7.d, founder demo), a real destination now
+ * — a YouTube-style grid of long-form campaigns — rather than `/quick`,
+ * which used to stand in for it and now only redirects to Home (11.4.b).
+ * `/watch/[id]` (the campaign page) is Watch's own subtree via its own
+ * `href`, so it is deliberately NOT also in Home's `matchPrefixes` any
+ * more: before this task both tabs claimed it, which would have
+ * highlighted Home and Watch simultaneously on a campaign page.
  *
  * `labelKey` (YT-0058), not `label`: this list is a plain data module with
  * no locale of its own, and a hardcoded English `label` here was exactly
@@ -24,7 +32,7 @@ import type { SupportedLocale } from "./nav-i18n";
 // time. Keeping this list literal (rather than widened to `string`) is what
 // lets `<Link href={item.href}>` in nav-link.tsx typecheck against Next's
 // generated route types.
-export type TabHref = "/home" | "/quick" | "/store" | "/wallet" | "/me";
+export type TabHref = "/home" | "/watch" | "/store" | "/wallet" | "/me";
 
 export type NavLabelKey = "home" | "watch" | "store" | "wallet" | "me";
 
@@ -36,8 +44,8 @@ export interface NavItem {
 }
 
 export const navItems: readonly NavItem[] = [
-  { href: "/home", labelKey: "home", icon: Home, matchPrefixes: ["/campaign", "/watch"] },
-  { href: "/quick", labelKey: "watch", icon: PlayCircle },
+  { href: "/home", labelKey: "home", icon: Home, matchPrefixes: ["/campaign"] },
+  { href: "/watch", labelKey: "watch", icon: PlayCircle },
   { href: "/store", labelKey: "store", icon: Store },
   { href: "/wallet", labelKey: "wallet", icon: Wallet },
   { href: "/me", labelKey: "me", icon: CircleUserRound },

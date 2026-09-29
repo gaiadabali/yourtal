@@ -4,11 +4,14 @@ import { StoreListingCardLayout } from "./store-listing-card-layout";
 /**
  * Loading placeholder for `StoreListingCard`. Renders through the exact
  * same `StoreListingCardLayout` frame as the real card, so there is no
- * separate set of dimension numbers to keep in sync by hand.
+ * separate set of dimension numbers to keep in sync by hand — the image
+ * row's `aspect-video` sizing lives on the layout's own wrapping `div`, so
+ * this only needs to fill it.
  */
 export function StoreListingCardSkeleton() {
   return (
     <StoreListingCardLayout
+      imageSlot={<Skeleton className="h-full w-full rounded-none" />}
       merchantSlot={<Skeleton className="h-4 w-2/5" />}
       titleSlot={<Skeleton className="h-full w-4/5" />}
       metaSlot={<Skeleton className="h-4 w-3/5" />}

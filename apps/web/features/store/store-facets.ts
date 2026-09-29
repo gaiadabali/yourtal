@@ -1,4 +1,4 @@
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { listingHasDistrict } from "./listing-locations";
 
 /**
@@ -32,7 +32,10 @@ export interface StoreMerchantOption {
  * a filter that could not offer two of them would hide real inventory from
  * a user who is standing in one of those two districts.
  */
-export function listingLocations(listings: readonly Listing[], locale: SupportedLocale): string[] {
+export function listingLocations(
+  listings: readonly PublicListing[],
+  locale: SupportedLocale,
+): string[] {
   return Array.from(
     new Set(listings.flatMap((listing) => listing.locations.map((location) => location.district))),
   ).sort((a, b) => a.localeCompare(b, locale));
@@ -40,7 +43,7 @@ export function listingLocations(listings: readonly Listing[], locale: Supported
 
 /** Every merchant represented in `listings`, deduplicated by id and alphabetised by name. */
 export function listingMerchants(
-  listings: readonly Listing[],
+  listings: readonly PublicListing[],
   locale: SupportedLocale,
 ): StoreMerchantOption[] {
   const byId = new Map<string, string>();
@@ -53,9 +56,9 @@ export function listingMerchants(
 }
 
 export function filterListingsByLocation(
-  listings: readonly Listing[],
+  listings: readonly PublicListing[],
   district: string,
-): Listing[] {
+): PublicListing[] {
   if (district === STORE_LOCATION_ALL) {
     return [...listings];
   }
@@ -63,9 +66,9 @@ export function filterListingsByLocation(
 }
 
 export function filterListingsByMerchant(
-  listings: readonly Listing[],
+  listings: readonly PublicListing[],
   merchantId: string,
-): Listing[] {
+): PublicListing[] {
   if (merchantId === STORE_MERCHANT_ALL) {
     return [...listings];
   }

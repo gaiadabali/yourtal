@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { Badge } from "@yourtal/ui/badge";
 import { StoreListingCardLayout } from "./store-listing-card-layout";
 import { categoryLabel } from "./store-category";
@@ -10,7 +10,7 @@ import { listingStatusPresentation } from "./store-status";
 import type { SupportedLocale } from "./store-i18n";
 
 export interface StoreListingCardProps {
-  listing: Listing;
+  listing: PublicListing;
   /** YT-0405: required, not defaulted — see `campaign-card.tsx`'s report. */
   locale: SupportedLocale;
 }
@@ -38,17 +38,23 @@ export function StoreListingCard({ listing, locale }: StoreListingCardProps) {
   return (
     <StoreListingCardLayout
       className="relative"
+      imageSlot={
+        <img src={listing.imageUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
+      }
       merchantSlot={
         <p className="truncate text-xs text-fg-subtle" title={listing.merchantName}>
           {listing.merchantName}
         </p>
       }
       titleSlot={
-        <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-fg">
+        // h2, not h3: the page's own <h1> ("Store") has no h2 between it and
+        // the grid, and axe's heading-order rule (correctly) flags a level
+        // skipped, not just a level reused — found running 11.6.a's axe pass.
+        <h2 className="line-clamp-2 text-sm font-semibold leading-5 text-fg">
           <Link href={href} className="static after:absolute after:inset-0 after:content-['']">
             {listing.title}
           </Link>
-        </h3>
+        </h2>
       }
       metaSlot={
         <div className="flex items-center gap-1.5 truncate text-xs text-fg-muted">

@@ -1,4 +1,4 @@
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
 import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 
 /**
@@ -69,9 +69,9 @@ export function isStorePriceBandFilter(value: string): value is StorePriceBandFi
 }
 
 export function filterListingsByPriceBand(
-  listings: readonly Listing[],
+  listings: readonly PublicListing[],
   priceBand: StorePriceBandFilter,
-): Listing[] {
+): PublicListing[] {
   if (priceBand === "all") {
     return [...listings];
   }

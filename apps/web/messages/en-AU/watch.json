@@ -1,0 +1,12 @@
+{
+  "title": "Watch",
+  "empty": {
+    "heading": "Nothing to watch right now",
+    "body": "Longer campaigns show up here as they go live. Check back soon."
+  },
+  "error": {
+    "heading": "Watch didn't load",
+    "body": "Check your connection and try again.",
+    "retry": "Try again"
+  }
+}

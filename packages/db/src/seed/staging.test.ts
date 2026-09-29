@@ -288,14 +288,20 @@ class FakeLedger {
         },
       ];
     }
-    // The real reward engine's replay rule returns the STORED grantedAt on
-    // a repeat, not a fresh one — reproduced here, per idempotencyKey, so
-    // the "just created vs already there" heuristic under test sees the
-    // same shape it would in production, and a replay never double-credits
-    // `availableByUser`.
-    const alreadyGranted = this.grantedAtByKey.has(body.idempotencyKey);
+    // The real reward engine's replay rule looks up
+    // `GetGrantByExternalRef(userId, actionType, externalRef)` —
+    // `services/ledger/internal/reward/contract.go` — scoped by USER, not
+    // by idempotencyKey alone: two different users can legitimately share
+    // the same region-scoped topup key (F74/8.2.i's own "recovers a
+    // missing demo account" test does exactly this, recreating
+    // `viewer.id` under a brand-new user id that must start its topup
+    // sequence fresh, not replay the deleted user's old grant). A
+    // per-key-only map would misattribute the OLD user's grant to the
+    // NEW one the moment they share a key.
+    const grantKey = `${body.userId}::${body.idempotencyKey}`;
+    const alreadyGranted = this.grantedAtByKey.has(grantKey);
     if (!alreadyGranted) {
-      this.grantedAtByKey.set(body.idempotencyKey, new Date().toISOString());
+      this.grantedAtByKey.set(grantKey, new Date().toISOString());
       if (body.trustTier >= 3) {
         this.availableByUser.set(
           body.userId,
@@ -303,7 +309,7 @@ class FakeLedger {
         );
       }
     }
-    const grantedAt = this.grantedAtByKey.get(body.idempotencyKey);
+    const grantedAt = this.grantedAtByKey.get(grantKey);
     return [
       200,
       {
@@ -1056,6 +1062,107 @@ describe("seedStaging", () => {
         { region: "AU", status: "already_sufficient", availablePoints: 450, targetPoints: 300 },
         { region: "ID", status: "already_sufficient", availablePoints: 1_000, targetPoints: 500 },
       ]);
+    } finally {
+      await ledger.close();
+    }
+  });
+
+  it("recovers a demo account that is missing from an already-seeded world (F74/8.2.i's real staging incident)", async () => {
+    const ledger = new FakeLedger();
+    const baseUrl = await ledger.listen();
+    try {
+      // Simulates the OLD seed's world exactly, not a hand-written
+      // approximation of it: run the CURRENT seed once (every account,
+      // business and campaign real staging already had), then surgically
+      // remove `viewer.id` — the account `demoAccounts()` did not have YET
+      // when staging's own `identity.user_profile` was first populated,
+      // weeks before `viewer.id` was ever added to the code. That is
+      // exactly what "the world already exists" meant on real staging: not
+      // an empty table, but one this seed itself had already written to,
+      // missing one row it did not know to check for individually.
+      const first = await seedStaging(owner, {
+        demoPassword: DEMO_PASSWORD,
+        ledger: { baseUrl, serviceSecret: LEDGER_SECRET },
+        voucher: { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+        log: () => undefined,
+        replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
+      });
+      expect(first.world).toBe("seeded");
+
+      const before = await owner.query<{ user_id: string }>(
+        `SELECT user_id FROM identity.credential WHERE identifier = 'viewer.id@demo.yourtal.test'`,
+      );
+      const oldUserId = before.rows[0]?.user_id;
+      expect(oldUserId).toBeDefined();
+      await owner.query(`DELETE FROM identity.user_profile WHERE user_id = $1`, [oldUserId]);
+      await owner.query(`DELETE FROM identity.credential WHERE user_id = $1`, [oldUserId]);
+      const gone = await owner.query(
+        `SELECT 1 FROM identity.credential WHERE identifier = 'viewer.id@demo.yourtal.test'`,
+      );
+      expect(gone.rowCount).toBe(0);
+
+      // The next deploy: `identity.user_profile` is still non-empty (every
+      // OTHER account is there), so the world step used to stop right
+      // there. Now it checks each account by email instead, finds
+      // viewer.id missing, and creates ONLY that one row — never resetting
+      // anything that already existed.
+      await sleep(TEST_REPLAY_WINDOW_MS + 20);
+      const second = await seedStaging(owner, {
+        demoPassword: DEMO_PASSWORD,
+        ledger: { baseUrl, serviceSecret: LEDGER_SECRET },
+        voucher: { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+        log: () => undefined,
+        replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
+      });
+      expect(second.world).toBe("already_present");
+
+      const recreated = await owner.query<{ user_id: string; secret_hash: string }>(
+        `SELECT user_id, secret_hash FROM identity.credential
+          WHERE identifier = 'viewer.id@demo.yourtal.test'`,
+      );
+      expect(recreated.rows).toHaveLength(1);
+      const newUserId = recreated.rows[0]?.user_id;
+      expect(newUserId).toBeDefined();
+      expect(newUserId).not.toBe(oldUserId);
+      // Exists AND can log in — a real, freshly-hashed password, not a row
+      // with no usable credential.
+      await expect(verifyPassword(recreated.rows[0]!.secret_hash, DEMO_PASSWORD)).resolves.toBe(
+        true,
+      );
+      // Nothing else in the world was touched a second time — still
+      // exactly the two Snap App businesses this seed's own world creates.
+      expect(
+        (
+          await owner.query(
+            `SELECT count(*)::int AS n FROM business.business_accounts WHERE id = ANY($1)`,
+            [BUSINESS_IDS],
+          )
+        ).rows[0]?.n,
+      ).toBe(2);
+
+      // Holds its balance on the SAME deploy — the existing wiring already
+      // does this once `viewerIdUserId` is non-null, regardless of
+      // `world.status`, so fixing account recovery alone is enough.
+      const idBalance = second.redemptionBalance.find((b) => b.region === "ID");
+      expect(idBalance?.status).toBe("topped_up");
+      expect(idBalance?.availablePoints).toBe(1_000);
+
+      // Running it again changes nothing further: the same account, the
+      // same balance, no new grant.
+      const third = await seedStaging(owner, {
+        demoPassword: DEMO_PASSWORD,
+        ledger: { baseUrl, serviceSecret: LEDGER_SECRET },
+        voucher: { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+        log: () => undefined,
+        replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
+      });
+      const stillThere = await owner.query<{ user_id: string }>(
+        `SELECT user_id FROM identity.credential WHERE identifier = 'viewer.id@demo.yourtal.test'`,
+      );
+      expect(stillThere.rows[0]?.user_id).toBe(newUserId);
+      expect(third.redemptionBalance.find((b) => b.region === "ID")?.status).toBe(
+        "already_sufficient",
+      );
     } finally {
       await ledger.close();
     }

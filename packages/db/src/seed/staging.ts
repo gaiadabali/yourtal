@@ -643,6 +643,104 @@ async function lookupUserId(pool: pg.Pool, email: string): Promise<string | null
   return result.rows[0]?.user_id ?? null;
 }
 
+async function businessExists(pool: pg.Pool, businessId: string): Promise<boolean> {
+  const result = await pool.query(`SELECT 1 FROM business.business_accounts WHERE id = $1`, [
+    businessId,
+  ]);
+  return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * F74/8.2.i (reopened a second time) — the real staging incident this
+ * guards against: `viewer.id@demo.yourtal.test` was added to
+ * `demoAccounts()` well after staging's `identity.user_profile` was first
+ * populated, so the ORIGINAL "world already exists, do nothing further"
+ * early return skipped creating it forever — not because the seed was
+ * broken, but because it never asked the question "does THIS account
+ * exist yet" at all, only "does ANY account exist". The login-throttle 429
+ * the lead saw was real: an account that never existed, tried enough
+ * times.
+ *
+ * So this runs on EVERY invocation, world-already-seeded or not, and for
+ * each `demoAccounts()` entry checks by EMAIL, not by a world-wide count:
+ * missing -> `registerDemoAccount` (a fresh row); already there -> touched
+ * NOT AT ALL, never a password reset, never a profile overwrite. Business
+ * membership / staff-role linkage is applied the same way, gated on the
+ * account being new here (a pre-existing account's own linkage, however it
+ * got there, is left alone) and on the owning business actually existing
+ * (defends the same "identity.user_profile non-empty from something this
+ * seed did not create" case `WorldResult`'s own doc names — a foreign DB
+ * with no Snap App business at all must not FK-violate trying to add one).
+ */
+async function ensureAllDemoAccountsExist(
+  pool: pg.Pool,
+  demoPassword: string,
+  log: (message: string) => void,
+): Promise<{ viewerUserId: string | null; viewerIdUserId: string | null }> {
+  const idByEmail = new Map<string, string>();
+  const justCreated = new Set<string>();
+  for (const spec of demoAccounts()) {
+    const existingId = await lookupUserId(pool, spec.email);
+    if (existingId !== null) {
+      idByEmail.set(spec.email, existingId);
+      continue;
+    }
+    const userId = await registerDemoAccount(pool, demoPassword, spec);
+    idByEmail.set(spec.email, userId);
+    justCreated.add(spec.email);
+    log(`[seed:staging] ${spec.email} did not exist yet — created it now.`);
+  }
+
+  const ownerAu = idByEmail.get("owner.au@demo.yourtal.test");
+  const memberAu = idByEmail.get("member.au@demo.yourtal.test");
+  const ownerId = idByEmail.get("owner.id@demo.yourtal.test");
+  if (justCreated.has("owner.au@demo.yourtal.test") && ownerAu !== undefined) {
+    if (await businessExists(pool, SNAP_APP_AU_ID)) {
+      await insertBusinessMember(pool, SNAP_APP_AU_ID, ownerAu, "owner", ownerAu);
+    } else {
+      log(
+        `[seed:staging] owner.au created but ${SNAP_APP_AU_ID} does not exist — no membership row.`,
+      );
+    }
+  }
+  if (
+    justCreated.has("member.au@demo.yourtal.test") &&
+    memberAu !== undefined &&
+    ownerAu !== undefined
+  ) {
+    if (await businessExists(pool, SNAP_APP_AU_ID)) {
+      await insertBusinessMember(pool, SNAP_APP_AU_ID, memberAu, "marketer", ownerAu);
+    } else {
+      log(
+        `[seed:staging] member.au created but ${SNAP_APP_AU_ID} does not exist — no membership row.`,
+      );
+    }
+  }
+  if (justCreated.has("owner.id@demo.yourtal.test") && ownerId !== undefined) {
+    if (await businessExists(pool, SNAP_APP_ID_ID)) {
+      await insertBusinessMember(pool, SNAP_APP_ID_ID, ownerId, "owner", ownerId);
+    } else {
+      log(
+        `[seed:staging] owner.id created but ${SNAP_APP_ID_ID} does not exist — no membership row.`,
+      );
+    }
+  }
+  for (const [email, role] of Object.entries(STAFF_ROLE_BY_EMAIL)) {
+    if (!justCreated.has(email)) continue;
+    const userId = idByEmail.get(email);
+    if (userId === undefined) continue;
+    await pool.query(
+      `INSERT INTO identity.staff_role (user_id, role, granted_by) VALUES ($1, $2, 'staging-seed')`,
+      [userId, role],
+    );
+  }
+
+  return {
+    viewerUserId: idByEmail.get("viewer.au@demo.yourtal.test") ?? null,
+    viewerIdUserId: idByEmail.get("viewer.id@demo.yourtal.test") ?? null,
+  };
+}
+
 /** Step 1 — see this file's header. Gated on `identity.user_profile` being
  * empty; looks up the viewer's `user_id` either way, since steps 2 and 3
  * need it whether the world was just created or already existed. */
@@ -656,8 +754,11 @@ async function seedWorldIfEmpty(
   );
   if (Number(existing.rows[0]?.count ?? "0") > 0) {
     log("[seed:staging] identity.user_profile is not empty — the world is already seeded.");
-    const viewerUserId = await lookupUserId(pool, "viewer.au@demo.yourtal.test");
-    const viewerIdUserId = await lookupUserId(pool, "viewer.id@demo.yourtal.test");
+    const { viewerUserId, viewerIdUserId } = await ensureAllDemoAccountsExist(
+      pool,
+      demoPassword,
+      log,
+    );
     return {
       status: "already_present",
       businesses: 0,

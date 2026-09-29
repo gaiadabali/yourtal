@@ -10,7 +10,19 @@
   "breadcrumb": {
     "home": "Home",
     "catalogue": "Rewards catalogue",
-    "merchants": "Merchants"
+    "merchants": "Merchants",
+    "transparency": "Transparency"
+  },
+  "transparency": {
+    "title": "Transparency",
+    "description": "Every day's published proof root — recompute it yourself against that day's entries and compare.",
+    "heading": "Daily proof roots",
+    "intro": "Each row is one calendar day's published root, exactly as our own API returns it — nothing reformatted or re-derived.",
+    "empty": "No proof roots have been published yet.",
+    "tableCaption": "Daily proof roots",
+    "dateHeader": "Date",
+    "rootHeader": "Root",
+    "entryCountHeader": "Entries"
   },
   "campaign": {
     "eyebrow": "Sponsored video",

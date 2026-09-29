@@ -10,7 +10,19 @@
   "breadcrumb": {
     "home": "Beranda",
     "catalogue": "Katalog reward",
-    "merchants": "Merchant"
+    "merchants": "Merchant",
+    "transparency": "Transparansi"
+  },
+  "transparency": {
+    "title": "Transparansi",
+    "description": "Root bukti yang dipublikasikan setiap hari — hitung ulang sendiri dari entri hari itu dan bandingkan.",
+    "heading": "Root bukti harian",
+    "intro": "Setiap baris adalah root yang dipublikasikan untuk satu hari kalender, persis seperti yang dikembalikan API kami sendiri — tidak diformat ulang atau diturunkan ulang.",
+    "empty": "Belum ada root bukti yang dipublikasikan.",
+    "tableCaption": "Root bukti harian",
+    "dateHeader": "Tanggal",
+    "rootHeader": "Root",
+    "entryCountHeader": "Entri"
   },
   "campaign": {
     "eyebrow": "Video bersponsor",

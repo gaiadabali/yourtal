@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | **12** Teen & family mode (early slice, F80) | 2026-09-29 | 12.1 in 3 parallel agents: A guardian flow (`yourtal-1`, `phase/12`, db `yourtal_s1`), B Cerbos age wall (`yourtal-p12-b`, db `yourtal_s12b`, ports 26610–26615), C teen earn cap (`yourtal-p12-c`, db `yourtal_s12c`, ports 26620–26625). Then 12.2.c, 12.3; 12.2.a/b wait for Phase 11 |
+| 1 | `yourtal-1` | **12** Teen & family mode (early slice, F80) | 2026-09-29 | 12.1.a–d and g merged; 12.1.e passed its guardian bullet on staging, adult-wall bullet runs once 12.1.g deploys. Now: 12.2.c guardian page (`yourtal-p12-b`, `phase/12-c2`, ports 26610–26615) and 12.3 Studio/reports (`yourtal-1`, ports 26310–26315). 12.2.a/b start when Phase 11 is ✅ |
 | 2 | `yourtal-2` | free | 2026-09-29 | Phase 9 ✅ (779b2a53). Worktree, `.env`, db `yourtal_s2` and Cerbos 26325 ready for the next phase. Phase 9 helpers `yourtal-p9-b/c/d` (dbs `yourtal_s9b/c/d`) are done and can be reused; their Cerbos containers are stopped. Staging holds a test `ops` account (`staff-ops-9-3-b-1790652948@example.test`, granted under F76). Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check, and its burns are not region-tagged. Carried for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | free | **6** Viewer app — ✅ done | 2026-09-27 | Phase 6 done: 6.7 ✅ (c8d0dab); 6.5 ✅ (aae765a, incl. 4.8.c requested of A); 6.2 ✅ (e747877f, agent D); 6.1 ✅ (63cc61b, agent A); 6.9 ✅ (53317515, agent B — 6.9.d's CI run also surfaced F49, fixed same session, and F50, unrelated/left for whoever owns `packages/media`'s CI setup). All four agents' worktrees left in place, slot 3 free for the next phase. C's worktree `yourtal-p6-c` is done; its db `yourtal_s3c` has stale revision rows for the renamed watch migrations (repoint like `yourtal_s2`, or leave: nothing else uses it). Slot 3b's own db `yourtal_s3b` hit the SAME stale-revision issue (F34/F36 watch migration rename) mid-6.5 — resolved by drop+recreate (it holds no long-lived data, only this session's own fixtures). Also fixed while verifying 6.1.e (own commit on main, not this row's own subtask): `features/me/me-section-states.tsx` was missing `"use client"`, crashing all of Me on any real section error — see 6.1.e's own note. |
 | 4 | `yourtal-4` | **11** Viewer feed & public site | 2026-09-29 | 11.4 ✅; 11.6 ✅ (G); 11.1/11.2/11.3 ✅ (H); 11.5.a-e ✅ (F, staging Check passed). I (`yourtal-p11-i`, 26570–76): 11.5.f–j done and merged (`1c63b9e5`) — real deliveryCoverage reader, real streak-completion hook, real timing signal into the RiskGate, streak-backstop's live-ledger path (with the ageBand 12.1.c needs), all verified against real Postgres + the real Go ledger; 11.7.a/b done and merged — notifications bell, `/search` page, 11.7.c's Check passed locally (Bondi finds its campaign/channel/voucher) but not yet on staging. Slot free once someone runs that Check post-deploy and closes 11.5/11.7. A (`yourtal-4`) coordinates |
@@ -1378,7 +1378,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - a 14-year-old registration waits for approval, and calling the guardian link's approve endpoint activates it (HTTP round trip);
     - an adult-only campaign is denied to a teen principal on every endpoint;
     - a teen's grant above the cap is refused.
-- [ ] **12.2 Teen feed and experience** · B · needs: 12.1, 7.7, 11.4
+- [ ] **12.2 Teen feed and experience** · B · needs: 12.1, 7.7, 11.4 — 🔄 slot 1
   - [ ] 12.2.a Teen items get the 1.1.c ranking boost, and teen accounts see only teen-relevant interests (games, books, school supplies, sportswear, streaming, cinema).
   - [ ] 12.2.b Softer engagement:
     - no streak counter and no loss-framed or at-risk messages;
@@ -1388,7 +1388,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - teen-appropriate vouchers only.
   - [ ] 12.2.c (requested by A) `/guardian/[token]`: the guardian confirms they are 18 or over and approves; the same link later revokes. There is no guardian account.
   - [ ] 12.2.d **Check:** a teen demo account gets no notification between 21:00 and 07:00 in its timezone and sees only teen and all_ages items.
-- [ ] **12.3 Studio and data** · C · needs: 12.1, 7.6
+- [ ] **12.3 Studio and data** · C · needs: 12.1, 7.6 — 🔄 slot 1
   - [ ] 12.3.a Audience and category pickers with the 1.1.d policy shown. Teen-rated question banks may not ask personal questions.
   - [ ] 12.3.b Reports apply the teen cohort floor (F12), with no teen breakdown below it.
   - [ ] 12.3.d (found by 12.1) Three value-moving staff routes declare no idempotency stance, so `mutating-routes.test.ts` is red on main: `staff-disputes.controller.ts` resolve and `staff-risk-queue.controller.ts` release/suspend. Mark them `@Idempotent` and have the staff risk and dispute actions send an `Idempotency-Key`, as the other staff actions do.

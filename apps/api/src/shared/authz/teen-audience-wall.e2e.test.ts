@@ -168,17 +168,27 @@ async function insertCampaign(audience: "teen" | "adult"): Promise<string> {
  */
 async function listingWithAudience(audience: "teen" | "adult"): Promise<string> {
   const newId = randomUUID();
+  const sourceRows = await owner.execute<{ id: string }>(sql`
+    SELECT id::text FROM store.listings WHERE region = 'ID' LIMIT 1`);
+  const sourceId = sourceRows.rows[0]?.id;
+  if (sourceId === undefined) throw new Error("no seeded ID listing to copy for the fixture");
+
   await owner.execute(sql`
     INSERT INTO store.listings
     SELECT (jsonb_populate_record(NULL::store.listings, to_jsonb(l)
               || jsonb_build_object('id', ${newId}::uuid, 'region', 'AU', 'currency', 'AUD'))).*
       FROM store.listings l
-     WHERE region = 'ID'
-     LIMIT 1`);
+     WHERE l.id = ${sourceId}::uuid`);
   await owner.execute(sql`
     UPDATE store.listings SET lifecycle_state = 'active', status = 'available', stock_remaining = stock_total,
            expires_at = now() + interval '30 days', audience = ${audience}
      WHERE id = ${newId}::uuid`);
+  // `listingSchema` requires >=1 location -- copied separately because
+  // `store.listing_location` is its own join table, not a column on
+  // `store.listings` itself (see `listing.table.ts`).
+  await owner.execute(sql`
+    INSERT INTO store.listing_location (listing_id, location_id)
+    SELECT ${newId}::uuid, location_id FROM store.listing_location WHERE listing_id = ${sourceId}::uuid`);
   return newId;
 }
 
@@ -209,6 +219,7 @@ afterAll(async () => {
     await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);
   }
   for (const id of [teenListingId, adultListingId]) {
+    await owner.execute(sql`DELETE FROM store.listing_location WHERE listing_id = ${id}::uuid`);
     await owner.execute(sql`DELETE FROM store.listings WHERE id = ${id}::uuid`);
   }
 });

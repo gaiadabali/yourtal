@@ -92,6 +92,8 @@ export function VoucherDetailView({
   const expired = isVoucherEffectivelyExpired(detail.expiresAt, Date.now());
   const statusCopy = describeVoucherStatus(detail.state, expired, t, detail.status);
   const isRedeemable = isVoucherRedeemable(detail, Date.now());
+  // Voided: nothing left to spend, so none of the spending details apply.
+  const isVoid = statusCopy.kind === "void";
 
   // The hook must always run (rules of hooks) — `initialQr` is null for an
   // already-archived voucher, so it is handed an inert placeholder that
@@ -156,46 +158,50 @@ export function VoucherDetailView({
           <VoucherArchivedPanel
             statusLabel={statusCopy.label}
             dateLabel={
-              detail.expiresAt
-                ? t("voucher.expiresOn", { date: formatWalletDate(detail.expiresAt, locale) })
-                : ""
+              isVoid
+                ? t("voucher.voidHint")
+                : statusCopy.kind === "expired" && detail.expiresAt
+                  ? t("voucher.expiresOn", { date: formatWalletDate(detail.expiresAt, locale) })
+                  : ""
             }
           />
         )}
 
-        {(() => {
-          const items = [
-            ...(detail.remainingValueMinor !== undefined && detail.currency
-              ? [
-                  {
-                    key: "remaining",
-                    label: t("voucher.remainingValue"),
-                    value: (
-                      <MoneyAmount
-                        amountMinor={detail.remainingValueMinor}
-                        currency={detail.currency}
-                        locale={locale}
-                      />
-                    ),
-                  },
-                ]
-              : []),
-            ...(detail.expiresAt
-              ? [
-                  {
-                    key: "validUntil",
-                    label: t("voucher.validUntilLabel"),
-                    value: formatWalletDate(detail.expiresAt, locale),
-                  },
-                ]
-              : []),
-          ];
-          return items.length > 0 ? (
-            <KeyValue items={items} className="w-full border-t border-border pt-4" />
-          ) : null;
-        })()}
+        {isVoid
+          ? null
+          : (() => {
+              const items = [
+                ...(detail.remainingValueMinor !== undefined && detail.currency
+                  ? [
+                      {
+                        key: "remaining",
+                        label: t("voucher.remainingValue"),
+                        value: (
+                          <MoneyAmount
+                            amountMinor={detail.remainingValueMinor}
+                            currency={detail.currency}
+                            locale={locale}
+                          />
+                        ),
+                      },
+                    ]
+                  : []),
+                ...(detail.expiresAt
+                  ? [
+                      {
+                        key: "validUntil",
+                        label: t("voucher.validUntilLabel"),
+                        value: formatWalletDate(detail.expiresAt, locale),
+                      },
+                    ]
+                  : []),
+              ];
+              return items.length > 0 ? (
+                <KeyValue items={items} className="w-full border-t border-border pt-4" />
+              ) : null;
+            })()}
 
-        {detail.location ? (
+        {detail.location && !isVoid ? (
           <div className="w-full border-t border-border pt-4">
             <h2 className="text-caption text-fg-subtle">{t("voucher.redeemAtLabel")}</h2>
             <p className="font-sans text-body font-medium text-fg">{detail.location.name}</p>
@@ -206,16 +212,18 @@ export function VoucherDetailView({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2 rounded-card border border-border-subtle bg-surface p-6">
-        <Heading level={2} size="title">
-          {t("voucher.howToRedeem")}
-        </Heading>
-        <Text tone="muted">
-          {detail.merchantName && detail.partialRedemptionPolicy
-            ? buildRedemptionInstructions(detail.merchantName, detail.partialRedemptionPolicy, t)
-            : t("voucher.genericInstructions")}
-        </Text>
-      </div>
+      {isVoid ? null : (
+        <div className="flex flex-col gap-2 rounded-card border border-border-subtle bg-surface p-6">
+          <Heading level={2} size="title">
+            {t("voucher.howToRedeem")}
+          </Heading>
+          <Text tone="muted">
+            {detail.merchantName && detail.partialRedemptionPolicy
+              ? buildRedemptionInstructions(detail.merchantName, detail.partialRedemptionPolicy, t)
+              : t("voucher.genericInstructions")}
+          </Text>
+        </div>
+      )}
     </div>
   );
 }

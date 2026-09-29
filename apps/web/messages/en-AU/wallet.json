@@ -24,6 +24,7 @@
     "statusRedeemed": "Redeemed",
     "statusTransferred": "Transferred",
     "statusVoid": "No longer valid",
+    "voidHint": "This voucher was cancelled, so it can't be used at the counter.",
     "genericTitle": "Voucher",
     "detailsUnavailable": "Details unavailable",
     "expiresOn": "Ended {date}",

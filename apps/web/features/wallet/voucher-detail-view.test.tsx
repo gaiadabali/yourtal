@@ -161,6 +161,30 @@ describe("VoucherDetailView", () => {
     expect(screen.queryByText("Voucher ini tidak bisa dipakai")).not.toBeInTheDocument();
   });
 
+  it("shows a voided voucher as no longer valid, without any spending details", async () => {
+    // A dispute (or fraud/admin) void has no public status (11.6.e).
+    const voided: VoucherDetailSource = { ...cachedVoucher, status: undefined };
+    const detail = buildCachedVoucherDetail(voided, "2026-09-19T09:00:00.000Z");
+
+    renderWithRegion(
+      <VoucherDetailView
+        voucherId={voided.voucherId}
+        initialDetail={detail}
+        initialQr={null}
+        code={undefined}
+      />,
+    );
+    await flushMicrotasks();
+
+    expect(screen.getAllByText("Tidak berlaku lagi").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("Voucher ini dibatalkan, jadi tidak bisa dipakai di kasir."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^Berakhir/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Rp/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
   it("archives a held voucher once its expiry time actually passes, per plain wall-clock time", async () => {
     const almostExpired: VoucherDetailSource = {
       ...cachedVoucher,

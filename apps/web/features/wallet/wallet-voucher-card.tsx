@@ -69,7 +69,8 @@ export async function WalletVoucherCard({ voucher, nowMs, locale }: WalletVouche
             {t("voucher.detailsUnavailable")}
           </Text>
         )}
-        {voucher.expiresAt ? (
+        {/* A redeemed or voided voucher did not "end" on its expiry date. */}
+        {voucher.expiresAt && (!statusCopy.isArchived || statusCopy.kind === "expired") ? (
           <Text tone="subtle" size="caption" className="min-w-0">
             {statusCopy.isArchived
               ? t("voucher.expiresOn", { date: formatWalletDate(voucher.expiresAt, locale) })

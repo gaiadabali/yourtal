@@ -15,9 +15,22 @@
 
 export type SupportedLocale = "en-AU" | "id-ID";
 
+// A fixed zone per language, so the server's render and the browser's agree
+// on the day (without one the server formats in UTC, the browser in local
+// time, and React refuses to hydrate the mismatch).
 const WALLET_DATE_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
-  "en-AU": new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" }),
-  "id-ID": new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+  "en-AU": new Intl.DateTimeFormat("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Australia/Sydney",
+  }),
+  "id-ID": new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  }),
 };
 
 // `numeric: "always"`, not "auto" — "auto" substitutes idioms like "kemarin

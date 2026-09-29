@@ -23,7 +23,7 @@ var _ MappedNullable = &ApiTenantIdStudioCampaignsGet200ResponseInner{}
 type ApiTenantIdStudioCampaignsGet200ResponseInner struct {
 	Id string `json:"id"`
 	BusinessId string `json:"businessId"`
-	Region string `json:"region"`
+	Region NullableString `json:"region"`
 	Kind string `json:"kind"`
 	Title NullableString `json:"title"`
 	Synopsis NullableString `json:"synopsis"`
@@ -56,7 +56,7 @@ type _ApiTenantIdStudioCampaignsGet200ResponseInner ApiTenantIdStudioCampaignsGe
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioCampaignsGet200ResponseInner(id string, businessId string, region string, kind string, title NullableString, synopsis NullableString, durationSeconds NullableInt32, contentCategory string, audience string, lifecycleState string, rejectionReason NullableString, startsAt NullableTime, endsAt NullableTime, openViewing bool, teaserStartSeconds NullableInt32, posterFrameSeconds NullableInt32, declaredInterests []string, chapters []ApiTenantIdStudioCampaignsGet200ResponseInnerChaptersInner, captionsUrl NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, rewardPoints NullableInt32, questionCount NullableInt32, scoringRule NullableString, publishedAt NullableTime) *ApiTenantIdStudioCampaignsGet200ResponseInner {
+func NewApiTenantIdStudioCampaignsGet200ResponseInner(id string, businessId string, region NullableString, kind string, title NullableString, synopsis NullableString, durationSeconds NullableInt32, contentCategory string, audience string, lifecycleState string, rejectionReason NullableString, startsAt NullableTime, endsAt NullableTime, openViewing bool, teaserStartSeconds NullableInt32, posterFrameSeconds NullableInt32, declaredInterests []string, chapters []ApiTenantIdStudioCampaignsGet200ResponseInnerChaptersInner, captionsUrl NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, rewardPoints NullableInt32, questionCount NullableInt32, scoringRule NullableString, publishedAt NullableTime) *ApiTenantIdStudioCampaignsGet200ResponseInner {
 	this := ApiTenantIdStudioCampaignsGet200ResponseInner{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -144,27 +144,29 @@ func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) SetBusinessId(v string) 
 }
 
 // GetRegion returns the Region field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) GetRegion() string {
-	if o == nil {
+	if o == nil || o.Region.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Region
+	return *o.Region.Get()
 }
 
 // GetRegionOk returns a tuple with the Region field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) GetRegionOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Region, true
+	return o.Region.Get(), o.Region.IsSet()
 }
 
 // SetRegion sets field value
 func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) SetRegion(v string) {
-	o.Region = v
+	o.Region.Set(&v)
 }
 
 // GetKind returns the Kind field value
@@ -763,7 +765,7 @@ func (o ApiTenantIdStudioCampaignsGet200ResponseInner) ToMap() (map[string]inter
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id
 	toSerialize["businessId"] = o.BusinessId
-	toSerialize["region"] = o.Region
+	toSerialize["region"] = o.Region.Get()
 	toSerialize["kind"] = o.Kind
 	toSerialize["title"] = o.Title.Get()
 	toSerialize["synopsis"] = o.Synopsis.Get()

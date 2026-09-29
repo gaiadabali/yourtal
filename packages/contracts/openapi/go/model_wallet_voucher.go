@@ -12,7 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
-	"bytes"
+	"time"
 	"fmt"
 )
 
@@ -21,9 +21,21 @@ var _ MappedNullable = &WalletVoucher{}
 
 // WalletVoucher A voucher the caller holds (4.8.a). Its words and value come from the store listing.
 type WalletVoucher struct {
-	VoucherId string `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	ListingId string `json:"listingId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	ListingId NullableString `json:"listingId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	State string `json:"state"`
+	Status *VoucherStatus `json:"status,omitempty"`
+	MerchantName NullableString `json:"merchantName,omitempty"`
+	Title NullableString `json:"title,omitempty"`
+	Currency *Currency `json:"currency,omitempty"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	FaceValueMinor *int64 `json:"faceValueMinor,omitempty"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	RemainingValueMinor *int64 `json:"remainingValueMinor,omitempty"`
+	ExpiresAt *time.Time `json:"expiresAt,omitempty" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	Location *WalletVoucherLocation `json:"location,omitempty"`
+	PartialRedemptionPolicy *PartialRedemptionPolicy `json:"partialRedemptionPolicy,omitempty"`
+	AdditionalProperties map[string]interface{}
 }
 
 type _WalletVoucher WalletVoucher
@@ -32,7 +44,7 @@ type _WalletVoucher WalletVoucher
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWalletVoucher(voucherId string, listingId string, state string) *WalletVoucher {
+func NewWalletVoucher(voucherId NullableString, listingId NullableString, state string) *WalletVoucher {
 	this := WalletVoucher{}
 	this.VoucherId = voucherId
 	this.ListingId = listingId
@@ -49,51 +61,55 @@ func NewWalletVoucherWithDefaults() *WalletVoucher {
 }
 
 // GetVoucherId returns the VoucherId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *WalletVoucher) GetVoucherId() string {
-	if o == nil {
+	if o == nil || o.VoucherId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.VoucherId
+	return *o.VoucherId.Get()
 }
 
 // GetVoucherIdOk returns a tuple with the VoucherId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *WalletVoucher) GetVoucherIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.VoucherId, true
+	return o.VoucherId.Get(), o.VoucherId.IsSet()
 }
 
 // SetVoucherId sets field value
 func (o *WalletVoucher) SetVoucherId(v string) {
-	o.VoucherId = v
+	o.VoucherId.Set(&v)
 }
 
 // GetListingId returns the ListingId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *WalletVoucher) GetListingId() string {
-	if o == nil {
+	if o == nil || o.ListingId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ListingId
+	return *o.ListingId.Get()
 }
 
 // GetListingIdOk returns a tuple with the ListingId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *WalletVoucher) GetListingIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ListingId, true
+	return o.ListingId.Get(), o.ListingId.IsSet()
 }
 
 // SetListingId sets field value
 func (o *WalletVoucher) SetListingId(v string) {
-	o.ListingId = v
+	o.ListingId.Set(&v)
 }
 
 // GetState returns the State field value
@@ -120,6 +136,314 @@ func (o *WalletVoucher) SetState(v string) {
 	o.State = v
 }
 
+// GetStatus returns the Status field value if set, zero value otherwise.
+func (o *WalletVoucher) GetStatus() VoucherStatus {
+	if o == nil || IsNil(o.Status) {
+		var ret VoucherStatus
+		return ret
+	}
+	return *o.Status
+}
+
+// GetStatusOk returns a tuple with the Status field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetStatusOk() (*VoucherStatus, bool) {
+	if o == nil || IsNil(o.Status) {
+		return nil, false
+	}
+	return o.Status, true
+}
+
+// HasStatus returns a boolean if a field has been set.
+func (o *WalletVoucher) HasStatus() bool {
+	if o != nil && !IsNil(o.Status) {
+		return true
+	}
+
+	return false
+}
+
+// SetStatus gets a reference to the given VoucherStatus and assigns it to the Status field.
+func (o *WalletVoucher) SetStatus(v VoucherStatus) {
+	o.Status = &v
+}
+
+// GetMerchantName returns the MerchantName field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *WalletVoucher) GetMerchantName() string {
+	if o == nil || IsNil(o.MerchantName.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.MerchantName.Get()
+}
+
+// GetMerchantNameOk returns a tuple with the MerchantName field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *WalletVoucher) GetMerchantNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.MerchantName.Get(), o.MerchantName.IsSet()
+}
+
+// HasMerchantName returns a boolean if a field has been set.
+func (o *WalletVoucher) HasMerchantName() bool {
+	if o != nil && o.MerchantName.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetMerchantName gets a reference to the given NullableString and assigns it to the MerchantName field.
+func (o *WalletVoucher) SetMerchantName(v string) {
+	o.MerchantName.Set(&v)
+}
+// SetMerchantNameNil sets the value for MerchantName to be an explicit nil
+func (o *WalletVoucher) SetMerchantNameNil() {
+	o.MerchantName.Set(nil)
+}
+
+// UnsetMerchantName ensures that no value is present for MerchantName, not even an explicit nil
+func (o *WalletVoucher) UnsetMerchantName() {
+	o.MerchantName.Unset()
+}
+
+// GetTitle returns the Title field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *WalletVoucher) GetTitle() string {
+	if o == nil || IsNil(o.Title.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.Title.Get()
+}
+
+// GetTitleOk returns a tuple with the Title field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *WalletVoucher) GetTitleOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Title.Get(), o.Title.IsSet()
+}
+
+// HasTitle returns a boolean if a field has been set.
+func (o *WalletVoucher) HasTitle() bool {
+	if o != nil && o.Title.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetTitle gets a reference to the given NullableString and assigns it to the Title field.
+func (o *WalletVoucher) SetTitle(v string) {
+	o.Title.Set(&v)
+}
+// SetTitleNil sets the value for Title to be an explicit nil
+func (o *WalletVoucher) SetTitleNil() {
+	o.Title.Set(nil)
+}
+
+// UnsetTitle ensures that no value is present for Title, not even an explicit nil
+func (o *WalletVoucher) UnsetTitle() {
+	o.Title.Unset()
+}
+
+// GetCurrency returns the Currency field value if set, zero value otherwise.
+func (o *WalletVoucher) GetCurrency() Currency {
+	if o == nil || IsNil(o.Currency) {
+		var ret Currency
+		return ret
+	}
+	return *o.Currency
+}
+
+// GetCurrencyOk returns a tuple with the Currency field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetCurrencyOk() (*Currency, bool) {
+	if o == nil || IsNil(o.Currency) {
+		return nil, false
+	}
+	return o.Currency, true
+}
+
+// HasCurrency returns a boolean if a field has been set.
+func (o *WalletVoucher) HasCurrency() bool {
+	if o != nil && !IsNil(o.Currency) {
+		return true
+	}
+
+	return false
+}
+
+// SetCurrency gets a reference to the given Currency and assigns it to the Currency field.
+func (o *WalletVoucher) SetCurrency(v Currency) {
+	o.Currency = &v
+}
+
+// GetFaceValueMinor returns the FaceValueMinor field value if set, zero value otherwise.
+func (o *WalletVoucher) GetFaceValueMinor() int64 {
+	if o == nil || IsNil(o.FaceValueMinor) {
+		var ret int64
+		return ret
+	}
+	return *o.FaceValueMinor
+}
+
+// GetFaceValueMinorOk returns a tuple with the FaceValueMinor field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetFaceValueMinorOk() (*int64, bool) {
+	if o == nil || IsNil(o.FaceValueMinor) {
+		return nil, false
+	}
+	return o.FaceValueMinor, true
+}
+
+// HasFaceValueMinor returns a boolean if a field has been set.
+func (o *WalletVoucher) HasFaceValueMinor() bool {
+	if o != nil && !IsNil(o.FaceValueMinor) {
+		return true
+	}
+
+	return false
+}
+
+// SetFaceValueMinor gets a reference to the given int64 and assigns it to the FaceValueMinor field.
+func (o *WalletVoucher) SetFaceValueMinor(v int64) {
+	o.FaceValueMinor = &v
+}
+
+// GetRemainingValueMinor returns the RemainingValueMinor field value if set, zero value otherwise.
+func (o *WalletVoucher) GetRemainingValueMinor() int64 {
+	if o == nil || IsNil(o.RemainingValueMinor) {
+		var ret int64
+		return ret
+	}
+	return *o.RemainingValueMinor
+}
+
+// GetRemainingValueMinorOk returns a tuple with the RemainingValueMinor field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetRemainingValueMinorOk() (*int64, bool) {
+	if o == nil || IsNil(o.RemainingValueMinor) {
+		return nil, false
+	}
+	return o.RemainingValueMinor, true
+}
+
+// HasRemainingValueMinor returns a boolean if a field has been set.
+func (o *WalletVoucher) HasRemainingValueMinor() bool {
+	if o != nil && !IsNil(o.RemainingValueMinor) {
+		return true
+	}
+
+	return false
+}
+
+// SetRemainingValueMinor gets a reference to the given int64 and assigns it to the RemainingValueMinor field.
+func (o *WalletVoucher) SetRemainingValueMinor(v int64) {
+	o.RemainingValueMinor = &v
+}
+
+// GetExpiresAt returns the ExpiresAt field value if set, zero value otherwise.
+func (o *WalletVoucher) GetExpiresAt() time.Time {
+	if o == nil || IsNil(o.ExpiresAt) {
+		var ret time.Time
+		return ret
+	}
+	return *o.ExpiresAt
+}
+
+// GetExpiresAtOk returns a tuple with the ExpiresAt field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetExpiresAtOk() (*time.Time, bool) {
+	if o == nil || IsNil(o.ExpiresAt) {
+		return nil, false
+	}
+	return o.ExpiresAt, true
+}
+
+// HasExpiresAt returns a boolean if a field has been set.
+func (o *WalletVoucher) HasExpiresAt() bool {
+	if o != nil && !IsNil(o.ExpiresAt) {
+		return true
+	}
+
+	return false
+}
+
+// SetExpiresAt gets a reference to the given time.Time and assigns it to the ExpiresAt field.
+func (o *WalletVoucher) SetExpiresAt(v time.Time) {
+	o.ExpiresAt = &v
+}
+
+// GetLocation returns the Location field value if set, zero value otherwise.
+func (o *WalletVoucher) GetLocation() WalletVoucherLocation {
+	if o == nil || IsNil(o.Location) {
+		var ret WalletVoucherLocation
+		return ret
+	}
+	return *o.Location
+}
+
+// GetLocationOk returns a tuple with the Location field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetLocationOk() (*WalletVoucherLocation, bool) {
+	if o == nil || IsNil(o.Location) {
+		return nil, false
+	}
+	return o.Location, true
+}
+
+// HasLocation returns a boolean if a field has been set.
+func (o *WalletVoucher) HasLocation() bool {
+	if o != nil && !IsNil(o.Location) {
+		return true
+	}
+
+	return false
+}
+
+// SetLocation gets a reference to the given WalletVoucherLocation and assigns it to the Location field.
+func (o *WalletVoucher) SetLocation(v WalletVoucherLocation) {
+	o.Location = &v
+}
+
+// GetPartialRedemptionPolicy returns the PartialRedemptionPolicy field value if set, zero value otherwise.
+func (o *WalletVoucher) GetPartialRedemptionPolicy() PartialRedemptionPolicy {
+	if o == nil || IsNil(o.PartialRedemptionPolicy) {
+		var ret PartialRedemptionPolicy
+		return ret
+	}
+	return *o.PartialRedemptionPolicy
+}
+
+// GetPartialRedemptionPolicyOk returns a tuple with the PartialRedemptionPolicy field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetPartialRedemptionPolicyOk() (*PartialRedemptionPolicy, bool) {
+	if o == nil || IsNil(o.PartialRedemptionPolicy) {
+		return nil, false
+	}
+	return o.PartialRedemptionPolicy, true
+}
+
+// HasPartialRedemptionPolicy returns a boolean if a field has been set.
+func (o *WalletVoucher) HasPartialRedemptionPolicy() bool {
+	if o != nil && !IsNil(o.PartialRedemptionPolicy) {
+		return true
+	}
+
+	return false
+}
+
+// SetPartialRedemptionPolicy gets a reference to the given PartialRedemptionPolicy and assigns it to the PartialRedemptionPolicy field.
+func (o *WalletVoucher) SetPartialRedemptionPolicy(v PartialRedemptionPolicy) {
+	o.PartialRedemptionPolicy = &v
+}
+
 func (o WalletVoucher) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -130,9 +454,41 @@ func (o WalletVoucher) MarshalJSON() ([]byte, error) {
 
 func (o WalletVoucher) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["voucherId"] = o.VoucherId
-	toSerialize["listingId"] = o.ListingId
+	toSerialize["voucherId"] = o.VoucherId.Get()
+	toSerialize["listingId"] = o.ListingId.Get()
 	toSerialize["state"] = o.State
+	if !IsNil(o.Status) {
+		toSerialize["status"] = o.Status
+	}
+	if o.MerchantName.IsSet() {
+		toSerialize["merchantName"] = o.MerchantName.Get()
+	}
+	if o.Title.IsSet() {
+		toSerialize["title"] = o.Title.Get()
+	}
+	if !IsNil(o.Currency) {
+		toSerialize["currency"] = o.Currency
+	}
+	if !IsNil(o.FaceValueMinor) {
+		toSerialize["faceValueMinor"] = o.FaceValueMinor
+	}
+	if !IsNil(o.RemainingValueMinor) {
+		toSerialize["remainingValueMinor"] = o.RemainingValueMinor
+	}
+	if !IsNil(o.ExpiresAt) {
+		toSerialize["expiresAt"] = o.ExpiresAt
+	}
+	if !IsNil(o.Location) {
+		toSerialize["location"] = o.Location
+	}
+	if !IsNil(o.PartialRedemptionPolicy) {
+		toSerialize["partialRedemptionPolicy"] = o.PartialRedemptionPolicy
+	}
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
@@ -162,15 +518,31 @@ func (o *WalletVoucher) UnmarshalJSON(data []byte) (err error) {
 
 	varWalletVoucher := _WalletVoucher{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varWalletVoucher)
+	err = json.Unmarshal(data, &varWalletVoucher)
 
 	if err != nil {
 		return err
 	}
 
 	*o = WalletVoucher(varWalletVoucher)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "voucherId")
+		delete(additionalProperties, "listingId")
+		delete(additionalProperties, "state")
+		delete(additionalProperties, "status")
+		delete(additionalProperties, "merchantName")
+		delete(additionalProperties, "title")
+		delete(additionalProperties, "currency")
+		delete(additionalProperties, "faceValueMinor")
+		delete(additionalProperties, "remainingValueMinor")
+		delete(additionalProperties, "expiresAt")
+		delete(additionalProperties, "location")
+		delete(additionalProperties, "partialRedemptionPolicy")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }

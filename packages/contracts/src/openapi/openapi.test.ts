@@ -211,11 +211,13 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   revealedCodeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   qrTokenRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   qrTokenSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  qrTokenWindowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   verifyQrTokenRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   verifyQrTokenResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   voidVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- voucher-internal: wallet ---
+  walletVoucherRowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   listForUserRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   listForUserResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   getVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

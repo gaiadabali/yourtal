@@ -13,71 +13,42 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
-// checks if the WalletQr type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &WalletQr{}
+// checks if the WalletQrTokensInner type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &WalletQrTokensInner{}
 
-// WalletQr A short-lived signed token a counter scans to redeem the voucher.
-type WalletQr struct {
-	VoucherId NullableString `json:"voucherId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+// WalletQrTokensInner struct for WalletQrTokensInner
+type WalletQrTokensInner struct {
 	Token string `json:"token"`
 	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
-	Tokens []WalletQrTokensInner `json:"tokens,omitempty"`
-	AdditionalProperties map[string]interface{}
 }
 
-type _WalletQr WalletQr
+type _WalletQrTokensInner WalletQrTokensInner
 
-// NewWalletQr instantiates a new WalletQr object
+// NewWalletQrTokensInner instantiates a new WalletQrTokensInner object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWalletQr(voucherId NullableString, token string, expiresAt time.Time) *WalletQr {
-	this := WalletQr{}
-	this.VoucherId = voucherId
+func NewWalletQrTokensInner(token string, expiresAt time.Time) *WalletQrTokensInner {
+	this := WalletQrTokensInner{}
 	this.Token = token
 	this.ExpiresAt = expiresAt
 	return &this
 }
 
-// NewWalletQrWithDefaults instantiates a new WalletQr object
+// NewWalletQrTokensInnerWithDefaults instantiates a new WalletQrTokensInner object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewWalletQrWithDefaults() *WalletQr {
-	this := WalletQr{}
+func NewWalletQrTokensInnerWithDefaults() *WalletQrTokensInner {
+	this := WalletQrTokensInner{}
 	return &this
 }
 
-// GetVoucherId returns the VoucherId field value
-// If the value is explicit nil, the zero value for string will be returned
-func (o *WalletQr) GetVoucherId() string {
-	if o == nil || o.VoucherId.Get() == nil {
-		var ret string
-		return ret
-	}
-
-	return *o.VoucherId.Get()
-}
-
-// GetVoucherIdOk returns a tuple with the VoucherId field value
-// and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *WalletQr) GetVoucherIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.VoucherId.Get(), o.VoucherId.IsSet()
-}
-
-// SetVoucherId sets field value
-func (o *WalletQr) SetVoucherId(v string) {
-	o.VoucherId.Set(&v)
-}
-
 // GetToken returns the Token field value
-func (o *WalletQr) GetToken() string {
+func (o *WalletQrTokensInner) GetToken() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -88,7 +59,7 @@ func (o *WalletQr) GetToken() string {
 
 // GetTokenOk returns a tuple with the Token field value
 // and a boolean to check if the value has been set.
-func (o *WalletQr) GetTokenOk() (*string, bool) {
+func (o *WalletQrTokensInner) GetTokenOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -96,12 +67,12 @@ func (o *WalletQr) GetTokenOk() (*string, bool) {
 }
 
 // SetToken sets field value
-func (o *WalletQr) SetToken(v string) {
+func (o *WalletQrTokensInner) SetToken(v string) {
 	o.Token = v
 }
 
 // GetExpiresAt returns the ExpiresAt field value
-func (o *WalletQr) GetExpiresAt() time.Time {
+func (o *WalletQrTokensInner) GetExpiresAt() time.Time {
 	if o == nil {
 		var ret time.Time
 		return ret
@@ -112,7 +83,7 @@ func (o *WalletQr) GetExpiresAt() time.Time {
 
 // GetExpiresAtOk returns a tuple with the ExpiresAt field value
 // and a boolean to check if the value has been set.
-func (o *WalletQr) GetExpiresAtOk() (*time.Time, bool) {
+func (o *WalletQrTokensInner) GetExpiresAtOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -120,43 +91,11 @@ func (o *WalletQr) GetExpiresAtOk() (*time.Time, bool) {
 }
 
 // SetExpiresAt sets field value
-func (o *WalletQr) SetExpiresAt(v time.Time) {
+func (o *WalletQrTokensInner) SetExpiresAt(v time.Time) {
 	o.ExpiresAt = v
 }
 
-// GetTokens returns the Tokens field value if set, zero value otherwise.
-func (o *WalletQr) GetTokens() []WalletQrTokensInner {
-	if o == nil || IsNil(o.Tokens) {
-		var ret []WalletQrTokensInner
-		return ret
-	}
-	return o.Tokens
-}
-
-// GetTokensOk returns a tuple with the Tokens field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *WalletQr) GetTokensOk() ([]WalletQrTokensInner, bool) {
-	if o == nil || IsNil(o.Tokens) {
-		return nil, false
-	}
-	return o.Tokens, true
-}
-
-// HasTokens returns a boolean if a field has been set.
-func (o *WalletQr) HasTokens() bool {
-	if o != nil && !IsNil(o.Tokens) {
-		return true
-	}
-
-	return false
-}
-
-// SetTokens gets a reference to the given []WalletQrTokensInner and assigns it to the Tokens field.
-func (o *WalletQr) SetTokens(v []WalletQrTokensInner) {
-	o.Tokens = v
-}
-
-func (o WalletQr) MarshalJSON() ([]byte, error) {
+func (o WalletQrTokensInner) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -164,28 +103,18 @@ func (o WalletQr) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o WalletQr) ToMap() (map[string]interface{}, error) {
+func (o WalletQrTokensInner) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["voucherId"] = o.VoucherId.Get()
 	toSerialize["token"] = o.Token
 	toSerialize["expiresAt"] = o.ExpiresAt
-	if !IsNil(o.Tokens) {
-		toSerialize["tokens"] = o.Tokens
-	}
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
-func (o *WalletQr) UnmarshalJSON(data []byte) (err error) {
+func (o *WalletQrTokensInner) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"voucherId",
 		"token",
 		"expiresAt",
 	}
@@ -204,61 +133,53 @@ func (o *WalletQr) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varWalletQr := _WalletQr{}
+	varWalletQrTokensInner := _WalletQrTokensInner{}
 
-	err = json.Unmarshal(data, &varWalletQr)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varWalletQrTokensInner)
 
 	if err != nil {
 		return err
 	}
 
-	*o = WalletQr(varWalletQr)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "voucherId")
-		delete(additionalProperties, "token")
-		delete(additionalProperties, "expiresAt")
-		delete(additionalProperties, "tokens")
-		o.AdditionalProperties = additionalProperties
-	}
+	*o = WalletQrTokensInner(varWalletQrTokensInner)
 
 	return err
 }
 
-type NullableWalletQr struct {
-	value *WalletQr
+type NullableWalletQrTokensInner struct {
+	value *WalletQrTokensInner
 	isSet bool
 }
 
-func (v NullableWalletQr) Get() *WalletQr {
+func (v NullableWalletQrTokensInner) Get() *WalletQrTokensInner {
 	return v.value
 }
 
-func (v *NullableWalletQr) Set(val *WalletQr) {
+func (v *NullableWalletQrTokensInner) Set(val *WalletQrTokensInner) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableWalletQr) IsSet() bool {
+func (v NullableWalletQrTokensInner) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableWalletQr) Unset() {
+func (v *NullableWalletQrTokensInner) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableWalletQr(val *WalletQr) *NullableWalletQr {
-	return &NullableWalletQr{value: val, isSet: true}
+func NewNullableWalletQrTokensInner(val *WalletQrTokensInner) *NullableWalletQrTokensInner {
+	return &NullableWalletQrTokensInner{value: val, isSet: true}
 }
 
-func (v NullableWalletQr) MarshalJSON() ([]byte, error) {
+func (v NullableWalletQrTokensInner) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableWalletQr) UnmarshalJSON(src []byte) error {
+func (v *NullableWalletQrTokensInner) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

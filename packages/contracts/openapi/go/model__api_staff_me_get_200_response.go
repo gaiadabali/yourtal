@@ -23,7 +23,7 @@ type ApiStaffMeGet200Response struct {
 	UserId NullableString `json:"userId"`
 	Email NullableString `json:"email"`
 	Roles []string `json:"roles"`
-	Region string `json:"region"`
+	Region NullableString `json:"region"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -33,7 +33,7 @@ type _ApiStaffMeGet200Response ApiStaffMeGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiStaffMeGet200Response(userId NullableString, email NullableString, roles []string, region string) *ApiStaffMeGet200Response {
+func NewApiStaffMeGet200Response(userId NullableString, email NullableString, roles []string, region NullableString) *ApiStaffMeGet200Response {
 	this := ApiStaffMeGet200Response{}
 	this.UserId = userId
 	this.Email = email
@@ -127,27 +127,29 @@ func (o *ApiStaffMeGet200Response) SetRoles(v []string) {
 }
 
 // GetRegion returns the Region field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiStaffMeGet200Response) GetRegion() string {
-	if o == nil {
+	if o == nil || o.Region.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Region
+	return *o.Region.Get()
 }
 
 // GetRegionOk returns a tuple with the Region field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiStaffMeGet200Response) GetRegionOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Region, true
+	return o.Region.Get(), o.Region.IsSet()
 }
 
 // SetRegion sets field value
 func (o *ApiStaffMeGet200Response) SetRegion(v string) {
-	o.Region = v
+	o.Region.Set(&v)
 }
 
 func (o ApiStaffMeGet200Response) MarshalJSON() ([]byte, error) {
@@ -163,7 +165,7 @@ func (o ApiStaffMeGet200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize["userId"] = o.UserId.Get()
 	toSerialize["email"] = o.Email.Get()
 	toSerialize["roles"] = o.Roles
-	toSerialize["region"] = o.Region
+	toSerialize["region"] = o.Region.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

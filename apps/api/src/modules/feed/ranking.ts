@@ -1,6 +1,6 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Audience } from "@yourtal/contracts/audience/audience";
-import type { FeedItem } from "@yourtal/contracts/feed";
+import type { FeedItem, FeedWhyReason } from "@yourtal/contracts/feed";
 import { toPoints } from "@yourtal/contracts/money";
 import type { Region } from "@yourtal/contracts/region";
 import type { CampaignRewardConfigRow } from "../campaign/persistence/campaign.repository";
@@ -121,6 +121,14 @@ function scoreOf(candidate: CandidateCampaign, signals: Signals, ctx: RankingCon
   return score;
 }
 
+function whyReasonFor(signals: Signals): FeedWhyReason {
+  if (signals.followed) return "followed";
+  if (signals.interestMatch) return "interest";
+  if (signals.audienceMatch) return "audience";
+  if (signals.endingSoon) return "ending_soon";
+  return "popular";
+}
+
 function whyFor(signals: Signals, campaign: Campaign): string {
   if (signals.followed) return `Because you follow ${campaign.merchantName}`;
   if (signals.interestMatch) return "Matches an interest you declared";
@@ -153,6 +161,7 @@ export function toFeedItem(candidate: CandidateCampaign, signals: Signals): Feed
     openViewing: campaign.openViewing,
     endingSoon: signals.endingSoon,
     why: whyFor(signals, campaign),
+    whyReason: whyReasonFor(signals),
   };
 }
 

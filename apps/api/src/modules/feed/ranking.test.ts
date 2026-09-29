@@ -241,6 +241,7 @@ describe("buildFeed", () => {
       questionCount: 3,
       estimatedDataMb: 120,
       maxRewardPoints: 112,
+      whyReason: "popular",
     });
   });
 });

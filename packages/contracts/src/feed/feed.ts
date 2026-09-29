@@ -14,6 +14,15 @@ import { campaignKindSchema } from "../campaign/campaign";
  * from here. Additive only if it changes: nothing here is removed without
  * saying so in the commit that does it.
  */
+export const feedWhyReasonSchema = z.enum([
+  "followed",
+  "interest",
+  "audience",
+  "ending_soon",
+  "popular",
+]);
+export type FeedWhyReason = z.infer<typeof feedWhyReasonSchema>;
+
 export const feedSurfaceSchema = z.enum(["home", "watch"]);
 export type FeedSurface = z.infer<typeof feedSurfaceSchema>;
 
@@ -47,6 +56,8 @@ export const feedItemSchema = z.object({
   endingSoon: z.boolean(),
   /** One short, human-readable reason this item is here (docs/17 "why"). */
   why: z.string().min(1),
+  /** The same reason as a code, so clients can say it in the viewer's language (F78). */
+  whyReason: feedWhyReasonSchema,
 });
 export type FeedItem = z.infer<typeof feedItemSchema>;
 

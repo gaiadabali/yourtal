@@ -41,6 +41,7 @@ type FeedItem struct {
 	OpenViewing bool `json:"openViewing"`
 	EndingSoon bool `json:"endingSoon"`
 	Why string `json:"why"`
+	WhyReason string `json:"whyReason"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -50,7 +51,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason string) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -71,6 +72,7 @@ func NewFeedItem(campaignId NullableString, businessId NullableString, merchantN
 	this.OpenViewing = openViewing
 	this.EndingSoon = endingSoon
 	this.Why = why
+	this.WhyReason = whyReason
 	return &this
 }
 
@@ -544,6 +546,30 @@ func (o *FeedItem) SetWhy(v string) {
 	o.Why = v
 }
 
+// GetWhyReason returns the WhyReason field value
+func (o *FeedItem) GetWhyReason() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.WhyReason
+}
+
+// GetWhyReasonOk returns a tuple with the WhyReason field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetWhyReasonOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.WhyReason, true
+}
+
+// SetWhyReason sets field value
+func (o *FeedItem) SetWhyReason(v string) {
+	o.WhyReason = v
+}
+
 func (o FeedItem) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -573,6 +599,7 @@ func (o FeedItem) ToMap() (map[string]interface{}, error) {
 	toSerialize["openViewing"] = o.OpenViewing
 	toSerialize["endingSoon"] = o.EndingSoon
 	toSerialize["why"] = o.Why
+	toSerialize["whyReason"] = o.WhyReason
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -605,6 +632,7 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		"openViewing",
 		"endingSoon",
 		"why",
+		"whyReason",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -653,6 +681,7 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "openViewing")
 		delete(additionalProperties, "endingSoon")
 		delete(additionalProperties, "why")
+		delete(additionalProperties, "whyReason")
 		o.AdditionalProperties = additionalProperties
 	}
 

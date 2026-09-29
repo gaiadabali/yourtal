@@ -199,7 +199,13 @@ test.describe.serial("12.2.c: /guardian/[token] — pending -> granted -> revoke
     await shotEveryCombo(browser, "revoked", async (p) => {
       await p.goto(`/guardian/${token}`);
       await expect(p.getByRole("heading", { name: "Approval withdrawn" })).toBeVisible();
-      await expect(p.getByRole("button")).toHaveCount(0);
+      // No approve/withdraw controls left — final for this link (12.1.a).
+      // Not a bare `getByRole("button")` count of 0: `next dev`'s own
+      // floating "Open Next.js Dev Tools" button is dev-only chrome, not
+      // part of this page, and would make that assertion fail for a
+      // reason that has nothing to do with this ticket.
+      await expect(p.getByRole("button", { name: "Approve" })).toHaveCount(0);
+      await expect(p.getByRole("button", { name: /withdraw approval/i })).toHaveCount(0);
     });
   });
 

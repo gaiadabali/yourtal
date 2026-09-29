@@ -70,9 +70,19 @@ export class DrizzleGuardianConsentRepository implements GuardianConsentReposito
     const runner = tx ?? this.db;
     // Either starting state (pending or granted) qualifies — only an
     // already-revoked row (12.1.a: "revoked is final") refuses.
+    //
+    // 12.2.c: `approvedAt: null` here is not optional — the migration's own
+    // `guardian_consent_not_both_approved_and_revoked` CHECK
+    // (`approved_at IS NULL OR revoked_at IS NULL`) means revoking a row
+    // that already carries an `approvedAt` (the ordinary "guardian
+    // approved, then later withdrew" case — the SAME link, later, per this
+    // table's own migration comment) would otherwise 500 on that
+    // constraint on every real revoke-after-approve, the whole point of
+    // this method. Found live: the granted -> revoked step of `/guardian/
+    // [token]`'s own e2e Check 500'd until this line was added.
     const claimed = await runner
       .update(guardianConsents)
-      .set({ revokedAt: now, updatedAt: now })
+      .set({ revokedAt: now, approvedAt: null, updatedAt: now })
       .where(
         and(eq(guardianConsents.tokenHash, tokenHash), sql`${guardianConsents.revokedAt} IS NULL`),
       )

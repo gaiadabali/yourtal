@@ -246,4 +246,50 @@ describe("12.1.a — guardian consent: revoke", () => {
     expect(revokeAgain.statusCode).toBe(201);
     expect(revokeAgain.json()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
   });
+
+  /**
+   * 12.2.c: the real-world revoke path — approve, THEN withdraw with the
+   * same link — against the real DB and its
+   * `guardian_consent_not_both_approved_and_revoked` CHECK
+   * (`identity.guardian_consent`'s own migration). The suite above only
+   * ever revokes a row that was never approved; that left
+   * `DrizzleGuardianConsentRepository.revoke` not clearing `approvedAt`
+   * unexercised, so it 500'd on this exact constraint the first time a
+   * real guardian actually withdrew an approval it had already given —
+   * found live building `/guardian/[token]`'s own e2e Check.
+   */
+  it("revokes an already-approved consent — the ordinary 'approved, then later withdrawn' path", async () => {
+    const guardianEmail = `guardian+${randomUUID()}@example.test`;
+    const register = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID() },
+      payload: registerPayload(guardianEmail),
+    });
+    expect(register.statusCode).toBeLessThan(300);
+    const registeredBody: { userId: string; token: string } = register.json();
+    const { userId } = registeredBody;
+    const email = await latestGuardianConsentEmail(guardianEmail);
+
+    const approve = await app.inject({
+      method: "POST",
+      url: `/api/guardian/${email!.token}/approve`,
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID() },
+      payload: { confirmAdult: true },
+    });
+    expect(approve.statusCode).toBe(201);
+    expect(await parentConsentStatusFor(userId)).toBe("granted");
+
+    const revoke = await app.inject({
+      method: "POST",
+      url: `/api/guardian/${email!.token}/revoke`,
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID() },
+    });
+    expect(revoke.statusCode).toBe(201);
+    expect(revoke.json()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
+    expect(await parentConsentStatusFor(userId)).toBe("revoked");
+  });
 });

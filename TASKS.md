@@ -81,8 +81,8 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **10** Settlement, lifecycle & risk | 2026-09-29 | Two agents. A (`yourtal-1`, `phase/10`, db `yourtal_s1`, api 26311, Cerbos 26315): 10.1 → 10.3 → 10.6. B (`yourtal-p7-b`, `phase/10-b`, db `yourtal_s4b`, api 26411, Cerbos `yourtal-cerbos-p10b` 26415): 10.4 → 10.2 → 10.5 (10.5 after 10.1 merges) |
 | 2 | `yourtal-2` | **9** Staff console | 2026-09-29 | Resumed: Phase 7 ✅, so 7.3's blocks are gone. 9.1, 9.4, 9.5 ✅; 9.2.c, 9.3.a merged. Two agents (Sonnet): B (`yourtal-p9-b`, `phase/9-b`, db `yourtal_s9b`, 26470/26471, Cerbos 26475) finishes 9.3.b's submit half on staging; E (`yourtal-p9-c`, `phase/9-e`, db `yourtal_s9c`, 26480/26481, Cerbos 26485) builds 9.2.a and 9.2.b. Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check, and its burns are not region-tagged. Carried for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | free | **6** Viewer app — ✅ done | 2026-09-27 | Phase 6 done: 6.7 ✅ (c8d0dab); 6.5 ✅ (aae765a, incl. 4.8.c requested of A); 6.2 ✅ (e747877f, agent D); 6.1 ✅ (63cc61b, agent A); 6.9 ✅ (53317515, agent B — 6.9.d's CI run also surfaced F49, fixed same session, and F50, unrelated/left for whoever owns `packages/media`'s CI setup). All four agents' worktrees left in place, slot 3 free for the next phase. C's worktree `yourtal-p6-c` is done; its db `yourtal_s3c` has stale revision rows for the renamed watch migrations (repoint like `yourtal_s2`, or leave: nothing else uses it). Slot 3b's own db `yourtal_s3b` hit the SAME stale-revision issue (F34/F36 watch migration rename) mid-6.5 — resolved by drop+recreate (it holds no long-lived data, only this session's own fixtures). Also fixed while verifying 6.1.e (own commit on main, not this row's own subtask): `features/me/me-section-states.tsx` was missing `"use client"`, crashing all of Me on any real section error — see 6.1.e's own note. |
-| 4 | `yourtal-4` | free | 2026-09-27 | Phase 2 ✅ (all five tasks). Slot db `yourtal_s4`, ports 26360–26366 stay for the next phase |
-| 2b | `yourtal-p11` | **11** Public site (early slice, F26) | 2026-09-26 | 11.3.a ✅ (d2ae6ab); 11.3.b merged except `VideoObject` (11fc23d). **Phase 11 is now "Viewer feed & public site" (F40)** and also holds the feed, watch page, store and search (11.4–11.7, from Phase 6), in the order 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. Everything left needs Phase 7 (7.4, 7.7); slot free, worktree left in place |
+| 4 | `yourtal-4` | **11** Viewer feed & public site | 2026-09-29 | One agent (`yourtal-4`, `phase/11`, db `yourtal_s4`, web 26360, api 26361, Cerbos 26365). Order 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. Now 11.4 |
+| 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
 **Ready to start, no slot yet:** none.
@@ -1292,7 +1292,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 
 Everything the viewer does with campaigns and listings, signed in or not, which needs Phase 7's feed and inventory. Work in this order, which overrides task order: 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. The Phase 6 screen rules (live data, primitives, copy pass, every state, screenshots with axe) apply to 11.4–11.7.
 
-- [ ] **11.1 Landing page and chooser** · needs: 3.5, 7.2.e, 7.7 — ⛔ 7.7
+- [ ] **11.1 Landing page and chooser** · needs: 3.5, 7.2.e, 7.7
   - [ ] 11.1.a `/` becomes a public landing page, with logged-in visitors sent to `/home`:
     - a hero with real campaign video;
     - how it works in three steps;
@@ -1300,18 +1300,18 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - a crawlable region and language chooser with no IP redirect, AU first, plus `x-default`.
   - [ ] 11.1.b A logged-out For You feed of Open Viewing teasers on `/au` and `/id`.
   - [ ] 11.1.c **Check:** a logged-out visitor sees the landing page in English; a logged-in one lands on the feed.
-- [ ] **11.2 Real data** · needs: 7.7 — ⛔ 7.7
+- [ ] **11.2 Real data** · needs: 7.7
   - [ ] 11.2.a `/au` and `/id` read the API with revalidation. **Channel pages live at the existing `/[locale]/m/[handle]` route** (keyed by business handle), and campaign pages stay at `/[locale]/c/[campaignId]`.
   - [ ] 11.2.b Open Viewing (F8): only campaigns with `openViewing` that are rated all_ages play logged-out through a **non-earning anonymous watch session**, which returns the same per-session signed manifest URL as 5.1.d and counts against the F12 per-IP limit. `/media/hls/` never becomes public. Other campaigns show their poster and terms with "Sign in to watch". Sign-up returns to **the same campaign**; today it lands on a different, synthesised one.
   - [ ] 11.2.d (moved from 7.6.a) Open views in Studio reports: count 11.2.b's anonymous sessions per campaign as a separate metric from a separate query in `apps/api/src/modules/reports` (Area C), never summed with rewarded views, suppressed below the F12 cohort floor.
   - [ ] 11.2.c **Check:** a campaign created in Studio appears on the public page without a rebuild, and an adult-rated campaign cannot be played logged-out.
-- [ ] **11.3 SEO and trust pages** · needs: 11.2 — 🔄 slot 2b (early slice F26: a and b without JSON-LD)
+- [ ] **11.3 SEO and trust pages** · needs: 11.2 — 🔄 slot 4 (a done; b open for `VideoObject` only)
   - [x] 11.3.a Help / FAQ, how points work, for business, and terms and privacy (marked draft on staging). A branded 404 and branded OG cards.
   - [ ] 11.3.b `VideoObject` JSON-LD, sitemap and robots fixes (`/id/` rather than a bare `/id` prefix, and a configurable site URL), and `llms.txt`. Everything is `noindex` while `APP_ENV=staging`. — everything except `VideoObject` is on main (11fc23d): `SITE_URL`, `/au/` and `/id/` robots rules, info pages in the sitemap, `llms.txt`, and staging `noindex` in meta and `X-Robots-Tag`. `VideoObject` is ⛔ 7.7 (needs real campaign media)
   - [ ] 11.3.c (requested by A) `/[locale]/transparency`, listing each day's root from `GET /api/proof/roots` (10.3.b); the page shows the same root the API returns (moved from 10.3.d's Check). · needs: 10.3.b
   - [ ] 11.3.d **Check:** a crawl of staging finds no broken links and no page without a title or description. — dry run 2026-09-26 on a local staging build: 303 URLs, no page without a title or description; the only broken link is `/login`, which the 1.7.c gate redirects to and 6.2.a builds
 
-- [ ] **11.4 Home: the For You feed** · needs: 3.5, 7.7, 5.3, 6.2 (moved from 6.3)
+- [ ] **11.4 Home: the For You feed** · needs: 3.5, 7.7, 5.3, 6.2 (moved from 6.3) — 🔄 slot 4
   - [ ] 11.4.a A vertical feed of campaign teasers from C's feed API. Each item shows the channel avatar, the title and honest terms before any action: "18 min · 3 questions · up to 112 pts · ~120 MB · finish to earn" (AU; F12).
   - [ ] 11.4.b **Quick campaigns (under 60 s, so they have no questions; F15) earn inside the feed.** Tapping Earn starts a reward session in place, and the earn moment lands in the item before the user swipes on. Longer campaigns show a teaser and **Watch & earn**. `/quick` redirects to Home.
   - [ ] 11.4.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.

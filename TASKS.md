@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 0/7 | 5/26 | `██░░░░░░░░`  19% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/34 | `░░░░░░░░░░`   3% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/35 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **65/91** | **351/439** | `████████░░`  80% |
+| **All** | | | **65/91** | **351/440** | `████████░░`  80% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1305,6 +1305,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - a "for businesses" section, following the Phase 3 copy rules;
     - a crawlable region and language chooser with no IP redirect, AU first, plus `x-default`.
   - [ ] 11.1.b A logged-out For You feed of Open Viewing teasers on `/au` and `/id`.
+  - [ ] 11.1.d (F79) Logged-out visitors get the same viewer shell as signed-in ones: side nav from 1024 px and bottom nav on mobile on `/au` and `/id`. Home and Store are browsable logged out; Wallet and Me show a sign-in prompt; the top bar shows "Sign up to earn" instead of the points chip. The public pages stay cacheable (no `cookies()` in the public tree).
   - [ ] 11.1.c **Check:** a logged-out visitor sees the landing page in English; a logged-in one lands on the feed.
 - [ ] **11.2 Real data** · needs: 7.7 — 🔄 slot 4 agent C (11.2.a with 11.1.b)
   - [ ] 11.2.a `/au` and `/id` read the API with revalidation. **Channel pages live at the existing `/[locale]/m/[handle]` route** (keyed by business handle), and campaign pages stay at `/[locale]/c/[campaignId]`.
@@ -1513,6 +1514,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 | **F76** | 9.3.b's staging run needs an `ops` staff account on staging's database, and granting one only works over SSH on Helios | **The lead session runs it once** (founder, 2026-09-29), like F73: `pnpm staff:add <demo email> ops` inside `/opt/yourtal` only, then the Studio → KYB approve → submit flow against the staging URL. Nothing else on the box is touched, and no secret leaves it. |
 | **F77** | Every staging deploy since 1ca6dfb0 (9.5) failed: `20260929050100_staff_economy_proposal.sql` reached main after staging had applied `20260929060000` (Atlas out-of-order), so staging stayed on 15f56dc | **Renamed it to `20260929060100`** (bae7ef26), like F34/F51: staging never applied the old name; `yourtal_s9b/c/d`'s revision rows were repointed. The 9.5 agent had missed the rename-before-merge rule. |
 | **F78** | 11.4.a's terms line needs question count, max reward (base + bonus), data size, kind and channel handle on each feed item; the mapping is Area C's `feed/ranking.ts` and Phase 7 is closed | **Phase 11 writes it.** B extends its `feed` contract and the mapping in C's `toFeedItem` (11.4.g), additive only, with C's feed tests kept green. |
+| **F79** | Should logged-out visitors see the sidebar and bottom nav? | **Yes, one shell for everyone**, like YouTube. `/au` and `/id` use the viewer shell; Home and the rewards store are browsable logged out; Wallet and Me show a sign-in prompt; "Sign up to earn" replaces the points chip (11.1.d). |
 | **Helios is shared** with about 30 client sites | Loopback only, the `yourtal.slice` CPU and memory caps, and nightly backups including the keyring. |
 | **Legal exposure from teen mode** | Flag off outside staging until 12.4. No social features anywhere. Guardian consent from day one. |
 | **A public repo** (F6) | Role passwords are set on Helios from secrets, gitleaks runs in CI, and the security gaps listed in the audit close in Phases 1, 4 and 5. |

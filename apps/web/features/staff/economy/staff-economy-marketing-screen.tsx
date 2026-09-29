@@ -64,7 +64,7 @@ export function StaffEconomyMarketingScreen({
           ) : (
             <DataTable
               caption={t("economy.marketingTitle")}
-              rows={fundings}
+              rows={[...fundings]}
               getRowKey={(row) => row.id}
               columns={[
                 { key: "summary", header: t("economy.purchaseSummary"), cell: (row) => row.summary },
@@ -126,7 +126,7 @@ export function StaffEconomyMarketingScreen({
           ) : (
             <DataTable
               caption={t("economy.killSwitchesTitle")}
-              rows={killSwitches}
+              rows={[...killSwitches]}
               getRowKey={(row) => row.killSwitchId}
               columns={[
                 { key: "scope", header: t("economy.killSwitchScope"), cell: (row) => row.scope },

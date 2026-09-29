@@ -293,7 +293,9 @@
     "pendingSettingsEmptyTitle": "Tidak ada perubahan pengaturan yang menunggu",
     "proposeSettingTitle": "Ajukan perubahan pengaturan",
     "settingKeyLabel": "Kunci pengaturan",
+    "settingKeyPlaceholder": "daily_earn_cap",
     "settingValueLabel": "Nilai baru (JSON)",
+    "settingValuePlaceholder": "600 atau {\"enabled\": true, \"inactivityMonths\": 12}",
     "proposeSettingSubmit": "Ajukan perubahan",
     "flash": {
       "proposed": "Perubahan diajukan dan menunggu penyetuju kedua.",

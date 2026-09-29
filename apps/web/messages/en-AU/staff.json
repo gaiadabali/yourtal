@@ -293,7 +293,9 @@
     "pendingSettingsEmptyTitle": "No setting change is pending",
     "proposeSettingTitle": "Propose a setting change",
     "settingKeyLabel": "Setting key",
+    "settingKeyPlaceholder": "daily_earn_cap",
     "settingValueLabel": "New value (JSON)",
+    "settingValuePlaceholder": "600 or {\"enabled\": true, \"inactivityMonths\": 12}",
     "proposeSettingSubmit": "Propose change",
     "flash": {
       "proposed": "The change was proposed and is awaiting a second approver.",

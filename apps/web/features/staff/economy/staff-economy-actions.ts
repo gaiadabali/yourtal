@@ -3,10 +3,7 @@
 import type { Route } from "next";
 import { redirect } from "next/navigation";
 import type { ZodType } from "zod";
-import {
-  decideProposalBodySchema,
-  economyProposalSchema,
-} from "@yourtal/contracts/staff/economy";
+import { economyProposalSchema } from "@yourtal/contracts/staff/economy";
 import { killSwitchSchema } from "@yourtal/contracts/voucher-internal/kill-switch";
 import { apiFetch } from "@/lib/api/api-fetch";
 

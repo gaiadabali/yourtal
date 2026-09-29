@@ -75,7 +75,7 @@ export function StaffEconomySettingsScreen({
     typeof expiry?.value === "object" &&
     expiry.value !== null &&
     "enabled" in expiry.value &&
-    (expiry.value as { enabled: unknown }).enabled === true;
+    expiry.value.enabled === true;
 
   return (
     <div className="flex flex-col gap-6">
@@ -173,14 +173,14 @@ export function StaffEconomySettingsScreen({
               <Input
                 name="key"
                 label={t("economy.settingKeyLabel")}
-                placeholder="daily_earn_cap"
+                placeholder={t("economy.settingKeyPlaceholder")}
                 required
                 className="w-72"
               />
               <Textarea
                 name="value"
                 label={t("economy.settingValueLabel")}
-                placeholder={'600 or {"enabled": true, "inactivityMonths": 12}'}
+                placeholder={t("economy.settingValuePlaceholder")}
                 required
               />
               <Textarea name="reason" label={t("economy.optionalReasonLabel")} />

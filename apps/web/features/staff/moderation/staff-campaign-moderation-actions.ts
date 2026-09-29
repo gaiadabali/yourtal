@@ -8,8 +8,7 @@ import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiError } from "@/lib/api/api-fetch";
 
 export type StaffCampaignModerationActionResult =
-  | { ok: true; campaign: StaffCampaignModerationCampaign }
-  | { ok: false; error: ApiError };
+  { ok: true; campaign: StaffCampaignModerationCampaign } | { ok: false; error: ApiError };
 
 async function post(path: string, body: unknown): Promise<StaffCampaignModerationActionResult> {
   const result = await apiFetch(path, staffCampaignModerationCampaignSchema, {

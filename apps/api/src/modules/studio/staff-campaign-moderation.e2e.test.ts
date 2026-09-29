@@ -40,7 +40,10 @@ async function ownerAt() {
 }
 
 async function markKybVerified(businessId: string) {
-  await db.update(businessAccounts).set({ isVerified: true }).where(eq(businessAccounts.id, businessId));
+  await db
+    .update(businessAccounts)
+    .set({ isVerified: true })
+    .where(eq(businessAccounts.id, businessId));
 }
 
 async function fillMedia(campaignId: string) {
@@ -198,7 +201,9 @@ describe("9.2.a/9.2.b: staff campaign moderation", () => {
       headers: { cookie: viewer.cookie },
     });
     expect(feed.statusCode, feed.body).toBe(200);
-    const feedIds = feed.json<{ items: Array<{ campaignId: string }> }>().items.map((item) => item.campaignId);
+    const feedIds = feed
+      .json<{ items: Array<{ campaignId: string }> }>()
+      .items.map((item) => item.campaignId);
     expect(feedIds).toContain(campaignId);
 
     const audit = await ownerPool().query(
@@ -225,12 +230,12 @@ describe("9.2.a/9.2.b: staff campaign moderation", () => {
       payload: { reason: "the teaser does not match the platform's disclosure requirements" },
     });
     expect(rejected.statusCode, rejected.body).toBe(201);
-    expect(rejected.json<{ lifecycleState: string; rejectionReason: string | null }>()).toMatchObject(
-      {
-        lifecycleState: "rejected",
-        rejectionReason: "the teaser does not match the platform's disclosure requirements",
-      },
-    );
+    expect(
+      rejected.json<{ lifecycleState: string; rejectionReason: string | null }>(),
+    ).toMatchObject({
+      lifecycleState: "rejected",
+      rejectionReason: "the teaser does not match the platform's disclosure requirements",
+    });
 
     // The business's OWN draft read (Studio) shows the exact reason.
     const draft = await app.inject({
@@ -257,7 +262,10 @@ describe("9.2.a/9.2.b: staff campaign moderation", () => {
       method: "POST",
       url: `/api/staff/moderation/campaigns/${campaignId}/approve`,
       headers: { cookie: staff.cookie, "idempotency-key": randomUUID() },
-      payload: { reason: "confirmed: alcohol, adult-only, correctly declared", contentCategory: "alcohol" },
+      payload: {
+        reason: "confirmed: alcohol, adult-only, correctly declared",
+        contentCategory: "alcohol",
+      },
     });
     expect(approved.statusCode, approved.body).toBe(201);
     expect(approved.json<{ audience: string; contentCategory: string }>()).toMatchObject({

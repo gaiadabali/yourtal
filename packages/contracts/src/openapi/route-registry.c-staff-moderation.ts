@@ -59,7 +59,8 @@ const CAMPAIGN_ID_PARAM: RoutePathParam = {
 
 const CAMPAIGN_NOT_FOUND: RouteErrorResponse = {
   status: 404,
-  description: "No campaign exists with this id (studio/to-http-exception.ts's campaign_not_found).",
+  description:
+    "No campaign exists with this id (studio/to-http-exception.ts's campaign_not_found).",
   documented: true,
 };
 
@@ -159,7 +160,8 @@ export const STAFF_MODERATION_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "post",
     path: "/api/staff/moderation/campaigns/{campaignId}/reject",
-    summary: "Reject an in-review campaign, with a reason Studio shows the business (moderator only)",
+    summary:
+      "Reject an in-review campaign, with a reason Studio shows the business (moderator only)",
     tags: ["staff"],
     pathParams: [CAMPAIGN_ID_PARAM],
     requestBody: {

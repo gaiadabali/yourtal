@@ -2,17 +2,17 @@ import { errAsync, ResultAsync } from "neverthrow";
 import { detectPiiRequest, detectPredictionRequest } from "@yourtal/contracts/question/pii-guard";
 import type { Audience } from "@yourtal/contracts/campaign";
 import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
-import type { CampaignDraft, CampaignDraftRepository } from "../persistence/campaign-draft.repository";
+import type {
+  CampaignDraft,
+  CampaignDraftRepository,
+} from "../persistence/campaign-draft.repository";
 import type { QuestionBankRepository } from "../persistence/question-bank.repository";
 import type { RewardConfigRepository } from "../persistence/reward-config.repository";
 import type { TermsVersionRepository } from "../persistence/terms-version.repository";
 import type { CampaignPublishedPublisher } from "../campaign-published-publisher";
 import { transitionCampaignLifecycle } from "./transition-campaign-lifecycle.use-case";
 import { categoryRefusal } from "./category-policy";
-import type {
-  ListCampaignModerationQueueError,
-  ModerateCampaignError,
-} from "../studio.errors";
+import type { ListCampaignModerationQueueError, ModerateCampaignError } from "../studio.errors";
 
 /**
  * TASKS.md 9.2.a: the campaign half of the staff moderation queue. Reuses
@@ -220,11 +220,10 @@ export function rejectCampaignModeration(
       campaignId,
       "rejected",
       reason,
-    ).mapErr(
-      (error): ModerateCampaignError =>
-        error.type === "campaign_not_found"
-          ? { type: "campaign_not_found", campaignId: error.campaignId }
-          : error,
+    ).mapErr((error): ModerateCampaignError =>
+      error.type === "campaign_not_found"
+        ? { type: "campaign_not_found", campaignId: error.campaignId }
+        : error,
     );
   });
 }

@@ -69,7 +69,11 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
   }
 
   async findByIdAnyBusiness(campaignId: string): Promise<CampaignDraft | null> {
-    const [row] = await this.db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
+    const [row] = await this.db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId))
+      .limit(1);
     if (row === undefined) return null;
     return toDomain(row, await this.chaptersFor(campaignId));
   }

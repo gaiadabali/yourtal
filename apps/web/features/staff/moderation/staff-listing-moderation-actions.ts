@@ -8,8 +8,7 @@ import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiError } from "@/lib/api/api-fetch";
 
 export type StaffListingModerationActionResult =
-  | { ok: true; listing: StaffListingModerationItem }
-  | { ok: false; error: ApiError };
+  { ok: true; listing: StaffListingModerationItem } | { ok: false; error: ApiError };
 
 async function post(path: string, reason: string): Promise<StaffListingModerationActionResult> {
   const result = await apiFetch(path, staffListingModerationItemSchema, {

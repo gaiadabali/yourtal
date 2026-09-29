@@ -173,12 +173,12 @@ describe("9.2.a: staff listing moderation", () => {
       payload: { reason: "creative does not meet the platform's dating-category guidelines" },
     });
     expect(rejected.statusCode, rejected.body).toBe(201);
-    expect(rejected.json<{ lifecycleState: string; rejectionReason: string | null }>()).toMatchObject(
-      {
-        lifecycleState: "rejected",
-        rejectionReason: "creative does not meet the platform's dating-category guidelines",
-      },
-    );
+    expect(
+      rejected.json<{ lifecycleState: string; rejectionReason: string | null }>(),
+    ).toMatchObject({
+      lifecycleState: "rejected",
+      rejectionReason: "creative does not meet the platform's dating-category guidelines",
+    });
 
     const publicListing = await app.inject({
       method: "GET",

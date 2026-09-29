@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 4/7 | 21/26 | `████████░░`  81% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 4/36 | `█░░░░░░░░░`  11% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 6/36 | `██░░░░░░░░`  17% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **69/91** | **370/441** | `████████░░`  84% |
+| **All** | | | **69/91** | **372/441** | `████████░░`  84% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1319,8 +1319,8 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 11.3.d **Check:** a crawl of staging finds no broken links and no page without a title or description. — dry run 2026-09-26 on a local staging build: 303 URLs, no page without a title or description; the only broken link is `/login`, which the 1.7.c gate redirects to and 6.2.a builds
 
 - [ ] **11.4 Home: the For You feed** · needs: 3.5, 7.7, 5.3, 6.2 (moved from 6.3) — 🔄 slot 4
-  - [ ] 11.4.a A vertical feed of campaign teasers from C's feed API. Each item shows the channel avatar, the title and honest terms before any action: "18 min · 3 questions · up to 112 pts · ~120 MB · finish to earn" (AU; F12).
-  - [ ] 11.4.b **Quick campaigns (under 60 s, so they have no questions; F15) earn inside the feed.** Tapping Earn starts a reward session in place, and the earn moment lands in the item before the user swipes on. Longer campaigns show a teaser and **Watch & earn**. `/quick` redirects to Home.
+  - [x] 11.4.a A vertical feed of campaign teasers from C's feed API. Each item shows the channel avatar, the title and honest terms before any action: "18 min · 3 questions · up to 112 pts · ~120 MB · finish to earn" (AU; F12).
+  - [x] 11.4.b **Quick campaigns (under 60 s, so they have no questions; F15) earn inside the feed.** Tapping Earn starts a reward session in place, and the earn moment lands in the item before the user swipes on. Longer campaigns show a teaser and **Watch & earn**. `/quick` redirects to Home.
   - [ ] 11.4.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.
   - [ ] 11.4.d Each item offers Share (Web Share API to the public campaign page, with no reward), Save, Not interested, and "Why am I seeing this?", which explains the 7.7 ranking.
   - [ ] 11.4.f (moved from 6.7.b) The autoplay setting from Me (6.7.a) holds on the feed.

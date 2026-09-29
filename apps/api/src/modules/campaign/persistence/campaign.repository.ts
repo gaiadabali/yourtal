@@ -41,9 +41,16 @@ export interface CampaignRepository {
    * 11.5.a/11.5.d: one business's own visible campaigns, newest first --
    * the watch page's "more from this channel" and the `/c/[handle]` channel
    * page's campaign grid. Same visibility rule as `listVisible`, just
-   * narrowed to one `businessId`.
+   * narrowed to one `businessId` -- including the same optional `audiences`
+   * filter (12.1.b): a channel page is public browse, so it needs the same
+   * audience wall the plain campaign list has, or a teen/anonymous visitor
+   * sees an adult-only campaign there that `GET /api/campaigns` already hid.
    */
-  listVisibleByBusiness(businessId: string, limit: number): Promise<Campaign[]>;
+  listVisibleByBusiness(
+    businessId: string,
+    limit: number,
+    audiences?: readonly Audience[],
+  ): Promise<Campaign[]>;
   /**
    * The terms version currently in force, for starting a watch session.
    * `null` when the campaign has no terms — which the migration makes

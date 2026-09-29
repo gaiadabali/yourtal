@@ -47,7 +47,11 @@ export class DrizzleCampaignRepository implements CampaignRepository {
     return assembled.filter((campaign): campaign is Campaign => campaign !== null);
   }
 
-  async listVisibleByBusiness(businessId: string, limit: number): Promise<Campaign[]> {
+  async listVisibleByBusiness(
+    businessId: string,
+    limit: number,
+    audiences?: readonly Audience[],
+  ): Promise<Campaign[]> {
     const rows = await this.db
       .select()
       .from(campaigns)
@@ -55,6 +59,11 @@ export class DrizzleCampaignRepository implements CampaignRepository {
         and(
           eq(campaigns.businessId, businessId),
           inArray(campaigns.lifecycleState, VISIBLE_STATES),
+          // 12.1.b: same audience filter `listVisible` uses, see that
+          // method's own comment for why `undefined`/empty skips it.
+          audiences === undefined || audiences.length === 0
+            ? undefined
+            : inArray(campaigns.audience, audiences),
         ),
       )
       .orderBy(desc(campaigns.publishedAt))

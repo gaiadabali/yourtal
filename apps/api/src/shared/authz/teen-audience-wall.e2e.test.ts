@@ -23,6 +23,8 @@ import { DrizzleCampaignAuthzAttributesReader } from "../../modules/campaign/per
 import { DrizzleWatchSessionRepository } from "../../modules/watch/persistence/drizzle-watch-session.repository";
 import { CampaignViewAttributeLoader } from "../../modules/watch/campaign-view-attribute-loader";
 import { CampaignController } from "../../modules/campaign/campaign.controller";
+import { ChannelController } from "../../modules/campaign/channel.controller";
+import { DrizzleChannelLookupRepository } from "../../modules/campaign/persistence/drizzle-channel-lookup.repository";
 import { WatchController } from "../../modules/watch/watch.controller";
 import { StoreCatalogueController } from "../../modules/store/store-catalogue.controller";
 import { DrizzleListingRepository } from "../../modules/store/persistence/drizzle-listing.repository";
@@ -89,6 +91,12 @@ const loader = new CampaignViewAttributeLoader(
 );
 const listings = new DrizzleListingRepository(db, ledger);
 const catalogueController = new StoreCatalogueController(listings, principals, pdp);
+const channelController = new ChannelController(
+  new DrizzleChannelLookupRepository(db),
+  campaignRepository,
+  listings,
+  principals,
+);
 
 function guard(): PdpGuard {
   return new PdpGuard(new Reflector(), pdp, principals, [loader]);
@@ -121,6 +129,10 @@ let teenCampaignId = "";
 let adultCampaignId = "";
 let teenListingId = "";
 let adultListingId = "";
+const channelBusinessId = randomUUID();
+const channelHandle = `e2e-channel-${channelBusinessId.slice(0, 8)}`;
+let channelTeenCampaignId = "";
+let channelAdultCampaignId = "";
 
 const teenPendingUserId = randomUUID();
 const teenGrantedUserId = randomUUID();
@@ -133,9 +145,11 @@ function teenDateOfBirth(): string {
   return dob.toISOString().split("T")[0] ?? "2011-01-01";
 }
 
-async function insertCampaign(audience: "teen" | "adult"): Promise<string> {
+async function insertCampaign(
+  audience: "teen" | "adult",
+  businessId: string = randomUUID(),
+): Promise<string> {
   const campaignId = randomUUID();
-  const businessId = randomUUID();
   await owner.execute(sql`
     INSERT INTO campaign.campaigns
       (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
@@ -220,14 +234,28 @@ beforeAll(async () => {
   adultCampaignId = await insertCampaign("adult");
   teenListingId = await listingWithAudience("teen");
   adultListingId = await listingWithAudience("adult");
+
+  // A channel: one business, one teen-audience and one adult-audience
+  // campaign, so the channel page's own campaign grid has something to
+  // over-disclose if `ChannelController` ever stopped filtering it.
+  await owner.execute(sql`
+    INSERT INTO business.business_accounts
+      (id, legal_name, display_name, district, roles, is_verified, region, currency, handle)
+    VALUES
+      (${channelBusinessId}, '12.1.b e2e channel business', '12.1.b e2e channel business',
+       'Testville', '["advertiser"]'::jsonb, true, 'AU', 'AUD', ${channelHandle})
+  `);
+  channelTeenCampaignId = await insertCampaign("teen", channelBusinessId);
+  channelAdultCampaignId = await insertCampaign("adult", channelBusinessId);
 });
 
 afterAll(async () => {
-  for (const id of [teenCampaignId, adultCampaignId]) {
+  for (const id of [teenCampaignId, adultCampaignId, channelTeenCampaignId, channelAdultCampaignId]) {
     await owner.execute(sql`DELETE FROM campaign.terms_version WHERE campaign_id = ${id}`);
     await owner.execute(sql`DELETE FROM campaign.video_source WHERE campaign_id = ${id}`);
     await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);
   }
+  await owner.execute(sql`DELETE FROM business.business_accounts WHERE id = ${channelBusinessId}`);
   for (const id of [teenListingId, adultListingId]) {
     await owner.execute(sql`DELETE FROM store.listing_location WHERE listing_id = ${id}::uuid`);
     await owner.execute(sql`DELETE FROM store.listings WHERE id = ${id}::uuid`);
@@ -299,5 +327,31 @@ describe("GET /api/campaigns -- the list agrees with the single-item wall", () =
     const ids = campaigns.map((campaign) => campaign.id);
     expect(ids).toContain(adultCampaignId);
     expect(ids).not.toContain(teenCampaignId);
+  });
+});
+
+describe("GET /api/channels/:handle -- the channel page's campaign grid agrees with the wall too", () => {
+  it("a teen sees the channel's teen campaign but not its adult one", async () => {
+    const request = { headers: { cookie: `yt_session=${teenPendingUserId}` } } as FastifyRequest;
+    const result = await channelController.byHandle(channelHandle, request);
+    const ids = result.campaigns.map((campaign) => campaign.id);
+    expect(ids).toContain(channelTeenCampaignId);
+    expect(ids).not.toContain(channelAdultCampaignId);
+  });
+
+  it("an anonymous visitor sees neither -- an anonymous ageBand reaches only all_ages", async () => {
+    const request = { headers: {} } as FastifyRequest;
+    const result = await channelController.byHandle(channelHandle, request);
+    const ids = result.campaigns.map((campaign) => campaign.id);
+    expect(ids).not.toContain(channelTeenCampaignId);
+    expect(ids).not.toContain(channelAdultCampaignId);
+  });
+
+  it("an adult sees the channel's adult campaign but not its teen one", async () => {
+    const request = { headers: { cookie: `yt_session=${adultUserId}` } } as FastifyRequest;
+    const result = await channelController.byHandle(channelHandle, request);
+    const ids = result.campaigns.map((campaign) => campaign.id);
+    expect(ids).toContain(channelAdultCampaignId);
+    expect(ids).not.toContain(channelTeenCampaignId);
   });
 });

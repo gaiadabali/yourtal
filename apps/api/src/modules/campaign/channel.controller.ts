@@ -77,7 +77,11 @@ export class ChannelController {
     const audiences = scope.kind === "ok" ? scope.audiences : (["all_ages"] as const);
 
     const [campaigns, listingPage] = await Promise.all([
-      this.campaigns.listVisibleByBusiness(channel.businessId, CAMPAIGN_LIMIT),
+      // 12.1.b: same audience wall the listings call below already had --
+      // this campaign grid is public browse too, so a teen/anonymous
+      // visitor must not see an adult-only campaign here that
+      // `GET /api/campaigns` already hides.
+      this.campaigns.listVisibleByBusiness(channel.businessId, CAMPAIGN_LIMIT, audiences),
       this.listings.browsePublic({
         region: channel.region,
         audiences,

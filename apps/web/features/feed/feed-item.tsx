@@ -75,10 +75,14 @@ export function FeedItem({
       </div>
 
       <div className="absolute inset-x-3 bottom-4 z-20 flex max-w-[calc(100%-4.5rem)] flex-col gap-2 text-white">
-        <div className="flex items-center gap-2">
-          <ChannelAvatar name={item.merchantName} size="sm" />
+        <a href={`/c/${item.channelHandle}`} className="flex w-fit items-center gap-2">
+          <ChannelAvatar
+            name={item.merchantName}
+            size="sm"
+            {...(item.channelLogoUrl ? { src: item.channelLogoUrl } : {})}
+          />
           <span className="text-label font-sans font-semibold">{item.merchantName}</span>
-        </div>
+        </a>
         <h2 className="line-clamp-2 font-display text-title font-bold text-balance">
           {item.title}
         </h2>

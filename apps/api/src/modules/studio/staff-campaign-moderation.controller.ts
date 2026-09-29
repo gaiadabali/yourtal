@@ -1,7 +1,10 @@
 import { Body, Controller, Get, Inject, Param, Post, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import type { PdpClient } from "@yourtal/authz/pdp-client";
-import { listCampaignModerationQueueResponseSchema } from "@yourtal/contracts/staff/moderation";
+import {
+  listCampaignModerationQueueResponseSchema,
+  staffCampaignModerationCampaignSchema,
+} from "@yourtal/contracts/staff/moderation";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { mapAuthzErrorToHttpException } from "../../shared/authz/authz-error.mapper";
@@ -29,6 +32,32 @@ import {
   listCampaignModerationQueue,
   rejectCampaignModeration,
 } from "./use-cases/staff-campaign-moderation.use-cases";
+import type { CampaignDraft } from "./persistence/campaign-draft.repository";
+
+/**
+ * `CampaignDraft` is Studio's own authoring shape (chapters, media, reward
+ * mirror -- everything a business's own editor needs). A moderator's
+ * response is a narrower, documented contract
+ * (`staffCampaignModerationCampaignSchema`); returning the wider shape
+ * directly would pass `result.value` through unchanged but fail the WEB
+ * client's own strict parse of it, the exact "did not match its contract"
+ * shape docs/13b warns about.
+ */
+function toModerationCampaignPayload(draft: CampaignDraft) {
+  return staffCampaignModerationCampaignSchema.parse({
+    id: draft.id,
+    businessId: draft.businessId,
+    region: draft.region,
+    title: draft.title,
+    synopsis: draft.synopsis,
+    audience: draft.audience,
+    contentCategory: draft.contentCategory,
+    lifecycleState: draft.lifecycleState,
+    rejectionReason: draft.rejectionReason,
+    posterUrl: draft.posterUrl,
+    teaserUrl: draft.teaserUrl,
+  });
+}
 
 /**
  * TASKS.md 9.2.a: the campaign-creative half of the staff moderation queue.
@@ -69,19 +98,7 @@ export class StaffCampaignModerationController {
     if (result.isErr()) throw mapStudioErrorToHttpException(result.error);
     const payload = {
       items: result.value.map((item) => ({
-        campaign: {
-          id: item.campaign.id,
-          businessId: item.campaign.businessId,
-          region: item.campaign.region,
-          title: item.campaign.title,
-          synopsis: item.campaign.synopsis,
-          audience: item.campaign.audience,
-          contentCategory: item.campaign.contentCategory,
-          lifecycleState: item.campaign.lifecycleState,
-          rejectionReason: item.campaign.rejectionReason,
-          posterUrl: item.campaign.posterUrl,
-          teaserUrl: item.campaign.teaserUrl,
-        },
+        campaign: toModerationCampaignPayload(item.campaign),
         flags: item.flags,
       })),
     };
@@ -133,7 +150,7 @@ export class StaffCampaignModerationController {
       reason: body.reason,
       detail: { audience: result.value.audience, contentCategory: result.value.contentCategory },
     });
-    return result.value;
+    return toModerationCampaignPayload(result.value);
   }
 
   @StaffAction("campaign_moderation.reject")
@@ -180,6 +197,6 @@ export class StaffCampaignModerationController {
       region: result.value.region,
       reason: body.reason,
     });
-    return result.value;
+    return toModerationCampaignPayload(result.value);
   }
 }

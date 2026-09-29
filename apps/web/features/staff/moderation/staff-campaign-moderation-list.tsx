@@ -97,9 +97,9 @@ export function StaffCampaignModerationList({ initial }: StaffCampaignModeration
                   <StaffReasonDialogButton
                     triggerLabel={t("moderation.approveCta")}
                     triggerVariant="primary"
-                    dialogTitle={t("moderation.approveDialogTitle")}
+                    dialogTitle={t("moderation.approveCampaignDialogTitle")}
                     dialogBody={t("moderation.approveCampaignDialogBody")}
-                    submitLabel={t("moderation.approveSubmit")}
+                    submitLabel={t("moderation.approveCampaignSubmit")}
                     onSubmit={(reason) =>
                       decide(row.campaign.id, approveCampaignModerationAction, reason)
                     }
@@ -107,9 +107,9 @@ export function StaffCampaignModerationList({ initial }: StaffCampaignModeration
                   <StaffReasonDialogButton
                     triggerLabel={t("moderation.rejectCta")}
                     triggerVariant="danger"
-                    dialogTitle={t("moderation.rejectDialogTitle")}
+                    dialogTitle={t("moderation.rejectCampaignDialogTitle")}
                     dialogBody={t("moderation.rejectCampaignDialogBody")}
-                    submitLabel={t("moderation.rejectSubmit")}
+                    submitLabel={t("moderation.rejectCampaignSubmit")}
                     onSubmit={(reason) =>
                       decide(row.campaign.id, rejectCampaignModerationAction, reason)
                     }

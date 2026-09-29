@@ -80,17 +80,17 @@ export function StaffListingModerationList({ initial }: StaffListingModerationLi
                   <StaffReasonDialogButton
                     triggerLabel={t("moderation.approveCta")}
                     triggerVariant="primary"
-                    dialogTitle={t("moderation.approveDialogTitle")}
+                    dialogTitle={t("moderation.approveListingDialogTitle")}
                     dialogBody={t("moderation.approveListingDialogBody")}
-                    submitLabel={t("moderation.approveSubmit")}
+                    submitLabel={t("moderation.approveListingSubmit")}
                     onSubmit={(reason) => decide(row.id, approveListingModerationAction, reason)}
                   />
                   <StaffReasonDialogButton
                     triggerLabel={t("moderation.rejectCta")}
                     triggerVariant="danger"
-                    dialogTitle={t("moderation.rejectDialogTitle")}
+                    dialogTitle={t("moderation.rejectListingDialogTitle")}
                     dialogBody={t("moderation.rejectListingDialogBody")}
-                    submitLabel={t("moderation.rejectSubmit")}
+                    submitLabel={t("moderation.rejectListingSubmit")}
                     onSubmit={(reason) => decide(row.id, rejectListingModerationAction, reason)}
                   />
                 </div>

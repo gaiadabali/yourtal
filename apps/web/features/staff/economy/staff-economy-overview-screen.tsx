@@ -82,7 +82,7 @@ export function StaffEconomyOverviewScreen({
                 key: "status",
                 label: t("economy.coverageStatus"),
                 value:
-                  coverage.ratio >= 1 ? (
+                  coverage.nothingOwed || coverage.ratio >= 1 ? (
                     <StatusBadge status="success">{t("economy.covered")}</StatusBadge>
                   ) : (
                     <StatusBadge status="danger">{t("economy.underCovered")}</StatusBadge>

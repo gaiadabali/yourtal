@@ -276,11 +276,6 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   unpostedWebhookEventsSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   webhookEventsPostedRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   webhookEventsPostedSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
-  // 4.8.c landed these two without a NOT_PUBLISHED entry (found while
-  // rebasing 9.5 past it, unrelated to this task) -- same voucher-internal
-  // operation type as every other row in this block.
-  qrTokenWindowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
-  walletVoucherRowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- me (TASKS.md 6.7.a) ---
   autoplaySettingSchema:

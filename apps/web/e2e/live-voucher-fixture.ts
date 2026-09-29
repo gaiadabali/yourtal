@@ -140,6 +140,8 @@ export async function grantPoints(userId: string, points: number): Promise<void>
       region: "AU",
       points: toPoints(points),
       trustTier: 3,
+      // Test accounts are adults; the ledger refuses a grant without an age band.
+      ageBand: "adult",
       idempotencyKey: `live-e2e-grant-${randomUUID()}`,
     }),
   );

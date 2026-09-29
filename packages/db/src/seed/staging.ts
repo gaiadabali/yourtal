@@ -922,6 +922,8 @@ async function ensureTierZeroPendingGrant(
     region: "AU",
     points: toPoints(500),
     trustTier: 0,
+    // Demo viewers are adults; the ledger refuses a grant without an age band (12.1.c).
+    ageBand: "adult",
     idempotencyKey: "staging-seed-tier0-viewer-pending-grant",
   });
   const path = "/v1/actions/grants";
@@ -1680,6 +1682,7 @@ async function ensureDemoRedemptionBalance(
     region,
     points: toPoints(chunkPoints),
     trustTier: 3,
+    ageBand: "adult",
     idempotencyKey: `staging-seed-viewer-${region}-topup-${String(chunkIndex)}`,
   });
   const granted = await postSigned(ledger, "/v1/actions/grants", request);

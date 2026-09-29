@@ -310,7 +310,6 @@ describe("a session belongs to one user", () => {
     expect(theirs.sessions.map((row) => row.sessionId)).not.toContain(started.session.id);
   });
 
-
   it("reports someone else's session as missing, not forbidden", async () => {
     // A 403 would confirm the id exists.
     const started = await controller.start(request, { campaignId: longFormId });

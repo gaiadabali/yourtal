@@ -42,11 +42,11 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 7** Business studio | C | ✅ done | 9/9 | 46/46 | `██████████` 100% |
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
-| **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 1/7 | 14/26 | `█████░░░░░`  54% |
+| **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 2/7 | 14/26 | `█████░░░░░`  54% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 2/35 | `█░░░░░░░░░`   6% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **66/91** | **361/440** | `████████░░`  82% |
+| **All** | | | **67/91** | **361/440** | `████████░░`  82% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1523,6 +1523,8 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 ## Log
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
+
+- 2026-09-29 · A · **10.2 and 10.4 done.** Points expiry (`services/ledger/internal/expiry`, off by default per F2, 30/7-day `points_expiring` notices) and voucher expiry (`services/voucher/internal/lifecycle/expiresweep`, covering active vouchers and — via the pre-existing hold-release sweep — dead holds too), both posting through new ledger routes. The real RiskGate (`services/ledger/internal/risk`, replacing `AlwaysAllow`): velocity per user/device/IP, a "block" severity auto-holding the account's balance into escrow and writing `ledger.risk_flag` for 10.5's queue, a live daily-cap-change enforcement test, and delivery-log cross-check scaffolding (`platform.delivery_log`, a real `DeliveryCoverageReader` not yet wired — 11.5.f is B's). All suites green (`@yourtal/ledger-service`, `@yourtal/voucher-service`, `@yourtal/worker`, `@yourtal/contracts`), `pnpm check` clean, `release.yml` green, staging `/api/health` confirmed at this sha · c35b6ff2
 
 - 2026-09-29 · C · **9.3 done, Phase 9 done.** Staff businesses at `/staff/businesses` (ops): KYB approve or reject (setting `is_verified`) and suspend or reinstate, each with a required reason; a suspended business's campaigns leave `GET /api/feed`. Found and fixed: Studio's Submit button never called the real submit route. 9.3.b's Check passed locally and on staging (F76): a Studio-made business is blocked from submitting until ops approves its KYB, then submits to `in_review`. Phase 9 as a whole: shell and audit (9.1), moderation (9.2), businesses (9.3), users and support (9.4) and economy (9.5), all on merged main and staging · 779b2a53
 - 2026-09-29 · C · **9.2 done.** Staff moderation queue at `/staff/moderation`: submitted campaigns (moderator approves `in_review → live` through the same lifecycle Studio uses, optionally changing audience and category within the 1.1.d policy, or rejects with a reason Studio shows the business), listings the automated screen flags (`adult_only` → `pending_review`, ops), and voucher batches (moderator, minting through 4.5; stock rises by the batch size, proved against the real voucher service). Verified on merged main: 16/16 moderation API e2e, live `c-staff-campaign-moderation.spec.ts` 11/11, `c-staff-listing-moderation.spec.ts` 5/5 and `c-staff-moderation.spec.ts` 5/5 at 390/1280 px light/dark, axe clean · 4a224f05

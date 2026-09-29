@@ -8,6 +8,9 @@
     "lockExpiredBody": "Your price lock expired at {expiredDate}. Prices and availability can change, so we can't continue at the old price. Reload to see the current price.",
     "listingUnavailableHeading": "This item is no longer available",
     "listingUnavailableBody": "It just sold out. Try a similar offer in the Store instead.",
+    "checkoutInsufficientBody": "Your balance has changed since this price was quoted, and you no longer have enough points. Check your balance and try again.",
+    "checkoutBlockedHeading": "This purchase can't go ahead",
+    "checkoutBlockedBody": "Something about this offer or your account means we can't complete it right now. Try a different item, or try again later.",
     "redemptionFailedHeading": "Redemption failed",
     "redemptionFailedBody": "Something went wrong while processing your redemption. Your points have not been deducted — please try again."
   },
@@ -43,7 +46,7 @@
     "confirmDisclaimer": "Pressing \"Redeem now\" will deduct your points immediately and cannot be undone.",
     "processing": "Processing your redemption…",
     "successBadge": "Success",
-    "successMessage": "Voucher <bold>{voucherTitle}</bold> redeemed successfully. Your voucher code: <code>{voucherCode}</code>",
+    "successMessage": "Voucher <bold>{voucherTitle}</bold> for {merchantName} redeemed successfully. Find it in your Wallet for its QR code.",
     "viewInWallet": "View in Wallet",
     "tryAgain": "Try again",
     "reloadPrice": "Reload price",

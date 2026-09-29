@@ -8,6 +8,9 @@
     "lockExpiredBody": "Waktu kunci harga Anda sudah habis pada {expiredDate}. Harga dan ketersediaan bisa berubah, jadi kami tidak bisa melanjutkan penukaran dengan harga lama. Muat ulang untuk melihat harga terbaru.",
     "listingUnavailableHeading": "Item ini sudah tidak tersedia",
     "listingUnavailableBody": "Stoknya baru saja habis. Coba cari penawaran serupa lainnya di Toko.",
+    "checkoutInsufficientBody": "Saldo Anda berubah sejak harga ini dikutip, dan poin Anda sekarang tidak cukup. Periksa saldo Anda dan coba lagi.",
+    "checkoutBlockedHeading": "Penukaran ini tidak dapat dilanjutkan",
+    "checkoutBlockedBody": "Ada sesuatu pada penawaran ini atau akun Anda yang membuat kami tidak bisa melanjutkan sekarang. Coba item lain, atau coba lagi nanti.",
     "redemptionFailedHeading": "Penukaran gagal",
     "redemptionFailedBody": "Terjadi kendala saat memproses penukaran Anda. Poin Anda belum terpotong — silakan coba lagi."
   },
@@ -43,7 +46,7 @@
     "confirmDisclaimer": "Dengan menekan \"Tukar sekarang\", poin Anda akan langsung dipotong dan tidak dapat dibatalkan.",
     "processing": "Memproses penukaran…",
     "successBadge": "Berhasil",
-    "successMessage": "Voucher <bold>{voucherTitle}</bold> berhasil ditukar. Kode voucher Anda: <code>{voucherCode}</code>",
+    "successMessage": "Voucher <bold>{voucherTitle}</bold> dari {merchantName} berhasil ditukar. Lihat kode QR-nya di Dompet Anda.",
     "viewInWallet": "Lihat di Dompet",
     "tryAgain": "Coba lagi",
     "reloadPrice": "Muat ulang harga",

@@ -31,6 +31,8 @@ export const cachedVoucherDetailSchema = z.object({
   voucherId: z.string().check(z.minLength(1)),
   listingId: z.string().check(z.minLength(1)),
   state: z.enum(["reserved", "activated", "released"]),
+  /** 11.6.d: the same additive `status` field `wallet-data.ts` now parses — see its doc comment. */
+  status: z.optional(z.enum(["active", "redeemed", "expired", "transferred"])),
   merchantName: z.optional(z.string()),
   title: z.optional(z.string()),
   currency: z.optional(z.enum(["AUD", "IDR"])),
@@ -59,6 +61,7 @@ export interface VoucherDetailSource {
   // this type mirrors `WalletVoucherDetail`, whose optional fields come out of a
   // Zod `.optional()` parse as an always-present key that MAY be `undefined`,
   // not an omittable one — the two are different shapes under this flag.
+  status?: "active" | "redeemed" | "expired" | "transferred" | undefined;
   merchantName?: string | undefined;
   title?: string | undefined;
   currency?: "AUD" | "IDR" | undefined;

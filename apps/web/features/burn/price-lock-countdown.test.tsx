@@ -36,12 +36,13 @@ describe("PriceLockCountdown", () => {
   });
 
   it("shows a full-strength progressbar and clock right after the price is shown", () => {
-    const lockExpiresAt = new Date(NOW.getTime() + 600_000).toISOString();
+    // 15 minutes — the ledger's own real quote lock (`price-lock.ts`'s doc comment).
+    const lockExpiresAt = new Date(NOW.getTime() + 900_000).toISOString();
     renderPriceLock(<PriceLockCountdown lockExpiresAt={lockExpiresAt} onExpire={vi.fn()} />);
 
     const bar = screen.getByRole("progressbar", { name: "Sisa waktu kunci harga" });
     expect(bar).toHaveAttribute("aria-valuenow", "100");
-    expect(screen.getByRole("timer")).toHaveTextContent("10:00");
+    expect(screen.getByRole("timer")).toHaveTextContent("15:00");
   });
 
   it("switches to the expired presentation and calls onExpire once the lock runs out", () => {

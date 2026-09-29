@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PageContainer } from "@yourtal/ui/page-container";
 import { getWalletVoucher, getWalletVoucherQr } from "@/features/wallet/wallet-data";
 import { buildCachedVoucherDetail } from "@/features/wallet/voucher-detail-cache";
-import { isVoucherEffectivelyExpired } from "@/features/wallet/wallet-voucher-status-copy";
+import { isVoucherRedeemable } from "@/features/wallet/wallet-voucher-status-copy";
 import { VoucherDetailView } from "@/features/wallet/voucher-detail-view";
 
 /**
@@ -26,8 +26,7 @@ export default async function WalletVoucherDetailPage(
   }
   const voucher = voucherResult.data;
 
-  const isRedeemable =
-    voucher.state === "activated" && !isVoucherEffectivelyExpired(voucher.expiresAt, Date.now());
+  const isRedeemable = isVoucherRedeemable(voucher, Date.now());
   const qrResult = isRedeemable ? await getWalletVoucherQr(voucherId) : null;
 
   const initialDetail = buildCachedVoucherDetail(voucher, new Date().toISOString());

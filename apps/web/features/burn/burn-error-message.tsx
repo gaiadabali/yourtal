@@ -54,12 +54,22 @@ function copyFor(error: BurnError, t: BurnTranslator, locale: "en-AU" | "id-ID")
           expiredDate: formatUnlockDateTime(error.expiredAt, locale),
         }),
       };
-    case "listing_unavailable":
+    case "insufficient_now":
+      return {
+        heading: t("error.insufficientHeading"),
+        body: t("error.checkoutInsufficientBody"),
+      };
+    case "checkout_unavailable":
       return {
         heading: t("error.listingUnavailableHeading"),
         body: t("error.listingUnavailableBody"),
       };
-    case "redemption_failed":
+    case "checkout_blocked":
+      return {
+        heading: t("error.checkoutBlockedHeading"),
+        body: t("error.checkoutBlockedBody"),
+      };
+    case "checkout_failed":
       return {
         heading: t("error.redemptionFailedHeading"),
         body: t("error.redemptionFailedBody"),

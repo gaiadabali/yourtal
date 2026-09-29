@@ -6,6 +6,7 @@ import {
   type WalletHistoryPage,
   type WalletSummary,
 } from "@yourtal/contracts/wallet/wallet";
+import { voucherStatusSchema } from "@yourtal/contracts/voucher/voucher";
 
 /**
  * The Wallet's one data-access seam (6.5, replacing Phase U's mock-only
@@ -63,6 +64,15 @@ export const walletVoucherDetailSchema = z.object({
   voucherId: z.uuid(),
   listingId: z.uuid(),
   state: z.enum(["reserved", "activated", "released"]),
+  /**
+   * 11.6.d (from 4.8.c, merged on main): the voucher's REAL lifecycle —
+   * active/redeemed/expired/transferred — derived server-side by
+   * `publicVoucherStatusOf`. `state` above stays untouched for
+   * back-compat; every classification in `wallet-voucher-status-copy.ts`
+   * now prefers this field and falls back to `state` only when a response
+   * predates 4.8.c (optional, so both parse).
+   */
+  status: voucherStatusSchema.optional(),
   merchantName: z.string().optional(),
   title: z.string().optional(),
   /** Never cached (docs/15 rule 7: a plaintext redemption code is never persisted client-side) — see `voucher-detail-cache.ts`. */

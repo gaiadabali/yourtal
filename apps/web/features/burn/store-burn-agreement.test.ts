@@ -1,85 +1,65 @@
 import { describe, expect, it } from "vitest";
-
+import { toPoints } from "@yourtal/contracts/money";
 import { computeBalanceShortfall } from "../store/store-balance";
-import { getCurrentBalance } from "../store/store-balance-data";
-import { getListing, listListings } from "../store/store-data";
-import { classifyBurnEligibility } from "./burn-errors";
-import { getRedeemData } from "./burn-data";
+import { classifyBalanceEligibility } from "./burn-errors";
+import { makeBalanceFixture } from "./burn-test-fixtures";
 
 /**
- * Cross-route invariant, not a unit test of either feature.
+ * Cross-feature invariant, not a unit test of either feature.
  *
- * `/store/[listingId]` tells the user whether they can afford a listing, and
- * `/store/[listingId]/redeem` decides whether the burn is actually allowed.
- * Those are two separate modules, written by two agents, each with its own
- * data access. If they ever disagree, the user is told "you can afford this",
- * taps through, and is refused — or worse, is told they cannot afford
- * something they can. YT-0411's rule, which the store and burn code both
- * cite, is "the terms shown here are the terms honoured".
+ * `/store/[listingId]` tells the user whether they can afford a listing
+ * (`computeBalanceShortfall`), and `/store/[listingId]/redeem` decides
+ * whether the checkout is actually allowed to proceed
+ * (`classifyBalanceEligibility`). Those are two separate modules, written by
+ * two agents, each with its own affordability check. If they ever disagree
+ * on the boundary — available points alone covering the price — the user is
+ * told "you can afford this", taps through, and is refused, or is told they
+ * cannot afford something they can. docs/09's rule, which both modules cite,
+ * is "the terms shown here are the terms honoured".
  *
- * The burn feature deliberately reuses the store's listing catalogue and
- * balance rather than picking its own. This test is what fails if that ever
- * drifts apart — a seam neither feature's own suite can see.
- *
- * SKIPPED as of 11.6.a: `store-data.ts` now reads the real catalogue
- * (`GET /api/store/listings*`, `ApiResult<PublicListing>`), which needs a
- * running API and cannot resolve in a unit-test process; `burn-data.ts`
- * still reads its own mock catalogue (11.6.b, listed as a follow-up: "do
- * not break the existing checkout flow", not "wire it live"). The two are
- * temporarily two different catalogues by design, so this invariant cannot
- * hold until 11.6.b makes burn live too — re-enable it then.
+ * Rewritten for 11.6.b: both routes now read the SAME live listing and
+ * balance (`store-data.ts`'s `getListing`, `store-balance-data.ts`'s
+ * `getCurrentBalance` — the redeem page calls both directly, no separate
+ * catalogue to drift out of step with, unlike the mock-era `burn-data.ts`
+ * this test used to exercise against a live API). What is left to prove
+ * here — the one thing that WOULD still silently disagree if either
+ * function's threshold ever moved without the other noticing — is that the
+ * two functions agree on exactly where the affordability boundary sits,
+ * checked directly against both, with no network involved.
  */
-describe.skip("store and burn agree on affordability", () => {
-  it("returns the same listing for every id the store catalogue exposes", async () => {
-    const listingsResult = await listListings();
-    if (!listingsResult.ok) throw new Error("listListings failed");
-    const listings = listingsResult.data;
-    expect(listings.length).toBeGreaterThan(0);
+describe("store and burn agree on the affordability boundary", () => {
+  const cases: Array<{ pricePoints: number; availablePoints: number; pendingPoints: number }> = [
+    { pricePoints: 5_000, availablePoints: 5_000, pendingPoints: 0 },
+    { pricePoints: 5_000, availablePoints: 5_001, pendingPoints: 0 },
+    { pricePoints: 5_000, availablePoints: 4_999, pendingPoints: 0 },
+    { pricePoints: 9_000, availablePoints: 8_400, pendingPoints: 1_200 },
+    { pricePoints: 9_600, availablePoints: 8_400, pendingPoints: 1_200 },
+    { pricePoints: 1, availablePoints: 0, pendingPoints: 0 },
+    { pricePoints: 0, availablePoints: 0, pendingPoints: 0 },
+  ];
 
-    for (const listing of listings) {
-      const redeem = await getRedeemData(listing.id);
-      expect(redeem, `no redeem data for listing ${listing.id}`).toBeDefined();
-      expect(redeem?.listing).toStrictEqual(listing);
-    }
-  });
+  for (const { pricePoints, availablePoints, pendingPoints } of cases) {
+    it(`price ${pricePoints}, available ${availablePoints}, pending ${pendingPoints}`, () => {
+      const balance = makeBalanceFixture({
+        availablePoints,
+        pendingPoints,
+        pendingUnlockAt: pendingPoints > 0 ? "2026-09-22T00:00:00.000Z" : null,
+      });
 
-  it("uses the same balance on both routes", async () => {
-    const [storeBalance, listingsResult] = await Promise.all([getCurrentBalance(), listListings()]);
-    if (!listingsResult.ok) throw new Error("listListings failed");
-    const first = listingsResult.data[0];
-    expect(first).toBeDefined();
-
-    const redeem = await getRedeemData(first!.id);
-    expect(redeem?.balance).toStrictEqual(storeBalance);
-  });
-
-  it("never says affordable on the offer page and then refuses the burn for lack of points", async () => {
-    const [listingsResult, balance] = await Promise.all([listListings(), getCurrentBalance()]);
-    if (!listingsResult.ok) throw new Error("listListings failed");
-
-    for (const listing of listingsResult.data) {
       const shownAsAffordable = computeBalanceShortfall(
-        listing.priceInPoints,
-        balance.availablePoints,
+        toPoints(pricePoints),
+        toPoints(availablePoints),
       ).isAffordable;
+      const isEligible = classifyBalanceEligibility(pricePoints, balance) === null;
 
-      const redeem = await getRedeemData(listing.id);
-      const burnError = classifyBurnEligibility(redeem!.listing, redeem!.balance);
-      const refusedForPoints =
-        burnError?.type === "insufficient_points" || burnError?.type === "holdback_blocks";
-
-      // The offer page promising affordability while the burn refuses on
-      // points is the failure this whole test exists to prevent.
-      expect(
-        shownAsAffordable && refusedForPoints,
-        `listing ${listing.id}: offer page says affordable, burn refuses with ${burnError?.type}`,
-      ).toBe(false);
-    }
-  });
-
-  it("404s on both routes for an id in neither catalogue", async () => {
-    const unknownId = "00000000-0000-4000-8000-00000000ffff";
-    expect(await getListing(unknownId)).toBeUndefined();
-    expect(await getRedeemData(unknownId)).toBeUndefined();
-  });
+      // The offer page promising affordability while checkout refuses for
+      // lack of points (or vice versa) is the failure this test exists to
+      // prevent — both must agree on whether AVAILABLE POINTS ALONE cover
+      // the price. `classifyBalanceEligibility` may still refuse with
+      // `holdback_blocks` even when this agrees (pending would cover the
+      // rest), which is a real, intentional difference — that pending
+      // money is not yet spendable — not a disagreement about affordability.
+      expect(shownAsAffordable).toBe(isEligible);
+    });
+  }
 });

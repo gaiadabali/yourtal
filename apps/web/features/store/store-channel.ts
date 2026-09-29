@@ -34,6 +34,16 @@ export function storeChannelFilterOptions(
   ];
 }
 
+/**
+ * Locale-aware display label for a listing's own channel (11.6.b: the offer
+ * page shows where a listing may be redeemed) — same convention as
+ * `store-category.ts`'s `categoryLabel`.
+ */
+export function channelLabel(channel: ListingChannel, locale: SupportedLocale): string {
+  const t = getStoreTranslator(locale);
+  return t(`store.channel.${channel}`);
+}
+
 export function isStoreChannelFilter(value: string): value is StoreChannelFilter {
   return (STORE_CHANNEL_FILTER_VALUES as readonly string[]).includes(value);
 }

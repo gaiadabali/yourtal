@@ -6,8 +6,34 @@ import {
   expiringSoonListingFixture,
   soldOutListingFixture,
 } from "@yourtal/contracts/listing/mock";
-import { mixedStateBalanceFixture, zeroBalanceFixture } from "@yourtal/contracts/balance/mock";
+import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
+import { toPoints } from "@yourtal/contracts/money";
 import { StoreOfferCard } from "./store-offer-card";
+
+/**
+ * 11.6.b: `StoreOfferCard` now takes the real `WalletSummary` (`GET
+ * /api/wallet`), not the Phase U mock `Balance`. These two mirror the old
+ * `mixedStateBalanceFixture`/`zeroBalanceFixture` shapes exactly (this
+ * card only ever reads `.availablePoints`), so every assertion below is
+ * unchanged.
+ */
+const mixedStateBalanceFixture: WalletSummary = {
+  region: "ID",
+  availablePoints: toPoints(8_400),
+  pendingPoints: toPoints(1_200),
+  pending: [{ points: toPoints(1_200), unlockAt: "2026-09-22T00:00:00.000Z" }],
+  expiringPoints: toPoints(0),
+  expiringAt: null,
+};
+
+const zeroBalanceFixture: WalletSummary = {
+  region: "ID",
+  availablePoints: toPoints(0),
+  pendingPoints: toPoints(0),
+  pending: [],
+  expiringPoints: toPoints(0),
+  expiringAt: null,
+};
 
 describe("StoreOfferCard (id-ID)", () => {
   it("renders the terms before the primary action, so terms are never reachable only after acting", () => {

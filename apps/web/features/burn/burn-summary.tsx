@@ -1,7 +1,8 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import type { Listing } from "@yourtal/contracts/listing";
+import type { PublicListing } from "@yourtal/contracts/listing";
+import type { Points } from "@yourtal/contracts/money";
 import {
   asDisplayIdr,
   asDisplayPoints,
@@ -12,12 +13,21 @@ import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
 import { Badge } from "@yourtal/ui/badge";
 
 export interface BurnSummaryProps {
-  listing: Listing;
+  listing: PublicListing;
+  /**
+   * 11.6.b: the checkout's own LOCKED price (`POST /api/checkout/quote`'s
+   * `pricePoints`), not `listing.priceInPoints` re-read from the catalogue —
+   * a listing's live price can move between quoting and this render (a rate
+   * change, a re-quote), and "the confirmation step restates cost and
+   * terms" (docs/09 §4.2) means the price that will actually be charged.
+   * Defaults to the listing's own price for a caller with no quote yet.
+   */
+  pricePoints?: Points;
   /**
    * Controls only the heading — the figures below never differ between the
    * two, because "the confirmation step restates cost and terms"
-   * (docs/tasks/phase-u-ui.md YT-0422) means literally the same numbers,
-   * not a re-derived approximation.
+   * (docs/09 §4.2) means literally the same numbers, not a re-derived
+   * approximation.
    */
   variant?: "review" | "confirmation";
 }
@@ -37,10 +47,14 @@ export interface BurnSummaryProps {
  * spend render via `formatMoney` in the LISTING's own currency (never the
  * viewer's region or display language), never a hardcoded `formatIdr`/`Rp`.
  */
-export function BurnSummary({ listing, variant = "review" }: BurnSummaryProps) {
+export function BurnSummary({
+  listing,
+  pricePoints = listing.priceInPoints,
+  variant = "review",
+}: BurnSummaryProps) {
   const locale = useLocale() as DisplayLocale;
   const t = useTranslations("burn");
-  const partialRedemptionCopy: Record<Listing["partialRedemptionPolicy"], string> = {
+  const partialRedemptionCopy: Record<PublicListing["partialRedemptionPolicy"], string> = {
     balance_carrying: t("summary.balanceCarrying"),
     single_use_forfeit: t("summary.singleUseForfeit"),
     minimum_spend: t("summary.minimumSpendPolicy"),
@@ -58,7 +72,7 @@ export function BurnSummary({ listing, variant = "review" }: BurnSummaryProps) {
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm font-sans">
         <dt className="text-fg-muted">{t("summary.pointsCost")}</dt>
         <dd className="text-right font-semibold text-price">
-          {formatPointsIn(locale, asDisplayPoints(listing.priceInPoints))}
+          {formatPointsIn(locale, asDisplayPoints(pricePoints))}
         </dd>
         <dt className="text-fg-muted">{t("summary.voucherValue")}</dt>
         <dd className="text-right text-fg">

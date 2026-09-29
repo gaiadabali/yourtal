@@ -26,12 +26,18 @@ export interface WalletVoucherCardProps {
 export async function WalletVoucherCard({ voucher, nowMs, locale }: WalletVoucherCardProps) {
   const t = await getTranslations("wallet");
   const expired = isVoucherEffectivelyExpired(voucher.expiresAt, nowMs);
-  const statusCopy = describeVoucherStatus(voucher.state, expired, t);
+  const statusCopy = describeVoucherStatus(voucher.state, expired, t, voucher.status);
   const href = `/wallet/voucher/${voucher.voucherId}` as Route;
 
   return (
     <div
-      className={`relative min-w-0 flex flex-col gap-2 rounded-card border border-border-subtle bg-surface p-4 ${statusCopy.isArchived ? "opacity-70" : ""}`}
+      // 11.6.d: `opacity-70` on `text-fg-subtle` failed WCAG AA color-contrast
+      // in both themes (3.47:1 dark / 4.27:1 light, needs 4.5:1) — a
+      // pre-existing bug this task's own Check surfaces on every
+      // purchased-then-redeemed voucher (previously an archived card was
+      // rare in a mock-only demo). `opacity-95` keeps the de-emphasised
+      // look while staying above the threshold in both themes.
+      className={`relative min-w-0 flex flex-col gap-2 rounded-card border border-border-subtle bg-surface p-4 ${statusCopy.isArchived ? "opacity-95" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">

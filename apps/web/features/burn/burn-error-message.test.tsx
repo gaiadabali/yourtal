@@ -61,16 +61,25 @@ describe("BurnErrorMessage", () => {
   });
 
   it("tells the user an unavailable listing is out of stock", () => {
-    renderWithRegion(
-      <BurnErrorMessage error={{ type: "listing_unavailable", status: "sold_out" }} />,
-    );
+    renderWithRegion(<BurnErrorMessage error={{ type: "checkout_unavailable" }} />);
     expect(screen.getByRole("alert")).toHaveTextContent("sudah tidak tersedia");
   });
 
-  it("reassures that points were not deducted after a redemption failure", () => {
-    renderWithRegion(<BurnErrorMessage error={{ type: "redemption_failed" }} />);
+  it("reassures that points were not deducted after a generic checkout failure", () => {
+    renderWithRegion(<BurnErrorMessage error={{ type: "checkout_failed" }} />);
     expect(screen.getByRole("alert")).toHaveTextContent("Penukaran gagal");
     expect(screen.getByRole("alert")).toHaveTextContent("belum terpotong");
+  });
+
+  it("tells the user their balance changed and no longer covers the price, with no stale shortfall number", () => {
+    renderWithRegion(<BurnErrorMessage error={{ type: "insufficient_now" }} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Poin Anda belum cukup");
+    expect(screen.getByRole("alert")).toHaveTextContent("Saldo Anda berubah");
+  });
+
+  it("tells the user a blocked purchase cannot go ahead", () => {
+    renderWithRegion(<BurnErrorMessage error={{ type: "checkout_blocked" }} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("tidak dapat dilanjutkan");
   });
 
   it("covers every BurnError variant (fails to compile if a variant is ever added without copy)", () => {
@@ -78,8 +87,10 @@ describe("BurnErrorMessage", () => {
       { type: "insufficient_points", short: 1 },
       { type: "holdback_blocks", unlocksAt: "2026-09-22T10:00:00.000Z" },
       { type: "lock_expired", expiredAt: "2026-09-19T10:10:00.000Z" },
-      { type: "listing_unavailable", status: "sold_out" },
-      { type: "redemption_failed" },
+      { type: "insufficient_now" },
+      { type: "checkout_unavailable" },
+      { type: "checkout_blocked" },
+      { type: "checkout_failed" },
     ];
     for (const error of errors) {
       const { unmount } = renderWithRegion(<BurnErrorMessage error={error} />);
@@ -127,16 +138,24 @@ describe("BurnErrorMessage (en-AU, YT-0405)", () => {
   });
 
   it("tells the user an unavailable listing is out of stock in English", () => {
-    renderWithRegion(
-      <BurnErrorMessage error={{ type: "listing_unavailable", status: "sold_out" }} />,
-      "AU",
-    );
+    renderWithRegion(<BurnErrorMessage error={{ type: "checkout_unavailable" }} />, "AU");
     expect(screen.getByRole("alert")).toHaveTextContent("no longer available");
   });
 
-  it("reassures that points were not deducted after a redemption failure, in English", () => {
-    renderWithRegion(<BurnErrorMessage error={{ type: "redemption_failed" }} />, "AU");
+  it("reassures that points were not deducted after a generic checkout failure, in English", () => {
+    renderWithRegion(<BurnErrorMessage error={{ type: "checkout_failed" }} />, "AU");
     expect(screen.getByRole("alert")).toHaveTextContent("Redemption failed");
     expect(screen.getByRole("alert")).toHaveTextContent("have not been deducted");
+  });
+
+  it("tells the user their balance changed and no longer covers the price, in English", () => {
+    renderWithRegion(<BurnErrorMessage error={{ type: "insufficient_now" }} />, "AU");
+    expect(screen.getByRole("alert")).toHaveTextContent("You don't have enough points yet");
+    expect(screen.getByRole("alert")).toHaveTextContent("Your balance has changed");
+  });
+
+  it("tells the user a blocked purchase cannot go ahead, in English", () => {
+    renderWithRegion(<BurnErrorMessage error={{ type: "checkout_blocked" }} />, "AU");
+    expect(screen.getByRole("alert")).toHaveTextContent("can't go ahead");
   });
 });

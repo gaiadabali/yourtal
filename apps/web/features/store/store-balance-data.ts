@@ -1,36 +1,21 @@
-import type { Balance } from "@yourtal/contracts/balance";
-import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
-import { resolveDataSource } from "@yourtal/contracts/mock-source";
+import "server-only";
+
+import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
+import { getWalletBalance } from "@/features/wallet/wallet-data";
 
 /**
- * The signed-in user's wallet balance, as needed by the offer detail page
- * (YT-0421: "insufficient-balance state shows exactly how much more is
- * needed"). Server-data-only, same boundary discipline as `store-data.ts`.
+ * The signed-in user's real wallet balance (11.6.b, replacing Phase U's
+ * `mixedStateBalanceFixture`). Delegates to `features/wallet`'s own
+ * `getWalletBalance` — the store's balance IS the wallet's balance, and two
+ * independent fetches of `GET /api/wallet` would just be two chances to
+ * drift.
  *
- * `mixedStateBalanceFixture` (8,400 available points) is used as "the
- * current user" — deliberately a mid-range, realistic balance rather than
- * zero or unlimited, so browsing the real mock catalogue naturally
- * exercises both the affordable and insufficient-balance states across
- * different listings instead of only one of them.
+ * Throws on a non-ok result, same convention as `store-data.ts`'s
+ * `getListing` for a non-404 failure — the nearest `error.tsx` (offer page,
+ * redeem page) renders it.
  */
-interface StoreBalanceDataSource {
-  getCurrentBalance: () => Promise<Balance>;
-}
-
-const mockDataSource: StoreBalanceDataSource = {
-  getCurrentBalance: () => Promise.resolve(mixedStateBalanceFixture),
-};
-
-const liveDataSource: StoreBalanceDataSource = {
-  getCurrentBalance: () =>
-    Promise.reject(
-      new Error("Live balance data source is not implemented yet (Phase U is mock-only)."),
-    ),
-};
-
-const balanceDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
-
-/** The current user's wallet balance. */
-export function getCurrentBalance(): Promise<Balance> {
-  return balanceDataSource.getCurrentBalance();
+export async function getCurrentBalance(): Promise<WalletSummary> {
+  const result = await getWalletBalance();
+  if (result.ok) return result.data;
+  throw new Error(`GET /api/wallet failed: ${result.error.message}`);
 }

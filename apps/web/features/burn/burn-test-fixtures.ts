@@ -1,7 +1,7 @@
-import type { Listing } from "@yourtal/contracts/listing";
-import { listingSchema } from "@yourtal/contracts/listing";
-import type { Balance } from "@yourtal/contracts/balance";
-import { balanceSchema } from "@yourtal/contracts/balance";
+import type { PublicListing } from "@yourtal/contracts/listing";
+import { publicListingSchema } from "@yourtal/contracts/listing";
+import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
+import { walletSummarySchema } from "@yourtal/contracts/wallet/wallet";
 import { rupiah, toPoints } from "@yourtal/contracts/money";
 
 /**
@@ -10,6 +10,9 @@ import { rupiah, toPoints } from "@yourtal/contracts/money";
  * schemas directly, which is fine here — test files never ship in a client
  * bundle, so the 170 KB initial-JS budget (docs/13b section 8) does not
  * apply to them.
+ *
+ * 11.6.b: `PublicListing`/`WalletSummary`, the real contracts checkout now
+ * uses, replacing Phase U's mock-only `Listing`/`Balance` fixtures.
  */
 
 const BASE_LISTING = {
@@ -29,7 +32,6 @@ const BASE_LISTING = {
   ],
   currency: "IDR",
   faceValueMinor: rupiah(100_000),
-  settlementValueMinor: rupiah(30_000),
   stockRemaining: 5,
   stockTotal: 10,
   transferable: false,
@@ -45,19 +47,37 @@ const BASE_LISTING = {
   partialRedemption: "single_use",
 } as const;
 
-export function makeListingFixture(overrides: Record<string, unknown> = {}): Listing {
-  return listingSchema.parse({ ...BASE_LISTING, priceInPoints: toPoints(5_000), ...overrides });
+export function makeListingFixture(overrides: Record<string, unknown> = {}): PublicListing {
+  return publicListingSchema.parse({ ...BASE_LISTING, priceInPoints: toPoints(5_000), ...overrides });
 }
 
-export function makeBalanceFixture(overrides: Record<string, unknown> = {}): Balance {
-  return balanceSchema.parse({
-    userId: "00000000-0000-4000-8000-000000000903",
-    availablePoints: toPoints(0),
-    pendingPoints: toPoints(0),
-    pendingUnlockAt: null,
-    expiringPoints: toPoints(0),
-    expiringAt: null,
-    updatedAt: "2026-09-19T00:00:00.000Z",
-    ...overrides,
+export interface BalanceFixtureOverrides {
+  availablePoints?: number;
+  pendingPoints?: number;
+  pendingUnlockAt?: string | null;
+  expiringPoints?: number;
+  expiringAt?: string | null;
+  region?: "AU" | "ID";
+}
+
+/**
+ * Builds a `WalletSummary` from the simpler `{availablePoints, pendingPoints,
+ * pendingUnlockAt}` shape every existing burn test already writes — `pending`
+ * (one entry per unlock time, `wallet.ts`'s own doc comment) is derived as a
+ * single bucket, which is all a fixture with one `pendingUnlockAt` can
+ * represent anyway.
+ */
+export function makeBalanceFixture(overrides: BalanceFixtureOverrides = {}): WalletSummary {
+  const pendingPoints = toPoints(overrides.pendingPoints ?? 0);
+  const pendingUnlockAt = overrides.pendingUnlockAt ?? null;
+  return walletSummarySchema.parse({
+    region: overrides.region ?? "ID",
+    availablePoints: toPoints(overrides.availablePoints ?? 0),
+    pendingPoints,
+    pending: pendingPoints > 0 && pendingUnlockAt !== null
+      ? [{ points: pendingPoints, unlockAt: pendingUnlockAt }]
+      : [],
+    expiringPoints: toPoints(overrides.expiringPoints ?? 0),
+    expiringAt: overrides.expiringAt ?? null,
   });
 }

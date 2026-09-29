@@ -1,4 +1,4 @@
-import type { Balance } from "@yourtal/contracts/balance";
+import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
 import type { PublicListing } from "@yourtal/contracts/listing";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
@@ -6,6 +6,7 @@ import { Card, CardContent } from "@yourtal/ui/card";
 import { computeBalanceShortfall } from "./store-balance";
 import { StoreBalanceNotice } from "./store-balance-notice";
 import { categoryLabel } from "./store-category";
+import { channelLabel } from "./store-channel";
 import { formatExpiryDate, formatListingPrice, formatStockRemaining } from "./store-format";
 import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 import { listingDistricts } from "./listing-locations";
@@ -16,7 +17,7 @@ import { listingStatusPresentation } from "./store-status";
 
 export interface StoreOfferCardProps {
   listing: PublicListing;
-  balance: Balance;
+  balance: WalletSummary;
   /** YT-0405: required, not defaulted — see `campaign-card.tsx`'s report. */
   locale: SupportedLocale;
 }
@@ -84,6 +85,10 @@ export function StoreOfferCard({ listing, balance, locale }: StoreOfferCardProps
           <StoreOfferFact
             label={t("offer.locationLabel")}
             value={listingDistricts(listing, locale).join(", ")}
+          />
+          <StoreOfferFact
+            label={t("offer.channelLabel")}
+            value={channelLabel(listing.channel, locale)}
           />
           <StoreOfferFact
             label={t("offer.stockLabel")}

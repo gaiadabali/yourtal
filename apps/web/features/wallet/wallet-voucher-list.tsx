@@ -4,7 +4,7 @@ import { Section } from "@yourtal/ui/section";
 import { Text } from "@yourtal/ui/text";
 import type { WalletVoucherDetail } from "./wallet-data";
 import { WalletVoucherCard } from "./wallet-voucher-card";
-import { isVoucherEffectivelyExpired } from "./wallet-voucher-status-copy";
+import { isVoucherRedeemable } from "./wallet-voucher-status-copy";
 import type { SupportedLocale } from "./wallet-format";
 
 export interface WalletVoucherListProps {
@@ -14,7 +14,7 @@ export interface WalletVoucherListProps {
 }
 
 function isActiveAndLive(voucher: WalletVoucherDetail, nowMs: number): boolean {
-  return voucher.state === "activated" && !isVoucherEffectivelyExpired(voucher.expiresAt, nowMs);
+  return isVoucherRedeemable(voucher, nowMs);
 }
 
 /** `WalletVoucherCard` is itself async (`getTranslations`) — resolved here explicitly rather than left as JSX, so this works under a plain renderer too, not only Next's RSC pipeline (see wallet-screen.tsx's doc comment for the same rule). */

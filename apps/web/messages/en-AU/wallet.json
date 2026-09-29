@@ -21,6 +21,8 @@
     "statusPending": "Processing",
     "statusReleased": "Released",
     "statusExpired": "Expired",
+    "statusRedeemed": "Redeemed",
+    "statusTransferred": "Transferred",
     "genericTitle": "Voucher",
     "detailsUnavailable": "Details unavailable",
     "expiresOn": "Ended {date}",

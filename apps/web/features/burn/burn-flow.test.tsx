@@ -5,18 +5,26 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextIntlClientProvider } from "next-intl";
 import { toPoints } from "@yourtal/contracts/money";
-import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
 import type { Region } from "@yourtal/contracts/region";
 import { RegionProvider } from "@/features/region/region-context";
 import idID from "@/messages/id-ID/burn.json";
 import enAU from "@/messages/en-AU/burn.json";
 import { BurnFlow } from "./burn-flow";
-import { computeLockExpiresAt } from "./price-lock";
 import { makeBalanceFixture, makeListingFixture } from "./burn-test-fixtures";
+import { confirmCheckoutAction } from "./confirm-checkout-action";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
+
+vi.mock("./confirm-checkout-action", () => ({
+  confirmCheckoutAction: vi.fn(),
+}));
+
+const mockConfirm = vi.mocked(confirmCheckoutAction);
+
+const CHECKOUT_ID = "00000000-0000-4000-9000-000000000001";
+const VOUCHER_ID = "00000000-0000-4000-9000-000000000002";
 
 /**
  * `BurnFlow` renders `BurnSummary`/`BurnErrorMessage`, both Client
@@ -45,26 +53,36 @@ function advanceSeconds(seconds: number): void {
   }
 }
 
-/** A listing id guaranteed NOT to land in `attemptBurn`'s simulated-failure bucket, so success-path tests are not flaky. */
-function successListingId(): string {
-  for (let index = 0; index < 200; index += 1) {
-    const id = `00000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
-    if (hashStringToSeed(`${id}:redemption-outcome`) % 8 !== 0) {
-      return id;
-    }
-  }
-  throw new Error("could not find a non-failing demo listing id");
+const NOW = new Date("2026-09-19T10:00:00.000Z");
+/**
+ * Real wall-clock relative expiry for every test OUTSIDE the "price-lock
+ * expiry" describe block below — those tests never mock the clock, so a
+ * `lockExpiresAt` anchored to the fixed historical `NOW` (used only where
+ * `vi.setSystemTime(NOW)` is also in effect) would already read as expired
+ * against the real current instant.
+ */
+function freshLockExpiresAt(): string {
+  return new Date(Date.now() + 15 * 60_000).toISOString();
 }
 
-const NOW = new Date("2026-09-19T10:00:00.000Z");
-
 describe("BurnFlow", () => {
+  beforeEach(() => {
+    mockConfirm.mockReset();
+  });
+
   it("shows the price-lock countdown and a Lanjutkan button when the wallet already covers the price", () => {
     const listing = makeListingFixture({ priceInPoints: toPoints(1_000) });
     const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
-    const lockExpiresAt = computeLockExpiresAt(new Date());
 
-    renderBurnFlow(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
+    renderBurnFlow(
+      <BurnFlow
+        listing={listing}
+        balance={balance}
+        checkoutId={CHECKOUT_ID}
+        pricePoints={toPoints(1_000)}
+        lockExpiresAt={freshLockExpiresAt()}
+      />,
+    );
 
     expect(screen.getByRole("timer")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeInTheDocument();
@@ -77,9 +95,16 @@ describe("BurnFlow", () => {
       pendingPoints: toPoints(1_200),
       pendingUnlockAt: "2026-09-22T00:00:00.000Z",
     });
-    const lockExpiresAt = computeLockExpiresAt(new Date());
 
-    renderBurnFlow(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
+    renderBurnFlow(
+      <BurnFlow
+        listing={listing}
+        balance={balance}
+        checkoutId={CHECKOUT_ID}
+        pricePoints={toPoints(9_000)}
+        lockExpiresAt={freshLockExpiresAt()}
+      />,
+    );
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Sebagian poin Anda masih ditahan sementara",
@@ -87,13 +112,24 @@ describe("BurnFlow", () => {
     expect(screen.queryByRole("button", { name: "Lanjutkan" })).not.toBeInTheDocument();
   });
 
-  it("walks reviewing -> confirming -> success, restating the same cost at confirmation, for an eligible listing", async () => {
+  it("walks reviewing -> confirming -> success, restating the same locked price at confirmation, and calls the server exactly once", async () => {
+    mockConfirm.mockResolvedValue({
+      ok: true,
+      result: { checkoutId: CHECKOUT_ID, state: "done", voucherId: VOUCHER_ID, pricePoints: toPoints(1_000) },
+    });
     const user = userEvent.setup();
-    const listing = makeListingFixture({ id: successListingId(), priceInPoints: toPoints(1_000) });
+    const listing = makeListingFixture({ priceInPoints: toPoints(1_000) });
     const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
-    const lockExpiresAt = computeLockExpiresAt(new Date());
 
-    renderBurnFlow(<BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />);
+    renderBurnFlow(
+      <BurnFlow
+        listing={listing}
+        balance={balance}
+        checkoutId={CHECKOUT_ID}
+        pricePoints={toPoints(1_000)}
+        lockExpiresAt={freshLockExpiresAt()}
+      />,
+    );
 
     expect(screen.getByText("1.000 poin")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
@@ -105,7 +141,41 @@ describe("BurnFlow", () => {
     await user.click(screen.getByRole("button", { name: "Tukar sekarang" }));
 
     expect(await screen.findByText("Berhasil")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Lihat di Dompet" })).toBeInTheDocument();
+    const walletLink = screen.getByRole("link", { name: "Lihat di Dompet" });
+    expect(walletLink).toHaveAttribute("href", `/wallet/voucher/${VOUCHER_ID}`);
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    expect(mockConfirm).toHaveBeenCalledWith(CHECKOUT_ID);
+  });
+
+  it("shows a plain-language refusal, not a crash, when the server refuses the confirm", async () => {
+    mockConfirm.mockResolvedValue({
+      ok: false,
+      error: {
+        kind: "http",
+        status: 409,
+        code: "insufficient_available",
+        message: "not enough points to spend",
+      },
+    });
+    const user = userEvent.setup();
+    const listing = makeListingFixture({ priceInPoints: toPoints(1_000) });
+    const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
+
+    renderBurnFlow(
+      <BurnFlow
+        listing={listing}
+        balance={balance}
+        checkoutId={CHECKOUT_ID}
+        pricePoints={toPoints(1_000)}
+        lockExpiresAt={freshLockExpiresAt()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
+    await user.click(screen.getByRole("button", { name: "Tukar sekarang" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Saldo Anda berubah");
+    expect(screen.queryByRole("button", { name: "Tukar sekarang" })).not.toBeInTheDocument();
   });
 
   describe("price-lock expiry", () => {
@@ -119,15 +189,18 @@ describe("BurnFlow", () => {
     });
 
     it("transitions to the unrecoverable lock_expired state when the countdown reaches zero, and offers only a re-quote", () => {
-      const listing = makeListingFixture({
-        id: successListingId(),
-        priceInPoints: toPoints(1_000),
-      });
+      const listing = makeListingFixture({ priceInPoints: toPoints(1_000) });
       const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
       const lockExpiresAt = new Date(NOW.getTime() + 3_000).toISOString();
 
       renderBurnFlow(
-        <BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />,
+        <BurnFlow
+          listing={listing}
+          balance={balance}
+          checkoutId={CHECKOUT_ID}
+          pricePoints={toPoints(1_000)}
+          lockExpiresAt={lockExpiresAt}
+        />,
       );
       expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeInTheDocument();
 
@@ -144,15 +217,18 @@ describe("BurnFlow", () => {
       // scheduling does not mix reliably with `vi.useFakeTimers()` (it hangs
       // waiting on a real timer that will never fire). `fireEvent.click` is
       // synchronous and exercises the same `onClick` handler.
-      const listing = makeListingFixture({
-        id: successListingId(),
-        priceInPoints: toPoints(1_000),
-      });
+      const listing = makeListingFixture({ priceInPoints: toPoints(1_000) });
       const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
       const lockExpiresAt = new Date(NOW.getTime() + 3_000).toISOString();
 
       renderBurnFlow(
-        <BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />,
+        <BurnFlow
+          listing={listing}
+          balance={balance}
+          checkoutId={CHECKOUT_ID}
+          pricePoints={toPoints(1_000)}
+          lockExpiresAt={lockExpiresAt}
+        />,
       );
       act(() => {
         fireEvent.click(screen.getByRole("button", { name: "Lanjutkan" }));
@@ -168,14 +244,27 @@ describe("BurnFlow", () => {
 });
 
 describe("BurnFlow (en-AU, YT-0405)", () => {
+  beforeEach(() => {
+    mockConfirm.mockReset();
+  });
+
   it("walks reviewing -> confirming -> success in English, with no Indonesian copy leaking through", async () => {
+    mockConfirm.mockResolvedValue({
+      ok: true,
+      result: { checkoutId: CHECKOUT_ID, state: "done", voucherId: VOUCHER_ID, pricePoints: toPoints(1_000) },
+    });
     const user = userEvent.setup();
-    const listing = makeListingFixture({ id: successListingId(), priceInPoints: toPoints(1_000) });
+    const listing = makeListingFixture({ priceInPoints: toPoints(1_000), currency: "AUD" });
     const balance = makeBalanceFixture({ availablePoints: toPoints(5_000) });
-    const lockExpiresAt = computeLockExpiresAt(new Date());
 
     renderBurnFlow(
-      <BurnFlow listing={listing} balance={balance} lockExpiresAt={lockExpiresAt} />,
+      <BurnFlow
+        listing={listing}
+        balance={balance}
+        checkoutId={CHECKOUT_ID}
+        pricePoints={toPoints(1_000)}
+        lockExpiresAt={freshLockExpiresAt()}
+      />,
       "AU",
     );
 

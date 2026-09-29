@@ -18,7 +18,11 @@ import { VoucherQrCode } from "./voucher-qr-code";
 import { VoucherValidityCountdown } from "./voucher-validity-countdown";
 import { VoucherArchivedPanel } from "./voucher-archived-panel";
 import { VoucherDisputeButton } from "./voucher-dispute-button";
-import { describeVoucherStatus, isVoucherEffectivelyExpired } from "./wallet-voucher-status-copy";
+import {
+  describeVoucherStatus,
+  isVoucherEffectivelyExpired,
+  isVoucherRedeemable,
+} from "./wallet-voucher-status-copy";
 import { buildRedemptionInstructions } from "./wallet-redemption-copy";
 import { formatWalletDate } from "./wallet-format";
 
@@ -83,11 +87,11 @@ export function VoucherDetailView({
     // Only re-runs when the cached values actually change identity, not on
     // every render — `detail` is a plain object read fresh each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [detail.voucherId, detail.state, detail.cachedAt]);
+  }, [detail.voucherId, detail.state, detail.status, detail.cachedAt]);
 
   const expired = isVoucherEffectivelyExpired(detail.expiresAt, Date.now());
-  const statusCopy = describeVoucherStatus(detail.state, expired, t);
-  const isRedeemable = detail.state === "activated" && !expired;
+  const statusCopy = describeVoucherStatus(detail.state, expired, t, detail.status);
+  const isRedeemable = isVoucherRedeemable(detail, Date.now());
 
   // The hook must always run (rules of hooks) — `initialQr` is null for an
   // already-archived voucher, so it is handed an inert placeholder that

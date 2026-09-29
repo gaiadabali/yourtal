@@ -5,20 +5,25 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import type { Listing } from "@yourtal/contracts/listing";
-import type { Balance } from "@yourtal/contracts/balance";
+import type { PublicListing } from "@yourtal/contracts/listing";
+import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
+import type { Points } from "@yourtal/contracts/money";
 import { Button } from "@yourtal/ui/button";
 import { Badge } from "@yourtal/ui/badge";
 import { PriceLockCountdown } from "./price-lock-countdown";
 import { BurnSummary } from "./burn-summary";
 import { BurnErrorMessage } from "./burn-error-message";
-import { classifyBurnEligibility, recoveryForError } from "./burn-errors";
-import { attemptBurn } from "./burn-redemption";
+import { classifyBalanceEligibility, recoveryForError, burnErrorFromApiError } from "./burn-errors";
+import { confirmCheckoutAction } from "./confirm-checkout-action";
 import type { BurnFlowState } from "./burn-flow-state";
 
 export interface BurnFlowProps {
-  listing: Listing;
-  balance: Balance;
+  listing: PublicListing;
+  balance: WalletSummary;
+  /** The checkout saga `POST /api/checkout/quote` opened — `confirmCheckoutAction` runs it. */
+  checkoutId: string;
+  /** The REAL, locked price (`CheckoutQuote.pricePoints`) — never re-read from `listing.priceInPoints`, which can move before this quote is confirmed. */
+  pricePoints: Points;
   lockExpiresAt: string;
 }
 
@@ -29,13 +34,13 @@ export interface BurnFlowProps {
  *
  * Rendered with `key={lockExpiresAt}` by `page.tsx`, so a re-quote (a fresh
  * server render after "Muat ulang harga") remounts this component from
- * scratch with a brand-new lock and a `reviewing` state, instead of a stale
+ * scratch with a brand-new lock, checkout id and price, instead of a stale
  * `failed`/`lock_expired` state surviving across the new quote.
  */
-export function BurnFlow({ listing, balance, lockExpiresAt }: BurnFlowProps) {
+export function BurnFlow({ listing, balance, checkoutId, pricePoints, lockExpiresAt }: BurnFlowProps) {
   const router = useRouter();
   const [state, setState] = useState<BurnFlowState>(() => {
-    const initialError = classifyBurnEligibility(listing, balance);
+    const initialError = classifyBalanceEligibility(pricePoints, balance);
     return initialError ? { step: "failed", error: initialError } : { step: "reviewing" };
   });
 
@@ -51,16 +56,16 @@ export function BurnFlow({ listing, balance, lockExpiresAt }: BurnFlowProps) {
     });
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     setState({ step: "submitting" });
-    // Re-checks the lock and the balance from scratch — see
-    // `burn-redemption.ts`'s doc comment for why this call, not the
-    // countdown's last render, is the actual gate.
-    const result = attemptBurn({ listing, balance, lockExpiresAt, nowMs: Date.now() });
+    // The real gate: `POST /api/checkout` re-checks the quote's expiry and
+    // the caller's actual balance server-side (4.7.a's saga), regardless of
+    // what this render last showed — see `confirm-checkout-action.ts`.
+    const outcome = await confirmCheckoutAction(checkoutId);
     setState(
-      result.ok
-        ? { step: "success", voucher: result.voucher }
-        : { step: "failed", error: result.error },
+      outcome.ok
+        ? { step: "success", voucherId: outcome.result.voucherId }
+        : { step: "failed", error: burnErrorFromApiError(outcome.error, lockExpiresAt) },
     );
   }
 
@@ -76,10 +81,11 @@ export function BurnFlow({ listing, balance, lockExpiresAt }: BurnFlowProps) {
       <BurnFlowStep
         state={state}
         listing={listing}
+        pricePoints={pricePoints}
         storeHref={storeHref}
         onContinue={() => setState({ step: "confirming" })}
         onBack={() => setState({ step: "reviewing" })}
-        onConfirm={handleConfirm}
+        onConfirm={() => void handleConfirm()}
         onRequote={() => router.refresh()}
       />
     </div>
@@ -88,7 +94,8 @@ export function BurnFlow({ listing, balance, lockExpiresAt }: BurnFlowProps) {
 
 interface BurnFlowStepProps {
   state: BurnFlowState;
-  listing: Listing;
+  listing: PublicListing;
+  pricePoints: Points;
   storeHref: Route;
   onContinue: () => void;
   onBack: () => void;
@@ -100,6 +107,7 @@ interface BurnFlowStepProps {
 function BurnFlowStep({
   state,
   listing,
+  pricePoints,
   storeHref,
   onContinue,
   onBack,
@@ -111,7 +119,7 @@ function BurnFlowStep({
     case "reviewing":
       return (
         <>
-          <BurnSummary listing={listing} variant="review" />
+          <BurnSummary listing={listing} pricePoints={pricePoints} variant="review" />
           <Button type="button" onClick={onContinue}>
             {t("flow.continue")}
           </Button>
@@ -120,7 +128,7 @@ function BurnFlowStep({
     case "confirming":
       return (
         <>
-          <BurnSummary listing={listing} variant="confirmation" />
+          <BurnSummary listing={listing} pricePoints={pricePoints} variant="confirmation" />
           <p className="text-xs font-sans text-fg-subtle">{t("flow.confirmDisclaimer")}</p>
           <div className="flex gap-2">
             <Button type="button" variant="secondary" onClick={onBack} className="flex-1">
@@ -142,7 +150,8 @@ function BurnFlowStep({
           {t("flow.processing")}
         </div>
       );
-    case "success":
+    case "success": {
+      const voucherHref = `/wallet/voucher/${state.voucherId}` as Route;
       return (
         <div className="flex flex-col gap-3 rounded-lg border border-success bg-success/10 p-4">
           <Badge variant="success" className="w-fit">
@@ -150,17 +159,17 @@ function BurnFlowStep({
           </Badge>
           <p className="text-sm font-sans text-fg">
             {t.rich("flow.successMessage", {
-              voucherTitle: state.voucher.title,
-              voucherCode: state.voucher.code,
+              voucherTitle: listing.title,
+              merchantName: listing.merchantName,
               bold: (chunks) => <span className="font-semibold">{chunks}</span>,
-              code: (chunks) => <span className="font-semibold tabular-nums">{chunks}</span>,
             })}
           </p>
           <Button asChild>
-            <Link href="/wallet">{t("flow.viewInWallet")}</Link>
+            <Link href={voucherHref}>{t("flow.viewInWallet")}</Link>
           </Button>
         </div>
       );
+    }
     case "failed": {
       const recovery = recoveryForError(state.error);
       return (

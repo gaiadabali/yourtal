@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextIntlClientProvider } from "next-intl";
 import idID from "@/messages/id-ID/burn.json";
 import { usePriceLockCountdown } from "./use-price-lock-countdown";
-import { computeLockExpiresAt } from "./price-lock";
 
 /** `usePriceLockCountdown` reads `burn` copy via `useTranslations` (6.1.d) — needs a provider ancestor, same as every other burn test. */
 function wrapper({ children }: { children: ReactNode }) {
@@ -51,10 +50,10 @@ describe("usePriceLockCountdown", () => {
   });
 
   it("if the price was already shown a while ago, reflects the true remaining time immediately (never resets the clock)", () => {
-    // The quote was shown 8 minutes ago; only 2 minutes of a 10-minute lock remain.
-    const lockExpiresAt = computeLockExpiresAt(new Date(NOW.getTime() - 8 * 60_000));
+    // The quote was shown 8 minutes ago; only 7 minutes of a 15-minute lock remain.
+    const lockExpiresAt = new Date(NOW.getTime() + 7 * 60_000).toISOString();
     const { result } = renderHook(() => usePriceLockCountdown(lockExpiresAt, vi.fn()), { wrapper });
-    expect(result.current.secondsRemaining).toBe(2 * 60);
+    expect(result.current.secondsRemaining).toBe(7 * 60);
   });
 
   it("counts down every second and calls onExpire exactly once when it reaches zero", () => {

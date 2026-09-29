@@ -6,9 +6,8 @@
 
 /** The only files that may still name a mock backing rate. */
 const ALLOWED = [
-  // Removed by B's 6.6.b.
-  "apps/web/features/burn/burn-data.ts",
-  "apps/web/features/wallet/wallet-history.ts",
+  // B's 11.6.b deleted `burn-data.ts` (its rate) and `wallet-history.ts`
+  // (removed earlier, 6.5) — both entries are gone, not just their rates.
   // C's 7.8.c removed this from `apps/web/features/studio/campaign-builder/campaign-reward-risk.ts`.
   // The contract mocks and the constant itself; 13.5.c deletes them.
   "packages/contracts/src/money/mock-backing-rate.ts",

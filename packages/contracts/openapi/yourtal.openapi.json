@@ -23193,6 +23193,9 @@
                 "type": "null"
               }
             ]
+          },
+          "dailyCapPoints": {
+            "$ref": "#/components/schemas/Points"
           }
         },
         "required": [

@@ -5,8 +5,11 @@
  * itself (Area A-owned) so a redirect rule never requires touching the auth
  * gate.
  *
- * `/` is the signed-in home at `/home`; signed out it is the AU landing page
- * until 11.1.a gives `/` a public page of its own.
+ * `/` is the signed-in home at `/home`; signed out, 11.1.a's own public
+ * landing page at `app/(landing)/page.tsx` renders directly — no redirect,
+ * so a crawler and every visitor see the same page regardless of the
+ * request's IP (docs/11-seo-aeo-geo.md's own "no IP redirect" rule). That
+ * page carries its own crawlable region/language chooser.
  */
 export interface RouteRedirectRule {
   /** Exact pathname to match (no query string, no trailing slash). */
@@ -33,8 +36,9 @@ function movedToStudio(destination: string): RouteRedirectRule["resolve"] {
 }
 
 export const routeRedirects: readonly RouteRedirectRule[] = [
-  // Area B (3.5.d).
-  { path: "/", resolve: ({ signedIn }) => (signedIn ? "/home" : "/au") },
+  // Area B (3.5.d, 11.1.a). Signed out: `null` — no redirect, so `/`'s own
+  // public landing page renders (never an `/au` IP redirect).
+  { path: "/", resolve: ({ signedIn }) => (signedIn ? "/home" : null) },
   // Area C (7.8.a).
   { path: "/business", resolve: movedToStudio("/studio") },
   { path: "/business/campaigns", resolve: movedToStudio("/studio/campaigns") },

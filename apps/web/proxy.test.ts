@@ -62,10 +62,13 @@ describe("proxy (1.7.c)", () => {
     },
   );
 
-  // 3.5.d's route-redirects rule: `/` is the signed-in home, never a login wall.
-  it("sends / to /au signed out and to /home signed in", () => {
+  // 3.5.d/11.1.a's route-redirects rule: `/` is the signed-in home, never a
+  // login wall — and, signed out, its own public landing page (no IP
+  // redirect to /au).
+  it("renders / directly signed out (no redirect) and sends it to /home signed in", () => {
     const signedOut = proxy(requestFor("/"));
-    expect(new URL(signedOut.headers.get("location") ?? "").pathname).toBe("/au");
+    expect(signedOut.status).not.toBe(307);
+    expect(signedOut.headers.get("location")).toBeNull();
     const signedIn = proxy(requestFor("/", "yt_session=token"));
     expect(new URL(signedIn.headers.get("location") ?? "").pathname).toBe("/home");
   });

@@ -40,7 +40,17 @@ function filesUnder(root: string, prefix = ""): string[] {
 function contentTypeFor(file: string): string {
   if (file.endsWith(".m3u8")) return "application/vnd.apple.mpegurl";
   if (file.endsWith(".ts")) return "video/mp2t";
-  throw new Error(`no HLS content type for ${file}`);
+  if (file.endsWith(".jpg")) return "image/jpeg";
+  if (file.endsWith(".mp4")) return "video/mp4";
+  throw new Error(`no media content type for ${file}`);
+}
+
+// A fixture's poster and teaser live under the public prefixes nginx serves; the rest is HLS.
+function objectKeyFor(assetId: string, file: string): string | null {
+  if (file === "poster.jpg") return `posters/${assetId}.jpg`;
+  if (file === "teaser.mp4") return `teasers/${assetId}.mp4`;
+  if (file.endsWith(".txt")) return null;
+  return `hls/${assetId}/${file}`;
 }
 
 async function remoteSize(client: S3Client, bucket: string, key: string): Promise<number | null> {
@@ -72,7 +82,8 @@ export async function ensureStagingMedia(config: StagingMediaConfig): Promise<St
   try {
     for (const file of files) {
       const local = path.join(config.fixtureDir, file);
-      const key = `hls/${config.assetId}/${file}`;
+      const key = objectKeyFor(config.assetId, file);
+      if (key === null) continue;
       if ((await remoteSize(client, config.bucket, key)) === statSync(local).size) continue;
       await client.send(
         new PutObjectCommand({

@@ -17,8 +17,8 @@
     "zeroQuestions": "No questions",
     "oneQuestion": "1 question",
     "manyQuestions": "{count} questions",
-    "scoringBaseOnly": "Full reward is paid for watching and answering, with no requirement to answer correctly.",
-    "scoringBaseBonus": "A base reward is paid for watching and answering; an additional bonus follows the number of correct answers."
+    "scoringBaseOnly": "You earn the full reward for watching and answering, whether or not your answers are correct.",
+    "scoringBaseBonus": "You earn a base reward for watching and answering, plus a bonus for correct answers."
   },
   "campaign": {
     "emptyFiltered": "No {filterLabel} campaigns right now",

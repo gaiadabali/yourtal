@@ -89,6 +89,19 @@ function categoryFor(slug: string): {
   return CATEGORY_BY_SLUG[slug] ?? { category: "retail", contentCategory: "services" };
 }
 
+/** Viewer-facing listing copy in the region's language; never cites tickets or tooling. */
+export function listingCopy(brand: string, region: string): { title: string; description: string } {
+  return region === "ID"
+    ? {
+        title: `Voucher ${brand}`,
+        description: `Tukarkan di ${brand}. Tunjukkan kodenya di kasir.`,
+      }
+    : {
+        title: `${brand} voucher`,
+        description: `Redeem at ${brand}. Show the code at the counter.`,
+      };
+}
+
 export interface DemoMediaVoucherResult {
   readonly slug: string;
   readonly status: "seeded" | "already_present" | "failed";
@@ -122,10 +135,9 @@ function buildListing(params: {
     id: listingId,
     merchantId: business.businessId,
     merchantName: business.brand,
-    title: `${business.brand} — Demo Voucher`,
-    description: `A demonstration voucher for ${business.brand}, seeded by pnpm demo:media (7.2.e).`,
+    ...listingCopy(business.brand, business.region),
     category,
-    locations: [{ id: locationId, name: `${business.brand} — Demo Outlet`, address, district }],
+    locations: [{ id: locationId, name: business.brand, address, district }],
     currency: money.currency,
     faceValueMinor: toMinorUnits(money.faceValueMinor),
     settlementValueMinor: toMinorUnits(money.settlementValueMinor),

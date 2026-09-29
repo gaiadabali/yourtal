@@ -32,7 +32,7 @@ describe("AccrualIndicator", () => {
         locale="en-AU"
       />,
     );
-    expect(screen.getByRole("status")).toHaveTextContent(/Nothing is paid/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/You earn nothing until you finish/i);
 
     rerender(
       <AccrualIndicator

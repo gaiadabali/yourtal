@@ -27,7 +27,9 @@ describe("describeQuestionCount", () => {
 
 describe("en-AU (YT-0405)", () => {
   it("describes base_only as unconditional in English, with no Indonesian leaking through", () => {
-    expect(describeScoringRule("base_only", "en-AU")).toMatch(/no requirement to answer correctly/);
+    expect(describeScoringRule("base_only", "en-AU")).toMatch(
+      /whether or not your answers are correct/,
+    );
   });
 
   it("describes base_plus_accuracy_bonus as base plus a bonus in English", () => {

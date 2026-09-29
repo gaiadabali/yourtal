@@ -139,7 +139,7 @@ jobs:
           cp -r packages/db/migrations "$STAGE/migrations"
           cp -r policies "$STAGE/policies"
           # The demo video the staging seed publishes to RustFS (2.3.i, F58).
-          mkdir -p "$STAGE/media-fixtures" && cp -r packages/media/fixtures/attention-30s "$STAGE/media-fixtures/"
+          mkdir -p "$STAGE/media-fixtures" && cp -r packages/media/fixtures/attention-30s "$STAGE/media-fixtures/" && cp -r packages/media/fixtures/snap-app-30s "$STAGE/media-fixtures/"
           cp infra/helios/pre-reload.sh infra/helios/set-role-passwords.mjs             infra/helios/run-with-env.sh infra/helios/ecosystem.config.cjs "$STAGE/deploy/"
           chmod 755 "$STAGE/deploy/"*.sh "$STAGE/bin/"*
           echo "$GITHUB_SHA" > "$STAGE/REVISION"

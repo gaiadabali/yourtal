@@ -6,7 +6,8 @@ import { listDemoMediaBusinesses, runDemoMedia } from "@yourtal/media/demo-media
 import type { DemoMediaResult } from "@yourtal/media/demo-media";
 import { runDemoCampaignFunding } from "./demo-campaign-funding";
 import { alignDemoCampaignTerms } from "./demo-campaign-terms";
-import { repairDemoListingImages } from "./demo-listing-images";
+import { repairDemoListingCopy, repairDemoListingImages } from "./demo-listing-images";
+import { SNAP_APP_ASSET_ID, repairSnapAppMedia } from "./snap-app-media";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
 import type { DemoMediaVoucherResult } from "./demo-media-vouchers";
@@ -160,6 +161,25 @@ async function main(): Promise<void> {
             accessKeyId: process.env.S3_ACCESS_KEY ?? "",
             secretAccessKey: process.env.S3_SECRET_KEY ?? "",
           });
+    // The Snap App quick campaigns' real clip, shipped beside the test-card fixture.
+    const snapAppDir =
+      fixtureDir === undefined || fixtureDir === ""
+        ? null
+        : path.join(path.dirname(fixtureDir), SNAP_APP_ASSET_ID);
+    const snapAppMedia =
+      snapAppDir === null || !existsSync(snapAppDir)
+        ? null
+        : await ensureStagingMedia({
+            fixtureDir: snapAppDir,
+            assetId: SNAP_APP_ASSET_ID,
+            bucket: process.env.S3_BUCKET ?? "yourtal-media",
+            endpoint: process.env.S3_ENDPOINT ?? "http://127.0.0.1:26900",
+            accessKeyId: process.env.S3_ACCESS_KEY ?? "",
+            secretAccessKey: process.env.S3_SECRET_KEY ?? "",
+          });
+    if (snapAppMedia !== null && snapAppMedia.status !== "failed") {
+      await repairSnapAppMedia(pool, console.log);
+    }
     const mediaSummary =
       media === null
         ? "demo video: skipped"
@@ -264,6 +284,7 @@ async function main(): Promise<void> {
     }
     // After the vouchers' listings exist: give any placeholder image a real poster.
     await repairDemoListingImages(pool, console.log);
+    await repairDemoListingCopy(pool, console.log);
     const demoMediaVouchersSeeded = demoMediaVoucherResults.filter(
       (r: DemoMediaVoucherResult) => r.status === "seeded",
     ).length;

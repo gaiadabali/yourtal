@@ -3,7 +3,7 @@
     "rewardIfYouFinish": "Reward jika kamu selesai",
     "progressAriaLabel": "Progres menuju reward",
     "paused": "Akumulasi reward dijeda — tab ini di latar belakang.",
-    "pendingUntilFinish": "Tidak ada yang dibayarkan sampai kamu menonton seluruh video dan menjawab pertanyaan checkpoint — lalu kamu menerima {points}."
+    "pendingUntilFinish": "Kamu belum mendapat poin sampai menonton seluruh video dan menjawab pertanyaan checkpoint. Setelah itu kamu mendapat {points}."
   },
   "completion": {
     "watchedPending": "Kamu sudah menonton seluruh video. {points} tertunda — jawab pertanyaan checkpoint untuk mengonfirmasi rewardmu."
@@ -61,7 +61,7 @@
     "pointsWithBonus": "Hingga {points} dengan bonus akurasi penuh",
     "questionCount": "{count, plural, one {# pertanyaan} other {# pertanyaan}} di sepanjang video",
     "noQuestions": "Tidak ada pertanyaan — cukup tonton sampai selesai",
-    "stoppingEarly": "Berhenti di tengah jalan tidak menghasilkan apa pun — reward hanya dibayar setelah kamu selesai",
+    "stoppingEarly": "Berhenti di tengah jalan tidak memberi poin. Tonton sampai selesai untuk mendapatkan poin.",
     "newAccountHold": "Poin akun baru terbuka setelah maksimal 3 hari"
   }
 }

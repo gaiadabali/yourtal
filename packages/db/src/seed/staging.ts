@@ -1025,9 +1025,8 @@ function buildDemoListing(priceInPoints: number): Listing {
     id: DEMO_LISTING_ID,
     merchantId: SNAP_APP_AU_ID,
     merchantName: "Snap App",
-    title: "Snap App — Demo Voucher",
-    description:
-      "A demonstration voucher seeded for staging review and the backup restore rehearsal (2.3.c).",
+    title: "Snap App voucher",
+    description: "Redeem at Snap App. Show the code at the counter.",
     category: "retail",
     locations: [
       {
@@ -1533,7 +1532,9 @@ function buildAffordableListing(
     merchantName: spec.merchantName,
     title: spec.title,
     description:
-      "A demonstration voucher seeded for the staging redemption-loop Check (F74/8.2.i), priced low enough for the demo viewer's own standing balance.",
+      spec.region === "ID"
+        ? "Tukarkan di Snap App. Tunjukkan kodenya di kasir."
+        : "Redeem at Snap App. Show the code at the counter.",
     category: "retail",
     locations: [
       {
@@ -1795,7 +1796,7 @@ export async function seedStaging(
       merchantName: "Snap App",
       region: "AU",
       currency: "AUD",
-      title: "Snap App — Demo Voucher (affordable)",
+      title: "Snap App starter voucher",
       locationName: "Snap App — Pyrmont",
       address: "2 Refinery Drive, Pyrmont NSW 2009",
       district: "Pyrmont",
@@ -1814,7 +1815,7 @@ export async function seedStaging(
       merchantName: "Snap App",
       region: "ID",
       currency: "IDR",
-      title: "Snap App — Voucher Demo (terjangkau)",
+      title: "Voucher hemat Snap App",
       locationName: "Snap App — Kemang",
       address: "Jl. Kemang Raya No. 8, Jakarta Selatan",
       district: "Kemang",

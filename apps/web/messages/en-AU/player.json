@@ -3,7 +3,7 @@
     "rewardIfYouFinish": "Reward if you finish",
     "progressAriaLabel": "Progress toward the reward",
     "paused": "Reward accrual paused — this tab is in the background.",
-    "pendingUntilFinish": "Nothing is paid until you finish the whole video and answer the checkpoint questions — then you receive {points}."
+    "pendingUntilFinish": "You earn nothing until you finish the whole video and answer the checkpoint questions. Then you earn {points}."
   },
   "completion": {
     "watchedPending": "You watched the whole video. {points} pending — answer the checkpoint questions to confirm your reward."
@@ -61,7 +61,7 @@
     "pointsWithBonus": "Up to {points} with a full-accuracy bonus",
     "questionCount": "{count, plural, one {# question} other {# questions}} along the way",
     "noQuestions": "No questions — just watch the whole thing",
-    "stoppingEarly": "Stopping early earns nothing — you're paid only once you finish",
+    "stoppingEarly": "Stopping early earns nothing. Finish the video to earn your points.",
     "newAccountHold": "New accounts' points unlock after up to 3 days"
   }
 }

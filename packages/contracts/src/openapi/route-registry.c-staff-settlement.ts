@@ -103,7 +103,13 @@ export const STAFF_SETTLEMENT_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successStatus: 201,
     successDescription: "The statement, now `open` again.",
     successSchema: inlineSchema(statementSchema),
-    errors: [VALIDATION_400, FORBIDDEN, STATEMENT_NOT_FOUND, SETTLEMENT_CONFLICT, SERVICE_UNAVAILABLE],
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      STATEMENT_NOT_FOUND,
+      SETTLEMENT_CONFLICT,
+      SERVICE_UNAVAILABLE,
+    ],
   },
 
   // -- payout approval, two-person (10.1.c) --
@@ -136,7 +142,8 @@ export const STAFF_SETTLEMENT_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "post",
     path: "/api/staff/settlement/{region}/payout-proposals/{proposalId}/approve",
-    summary: "Approve a pending payout -- calls ledger approvePayout, refused inside the F12 window",
+    summary:
+      "Approve a pending payout -- calls ledger approvePayout, refused inside the F12 window",
     tags: ["staff-settlement"],
     pathParams: [REGION_PARAM, PROPOSAL_ID_PARAM],
     requestBody: {

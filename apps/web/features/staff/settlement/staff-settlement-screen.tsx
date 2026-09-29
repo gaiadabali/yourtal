@@ -34,7 +34,10 @@ const FLASH_TONE: Record<string, "success" | "danger" | "warning"> = {
   invalid: "warning",
 };
 
-const STATUS_TONE: Record<SettlementQueue["statements"][number]["status"], "danger" | "warning" | "success" | "neutral"> = {
+const STATUS_TONE: Record<
+  SettlementQueue["statements"][number]["status"],
+  "danger" | "warning" | "success" | "neutral"
+> = {
   open: "neutral",
   disputed: "danger",
   paid: "success",

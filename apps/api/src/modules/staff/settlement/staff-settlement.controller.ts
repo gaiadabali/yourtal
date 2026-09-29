@@ -76,7 +76,11 @@ export class StaffSettlementController {
 
   // -- the queue: every open or disputed statement in a region -----------
 
-  @Authorize({ kind: "billing", action: "view_statement_queue", attrsFrom: () => ({ businessId: "staff" }) })
+  @Authorize({
+    kind: "billing",
+    action: "view_statement_queue",
+    attrsFrom: () => ({ businessId: "staff" }),
+  })
   @StaffAction("settlement.view_queue")
   @NotValueMoving("A read.")
   @Get(":region/queue")
@@ -89,7 +93,11 @@ export class StaffSettlementController {
 
   // -- resolving a statement's own dispute (10.6.b raised it) -------------
 
-  @Authorize({ kind: "billing", action: "resolve_dispute", attrsFrom: () => ({ businessId: "staff" }) })
+  @Authorize({
+    kind: "billing",
+    action: "resolve_dispute",
+    attrsFrom: () => ({ businessId: "staff" }),
+  })
   @StaffAction("settlement.resolve_dispute")
   @Idempotent({ retentionMs: SETTLEMENT_RETENTION_MS })
   @Post("statements/:id/resolve-dispute")

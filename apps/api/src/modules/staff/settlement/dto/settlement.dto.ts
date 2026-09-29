@@ -10,8 +10,6 @@ import { z } from "zod";
 
 export class ResolveStatementDisputeDto extends createZodDto(resolveStatementDisputeBodySchema) {}
 export class ProposePayoutDto extends createZodDto(proposePayoutBodySchema) {}
-export class DecideSettlementProposalDto extends createZodDto(
-  decideSettlementProposalBodySchema,
-) {}
+export class DecideSettlementProposalDto extends createZodDto(decideSettlementProposalBodySchema) {}
 
 export const regionParamSchema = z.object({ region: z.enum(["AU", "ID"]) });

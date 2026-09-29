@@ -1,13 +1,7 @@
 import "server-only";
 import { forbidden } from "next/navigation";
-import {
-  economyProposalSchema,
-  type EconomyProposal,
-} from "@yourtal/contracts/staff/economy";
-import {
-  settlementQueueSchema,
-  type SettlementQueue,
-} from "@yourtal/contracts/staff/settlement";
+import { economyProposalSchema, type EconomyProposal } from "@yourtal/contracts/staff/economy";
+import { settlementQueueSchema, type SettlementQueue } from "@yourtal/contracts/staff/settlement";
 import { z } from "zod";
 import type { ApiError } from "@/lib/api/api-fetch";
 import { apiFetch } from "@/lib/api/api-fetch";

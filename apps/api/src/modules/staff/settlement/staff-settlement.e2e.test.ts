@@ -100,7 +100,12 @@ async function closedWindowStatement(businessId: string) {
     sql`UPDATE platform.ledger_fake_capture SET posted_at = ${midpoint}::timestamptz WHERE capture_id = ${captureId}`,
   );
 
-  return generateStatementFake(db, { businessId, region: "AU", from: from.toISOString(), to: to.toISOString() });
+  return generateStatementFake(db, {
+    businessId,
+    region: "AU",
+    from: from.toISOString(),
+    to: to.toISOString(),
+  });
 }
 
 /** A statement whose window is still open (`to` an hour from now), for the "pays nothing yet" half. */
@@ -201,9 +206,9 @@ describe("payout approval (10.1.c/10.6.a) -- two-person, after the dispute windo
       headers: { cookie: approver.cookie },
     });
     expect(
-      queueResp.json<{ statements: { id: string }[] }>().statements.some(
-        (row) => row.id === statement.id,
-      ),
+      queueResp
+        .json<{ statements: { id: string }[] }>()
+        .statements.some((row) => row.id === statement.id),
     ).toBe(false);
   });
 
@@ -243,8 +248,9 @@ describe("a disputed statement pays nothing until resolved (10.6.a; 10.6.b raise
     // (billing.controller.e2e.test.ts proves the HTTP path and its tenancy
     // check); raised here directly against the same fake store so this
     // suite stays focused on the SETTLEMENT half.
-    (await fake.disputeStatement({ statementId: statement.id, reason: "amount looks wrong" }))
-      ._unsafeUnwrap();
+    (
+      await fake.disputeStatement({ statementId: statement.id, reason: "amount looks wrong" })
+    )._unsafeUnwrap();
 
     const proposer = await staffWith("finance");
     const approver = await staffWith("finance");

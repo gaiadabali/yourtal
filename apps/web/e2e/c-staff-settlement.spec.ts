@@ -218,7 +218,9 @@ test.describe.serial("10.6.a/10.6.c: staff settlement console", () => {
 
     await row.getByLabel("Resolution note (required)").fill("recovery posted, dispute unfounded");
     await row.getByRole("button", { name: "Resolve dispute" }).click();
-    await expect(pageOps.getByText("The dispute was resolved. The statement is open again.")).toBeVisible();
+    await expect(
+      pageOps.getByText("The dispute was resolved. The statement is open again."),
+    ).toBeVisible();
     await pageOps.close();
 
     // Now open (and its window was already closed) -- the normal two-person payout works.

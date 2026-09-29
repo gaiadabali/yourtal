@@ -100,12 +100,11 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
         />
       </div>
 
-      <section
-        aria-label={t("feedLabel")}
-        className={`${tab === "forYou" ? "block" : "hidden"} h-[calc(100dvh-12rem)] w-full overflow-hidden rounded-card lg:block lg:h-[calc(100dvh-7rem)] lg:w-[420px] lg:shrink-0`}
+      <div
+        className={`${tab === "forYou" ? "block" : "hidden"} h-[calc(100dvh-16rem)] w-full overflow-hidden rounded-card lg:block lg:h-[calc(100dvh-7rem)] lg:w-[420px] lg:shrink-0`}
       >
         {feed}
-      </section>
+      </div>
 
       {tab === "forYou" ? null : <div className="lg:hidden">{rows[ROW_KEYS.indexOf(tab)]}</div>}
 

@@ -24,7 +24,7 @@ export interface FeedItemActionsProps {
 }
 
 const RAIL_BUTTON =
-  "flex h-auto w-14 flex-col items-center gap-1 rounded-control bg-transparent p-1 text-caption font-sans text-white hover:bg-white/10";
+  "flex h-auto w-16 flex-col items-center gap-1 whitespace-normal rounded-control bg-transparent p-1 text-center text-caption leading-tight font-sans text-white hover:bg-white/10";
 
 /** Share, Save, Not interested and "Why am I seeing this?" (11.4.d). Nothing here is social. */
 export function FeedItemActions({

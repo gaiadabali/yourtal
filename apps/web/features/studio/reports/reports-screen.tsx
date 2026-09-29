@@ -76,7 +76,9 @@ export function ReportsScreen({
   // `reports-data.ts`'s `ReportsBundle.vouchers` doc comment) — an honest
   // gap panel renders instead of the ledger, below, rather than a
   // real-looking table of zeroes.
-  const redemptionSummary = bundle.vouchers ? summarizeRedemptionLedger(bundle.vouchers) : undefined;
+  const redemptionSummary = bundle.vouchers
+    ? summarizeRedemptionLedger(bundle.vouchers)
+    : undefined;
 
   const relevantGaps = UNAVAILABLE_METRICS.filter(
     (metric) =>

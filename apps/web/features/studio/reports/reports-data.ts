@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { campaignLifecycleStateSchema, publicStatusOf } from "@yourtal/contracts/campaign/lifecycle";
+import {
+  campaignLifecycleStateSchema,
+  publicStatusOf,
+} from "@yourtal/contracts/campaign/lifecycle";
 import { campaignScoringRuleSchema } from "@yourtal/contracts/campaign";
 import { listingSchema } from "@yourtal/contracts/listing";
 import type { Listing } from "@yourtal/contracts/listing";
@@ -149,9 +152,7 @@ const liveReportsDataSource: ReportsDataSource = {
       z.array(apiCampaignSummarySchema),
     );
     if (!campaignsResult.ok) {
-      throw new Error(
-        `Could not load this business's campaigns: ${campaignsResult.error.message}`,
-      );
+      throw new Error(`Could not load this business's campaigns: ${campaignsResult.error.message}`);
     }
     const campaigns = campaignsResult.data
       .map(toReportsCampaign)
@@ -173,7 +174,10 @@ const liveReportsDataSource: ReportsDataSource = {
       }),
     );
 
-    const listingsResult = await apiFetch(`/api/${businessId}/store/listings`, listingsResponseSchema);
+    const listingsResult = await apiFetch(
+      `/api/${businessId}/store/listings`,
+      listingsResponseSchema,
+    );
     if (!listingsResult.ok) {
       throw new Error(`Could not load this business's listings: ${listingsResult.error.message}`);
     }

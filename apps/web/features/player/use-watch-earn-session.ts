@@ -49,6 +49,10 @@ export type WatchEarnPhase =
   | { kind: "claiming" }
   | { kind: "earned"; points: number; unlockAt: string | null }
   | { kind: "not_earning"; reason: string | null }
+  /** 12.2.e: a teen's own quiet hours (21:00-07:00) refused a NEW reward
+   * session -- the long-form mirror of `use-quick-earn.ts`'s same phase.
+   * Kind, not a generic failure, and never a retry loop. */
+  | { kind: "quiet_hours" }
   | { kind: "failed" };
 
 const REPORT_EVERY_MS = 4_000;
@@ -89,7 +93,11 @@ export function useWatchEarnSession(campaignId: string) {
     setPhase({ kind: "starting" });
     const started = await startWatchSessionAction(campaignId);
     if (!started.ok) {
-      setPhase({ kind: "failed" });
+      setPhase(
+        started.error.kind === "http" && started.error.code === "teen_quiet_hours"
+          ? { kind: "quiet_hours" }
+          : { kind: "failed" },
+      );
       return;
     }
     const { session, manifestUrl, durationSeconds } = started.data;

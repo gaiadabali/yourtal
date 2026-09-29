@@ -79,5 +79,12 @@
     "noQuestions": "Tidak ada pertanyaan — cukup tonton sampai selesai",
     "stoppingEarly": "Berhenti di tengah jalan tidak memberi poin. Tonton sampai selesai untuk mendapatkan poin.",
     "newAccountHold": "Poin akun baru terbuka setelah maksimal 3 hari"
+  },
+  "quietHours": {
+    "message": "Jam tenang sampai jam 7 pagi -- coba lagi besok pagi."
+  },
+  "watchTimeReminder": {
+    "body": "Kamu sudah menonton cukup lama -- boleh istirahat sebentar kalau mau.",
+    "dismiss": "Oke"
   }
 }

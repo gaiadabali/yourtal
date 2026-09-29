@@ -335,6 +335,56 @@ describe("VideoPlayer", () => {
     );
   });
 
+  // 12.2.e: the long-form mirror of `use-quick-earn.test.ts`'s own
+  // "quiet_hours, not failed" case.
+  it("shows the kind quiet-hours state, not the generic failed banner or a retry button, when a teen's new session is refused", async () => {
+    startWatchSessionActionMock.mockResolvedValue({
+      ok: false,
+      error: { kind: "http", status: 403, code: "teen_quiet_hours", message: "quiet hours" },
+    });
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+
+    expect(await screen.findByText(/Quiet hours until 7am/)).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Play Test Campaign" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+  });
+
+  // 12.2.e: the player's own wiring of the shared `use-watch-time-reminder`
+  // hook (12.2.b) -- teen-only, never blocking playback.
+  describe("the teen watch-time reminder", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("shows after ~45 continuous foreground minutes for a teen, and dismissing it does not touch playback", async () => {
+      vi.useFakeTimers();
+      render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" isTeen />);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(45 * 60 * 1000);
+      });
+      expect(screen.getByText(/You've been watching a while/)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "Got it" }));
+      expect(screen.queryByText(/You've been watching a while/)).not.toBeInTheDocument();
+      // The button click never reaches the (unmounted) video, so nothing
+      // asserts pause/play here — there is no session running yet, and the
+      // reminder itself carries no playback reference at all.
+    });
+
+    it("never shows for an adult viewer", async () => {
+      vi.useFakeTimers();
+      render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" isTeen={false} />);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(120 * 60 * 1000);
+      });
+      expect(screen.queryByText(/You've been watching a while/)).not.toBeInTheDocument();
+    });
+  });
+
   it("shows the not-earning moment when the server completes without granting", async () => {
     completeWatchSessionActionMock.mockResolvedValue({
       ok: true,

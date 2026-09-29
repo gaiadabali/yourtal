@@ -16,6 +16,12 @@ import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 import { SpendAtBrand } from "./spend-at-brand";
 import { UpNextCard } from "./up-next-card";
 import { useWatchEarnSession } from "./use-watch-earn-session";
+// 12.2.e: the same hook the in-feed reward loop uses (12.2.b) -- reused
+// here rather than duplicated, since the counting logic (foreground-only,
+// one nudge, never a repeat) is identical for both players. `features/feed`
+// owns the file; this is a plain cross-feature import, the same pattern
+// `features/feed/quick-earn.tsx` already uses for `features/player`.
+import { useWatchTimeReminder } from "@/features/feed/use-watch-time-reminder";
 
 // Loaded on intent only, never server-rendered — see hls-attacher.tsx's own
 // doc comment. The session's manifest URL does not exist until `start()`
@@ -38,6 +44,8 @@ export interface VideoPlayerProps {
   upNext?: Campaign | null;
   /** 11.5.c: the funder's own store listings, "Spend at <brand>" on the completion screen. */
   vouchers?: readonly PublicListing[];
+  /** 12.2.e: gates the teen-only watch-time reminder below. Defaults to `false` -- widens what already rendered, never narrows it, same convention as `feed-data.ts`'s own `ageBand` fallback. */
+  isTeen?: boolean;
 }
 
 /**
@@ -58,12 +66,17 @@ export function VideoPlayer({
   locale,
   upNext = null,
   vouchers = [],
+  isTeen = false,
 }: VideoPlayerProps) {
   const t = getPlayerTranslator(locale);
   const { phase, videoRef, start, chooseResume, answer, finish } = useWatchEarnSession(campaign.id);
   const [nativeHls, setNativeHls] = useState<boolean | null>(null);
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const [videoError, setVideoError] = useState(false);
+  // 12.2.e: a gentle, non-blocking nudge after ~45 continuous foreground
+  // minutes -- teen-only, same threshold and "one nudge, never a nag" rule
+  // as the feed's own (12.2.b). Never pauses or alters playback.
+  const watchTimeReminder = useWatchTimeReminder(isTeen);
   const maxPoints = terms.rewardPoints + terms.accuracyBonusPoints;
   const chapters = playerChapters(campaign);
 
@@ -90,6 +103,17 @@ export function VideoPlayer({
 
   return (
     <div className="flex flex-col gap-4">
+      {watchTimeReminder.show ? (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-sunken px-4 py-3"
+        >
+          <p className="text-sm font-sans text-fg-muted">{t("watchTimeReminder.body")}</p>
+          <Button type="button" size="sm" variant="secondary" onClick={watchTimeReminder.dismiss}>
+            {t("watchTimeReminder.dismiss")}
+          </Button>
+        </div>
+      ) : null}
       <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-fg">
         <video
           ref={videoRef}
@@ -171,6 +195,16 @@ export function VideoPlayer({
       {phase.kind === "failed" ? (
         <p role="alert" className="text-sm font-sans text-danger">
           {t("errors.startFailed")}
+        </p>
+      ) : null}
+
+      {/* 12.2.e: a kind explanation, not a retry button -- trying again does
+          not help until quiet hours end (the long-form mirror of the feed's
+          own `quiet_hours` phase, 12.2.b). `showStartOverlay` already
+          excludes this phase, so no play button sits over it either. */}
+      {phase.kind === "quiet_hours" ? (
+        <p role="status" className="text-sm font-sans text-fg-muted">
+          {t("quietHours.message")}
         </p>
       ) : null}
 

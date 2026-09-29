@@ -8,6 +8,9 @@ import { MoreFromChannel } from "@/features/player/more-from-channel";
 import { TermsCard } from "@/features/player/terms-card";
 import { VideoPlayer } from "@/features/player/video-player";
 import { getDisplayLocale } from "@/i18n/get-locale";
+// 12.2.e: gates the player's teen-only watch-time reminder -- same read
+// `app/(app)/me/page.tsx` already runs for its own teen-only section.
+import { getMeProfile } from "@/features/me/me-data";
 
 interface WatchPageProps {
   params: Promise<{ campaignId: string }>;
@@ -35,11 +38,16 @@ export default async function WatchPage({ params }: WatchPageProps) {
     notFound();
   }
   const { campaign, terms } = found;
-  const [locale, channelData, isFollowing] = await Promise.all([
+  const [locale, channelData, isFollowing, profile] = await Promise.all([
     getDisplayLocale(),
     getWatchChannel(campaign.businessId),
     isFollowingBusiness(campaign.businessId),
+    getMeProfile(),
   ]);
+  // 12.2.e: defaults to `false` on a failed profile read -- widens what
+  // already rendered before this prop existed, never narrows it (same
+  // convention as `feed-data.ts`'s own `ageBand` fallback).
+  const isTeen = profile.ok && profile.data.profile.ageBand === "teen";
 
   // `channelData` is `null` only on a lookup failure (business not found,
   // suspended, or the API unreachable) — the player and terms card still
@@ -62,6 +70,7 @@ export default async function WatchPage({ params }: WatchPageProps) {
         locale={locale}
         upNext={upNext}
         vouchers={channelData?.listings ?? []}
+        isTeen={isTeen}
       />
       {channelData !== null ? (
         <ChannelRow

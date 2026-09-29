@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Input } from "@yourtal/ui/input";
 import { PointsChip } from "@yourtal/ui/points-chip";
+import type { Notification } from "@yourtal/contracts/me/notification";
+import { NotificationsBell } from "../notifications/notifications-bell";
 import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
 import { Wordmark } from "./wordmark";
 
@@ -10,6 +12,13 @@ export interface TopBarProps {
   locale: SupportedLocale;
   /** The signed-in viewer's spendable points, shown in the PointsChip. Ignored when `signedOut` is set. */
   availablePoints: number;
+  /**
+   * 11.7.a: the signed-in viewer's notifications, server-fetched once at
+   * shell render time. Omitted (no bell rendered) when `signedOut` is set —
+   * `GET /api/me/notifications` needs a session, and a bell that always
+   * opens empty for a logged-out visitor is worse than no bell.
+   */
+  notifications?: readonly Notification[];
   /** Where the wordmark links home. Defaults to `/home` (the signed-in tab) — F79's anonymous caller passes its own public locale root instead. */
   homeHref?: string;
   /**
@@ -44,10 +53,16 @@ export interface TopBarProps {
  * breakpoints' left-padding declarations cleanly override each other
  * instead of both trying to set the same property with no defined winner.
  *
- * Search submits a real, JS-free GET to `/store?q=...` — no `onSubmit`, so
- * it works before hydration and with JS disabled.
+ * Search submits a real, JS-free GET to `/search?q=...` (11.7.b) — no
+ * `onSubmit`, so it works before hydration and with JS disabled.
  */
-export function TopBar({ locale, availablePoints, homeHref = "/home", signedOutCta }: TopBarProps) {
+export function TopBar({
+  locale,
+  availablePoints,
+  notifications,
+  homeHref = "/home",
+  signedOutCta,
+}: TopBarProps) {
   const t = getNavTranslator(locale);
 
   return (
@@ -67,7 +82,7 @@ export function TopBar({ locale, availablePoints, homeHref = "/home", signedOutC
       {signedOutCta ? (
         <div className="min-w-0 flex-1" />
       ) : (
-        <form action="/store" method="get" role="search" className="min-w-0 flex-1">
+        <form action="/search" method="get" role="search" className="min-w-0 flex-1">
           <Input
             type="search"
             name="q"
@@ -85,13 +100,16 @@ export function TopBar({ locale, availablePoints, homeHref = "/home", signedOutC
           {signedOutCta.label}
         </a>
       ) : (
-        <PointsChip
-          value={availablePoints}
-          size="sm"
-          locale={locale}
-          formatLabel={(formatted) => t("pointsAvailable", { points: formatted })}
-          className="shrink-0"
-        />
+        <>
+          {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}
+          <PointsChip
+            value={availablePoints}
+            size="sm"
+            locale={locale}
+            formatLabel={(formatted) => t("pointsAvailable", { points: formatted })}
+            className="shrink-0"
+          />
+        </>
       )}
     </header>
   );

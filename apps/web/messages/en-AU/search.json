@@ -1,0 +1,12 @@
+{
+  "pageTitle": "Search",
+  "searchLabel": "Search YourTal",
+  "placeholder": "Search brands, videos and rewards",
+  "emptyQuery": "Search for a brand, a channel or a reward.",
+  "noResults": "No results for \"{query}\".",
+  "campaignsHeading": "Campaigns",
+  "channelsHeading": "Channels",
+  "listingsHeading": "Rewards",
+  "errorTitle": "Search couldn't load right now.",
+  "retry": "Try again"
+}

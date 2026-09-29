@@ -1,0 +1,12 @@
+{
+  "pageTitle": "Cari",
+  "searchLabel": "Cari di YourTal",
+  "placeholder": "Cari merek, video, dan hadiah",
+  "emptyQuery": "Cari merek, kanal, atau hadiah.",
+  "noResults": "Tidak ada hasil untuk \"{query}\".",
+  "campaignsHeading": "Kampanye",
+  "channelsHeading": "Kanal",
+  "listingsHeading": "Hadiah",
+  "errorTitle": "Pencarian tidak dapat dimuat saat ini.",
+  "retry": "Coba lagi"
+}

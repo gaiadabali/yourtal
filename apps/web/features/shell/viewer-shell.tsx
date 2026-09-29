@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@yourtal/ui/cn";
+import type { Notification } from "@yourtal/contracts/me/notification";
 import { BottomNav } from "./bottom-nav";
 import type { SupportedLocale } from "./nav-i18n";
 import type { NavLabelKey } from "./nav-items";
@@ -26,6 +27,8 @@ export interface ViewerShellProps {
   locale: SupportedLocale;
   /** The signed-in viewer's spendable points, shown in the top bar's chip. Unused when `signedOut` is set (kept required so every existing signed-in caller is unaffected). */
   availablePoints: number;
+  /** 11.7.a: the signed-in viewer's notifications for the top bar's bell. Omit (or leave unset) for a signed-out shell — `TopBar` shows no bell then either way. */
+  notifications?: readonly Notification[];
   /**
    * The viewer is dark-first (After Dark, F3) — every caller gets `"dark"`
    * until the Me screen grows a real light/dark setting. `data-theme` on the
@@ -63,6 +66,7 @@ export interface ViewerShellProps {
 export function ViewerShell({
   locale,
   availablePoints,
+  notifications,
   theme = "dark",
   signedOut,
   children,
@@ -80,10 +84,18 @@ export function ViewerShell({
       }
     : {};
   const navSignedOutProps = signedOut ? { signedOutHrefs: signedOut.hrefs } : {};
+  // Same `exactOptionalPropertyTypes` reasoning as above: omit the key
+  // entirely rather than pass `notifications: undefined` when there is none.
+  const topBarNotificationsProps = notifications ? { notifications } : {};
 
   return (
     <div data-surface="viewer" data-theme={theme} className="min-h-dvh bg-canvas text-fg">
-      <TopBar locale={locale} availablePoints={availablePoints} {...topBarSignedOutProps} />
+      <TopBar
+        locale={locale}
+        availablePoints={availablePoints}
+        {...topBarSignedOutProps}
+        {...topBarNotificationsProps}
+      />
       <SideNav locale={locale} {...navSignedOutProps} />
       <main
         className={cn(

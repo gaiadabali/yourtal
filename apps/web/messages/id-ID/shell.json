@@ -1,3 +1,12 @@
 {
-  "stagingBanner": "Staging — data demo, pembayaran disimulasikan"
+  "stagingBanner": "Staging — data demo, pembayaran disimulasikan",
+  "notifications": {
+    "bellLabel": "Notifikasi",
+    "unreadCount": "{count} notifikasi belum dibaca",
+    "title": "Notifikasi",
+    "empty": "Belum ada apa-apa — notifikasi Anda akan muncul di sini.",
+    "markRead": "Tandai sudah dibaca",
+    "markAllRead": "Tandai semua sudah dibaca",
+    "loadError": "Notifikasi tidak dapat dimuat saat ini."
+  }
 }

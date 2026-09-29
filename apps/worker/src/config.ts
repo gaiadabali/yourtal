@@ -44,7 +44,11 @@ const envSchema = z.object({
 export interface WorkerConfig {
   readonly nodeEnv: "development" | "test" | "production";
   readonly databaseUrl: string;
-  readonly ledger: { readonly baseUrl: string; readonly serviceSecret: string };
+  readonly ledger: {
+    readonly baseUrl: string;
+    readonly serviceSecret: string;
+    readonly mode: "fake" | "live";
+  };
   readonly voucher: { readonly baseUrl: string; readonly serviceSecret: string };
   readonly webhookSecretEncryptionKey: string;
   readonly nginxAccessLogPath: string;
@@ -56,7 +60,11 @@ export function loadWorkerConfig(source: NodeJS.ProcessEnv = process.env): Worke
   return {
     nodeEnv: env.NODE_ENV,
     databaseUrl: env.DATABASE_URL,
-    ledger: { baseUrl: env.LEDGER_BASE_URL, serviceSecret: env.LEDGER_SERVICE_SECRET },
+    ledger: {
+      baseUrl: env.LEDGER_BASE_URL,
+      serviceSecret: env.LEDGER_SERVICE_SECRET,
+      mode: env.LEDGER_MODE,
+    },
     voucher: { baseUrl: env.VOUCHER_BASE_URL, serviceSecret: env.VOUCHER_SERVICE_SECRET },
     webhookSecretEncryptionKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
     nginxAccessLogPath: env.NGINX_ACCESS_LOG_PATH,

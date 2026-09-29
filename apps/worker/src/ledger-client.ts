@@ -18,6 +18,8 @@ import {
   SERVICE_SIGNATURE_HEADER,
   signServiceRequest,
 } from "@yourtal/contracts/ledger-internal/service-signature";
+import { grantSchema } from "@yourtal/contracts/ledger-internal/rewards";
+import type { Grant, GrantActionRequest } from "@yourtal/contracts/ledger-internal/rewards";
 import type { WorkerConfig } from "./config";
 
 /**
@@ -32,9 +34,18 @@ export interface WorkerLedgerClient {
   pointsExpiryNotified(
     notices: readonly { accountId: string; milestoneDays: 30 | 7; expiringAt: string }[],
   ): Promise<PointsExpiryNotified>;
+  /**
+   * TASKS.md 11.5.h: `streak-backstop.ts`'s `LEDGER_MODE=live` path — the
+   * same `/v1/actions/grants` route `apps/api`'s `HttpLedgerClient.grantAction`
+   * calls, signed here as `worker` instead of `api` (the same distinction
+   * `caller` already makes on the api side).
+   */
+  grantAction(request: GrantActionRequest): Promise<Grant>;
 }
 
-export function createWorkerLedgerClient(ledger: WorkerConfig["ledger"]): WorkerLedgerClient {
+export function createWorkerLedgerClient(
+  ledger: Pick<WorkerConfig["ledger"], "baseUrl" | "serviceSecret">,
+): WorkerLedgerClient {
   async function post(path: string, body: unknown): Promise<unknown> {
     const payload = JSON.stringify(body);
     const response = await fetch(`${ledger.baseUrl}${path}`, {
@@ -75,6 +86,9 @@ export function createWorkerLedgerClient(ledger: WorkerConfig["ledger"]): Worker
       return pointsExpiryNotifiedSchema.parse(
         await post("/v1/economy/expiry/notified", { notices }),
       );
+    },
+    async grantAction(request) {
+      return grantSchema.parse(await post("/v1/actions/grants", request));
     },
   };
 }

@@ -10,8 +10,11 @@ import {
 import type { StreakState } from "@yourtal/contracts/me/streak";
 import { DEFAULT_HOLDBACK_HOURS_BY_TIER } from "@yourtal/contracts/ledger-internal/rewards";
 import type { TrustTier } from "@yourtal/contracts/ledger-internal/rewards";
+import { toPoints } from "@yourtal/contracts/money";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { defineJob } from "../job";
+import { createWorkerLedgerClient } from "../ledger-client";
+import type { WorkerLedgerClient } from "../ledger-client";
 
 /**
  * 5.5.d's daily backstop: a user who never re-opens the app after crossing
@@ -51,14 +54,19 @@ import { defineJob } from "../job";
  * an hour of either, was chosen over two DST-fragile per-region crons.
  * Proposed decision, not asked of the founder (effort budget; see report).
  *
- * ## What is NOT built here
+ * ## `LEDGER_MODE=live` (11.5.h)
  *
- * Only the fake-ledger grant path (`LEDGER_MODE` unset or `fake`, this
- * repo's own default — `env.schema.ts`). A `LEDGER_MODE=live` HTTP call to
- * `/v1/actions/grants` (`HttpLedgerClient`'s own route, signed the same way
- * `points-unlocked.ts` already signs its calls) is stubbed but UNVERIFIED —
- * no live ledger service runs in this session's environment to test
- * against. Flagged in this session's report, not claimed as done.
+ * `runStreakBackstop`'s optional third argument is a `WorkerLedgerClient`
+ * (this repo's own `apps/worker/src/ledger-client.ts`, the same signed-HTTP
+ * pattern `points-unlocked.ts` already uses). When given, a bonus grants
+ * through the real ledger's `/v1/actions/grants` (`grantAction`) instead of
+ * `platform.ledger_fake_grant`, and the LOCAL coverage-ratio pause check
+ * below is skipped entirely — that math reads `platform.ledger_fake_*`
+ * tables, which a real ledger never populates; the real ledger's own
+ * `RiskGate`/solvency check (10.4.a, 4.9.c) is what actually gates a live
+ * grant, and a non-2xx from it is treated the same as `paused` (the day
+ * count stands, the bonus flag reverts to false so a later tick retries).
+ * `job.handle` passes one whenever `config.ledger.mode === "live"`.
  */
 
 const REGIONS = ["AU", "ID"] as const;
@@ -213,6 +221,7 @@ async function processCandidate(
   region: Region,
   candidate: Candidate,
   now: Date,
+  liveLedger: WorkerLedgerClient | undefined,
 ): Promise<void> {
   const client = await db.connect();
   try {
@@ -275,22 +284,50 @@ async function processCandidate(
         for (const bonus of bonuses) {
           const points = bonus.day === 3 ? bonusPoints?.day3 : bonusPoints?.day7;
           if (typeof points !== "number") continue; // malformed/missing setting — defer rather than crash the tick
-          const coverage = await coverageRatio(client, region);
-          const paused = !coverage.ok || (!coverage.nothingOwed && coverage.ratio < pauseThreshold);
-          if (paused) {
+
+          if (liveLedger === undefined) {
+            const coverage = await coverageRatio(client, region);
+            const paused =
+              !coverage.ok || (!coverage.nothingOwed && coverage.ratio < pauseThreshold);
+            if (paused) {
+              finalState =
+                bonus.day === 3
+                  ? { ...finalState, day3Granted: false }
+                  : { ...finalState, day7Granted: false };
+              continue;
+            }
+            await insertFakeGrant(client, {
+              userId: candidate.userId,
+              region,
+              points,
+              trustTier: candidate.trustTier,
+              idempotencyKey: streakGrantIdempotencyKey(candidate.userId, bonus),
+            });
+            continue;
+          }
+
+          // 11.5.h: LEDGER_MODE=live — the real ledger's own RiskGate/
+          // solvency check is what gates this, not the local fake-table
+          // math above. A refusal is deferred exactly like `paused`.
+          try {
+            await liveLedger.grantAction({
+              kind: "streak",
+              userId: candidate.userId,
+              region,
+              points: toPoints(points),
+              trustTier: candidate.trustTier,
+              idempotencyKey: streakGrantIdempotencyKey(candidate.userId, bonus),
+            });
+          } catch (error) {
             finalState =
               bonus.day === 3
                 ? { ...finalState, day3Granted: false }
                 : { ...finalState, day7Granted: false };
-            continue;
+            // eslint-disable-next-line no-console -- this job has no injected logger; same convention `delivery-log-ingest.ts` would use if it needed one.
+            console.warn(
+              `streak-backstop: live grant deferred for user=${candidate.userId} day=${String(bonus.day)}: ${error instanceof Error ? error.message : String(error)}`,
+            );
           }
-          await insertFakeGrant(client, {
-            userId: candidate.userId,
-            region,
-            points,
-            trustTier: candidate.trustTier,
-            idempotencyKey: streakGrantIdempotencyKey(candidate.userId, bonus),
-          });
         }
       }
     }
@@ -318,12 +355,21 @@ async function processCandidate(
   }
 }
 
-/** Exported for direct invocation from tests, same convention as `announceUnlockedPoints`. */
-export async function runStreakBackstop(db: Pool, now: Date = new Date()): Promise<void> {
+/**
+ * Exported for direct invocation from tests, same convention as
+ * `announceUnlockedPoints`. `liveLedger` is `undefined` for the fake-ledger
+ * path (every existing test call omits it, unchanged); pass one to grant
+ * through the real ledger instead (11.5.h).
+ */
+export async function runStreakBackstop(
+  db: Pool,
+  now: Date = new Date(),
+  liveLedger?: WorkerLedgerClient,
+): Promise<void> {
   for (const region of REGIONS) {
     const candidates = await candidatesFor(db, region, now);
     for (const candidate of candidates) {
-      await processCandidate(db, region, candidate, now);
+      await processCandidate(db, region, candidate, now, liveLedger);
     }
   }
 }
@@ -332,6 +378,8 @@ export const job = defineJob({
   queue: "me.streak_backstop",
   schedule: "17 * * * *",
   async handle(_job, { config }) {
-    await runStreakBackstop(poolFor(config.databaseUrl));
+    const liveLedger =
+      config.ledger.mode === "live" ? createWorkerLedgerClient(config.ledger) : undefined;
+    await runStreakBackstop(poolFor(config.databaseUrl), new Date(), liveLedger);
   },
 });

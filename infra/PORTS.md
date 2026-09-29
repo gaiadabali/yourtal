@@ -74,6 +74,7 @@ main checkout runs compose. The ports are set in each worktree's `.env`.
 | 9c (`yourtal-p9-c` helper worktree)                    | 26480 | 26481 | 26482                         | 26483                          | 26484      | 26486       | 26485 (`yourtal-cerbos-p9c`)                                                                                                                       |
 | 9d (`yourtal-p9-d` helper worktree)                    | 26490 | 26491 | 26492                         | 26493                          | 26494      | 26496       | 26495 (`yourtal-cerbos-p9d`)                                                                                                                       |
 | 11b (`yourtal-p11-b` helper worktree, TASKS.md 11.4.h) | 26500 | 26501 | 26502 (`yourtal-ledger-p11b`) | 26503 (`yourtal-voucher-p11b`) | 26504      | 26506       | 26592 (the main stack's — this task has no policy work of its own, `register` still calls the PDP so `26592` is reused rather than run standalone) |
+| 11c (`yourtal-p11-c` helper worktree, TASKS.md 11.1.b/11.1.d/11.2.a) | 26510 | 26511 | 26512 (`yourtal-ledger-p11c`) | 26513 (`yourtal-voucher-p11c`) | 26514      | not used    | 26515 (`yourtal-cerbos-p11c`)                                                                                                                       |
 
 - web and api read `WEB_PORT` and `PORT`; Playwright reads `PLAYWRIGHT_PORT`
   (the offline config adds 2).

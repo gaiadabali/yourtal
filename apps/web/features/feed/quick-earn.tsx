@@ -25,10 +25,12 @@ export function QuickEarnVideo({ earn, title, active }: QuickEarnVideoProps) {
   const { phase, finish, videoRef } = earn;
   const [nativeHls, setNativeHls] = useState<boolean | null>(null);
 
+  // Probed on a detached element: this runs before the session's own <video> exists.
   useEffect(() => {
-    const video = videoRef.current;
-    if (video) setNativeHls(video.canPlayType("application/vnd.apple.mpegurl") !== "");
-  }, [videoRef]);
+    setNativeHls(
+      document.createElement("video").canPlayType("application/vnd.apple.mpegurl") !== "",
+    );
+  }, []);
 
   useEffect(() => {
     if (!active) videoRef.current?.pause();

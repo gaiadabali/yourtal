@@ -31,6 +31,19 @@ const config: NextConfig = {
   output: "standalone",
   // i18n/request.ts reads the catalogues from disk, which the tracer cannot see.
   outputFileTracingIncludes: { "/**": ["./messages/**/*.json"] },
+  // `next dev` only: no nginx locally, so signed HLS paths (/media/hls/<expires>/<token>/<session>/…)
+  // pass straight to the dev bucket. Staging and production never build this; nginx checks each request.
+  async rewrites() {
+    const endpoint = process.env["S3_ENDPOINT"];
+    const bucket = process.env["S3_BUCKET"];
+    if (process.env.NODE_ENV !== "development" || !endpoint || !bucket) return [];
+    return [
+      {
+        source: "/media/hls/:expires/:token/:session/:path*",
+        destination: `${endpoint}/${bucket}/hls/:path*`,
+      },
+    ];
+  },
   // Staging is open to reviewers but never indexed, OG images and llms.txt included.
   async headers() {
     if (process.env["APP_ENV"] !== "staging") return [];

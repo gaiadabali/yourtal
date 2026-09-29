@@ -107,7 +107,7 @@ describe("ReportsScreen", () => {
     expect(screen.getByRole("heading", { name: "Nothing to report yet" })).toBeInTheDocument();
   });
 
-  it("lists 'open views vs rewarded views' and the other named gaps for an advertiser, as two never-summed entries", () => {
+  it("lists the gaps that are still genuinely true for an advertiser", () => {
     render(
       <ReportsScreen
         bundle={buildBundle()}
@@ -117,17 +117,20 @@ describe("ReportsScreen", () => {
         locale="en-AU"
       />,
     );
+    expect(screen.getByRole("heading", { name: "Completion by chapter" })).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Open views vs rewarded views" }),
+      screen.getByRole("heading", { name: "Which campaign led to a redemption" }),
     ).toBeInTheDocument();
+    // 12.3.e: re-verified against main and dropped — an aggregate question
+    // accuracy is already computed and shown in the campaign performance
+    // panel, and open/rewarded views are both real, separately-floored
+    // numbers shown there too (see reports-campaign-metrics-panel.tsx).
+    // Neither gap was still true, so neither renders here any more.
     expect(
-      screen.getByRole("heading", { name: "Redemption attribution to a campaign" }),
-    ).toBeInTheDocument();
-    // Structural check that there is no THIRD, combined figure sitting
-    // alongside the two separate gap entries — only two headings exist for
-    // this pair of concepts, never a "Total views" or "Combined views" one.
+      screen.queryByRole("heading", { name: /open views vs rewarded views/i }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: /total views|combined views/i }),
+      screen.queryByRole("heading", { name: /question accuracy.*recall/i }),
     ).not.toBeInTheDocument();
   });
 

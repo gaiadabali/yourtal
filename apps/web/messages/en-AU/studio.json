@@ -292,6 +292,20 @@
       "nothingToReportTitle": "Nothing to report yet",
       "nothingToReportBody": "This business holds no advertiser or supplier relationship, so it has no campaigns or listings for this zone to summarise. A redeemer-only business's own redemption log lives in the Redemption zone, not here.",
       "gapsTitle": "What this report cannot show yet"
+    },
+    "gaps": {
+      "completion-by-chapter": {
+        "label": "Completion by chapter",
+        "reason": "We can show whether a viewer finished a video, but not yet how many people make it through each individual chapter."
+      },
+      "campaign-redemption-attribution": {
+        "label": "Which campaign led to a redemption",
+        "reason": "We can show how many of your vouchers have been redeemed, but not yet which campaign's video earned each one."
+      },
+      "voucher-ledger-by-status": {
+        "label": "Vouchers by status (active, redeemed, expired, transferred)",
+        "reason": "We can only show vouchers already redeemed at one of your own locations — that list lives under Redemptions. We can't yet show how many of your vouchers are still active, expired or transferred."
+      }
     }
   },
   "team": {

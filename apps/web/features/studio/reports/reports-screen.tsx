@@ -146,7 +146,7 @@ export function ReportsScreen({
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {relevantGaps.map((metric) => (
-              <ReportsUnavailablePanel key={metric.id} metric={metric} />
+              <ReportsUnavailablePanel key={metric.id} metric={metric} locale={locale} />
             ))}
           </div>
         </div>

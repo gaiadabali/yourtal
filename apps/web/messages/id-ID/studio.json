@@ -292,6 +292,20 @@
       "nothingToReportTitle": "Belum ada yang bisa dilaporkan",
       "nothingToReportBody": "Bisnis ini tidak memiliki hubungan pengiklan atau pemasok, sehingga tidak ada kampanye atau listing untuk dirangkum di zona ini. Log penukaran milik bisnis khusus penukar sendiri ada di zona Penukaran, bukan di sini.",
       "gapsTitle": "Yang belum dapat ditampilkan laporan ini"
+    },
+    "gaps": {
+      "completion-by-chapter": {
+        "label": "Penyelesaian per bab",
+        "reason": "Kami bisa menunjukkan apakah seorang penonton menyelesaikan sebuah video, tapi belum bisa menunjukkan berapa banyak orang yang menonton sampai ke setiap bab."
+      },
+      "campaign-redemption-attribution": {
+        "label": "Kampanye mana yang menghasilkan penukaran",
+        "reason": "Kami bisa menunjukkan berapa banyak voucher Anda yang sudah ditukarkan, tapi belum bisa menunjukkan kampanye mana yang menghasilkan masing-masing voucher."
+      },
+      "voucher-ledger-by-status": {
+        "label": "Voucher berdasarkan status (aktif, ditukarkan, kedaluwarsa, dipindahkan)",
+        "reason": "Kami hanya bisa menunjukkan voucher yang sudah ditukarkan di salah satu lokasi Anda sendiri — daftar itu ada di halaman Penukaran. Kami belum bisa menunjukkan berapa banyak voucher Anda yang masih aktif, kedaluwarsa, atau sudah dipindahkan."
+      }
     }
   },
   "team": {

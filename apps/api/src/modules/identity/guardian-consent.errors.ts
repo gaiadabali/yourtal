@@ -17,6 +17,6 @@ export interface GuardianLedgerUnavailableError {
 
 export type GetGuardianConsentError = GuardianTokenNotFoundError;
 export type ApproveGuardianConsentError =
-  | GuardianTokenNotFoundError
-  | GuardianConsentAlreadyRevokedError;
-export type RevokeGuardianConsentError = GuardianTokenNotFoundError | GuardianLedgerUnavailableError;
+  GuardianTokenNotFoundError | GuardianConsentAlreadyRevokedError;
+export type RevokeGuardianConsentError =
+  GuardianTokenNotFoundError | GuardianLedgerUnavailableError;

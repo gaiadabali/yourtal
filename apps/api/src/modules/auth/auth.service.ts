@@ -94,7 +94,8 @@ export class AuthService {
     private readonly verificationTokens: VerificationTokenRepository,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(STAFF_ROLE_READER) private readonly staffRoles: StaffRoleReader,
-    @Inject(GUARDIAN_CONSENT_REPOSITORY) private readonly guardianConsents: GuardianConsentRepository,
+    @Inject(GUARDIAN_CONSENT_REPOSITORY)
+    private readonly guardianConsents: GuardianConsentRepository,
     private readonly sessions: SessionService,
     private readonly throttle: ThrottleService,
     private readonly devTokenAccess: DevTokenAccess,
@@ -534,7 +535,12 @@ export class AuthService {
   ): Promise<void> {
     const approveUrl = `${this.config.webOrigin}/guardian/${token}`;
     const revokeUrl = `${this.config.webOrigin}/guardian/${token}?action=revoke`;
-    const { subject, body } = guardianConsentEmailContent(locale, displayName, approveUrl, revokeUrl);
+    const { subject, body } = guardianConsentEmailContent(
+      locale,
+      displayName,
+      approveUrl,
+      revokeUrl,
+    );
 
     const sent = await this.email.send({
       // The token hash, not the token — same convention `deliver()`'s own

@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { okAsync } from "neverthrow";
 import { hashOpaqueToken } from "../../auth/crypto/opaque-token";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
-import type { LedgerBalance, Escrow, EscrowRequest } from "@yourtal/contracts/ledger-internal/wallet";
+import type {
+  LedgerBalance,
+  Escrow,
+  EscrowRequest,
+} from "@yourtal/contracts/ledger-internal/wallet";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import type {
   ConsentTransition,
@@ -50,26 +54,32 @@ function fakeConsents(row: StoredGuardianConsent | null): GuardianConsentReposit
   let stored = row === null ? null : { ...row };
   return {
     create: vi.fn(async () => {}),
-    findByTokenHash: async (tokenHash) =>
-      stored !== null && stored.tokenHash === tokenHash ? { ...stored } : null,
-    findByUserId: async (userId) =>
-      stored !== null && stored.userId === userId ? { ...stored } : null,
-    approve: async (tokenHash, now): Promise<ConsentTransition> => {
+    findByTokenHash: (tokenHash) =>
+      Promise.resolve(stored !== null && stored.tokenHash === tokenHash ? { ...stored } : null),
+    findByUserId: (userId) =>
+      Promise.resolve(stored !== null && stored.userId === userId ? { ...stored } : null),
+    approve: (tokenHash, now): Promise<ConsentTransition> => {
       if (stored === null || stored.tokenHash !== tokenHash) {
-        return { transitioned: false, reason: "not_found" };
+        return Promise.resolve({ transitioned: false, reason: "not_found" });
       }
-      if (stored.revokedAt !== null) return { transitioned: false, reason: "already_revoked" };
-      if (stored.approvedAt !== null) return { transitioned: false, reason: "already_granted" };
+      if (stored.revokedAt !== null) {
+        return Promise.resolve({ transitioned: false, reason: "already_revoked" });
+      }
+      if (stored.approvedAt !== null) {
+        return Promise.resolve({ transitioned: false, reason: "already_granted" });
+      }
       stored = { ...stored, approvedAt: now, guardianConfirmedAdultAt: now };
-      return { transitioned: true, userId: stored.userId, region: stored.region };
+      return Promise.resolve({ transitioned: true, userId: stored.userId, region: stored.region });
     },
-    revoke: async (tokenHash, now): Promise<ConsentTransition> => {
+    revoke: (tokenHash, now): Promise<ConsentTransition> => {
       if (stored === null || stored.tokenHash !== tokenHash) {
-        return { transitioned: false, reason: "not_found" };
+        return Promise.resolve({ transitioned: false, reason: "not_found" });
       }
-      if (stored.revokedAt !== null) return { transitioned: false, reason: "already_revoked" };
+      if (stored.revokedAt !== null) {
+        return Promise.resolve({ transitioned: false, reason: "already_revoked" });
+      }
       stored = { ...stored, revokedAt: now };
-      return { transitioned: true, userId: stored.userId, region: stored.region };
+      return Promise.resolve({ transitioned: true, userId: stored.userId, region: stored.region });
     },
   };
 }
@@ -96,7 +106,8 @@ function fakeProfiles(profile: StoredUserProfile | null): UserProfileRepository 
   const setParentConsentStatus = vi.fn(async () => {});
   return {
     create: vi.fn(async () => {}),
-    findByUserId: async (userId) => (profile !== null && profile.userId === userId ? profile : null),
+    findByUserId: (userId) =>
+      Promise.resolve(profile !== null && profile.userId === userId ? profile : null),
     update: vi.fn(async () => {}),
     setParentConsentStatus,
   };
@@ -116,9 +127,10 @@ function zeroBalance(): LedgerBalance {
   };
 }
 
-function fakeLedger(
-  balance: LedgerBalance,
-): { client: LedgerInternalClient; escrowCalls: EscrowRequest[] } {
+function fakeLedger(balance: LedgerBalance): {
+  client: LedgerInternalClient;
+  escrowCalls: EscrowRequest[];
+} {
   const escrowCalls: EscrowRequest[] = [];
   const client: Partial<LedgerInternalClient> = {
     balance: () => okAsync(balance),
@@ -179,6 +191,7 @@ describe("approveGuardianConsent", () => {
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toStrictEqual({ approved: true });
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- expect() reads the mock fn's calls, never invokes it as a method
     expect(profiles.setParentConsentStatus).toHaveBeenCalledWith(USER_ID, "granted", FAKE_DB);
   });
 
@@ -191,6 +204,7 @@ describe("approveGuardianConsent", () => {
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toStrictEqual({ approved: true });
     // No new write — nothing changed, so nothing to persist again.
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- expect() reads the mock fn's calls, never invokes it as a method
     expect(profiles.setParentConsentStatus).not.toHaveBeenCalled();
   });
 
@@ -202,6 +216,7 @@ describe("approveGuardianConsent", () => {
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "already_revoked" });
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- expect() reads the mock fn's calls, never invokes it as a method
     expect(profiles.setParentConsentStatus).not.toHaveBeenCalled();
   });
 
@@ -222,7 +237,9 @@ describe("revokeGuardianConsent", () => {
     const balance: LedgerBalance = {
       userId: USER_ID,
       availablePoints: 40 as LedgerBalance["availablePoints"],
-      pending: [{ points: 10 as LedgerBalance["availablePoints"], unlockAt: "2026-03-01T00:00:00Z" }],
+      pending: [
+        { points: 10 as LedgerBalance["availablePoints"], unlockAt: "2026-03-01T00:00:00Z" },
+      ],
       expiringPoints: 0 as LedgerBalance["expiringPoints"],
       expiringAt: null,
     };
@@ -246,6 +263,7 @@ describe("revokeGuardianConsent", () => {
       reason: "guardian_consent_revoked",
       idempotencyKey: `guardian-consent-revoke:${USER_ID}`,
     });
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- expect() reads the mock fn's calls, never invokes it as a method
     expect(profiles.setParentConsentStatus).toHaveBeenCalledWith(USER_ID, "revoked", FAKE_DB);
   });
 
@@ -254,7 +272,14 @@ describe("revokeGuardianConsent", () => {
     const profiles = fakeProfiles(fakeProfile());
     const { client, escrowCalls } = fakeLedger(zeroBalance());
 
-    const result = await revokeGuardianConsent(FAKE_DB, consents, profiles, client, RAW_TOKEN, new Date());
+    const result = await revokeGuardianConsent(
+      FAKE_DB,
+      consents,
+      profiles,
+      client,
+      RAW_TOKEN,
+      new Date(),
+    );
 
     expect(result._unsafeUnwrap()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
     expect(escrowCalls).toHaveLength(0);
@@ -271,10 +296,18 @@ describe("revokeGuardianConsent", () => {
       expiringAt: null,
     });
 
-    const result = await revokeGuardianConsent(FAKE_DB, consents, profiles, client, RAW_TOKEN, new Date());
+    const result = await revokeGuardianConsent(
+      FAKE_DB,
+      consents,
+      profiles,
+      client,
+      RAW_TOKEN,
+      new Date(),
+    );
 
     expect(result._unsafeUnwrap()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
     expect(escrowCalls).toHaveLength(0);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- expect() reads the mock fn's calls, never invokes it as a method
     expect(profiles.setParentConsentStatus).not.toHaveBeenCalled();
   });
 
@@ -283,7 +316,14 @@ describe("revokeGuardianConsent", () => {
     const profiles = fakeProfiles(null);
     const { client } = fakeLedger(zeroBalance());
 
-    const result = await revokeGuardianConsent(FAKE_DB, consents, profiles, client, RAW_TOKEN, new Date());
+    const result = await revokeGuardianConsent(
+      FAKE_DB,
+      consents,
+      profiles,
+      client,
+      RAW_TOKEN,
+      new Date(),
+    );
 
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "not_found" });
   });

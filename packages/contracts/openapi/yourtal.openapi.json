@@ -18557,14 +18557,7 @@
             "minLength": 1
           },
           "whyReason": {
-            "type": "string",
-            "enum": [
-              "followed",
-              "interest",
-              "audience",
-              "ending_soon",
-              "popular"
-            ]
+            "$ref": "#/components/schemas/FeedWhyReason"
           }
         },
         "required": [
@@ -18617,6 +18610,17 @@
         "enum": [
           "home",
           "watch"
+        ]
+      },
+      "FeedWhyReason": {
+        "description": "Why a feed item is shown, as a code a client renders in the viewer's own language.",
+        "type": "string",
+        "enum": [
+          "followed",
+          "interest",
+          "audience",
+          "ending_soon",
+          "popular"
         ]
       },
       "FunderType": {

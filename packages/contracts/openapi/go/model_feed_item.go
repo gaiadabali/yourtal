@@ -41,7 +41,7 @@ type FeedItem struct {
 	OpenViewing bool `json:"openViewing"`
 	EndingSoon bool `json:"endingSoon"`
 	Why string `json:"why"`
-	WhyReason string `json:"whyReason"`
+	WhyReason FeedWhyReason `json:"whyReason"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -51,7 +51,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason string) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -547,9 +547,9 @@ func (o *FeedItem) SetWhy(v string) {
 }
 
 // GetWhyReason returns the WhyReason field value
-func (o *FeedItem) GetWhyReason() string {
+func (o *FeedItem) GetWhyReason() FeedWhyReason {
 	if o == nil {
-		var ret string
+		var ret FeedWhyReason
 		return ret
 	}
 
@@ -558,7 +558,7 @@ func (o *FeedItem) GetWhyReason() string {
 
 // GetWhyReasonOk returns a tuple with the WhyReason field value
 // and a boolean to check if the value has been set.
-func (o *FeedItem) GetWhyReasonOk() (*string, bool) {
+func (o *FeedItem) GetWhyReasonOk() (*FeedWhyReason, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -566,7 +566,7 @@ func (o *FeedItem) GetWhyReasonOk() (*string, bool) {
 }
 
 // SetWhyReason sets field value
-func (o *FeedItem) SetWhyReason(v string) {
+func (o *FeedItem) SetWhyReason(v FeedWhyReason) {
 	o.WhyReason = v
 }
 

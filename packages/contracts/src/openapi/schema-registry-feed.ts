@@ -3,6 +3,7 @@ import {
   feedItemSchema,
   feedResponseSchema,
   feedSurfaceSchema,
+  feedWhyReasonSchema,
   searchResponseSchema,
 } from "../feed/feed";
 import type { ContractComponent } from "./schema-registry";
@@ -14,6 +15,13 @@ export const FEED_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: feedSurfaceSchema,
     description:
       "Which board GET /api/feed is ranking for -- home or the full-screen watch surface.",
+    crossFieldRules: [],
+  },
+  {
+    id: "FeedWhyReason",
+    schema: feedWhyReasonSchema,
+    description:
+      "Why a feed item is shown, as a code a client renders in the viewer's own language.",
     crossFieldRules: [],
   },
   {

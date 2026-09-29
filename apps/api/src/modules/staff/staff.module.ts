@@ -9,6 +9,7 @@ import { StoreModule } from "../store/store.module";
 import { StaffConsoleController } from "./staff-console.controller";
 import { StaffUsersController } from "./staff-users.controller";
 import { StaffDisputesController } from "./staff-disputes.controller";
+import { StaffRiskQueueController } from "./staff-risk-queue.controller";
 import { StaffEconomyController } from "./economy/staff-economy.controller";
 import { StaffAuditInterceptor } from "./staff-audit.interceptor";
 import { UserAccountAttributeLoader } from "./user-account-attribute-loader";
@@ -51,6 +52,7 @@ class StaffPoolShutdown implements OnApplicationShutdown {
     StaffConsoleController,
     StaffUsersController,
     StaffDisputesController,
+    StaffRiskQueueController,
     StaffEconomyController,
   ],
   providers: [

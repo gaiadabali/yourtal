@@ -193,6 +193,19 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   burnForVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   burnSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
+  // --- staff/risk-queue.ts (TASKS.md 10.5.a): the manual-review queue
+  // screen, documented inline in route-registry.c-staff-risk.ts, same
+  // treatment as staffSessionSchema above.
+  staffRiskSignalSchema:
+    "10.5.a's staff risk queue: documented inline in route-registry.c-staff-risk.ts, same as staffSessionSchema above.",
+  staffRiskFlagSchema: "Same as staffRiskSignalSchema above.",
+  staffRiskQueueSchema:
+    "10.5.a's GET /api/staff/risk/queue response, documented inline in route-registry.c-staff-risk.ts.",
+  staffRiskResolveRequestSchema:
+    "10.5.a's release/suspend request body, documented inline in route-registry.c-staff-risk.ts.",
+  staffRiskResolveResultSchema:
+    "10.5.a's release/suspend response, documented inline in route-registry.c-staff-risk.ts.",
+
   // --- ledger-internal: points expiry (10.2.d) and the RiskGate queue (10.4/10.5) ---
   milestoneDaysSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   expiryNoticeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
@@ -208,17 +221,6 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   riskQueueListRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   riskQueueListSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   riskQueueResolveRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
-
-  // --- staff/risk-queue.ts (TASKS.md 10.5.a, in progress): the manual-review
-  // queue screen. Not yet wired to a route in this commit (the merge this
-  // lands in is scoped to 10.2/10.4 only) -- 10.5.a's own controller will
-  // document these inline in a route-registry file, same as every other
-  // staff* schema above.
-  staffRiskSignalSchema: "10.5.a, in progress -- see the comment above this block.",
-  staffRiskFlagSchema: "10.5.a, in progress -- see the comment above this block.",
-  staffRiskQueueSchema: "10.5.a, in progress -- see the comment above this block.",
-  staffRiskResolveRequestSchema: "10.5.a, in progress -- see the comment above this block.",
-  staffRiskResolveResultSchema: "10.5.a, in progress -- see the comment above this block.",
 
   // --- studio media pipeline (TASKS.md 7.2): worker -> api internal callback ---
   mediaReadyCallbackRequestSchema:

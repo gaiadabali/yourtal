@@ -10,7 +10,11 @@ import {
   suspendUserResultSchema,
   releaseUserResultSchema,
 } from "../staff/users";
-import { staffDisputeQueueSchema } from "../staff/disputes";
+import {
+  disputeResolutionResultSchema,
+  resolveDisputeRequestSchema,
+  staffDisputeQueueSchema,
+} from "../staff/disputes";
 import {
   FORBIDDEN,
   SERVICE_UNAVAILABLE,
@@ -202,5 +206,42 @@ export const STAFF_DISPUTES_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       "Every captured-voucher dispute waiting for staff (checkout.dispute where outcome = 'queued'), oldest first. List-only -- resolving one is TASKS.md 10.5.",
     successSchema: inlineSchema(staffDisputeQueueSchema),
     errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/staff/disputes/{voucherId}/resolve",
+    summary:
+      "Resolve a K13 dispute, posting a recovery line against the merchant (TASKS.md 10.5.b)",
+    tags: ["staff"],
+    pathParams: [
+      {
+        name: "voucherId",
+        description: "The disputed voucher (checkout.dispute.voucher_id).",
+        schema: { type: "string", format: "uuid" },
+      },
+    ],
+    requestBody: {
+      description: "Why the dispute is resolved in the user's favour.",
+      schema: inlineSchema(resolveDisputeRequestSchema),
+    },
+    successStatus: 201,
+    successDescription:
+      "The recovery line posted to the ledger (reversing the S-scaled payable the original capture posted). Shows up as recoveriesMinor on the merchant's next statement.",
+    successSchema: inlineSchema(disputeResolutionResultSchema),
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      {
+        status: 404,
+        description: "No such dispute, or its voucher was never captured (capture_not_found).",
+        documented: true,
+      },
+      {
+        status: 409,
+        description: "This dispute was already resolved (already_resolved).",
+        documented: true,
+      },
+      SERVICE_UNAVAILABLE,
+    ],
   },
 ];

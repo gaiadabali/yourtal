@@ -132,6 +132,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   setTrustTierResultSchema: "Same as staffUserSearchQuerySchema above.",
   staffDisputeSchema: "Same as staffUserSearchQuerySchema above.",
   staffDisputeQueueSchema: "Same as staffUserSearchQuerySchema above.",
+  resolveDisputeRequestSchema:
+    "10.5.b's dispute resolve. Same as staffUserSearchQuerySchema above.",
+  disputeResolutionResultSchema:
+    "10.5.b's dispute resolve. Same as staffUserSearchQuerySchema above.",
   regionSettingSchema:
     "1.2.f's ledger-internal settings row (getSettings/proposeSetting/approveSetting). Internal to the ledger and 9.5.d's staff console, not a public/business-facing HTTP contract -- same reason ledger-internal and voucher-internal's own operation types are not routed through this registry.",
 

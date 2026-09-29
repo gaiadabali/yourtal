@@ -619,6 +619,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "9.1.a's append-only audit trail of every staff console action -- written by the staff module's interceptor, never a domain contract any consumer parses.",
   "staff.user_suspension":
     "9.4.b (20260928120000): which ledger escrow a staff suspension moved a user's points into, so `release` can find it again -- the ledger client has no \"active escrow for this user\" query of its own. Internal bookkeeping only; what a client actually sees (`suspendUserResultSchema`/`releaseUserResultSchema`) mirrors the ledger's own Escrow shape, not a row of this table.",
+  "staff.dispute_resolution":
+    "TASKS.md 10.5.b (20260929070900): which capture and ledger recovery-posting id a K13 dispute's resolution used, so a resolved voucher leaves the queue (checkout.dispute itself stays append-only, its own outcome never changes) and cannot be resolved twice. Internal bookkeeping only; what a client sees (`disputeResolutionResultSchema`) is the ledger's own CaptureRecoveryPosting shape, not a row of this table.",
   "staff.economy_proposal":
     "9.5's pending-approval read model. Deliberately a partial mapping, not a full one: economyProposalSchema (staff-economy.ts) exposes only id/kind/region/summary/proposedBy/approvedBy/status/reason/createdAt/decidedAt -- `payload` and `result` (the ledger's own request/response, which for a rate_change proposal carries B) and `decision_note` are read by the API but never serialised to a client, the same 'not every column reaches a contract' shape platform.partner_credential states above.",
   "platform.dev_clock_audit":

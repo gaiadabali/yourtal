@@ -148,6 +148,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F52** | Phase 9 was asked to start while its gate (Phase 7) was unfinished: 7.3 had not merged | **Start an early slice now** in slot 2 (`phase/9`), like F21/F26/F27/F36: 9.1, 9.3, 9.4 and 9.5, whose needs are all ✅, plus 9.2.c (batch approval needs only 7.4). 9.2.a and its Check 9.2.b wait for 7.3. |
 | **F53** | A true HTTP 403 on `/staff/*` pages needs Next's `experimental.authInterrupts` in `apps/web/next.config.ts`, which is Area B's file | **Phase 9 adds that one line** beside `globalNotFound`, so non-staff get a real 403 page. |
 | **F54** | 9.5.b's rate screen must show and set B, but 4.9.d's `no-backing-rate-in-api.test.ts` banned B from the whole published API, staff routes included | **Carve out `/api/staff/**`.** B is shown only to finance on that one Cerbos-gated staff screen; the test keeps banning it from every viewer and business route. Phase 9 makes that narrow change to 4.9.d's test. |
+| **F81** | Every worktree kept a frozen TASKS.md from when its branch was cut, which looked current (the founder read Phase 10 at 4/7 in `yourtal-p11-d` after it was done) | **Leave TASKS.md out of every worktree** with git sparse-checkout, so the main checkout's copy is the only one on disk. Applied to all 23 worktrees on 2026-09-29; new slots run it in slot setup. Undo per worktree with `git sparse-checkout disable`. |
 | **F80** | Phase 12 was asked to start while its gate (Phase 11) was unfinished | **Start an early slice now** in slot 1 (`phase/12`), like F21/F26/F27/F36/F52: 12.1 (guardians, the Cerbos age wall, the teen cap), 12.2.c (the new `/guardian/[token]` page) and 12.3, whose needs are all ✅. 12.2.a/b wait for Phase 11 to close, since they touch the feed and streak files slot 4 is editing. |
 
 **F12 defaults**, per region (AU / ID):
@@ -231,6 +232,7 @@ Every phase belongs to one area (A, B or C, shown in its heading). A phase sessi
 ```bash
 cd C:/Users/Hansel/Documents/Hansel/Projects/yourtal
 git worktree add --detach ../yourtal-2 main
+MSYS_NO_PATHCONV=1 git -C ../yourtal-2 sparse-checkout set --no-cone '/*' '!/TASKS.md'   # F81: the only TASKS.md on disk is the live one
 cp .env.example ../yourtal-2/.env   # not .env: the main .env lacks CHECKPOINT_TOKEN_SECRET and the ledger/voucher URLs
 # edit ../yourtal-2/.env now (0.2.b), before any pnpm db:* command
 mkdir -p ../yourtal-2/.claude && printf '{"permissions":{"additionalDirectories":["C:/Users/Hansel/Documents/Hansel/Projects/yourtal"]}}\n' > ../yourtal-2/.claude/settings.local.json

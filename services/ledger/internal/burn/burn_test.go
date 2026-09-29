@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/burn"
+	"github.com/yourtal/services/ledger/internal/expiry"
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/ledgertest"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
@@ -156,5 +157,94 @@ func TestGetBurnFindsOnlyWhatWasBurned(t *testing.T) {
 	f := newFixture(t)
 	if _, err := f.engine.Get(context.Background(), unique("saga")); !errors.Is(err, burn.ErrNotFound) {
 		t.Fatalf("a saga that never burned: err = %v", err)
+	}
+}
+
+func lastActivity(t *testing.T, pool *pgxpool.Pool, accountID string) time.Time {
+	t.Helper()
+	var at time.Time
+	if err := pool.QueryRow(context.Background(),
+		`SELECT last_activity_at FROM ledger.account WHERE id = $1`, accountID).Scan(&at); err != nil {
+		t.Fatalf("reading last_activity_at: %v", err)
+	}
+	return at
+}
+
+// setPointsExpiry proposes+approves a points_expiry setting for region, the
+// same two-person shape expiry_test.go's own helper uses (duplicated here,
+// not exported cross-package, so this test stays self-contained).
+func setPointsExpiry(t *testing.T, region, value string) {
+	t.Helper()
+	ctx := context.Background()
+	owner, err := pgxpool.New(ctx, testdb.URL(t, "DATABASE_OWNER_URL"))
+	if err != nil {
+		t.Fatalf("connect as owner: %v", err)
+	}
+	defer owner.Close()
+	var id string
+	if err := owner.QueryRow(ctx,
+		`INSERT INTO platform.region_setting (region, key, value, set_by)
+		   VALUES ($1, 'points_expiry', $2::jsonb, $3) RETURNING id`,
+		region, value, unique("proposer")).Scan(&id); err != nil {
+		t.Fatalf("proposing points_expiry: %v", err)
+	}
+	if _, err := owner.Exec(ctx,
+		`UPDATE platform.region_setting SET approved_by = $2 WHERE id = $1`, id, unique("approver")); err != nil {
+		t.Fatalf("approving points_expiry: %v", err)
+	}
+}
+
+// 10.2.e (gap in 10.2.a): only grants touched last_activity_at, so a user
+// who only ever spends could drift into "inactive" while genuinely in use.
+// A burn now touches it too, in the same transaction as the rest of the burn.
+func TestBurnTouchesLastActivity(t *testing.T) {
+	f := newFixture(t)
+	user := f.user(t, ledger.RegionAU, 1_000)
+	accountID := ledger.UserAccountID(user, ledger.PurposeAvailable)
+
+	// Push the clock back as if the account had gone quiet since it was funded.
+	old := time.Now().AddDate(0, -13, 0)
+	if _, err := f.pool.Exec(context.Background(),
+		`UPDATE ledger.account SET last_activity_at = $2 WHERE id = $1`, accountID, old); err != nil {
+		t.Fatalf("clock-shifting activity: %v", err)
+	}
+
+	req := burn.Request{SagaID: unique("saga"), UserID: user, Region: ledger.RegionAU, Points: 200, SettlementMinor: 600}
+	if _, err := f.engine.Burn(context.Background(), req); err != nil {
+		t.Fatalf("burn: %v", err)
+	}
+
+	after := lastActivity(t, f.pool, accountID)
+	if !after.After(old.Add(time.Hour)) {
+		t.Errorf("last_activity_at after the burn = %s, want it moved to (near) now, not left at %s", after, old)
+	}
+}
+
+// 10.2.e's own Check: with expiry on, an account that only burns (never
+// granted anything fresh since) is not swept as inactive, because the burn
+// itself re-touches the clock.
+func TestAnAccountThatOnlyBurnsIsNotExpiredWhileActive(t *testing.T) {
+	f := newFixture(t)
+	setPointsExpiry(t, "AU", `{"enabled": true, "inactivityMonths": 12}`)
+	user := f.user(t, ledger.RegionAU, 1_000)
+	accountID := ledger.UserAccountID(user, ledger.PurposeAvailable)
+
+	// Dormant past the 12-month cutoff -- until the burn below re-touches it.
+	if _, err := f.pool.Exec(context.Background(),
+		`UPDATE ledger.account SET last_activity_at = now() - interval '13 months' WHERE id = $1`, accountID); err != nil {
+		t.Fatalf("clock-shifting activity: %v", err)
+	}
+
+	req := burn.Request{SagaID: unique("saga"), UserID: user, Region: ledger.RegionAU, Points: 200, SettlementMinor: 600}
+	if _, err := f.engine.Burn(context.Background(), req); err != nil {
+		t.Fatalf("burn: %v", err)
+	}
+
+	if _, err := expiry.Run(context.Background(), f.pool, f.book, ledger.RegionAU, 1000); err != nil {
+		t.Fatalf("expiry run: %v", err)
+	}
+
+	if remaining := f.available(t, user); remaining != 800 {
+		t.Errorf("available = %d, want 800 (the 1,000 minus the 200 burn, untouched by expiry)", remaining)
 	}
 }

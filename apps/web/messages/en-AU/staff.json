@@ -10,6 +10,7 @@
     "moderation": "Moderation",
     "users": "Users",
     "disputes": "Disputes",
+    "risk": "Risk",
     "economy": "Economy"
   },
   "overview": {
@@ -229,6 +230,33 @@
       "merchant_closed": "Merchant closed",
       "other": "Other"
     }
+  },
+  "risk": {
+    "title": "Risk queue",
+    "intro": "Accounts the real-time RiskGate flagged. See why, then release a false positive or suspend a confirmed risk into escrow.",
+    "regionLabel": "Region",
+    "viewSubmit": "View",
+    "emptyTitle": "Nothing flagged",
+    "emptyDescription": "No account is waiting for review in this region.",
+    "tableCaption": "Flagged accounts, why they were flagged, and staff actions",
+    "columnUser": "User",
+    "columnRegion": "Region",
+    "columnSeverity": "Severity",
+    "columnWhy": "Why flagged",
+    "columnCreatedAt": "Flagged",
+    "columnActions": "Actions",
+    "severity": {
+      "flag": "Flag",
+      "block": "Blocked (escrowed)"
+    },
+    "releaseCta": "Release",
+    "releaseDialogTitle": "Release this account?",
+    "releaseDialogBody": "The flag is cleared as a false positive. If the account's balance was auto-held, this releases that escrow too.",
+    "releaseSubmit": "Release",
+    "suspendCta": "Suspend into escrow",
+    "suspendDialogTitle": "Suspend this account into escrow?",
+    "suspendDialogBody": "Confirms the risk and holds the account's current balance in escrow pending further review.",
+    "suspendSubmit": "Suspend into escrow"
   },
   "economy": {
     "subnavLabel": "Economy screens",

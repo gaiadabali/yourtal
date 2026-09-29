@@ -28,6 +28,9 @@ export const STAFF_ZONES: readonly StaffZone[] = [
   // TASKS.md 9.4.d, K13: the captured-voucher dispute queue -- support and
   // finance, per voucher_dispute.yaml.
   { key: "disputes", href: "/staff/disputes", roles: ["support", "finance"] },
+  // TASKS.md 10.5.a: the real RiskGate's manual-review queue -- risk_analyst
+  // only, per risk_flag.yaml (same separation of duties as suspend/reinstate).
+  { key: "risk", href: "/staff/risk", roles: ["risk_analyst"] },
   // TASKS.md 9.5: coverage/rate/marketing/purchases/settings -- finance and
   // ops both see the zone; the rate screen inside it (B) is finance-only,
   // enforced by ledger_adjustment.yaml, not this courtesy list.

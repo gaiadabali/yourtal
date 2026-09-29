@@ -92,6 +92,14 @@ func (e *Engine) Burn(ctx context.Context, req Request) (Burn, error) {
 		if account.Country != string(req.Region) {
 			return fmt.Errorf("%w: user %s is in %s, the burn is in %s", ErrRegionMismatch, req.UserID, account.Country, req.Region)
 		}
+		// 10.2.e (gap in 10.2.a): the inactivity clock points expiry reads,
+		// touched here too -- until this, a user who only spends (never
+		// granted anything fresh) could expire while genuinely active.
+		// Same transaction as reward.Engine's own touch, so a later failure
+		// rolls this back with it.
+		if err := queries.TouchAccountActivity(ctx, account.ID); err != nil {
+			return fmt.Errorf("touching account activity: %w", err)
+		}
 		pointsHalf, err := e.ledger.TransferInTx(ctx, tx, ledger.TransferRequest{
 			ID: "led_txn_burn_points_" + req.SagaID, IdempotencyKey: "burn_" + req.SagaID,
 			ReasonCode: "burn_points", Entries: ledger.BurnPoints(req.Region, req.UserID, req.Points),

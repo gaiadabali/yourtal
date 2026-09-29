@@ -10,6 +10,7 @@
     "moderation": "Moderasi",
     "users": "Pengguna",
     "disputes": "Sengketa",
+    "risk": "Risiko",
     "economy": "Ekonomi"
   },
   "overview": {
@@ -229,6 +230,33 @@
       "merchant_closed": "Pedagang tutup",
       "other": "Lainnya"
     }
+  },
+  "risk": {
+    "title": "Antrean risiko",
+    "intro": "Akun yang ditandai oleh RiskGate secara real-time. Lihat alasannya, lalu bebaskan jika keliru atau tangguhkan ke eskro jika risiko dikonfirmasi.",
+    "regionLabel": "Wilayah",
+    "viewSubmit": "Lihat",
+    "emptyTitle": "Tidak ada yang ditandai",
+    "emptyDescription": "Tidak ada akun yang menunggu tinjauan di wilayah ini.",
+    "tableCaption": "Akun yang ditandai, alasannya, dan tindakan staf",
+    "columnUser": "Pengguna",
+    "columnRegion": "Wilayah",
+    "columnSeverity": "Tingkat",
+    "columnWhy": "Alasan ditandai",
+    "columnCreatedAt": "Ditandai",
+    "columnActions": "Tindakan",
+    "severity": {
+      "flag": "Ditandai",
+      "block": "Diblokir (dieskro)"
+    },
+    "releaseCta": "Bebaskan",
+    "releaseDialogTitle": "Bebaskan akun ini?",
+    "releaseDialogBody": "Tanda dihapus sebagai kekeliruan. Jika saldo akun sempat ditahan otomatis, ini juga membebaskan eskro tersebut.",
+    "releaseSubmit": "Bebaskan",
+    "suspendCta": "Tangguhkan ke eskro",
+    "suspendDialogTitle": "Tangguhkan akun ini ke eskro?",
+    "suspendDialogBody": "Mengonfirmasi risiko dan menahan saldo akun saat ini di eskro sambil menunggu tinjauan lebih lanjut.",
+    "suspendSubmit": "Tangguhkan ke eskro"
   },
   "economy": {
     "subnavLabel": "Layar ekonomi",

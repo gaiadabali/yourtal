@@ -59,6 +59,26 @@ async function registerAndLogIn(request: APIRequestContext, tag: string): Promis
   return { email, token: body.token, cookie: `yt_session=${body.token}` };
 }
 
+/**
+ * Staging run (F76): set STAFF_E2E_STAGING=1 plus STAGING_OPS_EMAIL/PASSWORD
+ * for an account already granted `ops` on staging. Media then goes through
+ * `ssh helios-w` into staging's own database instead of this slot's.
+ */
+const STAGING = process.env["STAFF_E2E_STAGING"] === "1";
+
+async function logIn(
+  request: APIRequestContext,
+  email: string,
+  password: string,
+): Promise<LiveAccount> {
+  const loggedIn = await request.post(`${apiBaseUrl()}/api/auth/login`, {
+    data: { email, password },
+  });
+  expect(loggedIn.ok(), await loggedIn.text()).toBeTruthy();
+  const body = (await loggedIn.json()) as { token: string };
+  return { email, token: body.token, cookie: `yt_session=${body.token}` };
+}
+
 function staffAdd(email: string, role: string): void {
   execFileSync("pnpm", ["staff:add", email, role], {
     cwd: REPO_ROOT,
@@ -78,6 +98,22 @@ function staffAdd(email: string, role: string): void {
  * `pg` dependency to `apps/web` for one spec.
  */
 function fillCampaignMedia(campaignId: string): void {
+  if (STAGING) {
+    if (!/^[0-9a-f-]{36}$/.test(campaignId))
+      throw new Error(`unexpected campaign id ${campaignId}`);
+    const sql = `UPDATE campaign.campaigns SET poster_url = 'https://media.example/poster.jpg', teaser_url = 'https://media.example/teaser.mp4', hls_url = 'https://media.example/stream.m3u8', aspect = '9:16', estimated_bytes = 50000000, estimated_data_mb = 50 WHERE id = '${campaignId}'`;
+    execFileSync(
+      "ssh",
+      [
+        "-o",
+        "BatchMode=yes",
+        "helios-w",
+        `docker exec yourtal-postgres psql -U yourtal -d yourtal -v ON_ERROR_STOP=1 -c "${sql}"`,
+      ],
+      { stdio: "pipe" },
+    );
+    return;
+  }
   const script = `
     const { Client } = require("pg");
     (async () => {
@@ -128,8 +164,16 @@ test.describe.serial("9.3.b: approving KYB unblocks submit, through the real Stu
 
   test.beforeAll(async ({ request }) => {
     owner = await registerAndLogIn(request, "owner");
-    staff = await registerAndLogIn(request, "ops");
-    staffAdd(staff.email, "ops");
+    if (STAGING) {
+      staff = await logIn(
+        request,
+        process.env["STAGING_OPS_EMAIL"] ?? "",
+        process.env["STAGING_OPS_PASSWORD"] ?? "",
+      );
+    } else {
+      staff = await registerAndLogIn(request, "ops");
+      staffAdd(staff.email, "ops");
+    }
   });
 
   test("a funded campaign with a question bank reaches ready-to-submit, blocked by the verification banner", async ({

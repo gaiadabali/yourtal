@@ -25,11 +25,10 @@ import type { StaffRoleReader } from "../../modules/identity/persistence/staff-r
  * trusted for: `jurisdiction` (F2's region wall), `ageBand`, `isSuspended`
  * and `businessRoles` all come from `identity.user_profile` /
  * `business.business_members` when a profile row exists, and staff roles
- * come from `identity.staff_role` regardless. `reauthenticatedAt`,
- * `hasPasskey` and `goodwillCreditCeilingIdr` remain unpopulated on
- * purpose: `reauthenticatedAt`/`hasPasskey` are step-up-auth state pending
- * the auth work in YT-0540/0541, and `goodwillCreditCeilingIdr` is
- * economy-owned (YT-0050).
+ * come from `identity.staff_role` regardless. `reauthenticatedAt` and
+ * `hasPasskey` remain unpopulated on purpose: they are step-up-auth state
+ * pending the auth work in YT-0540/0541. (The goodwill ceiling is a
+ * resource attribute since 9.4, read per request from region settings.)
  *
  * ## No profile row, no principal (2.5/F31)
  *

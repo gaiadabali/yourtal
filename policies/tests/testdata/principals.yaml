@@ -189,7 +189,6 @@ principals:
       jurisdiction: "ID"
       businessRoles: {}
       isSuspended: false
-      goodwillCreditCeilingIdr: 50000
 
   support_sari_suspended:
     id: sari

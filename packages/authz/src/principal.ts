@@ -64,9 +64,6 @@ export const principalAttrSchema = z
     /** store_device only: the location it was bound to. */
     deviceLocationId: z.string().min(1).optional(),
 
-    /** support only: the ceiling below which goodwill needs no approver. */
-    goodwillCreditCeilingIdr: z.number().int().nonnegative().optional(),
-
     /**
      * 1.5.b, from `identity.user_profile.date_of_birth` (computed at read
      * time, `@yourtal/jurisdiction/age`'s `ageBandFrom`, never stored twice).

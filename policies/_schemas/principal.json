@@ -44,11 +44,6 @@
       "description": "store_device only: the location it was bound to (docs/17 section 2.2, \"Kemang counter 2\").",
       "type": "string"
     },
-    "goodwillCreditCeilingIdr": {
-      "description": "support only: the per-case ceiling below which a goodwill credit needs no second approver.",
-      "type": "integer",
-      "minimum": 0
-    },
     "ageBand": {
       "description": "1.5.b, computed from identity.user_profile.date_of_birth. Absent for anonymous and store_device.",
       "type": "string",

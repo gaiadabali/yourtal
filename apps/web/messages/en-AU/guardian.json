@@ -1,0 +1,50 @@
+{
+  "brand": "YourTal",
+  "pending": {
+    "heading": "Approve {displayName}'s account",
+    "intro": "{displayName} would like to use YourTal — a video app where teens watch age-appropriate videos and earn points and rewards.",
+    "whatTheyGetHeading": "What {displayName} gets",
+    "bulletFeed": "An age-appropriate feed, matched to their age",
+    "bulletEarn": "Points and rewards for watching and learning",
+    "bulletCap": "A daily cap on how much they can earn",
+    "bulletQuietHours": "Quiet hours, so nothing arrives late at night",
+    "notContractNotice": "This isn't a contract. You can withdraw your approval at any time, using this same link.",
+    "confirmLabel": "I am 18 or over and the parent or guardian of {displayName}.",
+    "approveCta": "Approve",
+    "errors": {
+      "already_revoked": "This link already withdrew approval. It can't approve again — {displayName} would need a new invitation.",
+      "network": "YourTal couldn't be reached. Check your connection and try again.",
+      "invalid_response": "Something went wrong on our end. Try again shortly.",
+      "unavailable": "YourTal is temporarily unavailable. Try again shortly.",
+      "unknown": "Something wasn't quite right. Try again."
+    }
+  },
+  "granted": {
+    "heading": "You've approved {displayName}'s account",
+    "body": "{displayName} can watch, earn points and redeem rewards on YourTal, within the daily cap and quiet hours we set for teen accounts.",
+    "withdrawCta": "Withdraw approval",
+    "confirmTitle": "Withdraw approval?",
+    "confirmBody": "{displayName}'s points will be held and they won't be able to earn any more. This link can't approve again afterwards — {displayName} would need a new invitation to continue.",
+    "confirmCancelCta": "Cancel",
+    "confirmWithdrawCta": "Yes, withdraw approval",
+    "errors": {
+      "network": "YourTal couldn't be reached. Check your connection and try again.",
+      "invalid_response": "Something went wrong on our end. Try again shortly.",
+      "unavailable": "YourTal is temporarily unavailable. Try again shortly.",
+      "unknown": "Something wasn't quite right. Try again."
+    }
+  },
+  "revoked": {
+    "heading": "Approval withdrawn",
+    "body": "You've withdrawn approval for {displayName}'s YourTal account. Their points are held, and this link can't be used again."
+  },
+  "invalid": {
+    "heading": "This link isn't valid",
+    "body": "This guardian link doesn't match a YourTal account. If you were sent this recently, check the whole link was copied, or ask for a new one."
+  },
+  "error": {
+    "heading": "Something went wrong",
+    "body": "We couldn't reach YourTal. Check your connection and try again.",
+    "retryCta": "Try again"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "brand": "YourTal",
+  "pending": {
+    "heading": "Setujui akun {displayName}",
+    "intro": "{displayName} ingin menggunakan YourTal — aplikasi video tempat remaja menonton video yang sesuai usia serta mendapatkan poin dan reward.",
+    "whatTheyGetHeading": "Yang didapat {displayName}",
+    "bulletFeed": "Feed yang sesuai usia mereka",
+    "bulletEarn": "Poin dan reward karena menonton dan belajar",
+    "bulletCap": "Batas harian untuk jumlah poin yang bisa didapat",
+    "bulletQuietHours": "Jam tenang, agar tidak ada notifikasi di malam hari",
+    "notContractNotice": "Ini bukan kontrak. Anda dapat menarik persetujuan kapan saja, menggunakan tautan yang sama ini.",
+    "confirmLabel": "Saya berusia 18 tahun ke atas dan merupakan orang tua atau wali dari {displayName}.",
+    "approveCta": "Setujui",
+    "errors": {
+      "already_revoked": "Tautan ini sudah menarik persetujuan sebelumnya dan tidak dapat menyetujui lagi — {displayName} memerlukan undangan baru.",
+      "network": "YourTal tidak dapat dihubungi. Periksa koneksi Anda dan coba lagi.",
+      "invalid_response": "Ada yang tidak beres di sisi kami. Coba lagi sebentar lagi.",
+      "unavailable": "YourTal sedang tidak tersedia sementara. Coba lagi sebentar lagi.",
+      "unknown": "Ada yang kurang tepat. Coba lagi."
+    }
+  },
+  "granted": {
+    "heading": "Anda telah menyetujui akun {displayName}",
+    "body": "{displayName} dapat menonton, mendapatkan poin, dan menukar reward di YourTal, sesuai batas harian dan jam tenang yang berlaku untuk akun remaja.",
+    "withdrawCta": "Tarik persetujuan",
+    "confirmTitle": "Tarik persetujuan?",
+    "confirmBody": "Poin {displayName} akan ditahan dan mereka tidak dapat mendapatkan poin lagi. Tautan ini tidak dapat menyetujui lagi setelahnya — {displayName} memerlukan undangan baru untuk melanjutkan.",
+    "confirmCancelCta": "Batal",
+    "confirmWithdrawCta": "Ya, tarik persetujuan",
+    "errors": {
+      "network": "YourTal tidak dapat dihubungi. Periksa koneksi Anda dan coba lagi.",
+      "invalid_response": "Ada yang tidak beres di sisi kami. Coba lagi sebentar lagi.",
+      "unavailable": "YourTal sedang tidak tersedia sementara. Coba lagi sebentar lagi.",
+      "unknown": "Ada yang kurang tepat. Coba lagi."
+    }
+  },
+  "revoked": {
+    "heading": "Persetujuan ditarik",
+    "body": "Anda telah menarik persetujuan untuk akun YourTal {displayName}. Poin mereka ditahan, dan tautan ini tidak dapat digunakan lagi."
+  },
+  "invalid": {
+    "heading": "Tautan ini tidak valid",
+    "body": "Tautan wali ini tidak cocok dengan akun YourTal mana pun. Jika Anda baru saja menerima ini, periksa apakah seluruh tautan tersalin dengan benar, atau minta tautan baru."
+  },
+  "error": {
+    "heading": "Terjadi kesalahan",
+    "body": "Kami tidak dapat menghubungi YourTal. Periksa koneksi Anda dan coba lagi.",
+    "retryCta": "Coba lagi"
+  }
+}

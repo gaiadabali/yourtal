@@ -44,6 +44,24 @@ describe("addQuestionToBank", () => {
       expect(questionBankActionErrorMessage(result.error).length).toBeGreaterThan(0);
     }
   });
+
+  it("12.3.a: refuses a personal question for a teen-audience campaign", () => {
+    const draft = createEmptyQuestionDraft("short_text", CAMPAIGN_ID, idFactory);
+    draft.prompt = "How old are you?";
+    const result = addQuestionToBank([], draft, "teen");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.type).toBe("pii_request");
+      expect(questionBankActionErrorMessage(result.error).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("12.3.a: allows the identical prompt for a non-teen campaign", () => {
+    const draft = createEmptyQuestionDraft("short_text", CAMPAIGN_ID, idFactory);
+    draft.prompt = "How old are you?";
+    const result = addQuestionToBank([], draft, "all_ages");
+    expect(result.ok).toBe(true);
+  });
 });
 
 describe("updateQuestionInBank", () => {

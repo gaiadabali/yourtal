@@ -10,11 +10,17 @@ import { QuestionEditor } from "./question-editor";
 
 const CAMPAIGN_ID = "00000000-0000-4000-8000-000000000900";
 
-function StatefulEditor({ initial }: { initial: QuestionDraft }) {
+function StatefulEditor({
+  initial,
+  audience,
+}: {
+  initial: QuestionDraft;
+  audience?: string;
+}) {
   const [draft, setDraft] = useState(initial);
   return (
     <StudioIntlProvider>
-      <QuestionEditor draft={draft} onChange={setDraft} />
+      <QuestionEditor draft={draft} onChange={setDraft} audience={audience} />
     </StudioIntlProvider>
   );
 }
@@ -78,6 +84,31 @@ describe("QuestionEditor", () => {
     render(<StatefulEditor initial={createEmptyQuestionDraft("short_text", CAMPAIGN_ID)} />);
     const prompt = screen.getByRole("textbox", { name: "Question prompt" });
     await userEvent.type(prompt, "What discount did the video mention?");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("12.3.a: shows a personal-question rejection inline for a teen-audience campaign", async () => {
+    render(
+      <StatefulEditor
+        initial={createEmptyQuestionDraft("short_text", CAMPAIGN_ID)}
+        audience="teen"
+      />,
+    );
+    const prompt = screen.getByRole("textbox", { name: "Question prompt" });
+    await userEvent.type(prompt, "How old are you?");
+    const error = await screen.findByRole("alert");
+    expect(error.textContent).toContain("age or date of birth");
+  });
+
+  it("12.3.a: does not refuse the identical prompt for a non-teen campaign", async () => {
+    render(
+      <StatefulEditor
+        initial={createEmptyQuestionDraft("short_text", CAMPAIGN_ID)}
+        audience="all_ages"
+      />,
+    );
+    const prompt = screen.getByRole("textbox", { name: "Question prompt" });
+    await userEvent.type(prompt, "How old are you?");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

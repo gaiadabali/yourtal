@@ -36,6 +36,8 @@ export interface QuestionBankScreenProps {
   readOnly?: boolean;
   /** Live mode: `save()`/`remove()` call the real `POST`/`PATCH`/`DELETE .../questions` (7.3.b/7.3.i). */
   isLiveMode?: boolean;
+  /** TASKS.md 12.3.a: the campaign's own audience, threaded to the editor's inline teen personal-question guard and the mock-mode save gate. The server is the real authority either way (`create-question.use-case.ts`). */
+  audience?: string | undefined;
 }
 
 type EditorState = { open: false } | { open: true; draft: QuestionDraft; isNew: boolean };
@@ -62,6 +64,7 @@ export function QuestionBankScreen({
   onBankChange,
   readOnly = false,
   isLiveMode = false,
+  audience,
 }: QuestionBankScreenProps) {
   const t = useTranslations("studio");
   const [bank, setBank] = useState<QuestionDraft[]>(initialBank);
@@ -111,8 +114,8 @@ export function QuestionBankScreen({
       return;
     }
     const result = editor.isNew
-      ? addQuestionToBank(bank, editor.draft)
-      : updateQuestionInBank(bank, editor.draft);
+      ? addQuestionToBank(bank, editor.draft, audience)
+      : updateQuestionInBank(bank, editor.draft, audience);
     if (!result.ok) {
       setSaveError(result.error);
       return;
@@ -207,6 +210,7 @@ export function QuestionBankScreen({
               <QuestionEditor
                 draft={editor.draft}
                 onChange={(draft) => setEditor({ open: true, draft, isNew: editor.isNew })}
+                audience={audience}
               />
               {saveError ? (
                 <p role="alert" className="text-xs font-sans text-danger">

@@ -37,7 +37,14 @@
       "openViewingLabel": "Tontonan Terbuka (tidak perlu hadiah untuk menonton)",
       "captionsUrlLabel": "URL Teks",
       "captionsUrlPlaceholder": "https://…",
-      "teaserStartLabel": "Teaser dimulai pada (detik)"
+      "teaserStartLabel": "Teaser dimulai pada (detik)",
+      "categoryStatusAdultOnly": "Kategori ini hanya untuk dewasa di {region} — audiens dikunci ke Dewasa.",
+      "categoryStatusProhibited": "Kategori ini tidak boleh diiklankan di {region}.",
+      "categoryOptionProhibitedSuffix": " (tidak diizinkan di sini)",
+      "audienceReachAllAges": "Menjangkau semua penonton.",
+      "audienceReachTeen": "Hanya menjangkau penonton berusia 13–17 tahun.",
+      "audienceReachAdult": "Hanya menjangkau penonton berusia 18 tahun ke atas.",
+      "audienceReachParents": "Menjangkau penonton berusia 18 tahun ke atas, ditingkatkan untuk yang telah memberi tahu kami bahwa mereka mengasuh anak kecil."
     },
     "reward": {
       "scoringRuleBaseOnly": "Reward tetap — sama untuk setiap penonton yang menonton dan menjawab",

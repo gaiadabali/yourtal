@@ -103,3 +103,79 @@ export function detectPiiRequest(promptText: string): PiiFinding | null {
   }
   return null;
 }
+
+/**
+ * TASKS.md 12.3.a: "Teen-rated question banks may not ask personal
+ * questions." A stricter, teen-only inline copy of the server's own
+ * `detectTeenPersonalQuestion`
+ * (`packages/contracts/src/question/question-pii-guard.ts`) -- kept
+ * dependency-free for the same reason the rest of this file is, and never
+ * the real gate on its own: the server re-runs the identical categories on
+ * every save (`create-question.use-case.ts` / `update-question.use-case.ts`),
+ * refusing outright for a campaign whose `audience` is `"teen"`. This copy
+ * only makes the refusal visible inline, as the author types, the same way
+ * `detectPiiRequest`'s own inline warning already works.
+ */
+const TEEN_PERSONAL_RULES: PiiRule[] = [
+  {
+    category: "age or date of birth",
+    reason:
+      "Teen-rated question banks cannot ask someone's age or date of birth. This platform already knows a viewer's age band; a quiz never needs to ask again.",
+    pattern:
+      /\bhow\s+old\s+are\s+you\b|\byour\s+age\b|\bdate\s+of\s+birth\b|\bberapa\s+umur\b|\busia\s*(kamu|anda)\b|\btanggal\s*lahir\b/i,
+  },
+  {
+    category: "school",
+    reason:
+      "Teen-rated question banks cannot ask what school someone goes to. That identifies a minor's physical location, which this platform never collects through a quiz.",
+    pattern: /\bwhat\s+school\b|\bwhich\s+school\b|\bsekolah\s*(mana|kamu|anda)\b/i,
+  },
+  {
+    category: "where you live",
+    reason:
+      "Teen-rated question banks cannot ask what city or suburb someone lives in. A comprehension check never needs to know where a minor is.",
+    pattern:
+      /\bwhat\s+(city|suburb|neighbo(u)?rhood)\s+do\s+you\s+live\b|\bkota\s*(mana|apa)\s*(kamu|anda)?\s*tinggal\b|\btinggal\s*di\s*mana\b/i,
+  },
+  {
+    category: "appearance",
+    reason:
+      "Teen-rated question banks cannot ask about someone's physical appearance. That is personal profiling, not video comprehension.",
+    pattern:
+      /\bwhat\s+do\s+you\s+look\s+like\b|\byour\s+(weight|height)\b|\bberat\s*badan\s*(kamu|anda)\b|\btinggi\s*badan\s*(kamu|anda)\b/i,
+  },
+  {
+    category: "family",
+    reason:
+      "Teen-rated question banks cannot ask about someone's parents or siblings. Family details are never something a checkpoint needs.",
+    pattern:
+      /\byour\s+(parents|mother|father|siblings|brother|sister)\b|\borang\s*tua\s*(kamu|anda)\b|\bsaudara\s*(kamu|anda)\b/i,
+  },
+  {
+    category: "social media handle",
+    reason:
+      "Teen-rated question banks cannot ask for a social media username or handle. That is contact-collection, not a comprehension check.",
+    pattern:
+      /\b(instagram|tiktok|snapchat|discord)\s*(username|handle|account)?\b|\bakun\s*(instagram|tiktok|snapchat|discord)\b/i,
+  },
+  {
+    category: "relationship status",
+    reason:
+      "Teen-rated question banks cannot ask about someone's relationship or dating status. That is personal profiling of a minor, which this platform never collects.",
+    pattern: /\b(girlfriend|boyfriend|dating\s+anyone)\b|\bpunya\s*pacar\b|\bstatus\s*pacaran\b/i,
+  },
+];
+
+export function detectTeenPersonalQuestion(promptText: string): PiiFinding | null {
+  const trimmed = promptText.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  for (const rule of TEEN_PERSONAL_RULES) {
+    const match = rule.pattern.exec(trimmed);
+    if (match) {
+      return { category: rule.category, matchedTerm: match[0], reason: rule.reason };
+    }
+  }
+  return null;
+}

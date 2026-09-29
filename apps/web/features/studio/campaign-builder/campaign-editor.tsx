@@ -148,6 +148,7 @@ export function CampaignEditor({
                 onBankChange={(questionBank) => onChange({ ...draft, questionBank })}
                 readOnly={!editable}
                 isLiveMode={isLiveMode}
+                audience={draft.audience}
               />
             ) : null}
           </div>

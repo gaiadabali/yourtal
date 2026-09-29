@@ -8,6 +8,7 @@ import { Input } from "@yourtal/ui/input";
 import { NativeSelect } from "@yourtal/ui/native-select";
 import { Switch } from "@yourtal/ui/switch";
 import { cn } from "@yourtal/ui/cn";
+import { useRegion } from "@/features/region/use-region";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
 
 export interface CampaignEditorDetailsProps {
@@ -60,6 +61,44 @@ const CONTENT_CATEGORIES = [
 /** Restated from `@yourtal/contracts/campaign`'s `audienceSchema` — this module only ever `import type`s that package's schemas (see this file's own doc comment on why). */
 const AUDIENCES = ["all_ages", "teen", "adult", "parents"] as const;
 
+type CategoryStatus = "allowed" | "adult_only" | "prohibited";
+
+/**
+ * TASKS.md 12.3.a: restated from @yourtal/jurisdiction's own categoryPolicy
+ * table (1.1.d) -- same "plain strings, not the real enum" reasoning
+ * CONTENT_CATEGORIES above already gives, so this client-reachable module
+ * still never imports that package's Zod runtime. A category with no entry
+ * here reads "allowed", matching that package's own default.
+ */
+const CATEGORY_POLICY: Record<"AU" | "ID", Partial<Record<string, CategoryStatus>>> = {
+  AU: {
+    tobacco: "prohibited",
+    vaping: "prohibited",
+    gambling: "adult_only",
+    alcohol: "adult_only",
+    dating: "adult_only",
+    "financial-products": "adult_only",
+    "weight-loss": "adult_only",
+    "cosmetic-procedures": "adult_only",
+    "energy-drinks": "adult_only",
+  },
+  ID: {
+    gambling: "prohibited",
+    tobacco: "prohibited",
+    vaping: "prohibited",
+    alcohol: "adult_only",
+    dating: "adult_only",
+    "financial-products": "adult_only",
+    "weight-loss": "adult_only",
+    "cosmetic-procedures": "adult_only",
+    "energy-drinks": "adult_only",
+  },
+};
+
+function categoryStatusFor(region: "AU" | "ID", category: string): CategoryStatus {
+  return CATEGORY_POLICY[region][category] ?? "allowed";
+}
+
 /** `YYYY-MM-DD` for a `type="date"` input from a full ISO datetime, and back — schedule fields are dates in this editor, never a time of day. */
 function toDateInputValue(iso: string): string {
   return iso.slice(0, 10);
@@ -93,6 +132,7 @@ export function CampaignEditorDetails({
   disabled,
 }: CampaignEditorDetailsProps) {
   const t = useTranslations("studio");
+  const { region, countryName } = useRegion();
   const synopsisId = useId();
   const synopsisHelpId = `${synopsisId}-help`;
   const synopsisErrorId = `${synopsisId}-error`;
@@ -100,13 +140,47 @@ export function CampaignEditorDetails({
   const synopsisError = form.formState.errors.synopsis?.message;
   const remaining = MAX_SYNOPSIS_LENGTH - synopsis.length;
   const categoryId = useId();
+  const categoryStatusId = `${categoryId}-status`;
   const audienceId = useId();
+  const audienceReachId = `${audienceId}-reach`;
   const audienceLabels: Record<(typeof AUDIENCES)[number], string> = {
     all_ages: t("campaignBuilder.details.audienceAllAges"),
     teen: t("campaignBuilder.details.audienceTeen"),
     adult: t("campaignBuilder.details.audienceAdult"),
     parents: t("campaignBuilder.details.audienceParents"),
   };
+  const audienceReachText: Record<(typeof AUDIENCES)[number], string> = {
+    all_ages: t("campaignBuilder.details.audienceReachAllAges"),
+    teen: t("campaignBuilder.details.audienceReachTeen"),
+    adult: t("campaignBuilder.details.audienceReachAdult"),
+    parents: t("campaignBuilder.details.audienceReachParents"),
+  };
+
+  // TASKS.md 12.3.a: the 1.1.d policy shown inline, cosmetically -- the
+  // server re-checks the SAME table on every save (`category-policy.ts`'s
+  // `categoryRefusal`, run again on update and on publish), so this picker
+  // guiding the author to a compliant choice is convenience, never the gate.
+  const categoryStatus = categoryStatusFor(region, draft.contentCategory);
+  const audienceLocked = categoryStatus === "adult_only";
+
+  function changeCategory(category: string) {
+    const nextStatus = categoryStatusFor(region, category);
+    onChange({
+      ...draft,
+      contentCategory: category,
+      // Never silently coerced past this point -- forced here, the one
+      // moment the author is actively choosing a category, exactly like
+      // the server's own `categoryRefusal` treats an adult_only category
+      // paired with a non-adult audience as a hard refusal rather than a
+      // silent rewrite anywhere else.
+      audience: nextStatus === "adult_only" ? "adult" : draft.audience,
+    });
+  }
+
+  function changeAudience(audience: string) {
+    if (audienceLocked) return;
+    onChange({ ...draft, audience });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -162,22 +236,46 @@ export function CampaignEditorDetails({
             id={categoryId}
             value={draft.contentCategory}
             disabled={disabled}
-            onChange={(event) => onChange({ ...draft, contentCategory: event.target.value })}
+            aria-describedby={categoryStatus === "allowed" ? undefined : categoryStatusId}
+            onChange={(event) => changeCategory(event.target.value)}
           >
-            {CONTENT_CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
+            {CONTENT_CATEGORIES.map((category) => {
+              // A prohibited category can't be chosen at all (1.1.d) --
+              // disabled in the native select, not merely refused after the
+              // fact, with a suffix so the reason is visible without a
+              // second click. Not skipped from the list entirely: a
+              // business in the OTHER region needs to still see it exists.
+              const status = categoryStatusFor(region, category);
+              return (
+                <option key={category} value={category} disabled={status === "prohibited"}>
+                  {category}
+                  {status === "prohibited"
+                    ? t("campaignBuilder.details.categoryOptionProhibitedSuffix")
+                    : ""}
+                </option>
+              );
+            })}
           </NativeSelect>
+          {categoryStatus === "allowed" ? null : (
+            <p
+              id={categoryStatusId}
+              role="note"
+              className="mt-1.5 text-xs font-sans text-fg-muted"
+            >
+              {categoryStatus === "adult_only"
+                ? t("campaignBuilder.details.categoryStatusAdultOnly", { region: countryName })
+                : t("campaignBuilder.details.categoryStatusProhibited", { region: countryName })}
+            </p>
+          )}
         </div>
         <div className="flex-1">
           <NativeSelect
             label={t("campaignBuilder.details.audienceLabel")}
             id={audienceId}
             value={draft.audience}
-            disabled={disabled}
-            onChange={(event) => onChange({ ...draft, audience: event.target.value })}
+            disabled={disabled || audienceLocked}
+            aria-describedby={audienceReachId}
+            onChange={(event) => changeAudience(event.target.value)}
           >
             {AUDIENCES.map((audience) => (
               <option key={audience} value={audience}>
@@ -185,6 +283,10 @@ export function CampaignEditorDetails({
               </option>
             ))}
           </NativeSelect>
+          <p id={audienceReachId} className="mt-1.5 text-xs font-sans text-fg-muted">
+            {audienceReachText[draft.audience as (typeof AUDIENCES)[number]] ??
+              audienceReachText.all_ages}
+          </p>
         </div>
       </div>
 

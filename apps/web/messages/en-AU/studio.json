@@ -37,7 +37,14 @@
       "openViewingLabel": "Open Viewing (no reward required to watch)",
       "captionsUrlLabel": "Captions URL",
       "captionsUrlPlaceholder": "https://…",
-      "teaserStartLabel": "Teaser starts at (seconds)"
+      "teaserStartLabel": "Teaser starts at (seconds)",
+      "categoryStatusAdultOnly": "This category is adult-only in {region} — audience is locked to Adult.",
+      "categoryStatusProhibited": "This category cannot be advertised in {region}.",
+      "categoryOptionProhibitedSuffix": " (not allowed here)",
+      "audienceReachAllAges": "Reaches every viewer.",
+      "audienceReachTeen": "Reaches only viewers aged 13–17.",
+      "audienceReachAdult": "Reaches only viewers 18 and over.",
+      "audienceReachParents": "Reaches viewers 18 and over, boosted for those who have told us they parent young children."
     },
     "reward": {
       "scoringRuleBaseOnly": "Fixed reward — same for every viewer who watches and answers",

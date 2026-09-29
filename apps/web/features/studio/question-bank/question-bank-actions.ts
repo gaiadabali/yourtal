@@ -1,5 +1,5 @@
 import type { QuestionDraft } from "./question-draft";
-import { detectPiiRequest } from "./question-pii-guard";
+import { detectPiiRequest, detectTeenPersonalQuestion } from "./question-pii-guard";
 
 /**
  * Pure question-bank mutations, mirroring `features/studio/team-actions.ts`'s
@@ -25,7 +25,8 @@ export type QuestionBankActionError =
 export type QuestionBankActionResult<T> =
   { ok: true; value: T } | { ok: false; error: QuestionBankActionError };
 
-function validatePrompt(draft: QuestionDraft): QuestionBankActionError | null {
+/** TASKS.md 12.3.a: `audience` defaults to a non-teen value -- only a teen-audience campaign runs the extra personal-question guard, same as the server's own use-cases. */
+function validatePrompt(draft: QuestionDraft, audience?: string): QuestionBankActionError | null {
   if (draft.prompt.trim().length === 0) {
     return { type: "empty_prompt" };
   }
@@ -33,14 +34,21 @@ function validatePrompt(draft: QuestionDraft): QuestionBankActionError | null {
   if (finding) {
     return { type: "pii_request", category: finding.category, reason: finding.reason };
   }
+  if (audience === "teen") {
+    const teenFinding = detectTeenPersonalQuestion(draft.prompt);
+    if (teenFinding) {
+      return { type: "pii_request", category: teenFinding.category, reason: teenFinding.reason };
+    }
+  }
   return null;
 }
 
 export function addQuestionToBank(
   bank: readonly QuestionDraft[],
   draft: QuestionDraft,
+  audience?: string,
 ): QuestionBankActionResult<QuestionDraft[]> {
-  const error = validatePrompt(draft);
+  const error = validatePrompt(draft, audience);
   if (error) {
     return { ok: false, error };
   }
@@ -50,8 +58,9 @@ export function addQuestionToBank(
 export function updateQuestionInBank(
   bank: readonly QuestionDraft[],
   draft: QuestionDraft,
+  audience?: string,
 ): QuestionBankActionResult<QuestionDraft[]> {
-  const error = validatePrompt(draft);
+  const error = validatePrompt(draft, audience);
   if (error) {
     return { ok: false, error };
   }

@@ -83,25 +83,55 @@ beforeAll(async () => {
 
 /**
  * A listing the ledger has priced at `points`, so a burn can read its S and
- * region: at the ID backing rate of IDR 6 a point, S = 6 × points (AU: 3
- * cents a point). Also a real, throwaway `store.listings` row in the same
- * region — 10.7.b's `burnForVoucher` (fake) reads a burn's region from
- * there, the same denormalised-at-mint-time shape `voucher.vouchers.region`
- * already uses (4.5.e); merchant_id carries no foreign key, so any UUID
- * does, and this test owns the row (nothing else reads it).
+ * region: at the ID backing rate of IDR 6 a point, S = 6 × points. Unchanged
+ * from before 10.7 for every existing (ID) caller.
  */
-async function pricedListing(points: number, region: "AU" | "ID" = "ID"): Promise<string> {
+async function pricedListing(points: number): Promise<string> {
   const listingId = randomUUID();
-  const currency = region === "AU" ? "AUD" : "IDR";
-  const backingMinorPerPoint = region === "AU" ? 3 : 6;
   const priced = await client.priceListing({
     listingId,
-    region,
-    currency,
-    settlementMinor: toMinorUnits(backingMinorPerPoint * points),
+    region: "ID",
+    currency: "IDR",
+    settlementMinor: toMinorUnits(6 * points),
   });
   expect(priced._unsafeUnwrap().pricePoints).toBe(points);
+  await insertTestListing(listingId, "ID", "IDR", points);
+  return listingId;
+}
 
+/**
+ * 10.7.b's own AU listing: unlike `pricedListing` above, this does not
+ * assume a fixed backing rate — `proposeRate`/`approveRate` elsewhere in
+ * this same file move AU's rate in force, and other suites sharing this
+ * database may too, so it reads the CURRENT rate and returns whatever
+ * `pricePoints` it actually prices to, rather than insisting the caller's
+ * own requested amount survives two roundings intact.
+ */
+async function pricedAuListing(targetPoints: number): Promise<{ listingId: string; points: number }> {
+  const listingId = randomUUID();
+  const rateRows = await db.execute<{ backing_rate_micros_per_pt: string }>(sql`
+    SELECT backing_rate_micros_per_pt FROM platform.ledger_fake_backing_rate
+     WHERE region = 'AU' ORDER BY effective_from DESC LIMIT 1
+  `);
+  const micros = Number(rateRows.rows[0]?.backing_rate_micros_per_pt ?? 3_000_000);
+  const settlementMinor = Math.ceil((targetPoints * micros) / 1_000_000);
+  const priced = await client.priceListing({
+    listingId,
+    region: "AU",
+    currency: "AUD",
+    settlementMinor: toMinorUnits(settlementMinor),
+  });
+  const points = priced._unsafeUnwrap().pricePoints;
+  await insertTestListing(listingId, "AU", "AUD", points);
+  return { listingId, points };
+}
+
+async function insertTestListing(
+  listingId: string,
+  region: "AU" | "ID",
+  currency: "AUD" | "IDR",
+  points: number,
+): Promise<void> {
   await db.execute(sql`
     INSERT INTO store.listings
       (id, merchant_id, merchant_name, title, description, category,
@@ -112,12 +142,11 @@ async function pricedListing(points: number, region: "AU" | "ID" = "ID"): Promis
     VALUES
       (${listingId}, ${randomUUID()}, 'Contract spec listing', 'Contract spec listing',
        'a listing minted for the ledger contract spec', 'food-and-drink',
-       ${backingMinorPerPoint * points}, ${backingMinorPerPoint * points}, ${points},
+       ${points}, ${points}, ${points},
        1, 1, false, 'single_use_forfeit',
        NULL, now() + interval '90 days', 'available', ${currency}, ${region}, 'all_ages',
        'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg', 'both', 'single_use')
   `);
-  return listingId;
 }
 
 const attestationSecret =
@@ -604,6 +633,21 @@ describe("earning and spending", () => {
     const auBefore = await redeemedToday("AU");
     const idBefore = await redeemedToday("ID");
 
+    // A generous top-up: comfortably covers 500 points at any rate this
+    // file's own proposeRate/approveRate tests could plausibly move AU to
+    // (F1's margin rule keeps B within a small multiple of P_issue).
+    expect(
+      (
+        await client.fundMarketing({
+          region: "AU",
+          amountMinor: toMinorUnits(10_000_000),
+          proposedBy: "staff-1",
+          approvedBy: "staff-2",
+        })
+      ).isOk(),
+    ).toBe(true);
+
+    const { listingId, points } = await pricedAuListing(500);
     const userId = randomUUID();
     expect(
       (
@@ -611,7 +655,7 @@ describe("earning and spending", () => {
           kind: "goodwill",
           userId,
           region: "AU",
-          points: toPoints(500),
+          points: toPoints(points),
           trustTier: 3,
           idempotencyKey: randomUUID(),
         })
@@ -619,13 +663,13 @@ describe("earning and spending", () => {
     ).toBe(true);
     const burned = await client.burnForVoucher({
       userId,
-      listingId: await pricedListing(500, "AU"),
-      points: toPoints(500),
+      listingId,
+      points: toPoints(points),
       sagaId: randomUUID(),
     });
     expect(burned._unsafeUnwrap().state).toBe("burned");
 
-    expect((await redeemedToday("AU")) - auBefore).toBe(500);
+    expect((await redeemedToday("AU")) - auBefore).toBe(points);
     expect(await redeemedToday("ID")).toBe(idBefore);
   });
 });

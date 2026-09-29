@@ -146,8 +146,15 @@ func (a *API) qrToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := ownedVoucher(r.Context(), a.pool, voucherID, ownerID); err != nil {
+	voucher, err := ownedVoucher(r.Context(), a.pool, voucherID, ownerID)
+	if err != nil {
 		a.fail(w, err)
+		return
+	}
+	// A voided, redeemed or expired voucher has nothing to present: counters
+	// refuse it anyway, so a QR for it would only mislead its owner.
+	if !lifecycle.Spendable(lifecycle.State(voucher.State)) {
+		a.fail(w, fmt.Errorf("%w: voucher %s is %s, not spendable", errAlreadyCaptured, voucherID, voucher.State))
 		return
 	}
 

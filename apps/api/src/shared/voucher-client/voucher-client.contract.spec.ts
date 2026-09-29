@@ -193,6 +193,10 @@ describe("reservation lifecycle", () => {
     // refusing, so a retried call after a lost response is safe.
     const replayed = await client.voidVoucher({ voucherId, ownerId, reason: "retry" });
     expect(replayed.isOk()).toBe(true);
+
+    // A voided voucher has nothing to present at a counter, so no QR either.
+    const qr = await client.qrToken({ voucherId, ownerId });
+    expect(qr._unsafeUnwrapErr().code).toBe("already_granted");
   });
 });
 

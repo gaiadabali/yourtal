@@ -1,5 +1,9 @@
 import { errAsync, ResultAsync } from "neverthrow";
-import { detectPiiRequest, detectPredictionRequest } from "@yourtal/contracts/question/pii-guard";
+import {
+  detectPiiRequest,
+  detectPredictionRequest,
+  detectTeenPersonalQuestion,
+} from "@yourtal/contracts/question/pii-guard";
 import type { Audience } from "@yourtal/contracts/campaign";
 import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
 import type {
@@ -32,7 +36,7 @@ export interface StaffModerationDeps {
 
 export interface CampaignModerationFlag {
   readonly questionId: string;
-  readonly kind: "pii" | "prediction";
+  readonly kind: "pii" | "prediction" | "teen_personal";
   readonly category?: string;
   readonly reason: string;
 }
@@ -53,6 +57,8 @@ export interface CampaignModerationQueueItem {
 async function flagsFor(
   bank: QuestionBankRepository,
   campaignId: string,
+  /** 12.3.a: only a teen-audience campaign is re-screened for the extra personal-question guard. */
+  audience: Audience,
 ): Promise<readonly CampaignModerationFlag[]> {
   const questions = await bank.listByCampaign(campaignId);
   const flags: CampaignModerationFlag[] = [];
@@ -69,6 +75,17 @@ async function flagsFor(
     const prediction = detectPredictionRequest(record.question.prompt);
     if (prediction !== null) {
       flags.push({ questionId: record.question.id, kind: "prediction", reason: prediction.reason });
+    }
+    if (audience === "teen") {
+      const personal = detectTeenPersonalQuestion(record.question.prompt);
+      if (personal !== null) {
+        flags.push({
+          questionId: record.question.id,
+          kind: "teen_personal",
+          category: personal.category,
+          reason: personal.reason,
+        });
+      }
     }
   }
   return flags;
@@ -88,7 +105,7 @@ export function listCampaignModerationQueue(
       Promise.all(
         campaigns.map(async (campaign) => ({
           campaign,
-          flags: await flagsFor(deps.bank, campaign.id),
+          flags: await flagsFor(deps.bank, campaign.id, campaign.audience),
         })),
       ),
       (cause): ListCampaignModerationQueueError => ({
@@ -148,7 +165,7 @@ export function approveCampaignModeration(
     }
 
     return ResultAsync.fromPromise(
-      flagsFor(deps.bank, campaignId),
+      flagsFor(deps.bank, campaignId, audience),
       (cause): ModerateCampaignError => ({ type: "persistence_failed", cause: String(cause) }),
     ).andThen((flags) => {
       const pii = flags.find((flag) => flag.kind === "pii");
@@ -164,6 +181,14 @@ export function approveCampaignModeration(
         return errAsync<CampaignDraft, ModerateCampaignError>({
           type: "prediction_request",
           reason: prediction.reason,
+        });
+      }
+      const teenPersonal = flags.find((flag) => flag.kind === "teen_personal");
+      if (teenPersonal !== undefined) {
+        return errAsync<CampaignDraft, ModerateCampaignError>({
+          type: "teen_personal_question",
+          category: teenPersonal.category ?? "unknown",
+          reason: teenPersonal.reason,
         });
       }
 

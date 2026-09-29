@@ -62,7 +62,11 @@ async function makeSubmittable(campaignId: string): Promise<void> {
     .where(eq(campaigns.id, campaignId));
 }
 
-async function createDraftCampaign(cookie: string, businessId: string): Promise<string> {
+async function createDraftCampaign(
+  cookie: string,
+  businessId: string,
+  audience: "all_ages" | "teen" | "adult" | "parents" = "all_ages",
+): Promise<string> {
   const now = Date.now();
   const response = await app.inject({
     method: "POST",
@@ -74,7 +78,7 @@ async function createDraftCampaign(cookie: string, businessId: string): Promise<
       synopsis: "Exercises question edit/retire end to end.",
       durationSeconds: 20 * 60,
       contentCategory: "food-and-drink",
-      audience: "all_ages",
+      audience,
       startsAt: new Date(now).toISOString(),
       endsAt: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(),
       openViewing: false,
@@ -112,6 +116,16 @@ async function createQuestion(cookie: string, businessId: string, campaignId: st
   });
   expect(response.statusCode).toBe(201);
   return response.json<{ question: { id: string } }>().question.id;
+}
+
+/** Same POST, but with an arbitrary prompt and the raw response left to the caller -- 12.3.a's teen-personal-question tests need to assert on a refusal, not a 201. */
+function postQuestion(cookie: string, businessId: string, campaignId: string, prompt: string) {
+  return app.inject({
+    method: "POST",
+    url: `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
+    headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
+    payload: multipleChoicePayload(prompt),
+  });
 }
 
 interface BankQuestionRecordBody {
@@ -223,6 +237,55 @@ describe("PATCH /api/:tenantId/studio/campaigns/:campaignId/questions/:questionI
     });
     expect(response.statusCode).toBe(400);
     expect(response.json<{ code: string }>().code).toBe("campaign_not_draft");
+  });
+});
+
+describe("POST /api/:tenantId/studio/campaigns/:campaignId/questions (12.3.a teen personal-question guard)", () => {
+  it("refuses a personal question on a teen-audience campaign, in plain language", async () => {
+    const { cookie, businessId } = await ownerAt();
+    const campaignId = await createDraftCampaign(cookie, businessId, "teen");
+
+    const response = await postQuestion(cookie, businessId, campaignId, "How old are you?");
+    expect(response.statusCode).toBe(400);
+    const body = response.json<{ code: string; message: string }>();
+    expect(body.code).toBe("teen_personal_question");
+    expect(body.message.length).toBeGreaterThan(0);
+  });
+
+  it("allows an ordinary comprehension question on a teen-audience campaign", async () => {
+    const { cookie, businessId } = await ownerAt();
+    const campaignId = await createDraftCampaign(cookie, businessId, "teen");
+
+    const response = await postQuestion(
+      cookie,
+      businessId,
+      campaignId,
+      "Which discount did the video mention?",
+    );
+    expect(response.statusCode).toBe(201);
+  });
+
+  it("does not refuse the same personal-style prompt on a non-teen campaign", async () => {
+    const { cookie, businessId } = await ownerAt();
+    const campaignId = await createDraftCampaign(cookie, businessId, "all_ages");
+
+    const response = await postQuestion(cookie, businessId, campaignId, "How old are you?");
+    expect(response.statusCode).toBe(201);
+  });
+
+  it("re-checks the teen guard on PATCH: an edit into a personal question is refused", async () => {
+    const { cookie, businessId } = await ownerAt();
+    const campaignId = await createDraftCampaign(cookie, businessId, "teen");
+    const questionId = await createQuestion(cookie, businessId, campaignId);
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}/questions/${questionId}`,
+      headers: { cookie },
+      payload: multipleChoicePayload("What school do you go to?"),
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json<{ code: string }>().code).toBe("teen_personal_question");
   });
 });
 

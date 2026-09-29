@@ -135,3 +135,88 @@ export function detectPredictionRequest(promptText: string): PredictionFinding |
       "Questions cannot ask someone to predict or guess an outcome (red line 1). A checkpoint checks what the video showed, not what might happen next.",
   };
 }
+
+/**
+ * TASKS.md 12.3.a: "Teen-rated question banks may not ask personal
+ * questions." A STRICTER, teen-only layer on top of `detectPiiRequest`
+ * above -- that function already refuses hard data-harvesting categories
+ * (phone, email, government ID, and the rest) for every campaign,
+ * regardless of audience. This one adds the categories that are ordinary,
+ * fine questions for an adult audience (an opinion on age, school,
+ * neighbourhood, appearance, family or an online handle) but are not
+ * something a 13-17-year-old's quiz should be asking at all -- the
+ * platform minimising what it collects from a minor, not just what counts
+ * as identity-theft-grade PII. Called only when the campaign's own
+ * `audience` is `"teen"` (`create-question.use-case.ts` /
+ * `update-question.use-case.ts`); an adult, parents or all_ages campaign
+ * never runs this check.
+ */
+const TEEN_PERSONAL_RULES: PiiRule[] = [
+  {
+    category: "age or date of birth",
+    reason:
+      "Teen-rated question banks cannot ask someone's age or date of birth. This platform already knows a viewer's age band; a quiz never needs to ask again.",
+    pattern:
+      /\bhow\s+old\s+are\s+you\b|\byour\s+age\b|\bdate\s+of\s+birth\b|\bberapa\s+umur\b|\busia\s*(kamu|anda)\b|\btanggal\s*lahir\b/i,
+  },
+  {
+    category: "school",
+    reason:
+      "Teen-rated question banks cannot ask what school someone goes to. That identifies a minor's physical location, which this platform never collects through a quiz.",
+    pattern: /\bwhat\s+school\b|\bwhich\s+school\b|\bsekolah\s*(mana|kamu|anda)\b/i,
+  },
+  {
+    category: "where you live",
+    reason:
+      "Teen-rated question banks cannot ask what city or suburb someone lives in. A comprehension check never needs to know where a minor is.",
+    pattern:
+      /\bwhat\s+(city|suburb|neighbo(u)?rhood)\s+do\s+you\s+live\b|\bkota\s*(mana|apa)\s*(kamu|anda)?\s*tinggal\b|\btinggal\s*di\s*mana\b/i,
+  },
+  {
+    category: "appearance",
+    reason:
+      "Teen-rated question banks cannot ask about someone's physical appearance. That is personal profiling, not video comprehension.",
+    pattern:
+      /\bwhat\s+do\s+you\s+look\s+like\b|\byour\s+(weight|height)\b|\bberat\s*badan\s*(kamu|anda)\b|\btinggi\s*badan\s*(kamu|anda)\b/i,
+  },
+  {
+    category: "family",
+    reason:
+      "Teen-rated question banks cannot ask about someone's parents or siblings. Family details are never something a checkpoint needs.",
+    pattern:
+      /\byour\s+(parents|mother|father|siblings|brother|sister)\b|\borang\s*tua\s*(kamu|anda)\b|\bsaudara\s*(kamu|anda)\b/i,
+  },
+  {
+    category: "social media handle",
+    reason:
+      "Teen-rated question banks cannot ask for a social media username or handle. That is contact-collection, not a comprehension check.",
+    pattern:
+      /\b(instagram|tiktok|snapchat|discord)\s*(username|handle|account)?\b|\bakun\s*(instagram|tiktok|snapchat|discord)\b/i,
+  },
+  {
+    category: "relationship status",
+    reason:
+      "Teen-rated question banks cannot ask about someone's relationship or dating status. That is personal profiling of a minor, which this platform never collects.",
+    pattern: /\b(girlfriend|boyfriend|dating\s+anyone)\b|\bpunya\s*pacar\b|\bstatus\s*pacaran\b/i,
+  },
+];
+
+/**
+ * Scans one teen-campaign question prompt for a personal-question request
+ * beyond the universal PII list. Returns `null` for an ordinary
+ * comprehension/opinion question -- the same "how likely are you to
+ * recommend this" style prompt `detectPiiRequest` already lets through.
+ */
+export function detectTeenPersonalQuestion(promptText: string): PiiFinding | null {
+  const trimmed = promptText.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  for (const rule of TEEN_PERSONAL_RULES) {
+    const match = rule.pattern.exec(trimmed);
+    if (match) {
+      return { category: rule.category, matchedTerm: match[0], reason: rule.reason };
+    }
+  }
+  return null;
+}

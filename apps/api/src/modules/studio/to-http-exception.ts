@@ -26,6 +26,7 @@ import type {
   QuestionNotFoundError,
   QuestionTypeImmutableError,
   RewardExceedsCeilingError,
+  TeenPersonalQuestionError,
 } from "./studio.errors";
 
 const logger = new Logger("StudioErrorMapper");
@@ -40,6 +41,7 @@ export type StudioDomainError =
   | AudienceMustBeAdultError
   | PiiRequestError
   | PredictionRequestError
+  | TeenPersonalQuestionError
   | QuestionNotFoundError
   | QuestionTypeImmutableError
   | AllocationNotOwnedError
@@ -88,6 +90,11 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
       return new BadRequestException({ code: "pii_request", message: error.reason });
     case "prediction_request":
       return new BadRequestException({ code: "prediction_request", message: error.reason });
+    case "teen_personal_question":
+      return new BadRequestException({
+        code: "teen_personal_question",
+        message: error.reason,
+      });
     case "question_not_found":
       return new NotFoundException({
         code: "question_not_found",

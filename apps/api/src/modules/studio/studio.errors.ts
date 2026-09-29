@@ -63,8 +63,19 @@ export interface PredictionRequestError {
   readonly reason: string;
 }
 
+/** TASKS.md 12.3.a: a teen-audience campaign's question bank asked a personal question beyond the universal PII list (`detectTeenPersonalQuestion`). */
+export interface TeenPersonalQuestionError {
+  readonly type: "teen_personal_question";
+  readonly category: string;
+  readonly reason: string;
+}
+
 export type CreateQuestionError =
-  CampaignNotFoundError | PiiRequestError | PredictionRequestError | PersistenceFailedError;
+  | CampaignNotFoundError
+  | PiiRequestError
+  | PredictionRequestError
+  | TeenPersonalQuestionError
+  | PersistenceFailedError;
 
 export interface QuestionNotFoundError {
   readonly type: "question_not_found";
@@ -83,6 +94,7 @@ export type UpdateQuestionError =
   | CampaignNotDraftError
   | PiiRequestError
   | PredictionRequestError
+  | TeenPersonalQuestionError
   | PersistenceFailedError;
 
 export type RetireQuestionError =
@@ -158,6 +170,7 @@ export type ModerateCampaignError =
   | AudienceMustBeAdultError
   | PiiRequestError
   | PredictionRequestError
+  | TeenPersonalQuestionError
   | IllegalTransitionError
   | PersistenceFailedError;
 

@@ -1,5 +1,9 @@
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
-import { detectPiiRequest, detectPredictionRequest } from "@yourtal/contracts/question/pii-guard";
+import {
+  detectPiiRequest,
+  detectPredictionRequest,
+  detectTeenPersonalQuestion,
+} from "@yourtal/contracts/question/pii-guard";
 import type { CampaignDraftRepository } from "../persistence/campaign-draft.repository";
 import type {
   BankQuestionRecord,
@@ -73,6 +77,20 @@ export function updateQuestion(
       }
       if (draft.lifecycleState !== "draft") {
         return errAsync<BankQuestionRecord, UpdateQuestionError>({ type: "campaign_not_draft" });
+      }
+      // TASKS.md 12.3.a: the same teen-only guard create-question.use-case.ts
+      // runs, re-run here because the prompt may have just changed into a
+      // personal question -- an edit that skipped this would be a second,
+      // unscreened way into a teen-audience bank.
+      if (draft.audience === "teen") {
+        const personalFinding = detectTeenPersonalQuestion(question.prompt);
+        if (personalFinding !== null) {
+          return errAsync<BankQuestionRecord, UpdateQuestionError>({
+            type: "teen_personal_question",
+            category: personalFinding.category,
+            reason: personalFinding.reason,
+          });
+        }
       }
       return ResultAsync.fromPromise(
         deps.bank.update(questionId, question, "clear"),

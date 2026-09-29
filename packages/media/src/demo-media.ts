@@ -86,18 +86,20 @@ export function demoCampaignCopy(
   brand: string,
   region: string,
 ): { title: string; synopsis: string } {
+  // "Tasmania Wool Co." already ends a sentence; never write "Co..".
+  const sentence = brand.replace(/\.$/, "");
   return region === "ID"
     ? {
         title: `Kenalan dengan ${brand}`,
-        synopsis: `Sekilas tentang ${brand}. Tonton sampai habis dan jawab satu pertanyaan untuk mendapatkan poin.`,
+        synopsis: `Sekilas tentang ${sentence}. Tonton sampai habis dan jawab satu pertanyaan untuk mendapatkan poin.`,
       }
     : {
         title: `Get to know ${brand}`,
-        synopsis: `A quick look at ${brand}. Watch to the end and answer one question to earn points.`,
+        synopsis: `A quick look at ${sentence}. Watch to the end and answer one question to earn points.`,
       };
 }
 
-const STALE_COPY = /\(\d+\.\d+[a-z]?\)|pnpm |\(F\d+\)/;
+const STALE_COPY = /\(\d+\.\d+[a-z]?\)|pnpm |\(F\d+\)|\w\.\. /;
 
 /** F10's own 60s floor, plus margin: every demo campaign lands at exactly this length. */
 const TARGET_DURATION_SECONDS = 90;

@@ -7,6 +7,9 @@ describe("demoCampaignCopy", () => {
     const id = demoCampaignCopy("Bali Batik House", "ID");
     expect(au.title).toBe("Get to know Bondi Board Co.");
     expect(id.title).toBe("Kenalan dengan Bali Batik House");
+    expect(demoCampaignCopy("Tasmania Wool Co.", "AU").synopsis).toMatch(
+      /^A quick look at Tasmania Wool Co\. Watch/,
+    );
     for (const text of [au.title, au.synopsis, id.title, id.synopsis]) {
       expect(text).not.toMatch(/\(\d+\.\d+|pnpm|\(F\d+\)|demo/i);
     }

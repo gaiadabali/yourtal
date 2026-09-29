@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { mixedStateBalanceFixture } from "@yourtal/contracts/balance/mock";
+import { getWalletBalance } from "@/features/wallet/wallet-data";
 import { RumReporterLoader } from "@/features/rum/rum-reporter-loader";
 import { getDisplayLocale } from "@/i18n/get-locale";
 import { ViewerShell } from "./viewer-shell";
@@ -18,19 +18,15 @@ export interface AppShellProps {
  * component tree from a Client Component (see `viewer-shell.tsx`'s doc
  * comment).
  *
- * `availablePoints`: no shell-safe wallet read exists yet —
- * `features/wallet/wallet-data.ts` is scoped to `app/(app)/wallet/**` by its
- * own doc comment, and importing it here would cross that boundary. Standing
- * in with the same mixed-state balance fixture the Wallet screen itself
- * reads from (`@yourtal/contracts/balance/mock`) until a real, shell-wide
- * balance read is threaded through (tracked for a later phase).
+ * `availablePoints` is the viewer's real spendable balance; if the wallet
+ * read fails the chip shows 0 rather than a made-up number.
  */
 export async function AppShell({ children }: AppShellProps) {
-  const locale = await getDisplayLocale();
+  const [locale, wallet] = await Promise.all([getDisplayLocale(), getWalletBalance()]);
   return (
     <>
       <RumReporterLoader />
-      <ViewerShell locale={locale} availablePoints={mixedStateBalanceFixture.availablePoints}>
+      <ViewerShell locale={locale} availablePoints={wallet.ok ? wallet.data.availablePoints : 0}>
         {children}
       </ViewerShell>
     </>

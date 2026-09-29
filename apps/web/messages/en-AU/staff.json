@@ -218,7 +218,7 @@
   },
   "disputes": {
     "title": "Disputes",
-    "intro": "Captured-voucher disputes waiting for staff. Resolving one is a later screen -- this list is read-only.",
+    "intro": "Captured-voucher disputes waiting for staff. Finance resolves one in the user's favour, posting a recovery line against the merchant.",
     "emptyTitle": "No disputes waiting",
     "emptyDescription": "Every captured-voucher dispute has been picked up.",
     "columnVoucher": "Voucher",
@@ -230,7 +230,12 @@
       "not_honoured": "Not honoured",
       "merchant_closed": "Merchant closed",
       "other": "Other"
-    }
+    },
+    "columnActions": "Actions",
+    "resolveCta": "Resolve",
+    "resolveDialogTitle": "Resolve this dispute?",
+    "resolveDialogBody": "Posts a recovery line against the merchant that captured this voucher and removes the dispute from the queue. This cannot be undone.",
+    "resolveSubmit": "Resolve"
   },
   "risk": {
     "title": "Risk queue",

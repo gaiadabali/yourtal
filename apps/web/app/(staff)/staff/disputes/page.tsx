@@ -13,7 +13,7 @@ export default async function StaffDisputesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t("disputes.title")} description={t("disputes.intro")} />
-      <StaffDisputesList t={t} disputes={disputes} />
+      <StaffDisputesList disputes={disputes} />
     </div>
   );
 }

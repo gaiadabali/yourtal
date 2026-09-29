@@ -218,7 +218,7 @@
   },
   "disputes": {
     "title": "Sengketa",
-    "intro": "Sengketa voucher yang telah ditangkap dan menunggu staf. Menyelesaikannya adalah layar berikutnya -- daftar ini hanya untuk dilihat.",
+    "intro": "Sengketa voucher yang telah ditangkap dan menunggu staf. Finance menyelesaikannya demi pengguna, dengan memposting baris pemulihan terhadap pedagang.",
     "emptyTitle": "Tidak ada sengketa menunggu",
     "emptyDescription": "Setiap sengketa voucher yang ditangkap telah ditindaklanjuti.",
     "columnVoucher": "Voucher",
@@ -230,7 +230,12 @@
       "not_honoured": "Tidak dihormati",
       "merchant_closed": "Pedagang tutup",
       "other": "Lainnya"
-    }
+    },
+    "columnActions": "Tindakan",
+    "resolveCta": "Selesaikan",
+    "resolveDialogTitle": "Selesaikan sengketa ini?",
+    "resolveDialogBody": "Memposting baris pemulihan terhadap pedagang yang menangkap voucher ini dan menghapus sengketa dari antrean. Tindakan ini tidak dapat dibatalkan.",
+    "resolveSubmit": "Selesaikan"
   },
   "risk": {
     "title": "Antrean risiko",

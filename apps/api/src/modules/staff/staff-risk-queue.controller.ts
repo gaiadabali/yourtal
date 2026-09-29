@@ -26,7 +26,13 @@ import {
   LEDGER_INTERNAL_CLIENT,
   type LedgerInternalClient,
 } from "../../shared/ledger-client/ledger-internal-client";
+import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
 import { StaffAction, setStaffAuditContext } from "./staff-action.decorator";
+
+// TASKS.md 12.3.d, same 24h window `staff-economy.controller.ts`'s own
+// `ECONOMY_RETENTION_MS` uses: a staff member retries a release/suspend
+// within a session, never across days.
+const RISK_QUEUE_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 class ResolveDto extends createZodDto(staffRiskResolveRequestSchema) {}
 
@@ -69,6 +75,7 @@ export class StaffRiskQueueController {
   }
 
   @StaffAction("risk.release")
+  @Idempotent({ retentionMs: RISK_QUEUE_RETENTION_MS })
   @Authorize({ kind: "risk_flag", action: "release", idFrom: () => "self" })
   @Post("queue/:id/release")
   async release(
@@ -94,6 +101,7 @@ export class StaffRiskQueueController {
   }
 
   @StaffAction("risk.suspend")
+  @Idempotent({ retentionMs: RISK_QUEUE_RETENTION_MS })
   @Authorize({ kind: "risk_flag", action: "suspend", idFrom: () => "self" })
   @Post("queue/:id/suspend")
   async suspend(

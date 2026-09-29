@@ -28,6 +28,7 @@ import {
   type LedgerInternalClient,
 } from "../../shared/ledger-client/ledger-internal-client";
 import { LedgerNotFoundError } from "../../shared/ledger-client/ledger-not-found";
+import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
 import { StaffAction, setStaffAuditContext } from "./staff-action.decorator";
 import { STAFF_DISPUTE_QUEUE } from "./persistence/staff-dispute-queue";
 import type { StaffDisputeQueue as DisputeQueueReader } from "./persistence/staff-dispute-queue";
@@ -35,6 +36,13 @@ import { STAFF_DISPUTE_RESOLUTION } from "./persistence/staff-dispute-resolution
 import type { StaffDisputeResolution } from "./persistence/staff-dispute-resolution";
 
 class ResolveDisputeDto extends createZodDto(resolveDisputeRequestSchema) {}
+
+// TASKS.md 12.3.d, same 24h window `staff-economy.controller.ts`'s
+// `ECONOMY_RETENTION_MS` uses for its own staff proposal/approval routes: a
+// staff member retries within a session, never across days, and the
+// ledger's own `recoverCapture` idempotency key (captureId) already covers
+// a slower retry independently of this table.
+const DISPUTE_RESOLVE_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 /**
  * TASKS.md 9.4.d, K13: the captured-voucher dispute queue
@@ -78,6 +86,7 @@ export class StaffDisputesController {
   }
 
   @StaffAction("dispute.resolve")
+  @Idempotent({ retentionMs: DISPUTE_RESOLVE_RETENTION_MS })
   @Authorize({ kind: "voucher_dispute", action: "resolve", idFrom: () => "self" })
   @Post(":voucherId/resolve")
   async resolve(

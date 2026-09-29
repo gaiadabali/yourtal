@@ -60,7 +60,9 @@ function post(url: string, session: TestSession, payload?: object) {
   return app.inject({
     method: "POST",
     url,
-    headers: { cookie: session.cookie },
+    // 12.3.d: `resolve` is now `@Idempotent` (mutating-routes.test.ts), same
+    // header `staff-risk-queue.e2e.test.ts`'s own `post()` already sends.
+    headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
     ...(payload === undefined ? {} : { payload }),
   });
 }

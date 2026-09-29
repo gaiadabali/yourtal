@@ -29,6 +29,11 @@ const envSchema = z.object({
     .string()
     .min(32)
     .default("local-only-webhook-secret-encryption-key-not-a-real-secret"),
+  // TASKS.md 10.4.c (EW-18): where nginx's own access log lives on this
+  // box. Empty by default -- dev and CI have no nginx in front of them, and
+  // `delivery-log-ingest.ts` treats "" as "nothing to ingest yet" rather
+  // than failing; staging's `.gaiadeploy.yml` sets the real path.
+  NGINX_ACCESS_LOG_PATH: z.string().default(""),
 });
 
 export interface WorkerConfig {
@@ -37,6 +42,7 @@ export interface WorkerConfig {
   readonly ledger: { readonly baseUrl: string; readonly serviceSecret: string };
   readonly voucher: { readonly baseUrl: string; readonly serviceSecret: string };
   readonly webhookSecretEncryptionKey: string;
+  readonly nginxAccessLogPath: string;
 }
 
 /** `process.env` is read in exactly this one file. Everything else takes `WorkerConfig`. */
@@ -48,5 +54,6 @@ export function loadWorkerConfig(source: NodeJS.ProcessEnv = process.env): Worke
     ledger: { baseUrl: env.LEDGER_BASE_URL, serviceSecret: env.LEDGER_SERVICE_SECRET },
     voucher: { baseUrl: env.VOUCHER_BASE_URL, serviceSecret: env.VOUCHER_SERVICE_SECRET },
     webhookSecretEncryptionKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+    nginxAccessLogPath: env.NGINX_ACCESS_LOG_PATH,
   };
 }

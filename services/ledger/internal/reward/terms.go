@@ -110,7 +110,8 @@ func (e *Engine) campaignGrant(ctx context.Context, req RewardRequest) (GrantReq
 		UserID: req.UserID, Action: ActionWatchCompleted, ExternalRef: req.CampaignID,
 		AllocationID: config.AllocationID, HoldID: req.HoldID, CampaignID: req.CampaignID,
 		IdempotencyKey: req.IdempotencyKey, def: &def, completion: &c,
-		campaignMax: config.MaxPointsForCampaign,
+		campaignMax:      config.MaxPointsForCampaign,
+		TimingSuspicious: req.TimingSuspicious,
 	}, nil
 }
 

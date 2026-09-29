@@ -39,6 +39,12 @@ import type {
   LedgerHistoryEntry,
 } from "@yourtal/contracts/ledger-internal/wallet";
 import type {
+  RiskFlag,
+  RiskQueueList,
+  RiskQueueListRequest,
+  RiskQueueResolveRequest,
+} from "@yourtal/contracts/ledger-internal/risk";
+import type {
   ApproveRateRequest,
   ApprovePayoutRequest,
   Coverage,
@@ -108,6 +114,11 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   releaseEscrow(escrowId: string): ResultAsync<Escrow, LedgerError>;
   balance(userId: string): ResultAsync<LedgerBalance, LedgerError>;
   history(request: HistoryRequest): ResultAsync<readonly LedgerHistoryEntry[], LedgerError>;
+
+  // --- risk (10.4/10.5) ---
+  riskQueueList(request: RiskQueueListRequest): ResultAsync<RiskQueueList, LedgerError>;
+  riskQueueRelease(request: RiskQueueResolveRequest): ResultAsync<RiskFlag, LedgerError>;
+  riskQueueSuspend(request: RiskQueueResolveRequest): ResultAsync<RiskFlag, LedgerError>;
 
   // --- economy ---
   coverage(region: string): ResultAsync<Coverage, LedgerError>;

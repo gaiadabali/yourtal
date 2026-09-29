@@ -34,14 +34,15 @@ type CampaignRewardConfig struct {
 }
 
 type LedgerAccount struct {
-	ID        string
-	OwnerType string
-	OwnerID   string
-	Currency  string
-	Kind      string
-	Country   string
-	CreatedAt pgtype.Timestamptz
-	Purpose   string
+	ID             string
+	OwnerType      string
+	OwnerID        string
+	Currency       string
+	Kind           string
+	Country        string
+	CreatedAt      pgtype.Timestamptz
+	Purpose        string
+	LastActivityAt pgtype.Timestamptz
 }
 
 type LedgerAllocation struct {
@@ -219,6 +220,14 @@ type LedgerPointPurchase struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type LedgerPointsExpiryNotice struct {
+	AccountID     string
+	MilestoneDays int32
+	ExpiringAt    pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
+	NotifiedAt    pgtype.Timestamptz
+}
+
 type LedgerQuote struct {
 	ID              pgtype.UUID
 	Region          string
@@ -238,6 +247,21 @@ type LedgerQuoteLock struct {
 type LedgerReleaseNotice struct {
 	GrantID   string
 	CreatedAt pgtype.Timestamptz
+}
+
+type LedgerRiskFlag struct {
+	ID             string
+	UserID         string
+	Region         string
+	Severity       string
+	Reason         string
+	Signals        []byte
+	EscrowID       *string
+	Status         string
+	CreatedAt      pgtype.Timestamptz
+	ResolvedAt     pgtype.Timestamptz
+	ResolvedBy     *string
+	ResolutionNote *string
 }
 
 type LedgerTransfer struct {

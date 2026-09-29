@@ -295,6 +295,18 @@ export const RESOURCE_ACTIONS = {
    * `staff_console` itself.
    */
   voucher_dispute: ["view"],
+
+  /**
+   * TASKS.md 10.5.a: the real RiskGate's manual-review queue (10.4.b,
+   * `ledger.risk_flag`). Same role as user_account's suspend/reinstate
+   * (risk_analyst) -- releasing or suspending a flagged account is exactly
+   * that action, just reached from the queue screen instead of a user
+   * search. A new kind rather than folding into `user_account`: a flag has
+   * its own id and its own lifecycle (pending/released/suspended)
+   * independent of which user it names, and `list` has no single user to
+   * scope a `user_account.view` check to.
+   */
+  risk_flag: ["view", "release", "suspend"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

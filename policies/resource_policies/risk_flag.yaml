@@ -1,0 +1,22 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  TASKS.md 10.5.a: the real RiskGate's manual-review queue (10.4.b,
+  ledger.risk_flag). Same role as user_account.yaml's suspend/reinstate
+  (risk_analyst): releasing a flag or escalating it into a suspension is the
+  same kind of decision, just reached from the queue screen. Support and
+  finance do not touch it -- whoever-can-adjust-cannot-suspend in
+  user_account.yaml is the same separation of duties here.
+resourcePolicy:
+  version: default
+  resource: risk_flag
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/risk_flag.json
+  rules:
+    - name: risk-works-the-queue
+      actions: ["view", "release", "suspend"]
+      effect: EFFECT_ALLOW
+      roles: ["risk_analyst"]

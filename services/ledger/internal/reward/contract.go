@@ -32,6 +32,8 @@ type RewardRequest struct {
 	// Completion and Signature are apps/api's attestation (4.4.c).
 	Completion attest.Completion
 	Signature  string
+	// TimingSuspicious is 10.4.a's own signal — see RiskCheck.
+	TimingSuspicious bool
 }
 
 // GrantReward pays a completed campaign what its frozen terms promise, on a
@@ -53,6 +55,8 @@ type ActionRequest struct {
 	Points         int64
 	TrustTier      int
 	IdempotencyKey string
+	DeviceID       string
+	IPAddress      string
 }
 
 var actionKinds = map[string]ActionType{
@@ -78,6 +82,7 @@ func (e *Engine) GrantAction(ctx context.Context, req ActionRequest) (GrantResul
 	return e.contractGrant(ctx, GrantRequest{
 		UserID: req.UserID, Action: action, ExternalRef: req.IdempotencyKey, AllocationID: budget,
 		IdempotencyKey: req.IdempotencyKey, def: &def,
+		DeviceID: req.DeviceID, IPAddress: req.IPAddress,
 	}, req.TrustTier)
 }
 

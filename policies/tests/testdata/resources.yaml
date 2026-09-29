@@ -333,6 +333,11 @@ resources:
     id: self
     attr: {}
 
+  risk_flag_self:
+    kind: risk_flag
+    id: self
+    attr: {}
+
   adjustment_by_yani:
     kind: ledger_adjustment
     id: adj-1

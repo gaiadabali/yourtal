@@ -1,0 +1,36 @@
+---
+name: RiskFlagSuite
+description: |-
+  TASKS.md 10.5.a: only risk_analyst works the manual-review queue.
+  Support, finance, ops and a consumer do not -- the same
+  whoever-can-adjust-cannot-suspend separation user_account.yaml states for
+  suspend/reinstate.
+tests:
+  - name: risk_analyst views, releases and suspends
+    input:
+      principals: [risk_umi]
+      resources: [risk_flag_self]
+      actions: [view, release, suspend]
+    expected:
+      - principal: risk_umi
+        resource: risk_flag_self
+        actions: { view: EFFECT_ALLOW, release: EFFECT_ALLOW, suspend: EFFECT_ALLOW }
+
+  - name: support, finance, ops and a consumer are refused
+    input:
+      principals: [support_sari, finance_yani, ops_zul, wina]
+      resources: [risk_flag_self]
+      actions: [view, release, suspend]
+    expected:
+      - principal: support_sari
+        resource: risk_flag_self
+        actions: { view: EFFECT_DENY, release: EFFECT_DENY, suspend: EFFECT_DENY }
+      - principal: finance_yani
+        resource: risk_flag_self
+        actions: { view: EFFECT_DENY, release: EFFECT_DENY, suspend: EFFECT_DENY }
+      - principal: ops_zul
+        resource: risk_flag_self
+        actions: { view: EFFECT_DENY, release: EFFECT_DENY, suspend: EFFECT_DENY }
+      - principal: wina
+        resource: risk_flag_self
+        actions: { view: EFFECT_DENY, release: EFFECT_DENY, suspend: EFFECT_DENY }

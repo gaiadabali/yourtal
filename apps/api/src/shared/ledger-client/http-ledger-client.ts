@@ -43,6 +43,12 @@ import type {
   LedgerHistoryEntry,
 } from "@yourtal/contracts/ledger-internal/wallet";
 import type {
+  RiskFlag,
+  RiskQueueList,
+  RiskQueueListRequest,
+  RiskQueueResolveRequest,
+} from "@yourtal/contracts/ledger-internal/risk";
+import type {
   ApproveRateRequest,
   ApprovePayoutRequest,
   Coverage,
@@ -238,6 +244,18 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   history(request: HistoryRequest): ResultAsync<readonly LedgerHistoryEntry[], LedgerError> {
     return this.post("/v1/wallet/history", request);
+  }
+
+  riskQueueList(request: RiskQueueListRequest): ResultAsync<RiskQueueList, LedgerError> {
+    return this.post("/v1/risk/queue/list", request);
+  }
+
+  riskQueueRelease(request: RiskQueueResolveRequest): ResultAsync<RiskFlag, LedgerError> {
+    return this.post("/v1/risk/queue/release", request);
+  }
+
+  riskQueueSuspend(request: RiskQueueResolveRequest): ResultAsync<RiskFlag, LedgerError> {
+    return this.post("/v1/risk/queue/suspend", request);
   }
 
   coverage(region: string): ResultAsync<Coverage, LedgerError> {

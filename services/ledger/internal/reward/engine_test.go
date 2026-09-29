@@ -39,7 +39,7 @@ var uncapped = reward.Caps{DailyPoints: 1 << 40, MonthlyPoints: 1 << 40}
 
 type refuseAll struct{}
 
-func (refuseAll) Allow(context.Context, string, reward.ActionType) (bool, error) {
+func (refuseAll) Allow(context.Context, reward.RiskCheck) (bool, error) {
 	return false, nil
 }
 

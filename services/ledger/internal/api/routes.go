@@ -28,6 +28,7 @@ import (
 	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/proof"
 	"github.com/yourtal/services/ledger/internal/reward"
+	"github.com/yourtal/services/ledger/internal/risk"
 	"github.com/yourtal/services/ledger/internal/serviceauth"
 )
 
@@ -43,6 +44,7 @@ type API struct {
 	escrows  *escrow.Engine
 	captures *capture.Engine
 	proof    *proof.Checker
+	risk     *risk.Gate
 	// devEnabled gates /dev/* (2.3.f's /dev/clock). false unless main.go
 	// calls EnableDevRoutes, which it only does when APP_ENV is dev or
 	// staging — unset or production means disabled, the same fail-closed
@@ -61,12 +63,19 @@ func (a *API) EnableDevRoutes(enabled bool) *API {
 // attestations (4.4.c); without one, no campaign reward can be paid.
 func New(logger *slog.Logger, pool *pgxpool.Pool, attestationSecret []byte) *API {
 	book := ledger.New(pool)
+	escrows := escrow.New(pool, book)
+	// 10.4.a: the real RiskGate (YT-0054), one per region same as the
+	// reward engines themselves — it writes ledger.risk_flag tagged with
+	// whichever region raised it, and auto-holds through the same escrow
+	// engine the reward engines' region map shares.
+	gate := risk.New(pool, book, escrows)
 	return &API{
 		logger: logger, pool: pool, ledger: book, pricing: pricing.New(pool), burns: burn.New(pool, book),
-		escrows: escrow.New(pool, book), captures: capture.New(pool, book), proof: proof.New(pool, proof.LoggingAlerter{Logger: logger}),
+		escrows: escrows, captures: capture.New(pool, book), proof: proof.New(pool, proof.LoggingAlerter{Logger: logger}),
+		risk: gate,
 		rewards: map[ledger.Region]*reward.Engine{
-			ledger.RegionAU: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionAU).WithAttestationSecret(attestationSecret),
-			ledger.RegionID: reward.New(pool, book, reward.AlwaysAllow{}, ledger.RegionID).WithAttestationSecret(attestationSecret),
+			ledger.RegionAU: reward.New(pool, book, gate, ledger.RegionAU).WithAttestationSecret(attestationSecret),
+			ledger.RegionID: reward.New(pool, book, gate, ledger.RegionID).WithAttestationSecret(attestationSecret),
 		},
 	}
 }
@@ -78,6 +87,8 @@ func (a *API) Routes() chi.Router {
 
 	// services/voucher signs as "voucher" and reaches only its own routes.
 	r.Post("/captures", a.captureVoucher)
+	// 10.2.b: the expiry sweep's own outbox posts here, same caller as /captures.
+	r.Post("/vouchers/expire", a.expireVoucherLiability)
 	r.With(a.onlyCaller("voucher")).Post("/proof/voucher-heads", a.anchorVoucherHeads)
 
 	r.Group(func(r chi.Router) {
@@ -111,10 +122,19 @@ func (a *API) platformRoutes(r chi.Router) {
 	r.Post("/releases/unnotified", a.unnotifiedReleases)
 	r.Post("/releases/notified", a.releasesNotified)
 
+	// 10.2.d: the 30/7-day points-expiring warning outbox.
+	r.Post("/economy/expiry/unnotified", a.unnotifiedPointsExpiry)
+	r.Post("/economy/expiry/notified", a.pointsExpiryNotified)
+
 	r.Post("/wallet/balance", a.balance)
 	r.Post("/escrow", a.escrow)
 	r.Post("/escrow/release", a.releaseEscrow)
 	r.Post("/wallet/history", a.history)
+
+	// 10.4/10.5: the manual-review queue.
+	r.Post("/risk/queue/list", a.riskQueueList)
+	r.Post("/risk/queue/release", a.riskQueueRelease)
+	r.Post("/risk/queue/suspend", a.riskQueueSuspend)
 
 	r.Post("/economy/coverage", a.coverage)
 	r.Post("/economy/daily", a.economyDaily)
@@ -203,6 +223,12 @@ var contractCodes = []struct {
 	{reward.ErrDeviceCapReached, "velocity_capped"},
 	{reward.ErrIPCapReached, "velocity_capped"},
 	{reward.ErrEarnCapReached, "velocity_capped"},
+	// 10.4.a: the real RiskGate's refusal reuses the same closed code as the
+	// velocity caps above — a caller already switches on "velocity_capped"
+	// to show a generic "try again later", which is the right answer here
+	// too; the actual signal that tripped it is for 10.5's queue, not the
+	// caller mid-request.
+	{reward.ErrRiskRefused, "velocity_capped"},
 	{reward.ErrSolvencyBlocked, "solvency_blocked"},
 	{reward.ErrRegionMismatch, "region_mismatch"},
 	{burn.ErrRegionMismatch, "region_mismatch"},

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "risk_flag",
+  "description": "TASKS.md 10.5.a: the real RiskGate's manual-review queue (10.4.b, ledger.risk_flag). No attributes: the question is only whether the caller holds the right working role, same shape as staff_console and voucher_dispute. See policies/resource_policies/risk_flag.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

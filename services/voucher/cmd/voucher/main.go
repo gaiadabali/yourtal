@@ -37,6 +37,7 @@ import (
 	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/keyring"
 	"github.com/yourtal/services/voucher/internal/ledgerpost"
+	"github.com/yourtal/services/voucher/internal/lifecycle/expiresweep"
 	"github.com/yourtal/services/voucher/internal/merchantauth"
 	"github.com/yourtal/services/voucher/internal/redeem"
 	"github.com/yourtal/services/voucher/internal/serviceauth"
@@ -54,6 +55,10 @@ const (
 	sweepInterval = time.Minute
 	// How often the capture outbox is drained into the ledger (4.6.f.2).
 	postInterval = 5 * time.Second
+	// TASKS.md 10.2.b: how often active vouchers past their own expires_at
+	// are swept to Expired. Same "not load-bearing" reasoning as
+	// sweepInterval above -- every read already filters on state/expiry.
+	expireSweepInterval = time.Minute
 )
 
 func main() {
@@ -150,6 +155,7 @@ func run(logger *slog.Logger) error {
 	})
 
 	go sweepHolds(ctx, logger, network, verifier)
+	go sweepExpiry(ctx, logger, expiresweep.NewSweeper(pool))
 
 	// Captures reach the ledger from this service's own outbox. Without a
 	// ledger URL and secret they wait in the outbox, loudly, until it has one.
@@ -233,6 +239,29 @@ func loadKeys() (*keyring.Keyring, error) {
 // error stops silently, and everyone keeps believing it is running.
 //
 // It also forgets merchant signatures too old to verify again (D9).
+// sweepExpiry is TASKS.md 10.2.b: active vouchers past their own expires_at
+// move to Expired, in the same loop shape as sweepHolds above (not
+// load-bearing; a stopped sweeper changes no read, only how promptly the
+// ledger learns about it and how promptly a wallet stops showing the
+// voucher as spendable).
+func sweepExpiry(ctx context.Context, logger *slog.Logger, sweeper *expiresweep.Sweeper) {
+	ticker := time.NewTicker(expireSweepInterval)
+	defer ticker.Stop()
+	for {
+		expired, err := sweeper.SweepDue(ctx)
+		if err != nil {
+			logger.Error("sweeping expired vouchers failed", "error", err)
+		} else if expired > 0 {
+			logger.Info("expired overdue vouchers", "count", expired)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
 func sweepHolds(ctx context.Context, logger *slog.Logger, network *redeem.Network, verifier *merchantauth.Verifier) {
 	ticker := time.NewTicker(sweepInterval)
 	defer ticker.Stop()

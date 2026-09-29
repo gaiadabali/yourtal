@@ -46,22 +46,46 @@ var (
 
 // RiskGate decides whether a principal may earn at all.
 //
-// An interface because the real one (YT-0054) does not exist yet, and
-// because docs/18 §9 is explicit that the engine gets smarter only in its
-// INPUTS. Note the shape: it returns a decision, not a multiplier. A gate
-// that could scale the reward would be arithmetic, and two users completing
-// the same campaign would quietly be paid differently.
+// docs/18 §9 is explicit that the engine gets smarter only in its INPUTS.
+// Note the shape: it returns a decision, not a multiplier. A gate that could
+// scale the reward would be arithmetic, and two users completing the same
+// campaign would quietly be paid differently.
+//
+// TASKS.md 10.4 (YT-0054): the real gate is `services/ledger/internal/risk`.
+// It is a separate package, not a method on Engine, because it reads and
+// writes its own table (ledger.risk_flag) and calls escrow directly; Allow
+// takes a RiskCheck rather than risk.Gate's own request type so this
+// package never has to import risk (risk imports reward instead, for
+// ActionType and Region — no cycle).
 type RiskGate interface {
-	Allow(ctx context.Context, userID string, action ActionType) (bool, error)
+	Allow(ctx context.Context, check RiskCheck) (bool, error)
 }
 
-// AlwaysAllow is the placeholder gate until YT-0054 lands.
+// RiskCheck is everything a real gate needs to score one grant attempt.
+// AlwaysAllow ignores every field, which is exactly why it cannot be
+// mistaken for a real control in a stack trace or a wiring diagram.
+type RiskCheck struct {
+	UserID    string
+	Action    ActionType
+	Region    ledger.Region
+	DeviceID  string
+	IPAddress string
+	// TimingSuspicious is the caller's own read of "this answer arrived
+	// faster than the prompt could plausibly have been read"
+	// (packages/contracts' question-response-signals, computed against
+	// per-question timestamps this package never sees). False for every
+	// caller that does not yet pass it — (requested by B): wire it from
+	// watch.controller.ts's own completion path into GrantRequest.
+	TimingSuspicious bool
+}
+
+// AlwaysAllow is the placeholder gate. Still used wherever a test's subject
+// is something other than risk (purchases, holds, solvency, ...).
 //
-// Deliberately named so it cannot be mistaken for a real control in a stack
-// trace or a wiring diagram.
+// Deliberately named so it cannot be mistaken for a real control.
 type AlwaysAllow struct{}
 
-func (AlwaysAllow) Allow(context.Context, string, ActionType) (bool, error) { return true, nil }
+func (AlwaysAllow) Allow(context.Context, RiskCheck) (bool, error) { return true, nil }
 
 // GrantRequest is one verified action asking to be paid.
 type GrantRequest struct {
@@ -90,6 +114,9 @@ type GrantRequest struct {
 	HoldbackHours *int32
 	// IdempotencyKey is the caller's key, stored with the grant.
 	IdempotencyKey string
+	// TimingSuspicious forwards to RiskCheck (10.4.a). False unless the
+	// caller has a real signal to give.
+	TimingSuspicious bool
 
 	// def replaces the taxonomy entry, for the contract's grants whose
 	// points are set per request (GrantReward, GrantAction).
@@ -169,7 +196,10 @@ func (e *Engine) Grant(ctx context.Context, req GrantRequest) (GrantResult, erro
 			ErrEvidenceMissing, req.Action, definition.Evidence)
 	}
 
-	allowed, err := e.risk.Allow(ctx, req.UserID, req.Action)
+	allowed, err := e.risk.Allow(ctx, RiskCheck{
+		UserID: req.UserID, Action: req.Action, Region: e.region,
+		DeviceID: req.DeviceID, IPAddress: req.IPAddress, TimingSuspicious: req.TimingSuspicious,
+	})
 	if err != nil {
 		return GrantResult{}, fmt.Errorf("risk gate: %w", err)
 	}
@@ -250,6 +280,12 @@ func (e *Engine) issue(
 
 			if err := e.ensureUserAccount(ctx, queries, req.UserID); err != nil {
 				return err
+			}
+			// 10.2.a: the inactivity clock points expiry reads. Touched on
+			// every grant, in the same transaction, so a run that later
+			// fails still rolls this back with it.
+			if err := queries.TouchAccountActivity(ctx, ledger.UserAccountID(req.UserID, ledger.PurposeAvailable)); err != nil {
+				return fmt.Errorf("touching account activity: %w", err)
 			}
 			if def.MarketingFunded {
 				if err := e.checkSolvency(ctx, queries); err != nil {

@@ -38,6 +38,12 @@ import type {
   LedgerHistoryEntry,
 } from "@yourtal/contracts/ledger-internal/wallet";
 import type {
+  RiskFlag,
+  RiskQueueList,
+  RiskQueueListRequest,
+  RiskQueueResolveRequest,
+} from "@yourtal/contracts/ledger-internal/risk";
+import type {
   ApproveRateRequest,
   ApprovePayoutRequest,
   Coverage,
@@ -64,6 +70,7 @@ import * as pricing from "./fake/fake-ledger-pricing";
 import * as funding from "./fake/fake-ledger-funding";
 import * as rewards from "./fake/fake-ledger-rewards";
 import * as wallet from "./fake/fake-ledger-wallet";
+import * as risk from "./fake/fake-ledger-risk";
 import * as economy from "./fake/fake-ledger-economy";
 import * as settings from "./fake/fake-ledger-settings";
 import * as capture from "./fake/fake-ledger-capture";
@@ -169,6 +176,18 @@ export class FakeLedgerClient implements LedgerInternalClient {
 
   history(request: HistoryRequest): ResultAsync<readonly LedgerHistoryEntry[], LedgerError> {
     return wallet.history(this.db, request);
+  }
+
+  riskQueueList(request: RiskQueueListRequest): ResultAsync<RiskQueueList, LedgerError> {
+    return risk.riskQueueList(this.db, request);
+  }
+
+  riskQueueRelease(request: RiskQueueResolveRequest): ResultAsync<RiskFlag, LedgerError> {
+    return risk.riskQueueRelease(this.db, request);
+  }
+
+  riskQueueSuspend(request: RiskQueueResolveRequest): ResultAsync<RiskFlag, LedgerError> {
+    return risk.riskQueueSuspend(this.db, request);
   }
 
   coverage(region: string): ResultAsync<Coverage, LedgerError> {

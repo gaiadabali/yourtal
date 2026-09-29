@@ -7,14 +7,15 @@
 CREATE SCHEMA IF NOT EXISTS ledger;
 
 CREATE TABLE ledger.account (
-  id          text        PRIMARY KEY,
-  owner_type  text        NOT NULL,
-  owner_id    text        NOT NULL,
-  currency    char(3)     NOT NULL,
-  kind        text        NOT NULL,
-  country     text        NOT NULL,
-  created_at  timestamptz NOT NULL DEFAULT now(),
-  purpose     text        NOT NULL DEFAULT 'main'
+  id               text        PRIMARY KEY,
+  owner_type       text        NOT NULL,
+  owner_id         text        NOT NULL,
+  currency         char(3)     NOT NULL,
+  kind             text        NOT NULL,
+  country          text        NOT NULL,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  purpose          text        NOT NULL DEFAULT 'main',
+  last_activity_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE ledger.transfer (
@@ -220,6 +221,29 @@ CREATE TABLE ledger.escrow_release (
   escrow_id   text        PRIMARY KEY REFERENCES ledger.escrow (id),
   transfer_id text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
   created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE ledger.risk_flag (
+  id              text        PRIMARY KEY,
+  user_id         text        NOT NULL,
+  region          text        NOT NULL,
+  severity        text        NOT NULL,
+  reason          text        NOT NULL,
+  signals         jsonb       NOT NULL,
+  escrow_id       text        REFERENCES ledger.escrow (id),
+  status          text        NOT NULL DEFAULT 'pending',
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  resolved_at     timestamptz,
+  resolved_by     text,
+  resolution_note text
+);
+
+CREATE TABLE ledger.points_expiry_notice (
+  account_id     text        NOT NULL REFERENCES ledger.account (id),
+  milestone_days integer     NOT NULL,
+  expiring_at    timestamptz NOT NULL,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  notified_at    timestamptz
 );
 
 CREATE TABLE ledger.quote (

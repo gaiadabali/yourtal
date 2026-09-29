@@ -96,6 +96,12 @@ func (p *Poster) Run(ctx context.Context, interval time.Duration) {
 		} else if posted > 0 {
 			p.logger.Info("posted captures to the ledger", "count", posted)
 		}
+		expired, err := p.DrainExpiryOnce(ctx)
+		if err != nil {
+			p.logger.Error("posting voucher expiries to the ledger failed; retrying next pass", "error", err)
+		} else if expired > 0 {
+			p.logger.Info("posted voucher expiries to the ledger", "count", expired)
+		}
 		anchored, err := p.AnchorOnce(ctx)
 		if err != nil {
 			p.logger.Error("anchoring voucher chain heads failed; retrying next pass", "error", err)

@@ -7,6 +7,14 @@ import type {
   UnnotifiedReleases,
 } from "@yourtal/contracts/ledger-internal/releases";
 import {
+  pointsExpiryNotifiedSchema,
+  unnotifiedPointsExpirySchema,
+} from "@yourtal/contracts/ledger-internal/expiry";
+import type {
+  PointsExpiryNotified,
+  UnnotifiedPointsExpiry,
+} from "@yourtal/contracts/ledger-internal/expiry";
+import {
   SERVICE_SIGNATURE_HEADER,
   signServiceRequest,
 } from "@yourtal/contracts/ledger-internal/service-signature";
@@ -19,6 +27,11 @@ import type { WorkerConfig } from "./config";
 export interface WorkerLedgerClient {
   unnotifiedReleases(limit: number): Promise<UnnotifiedReleases>;
   releasesNotified(grantIds: readonly string[]): Promise<ReleasesNotified>;
+  /** TASKS.md 10.2.d. */
+  unnotifiedPointsExpiry(limit: number): Promise<UnnotifiedPointsExpiry>;
+  pointsExpiryNotified(
+    notices: readonly { accountId: string; milestoneDays: 30 | 7; expiringAt: string }[],
+  ): Promise<PointsExpiryNotified>;
 }
 
 export function createWorkerLedgerClient(ledger: WorkerConfig["ledger"]): WorkerLedgerClient {
@@ -52,6 +65,16 @@ export function createWorkerLedgerClient(ledger: WorkerConfig["ledger"]): Worker
     },
     async releasesNotified(grantIds) {
       return releasesNotifiedSchema.parse(await post("/v1/releases/notified", { grantIds }));
+    },
+    async unnotifiedPointsExpiry(limit) {
+      return unnotifiedPointsExpirySchema.parse(
+        await post("/v1/economy/expiry/unnotified", { limit }),
+      );
+    },
+    async pointsExpiryNotified(notices) {
+      return pointsExpiryNotifiedSchema.parse(
+        await post("/v1/economy/expiry/notified", { notices }),
+      );
     },
   };
 }

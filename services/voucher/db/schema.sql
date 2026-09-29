@@ -156,6 +156,15 @@ CREATE TABLE voucher.webhook_outbox (
   posted_at       timestamptz
 );
 
+CREATE TABLE voucher.expiry_outbox (
+  voucher_id   uuid        PRIMARY KEY REFERENCES voucher.vouchers (id),
+  region       text        NOT NULL,
+  amount_minor bigint      NOT NULL,
+  currency     char(3)     NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  posted_at    timestamptz
+);
+
 CREATE TABLE voucher.merchant_signature_seen (
   key_id  text        NOT NULL,
   mac     bytea       NOT NULL,

@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 4/7 | 17/26 | `███████░░░`  65% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 2/35 | `█░░░░░░░░░`   6% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 3/35 | `█░░░░░░░░░`   9% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **69/91** | **364/440** | `████████░░`  83% |
+| **All** | | | **69/91** | **365/440** | `████████░░`  83% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1324,7 +1324,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 11.4.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.
   - [ ] 11.4.d Each item offers Share (Web Share API to the public campaign page, with no reward), Save, Not interested, and "Why am I seeing this?", which explains the 7.7 ranking.
   - [ ] 11.4.f (moved from 6.7.b) The autoplay setting from Me (6.7.a) holds on the feed.
-  - [ ] 11.4.g (F78; C's file) Feed items carry `kind`, `questionCount`, `maxRewardPoints` (base + accuracy bonus from the reward config), and `estimatedDataMb`, mapped in `apps/api/src/modules/feed/ranking.ts`'s `toFeedItem`.
+  - [x] 11.4.g (F78; C's file) Feed items carry `kind`, `questionCount`, `maxRewardPoints` (base + accuracy bonus from the reward config), and `estimatedDataMb`, mapped in `apps/api/src/modules/feed/ranking.ts`'s `toFeedItem`.
   - [x] 11.4.h (shared seed file) Fund every demo campaign: the staging seed buys points per demo business through the ledger's `/v1/allocations/purchase` and writes each campaign's `reward_config` at the F12 demo rates (5 / 80 pts per minute, 25% accuracy bonus), idempotently on every deploy. Today no campaign has a reward config, so the feed is empty on staging and locally. — ✅ 2026-09-29 0e0a87a1 (`packages/db/src/seed/demo-campaign-funding.ts`, called from `main-staging.ts` after `runDemoMedia`; verified live: 20/20 campaigns funded, re-run is a no-op, signed-in feed returns 10 items/region, anonymous open-viewing feed returns 8 items/region)
   - [ ] 11.4.e **Check:** on staging (after 7.2.e media), a new user scrolls the feed, earns a Quick campaign in place, and the wallet shows it pending.
 - [ ] **11.5 Watch: campaign page and player** · needs: 11.4 (moved from 6.4)

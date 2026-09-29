@@ -43,7 +43,10 @@ export default async function SearchPage(props: PageProps<"/search">) {
         <ErrorState
           title={t("errorTitle")}
           retry={
-            <a href={`/search?q=${encodeURIComponent(query)}`} className="text-label font-sans font-semibold text-accent">
+            <a
+              href={`/search?q=${encodeURIComponent(query)}`}
+              className="text-label font-sans font-semibold text-accent"
+            >
               {t("retry")}
             </a>
           }

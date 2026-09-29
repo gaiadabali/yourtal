@@ -162,6 +162,7 @@ describe("judging a completed session", () => {
     granted: false,
     questionsAsked: 0,
     questionsCorrect: 0,
+    timingSuspicious: false,
   });
   const fullCoverage = [{ fromSecond: 0, toSecond: DURATION }];
 

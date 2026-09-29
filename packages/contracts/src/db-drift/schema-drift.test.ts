@@ -297,7 +297,12 @@ const MAPPINGS: readonly Mapping[] = [
     table: "watch.session",
     fieldsAwaitingStorage: {},
     fieldsWithNoColumn: {},
-    columnsWithNoField: {},
+    columnsWithNoField: {
+      answer_latencies_ms:
+        "11.5.i: question-answer.repository.ts's own running latency copy for the timing-jitter check (campaign.question_response has no SELECT grant) -- internal evidence, never read back by any client. `timingSuspicious` (which this backs) is the field that is published.",
+      delivery_gap_flagged_at:
+        "11.5.f: set when the real DeliveryCoverageReader answers gap_detected at completion -- internal evidence for later fraud review, never a client-facing field. The verdict itself is returned inline as `complete`'s own `deliveryCoverage` (route-registry.b.ts), not mirrored on WatchSession.",
+    },
   },
   {
     name: "merchantLocationSchema",

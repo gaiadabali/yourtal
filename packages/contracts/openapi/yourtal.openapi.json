@@ -23421,6 +23421,9 @@
             "minimum": 0,
             "maximum": 9007199254740991,
             "format": "int64"
+          },
+          "timingSuspicious": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -23437,7 +23440,8 @@
           "holdId",
           "granted",
           "questionsAsked",
-          "questionsCorrect"
+          "questionsCorrect",
+          "timingSuspicious"
         ],
         "additionalProperties": false
       },

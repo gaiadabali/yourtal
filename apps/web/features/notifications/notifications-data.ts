@@ -12,5 +12,8 @@ import {
 const BELL_LIMIT = 20;
 
 export function getNotifications(): Promise<ApiResult<NotificationListResponse>> {
-  return apiFetch(`/api/me/notifications?limit=${String(BELL_LIMIT)}`, notificationListResponseSchema);
+  return apiFetch(
+    `/api/me/notifications?limit=${String(BELL_LIMIT)}`,
+    notificationListResponseSchema,
+  );
 }

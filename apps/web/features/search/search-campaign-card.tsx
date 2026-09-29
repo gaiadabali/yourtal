@@ -19,9 +19,7 @@ export function SearchCampaignCard({ item, locale }: SearchCampaignCardProps) {
       aspect="16:9"
       title={item.title}
       channel={<span className="text-caption font-sans">{item.merchantName}</span>}
-      reward={
-        <span className="text-caption font-sans">{feedTermsLine(t, locale, item)}</span>
-      }
+      reward={<span className="text-caption font-sans">{feedTermsLine(t, locale, item)}</span>}
     />
   );
 }

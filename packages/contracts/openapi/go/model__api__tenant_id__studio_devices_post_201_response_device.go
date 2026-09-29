@@ -23,7 +23,7 @@ var _ MappedNullable = &ApiTenantIdStudioDevicesPost201ResponseDevice{}
 type ApiTenantIdStudioDevicesPost201ResponseDevice struct {
 	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	BusinessId NullableString `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	Region string `json:"region"`
+	Region NullableString `json:"region"`
 	LocationId NullableString `json:"locationId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Label string `json:"label"`
 	State string `json:"state"`
@@ -40,7 +40,7 @@ type _ApiTenantIdStudioDevicesPost201ResponseDevice ApiTenantIdStudioDevicesPost
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioDevicesPost201ResponseDevice(id NullableString, businessId NullableString, region string, locationId NullableString, label string, state string, createdBy string, createdAt time.Time, pairedAt NullableTime, revokedAt NullableTime) *ApiTenantIdStudioDevicesPost201ResponseDevice {
+func NewApiTenantIdStudioDevicesPost201ResponseDevice(id NullableString, businessId NullableString, region NullableString, locationId NullableString, label string, state string, createdBy string, createdAt time.Time, pairedAt NullableTime, revokedAt NullableTime) *ApiTenantIdStudioDevicesPost201ResponseDevice {
 	this := ApiTenantIdStudioDevicesPost201ResponseDevice{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -116,27 +116,29 @@ func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) SetBusinessId(v string) 
 }
 
 // GetRegion returns the Region field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) GetRegion() string {
-	if o == nil {
+	if o == nil || o.Region.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Region
+	return *o.Region.Get()
 }
 
 // GetRegionOk returns a tuple with the Region field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) GetRegionOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Region, true
+	return o.Region.Get(), o.Region.IsSet()
 }
 
 // SetRegion sets field value
 func (o *ApiTenantIdStudioDevicesPost201ResponseDevice) SetRegion(v string) {
-	o.Region = v
+	o.Region.Set(&v)
 }
 
 // GetLocationId returns the LocationId field value
@@ -325,7 +327,7 @@ func (o ApiTenantIdStudioDevicesPost201ResponseDevice) ToMap() (map[string]inter
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id.Get()
 	toSerialize["businessId"] = o.BusinessId.Get()
-	toSerialize["region"] = o.Region
+	toSerialize["region"] = o.Region.Get()
 	toSerialize["locationId"] = o.LocationId.Get()
 	toSerialize["label"] = o.Label
 	toSerialize["state"] = o.State

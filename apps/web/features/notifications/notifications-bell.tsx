@@ -7,13 +7,7 @@ import { Button } from "@yourtal/ui/button";
 import { Badge } from "@yourtal/ui/badge";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { ListRow } from "@yourtal/ui/list-row";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@yourtal/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@yourtal/ui/sheet";
 import type { Notification } from "@yourtal/contracts/me/notification";
 import { markNotificationReadAction } from "./notifications-actions";
 
@@ -37,8 +31,7 @@ export interface NotificationsBellProps {
  */
 export function NotificationsBell({ initialNotifications }: NotificationsBellProps) {
   const t = useTranslations("shell.notifications");
-  const [notifications, setNotifications] =
-    useState<readonly Notification[]>(initialNotifications);
+  const [notifications, setNotifications] = useState<readonly Notification[]>(initialNotifications);
   const [, startTransition] = useTransition();
   const unreadCount = notifications.filter((n) => n.readAt === null).length;
 
@@ -61,16 +54,14 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
         <Button
           variant="ghost"
           size="icon"
-          aria-label={
-            unreadCount > 0 ? t("unreadCount", { count: unreadCount }) : t("bellLabel")
-          }
+          aria-label={unreadCount > 0 ? t("unreadCount", { count: unreadCount }) : t("bellLabel")}
           className="relative shrink-0"
         >
           <Bell className="size-5" aria-hidden="true" />
           {unreadCount > 0 ? (
             <Badge
               variant="danger"
-              className="absolute -right-1 -top-1 min-w-4 justify-center px-1 py-0 text-[10px] leading-4"
+              className="absolute -right-1 -top-1 min-w-4 justify-center px-1 py-0 text-caption leading-4"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>

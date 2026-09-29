@@ -323,7 +323,6 @@ async function processCandidate(
               bonus.day === 3
                 ? { ...finalState, day3Granted: false }
                 : { ...finalState, day7Granted: false };
-            // eslint-disable-next-line no-console -- this job has no injected logger; same convention `delivery-log-ingest.ts` would use if it needed one.
             console.warn(
               `streak-backstop: live grant deferred for user=${candidate.userId} day=${String(bonus.day)}: ${error instanceof Error ? error.message : String(error)}`,
             );

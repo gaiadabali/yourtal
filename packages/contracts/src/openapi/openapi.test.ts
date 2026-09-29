@@ -431,6 +431,16 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   // --- device: webhook delivery (TASKS.md 8.3.c) ---
   webhookDeliveryEventSchema:
     "device/webhook-delivery-event.ts's internal pg-boss job payload (apps/api's producer to apps/worker's consumer) — not an HTTP request/response shape at all.",
+
+  // --- me: notifications (TASKS.md 5.5.b, named by 11.7.a) ---
+  notificationSchema:
+    "me/notification.ts's shape for GET /api/me/notifications and PATCH .../:id/read — both routes predate this " +
+    'file and are already exempted in route-drift.test.ts ("MeModule -- TASKS.md 5.5, this pass\'s own ticket"); ' +
+    "this only names the shape apps/web now imports, without closing that pre-existing registry gap.",
+  notificationListResponseSchema:
+    "me/notification.ts's GET /api/me/notifications response envelope — same gap as notificationSchema above.",
+  notificationMarkReadResponseSchema:
+    "me/notification.ts's PATCH .../:id/read response — same gap as notificationSchema above.",
 };
 
 function exportedSchemaNames(): string[] {

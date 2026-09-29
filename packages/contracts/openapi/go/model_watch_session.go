@@ -36,6 +36,7 @@ type WatchSession struct {
 	Granted bool `json:"granted"`
 	QuestionsAsked int64 `json:"questionsAsked"`
 	QuestionsCorrect int64 `json:"questionsCorrect"`
+	TimingSuspicious bool `json:"timingSuspicious"`
 }
 
 type _WatchSession WatchSession
@@ -44,7 +45,7 @@ type _WatchSession WatchSession
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWatchSession(id string, userId string, campaignId string, termsVersion int64, state WatchSessionState, startedAt time.Time, lastProgressAt time.Time, completedAt NullableTime, nonEarning bool, nonEarningReason NullableString, holdId NullableString, granted bool, questionsAsked int64, questionsCorrect int64) *WatchSession {
+func NewWatchSession(id string, userId string, campaignId string, termsVersion int64, state WatchSessionState, startedAt time.Time, lastProgressAt time.Time, completedAt NullableTime, nonEarning bool, nonEarningReason NullableString, holdId NullableString, granted bool, questionsAsked int64, questionsCorrect int64, timingSuspicious bool) *WatchSession {
 	this := WatchSession{}
 	this.Id = id
 	this.UserId = userId
@@ -60,6 +61,7 @@ func NewWatchSession(id string, userId string, campaignId string, termsVersion i
 	this.Granted = granted
 	this.QuestionsAsked = questionsAsked
 	this.QuestionsCorrect = questionsCorrect
+	this.TimingSuspicious = timingSuspicious
 	return &this
 }
 
@@ -413,6 +415,30 @@ func (o *WatchSession) SetQuestionsCorrect(v int64) {
 	o.QuestionsCorrect = v
 }
 
+// GetTimingSuspicious returns the TimingSuspicious field value
+func (o *WatchSession) GetTimingSuspicious() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.TimingSuspicious
+}
+
+// GetTimingSuspiciousOk returns a tuple with the TimingSuspicious field value
+// and a boolean to check if the value has been set.
+func (o *WatchSession) GetTimingSuspiciousOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TimingSuspicious, true
+}
+
+// SetTimingSuspicious sets field value
+func (o *WatchSession) SetTimingSuspicious(v bool) {
+	o.TimingSuspicious = v
+}
+
 func (o WatchSession) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -437,6 +463,7 @@ func (o WatchSession) ToMap() (map[string]interface{}, error) {
 	toSerialize["granted"] = o.Granted
 	toSerialize["questionsAsked"] = o.QuestionsAsked
 	toSerialize["questionsCorrect"] = o.QuestionsCorrect
+	toSerialize["timingSuspicious"] = o.TimingSuspicious
 	return toSerialize, nil
 }
 
@@ -459,6 +486,7 @@ func (o *WatchSession) UnmarshalJSON(data []byte) (err error) {
 		"granted",
 		"questionsAsked",
 		"questionsCorrect",
+		"timingSuspicious",
 	}
 
 	allProperties := make(map[string]interface{})

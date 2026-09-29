@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 0/7 | 5/26 | `██░░░░░░░░`  19% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/33 | `░░░░░░░░░░`   3% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/34 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **65/91** | **351/438** | `████████░░`  80% |
+| **All** | | | **65/91** | **351/439** | `████████░░`  80% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | **10** Settlement, lifecycle & risk | 2026-09-29 | Two agents. A (`yourtal-1`, `phase/10`, db `yourtal_s1`, api 26311, Cerbos 26315): 10.1 → 10.7 → 10.3 → 10.6. B (`yourtal-p7-b`, `phase/10-b`, db `yourtal_s4b`, api 26411, Cerbos `yourtal-cerbos-p10b` 26415): 10.4 → 10.2 → 10.5 (10.5 after 10.1 merges) |
 | 2 | `yourtal-2` | free | 2026-09-29 | Phase 9 ✅ (779b2a53). Worktree, `.env`, db `yourtal_s2` and Cerbos 26325 ready for the next phase. Phase 9 helpers `yourtal-p9-b/c/d` (dbs `yourtal_s9b/c/d`) are done and can be reused; their Cerbos containers are stopped. Staging holds a test `ops` account (`staff-ops-9-3-b-1790652948@example.test`, granted under F76). Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check, and its burns are not region-tagged. Carried for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | free | **6** Viewer app — ✅ done | 2026-09-27 | Phase 6 done: 6.7 ✅ (c8d0dab); 6.5 ✅ (aae765a, incl. 4.8.c requested of A); 6.2 ✅ (e747877f, agent D); 6.1 ✅ (63cc61b, agent A); 6.9 ✅ (53317515, agent B — 6.9.d's CI run also surfaced F49, fixed same session, and F50, unrelated/left for whoever owns `packages/media`'s CI setup). All four agents' worktrees left in place, slot 3 free for the next phase. C's worktree `yourtal-p6-c` is done; its db `yourtal_s3c` has stale revision rows for the renamed watch migrations (repoint like `yourtal_s2`, or leave: nothing else uses it). Slot 3b's own db `yourtal_s3b` hit the SAME stale-revision issue (F34/F36 watch migration rename) mid-6.5 — resolved by drop+recreate (it holds no long-lived data, only this session's own fixtures). Also fixed while verifying 6.1.e (own commit on main, not this row's own subtask): `features/me/me-section-states.tsx` was missing `"use client"`, crashing all of Me on any real section error — see 6.1.e's own note. |
-| 4 | `yourtal-4` | **11** Viewer feed & public site | 2026-09-29 | One agent (`yourtal-4`, `phase/11`, db `yourtal_s4`, web 26360, api 26361, Cerbos 26365). Order 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. Now 11.4 |
+| 4 | `yourtal-4` | **11** Viewer feed & public site | 2026-09-29 | Three agents (founder: seeded content live in the browser, both regions). A (`yourtal-4`, `phase/11`, db `yourtal_s4`, web 26360, api 26361, ledger 26362, voucher 26363, Cerbos 26365): 11.4. B (`yourtal-p11-b`, `phase/11-b`): 11.4.h demo campaign funding in the seed. C (`yourtal-p11-c`, `phase/11-c`): 11.1.b + 11.2.a, the logged-out feed on `/au` and `/id` |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
@@ -1298,7 +1298,7 @@ The internal team runs the economy and the review queues. Today none of it exist
 
 Everything the viewer does with campaigns and listings, signed in or not, which needs Phase 7's feed and inventory. Work in this order, which overrides task order: 11.4 → 11.5 → 11.6 → 11.7 → 11.1 → 11.2 → 11.3. The Phase 6 screen rules (live data, primitives, copy pass, every state, screenshots with axe) apply to 11.4–11.7.
 
-- [ ] **11.1 Landing page and chooser** · needs: 3.5, 7.2.e, 7.7
+- [ ] **11.1 Landing page and chooser** · needs: 3.5, 7.2.e, 7.7 — 🔄 slot 4 agent C (11.1.b first, founder: seeded content visible to anyone)
   - [ ] 11.1.a `/` becomes a public landing page, with logged-in visitors sent to `/home`:
     - a hero with real campaign video;
     - how it works in three steps;
@@ -1306,7 +1306,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - a crawlable region and language chooser with no IP redirect, AU first, plus `x-default`.
   - [ ] 11.1.b A logged-out For You feed of Open Viewing teasers on `/au` and `/id`.
   - [ ] 11.1.c **Check:** a logged-out visitor sees the landing page in English; a logged-in one lands on the feed.
-- [ ] **11.2 Real data** · needs: 7.7
+- [ ] **11.2 Real data** · needs: 7.7 — 🔄 slot 4 agent C (11.2.a with 11.1.b)
   - [ ] 11.2.a `/au` and `/id` read the API with revalidation. **Channel pages live at the existing `/[locale]/m/[handle]` route** (keyed by business handle), and campaign pages stay at `/[locale]/c/[campaignId]`.
   - [ ] 11.2.b Open Viewing (F8): only campaigns with `openViewing` that are rated all_ages play logged-out through a **non-earning anonymous watch session**, which returns the same per-session signed manifest URL as 5.1.d and counts against the F12 per-IP limit. `/media/hls/` never becomes public. Other campaigns show their poster and terms with "Sign in to watch". Sign-up returns to **the same campaign**; today it lands on a different, synthesised one.
   - [ ] 11.2.d (moved from 7.6.a) Open views in Studio reports: count 11.2.b's anonymous sessions per campaign as a separate metric from a separate query in `apps/api/src/modules/reports` (Area C), never summed with rewarded views, suppressed below the F12 cohort floor.
@@ -1324,6 +1324,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 11.4.d Each item offers Share (Web Share API to the public campaign page, with no reward), Save, Not interested, and "Why am I seeing this?", which explains the 7.7 ranking.
   - [ ] 11.4.f (moved from 6.7.b) The autoplay setting from Me (6.7.a) holds on the feed.
   - [ ] 11.4.g (F78; C's file) Feed items carry `kind`, `questionCount`, `maxRewardPoints` (base + accuracy bonus from the reward config), and `estimatedDataMb`, mapped in `apps/api/src/modules/feed/ranking.ts`'s `toFeedItem`.
+  - [ ] 11.4.h (shared seed file) Fund every demo campaign: the staging seed buys points per demo business through the ledger's `/v1/allocations/purchase` and writes each campaign's `reward_config` at the F12 demo rates (5 / 80 pts per minute, 25% accuracy bonus), idempotently on every deploy. Today no campaign has a reward config, so the feed is empty on staging and locally.
   - [ ] 11.4.e **Check:** on staging (after 7.2.e media), a new user scrolls the feed, earns a Quick campaign in place, and the wallet shows it pending.
 - [ ] **11.5 Watch: campaign page and player** · needs: 11.4 (moved from 6.4)
   - [ ] 11.5.a The campaign page works like a YouTube watch page: player, channel row with Follow, the terms card, chapters, and more from this channel. The terms card states the question count, "stopping early earns nothing" and "new accounts' points unlock after up to 3 days", and shows absolute points from the terms. **Delete `campaign-reward-split.ts`** (its `BASE_REWARD_RATIO = 0.6` is not what gets paid).

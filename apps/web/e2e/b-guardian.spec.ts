@@ -79,9 +79,7 @@ async function latestGuardianToken(
   const matches = body.entries
     .filter((entry) => entry.recipient === guardianEmail && entry.category === "guardian_consent")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  expect(matches.length, `no guardian_consent email found for ${guardianEmail}`).toBeGreaterThan(
-    0,
-  );
+  expect(matches.length, `no guardian_consent email found for ${guardianEmail}`).toBeGreaterThan(0);
   const token = matches[0]?.metadata["token"];
   expect(typeof token).toBe("string");
   return token as string;

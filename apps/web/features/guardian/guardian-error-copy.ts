@@ -9,11 +9,7 @@ import type { ApiError } from "@/lib/api/api-fetch";
  * "invalid link" state), not re-surfaced as an action error here.
  */
 export type GuardianErrorKey =
-  | "already_revoked"
-  | "network"
-  | "invalid_response"
-  | "unavailable"
-  | "unknown";
+  "already_revoked" | "network" | "invalid_response" | "unavailable" | "unknown";
 
 export function guardianErrorKeyFor(error: ApiError): GuardianErrorKey {
   if (error.kind === "network") return "network";

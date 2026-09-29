@@ -31,7 +31,10 @@ import type { ApiResult } from "@/lib/api/api-fetch";
  * `ApiError` looks like.
  */
 
-async function guardianFetch(path: string, init: RequestInit): Promise<Response | ApiResult<never>> {
+async function guardianFetch(
+  path: string,
+  init: RequestInit,
+): Promise<Response | ApiResult<never>> {
   // `new Headers(init.headers)`, not an object spread: `init.headers` is
   // `HeadersInit`, which can be a `Headers` instance or a tuple array as
   // well as a plain object, and spreading either of those into an object

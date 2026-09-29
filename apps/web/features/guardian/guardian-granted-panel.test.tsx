@@ -33,7 +33,10 @@ describe("GuardianGrantedPanel", () => {
   });
 
   it("opens the withdraw confirm immediately when told to (?action=revoke) and submits on confirm", async () => {
-    revokeMock.mockResolvedValue({ ok: true, data: { revoked: true, escrowedPoints: toPoints(0) } });
+    revokeMock.mockResolvedValue({
+      ok: true,
+      data: { revoked: true, escrowedPoints: toPoints(0) },
+    });
     const user = userEvent.setup();
     render(
       <GuardianGrantedPanel

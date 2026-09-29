@@ -22,14 +22,14 @@ describe("guardianErrorKeyFor", () => {
     expect(
       guardianErrorKeyFor({ kind: "http", status: 502, code: "ledger_unavailable", message: "x" }),
     ).toBe("unavailable");
-    expect(
-      guardianErrorKeyFor({ kind: "http", status: 500, code: "http_500", message: "x" }),
-    ).toBe("unavailable");
+    expect(guardianErrorKeyFor({ kind: "http", status: 500, code: "http_500", message: "x" })).toBe(
+      "unavailable",
+    );
   });
 
   it("falls back to unknown for anything else, e.g. a 429", () => {
-    expect(
-      guardianErrorKeyFor({ kind: "http", status: 429, code: "http_429", message: "x" }),
-    ).toBe("unknown");
+    expect(guardianErrorKeyFor({ kind: "http", status: 429, code: "http_429", message: "x" })).toBe(
+      "unknown",
+    );
   });
 });

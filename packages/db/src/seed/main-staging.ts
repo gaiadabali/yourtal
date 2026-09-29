@@ -224,7 +224,9 @@ async function main(): Promise<void> {
       console.error(
         `[seed:staging] demo campaign funding threw rather than returning results: ${detail}`,
       );
-      demoCampaignFundingResults = [{ campaignId: "n/a", title: "n/a", region: "AU", status: "failed", detail }];
+      demoCampaignFundingResults = [
+        { campaignId: "n/a", title: "n/a", region: "AU", status: "failed", detail },
+      ];
     }
     const demoCampaignFundingFailed = demoCampaignFundingResults.filter(
       (r) => r.status === "failed",

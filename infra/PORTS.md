@@ -59,20 +59,21 @@ Parallel sessions each run in a slot worktree with its own database
 (`yourtal-media-1|2|3`), all on the shared compose stack above. Only the
 main checkout runs compose. The ports are set in each worktree's `.env`.
 
-| Slot                                | web   | api   | ledger | voucher | Playwright | offline e2e | Cerbos                       |
-| ----------------------------------- | ----- | ----- | ------ | ------- | ---------- | ----------- | ---------------------------- |
-| 1                                   | 26310 | 26311 | 26312  | 26313   | 26314      | 26316       | 26315                        |
-| 2                                   | 26320 | 26321 | 26322  | 26323   | 26324      | 26326       | 26325                        |
-| 3                                   | 26330 | 26331 | 26332  | 26333   | 26334      | 26336       | 26335                        |
-| 3b (`yourtal-p1-b` helper worktree) | 26336 | 26337 | 26338  | 26339   | 26340      | 26342       | 26335 (shared with slot 3)   |
-| 3c (`yourtal-p1-c` helper worktree) | 26343 | 26344 | 26345  | 26346   | 26347      | 26349       | 26335 (shared with slot 3)   |
-| 1b (`yourtal-p4-b` helper worktree) | 26350 | 26351 | 26352  | 26353   | 26354      | 26356       | 26315 (shared with slot 1)   |
-| 4 (`yourtal-4`, Phase 2)            | 26360 | 26361 | 26362  | 26363   | 26364      | 26366       | 26365                        |
-| 8 (`yourtal-p8` helper worktree)    | 26371 | 26372 | 26373  | 26374   | 26375      | 26377       | 26592 (the main stack's)     |
-| 8b (`yourtal-p8-b` helper worktree) | 26381 | 26382 | 26383  | 26384   | 26385      | 26387       | 26592 (the main stack's)     |
-| 9b (`yourtal-p9-b` helper worktree) | 26470 | 26471 | 26472  | 26473   | 26474      | 26476       | 26475 (`yourtal-cerbos-p9b`) |
-| 9c (`yourtal-p9-c` helper worktree) | 26480 | 26481 | 26482  | 26483   | 26484      | 26486       | 26485 (`yourtal-cerbos-p9c`) |
-| 9d (`yourtal-p9-d` helper worktree) | 26490 | 26491 | 26492  | 26493   | 26494      | 26496       | 26495 (`yourtal-cerbos-p9d`) |
+| Slot                                                   | web   | api   | ledger                        | voucher                        | Playwright | offline e2e | Cerbos                                                                                                                                             |
+| ------------------------------------------------------ | ----- | ----- | ----------------------------- | ------------------------------ | ---------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1                                                      | 26310 | 26311 | 26312                         | 26313                          | 26314      | 26316       | 26315                                                                                                                                              |
+| 2                                                      | 26320 | 26321 | 26322                         | 26323                          | 26324      | 26326       | 26325                                                                                                                                              |
+| 3                                                      | 26330 | 26331 | 26332                         | 26333                          | 26334      | 26336       | 26335                                                                                                                                              |
+| 3b (`yourtal-p1-b` helper worktree)                    | 26336 | 26337 | 26338                         | 26339                          | 26340      | 26342       | 26335 (shared with slot 3)                                                                                                                         |
+| 3c (`yourtal-p1-c` helper worktree)                    | 26343 | 26344 | 26345                         | 26346                          | 26347      | 26349       | 26335 (shared with slot 3)                                                                                                                         |
+| 1b (`yourtal-p4-b` helper worktree)                    | 26350 | 26351 | 26352                         | 26353                          | 26354      | 26356       | 26315 (shared with slot 1)                                                                                                                         |
+| 4 (`yourtal-4`, Phase 2)                               | 26360 | 26361 | 26362                         | 26363                          | 26364      | 26366       | 26365                                                                                                                                              |
+| 8 (`yourtal-p8` helper worktree)                       | 26371 | 26372 | 26373                         | 26374                          | 26375      | 26377       | 26592 (the main stack's)                                                                                                                           |
+| 8b (`yourtal-p8-b` helper worktree)                    | 26381 | 26382 | 26383                         | 26384                          | 26385      | 26387       | 26592 (the main stack's)                                                                                                                           |
+| 9b (`yourtal-p9-b` helper worktree)                    | 26470 | 26471 | 26472                         | 26473                          | 26474      | 26476       | 26475 (`yourtal-cerbos-p9b`)                                                                                                                       |
+| 9c (`yourtal-p9-c` helper worktree)                    | 26480 | 26481 | 26482                         | 26483                          | 26484      | 26486       | 26485 (`yourtal-cerbos-p9c`)                                                                                                                       |
+| 9d (`yourtal-p9-d` helper worktree)                    | 26490 | 26491 | 26492                         | 26493                          | 26494      | 26496       | 26495 (`yourtal-cerbos-p9d`)                                                                                                                       |
+| 11b (`yourtal-p11-b` helper worktree, TASKS.md 11.4.h) | 26500 | 26501 | 26502 (`yourtal-ledger-p11b`) | 26503 (`yourtal-voucher-p11b`) | 26504      | 26506       | 26592 (the main stack's — this task has no policy work of its own, `register` still calls the PDP so `26592` is reused rather than run standalone) |
 
 - web and api read `WEB_PORT` and `PORT`; Playwright reads `PLAYWRIGHT_PORT`
   (the offline config adds 2).

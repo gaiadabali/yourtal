@@ -3,7 +3,10 @@ import {
   exceedsAccuracyBonusRatio,
   exceedsRewardCeiling,
 } from "@yourtal/contracts/campaign/reward-config";
-import { allocationSchema, purchasePointsRequestSchema } from "@yourtal/contracts/ledger-internal/funding";
+import {
+  allocationSchema,
+  purchasePointsRequestSchema,
+} from "@yourtal/contracts/ledger-internal/funding";
 import { toPoints } from "@yourtal/contracts/money";
 import type { Region } from "@yourtal/contracts/region";
 import { postSigned } from "./staging";
@@ -70,7 +73,8 @@ async function regionEconomy(pool: pg.Pool, region: Region): Promise<RegionEcono
   const byKey = new Map(rows.rows.map((row) => [row.key, row.value]));
 
   const rate = byKey.get("demo_reward_points_per_minute");
-  const bonus = byKey.get("demo_accuracy_bonus") as { pct?: unknown; maxOfBasePct?: unknown } | undefined;
+  const bonus = byKey.get("demo_accuracy_bonus") as
+    { pct?: unknown; maxOfBasePct?: unknown } | undefined;
   const ceiling = byKey.get("reward_ceiling_points_per_minute");
   if (
     typeof rate !== "number" ||
@@ -240,7 +244,13 @@ export async function runDemoCampaignFunding(
           reward_points_per_completion, accuracy_bonus_points)
        VALUES ($1, $2, 'partner', $3, $4, $5)
        ON CONFLICT (campaign_id) DO NOTHING`,
-      [campaign.id, allocation.allocationId, points, rewardPointsPerCompletion, accuracyBonusPoints],
+      [
+        campaign.id,
+        allocation.allocationId,
+        points,
+        rewardPointsPerCompletion,
+        accuracyBonusPoints,
+      ],
     );
 
     log(

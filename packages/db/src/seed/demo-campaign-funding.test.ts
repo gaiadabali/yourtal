@@ -111,7 +111,13 @@ async function insertLiveCampaign(params: {
              'http://127.0.0.1:26900/x/poster.jpg', 'http://127.0.0.1:26900/x/teaser.mp4',
              'http://127.0.0.1:26900/x/index.m3u8', null, '9:16', 1000,
              now(), now() + interval '90 days', true, 0)`,
-    [campaignId, `Demo campaign funding test ${campaignId}`, businessId, params.durationSeconds, params.region],
+    [
+      campaignId,
+      `Demo campaign funding test ${campaignId}`,
+      businessId,
+      params.durationSeconds,
+      params.region,
+    ],
   );
   return { campaignId, businessId };
 }
@@ -170,12 +176,16 @@ describe("runDemoCampaignFunding", () => {
       // Matched by OUR OWN businessId, never by region alone -- this test
       // database also carries the local dev seed's own mock campaigns
       // (`seedStudio`), which this same funding pass also funds.
-      const auRequest = ledgerService.received.find((call) => call.body.businessId === au.businessId);
+      const auRequest = ledgerService.received.find(
+        (call) => call.body.businessId === au.businessId,
+      );
       expect(auRequest?.body.points).toBe(6000);
       expect(auRequest?.body.paidMinor).toBe(27_000);
       expect(auRequest?.body.currency).toBe("AUD");
 
-      const idRequest = ledgerService.received.find((call) => call.body.businessId === id.businessId);
+      const idRequest = ledgerService.received.find(
+        (call) => call.body.businessId === id.businessId,
+      );
       expect(idRequest?.body.points).toBe(109_000);
       expect(idRequest?.body.paidMinor).toBe(981_000);
       expect(idRequest?.body.currency).toBe("IDR");

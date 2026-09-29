@@ -9,6 +9,8 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import { Notice } from "@yourtal/ui/notice";
 import { Text } from "@yourtal/ui/text";
 import { StaffReasonDialogButton } from "../staff-reason-dialog-button";
+import { StaffCampaignApproveDialogButton } from "./staff-campaign-approve-dialog-button";
+import type { Audience, ContentCategory } from "./campaign-category-policy";
 import {
   approveCampaignModerationAction,
   rejectCampaignModerationAction,
@@ -42,6 +44,20 @@ export function StaffCampaignModerationList({ initial }: StaffCampaignModeration
       return true;
     }
     setError(result.error?.message ?? t("errors.actionFailed"));
+    return false;
+  }
+
+  async function decideApprove(
+    campaignId: string,
+    params: { reason: string; audience: Audience; contentCategory: ContentCategory },
+  ): Promise<boolean> {
+    const result = await approveCampaignModerationAction(campaignId, params);
+    if (result.ok) {
+      setItems((current) => current.filter((item) => item.campaign.id !== campaignId));
+      setError(null);
+      return true;
+    }
+    setError(result.error.message);
     return false;
   }
 
@@ -94,15 +110,12 @@ export function StaffCampaignModerationList({ initial }: StaffCampaignModeration
               header: t("moderation.columnActions"),
               cell: (row) => (
                 <div className="flex flex-wrap gap-2">
-                  <StaffReasonDialogButton
-                    triggerLabel={t("moderation.approveCta")}
-                    triggerVariant="primary"
-                    dialogTitle={t("moderation.approveCampaignDialogTitle")}
-                    dialogBody={t("moderation.approveCampaignDialogBody")}
+                  <StaffCampaignApproveDialogButton
+                    region={row.campaign.region}
+                    declaredAudience={row.campaign.audience}
+                    declaredCategory={row.campaign.contentCategory}
                     submitLabel={t("moderation.approveCampaignSubmit")}
-                    onSubmit={(reason) =>
-                      decide(row.campaign.id, approveCampaignModerationAction, reason)
-                    }
+                    onSubmit={(params) => decideApprove(row.campaign.id, params)}
                   />
                   <StaffReasonDialogButton
                     triggerLabel={t("moderation.rejectCta")}

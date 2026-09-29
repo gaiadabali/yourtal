@@ -19,12 +19,12 @@ async function post(path: string, body: unknown): Promise<StaffCampaignModeratio
   return result.ok ? { ok: true, campaign: result.data } : { ok: false, error: result.error };
 }
 
-/** TASKS.md 9.2.a: approves as declared ("confirm") -- overriding audience/category ("change") is a later UI pass; the API already accepts both. */
+/** TASKS.md 9.2.a/9.2.d: "confirm or change" (1.1.d) -- `audience`/`contentCategory` are the moderator's own choice (pre-filled from the declared values, sent back whether confirmed or changed). */
 export async function approveCampaignModerationAction(
   campaignId: string,
-  reason: string,
+  params: { reason: string; audience: string; contentCategory: string },
 ): Promise<StaffCampaignModerationActionResult> {
-  return post(`/api/staff/moderation/campaigns/${campaignId}/approve`, { reason });
+  return post(`/api/staff/moderation/campaigns/${campaignId}/approve`, params);
 }
 
 export async function rejectCampaignModerationAction(

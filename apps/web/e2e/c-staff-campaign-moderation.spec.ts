@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
@@ -116,6 +117,40 @@ function markKybVerified(businessId: string): void {
     env: process.env,
     stdio: "pipe",
   });
+}
+
+/** TASKS.md 9.2.d: reads back the staff audit row `setStaffAuditContext` writes on approve, the same DB-script pattern `fillCampaignMedia`/`markKybVerified` already use for a fact this spec cannot reach through the public API. */
+function readAuditDetail(campaignId: string): {
+  reason: string;
+  detail: { audience: string; contentCategory: string } | null;
+} {
+  const outFile = `${REPO_ROOT}/apps/web/test-results/audit-${campaignId}.json`;
+  const script = `
+    const { Client } = require("pg");
+    const fs = require("node:fs");
+    (async () => {
+      const c = new Client({ connectionString: process.env.DATABASE_OWNER_URL });
+      await c.connect();
+      const { rows } = await c.query(
+        "SELECT reason, detail FROM staff.audit_event WHERE action = 'campaign_moderation.approve' AND target_id = $1",
+        ["${campaignId}"],
+      );
+      fs.writeFileSync(${JSON.stringify(outFile)}, JSON.stringify(rows[0] ?? null));
+      await c.end();
+    })();
+  `;
+  execFileSync("node", ["-e", script], {
+    cwd: `${REPO_ROOT}/packages/db`,
+    env: process.env,
+    stdio: "pipe",
+  });
+  const raw = readFileSync(outFile, "utf8");
+  const row = JSON.parse(raw) as {
+    reason: string;
+    detail: { audience: string; contentCategory: string } | null;
+  } | null;
+  if (row === null) throw new Error(`no approve audit row found for campaign ${campaignId}`);
+  return row;
 }
 
 async function newSessionContext(
@@ -252,8 +287,11 @@ test.describe.serial("9.2.a/9.2.b: staff campaign moderation, through the real U
   let businessId: string;
   let approvedCampaignId: string;
   let rejectedCampaignId: string;
+  let recategorizedCampaignId: string;
   const approvedTitle = `Approve Me ${uniqueSuffix()}`;
   const rejectedTitle = `Reject Me ${uniqueSuffix()}`;
+  const recategorizedTitle = `Change Category ${uniqueSuffix()}`;
+  const dialogScreenshotTitle = `Approve Dialog ${uniqueSuffix()}`;
   const rejectionReason = `Creative does not meet disclosure requirements (${uniqueSuffix()}).`;
 
   test.beforeAll(async ({ request }) => {
@@ -265,7 +303,49 @@ test.describe.serial("9.2.a/9.2.b: staff campaign moderation, through the real U
     markKybVerified(businessId);
     approvedCampaignId = await createSubmittedCampaign(request, owner, businessId, approvedTitle);
     rejectedCampaignId = await createSubmittedCampaign(request, owner, businessId, rejectedTitle);
+    recategorizedCampaignId = await createSubmittedCampaign(
+      request,
+      owner,
+      businessId,
+      recategorizedTitle,
+    );
+    await createSubmittedCampaign(request, owner, businessId, dialogScreenshotTitle);
   });
+
+  for (const width of [390, 1280]) {
+    for (const colorScheme of ["light", "dark"] as const) {
+      test(`the approve dialog's audience/category override renders at ${String(width)}px, ${colorScheme} (9.2.d)`, async ({
+        browser,
+        baseURL,
+      }) => {
+        const context = await browser.newContext({
+          viewport: { width, height: 900 },
+          colorScheme,
+        });
+        await context.addCookies([
+          { name: "yt_session", value: staff.token, url: baseURL as string },
+        ]);
+        const page = await context.newPage();
+        await page.goto("/staff/moderation");
+        await expect(
+          page.locator(":visible", { hasText: dialogScreenshotTitle }).first(),
+        ).toBeVisible();
+        const row = page
+          .locator("tr:visible, li:visible")
+          .filter({ hasText: dialogScreenshotTitle })
+          .first();
+        await row.getByRole("button", { name: "Approve" }).click();
+        await expect(page.getByRole("dialog")).toBeVisible();
+        await page.getByLabel("Category", { exact: true }).selectOption("entertainment");
+        await expectAxeClean(page);
+        await page.screenshot({
+          path: `test-results/c-staff-campaign-moderation-approve-dialog-${String(width)}-${colorScheme}.png`,
+          fullPage: true,
+        });
+        await context.close();
+      });
+    }
+  }
 
   for (const width of [390, 1280]) {
     for (const colorScheme of ["light", "dark"] as const) {
@@ -304,7 +384,7 @@ test.describe.serial("9.2.a/9.2.b: staff campaign moderation, through the real U
     await page.goto("/staff/moderation");
     await expect(page.locator(":visible", { hasText: approvedTitle }).first()).toBeVisible();
 
-    const row = page.locator("tr, li").filter({ hasText: approvedTitle }).first();
+    const row = page.locator("tr:visible, li:visible").filter({ hasText: approvedTitle }).first();
     await row.getByRole("button", { name: "Approve" }).click();
     await page
       .getByLabel("Reason (required, for the record)")
@@ -330,7 +410,7 @@ test.describe.serial("9.2.a/9.2.b: staff campaign moderation, through the real U
     await page.goto("/staff/moderation");
     await expect(page.locator(":visible", { hasText: rejectedTitle }).first()).toBeVisible();
 
-    const row = page.locator("tr, li").filter({ hasText: rejectedTitle }).first();
+    const row = page.locator("tr:visible, li:visible").filter({ hasText: rejectedTitle }).first();
     await row.getByRole("button", { name: "Reject" }).click();
     await page.getByLabel("Reason (required, for the record)").fill(rejectionReason);
     await page.getByRole("button", { name: "Reject campaign" }).click();
@@ -361,5 +441,52 @@ test.describe.serial("9.2.a/9.2.b: staff campaign moderation, through the real U
     expect(feedResponse.ok(), await feedResponse.text()).toBeTruthy();
     const feed = (await feedResponse.json()) as { items: Array<{ campaignId: string }> };
     expect(feed.items.map((item) => item.campaignId)).not.toContain(rejectedCampaignId);
+  });
+
+  test("a moderator changes a campaign's category and audience while approving (9.2.d)", async ({
+    browser,
+    baseURL,
+    request,
+  }) => {
+    const { context, page } = await newSessionContext(browser, baseURL as string, staff.cookie);
+    await page.goto("/staff/moderation");
+    await expect(page.locator(":visible", { hasText: recategorizedTitle }).first()).toBeVisible();
+
+    const row = page
+      .locator("tr:visible, li:visible")
+      .filter({ hasText: recategorizedTitle })
+      .first();
+    // Declared as food-and-drink/all_ages (createSubmittedCampaign's own
+    // default) -- pre-filled in the dialog, then CHANGED to a different,
+    // still-`allowed` (not adult_only) category: "entertainment" needs no
+    // audience change, proving the override travels end to end without
+    // also depending on the adult_only/audience-forcing behaviour a
+    // separate unit test already covers (category-policy.ts's own).
+    await row.getByRole("button", { name: "Approve" }).click();
+    await page.getByLabel("Category", { exact: true }).selectOption("entertainment");
+    await page
+      .getByLabel("Reason (required, for the record)")
+      .fill("Miscategorised as food-and-drink; this is entertainment content.");
+    await page.getByRole("button", { name: "Approve campaign" }).click();
+    await expect(page.getByText(recategorizedTitle)).toHaveCount(0);
+    await context.close();
+
+    // The stored value, read back through GET /api/feed (the feed item
+    // carries the campaign's real, current contentCategory/audience).
+    const feedResponse = await request.get(`${apiBaseUrl()}/api/feed`, {
+      headers: { cookie: viewer.cookie },
+    });
+    expect(feedResponse.ok(), await feedResponse.text()).toBeTruthy();
+    const feed = (await feedResponse.json()) as {
+      items: Array<{ campaignId: string; contentCategory: string; audience: string }>;
+    };
+    const feedItem = feed.items.find((item) => item.campaignId === recategorizedCampaignId);
+    expect(feedItem, "the recategorized campaign should be live in the feed").toBeDefined();
+    expect(feedItem).toMatchObject({ contentCategory: "entertainment", audience: "all_ages" });
+
+    // The audit row: the moderator's real reason, and the exact override applied.
+    const audit = readAuditDetail(recategorizedCampaignId);
+    expect(audit.reason).toBe("Miscategorised as food-and-drink; this is entertainment content.");
+    expect(audit.detail).toMatchObject({ audience: "all_ages", contentCategory: "entertainment" });
   });
 });

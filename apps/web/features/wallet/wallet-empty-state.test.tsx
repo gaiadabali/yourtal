@@ -27,11 +27,11 @@ describe("WalletEmptyState (id-ID)", () => {
     expect(screen.getByText(/menonton video/)).toBeInTheDocument();
   });
 
-  it("links straight into the Earn board so the loop is one tap away", async () => {
+  it("links straight to Home so the loop is one tap away", async () => {
     locale = "id-ID";
     render(await WalletEmptyState());
 
-    const link = screen.getByRole("link", { name: /Earn/ });
+    const link = screen.getByRole("link", { name: /Beranda/ });
     expect(link).toHaveAttribute("href", "/home");
   });
 });
@@ -42,7 +42,7 @@ describe("WalletEmptyState (en-AU)", () => {
     const { container } = render(await WalletEmptyState());
 
     expect(screen.getByText(/watching short videos/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Find a video in Earn/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Find a video on Home/ })).toHaveAttribute(
       "href",
       "/home",
     );

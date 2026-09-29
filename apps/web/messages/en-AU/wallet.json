@@ -83,8 +83,8 @@
   },
   "emptyState": {
     "heading": "No points here yet",
-    "body": "You earn points by watching short videos from your favourite merchants. Finish one video on the Earn board to start collecting points, then redeem them for a voucher in the Store.",
-    "cta": "Find a video in Earn"
+    "body": "You earn points by watching short videos from your favourite brands. Finish a video on Home to start collecting points, then redeem them for a voucher in the Store.",
+    "cta": "Find a video on Home"
   },
   "voucherList": {
     "activeHeading": "Active vouchers",

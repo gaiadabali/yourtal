@@ -82,7 +82,7 @@ describe("WalletScreen (id-ID)", () => {
     );
 
     expect(screen.getByText("Saldo tersedia")).toBeInTheDocument();
-    expect(screen.getByText("Wallet")).toBeInTheDocument();
+    expect(screen.getByText("Dompet")).toBeInTheDocument();
     expect(screen.getByText("Riwayat poin")).toBeInTheDocument();
   });
 });

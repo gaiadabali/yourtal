@@ -57,7 +57,9 @@ export async function WalletVoucherCard({ voucher, nowMs, locale }: WalletVouche
         </StatusBadge>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-body-sm">
-        {voucher.remainingValueMinor !== undefined && voucher.currency ? (
+        {/* A voided voucher holds no value, whatever the row still records. */}
+        {statusCopy.kind === "void" ? null : voucher.remainingValueMinor !== undefined &&
+          voucher.currency ? (
           <MoneyAmount
             amountMinor={voucher.remainingValueMinor}
             currency={voucher.currency}

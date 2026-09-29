@@ -87,8 +87,8 @@
   },
   "notFound": {
     "heading": "Item tidak ditemukan",
-    "body": "Item ini mungkin sudah tidak tersedia atau tautannya salah. Coba kembali ke Store untuk melihat katalog yang masih aktif.",
-    "cta": "Kembali ke Store"
+    "body": "Item ini mungkin sudah tidak tersedia atau tautannya salah. Coba kembali ke Toko untuk melihat katalog yang masih aktif.",
+    "cta": "Kembali ke Toko"
   },
   "redeem": {
     "pageTitleWithName": "Tukar {itemTitle}",

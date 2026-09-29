@@ -59,7 +59,7 @@ describe("WalletVoucherList (id-ID)", () => {
     locale = "id-ID";
     render(await WalletVoucherList({ vouchers: [releasedVoucher], nowMs, locale: "id-ID" }));
 
-    expect(screen.getByText(/Tukar poin di Store/)).toBeInTheDocument();
+    expect(screen.getByText(/Tukar poin di Toko/)).toBeInTheDocument();
   });
 });
 

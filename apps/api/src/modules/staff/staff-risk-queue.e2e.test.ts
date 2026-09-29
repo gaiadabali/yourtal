@@ -80,9 +80,9 @@ describe("staff risk queue", () => {
     const listed = await get("/api/staff/risk/queue?region=AU", risk);
     expect(listed.statusCode).toBe(200);
     const flags = listed.json<{ id: string; userId: string; severity: string; status: string }[]>();
-    expect(flags.some((f) => f.id === flagId && f.userId === userId && f.severity === "block")).toBe(
-      true,
-    );
+    expect(
+      flags.some((f) => f.id === flagId && f.userId === userId && f.severity === "block"),
+    ).toBe(true);
 
     const support = await staffSession("support");
     const refused = await get("/api/staff/risk/queue?region=AU", support);

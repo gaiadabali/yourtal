@@ -3,6 +3,8 @@ name: VoucherDisputeSuite
 description: |-
   TASKS.md 9.4.d, K13: only support and finance see the captured-voucher
   dispute queue. Risk, ops, a consumer and a suspended staff account do not.
+  TASKS.md 10.5.b: only finance resolves one (posts the recovery line) --
+  support can see the queue but not move money.
 tests:
   - name: support and finance see the queue
     input:
@@ -25,3 +27,19 @@ tests:
       - { principal: risk_umi, resource: dispute_queue_self, actions: { view: EFFECT_DENY } }
       - { principal: ops_zul, resource: dispute_queue_self, actions: { view: EFFECT_DENY } }
       - { principal: wina, resource: dispute_queue_self, actions: { view: EFFECT_DENY } }
+
+  - name: only finance resolves a dispute
+    input:
+      principals: [finance_yani, support_sari, risk_umi, ops_zul, wina]
+      resources: [dispute_queue_self]
+      actions: [resolve]
+    expected:
+      - {
+          principal: finance_yani,
+          resource: dispute_queue_self,
+          actions: { resolve: EFFECT_ALLOW },
+        }
+      - { principal: support_sari, resource: dispute_queue_self, actions: { resolve: EFFECT_DENY } }
+      - { principal: risk_umi, resource: dispute_queue_self, actions: { resolve: EFFECT_DENY } }
+      - { principal: ops_zul, resource: dispute_queue_self, actions: { resolve: EFFECT_DENY } }
+      - { principal: wina, resource: dispute_queue_self, actions: { resolve: EFFECT_DENY } }

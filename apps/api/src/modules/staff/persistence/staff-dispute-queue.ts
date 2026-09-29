@@ -38,10 +38,15 @@ export class PostgresStaffDisputeQueue implements StaffDisputeQueue {
       reason: string;
       created_at: Date;
     }>(
+      // 10.5.b: a voucher with a staff.dispute_resolution row has been
+      // resolved -- checkout.dispute.outcome never changes to reflect that
+      // (that table is append-only, 4.7.c's own design), so the exclusion
+      // lives here instead.
       `SELECT d.voucher_id, d.saga_id, d.user_id, up.region, d.reason, d.created_at
          FROM checkout.dispute d
          LEFT JOIN identity.user_profile up ON up.user_id = d.user_id::text
-        WHERE d.outcome = 'queued'
+         LEFT JOIN staff.dispute_resolution sr ON sr.voucher_id = d.voucher_id
+        WHERE d.outcome = 'queued' AND sr.voucher_id IS NULL
           AND ($1::text IS NULL OR up.region = $1)
         ORDER BY d.created_at ASC
         LIMIT ${String(QUEUE_LIMIT)}`,

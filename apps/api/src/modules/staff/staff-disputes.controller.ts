@@ -1,20 +1,56 @@
-import { Controller, Get, Inject, Query, Req } from "@nestjs/common";
+import {
+  BadGatewayException,
+  Body,
+  Controller,
+  ConflictException,
+  Get,
+  Inject,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
+import { createZodDto } from "nestjs-zod";
 import type { Region } from "@yourtal/contracts/region";
-import { staffDisputeQueueSchema, type StaffDisputeQueue } from "@yourtal/contracts/staff/disputes";
+import {
+  disputeResolutionResultSchema,
+  resolveDisputeRequestSchema,
+  staffDisputeQueueSchema,
+  type DisputeResolutionResult,
+  type StaffDisputeQueue,
+} from "@yourtal/contracts/staff/disputes";
 import { Authorize } from "../../shared/authz/authorize.decorator";
+import { PrincipalService } from "../../shared/authz/principal.service";
+import {
+  LEDGER_INTERNAL_CLIENT,
+  type LedgerInternalClient,
+} from "../../shared/ledger-client/ledger-internal-client";
+import { LedgerNotFoundError } from "../../shared/ledger-client/ledger-not-found";
 import { StaffAction, setStaffAuditContext } from "./staff-action.decorator";
 import { STAFF_DISPUTE_QUEUE } from "./persistence/staff-dispute-queue";
 import type { StaffDisputeQueue as DisputeQueueReader } from "./persistence/staff-dispute-queue";
+import { STAFF_DISPUTE_RESOLUTION } from "./persistence/staff-dispute-resolution";
+import type { StaffDisputeResolution } from "./persistence/staff-dispute-resolution";
+
+class ResolveDisputeDto extends createZodDto(resolveDisputeRequestSchema) {}
 
 /**
  * TASKS.md 9.4.d, K13: the captured-voucher dispute queue
- * (`checkout.dispute`, 4.7.c). List-only here -- resolving one is 10.5,
- * which needs Phase 10.
+ * (`checkout.dispute`, 4.7.c). `resolve` is 10.5.b: posts the ledger's own
+ * recovery line (`recoverCapture`, reversing the S-scaled payable the
+ * original capture posted) against the merchant, finance-only
+ * (voucher_dispute.yaml).
  */
 @Controller("api/staff/disputes")
 export class StaffDisputesController {
-  constructor(@Inject(STAFF_DISPUTE_QUEUE) private readonly disputes: DisputeQueueReader) {}
+  constructor(
+    @Inject(STAFF_DISPUTE_QUEUE) private readonly disputes: DisputeQueueReader,
+    @Inject(STAFF_DISPUTE_RESOLUTION) private readonly resolutions: StaffDisputeResolution,
+    private readonly principals: PrincipalService,
+    @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
+  ) {}
 
   @StaffAction("dispute.view_queue")
   @Authorize({ kind: "voucher_dispute", action: "view", idFrom: () => "self" })
@@ -39,5 +75,73 @@ export class StaffDisputesController {
         createdAt: row.createdAt.toISOString(),
       })),
     );
+  }
+
+  @StaffAction("dispute.resolve")
+  @Authorize({ kind: "voucher_dispute", action: "resolve", idFrom: () => "self" })
+  @Post(":voucherId/resolve")
+  async resolve(
+    @Param("voucherId") voucherId: string,
+    @Body() body: ResolveDisputeDto,
+    @Req() request: FastifyRequest,
+  ): Promise<DisputeResolutionResult> {
+    const captureId = await this.resolutions.findCaptureIdForVoucher(voucherId);
+    if (captureId === null) {
+      throw new NotFoundException({
+        code: "capture_not_found",
+        message: `voucher ${voucherId} was never captured`,
+      });
+    }
+
+    let posting;
+    try {
+      const result = await this.ledger.recoverCapture({ captureId, reason: body.reason });
+      if (result.isErr()) {
+        throw new BadGatewayException({ code: result.error.code, message: result.error.message });
+      }
+      posting = result.value;
+    } catch (cause) {
+      if (cause instanceof LedgerNotFoundError) {
+        throw new NotFoundException({
+          code: "capture_not_found",
+          message: `no capture ${captureId} on the ledger`,
+        });
+      }
+      throw cause;
+    }
+
+    const actor = await this.principals.resolve(request);
+    try {
+      await this.resolutions.record({
+        voucherId,
+        captureId,
+        recoveryPostingId: posting.id,
+        resolvedBy: actor.id,
+        resolutionNote: body.reason,
+      });
+    } catch (cause) {
+      // The ledger's own idempotency key (captureId) already makes a
+      // retried recoverCapture a no-op (posting.id comes back the same) --
+      // this table's PRIMARY KEY on voucher_id is refused only by a second
+      // resolve of the SAME dispute, which is a 409, not a lost recovery.
+      throw new ConflictException({
+        code: "already_resolved",
+        message: `voucher ${voucherId} was already resolved: ${String(cause)}`,
+      });
+    }
+
+    setStaffAuditContext(request, {
+      targetKind: "dispute",
+      targetId: voucherId,
+      reason: body.reason,
+      detail: { captureId, recoveryPostingId: posting.id, amountMinor: posting.amountMinor },
+    });
+
+    return disputeResolutionResultSchema.parse({
+      voucherId,
+      recoveryPostingId: posting.id,
+      amountMinor: posting.amountMinor,
+      currency: posting.currency,
+    });
   }
 }

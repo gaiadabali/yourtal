@@ -3,11 +3,11 @@ apiVersion: api.cerbos.dev/v1
 description: |-
   TASKS.md 9.4.d, K13: the queue of vouchers a merchant would not honour that
   were already captured (checkout.dispute, outcome = 'queued', 4.7.c).
-  List-only -- resolving one and posting the merchant recovery line is 10.5,
-  which needs Phase 10 and gets its own resource kind and rule then. Support
-  opens cases (docs/17 section 5) and finance is who eventually posts the
-  recovery line, so both see the queue; risk and ops do not need it for this
-  read-only list.
+  Support opens cases (docs/17 section 5) and sees the queue; finance both
+  sees it AND resolves one (TASKS.md 10.5.b), since resolving posts a real
+  ledger recovery line (`recoverCapture`) -- the same "whoever can adjust
+  cannot suspend, whoever suspends cannot adjust" separation user_account.yaml
+  states, applied here as "whoever opens a case is not who moves money".
 resourcePolicy:
   version: default
   resource: voucher_dispute
@@ -21,3 +21,8 @@ resourcePolicy:
       actions: ["view"]
       effect: EFFECT_ALLOW
       roles: ["support", "finance"]
+
+    - name: finance-resolves-a-dispute
+      actions: ["resolve"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]

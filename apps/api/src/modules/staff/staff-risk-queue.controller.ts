@@ -15,7 +15,10 @@ import type { ResultAsync } from "neverthrow";
 import { createZodDto } from "nestjs-zod";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type { RiskFlag } from "@yourtal/contracts/ledger-internal/risk";
-import { staffRiskResolveRequestSchema, type StaffRiskFlag } from "@yourtal/contracts/staff/risk-queue";
+import {
+  staffRiskResolveRequestSchema,
+  type StaffRiskFlag,
+} from "@yourtal/contracts/staff/risk-queue";
 import type { Region } from "@yourtal/contracts/region";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";

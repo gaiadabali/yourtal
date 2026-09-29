@@ -295,7 +295,10 @@ export const RESOURCE_ACTIONS = {
    * only whether the caller holds the right working role" shape as
    * `staff_console` itself.
    */
-  voucher_dispute: ["view"],
+  // TASKS.md 10.5.b: `resolve` posts the K13 recovery line (finance only —
+  // voucher_dispute.yaml's own header already named finance as "who
+  // eventually posts the recovery line").
+  voucher_dispute: ["view", "resolve"],
 
   /**
    * TASKS.md 10.5.a: the real RiskGate's manual-review queue (10.4.b,

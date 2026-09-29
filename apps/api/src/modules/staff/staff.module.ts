@@ -29,6 +29,10 @@ import {
 } from "./persistence/staff-suspension-repository";
 import { PostgresStaffDisputeQueue, STAFF_DISPUTE_QUEUE } from "./persistence/staff-dispute-queue";
 import {
+  PostgresStaffDisputeResolution,
+  STAFF_DISPUTE_RESOLUTION,
+} from "./persistence/staff-dispute-resolution";
+import {
   ECONOMY_PROPOSAL_REPOSITORY,
   PostgresEconomyProposalRepository,
 } from "./economy/persistence/economy-proposal.repository";
@@ -84,6 +88,11 @@ class StaffPoolShutdown implements OnApplicationShutdown {
     {
       provide: STAFF_DISPUTE_QUEUE,
       useFactory: (pool: Pool) => new PostgresStaffDisputeQueue(pool),
+      inject: [STAFF_DB_POOL],
+    },
+    {
+      provide: STAFF_DISPUTE_RESOLUTION,
+      useFactory: (pool: Pool) => new PostgresStaffDisputeResolution(pool),
       inject: [STAFF_DB_POOL],
     },
     {

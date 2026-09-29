@@ -12,6 +12,8 @@ import type { HomeFeedData } from "./feed-data";
 import { FeedItem } from "./feed-item";
 import { FeedRow } from "./feed-row";
 import { StreakStrip } from "./streak-strip";
+import { WatchTimeReminder } from "./watch-time-reminder";
+import { useWatchTimeReminder } from "./use-watch-time-reminder";
 import { formatFeedPoints, type FeedLocale } from "./feed-terms";
 
 type Tab = "forYou" | "continue" | "saved" | "following" | "endingSoon";
@@ -88,10 +90,16 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
   // streak-first UI (days count, pending-grant dates framed against it), so
   // it does not render at all rather than showing a half-empty version.
   const isTeen = data.ageBand === "teen";
+  // 12.2.b: a gentle nudge after ~45 continuous foreground minutes in the
+  // feed -- teen-only, same as the rest of this section's softer engagement.
+  const watchTimeReminder = useWatchTimeReminder(isTeen);
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
       <div className="flex flex-col gap-3 lg:hidden">
+        {watchTimeReminder.show ? (
+          <WatchTimeReminder onDismiss={watchTimeReminder.dismiss} />
+        ) : null}
         {isTeen ? null : (
           <StreakStrip days={data.streakDays} pending={data.pending} locale={locale} />
         )}
@@ -116,6 +124,9 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
       {tab === "forYou" ? null : <div className="lg:hidden">{rows[ROW_KEYS.indexOf(tab)]}</div>}
 
       <div className="hidden min-w-0 flex-1 flex-col gap-6 lg:flex">
+        {watchTimeReminder.show ? (
+          <WatchTimeReminder onDismiss={watchTimeReminder.dismiss} />
+        ) : null}
         {isTeen ? null : (
           <StreakStrip days={data.streakDays} pending={data.pending} locale={locale} />
         )}

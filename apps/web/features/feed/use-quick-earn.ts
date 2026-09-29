@@ -10,6 +10,8 @@ export type QuickEarnPhase =
   | { kind: "claiming" }
   | { kind: "earned"; points: number; unlockAt: string | null }
   | { kind: "not_earning"; alreadyEarned: boolean }
+  /** 12.2.b: a teen's own quiet hours (21:00-07:00) refused a NEW reward session — kindly, not as a generic failure. */
+  | { kind: "quiet_hours" }
   | { kind: "failed" };
 
 // Real time between reports. The server refuses anything faster than real time.
@@ -32,7 +34,11 @@ export function useQuickEarn(campaignId: string) {
     setPhase({ kind: "starting" });
     const started = await startWatchAction(campaignId);
     if (!started.ok) {
-      setPhase({ kind: "failed" });
+      setPhase(
+        started.error.kind === "http" && started.error.code === "teen_quiet_hours"
+          ? { kind: "quiet_hours" }
+          : { kind: "failed" },
+      );
       return;
     }
     const { session, alreadyEarned, manifestUrl, durationSeconds } = started.data;

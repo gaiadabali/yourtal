@@ -99,6 +99,16 @@ export function QuickEarnAction({ earn, rewardPoints, locale }: QuickEarnActionP
     );
   }
 
+  // 12.2.b: a kind explanation, not a retry button — trying again does not
+  // help until quiet hours end.
+  if (phase.kind === "quiet_hours") {
+    return (
+      <p role="status" className="text-body-sm font-sans text-white">
+        {t("earn.quietHours")}
+      </p>
+    );
+  }
+
   if (phase.kind === "watching") return null;
 
   const busy = phase.kind === "starting" || phase.kind === "claiming";

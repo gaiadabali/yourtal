@@ -48,7 +48,8 @@
     "notEarning": "This one isn't earning right now",
     "failed": "We couldn't record that watch.",
     "retry": "Try again",
-    "stoppedEarly": "Stopping early earns nothing. Watch to the end to earn."
+    "stoppedEarly": "Stopping early earns nothing. Watch to the end to earn.",
+    "quietHours": "Quiet hours until 7am -- try again in the morning."
   },
   "actions": {
     "label": "Actions for {title}",
@@ -88,5 +89,9 @@
     "heading": "Your feed didn't load",
     "body": "Check your connection and try again.",
     "retry": "Try again"
+  },
+  "watchTimeReminder": {
+    "body": "You've been watching a while -- take a break if you'd like.",
+    "dismiss": "Got it"
   }
 }

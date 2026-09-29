@@ -48,7 +48,8 @@
     "notEarning": "Video ini sedang tidak memberi poin",
     "failed": "Tontonanmu tidak bisa dicatat.",
     "retry": "Coba lagi",
-    "stoppedEarly": "Berhenti di tengah tidak memberi poin. Tonton sampai selesai."
+    "stoppedEarly": "Berhenti di tengah tidak memberi poin. Tonton sampai selesai.",
+    "quietHours": "Jam tenang sampai jam 7 pagi -- coba lagi besok pagi."
   },
   "actions": {
     "label": "Tindakan untuk {title}",
@@ -88,5 +89,9 @@
     "heading": "Berandamu gagal dimuat",
     "body": "Periksa koneksimu lalu coba lagi.",
     "retry": "Coba lagi"
+  },
+  "watchTimeReminder": {
+    "body": "Kamu sudah menonton cukup lama -- boleh istirahat sebentar kalau mau.",
+    "dismiss": "Oke"
   }
 }

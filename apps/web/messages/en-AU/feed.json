@@ -1,0 +1,92 @@
+{
+  "title": "Home",
+  "feedLabel": "For you",
+  "tabs": {
+    "label": "Home sections",
+    "forYou": "For you",
+    "continue": "Continue watching",
+    "saved": "Saved",
+    "following": "Following",
+    "endingSoon": "Ending soon"
+  },
+  "rows": {
+    "continue": "Continue watching",
+    "saved": "Saved",
+    "following": "From channels you follow",
+    "endingSoon": "Ending soon"
+  },
+  "rowEmpty": {
+    "continue": "Nothing in progress.",
+    "saved": "Nothing saved yet.",
+    "following": "Follow channels to see their campaigns here.",
+    "endingSoon": "Nothing is ending soon."
+  },
+  "terms": {
+    "minutes": "{count} min",
+    "seconds": "{count} s",
+    "questions": "{count, plural, one {# question} other {# questions}}",
+    "upTo": "up to {points}",
+    "data": "~{mb} MB",
+    "finishToEarn": "finish to earn",
+    "noQuestions": "no questions"
+  },
+  "item": {
+    "label": "{merchantName}: {title}",
+    "play": "Play {title}",
+    "pause": "Pause {title}",
+    "earn": "Earn {points}",
+    "watchAndEarn": "Watch & earn",
+    "progress": "{watched} of {total} watched"
+  },
+  "earn": {
+    "starting": "Starting…",
+    "watching": "Keep it on screen to earn",
+    "claiming": "Checking your watch…",
+    "earned": "+{points} earned",
+    "unlocks": "Pending, unlocks {date}",
+    "alreadyEarned": "You've already earned this one",
+    "notEarning": "This one isn't earning right now",
+    "failed": "We couldn't record that watch.",
+    "retry": "Try again",
+    "stoppedEarly": "Stopping early earns nothing. Watch to the end to earn."
+  },
+  "actions": {
+    "label": "Actions for {title}",
+    "share": "Share",
+    "save": "Save",
+    "unsave": "Saved",
+    "notInterested": "Not interested",
+    "hidden": "Got it. You'll see fewer like this.",
+    "undo": "Undo",
+    "why": "Why am I seeing this?",
+    "linkCopied": "Link copied",
+    "close": "Close"
+  },
+  "why": {
+    "followed": "You follow {merchantName}.",
+    "interest": "It matches an interest you chose.",
+    "audience": "It's picked for people like you.",
+    "ending_soon": "It's ending soon.",
+    "popular": "It's popular right now.",
+    "footer": "Campaigns you finish, save or skip change what comes next. Businesses never see who you are."
+  },
+  "end": {
+    "caughtUp": "You're all caught up",
+    "earnedToday": "{points} earned today"
+  },
+  "streak": {
+    "label": "Your streak",
+    "days": "{count, plural, one {# day streak} other {# day streak}}",
+    "start": "Watch a campaign today to start a streak",
+    "pending": "{points} unlocks {date}"
+  },
+  "empty": {
+    "heading": "No campaigns right now",
+    "body": "New campaigns arrive regularly. Check back soon."
+  },
+  "error": {
+    "heading": "Your feed didn't load",
+    "body": "Check your connection and try again.",
+    "retry": "Try again"
+  }
+}

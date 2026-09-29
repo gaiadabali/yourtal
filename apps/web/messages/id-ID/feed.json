@@ -1,0 +1,92 @@
+{
+  "title": "Beranda",
+  "feedLabel": "Untukmu",
+  "tabs": {
+    "label": "Bagian beranda",
+    "forYou": "Untukmu",
+    "continue": "Lanjutkan",
+    "saved": "Tersimpan",
+    "following": "Diikuti",
+    "endingSoon": "Segera berakhir"
+  },
+  "rows": {
+    "continue": "Lanjutkan menonton",
+    "saved": "Tersimpan",
+    "following": "Dari kanal yang kamu ikuti",
+    "endingSoon": "Segera berakhir"
+  },
+  "rowEmpty": {
+    "continue": "Belum ada yang sedang ditonton.",
+    "saved": "Belum ada yang disimpan.",
+    "following": "Ikuti kanal untuk melihat kampanye mereka di sini.",
+    "endingSoon": "Tidak ada yang segera berakhir."
+  },
+  "terms": {
+    "minutes": "{count} mnt",
+    "seconds": "{count} dtk",
+    "questions": "{count} pertanyaan",
+    "upTo": "hingga {points}",
+    "data": "~{mb} MB",
+    "finishToEarn": "tonton sampai selesai",
+    "noQuestions": "tanpa pertanyaan"
+  },
+  "item": {
+    "label": "{merchantName}: {title}",
+    "play": "Putar {title}",
+    "pause": "Jeda {title}",
+    "earn": "Dapatkan {points}",
+    "watchAndEarn": "Tonton & dapatkan poin",
+    "progress": "{watched} dari {total} ditonton"
+  },
+  "earn": {
+    "starting": "Memulai…",
+    "watching": "Biarkan tetap di layar untuk mendapatkan poin",
+    "claiming": "Memeriksa tontonanmu…",
+    "earned": "+{points} didapat",
+    "unlocks": "Tertunda, bisa dipakai {date}",
+    "alreadyEarned": "Kamu sudah mendapatkan poin dari video ini",
+    "notEarning": "Video ini sedang tidak memberi poin",
+    "failed": "Tontonanmu tidak bisa dicatat.",
+    "retry": "Coba lagi",
+    "stoppedEarly": "Berhenti di tengah tidak memberi poin. Tonton sampai selesai."
+  },
+  "actions": {
+    "label": "Tindakan untuk {title}",
+    "share": "Bagikan",
+    "save": "Simpan",
+    "unsave": "Tersimpan",
+    "notInterested": "Tidak tertarik",
+    "hidden": "Oke. Kamu akan lebih jarang melihat yang seperti ini.",
+    "undo": "Urungkan",
+    "why": "Kenapa saya melihat ini?",
+    "linkCopied": "Tautan disalin",
+    "close": "Tutup"
+  },
+  "why": {
+    "followed": "Kamu mengikuti {merchantName}.",
+    "interest": "Sesuai minat yang kamu pilih.",
+    "audience": "Dipilih untuk orang sepertimu.",
+    "ending_soon": "Segera berakhir.",
+    "popular": "Sedang populer.",
+    "footer": "Kampanye yang kamu selesaikan, simpan, atau lewati memengaruhi yang muncul berikutnya. Bisnis tidak pernah tahu siapa kamu."
+  },
+  "end": {
+    "caughtUp": "Kamu sudah melihat semuanya",
+    "earnedToday": "{points} didapat hari ini"
+  },
+  "streak": {
+    "label": "Streak kamu",
+    "days": "Streak {count} hari",
+    "start": "Tonton satu kampanye hari ini untuk memulai streak",
+    "pending": "{points} bisa dipakai {date}"
+  },
+  "empty": {
+    "heading": "Belum ada kampanye",
+    "body": "Kampanye baru datang secara rutin. Cek lagi nanti."
+  },
+  "error": {
+    "heading": "Berandamu gagal dimuat",
+    "body": "Periksa koneksimu lalu coba lagi.",
+    "retry": "Coba lagi"
+  }
+}

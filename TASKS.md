@@ -44,9 +44,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 43/43 | `██████████` 100% |
-| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 2/4 | 14/18 | `████████░░`  78% |
+| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 2/4 | 15/18 | `████████░░`  83% |
 | **Phase 13** Ready for live review | all | · not started | 0/9 | 0/22 | `░░░░░░░░░░`   0% |
-| **All** | | | **81/92** | **430/457** | `█████████░`  94% |
+| **All** | | | **81/92** | **431/457** | `█████████░`  94% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1394,7 +1394,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - teen-appropriate vouchers only.
   - [x] 12.2.c (requested by A) `/guardian/[token]`: the guardian confirms they are 18 or over and approves; the same link later revokes. There is no guardian account. — ✅ a32200ca: `app/(guardian)/guardian/[token]`, no session and no locale prefix, in the teen's language; checkbox-gated approve, withdraw behind a confirm (straight there on `?action=revoke`), final withdrawn notice, 404 for an unknown link. Also fixed: withdrawing an approved consent 500d (it kept `approved_at`, breaking the table's own CHECK). On staging, an ID teen: page 200 "Setujui akun…", approve 201, "Anda telah menyetujui…", withdraw 201, "Persetujuan ditarik", unknown link 404. Screenshots 390/1280 light/dark for all three states, axe clean.
   - [ ] 12.2.e (found by 12.2.b) The long-form player (`features/player/**`) shows a generic failure when a teen starts a reward session in quiet hours; give it the feed's kind "Quiet hours until 7am" state and the watch-time reminder. The server already refuses correctly.
-  - [ ] 12.2.d **Check:** a teen demo account gets no notification between 21:00 and 07:00 in its timezone and sees only teen and all_ages items.
+  - [x] 12.2.d **Check:** a teen demo account gets no notification between 21:00 and 07:00 in its timezone and sees only teen and all_ages items. — ✅ edb7d69e. On staging, two guardian-approved AU teens at the same instant: Sydney (03:00, quiet hours) and London (18:00). Both see only `teen` and `all_ages` in feed and search, and a 250-point daily cap; a new reward session is 403 `teen_quiet_hours` for Sydney and 201 for London. Notifications, against a real worker and pg-boss: a `campaign.published` event wrote no `me.notification` row for a teen inside quiet hours and one for a teen outside them.
 - [x] **12.3 Studio and data** · C · needs: 12.1, 7.6 — ✅ 2026-09-30 56d0d9cd
   - [x] 12.3.a Audience and category pickers with the 1.1.d policy shown. Teen-rated question banks may not ask personal questions. — ✅ 919a75af: Studio category/audience pickers restate the 1.1.d policy (an adult-only category locks the audience to Adult, a prohibited one cannot be chosen); the server re-checks on create, update and publish. `detectTeenPersonalQuestion` refuses personal questions (age, school, location, appearance, family, social handles) for teen campaigns, server side and inline. Screenshots 390/1280 light/dark, axe clean.
   - [x] 12.3.b Reports apply the teen cohort floor (F12), with no teen breakdown below it. — ✅ 919a75af: the floors (10, teens 20) were already built in `reports/cohort-floor.ts`; boundary tests added (19 teen viewers suppressed, 20 shown).

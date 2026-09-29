@@ -123,7 +123,13 @@ export function OpenViewPlayer({
             tree — the only actions this component ever renders are play,
             pause, seek, quality, and the two sign-up links, never a reward
             claim of any kind (YT-0432's first acceptance criterion). */}
-        <video ref={session.videoRef} className="h-full w-full" playsInline aria-hidden="true" />
+        <video
+          ref={session.videoRef}
+          className="h-full w-full"
+          poster={campaign.posterUrl}
+          playsInline
+          aria-hidden="true"
+        />
         {showStartOverlay ? (
           // Same reasoning as features/player/video-player.tsx: a full-bleed
           // hit target over the video, not a styled button.

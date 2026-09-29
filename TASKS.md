@@ -43,10 +43,10 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 4/7 | 23/26 | `█████████░`  88% |
-| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 9/36 | `███░░░░░░░`  25% |
+| **Phase 11** Viewer feed & public site | B | 🔄 in progress | 1/7 | 10/36 | `███░░░░░░░`  28% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **69/91** | **377/441** | `█████████░`  85% |
+| **All** | | | **70/91** | **378/441** | `█████████░`  86% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1318,7 +1318,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 11.3.c (requested by A) `/[locale]/transparency`, listing each day's root from `GET /api/proof/roots` (10.3.b); the page shows the same root the API returns (moved from 10.3.d's Check). · needs: 10.3.b
   - [ ] 11.3.d **Check:** a crawl of staging finds no broken links and no page without a title or description. — dry run 2026-09-26 on a local staging build: 303 URLs, no page without a title or description; the only broken link is `/login`, which the 1.7.c gate redirects to and 6.2.a builds
 
-- [ ] **11.4 Home: the For You feed** · needs: 3.5, 7.7, 5.3, 6.2 (moved from 6.3) — 🔄 slot 4
+- [x] **11.4 Home: the For You feed** · needs: 3.5, 7.7, 5.3, 6.2 (moved from 6.3) — ✅ 2026-09-29 0ea5f9b4
   - [x] 11.4.a A vertical feed of campaign teasers from C's feed API. Each item shows the channel avatar, the title and honest terms before any action: "18 min · 3 questions · up to 112 pts · ~120 MB · finish to earn" (AU; F12).
   - [x] 11.4.b **Quick campaigns (under 60 s, so they have no questions; F15) earn inside the feed.** Tapping Earn starts a reward session in place, and the earn moment lands in the item before the user swipes on. Longer campaigns show a teaser and **Watch & earn**. `/quick` redirects to Home.
   - [x] 11.4.c Rows (desktop) or tabs (mobile): Continue watching, Saved, From channels you follow, Ending soon. The feed ends with "You're all caught up · N pts earned today". The streak strip shows each grant's own unlock date and never names a tier.
@@ -1327,7 +1327,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [x] 11.4.g (F78; C's file) Feed items carry `kind`, `questionCount`, `maxRewardPoints` (base + accuracy bonus from the reward config), and `estimatedDataMb`, mapped in `apps/api/src/modules/feed/ranking.ts`'s `toFeedItem`.
   - [x] 11.4.h (shared seed file) Fund every demo campaign: the staging seed buys points per demo business through the ledger's `/v1/allocations/purchase` and writes each campaign's `reward_config` at the F12 demo rates (5 / 80 pts per minute, 25% accuracy bonus), idempotently on every deploy. Today no campaign has a reward config, so the feed is empty on staging and locally. — ✅ 2026-09-29 0e0a87a1 (`packages/db/src/seed/demo-campaign-funding.ts`, called from `main-staging.ts` after `runDemoMedia`; verified live: 20/20 campaigns funded, re-run is a no-op, signed-in feed returns 10 items/region, anonymous open-viewing feed returns 8 items/region)
   - [x] 11.4.i (C's file, copy rules) Demo campaigns say "Get to know <brand>" / "Kenalan dengan <brand>" instead of citing a ticket and tooling, and the seed repairs rows already written. Found with 11.4.h: the funded terms version also has to match the funding (4c2fe52f).
-  - [ ] 11.4.e **Check:** on staging (after 7.2.e media), a new user scrolls the feed, earns a Quick campaign in place, and the wallet shows it pending.
+  - [x] 11.4.e **Check:** on staging (after 7.2.e media), a new user scrolls the feed, earns a Quick campaign in place, and the wallet shows it pending.
 - [ ] **11.5 Watch: campaign page and player** · needs: 11.4 (moved from 6.4) — 🔄 slot 4 agent D
   - [ ] 11.5.a The campaign page works like a YouTube watch page: player, channel row with Follow, the terms card, chapters, and more from this channel. The terms card states the question count, "stopping early earns nothing" and "new accounts' points unlock after up to 3 days", and shows absolute points from the terms. **Delete `campaign-reward-split.ts`** (its `BASE_REWARD_RATIO = 0.6` is not what gets paid).
   - [ ] 11.5.b Wire the player to 5.1–5.3:
@@ -1525,6 +1525,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-29 · B · 11.4 Home: the For You feed done: real feed API with honest terms ("2 min · 1 question · up to 10 points · ~15 MB · finish to earn"), quick campaigns earn in place (checked on staging: a new AU viewer earned 3 pts, pending in the wallet), rows/tabs, streak strip with unlock dates, Save/Share/Not interested/Why, autoplay setting honoured. Found and fixed on the way: seeded campaigns were unfunded (11.4.h), their paid terms outran the funding (K6), demo titles cited tickets, and wallet history failed to parse any watch grant · 0ea5f9b4
 - 2026-09-29 · A · **10.1 and 10.7 done** (10.6.b, part of the same merge, ticked separately — 10.6 itself stays open for 10.6.a). 10.1: the S-scaling `capture_outbox` was missing (`settle.go`'s `ceilShare`, telescoped so a balance-carrying voucher's total payable never exceeds S); a new `services/ledger/internal/settlement` package (statements, dispute/resolve, `approvePayout` gated on F12's window, `ReleaseVoucherLiability`, `PostCaptureRecovery` for 10.5.b) with matching TS contract, Fake+Http clients and Studio's real `GET/POST .../studio/billing/statements*` (CSV export, tenancy checked before any mutation). 10.3.b's `GET /api/proof/roots` also landed (public, no auth) plus 10.3.a's grace-period guard and an append-only external root store, ahead of the rest of 10.3. 10.7: `FakeLedgerClient.grantAction` now enforces K6 (debits the region's marketing fund, refuses what it can't back) and `burnForVoucher`/`economyDaily` are region-tagged, closing a fake/live parity gap Phase 9 found. All Go suites green (`ledger`, `voucher`), `ledger-client.contract.spec.ts` 39/39, `pnpm check` clean, `release.yml` green, staging `/api/health` confirmed at this sha. B-facing: `ledger.recoverCapture({captureId, reason})` is the 10.5.b call (idempotent per captureId, lands on the merchant's next statement as `recoveriesMinor`) · 9f028330
 - 2026-09-29 · A · **10.2 and 10.4 done.** Points expiry (`services/ledger/internal/expiry`, off by default per F2, 30/7-day `points_expiring` notices) and voucher expiry (`services/voucher/internal/lifecycle/expiresweep`, covering active vouchers and — via the pre-existing hold-release sweep — dead holds too), both posting through new ledger routes. The real RiskGate (`services/ledger/internal/risk`, replacing `AlwaysAllow`): velocity per user/device/IP, a "block" severity auto-holding the account's balance into escrow and writing `ledger.risk_flag` for 10.5's queue, a live daily-cap-change enforcement test, and delivery-log cross-check scaffolding (`platform.delivery_log`, a real `DeliveryCoverageReader` not yet wired — 11.5.f is B's). All suites green (`@yourtal/ledger-service`, `@yourtal/voucher-service`, `@yourtal/worker`, `@yourtal/contracts`), `pnpm check` clean, `release.yml` green, staging `/api/health` confirmed at this sha · c35b6ff2
 

@@ -48,6 +48,7 @@ resources:
       region: "ID"
       openViewingEnabled: true
       openViewingBudgetRemaining: 500
+      audience: "all_ages"
 
   view_open_exhausted:
     kind: campaign_view

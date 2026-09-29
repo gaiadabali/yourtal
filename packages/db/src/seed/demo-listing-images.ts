@@ -69,7 +69,30 @@ export async function repairDemoListingCopy(
     `UPDATE store.merchant_location SET name = replace(name, ' — Demo Outlet', '')
       WHERE name LIKE '% — Demo Outlet'`,
   );
-  const repaired = (titles.rowCount ?? 0) + (descriptions.rowCount ?? 0) + (outlets.rowCount ?? 0);
+  // Each voucher keeps its own copy of the title from when it was minted, so
+  // the pre-minted demo batches still carried the old copy into wallets.
+  // Best effort: the voucher schema is the voucher service's, and a refusal
+  // must not stop the deploy.
+  const vouchers = await pool
+    .query(
+      `UPDATE voucher.vouchers
+        SET title = CASE
+              WHEN title LIKE '% (affordable)' THEN merchant_name || ' starter voucher'
+              WHEN title LIKE '% (terjangkau)' THEN 'Voucher hemat ' || merchant_name
+              WHEN currency = 'IDR' THEN 'Voucher ' || merchant_name
+              ELSE merchant_name || ' voucher'
+            END
+      WHERE title LIKE '% — Demo Voucher%' OR title LIKE '% — Voucher Demo%'`,
+    )
+    .catch((error: unknown) => {
+      log(`[seed:demo-listing-copy] voucher titles left as they are: ${String(error)}`);
+      return { rowCount: 0 };
+    });
+  const repaired =
+    (titles.rowCount ?? 0) +
+    (descriptions.rowCount ?? 0) +
+    (outlets.rowCount ?? 0) +
+    (vouchers.rowCount ?? 0);
   if (repaired > 0) log(`[seed:demo-listing-copy] ${String(repaired)} listing texts rewritten`);
   return { repaired };
 }

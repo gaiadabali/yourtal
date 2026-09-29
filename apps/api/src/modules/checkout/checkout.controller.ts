@@ -67,14 +67,27 @@ export class CheckoutController {
     if (profile === null) throw new NotFoundException("No such account.");
     const listing = await findListingForCheckout(this.db, body.listingId);
 
-    // 12.1.b: a second, PDP-backed opinion alongside `quoteCheckout`'s own
-    // `reachesAudience` check below -- both read the SAME truth table
+    const quoted = await quoteCheckout(
+      this.deps,
+      {
+        userId,
+        region: profile.region,
+        dateOfBirth: profile.dateOfBirth,
+        trustTier: profile.trustTier,
+      },
+      listing,
+    );
+    if (quoted.isErr()) throw refusal(quoted.error);
+
+    // 12.1.b: a second, PDP-backed opinion, asked only once `quoteCheckout`
+    // has ALREADY allowed this listing -- both read the SAME truth table
     // (audience.ts), so this is defence in depth against the two ever
-    // drifting, not a different rule. `listing.yaml`'s
-    // `consumer-browse-is-audience-gated` rule is what a teen's own
-    // `AsyncPrincipalResolver`-derived `ageBand` is checked against here;
-    // `PrincipalService.resolve()` above never carries one, which is why
-    // this needs its own principal read rather than reusing `userId`'s.
+    // drifting, not a different rule, and it must never pre-empt
+    // `quoteCheckout`'s own, more specific refusal codes (`region_mismatch`
+    // vs `audience_blocked`) with a blanket one. `listing` is non-null here:
+    // `quoteCheckout` itself refuses `listing_unavailable` for a null one.
+    // `PrincipalService.resolve()` above never carries an `ageBand`, which
+    // is why this needs its own principal read rather than reusing `userId`'s.
     if (listing !== null) {
       const authz = await this.pdp.requireAction(
         await this.asyncPrincipals.resolve(request),
@@ -93,17 +106,6 @@ export class CheckoutController {
       }
     }
 
-    const quoted = await quoteCheckout(
-      this.deps,
-      {
-        userId,
-        region: profile.region,
-        dateOfBirth: profile.dateOfBirth,
-        trustTier: profile.trustTier,
-      },
-      listing,
-    );
-    if (quoted.isErr()) throw refusal(quoted.error);
     return quoted.value;
   }
 

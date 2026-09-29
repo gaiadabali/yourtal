@@ -156,6 +156,15 @@ async function insertCampaign(audience: "teen" | "adult"): Promise<string> {
       (campaign_id, version, reward_points, question_count, scoring_rule, duration_seconds, accuracy_bonus_points, effective_from)
     VALUES (${campaignId}, 1, 10, 0, 'base_only', 30, 0, now())
   `);
+  // `campaignSchema.videoSource` is REQUIRED (packages/contracts/src/campaign/campaign.ts)
+  // -- with no row here, `DrizzleCampaignRepository.assemble()` fails to
+  // parse and DROPS the row from every list silently (`campaign that fails
+  // to parse is dropped`, that file's own comment), which is exactly why
+  // this campaign never showed up in `listVisible` before this fixed it.
+  await owner.execute(sql`
+    INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
+    VALUES (${campaignId}, 'hls', 'https://example.test/hls.m3u8')
+  `);
   return campaignId;
 }
 
@@ -216,6 +225,7 @@ beforeAll(async () => {
 afterAll(async () => {
   for (const id of [teenCampaignId, adultCampaignId]) {
     await owner.execute(sql`DELETE FROM campaign.terms_version WHERE campaign_id = ${id}`);
+    await owner.execute(sql`DELETE FROM campaign.video_source WHERE campaign_id = ${id}`);
     await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);
   }
   for (const id of [teenListingId, adultListingId]) {

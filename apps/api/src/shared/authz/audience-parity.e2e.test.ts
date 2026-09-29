@@ -74,10 +74,17 @@ describe("12.1.b parity: campaign_view's audience-wall + guardian-consent rules 
               : reachesAudience(audience, { ageBand });
           const expectedEarn = expectedWatchOpen && canEarn(ageBand, guardianConsent);
 
+          const campaignId = `camp-${randomUUID()}`;
           const resource = {
             kind: "campaign_view" as const,
-            id: `camp-${randomUUID()}`,
+            id: campaignId,
             attr: {
+              // `campaign_view.json`'s only required field -- omitting it
+              // fails Cerbos schema validation outright (enforcement:
+              // reject) and DENIES every action regardless of any rule,
+              // which is a false "the wall works" for every DENY-expecting
+              // case in this matrix and a false failure for every ALLOW one.
+              campaignId,
               state: "live",
               region: "ID",
               audience,

@@ -656,6 +656,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "8.3.e's outbox row, written in the same transaction as the capture/refund/expiry it names. apps/worker drains it onto the 8.3.c webhook-delivery queue over voucher-internal/webhook-events.ts's schemas (already NOT_PUBLISHED in openapi.test.ts, same reasoning as releaseSchema) — same shape as voucher.capture_outbox above, no public contract either.",
   "watch.coverage":
     "The raw evidence rows behind watch-coverage.ts's range arithmetic (YT-0120/YT-0551). That module exports functions and types over server-computed ranges, not a persisted object schema, so there is no contract to map.",
+  "watch.open_view_session":
+    "11.2.b's Open Viewing rate-limit bookkeeping (F12's per-IP daily cap and one-concurrent-session rule). Deliberately server-internal, same reasoning as watch.checkpoint_nonce below: a client never reads a row of this table back (only the derived sessionId/manifestUrl the controller mints), and ip_hash exists to be compared against, never surfaced.",
   "watch.checkpoint_nonce":
     "The spend record that makes a checkpoint token single-use (YT-0121). watch-checkpoint-token.ts's CheckpointClaims is what a token CARRIES, not what this table stores — the row exists to be conflicted with, and its columns are the burn's own bookkeeping. Deliberately has no public contract: a nonce is a value a client presents once and must never be able to enumerate or read back.",
   "watch.checkpoint_issue":

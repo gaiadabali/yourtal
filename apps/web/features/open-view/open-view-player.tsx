@@ -60,7 +60,13 @@ export interface OpenViewPlayerProps {
  * `AccrualIndicator`, so `false` is passed literally rather than pulling in
  * `useTabVisibility` for a value nothing here would use.
  */
-export function OpenViewPlayer({ campaign, chapters, copy, locale, sessionId }: OpenViewPlayerProps) {
+export function OpenViewPlayer({
+  campaign,
+  chapters,
+  copy,
+  locale,
+  sessionId,
+}: OpenViewPlayerProps) {
   const session = useWatchSession(campaign, chapters, false);
   const showStartOverlay = !session.hasStarted && !session.resumeOffer;
   const signupHref = buildOpenViewSignupHref(campaign.id);

@@ -55,7 +55,10 @@ function isOpenViewEligible(campaign: Campaign): boolean {
   return campaign.status === "active" && campaign.openViewing && campaign.audience === "all_ages";
 }
 
-async function requireEligibleCampaign(campaignId: string, locale: PublicLocale): Promise<Campaign> {
+async function requireEligibleCampaign(
+  campaignId: string,
+  locale: PublicLocale,
+): Promise<Campaign> {
   const campaign = await getPublicCampaignForLocale(campaignId, locale);
   if (!campaign || !isOpenViewEligible(campaign)) {
     notFound();

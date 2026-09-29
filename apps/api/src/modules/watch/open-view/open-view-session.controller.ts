@@ -93,10 +93,7 @@ export class OpenViewSessionController {
     const ipHash = hashRequestIp(request);
     const limits = await readOpenViewingLimits(this.settings, campaign.region);
 
-    const existingForCampaign = await this.sessions.findActiveForIpAndCampaign(
-      ipHash,
-      campaign.id,
-    );
+    const existingForCampaign = await this.sessions.findActiveForIpAndCampaign(ipHash, campaign.id);
     if (existingForCampaign === null) {
       const watchedToday = await this.sessions.watchedSecondsToday(ipHash, campaign.region);
       if (watchedToday >= limits.dailySeconds) {
@@ -157,7 +154,9 @@ export class OpenViewSessionController {
   ) {
     const parsed = progressBody.safeParse(body);
     if (!parsed.success) {
-      throw new BadRequestException("A progress report needs campaignId, fromSeconds and toSeconds.");
+      throw new BadRequestException(
+        "A progress report needs campaignId, fromSeconds and toSeconds.",
+      );
     }
     const ipHash = hashRequestIp(request);
     const session = await this.sessions.findByIdForIp(openViewSessionId, ipHash);

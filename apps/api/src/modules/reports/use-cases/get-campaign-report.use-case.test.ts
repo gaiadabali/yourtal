@@ -147,7 +147,11 @@ describe("getCampaignReport", () => {
   it("11.2.d: open views can clear their own floor even while the rest of the report is suppressed", async () => {
     const result = await getCampaignReport(
       fakeRepo({
-        sessions: { rewardedViews: COHORT_FLOOR - 1, completions: 0, averageWatchTimeSeconds: null },
+        sessions: {
+          rewardedViews: COHORT_FLOOR - 1,
+          completions: 0,
+          averageWatchTimeSeconds: null,
+        },
         openViewCount: COHORT_FLOOR + 5,
       }),
       fakeLedger(),

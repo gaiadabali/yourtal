@@ -15,7 +15,9 @@ export type StartOpenViewSessionResult =
   | { ok: true; sessionId: string; manifestUrl: string; durationSeconds: number }
   | { ok: false; status: number; message: string | null };
 
-export async function startOpenViewSession(campaignId: string): Promise<StartOpenViewSessionResult> {
+export async function startOpenViewSession(
+  campaignId: string,
+): Promise<StartOpenViewSessionResult> {
   try {
     const response = await fetch("/api/watch/open-view-sessions", {
       method: "POST",

@@ -311,7 +311,9 @@ describe("POST /api/watch/open-view-sessions/:openViewSessionId/progress", () =>
     expect(progressed.json()).toMatchObject({ accepted: true, watchedSeconds: 12 });
 
     const [row] = (
-      await db.execute(sql`SELECT watched_seconds FROM watch.open_view_session WHERE id = ${sessionId}`)
+      await db.execute(
+        sql`SELECT watched_seconds FROM watch.open_view_session WHERE id = ${sessionId}`,
+      )
     ).rows;
     expect(row).toMatchObject({ watched_seconds: 12 });
   });

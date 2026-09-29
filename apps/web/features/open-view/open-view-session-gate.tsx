@@ -40,7 +40,12 @@ type GateState =
  * trade a page that starts loading its hero video before a click already
  * makes everywhere else in this app.
  */
-export function OpenViewSessionGate({ campaign, chapters, copy, locale }: OpenViewSessionGateProps) {
+export function OpenViewSessionGate({
+  campaign,
+  chapters,
+  copy,
+  locale,
+}: OpenViewSessionGateProps) {
   const [state, setState] = useState<GateState>({ kind: "starting" });
   const signupHref = buildOpenViewSignupHref(campaign.id);
 
@@ -73,11 +78,7 @@ export function OpenViewSessionGate({ campaign, chapters, copy, locale }: OpenVi
   if (state.kind === "starting") {
     return (
       <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-fg">
-        <img
-          src={campaign.posterUrl}
-          alt=""
-          className="h-full w-full object-cover opacity-60"
-        />
+        <img src={campaign.posterUrl} alt="" className="h-full w-full object-cover opacity-60" />
         <p role="status" aria-live="polite" className="sr-only">
           {copy.startingLabel}
         </p>
@@ -87,7 +88,8 @@ export function OpenViewSessionGate({ campaign, chapters, copy, locale }: OpenVi
 
   if (state.kind === "denied") {
     const isDailyLimit = state.status === 403 && (state.message?.includes("today's") ?? false);
-    const isConcurrent = state.status === 403 && (state.message?.includes("one anonymous") ?? false);
+    const isConcurrent =
+      state.status === 403 && (state.message?.includes("one anonymous") ?? false);
     const heading = isDailyLimit
       ? copy.dailyLimitHeading
       : isConcurrent
@@ -101,11 +103,7 @@ export function OpenViewSessionGate({ campaign, chapters, copy, locale }: OpenVi
     return (
       <div className="flex flex-col gap-4">
         <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-fg">
-          <img
-            src={campaign.posterUrl}
-            alt=""
-            className="h-full w-full object-cover opacity-40"
-          />
+          <img src={campaign.posterUrl} alt="" className="h-full w-full object-cover opacity-40" />
         </div>
         <OpenViewSignupPrompt
           heading={heading}

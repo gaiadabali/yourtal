@@ -53,7 +53,10 @@ export class DrizzleOpenViewSessionRepository implements OpenViewSessionReposito
         and(
           eq(openViewSessions.ipHash, ipHash),
           eq(openViewSessions.campaignId, campaignId),
-          gt(openViewSessions.lastProgressAt, sql`now() - make_interval(secs => ${IDLE_WINDOW_SECONDS})`),
+          gt(
+            openViewSessions.lastProgressAt,
+            sql`now() - make_interval(secs => ${IDLE_WINDOW_SECONDS})`,
+          ),
         ),
       )
       .orderBy(desc(openViewSessions.lastProgressAt))
@@ -68,7 +71,10 @@ export class DrizzleOpenViewSessionRepository implements OpenViewSessionReposito
       .where(
         and(
           eq(openViewSessions.ipHash, ipHash),
-          gt(openViewSessions.lastProgressAt, sql`now() - make_interval(secs => ${IDLE_WINDOW_SECONDS})`),
+          gt(
+            openViewSessions.lastProgressAt,
+            sql`now() - make_interval(secs => ${IDLE_WINDOW_SECONDS})`,
+          ),
         ),
       );
     return Number(row?.total ?? "0");
@@ -82,7 +88,10 @@ export class DrizzleOpenViewSessionRepository implements OpenViewSessionReposito
         and(
           eq(openViewSessions.ipHash, ipHash),
           eq(openViewSessions.region, region),
-          gt(openViewSessions.startedAt, sql`now() - make_interval(secs => ${DAILY_WINDOW_SECONDS})`),
+          gt(
+            openViewSessions.startedAt,
+            sql`now() - make_interval(secs => ${DAILY_WINDOW_SECONDS})`,
+          ),
         ),
       );
     return Number(row?.total ?? "0");

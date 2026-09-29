@@ -280,8 +280,7 @@ export function CampaignEditorDetails({
             ))}
           </NativeSelect>
           <p id={audienceReachId} className="mt-1.5 text-xs font-sans text-fg-muted">
-            {audienceReachText[draft.audience as (typeof AUDIENCES)[number]] ??
-              audienceReachText.all_ages}
+            {audienceReachText[draft.audience as (typeof AUDIENCES)[number]]}
           </p>
         </div>
       </div>

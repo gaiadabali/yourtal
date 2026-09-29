@@ -234,7 +234,8 @@
       "campaignHeader": "Campaign",
       "statusHeader": "Status",
       "questionsHeader": "Questions",
-      "scoringRuleHeader": "Scoring rule"
+      "scoringRuleHeader": "Scoring rule",
+      "scoringRuleNotSet": "Not set yet"
     },
     "legend": {
       "title": "How to read these numbers",

@@ -1,11 +1,12 @@
-import type { Campaign, CampaignStatus } from "@yourtal/contracts/campaign";
+import type { CampaignScoringRule, CampaignStatus } from "@yourtal/contracts/campaign";
 import { Badge } from "@yourtal/ui/badge";
 import { DataTable } from "@yourtal/ui/data-table";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { ReportProvenanceBadge } from "./report-provenance-badge";
+import type { ReportsCampaign } from "./reports-campaign";
 
 export interface ReportsCampaignOverviewTableProps {
-  campaigns: readonly Campaign[];
+  campaigns: readonly ReportsCampaign[];
   locale: SupportedLocale;
 }
 
@@ -15,7 +16,7 @@ const STATUS_VARIANT: Record<CampaignStatus, "success" | "secondary" | "outline"
   ended: "outline",
 };
 
-const SCORING_RULE_LABEL: Record<Campaign["scoringRule"], string> = {
+const SCORING_RULE_LABEL: Record<CampaignScoringRule, string> = {
   base_only: "Base reward only",
   base_plus_accuracy_bonus: "Base + accuracy bonus",
 };
@@ -62,7 +63,10 @@ export function ReportsCampaignOverviewTable({
           {
             key: "scoringRule",
             header: t("reports.overview.scoringRuleHeader"),
-            cell: (campaign) => SCORING_RULE_LABEL[campaign.scoringRule],
+            cell: (campaign) =>
+              campaign.scoringRule
+                ? SCORING_RULE_LABEL[campaign.scoringRule]
+                : t("reports.overview.scoringRuleNotSet"),
           },
         ]}
       />

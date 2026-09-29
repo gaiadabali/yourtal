@@ -1,7 +1,8 @@
-import type { Campaign } from "@yourtal/contracts/campaign";
+import type { CampaignScoringRule, CampaignStatus } from "@yourtal/contracts/campaign";
 import { asDisplayIdr } from "@yourtal/contracts/money/format";
 import type { Question } from "@yourtal/contracts/question";
 import type { Voucher, VoucherStatus } from "@yourtal/contracts/voucher";
+import type { ReportsCampaign } from "./reports-campaign";
 
 /**
  * Pure aggregation over what the mock ledger actually contains — no event
@@ -45,9 +46,9 @@ export interface QuestionTypeCount {
 export interface CampaignQuestionBankRow {
   campaignId: string;
   campaignTitle: string;
-  status: Campaign["status"];
+  status: CampaignStatus;
   questionCount: number;
-  scoringRule: Campaign["scoringRule"];
+  scoringRule: CampaignScoringRule | null;
   typeCounts: QuestionTypeCount[];
   /** Always "configured" — this describes what the business set up, not a performance outcome. See report-provenance.ts. */
   provenance: "configured";
@@ -61,7 +62,7 @@ export interface CampaignQuestionBankRow {
  * stated explicitly rather than guessed at.
  */
 export function summarizeQuestionBank(
-  campaigns: readonly Campaign[],
+  campaigns: readonly ReportsCampaign[],
   questionsByCampaignId: Readonly<Record<string, readonly Question[]>>,
 ): CampaignQuestionBankRow[] {
   return campaigns.map((campaign) => {

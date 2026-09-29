@@ -50,3 +50,24 @@ export const UNAVAILABLE_METRICS: readonly UnavailableMetric[] = [
       "No view or watch-session event record exists yet — not for anonymous Open Viewing, nor for signed-in rewarded views. Both counts, and therefore any ratio or total between them, are unavailable rather than fabricated. Kept as two separate, never-summed entries here on purpose, so the distinction stays structural even while both numbers are absent.",
   },
 ];
+
+/**
+ * 12.3.e: NOT part of `UNAVAILABLE_METRICS` above — that list is for gaps
+ * with no possible schema today (an inherently missing field or record).
+ * This one is a missing ENDPOINT, not missing data: `GET
+ * .../studio/redemptions` (8.2.g) already lists this business's own
+ * capture events, but nothing returns its full voucher ledger broken down
+ * by status (active/redeemed/expired/transferred) with a face-value total
+ * per status — the Reports zone's redemption-ledger panel needs. Building
+ * one is a real, buildable next step, just not this pass's — flagged for
+ * the architect rather than invented client-side. `reports-screen.tsx`
+ * adds this to its gap list only when `ReportsBundle.vouchers` is actually
+ * `undefined` (live mode today), never in mock, where a real ledger exists.
+ */
+export const VOUCHER_LEDGER_GAP: UnavailableMetric = {
+  id: "voucher-ledger-by-status",
+  label: "Vouchers by status (active, redeemed, expired, transferred)",
+  requiresRelationship: "supplier",
+  reason:
+    "No merchant-facing endpoint returns this business's own voucher ledger broken down by status yet. GET /api/:tenantId/studio/redemptions (8.2.g) exists but only lists this business's own capture events (vouchers already redeemed at one of its own devices, shown in the separate Redemptions zone) — active, expired and transferred vouchers are never captured, so nothing here can report on them without a new endpoint.",
+};

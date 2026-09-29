@@ -1,12 +1,17 @@
-import type { Campaign } from "@yourtal/contracts/campaign";
+import { z } from "zod";
+import { campaignLifecycleStateSchema, publicStatusOf } from "@yourtal/contracts/campaign/lifecycle";
+import { campaignScoringRuleSchema } from "@yourtal/contracts/campaign";
+import { listingSchema } from "@yourtal/contracts/listing";
 import type { Listing } from "@yourtal/contracts/listing";
 import { resolveStudioDataSource } from "../studio-data-source";
+import { questionSchema } from "@yourtal/contracts/question";
 import type { Question } from "@yourtal/contracts/question";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { campaignReportResultSchema } from "@yourtal/contracts/report";
 import type { CampaignReportResult } from "@yourtal/contracts/report";
 import { toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
+import type { ReportsCampaign } from "./reports-campaign";
 import {
   buildCampaignFixtures,
   buildListingFixtures,
@@ -23,11 +28,23 @@ import {
  * module.
  */
 export interface ReportsBundle {
-  campaigns: Campaign[];
+  campaigns: ReportsCampaign[];
   /** Keyed by `campaign.id`. A campaign with `questionCount: 0` has an empty array here, never a missing key. */
   questionsByCampaignId: Record<string, Question[]>;
   listings: Listing[];
-  vouchers: Voucher[];
+  /**
+   * `undefined`: a genuine structural gap, not a real zero — no
+   * merchant-facing endpoint returns this business's own voucher ledger
+   * broken down by status yet (`GET .../studio/redemptions`, 8.2.g, only
+   * lists this business's own CAPTURE events — vouchers already redeemed at
+   * one of its own devices — which is the separate Redemptions zone, not a
+   * full ledger across every status). `reports-screen.tsx` renders an
+   * honest gap panel instead of the ledger panel when this is `undefined`,
+   * exactly the same "null means genuinely unavailable" reasoning
+   * `CampaignReportResult`'s own `openViews` field documents. Flagged for
+   * the architect (a new endpoint) rather than built here.
+   */
+  vouchers: Voucher[] | undefined;
 }
 
 interface ReportsDataSource {
@@ -70,20 +87,106 @@ const mockReportsDataSource: ReportsDataSource = {
     }),
 };
 
-const NOT_IMPLEMENTED_MESSAGE =
-  "Live business reports data source is not implemented yet (Phase U is mock-only) — and unlike other console zones, there is also no history/analytics event contract in packages/contracts for it to read from yet. See YT-0443's report.";
+/**
+ * `apps/api`'s `CampaignDraftController` list response (7.3.a), restated —
+ * a server can't import another app's types, same reasoning
+ * `campaign-draft-live-response.ts` gives. Only the fields this zone
+ * actually reads; see `reports-campaign.ts` for why a narrower type is
+ * correct here rather than the full authoring shape.
+ */
+const apiCampaignSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  lifecycleState: z.string(),
+  questionCount: z.number().nullable(),
+  scoringRule: campaignScoringRuleSchema.nullable(),
+});
 
 /**
- * Fails loudly and specifically rather than silently falling back to mock
- * data under a "live" flag — see `studio-data.ts`/`store-data.ts` for the
- * same reasoning. `getCampaignReport` is the one exception: 7.6's real
- * endpoint exists, so it is genuinely wired, while the rest of the bundle
- * (campaign listing, question banks, vouchers) still has no live source —
- * `reports-screen.tsx` shows those as honest gaps via
- * `reports-unavailable-metrics.ts` once 7.3's real campaign listing lands.
+ * `null` for a campaign this zone has nothing to report on — draft,
+ * in_review or rejected (`publicStatusOf` returns `undefined` for all
+ * three), or an unrecognised lifecycle value this build predates. Never
+ * throws on the latter: one campaign in an unexpected state should shrink
+ * this zone's list by one row, not fail the whole page.
+ */
+function toReportsCampaign(api: z.infer<typeof apiCampaignSummarySchema>): ReportsCampaign | null {
+  const parsedLifecycle = campaignLifecycleStateSchema.safeParse(api.lifecycleState);
+  const status = parsedLifecycle.success ? publicStatusOf(parsedLifecycle.data) : undefined;
+  if (status === undefined) return null;
+  return {
+    id: api.id,
+    title: api.title,
+    status,
+    questionCount: api.questionCount ?? 0,
+    scoringRule: api.scoringRule,
+  };
+}
+
+/** `apps/api`'s `BankQuestionRecord` (`question-bank.controller.ts`) — only `.question` is read here; the bank's own status/PII/attempt-count fields are the question BANK editor's concern (`question-live-actions.ts`), not this zone's. */
+const bankQuestionRecordSchema = z.object({ question: questionSchema });
+
+const listingsResponseSchema = z.object({ listings: z.array(listingSchema) });
+
+/**
+ * Live: `GET /api/:tenantId/studio/campaigns` (7.3.a) for the campaign
+ * list, `GET .../campaigns/:campaignId/questions` (7.3.b) per campaign for
+ * its bank, and `GET .../store/listings` for this business's inventory —
+ * every one of these already backs a DIFFERENT live Studio screen
+ * (`campaign-builder-data.ts`, `question-bank-screen.tsx`,
+ * `inventory-data.ts`), so this zone reads the same real rows those do,
+ * restated through its own narrower schemas rather than importing another
+ * feature's data module (each `*-data.ts` file stays self-contained, same
+ * as `studio-data.ts`/`inventory-data.ts`/`campaign-builder-data.ts`).
+ *
+ * `getCampaignReport` is unchanged from before this pass — 7.6.a's real
+ * endpoint was already fully wired, including the F12 cohort floor
+ * suppression and the separately-floored `openViews` (11.2.d, 12.3.c).
  */
 const liveReportsDataSource: ReportsDataSource = {
-  getReportsBundle: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
+  getReportsBundle: async (businessId) => {
+    const campaignsResult = await apiFetch(
+      `/api/${businessId}/studio/campaigns`,
+      z.array(apiCampaignSummarySchema),
+    );
+    if (!campaignsResult.ok) {
+      throw new Error(
+        `Could not load this business's campaigns: ${campaignsResult.error.message}`,
+      );
+    }
+    const campaigns = campaignsResult.data
+      .map(toReportsCampaign)
+      .filter((campaign): campaign is ReportsCampaign => campaign !== null);
+
+    const questionsByCampaignId: Record<string, Question[]> = {};
+    await Promise.all(
+      campaigns.map(async (campaign) => {
+        const result = await apiFetch(
+          `/api/${businessId}/studio/campaigns/${campaign.id}/questions`,
+          z.array(bankQuestionRecordSchema),
+        );
+        if (!result.ok) {
+          throw new Error(
+            `Could not load "${campaign.title}"'s question bank: ${result.error.message}`,
+          );
+        }
+        questionsByCampaignId[campaign.id] = result.data.map((record) => record.question);
+      }),
+    );
+
+    const listingsResult = await apiFetch(`/api/${businessId}/store/listings`, listingsResponseSchema);
+    if (!listingsResult.ok) {
+      throw new Error(`Could not load this business's listings: ${listingsResult.error.message}`);
+    }
+
+    return {
+      campaigns,
+      questionsByCampaignId,
+      listings: listingsResult.data.listings,
+      // See `ReportsBundle.vouchers`'s own doc comment — a genuine gap,
+      // never a fabricated empty ledger.
+      vouchers: undefined,
+    };
+  },
   getCampaignReport: async (businessId, campaignId) => {
     const result = await apiFetch(
       `/api/${businessId}/studio/reports/campaigns/${campaignId}`,
@@ -102,7 +205,7 @@ const reportsDataSource = resolveStudioDataSource({
   live: liveReportsDataSource,
 });
 
-/** Everything this business's Reports zone can honestly render today: its own campaigns, question banks, listings and voucher ledger. */
+/** Everything this business's Reports zone can honestly render today: its own campaigns, question banks and listings — plus its voucher ledger where a source for it exists (mock only today; see `ReportsBundle.vouchers`). */
 export function getReportsBundle(
   businessId: string,
   businessDisplayName: string,

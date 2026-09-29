@@ -15,7 +15,7 @@ import { ReportsProvenanceLegend } from "./reports-provenance-legend";
 import { ReportsQuestionBankPanel } from "./reports-question-bank-panel";
 import { ReportsRedemptionLedgerPanel } from "./reports-redemption-ledger-panel";
 import { ReportsUnavailablePanel } from "./reports-unavailable-panel";
-import { UNAVAILABLE_METRICS } from "./reports-unavailable-metrics";
+import { UNAVAILABLE_METRICS, VOUCHER_LEDGER_GAP } from "./reports-unavailable-metrics";
 
 export interface ReportsScreenProps {
   /** Already fetched by `page.tsx` — this component does no data access of its own, matching how `TeamScreen` receives `initialRoster` rather than fetching it, and keeping this component plain-`render()`-testable. */
@@ -72,12 +72,19 @@ export function ReportsScreen({
     ? selectedRow.typeCounts
     : aggregateQuestionTypeCounts(questionBankRows);
 
-  const redemptionSummary = summarizeRedemptionLedger(bundle.vouchers);
+  // `undefined`: no live source for the full voucher ledger yet (see
+  // `reports-data.ts`'s `ReportsBundle.vouchers` doc comment) — an honest
+  // gap panel renders instead of the ledger, below, rather than a
+  // real-looking table of zeroes.
+  const redemptionSummary = bundle.vouchers ? summarizeRedemptionLedger(bundle.vouchers) : undefined;
 
   const relevantGaps = UNAVAILABLE_METRICS.filter(
     (metric) =>
       metric.requiresRelationship === null || relationships.includes(metric.requiresRelationship),
   );
+  if (isSupplier && bundle.vouchers === undefined) {
+    relevantGaps.push(VOUCHER_LEDGER_GAP);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,7 +120,7 @@ export function ReportsScreen({
         <ReportsQuestionBankPanel scopeLabel={scopeLabel} typeCounts={typeCounts} locale={locale} />
       ) : null}
 
-      {isSupplier ? (
+      {isSupplier && redemptionSummary ? (
         <ReportsRedemptionLedgerPanel summary={redemptionSummary} locale={locale} />
       ) : null}
 

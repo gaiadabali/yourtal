@@ -234,7 +234,8 @@
       "campaignHeader": "Kampanye",
       "statusHeader": "Status",
       "questionsHeader": "Pertanyaan",
-      "scoringRuleHeader": "Aturan penilaian"
+      "scoringRuleHeader": "Aturan penilaian",
+      "scoringRuleNotSet": "Belum diatur"
     },
     "legend": {
       "title": "Cara membaca angka-angka ini",

@@ -1,3 +1,4 @@
+import type { Campaign } from "@yourtal/contracts/campaign";
 import type { PublicListing } from "@yourtal/contracts/listing";
 import type { PublicMerchant } from "./public-merchant";
 import type { PublicLocale, PublicLocaleConfig } from "./public-locale";
@@ -7,20 +8,9 @@ import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
  * Structured-data builders for the public surface (YT-0431,
  * `docs/11-seo-aeo-geo.md` §5). Every type emitted here genuinely maps to
  * the entity's real fields — nothing is fabricated to chase a rich result.
- * Two schema.org types docs/11 §5 lists were deliberately NOT built, and
- * that refusal is as much this ticket's job as what is here:
+ * One schema.org type docs/11 §5 lists was deliberately NOT built, and that
+ * refusal is as much this ticket's job as what is here:
  *
- * - **`VideoObject` on the campaign page** — the type's required/expected
- *   fields (`thumbnailUrl`, `contentUrl`/`embedUrl`, `uploadDate`) have no
- *   backing data: `Campaign` (`packages/contracts/src/campaign/campaign.ts`)
- *   has no video asset URL, no thumbnail and no upload timestamp
- *   (`publishedAt` is a catalogue date, not an upload date for a specific
- *   asset). Emitting `VideoObject` with the generated OG card image standing
- *   in for `thumbnailUrl` and no `contentUrl` at all would be exactly the
- *   "incorrect structured data" this ticket's brief says is worse than none.
- *   Revisit once the campaign contract carries a real media asset (this is
- *   also that campaign page's own honest reason for not embedding a player —
- *   Open Viewing, YT-0432, is not built yet either).
  * - **`LocalBusiness` when a merchant's view carries no listing at all** —
  *   `public-merchant.ts`'s view is grouped from whatever campaigns and
  *   listings share a merchant's name, and a merchant known only from a
@@ -52,6 +42,47 @@ export function buildBreadcrumbJsonLd(items: readonly JsonLdBreadcrumbItem[]): o
       name: item.name,
       item: item.url,
     })),
+  };
+}
+
+/** Whole-second duration as an ISO 8601 duration (`PT90S`, `PT1H2M3S`) — the format schema.org's `VideoObject.duration` requires. */
+function iso8601Duration(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  const hoursPart = hours > 0 ? `${hours}H` : "";
+  const minutesPart = minutes > 0 ? `${minutes}M` : "";
+  // Always present, even at 0s: "PT" with nothing after it is not a valid duration.
+  const secondsPart = `${seconds}S`;
+  return `PT${hoursPart}${minutesPart}${secondsPart}`;
+}
+
+/**
+ * `VideoObject` for the public campaign page (11.3.b, docs/11 §5's own
+ * entry for it — see this file's earlier header for why it waited on real
+ * campaign media, 7.2). `contentUrl` is deliberately the public teaser
+ * clip (`campaign.teaserUrl`, a progressive MP4 already served with no
+ * signed session), never the signed HLS manifest — `/media/hls/` must
+ * never become reachable from a crawler or a rich-result preview, the same
+ * "signed URL only ever comes from a real session" rule 11.2.b's Open
+ * Viewing enforces for the player itself. `embedUrl` is the page a human
+ * (or a rich result) actually watches from.
+ */
+export function buildCampaignVideoObjectJsonLd(params: {
+  campaign: Campaign;
+  url: string;
+}): object {
+  const { campaign, url } = params;
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: campaign.title,
+    description: campaign.synopsis,
+    thumbnailUrl: [campaign.posterUrl],
+    uploadDate: campaign.publishedAt,
+    duration: iso8601Duration(campaign.durationSeconds),
+    contentUrl: campaign.teaserUrl,
+    embedUrl: url,
   };
 }
 

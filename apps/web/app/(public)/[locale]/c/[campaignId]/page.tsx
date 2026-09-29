@@ -16,6 +16,8 @@ import { PublicBreadcrumbs } from "@/features/public/public-breadcrumbs";
 import { PublicCampaignContent } from "@/features/public/public-campaign-content";
 import { publicTwitterCard } from "@/features/public/public-twitter-card";
 import { slugify } from "@/features/public/public-slug";
+import { buildCampaignVideoObjectJsonLd } from "@/features/public/public-jsonld";
+import { PublicJsonLdScript } from "@/features/public/public-json-ld-script";
 
 /**
  * `/[locale]/c/[campaignId]` — the public campaign landing page (YT-0431,
@@ -79,9 +81,11 @@ export default async function PublicCampaignPage({ params }: PublicCampaignPageP
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
   const merchantSlug = slugify(campaign.merchantName);
+  const url = publicUrl(locale, `/c/${campaign.id}`);
 
   return (
     <>
+      <PublicJsonLdScript data={buildCampaignVideoObjectJsonLd({ campaign, url })} />
       <PublicBreadcrumbs
         navAriaLabel={t("breadcrumbNav.ariaLabel")}
         items={[

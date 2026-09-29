@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { soldOutListingFixture, expiringSoonListingFixture } from "@yourtal/contracts/listing/mock";
+import { longMerchantNameCampaignFixture } from "@yourtal/contracts/campaign/mock";
 import { publicLocaleConfig } from "./public-locale";
 import {
   buildBreadcrumbJsonLd,
+  buildCampaignVideoObjectJsonLd,
   buildCatalogueItemListJsonLd,
   buildMerchantLocalBusinessJsonLd,
   buildMerchantOrganizationJsonLd,
@@ -16,6 +18,43 @@ describe("buildBreadcrumbJsonLd", () => {
       { name: "Kopi Sentosa", url: "https://yourtal.com/id/m/kopi-sentosa" },
     ]) as { itemListElement: { position: number }[] };
     expect(jsonLd.itemListElement.map((item) => item.position)).toEqual([1, 2]);
+  });
+});
+
+describe("buildCampaignVideoObjectJsonLd", () => {
+  it("maps real campaign fields, never the signed HLS manifest, to VideoObject", () => {
+    const url = "https://yourtal.com/id/c/00000000-0000-4000-8000-000000000002";
+    const jsonLd = buildCampaignVideoObjectJsonLd({
+      campaign: longMerchantNameCampaignFixture,
+      url,
+    }) as {
+      "@type": string;
+      name: string;
+      thumbnailUrl: string[];
+      uploadDate: string;
+      duration: string;
+      contentUrl: string;
+      embedUrl: string;
+    };
+
+    expect(jsonLd["@type"]).toBe("VideoObject");
+    expect(jsonLd.name).toBe(longMerchantNameCampaignFixture.title);
+    expect(jsonLd.thumbnailUrl).toEqual([longMerchantNameCampaignFixture.posterUrl]);
+    expect(jsonLd.uploadDate).toBe(longMerchantNameCampaignFixture.publishedAt);
+    // 30 whole seconds.
+    expect(jsonLd.duration).toBe("PT30S");
+    // The public teaser clip, never the signed /media/hls/ manifest.
+    expect(jsonLd.contentUrl).toBe(longMerchantNameCampaignFixture.teaserUrl);
+    expect(jsonLd.contentUrl).not.toMatch(/\/media\/hls\//);
+    expect(jsonLd.embedUrl).toBe(url);
+  });
+
+  it("formats an hours+minutes+seconds duration correctly", () => {
+    const jsonLd = buildCampaignVideoObjectJsonLd({
+      campaign: { ...longMerchantNameCampaignFixture, durationSeconds: 3723 },
+      url: "https://yourtal.com/id/c/x",
+    }) as { duration: string };
+    expect(jsonLd.duration).toBe("PT1H2M3S");
   });
 });
 

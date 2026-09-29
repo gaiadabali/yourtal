@@ -240,10 +240,12 @@ beforeAll(async () => {
   // over-disclose if `ChannelController` ever stopped filtering it.
   await owner.execute(sql`
     INSERT INTO business.business_accounts
-      (id, legal_name, display_name, district, roles, is_verified, region, currency, handle)
+      (id, legal_name, display_name, roles, is_verified, region, currency, handle,
+       tax_id_kind, tax_id_value, address_state, address_postcode)
     VALUES
       (${channelBusinessId}, '12.1.b e2e channel business', '12.1.b e2e channel business',
-       'Testville', '["advertiser"]'::jsonb, true, 'AU', 'AUD', ${channelHandle})
+       '["advertiser"]'::jsonb, true, 'AU', 'AUD', ${channelHandle},
+       'ABN', '00000000000', 'NSW', '2000')
   `);
   channelTeenCampaignId = await insertCampaign("teen", channelBusinessId);
   channelAdultCampaignId = await insertCampaign("adult", channelBusinessId);

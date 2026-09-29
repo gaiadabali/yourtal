@@ -9,7 +9,10 @@ import { PrincipalService } from "./principal.service";
 import { PRINCIPAL_SECURITY_STATE_REPOSITORY } from "../../modules/identity/persistence/principal-security-state.repository";
 import type { PrincipalSecurityStateRepository } from "../../modules/identity/persistence/principal-security-state.repository";
 import { USER_PROFILE_REPOSITORY } from "../../modules/identity/persistence/user-profile.repository";
-import type { UserProfileRepository } from "../../modules/identity/persistence/user-profile.repository";
+import type {
+  ParentConsentStatus,
+  UserProfileRepository,
+} from "../../modules/identity/persistence/user-profile.repository";
 import { BUSINESS_MEMBERSHIP_READER } from "../../modules/identity/persistence/business-membership-reader";
 import type { BusinessMembershipReader } from "../../modules/identity/persistence/business-membership-reader";
 import { STAFF_ROLE_READER } from "../../modules/identity/persistence/staff-role-reader";
@@ -121,6 +124,11 @@ export class AsyncPrincipalResolver {
       ageBand: ageBandFrom(ageYearsFrom(profile.dateOfBirth, new Date())),
       isSuspended: profile.suspendedAt !== null,
       businessRoles,
+      // `profile.parentConsentStatus` is typed `ParentConsentStatus`
+      // already, but a plain DB `text` column is only as trustworthy as
+      // its own CHECK constraint -- `guardianConsentFrom`'s runtime guard
+      // stays for the same reason a Zod schema still validates a value
+      // TypeScript already believes it knows the shape of.
       guardianConsent: guardianConsentFrom(profile.parentConsentStatus),
     };
 
@@ -163,20 +171,17 @@ function dedupeRoles(roles: readonly PrincipalRole[]): readonly PrincipalRole[] 
 
 /**
  * 12.1.b: maps `identity.user_profile.parent_consent_status` onto
- * `PrincipalAttr["guardianConsent"]`.
- *
- * Written defensively on purpose: agent A (12.1.a) is adding `"revoked"` to
- * `ParentConsentStatus` and the DB CHECK constraint in parallel, on a
- * different branch. Until that lands here, the TYPE this function's
- * parameter carries is still the 3-value union -- but nothing stops the
- * ACTUAL STRING the identity module hands back from already being
- * `"revoked"` once both land and merge, so this compares the raw string
- * rather than exhaustively switching over the (currently narrower) type.
- * Anything this function does not recognise fails closed to `"pending"` --
- * safe for the one thing `guardianConsent` gates (a teen's own earning,
- * `campaign_view.yaml`), never `"granted"` or `"not_required"`.
+ * `PrincipalAttr["guardianConsent"]`. `ParentConsentStatus` (12.1.a) is now
+ * the complete 4-value union, so the `default` branch below is
+ * unreachable BY THE TYPE -- kept anyway as a runtime fail-closed guard,
+ * the same reason a Zod schema still validates a value the compiler
+ * already believes it knows the shape of. Anything unrecognised maps to
+ * `"pending"`, safe for the one thing `guardianConsent` gates (a teen's
+ * own earning, `campaign_view.yaml`), never `"granted"` or `"not_required"`.
  */
-function guardianConsentFrom(status: string): NonNullable<PrincipalAttr["guardianConsent"]> {
+function guardianConsentFrom(
+  status: ParentConsentStatus,
+): NonNullable<PrincipalAttr["guardianConsent"]> {
   switch (status) {
     case "not_required":
     case "pending":

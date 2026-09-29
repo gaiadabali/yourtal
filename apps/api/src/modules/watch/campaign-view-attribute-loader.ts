@@ -2,8 +2,13 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { ResourceAttributeLoader } from "../../shared/authz/resource-attribute-loader";
+import { CAMPAIGN_REPOSITORY } from "../campaign/persistence/campaign.repository";
+import type { CampaignRepository } from "../campaign/persistence/campaign.repository";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
+import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import {
   CAMPAIGN_AUTHZ_ATTRIBUTES_READER,
+  type CampaignAuthzAttributes,
   type CampaignAuthzAttributesReader,
 } from "../campaign/persistence/campaign-authz-attributes";
 import { WATCH_SESSION_REPOSITORY } from "./persistence/drizzle-watch-session.repository";
@@ -38,6 +43,8 @@ export class CampaignViewAttributeLoader implements ResourceAttributeLoader<"cam
     @Inject(CAMPAIGN_AUTHZ_ATTRIBUTES_READER)
     private readonly campaigns: CampaignAuthzAttributesReader,
     @Inject(WATCH_SESSION_REPOSITORY) private readonly sessions: WatchSessionRepository,
+    @Inject(CAMPAIGN_REPOSITORY) private readonly campaignRepository: CampaignRepository,
+    @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
   ) {}
 
   async resolve(
@@ -59,8 +66,33 @@ export class CampaignViewAttributeLoader implements ResourceAttributeLoader<"cam
         region: campaign.region,
         audience: campaign.audience,
         openViewingEnabled: campaign.openViewingEnabled,
+        openViewingBudgetRemaining: await this.openViewingBudgetRemaining(campaign),
       },
     };
+  }
+
+  /**
+   * 11.2.a: `campaign_view.yaml`'s `open-viewing-is-opt-in-and-funded` rule
+   * requires `R.attr.openViewingBudgetRemaining`, which nothing ever
+   * supplied — this loader only ever sent `state`/`region`/`audience`/
+   * `openViewingEnabled`, so the anonymous ALLOW rule could never actually
+   * match and every Open Viewing read (`GET /api/campaigns/:campaignId`,
+   * `POST /api/watch/sessions`) 401'd for an anonymous caller regardless of
+   * funding. Same source of truth `fetchFundedCampaigns`
+   * (`apps/api/src/modules/feed/candidates.ts`) already uses to decide
+   * whether a campaign is fundable enough to appear in the anonymous feed
+   * at all: the campaign's `reward_config.allocationId`, read from the
+   * ledger. `0` (never funded, so never open-viewable) for a campaign with
+   * no reward config or an allocation the ledger no longer recognises —
+   * same "absent, not thrown" contract `candidates.ts` follows.
+   */
+  private async openViewingBudgetRemaining(campaign: CampaignAuthzAttributes): Promise<number> {
+    if (campaign.state !== "live" || !campaign.openViewingEnabled) return 0;
+    const rewardConfig = await this.campaignRepository.rewardConfigFor(campaign.campaignId);
+    if (rewardConfig === null) return 0;
+    const allocation = await this.ledger.getAllocation(rewardConfig.allocationId);
+    if (allocation.isErr()) return 0;
+    return Number(allocation.value.remainingPoints);
   }
 
   /** `undefined` means the request names no campaign of any kind — see the class comment. */

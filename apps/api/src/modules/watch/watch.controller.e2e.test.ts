@@ -13,6 +13,7 @@ import { alwaysValidSessionValidator } from "../../shared/testing/fake-session-v
 import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
+import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
 import { DrizzlePrincipalSecurityStateRepository } from "../identity/persistence/drizzle-principal-security-state.repository";
 import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-user-profile.repository";
 import { DrizzleBusinessMembershipReader } from "../identity/persistence/drizzle-business-membership-reader";
@@ -84,7 +85,8 @@ const pdp = createPdpClient({ baseUrl: CONFIG.pdp.baseUrl });
 const campaignRepository = new DrizzleCampaignRepository(db);
 const campaignAttrs = new DrizzleCampaignAuthzAttributesReader(db);
 const sessions = new DrizzleWatchSessionRepository(db);
-const loader = new CampaignViewAttributeLoader(campaignAttrs, sessions);
+const ledger = createLedgerClient(CONFIG, db);
+const loader = new CampaignViewAttributeLoader(campaignAttrs, sessions, campaignRepository, ledger);
 
 function guard(): PdpGuard {
   return new PdpGuard(new Reflector(), pdp, principals, [loader]);

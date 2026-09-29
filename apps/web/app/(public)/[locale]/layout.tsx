@@ -35,10 +35,18 @@ import { getNavTranslator } from "@/features/shell/nav-i18n";
  * cookie `apps/web/features/region/get-region.ts` reads — that is the one
  * change this ticket's brief calls for to keep the surface static.
  *
- * `generateStaticParams`/`dynamicParams = false` together mean a locale
- * outside `GENERATED_PUBLIC_LOCALES` (today, just `"id"` — see
- * `public-locale.ts` for why `"au"` is not generated yet) 404s at the router
- * before this layout, or anything under it, ever runs.
+ * **`dynamicParams = true` (11.2.a), not `false`.** This governs the
+ * WHOLE subtree, not just this segment's own `locale` param: a descendant
+ * page's `dynamicParams = true` (`c/[campaignId]/page.tsx`, for a real
+ * campaign id `generateStaticParams` never enumerated) only takes effect
+ * if every ancestor also allows it — Next's static-params gate is checked
+ * against the full path, and one `false` anywhere above 404s the whole
+ * combination at the router before ANY layout or page in the tree runs,
+ * regardless of what the leaf itself declares. `requirePublicLocale`
+ * below still 404s a `locale` outside `GENERATED_PUBLIC_LOCALES` — that
+ * check just now happens inside this function instead of at the router,
+ * which costs nothing real (a bad locale is not a path anything else here
+ * ever links to).
  *
  * **F79 (11.1.d): the chrome is `ViewerShell`, in its signed-out mode, not
  * `PublicHeader`.** A logged-out visitor gets the same side rail/bottom
@@ -58,7 +66,7 @@ export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.map((locale) => ({ locale }));
 }
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export const metadata: Metadata = {
   ...baseMetadata,

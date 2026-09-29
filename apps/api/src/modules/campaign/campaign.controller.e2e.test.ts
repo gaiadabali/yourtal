@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
+import { sql } from "drizzle-orm";
 import type { ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { FastifyRequest } from "fastify";
 import { createPdpClient } from "@yourtal/authz/pdp-client";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PdpGuard } from "../../shared/authz/pdp.guard";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { PrincipalService } from "../../shared/authz/principal.service";
@@ -11,6 +12,7 @@ import { alwaysValidSessionValidator } from "../../shared/testing/fake-session-v
 import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
+import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
 import { DrizzlePrincipalSecurityStateRepository } from "../identity/persistence/drizzle-principal-security-state.repository";
 import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-user-profile.repository";
 import { DrizzleBusinessMembershipReader } from "../identity/persistence/drizzle-business-membership-reader";
@@ -32,6 +34,13 @@ import { seedUserProfile } from "../../shared/testing/seed-user-profile";
  * branch is what fixes it here. `GET /api/campaigns` (the list, no id at
  * all) is deliberately not exercised here — see the loader's own class
  * comment for why a collection route falls through instead.
+ *
+ * 11.2.a added the anonymous cases below: `campaign_view.yaml`'s
+ * `open-viewing-is-opt-in-and-funded` rule also requires
+ * `R.attr.openViewingBudgetRemaining`, which `CampaignViewAttributeLoader`
+ * never supplied — every anonymous Open Viewing read 401'd regardless of
+ * funding, and nothing caught it because this suite (and
+ * `watch.controller.e2e.test.ts`) only ever exercised the signed-in path.
  */
 const CONFIG: AppConfig = {
   nodeEnv: "test",
@@ -61,6 +70,7 @@ const CONFIG: AppConfig = {
 };
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);
+const owner: AppDb = createAppDb(process.env["DATABASE_OWNER_URL"]!);
 const securityState = new DrizzlePrincipalSecurityStateRepository(db);
 const profiles = new DrizzleUserProfileRepository(db);
 const businessMemberships = new DrizzleBusinessMembershipReader(db);
@@ -74,23 +84,27 @@ const principals = new AsyncPrincipalResolver(
 );
 const pdp = createPdpClient({ baseUrl: CONFIG.pdp.baseUrl });
 const campaignRepository = new DrizzleCampaignRepository(db);
+const ledger = createLedgerClient(CONFIG, db);
 const loader = new CampaignViewAttributeLoader(
   new DrizzleCampaignAuthzAttributesReader(db),
   new DrizzleWatchSessionRepository(db),
+  campaignRepository,
+  ledger,
 );
 
 function guard(): PdpGuard {
   return new PdpGuard(new Reflector(), pdp, principals, [loader]);
 }
 
+/** `userId: null` sends no `yt_session` cookie at all — an anonymous caller (see `principal.service.ts`). */
 function contextFor(
   handler: (...args: never[]) => unknown,
   params: Record<string, string>,
-  userId: string,
+  userId: string | null,
 ): ExecutionContext {
   const request = {
     params,
-    headers: { cookie: `yt_session=${userId}` },
+    headers: userId === null ? {} : { cookie: `yt_session=${userId}` },
   } as unknown as FastifyRequest;
   return {
     getHandler: () => handler,
@@ -99,11 +113,57 @@ function contextFor(
 }
 
 let liveCampaignId = "";
+let openViewingFundedId = "";
+let openViewingExhaustedId = "";
+
+/** A throwaway `campaign.campaigns` row this suite owns outright, funded to the given remaining points (11.2.a). */
+async function insertOpenViewingCampaign(remainingPoints: number): Promise<string> {
+  const campaignId = randomUUID();
+  const businessId = randomUUID();
+  const allocationId = randomUUID();
+  await owner.execute(sql`
+    INSERT INTO campaign.campaigns
+      (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds,
+       estimated_data_mb, reward_points, question_count, scoring_rule,
+       lifecycle_state, published_at, business_id, region, audience, content_category,
+       poster_url, teaser_url, hls_url, aspect, estimated_bytes,
+       starts_at, ends_at, open_viewing, teaser_start_seconds)
+    VALUES
+      (${campaignId}, 'quick', '11.2.a e2e fixture (open viewing)', ${randomUUID()}, 'e2e merchant',
+       'fixture', 30, 5, 10, 0, 'base_only',
+       'live', now(), ${businessId}, 'AU', 'all_ages', 'entertainment',
+       'https://example.test/poster.jpg', 'https://example.test/teaser.mp4',
+       'https://example.test/hls.m3u8', '16:9', 1000000,
+       now(), now() + interval '30 days', true, 0)
+  `);
+  await owner.execute(sql`
+    INSERT INTO platform.ledger_fake_allocation
+      (id, business_id, region, funder_type, currency, total_points, remaining_points)
+    VALUES (${allocationId}, ${businessId}, 'AU', 'partner', 'AUD', 1000, ${remainingPoints})
+  `);
+  await owner.execute(sql`
+    INSERT INTO campaign.reward_config
+      (campaign_id, allocation_id, funder_type, max_points_for_campaign,
+       reward_points_per_completion, accuracy_bonus_points)
+    VALUES (${campaignId}, ${allocationId}, 'partner', 10, 10, 0)
+  `);
+  return campaignId;
+}
 
 beforeAll(async () => {
   const visible = await campaignRepository.listVisible(50);
   expect(visible.length, "the seeded catalogue should be non-empty").toBeGreaterThan(0);
   liveCampaignId = visible[0]?.id ?? "";
+
+  openViewingFundedId = await insertOpenViewingCampaign(500);
+  openViewingExhaustedId = await insertOpenViewingCampaign(0);
+});
+
+afterAll(async () => {
+  for (const id of [openViewingFundedId, openViewingExhaustedId]) {
+    await owner.execute(sql`DELETE FROM campaign.reward_config WHERE campaign_id = ${id}`);
+    await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);
+  }
 });
 
 // Read once, here, for its `@Authorize` metadata only — never called, so the
@@ -123,5 +183,20 @@ describe("CampaignController.get against real Cerbos", () => {
     await seedUserProfile(db, { userId, region: "ID" });
     const context = contextFor(get, { campaignId: liveCampaignId }, userId);
     await expect(guard().canActivate(context)).resolves.toBe(true);
+  });
+
+  it("ALLOWS an anonymous caller reading a live, open-viewing, funded campaign (11.2.a)", async () => {
+    const context = contextFor(get, { campaignId: openViewingFundedId }, null);
+    await expect(guard().canActivate(context)).resolves.toBe(true);
+  });
+
+  it("DENIES an anonymous caller once the campaign's funding is exhausted (11.2.a, docs/17 §4.2)", async () => {
+    const context = contextFor(get, { campaignId: openViewingExhaustedId }, null);
+    await expect(guard().canActivate(context)).rejects.toMatchObject({ status: 401 });
+  });
+
+  it("DENIES an anonymous caller reading a campaign that has not opted into Open Viewing", async () => {
+    const context = contextFor(get, { campaignId: liveCampaignId }, null);
+    await expect(guard().canActivate(context)).rejects.toMatchObject({ status: 401 });
   });
 });

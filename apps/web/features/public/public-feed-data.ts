@@ -24,14 +24,10 @@ const FEED_REVALIDATE_SECONDS = 60;
  * either way (a visitor cannot tell those apart and should not have to).
  */
 export async function getPublicFeed(locale: PublicLocale): Promise<readonly FeedItem[]> {
-  const result = await publicApiFetch(
-    "/api/feed",
-    feedResponseSchema,
-    {
-      searchParams: { region: publicLocaleRegion(locale), surface: "home" },
-      revalidate: FEED_REVALIDATE_SECONDS,
-    },
-  );
+  const result = await publicApiFetch("/api/feed", feedResponseSchema, {
+    searchParams: { region: publicLocaleRegion(locale), surface: "home" },
+    revalidate: FEED_REVALIDATE_SECONDS,
+  });
   if (!result.ok) {
     return [];
   }

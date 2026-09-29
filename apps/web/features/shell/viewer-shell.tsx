@@ -74,7 +74,10 @@ export function ViewerShell({
   // `signedOutHrefs?`/`homeHref?`). Omitting the key entirely when there is
   // no `signedOut` is what those types actually ask for.
   const topBarSignedOutProps = signedOut
-    ? { homeHref: signedOut.homeHref, signedOutCta: { href: signedOut.signUpHref, label: signedOut.signUpLabel } }
+    ? {
+        homeHref: signedOut.homeHref,
+        signedOutCta: { href: signedOut.signUpHref, label: signedOut.signUpLabel },
+      }
     : {};
   const navSignedOutProps = signedOut ? { signedOutHrefs: signedOut.hrefs } : {};
 

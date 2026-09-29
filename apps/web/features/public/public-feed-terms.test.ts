@@ -45,6 +45,8 @@ describe("describeFeedItemTerms (11.1.b, F12)", () => {
 
   it("localises into id-ID", () => {
     const label = describeFeedItemTerms(feedItem(), publicLocaleConfig("id"));
-    expect(label).toBe("18 menit · 3 pertanyaan · hingga 112 poin · ~120 MB · selesaikan untuk dapat poin");
+    expect(label).toBe(
+      "18 menit · 3 pertanyaan · hingga 112 poin · ~120 MB · selesaikan untuk dapat poin",
+    );
   });
 });

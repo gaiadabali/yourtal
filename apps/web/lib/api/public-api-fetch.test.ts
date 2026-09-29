@@ -44,7 +44,10 @@ describe("publicApiFetch (11.2.a)", () => {
 
     await publicApiFetch("/api/feed", echoSchema, { revalidate: 60 });
 
-    const [, init] = fetchMock.mock.calls[0] as unknown as [URL, RequestInit & { next?: { revalidate: number } }];
+    const [, init] = fetchMock.mock.calls[0] as unknown as [
+      URL,
+      RequestInit & { next?: { revalidate: number } },
+    ];
     expect(init.cache).toBeUndefined();
     expect(init.next).toEqual({ revalidate: 60 });
   });

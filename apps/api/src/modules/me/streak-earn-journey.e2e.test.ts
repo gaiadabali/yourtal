@@ -39,6 +39,21 @@ function json<T>(response: { json: () => unknown }): T {
  * session state transition) is genuinely produced by the real HTTP flow;
  * only the recorded instant is moved, the established technique for
  * controlling "which day" in this suite without a real multi-day wait.
+ *
+ * 11.5.g wired the real completion hook in (`WatchCompletionHookModule`),
+ * so each `/complete` call above now ALSO syncs the streak immediately, at
+ * the real moment it runs -- before this file's own backdate UPDATE moves
+ * `completed_at` back to its target day. Three real completions inside one
+ * test, seconds apart, are all the same real calendar day, so the hook's
+ * own sync collapses them to a single counted day before the backdating
+ * ever happens. `resetStreakState` below discards that premature, now-stale
+ * cache row right after backdating and before this test's own explicit
+ * `GET /api/me/streak` -- which then recomputes cleanly from
+ * `watch.session.completed_at`, the real source of truth, now holding the
+ * three correct days. This is not a workaround for a bug: a real user's
+ * three sessions really would complete (and sync) on three real, distinct
+ * days, so nothing here would ever race like this outside a test that
+ * moves history after the fact.
  */
 let app: NestFastifyApplication;
 const owner: AppDb = createAppDb(process.env["DATABASE_OWNER_URL"] ?? "");
@@ -131,6 +146,16 @@ async function seedRewardedCampaign(): Promise<Fixture> {
   const fixture = { campaignId, allocationId };
   fixtures.push(fixture);
   return fixture;
+}
+
+/**
+ * 11.5.g: wipes whatever the live completion hook already synced (against
+ * the real, un-backdated `completed_at` each `/complete` call wrote) so this
+ * file's own explicit `GET /api/me/streak` is the first read against the
+ * NOW-backdated `watch.session` rows -- see this file's own header.
+ */
+async function resetStreakState(userId: string): Promise<void> {
+  await owner.execute(sql`DELETE FROM me.streak_state WHERE user_id = ${userId}`);
 }
 
 /** Same technique `watch-earn-journey.e2e.test.ts` uses to claim full coverage without a real wait. */
@@ -232,6 +257,7 @@ describe("5.5.c: three real reward-earning days pay the streak bonus exactly onc
     await earnOnDay(app, viewer.cookie, day1.campaignId, DAY_1);
     await earnOnDay(app, viewer.cookie, day2.campaignId, DAY_2);
     await earnOnDay(app, viewer.cookie, day3.campaignId, DAY_3);
+    await resetStreakState(viewer.userId);
 
     const first = await app.inject({
       method: "GET",

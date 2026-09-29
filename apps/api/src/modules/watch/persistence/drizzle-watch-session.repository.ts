@@ -81,6 +81,12 @@ export interface WatchSessionRepository {
   markCompleted(sessionId: string, at: Date): Promise<boolean>;
   /** Records that a completed session's grant actually landed. Idempotent — a replay simply confirms `true`. */
   markGranted(sessionId: string): Promise<void>;
+  /**
+   * 11.5.f: records that the real `DeliveryCoverageReader` answered
+   * `gap_detected` for this session — evidence for later fraud review,
+   * never a gate on the grant that already ran.
+   */
+  flagDeliveryGap(sessionId: string, at: Date): Promise<void>;
 }
 
 export const WATCH_SESSION_REPOSITORY = Symbol("WATCH_SESSION_REPOSITORY");
@@ -103,6 +109,7 @@ function toWatchSession(row: SessionRow): WatchSession {
     granted: row.granted,
     questionsAsked: row.questionsAsked,
     questionsCorrect: row.questionsCorrect,
+    timingSuspicious: row.timingSuspicious,
   });
 }
 
@@ -223,6 +230,8 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
         questionsAsked: 0,
         questionsCorrect: 0,
         granted: false,
+        timingSuspicious: false,
+        answerLatenciesMs: [],
       });
       const createdRows = await tx
         .select()
@@ -365,6 +374,13 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
     await this.db
       .update(watchSessions)
       .set({ granted: true })
+      .where(eq(watchSessions.id, sessionId));
+  }
+
+  async flagDeliveryGap(sessionId: string, at: Date): Promise<void> {
+    await this.db
+      .update(watchSessions)
+      .set({ deliveryGapFlaggedAt: at })
       .where(eq(watchSessions.id, sessionId));
   }
 }

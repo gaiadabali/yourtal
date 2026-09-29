@@ -1,5 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type { Question } from "@yourtal/contracts/question/question";
+import { isMachineRegular, timingSignals } from "@yourtal/contracts/question/response-signals";
+import { CHECKPOINT_ANSWER_TIMER_MS } from "@yourtal/contracts/watch/checkpoint-token";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { watchSessions } from "../persistence/schema/watch.table";
 
@@ -81,11 +83,40 @@ export class DrizzleQuestionAnswerRepository implements QuestionAnswerRepository
          WHERE id = ${input.question.id}
       `);
 
+      // 11.5.i: the timing signal. `campaign.question_response` cannot be
+      // re-SELECTed (`yourtal_app` has INSERT only there — see above), so
+      // this session's own running latency list is this repository's copy,
+      // read here under the row lock the increment below also needs.
+      const locked = await tx
+        .select({
+          answerLatenciesMs: watchSessions.answerLatenciesMs,
+          timingSuspicious: watchSessions.timingSuspicious,
+        })
+        .from(watchSessions)
+        .where(eq(watchSessions.id, input.sessionId))
+        .for("update")
+        .limit(1);
+      const priorLatencies = locked[0]?.answerLatenciesMs ?? [];
+      const priorSuspicious = locked[0]?.timingSuspicious ?? false;
+      const latencies = [...priorLatencies, input.latencyMs];
+      const perAnswerSignals = timingSignals({
+        latencyMs: input.latencyMs,
+        promptLength: input.question.prompt.length,
+        timerSeconds: CHECKPOINT_ANSWER_TIMER_MS / 1_000,
+      });
+      // Sticky: once suspicious, stays suspicious for the rest of this
+      // session — one implausible answer is evidence about the whole
+      // attempt, not just that answer.
+      const timingSuspicious =
+        priorSuspicious || perAnswerSignals.length > 0 || isMachineRegular(latencies);
+
       await tx
         .update(watchSessions)
         .set({
           questionsAsked: sql`${watchSessions.questionsAsked} + 1`,
           questionsCorrect: sql`${watchSessions.questionsCorrect} + ${wasCorrect ? 1 : 0}`,
+          answerLatenciesMs: latencies,
+          timingSuspicious,
         })
         .where(eq(watchSessions.id, input.sessionId));
     });

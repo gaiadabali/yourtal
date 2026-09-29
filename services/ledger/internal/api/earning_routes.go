@@ -39,7 +39,12 @@ func (a *API) grantReward(w http.ResponseWriter, r *http.Request) {
 		IdempotencyKey string `json:"idempotencyKey"`
 		HoldID         string `json:"holdId,omitempty"`
 		AgeBand        string `json:"ageBand"`
-		Attestation    struct {
+		// 11.5.i (requested for 10.4.a): apps/api's own read of
+		// question-response-signals, forwarded to the RiskGate. Absent (the
+		// zero value) from any caller that does not yet compute it, same as
+		// before this field existed.
+		TimingSuspicious bool `json:"timingSuspicious,omitempty"`
+		Attestation      struct {
 			SessionID    string `json:"sessionId"`
 			TermsVersion int    `json:"termsVersion"`
 			CompletedAt  string `json:"completedAt"`
@@ -67,6 +72,7 @@ func (a *API) grantReward(w http.ResponseWriter, r *http.Request) {
 	granted, err := engine.GrantReward(r.Context(), reward.RewardRequest{
 		CampaignID: body.CampaignID, UserID: body.UserID, Points: body.Points, TrustTier: body.TrustTier,
 		IdempotencyKey: body.IdempotencyKey, HoldID: body.HoldID, AgeBand: ageBand,
+		TimingSuspicious: body.TimingSuspicious,
 		Completion: attest.Completion{
 			SessionID: body.Attestation.SessionID, UserID: body.UserID, CampaignID: body.CampaignID,
 			TermsVersion: body.Attestation.TermsVersion, CompletedAt: completedAt,

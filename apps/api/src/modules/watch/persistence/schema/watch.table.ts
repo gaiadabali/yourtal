@@ -1,4 +1,13 @@
-import { bigserial, boolean, integer, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigserial,
+  boolean,
+  integer,
+  jsonb,
+  pgSchema,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 /**
  * Applied by `packages/db/migrations/20260920000013_watch_session.sql`, and
@@ -22,6 +31,18 @@ export const watchSessions = watchPgSchema.table("session", {
   questionsAsked: integer("questions_asked").notNull(),
   questionsCorrect: integer("questions_correct").notNull(),
   granted: boolean("granted").notNull(),
+  // 11.5.i (20260929090000): sticky verdict from question-response-signals,
+  // accumulated across this session's answers by
+  // `DrizzleQuestionAnswerRepository.recordAnswer` and read at completion
+  // (`WatchController.complete`) to set the ledger grant's `TimingSuspicious`.
+  timingSuspicious: boolean("timing_suspicious").notNull(),
+  // Raw latencies (ms), one per answered question, for the jitter check
+  // (`isMachineRegular`) — `campaign.question_response` cannot be re-SELECTed
+  // (`yourtal_app` has INSERT only there), so this is this signal's own copy.
+  answerLatenciesMs: jsonb("answer_latencies_ms").notNull().$type<number[]>(),
+  // 11.5.f: set when the real DeliveryCoverageReader answers `gap_detected`
+  // at completion. Never gates the grant — written after it already ran.
+  deliveryGapFlaggedAt: timestamp("delivery_gap_flagged_at", { withTimezone: true }),
 });
 
 /**

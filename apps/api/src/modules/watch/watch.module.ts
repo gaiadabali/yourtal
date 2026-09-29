@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { Pool } from "pg";
 import { AuthzModule } from "../../shared/authz/authz.module";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { APP_CONFIG } from "../../config/app-config.module";
@@ -7,6 +8,7 @@ import { SettingsModule } from "../../shared/settings/settings.module";
 import { CampaignModule, CAMPAIGN_DB } from "../campaign/campaign.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletModule } from "../wallet/wallet.module";
+import { WatchCompletionHookModule } from "../me/watch-completion-hook.module";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import {
   DrizzleWatchSessionRepository,
@@ -14,11 +16,11 @@ import {
 } from "./persistence/drizzle-watch-session.repository";
 import { WatchController } from "./watch.controller";
 import { CampaignViewAttributeLoader } from "./campaign-view-attribute-loader";
-import { DELIVERY_COVERAGE_READER, StubDeliveryCoverageReader } from "./delivery-coverage";
+import { DELIVERY_COVERAGE_READER } from "./delivery-coverage";
+import { RealDeliveryCoverageReader } from "../../shared/delivery-log/delivery-coverage-reader";
 import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
 import { REWARD_ATTESTATION_SECRET } from "./reward-attestation-secret";
 import { MANIFEST_SIGNING_SECRET } from "./media/manifest-signing-secret";
-import { NoopWatchCompletionHook, WATCH_COMPLETION_HOOK } from "./watch-completion-hook";
 // 11.2.b: Open Viewing's anonymous session — its own controller/repository,
 // deliberately never touching WATCH_SESSION_REPOSITORY or the ledger. See
 // open-view-session.controller.ts's own header.
@@ -51,6 +53,10 @@ import {
     IdentityModule,
     WalletModule,
     SettingsModule,
+    // 11.5.g: the real streak-grant listener (5.5.d), replacing the local
+    // no-op — see watch-completion-hook.module.ts's own header for why this
+    // is imported rather than `MeModule` directly.
+    WatchCompletionHookModule,
   ],
   controllers: [WatchController, OpenViewSessionController],
   providers: [
@@ -78,7 +84,19 @@ import {
       },
       inject: [APP_CONFIG],
     },
-    { provide: DELIVERY_COVERAGE_READER, useClass: StubDeliveryCoverageReader },
+    {
+      // 11.5.f: the real reader (10.4.c's platform.delivery_log
+      // cross-check). `AppDb`'s own type strips drizzle's `$client` escape
+      // hatch (`createAppDb`'s explicit return annotation), so this opens
+      // its own small `pg.Pool` from the same `DATABASE_URL` rather than
+      // reaching past that type — the same "each module its own pool"
+      // pattern `CAMPAIGN_DB`'s own factory follows. StubDeliveryCoverageReader
+      // is dead from here; delete it once nothing else depends on it.
+      provide: DELIVERY_COVERAGE_READER,
+      useFactory: (config: AppConfig) =>
+        new RealDeliveryCoverageReader(new Pool({ connectionString: config.databaseUrl })),
+      inject: [APP_CONFIG],
+    },
     {
       // 5.6.a: signs the per-session manifest URL with the same secret
       // `HlsAuthController` verifies with (`config.hlsSigningSecret`, both
@@ -93,10 +111,6 @@ import {
       },
       inject: [APP_CONFIG],
     },
-    // 5.5.d: overridable in app.module.ts (or a shared module both this and
-    // the streak module import) once a real listener exists — see
-    // watch-completion-hook.ts's own header for exactly how.
-    { provide: WATCH_COMPLETION_HOOK, useClass: NoopWatchCompletionHook },
     {
       provide: CHECKPOINT_SECRET,
       useFactory: (): string => {

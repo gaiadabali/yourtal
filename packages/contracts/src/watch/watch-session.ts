@@ -100,6 +100,14 @@ export const watchSessionSchema = z.object({
    */
   questionsAsked: z.number().int().min(0),
   questionsCorrect: z.number().int().min(0),
+  /**
+   * 11.5.i: the timing signal (question-response-signals), accumulated
+   * across this session's answers and read at completion to set the
+   * ledger grant's `TimingSuspicious` (10.4.a's RiskGate). Sticky — set
+   * once, never cleared — because one implausible answer is evidence about
+   * the whole session, not just that answer.
+   */
+  timingSuspicious: z.boolean(),
 });
 
 export type WatchSession = z.infer<typeof watchSessionSchema>;

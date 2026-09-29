@@ -67,6 +67,14 @@ export const grantRewardRequestSchema = z.object({
   holdId: z.string().min(1).optional(),
   attestation: rewardAttestationSchema,
   ageBand: ageBandSchema.optional(),
+  /**
+   * 11.5.i (requested by A for 10.4.a): the real per-question timing signal
+   * (`question-response-signals`), computed by `watch.controller.ts` over
+   * this session's answers. Forwarded verbatim to the RiskGate
+   * (`services/ledger/internal/risk`), which reads `false` when absent —
+   * unchanged behaviour for any caller that does not yet compute it.
+   */
+  timingSuspicious: z.boolean().optional(),
 });
 export type GrantRewardRequest = z.infer<typeof grantRewardRequestSchema>;
 

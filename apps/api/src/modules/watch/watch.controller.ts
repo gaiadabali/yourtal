@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Get,
   Inject,
+  Logger,
   NotFoundException,
   Param,
   Post,
@@ -79,6 +80,8 @@ function holdTtlSeconds(durationSeconds: number): number {
  */
 @Controller("api/watch/sessions")
 export class WatchController {
+  private readonly logger = new Logger("WatchController");
+
   constructor(
     @Inject(PrincipalService) private readonly principals: PrincipalResolver,
     @Inject(WATCH_SESSION_REPOSITORY) private readonly sessions: WatchSessionRepository,
@@ -364,6 +367,10 @@ export class WatchController {
       idempotencyKey: `watch-grant:${session.id}`,
       ...(session.holdId === null ? {} : { holdId: session.holdId }),
       attestation,
+      // 11.5.i: the real per-question timing signal, accumulated by
+      // question-answer.repository.ts across this session's answers —
+      // never a placeholder `false`.
+      timingSuspicious: session.timingSuspicious,
     });
 
     if (granted.isErr()) {
@@ -383,6 +390,15 @@ export class WatchController {
 
     await this.sessions.markGranted(session.id);
     const deliveryCoverageVerdict = await this.delivery.deliveryCoverage(session.id);
+    if (deliveryCoverageVerdict === "gap_detected") {
+      // 11.5.f: never gates or delays the grant above (delivery-coverage.ts's
+      // own header) — this is evidence recorded AFTER the fact, for whoever
+      // reviews fraud later. Usually reads "unknown" at this point in
+      // practice (the log ingests on its own 5-minute cycle, 10.4.c), so a
+      // real gap surfacing here is itself notable.
+      this.logger.warn(`delivery coverage gap — session=${session.id}, flagged for review`);
+      await this.sessions.flagDeliveryGap(session.id, now);
+    }
 
     // 5.5.d's hook: fired only for a genuinely earning, granted completion
     // — never for a non-earning one (see watch-completion-hook.ts's own

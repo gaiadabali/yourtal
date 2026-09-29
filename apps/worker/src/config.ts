@@ -16,6 +16,11 @@ const envSchema = z.object({
   // the same dev defaults as apps/api's.
   LEDGER_BASE_URL: z.url().default("http://127.0.0.1:26910"),
   LEDGER_SERVICE_SECRET: z.string().min(32).default("local-only-ledger-service-secret-not-real"),
+  // TASKS.md 11.5.h: same switch as apps/api's own `LEDGER_MODE`
+  // (env.schema.ts) — one env var, read by both processes. `streak-backstop`
+  // is the only job that currently branches on it (it writes a grant
+  // itself, unlike the read-only release/expiry jobs above).
+  LEDGER_MODE: z.enum(["fake", "live"]).default("fake"),
   // TASKS.md 8.3.e: same loopback pattern as the ledger's above, for
   // services/voucher/internal/serviceauth — the worker drains its webhook
   // outbox from here. Same env var names and defaults apps/api's

@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { campaignSchema } from "@yourtal/contracts/campaign";
 import { campaignTermsSchema } from "@yourtal/contracts/campaign/terms";
+import { soldOutListingFixture } from "@yourtal/contracts/listing/mock";
 import { VideoPlayer } from "./video-player";
 
 /**
@@ -276,6 +277,62 @@ describe("VideoPlayer", () => {
 
     await waitFor(() => expect(completeWatchSessionActionMock).toHaveBeenCalledWith("session-1"));
     expect(await screen.findByText("+100")).toBeInTheDocument();
+  });
+
+  it("shows Up Next (a tap-through link) and the funder's own vouchers only once the completion screen is reached", async () => {
+    completeWatchSessionActionMock.mockResolvedValue({
+      ok: true,
+      data: {
+        completed: true,
+        granted: true,
+        pendingPoints: 100,
+        unlockAt: "2026-10-01T00:00:00.000Z",
+      },
+    });
+    const upNext = {
+      ...campaign,
+      id: "33333333-3333-4333-8333-333333333333",
+      title: "Another Campaign",
+    };
+    const voucher = {
+      ...soldOutListingFixture,
+      id: "44444444-4444-4444-8444-444444444444",
+      merchantName: campaign.merchantName,
+      title: "Toko Uji voucher",
+      status: "available" as const,
+      stockRemaining: 5,
+    };
+
+    render(
+      <VideoPlayer
+        campaign={campaign}
+        terms={terms}
+        locale="en-AU"
+        upNext={upNext}
+        vouchers={[voucher]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+    await vi.waitFor(() => expect(startWatchSessionActionMock).toHaveBeenCalled());
+
+    // Not shown before completion.
+    expect(screen.queryByText("Up next")).not.toBeInTheDocument();
+
+    const video = document.querySelector("video");
+    if (!video) throw new Error("expected a <video> element");
+    fireEvent.ended(video);
+    await waitFor(() => expect(completeWatchSessionActionMock).toHaveBeenCalled());
+
+    expect(await screen.findByText("Up next")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Play/ })).toHaveAttribute(
+      "href",
+      `/watch/${upNext.id}`,
+    );
+    expect(screen.getByText(`Spend at ${campaign.merchantName}`)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Toko Uji voucher/ })).toHaveAttribute(
+      "href",
+      `/store/${voucher.id}`,
+    );
   });
 
   it("shows the not-earning moment when the server completes without granting", async () => {

@@ -44,7 +44,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 1/7 | 15/38 | `████░░░░░░`  39% |
-| **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
+| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
 | **All** | | | **73/91** | **387/444** | `█████████░`  87% |
 <!-- progress:end -->
@@ -78,7 +78,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | Slot | Worktree | Phase | Since | Note |
 | ---- | -------- | ----- | ----- | ---- |
-| 1 | `yourtal-1` | free | 2026-09-29 | Phase 10 done (all 7 tasks ✅, e1b94699). Slot db `yourtal_s1` and helper `yourtal-p7-b` (db `yourtal_s4b`) stay for reuse; Cerbos `yourtal-cerbos-p10b` removed. Left for Phase 11: 11.5.f (bind the real delivery-coverage reader), 11.5.i (timing signal into the RiskGate) |
+| 1 | `yourtal-1` | **12** Teen & family mode (early slice, F80) | 2026-09-29 | 12.1 → 12.2.c → 12.3; 12.2.a/b wait for Phase 11. db `yourtal_s1`, ports 26310–26315 |
 | 2 | `yourtal-2` | free | 2026-09-29 | Phase 9 ✅ (779b2a53). Worktree, `.env`, db `yourtal_s2` and Cerbos 26325 ready for the next phase. Phase 9 helpers `yourtal-p9-b/c/d` (dbs `yourtal_s9b/c/d`) are done and can be reused; their Cerbos containers are stopped. Staging holds a test `ops` account (`staff-ops-9-3-b-1790652948@example.test`, granted under F76). Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check, and its burns are not region-tagged. Carried for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | free | **6** Viewer app — ✅ done | 2026-09-27 | Phase 6 done: 6.7 ✅ (c8d0dab); 6.5 ✅ (aae765a, incl. 4.8.c requested of A); 6.2 ✅ (e747877f, agent D); 6.1 ✅ (63cc61b, agent A); 6.9 ✅ (53317515, agent B — 6.9.d's CI run also surfaced F49, fixed same session, and F50, unrelated/left for whoever owns `packages/media`'s CI setup). All four agents' worktrees left in place, slot 3 free for the next phase. C's worktree `yourtal-p6-c` is done; its db `yourtal_s3c` has stale revision rows for the renamed watch migrations (repoint like `yourtal_s2`, or leave: nothing else uses it). Slot 3b's own db `yourtal_s3b` hit the SAME stale-revision issue (F34/F36 watch migration rename) mid-6.5 — resolved by drop+recreate (it holds no long-lived data, only this session's own fixtures). Also fixed while verifying 6.1.e (own commit on main, not this row's own subtask): `features/me/me-section-states.tsx` was missing `"use client"`, crashing all of Me on any real section error — see 6.1.e's own note. |
 | 4 | `yourtal-4` | **11** Viewer feed & public site | 2026-09-29 | Founder: demo-ready video UI with the sidebar first. 11.4 ✅. C done (11.1.b, 11.1.d, 11.2.a: logged-out /au and /id in the viewer shell). E done (11.6.a Store grid, 11.7.d Watch tab). D done for now (`2fb77456`): 11.5.a/b core merged — real server watch session, terms card, checkpoint overlay, earn moment; verified live (curl + headless Chromium, 1280px/390px, axe clean) against a hand-seeded AU campaign reusing slot 4's real Tasmania Wool Co. HLS media, `LEDGER_MODE=fake` on a scratch db (`yourtal_s11d`) since slot 4's own api/db were off-limits — see 11.5.a/b's own notes for exactly what's left (channel row, chapters, captions, resume/error UI, Up next, `campaign-reward-split.ts` deletion). Slot freed. A (`yourtal-4`, db `yourtal_s4`, web 26360, api 26361, ledger 26362, voucher 26363, Cerbos 26365) next: 11.5.c/d |
@@ -148,6 +148,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F52** | Phase 9 was asked to start while its gate (Phase 7) was unfinished: 7.3 had not merged | **Start an early slice now** in slot 2 (`phase/9`), like F21/F26/F27/F36: 9.1, 9.3, 9.4 and 9.5, whose needs are all ✅, plus 9.2.c (batch approval needs only 7.4). 9.2.a and its Check 9.2.b wait for 7.3. |
 | **F53** | A true HTTP 403 on `/staff/*` pages needs Next's `experimental.authInterrupts` in `apps/web/next.config.ts`, which is Area B's file | **Phase 9 adds that one line** beside `globalNotFound`, so non-staff get a real 403 page. |
 | **F54** | 9.5.b's rate screen must show and set B, but 4.9.d's `no-backing-rate-in-api.test.ts` banned B from the whole published API, staff routes included | **Carve out `/api/staff/**`.** B is shown only to finance on that one Cerbos-gated staff screen; the test keeps banning it from every viewer and business route. Phase 9 makes that narrow change to 4.9.d's test. |
+| **F80** | Phase 12 was asked to start while its gate (Phase 11) was unfinished | **Start an early slice now** in slot 1 (`phase/12`), like F21/F26/F27/F36/F52: 12.1 (guardians, the Cerbos age wall, the teen cap), 12.2.c (the new `/guardian/[token]` page) and 12.3, whose needs are all ✅. 12.2.a/b wait for Phase 11 to close, since they touch the feed and streak files slot 4 is editing. |
 
 **F12 defaults**, per region (AU / ID):
 
@@ -1361,7 +1362,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 
 **Founder decision 2026-09-25 (F4), reversing C4 ("18+ only"):** teens aged 13–17 get their own age-appropriate YourTal, like YouTube Kids. It suits companies that sell to teenagers (games, books). Products for young children (strollers and the like) are aimed at **parents**, who are adult users; under-13s never get accounts. Teen mode is built fully and switched on in staging for review. It is switched on for real minors only after the legal review in 12.4. The platform is already free of user-to-user interaction (Phase 3), so teens need no special handling there.
 
-- [ ] **12.1 Guardians and enforcement** · A · needs: 1.4, 1.5, 10.4
+- [ ] **12.1 Guardians and enforcement** · A · needs: 1.4, 1.5, 10.4 — 🔄 slot 1
   - [ ] 12.1.a Register a 13–17 account (1.4.b), and the guardian email carries approve and revoke links to `/guardian/[token]`. B builds that page (12.2.c). Revoking sets the teen back to restricted and escrows its balance. A pending teen may browse teen and all_ages campaigns but cannot start a reward session.
   - [ ] 12.1.b The Cerbos `campaign_view` and `listing` policies deny when the resource's audience is not allowed for the principal's `ageBand` (1.1.c). Every read, watch start, checkout, notification, search and public page is gated in one place.
   - [ ] 12.1.c The teen cap from F12 goes into `RiskGate`. Minors get declared interests only, never inferred ones.

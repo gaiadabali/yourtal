@@ -4,6 +4,8 @@ import path from "node:path";
 import pg from "pg";
 import { listDemoMediaBusinesses, runDemoMedia } from "@yourtal/media/demo-media";
 import type { DemoMediaResult } from "@yourtal/media/demo-media";
+import { runDemoCampaignFunding } from "./demo-campaign-funding";
+import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
 import type { DemoMediaVoucherResult } from "./demo-media-vouchers";
 import { seedStaging } from "./staging";
@@ -201,6 +203,37 @@ async function main(): Promise<void> {
         ? `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaRepaired)} repaired, ${String(demoMediaFailed.length)} FAILED (${demoMediaFailed.map((r: DemoMediaResult) => r.slug).join(", ")}) — not failing the deploy over it`
         : `demo media: ${String(demoMediaSeeded)} seeded, ${String(demoMediaRepaired)} repaired, ${String(demoMediaAlready)} already present`;
 
+    // TASKS.md 11.4.h: every campaign (the 4 Snap App fixtures `seedStaging`
+    // creates, plus the 16 demo-media campaigns `runDemoMedia` just did) gets
+    // a real ledger allocation and a `campaign.reward_config` row, or the
+    // feed (`fetchFundedCampaigns`) shows nothing. MUST run after
+    // `runDemoMedia`, not inside `seedStaging` — the demo-media campaigns
+    // don't exist until the call just above. A real ledger call, same as
+    // `pendingGrant`/`demoVoucher` above (not the 16-cosmetic-campaigns
+    // non-fatal treatment `demoMediaSummary` gets): a failure here means the
+    // home feed stays empty, so it fails the deploy loudly too.
+    let demoCampaignFundingResults: readonly DemoCampaignFundingResult[] = [];
+    try {
+      demoCampaignFundingResults = await runDemoCampaignFunding(
+        pool,
+        { baseUrl: ledgerBaseUrl, serviceSecret: ledgerServiceSecret },
+        console.log,
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      console.error(
+        `[seed:staging] demo campaign funding threw rather than returning results: ${detail}`,
+      );
+      demoCampaignFundingResults = [{ campaignId: "n/a", title: "n/a", region: "AU", status: "failed", detail }];
+    }
+    const demoCampaignFundingFailed = demoCampaignFundingResults.filter(
+      (r) => r.status === "failed",
+    );
+    const demoCampaignFundingSummary =
+      demoCampaignFundingResults.length === 0
+        ? "demo campaign funding: nothing to fund (all campaigns already funded)"
+        : `demo campaign funding: ${String(demoCampaignFundingResults.length - demoCampaignFundingFailed.length)} funded, ${String(demoCampaignFundingFailed.length)} FAILED`;
+
     // TASKS.md 7.2.e: each of the 16 demo-media businesses above gets one
     // real store listing plus 6 real vouchers, minted through the ledger's
     // real pricing route and the voucher service's real batch/approve path
@@ -237,7 +270,8 @@ async function main(): Promise<void> {
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
         `${grantSummary}; ${voucherSummary}; ${affordableListingsSummary}; ` +
-        `${redemptionBalanceSummary}; ${mediaSummary}; ${demoMediaSummary}; ${demoMediaVouchersSummary}.`,
+        `${redemptionBalanceSummary}; ${mediaSummary}; ${demoMediaSummary}; ` +
+        `${demoCampaignFundingSummary}; ${demoMediaVouchersSummary}.`,
     );
 
     if (
@@ -245,7 +279,8 @@ async function main(): Promise<void> {
       result.demoVoucher === "failed" ||
       result.affordableListings.some((l) => l.status === "failed") ||
       result.redemptionBalance.some((b) => b.status === "failed") ||
-      media?.status === "failed"
+      media?.status === "failed" ||
+      demoCampaignFundingFailed.length > 0
     ) {
       // set -Eeuo pipefail in infra/helios/pre-reload.sh turns this into a
       // failed deploy, on purpose — see this file's own header.

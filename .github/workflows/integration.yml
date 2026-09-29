@@ -108,6 +108,9 @@ jobs:
       # boot test failing identically) to loadAppConfig's own ZodError on
       # this variable, not to Cerbos or a fixture/constraint regression.
       WEBHOOK_SECRET_ENCRYPTION_KEY: ci-only-webhook-secret-encryption-key-not-a-real-secret
+      # Signs Snap App's partner calls (8.4.d). Required with no default, same
+      # as the two above; missing, the offline e2e's API never booted.
+      SNAP_APP_PARTNER_SECRET: ci-only-snap-app-partner-secret-not-a-real-secret
       S3_ACCESS_KEY: yourtal
       S3_SECRET_KEY: yourtal_local_only
       S3_BUCKET: yourtal-media

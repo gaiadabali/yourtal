@@ -116,12 +116,14 @@ async function seedBusiness(region: "AU" | "ID"): Promise<string> {
   const handle = `me-e2e-${id.slice(0, 8)}`;
   // TASKS.md 7.1.a replaced `district` with a region-specific tax ID and
   // address (migration 20260927013927) — values here just satisfy the CHECK
-  // constraints, not realistic ones.
+  // constraints, not realistic ones. The display name sorts first because
+  // candidates are ordered by name and capped at 12, and other suites' AU
+  // businesses share this database.
   await db.execute(sql`
     INSERT INTO business.business_accounts
       (id, legal_name, display_name, tax_id_kind, tax_id_value,
        address_state, address_postcode, address_city, roles, region, currency, handle)
-    VALUES (${id}, 'Me E2E Pty Ltd', 'Me E2E',
+    VALUES (${id}, 'Me E2E Pty Ltd', '0 Me E2E',
             ${region === "AU" ? "ABN" : "NPWP"}, ${region === "AU" ? "12345678901" : "1234567890123456"},
             ${region === "AU" ? "NSW" : null}, ${region === "AU" ? "2000" : null},
             ${region === "AU" ? null : "Jakarta"},

@@ -114,7 +114,10 @@ let liveCampaignId = "";
 let pausedCampaignId = "";
 
 beforeAll(async () => {
-  const visible = await campaignRepository.listVisible(50);
+  // Match the principal below (ID, adult): the newest campaign overall may be
+  // another region's or age-rated, and the region/audience walls would refuse it
+  // for a reason this suite is not testing.
+  const visible = await campaignRepository.listVisible(50, ["all_ages"], "ID");
   const longForm = visible.find((campaign) => campaign.kind === "long_form");
   expect(longForm, "the seeded catalogue should contain a live long-form campaign").toBeDefined();
   liveCampaignId = longForm?.id ?? "";

@@ -64,8 +64,16 @@ const VOUCHER_ROW_SELECT = sql`
          ) AS held
     FROM platform.voucher_fake_voucher v
     LEFT JOIN store.listings l ON l.id = v.listing_id
-    LEFT JOIN store.listing_location ll ON ll.listing_id = v.listing_id
-    LEFT JOIN store.merchant_location loc ON loc.id = ll.location_id
+    -- One branch per voucher: a listing honoured at two branches must not
+    -- list the same voucher twice (the live engine stores the voucher's own).
+    LEFT JOIN LATERAL (
+      SELECT m.name, m.address, m.district
+        FROM store.listing_location ll
+        JOIN store.merchant_location m ON m.id = ll.location_id
+       WHERE ll.listing_id = v.listing_id
+       ORDER BY m.id
+       LIMIT 1
+    ) loc ON true
 `;
 
 function toWalletVoucherRow(row: VoucherRow): WalletVoucherRow {

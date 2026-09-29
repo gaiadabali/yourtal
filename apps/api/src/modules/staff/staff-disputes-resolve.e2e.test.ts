@@ -68,9 +68,10 @@ function post(url: string, session: TestSession, payload?: object) {
 }
 
 /**
- * A captured voucher and its own dispute, ready to resolve: reuses an
- * EXISTING seeded voucher's listing (so it carries a real merchant/currency
- * without this test re-running the whole issuance saga), and fabricates its
+ * A captured voucher and its own dispute, ready to resolve: reuses a seeded
+ * listing with a location (so it carries a real merchant/currency without
+ * this test re-running the whole issuance saga; a fresh database has
+ * listings but no minted vouchers), and fabricates its
  * own authorization + capture + checkout saga/dispute rows around it --
  * this is the one thing `findCaptureIdForVoucher` needs that no seed
  * fixture provides on its own.
@@ -82,20 +83,19 @@ async function seedCapturedDispute(): Promise<{
   region: "AU" | "ID";
 }> {
   const seeded = await owner.query<{
-    id: string;
     merchant_id: string;
     currency: string;
     listing_id: string;
     location_id: string;
     region: "AU" | "ID";
   }>(
-    `SELECT v.id, v.merchant_id, v.currency, v.listing_id, ll.location_id, v.region
-       FROM voucher.vouchers v
-       JOIN store.listing_location ll ON ll.listing_id = v.listing_id
-      ORDER BY v.id LIMIT 1`,
+    `SELECT l.merchant_id, l.currency, l.id AS listing_id, ll.location_id, l.region
+       FROM store.listings l
+       JOIN store.listing_location ll ON ll.listing_id = l.id
+      ORDER BY l.id LIMIT 1`,
   );
   const seed = seeded.rows[0];
-  if (seed === undefined) throw new Error("expected at least one seeded voucher with a location");
+  if (seed === undefined) throw new Error("expected at least one seeded listing with a location");
 
   const voucherId = randomUUID();
   await owner.query(
@@ -177,7 +177,7 @@ describe("staff dispute resolution", () => {
     const resolved = await post(`/api/staff/disputes/${voucherId}/resolve`, finance, {
       reason: "K13: voucher not honoured",
     });
-    expect(resolved.statusCode).toBe(201);
+    expect(resolved.statusCode, resolved.body).toBe(201);
     const body = resolved.json<{
       voucherId: string;
       recoveryPostingId: string;

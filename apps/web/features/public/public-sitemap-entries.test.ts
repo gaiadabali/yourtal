@@ -68,9 +68,17 @@ describe("publicSitemapEntries", () => {
     const seen = new Map<string, number>();
     for (const path of paths) seen.set(path, (seen.get(path) ?? 0) + 1);
 
-    // `/`, `/rewards` and the info pages are the genuine per-locale pairs:
-    // the only pages in both regions, so the only ones with hreflang alternates.
-    const paired = new Set(["/", "/rewards", ...PUBLIC_INFO_SLUGS.map((slug) => `/${slug}`)]);
+    // `/`, `/rewards`, `/transparency` and the info pages are the genuine
+    // per-locale pairs: the only pages in both regions, so the only ones
+    // with hreflang alternates. The bare `/` landing page (11.1.a) is a
+    // separate, single, locale-less entry (`https://yourtal.com/`, no
+    // `/au`/`/id` prefix to strip), so it never reaches this map at all.
+    const paired = new Set([
+      "/",
+      "/rewards",
+      "/transparency",
+      ...PUBLIC_INFO_SLUGS.map((slug) => `/${slug}`),
+    ]);
     const duplicated = [...seen].filter(([path, count]) => count > 1 && !paired.has(path));
     expect(duplicated).toEqual([]);
   });
@@ -115,6 +123,31 @@ describe("publicSitemapEntries", () => {
         (candidate) => candidate.url === `https://yourtal.com/id/c/${firstCampaign.id}`,
       );
       expect(entry?.lastModified).toBe(firstCampaign.publishedAt);
+    }
+  });
+
+  it("11.1.a: lists the bare landing page once, with an x-default alternate", () => {
+    const entries = publicSitemapEntries();
+    const landing = entries.filter((entry) => entry.url === "https://yourtal.com/");
+    expect(landing).toHaveLength(1);
+    expect(landing[0]?.alternates?.languages).toMatchObject({
+      "id-ID": "https://yourtal.com/id/",
+      "en-AU": "https://yourtal.com/au/",
+      "x-default": "https://yourtal.com/",
+    });
+  });
+
+  it("11.3.c: lists /transparency in both regions, with language alternates", () => {
+    const entries = publicSitemapEntries();
+    for (const locale of ["au", "id"]) {
+      const entry = entries.find(
+        (candidate) => candidate.url === `https://yourtal.com/${locale}/transparency`,
+      );
+      expect(entry, locale).toBeDefined();
+      expect(entry?.alternates?.languages).toEqual({
+        "id-ID": "https://yourtal.com/id/transparency",
+        "en-AU": "https://yourtal.com/au/transparency",
+      });
     }
   });
 

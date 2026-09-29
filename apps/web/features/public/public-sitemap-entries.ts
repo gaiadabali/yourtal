@@ -2,7 +2,12 @@ import type { MetadataRoute } from "next";
 import { listPublicCampaigns } from "./public-campaign-data";
 import { listPublicListings } from "./public-listing-data";
 import { listPublicMerchants } from "./public-merchant";
-import { GENERATED_PUBLIC_LOCALES, publicLanguageAlternates, publicUrl } from "./public-locale";
+import {
+  GENERATED_PUBLIC_LOCALES,
+  PUBLIC_SITE_URL,
+  publicLanguageAlternates,
+  publicUrl,
+} from "./public-locale";
 import { slugify } from "./public-slug";
 import { PUBLIC_INFO_SLUGS } from "./public-info-pages";
 
@@ -32,7 +37,17 @@ import { PUBLIC_INFO_SLUGS } from "./public-info-pages";
  * neither is emitted.
  */
 export function publicSitemapEntries(): MetadataRoute.Sitemap {
-  const entries: MetadataRoute.Sitemap = [];
+  // 11.1.a: the bare `/` landing page — one entry, not per-locale (it has
+  // no `[locale]` segment; it IS the chooser the region entries below are
+  // chosen from).
+  const entries: MetadataRoute.Sitemap = [
+    {
+      url: `${PUBLIC_SITE_URL}/`,
+      alternates: {
+        languages: { ...publicLanguageAlternates("/"), "x-default": `${PUBLIC_SITE_URL}/` },
+      },
+    },
+  ];
 
   for (const locale of GENERATED_PUBLIC_LOCALES) {
     entries.push(
@@ -40,6 +55,11 @@ export function publicSitemapEntries(): MetadataRoute.Sitemap {
       {
         url: publicUrl(locale, "/rewards"),
         alternates: { languages: publicLanguageAlternates("/rewards") },
+      },
+      {
+        // 11.3.c
+        url: publicUrl(locale, "/transparency"),
+        alternates: { languages: publicLanguageAlternates("/transparency") },
       },
     );
 

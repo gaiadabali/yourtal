@@ -10,6 +10,7 @@ const sampleVoucher: VoucherDetailSource = {
   voucherId: "00000000-0000-4000-8000-000000000001",
   listingId: "00000000-0000-4000-8000-000000000002",
   state: "activated",
+  status: "active",
   merchantName: "Kopi Sentosa",
   title: "Kopi Sentosa AUD 10 voucher",
   currency: "AUD",

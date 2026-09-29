@@ -19,6 +19,7 @@ const heldVoucher: WalletVoucherDetail = {
   voucherId: "00000000-0000-4000-8000-000000000001",
   listingId: "00000000-0000-4000-8000-000000000010",
   state: "activated",
+  status: "active",
   merchantName: "Kopi Kenangan",
   title: "Kopi Kenangan voucher",
   currency: "IDR",
@@ -31,6 +32,7 @@ const releasedVoucher: WalletVoucherDetail = {
   merchantName: "Toko Berkah",
   title: "Toko Berkah voucher",
   state: "released",
+  status: undefined,
 };
 
 describe("WalletVoucherList (id-ID)", () => {

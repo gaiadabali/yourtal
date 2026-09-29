@@ -23,6 +23,7 @@
     "statusExpired": "Kedaluwarsa",
     "statusRedeemed": "Sudah Ditukar",
     "statusTransferred": "Dipindahkan",
+    "statusVoid": "Tidak berlaku lagi",
     "genericTitle": "Voucher",
     "detailsUnavailable": "Detail tidak tersedia",
     "expiresOn": "Berakhir {date}",

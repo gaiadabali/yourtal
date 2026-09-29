@@ -29,11 +29,11 @@ describe("isVoucherEffectivelyExpired", () => {
 });
 
 describe("classifyVoucherStatus", () => {
-  it("falls back to the coarse state when no real status is known (pre-4.8.c response)", () => {
+  it("reads a held voucher with no public status as void (a dispute, fraud or admin kill)", () => {
     expect(classifyVoucherStatus("activated", false)).toEqual({
-      kind: "held",
-      badgeStatus: "success",
-      isArchived: false,
+      kind: "void",
+      badgeStatus: "neutral",
+      isArchived: true,
     });
     expect(classifyVoucherStatus("reserved", false)).toEqual({
       kind: "pending",
@@ -87,7 +87,8 @@ describe("classifyVoucherStatus", () => {
 describe("describeVoucherStatus", () => {
   it("labels every status in en-AU", () => {
     const t = walletTestTranslator("en-AU");
-    expect(describeVoucherStatus("activated", false, t).label).toBe("Active");
+    expect(describeVoucherStatus("activated", false, t, "active").label).toBe("Active");
+    expect(describeVoucherStatus("activated", false, t).label).toBe("No longer valid");
     expect(describeVoucherStatus("reserved", false, t).label).toBe("Processing");
     expect(describeVoucherStatus("released", false, t).label).toBe("Released");
     expect(describeVoucherStatus("activated", true, t).label).toBe("Expired");
@@ -95,7 +96,8 @@ describe("describeVoucherStatus", () => {
 
   it("labels every status in id-ID", () => {
     const t = walletTestTranslator("id-ID");
-    expect(describeVoucherStatus("activated", false, t).label).toBe("Aktif");
+    expect(describeVoucherStatus("activated", false, t, "active").label).toBe("Aktif");
+    expect(describeVoucherStatus("activated", false, t).label).toBe("Tidak berlaku lagi");
     expect(describeVoucherStatus("released", false, t).label).toBe("Dilepas");
   });
 
@@ -118,8 +120,8 @@ describe("isVoucherRedeemable", () => {
     );
   });
 
-  it("falls back to state === activated when no status is known", () => {
-    expect(isVoucherRedeemable({ state: "activated" }, Date.now())).toBe(true);
+  it("never treats a voucher with no public status as redeemable (a voided one)", () => {
+    expect(isVoucherRedeemable({ state: "activated" }, Date.now())).toBe(false);
     expect(isVoucherRedeemable({ state: "reserved" }, Date.now())).toBe(false);
     expect(isVoucherRedeemable({ state: "released" }, Date.now())).toBe(false);
   });

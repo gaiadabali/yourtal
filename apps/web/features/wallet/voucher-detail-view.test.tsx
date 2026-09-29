@@ -52,6 +52,7 @@ const cachedVoucher: VoucherDetailSource = {
   voucherId: "00000000-0000-4000-8000-000000000001",
   listingId: "00000000-0000-4000-8000-000000000010",
   state: "activated",
+  status: "active",
   merchantName: "Toko Cache",
   title: "Voucher dari cache",
   currency: "IDR",
@@ -138,7 +139,11 @@ describe("VoucherDetailView", () => {
   });
 
   it("shows an archived panel instead of a QR for a released voucher, with no dispute action", async () => {
-    const released: VoucherDetailSource = { ...cachedVoucher, state: "released" };
+    const released: VoucherDetailSource = {
+      ...cachedVoucher,
+      state: "released",
+      status: undefined,
+    };
     const detail = buildCachedVoucherDetail(released, "2026-09-19T09:00:00.000Z");
 
     renderWithRegion(
@@ -190,6 +195,7 @@ describe("VoucherDetailView", () => {
       voucherId: cachedVoucher.voucherId,
       listingId: cachedVoucher.listingId,
       state: "activated",
+      status: "active",
     };
     const detail = buildCachedVoucherDetail(bare, "2026-09-19T09:00:00.000Z");
 
@@ -303,7 +309,11 @@ describe("VoucherDetailView (en-AU)", () => {
   });
 
   it("shows a released voucher's status in English", async () => {
-    const released: VoucherDetailSource = { ...cachedVoucher, state: "released" };
+    const released: VoucherDetailSource = {
+      ...cachedVoucher,
+      state: "released",
+      status: undefined,
+    };
     const detail = buildCachedVoucherDetail(released, "2026-09-19T09:00:00.000Z");
 
     renderWithRegion(

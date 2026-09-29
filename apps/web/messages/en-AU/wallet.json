@@ -23,6 +23,7 @@
     "statusExpired": "Expired",
     "statusRedeemed": "Redeemed",
     "statusTransferred": "Transferred",
+    "statusVoid": "No longer valid",
     "genericTitle": "Voucher",
     "detailsUnavailable": "Details unavailable",
     "expiresOn": "Ended {date}",

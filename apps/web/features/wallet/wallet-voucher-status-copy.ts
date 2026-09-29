@@ -10,14 +10,15 @@ export type WalletVoucherState = "reserved" | "activated" | "released";
 
 /**
  * 11.6.d: the voucher's REAL lifecycle, additive over `state` (4.8.c,
- * merged on main) — `publicVoucherStatusOf`'s public form. `undefined`
- * means a response from before 4.8.c landed; every function below falls
- * back to classifying `state` alone in that case.
+ * merged on main) — `publicVoucherStatusOf`'s public form. The API always
+ * sends it now, except for a voucher voided other than by transfer (a
+ * dispute, fraud or admin kill), which has no public status: `undefined`
+ * on a held voucher therefore means "no longer valid", never "active".
  */
 export type WalletVoucherStatus = "active" | "redeemed" | "expired" | "transferred";
 
 export type VoucherStatusKind =
-  "held" | "pending" | "released" | "expired" | "redeemed" | "transferred";
+  "held" | "pending" | "released" | "expired" | "redeemed" | "transferred" | "void";
 
 /** Matches `@yourtal/ui/status-badge`'s `status` variant. */
 export type BadgeStatus = "success" | "warning" | "danger" | "info" | "neutral";
@@ -38,6 +39,7 @@ export const VOUCHER_STATUS_MESSAGE_KEY: Record<
   | "voucher.statusExpired"
   | "voucher.statusRedeemed"
   | "voucher.statusTransferred"
+  | "voucher.statusVoid"
 > = {
   held: "voucher.statusHeld",
   pending: "voucher.statusPending",
@@ -45,6 +47,7 @@ export const VOUCHER_STATUS_MESSAGE_KEY: Record<
   expired: "voucher.statusExpired",
   redeemed: "voucher.statusRedeemed",
   transferred: "voucher.statusTransferred",
+  void: "voucher.statusVoid",
 };
 
 /**
@@ -63,9 +66,9 @@ export function isVoucherEffectivelyExpired(expiresAt: string | undefined, nowMs
  *
  * Prefers the real `status` (11.6.d) when the response carries one; a
  * client-side `isEffectivelyExpired` still wins even then (a wall-clock
- * check the server response cannot race). Falls back to the original
- * three-bucket `state` classification when `status` is absent — a response
- * from before 4.8.c landed.
+ * check the server response cannot race). Without `status`, a reserved or
+ * released voucher reads from `state`; a held one was voided (see
+ * `WalletVoucherStatus`), so it is archived rather than shown as usable.
  */
 export function classifyVoucherStatus(
   state: WalletVoucherState,
@@ -97,7 +100,7 @@ export function classifyVoucherStatus(
   if (state === "reserved") {
     return { kind: "pending", badgeStatus: "info", isArchived: false };
   }
-  return { kind: "held", badgeStatus: "success", isArchived: false };
+  return { kind: "void", badgeStatus: "neutral", isArchived: true };
 }
 
 /** A translator with next-intl's call signature — `getTranslations` (server) and `useTranslations` (client) both satisfy this. */
@@ -129,8 +132,8 @@ export function describeVoucherStatus(
  * detail page (whether to fetch a QR at all) and `voucher-detail-view.tsx`
  * (whether to render the QR) each need. Prefers `status === "active"`
  * (11.6.d — folds in a mid-hold voucher too, `publicVoucherStatusOf`'s own
- * doc comment) and falls back to the original `state === "activated"` check
- * when `status` has not landed yet.
+ * doc comment). No `status` is never redeemable: that is a voided voucher,
+ * whose QR every counter refuses.
  */
 export function isVoucherRedeemable(
   voucher: {
@@ -141,5 +144,5 @@ export function isVoucherRedeemable(
   nowMs: number,
 ): boolean {
   if (isVoucherEffectivelyExpired(voucher.expiresAt, nowMs)) return false;
-  return voucher.status !== undefined ? voucher.status === "active" : voucher.state === "activated";
+  return voucher.status === "active";
 }

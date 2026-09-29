@@ -16,6 +16,7 @@ const heldVoucher: WalletVoucherDetail = {
   voucherId: "00000000-0000-4000-8000-000000000001",
   listingId: "00000000-0000-4000-8000-000000000010",
   state: "activated",
+  status: "active",
   merchantName: "Toko Berkah",
   title: "Toko Berkah IDR 50.000 voucher",
   currency: "IDR",
@@ -61,6 +62,7 @@ describe("WalletVoucherCard", () => {
       voucherId: "00000000-0000-4000-8000-000000000003",
       listingId: "00000000-0000-4000-8000-000000000010",
       state: "activated",
+      status: "active",
     };
     render(await WalletVoucherCard({ voucher: bare, nowMs, locale: "id-ID" }));
 

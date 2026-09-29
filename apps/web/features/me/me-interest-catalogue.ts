@@ -89,10 +89,9 @@ const TEEN_ICONS: Record<string, LucideIcon> = {
  * else for a teen regardless, the same "the UI offers, the server decides"
  * shape `ME_INTEREST_CATEGORIES` already follows for `isKnownInterestNode`.
  */
-export const ME_TEEN_INTEREST_CATEGORIES: readonly MeInterestCategory[] = TEEN_INTEREST_NODE_IDS.map(
-  (id) => {
+export const ME_TEEN_INTEREST_CATEGORIES: readonly MeInterestCategory[] =
+  TEEN_INTEREST_NODE_IDS.map((id) => {
     const node = INTEREST_TAXONOMY.get(id);
     if (node === undefined) throw new Error(`Teen interest node "${id}" is not in the taxonomy.`);
     return { id: node.id, fallbackLabel: node.label, icon: TEEN_ICONS[node.id] ?? Sparkles };
-  },
-);
+  });

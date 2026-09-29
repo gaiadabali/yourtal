@@ -25,28 +25,26 @@ async function seedProfile(dateOfBirth: string, timezone: string): Promise<strin
 describe("isTeenInQuietHours", () => {
   it("is true for a teen at 21:00 in their own timezone", async () => {
     const userId = await seedProfile("2012-01-01", "Australia/Sydney");
-    expect(
-      await isTeenInQuietHours(pool, userId, new Date("2026-07-01T11:00:00.000Z")),
-    ).toBe(true);
+    expect(await isTeenInQuietHours(pool, userId, new Date("2026-07-01T11:00:00.000Z"))).toBe(true);
   });
 
   it("is false for the same teen at 10:00", async () => {
     const userId = await seedProfile("2012-01-01", "Australia/Sydney");
-    expect(
-      await isTeenInQuietHours(pool, userId, new Date("2026-07-01T00:00:00.000Z")),
-    ).toBe(false);
+    expect(await isTeenInQuietHours(pool, userId, new Date("2026-07-01T00:00:00.000Z"))).toBe(
+      false,
+    );
   });
 
   it("is false for an adult at 21:00 -- quiet hours are a teen-only rule", async () => {
     const userId = await seedProfile("1990-01-01", "Australia/Sydney");
-    expect(
-      await isTeenInQuietHours(pool, userId, new Date("2026-07-01T11:00:00.000Z")),
-    ).toBe(false);
+    expect(await isTeenInQuietHours(pool, userId, new Date("2026-07-01T11:00:00.000Z"))).toBe(
+      false,
+    );
   });
 
   it("fails open (false) when there is no profile to check", async () => {
-    expect(
-      await isTeenInQuietHours(pool, randomUUID(), new Date("2026-07-01T11:00:00.000Z")),
-    ).toBe(false);
+    expect(await isTeenInQuietHours(pool, randomUUID(), new Date("2026-07-01T11:00:00.000Z"))).toBe(
+      false,
+    );
   });
 });

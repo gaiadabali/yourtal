@@ -214,10 +214,10 @@ describe("campaign-published-notify job", () => {
       expect(duringQuietHours.rows.map((row) => row.user_id)).toStrictEqual([adultFollower]);
 
       vi.setSystemTime(new Date("2026-07-01T00:00:00.000Z")); // 10:00 AEST, next day
-      await job.handle(
-        fakeJob({ ...event, idempotencyKey: `${event.idempotencyKey}_2` }),
-        { boss: undefined as never, config },
-      );
+      await job.handle(fakeJob({ ...event, idempotencyKey: `${event.idempotencyKey}_2` }), {
+        boss: undefined as never,
+        config,
+      });
       const outsideQuietHours = await pool.query<{ user_id: string }>(
         `SELECT DISTINCT user_id FROM me.notification WHERE user_id = ANY($1)`,
         [[teenFollower, adultFollower]],

@@ -17,7 +17,10 @@ export interface MeTeenCapSectionProps {
  * language: just today's progress toward a cap that exists to protect, not
  * to gamify.
  */
-export async function MeTeenCapSection({ earnedTodayPoints, dailyCapPoints }: MeTeenCapSectionProps) {
+export async function MeTeenCapSection({
+  earnedTodayPoints,
+  dailyCapPoints,
+}: MeTeenCapSectionProps) {
   const t = await getTranslations("me.teenCap");
   const clamped = Math.min(earnedTodayPoints, dailyCapPoints);
 

@@ -122,7 +122,8 @@ export class WatchController {
       if (ageBand === "teen" && isQuietHours(new Date(), profile.timezone)) {
         throw new ForbiddenException({
           code: "teen_quiet_hours",
-          message: "Reward sessions pause during quiet hours (21:00-07:00). Try again in the morning.",
+          message:
+            "Reward sessions pause during quiet hours (21:00-07:00). Try again in the morning.",
         });
       }
     }

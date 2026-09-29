@@ -57,9 +57,7 @@ export class InterestsController {
     if (principal.attr.ageBand === "teen") {
       const outOfReach = parsed.data.nodeIds.filter((id) => !isTeenInterestNode(id));
       if (outOfReach.length > 0) {
-        throw new BadRequestException(
-          `Not a teen-appropriate interest: ${outOfReach.join(", ")}`,
-        );
+        throw new BadRequestException(`Not a teen-appropriate interest: ${outOfReach.join(", ")}`);
       }
     }
 

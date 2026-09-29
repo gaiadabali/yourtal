@@ -110,9 +110,10 @@ describe("points-unlocked-notify job", () => {
         }),
         { boss: undefined as never, config },
       );
-      const duringQuietHours = await pool.query(`SELECT 1 FROM me.notification WHERE user_id = $1`, [
-        userId,
-      ]);
+      const duringQuietHours = await pool.query(
+        `SELECT 1 FROM me.notification WHERE user_id = $1`,
+        [userId],
+      );
       expect(duringQuietHours.rows).toHaveLength(0);
 
       vi.setSystemTime(new Date("2026-07-01T00:00:00.000Z")); // 10:00 AEST

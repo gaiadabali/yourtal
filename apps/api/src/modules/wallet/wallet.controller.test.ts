@@ -92,7 +92,9 @@ describe("GET /api/wallet", () => {
   it("carries the region's teen daily earn cap for a teen viewer, and omits it for an adult", async () => {
     const fourteenYearsAgo = (() => {
       const now = new Date();
-      const dob = new Date(Date.UTC(now.getUTCFullYear() - 14, now.getUTCMonth(), now.getUTCDate()));
+      const dob = new Date(
+        Date.UTC(now.getUTCFullYear() - 14, now.getUTCMonth(), now.getUTCDate()),
+      );
       return dob.toISOString().slice(0, 10);
     })();
 

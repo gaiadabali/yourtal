@@ -130,6 +130,50 @@ describe("getCampaignReport", () => {
     });
   });
 
+  it("12.3.b: suppresses a teen-audience campaign's report at 19 teen viewers, one below the F12 teen floor", async () => {
+    const result = await getCampaignReport(
+      fakeRepo({
+        campaign: { campaignId: CAMPAIGN_ID, audience: "teen" },
+        sessions: {
+          rewardedViews: TEEN_COHORT_FLOOR - 1,
+          completions: 10,
+          averageWatchTimeSeconds: 20,
+        },
+      }),
+      fakeLedger(),
+      fakeVouchers(),
+      BUSINESS_ID,
+      CAMPAIGN_ID,
+    );
+    const report = result._unsafeUnwrap();
+    expect(report).toStrictEqual({
+      campaignId: CAMPAIGN_ID,
+      suppressed: true,
+      floor: TEEN_COHORT_FLOOR,
+      openViews: null,
+    });
+  });
+
+  it("12.3.b: shows a teen-audience campaign's report at exactly 20 teen viewers, the F12 teen floor itself", async () => {
+    const result = await getCampaignReport(
+      fakeRepo({
+        campaign: { campaignId: CAMPAIGN_ID, audience: "teen" },
+        sessions: {
+          rewardedViews: TEEN_COHORT_FLOOR,
+          completions: 10,
+          averageWatchTimeSeconds: 20,
+        },
+      }),
+      fakeLedger(),
+      fakeVouchers(),
+      BUSINESS_ID,
+      CAMPAIGN_ID,
+    );
+    const report = result._unsafeUnwrap();
+    if (report.suppressed) throw new Error("expected an unsuppressed report at the floor itself");
+    expect(report.rewardedViews).toBe(TEEN_COHORT_FLOOR);
+  });
+
   it("11.2.d: shows open views once they clear the floor, from their OWN query -- never summed with rewardedViews", async () => {
     const result = await getCampaignReport(
       fakeRepo({ openViewCount: COHORT_FLOOR + 5 }),

@@ -518,6 +518,16 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Escrow holds (9.4.b, 20260926015000_ledger_escrow.sql), ledger-internal. ledger-internal's escrowSchema is built by the ledger route and leaves out the available/pending split, so it is not a row mirror. Same ledger-internals note as ledger.account above.",
   "ledger.escrow_release":
     "The exactly-once release of an escrow (same migration). escrowSchema's state is derived from it. Same ledger-internals note as ledger.account above.",
+  "ledger.risk_flag":
+    "TASKS.md 10.4/10.5 (20260929070200_risk_flag_and_activity.sql): the real RiskGate's manual-review queue, ledger-internal. `ledger-internal/risk.ts`'s riskFlagSchema and `staff/risk-queue.ts`'s staffRiskFlagSchema are both built by the ledger's own route from this row plus a joined escrow state, not a row mirror -- same reason ledger.escrow above is not one either.",
+  "ledger.points_expiry_notice":
+    "TASKS.md 10.2.d (same migration): unnotified 30/7-day points-expiring warnings. `ledger-internal/expiry.ts`'s expiryNoticeSchema is built by the ledger's own route (it joins ledger.account for userId/region and reads the CURRENT balance fresh, not what this row stored at notice time). Same ledger-internals note as ledger.account above.",
+  "platform.delivery_log":
+    "TASKS.md 10.4.c (EW-18, 20260929070300_delivery_log.sql): one row per signed HLS request apps/worker's delivery-log-ingest job recognised in the nginx access log. No contract publishes a row of it -- `deliveryCoverage(sessionId)`'s answer is a derived verdict (matches/gap_detected/unknown), not a projection of this table's columns.",
+  "voucher.expiry_outbox":
+    "TASKS.md 10.2.b (20260929070500_voucher_expiry.sql): the voucher expiry sweep's own outbox to the ledger, drained in-process by ledgerpost.Poster (Go) -- same shape voucher.capture_outbox already has, and voucher-internal has no contract for that one either.",
+  "platform.ledger_fake_risk_flag":
+    "TASKS.md 10.5 (20260929070600_ledger_fake_risk_flag.sql): the fake ledger's own backing store for the risk queue, seeded directly by a staff-console test since LEDGER_MODE=fake never runs the real RiskGate. Same reason as platform.ledger_fake_capture above -- an internal fixture table, not a public contract's source.",
   "ledger.quote":
     "Stored quotes (4.1.b), ledger-internal. ledger-internal's quoteSchema is what callers see, built by the ledger route, not a row mirror.",
   "ledger.quote_lock": "Same as ledger.quote: an append-only lock record for a stored quote.",

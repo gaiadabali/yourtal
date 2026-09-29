@@ -193,6 +193,33 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   burnForVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   burnSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
+  // --- ledger-internal: points expiry (10.2.d) and the RiskGate queue (10.4/10.5) ---
+  milestoneDaysSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  expiryNoticeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  unnotifiedPointsExpiryRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  unnotifiedPointsExpirySchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  pointsExpiryNotifiedRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  pointsExpiryNotifiedSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  pointsExpiringEventSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  riskSignalSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  riskFlagSeveritySchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  riskFlagStatusSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  riskFlagSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  riskQueueListRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  riskQueueListSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  riskQueueResolveRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+
+  // --- staff/risk-queue.ts (TASKS.md 10.5.a, in progress): the manual-review
+  // queue screen. Not yet wired to a route in this commit (the merge this
+  // lands in is scoped to 10.2/10.4 only) -- 10.5.a's own controller will
+  // document these inline in a route-registry file, same as every other
+  // staff* schema above.
+  staffRiskSignalSchema: "10.5.a, in progress -- see the comment above this block.",
+  staffRiskFlagSchema: "10.5.a, in progress -- see the comment above this block.",
+  staffRiskQueueSchema: "10.5.a, in progress -- see the comment above this block.",
+  staffRiskResolveRequestSchema: "10.5.a, in progress -- see the comment above this block.",
+  staffRiskResolveResultSchema: "10.5.a, in progress -- see the comment above this block.",
+
   // --- studio media pipeline (TASKS.md 7.2): worker -> api internal callback ---
   mediaReadyCallbackRequestSchema:
     "7.2.b's POST /internal/studio/media/:assetId/ready, called by apps/worker over the loopback " +

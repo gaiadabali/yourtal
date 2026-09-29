@@ -45,6 +45,7 @@ type StoreListing struct {
 	ImageUrl                string
 	Channel                 string
 	PartialRedemption       string
+	RejectionReason         *string
 }
 
 type StoreListingLocation struct {

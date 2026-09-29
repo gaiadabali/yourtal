@@ -241,7 +241,9 @@ CREATE TABLE store.listings (
   content_category          text        NOT NULL,
   image_url                 text        NOT NULL,
   channel                   text        NOT NULL,
-  partial_redemption        text        NOT NULL
+  partial_redemption        text        NOT NULL,
+  -- Added by 20260929070000 (listing moderation), mirrored for the drift guard only.
+  rejection_reason          text
 );
 
 CREATE TABLE store.listing_location (

@@ -36,7 +36,7 @@ const REGION_PARAM: RoutePathParam = {
 
 const PROPOSAL_ID_PARAM: RoutePathParam = {
   name: "id",
-  description: "A `staff.economy_proposal` row id (migration 20260929050100).",
+  description: "A `staff.economy_proposal` row id (migration 20260929060100).",
   schema: { type: "string" },
 };
 

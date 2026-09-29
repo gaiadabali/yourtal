@@ -120,7 +120,7 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "staff-economy.ts's closed kind union, nested inside economyProposalSchema's own inline schema -- not a standalone component.",
   economyProposalStatusSchema: "Same as economyProposalKindSchema above.",
   economyProposalSchema:
-    "9.5.b-d's pending-approval row. Documented inline wherever it appears (route-registry.c-staff-economy.ts), not a registered component -- staff.economy_proposal (migration 20260929050100) is a staff-only read model, same tier as regionSettingSchema above.",
+    "9.5.b-d's pending-approval row. Documented inline wherever it appears (route-registry.c-staff-economy.ts), not a registered component -- staff.economy_proposal (migration 20260929060100) is a staff-only read model, same tier as regionSettingSchema above.",
   economyDaySchema:
     "staff-economy.ts's per-day row, nested inside economyOverviewSchema's own inline schema -- not a standalone component.",
   economyOverviewSchema:

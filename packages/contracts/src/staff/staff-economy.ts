@@ -12,7 +12,7 @@ import { regionSettingSchema } from "../ledger-internal/settings";
  * directly rather than re-declared, so a staff reader and every other reader
  * of those same ledger fields can never drift.
  *
- * `staff.economy_proposal` (migration 20260929050100) is a staff-owned read
+ * `staff.economy_proposal` (migration 20260929060100) is a staff-owned read
  * model, not a second ledger -- see that migration's own header for why it
  * exists (`ledger-internal` exposes no "list what is pending" operation).
  * `economyProposalSchema` below is that row's own shape.

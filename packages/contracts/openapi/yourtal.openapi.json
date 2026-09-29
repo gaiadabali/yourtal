@@ -13892,7 +13892,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "A `staff.economy_proposal` row id (migration 20260929050100).",
+            "description": "A `staff.economy_proposal` row id (migration 20260929060100).",
             "schema": {
               "type": "string"
             }
@@ -14395,7 +14395,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "A `staff.economy_proposal` row id (migration 20260929050100).",
+            "description": "A `staff.economy_proposal` row id (migration 20260929060100).",
             "schema": {
               "type": "string"
             }
@@ -14780,7 +14780,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "A `staff.economy_proposal` row id (migration 20260929050100).",
+            "description": "A `staff.economy_proposal` row id (migration 20260929060100).",
             "schema": {
               "type": "string"
             }
@@ -15349,7 +15349,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "A `staff.economy_proposal` row id (migration 20260929050100).",
+            "description": "A `staff.economy_proposal` row id (migration 20260929060100).",
             "schema": {
               "type": "string"
             }

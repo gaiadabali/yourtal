@@ -1230,6 +1230,236 @@
         }
       }
     },
+    "/api/guardian/{token}": {
+      "get": {
+        "summary": "What a guardian's own consent link shows them — no session",
+        "tags": [
+          "guardian"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "description": "The guardian consent link's token (never the hash stored server-side).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status plus just enough to greet the teen by name — never a date of birth or an email address.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "granted",
+                        "revoked"
+                      ]
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "locale": {
+                      "type": "string",
+                      "enum": [
+                        "en-AU",
+                        "id-ID"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "displayName",
+                    "region",
+                    "locale"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such guardian link — an unknown token and a spent/expired one look identical.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/guardian/{token}/approve": {
+      "post": {
+        "summary": "The guardian confirms they are 18+ and approves",
+        "tags": [
+          "guardian"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "description": "The guardian consent link's token (never the hash stored server-side).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "confirmAdult must be the literal true — there is no partial approval.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirmAdult": {
+                    "type": "boolean",
+                    "const": true
+                  }
+                },
+                "required": [
+                  "confirmAdult"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Granted — idempotent if this link already approved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "approved": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "approved"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "404": {
+            "description": "No such guardian link — an unknown token and a spent/expired one look identical.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This link already withdrew approval (guardian-consent.errors.ts's already_revoked) — 12.1.a's own 'revoked is final for this link; re-approval is out of scope'.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/guardian/{token}/revoke": {
+      "post": {
+        "summary": "The same link withdraws approval and escrows the teen's balance",
+        "tags": [
+          "guardian"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "description": "The guardian consent link's token (never the hash stored server-side).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoked — escrowedPoints is 0 when the account already held nothing, or when this link was already revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revoked": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "escrowedPoints": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000000000,
+                      "format": "int64"
+                    }
+                  },
+                  "required": [
+                    "revoked",
+                    "escrowedPoints"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such guardian link — an unknown token and a spent/expired one look identical.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The ledger could not be reached or refused the escrow call.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/campaigns": {
       "get": {
         "summary": "List visible campaigns for the Earn board",

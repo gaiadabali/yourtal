@@ -51,6 +51,8 @@ export interface AppConfig {
     readonly secretAccessKey: string;
     readonly bucket: string;
   };
+  /** 12.1.a — builds the guardian consent email's links. See `loadAppConfig`'s own comment for the per-`APP_ENV` default. */
+  readonly webOrigin: string;
 }
 
 /**
@@ -96,5 +98,12 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       secretAccessKey: env.S3_SECRET_KEY,
       bucket: env.S3_BUCKET,
     },
+    // 12.1.a: no static schema default (see env.schema.ts's own comment) —
+    // staging's `.env` on Helios is written once and gets no new line for
+    // this, so the fallback has to already be staging's real origin rather
+    // than something a deploy would need to remember to override.
+    webOrigin:
+      env.PUBLIC_WEB_ORIGIN ??
+      (env.APP_ENV === "staging" ? "https://yourtal.gaiada.com" : "http://localhost:3000"),
   };
 }

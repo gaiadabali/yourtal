@@ -1,6 +1,11 @@
-import { NotFoundException } from "@nestjs/common";
+import { BadGatewayException, ConflictException, NotFoundException } from "@nestjs/common";
 import type { HttpException } from "@nestjs/common";
 import type { GetMeError } from "./me.errors";
+import type {
+  ApproveGuardianConsentError,
+  GetGuardianConsentError,
+  RevokeGuardianConsentError,
+} from "./guardian-consent.errors";
 
 /**
  * The one adapter for this module's domain errors (docs/13b section 4).
@@ -24,4 +29,29 @@ export function mapMeErrorToHttpException(error: GetMeError): HttpException {
     code: error.type,
     message: "no profile exists for this account",
   });
+}
+
+/**
+ * The guardian consent routes' own adapter (12.1.a). Unlike
+ * `mapMeErrorToHttpException` above, `not_found` here is a REAL, expected
+ * outcome — an unknown or bad token, deliberately given the same generic
+ * 404 whether the token was never issued, is a typo, or belongs to no row
+ * at all, so a caller cannot use the response to enumerate which — the
+ * same "no enumeration oracle" discipline `ConsumeRefusal`'s own header
+ * documents for `identity.verification_token`.
+ */
+export function mapGuardianConsentErrorToHttpException(
+  error: GetGuardianConsentError | ApproveGuardianConsentError | RevokeGuardianConsentError,
+): HttpException {
+  switch (error.type) {
+    case "not_found":
+      return new NotFoundException({ code: "not_found", message: "No such guardian link." });
+    case "already_revoked":
+      return new ConflictException({
+        code: "already_revoked",
+        message: "This link already withdrew approval; it cannot approve again.",
+      });
+    case "ledger_unavailable":
+      return new BadGatewayException({ code: "ledger_unavailable", message: error.cause });
+  }
 }

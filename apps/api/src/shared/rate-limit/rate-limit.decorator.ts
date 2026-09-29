@@ -93,3 +93,26 @@ export const EMAIL_VERIFY_REQUEST_RATE_LIMIT: RateLimitOptions = {
   identity: { max: 5, windowSeconds: 60 * 60 },
   ip: { max: 20, windowSeconds: 60 * 60 },
 };
+
+/**
+ * 12.1.a's guardian consent routes — public, no session, and a token is the
+ * only credential, so the IP dimension is what actually bounds a guesser.
+ * Looser than password reset above: a real guardian legitimately re-opens
+ * the same link (view, then approve, then — much later — revoke), and none
+ * of the three sends mail on every call the way password reset does.
+ */
+export const GUARDIAN_CONSENT_VIEW_RATE_LIMIT: RateLimitOptions = {
+  routeId: "guardian.consent.view",
+  ip: { max: 30, windowSeconds: 15 * 60 },
+  route: { max: 2000, windowSeconds: 15 * 60 },
+};
+export const GUARDIAN_CONSENT_APPROVE_RATE_LIMIT: RateLimitOptions = {
+  routeId: "guardian.consent.approve",
+  ip: { max: 10, windowSeconds: 15 * 60 },
+  route: { max: 500, windowSeconds: 15 * 60 },
+};
+export const GUARDIAN_CONSENT_REVOKE_RATE_LIMIT: RateLimitOptions = {
+  routeId: "guardian.consent.revoke",
+  ip: { max: 10, windowSeconds: 15 * 60 },
+  route: { max: 500, windowSeconds: 15 * 60 },
+};

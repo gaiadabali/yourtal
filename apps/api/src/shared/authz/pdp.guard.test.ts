@@ -40,6 +40,7 @@ const A_PROFILE: UserProfileRepository = {
       suspendedAt: null,
     }),
   update: () => Promise.reject(new Error("not used by this fake")),
+  setParentConsentStatus: () => Promise.reject(new Error("not used by this fake")),
 };
 const NO_MEMBERSHIPS: BusinessMembershipReader = { listForUser: () => Promise.resolve([]) };
 const NO_STAFF_ROLES: StaffRoleReader = { listForUser: () => Promise.resolve([]) };

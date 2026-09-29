@@ -54,6 +54,17 @@ export class DrizzleUserProfileRepository implements UserProfileRepository {
       })
       .where(eq(userProfiles.userId, userId));
   }
+
+  async setParentConsentStatus(
+    userId: string,
+    status: ParentConsentStatus,
+    tx?: AppDb,
+  ): Promise<void> {
+    await (tx ?? this.db)
+      .update(userProfiles)
+      .set({ parentConsentStatus: status, updatedAt: new Date() })
+      .where(eq(userProfiles.userId, userId));
+  }
 }
 
 // The columns below are CHECK-constrained by the migration to exactly these
@@ -72,6 +83,13 @@ function readDisplayLocale(value: string): "en-AU" | "id-ID" {
 }
 
 function readParentConsentStatus(value: string): ParentConsentStatus {
-  if (value === "not_required" || value === "pending" || value === "granted") return value;
+  if (
+    value === "not_required" ||
+    value === "pending" ||
+    value === "granted" ||
+    value === "revoked"
+  ) {
+    return value;
+  }
   throw new Error(`identity.user_profile.parent_consent_status has an unexpected value: ${value}`);
 }

@@ -116,6 +116,7 @@ async function populatableAttributes(): Promise<Set<string>> {
           suspendedAt: null,
         }),
       update: () => Promise.reject(new Error("unused")),
+      setParentConsentStatus: () => Promise.reject(new Error("unused")),
     },
     { listForUser: () => Promise.resolve([]) },
     { listForUser: () => Promise.resolve([]) },

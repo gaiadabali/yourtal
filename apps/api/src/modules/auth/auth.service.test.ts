@@ -13,6 +13,7 @@ import type { AppConfig } from "../../config/app-config";
 import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { DrizzleStaffRoleReader } from "../identity/persistence/drizzle-staff-role-reader";
+import { DrizzleGuardianConsentRepository } from "../identity/persistence/drizzle-guardian-consent.repository";
 import type { RegisterProfile } from "./auth.service";
 import { AuthService } from "./auth.service";
 import { DevTokenAccess } from "./dev-token-access";
@@ -75,6 +76,7 @@ const sessionRepo = new DrizzleSessionRepository(db);
 const verificationTokens = new DrizzleVerificationTokenRepository(db);
 const profiles = new DrizzleUserProfileRepository(db);
 const staffRoles = new DrizzleStaffRoleReader(db);
+const guardianConsents = new DrizzleGuardianConsentRepository(db);
 const sessionService = new SessionService(sessionRepo, CONFIG);
 const throttle = new ThrottleService(redis);
 const devTokenAccess = new DevTokenAccess();
@@ -90,6 +92,7 @@ const auth = new AuthService(
   verificationTokens,
   profiles,
   staffRoles,
+  guardianConsents,
   sessionService,
   throttle,
   devTokenAccess,
@@ -192,6 +195,7 @@ describe("register — 2.5/F31: credential and profile are one transaction", () 
       create: () => Promise.reject(new Error("simulated profile write failure (2.5/F31 test)")),
       findByUserId: () => Promise.resolve(null),
       update: () => Promise.resolve(),
+      setParentConsentStatus: () => Promise.resolve(),
     };
     // A second AuthService instance sharing every real collaborator except
     // the profile repository — proves the ROLLBACK, not just that a broken
@@ -204,6 +208,7 @@ describe("register — 2.5/F31: credential and profile are one transaction", () 
       verificationTokens,
       failingProfiles,
       staffRoles,
+      guardianConsents,
       sessionService,
       throttle,
       devTokenAccess,
@@ -622,6 +627,7 @@ describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox"
       verificationTokens,
       profiles,
       staffRoles,
+      guardianConsents,
       sessionService,
       throttle,
       devTokenAccess,

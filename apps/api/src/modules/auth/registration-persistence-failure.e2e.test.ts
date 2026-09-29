@@ -53,6 +53,8 @@ const failingProfiles: UserProfileRepository = {
   },
   findByUserId: (userId) => realProfiles.findByUserId(userId),
   update: (userId, patch) => realProfiles.update(userId, patch),
+  setParentConsentStatus: (userId, status, tx) =>
+    realProfiles.setParentConsentStatus(userId, status, tx),
 };
 
 beforeAll(async () => {

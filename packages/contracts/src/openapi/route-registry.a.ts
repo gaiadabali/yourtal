@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { displayLocaleSchema } from "../identity/user-profile";
 import {
+  approveGuardianConsentRequestSchema,
+  approveGuardianConsentResultSchema,
+  guardianConsentViewSchema,
+  revokeGuardianConsentResultSchema,
+} from "../identity/guardian";
+import {
   FORBIDDEN,
   PDP_UNAVAILABLE,
   VALIDATION_400,
@@ -417,5 +423,83 @@ export const DEV_CLOCK_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "The pg-boss queue and job id this enqueued.",
     successSchema: runJobResponseSchema,
     errors: [VALIDATION_400, FORBIDDEN, PDP_UNAVAILABLE],
+  },
+];
+
+// --- guardian-consent.controller.ts (TASKS.md 12.1.a) ---
+//
+// Public, no-session routes — the hashed token in the URL IS the credential,
+// same shape `device.ts`'s pairing code is for a counter device. No
+// FORBIDDEN/PDP_UNAVAILABLE here: `@PublicRoute` means no PDP question is
+// asked at all for any of these three (guardian-consent.controller.ts's own
+// header explains why). `NOT_FOUND` is the one error every route shares —
+// an unknown OR bad token, deliberately given the same generic 404 either
+// way (no enumeration oracle, guardian-consent.errors.ts's own comment).
+
+const GUARDIAN_TOKEN_PARAM = {
+  name: "token",
+  description: "The guardian consent link's token (never the hash stored server-side).",
+  schema: { type: "string" },
+};
+
+const GUARDIAN_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description: "No such guardian link — an unknown token and a spent/expired one look identical.",
+  documented: true,
+};
+
+const GUARDIAN_ALREADY_REVOKED: RouteErrorResponse = {
+  status: 409,
+  description:
+    "This link already withdrew approval (guardian-consent.errors.ts's already_revoked) — " +
+    "12.1.a's own 'revoked is final for this link; re-approval is out of scope'.",
+  documented: true,
+};
+
+const GUARDIAN_LEDGER_UNAVAILABLE: RouteErrorResponse = {
+  status: 502,
+  description: "The ledger could not be reached or refused the escrow call.",
+  documented: true,
+};
+
+export const GUARDIAN_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "get",
+    path: "/api/guardian/{token}",
+    summary: "What a guardian's own consent link shows them — no session",
+    tags: ["guardian"],
+    pathParams: [GUARDIAN_TOKEN_PARAM],
+    successStatus: 200,
+    successDescription:
+      "Status plus just enough to greet the teen by name — never a date of birth or an email address.",
+    successSchema: inlineSchema(guardianConsentViewSchema),
+    errors: [GUARDIAN_NOT_FOUND],
+  },
+  {
+    method: "post",
+    path: "/api/guardian/{token}/approve",
+    summary: "The guardian confirms they are 18+ and approves",
+    tags: ["guardian"],
+    pathParams: [GUARDIAN_TOKEN_PARAM],
+    requestBody: {
+      description: "confirmAdult must be the literal true — there is no partial approval.",
+      schema: inlineSchema(approveGuardianConsentRequestSchema),
+    },
+    successStatus: 200,
+    successDescription: "Granted — idempotent if this link already approved.",
+    successSchema: inlineSchema(approveGuardianConsentResultSchema),
+    errors: [VALIDATION_400, GUARDIAN_NOT_FOUND, GUARDIAN_ALREADY_REVOKED],
+  },
+  {
+    method: "post",
+    path: "/api/guardian/{token}/revoke",
+    summary: "The same link withdraws approval and escrows the teen's balance",
+    tags: ["guardian"],
+    pathParams: [GUARDIAN_TOKEN_PARAM],
+    successStatus: 200,
+    successDescription:
+      "Revoked — escrowedPoints is 0 when the account already held nothing, or when this link was already revoked.",
+    successSchema: inlineSchema(revokeGuardianConsentResultSchema),
+    errors: [GUARDIAN_NOT_FOUND, GUARDIAN_LEDGER_UNAVAILABLE],
   },
 ];

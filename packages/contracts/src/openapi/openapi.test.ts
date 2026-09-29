@@ -73,6 +73,16 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   staffSessionSchema: "Same as staffRoleSchema above.",
   staffBusinessSummarySchema:
     "9.3.a's staff Businesses zone: GET /api/staff/businesses documents its list item inline in route-registry.c-staff-businesses.ts, same as staffSessionSchema above.",
+  guardianConsentStatusSchema:
+    "12.1.a: a leaf enum of guardianConsentViewSchema below, documented inline (inlineSchema, not a named component) in route-registry.a.ts's three /api/guardian/:token routes.",
+  guardianConsentViewSchema:
+    "12.1.a: GET /api/guardian/:token's response, documented inline in route-registry.a.ts, same as guardianConsentStatusSchema above.",
+  approveGuardianConsentRequestSchema:
+    "12.1.a: POST /api/guardian/:token/approve's body, documented inline in route-registry.a.ts.",
+  approveGuardianConsentResultSchema:
+    "12.1.a: POST /api/guardian/:token/approve's response, documented inline in route-registry.a.ts.",
+  revokeGuardianConsentResultSchema:
+    "12.1.a: POST /api/guardian/:token/revoke's response, documented inline in route-registry.a.ts.",
   staffBusinessDetailSchema:
     "9.3.a's staff Businesses zone: GET /api/staff/businesses/{businessId} and every review action's response, documented inline in route-registry.c-staff-businesses.ts.",
   listStaffBusinessesResponseSchema:

@@ -37,6 +37,9 @@ class FakeProfiles implements UserProfileRepository {
   update(): Promise<void> {
     return Promise.resolve();
   }
+  setParentConsentStatus(): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 /**

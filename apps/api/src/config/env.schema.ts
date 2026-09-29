@@ -224,6 +224,16 @@ export const envSchema = z.object({
   S3_ACCESS_KEY: z.string().min(1).default("yourtal"),
   S3_SECRET_KEY: z.string().min(1).default("yourtal_local_only"),
   S3_BUCKET: z.string().min(1).default("yourtal-media"),
+
+  /**
+   * 12.1.a: builds the guardian consent email's approve/revoke links
+   * (`${PUBLIC_WEB_ORIGIN}/guardian/<token>`). No static default here — the
+   * right default depends on `APP_ENV`, which `loadAppConfig` reads
+   * alongside this one, so the fallback lives there (staging's own `.env`
+   * on Helios is written once and will not get a new line for this, per the
+   * coordinator's note: the default has to be right with no env change).
+   */
+  PUBLIC_WEB_ORIGIN: z.url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

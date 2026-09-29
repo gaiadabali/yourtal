@@ -17,6 +17,9 @@ import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.re
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { STAFF_ROLE_READER } from "../identity/persistence/staff-role-reader";
 import type { StaffRoleReader } from "../identity/persistence/staff-role-reader";
+import { GUARDIAN_CONSENT_REPOSITORY } from "../identity/persistence/guardian-consent.repository";
+import type { GuardianConsentRepository } from "../identity/persistence/guardian-consent.repository";
+import { guardianConsentEmailContent } from "./guardian-consent-email";
 import { hashPassword, verifyPassword } from "./crypto/password-hash";
 import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
 import { DevTokenAccess } from "./dev-token-access";
@@ -91,6 +94,7 @@ export class AuthService {
     private readonly verificationTokens: VerificationTokenRepository,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(STAFF_ROLE_READER) private readonly staffRoles: StaffRoleReader,
+    @Inject(GUARDIAN_CONSENT_REPOSITORY) private readonly guardianConsents: GuardianConsentRepository,
     private readonly sessions: SessionService,
     private readonly throttle: ThrottleService,
     private readonly devTokenAccess: DevTokenAccess,
@@ -148,6 +152,12 @@ export class AuthService {
       const userId = randomUUID();
       const secretHash = await hashPassword(password);
 
+      // 12.1.a: minted BEFORE the transaction opens, so the raw token
+      // (never stored — only its hash goes into the row below) is still in
+      // scope to email AFTER the transaction commits. `null` for an adult
+      // account — nothing to consent to, nothing to email.
+      const guardianConsentToken = isAdult ? null : issueOpaqueToken();
+
       // 2.5/F31: one Postgres transaction, opened here (docs/13b §7 —
       // "opened in the use-case") on THIS module's own pool (`AUTH_DB`).
       // `identity.credential` and `identity.user_profile` are two DIFFERENT
@@ -184,6 +194,24 @@ export class AuthService {
           },
           tx,
         );
+
+        // 12.1.a: the consent row lands in the SAME transaction as the
+        // profile it gates — a crash between the two would otherwise leave
+        // a pending teen account with no token anyone could ever use to
+        // approve it. `guardianEmail` is guaranteed non-undefined here: the
+        // `!isAdult` branch above already refused `guardian_email_required`
+        // otherwise.
+        if (guardianConsentToken !== null) {
+          await this.guardianConsents.create(
+            {
+              userId,
+              tokenHash: guardianConsentToken.hash,
+              guardianEmail: profile.guardianEmail as string,
+              region: profile.region,
+            },
+            tx,
+          );
+        }
         return "created" as const;
       });
 
@@ -193,6 +221,21 @@ export class AuthService {
       }
 
       const token = await this.issueSession(userId, now);
+
+      // Best-effort, same reasoning `deliver()`'s own comment gives: the
+      // account and its consent row already committed above, so a delivery
+      // outage here should not retroactively fail a registration that
+      // already succeeded.
+      if (guardianConsentToken !== null) {
+        await this.sendGuardianConsentEmail(
+          profile.locale,
+          profile.displayName,
+          profile.guardianEmail as string,
+          profile.region,
+          guardianConsentToken.token,
+        );
+      }
+
       return ok({ userId, token });
     });
   }
@@ -472,6 +515,42 @@ export class AuthService {
     });
     if (sent.isErr()) {
       this.logger.warn(`${purpose} email not sent for ${userId}: ${sent.error.kind}`);
+    }
+  }
+
+  /**
+   * 12.1.a: the registration-time guardian invite. Idempotent by
+   * construction the same way `deliver()`'s own idempotencyKey is — a
+   * fresh registration mints exactly one token, so this runs at most once
+   * per account; a resend flow is not built here (`identity.guardian_consent`
+   * only ever gets one row per teen).
+   */
+  private async sendGuardianConsentEmail(
+    locale: "en-AU" | "id-ID",
+    displayName: string,
+    guardianEmail: string,
+    region: "AU" | "ID",
+    token: string,
+  ): Promise<void> {
+    const approveUrl = `${this.config.webOrigin}/guardian/${token}`;
+    const revokeUrl = `${this.config.webOrigin}/guardian/${token}?action=revoke`;
+    const { subject, body } = guardianConsentEmailContent(locale, displayName, approveUrl, revokeUrl);
+
+    const sent = await this.email.send({
+      // The token hash, not the token — same convention `deliver()`'s own
+      // idempotencyKey comment documents: a resend of the SAME token (there
+      // is never one; each registration mints a fresh one) upserts onto the
+      // same outbox row rather than duplicating it.
+      idempotencyKey: hashOpaqueToken(token),
+      to: guardianEmail,
+      region,
+      category: "guardian_consent",
+      subject,
+      body,
+      metadata: { token },
+    });
+    if (sent.isErr()) {
+      this.logger.warn(`guardian_consent email not sent: ${sent.error.kind}`);
     }
   }
 

@@ -57,6 +57,7 @@ const CONFIG: AppConfig = {
     secretAccessKey: "yourtal_local_only",
     bucket: "yourtal-media",
   },
+  webOrigin: "http://localhost:3000",
 };
 
 const db: AppDb = createAppDb(CONFIG.databaseUrl);

@@ -70,6 +70,7 @@
     "./staff/settlement": "./src/staff/staff-settlement.ts",
     "./region/mock": "./src/region/region.mock.ts",
     "./identity/user-profile": "./src/identity/user-profile.ts",
+    "./identity/guardian": "./src/identity/guardian.ts",
     "./mock-source": "./src/mock-source.ts",
     "./mock-seed": "./src/mock-seed.ts",
     "./*": "./src/*.ts"

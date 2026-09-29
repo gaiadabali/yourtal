@@ -7,7 +7,8 @@ import type { AppDb } from "../../../shared/persistence/drizzle-client";
  * (`@yourtal/jurisdiction/age`), never stored, and this repository only
  * ever hands back what the row actually holds.
  */
-export type ParentConsentStatus = "not_required" | "pending" | "granted";
+/** `revoked` added by 12.1.a — the shared contract with Area B's `guardianConsent` principal attribute (phase12-common.md). */
+export type ParentConsentStatus = "not_required" | "pending" | "granted" | "revoked";
 
 export interface NewUserProfile {
   readonly userId: string;
@@ -44,6 +45,17 @@ export interface UserProfileRepository {
   findByUserId(userId: string): Promise<StoredUserProfile | null>;
   /** No-op if the user has no profile row — callers that need "exists" check `findByUserId` first. */
   update(userId: string, patch: UserProfileUpdate): Promise<void>;
+  /**
+   * 12.1.a: a dedicated write path for the ONE column `UserProfileUpdate`
+   * deliberately excludes — `parent_consent_status` is never a `PATCH
+   * /api/me` field (a caller cannot self-grant their own guardian consent),
+   * so it gets its own method rather than widening `UserProfileUpdate` and
+   * having to re-litigate that boundary at every call site. `tx`, same
+   * reason `create`'s own has one: `GuardianConsentService` moves this
+   * column and `identity.guardian_consent`'s own row together, in one
+   * transaction, on approve and on revoke.
+   */
+  setParentConsentStatus(userId: string, status: ParentConsentStatus, tx?: AppDb): Promise<void>;
 }
 
 export const USER_PROFILE_REPOSITORY = Symbol("USER_PROFILE_REPOSITORY");

@@ -3,6 +3,8 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import { DrizzlePrincipalSecurityStateRepository } from "./persistence/drizzle-principal-security-state.repository";
 import { PRINCIPAL_SECURITY_STATE_REPOSITORY } from "./persistence/principal-security-state.repository";
 import { DrizzleUserProfileRepository } from "./persistence/drizzle-user-profile.repository";
@@ -11,9 +13,13 @@ import { DrizzleBusinessMembershipReader } from "./persistence/drizzle-business-
 import { BUSINESS_MEMBERSHIP_READER } from "./persistence/business-membership-reader";
 import { DrizzleStaffRoleReader } from "./persistence/drizzle-staff-role-reader";
 import { STAFF_ROLE_READER } from "./persistence/staff-role-reader";
+import { DrizzleGuardianConsentRepository } from "./persistence/drizzle-guardian-consent.repository";
+import { GUARDIAN_CONSENT_REPOSITORY } from "./persistence/guardian-consent.repository";
+import { IDENTITY_DB } from "./persistence/identity-db.token";
 import { MeController } from "./me.controller";
+import { GuardianConsentController } from "./guardian-consent.controller";
 
-export const IDENTITY_DB = Symbol("IDENTITY_DB");
+export { IDENTITY_DB };
 
 /**
  * The identity domain's own storage: the freeze state
@@ -51,13 +57,31 @@ export const IDENTITY_DB = Symbol("IDENTITY_DB");
       useFactory: (db: AppDb) => new DrizzleStaffRoleReader(db),
       inject: [IDENTITY_DB],
     },
+    {
+      provide: GUARDIAN_CONSENT_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleGuardianConsentRepository(db),
+      inject: [IDENTITY_DB],
+    },
+    // 12.1.a: `GuardianConsentController.revoke` escrows the teen's balance.
+    // A second instance, on IDENTITY_DB's own pool — same physical database
+    // as WALLET_DB (`config.databaseUrl`), so `fake` mode's
+    // `platform.ledger_fake_*` reads/writes agree with the one every other
+    // module sees — rather than importing WalletModule, which would import
+    // IdentityModule right back (WalletModule already does, for
+    // USER_PROFILE_REPOSITORY) and make the two modules circular.
+    {
+      provide: LEDGER_INTERNAL_CLIENT,
+      useFactory: (config: AppConfig, db: AppDb) => createLedgerClient(config, db),
+      inject: [APP_CONFIG, IDENTITY_DB],
+    },
   ],
-  controllers: [MeController],
+  controllers: [MeController, GuardianConsentController],
   exports: [
     PRINCIPAL_SECURITY_STATE_REPOSITORY,
     USER_PROFILE_REPOSITORY,
     BUSINESS_MEMBERSHIP_READER,
     STAFF_ROLE_READER,
+    GUARDIAN_CONSENT_REPOSITORY,
   ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100

@@ -51,13 +51,21 @@ export async function getMarketingFundings(region: "AU" | "ID"): Promise<readonl
   return result.data;
 }
 
+/**
+ * `[]` on a 403 (ops only, `platform_setting.view` -- finance has no ALLOW
+ * rule for it at all) rather than `forbidden()`: this shares a page with
+ * marketing funding, which finance CAN see, so a finance-only viewer must
+ * still get that page, just with an empty kill-switch section -- same
+ * tolerance `getRateScreen` gives ops on the rate screen.
+ */
 export async function getKillSwitches(): Promise<readonly KillSwitch[]> {
   const result = await apiFetch(
     "/api/staff/economy/kill-switches",
     z.array(killSwitchSchema),
   );
-  if (!result.ok) throwOrForbid("load kill switches", result.error);
-  return result.data;
+  if (result.ok) return result.data;
+  if (result.error.kind === "http" && result.error.status === 403) return [];
+  throw new Error(`Could not load kill switches: ${result.error.message}`);
 }
 
 export async function getSettingsScreen(region: "AU" | "ID"): Promise<SettingsScreen> {

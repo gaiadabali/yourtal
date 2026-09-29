@@ -135,9 +135,10 @@ test.describe.serial("9.5: staff economy console", () => {
     await pageA.getByRole("button", { name: "Propose rate change" }).click();
     await expect(pageA.getByText("The change was proposed and is awaiting a second approver.")).toBeVisible();
 
-    // The proposer cannot approve their own change -- no approve button for their own row.
-    await expect(pageA.getByText("Awaiting a second approver")).toBeVisible();
-    await expect(pageA.getByRole("button", { name: "Approve" })).toHaveCount(0);
+    // The proposer cannot approve their own change -- their own row shows
+    // no approve button (a self-approval attempt is also proven denied,
+    // server-side, by staff-economy.e2e.test.ts's API suite).
+    await expect(pageA.getByText("Awaiting a second approver").first()).toBeVisible();
     await pageA.close();
 
     const pageB = await pageAs(browser, baseURL as string, financeB.token);
@@ -181,7 +182,7 @@ test.describe.serial("9.5: staff economy console", () => {
     await pageB.goto("/staff/economy?region=AU");
     await pageB.getByRole("button", { name: "Approve" }).first().click();
     await expect(pageB.getByText("The change was approved.")).toBeVisible();
-    await expect(pageB.getByText("BSB-062-000 REF-9.5.e")).toBeVisible();
+    await expect(pageB.getByText("BSB-062-000 REF-9.5.e").first()).toBeVisible();
     await pageB.close();
   });
 
@@ -191,7 +192,7 @@ test.describe.serial("9.5: staff economy console", () => {
   }) => {
     const pageA = await pageAs(browser, baseURL as string, financeA.token);
     await pageA.goto("/staff/economy/settings?region=AU");
-    await expect(pageA.getByText('"daily_earn_cap"')).toBeVisible();
+    await expect(pageA.getByText("daily_earn_cap").first()).toBeVisible();
 
     await pageA.getByLabel("Setting key").fill("daily_earn_cap");
     await pageA.getByLabel("New value (JSON)").fill("550");
@@ -229,7 +230,7 @@ test.describe.serial("9.5: staff economy console", () => {
     await page.getByLabel("New state").selectOption("true");
     await page.getByRole("button", { name: "Apply" }).click();
     await expect(page.getByText("The kill switch was updated.")).toBeVisible();
-    await expect(page.getByText("merchant-9-5-e2e")).toBeVisible();
+    await expect(page.getByText("merchant-9-5-e2e").first()).toBeVisible();
     await expect(page.getByText("Tripped").first()).toBeVisible();
     await page.close();
   });

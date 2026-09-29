@@ -400,6 +400,8 @@ async function assembleForSchema(dbPool: pg.Pool, campaignId: string): Promise<u
   };
 }
 
+// Each test transcodes two real clips with ffmpeg before it prices a voucher:
+// seconds on a laptop, well over a minute on a CI runner.
 describe("runDemoMediaVouchers", () => {
   it("prices and mints 6 real vouchers per business, region/currency held, idempotent on rerun", async () => {
     const stamp = Date.now();
@@ -546,7 +548,7 @@ describe("runDemoMediaVouchers", () => {
       await ledger.close();
       await voucher.close();
     }
-  }, 60_000);
+  }, 240_000);
 
   it("reports a per-business failure loudly without stopping the others", async () => {
     const stamp = Date.now();
@@ -585,5 +587,5 @@ describe("runDemoMediaVouchers", () => {
       await ledger.close();
       await voucher.close();
     }
-  }, 60_000);
+  }, 240_000);
 });

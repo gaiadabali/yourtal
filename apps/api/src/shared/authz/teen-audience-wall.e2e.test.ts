@@ -252,7 +252,12 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  for (const id of [teenCampaignId, adultCampaignId, channelTeenCampaignId, channelAdultCampaignId]) {
+  for (const id of [
+    teenCampaignId,
+    adultCampaignId,
+    channelTeenCampaignId,
+    channelAdultCampaignId,
+  ]) {
     await owner.execute(sql`DELETE FROM campaign.terms_version WHERE campaign_id = ${id}`);
     await owner.execute(sql`DELETE FROM campaign.video_source WHERE campaign_id = ${id}`);
     await owner.execute(sql`DELETE FROM campaign.campaigns WHERE id = ${id}`);

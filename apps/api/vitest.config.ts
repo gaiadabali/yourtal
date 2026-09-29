@@ -14,10 +14,13 @@ export default defineConfig({
     // gate env var is set (scripts/checkout-live.mjs sets CHECKOUT_LIVE=1;
     // TASKS.md 9.2.c's staff-voucher-batch-review.live.test.ts sets
     // VOUCHER_BATCH_LIVE=1 itself, self-contained rather than through a
-    // root script). Left in the default run it only ever reports "skipped",
-    // which Integration rightly refuses to treat as a pass.
+    // root script; 10.6.c's staff-settlement.live.test.ts sets
+    // SETTLEMENT_LIVE=1 the same way). Left in the default run it only ever
+    // reports "skipped", which Integration rightly refuses to treat as a pass.
     exclude:
-      process.env.CHECKOUT_LIVE === "1" || process.env.VOUCHER_BATCH_LIVE === "1"
+      process.env.CHECKOUT_LIVE === "1" ||
+      process.env.VOUCHER_BATCH_LIVE === "1" ||
+      process.env.SETTLEMENT_LIVE === "1"
         ? configDefaults.exclude
         : [...configDefaults.exclude, "src/**/*.live.test.ts"],
     environment: "node",

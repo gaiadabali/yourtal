@@ -1,6 +1,7 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { PublicListing } from "@yourtal/contracts/listing";
-import { listLivePublicCampaigns } from "./public-campaign-data";
+import { getPublicCampaignFromApi, listLivePublicCampaigns } from "./public-campaign-data";
+import { getPublicFeed } from "./public-feed-data";
 import { listPublicListings } from "./public-listing-data";
 import type { PublicLocale } from "./public-locale";
 import { slugify } from "./public-slug";
@@ -100,4 +101,56 @@ export function listPublicMerchants(locale: PublicLocale): PublicMerchant[] {
 /** A single merchant view for the public merchant page, or `undefined` if no campaign or listing carries this slug's name in this locale. */
 export function getPublicMerchant(slug: string, locale: PublicLocale): PublicMerchant | undefined {
   return listPublicMerchants(locale).find((merchant) => merchant.slug === slug);
+}
+
+/**
+ * 11.3.d: a real, seeded merchant the mock catalogue above knows nothing
+ * about — found crawling the public site once real campaigns (11.2.a)
+ * started linking to their own merchant page, none of which the mock-only
+ * `listPublicMerchants` above had ever heard of (a real 404 on a real,
+ * generated link). Built from whichever of this merchant's campaigns are in
+ * the anonymous Open Viewing feed (`getPublicFeed`) — the only public,
+ * unauthenticated listing of real campaigns this app has; a real merchant
+ * with campaigns outside that feed is not fully represented here, but an
+ * honestly partial page beats a 404 for a link this app's own campaign
+ * pages generate.
+ *
+ * `listings: []` always: there is no real listing→merchant join surfaced
+ * anywhere public yet — the same absence this file's own header already
+ * documents for the mock data, now also true for real data, so it is left
+ * empty rather than fabricated.
+ */
+export async function getPublicMerchantFromApi(
+  slug: string,
+  locale: PublicLocale,
+): Promise<PublicMerchant | undefined> {
+  const feed = await getPublicFeed(locale);
+  const matches = feed.filter((item) => slugify(item.merchantName) === slug);
+  const [first] = matches;
+  if (first === undefined) {
+    return undefined;
+  }
+
+  const campaignIds = [...new Set(matches.map((item) => item.campaignId))];
+  const campaigns = (
+    await Promise.all(campaignIds.map((id) => getPublicCampaignFromApi(id)))
+  ).filter((campaign): campaign is Campaign => campaign !== undefined);
+  if (campaigns.length === 0) {
+    return undefined;
+  }
+
+  return { slug, name: first.merchantName, district: null, campaigns, listings: [] };
+}
+
+/**
+ * `getPublicMerchant` (the fixed mock catalogue) first, then
+ * `getPublicMerchantFromApi` (a real seeded merchant) — same "no
+ * hash-synthesised fallback, mock first, real API second" convention
+ * `public-campaign-data.ts`'s own `getPublicCampaignForLocale` follows.
+ */
+export async function getPublicMerchantForLocale(
+  slug: string,
+  locale: PublicLocale,
+): Promise<PublicMerchant | undefined> {
+  return getPublicMerchant(slug, locale) ?? (await getPublicMerchantFromApi(slug, locale));
 }

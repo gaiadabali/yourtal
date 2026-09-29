@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getPublicMerchant, listPublicMerchants } from "@/features/public/public-merchant";
+import { getPublicMerchantForLocale, listPublicMerchants } from "@/features/public/public-merchant";
 import {
   GENERATED_PUBLIC_LOCALES,
   publicLocaleConfig,
@@ -23,6 +23,13 @@ import { publicTwitterCard } from "@/features/public/public-twitter-card";
  * `apps/web/features/public/public-merchant.ts` for why `[merchant]` is a
  * `merchantName` slug rather than a `Business.id` — there is no reliable
  * join between the two in this codebase's mock data.
+ *
+ * **11.3.d: `dynamicParams = true`.** A real, seeded campaign's own
+ * merchant (from the live anonymous feed, 11.2.a) is not in the mock
+ * catalogue `generateStaticParams` enumerates — `getPublicMerchantForLocale`
+ * falls back to a real, API-backed merchant view (`public-merchant.ts`'s
+ * own `getPublicMerchantFromApi`); an id/slug that matches neither still
+ * 404s.
  */
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.flatMap((locale) =>
@@ -30,7 +37,8 @@ export function generateStaticParams() {
   );
 }
 
-export const dynamicParams = false;
+export const dynamicParams = true;
+export const revalidate = 60;
 
 interface PublicMerchantPageProps {
   params: Promise<{ locale: string; merchant: string }>;
@@ -39,7 +47,7 @@ interface PublicMerchantPageProps {
 export async function generateMetadata({ params }: PublicMerchantPageProps): Promise<Metadata> {
   const { locale: rawLocale, merchant: merchantSlug } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const merchant = getPublicMerchant(merchantSlug, locale);
+  const merchant = await getPublicMerchantForLocale(merchantSlug, locale);
   if (!merchant) {
     notFound();
   }
@@ -59,7 +67,7 @@ export async function generateMetadata({ params }: PublicMerchantPageProps): Pro
 export default async function PublicMerchantPage({ params }: PublicMerchantPageProps) {
   const { locale: rawLocale, merchant: merchantSlug } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const merchant = getPublicMerchant(merchantSlug, locale);
+  const merchant = await getPublicMerchantForLocale(merchantSlug, locale);
   if (!merchant) {
     notFound();
   }

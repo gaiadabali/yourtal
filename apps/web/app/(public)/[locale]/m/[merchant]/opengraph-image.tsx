@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
-import { getPublicMerchant, listPublicMerchants } from "@/features/public/public-merchant";
+import { getPublicMerchantForLocale, listPublicMerchants } from "@/features/public/public-merchant";
 import {
   GENERATED_PUBLIC_LOCALES,
   publicLocaleConfig,
@@ -22,7 +22,8 @@ export function generateStaticParams() {
   );
 }
 
-export const dynamicParams = false;
+// 11.3.d: same real-merchant fallback as page.tsx — see its own doc comment.
+export const dynamicParams = true;
 
 interface MerchantOgImageProps {
   params: Promise<{ locale: string; merchant: string }>;
@@ -37,7 +38,7 @@ interface MerchantOgImageProps {
 export default async function MerchantOgImage({ params }: MerchantOgImageProps) {
   const { locale: rawLocale, merchant: merchantSlug } = await params;
   const locale = requirePublicLocale(rawLocale);
-  const merchant = getPublicMerchant(merchantSlug, locale);
+  const merchant = await getPublicMerchantForLocale(merchantSlug, locale);
   if (!merchant) {
     notFound();
   }

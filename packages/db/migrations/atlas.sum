@@ -1,4 +1,4 @@
-h1:Lu1/CCNhH9eWDTx1VmB51fNiLX3zVw+PDVzwml5HTNs=
+h1:9ebw1/D5qWdzWQ/gCXpm2GagDFzuEvTq4f0oeAHHqlQ=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -95,3 +95,8 @@ h1:Lu1/CCNhH9eWDTx1VmB51fNiLX3zVw+PDVzwml5HTNs=
 20260929060000_voucher_fake_wallet_widen.sql h1:/GlMHVGCOZ3TcQpqvFNsP9a2cOmCijuU+aRxMqs3ciE=
 20260929060100_staff_economy_proposal.sql h1:JFGrZdsH7dfpOO11OrdHTbk4IJqxaobPuiiw7mR5E7A=
 20260929070000_listing_moderation.sql h1:2LPm74sdlCNuv+wZV6cbBUjPfFJznhhS9BiGXQmV8do=
+20260929070200_risk_flag_and_activity.sql h1:JaUDa5mGolYMm9CdkmAAsg5zEF+hJrGC4x7r6WjRy5M=
+20260929070300_delivery_log.sql h1:4ypHezBviEUgjr5tuXrp7hv38Q32W+QvH9tPNvbVSuo=
+20260929070400_ledger_setting_points_expiry.sql h1:SbAvLFgJXn8yo5lsaSKq7gCRqc0W8U9bLY0Kg1mug6M=
+20260929070500_voucher_expiry.sql h1:L+aFjcZki0YrrMuKjIdewXrcG/dw/EdYgOo1rIR+R2w=
+20260929070600_ledger_fake_risk_flag.sql h1:DQDscU+cL8ylq6YeCC5JUXSPzKxD3+SC7cGTkKpviGA=

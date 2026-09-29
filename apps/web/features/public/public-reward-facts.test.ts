@@ -11,6 +11,7 @@ describe("computeCampaignRewardFacts", () => {
   it("names duration and reward together in the headline", () => {
     const facts = computeCampaignRewardFacts(
       longMerchantNameCampaignFixture,
+      0,
       publicLocaleConfig("id"),
     );
     expect(facts.headline).toContain(facts.baseRewardLabel);
@@ -20,13 +21,28 @@ describe("computeCampaignRewardFacts", () => {
   it("has no accuracy bonus for a base_only scoring rule", () => {
     const facts = computeCampaignRewardFacts(
       longMerchantNameCampaignFixture,
+      0,
       publicLocaleConfig("id"),
     );
     expect(facts.accuracyBonusLabel).toBeNull();
   });
 
+  it("shows the real accuracy bonus when the caller has one from the campaign's terms", () => {
+    const facts = computeCampaignRewardFacts(
+      longMerchantNameCampaignFixture,
+      500,
+      publicLocaleConfig("id"),
+    );
+    expect(facts.accuracyBonusLabel).not.toBeNull();
+    expect(facts.headline).toContain(facts.accuracyBonusLabel);
+  });
+
   it("never hides a zero reward — it states it plainly rather than omitting the row", () => {
-    const facts = computeCampaignRewardFacts(zeroRewardCampaignFixture, publicLocaleConfig("id"));
+    const facts = computeCampaignRewardFacts(
+      zeroRewardCampaignFixture,
+      0,
+      publicLocaleConfig("id"),
+    );
     expect(facts.baseRewardLabel).toMatch(/0/);
     expect(facts.headline).toContain(facts.durationLabel);
   });

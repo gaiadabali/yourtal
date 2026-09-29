@@ -42,6 +42,8 @@ type FeedItem struct {
 	EndingSoon bool `json:"endingSoon"`
 	Why string `json:"why"`
 	WhyReason FeedWhyReason `json:"whyReason"`
+	ChannelHandle string `json:"channelHandle"`
+	ChannelLogoUrl NullableString `json:"channelLogoUrl"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -51,7 +53,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -73,6 +75,8 @@ func NewFeedItem(campaignId NullableString, businessId NullableString, merchantN
 	this.EndingSoon = endingSoon
 	this.Why = why
 	this.WhyReason = whyReason
+	this.ChannelHandle = channelHandle
+	this.ChannelLogoUrl = channelLogoUrl
 	return &this
 }
 
@@ -570,6 +574,56 @@ func (o *FeedItem) SetWhyReason(v FeedWhyReason) {
 	o.WhyReason = v
 }
 
+// GetChannelHandle returns the ChannelHandle field value
+func (o *FeedItem) GetChannelHandle() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ChannelHandle
+}
+
+// GetChannelHandleOk returns a tuple with the ChannelHandle field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetChannelHandleOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ChannelHandle, true
+}
+
+// SetChannelHandle sets field value
+func (o *FeedItem) SetChannelHandle(v string) {
+	o.ChannelHandle = v
+}
+
+// GetChannelLogoUrl returns the ChannelLogoUrl field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *FeedItem) GetChannelLogoUrl() string {
+	if o == nil || o.ChannelLogoUrl.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.ChannelLogoUrl.Get()
+}
+
+// GetChannelLogoUrlOk returns a tuple with the ChannelLogoUrl field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *FeedItem) GetChannelLogoUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.ChannelLogoUrl.Get(), o.ChannelLogoUrl.IsSet()
+}
+
+// SetChannelLogoUrl sets field value
+func (o *FeedItem) SetChannelLogoUrl(v string) {
+	o.ChannelLogoUrl.Set(&v)
+}
+
 func (o FeedItem) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -600,6 +654,8 @@ func (o FeedItem) ToMap() (map[string]interface{}, error) {
 	toSerialize["endingSoon"] = o.EndingSoon
 	toSerialize["why"] = o.Why
 	toSerialize["whyReason"] = o.WhyReason
+	toSerialize["channelHandle"] = o.ChannelHandle
+	toSerialize["channelLogoUrl"] = o.ChannelLogoUrl.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -633,6 +689,8 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		"endingSoon",
 		"why",
 		"whyReason",
+		"channelHandle",
+		"channelLogoUrl",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -682,6 +740,8 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "endingSoon")
 		delete(additionalProperties, "why")
 		delete(additionalProperties, "whyReason")
+		delete(additionalProperties, "channelHandle")
+		delete(additionalProperties, "channelLogoUrl")
 		o.AdditionalProperties = additionalProperties
 	}
 

@@ -14,6 +14,7 @@ describe("PublicCampaignContent", () => {
     render(
       <PublicCampaignContent
         campaign={longMerchantNameCampaignFixture}
+        accuracyBonusPoints={0}
         locale={publicLocaleConfig("id")}
         merchantHref="/id/m/warung-kopi-kenangan-manis-nusantara-jaya-abadi-sentosa-cabang-kebayoran-baru"
         watchHref={`/id/c/${longMerchantNameCampaignFixture.id}/watch`}
@@ -34,6 +35,7 @@ describe("PublicCampaignContent", () => {
     render(
       <PublicCampaignContent
         campaign={longMerchantNameCampaignFixture}
+        accuracyBonusPoints={0}
         locale={publicLocaleConfig("id")}
         merchantHref="/id/m/x"
         watchHref={`/id/c/${longMerchantNameCampaignFixture.id}/watch`}
@@ -51,6 +53,7 @@ describe("PublicCampaignContent", () => {
     render(
       <PublicCampaignContent
         campaign={longMerchantNameCampaignFixture}
+        accuracyBonusPoints={0}
         locale={publicLocaleConfig("id")}
         merchantHref="/id/m/x"
         watchHref={`/id/c/${longMerchantNameCampaignFixture.id}/watch`}
@@ -66,6 +69,7 @@ describe("PublicCampaignContent", () => {
     render(
       <PublicCampaignContent
         campaign={zeroRewardCampaignFixture}
+        accuracyBonusPoints={0}
         locale={publicLocaleConfig("id")}
         merchantHref="/id/m/x"
         watchHref={`/id/c/${zeroRewardCampaignFixture.id}/watch`}
@@ -79,6 +83,7 @@ describe("PublicCampaignContent", () => {
     render(
       <PublicCampaignContent
         campaign={pausedCampaign}
+        accuracyBonusPoints={0}
         locale={publicLocaleConfig("id")}
         merchantHref="/id/m/x"
         watchHref={`/id/c/${pausedCampaign.id}/watch`}

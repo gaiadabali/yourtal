@@ -18,24 +18,24 @@ import (
 
 // ApiWatchSessionsPost403Response struct for ApiWatchSessionsPost403Response
 type ApiWatchSessionsPost403Response struct {
-	ApiWatchSessionsPost403ResponseAnyOf *ApiWatchSessionsPost403ResponseAnyOf
+	ApiChannelsByBusinessBusinessIdGet404Response *ApiChannelsByBusinessBusinessIdGet404Response
 	ErrorResponse *ErrorResponse
 }
 
 // Unmarshal JSON data into any of the pointers in the struct
 func (dst *ApiWatchSessionsPost403Response) UnmarshalJSON(data []byte) error {
 	var err error
-	// try to unmarshal JSON data into ApiWatchSessionsPost403ResponseAnyOf
-	err = json.Unmarshal(data, &dst.ApiWatchSessionsPost403ResponseAnyOf);
+	// try to unmarshal JSON data into ApiChannelsByBusinessBusinessIdGet404Response
+	err = json.Unmarshal(data, &dst.ApiChannelsByBusinessBusinessIdGet404Response);
 	if err == nil {
-		jsonApiWatchSessionsPost403ResponseAnyOf, _ := json.Marshal(dst.ApiWatchSessionsPost403ResponseAnyOf)
-		if string(jsonApiWatchSessionsPost403ResponseAnyOf) == "{}" { // empty struct
-			dst.ApiWatchSessionsPost403ResponseAnyOf = nil
+		jsonApiChannelsByBusinessBusinessIdGet404Response, _ := json.Marshal(dst.ApiChannelsByBusinessBusinessIdGet404Response)
+		if string(jsonApiChannelsByBusinessBusinessIdGet404Response) == "{}" { // empty struct
+			dst.ApiChannelsByBusinessBusinessIdGet404Response = nil
 		} else {
-			return nil // data stored in dst.ApiWatchSessionsPost403ResponseAnyOf, return on the first match
+			return nil // data stored in dst.ApiChannelsByBusinessBusinessIdGet404Response, return on the first match
 		}
 	} else {
-		dst.ApiWatchSessionsPost403ResponseAnyOf = nil
+		dst.ApiChannelsByBusinessBusinessIdGet404Response = nil
 	}
 
 	// try to unmarshal JSON data into ErrorResponse
@@ -56,8 +56,8 @@ func (dst *ApiWatchSessionsPost403Response) UnmarshalJSON(data []byte) error {
 
 // Marshal data from the first non-nil pointers in the struct to JSON
 func (src ApiWatchSessionsPost403Response) MarshalJSON() ([]byte, error) {
-	if src.ApiWatchSessionsPost403ResponseAnyOf != nil {
-		return json.Marshal(&src.ApiWatchSessionsPost403ResponseAnyOf)
+	if src.ApiChannelsByBusinessBusinessIdGet404Response != nil {
+		return json.Marshal(&src.ApiChannelsByBusinessBusinessIdGet404Response)
 	}
 
 	if src.ErrorResponse != nil {

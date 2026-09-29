@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
 import {
   getPublicCampaignForLocale,
+  getPublicCampaignTermsFromApi,
   listPublicCampaigns,
 } from "@/features/public/public-campaign-data";
 import {
@@ -53,7 +54,10 @@ export default async function CampaignOgImage({ params }: CampaignOgImageProps) 
 
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
-  const facts = computeCampaignRewardFacts(campaign, config);
+  // Real terms only exist for a seeded (API) campaign, never the fixed mock
+  // catalogue — `undefined` there is expected, not an error (11.5.a).
+  const terms = await getPublicCampaignTermsFromApi(campaignId);
+  const facts = computeCampaignRewardFacts(campaign, terms?.accuracyBonusPoints ?? 0, config);
 
   return new ImageResponse(
     <PublicOgCard

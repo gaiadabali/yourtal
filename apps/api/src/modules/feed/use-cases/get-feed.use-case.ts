@@ -7,11 +7,15 @@ import type { CampaignRepository } from "../../campaign/persistence/campaign.rep
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import type { RegionSettingsReader } from "../../../shared/settings/region-settings-reader";
 import { resolveCatalogueScope } from "../../store/catalogue-scope";
+import type { ChannelLookupRepository } from "../persistence/channel-lookup.repository";
 import type { FeedSignalsRepository } from "../persistence/feed-signals.repository";
 import type { PacingStateRepository } from "../persistence/pacing-state.repository";
 import type { SuspendedBusinessLookup } from "../persistence/suspended-business-lookup";
 import { buildFeed } from "../ranking";
 import { fetchFundedCampaigns } from "../candidates";
+
+/** 11.5.d: defensive fallback only -- see `RankingContext.channelOf`'s own comment. */
+const UNKNOWN_CHANNEL = { handle: "unknown", logoUrl: null } as const;
 
 /** Interest node docs/16 D3 uses for the "declared parent of young children" boost -- see audience.ts's own comment. */
 const PARENT_OF_YOUNG_CHILDREN_NODE = "family-young-children";
@@ -38,6 +42,7 @@ export async function getFeed(
   signals: FeedSignalsRepository,
   settings: RegionSettingsReader,
   suspendedBusinesses: SuspendedBusinessLookup,
+  channels: ChannelLookupRepository,
   principal: Principal,
   surface: FeedSurface,
   queryRegion: Region | undefined,
@@ -68,6 +73,11 @@ export async function getFeed(
     ),
   );
 
+  const channelMap = await channels.channelsFor(
+    candidates.map((candidate) => candidate.campaign.businessId),
+  );
+  const channelOf = (businessId: string) => channelMap.get(businessId) ?? UNKNOWN_CHANNEL;
+
   if (anonymous || region === undefined) {
     const items = buildFeed(candidates, {
       now: new Date(),
@@ -84,6 +94,7 @@ export async function getFeed(
       demotedCampaignIds: new Set(),
       canServe: (id) => canServeMap.get(id) ?? true,
       anonymous: true,
+      channelOf,
     });
     for (const item of items) await pacing.recordServe(item.campaignId);
     return { kind: "ok", result: { surface, items } };
@@ -150,6 +161,7 @@ export async function getFeed(
     demotedCampaignIds: demoted,
     canServe: (id) => canServeMap.get(id) ?? true,
     anonymous: false,
+    channelOf,
   });
   for (const item of items) await pacing.recordServe(item.campaignId);
   return { kind: "ok", result: { surface, items } };

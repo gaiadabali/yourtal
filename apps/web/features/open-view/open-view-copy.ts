@@ -33,16 +33,21 @@ export interface OpenViewCopy {
  * itself.
  *
  * Reuses `computeCampaignRewardFacts` rather than re-deriving the reward
- * split, and reproduces its exact base/bonus honesty rule
- * (`campaign-reward-split.ts`: never combine base + accuracy bonus into one
- * inflated number) for the "here's what you would have earned" copy —
+ * split, and reproduces its exact base/bonus honesty rule (11.5.a: never
+ * combine base + accuracy bonus into one inflated number, and never invent
+ * the bonus either) for the "here's what you would have earned" copy —
  * `*WithBonus` variants exist for that reason, not just to fill more
  * message keys.
  */
-export function computeOpenViewCopy(campaign: Campaign, locale: PublicLocaleConfig): OpenViewCopy {
+export function computeOpenViewCopy(
+  campaign: Campaign,
+  /** This campaign's real `CampaignTerms.accuracyBonusPoints` — `0` when the caller has no terms to read. */
+  accuracyBonusPoints: number,
+  locale: PublicLocaleConfig,
+): OpenViewCopy {
   const t = getPublicTranslator(locale.intlLocale);
   const tPlayer = getPlayerTranslator(locale.intlLocale);
-  const facts = computeCampaignRewardFacts(campaign, locale);
+  const facts = computeCampaignRewardFacts(campaign, accuracyBonusPoints, locale);
 
   const foregoneRewardNotice =
     facts.accuracyBonusLabel === null

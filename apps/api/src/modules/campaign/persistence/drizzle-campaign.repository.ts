@@ -35,6 +35,23 @@ export class DrizzleCampaignRepository implements CampaignRepository {
     return assembled.filter((campaign): campaign is Campaign => campaign !== null);
   }
 
+  async listVisibleByBusiness(businessId: string, limit: number): Promise<Campaign[]> {
+    const rows = await this.db
+      .select()
+      .from(campaigns)
+      .where(
+        and(
+          eq(campaigns.businessId, businessId),
+          inArray(campaigns.lifecycleState, VISIBLE_STATES),
+        ),
+      )
+      .orderBy(desc(campaigns.publishedAt))
+      .limit(limit);
+
+    const assembled = await Promise.all(rows.map((row) => this.assemble(row)));
+    return assembled.filter((campaign): campaign is Campaign => campaign !== null);
+  }
+
   async findVisibleById(campaignId: string): Promise<Campaign | null> {
     const rows = await this.db
       .select()

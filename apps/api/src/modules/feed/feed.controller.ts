@@ -28,6 +28,8 @@ import { CHANNEL_SEARCH_REPOSITORY } from "./persistence/channel-search.reposito
 import type { ChannelSearchRepository } from "./persistence/channel-search.repository";
 import { SUSPENDED_BUSINESS_LOOKUP } from "./persistence/suspended-business-lookup";
 import type { SuspendedBusinessLookup } from "./persistence/suspended-business-lookup";
+import { CHANNEL_LOOKUP_REPOSITORY } from "./persistence/channel-lookup.repository";
+import type { ChannelLookupRepository } from "./persistence/channel-lookup.repository";
 import { feedQuerySchema } from "./dto/feed-query";
 import { searchQuerySchema } from "./dto/search-query";
 import { getFeed } from "./use-cases/get-feed.use-case";
@@ -59,6 +61,7 @@ export class FeedController {
     @Inject(CHANNEL_SEARCH_REPOSITORY) private readonly channels: ChannelSearchRepository,
     @Inject(SUSPENDED_BUSINESS_LOOKUP)
     private readonly suspendedBusinesses: SuspendedBusinessLookup,
+    @Inject(CHANNEL_LOOKUP_REPOSITORY) private readonly channelLookup: ChannelLookupRepository,
     private readonly principals: AsyncPrincipalResolver,
   ) {}
 
@@ -81,6 +84,7 @@ export class FeedController {
       this.signals,
       this.settings,
       this.suspendedBusinesses,
+      this.channelLookup,
       principal,
       parsed.surface,
       parsed.region,
@@ -111,6 +115,7 @@ export class FeedController {
       this.channels,
       this.listings,
       this.suspendedBusinesses,
+      this.channelLookup,
       principal,
       parsed.q,
       parsed.region,

@@ -1,4 +1,5 @@
 import {
+  channelReadResponseSchema,
   feedChannelResultSchema,
   feedItemSchema,
   feedResponseSchema,
@@ -48,6 +49,13 @@ export const FEED_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: searchResponseSchema,
     description:
       "GET /api/search's response: campaigns, channels and listings, region- and audience-walled.",
+    crossFieldRules: [],
+  },
+  {
+    id: "ChannelReadResponse",
+    schema: channelReadResponseSchema,
+    description:
+      "GET /api/channels/{handle} and /api/channels/by-business/{businessId}'s response (11.5.d): the business's own page.",
     crossFieldRules: [],
   },
 ];

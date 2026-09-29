@@ -16,6 +16,8 @@ import { CHANNEL_SEARCH_REPOSITORY } from "./persistence/channel-search.reposito
 import { DrizzleChannelSearchRepository } from "./persistence/drizzle-channel-search.repository";
 import { SUSPENDED_BUSINESS_LOOKUP } from "./persistence/suspended-business-lookup";
 import { DrizzleSuspendedBusinessLookup } from "./persistence/drizzle-suspended-business-lookup";
+import { CHANNEL_LOOKUP_REPOSITORY } from "./persistence/channel-lookup.repository";
+import { DrizzleChannelLookupRepository } from "./persistence/drizzle-channel-lookup.repository";
 
 export const FEED_DB = Symbol("FEED_DB");
 
@@ -59,6 +61,11 @@ export const FEED_DB = Symbol("FEED_DB");
     {
       provide: SUSPENDED_BUSINESS_LOOKUP,
       useFactory: (db: AppDb) => new DrizzleSuspendedBusinessLookup(db),
+      inject: [FEED_DB],
+    },
+    {
+      provide: CHANNEL_LOOKUP_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleChannelLookupRepository(db),
       inject: [FEED_DB],
     },
   ],

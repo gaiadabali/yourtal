@@ -6,12 +6,15 @@ import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-
 import type { ListingRepository } from "../../store/persistence/listing.repository";
 import { resolveCatalogueScope } from "../../store/catalogue-scope";
 import type { ChannelSearchRepository } from "../persistence/channel-search.repository";
+import type { ChannelLookupRepository } from "../persistence/channel-lookup.repository";
 import type { SuspendedBusinessLookup } from "../persistence/suspended-business-lookup";
 import { fetchFundedCampaigns } from "../candidates";
 import { passesFilter, signalsFor, toFeedItem } from "../ranking";
 import type { RankingContext } from "../ranking";
 
 const SEARCH_LIMIT = 20;
+/** 11.5.d: defensive fallback only -- see `RankingContext.channelOf`'s own comment. */
+const UNKNOWN_CHANNEL = { handle: "unknown", logoUrl: null } as const;
 
 /**
  * 7.7.c: campaigns, channels (businesses) and listings, one query string,
@@ -27,6 +30,7 @@ export async function search(
   channels: ChannelSearchRepository,
   listings: Pick<ListingRepository, "browsePublic">,
   suspendedBusinesses: SuspendedBusinessLookup,
+  channelLookup: ChannelLookupRepository,
   principal: Principal,
   query: string,
   queryRegion: Region | undefined,
@@ -44,6 +48,10 @@ export async function search(
   const needle = query.toLowerCase();
 
   const candidates = await fetchFundedCampaigns(campaigns, ledger, suspendedBusinesses, region);
+  const channelMap = await channelLookup.channelsFor(
+    candidates.map((candidate) => candidate.campaign.businessId),
+  );
+  const channelOf = (businessId: string) => channelMap.get(businessId) ?? UNKNOWN_CHANNEL;
   const ctx: RankingContext = {
     now: new Date(),
     viewerRegion: region,
@@ -59,6 +67,7 @@ export async function search(
     demotedCampaignIds: new Set(),
     canServe: () => true,
     anonymous,
+    channelOf,
   };
   const matchingCampaigns = candidates
     .filter((candidate) => passesFilter(candidate, ctx))
@@ -69,7 +78,13 @@ export async function search(
         candidate.campaign.merchantName.toLowerCase().includes(needle),
     )
     .slice(0, SEARCH_LIMIT)
-    .map((candidate) => toFeedItem(candidate, signalsFor(candidate, ctx)));
+    .map((candidate) =>
+      toFeedItem(
+        candidate,
+        signalsFor(candidate, ctx),
+        ctx.channelOf(candidate.campaign.businessId),
+      ),
+    );
 
   const [channelResults, listingPage] = await Promise.all([
     channels.search(query, region, SEARCH_LIMIT),

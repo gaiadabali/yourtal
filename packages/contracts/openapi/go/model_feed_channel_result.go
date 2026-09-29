@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -20,12 +21,11 @@ var _ MappedNullable = &FeedChannelResult{}
 
 // FeedChannelResult A business matched by GET /api/search.
 type FeedChannelResult struct {
-	BusinessId NullableString `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	DisplayName NullableString `json:"displayName"`
-	Handle NullableString `json:"handle"`
+	BusinessId string `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	DisplayName string `json:"displayName"`
+	Handle string `json:"handle"`
 	LogoUrl NullableString `json:"logoUrl"`
 	Region Region `json:"region"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _FeedChannelResult FeedChannelResult
@@ -34,7 +34,7 @@ type _FeedChannelResult FeedChannelResult
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedChannelResult(businessId NullableString, displayName NullableString, handle NullableString, logoUrl NullableString, region Region) *FeedChannelResult {
+func NewFeedChannelResult(businessId string, displayName string, handle string, logoUrl NullableString, region Region) *FeedChannelResult {
 	this := FeedChannelResult{}
 	this.BusinessId = businessId
 	this.DisplayName = displayName
@@ -53,81 +53,75 @@ func NewFeedChannelResultWithDefaults() *FeedChannelResult {
 }
 
 // GetBusinessId returns the BusinessId field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *FeedChannelResult) GetBusinessId() string {
-	if o == nil || o.BusinessId.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.BusinessId.Get()
+	return o.BusinessId
 }
 
 // GetBusinessIdOk returns a tuple with the BusinessId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FeedChannelResult) GetBusinessIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.BusinessId.Get(), o.BusinessId.IsSet()
+	return &o.BusinessId, true
 }
 
 // SetBusinessId sets field value
 func (o *FeedChannelResult) SetBusinessId(v string) {
-	o.BusinessId.Set(&v)
+	o.BusinessId = v
 }
 
 // GetDisplayName returns the DisplayName field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *FeedChannelResult) GetDisplayName() string {
-	if o == nil || o.DisplayName.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.DisplayName.Get()
+	return o.DisplayName
 }
 
 // GetDisplayNameOk returns a tuple with the DisplayName field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FeedChannelResult) GetDisplayNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.DisplayName.Get(), o.DisplayName.IsSet()
+	return &o.DisplayName, true
 }
 
 // SetDisplayName sets field value
 func (o *FeedChannelResult) SetDisplayName(v string) {
-	o.DisplayName.Set(&v)
+	o.DisplayName = v
 }
 
 // GetHandle returns the Handle field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *FeedChannelResult) GetHandle() string {
-	if o == nil || o.Handle.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.Handle.Get()
+	return o.Handle
 }
 
 // GetHandleOk returns a tuple with the Handle field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FeedChannelResult) GetHandleOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Handle.Get(), o.Handle.IsSet()
+	return &o.Handle, true
 }
 
 // SetHandle sets field value
 func (o *FeedChannelResult) SetHandle(v string) {
-	o.Handle.Set(&v)
+	o.Handle = v
 }
 
 // GetLogoUrl returns the LogoUrl field value
@@ -190,16 +184,11 @@ func (o FeedChannelResult) MarshalJSON() ([]byte, error) {
 
 func (o FeedChannelResult) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["businessId"] = o.BusinessId.Get()
-	toSerialize["displayName"] = o.DisplayName.Get()
-	toSerialize["handle"] = o.Handle.Get()
+	toSerialize["businessId"] = o.BusinessId
+	toSerialize["displayName"] = o.DisplayName
+	toSerialize["handle"] = o.Handle
 	toSerialize["logoUrl"] = o.LogoUrl.Get()
 	toSerialize["region"] = o.Region
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -231,24 +220,15 @@ func (o *FeedChannelResult) UnmarshalJSON(data []byte) (err error) {
 
 	varFeedChannelResult := _FeedChannelResult{}
 
-	err = json.Unmarshal(data, &varFeedChannelResult)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varFeedChannelResult)
 
 	if err != nil {
 		return err
 	}
 
 	*o = FeedChannelResult(varFeedChannelResult)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "businessId")
-		delete(additionalProperties, "displayName")
-		delete(additionalProperties, "handle")
-		delete(additionalProperties, "logoUrl")
-		delete(additionalProperties, "region")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

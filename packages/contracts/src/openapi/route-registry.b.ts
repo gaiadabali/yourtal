@@ -51,6 +51,18 @@ const SESSION_ID_PARAM: RoutePathParam = {
   schema: { type: "string", format: "uuid" },
 };
 
+const CHANNEL_HANDLE_PARAM: RoutePathParam = {
+  name: "handle",
+  description: "The business's own handle (business.business_accounts.handle).",
+  schema: { type: "string" },
+};
+
+const CHANNEL_BUSINESS_ID_PARAM: RoutePathParam = {
+  name: "businessId",
+  description: "The business whose channel page is being read.",
+  schema: { type: "string", format: "uuid" },
+};
+
 const LIMIT_QUERY_PARAM: RouteQueryParam = {
   name: "limit",
   description:
@@ -131,6 +143,40 @@ export const CAMPAIGN_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       FORBIDDEN,
       PDP_UNAVAILABLE,
     ],
+  },
+];
+
+// --- channel.controller.ts (11.5.d) ---
+
+const CHANNEL_NOT_FOUND = nestDefaultError(
+  404,
+  "No such channel -- a bad handle/id, or a suspended business, are the same 404.",
+);
+
+export const CHANNEL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "get",
+    path: "/api/channels/{handle}",
+    summary: "Read a business's own channel page by handle",
+    tags: ["channel"],
+    pathParams: [CHANNEL_HANDLE_PARAM],
+    successStatus: 200,
+    successDescription:
+      "The channel's summary, its still-live campaigns and its own store listings.",
+    successSchema: ref("ChannelReadResponse"),
+    errors: [CHANNEL_NOT_FOUND, FORBIDDEN, PDP_UNAVAILABLE],
+  },
+  {
+    method: "get",
+    path: "/api/channels/by-business/{businessId}",
+    summary: "Read a business's own channel page by businessId",
+    tags: ["channel"],
+    pathParams: [CHANNEL_BUSINESS_ID_PARAM],
+    successStatus: 200,
+    successDescription:
+      "Same shape as GET /api/channels/{handle} -- for a caller (the watch page's channel row) that only has a businessId.",
+    successSchema: ref("ChannelReadResponse"),
+    errors: [CHANNEL_NOT_FOUND, FORBIDDEN, PDP_UNAVAILABLE],
   },
 ];
 

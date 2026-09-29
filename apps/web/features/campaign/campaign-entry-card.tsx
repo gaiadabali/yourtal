@@ -1,16 +1,25 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
-import { formatPointsIn } from "@yourtal/contracts/money/format";
+import { asDisplayPoints, formatPointsIn } from "@yourtal/contracts/money/format";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent } from "@yourtal/ui/card";
 import { formatDataCost, formatDuration } from "./campaign-format";
 import { EntryCardFact } from "./campaign-entry-fact";
-import { splitCampaignReward } from "./campaign-reward-split";
 import { describeQuestionCount, describeScoringRule } from "./campaign-scoring-copy";
 import { getCampaignTranslator, type SupportedLocale } from "./campaign-i18n";
 
 export interface CampaignEntryCardProps {
   campaign: Campaign;
+  /**
+   * The real, currently-effective bonus on top of `campaign.rewardPoints`
+   * (which is already the base amount — `CampaignRewardConfig.rewardPointsPerCompletion`,
+   * `packages/contracts/src/campaign/campaign-reward-config.ts`), from this
+   * campaign's own `CampaignTerms.accuracyBonusPoints` (11.5.a). `0` when the
+   * caller has no terms to read (never a fabricated ratio — the deleted
+   * `campaign-reward-split.ts` invented a flat 60/40 split that was not what
+   * any campaign actually paid).
+   */
+  accuracyBonusPoints: number;
   /** YT-0405: required, not defaulted — see `store-balance-notice.tsx`'s report for why. */
   locale: SupportedLocale;
 }
@@ -28,8 +37,13 @@ export interface CampaignEntryCardProps {
  * the watch begins" principle extends to never inflating them up front
  * either).
  */
-export function CampaignEntryCard({ campaign, locale }: CampaignEntryCardProps) {
-  const { baseRewardPoints, maxAccuracyBonusPoints } = splitCampaignReward(campaign);
+export function CampaignEntryCard({
+  campaign,
+  accuracyBonusPoints,
+  locale,
+}: CampaignEntryCardProps) {
+  const baseRewardPoints = campaign.rewardPoints;
+  const maxAccuracyBonusPoints = asDisplayPoints(Math.max(0, Math.round(accuracyBonusPoints)));
   const watchHref = `/watch/${campaign.id}`;
   const t = getCampaignTranslator(locale);
 

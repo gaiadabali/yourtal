@@ -5,11 +5,15 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { StoreModule } from "../store/store.module";
 import { CampaignController } from "./campaign.controller";
+import { ChannelController } from "./channel.controller";
 import { CAMPAIGN_REPOSITORY } from "./persistence/campaign.repository";
 import { DrizzleCampaignRepository } from "./persistence/drizzle-campaign.repository";
 import { CAMPAIGN_AUTHZ_ATTRIBUTES_READER } from "./persistence/campaign-authz-attributes";
 import { DrizzleCampaignAuthzAttributesReader } from "./persistence/drizzle-campaign-authz-attributes";
+import { CHANNEL_LOOKUP_REPOSITORY } from "./persistence/channel-lookup.repository";
+import { DrizzleChannelLookupRepository } from "./persistence/drizzle-channel-lookup.repository";
 
 export const CAMPAIGN_DB = Symbol("CAMPAIGN_DB");
 
@@ -22,8 +26,8 @@ export const CAMPAIGN_DB = Symbol("CAMPAIGN_DB");
  * select.
  */
 @Module({
-  imports: [AuthzModule, PdpClientModule],
-  controllers: [CampaignController],
+  imports: [AuthzModule, PdpClientModule, StoreModule],
+  controllers: [CampaignController, ChannelController],
   providers: [
     {
       provide: CAMPAIGN_DB,
@@ -38,6 +42,11 @@ export const CAMPAIGN_DB = Symbol("CAMPAIGN_DB");
     {
       provide: CAMPAIGN_AUTHZ_ATTRIBUTES_READER,
       useFactory: (db: AppDb) => new DrizzleCampaignAuthzAttributesReader(db),
+      inject: [CAMPAIGN_DB],
+    },
+    {
+      provide: CHANNEL_LOOKUP_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleChannelLookupRepository(db),
       inject: [CAMPAIGN_DB],
     },
   ],

@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -21,7 +22,7 @@ var _ MappedNullable = &CampaignTerms{}
 
 // CampaignTerms An immutable version of what a campaign promised (YT-0101). A watch session references the version it entered under, so an advertiser editing a live campaign cannot change what someone already watching is owed. Versioned rather than copied per session: one row per distinct set of terms, and the history is the audit trail a dispute needs. Only reward-affecting fields mint a version — a title edit does not.
 type CampaignTerms struct {
-	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Version int64 `json:"version"`
 	// Platform points. Always a whole number; there is no fractional point.
 	RewardPoints int64 `json:"rewardPoints"`
@@ -31,7 +32,6 @@ type CampaignTerms struct {
 	// Platform points. Always a whole number; there is no fractional point.
 	AccuracyBonusPoints int64 `json:"accuracyBonusPoints"`
 	EffectiveFrom time.Time `json:"effectiveFrom" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _CampaignTerms CampaignTerms
@@ -40,7 +40,7 @@ type _CampaignTerms CampaignTerms
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignTerms(campaignId NullableString, version int64, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, durationSeconds int64, accuracyBonusPoints int64, effectiveFrom time.Time) *CampaignTerms {
+func NewCampaignTerms(campaignId string, version int64, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, durationSeconds int64, accuracyBonusPoints int64, effectiveFrom time.Time) *CampaignTerms {
 	this := CampaignTerms{}
 	this.CampaignId = campaignId
 	this.Version = version
@@ -62,29 +62,27 @@ func NewCampaignTermsWithDefaults() *CampaignTerms {
 }
 
 // GetCampaignId returns the CampaignId field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *CampaignTerms) GetCampaignId() string {
-	if o == nil || o.CampaignId.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.CampaignId.Get()
+	return o.CampaignId
 }
 
 // GetCampaignIdOk returns a tuple with the CampaignId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CampaignTerms) GetCampaignIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.CampaignId.Get(), o.CampaignId.IsSet()
+	return &o.CampaignId, true
 }
 
 // SetCampaignId sets field value
 func (o *CampaignTerms) SetCampaignId(v string) {
-	o.CampaignId.Set(&v)
+	o.CampaignId = v
 }
 
 // GetVersion returns the Version field value
@@ -265,7 +263,7 @@ func (o CampaignTerms) MarshalJSON() ([]byte, error) {
 
 func (o CampaignTerms) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["campaignId"] = o.CampaignId.Get()
+	toSerialize["campaignId"] = o.CampaignId
 	toSerialize["version"] = o.Version
 	toSerialize["rewardPoints"] = o.RewardPoints
 	toSerialize["questionCount"] = o.QuestionCount
@@ -273,11 +271,6 @@ func (o CampaignTerms) ToMap() (map[string]interface{}, error) {
 	toSerialize["durationSeconds"] = o.DurationSeconds
 	toSerialize["accuracyBonusPoints"] = o.AccuracyBonusPoints
 	toSerialize["effectiveFrom"] = o.EffectiveFrom
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -312,27 +305,15 @@ func (o *CampaignTerms) UnmarshalJSON(data []byte) (err error) {
 
 	varCampaignTerms := _CampaignTerms{}
 
-	err = json.Unmarshal(data, &varCampaignTerms)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varCampaignTerms)
 
 	if err != nil {
 		return err
 	}
 
 	*o = CampaignTerms(varCampaignTerms)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "campaignId")
-		delete(additionalProperties, "version")
-		delete(additionalProperties, "rewardPoints")
-		delete(additionalProperties, "questionCount")
-		delete(additionalProperties, "scoringRule")
-		delete(additionalProperties, "durationSeconds")
-		delete(additionalProperties, "accuracyBonusPoints")
-		delete(additionalProperties, "effectiveFrom")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

@@ -9,9 +9,9 @@ export interface TermsCardProps {
 
 /**
  * 11.5.a: absolute points from the CURRENT terms (never
- * `campaign-reward-split.ts`'s 0.6 placeholder ratio — that file stays in
- * place for its other, out-of-scope callers per TASKS.md "Areas and
- * ownership", but this card never becomes one of them), the question count,
+ * the old `campaign-reward-split.ts`'s 0.6 placeholder ratio — deleted in
+ * 11.5.a, since every real call site now reads its own genuine numbers
+ * instead), the question count,
  * and the two facts F10/O-1 make non-negotiable: the reward is all-or-
  * nothing, and a new account's grant is held for review.
  */

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   getPublicCampaignForLocale,
+  getPublicCampaignTermsFromApi,
   listPublicCampaigns,
 } from "@/features/public/public-campaign-data";
 import {
@@ -71,6 +72,9 @@ export default async function PublicCampaignPage({ params }: PublicCampaignPageP
   if (!campaign) {
     notFound();
   }
+  // Real terms only exist for a seeded (API) campaign, never the fixed mock
+  // catalogue — `undefined` there is expected, not an error (11.5.a).
+  const terms = await getPublicCampaignTermsFromApi(campaignId);
 
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
@@ -88,6 +92,7 @@ export default async function PublicCampaignPage({ params }: PublicCampaignPageP
       />
       <PublicCampaignContent
         campaign={campaign}
+        accuracyBonusPoints={terms?.accuracyBonusPoints ?? 0}
         locale={config}
         merchantHref={`/${locale}/m/${merchantSlug}`}
         watchHref={`/${locale}/c/${campaign.id}/watch`}

@@ -1,4 +1,5 @@
 import { campaignSchema, type Campaign } from "@yourtal/contracts/campaign";
+import { campaignTermsSchema, type CampaignTerms } from "@yourtal/contracts/campaign/terms";
 import {
   longMerchantNameCampaignFixture,
   mockCampaigns,
@@ -124,4 +125,22 @@ export async function getPublicCampaignForLocale(
   locale: PublicLocale,
 ): Promise<Campaign | undefined> {
   return getPublicCampaign(campaignId, locale) ?? (await getPublicCampaignFromApi(campaignId));
+}
+
+/**
+ * 11.5.a: the real `accuracyBonusPoints` for the reward-facts honesty fix
+ * (`public-reward-facts.ts` no longer fabricates a 60/40 split). Only ever a
+ * real API read — the fixed mock catalogue's fixtures have no seeded terms
+ * row to read, so a mock-catalogue campaign gets `undefined` here and its
+ * caller shows no bonus row rather than inventing one. Same never-throws
+ * contract as `getPublicCampaignFromApi`: an unreachable API is exactly the
+ * "public pages must build without an API" case, not a page failure.
+ */
+export async function getPublicCampaignTermsFromApi(
+  campaignId: string,
+): Promise<CampaignTerms | undefined> {
+  const result = await publicApiFetch(`/api/campaigns/${campaignId}/terms`, campaignTermsSchema, {
+    revalidate: CAMPAIGN_REVALIDATE_SECONDS,
+  });
+  return result.ok ? result.data : undefined;
 }

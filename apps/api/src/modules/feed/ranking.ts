@@ -42,6 +42,16 @@ export interface RankingContext {
   readonly canServe: (campaignId: string) => boolean;
   /** Anonymous (Open Viewing): only openViewing + all_ages, unpersonalised -- every boost above is skipped. */
   readonly anonymous: boolean;
+  /**
+   * 11.5.d: `channelHandle`/`channelLogoUrl` for a business, backed by a
+   * pre-fetched batch lookup -- kept a plain sync function so `buildFeed`
+   * stays pure and synchronous, same reasoning `segmentSizeOf`/`canServe`
+   * already follow. `"unknown"` is defensive only: every campaign's
+   * `businessId` is a real FK and every `business_accounts` row has a
+   * `NOT NULL` handle, so a miss here would mean the pre-fetch itself was
+   * wrong, never real seeded data.
+   */
+  readonly channelOf: (businessId: string) => { handle: string; logoUrl: string | null };
 }
 
 /** 7.7.a's filter. Every clause here is a reason a campaign never appears, full stop. */
@@ -137,7 +147,11 @@ function whyFor(signals: Signals, campaign: Campaign): string {
   return "Popular right now";
 }
 
-export function toFeedItem(candidate: CandidateCampaign, signals: Signals): FeedItem {
+export function toFeedItem(
+  candidate: CandidateCampaign,
+  signals: Signals,
+  channel: { handle: string; logoUrl: string | null },
+): FeedItem {
   const { campaign } = candidate;
   return {
     campaignId: campaign.id,
@@ -163,6 +177,8 @@ export function toFeedItem(candidate: CandidateCampaign, signals: Signals): Feed
     endingSoon: signals.endingSoon,
     why: whyFor(signals, campaign),
     whyReason: whyReasonFor(signals),
+    channelHandle: channel.handle,
+    channelLogoUrl: channel.logoUrl,
   };
 }
 
@@ -203,7 +219,7 @@ export function buildFeed(
     .map((candidate) => {
       const signals = signalsFor(candidate, ctx);
       return {
-        item: toFeedItem(candidate, signals),
+        item: toFeedItem(candidate, signals, ctx.channelOf(candidate.campaign.businessId)),
         score: scoreOf(candidate, signals, ctx),
         businessId: candidate.campaign.businessId,
       };

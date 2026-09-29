@@ -81,6 +81,7 @@ function baseContext(overrides: Partial<RankingContext> = {}): RankingContext {
     demotedCampaignIds: new Set(),
     canServe: () => true,
     anonymous: false,
+    channelOf: () => ({ handle: "test-channel", logoUrl: null }),
     ...overrides,
   };
 }

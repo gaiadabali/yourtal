@@ -58,6 +58,7 @@ export function CampaignEntryPreview({ draft }: CampaignEntryPreviewProps) {
   const hasAccuracyBonus = draft.scoringRule === "base_plus_accuracy_bonus" && questionCount > 0;
   const { basePoints, maxAccuracyBonusPoints } = splitPreviewReward(
     draft.rewardPoints,
+    draft.accuracyBonusPoints,
     hasAccuracyBonus,
   );
   const assessment = assessRewardToDataCost(draft.rewardPoints, estimatedDataMb, currency);

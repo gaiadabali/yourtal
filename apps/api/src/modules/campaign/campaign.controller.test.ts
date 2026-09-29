@@ -104,6 +104,9 @@ class LimitRecordingRepository implements CampaignRepository {
   findVisibleById(): Promise<Campaign | null> {
     return Promise.resolve(null);
   }
+  listVisibleByBusiness(): Promise<Campaign[]> {
+    return Promise.resolve([]);
+  }
   currentTermsVersion(): Promise<number | null> {
     return Promise.resolve(null);
   }

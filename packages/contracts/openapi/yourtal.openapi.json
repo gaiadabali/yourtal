@@ -1454,6 +1454,165 @@
         }
       }
     },
+    "/api/channels/{handle}": {
+      "get": {
+        "summary": "Read a business's own channel page by handle",
+        "tags": [
+          "channel"
+        ],
+        "parameters": [
+          {
+            "name": "handle",
+            "in": "path",
+            "required": true,
+            "description": "The business's own handle (business.business_accounts.handle).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The channel's summary, its still-live campaigns and its own store listings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelReadResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such channel -- a bad handle/id, or a suspended business, are the same 404.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/channels/by-business/{businessId}": {
+      "get": {
+        "summary": "Read a business's own channel page by businessId",
+        "tags": [
+          "channel"
+        ],
+        "parameters": [
+          {
+            "name": "businessId",
+            "in": "path",
+            "required": true,
+            "description": "The business whose channel page is being read.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Same shape as GET /api/channels/{handle} -- for a caller (the watch page's channel row) that only has a businessId.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelReadResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such channel -- a bad handle/id, or a suspended business, are the same 404.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/watch/sessions": {
       "post": {
         "summary": "Start (or supersede into) a watch session",
@@ -19594,6 +19753,33 @@
           }
         ]
       },
+      "ChannelReadResponse": {
+        "description": "GET /api/channels/{handle} and /api/channels/by-business/{businessId}'s response (11.5.d): the business's own page.",
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/FeedChannelResult"
+          },
+          "campaigns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Campaign"
+            }
+          },
+          "listings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicListing"
+            }
+          }
+        },
+        "required": [
+          "channel",
+          "campaigns",
+          "listings"
+        ],
+        "additionalProperties": false
+      },
       "CheckoutQuote": {
         "description": "A held points price. Confirm it with checkoutId before expiresAt.",
         "type": "object",
@@ -20250,6 +20436,21 @@
           },
           "whyReason": {
             "$ref": "#/components/schemas/FeedWhyReason"
+          },
+          "channelHandle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "channelLogoUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -20272,7 +20473,9 @@
           "openViewing",
           "endingSoon",
           "why",
-          "whyReason"
+          "whyReason",
+          "channelHandle",
+          "channelLogoUrl"
         ],
         "additionalProperties": false
       },

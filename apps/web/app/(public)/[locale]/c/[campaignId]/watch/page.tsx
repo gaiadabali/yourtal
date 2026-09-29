@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import { playerChapters } from "@/features/player/player-chapters";
 import { computeOpenViewCopy } from "@/features/open-view/open-view-copy";
 import { OpenViewPlayer } from "@/features/open-view/open-view-player";
-import { getPublicCampaign, listLivePublicCampaigns } from "@/features/public/public-campaign-data";
+import {
+  getPublicCampaign,
+  getPublicCampaignTermsFromApi,
+  listLivePublicCampaigns,
+} from "@/features/public/public-campaign-data";
 import type { PublicLocale } from "@/features/public/public-locale";
 import {
   GENERATED_PUBLIC_LOCALES,
@@ -72,7 +76,10 @@ export default async function OpenViewWatchPage({ params }: OpenViewWatchPagePro
   const config = publicLocaleConfig(locale);
   const t = getPublicTranslator(config.intlLocale);
   const chapters = playerChapters(campaign);
-  const copy = computeOpenViewCopy(campaign, config);
+  // Real terms only exist for a seeded (API) campaign, never the fixed mock
+  // catalogue — `undefined` there is expected, not an error (11.5.a).
+  const terms = await getPublicCampaignTermsFromApi(campaignId);
+  const copy = computeOpenViewCopy(campaign, terms?.accuracyBonusPoints ?? 0, config);
   const merchantSlug = slugify(campaign.merchantName);
 
   return (

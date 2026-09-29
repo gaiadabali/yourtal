@@ -25,6 +25,13 @@ export interface CampaignRepository {
   /** One campaign, or `null` if it does not exist or is not public. */
   findVisibleById(campaignId: string): Promise<Campaign | null>;
   /**
+   * 11.5.a/11.5.d: one business's own visible campaigns, newest first --
+   * the watch page's "more from this channel" and the `/c/[handle]` channel
+   * page's campaign grid. Same visibility rule as `listVisible`, just
+   * narrowed to one `businessId`.
+   */
+  listVisibleByBusiness(businessId: string, limit: number): Promise<Campaign[]>;
+  /**
    * The terms version currently in force, for starting a watch session.
    * `null` when the campaign has no terms — which the migration makes
    * impossible for a seeded campaign, but a read must still answer honestly.

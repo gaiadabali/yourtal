@@ -4,7 +4,7 @@ import { pointsSchema } from "../money/money";
 import { regionSchema } from "../region/region";
 import { audienceSchema } from "../audience/audience";
 import { publicListingSchema } from "../listing/listing";
-import { campaignKindSchema } from "../campaign/campaign";
+import { campaignKindSchema, campaignSchema } from "../campaign/campaign";
 
 /**
  * 7.7: the feed/discovery response shape. `packages/contracts/src/feed` is
@@ -58,6 +58,15 @@ export const feedItemSchema = z.object({
   why: z.string().min(1),
   /** The same reason as a code, so clients can say it in the viewer's language (F78). */
   whyReason: feedWhyReasonSchema,
+  /**
+   * 11.5.d: the funder's own channel, for the Home card's channel row and
+   * a link to `/c/[handle]`. Every seeded business has a handle (migration
+   * `20260925190000`'s `business_accounts_handle_key`), so this is a plain
+   * string, never optional -- only the logo is nullable, same as
+   * `feedChannelResultSchema.logoUrl` below.
+   */
+  channelHandle: z.string().min(1),
+  channelLogoUrl: z.url().nullable(),
 });
 export type FeedItem = z.infer<typeof feedItemSchema>;
 
@@ -82,3 +91,18 @@ export const searchResponseSchema = z.object({
   listings: z.array(publicListingSchema),
 });
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
+
+/**
+ * 11.5.d: `GET /api/channels/:handle` (and its by-id sibling for a caller
+ * that only has a `businessId`, e.g. the watch page's channel row) — the
+ * business's own page: cover/logo, its still-live campaigns and its own
+ * store listings. `campaigns` is the full `Campaign` shape (not `FeedItem`):
+ * a channel page is not a ranked feed -- no `why`, no session-scoped signals
+ * -- so there is nothing here `buildFeed`'s ranking would add.
+ */
+export const channelReadResponseSchema = z.object({
+  channel: feedChannelResultSchema,
+  campaigns: z.array(campaignSchema),
+  listings: z.array(publicListingSchema),
+});
+export type ChannelReadResponse = z.infer<typeof channelReadResponseSchema>;

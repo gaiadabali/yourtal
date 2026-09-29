@@ -16,40 +16,40 @@ import (
 	"fmt"
 )
 
-// checks if the ApiWatchSessionsPost403ResponseAnyOf type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ApiWatchSessionsPost403ResponseAnyOf{}
+// checks if the ApiChannelsByBusinessBusinessIdGet404Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiChannelsByBusinessBusinessIdGet404Response{}
 
-// ApiWatchSessionsPost403ResponseAnyOf Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.
-type ApiWatchSessionsPost403ResponseAnyOf struct {
+// ApiChannelsByBusinessBusinessIdGet404Response Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.
+type ApiChannelsByBusinessBusinessIdGet404Response struct {
 	StatusCode int32 `json:"statusCode"`
 	Message string `json:"message"`
 	Error string `json:"error"`
 }
 
-type _ApiWatchSessionsPost403ResponseAnyOf ApiWatchSessionsPost403ResponseAnyOf
+type _ApiChannelsByBusinessBusinessIdGet404Response ApiChannelsByBusinessBusinessIdGet404Response
 
-// NewApiWatchSessionsPost403ResponseAnyOf instantiates a new ApiWatchSessionsPost403ResponseAnyOf object
+// NewApiChannelsByBusinessBusinessIdGet404Response instantiates a new ApiChannelsByBusinessBusinessIdGet404Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsPost403ResponseAnyOf(statusCode int32, message string, error_ string) *ApiWatchSessionsPost403ResponseAnyOf {
-	this := ApiWatchSessionsPost403ResponseAnyOf{}
+func NewApiChannelsByBusinessBusinessIdGet404Response(statusCode int32, message string, error_ string) *ApiChannelsByBusinessBusinessIdGet404Response {
+	this := ApiChannelsByBusinessBusinessIdGet404Response{}
 	this.StatusCode = statusCode
 	this.Message = message
 	this.Error = error_
 	return &this
 }
 
-// NewApiWatchSessionsPost403ResponseAnyOfWithDefaults instantiates a new ApiWatchSessionsPost403ResponseAnyOf object
+// NewApiChannelsByBusinessBusinessIdGet404ResponseWithDefaults instantiates a new ApiChannelsByBusinessBusinessIdGet404Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewApiWatchSessionsPost403ResponseAnyOfWithDefaults() *ApiWatchSessionsPost403ResponseAnyOf {
-	this := ApiWatchSessionsPost403ResponseAnyOf{}
+func NewApiChannelsByBusinessBusinessIdGet404ResponseWithDefaults() *ApiChannelsByBusinessBusinessIdGet404Response {
+	this := ApiChannelsByBusinessBusinessIdGet404Response{}
 	return &this
 }
 
 // GetStatusCode returns the StatusCode field value
-func (o *ApiWatchSessionsPost403ResponseAnyOf) GetStatusCode() int32 {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) GetStatusCode() int32 {
 	if o == nil {
 		var ret int32
 		return ret
@@ -60,7 +60,7 @@ func (o *ApiWatchSessionsPost403ResponseAnyOf) GetStatusCode() int32 {
 
 // GetStatusCodeOk returns a tuple with the StatusCode field value
 // and a boolean to check if the value has been set.
-func (o *ApiWatchSessionsPost403ResponseAnyOf) GetStatusCodeOk() (*int32, bool) {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) GetStatusCodeOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -68,12 +68,12 @@ func (o *ApiWatchSessionsPost403ResponseAnyOf) GetStatusCodeOk() (*int32, bool) 
 }
 
 // SetStatusCode sets field value
-func (o *ApiWatchSessionsPost403ResponseAnyOf) SetStatusCode(v int32) {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) SetStatusCode(v int32) {
 	o.StatusCode = v
 }
 
 // GetMessage returns the Message field value
-func (o *ApiWatchSessionsPost403ResponseAnyOf) GetMessage() string {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) GetMessage() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -84,7 +84,7 @@ func (o *ApiWatchSessionsPost403ResponseAnyOf) GetMessage() string {
 
 // GetMessageOk returns a tuple with the Message field value
 // and a boolean to check if the value has been set.
-func (o *ApiWatchSessionsPost403ResponseAnyOf) GetMessageOk() (*string, bool) {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) GetMessageOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -92,12 +92,12 @@ func (o *ApiWatchSessionsPost403ResponseAnyOf) GetMessageOk() (*string, bool) {
 }
 
 // SetMessage sets field value
-func (o *ApiWatchSessionsPost403ResponseAnyOf) SetMessage(v string) {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) SetMessage(v string) {
 	o.Message = v
 }
 
 // GetError returns the Error field value
-func (o *ApiWatchSessionsPost403ResponseAnyOf) GetError() string {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) GetError() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -108,7 +108,7 @@ func (o *ApiWatchSessionsPost403ResponseAnyOf) GetError() string {
 
 // GetErrorOk returns a tuple with the Error field value
 // and a boolean to check if the value has been set.
-func (o *ApiWatchSessionsPost403ResponseAnyOf) GetErrorOk() (*string, bool) {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) GetErrorOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -116,11 +116,11 @@ func (o *ApiWatchSessionsPost403ResponseAnyOf) GetErrorOk() (*string, bool) {
 }
 
 // SetError sets field value
-func (o *ApiWatchSessionsPost403ResponseAnyOf) SetError(v string) {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) SetError(v string) {
 	o.Error = v
 }
 
-func (o ApiWatchSessionsPost403ResponseAnyOf) MarshalJSON() ([]byte, error) {
+func (o ApiChannelsByBusinessBusinessIdGet404Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -128,7 +128,7 @@ func (o ApiWatchSessionsPost403ResponseAnyOf) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ApiWatchSessionsPost403ResponseAnyOf) ToMap() (map[string]interface{}, error) {
+func (o ApiChannelsByBusinessBusinessIdGet404Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["statusCode"] = o.StatusCode
 	toSerialize["message"] = o.Message
@@ -136,7 +136,7 @@ func (o ApiWatchSessionsPost403ResponseAnyOf) ToMap() (map[string]interface{}, e
 	return toSerialize, nil
 }
 
-func (o *ApiWatchSessionsPost403ResponseAnyOf) UnmarshalJSON(data []byte) (err error) {
+func (o *ApiChannelsByBusinessBusinessIdGet404Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -160,53 +160,53 @@ func (o *ApiWatchSessionsPost403ResponseAnyOf) UnmarshalJSON(data []byte) (err e
 		}
 	}
 
-	varApiWatchSessionsPost403ResponseAnyOf := _ApiWatchSessionsPost403ResponseAnyOf{}
+	varApiChannelsByBusinessBusinessIdGet404Response := _ApiChannelsByBusinessBusinessIdGet404Response{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varApiWatchSessionsPost403ResponseAnyOf)
+	err = decoder.Decode(&varApiChannelsByBusinessBusinessIdGet404Response)
 
 	if err != nil {
 		return err
 	}
 
-	*o = ApiWatchSessionsPost403ResponseAnyOf(varApiWatchSessionsPost403ResponseAnyOf)
+	*o = ApiChannelsByBusinessBusinessIdGet404Response(varApiChannelsByBusinessBusinessIdGet404Response)
 
 	return err
 }
 
-type NullableApiWatchSessionsPost403ResponseAnyOf struct {
-	value *ApiWatchSessionsPost403ResponseAnyOf
+type NullableApiChannelsByBusinessBusinessIdGet404Response struct {
+	value *ApiChannelsByBusinessBusinessIdGet404Response
 	isSet bool
 }
 
-func (v NullableApiWatchSessionsPost403ResponseAnyOf) Get() *ApiWatchSessionsPost403ResponseAnyOf {
+func (v NullableApiChannelsByBusinessBusinessIdGet404Response) Get() *ApiChannelsByBusinessBusinessIdGet404Response {
 	return v.value
 }
 
-func (v *NullableApiWatchSessionsPost403ResponseAnyOf) Set(val *ApiWatchSessionsPost403ResponseAnyOf) {
+func (v *NullableApiChannelsByBusinessBusinessIdGet404Response) Set(val *ApiChannelsByBusinessBusinessIdGet404Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableApiWatchSessionsPost403ResponseAnyOf) IsSet() bool {
+func (v NullableApiChannelsByBusinessBusinessIdGet404Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableApiWatchSessionsPost403ResponseAnyOf) Unset() {
+func (v *NullableApiChannelsByBusinessBusinessIdGet404Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableApiWatchSessionsPost403ResponseAnyOf(val *ApiWatchSessionsPost403ResponseAnyOf) *NullableApiWatchSessionsPost403ResponseAnyOf {
-	return &NullableApiWatchSessionsPost403ResponseAnyOf{value: val, isSet: true}
+func NewNullableApiChannelsByBusinessBusinessIdGet404Response(val *ApiChannelsByBusinessBusinessIdGet404Response) *NullableApiChannelsByBusinessBusinessIdGet404Response {
+	return &NullableApiChannelsByBusinessBusinessIdGet404Response{value: val, isSet: true}
 }
 
-func (v NullableApiWatchSessionsPost403ResponseAnyOf) MarshalJSON() ([]byte, error) {
+func (v NullableApiChannelsByBusinessBusinessIdGet404Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableApiWatchSessionsPost403ResponseAnyOf) UnmarshalJSON(src []byte) error {
+func (v *NullableApiChannelsByBusinessBusinessIdGet404Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

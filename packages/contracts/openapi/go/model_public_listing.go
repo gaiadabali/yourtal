@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -21,9 +22,9 @@ var _ MappedNullable = &PublicListing{}
 
 // PublicListing A store listing as the PUBLIC catalogue serves it. Identical to Listing except that settlementValueMinor is absent: S beside priceInPoints publishes the backing rate B by arithmetic, and docs/24 ID-1 rests on there being no published fixed cash rate. Consumers of the public catalogue must generate against this, never Listing.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - stockRemaining cannot exceed stockTotal.   - A sold_out listing must have zero stockRemaining.   - minimumSpendMinor is set if and only if the policy is minimum_spend.   - location ids must be unique within a listing.
 type PublicListing struct {
-	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	MerchantId NullableString `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	MerchantName NullableString `json:"merchantName"`
+	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	MerchantId string `json:"merchantId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	MerchantName string `json:"merchantName"`
 	Title string `json:"title"`
 	Description string `json:"description"`
 	Category ListingCategory `json:"category"`
@@ -48,7 +49,6 @@ type PublicListing struct {
 	ImageUrl string `json:"imageUrl"`
 	Channel ListingChannel `json:"channel"`
 	PartialRedemption PartialRedemption `json:"partialRedemption"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _PublicListing PublicListing
@@ -57,7 +57,7 @@ type _PublicListing PublicListing
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPublicListing(id NullableString, merchantId NullableString, merchantName NullableString, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, imageUrl string, channel ListingChannel, partialRedemption PartialRedemption) *PublicListing {
+func NewPublicListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, imageUrl string, channel ListingChannel, partialRedemption PartialRedemption) *PublicListing {
 	this := PublicListing{}
 	this.Id = id
 	this.MerchantId = merchantId
@@ -94,81 +94,75 @@ func NewPublicListingWithDefaults() *PublicListing {
 }
 
 // GetId returns the Id field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *PublicListing) GetId() string {
-	if o == nil || o.Id.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.Id.Get()
+	return o.Id
 }
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *PublicListing) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Id.Get(), o.Id.IsSet()
+	return &o.Id, true
 }
 
 // SetId sets field value
 func (o *PublicListing) SetId(v string) {
-	o.Id.Set(&v)
+	o.Id = v
 }
 
 // GetMerchantId returns the MerchantId field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *PublicListing) GetMerchantId() string {
-	if o == nil || o.MerchantId.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.MerchantId.Get()
+	return o.MerchantId
 }
 
 // GetMerchantIdOk returns a tuple with the MerchantId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *PublicListing) GetMerchantIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.MerchantId.Get(), o.MerchantId.IsSet()
+	return &o.MerchantId, true
 }
 
 // SetMerchantId sets field value
 func (o *PublicListing) SetMerchantId(v string) {
-	o.MerchantId.Set(&v)
+	o.MerchantId = v
 }
 
 // GetMerchantName returns the MerchantName field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *PublicListing) GetMerchantName() string {
-	if o == nil || o.MerchantName.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.MerchantName.Get()
+	return o.MerchantName
 }
 
 // GetMerchantNameOk returns a tuple with the MerchantName field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *PublicListing) GetMerchantNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.MerchantName.Get(), o.MerchantName.IsSet()
+	return &o.MerchantName, true
 }
 
 // SetMerchantName sets field value
 func (o *PublicListing) SetMerchantName(v string) {
-	o.MerchantName.Set(&v)
+	o.MerchantName = v
 }
 
 // GetTitle returns the Title field value
@@ -695,9 +689,9 @@ func (o PublicListing) MarshalJSON() ([]byte, error) {
 
 func (o PublicListing) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id.Get()
-	toSerialize["merchantId"] = o.MerchantId.Get()
-	toSerialize["merchantName"] = o.MerchantName.Get()
+	toSerialize["id"] = o.Id
+	toSerialize["merchantId"] = o.MerchantId
+	toSerialize["merchantName"] = o.MerchantName
 	toSerialize["title"] = o.Title
 	toSerialize["description"] = o.Description
 	toSerialize["category"] = o.Category
@@ -721,11 +715,6 @@ func (o PublicListing) ToMap() (map[string]interface{}, error) {
 	toSerialize["imageUrl"] = o.ImageUrl
 	toSerialize["channel"] = o.Channel
 	toSerialize["partialRedemption"] = o.PartialRedemption
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -775,43 +764,15 @@ func (o *PublicListing) UnmarshalJSON(data []byte) (err error) {
 
 	varPublicListing := _PublicListing{}
 
-	err = json.Unmarshal(data, &varPublicListing)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varPublicListing)
 
 	if err != nil {
 		return err
 	}
 
 	*o = PublicListing(varPublicListing)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "merchantId")
-		delete(additionalProperties, "merchantName")
-		delete(additionalProperties, "title")
-		delete(additionalProperties, "description")
-		delete(additionalProperties, "category")
-		delete(additionalProperties, "locations")
-		delete(additionalProperties, "currency")
-		delete(additionalProperties, "faceValueMinor")
-		delete(additionalProperties, "priceInPoints")
-		delete(additionalProperties, "stockRemaining")
-		delete(additionalProperties, "stockTotal")
-		delete(additionalProperties, "transferable")
-		delete(additionalProperties, "partialRedemptionPolicy")
-		delete(additionalProperties, "minimumSpendMinor")
-		delete(additionalProperties, "expiresAt")
-		delete(additionalProperties, "status")
-		delete(additionalProperties, "perUserLimit")
-		delete(additionalProperties, "region")
-		delete(additionalProperties, "audience")
-		delete(additionalProperties, "contentCategory")
-		delete(additionalProperties, "imageUrl")
-		delete(additionalProperties, "channel")
-		delete(additionalProperties, "partialRedemption")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

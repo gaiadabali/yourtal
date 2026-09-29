@@ -12,6 +12,8 @@ import type { PublicLocaleConfig } from "./public-locale";
 
 export interface PublicCampaignContentProps {
   campaign: Campaign;
+  /** This campaign's real `CampaignTerms.accuracyBonusPoints`, or `0` when the page had no terms to read (11.5.a: never a fabricated split). */
+  accuracyBonusPoints: number;
   locale: PublicLocaleConfig;
   merchantHref: string;
   /** `/[locale]/c/[campaignId]/watch` — Open Viewing (YT-0432). Only ever rendered as a link when the campaign is live; see `PublicCampaignLiveFacts`. */
@@ -43,6 +45,7 @@ export interface PublicCampaignContentProps {
  */
 export function PublicCampaignContent({
   campaign,
+  accuracyBonusPoints,
   locale,
   merchantHref,
   watchHref,
@@ -63,7 +66,12 @@ export function PublicCampaignContent({
         </header>
 
         {isLive ? (
-          <PublicCampaignLiveFacts campaign={campaign} locale={locale} watchHref={watchHref} />
+          <PublicCampaignLiveFacts
+            campaign={campaign}
+            accuracyBonusPoints={accuracyBonusPoints}
+            locale={locale}
+            watchHref={watchHref}
+          />
         ) : (
           <p className="rounded-md bg-surface-raised px-3 py-2 text-sm text-fg-muted">
             {t("campaign.notLiveNotice")}
@@ -76,14 +84,20 @@ export function PublicCampaignContent({
 
 interface PublicCampaignLiveFactsProps {
   campaign: Campaign;
+  accuracyBonusPoints: number;
   locale: PublicLocaleConfig;
   watchHref: string;
 }
 
 /** The reward facts, sign-up call to action, and Open Viewing link — only ever rendered for a currently live campaign. */
-function PublicCampaignLiveFacts({ campaign, locale, watchHref }: PublicCampaignLiveFactsProps) {
+function PublicCampaignLiveFacts({
+  campaign,
+  accuracyBonusPoints,
+  locale,
+  watchHref,
+}: PublicCampaignLiveFactsProps) {
   const t = getPublicTranslator(locale.intlLocale);
-  const facts = computeCampaignRewardFacts(campaign, locale);
+  const facts = computeCampaignRewardFacts(campaign, accuracyBonusPoints, locale);
 
   return (
     <>

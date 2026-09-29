@@ -5,8 +5,8 @@ import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
  * Price-band filter for the Store browse grid (YT-0420 acceptance:
  * "category, merchant, price-band and location filters"). Bands are a
  * presentation grouping over `priceInPoints`, not a contract concept, so
- * they live here rather than in `packages/contracts` — the same reasoning
- * `campaign-reward-split.ts` documents for its own mock-only ratio.
+ * they live here rather than in `packages/contracts` — a presentation-only
+ * grouping, not a contract concept.
  *
  * Bounds are chosen against the mock catalogue's actual spread (roughly
  * 750-20,000 points for ordinary listings, docs/09 §4.1's worked example),

@@ -1,8 +1,7 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { PublicListing } from "@yourtal/contracts/listing";
-import { formatMoney, formatPointsIn } from "@yourtal/contracts/money/format";
+import { asDisplayPoints, formatMoney, formatPointsIn } from "@yourtal/contracts/money/format";
 import { formatDataCost, formatDuration } from "@/features/campaign/campaign-format";
-import { splitCampaignReward } from "@/features/campaign/campaign-reward-split";
 import type { PublicLocaleConfig } from "./public-locale";
 
 /**
@@ -15,12 +14,12 @@ import type { PublicLocaleConfig } from "./public-locale";
  * A CTA that shows the reward on the page but not on the card it gets shared
  * as would be the dishonest split this ticket is explicitly warned against.
  *
- * Reuses `apps/web/features/campaign/campaign-format.ts` and
- * `campaign-reward-split.ts` rather than re-deriving duration/reward copy —
- * this ticket's brief is explicit that those existing formatters are the
- * source of truth for what an entity's facts look like; only the campaign
- * feature's own React components (off limits for this ticket) are not
- * reused.
+ * Reuses `apps/web/features/campaign/campaign-format.ts` rather than
+ * re-deriving duration copy. The base/bonus split itself is no longer
+ * computed here at all (11.5.a deleted `campaign-reward-split.ts`'s
+ * fabricated 60/40 ratio): `campaign.rewardPoints` is already the real base
+ * amount, and `accuracyBonusPoints` below is the real bonus, read by the
+ * caller from this campaign's own `CampaignTerms` — never invented.
  */
 export interface CampaignRewardFacts {
   durationLabel: string;
@@ -34,14 +33,19 @@ export interface CampaignRewardFacts {
 
 export function computeCampaignRewardFacts(
   campaign: Campaign,
+  /** This campaign's real `CampaignTerms.accuracyBonusPoints` — `0` when the caller has no terms to read (never a fabricated ratio). */
+  accuracyBonusPoints: number,
   locale: PublicLocaleConfig,
 ): CampaignRewardFacts {
-  const { baseRewardPoints, maxAccuracyBonusPoints } = splitCampaignReward(campaign);
+  const baseRewardPoints = campaign.rewardPoints;
+  const maxAccuracyBonusPoints = Math.max(0, Math.round(accuracyBonusPoints));
   const durationLabel = formatDuration(campaign.durationSeconds, locale.intlLocale);
   const dataCostLabel = formatDataCost(campaign.estimatedDataMb, locale.intlLocale);
   const baseRewardLabel = formatPointsIn(locale.intlLocale, baseRewardPoints);
   const accuracyBonusLabel =
-    maxAccuracyBonusPoints > 0 ? formatPointsIn(locale.intlLocale, maxAccuracyBonusPoints) : null;
+    maxAccuracyBonusPoints > 0
+      ? formatPointsIn(locale.intlLocale, asDisplayPoints(maxAccuracyBonusPoints))
+      : null;
 
   const headline =
     accuracyBonusLabel === null

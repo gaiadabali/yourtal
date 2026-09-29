@@ -42,11 +42,11 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 7** Business studio | C | ✅ done | 9/9 | 46/46 | `██████████` 100% |
 | **Phase 8** Voucher engine for clients | C | ✅ done | 4/4 | 22/22 | `██████████` 100% |
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
-| **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 0/6 | 5/23 | `██░░░░░░░░`  22% |
+| **Phase 10** Settlement, lifecycle & risk | A + C | 🔄 in progress | 0/7 | 5/26 | `██░░░░░░░░`  19% |
 | **Phase 11** Viewer feed & public site | B | 🔄 in progress | 0/7 | 1/33 | `░░░░░░░░░░`   3% |
 | **Phase 12** Teen & family mode | A + B + C | · not started | 0/4 | 0/13 | `░░░░░░░░░░`   0% |
 | **Phase 13** Ready for live review | all | · not started | 0/8 | 0/21 | `░░░░░░░░░░`   0% |
-| **All** | | | **65/90** | **351/435** | `████████░░`  81% |
+| **All** | | | **65/91** | **351/438** | `████████░░`  80% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1286,6 +1286,11 @@ The internal team runs the economy and the review queues. Today none of it exist
   - [ ] 10.6.a (was 9.6.a) Staff console: weekly statements, disputes and payout approval.
   - [ ] 10.6.b (was 9.6.c, from 7.5.b) Studio billing lists the business's statements, and `POST /api/:tenantId/studio/billing/statements/:id/dispute` holds that payout until staff resolve it in 10.6.a.
   - [ ] 10.6.c **Check:** an approved statement produces one simulated payout after the dispute window, and a disputed one pays nothing until resolved.
+
+- [ ] **10.7 Fake-ledger parity (requested by C, found in Phase 9)** · A · needs: —
+  - [ ] 10.7.a K6 in the fake: `FakeLedgerClient.grantAction` (`apps/api/src/shared/ledger-client/fake/fake-ledger-rewards.ts`) debits the region's marketing fund (`platform.ledger_fake_marketing_fund`, which `fundMarketing` writes) in the same transaction as the grant, and refuses a streak, receipt or goodwill grant the fund cannot back — the same rule the Go ledger enforces (4.4.h, F24). Today it grants unconditionally.
+  - [ ] 10.7.b Region-tagged burns in the fake: `fake-ledger-economy.ts`'s daily series counts `burnForVoucher` points per region, so the staff economy screen (9.5.a) shows real `pointsRedeemed` instead of 0.
+  - [ ] 10.7.c **Check:** with `LEDGER_MODE=fake`, a goodwill grant larger than the remaining AU marketing fund is refused and one within it lowers the fund by exactly its backing; a burn in AU shows in AU's `pointsRedeemed` and never in ID's; `ledger-client.contract.spec.ts` covers both against the fake and the live Go ledger.
 
 **Done when:** a week of simulated activity produces statements that reproduce from the ledger; expiry does nothing until it is switched on; the proof, solvency and risk jobs run and alert; staff work the review queue, resolve a captured-voucher dispute and approve payouts, and a business can dispute its statement.
 

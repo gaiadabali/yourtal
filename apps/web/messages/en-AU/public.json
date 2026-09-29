@@ -28,6 +28,18 @@
     "honestyNote": "The terms shown on this page are the terms honoured — duration, reward and the scoring rule never change once you start watching.",
     "notLiveNotice": "This campaign is not currently live."
   },
+  "feed": {
+    "landmarkLabel": "For you",
+    "heading": "For you",
+    "upToPoints": "up to {points} pts",
+    "finishToEarn": "finish to earn",
+    "signUpCta": "Sign up to earn",
+    "endOfFeed": "You're all caught up",
+    "emptyHeading": "Nothing to watch yet",
+    "emptyBody": "Check back soon — new videos from local businesses are added regularly.",
+    "playLabel": "Play video",
+    "pauseLabel": "Pause video"
+  },
   "openView": {
     "breadcrumbLabel": "Watch",
     "eyebrow": "Watching without an account",

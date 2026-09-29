@@ -7,5 +7,6 @@
   "primary": "Utama",
   "searchLabel": "Cari di YourTal",
   "searchPlaceholder": "Cari merek, video, dan reward",
-  "pointsAvailable": "{points} poin tersedia"
+  "pointsAvailable": "{points} poin tersedia",
+  "signUpToEarn": "Daftar untuk dapat poin"
 }

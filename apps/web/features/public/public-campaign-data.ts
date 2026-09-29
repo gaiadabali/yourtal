@@ -1,11 +1,15 @@
-import type { Campaign } from "@yourtal/contracts/campaign";
+import { campaignSchema, type Campaign } from "@yourtal/contracts/campaign";
 import {
   longMerchantNameCampaignFixture,
   mockCampaigns,
   zeroRewardCampaignFixture,
 } from "@yourtal/contracts/campaign/mock";
 import { REGION_CAMPAIGN_FIXTURES } from "@yourtal/contracts/region/mock";
+import { publicApiFetch } from "@/lib/api/public-api-fetch";
 import type { PublicLocale } from "./public-locale";
+
+/** How long a live campaign fetched from the API may serve before revalidating (11.2.a). */
+const CAMPAIGN_REVALIDATE_SECONDS = 60;
 
 /**
  * Data access for the public campaign landing page (YT-0431,
@@ -81,4 +85,43 @@ export function listLivePublicCampaigns(locale: PublicLocale): Campaign[] {
 /** A single campaign for the public landing page, or `undefined` if no such campaign exists in this locale's fixed catalogue. */
 export function getPublicCampaign(campaignId: string, locale: PublicLocale): Campaign | undefined {
   return catalogueFor(locale).find((campaign) => campaign.id === campaignId);
+}
+
+/**
+ * 11.2.a: a real, seeded campaign the mock catalogue above knows nothing
+ * about — `GET /api/campaigns/:campaignId`, the same anonymous Open
+ * Viewing read `apps/api/src/modules/campaign/campaign.controller.ts`
+ * already serves (`campaign_view.yaml`'s `open-viewing-is-opt-in-and-funded`
+ * rule: live, `openViewingEnabled`, budget remaining). Not region-filtered
+ * here — the API itself has no region query for a single campaign; a
+ * `/au/c/{id}` request for an ID campaign 404s downstream because
+ * `getPublicCampaignForLocale` only calls this once the mock catalogue
+ * lookup has already failed for THIS locale, and a real campaign id is
+ * unique across both regions in practice (one business, one region, 1.5.b).
+ *
+ * Read with ISR, not `apiFetch` — this is still the static/RSC public
+ * surface (see `layout.tsx`'s own doc comment), so it uses the same
+ * cookie-free, revalidate-on-a-timer fetch `public-feed-data.ts` uses.
+ * Never throws: a not-yet-live campaign, a suspended business, or an
+ * unreachable API all come back as `undefined`, and the page 404s exactly
+ * as it would for an id that was never real.
+ */
+export async function getPublicCampaignFromApi(campaignId: string): Promise<Campaign | undefined> {
+  const result = await publicApiFetch(`/api/campaigns/${campaignId}`, campaignSchema, {
+    revalidate: CAMPAIGN_REVALIDATE_SECONDS,
+  });
+  return result.ok ? result.data : undefined;
+}
+
+/**
+ * `getPublicCampaign` (the fixed mock catalogue) first, then
+ * `getPublicCampaignFromApi` (a real seeded campaign) — so a hand-typed id
+ * that matches neither still 404s, per this module's own "no
+ * hash-synthesised fallback" rule above.
+ */
+export async function getPublicCampaignForLocale(
+  campaignId: string,
+  locale: PublicLocale,
+): Promise<Campaign | undefined> {
+  return getPublicCampaign(campaignId, locale) ?? (await getPublicCampaignFromApi(campaignId));
 }

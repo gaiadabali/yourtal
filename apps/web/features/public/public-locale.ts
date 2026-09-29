@@ -82,6 +82,17 @@ export function publicLocaleConfig(locale: PublicLocale): PublicLocaleConfig {
 }
 
 /**
+ * The `Region` this locale reads and writes as, for the one caller that
+ * needs it (`public-feed-data.ts`'s anonymous `GET /api/feed?region=`,
+ * 11.2.a). Kept as a literal `"AU" | "ID"` rather than importing
+ * `@yourtal/contracts/region`'s `Region` — same reasoning as this file's
+ * own header comment on why it stays Zod-free.
+ */
+export function publicLocaleRegion(locale: PublicLocale): "AU" | "ID" {
+  return locale === "au" ? "AU" : "ID";
+}
+
+/**
  * Origin for every canonical, OG, sitemap and JSON-LD URL on the public
  * surface. `SITE_URL` is read at build time, so staging builds with its own
  * host and its links never point at production.

@@ -113,7 +113,12 @@ export async function apiFetch<T>(
   return { ok: true, data: parsed.data };
 }
 
-function tryParseJson(text: string): unknown {
+// Exported (11.2.a, additive): `public-api-fetch.ts` needs the exact same
+// JSON/error mapping as this file's own `apiFetch`, without pulling in its
+// `readSessionToken()` cookie read — see that file's header for why. Kept
+// as the one shared implementation rather than a second copy that could
+// drift.
+export function tryParseJson(text: string): unknown {
   try {
     return JSON.parse(text) as unknown;
   } catch {
@@ -130,7 +135,7 @@ function tryParseJson(text: string): unknown {
  * does not follow that convention (an unhandled 500, a proxy error page)
  * still gets a usable, if generic, `ApiError`.
  */
-function httpErrorFrom(status: number, body: unknown): ApiError {
+export function httpErrorFrom(status: number, body: unknown): ApiError {
   const record = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
   const code = typeof record["code"] === "string" ? record["code"] : `http_${status}`;
   const message =
@@ -140,6 +145,6 @@ function httpErrorFrom(status: number, body: unknown): ApiError {
   return { kind: "http", status, code, message };
 }
 
-function networkErrorMessage(cause: unknown): string {
+export function networkErrorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : "network error";
 }

@@ -7,5 +7,6 @@
   "primary": "Primary",
   "searchLabel": "Search YourTal",
   "searchPlaceholder": "Search brands, videos and rewards",
-  "pointsAvailable": "{points} points available"
+  "pointsAvailable": "{points} points available",
+  "signUpToEarn": "Sign up to earn"
 }

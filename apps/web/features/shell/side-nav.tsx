@@ -1,10 +1,20 @@
 import { cn } from "@yourtal/ui/cn";
 import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
-import { navItems } from "./nav-items";
+import { navItems, type NavLabelKey } from "./nav-items";
 import { NavLink } from "./nav-link";
 
 export interface SideNavProps {
   locale: SupportedLocale;
+  /**
+   * F79: an anonymous visitor's own destination per tab — Home and Store
+   * keep working (the public locale root, the public rewards catalogue),
+   * Watch/Wallet/Me point at sign-in. Plain `<a>` targets (below), not
+   * `next/link`, since these are outside the signed-in tab graph
+   * `NavLink`'s `TabHref` union describes — same reasoning `public-cta-link.tsx`
+   * gives for the same kind of cross-group link. Omitted entirely, this
+   * renders exactly as it always has (signed-in tab hrefs, `NavLink`).
+   */
+  signedOutHrefs?: Readonly<Record<NavLabelKey, string>>;
 }
 
 const LINK_BASE =
@@ -26,7 +36,7 @@ const LINK_ACTIVE = "bg-surface-sunken text-accent";
  * why (same reasoning, same catalogue, so the two chrome variants can never
  * disagree on a label for a given region).
  */
-export function SideNav({ locale }: SideNavProps) {
+export function SideNav({ locale, signedOutHrefs }: SideNavProps) {
   const t = getNavTranslator(locale);
 
   return (
@@ -40,6 +50,19 @@ export function SideNav({ locale }: SideNavProps) {
     >
       {navItems.map((item) => {
         const Icon = item.icon;
+        if (signedOutHrefs) {
+          return (
+            <a
+              key={item.href}
+              href={signedOutHrefs[item.labelKey]}
+              className={LINK_BASE}
+              rel={item.labelKey === "wallet" || item.labelKey === "me" ? "nofollow" : undefined}
+            >
+              <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+              <span>{t(item.labelKey)}</span>
+            </a>
+          );
+        }
         return (
           <NavLink
             key={item.href}

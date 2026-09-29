@@ -28,6 +28,18 @@
     "honestyNote": "Ketentuan yang ditampilkan di halaman ini adalah ketentuan yang akan dihormati — durasi, reward, dan aturan penilaian tidak berubah setelah kamu mulai menonton.",
     "notLiveNotice": "Campaign ini sedang tidak aktif."
   },
+  "feed": {
+    "landmarkLabel": "Untukmu",
+    "heading": "Untukmu",
+    "upToPoints": "hingga {points} poin",
+    "finishToEarn": "selesaikan untuk dapat poin",
+    "signUpCta": "Daftar untuk dapat poin",
+    "endOfFeed": "Kamu sudah menonton semuanya",
+    "emptyHeading": "Belum ada video untuk ditonton",
+    "emptyBody": "Cek lagi nanti — video baru dari bisnis lokal ditambahkan secara berkala.",
+    "playLabel": "Putar video",
+    "pauseLabel": "Jeda video"
+  },
   "openView": {
     "breadcrumbLabel": "Tonton",
     "eyebrow": "Menonton tanpa akun",

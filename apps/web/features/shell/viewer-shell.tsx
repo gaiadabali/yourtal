@@ -2,12 +2,29 @@ import type { ReactNode } from "react";
 import { cn } from "@yourtal/ui/cn";
 import { BottomNav } from "./bottom-nav";
 import type { SupportedLocale } from "./nav-i18n";
+import type { NavLabelKey } from "./nav-items";
 import { SideNav } from "./side-nav";
 import { TopBar } from "./top-bar";
 
+/**
+ * F79: the same shell for an anonymous visitor as a signed-in one — Home
+ * and Store keep working (their own public destinations), Watch/Wallet/Me
+ * point at sign-in, and the top bar shows a "sign up to earn" CTA instead
+ * of the points chip. `apps/web/proxy.ts` (Area A) is not touched by this:
+ * these are just where the NAV LINKS point, not a change to which routes
+ * are gated.
+ */
+export interface ViewerShellSignedOutProps {
+  /** Wordmark link target — the public locale root (`/au`/`/id`), not `/home`. */
+  homeHref: string;
+  hrefs: Readonly<Record<NavLabelKey, string>>;
+  signUpHref: string;
+  signUpLabel: string;
+}
+
 export interface ViewerShellProps {
   locale: SupportedLocale;
-  /** The signed-in viewer's spendable points, shown in the top bar's chip. */
+  /** The signed-in viewer's spendable points, shown in the top bar's chip. Unused when `signedOut` is set (kept required so every existing signed-in caller is unaffected). */
   availablePoints: number;
   /**
    * The viewer is dark-first (After Dark, F3) — every caller gets `"dark"`
@@ -16,6 +33,7 @@ export interface ViewerShellProps {
    * CSS.
    */
   theme?: "light" | "dark";
+  signedOut?: ViewerShellSignedOutProps;
   children: ReactNode;
 }
 
@@ -46,12 +64,20 @@ export function ViewerShell({
   locale,
   availablePoints,
   theme = "dark",
+  signedOut,
   children,
 }: ViewerShellProps) {
   return (
     <div data-surface="viewer" data-theme={theme} className="min-h-dvh bg-canvas text-fg">
-      <TopBar locale={locale} availablePoints={availablePoints} />
-      <SideNav locale={locale} />
+      <TopBar
+        locale={locale}
+        availablePoints={availablePoints}
+        homeHref={signedOut?.homeHref}
+        signedOutCta={
+          signedOut ? { href: signedOut.signUpHref, label: signedOut.signUpLabel } : undefined
+        }
+      />
+      <SideNav locale={locale} signedOutHrefs={signedOut?.hrefs} />
       <main
         className={cn(
           "min-h-dvh pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",
@@ -60,7 +86,7 @@ export function ViewerShell({
       >
         {children}
       </main>
-      <BottomNav locale={locale} />
+      <BottomNav locale={locale} signedOutHrefs={signedOut?.hrefs} />
     </div>
   );
 }

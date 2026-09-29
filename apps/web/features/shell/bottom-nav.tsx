@@ -1,10 +1,12 @@
 import { cn } from "@yourtal/ui/cn";
 import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
-import { navItems } from "./nav-items";
+import { navItems, type NavLabelKey } from "./nav-items";
 import { NavLink } from "./nav-link";
 
 export interface BottomNavProps {
   locale: SupportedLocale;
+  /** F79: see `side-nav.tsx`'s own doc comment — same optional signed-out override, same behaviour when omitted. */
+  signedOutHrefs?: Readonly<Record<NavLabelKey, string>>;
 }
 
 const LINK_BASE =
@@ -28,7 +30,7 @@ const LINK_ACTIVE = "text-accent";
  * Server Component tree (`app-shell.tsx`) or from the gallery's Client
  * Component tree, with no server-only import to make that a one-way door.
  */
-export function BottomNav({ locale }: BottomNavProps) {
+export function BottomNav({ locale, signedOutHrefs }: BottomNavProps) {
   const t = getNavTranslator(locale);
 
   return (
@@ -41,6 +43,19 @@ export function BottomNav({ locale }: BottomNavProps) {
     >
       {navItems.map((item) => {
         const Icon = item.icon;
+        if (signedOutHrefs) {
+          return (
+            <a
+              key={item.href}
+              href={signedOutHrefs[item.labelKey]}
+              className={LINK_BASE}
+              rel={item.labelKey === "wallet" || item.labelKey === "me" ? "nofollow" : undefined}
+            >
+              <Icon aria-hidden="true" className="h-5 w-5" />
+              <span>{t(item.labelKey)}</span>
+            </a>
+          );
+        }
         return (
           <NavLink
             key={item.href}

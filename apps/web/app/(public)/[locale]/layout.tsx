@@ -9,7 +9,8 @@ import {
 } from "@/features/public/public-locale";
 import { PublicFooter } from "@/features/public/public-footer";
 import { PublicInfoLinks } from "@/features/public/public-info-links";
-import { PublicHeader } from "@/features/public/public-header";
+import { ViewerShell } from "@/features/shell/viewer-shell";
+import { getNavTranslator } from "@/features/shell/nav-i18n";
 
 /**
  * The public surface's own layout (YT-0431) — deliberately a SIBLING route
@@ -24,10 +25,10 @@ import { PublicHeader } from "@/features/public/public-header";
  * visitor. `(app)/layout.tsx` and `(app)/loading.tsx` are also off limits
  * for this ticket. A sibling `(public)` group (mirroring the merchant
  * portal's own `(merchant)` group, see `app/(merchant)/merchant/page.tsx`'s
- * doc comment) gives this surface the root layout only (fonts, `<html>`)
- * plus this file's own minimal chrome, with zero calls to `cookies()` or
- * `headers()` anywhere in the tree — see this ticket's report for the build
- * output confirming every route here comes out static (`○`).
+ * doc comment) gives this surface the root layout only (fonts, `<html>`),
+ * with zero calls to `cookies()` or `headers()` anywhere in the tree — see
+ * this ticket's report for the build output confirming every route here
+ * comes out static (`○`).
  *
  * Region is resolved from the `[locale]` route segment
  * (`apps/web/features/public/public-locale.ts`), never from the region
@@ -38,6 +39,20 @@ import { PublicHeader } from "@/features/public/public-header";
  * outside `GENERATED_PUBLIC_LOCALES` (today, just `"id"` — see
  * `public-locale.ts` for why `"au"` is not generated yet) 404s at the router
  * before this layout, or anything under it, ever runs.
+ *
+ * **F79 (11.1.d): the chrome is `ViewerShell`, in its signed-out mode, not
+ * `PublicHeader`.** A logged-out visitor gets the same side rail/bottom
+ * nav/top bar as a signed-in one — Home (`/${locale}`) and Store
+ * (`/${locale}/rewards`) are real public destinations; Watch, Wallet and Me
+ * have none, so their nav links go straight to `/login?returnTo=`, and the
+ * top bar shows "Sign up to earn" instead of the points chip. This never
+ * reads the session (no `cookies()`) — every href below is a plain string
+ * computed from `locale`, so the page this renders stays exactly as
+ * cacheable as before. `apps/web/proxy.ts` (Area A) is untouched: these
+ * links do not un-gate `/wallet`/`/me`, they just send an anonymous visitor
+ * straight to the sign-in prompt those routes would bounce them to anyway.
+ * `PublicHeader` stays as a component (still used by `global-not-found.tsx`
+ * and the lab gallery) — this is simply no longer where it is rendered.
  */
 export function generateStaticParams() {
   return GENERATED_PUBLIC_LOCALES.map((locale) => ({ locale }));
@@ -60,20 +75,34 @@ export interface PublicLocaleLayoutProps {
 export default async function PublicLocaleLayout({ children, params }: PublicLocaleLayoutProps) {
   const locale = requirePublicLocale((await params).locale);
   const config = publicLocaleConfig(locale);
+  const navT = getNavTranslator(config.intlLocale);
 
   return (
     <RootDocument lang={config.intlLocale}>
-      <div className="flex min-h-dvh flex-col bg-surface">
-        <PublicHeader
-          locale={config.intlLocale}
-          homeHref={`/${locale}`}
-          currentPublicLocale={locale}
-        />
-        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">{children}</main>
+      <ViewerShell
+        locale={config.intlLocale}
+        // Never read for a signed-out caller (see `signedOut`'s own doc
+        // comment on `ViewerShellProps`) — 0 rather than left undefined so
+        // the prop stays required for every existing signed-in caller.
+        availablePoints={0}
+        signedOut={{
+          homeHref: `/${locale}`,
+          hrefs: {
+            home: `/${locale}`,
+            watch: `/login?returnTo=${encodeURIComponent("/quick")}`,
+            store: `/${locale}/rewards`,
+            wallet: `/login?returnTo=${encodeURIComponent("/wallet")}`,
+            me: `/login?returnTo=${encodeURIComponent("/me")}`,
+          },
+          signUpHref: "/onboarding",
+          signUpLabel: navT("signUpToEarn"),
+        }}
+      >
+        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">{children}</div>
         <PublicFooter locale={config.intlLocale}>
           <PublicInfoLinks locale={config.intlLocale} basePath={`/${locale}`} />
         </PublicFooter>
-      </div>
+      </ViewerShell>
     </RootDocument>
   );
 }

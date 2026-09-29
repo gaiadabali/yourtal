@@ -1,9 +1,10 @@
 import type { Region } from "@yourtal/contracts/region";
 import type { LedgerBalance, LedgerHistoryEntry } from "@yourtal/contracts/ledger-internal/wallet";
-import type { Reservation } from "@yourtal/contracts/voucher-internal/lifecycle";
+import type { WalletVoucherRow } from "@yourtal/contracts/voucher-internal/wallet";
 import type { WalletSummary, WalletVoucher } from "@yourtal/contracts/wallet/wallet";
 import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
 import { toPoints } from "@yourtal/contracts/money";
+import { publicVoucherStatusOf } from "@yourtal/contracts/voucher/voucher-lifecycle";
 
 /** The ledger's balance as the viewer reads it: pending summed, soonest unlock first. */
 export function toWalletSummary(region: Region, balance: LedgerBalance): WalletSummary {
@@ -43,11 +44,31 @@ export function toWalletHistoryEntry(entry: LedgerHistoryEntry): WalletHistoryEn
   };
 }
 
-/** A held voucher without the saga id, which is the checkout's, not the viewer's. */
-export function toWalletVoucher(reservation: Reservation): WalletVoucher {
+/**
+ * A held voucher without the saga id, which is the checkout's, not the
+ * viewer's. TASKS.md 4.8.c: `state` stays the original three-bucket
+ * collapse `services/voucher` already sends (untouched, back-compat with
+ * `apps/web/features/wallet/wallet-data.ts`'s own non-optional enum);
+ * `status` is the new, additive real state, derived the same way
+ * `voucherSchema.status` is everywhere else in this codebase —
+ * `publicVoucherStatusOf` is what decides a hold still reads as `active`
+ * and a non-transfer void has no public status at all (omitted, not sent
+ * as `null`: `exactOptionalPropertyTypes`).
+ */
+export function toWalletVoucher(row: WalletVoucherRow): WalletVoucher {
+  const status = publicVoucherStatusOf(row.lifecycleState, row.voidReason);
   return {
-    voucherId: reservation.voucherId,
-    listingId: reservation.listingId,
-    state: reservation.state,
+    voucherId: row.voucherId,
+    listingId: row.listingId,
+    state: row.state,
+    ...(status === undefined ? {} : { status }),
+    merchantName: row.merchantName,
+    title: row.title,
+    currency: row.currency,
+    faceValueMinor: row.faceValueMinor,
+    remainingValueMinor: row.remainingValueMinor,
+    expiresAt: row.expiresAt,
+    ...(row.location === null ? {} : { location: row.location }),
+    partialRedemptionPolicy: row.partialRedemptionPolicy,
   };
 }

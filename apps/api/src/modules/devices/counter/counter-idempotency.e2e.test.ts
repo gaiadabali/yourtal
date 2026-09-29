@@ -115,9 +115,14 @@ async function seedRedeemableVoucher(
   const voucherId = randomUUID();
   const code = randomUUID().replace(/-/g, "").toUpperCase().slice(0, 16);
   const codeHash = createHash("sha256").update(code).digest("hex");
+  // TASKS.md 4.8.c added `remaining_value_minor`/`expires_at` as NOT NULL
+  // columns (`20260929060000`) — a fresh voucher's remaining value starts
+  // at its listing's own face value, same as `fake-voucher-lifecycle.ts`'s
+  // own `reserve()`.
   await db.execute(sql`
-    INSERT INTO platform.voucher_fake_voucher (id, listing_id, saga_id, code, code_hash)
-    VALUES (${voucherId}, ${listingId}, ${randomUUID()}, ${code}, ${codeHash})
+    INSERT INTO platform.voucher_fake_voucher
+      (id, listing_id, saga_id, code, code_hash, remaining_value_minor, expires_at)
+    VALUES (${voucherId}, ${listingId}, ${randomUUID()}, ${code}, ${codeHash}, 50000, ${farFuture})
   `);
   return { listingId, code };
 }

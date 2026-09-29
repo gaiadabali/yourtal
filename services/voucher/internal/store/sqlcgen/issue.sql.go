@@ -310,11 +310,14 @@ func (q *Queries) GetListingTerms(ctx context.Context, id pgtype.UUID) (GetListi
 }
 
 const getOwnedVoucher = `-- name: GetOwnedVoucher :one
-SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
-       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
-       transferable, issued_at, expires_at, location_id, state, void_reason,
-       batch_id, version, currency, saga_id
-FROM voucher.vouchers WHERE id = $1 AND owner_id = $2
+SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title, v.face_value_minor,
+       v.remaining_value_minor, v.partial_redemption_policy, v.minimum_spend_minor,
+       v.transferable, v.issued_at, v.expires_at, v.location_id, v.state, v.void_reason,
+       v.batch_id, v.version, v.currency, v.saga_id,
+       l.name AS location_name, l.address AS location_address, l.district AS location_district
+FROM voucher.vouchers v
+LEFT JOIN store.merchant_location l ON l.id = v.location_id
+WHERE v.id = $1 AND v.owner_id = $2
 `
 
 type GetOwnedVoucherParams struct {
@@ -343,6 +346,9 @@ type GetOwnedVoucherRow struct {
 	Version                 int32
 	Currency                string
 	SagaID                  *string
+	LocationName            *string
+	LocationAddress         *string
+	LocationDistrict        *string
 }
 
 func (q *Queries) GetOwnedVoucher(ctx context.Context, arg GetOwnedVoucherParams) (GetOwnedVoucherRow, error) {
@@ -369,6 +375,9 @@ func (q *Queries) GetOwnedVoucher(ctx context.Context, arg GetOwnedVoucherParams
 		&i.Version,
 		&i.Currency,
 		&i.SagaID,
+		&i.LocationName,
+		&i.LocationAddress,
+		&i.LocationDistrict,
 	)
 	return i, err
 }
@@ -819,13 +828,15 @@ func (q *Queries) ListExpirableVouchers(ctx context.Context, limit int32) ([]Lis
 }
 
 const listVouchersForOwner = `-- name: ListVouchersForOwner :many
-SELECT id, listing_id, owner_id, merchant_id, merchant_name, title, face_value_minor,
-       remaining_value_minor, partial_redemption_policy, minimum_spend_minor,
-       transferable, issued_at, expires_at, location_id, state, void_reason,
-       batch_id, version, currency, saga_id
-FROM voucher.vouchers
-WHERE owner_id = $1 AND ($2::uuid IS NULL OR id > $2)
-ORDER BY id
+SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title, v.face_value_minor,
+       v.remaining_value_minor, v.partial_redemption_policy, v.minimum_spend_minor,
+       v.transferable, v.issued_at, v.expires_at, v.location_id, v.state, v.void_reason,
+       v.batch_id, v.version, v.currency, v.saga_id,
+       l.name AS location_name, l.address AS location_address, l.district AS location_district
+FROM voucher.vouchers v
+LEFT JOIN store.merchant_location l ON l.id = v.location_id
+WHERE v.owner_id = $1 AND ($2::uuid IS NULL OR v.id > $2)
+ORDER BY v.id
 LIMIT $3
 `
 
@@ -856,11 +867,17 @@ type ListVouchersForOwnerRow struct {
 	Version                 int32
 	Currency                string
 	SagaID                  *string
+	LocationName            *string
+	LocationAddress         *string
+	LocationDistrict        *string
 }
 
-// 4.5's wallet read. `id > $2` (not OFFSET) so paging is stable under
+// 4.5's wallet read (TASKS.md 4.8.c widens it with the branch that honours
+// this voucher). `id > $2` (not OFFSET) so paging is stable under
 // concurrent inserts — the same reasoning as every other keyset page in
-// this codebase.
+// this codebase. LEFT JOIN, not JOIN: a voucher minted before locations
+// existed (pre-20260919000009) would otherwise vanish from its owner's own
+// wallet rather than show with no location.
 func (q *Queries) ListVouchersForOwner(ctx context.Context, arg ListVouchersForOwnerParams) ([]ListVouchersForOwnerRow, error) {
 	rows, err := q.db.Query(ctx, listVouchersForOwner, arg.OwnerID, arg.Column2, arg.Limit)
 	if err != nil {
@@ -891,6 +908,9 @@ func (q *Queries) ListVouchersForOwner(ctx context.Context, arg ListVouchersForO
 			&i.Version,
 			&i.Currency,
 			&i.SagaID,
+			&i.LocationName,
+			&i.LocationAddress,
+			&i.LocationDistrict,
 		); err != nil {
 			return nil, err
 		}

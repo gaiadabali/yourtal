@@ -176,6 +176,29 @@ export function captureAsDevice(
         INSERT INTO platform.voucher_fake_capture (id, voucher_id, merchant_id, amount_minor, currency)
         VALUES (${captureId}, ${row.voucher_id}, ${row.merchant_id}, ${row.amount_minor}, ${row.currency})
       `);
+      // TASKS.md 4.8.c: mirrors `settle.go`'s own `afterCapture` (docs/09
+      // §8.2) -- balance_carrying leaves what is left spendable,
+      // single_use_forfeit/minimum_spend consume the whole voucher
+      // regardless of the amount captured. `voucher_fake_wallet.ts`'s
+      // `lifecycleState` derivation reads this column, so a capture that
+      // never updated it would leave a redeemed voucher showing `active`
+      // forever -- the exact bug 8.2.e's own Check found on staging.
+      const policyResult = await db.execute<{ remaining_value_minor: string; policy: string }>(sql`
+        SELECT v.remaining_value_minor, l.partial_redemption_policy AS policy
+          FROM platform.voucher_fake_voucher v
+          JOIN store.listings l ON l.id = v.listing_id
+         WHERE v.id = ${row.voucher_id}
+      `);
+      const policyRow = policyResult.rows[0];
+      if (policyRow !== undefined) {
+        const remaining =
+          policyRow.policy === "balance_carrying"
+            ? Math.max(0, Number(policyRow.remaining_value_minor) - Number(row.amount_minor))
+            : 0;
+        await db.execute(sql`
+          UPDATE platform.voucher_fake_voucher SET remaining_value_minor = ${remaining} WHERE id = ${row.voucher_id}
+        `);
+      }
       return ok({
         captureId,
         voucherId: row.voucher_id,

@@ -52,6 +52,15 @@ type StoreListingLocation struct {
 	LocationID pgtype.UUID
 }
 
+type StoreMerchantLocation struct {
+	ID         pgtype.UUID
+	MerchantID pgtype.UUID
+	Name       string
+	Address    string
+	District   string
+	CreatedAt  pgtype.Timestamptz
+}
+
 type VoucherAuthorization struct {
 	ID               pgtype.UUID
 	VoucherID        pgtype.UUID

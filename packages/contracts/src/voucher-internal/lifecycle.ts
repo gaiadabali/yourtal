@@ -49,10 +49,26 @@ export const qrTokenRequestSchema = z.object({
 });
 export type QrTokenRequest = z.infer<typeof qrTokenRequestSchema>;
 
+/** One of the 12 five-minute windows `qrtoken.Mint` produces (4.5.b). */
+export const qrTokenWindowSchema = z.object({
+  token: z.string().min(1),
+  expiresAt: z.iso.datetime(),
+});
+export type QrTokenWindow = z.infer<typeof qrTokenWindowSchema>;
+
 export const qrTokenSchema = z.object({
   token: z.string().min(1),
   voucherId: z.uuid(),
   expiresAt: z.iso.datetime(),
+  /**
+   * TASKS.md 4.8.c: all 12 windows the keyring already mints
+   * (`services/voucher/internal/api/wallet_routes.go`'s `qrTokenView.Tokens`),
+   * so a widened caller can cache the rest for offline display instead of
+   * re-requesting one every 5 minutes. Optional: the fake client mints only
+   * the current window (no keyring to mint 12 real ones against), so this
+   * is absent there rather than a single-element lie.
+   */
+  tokens: z.array(qrTokenWindowSchema).optional(),
 });
 export type QrToken = z.infer<typeof qrTokenSchema>;
 

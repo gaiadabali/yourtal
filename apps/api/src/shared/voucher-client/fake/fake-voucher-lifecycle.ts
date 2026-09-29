@@ -67,9 +67,25 @@ export function reserve(
       }
       const id = randomUUID();
       const code = randomUUID().replace(/-/g, "").toUpperCase().slice(0, 16);
+      // TASKS.md 4.8.c: `remaining_value_minor`/`expires_at` did not exist
+      // before this (`20260929060000`) — a fresh voucher's remaining value
+      // starts at its listing's own face value (nothing has redeemed any of
+      // it yet) and its expiry is the listing's own, the same values the
+      // real engine denormalizes onto `voucher.vouchers` at issuance.
+      // `COALESCE`, not a JOIN: this table carries no FK to `store.listings`
+      // by design (`voucher-client.contract.spec.ts`'s own comment — the
+      // fake ignores everything about a listing except the id it is given),
+      // and several tests `reserve()` a synthetic `listingId` that was never
+      // seeded there at all. A join would silently insert nothing for
+      // those; the 0/90-day fallback keeps this row inserted unconditionally.
       await db.execute(sql`
-        INSERT INTO platform.voucher_fake_voucher (id, listing_id, saga_id, code, code_hash)
-        VALUES (${id}, ${request.listingId}, ${request.sagaId}, ${code}, ${sha256(code)})
+        INSERT INTO platform.voucher_fake_voucher
+          (id, listing_id, saga_id, code, code_hash, remaining_value_minor, expires_at)
+        VALUES (
+          ${id}, ${request.listingId}, ${request.sagaId}, ${code}, ${sha256(code)},
+          COALESCE((SELECT face_value_minor FROM store.listings WHERE id = ${request.listingId}), 0),
+          COALESCE((SELECT expires_at FROM store.listings WHERE id = ${request.listingId}), now() + interval '90 days')
+        )
       `);
       return ok({
         voucherId: id,
@@ -130,11 +146,18 @@ export function activate(
 
 /**
  * 4.7.c / K13 (requested by A): the owner disputes an uncaptured voucher.
- * Legal only from "activated" (the fake has no "held"/"redeemed" state of
- * its own — captures write to a separate table, per `fake-voucher-redemption.ts`
- * — so this is the fake's best approximation: anything not already
- * "activated" or "voided" refuses). Voiding twice replays rather than
- * refusing, matching the real engine's own idempotence.
+ * `state` (reserved/activated/released) never grows a "voided" value — its
+ * CHECK constraint only allows those three (`20260925190500`), a bug this
+ * function's own OLD code tripped over (writing `state = 'voided'` would
+ * throw a constraint violation, never actually reached by a passing test).
+ * TASKS.md 4.8.c's own `void_reason` column is the real flag, same as the
+ * live engine's `voucher.vouchers.void_reason` — always `admin` here, the
+ * same reason `voidVoucher`'s real Go handler picks it (a staff/system-
+ * mediated dispute resolution). Legal only while `void_reason IS NULL` and
+ * the voucher is not yet fully redeemed (the fake's best approximation of
+ * "active", since it has no state of its own for held/redeemed — captures
+ * write to a separate table). Voiding twice replays rather than refusing,
+ * matching the real engine's own idempotence.
  */
 export function voidVoucher(
   db: AppDb,
@@ -142,8 +165,10 @@ export function voidVoucher(
 ): ResultAsync<void, VoucherError> {
   return new ResultAsync(
     (async (): Promise<Result<void, VoucherError>> => {
-      const result = await db.execute<VoucherRow>(sql`
-        SELECT id, listing_id, saga_id, owner_id, code, state
+      const result = await db.execute<
+        VoucherRow & { readonly void_reason: string | null; readonly remaining_value_minor: string }
+      >(sql`
+        SELECT id, listing_id, saga_id, owner_id, code, state, void_reason, remaining_value_minor
           FROM platform.voucher_fake_voucher WHERE id = ${request.voucherId}
       `);
       const row = result.rows[0];
@@ -156,17 +181,17 @@ export function voidVoucher(
           ),
         );
       }
-      if (row.state === "voided") return ok(undefined); // replay
-      if (row.state !== "activated") {
+      if (row.void_reason !== null) return ok(undefined); // replay
+      if (row.state !== "activated" || Number(row.remaining_value_minor) <= 0) {
         return err(
           ledgerError(
             "already_granted",
-            `voucher ${request.voucherId} is ${row.state}, not active — it cannot be disputed now`,
+            `voucher ${request.voucherId} is not active — it cannot be disputed now`,
           ),
         );
       }
       await db.execute(
-        sql`UPDATE platform.voucher_fake_voucher SET state = 'voided' WHERE id = ${request.voucherId}`,
+        sql`UPDATE platform.voucher_fake_voucher SET void_reason = 'admin' WHERE id = ${request.voucherId}`,
       );
       return ok(undefined);
     })(),

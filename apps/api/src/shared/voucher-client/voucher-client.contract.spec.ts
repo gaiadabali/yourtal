@@ -206,6 +206,71 @@ describe("wallet", () => {
     const fetched = await client.get({ voucherId, ownerId });
     expect(fetched._unsafeUnwrap().voucherId).toBe(voucherId);
   });
+
+  // TASKS.md 4.8.c (found by 8.2.e running on staging: the wallet read
+  // showed a captured voucher as "activated", the same collapsed state a
+  // never-touched one gets — a user would see a spent voucher as usable).
+  // `list` and `get` both widened; both checked here, in both regions.
+  it.each([
+    ["IDR" as const, "ID" as const],
+    ["AUD" as const, "AU" as const],
+  ])(
+    "%s: a bought-only voucher reads active, a bought-then-captured one reads redeemed",
+    async (currency, region) => {
+      const { voucherId, ownerId, merchantId } = await activeVoucher(currency, region);
+
+      const fresh = (await client.get({ voucherId, ownerId }))._unsafeUnwrap();
+      expect(fresh.lifecycleState).toBe("active");
+      expect(fresh.state).toBe("activated"); // the old collapse, unchanged
+      expect(fresh.remainingValueMinor).toBe(fresh.faceValueMinor);
+      expect(fresh.merchantName.length).toBeGreaterThan(0);
+      expect(fresh.title.length).toBeGreaterThan(0);
+      expect(fresh.currency).toBe(currency);
+      expect(fresh.partialRedemptionPolicy).toBe("single_use_forfeit");
+      expect(fresh.location).not.toBeNull();
+
+      const freshList = (await client.listForUser({ userId: ownerId, limit: 20 }))._unsafeUnwrap();
+      expect(freshList.vouchers.find((v) => v.voucherId === voucherId)?.lifecycleState).toBe(
+        "active",
+      );
+
+      // Capture the FULL face value: single_use_forfeit consumes the whole
+      // voucher on any capture, but sending the full amount is what a real
+      // counter does and is what 8.2.e's own Check now sends explicitly.
+      const revealed = (await client.reveal({ voucherId, ownerId }))._unsafeUnwrap();
+      const authorization = (
+        await client.authorizeAsDevice({
+          voucherCode: revealed.code,
+          deviceId: "device-1",
+          merchantId,
+          currency,
+          amountMinor: fresh.faceValueMinor,
+        })
+      )._unsafeUnwrap();
+      (
+        await client.captureAsDevice({
+          authorizationId: authorization.authorizationId,
+          deviceId: "device-1",
+          merchantId,
+        })
+      )._unsafeUnwrap();
+
+      const captured = (await client.get({ voucherId, ownerId }))._unsafeUnwrap();
+      expect(captured.lifecycleState).toBe("redeemed");
+      expect(captured.remainingValueMinor).toBe(0);
+      // The legacy collapse never distinguished "captured" from "active" —
+      // this is exactly the field the wallet controller no longer relies on
+      // for showing a spent voucher.
+      expect(captured.state).toBe("activated");
+
+      const capturedList = (
+        await client.listForUser({ userId: ownerId, limit: 20 })
+      )._unsafeUnwrap();
+      expect(capturedList.vouchers.find((v) => v.voucherId === voucherId)?.lifecycleState).toBe(
+        "redeemed",
+      );
+    },
+  );
 });
 
 describe("device-authorized redemption", () => {

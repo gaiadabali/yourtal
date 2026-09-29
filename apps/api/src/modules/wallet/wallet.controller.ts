@@ -113,7 +113,12 @@ export class WalletController {
   ): Promise<WalletQr> {
     const ownerId = (await this.principals.resolve(request)).id;
     const qr = await unwrap(this.vouchers.qrToken({ voucherId, ownerId }));
-    return { voucherId: qr.voucherId, token: qr.token, expiresAt: qr.expiresAt };
+    return {
+      voucherId: qr.voucherId,
+      token: qr.token,
+      expiresAt: qr.expiresAt,
+      ...(qr.tokens === undefined ? {} : { tokens: qr.tokens }),
+    };
   }
 }
 

@@ -12,7 +12,10 @@
 //   4. the counter redeems the voucher with that QR token: lookup ->
 //      authorize -> capture (8.2.a, widened by this same ticket -- see
 //      below);
-//   5. GET /api/wallet/vouchers/:id still returns it (state);
+//   5. GET /api/wallet/vouchers/:id shows it REDEEMED (status, TASKS.md
+//      4.8.c -- the old `state` field still just says "activated" either
+//      way, so it never distinguished a captured voucher from an untouched
+//      one, and this Check now fails if `status` is not "redeemed");
 //   6. GET /api/:tenantId/studio/redemptions shows the capture against
 //      that device;
 //   7. the device is revoked (F72: record what was created so it can be
@@ -258,10 +261,32 @@ async function main() {
   }
   created.captureId = capture.json.captureId;
 
-  // 5. The viewer's wallet still lists it.
+  // 5. The viewer's wallet shows it as REDEEMED, not merely present.
+  // TASKS.md 4.8.c (found running this Check on staging): the wallet read
+  // used to carry only the reserved/activated/released collapse, so a
+  // captured voucher and a never-touched one were indistinguishable here --
+  // a user would see a spent voucher as still usable. `status` is the new,
+  // real-state field (`wallet-mapping.ts`'s `publicVoucherStatusOf`); a
+  // full capture (this Check always sends the full remaining value as
+  // amountMinor above) must show `redeemed`, never the old `state` field,
+  // which still just says "activated" either way and is not what a fix
+  // here can be verified against.
   const walletVoucher = await req("GET", `/api/wallet/vouchers/${voucherId}`, viewer.token);
   if (walletVoucher.status !== 200) {
     fail(`GET /api/wallet/vouchers/:id failed: ${walletVoucher.status}`);
+  }
+  if (walletVoucher.json.status !== "redeemed") {
+    fail(
+      `wallet still shows voucher ${voucherId} as status=${JSON.stringify(walletVoucher.json.status)} ` +
+        `(state=${JSON.stringify(walletVoucher.json.state)}) after a full capture -- expected "redeemed" ` +
+        `(TASKS.md 4.8.c). Full response: ${JSON.stringify(walletVoucher.json)}`,
+    );
+  }
+  if (walletVoucher.json.remainingValueMinor !== 0) {
+    fail(
+      `wallet shows remainingValueMinor=${JSON.stringify(walletVoucher.json.remainingValueMinor)} ` +
+        `for a fully-captured voucher, expected 0`,
+    );
   }
 
   // 6. Studio -> Redemptions shows the capture against this device.
@@ -301,6 +326,7 @@ async function main() {
       authorizationId: created.authorizationId,
       captureId: created.captureId,
       walletVoucherState: walletVoucher.json.state,
+      walletVoucherStatus: walletVoucher.json.status,
       studioRedemptionFound: true,
       deviceRevoked: revoke.status === 200,
     })}`,

@@ -22,6 +22,7 @@ import type {
   GetVoucherRequest,
   ListForUserRequest,
   ListForUserResult,
+  WalletVoucherRow,
 } from "@yourtal/contracts/voucher-internal/wallet";
 import type {
   Authorization,
@@ -66,7 +67,7 @@ export interface VoucherInternalClient {
   verifyQrToken(request: VerifyQrTokenRequest): ResultAsync<VerifyQrTokenResult, VoucherError>;
 
   listForUser(request: ListForUserRequest): ResultAsync<ListForUserResult, VoucherError>;
-  get(request: GetVoucherRequest): ResultAsync<Reservation, VoucherError>;
+  get(request: GetVoucherRequest): ResultAsync<WalletVoucherRow, VoucherError>;
 
   /** 8.2.a: a read-only preview, no hold placed. */
   lookupAsDevice(request: LookupAsDeviceRequest): ResultAsync<VoucherPreview, VoucherError>;

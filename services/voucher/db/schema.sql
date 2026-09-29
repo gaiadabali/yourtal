@@ -240,3 +240,17 @@ CREATE TABLE store.listing_location (
   location_id uuid NOT NULL,
   PRIMARY KEY (listing_id, location_id)
 );
+
+-- packages/db/migrations/20260919000009_merchant_locations.sql. Mirrored
+-- here (TASKS.md 4.8.c) so the wallet read can join a voucher's own
+-- `location_id` to a display name/address/district, the same reason
+-- store.listings above is mirrored: sqlc needs a schema to type against,
+-- and schema_test.go is what keeps this copy honest.
+CREATE TABLE store.merchant_location (
+  id          uuid        PRIMARY KEY,
+  merchant_id uuid        NOT NULL,
+  name        text        NOT NULL,
+  address     text        NOT NULL,
+  district    text        NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);

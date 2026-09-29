@@ -21,6 +21,7 @@ import type {
   GetVoucherRequest,
   ListForUserRequest,
   ListForUserResult,
+  WalletVoucherRow,
 } from "@yourtal/contracts/voucher-internal/wallet";
 import type {
   Authorization,
@@ -98,7 +99,7 @@ export class FakeVoucherClient implements VoucherInternalClient {
     return walletOps.listForUser(this.db, request);
   }
 
-  get(request: GetVoucherRequest): ResultAsync<Reservation, VoucherError> {
+  get(request: GetVoucherRequest): ResultAsync<WalletVoucherRow, VoucherError> {
     return walletOps.get(this.db, request);
   }
 

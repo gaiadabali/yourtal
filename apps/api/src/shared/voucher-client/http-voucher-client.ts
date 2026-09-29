@@ -26,6 +26,7 @@ import type {
   GetVoucherRequest,
   ListForUserRequest,
   ListForUserResult,
+  WalletVoucherRow,
 } from "@yourtal/contracts/voucher-internal/wallet";
 import type {
   Authorization,
@@ -148,10 +149,10 @@ export class HttpVoucherClient implements VoucherInternalClient {
   }
 
   /**
-   * The wire response carries all twelve 5-minute-window tokens (4.5.b);
-   * this narrower interface hands back only the current one. A widened
-   * client is 8.x's to build when the wallet wants to cache the rest for
-   * offline display — see the voucher service's own `qrTokenView` comment.
+   * The wire response carries all twelve 5-minute-window tokens (4.5.b,
+   * `qrTokenView.Tokens`); `QrToken.tokens` (TASKS.md 4.8.c) now passes them
+   * through rather than dropping them — `token`/`expiresAt` stay the
+   * current window, unchanged, for every caller that only ever read those.
    */
   qrToken(request: QrTokenRequest): ResultAsync<QrToken, VoucherError> {
     return this.post("/internal/v1/vouchers/qr-token", request);
@@ -165,7 +166,7 @@ export class HttpVoucherClient implements VoucherInternalClient {
     return this.post("/internal/v1/wallet/list", request);
   }
 
-  get(request: GetVoucherRequest): ResultAsync<Reservation, VoucherError> {
+  get(request: GetVoucherRequest): ResultAsync<WalletVoucherRow, VoucherError> {
     return this.post("/internal/v1/wallet/get", request);
   }
 

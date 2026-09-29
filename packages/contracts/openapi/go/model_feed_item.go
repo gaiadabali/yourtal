@@ -30,6 +30,11 @@ type FeedItem struct {
 	DurationSeconds int64 `json:"durationSeconds"`
 	// Platform points. Always a whole number; there is no fractional point.
 	RewardPoints int64 `json:"rewardPoints"`
+	Kind CampaignKind `json:"kind"`
+	QuestionCount int64 `json:"questionCount"`
+	// Platform points. Always a whole number; there is no fractional point.
+	MaxRewardPoints int64 `json:"maxRewardPoints"`
+	EstimatedDataMb float32 `json:"estimatedDataMb"`
 	ContentCategory string `json:"contentCategory"`
 	Audience Audience `json:"audience"`
 	Region Region `json:"region"`
@@ -45,7 +50,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -56,6 +61,10 @@ func NewFeedItem(campaignId NullableString, businessId NullableString, merchantN
 	this.TeaserUrl = teaserUrl
 	this.DurationSeconds = durationSeconds
 	this.RewardPoints = rewardPoints
+	this.Kind = kind
+	this.QuestionCount = questionCount
+	this.MaxRewardPoints = maxRewardPoints
+	this.EstimatedDataMb = estimatedDataMb
 	this.ContentCategory = contentCategory
 	this.Audience = audience
 	this.Region = region
@@ -295,6 +304,102 @@ func (o *FeedItem) SetRewardPoints(v int64) {
 	o.RewardPoints = v
 }
 
+// GetKind returns the Kind field value
+func (o *FeedItem) GetKind() CampaignKind {
+	if o == nil {
+		var ret CampaignKind
+		return ret
+	}
+
+	return o.Kind
+}
+
+// GetKindOk returns a tuple with the Kind field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetKindOk() (*CampaignKind, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Kind, true
+}
+
+// SetKind sets field value
+func (o *FeedItem) SetKind(v CampaignKind) {
+	o.Kind = v
+}
+
+// GetQuestionCount returns the QuestionCount field value
+func (o *FeedItem) GetQuestionCount() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.QuestionCount
+}
+
+// GetQuestionCountOk returns a tuple with the QuestionCount field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetQuestionCountOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.QuestionCount, true
+}
+
+// SetQuestionCount sets field value
+func (o *FeedItem) SetQuestionCount(v int64) {
+	o.QuestionCount = v
+}
+
+// GetMaxRewardPoints returns the MaxRewardPoints field value
+func (o *FeedItem) GetMaxRewardPoints() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.MaxRewardPoints
+}
+
+// GetMaxRewardPointsOk returns a tuple with the MaxRewardPoints field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetMaxRewardPointsOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.MaxRewardPoints, true
+}
+
+// SetMaxRewardPoints sets field value
+func (o *FeedItem) SetMaxRewardPoints(v int64) {
+	o.MaxRewardPoints = v
+}
+
+// GetEstimatedDataMb returns the EstimatedDataMb field value
+func (o *FeedItem) GetEstimatedDataMb() float32 {
+	if o == nil {
+		var ret float32
+		return ret
+	}
+
+	return o.EstimatedDataMb
+}
+
+// GetEstimatedDataMbOk returns a tuple with the EstimatedDataMb field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetEstimatedDataMbOk() (*float32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.EstimatedDataMb, true
+}
+
+// SetEstimatedDataMb sets field value
+func (o *FeedItem) SetEstimatedDataMb(v float32) {
+	o.EstimatedDataMb = v
+}
+
 // GetContentCategory returns the ContentCategory field value
 func (o *FeedItem) GetContentCategory() string {
 	if o == nil {
@@ -458,6 +563,10 @@ func (o FeedItem) ToMap() (map[string]interface{}, error) {
 	toSerialize["teaserUrl"] = o.TeaserUrl
 	toSerialize["durationSeconds"] = o.DurationSeconds
 	toSerialize["rewardPoints"] = o.RewardPoints
+	toSerialize["kind"] = o.Kind
+	toSerialize["questionCount"] = o.QuestionCount
+	toSerialize["maxRewardPoints"] = o.MaxRewardPoints
+	toSerialize["estimatedDataMb"] = o.EstimatedDataMb
 	toSerialize["contentCategory"] = o.ContentCategory
 	toSerialize["audience"] = o.Audience
 	toSerialize["region"] = o.Region
@@ -486,6 +595,10 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		"teaserUrl",
 		"durationSeconds",
 		"rewardPoints",
+		"kind",
+		"questionCount",
+		"maxRewardPoints",
+		"estimatedDataMb",
 		"contentCategory",
 		"audience",
 		"region",
@@ -530,6 +643,10 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "teaserUrl")
 		delete(additionalProperties, "durationSeconds")
 		delete(additionalProperties, "rewardPoints")
+		delete(additionalProperties, "kind")
+		delete(additionalProperties, "questionCount")
+		delete(additionalProperties, "maxRewardPoints")
+		delete(additionalProperties, "estimatedDataMb")
 		delete(additionalProperties, "contentCategory")
 		delete(additionalProperties, "audience")
 		delete(additionalProperties, "region")

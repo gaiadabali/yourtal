@@ -4,6 +4,7 @@ import { pointsSchema } from "../money/money";
 import { regionSchema } from "../region/region";
 import { audienceSchema } from "../audience/audience";
 import { publicListingSchema } from "../listing/listing";
+import { campaignKindSchema } from "../campaign/campaign";
 
 /**
  * 7.7: the feed/discovery response shape. `packages/contracts/src/feed` is
@@ -32,6 +33,12 @@ export const feedItemSchema = z.object({
   teaserUrl: z.url(),
   durationSeconds: z.number().int().positive(),
   rewardPoints: pointsSchema,
+  /** 11.4.a's honest terms line (F78): quick campaigns earn in the feed (F15). */
+  kind: campaignKindSchema,
+  questionCount: z.number().int().min(0),
+  /** Base plus the maximum accuracy bonus, from the reward config: what "up to" means. */
+  maxRewardPoints: pointsSchema,
+  estimatedDataMb: z.number().positive(),
   contentCategory: contentCategorySchema,
   audience: audienceSchema,
   region: regionSchema,

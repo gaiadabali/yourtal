@@ -229,4 +229,18 @@ describe("buildFeed", () => {
     const items = buildFeed([soon], baseContext());
     expect(items[0]?.endingSoon).toBe(true);
   });
+
+  it("carries the honest terms line: kind, questions, data and base plus the maximum bonus (F78)", () => {
+    const withBonus = candidate({
+      campaign: campaign({ questionCount: 3, estimatedDataMb: 120 }),
+      rewardConfig: rewardConfig({ rewardPointsPerCompletion: 90, accuracyBonusPoints: 22 }),
+    });
+    const [item] = buildFeed([withBonus], baseContext());
+    expect(item).toMatchObject({
+      kind: withBonus.campaign.kind,
+      questionCount: 3,
+      estimatedDataMb: 120,
+      maxRewardPoints: 112,
+    });
+  });
 });

@@ -18401,6 +18401,22 @@
           "rewardPoints": {
             "$ref": "#/components/schemas/Points"
           },
+          "kind": {
+            "$ref": "#/components/schemas/CampaignKind"
+          },
+          "questionCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "maxRewardPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "estimatedDataMb": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
           "contentCategory": {
             "type": "string",
             "enum": [
@@ -18459,6 +18475,10 @@
           "teaserUrl",
           "durationSeconds",
           "rewardPoints",
+          "kind",
+          "questionCount",
+          "maxRewardPoints",
+          "estimatedDataMb",
           "contentCategory",
           "audience",
           "region",

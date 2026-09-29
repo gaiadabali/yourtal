@@ -1,6 +1,7 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { FeedItem } from "@yourtal/contracts/feed";
+import { toPoints } from "@yourtal/contracts/money";
 import type { Region } from "@yourtal/contracts/region";
 import type { CampaignRewardConfigRow } from "../campaign/persistence/campaign.repository";
 
@@ -140,6 +141,12 @@ export function toFeedItem(candidate: CandidateCampaign, signals: Signals): Feed
     teaserUrl: campaign.teaserUrl,
     durationSeconds: campaign.durationSeconds,
     rewardPoints: campaign.rewardPoints,
+    kind: campaign.kind,
+    questionCount: campaign.questionCount,
+    maxRewardPoints: toPoints(
+      candidate.rewardConfig.rewardPointsPerCompletion + candidate.rewardConfig.accuracyBonusPoints,
+    ),
+    estimatedDataMb: campaign.estimatedDataMb,
     contentCategory: campaign.contentCategory,
     audience: campaign.audience,
     region: campaign.region,

@@ -12,8 +12,27 @@ import type { Audience } from "@yourtal/contracts/campaign";
 import type { Region } from "@yourtal/contracts/region";
 import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
 
-/** MERCHANT-side visibility (docs/17 section 2, Inventory). Never a customer-facing value. */
-export type ListingLifecycleState = "active" | "paused" | "retired";
+/**
+ * MERCHANT-side visibility (docs/17 section 2, Inventory). Never a
+ * customer-facing value. `pending_review`/`rejected` are TASKS.md 9.2.a's
+ * addition: only a listing the automated screen flags (an `adult_only`
+ * `contentCategory`, per 1.1.d) is ever created `pending_review` -- every
+ * other listing still goes straight to `active`, exactly as before.
+ */
+export type ListingLifecycleState = "pending_review" | "active" | "rejected" | "paused" | "retired";
+
+/** One row of the staff moderation queue (9.2.a) -- trimmed to what a moderator needs to decide, never the priced customer-facing `Listing`. */
+export interface ListingModerationItem {
+  readonly id: string;
+  readonly merchantId: string;
+  readonly merchantName: string;
+  readonly title: string;
+  readonly region: Region;
+  readonly audience: Audience;
+  readonly contentCategory: ContentCategory;
+  readonly lifecycleState: ListingLifecycleState;
+  readonly rejectionReason: string | null;
+}
 
 export interface CreateListingInput {
   readonly merchantName: string;
@@ -154,6 +173,17 @@ export interface ListingRepository {
   ): Promise<Listing | null>;
   /** The listing's own lifecycle state, for validating a transition. `null` if not found. */
   lifecycleStateOf(merchantId: string, listingId: string): Promise<ListingLifecycleState | null>;
+
+  /** TASKS.md 9.2.a: every listing currently flagged for review, across every business -- staff is cross-business, unlike every method above. */
+  listPendingModeration(): Promise<readonly ListingModerationItem[]>;
+  /** One flagged listing by id, any business. `null` if none exists (found or not `pending_review` reads the same "not found" to the caller, matching the repository's own claiming-write convention elsewhere in this module). */
+  findPendingModerationById(listingId: string): Promise<ListingModerationItem | null>;
+  /** Moves a `pending_review` listing to `active` (approve) or `rejected` (reject, with a reason). `null` if the row is gone or no longer `pending_review`. */
+  decideModeration(
+    listingId: string,
+    decision: "active" | "rejected",
+    rejectionReason: string | null,
+  ): Promise<ListingModerationItem | null>;
 }
 
 export const LISTING_REPOSITORY = Symbol("LISTING_REPOSITORY");

@@ -91,6 +91,15 @@ export interface CampaignDraftRepository {
   create(input: CreateCampaignDraftInput): Promise<CampaignDraft>;
   findById(businessId: string, campaignId: string): Promise<CampaignDraft | null>;
   listByBusiness(businessId: string): Promise<readonly CampaignDraft[]>;
+  /**
+   * TASKS.md 9.2.a: staff moderation is cross-business by nature (a
+   * moderator reviews every business's queue, not one at a time), so it
+   * cannot go through the businessId-scoped methods above. Never exposed to
+   * a business-facing route.
+   */
+  findByIdAnyBusiness(campaignId: string): Promise<CampaignDraft | null>;
+  /** Every campaign currently awaiting the human moderation queue (9.2.a). */
+  listInReview(): Promise<readonly CampaignDraft[]>;
   update(
     businessId: string,
     campaignId: string,
@@ -123,6 +132,13 @@ export interface CampaignDraftRepository {
     businessId: string,
     campaignId: string,
     to: CampaignLifecycleState,
+    /**
+     * 9.2.a: staff rejection records why, in the same write as the
+     * transition (never a second round trip). `undefined` leaves the
+     * column untouched -- every pre-existing caller (draft -> in_review,
+     * pause/resume) passes nothing and behaves exactly as before.
+     */
+    rejectionReason?: string,
   ): Promise<{ readonly ok: true; readonly draft: CampaignDraft } | { readonly ok: false }>;
 }
 

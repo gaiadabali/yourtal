@@ -68,6 +68,20 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
     return Promise.all(rows.map(async (row) => toDomain(row, await this.chaptersFor(row.id))));
   }
 
+  async findByIdAnyBusiness(campaignId: string): Promise<CampaignDraft | null> {
+    const [row] = await this.db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
+    if (row === undefined) return null;
+    return toDomain(row, await this.chaptersFor(campaignId));
+  }
+
+  async listInReview(): Promise<readonly CampaignDraft[]> {
+    const rows = await this.db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.lifecycleState, "in_review"));
+    return Promise.all(rows.map(async (row) => toDomain(row, await this.chaptersFor(row.id))));
+  }
+
   async update(
     businessId: string,
     campaignId: string,
@@ -141,11 +155,14 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
     businessId: string,
     campaignId: string,
     to: CampaignLifecycleState,
+    rejectionReason?: string,
   ): Promise<{ readonly ok: true; readonly draft: CampaignDraft } | { readonly ok: false }> {
     try {
+      const values: Record<string, unknown> = { lifecycleState: to };
+      if (rejectionReason !== undefined) values["rejectionReason"] = rejectionReason;
       const [row] = await this.db
         .update(campaigns)
-        .set({ lifecycleState: to })
+        .set(values)
         .where(and(eq(campaigns.id, campaignId), eq(campaigns.businessId, businessId)))
         .returning();
       if (row === undefined) return { ok: false };

@@ -38,6 +38,8 @@ export function transitionCampaignLifecycle(
   businessId: string,
   campaignId: string,
   to: CampaignLifecycleState,
+  /** 9.2.a: a moderator's rejection reason, frozen in the same write as the transition. */
+  rejectionReason?: string,
 ): ResultAsync<CampaignDraft, TransitionError> {
   return wrap(deps.drafts.findById(businessId, campaignId)).andThen((draft) => {
     if (draft === null) {
@@ -53,7 +55,9 @@ export function transitionCampaignLifecycle(
       });
     }
 
-    return wrap(deps.drafts.transitionLifecycle(businessId, campaignId, to)).andThen((result) => {
+    return wrap(
+      deps.drafts.transitionLifecycle(businessId, campaignId, to, rejectionReason),
+    ).andThen((result) => {
       if (!result.ok) {
         return errAsync<CampaignDraft, TransitionError>({
           type: "illegal_transition",

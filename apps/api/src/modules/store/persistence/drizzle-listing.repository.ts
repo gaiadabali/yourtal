@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { Listing, PublicListing } from "@yourtal/contracts/listing";
+import { categoryPolicy } from "@yourtal/jurisdiction/content-category";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import { applySettlementValueChange } from "./apply-settlement-value-change";
@@ -19,9 +20,18 @@ import type {
   CreateListingInput,
   EditListingInput,
   ListingLifecycleState,
+  ListingModerationItem,
   ListingRepository,
   SettlementValueChange,
 } from "./listing.repository";
+
+/** TASKS.md 9.2.a: only a listing the automated screen flags starts in review -- see the migration header. */
+function initialLifecycleState(
+  region: CreateListingInput["region"],
+  contentCategory: CreateListingInput["contentCategory"],
+): ListingLifecycleState {
+  return categoryPolicy(region, contentCategory) === "adult_only" ? "pending_review" : "active";
+}
 
 /**
  * `store.listings`, `store.merchant_location` and `store.listing_location`,
@@ -134,7 +144,7 @@ export class DrizzleListingRepository implements ListingRepository {
           minimumSpendMinor: input.minimumSpendMinor,
           expiresAt: new Date(input.expiresAt),
           status: input.status,
-          lifecycleState: "active",
+          lifecycleState: initialLifecycleState(input.region, input.contentCategory),
           perUserLimit: input.perUserLimit ?? null,
           region: input.region,
           audience: input.audience,
@@ -245,4 +255,89 @@ export class DrizzleListingRepository implements ListingRepository {
       .limit(1);
     return (row?.lifecycleState as ListingLifecycleState | undefined) ?? null;
   }
+
+  async listPendingModeration(): Promise<readonly ListingModerationItem[]> {
+    const rows = await this.db
+      .select({
+        id: listings.id,
+        merchantId: listings.merchantId,
+        merchantName: listings.merchantName,
+        title: listings.title,
+        region: listings.region,
+        audience: listings.audience,
+        contentCategory: listings.contentCategory,
+        lifecycleState: listings.lifecycleState,
+        rejectionReason: listings.rejectionReason,
+      })
+      .from(listings)
+      .where(eq(listings.lifecycleState, "pending_review"))
+      .orderBy(asc(listings.id));
+    return rows.map(toModerationItem);
+  }
+
+  async findPendingModerationById(listingId: string): Promise<ListingModerationItem | null> {
+    const [row] = await this.db
+      .select({
+        id: listings.id,
+        merchantId: listings.merchantId,
+        merchantName: listings.merchantName,
+        title: listings.title,
+        region: listings.region,
+        audience: listings.audience,
+        contentCategory: listings.contentCategory,
+        lifecycleState: listings.lifecycleState,
+        rejectionReason: listings.rejectionReason,
+      })
+      .from(listings)
+      .where(and(eq(listings.id, listingId), eq(listings.lifecycleState, "pending_review")))
+      .limit(1);
+    return row === undefined ? null : toModerationItem(row);
+  }
+
+  async decideModeration(
+    listingId: string,
+    decision: "active" | "rejected",
+    rejectionReason: string | null,
+  ): Promise<ListingModerationItem | null> {
+    const [row] = await this.db
+      .update(listings)
+      .set({ lifecycleState: decision, rejectionReason })
+      .where(and(eq(listings.id, listingId), eq(listings.lifecycleState, "pending_review")))
+      .returning({
+        id: listings.id,
+        merchantId: listings.merchantId,
+        merchantName: listings.merchantName,
+        title: listings.title,
+        region: listings.region,
+        audience: listings.audience,
+        contentCategory: listings.contentCategory,
+        lifecycleState: listings.lifecycleState,
+        rejectionReason: listings.rejectionReason,
+      });
+    return row === undefined ? null : toModerationItem(row);
+  }
+}
+
+function toModerationItem(row: {
+  id: string;
+  merchantId: string;
+  merchantName: string;
+  title: string;
+  region: string;
+  audience: string;
+  contentCategory: string;
+  lifecycleState: string;
+  rejectionReason: string | null;
+}): ListingModerationItem {
+  return {
+    id: row.id,
+    merchantId: row.merchantId,
+    merchantName: row.merchantName,
+    title: row.title,
+    region: row.region as ListingModerationItem["region"],
+    audience: row.audience as ListingModerationItem["audience"],
+    contentCategory: row.contentCategory as ListingModerationItem["contentCategory"],
+    lifecycleState: row.lifecycleState as ListingLifecycleState,
+    rejectionReason: row.rejectionReason,
+  };
 }

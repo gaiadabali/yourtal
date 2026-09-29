@@ -19,6 +19,7 @@ import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { CampaignDraftController } from "./campaign-draft.controller";
 import { QuestionBankController } from "./question-bank.controller";
 import { RewardConfigController } from "./reward-config.controller";
+import { StaffCampaignModerationController } from "./staff-campaign-moderation.controller";
 import { CAMPAIGN_DRAFT_REPOSITORY } from "./persistence/campaign-draft.repository";
 import { DrizzleCampaignDraftRepository } from "./persistence/drizzle-campaign-draft.repository";
 import { QUESTION_BANK_REPOSITORY } from "./persistence/question-bank.repository";
@@ -85,6 +86,7 @@ class StudioQueueShutdown implements OnApplicationShutdown {
     CampaignDraftController,
     QuestionBankController,
     RewardConfigController,
+    StaffCampaignModerationController,
   ],
   providers: [
     MediaService,

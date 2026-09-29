@@ -4,9 +4,11 @@
   "description": "A flagged creative or question bank in the human queue (YT-0114).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["businessId"],
   "properties": {
-    "businessId": { "type": "string" },
+    "businessId": {
+      "description": "NOT required: TASKS.md 9.2.a's staff moderation queue names no single business in its URL (a list has none at all; approve/reject name a campaignId, not a businessId) -- same reasoning as voucher_batch.json's own comment. Cerbos runs with enforcement: reject, so requiring it would fail schema validation, and therefore deny, every staff moderation route before any rule ran.",
+      "type": "string"
+    },
     "hasReason": {
       "description": "An approve or reject with no reason is not a decision anyone can audit, so the PDP refuses it.",
       "type": "boolean"

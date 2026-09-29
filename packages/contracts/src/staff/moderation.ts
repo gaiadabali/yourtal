@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { audienceSchema } from "../campaign/campaign";
+import { campaignLifecycleStateSchema } from "../campaign/campaign-lifecycle";
+import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 
 /**
  * TASKS.md 9.2.c: the staff moderation queue's voucher-batch half --
@@ -42,3 +45,107 @@ export type ApproveVoucherBatchRequest = z.infer<typeof approveVoucherBatchReque
 
 export const rejectVoucherBatchRequestSchema = staffReasonSchema;
 export type RejectVoucherBatchRequest = z.infer<typeof rejectVoucherBatchRequestSchema>;
+
+/**
+ * TASKS.md 9.2.a: the campaign-creative half of the moderation queue --
+ * `apps/api/src/modules/studio/staff-campaign-moderation.controller.ts`.
+ * The automated screen's flags (question-bank PII/prediction, re-run at
+ * review time -- `staff-campaign-moderation.use-cases.ts`), shown to the
+ * moderator alongside the campaign itself.
+ */
+export const campaignModerationFlagSchema = z
+  .object({
+    questionId: z.uuid(),
+    kind: z.enum(["pii", "prediction"]),
+    category: z.string().optional(),
+    reason: z.string(),
+  })
+  .strict();
+export type CampaignModerationFlag = z.infer<typeof campaignModerationFlagSchema>;
+
+/** Studio's own authoring shape, trimmed to what a moderator needs to decide. */
+export const staffCampaignModerationCampaignSchema = z
+  .object({
+    id: z.uuid(),
+    businessId: z.uuid(),
+    region: z.enum(["AU", "ID"]),
+    title: z.string(),
+    synopsis: z.string(),
+    audience: audienceSchema,
+    contentCategory: contentCategorySchema,
+    lifecycleState: campaignLifecycleStateSchema,
+    rejectionReason: z.string().nullable(),
+    posterUrl: z.string().nullable(),
+    teaserUrl: z.string().nullable(),
+  })
+  .strict();
+export type StaffCampaignModerationCampaign = z.infer<typeof staffCampaignModerationCampaignSchema>;
+
+export const campaignModerationQueueItemSchema = z
+  .object({
+    campaign: staffCampaignModerationCampaignSchema,
+    flags: z.array(campaignModerationFlagSchema),
+  })
+  .strict();
+export type CampaignModerationQueueItem = z.infer<typeof campaignModerationQueueItemSchema>;
+
+export const listCampaignModerationQueueResponseSchema = z
+  .object({ items: z.array(campaignModerationQueueItemSchema) })
+  .strict();
+export type ListCampaignModerationQueueResponse = z.infer<
+  typeof listCampaignModerationQueueResponseSchema
+>;
+
+/**
+ * "Confirm or change" (1.1.d): a moderator may override the declared
+ * audience/category before approving. Both optional -- omitting either
+ * confirms the business's own value unchanged.
+ */
+export const approveCampaignModerationRequestSchema = z
+  .object({
+    reason: z.string().min(1).max(500),
+    audience: audienceSchema.optional(),
+    contentCategory: contentCategorySchema.optional(),
+  })
+  .strict();
+export type ApproveCampaignModerationRequest = z.infer<
+  typeof approveCampaignModerationRequestSchema
+>;
+
+export const rejectCampaignModerationRequestSchema = staffReasonSchema;
+export type RejectCampaignModerationRequest = z.infer<typeof rejectCampaignModerationRequestSchema>;
+
+/**
+ * TASKS.md 9.2.a: the listing half of the moderation queue --
+ * `apps/api/src/modules/store/staff-listing-moderation.controller.ts`.
+ * Only a listing the automated screen flagged (an `adult_only` category,
+ * per 1.1.d) ever reaches `pending_review`; every other listing goes
+ * straight to `active`, unchanged from before this task.
+ */
+export const staffListingModerationItemSchema = z
+  .object({
+    id: z.uuid(),
+    merchantId: z.uuid(),
+    merchantName: z.string(),
+    title: z.string(),
+    region: z.enum(["AU", "ID"]),
+    audience: audienceSchema,
+    contentCategory: contentCategorySchema,
+    lifecycleState: z.enum(["pending_review", "active", "rejected", "paused", "retired"]),
+    rejectionReason: z.string().nullable(),
+  })
+  .strict();
+export type StaffListingModerationItem = z.infer<typeof staffListingModerationItemSchema>;
+
+export const listPendingListingModerationResponseSchema = z
+  .object({ listings: z.array(staffListingModerationItemSchema) })
+  .strict();
+export type ListPendingListingModerationResponse = z.infer<
+  typeof listPendingListingModerationResponseSchema
+>;
+
+export const approveListingModerationRequestSchema = staffReasonSchema;
+export type ApproveListingModerationRequest = z.infer<typeof approveListingModerationRequestSchema>;
+
+export const rejectListingModerationRequestSchema = staffReasonSchema;
+export type RejectListingModerationRequest = z.infer<typeof rejectListingModerationRequestSchema>;

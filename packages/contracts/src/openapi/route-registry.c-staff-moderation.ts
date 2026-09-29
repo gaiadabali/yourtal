@@ -1,7 +1,15 @@
 import {
+  approveCampaignModerationRequestSchema,
+  approveListingModerationRequestSchema,
   approveVoucherBatchRequestSchema,
+  listCampaignModerationQueueResponseSchema,
+  listPendingListingModerationResponseSchema,
   listPendingVoucherBatchesResponseSchema,
+  rejectCampaignModerationRequestSchema,
+  rejectListingModerationRequestSchema,
   rejectVoucherBatchRequestSchema,
+  staffCampaignModerationCampaignSchema,
+  staffListingModerationItemSchema,
   staffVoucherBatchRequestSchema,
 } from "../staff/moderation";
 import {
@@ -17,8 +25,7 @@ import {
 /**
  * TASKS.md 9.2.c: the staff moderation queue's voucher-batch half --
  * `apps/api/src/modules/store/staff-voucher-batch-review.controller.ts`.
- * The rest of the moderation queue (9.2.a) is a separate file once it
- * lands, waiting on 7.3 -- this one only needs 7.4.
+ * 9.2.a's campaign and listing halves are appended below.
  */
 
 const REQUEST_ID_PARAM: RoutePathParam = {
@@ -41,6 +48,34 @@ const MINT_FAILED: RouteErrorResponse = {
   status: 503,
   description:
     "voucher-internal's requestBatch/approveBatch (4.5) refused the mint (store/to-http-exception.ts's voucher_mint_failed).",
+  documented: true,
+};
+
+const CAMPAIGN_ID_PARAM: RoutePathParam = {
+  name: "campaignId",
+  description: "The `in_review` campaign under review.",
+  schema: { type: "string", format: "uuid" },
+};
+
+const CAMPAIGN_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description: "No campaign exists with this id (studio/to-http-exception.ts's campaign_not_found).",
+  documented: true,
+};
+
+const LISTING_ID_PARAM: RoutePathParam = {
+  name: "listingId",
+  description: "The `pending_review` listing under review.",
+  schema: { type: "string", format: "uuid" },
+};
+
+const LISTING_NOT_FOUND: RouteErrorResponse = {
+  status: 400,
+  description:
+    "No PENDING_REVIEW listing exists with this id (store/to-http-exception.ts's " +
+    "invalid_lifecycle_transition, a 400) -- also returned for an already-decided or " +
+    "never-flagged listing, since `decideModeration`'s own claiming WHERE clause cannot " +
+    'tell those apart from "not pending review".',
   documented: true,
 };
 
@@ -87,5 +122,99 @@ export const STAFF_MODERATION_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "The request, now `rejected`.",
     successSchema: requestSchema,
     errors: [VALIDATION_400, FORBIDDEN, REQUEST_NOT_FOUND, SERVICE_UNAVAILABLE],
+  },
+
+  // -------------------------------------------------------------------------
+  // 9.2.a: campaign creative + question bank
+  // -------------------------------------------------------------------------
+  {
+    method: "get",
+    path: "/api/staff/moderation/campaigns",
+    summary: "List every campaign awaiting the human moderation queue (moderator only)",
+    tags: ["staff"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription:
+      "Every `in_review` campaign, each with the automated screen's flags (question-bank PII/prediction, re-run at review time).",
+    successSchema: inlineSchema(listCampaignModerationQueueResponseSchema),
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/staff/moderation/campaigns/{campaignId}/approve",
+    summary: "Approve an in-review campaign: it goes live (moderator only)",
+    tags: ["staff"],
+    pathParams: [CAMPAIGN_ID_PARAM],
+    requestBody: {
+      description:
+        "Why -- required for the audit trail. `audience`/`contentCategory` optionally " +
+        'override the business\'s own declared value ("confirm or change", 1.1.d).',
+      schema: inlineSchema(approveCampaignModerationRequestSchema),
+    },
+    successStatus: 201,
+    successDescription: "The campaign, now `live`.",
+    successSchema: inlineSchema(staffCampaignModerationCampaignSchema),
+    errors: [VALIDATION_400, FORBIDDEN, CAMPAIGN_NOT_FOUND, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/staff/moderation/campaigns/{campaignId}/reject",
+    summary: "Reject an in-review campaign, with a reason Studio shows the business (moderator only)",
+    tags: ["staff"],
+    pathParams: [CAMPAIGN_ID_PARAM],
+    requestBody: {
+      description: "Why -- shown to the business in Studio, and required for the audit trail.",
+      schema: inlineSchema(rejectCampaignModerationRequestSchema),
+    },
+    successStatus: 201,
+    successDescription: "The campaign, now `rejected`, carrying the reason.",
+    successSchema: inlineSchema(staffCampaignModerationCampaignSchema),
+    errors: [VALIDATION_400, FORBIDDEN, CAMPAIGN_NOT_FOUND, SERVICE_UNAVAILABLE],
+  },
+
+  // -------------------------------------------------------------------------
+  // 9.2.a: listings
+  // -------------------------------------------------------------------------
+  {
+    method: "get",
+    path: "/api/staff/moderation/listings",
+    summary: "List every listing the automated screen flagged for review (ops only)",
+    tags: ["staff"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription:
+      "Every `pending_review` listing -- only a listing with an adult_only contentCategory (1.1.d) is ever flagged.",
+    successSchema: inlineSchema(listPendingListingModerationResponseSchema),
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/staff/moderation/listings/{listingId}/approve",
+    summary: "Approve a flagged listing: it joins the public catalogue (ops only)",
+    tags: ["staff"],
+    pathParams: [LISTING_ID_PARAM],
+    requestBody: {
+      description: "Why -- required for the audit trail.",
+      schema: inlineSchema(approveListingModerationRequestSchema),
+    },
+    successStatus: 201,
+    successDescription: "The listing, now `active`.",
+    successSchema: inlineSchema(staffListingModerationItemSchema),
+    errors: [VALIDATION_400, FORBIDDEN, LISTING_NOT_FOUND, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/staff/moderation/listings/{listingId}/reject",
+    summary: "Reject a flagged listing (ops only)",
+    tags: ["staff"],
+    pathParams: [LISTING_ID_PARAM],
+    requestBody: {
+      description: "Why -- required for the audit trail.",
+      schema: inlineSchema(rejectListingModerationRequestSchema),
+    },
+    successStatus: 201,
+    successDescription: "The listing, now `rejected`.",
+    successSchema: inlineSchema(staffListingModerationItemSchema),
+    errors: [VALIDATION_400, FORBIDDEN, LISTING_NOT_FOUND, SERVICE_UNAVAILABLE],
   },
 ];

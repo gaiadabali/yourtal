@@ -41,6 +41,8 @@ export const listings = storePgSchema.table("listings", {
   status: text("status").notNull(),
   /** MERCHANT-side visibility. Never served to a customer. See the repository. */
   lifecycleState: text("lifecycle_state").notNull().default("active"),
+  /** TASKS.md 9.2.a: set only by a moderator's reject; null otherwise. See `campaign.campaigns.rejection_reason`'s own comment for the identical shape. */
+  rejectionReason: text("rejection_reason"),
   perUserLimit: integer("per_user_limit"),
   // TASKS.md 1.1.a.
   region: text("region").notNull(),

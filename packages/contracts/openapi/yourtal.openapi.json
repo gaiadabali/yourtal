@@ -12248,6 +12248,1139 @@
         }
       }
     },
+    "/api/staff/moderation/campaigns": {
+      "get": {
+        "summary": "List every campaign awaiting the human moderation queue (moderator only)",
+        "tags": [
+          "staff"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Every `in_review` campaign, each with the automated screen's flags (question-bank PII/prediction, re-run at review time).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "campaign": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "businessId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "region": {
+                                "type": "string",
+                                "enum": [
+                                  "AU",
+                                  "ID"
+                                ]
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "synopsis": {
+                                "type": "string"
+                              },
+                              "audience": {
+                                "type": "string",
+                                "enum": [
+                                  "all_ages",
+                                  "teen",
+                                  "adult",
+                                  "parents"
+                                ]
+                              },
+                              "contentCategory": {
+                                "type": "string",
+                                "enum": [
+                                  "food-and-drink",
+                                  "fashion",
+                                  "personal-care",
+                                  "electronics",
+                                  "telco",
+                                  "transport",
+                                  "fitness",
+                                  "education",
+                                  "travel",
+                                  "home",
+                                  "entertainment",
+                                  "games",
+                                  "books",
+                                  "family",
+                                  "toys",
+                                  "digital-goods",
+                                  "services",
+                                  "tobacco",
+                                  "vaping",
+                                  "gambling",
+                                  "alcohol",
+                                  "dating",
+                                  "financial-products",
+                                  "weight-loss",
+                                  "cosmetic-procedures",
+                                  "energy-drinks"
+                                ]
+                              },
+                              "lifecycleState": {
+                                "type": "string",
+                                "enum": [
+                                  "draft",
+                                  "in_review",
+                                  "rejected",
+                                  "live",
+                                  "paused",
+                                  "ended"
+                                ]
+                              },
+                              "rejectionReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "posterUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "teaserUrl": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "businessId",
+                              "region",
+                              "title",
+                              "synopsis",
+                              "audience",
+                              "contentCategory",
+                              "lifecycleState",
+                              "rejectionReason",
+                              "posterUrl",
+                              "teaserUrl"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "flags": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "questionId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                },
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "pii",
+                                    "prediction"
+                                  ]
+                                },
+                                "category": {
+                                  "type": "string"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "questionId",
+                                "kind",
+                                "reason"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "campaign",
+                          "flags"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/moderation/campaigns/{campaignId}/approve": {
+      "post": {
+        "summary": "Approve an in-review campaign: it goes live (moderator only)",
+        "tags": [
+          "staff"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The `in_review` campaign under review.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Why -- required for the audit trail. `audience`/`contentCategory` optionally override the business's own declared value (\"confirm or change\", 1.1.d).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "all_ages",
+                      "teen",
+                      "adult",
+                      "parents"
+                    ]
+                  },
+                  "contentCategory": {
+                    "type": "string",
+                    "enum": [
+                      "food-and-drink",
+                      "fashion",
+                      "personal-care",
+                      "electronics",
+                      "telco",
+                      "transport",
+                      "fitness",
+                      "education",
+                      "travel",
+                      "home",
+                      "entertainment",
+                      "games",
+                      "books",
+                      "family",
+                      "toys",
+                      "digital-goods",
+                      "services",
+                      "tobacco",
+                      "vaping",
+                      "gambling",
+                      "alcohol",
+                      "dating",
+                      "financial-products",
+                      "weight-loss",
+                      "cosmetic-procedures",
+                      "energy-drinks"
+                    ]
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The campaign, now `live`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "businessId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "synopsis": {
+                      "type": "string"
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "all_ages",
+                        "teen",
+                        "adult",
+                        "parents"
+                      ]
+                    },
+                    "contentCategory": {
+                      "type": "string",
+                      "enum": [
+                        "food-and-drink",
+                        "fashion",
+                        "personal-care",
+                        "electronics",
+                        "telco",
+                        "transport",
+                        "fitness",
+                        "education",
+                        "travel",
+                        "home",
+                        "entertainment",
+                        "games",
+                        "books",
+                        "family",
+                        "toys",
+                        "digital-goods",
+                        "services",
+                        "tobacco",
+                        "vaping",
+                        "gambling",
+                        "alcohol",
+                        "dating",
+                        "financial-products",
+                        "weight-loss",
+                        "cosmetic-procedures",
+                        "energy-drinks"
+                      ]
+                    },
+                    "lifecycleState": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "in_review",
+                        "rejected",
+                        "live",
+                        "paused",
+                        "ended"
+                      ]
+                    },
+                    "rejectionReason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "posterUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "teaserUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "businessId",
+                    "region",
+                    "title",
+                    "synopsis",
+                    "audience",
+                    "contentCategory",
+                    "lifecycleState",
+                    "rejectionReason",
+                    "posterUrl",
+                    "teaserUrl"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No campaign exists with this id (studio/to-http-exception.ts's campaign_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/moderation/campaigns/{campaignId}/reject": {
+      "post": {
+        "summary": "Reject an in-review campaign, with a reason Studio shows the business (moderator only)",
+        "tags": [
+          "staff"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The `in_review` campaign under review.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Why -- shown to the business in Studio, and required for the audit trail.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The campaign, now `rejected`, carrying the reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "businessId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "synopsis": {
+                      "type": "string"
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "all_ages",
+                        "teen",
+                        "adult",
+                        "parents"
+                      ]
+                    },
+                    "contentCategory": {
+                      "type": "string",
+                      "enum": [
+                        "food-and-drink",
+                        "fashion",
+                        "personal-care",
+                        "electronics",
+                        "telco",
+                        "transport",
+                        "fitness",
+                        "education",
+                        "travel",
+                        "home",
+                        "entertainment",
+                        "games",
+                        "books",
+                        "family",
+                        "toys",
+                        "digital-goods",
+                        "services",
+                        "tobacco",
+                        "vaping",
+                        "gambling",
+                        "alcohol",
+                        "dating",
+                        "financial-products",
+                        "weight-loss",
+                        "cosmetic-procedures",
+                        "energy-drinks"
+                      ]
+                    },
+                    "lifecycleState": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "in_review",
+                        "rejected",
+                        "live",
+                        "paused",
+                        "ended"
+                      ]
+                    },
+                    "rejectionReason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "posterUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "teaserUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "businessId",
+                    "region",
+                    "title",
+                    "synopsis",
+                    "audience",
+                    "contentCategory",
+                    "lifecycleState",
+                    "rejectionReason",
+                    "posterUrl",
+                    "teaserUrl"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No campaign exists with this id (studio/to-http-exception.ts's campaign_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/moderation/listings": {
+      "get": {
+        "summary": "List every listing the automated screen flagged for review (ops only)",
+        "tags": [
+          "staff"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Every `pending_review` listing -- only a listing with an adult_only contentCategory (1.1.d) is ever flagged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "listings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "merchantId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "merchantName": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "region": {
+                            "type": "string",
+                            "enum": [
+                              "AU",
+                              "ID"
+                            ]
+                          },
+                          "audience": {
+                            "type": "string",
+                            "enum": [
+                              "all_ages",
+                              "teen",
+                              "adult",
+                              "parents"
+                            ]
+                          },
+                          "contentCategory": {
+                            "type": "string",
+                            "enum": [
+                              "food-and-drink",
+                              "fashion",
+                              "personal-care",
+                              "electronics",
+                              "telco",
+                              "transport",
+                              "fitness",
+                              "education",
+                              "travel",
+                              "home",
+                              "entertainment",
+                              "games",
+                              "books",
+                              "family",
+                              "toys",
+                              "digital-goods",
+                              "services",
+                              "tobacco",
+                              "vaping",
+                              "gambling",
+                              "alcohol",
+                              "dating",
+                              "financial-products",
+                              "weight-loss",
+                              "cosmetic-procedures",
+                              "energy-drinks"
+                            ]
+                          },
+                          "lifecycleState": {
+                            "type": "string",
+                            "enum": [
+                              "pending_review",
+                              "active",
+                              "rejected",
+                              "paused",
+                              "retired"
+                            ]
+                          },
+                          "rejectionReason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "merchantId",
+                          "merchantName",
+                          "title",
+                          "region",
+                          "audience",
+                          "contentCategory",
+                          "lifecycleState",
+                          "rejectionReason"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "listings"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/moderation/listings/{listingId}/approve": {
+      "post": {
+        "summary": "Approve a flagged listing: it joins the public catalogue (ops only)",
+        "tags": [
+          "staff"
+        ],
+        "parameters": [
+          {
+            "name": "listingId",
+            "in": "path",
+            "required": true,
+            "description": "The `pending_review` listing under review.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Why -- required for the audit trail.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The listing, now `active`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "merchantId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "merchantName": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "all_ages",
+                        "teen",
+                        "adult",
+                        "parents"
+                      ]
+                    },
+                    "contentCategory": {
+                      "type": "string",
+                      "enum": [
+                        "food-and-drink",
+                        "fashion",
+                        "personal-care",
+                        "electronics",
+                        "telco",
+                        "transport",
+                        "fitness",
+                        "education",
+                        "travel",
+                        "home",
+                        "entertainment",
+                        "games",
+                        "books",
+                        "family",
+                        "toys",
+                        "digital-goods",
+                        "services",
+                        "tobacco",
+                        "vaping",
+                        "gambling",
+                        "alcohol",
+                        "dating",
+                        "financial-products",
+                        "weight-loss",
+                        "cosmetic-procedures",
+                        "energy-drinks"
+                      ]
+                    },
+                    "lifecycleState": {
+                      "type": "string",
+                      "enum": [
+                        "pending_review",
+                        "active",
+                        "rejected",
+                        "paused",
+                        "retired"
+                      ]
+                    },
+                    "rejectionReason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "merchantId",
+                    "merchantName",
+                    "title",
+                    "region",
+                    "audience",
+                    "contentCategory",
+                    "lifecycleState",
+                    "rejectionReason"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: No PENDING_REVIEW listing exists with this id (store/to-http-exception.ts's invalid_lifecycle_transition, a 400) -- also returned for an already-decided or never-flagged listing, since `decideModeration`'s own claiming WHERE clause cannot tell those apart from \"not pending review\".",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/moderation/listings/{listingId}/reject": {
+      "post": {
+        "summary": "Reject a flagged listing (ops only)",
+        "tags": [
+          "staff"
+        ],
+        "parameters": [
+          {
+            "name": "listingId",
+            "in": "path",
+            "required": true,
+            "description": "The `pending_review` listing under review.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Why -- required for the audit trail.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The listing, now `rejected`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "merchantId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "merchantName": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "audience": {
+                      "type": "string",
+                      "enum": [
+                        "all_ages",
+                        "teen",
+                        "adult",
+                        "parents"
+                      ]
+                    },
+                    "contentCategory": {
+                      "type": "string",
+                      "enum": [
+                        "food-and-drink",
+                        "fashion",
+                        "personal-care",
+                        "electronics",
+                        "telco",
+                        "transport",
+                        "fitness",
+                        "education",
+                        "travel",
+                        "home",
+                        "entertainment",
+                        "games",
+                        "books",
+                        "family",
+                        "toys",
+                        "digital-goods",
+                        "services",
+                        "tobacco",
+                        "vaping",
+                        "gambling",
+                        "alcohol",
+                        "dating",
+                        "financial-products",
+                        "weight-loss",
+                        "cosmetic-procedures",
+                        "energy-drinks"
+                      ]
+                    },
+                    "lifecycleState": {
+                      "type": "string",
+                      "enum": [
+                        "pending_review",
+                        "active",
+                        "rejected",
+                        "paused",
+                        "retired"
+                      ]
+                    },
+                    "rejectionReason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "merchantId",
+                    "merchantName",
+                    "title",
+                    "region",
+                    "audience",
+                    "contentCategory",
+                    "lifecycleState",
+                    "rejectionReason"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: No PENDING_REVIEW listing exists with this id (store/to-http-exception.ts's invalid_lifecycle_transition, a 400) -- also returned for an already-decided or never-flagged listing, since `decideModeration`'s own claiming WHERE clause cannot tell those apart from \"not pending review\".",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/staff/users": {
       "get": {
         "summary": "Search accounts by email or user id (TASKS.md 9.4.a)",

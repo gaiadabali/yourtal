@@ -214,7 +214,9 @@ const MAPPINGS: readonly Mapping[] = [
     },
     columnsWithNoField: {
       lifecycle_state:
-        "MERCHANT-side visibility (active/paused/retired), added by the store module's listing-management migration (20260920040000). Deliberately separate from the customer-facing `status` enum, the same split campaignSchema's lifecycle_state/status makes: a customer never sees a listing that is not active at all, so pausing removes it from the browse/offer-detail query rather than adding a value to the public enum.",
+        "MERCHANT-side visibility (pending_review/active/rejected/paused/retired), added by the store module's listing-management migration (20260920040000, extended by 9.2.a's 20260929070000). Deliberately separate from the customer-facing `status` enum, the same split campaignSchema's lifecycle_state/status makes: a customer never sees a listing that is not active at all, so pausing (or a pending/rejected review) removes it from the browse/offer-detail query rather than adding a value to the public enum.",
+      rejection_reason:
+        "TASKS.md 9.2.a, same shape campaignSchema's own rejection_reason above has: console-only, null unless a moderator rejected the listing. A customer is never shown why a listing they cannot see was refused.",
     },
   },
   {

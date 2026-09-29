@@ -88,6 +88,8 @@ function draftsStub(): CampaignDraftRepository {
     create: () => Promise.reject(new Error("not used")),
     findById: () => Promise.resolve(DRAFT),
     listByBusiness: () => Promise.reject(new Error("not used")),
+    findByIdAnyBusiness: () => Promise.reject(new Error("not used")),
+    listInReview: () => Promise.reject(new Error("not used")),
     update: () => Promise.reject(new Error("not used")),
     patchRewardMirror: (_businessId, _campaignId, mirror) =>
       Promise.resolve({ ...DRAFT, ...mirror }),

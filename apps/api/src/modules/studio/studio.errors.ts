@@ -144,3 +144,21 @@ export type SubmitCampaignError =
 export type GetCampaignDraftError = CampaignNotFoundError | PersistenceFailedError;
 export type ListCampaignDraftsError = PersistenceFailedError;
 export type ListQuestionsError = PersistenceFailedError;
+
+/** TASKS.md 9.2.a: only an `in_review` campaign can be approved or rejected. */
+export interface CampaignNotPendingReviewError {
+  readonly type: "campaign_not_pending_review";
+  readonly state: string;
+}
+
+export type ModerateCampaignError =
+  | CampaignNotFoundError
+  | CampaignNotPendingReviewError
+  | ProhibitedCategoryError
+  | AudienceMustBeAdultError
+  | PiiRequestError
+  | PredictionRequestError
+  | IllegalTransitionError
+  | PersistenceFailedError;
+
+export type ListCampaignModerationQueueError = PersistenceFailedError;

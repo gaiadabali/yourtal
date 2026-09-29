@@ -14,6 +14,7 @@ import type {
   BusinessNotFoundError,
   CampaignNotDraftError,
   CampaignNotFoundError,
+  CampaignNotPendingReviewError,
   IllegalTransitionError,
   LedgerRefusedError,
   NotKybVerifiedError,
@@ -34,6 +35,7 @@ export type StudioDomainError =
   | BusinessNotFoundError
   | CampaignNotFoundError
   | CampaignNotDraftError
+  | CampaignNotPendingReviewError
   | ProhibitedCategoryError
   | AudienceMustBeAdultError
   | PiiRequestError
@@ -66,6 +68,11 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
       return new BadRequestException({
         code: "campaign_not_draft",
         message: "this campaign has left draft; an advertiser edits freely only until submission",
+      });
+    case "campaign_not_pending_review":
+      return new BadRequestException({
+        code: "campaign_not_pending_review",
+        message: `this campaign is "${error.state}", not "in_review" -- there is nothing for a moderator to decide`,
       });
     case "prohibited_category":
       return new BadRequestException({

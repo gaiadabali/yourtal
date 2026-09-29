@@ -12,6 +12,12 @@ import { wrapPersistence } from "../wrap-persistence";
  * quietly resurrect one.
  */
 const LEGAL_TRANSITIONS: Record<ListingLifecycleState, readonly ListingLifecycleState[]> = {
+  // 9.2.a's moderation queue is the only door out of `pending_review`/
+  // `rejected` -- `DrizzleListingRepository.decideModeration` writes those
+  // moves directly (`WHERE lifecycle_state = 'pending_review'`) rather than
+  // through this merchant-facing use-case, so both are legally terminal HERE.
+  pending_review: [],
+  rejected: [],
   active: ["paused", "retired"],
   paused: ["active", "retired"],
   retired: [],

@@ -93,6 +93,26 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "9.2.c's staff moderation queue: POST .../approve's request body, documented inline in route-registry.c-staff-moderation.ts.",
   rejectVoucherBatchRequestSchema:
     "9.2.c's staff moderation queue: POST .../reject's request body, documented inline in route-registry.c-staff-moderation.ts.",
+  campaignModerationFlagSchema:
+    "9.2.a's staff moderation queue: one automated-screen flag on a campaign's question bank, documented inline in route-registry.c-staff-moderation.ts.",
+  staffCampaignModerationCampaignSchema:
+    "9.2.a's staff moderation queue: the campaign shape a moderator reviews, documented inline in route-registry.c-staff-moderation.ts.",
+  campaignModerationQueueItemSchema:
+    "9.2.a's staff moderation queue: one queue row (campaign + its flags), documented inline in route-registry.c-staff-moderation.ts.",
+  listCampaignModerationQueueResponseSchema:
+    "9.2.a's staff moderation queue: GET .../campaigns's response envelope, documented inline in route-registry.c-staff-moderation.ts.",
+  approveCampaignModerationRequestSchema:
+    "9.2.a's staff moderation queue: POST .../campaigns/{id}/approve's request body, documented inline in route-registry.c-staff-moderation.ts.",
+  rejectCampaignModerationRequestSchema:
+    "9.2.a's staff moderation queue: POST .../campaigns/{id}/reject's request body, documented inline in route-registry.c-staff-moderation.ts.",
+  staffListingModerationItemSchema:
+    "9.2.a's staff moderation queue: a listing the automated screen flagged, documented inline in route-registry.c-staff-moderation.ts.",
+  listPendingListingModerationResponseSchema:
+    "9.2.a's staff moderation queue: GET .../listings's response envelope, documented inline in route-registry.c-staff-moderation.ts.",
+  approveListingModerationRequestSchema:
+    "9.2.a's staff moderation queue: POST .../listings/{id}/approve's request body, documented inline in route-registry.c-staff-moderation.ts.",
+  rejectListingModerationRequestSchema:
+    "9.2.a's staff moderation queue: POST .../listings/{id}/reject's request body, documented inline in route-registry.c-staff-moderation.ts.",
 
   // --- staff/users, staff/disputes (9.4): documented inline in
   // route-registry.c-staff-users.ts via inlineSchema(), same reason

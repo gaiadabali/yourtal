@@ -244,6 +244,10 @@ export class HttpVoucherClient implements VoucherInternalClient {
     return this.postGift("/internal/v1/gifts/accept", request);
   }
 
+  sweepGifts(): ResultAsync<ListGiftsResult, VoucherGiftError> {
+    return this.postGift("/internal/v1/gifts/sweep", {});
+  }
+
   escrowHold(request: VoucherEscrowHoldRequest): ResultAsync<VoucherEscrow, VoucherGiftError> {
     return this.postGift("/internal/v1/escrow", request);
   }

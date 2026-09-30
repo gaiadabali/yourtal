@@ -178,6 +178,10 @@ export class FakeVoucherClient implements VoucherInternalClient {
     return gifts.acceptGift(this.db, request);
   }
 
+  sweepGifts(): ResultAsync<ListGiftsResult, VoucherGiftError> {
+    return gifts.sweepGifts(this.db);
+  }
+
   escrowHold(request: VoucherEscrowHoldRequest): ResultAsync<VoucherEscrow, VoucherGiftError> {
     return escrow.escrowHold(this.db, request);
   }

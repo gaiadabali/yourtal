@@ -222,3 +222,25 @@ export const acceptGift = (db: AppDb, request: ResolveGiftRequest) =>
   resolve(db, request, "accepted");
 export const declineGift = (db: AppDb, request: ResolveGiftRequest) =>
   resolve(db, request, "returned");
+
+/** Returns every pending fake gift past its window to its sender. */
+export function sweepGifts(db: AppDb): ResultAsync<ListGiftsResult, VoucherGiftError> {
+  return new ResultAsync(
+    (async (): Promise<Outcome<ListGiftsResult>> => {
+      const due = await db.execute<{ id: string; recipient_id: string }>(sql`
+        SELECT id, recipient_id FROM platform.voucher_fake_gift
+         WHERE state = 'pending' AND expires_at <= now() LIMIT 100
+      `);
+      const returned: VoucherGift[] = [];
+      for (const row of due.rows) {
+        const outcome = await resolve(
+          db,
+          { giftId: row.id, recipientId: row.recipient_id },
+          "returned",
+        );
+        if (outcome.isOk()) returned.push(outcome.value);
+      }
+      return ok({ gifts: returned });
+    })(),
+  );
+}

@@ -160,7 +160,6 @@ func run(logger *slog.Logger) error {
 
 	go sweepHolds(ctx, logger, network, verifier)
 	go sweepExpiry(ctx, logger, expiresweep.NewSweeper(pool))
-	go sweepGifts(ctx, logger, minter)
 
 	// Captures reach the ledger from this service's own outbox. Without a
 	// ledger URL and secret they wait in the outbox, loudly, until it has one.
@@ -302,23 +301,4 @@ func giftPolicy() (issue.GiftPolicy, error) {
 		policy.Holdback = holdback
 	}
 	return policy, nil
-}
-
-// sweepGifts returns gifts nobody accepted inside their window (13.20.b).
-func sweepGifts(ctx context.Context, logger *slog.Logger, minter *issue.Minter) {
-	ticker := time.NewTicker(expireSweepInterval)
-	defer ticker.Stop()
-	for {
-		returned, err := minter.SweepGifts(ctx)
-		if err != nil {
-			logger.Error("returning unaccepted gifts failed", "error", err)
-		} else if returned > 0 {
-			logger.Info("returned unaccepted gifts", "count", returned)
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-		}
-	}
 }

@@ -110,6 +110,8 @@ export interface VoucherInternalClient {
   listGifts(request: ListGiftsRequest): ResultAsync<ListGiftsResult, VoucherGiftError>;
   acceptGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError>;
   declineGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError>;
+  /** 13.20: return every gift past its window; the answer lists them. */
+  sweepGifts(): ResultAsync<ListGiftsResult, VoucherGiftError>;
   /** 13.22: escrow a listed voucher; hand it over at the close. */
   escrowHold(request: VoucherEscrowHoldRequest): ResultAsync<VoucherEscrow, VoucherGiftError>;
   escrowRelease(request: VoucherEscrowReleaseRequest): ResultAsync<VoucherEscrow, VoucherGiftError>;

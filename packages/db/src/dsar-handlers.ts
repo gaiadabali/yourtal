@@ -70,9 +70,23 @@ export function anonymiseVouchers(pool: pg.Pool): DomainHandler {
       `SELECT voucher.anonymise_owner($1) AS severed`,
       [subjectId],
     );
-    return rows[0]?.severed ?? 0;
+    // 13.22: an auction keeps its amounts (the charity's record) but loses
+    // the person, the same tombstone the voucher function uses.
+    let auctions = 0;
+    for (const statement of AUCTION_ANONYMISE) {
+      auctions += (await pool.query(statement, [subjectId, TOMBSTONE])).rowCount ?? 0;
+    }
+    return (rows[0]?.severed ?? 0) + auctions;
   };
 }
+
+const AUCTION_ANONYMISE = [
+  `UPDATE auction.auction SET seller_id = $2 WHERE seller_id = $1`,
+  `UPDATE auction.bid SET bidder_id = $2 WHERE bidder_id = $1`,
+  `UPDATE auction.settlement SET winner_id = $2 WHERE winner_id = $1`,
+  `UPDATE auction.settlement SET voucher_owner_id = $2 WHERE voucher_owner_id = $1`,
+  `UPDATE auction.receipt SET recipient_id = $2 WHERE recipient_id = $1`,
+];
 
 /**
  * Removes the subject from every business roster.

@@ -13,6 +13,7 @@ import { WalletAttributeLoader } from "./wallet-attribute-loader";
 import { WalletController } from "./wallet.controller";
 import { WalletGiftController } from "./wallet-gift.controller";
 import { GIFT_PARTY_READER, GiftPartyReader } from "./gift-party-reader";
+import { GIFT_NOTIFIER_DB, GiftNotifier } from "./gift-notifier";
 
 export const WALLET_DB = Symbol("WALLET_DB");
 
@@ -46,6 +47,8 @@ export const WALLET_DB = Symbol("WALLET_DB");
       useFactory: (db: AppDb) => new GiftPartyReader(db),
       inject: [WALLET_DB],
     },
+    { provide: GIFT_NOTIFIER_DB, useExisting: WALLET_DB },
+    GiftNotifier,
     WalletAttributeLoader,
   ],
   exports: [

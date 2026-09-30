@@ -190,13 +190,14 @@ func (m *Minter) DeclineGift(ctx context.Context, giftID, recipientID uuid.UUID)
 	})
 }
 
-// SweepGifts returns every pending gift whose window has closed.
-func (m *Minter) SweepGifts(ctx context.Context) (int, error) {
+// SweepGifts returns every pending gift whose window has closed, and says
+// which, so apps/api can tell each sender.
+func (m *Minter) SweepGifts(ctx context.Context) ([]uuid.UUID, error) {
 	due, err := sqlcgen.New(m.pool).ListDueGifts(ctx, 100)
 	if err != nil {
-		return 0, fmt.Errorf("listing due gifts: %w", err)
+		return nil, fmt.Errorf("listing due gifts: %w", err)
 	}
-	returned := 0
+	var returned []uuid.UUID
 	for _, id := range due {
 		err := m.resolveGift(ctx, asUUID(id), func(queries *sqlcgen.Queries, gift sqlcgen.VoucherGift) error {
 			return m.settleGift(ctx, queries, gift, "returned", asUUID(gift.SenderID))
@@ -207,7 +208,7 @@ func (m *Minter) SweepGifts(ctx context.Context) (int, error) {
 		if err != nil {
 			return returned, err
 		}
-		returned++
+		returned = append(returned, asUUID(id))
 	}
 	return returned, nil
 }

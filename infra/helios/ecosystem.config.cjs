@@ -23,12 +23,13 @@ const node = (name, script, env) => ({
 
 // The Go services read their own variables from app.env through a tiny
 // wrapper, because pm2 cannot load an env file for a non-Node binary.
-const go = (name, binary) => ({
+const go = (name, binary, env = {}) => ({
   name,
   script: `${CURRENT}/deploy/run-with-env.sh`,
   args: [ENV_FILE, `${CURRENT}/bin/${binary}`],
   cwd: CURRENT,
   interpreter: "/bin/bash",
+  env,
   max_memory_restart: "300M",
 });
 
@@ -38,6 +39,8 @@ module.exports = {
     node("yourtal-api", `${CURRENT}/api/dist/main.js`, { PORT: "26301", HOST: "127.0.0.1" }),
     node("yourtal-worker", `${CURRENT}/worker/dist/main.js`, {}),
     go("yourtal-ledger", "ledger"),
-    go("yourtal-voucher", "voucher"),
+    // F89: no gift holdback on staging, so a review can gift a voucher just
+    // bought. Production keeps the code default (24 h) by not setting it.
+    go("yourtal-voucher", "voucher", { GIFT_HOLDBACK: "0s" }),
   ],
 };

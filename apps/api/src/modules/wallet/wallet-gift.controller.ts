@@ -34,6 +34,7 @@ import {
   type VoucherInternalClient,
 } from "../../shared/voucher-client/voucher-internal-client";
 import { GIFT_PARTY_READER, type GiftParty, type GiftPartyReader } from "./gift-party-reader";
+import { GiftNotifier } from "./gift-notifier";
 
 class GiftVoucherDto extends createZodDto(giftVoucherBodySchema) {}
 
@@ -51,6 +52,7 @@ export class WalletGiftController {
     private readonly principals: PrincipalService,
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(GIFT_PARTY_READER) private readonly parties: GiftPartyReader,
+    private readonly notifier: GiftNotifier,
   ) {}
 
   @Idempotent({ retentionMs: GIFT_RETENTION_MS })
@@ -80,6 +82,7 @@ export class WalletGiftController {
         recipientRegion: recipient.region,
       }),
     );
+    await this.notifier.received(gift);
     return this.present(gift, userId);
   }
 
@@ -121,6 +124,7 @@ export class WalletGiftController {
     const gift = await unwrap(
       this.vouchers.declineGift({ giftId: uuidOrNil(giftId), recipientId: userId }),
     );
+    await this.notifier.returned(gift);
     return this.present(gift, userId);
   }
 

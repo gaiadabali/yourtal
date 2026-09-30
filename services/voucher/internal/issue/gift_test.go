@@ -194,8 +194,8 @@ func TestDeclinedAndExpiredGiftsGoBackToTheSender(t *testing.T) {
 	if err := f.minter.AcceptGift(ctx, second, recipient); !errors.Is(err, issue.ErrGiftWindowClosed) {
 		t.Fatalf("accepting late = %v, want ErrGiftWindowClosed", err)
 	}
-	if n, err := f.minter.SweepGifts(ctx); err != nil || n < 1 {
-		t.Fatalf("SweepGifts = %d, %v", n, err)
+	if ids, err := f.minter.SweepGifts(ctx); err != nil || len(ids) < 1 {
+		t.Fatalf("SweepGifts = %v, %v", ids, err)
 	}
 	if state, owner, _ := f.voucherState(t, f.giftVoucher(t, second)); state != "active" || owner == nil || *owner != sender {
 		t.Fatalf("an expired gift is %s owned by %v, want active with the sender", state, owner)

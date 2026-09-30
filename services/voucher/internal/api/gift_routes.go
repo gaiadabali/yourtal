@@ -185,3 +185,23 @@ func parseIDs(w http.ResponseWriter, a *API, values ...string) ([]uuid.UUID, boo
 	}
 	return ids, true
 }
+
+// sweepGifts returns every gift whose window has closed and lists them, so
+// apps/api (which drives this on a timer) can tell each sender.
+func (a *API) sweepGifts(w http.ResponseWriter, r *http.Request) {
+	ids, err := a.minter.SweepGifts(r.Context())
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+	gifts := make([]giftView, 0, len(ids))
+	for _, id := range ids {
+		row, err := sqlcgen.New(a.pool).GetGiftView(r.Context(), pgUUID(id))
+		if err != nil {
+			a.fail(w, err)
+			return
+		}
+		gifts = append(gifts, toGiftView(sqlcgen.ListGiftsForUserRow(row)))
+	}
+	httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]any{"gifts": gifts})
+}

@@ -6,6 +6,7 @@ import { ZodValidationPipe } from "nestjs-zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import { AppModule } from "../../app.module";
+import { GiftNotifier } from "./gift-notifier";
 
 /**
  * 13.20.b over real HTTP, a real PDP and the fake voucher engine's tables:
@@ -138,6 +139,13 @@ describe("13.20.b — gift a voucher", () => {
     const gift = sent.json<{ giftId: string; status: string; direction: string }>();
     expect(gift).toMatchObject({ status: "pending", direction: "sent", senderDisplayName: null });
 
+    const { rows: note } = await pool.query<{ title: string; body: string }>(
+      `SELECT title, body FROM me.notification WHERE user_id = $1 AND category = 'gift_received'`,
+      [recipient.userId],
+    );
+    expect(note).toHaveLength(1);
+    expect(note[0]?.body).toContain("Giver ID");
+
     const { rows: old } = await pool.query(
       `SELECT void_reason FROM platform.voucher_fake_voucher WHERE id = $1`,
       [voucherId],
@@ -173,5 +181,24 @@ describe("13.20.b — gift a voucher", () => {
       recipientEmail: sender.email,
     });
     expect(again.json()).toMatchObject({ code: "gift_already_gifted" });
+  });
+
+  it("tells the sender when an unaccepted gift goes back (13.20.f)", async () => {
+    const [sender, recipient] = [await person("ID"), await person("ID")];
+    const voucherId = await voucherFor(sender.userId);
+    const sent = await post(`/api/wallet/vouchers/${voucherId}/gift`, sender, {
+      recipientEmail: recipient.email,
+    });
+    const { giftId } = sent.json<{ giftId: string }>();
+    await pool.query(
+      `UPDATE platform.voucher_fake_gift SET expires_at = now() - interval '1 minute' WHERE id = $1`,
+      [giftId],
+    );
+    expect(await app.get(GiftNotifier).sweep()).toBeGreaterThanOrEqual(1);
+    const { rows } = await pool.query<{ category: string }>(
+      `SELECT category FROM me.notification WHERE user_id = $1`,
+      [sender.userId],
+    );
+    expect(rows.map((row) => row.category)).toEqual(["gift_returned"]);
   });
 });

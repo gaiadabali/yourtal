@@ -137,6 +137,9 @@ export const RESOURCE_ACTIONS = {
   /** A consumer's own balance, history and vouchers. */
   wallet: ["view", "view_history", "redeem", "transfer", "receive_voucher"],
 
+  /** 13.22 (F86): a charity auction in the caller's region. Teens take no part. */
+  auction: ["view", "bid"],
+
   /**
    * The merchant redemption network and its credentials. Note the absence of
    * any balance-lookup action: docs/14 section 6 forbids an endpoint that

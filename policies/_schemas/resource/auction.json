@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "auction",
+  "description": "A charity auction (13.22, F86). region is the auction's own; sellerId is the listing viewer, who may not bid on their own auction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["region"],
+  "properties": {
+    "region": {
+      "type": "string",
+      "enum": ["ID", "AU"]
+    },
+    "sellerId": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  13.22 (F86): charity auctions. Verified adults in the auction's own region
+  browse and bid in cash; the winner pays the charity directly. Teens take
+  no part at all, and AU and ID never cross. Who bid is never a resource
+  attribute, so no rule here can expose it.
+resourcePolicy:
+  version: default
+  resource: auction
+  importDerivedRoles:
+    - common
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/auction.json
+  rules:
+    - name: teens-take-no-part
+      actions: ["view", "bid"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(P.attr.ageBand) && P.attr.ageBand == "teen"
+
+    - name: f2-region-wall
+      actions: ["view", "bid"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: R.attr.region != P.attr.jurisdiction
+
+    - name: adults-browse
+      actions: ["view"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+
+    - name: adults-in-good-standing-bid
+      actions: ["bid"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: P.attr.isSuspended == false
+              - expr: has(P.attr.ageBand) && P.attr.ageBand == "adult"
+              - expr: "!has(P.attr.valueFrozenUntil) || now() > timestamp(P.attr.valueFrozenUntil)"
+              - expr: "!has(R.attr.sellerId) || R.attr.sellerId != P.id"

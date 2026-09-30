@@ -1,0 +1,35 @@
+---
+name: AuctionSuite
+description: |-
+  13.22 (F86): adults in the region browse and bid; teens, anonymous
+  visitors and the other region do neither; a seller cannot bid on their
+  own auction.
+tests:
+  - name: an adult in the region browses and bids, never on their own auction
+    input:
+      principals: [adi_adult]
+      resources: [auction_id, auction_id_by_adi, auction_au]
+      actions: [view, bid]
+    expected:
+      - principal: adi_adult
+        resource: auction_id
+        actions: { view: EFFECT_ALLOW, bid: EFFECT_ALLOW }
+      - principal: adi_adult
+        resource: auction_id_by_adi
+        actions: { view: EFFECT_ALLOW, bid: EFFECT_DENY }
+      - principal: adi_adult
+        resource: auction_au
+        actions: { view: EFFECT_DENY, bid: EFFECT_DENY }
+
+  - name: a teen and an anonymous visitor take no part
+    input:
+      principals: [teo_granted, anon]
+      resources: [auction_id]
+      actions: [view, bid]
+    expected:
+      - principal: teo_granted
+        resource: auction_id
+        actions: { view: EFFECT_DENY, bid: EFFECT_DENY }
+      - principal: anon
+        resource: auction_id
+        actions: { view: EFFECT_DENY, bid: EFFECT_DENY }

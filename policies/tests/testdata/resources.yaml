@@ -239,6 +239,26 @@ resources:
     id: batch-list
     attr: {}
 
+  auction_id:
+    kind: auction
+    id: auc-1
+    attr:
+      region: "ID"
+      sellerId: "budi"
+
+  auction_id_by_adi:
+    kind: auction
+    id: auc-2
+    attr:
+      region: "ID"
+      sellerId: "adi"
+
+  auction_au:
+    kind: auction
+    id: auc-3
+    attr:
+      region: "AU"
+
   wallet_teo:
     kind: wallet
     id: wal-teo

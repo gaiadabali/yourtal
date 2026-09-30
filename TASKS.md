@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 19/24 | `████████░░`  79% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 0/23 | 0/69 | `░░░░░░░░░░`   0% |
-| **All** | | | **82/106** | **437/511** | `█████████░`  86% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 1/23 | 3/69 | `░░░░░░░░░░`   4% |
+| **All** | | | **83/106** | **440/511** | `█████████░`  86% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1466,7 +1466,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **13.10 Vouchers by status in Studio Reports** (found by 12.3.e) · C · needs: —
   - [ ] 13.10.a A business endpoint returns its own vouchers counted by status (active, redeemed, expired, transferred), region-scoped and suppressed below the cohort floor. Studio Reports shows it in place of today's "Not available" panel.
 - [ ] **13.11 Tags on videos and vouchers** (F84) · C · needs: —
-  - [ ] 13.11.a Every campaign and every listing carries one primary category and up to 8 tags, picked from the interest taxonomy (`declared_interests` for campaigns; a new add-only column for listings). No free text, and the sensitive-term block applies. Studio's campaign and listing editors get a category and tag picker.
+  - [ ] 13.11.a Every campaign and every listing carries one primary category and up to 8 tags, picked from the interest taxonomy (`declared_interests` for campaigns; a new add-only column for listings). No free text, and the sensitive-term block applies. Studio's campaign and listing editors get a category and tag picker. (Labels for every taxonomy node, en-AU and id-ID, are in `apps/web/messages/*/taxonomy.json` as `taxonomy.node.<id>`, merged by slot 4 at 310e2770; use them for the Studio picker.)
   - [ ] 13.11.b Feed ranking matches the viewer's interests against a campaign's tags, not only its `contentCategory` (`ranking.ts` ignores `declaredInterests` today).
   - [ ] 13.11.c 13.1's demo world gives every demo campaign and listing a category and 2–5 tags, with long videos and Shorts spread across every category.
   - [ ] 13.11.d **Check:** a Studio-made campaign and listing, each saved with tags over HTTP, show the tags in their rows, and a viewer whose interests match those tags ranks the campaign higher.
@@ -1488,12 +1488,12 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.15.a A search box, category chips, and filters for brand, tags, points range, location and channel: a sidebar at 1280 px, a bottom sheet at 390 px. Active filters show as removable chips, with a result count, sort and paging.
   - [ ] 13.15.b Voucher cards show the image, brand, points, stock left and expiry. Brand pages list that brand's vouchers.
   - [ ] 13.15.c The "Channel" filter becomes "Where to use it" (In store, Online), and picking either one also shows "In store & online" vouchers (today it hides them).
-- [ ] **13.16 Light and dark mode** (F84) · B · needs: —
-  - [ ] 13.16.a A theme setting (System, Light, Dark) in Me and in the header menu, saved to the account and a cookie, so the server renders it with no flash. `ViewerShell` stops forcing dark.
+- [ ] **13.16 Light and dark mode** (F84) · B · needs: — — 🔄 slot 4
+  - [x] 13.16.a A theme setting (System, Light, Dark) in Me and in the header menu, saved to the account and a cookie, so the server renders it with no flash. `ViewerShell` stops forcing dark. — 310e2770: `me.viewer_theme` + `GET/PUT /api/me/settings/theme` (PUT light → row `light`, verified), `yt_theme` cookie read by every signed-in root layout into `<html data-theme>`, restored from the account at login; Me section and header menu. Default is System.
   - [ ] 13.16.b Every viewer, Studio, counter and staff screen is checked in both themes.
-- [ ] **13.18 Header and sidebar** (founder, 2026-09-30) · B · needs: — — 🔄 slot 4
-  - [ ] 13.18.a The logo moves to the top of the sidebar at 1280 px, so the header holds only search, notifications, the points balance and the profile. At 390 px the logo stays in the header, because there is no sidebar.
-  - [ ] 13.18.b A profile avatar at the top right opens a menu: name and email, Me, Wallet, theme (13.16), language, Studio or Staff console when the account has that role, and Log out.
+- [x] **13.18 Header and sidebar** (founder, 2026-09-30) · B · needs: — — ✅ 2026-09-30 310e2770
+  - [x] 13.18.a The logo moves to the top of the sidebar at 1280 px, so the header holds only search, notifications, the points balance and the profile. At 390 px the logo stays in the header, because there is no sidebar. — 310e2770: logo tops the side rail from lg; header holds search, bell, points and avatar; 390 keeps the logo, search is an icon link. Screenshots 390/1280 light/dark, axe clean.
+  - [x] 13.18.b A profile avatar at the top right opens a menu: name and email, Me, Wallet, theme (13.16), language, Studio or Staff console when the account has that role, and Log out. — 310e2770: `AccountMenu`; `GET /api/me` now returns `email`; Studio/Staff links by membership/staff role. Menu screenshots 390/1280 light/dark, axe clean.
 - [ ] **13.19 Wallet redesign** (founder, 2026-09-30: "more important things and a better flow") · B · needs: 13.12.b
   - [ ] 13.19.a Top card: available points, pending points (with when they release), and the next reward within reach ("40 more points for a Snap App coffee"), linking to it in the Store.
   - [ ] 13.19.b Active vouchers first, as cards that open the QR in one tap, with expiry and where to use them. Used and expired vouchers sit in their own tab.
@@ -1620,6 +1620,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-30 · B · **13.18 Header and sidebar** · 310e2770. The logo sits at the top of the side rail on desktop, so the header is search, notifications, points and a profile avatar. The avatar opens a menu with name and email, Me, Wallet, theme, language, Studio or Staff console by role, and Log out.
 - 2026-09-30 · B · **12.2 Teen feed and experience** · 6db42923. Staging Check passed: teens see only teen and all-ages items; in quiet hours (21:00–07:00 in the profile's timezone) no notification is sent and a new reward session is refused kindly, in the feed and the player. Teens get a daily-cap meter instead of a streak, a teen-only interest list, and a 45-minute watch-time reminder. The guardian page is live in both languages; withdrawing an approval no longer errors.
 - 2026-09-30 · B (slot 4) · **Phase 11 done.** 11.5 closed. Done-when run on staging in AU and ID: register → feed → earn a quick video in place (+3 / +40) → a 90 s video with its question (+8 / +150) → release → store → buy at the locked price (150 / 250 points) → voucher in the wallet → dispute (points back once); logged out, a video plays without earning and sign-up returns to it. Fixed on the way: the watch and channel pages crashed (`ChannelAvatar` lacked "use client"); a disputed voucher still looked usable (11.6.e, 4.8.d); pre-minted voucher titles; the blank logged-out player; hydration on wallet dates; ID wallet copy. Integration had been red since 2026-09-28 across every session; seven causes fixed (11.5.m) · f6908c2e
 - 2026-09-30 · C · **12.3 Studio and data** · 56d0d9cd. Studio audience and category pickers restate the category policy and the server re-checks it; teen question banks refuse personal questions; reports hide teen groups under 20 (proven over HTTP, and live in Studio, which now reads real data instead of mocks); three staff value-moving routes are idempotent, so `mutating-routes.test.ts` is green again.

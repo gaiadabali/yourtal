@@ -46,6 +46,7 @@ type FeedItem struct {
 	WhyReason FeedWhyReason `json:"whyReason"`
 	ChannelHandle string `json:"channelHandle"`
 	ChannelLogoUrl NullableString `json:"channelLogoUrl"`
+	Boosted bool `json:"boosted"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -55,7 +56,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, tags []string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, tags []string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString, boosted bool) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -80,6 +81,7 @@ func NewFeedItem(campaignId NullableString, businessId NullableString, merchantN
 	this.WhyReason = whyReason
 	this.ChannelHandle = channelHandle
 	this.ChannelLogoUrl = channelLogoUrl
+	this.Boosted = boosted
 	return &this
 }
 
@@ -88,6 +90,8 @@ func NewFeedItem(campaignId NullableString, businessId NullableString, merchantN
 // but it doesn't guarantee that properties required by API are set
 func NewFeedItemWithDefaults() *FeedItem {
 	this := FeedItem{}
+	var boosted bool = false
+	this.Boosted = boosted
 	return &this
 }
 
@@ -651,6 +655,30 @@ func (o *FeedItem) SetChannelLogoUrl(v string) {
 	o.ChannelLogoUrl.Set(&v)
 }
 
+// GetBoosted returns the Boosted field value
+func (o *FeedItem) GetBoosted() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.Boosted
+}
+
+// GetBoostedOk returns a tuple with the Boosted field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetBoostedOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Boosted, true
+}
+
+// SetBoosted sets field value
+func (o *FeedItem) SetBoosted(v bool) {
+	o.Boosted = v
+}
+
 func (o FeedItem) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -684,6 +712,7 @@ func (o FeedItem) ToMap() (map[string]interface{}, error) {
 	toSerialize["whyReason"] = o.WhyReason
 	toSerialize["channelHandle"] = o.ChannelHandle
 	toSerialize["channelLogoUrl"] = o.ChannelLogoUrl.Get()
+	toSerialize["boosted"] = o.Boosted
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -720,6 +749,7 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		"whyReason",
 		"channelHandle",
 		"channelLogoUrl",
+		"boosted",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -772,6 +802,7 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "whyReason")
 		delete(additionalProperties, "channelHandle")
 		delete(additionalProperties, "channelLogoUrl")
+		delete(additionalProperties, "boosted")
 		o.AdditionalProperties = additionalProperties
 	}
 

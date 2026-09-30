@@ -81,6 +81,8 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | free | 2026-09-30 | Phase 12 engineering done (12.1–12.3 ✅, Done when verified on staging at 6db42923); 12.4 ⛔ founder (counsel's review). Slot db `yourtal_s1` and Cerbos 26315 stay; helpers `yourtal-p12-b` (db `yourtal_s12b`, 26610–26615) and `yourtal-p12-c` (db `yourtal_s12c`, 26620–26625) are free for reuse, their Cerbos containers stopped. Carried to Phase 13: 13.10 |
 | 2 | `yourtal-2` | free | 2026-09-29 | Phase 9 ✅ (779b2a53). Worktree, `.env`, db `yourtal_s2` and Cerbos 26325 ready for the next phase. Phase 9 helpers `yourtal-p9-b/c/d` (dbs `yourtal_s9b/c/d`) are done and can be reused; their Cerbos containers are stopped. Staging holds a test `ops` account (`staff-ops-9-3-b-1790652948@example.test`, granted under F76). Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check, and its burns are not region-tagged. Carried for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | `yourtal-3` | **13** — business and API side (agent C) | 2026-09-30 | Branch `phase/13-c`, db `yourtal_s3`, ports 26330–26336. 13.11 → 13.12 (contract shapes merged first, for agent V) → 13.23 → 13.21, plus 13.17 (C half). |
+| 9b | `yourtal-p9-b` | **13** — platform (agent A1) | 2026-09-30 | Branch `phase/13-a1`, db `yourtal_s9b`, ports 26470–26477. 13.8 → 13.24 → 13.5. |
+| 9c | `yourtal-p9-c` | **13** — vouchers and escrow (agent A2) | 2026-09-30 | Branch `phase/13-a2`, db `yourtal_s9c`, ports 26480–26487. 13.20.a/b/d (gifting backend) → 13.10 → 13.9 → 13.22.a–c (auction backend, once 13.21.a is on main). |
 | 4 | `yourtal-4` | **13** — viewer side (agent V) | 2026-09-30 | Branch `phase/13`, db `yourtal_s4`, ports 26360–26366. 13.18 → 13.16 → 13.13 → 13.14 → 13.15 → 13.19 → 13.17 (B half); then 13.20 → 13.22. Slots 1 and 2 are in use by 12.4 sessions (`phase/12-4b`, `phase/12-4ef`) although their rows say free. |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
@@ -1526,8 +1528,8 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.23.d Boosted cards carry the "Sponsored" label (12.4.d). Studio Reports shows boosted impressions, spend and the average price paid.
   - [ ] 13.23.e **Check:** with two boosted campaigns over HTTP, the higher bid wins the slot and pays the lower bid plus one; spend stops at the daily budget; the reward rows are unchanged.
 
-- [ ] **13.11 Account deletion leaves the ledger balance behind** (found by 12.4.b) · A · needs: —
-  - [ ] 13.11.a `DELETE /api/me` and the guardian's delete both run `executeDeletion`, which has no `ledger` domain handler, so the balance and grant history stay under the deleted user's id (reported `unhandled`). Decide and build: void or escrow the balance with a posting, and pseudonymise the ledger rows, without deleting or editing ledger history.
+- [ ] **13.24 Account deletion leaves the ledger balance behind** (found by 12.4.b; renumbered from a clashing 13.11) · A · needs: —
+  - [ ] 13.24.a `DELETE /api/me` and the guardian's delete both run `executeDeletion`, which has no `ledger` domain handler, so the balance and grant history stay under the deleted user's id (reported `unhandled`). Decide and build: void or escrow the balance with a posting, and pseudonymise the ledger rows, without deleting or editing ledger history.
 
 **Done when:** the founder completes the walkthrough on staging, and every issue raised is either fixed or recorded as a task in this file.
 

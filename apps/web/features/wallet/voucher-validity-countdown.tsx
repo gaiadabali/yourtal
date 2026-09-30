@@ -26,7 +26,8 @@ export function VoucherValidityCountdown({
     <div className="flex w-full flex-col gap-1.5">
       <div className="flex items-center justify-between text-xs text-fg-muted">
         <span>{t("voucher.codeAutoRefresh")}</span>
-        <span className="tabular-nums">
+        {/* The server's second and the browser's differ by render time. */}
+        <span className="tabular-nums" suppressHydrationWarning>
           {t("voucher.secondsRemaining", { seconds: clampedSeconds })}
         </span>
       </div>
@@ -36,11 +37,13 @@ export function VoucherValidityCountdown({
         aria-valuemin={0}
         aria-valuemax={rotationIntervalSeconds}
         aria-valuenow={clampedSeconds}
+        suppressHydrationWarning
         className="h-1.5 w-full overflow-hidden rounded-full bg-surface-raised"
       >
         <div
           className="h-full rounded-full bg-primary transition-[width] duration-300 ease-linear"
           style={{ width: `${percentRemaining}%` }}
+          suppressHydrationWarning
         />
       </div>
     </div>

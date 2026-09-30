@@ -3,6 +3,7 @@ import type { PublicListing } from "@yourtal/contracts/listing";
 import type { Region } from "@yourtal/contracts/region";
 import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
 import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
+import type { WalletGift } from "@yourtal/contracts/wallet/wallet-gift";
 import { StoreVoucherCard } from "@/features/store/store-voucher-card";
 import type { WalletVoucherDetail } from "./wallet-data";
 import { WalletEmptyState } from "./wallet-empty-state";
@@ -10,6 +11,7 @@ import type { SupportedLocale } from "./wallet-format";
 import { WalletHero } from "./wallet-hero";
 import { WalletHistory, type HistoryFilter } from "./wallet-history";
 import { WalletVouchers, type VoucherTab } from "./wallet-vouchers";
+import { WalletGiftInbox, WalletGiftsSection } from "./wallet-gifts";
 
 export interface WalletView {
   readonly tab: VoucherTab;
@@ -24,6 +26,8 @@ export interface WalletScreenProps {
   historyNextCursor: string | null;
   nextReward: PublicListing | null;
   affordable: readonly PublicListing[];
+  /** 13.20.c. Omitted in older tests: no gifts. */
+  gifts?: readonly WalletGift[];
   view: WalletView;
   region: Region;
   nowMs: number;
@@ -59,16 +63,19 @@ export async function WalletScreen({
   historyNextCursor,
   nextReward,
   affordable,
+  gifts = [],
   view,
   region,
   nowMs,
   locale,
 }: WalletScreenProps) {
   const t = await getTranslations("wallet");
-  const empty = isWalletEmpty(balance, vouchers);
+  const empty = isWalletEmpty(balance, vouchers) && gifts.length === 0;
   // Awaited as calls, not JSX, so a test can render this async tree.
-  const [top, voucherSection, historySection] = await Promise.all([
+  const [top, inbox, giftSection, voucherSection, historySection] = await Promise.all([
     empty ? WalletEmptyState() : WalletHero({ balance, nextReward, locale }),
+    WalletGiftInbox({ gifts, locale }),
+    WalletGiftsSection({ gifts, locale }),
     empty
       ? null
       : WalletVouchers({
@@ -97,7 +104,9 @@ export async function WalletScreen({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-gutter-sm py-6 md:px-gutter-md">
       <h1 className="font-display text-headline font-bold text-fg">{t("screen.title")}</h1>
       {top}
+      {inbox}
       {voucherSection}
+      {giftSection}
 
       {affordable.length > 0 ? (
         <section aria-labelledby="wallet-affordable" className="flex flex-col gap-4">

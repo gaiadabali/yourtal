@@ -18,6 +18,7 @@ import { VoucherQrCode } from "./voucher-qr-code";
 import { VoucherValidityCountdown } from "./voucher-validity-countdown";
 import { VoucherArchivedPanel } from "./voucher-archived-panel";
 import { VoucherDisputeButton } from "./voucher-dispute-button";
+import { VoucherGiftButton } from "./voucher-gift-button";
 import {
   describeVoucherStatus,
   isVoucherEffectivelyExpired,
@@ -40,6 +41,8 @@ export interface VoucherDetailViewProps {
    * alone, which is exactly the behaviour that rule requires.
    */
   code: string | undefined;
+  /** 13.20.c: show the Gift action (the server's own `giftable`). */
+  giftable?: boolean;
 }
 
 /** True while the browser reports itself offline — 6.5.c: "shows with the network off". */
@@ -72,6 +75,7 @@ export function VoucherDetailView({
   initialDetail,
   initialQr,
   code,
+  giftable = false,
 }: VoucherDetailViewProps) {
   const { locale } = useRegion();
   const t = useTranslations("wallet");
@@ -152,7 +156,10 @@ export function VoucherDetailView({
                 {rotation.refreshFailed ? t("voucher.qrExpiredOffline") : t("voucher.qrRefreshing")}
               </Notice>
             )}
-            <VoucherDisputeButton voucherId={voucherId} onResolved={setDisputeOutcome} />
+            <div className="flex flex-wrap gap-2">
+              {giftable ? <VoucherGiftButton voucherId={voucherId} locale={locale} /> : null}
+              <VoucherDisputeButton voucherId={voucherId} onResolved={setDisputeOutcome} />
+            </div>
           </>
         ) : (
           <VoucherArchivedPanel

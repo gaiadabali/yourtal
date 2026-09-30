@@ -124,5 +124,56 @@
     "today": "Hari ini",
     "yesterday": "Kemarin",
     "older": "Tampilkan yang lebih lama"
+  },
+  "gift": {
+    "cta": "Hadiahkan",
+    "title": "Hadiahkan voucher ini",
+    "intro": "Berikan ke anggota YourTal lain di wilayah Anda. Mereka hanya melihat nama tampilan Anda.",
+    "emailLabel": "Email YourTal penerima",
+    "emailHelp": "Email yang mereka pakai untuk masuk.",
+    "ruleCode": "Kode Anda langsung tidak berlaku begitu hadiah dikirim.",
+    "ruleWindow": "Penerima punya 7 hari untuk menerima. Jika tidak, voucher kembali ke Anda.",
+    "ruleOnce": "Voucher hanya bisa dihadiahkan sekali dan tidak bisa diteruskan lagi.",
+    "cancel": "Batal",
+    "send": "Kirim hadiah",
+    "close": "Tutup",
+    "sentTitle": "Hadiah terkirim",
+    "sentBody": "Penerima punya waktu sampai {date} untuk menerima. Jika tidak, voucher kembali ke dompet Anda dengan kode baru.",
+    "backToWallet": "Kembali ke Dompet",
+    "inboxHeading": "Hadiah untuk Anda",
+    "receivedFrom": "{name} mengirimi Anda {title}",
+    "someone": "Seorang anggota YourTal",
+    "acceptBy": "terima sebelum {date}",
+    "accept": "Terima",
+    "decline": "Tolak",
+    "acceptLabel": "Terima {title}",
+    "declineLabel": "Tolak {title}",
+    "heading": "Hadiah",
+    "sent": "Dikirim",
+    "received": "Diterima",
+    "sentLine": {
+      "pending": "menunggu sampai {date}",
+      "accepted": "diterima {date}",
+      "returned": "kembali {date}"
+    },
+    "receivedLine": "dari {name}, {date}",
+    "status": {
+      "pending": "Menunggu",
+      "accepted": "Diterima",
+      "returned": "Kembali"
+    },
+    "refusal": {
+      "gift_recipient_ineligible": "Email itu tidak bisa menerima hadiah ini. Periksa emailnya, dan pastikan penerima anggota YourTal dewasa di wilayah Anda.",
+      "gift_sender_ineligible": "Verifikasi email Anda sebelum mengirim hadiah.",
+      "gift_to_self": "Itu email Anda sendiri.",
+      "gift_not_transferable": "Voucher ini tidak bisa dihadiahkan.",
+      "gift_already_gifted": "Voucher ini sudah pernah dihadiahkan.",
+      "gift_not_unused": "Hanya voucher yang belum dipakai yang bisa dihadiahkan.",
+      "gift_holdback": "Voucher ini terlalu baru untuk dihadiahkan. Coba lagi dalam satu atau dua hari.",
+      "gift_velocity_capped": "Anda sudah banyak mengirim hadiah akhir-akhir ini. Coba lagi nanti.",
+      "gift_not_pending": "Hadiah ini sudah dijawab.",
+      "gift_window_closed": "Batas 7 hari untuk menerima hadiah ini sudah lewat.",
+      "failed": "Hadiah belum terkirim. Coba lagi."
+    }
   }
 }

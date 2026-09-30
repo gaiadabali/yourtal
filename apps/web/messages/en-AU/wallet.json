@@ -124,5 +124,56 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "older": "Show older"
+  },
+  "gift": {
+    "cta": "Gift",
+    "title": "Gift this voucher",
+    "intro": "Give it to another YourTal member in your region. They'll see your display name, and nothing else.",
+    "emailLabel": "Their YourTal email",
+    "emailHelp": "The email they sign in with.",
+    "ruleCode": "Your code stops working as soon as you send it.",
+    "ruleWindow": "They have 7 days to accept. If they don't, it comes back to you.",
+    "ruleOnce": "A voucher can be gifted once. A gifted voucher can't be passed on again.",
+    "cancel": "Cancel",
+    "send": "Send gift",
+    "close": "Close",
+    "sentTitle": "Gift sent",
+    "sentBody": "They have until {date} to accept. If they don't, the voucher comes back to your wallet with a new code.",
+    "backToWallet": "Back to Wallet",
+    "inboxHeading": "Gifts for you",
+    "receivedFrom": "{name} sent you {title}",
+    "someone": "A YourTal member",
+    "acceptBy": "accept by {date}",
+    "accept": "Accept",
+    "decline": "Decline",
+    "acceptLabel": "Accept {title}",
+    "declineLabel": "Decline {title}",
+    "heading": "Gifts",
+    "sent": "Sent",
+    "received": "Received",
+    "sentLine": {
+      "pending": "waiting until {date}",
+      "accepted": "accepted {date}",
+      "returned": "came back {date}"
+    },
+    "receivedLine": "from {name}, {date}",
+    "status": {
+      "pending": "Waiting",
+      "accepted": "Accepted",
+      "returned": "Returned"
+    },
+    "refusal": {
+      "gift_recipient_ineligible": "That email can't receive this gift. Check it, and that they're an adult YourTal member in your region.",
+      "gift_sender_ineligible": "Verify your email before sending gifts.",
+      "gift_to_self": "That's your own email.",
+      "gift_not_transferable": "This voucher can't be gifted.",
+      "gift_already_gifted": "This voucher has already been gifted once.",
+      "gift_not_unused": "Only an unused voucher can be gifted.",
+      "gift_holdback": "This voucher is too new to gift. Try again in a day or two.",
+      "gift_velocity_capped": "You've sent a lot of gifts lately. Try again later.",
+      "gift_not_pending": "This gift has already been answered.",
+      "gift_window_closed": "The 7 days to accept this gift are over.",
+      "failed": "The gift couldn't be sent. Try again."
+    }
   }
 }

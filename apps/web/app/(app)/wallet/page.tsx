@@ -5,6 +5,7 @@ import {
   getWalletBalance,
   listAffordableRewards,
   listWalletHistory,
+  listWalletGifts,
   listWalletVouchers,
   nextRewardInReach,
 } from "@/features/wallet/wallet-data";
@@ -47,9 +48,10 @@ export default async function WalletPage(props: PageProps<"/wallet">) {
     );
   }
   const available = balanceResult.data.availablePoints;
-  const [nextReward, affordable] = await Promise.all([
+  const [nextReward, affordable, gifts] = await Promise.all([
     nextRewardInReach(available),
     listAffordableRewards(available),
+    listWalletGifts(),
   ]);
 
   return (
@@ -60,6 +62,7 @@ export default async function WalletPage(props: PageProps<"/wallet">) {
       historyNextCursor={historyResult.ok ? historyResult.data.nextCursor : null}
       nextReward={nextReward}
       affordable={affordable}
+      gifts={gifts}
       view={view}
       region={region}
       nowMs={Date.now()}

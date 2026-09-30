@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { PageContainer } from "@yourtal/ui/page-container";
+import { getMeProfile } from "@/features/me/me-data";
 import { getWalletVoucher, getWalletVoucherQr } from "@/features/wallet/wallet-data";
 import { buildCachedVoucherDetail } from "@/features/wallet/voucher-detail-cache";
 import { isVoucherRedeemable } from "@/features/wallet/wallet-voucher-status-copy";
@@ -19,7 +20,7 @@ export default async function WalletVoucherDetailPage(
   props: PageProps<"/wallet/voucher/[voucherId]">,
 ) {
   const { voucherId } = await props.params;
-  const voucherResult = await getWalletVoucher(voucherId);
+  const [voucherResult, me] = await Promise.all([getWalletVoucher(voucherId), getMeProfile()]);
 
   if (!voucherResult.ok) {
     notFound();
@@ -38,6 +39,10 @@ export default async function WalletVoucherDetailPage(
         initialDetail={initialDetail}
         initialQr={qrResult?.ok ? qrResult.data : null}
         code={voucher.code}
+        // F86: teens can neither give nor receive gifts; an unknown age offers nothing.
+        giftable={
+          isRedeemable && voucher.giftable === true && me.ok && me.data.profile.ageBand === "adult"
+        }
       />
     </PageContainer>
   );

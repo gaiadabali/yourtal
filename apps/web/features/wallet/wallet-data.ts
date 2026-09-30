@@ -10,6 +10,7 @@ import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
 import { voucherStatusSchema } from "@yourtal/contracts/voucher/voucher";
 import type { Region } from "@yourtal/contracts/region";
 import type { PublicListing } from "@yourtal/contracts/listing";
+import { walletGiftListSchema, type WalletGift } from "@yourtal/contracts/wallet/wallet-gift";
 import { listingBrowseResponseSchema } from "@yourtal/contracts/listing/browse";
 
 /**
@@ -90,6 +91,8 @@ export const walletVoucherDetailSchema = z.object({
   issuedAt: z.iso.datetime().optional(),
   expiresAt: z.iso.datetime().optional(),
   location: merchantLocationDisplaySchema.optional(),
+  /** 13.20: the voucher can be gifted now (holdback and caps are only known on trying). */
+  giftable: z.boolean().optional(),
 });
 export type WalletVoucherDetail = z.infer<typeof walletVoucherDetailSchema>;
 
@@ -216,4 +219,10 @@ export async function nextRewardInReach(available: number): Promise<PublicListin
     .filter((row) => row.priceInPoints > available && row.stockRemaining > 0)
     .sort((a, b) => a.priceInPoints - b.priceInPoints);
   return candidates[0] ?? null;
+}
+
+/** 13.20.c: gifts sent and received. A failed read shows no Gifts section. */
+export async function listWalletGifts(): Promise<WalletGift[]> {
+  const result = await apiFetch("/api/wallet/gifts", walletGiftListSchema);
+  return result.ok ? result.data.gifts : [];
 }

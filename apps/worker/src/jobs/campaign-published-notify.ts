@@ -9,6 +9,7 @@ import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
 import type { JobContext } from "../job";
+import { isPushEnabledFor } from "../push-default";
 
 /**
  * TASKS.md 7.3.g (moved from 5.5.b by F40): turns a `campaign.published`
@@ -102,13 +103,15 @@ export const job = defineJob<CampaignPublishedEvent>({
         ],
       );
 
-      const preference = await client.query<{ push_enabled: boolean }>(
-        `SELECT push_enabled FROM me.notification_preference WHERE user_id = $1 AND category = $2`,
-        [follower.user_id, CATEGORY],
-      );
-      // No row means the default (enabled) — see notification.repository.ts's own convention.
-      const pushEnabled = preference.rows[0]?.push_enabled ?? true;
-      if (!pushEnabled) continue;
+      // 12.4.b (#8): no row means the DPIA's own default -- off for a teen,
+      // on for everyone else (`push-default.ts`'s own header). Re-derives
+      // this follower's age band from `identity.user_profile` a second
+      // time (the row above already fetched `date_of_birth` for the
+      // audience/quiet-hours filters) rather than threading it through --
+      // this loop already re-queries `me.notification_preference` per
+      // follower, so one more indexed lookup keeps the interface uniform
+      // with the other two jobs rather than a special-cased shortcut here.
+      if (!(await isPushEnabledFor(client, follower.user_id, CATEGORY, now))) continue;
 
       await push.send({
         // Per-follower, not per-event: one event fans out to many

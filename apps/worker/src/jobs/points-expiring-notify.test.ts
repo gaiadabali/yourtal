@@ -1,10 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import type { Job } from "pg-boss";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { ok } from "neverthrow";
 import type { PointsExpiringEvent } from "@yourtal/contracts/ledger-internal/expiry";
 import { toPoints } from "@yourtal/contracts/money";
 import { loadWorkerConfig } from "../config";
+
+/** 12.4.b (#8): see points-unlocked-notify.test.ts's own header for why this mock exists. */
+const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn() }));
+vi.mock("@yourtal/drivers/push", () => ({
+  createSimulatedPush: () => ({ mode: "simulated", send: sendMock }),
+}));
+
 import { job } from "./points-expiring-notify";
 
 /** Real Postgres — same shape points-unlocked-notify.test.ts uses. */
@@ -16,6 +24,11 @@ const pool = new Pool({ connectionString: DATABASE_URL });
 
 afterAll(async () => {
   await pool.end();
+});
+
+beforeEach(() => {
+  sendMock.mockReset();
+  sendMock.mockResolvedValue(ok({ id: "mock-push-id" }));
 });
 
 function fakeJob(data: PointsExpiringEvent): Job<PointsExpiringEvent> {
@@ -52,6 +65,45 @@ describe("points-expiring-notify job", () => {
     expect(rows.rows[0]?.category).toBe("points_expiring");
     expect(rows.rows[0]?.body).toContain("50 pts");
     expect(rows.rows[0]?.body).toContain("2026-11-01");
+    expect(sendMock).toHaveBeenCalledTimes(1);
+  });
+
+  // 12.4.b (#8): the DPIA's own default -- an adult with no explicit
+  // preference row still gets the push. (This file has no equivalent teen
+  // case: 12.4.d/#7's `isTeenAccount` check above already suppresses the
+  // ENTIRE notification -- row and push -- for any teen, any time of day,
+  // which is a strictly stronger rule than "no row means off" and makes
+  // that narrower case moot here. `points-unlocked-notify.test.ts` and
+  // `campaign-published-notify.test.ts`, whose jobs keep the quiet-hours-
+  // only rule, are where the "teen still gets the row, just no push" case
+  // is actually reachable and proven.)
+  it("an adult with no preference row gets the push", async () => {
+    const userId = randomUUID();
+    const accountId = `usr_${userId}_available`;
+    await pool.query(
+      `INSERT INTO identity.user_profile (user_id, region, display_name, date_of_birth, timezone)
+       VALUES ($1, 'AU', 'Push Default Adult', '1990-01-01', 'Australia/Sydney')`,
+      [userId],
+    );
+
+    try {
+      await job.handle(
+        fakeJob({
+          accountId,
+          userId,
+          region: "AU",
+          milestoneDays: 7,
+          expiringAt: "2026-11-01T00:00:00.000Z",
+          points: toPoints(50),
+          idempotencyKey: `points_expiring_${accountId}_7_2026-11-01T00:00:00.000Z`,
+        }),
+        { boss: undefined as never, config },
+      );
+
+      expect(sendMock).toHaveBeenCalledTimes(1);
+    } finally {
+      await pool.query(`DELETE FROM identity.user_profile WHERE user_id = $1`, [userId]);
+    }
   });
 
   it("still writes the notification, but skips the push, when the user opted out", async () => {
@@ -77,6 +129,7 @@ describe("points-expiring-notify job", () => {
 
     const rows = await pool.query(`SELECT 1 FROM me.notification WHERE user_id = $1`, [userId]);
     expect(rows.rows).toHaveLength(1);
+    expect(sendMock).not.toHaveBeenCalled();
   });
 
   // 12.4.d/#7: a teen never gets this nudge, full stop -- not only during

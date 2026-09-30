@@ -6,6 +6,7 @@ import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
 import type { JobContext } from "../job";
 import { isTeenAccount } from "../teen-quiet-hours";
+import { isPushEnabledFor } from "../push-default";
 
 /**
  * TASKS.md 10.2.d: turns each `ledger.points_expiring` event into an in-app
@@ -60,12 +61,9 @@ export const job = defineJob<PointsExpiringEvent>({
       ],
     );
 
-    const preference = await client.query<{ push_enabled: boolean }>(
-      `SELECT push_enabled FROM me.notification_preference WHERE user_id = $1 AND category = $2`,
-      [event.userId, category],
-    );
-    const pushEnabled = preference.rows[0]?.push_enabled ?? true;
-    if (!pushEnabled) return;
+    // 12.4.b (#8): no row means the DPIA's own default -- off for a teen,
+    // on for everyone else (`push-default.ts`'s own header).
+    if (!(await isPushEnabledFor(client, event.userId, category, new Date()))) return;
 
     await push.send({
       idempotencyKey: event.idempotencyKey,

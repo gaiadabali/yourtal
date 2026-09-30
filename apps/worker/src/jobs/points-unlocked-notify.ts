@@ -6,6 +6,7 @@ import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
 import type { JobContext } from "../job";
 import { isTeenInQuietHours } from "../teen-quiet-hours";
+import { isPushEnabledFor } from "../push-default";
 
 /**
  * 5.5.b: turns each `ledger.points_unlocked` event (real today — 4.4.g's
@@ -57,13 +58,9 @@ export const job = defineJob<PointsUnlockedEvent>({
       ],
     );
 
-    const preference = await client.query<{ push_enabled: boolean }>(
-      `SELECT push_enabled FROM me.notification_preference WHERE user_id = $1 AND category = $2`,
-      [event.userId, category],
-    );
-    // No row means the default (enabled) — see notification.repository.ts's own convention.
-    const pushEnabled = preference.rows[0]?.push_enabled ?? true;
-    if (!pushEnabled) return;
+    // 12.4.b (#8): no row means the DPIA's own default -- off for a teen,
+    // on for everyone else (`push-default.ts`'s own header).
+    if (!(await isPushEnabledFor(client, event.userId, category, new Date()))) return;
 
     await push.send({
       idempotencyKey: event.idempotencyKey,

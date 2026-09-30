@@ -1,9 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import type { Job } from "pg-boss";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { ok } from "neverthrow";
 import type { CampaignPublishedEvent } from "@yourtal/contracts/studio/campaign-published-event";
 import { loadWorkerConfig } from "../config";
+
+/** 12.4.b (#8): see points-unlocked-notify.test.ts's own header for why this mock exists. */
+const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn() }));
+vi.mock("@yourtal/drivers/push", () => ({
+  createSimulatedPush: () => ({ mode: "simulated", send: sendMock }),
+}));
+
 import { job } from "./campaign-published-notify";
 
 /**
@@ -18,6 +26,11 @@ const pool = new Pool({ connectionString: DATABASE_URL });
 
 afterAll(async () => {
   await pool.end();
+});
+
+beforeEach(() => {
+  sendMock.mockReset();
+  sendMock.mockResolvedValue(ok({ id: "mock-push-id" }));
 });
 
 function fakeJob(data: CampaignPublishedEvent): Job<CampaignPublishedEvent> {
@@ -113,6 +126,57 @@ describe("campaign-published-notify job", () => {
 
     const rows = await pool.query(`SELECT 1 FROM me.notification WHERE user_id = $1`, [follower]);
     expect(rows.rows).toHaveLength(1);
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  // 12.4.b (#8): the DPIA's own default -- a teen follower with no explicit
+  // preference row gets no push, an adult follower with no row does.
+  it("a teen follower with no preference row gets no push; an adult follower with no row does", async () => {
+    const businessId = randomUUID();
+    const campaignId = randomUUID();
+    const teenFollower = randomUUID();
+    const adultFollower = randomUUID();
+
+    await pool.query(
+      `INSERT INTO identity.user_profile (user_id, region, display_name, date_of_birth, timezone)
+       VALUES ($1, 'AU', 'Push Default Teen', '2012-01-01', 'Australia/Sydney'),
+              ($2, 'AU', 'Push Default Adult', '1990-01-01', 'Australia/Sydney')`,
+      [teenFollower, adultFollower],
+    );
+    await pool.query(
+      `INSERT INTO me.follow (user_id, business_id, region) VALUES ($1, $2, 'AU'), ($3, $2, 'AU')`,
+      [teenFollower, businessId, adultFollower],
+    );
+
+    try {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-07-01T00:00:00.000Z")); // 10:00 AEST -- not quiet hours
+      await job.handle(
+        fakeJob({
+          campaignId,
+          businessId,
+          region: "AU",
+          idempotencyKey: `campaign_published_${campaignId}`,
+        }),
+        { boss: undefined as never, config },
+      );
+
+      const rows = await pool.query<{ user_id: string }>(
+        `SELECT user_id FROM me.notification WHERE user_id = ANY($1)`,
+        [[teenFollower, adultFollower]],
+      );
+      // Both get the in-app row -- only the push differs.
+      expect(rows.rows.map((row) => row.user_id).sort()).toStrictEqual(
+        [teenFollower, adultFollower].sort(),
+      );
+      expect(sendMock).toHaveBeenCalledTimes(1);
+      expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ to: adultFollower }));
+    } finally {
+      vi.useRealTimers();
+      await pool.query(`DELETE FROM identity.user_profile WHERE user_id = ANY($1)`, [
+        [teenFollower, adultFollower],
+      ]);
+    }
   });
 
   // 12.1.b: the audience wall reaches this fan-out too. Minimal

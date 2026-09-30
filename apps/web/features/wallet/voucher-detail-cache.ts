@@ -1,13 +1,11 @@
-import * as z from "zod/mini";
-
 /**
  * Local cache for one voucher's detail view — the offline guarantee behind
  * 6.5.b's "voucher is a pass" (usable at the counter with no signal).
  * localStorage is a process boundary (another tab, a stale schema version,
- * a tampered value can all write there), so every read is Zod-parsed and
- * every access wrapped in try/catch, and `zod/mini` (not `zod`) keeps this
- * out of the Zod-runtime cost that would otherwise land in the client
- * bundle (docs/13b-typescript-standards.md §3, §8) — see
+ * a tampered value can all write there), so every read is validated and
+ * every access wrapped in try/catch. The guard is hand-written, not Zod
+ * (13.4.d, F93): even `zod/mini` kept this route over the 200 KB
+ * initial-JS gate (docs/13b-typescript-standards.md §3, §8) — see
  * `use-voucher-qr-rotation.ts`'s sibling IndexedDB cache for the QR windows
  * themselves, which live separately because they need a bigger, longer-lived
  * store (6.5.c: an hour of rotating tokens, not one small record).
@@ -21,33 +19,89 @@ import * as z from "zod/mini";
  */
 const STORAGE_PREFIX = "yourtal:wallet:voucher:";
 
-const cachedMerchantLocationSchema = z.object({
-  name: z.string(),
-  address: z.string(),
-  district: z.string(),
-});
+const STATES = ["reserved", "activated", "released"] as const;
+const STATUSES = ["active", "redeemed", "expired", "transferred"] as const;
+const CURRENCIES = ["AUD", "IDR"] as const;
+const POLICIES = ["balance_carrying", "single_use_forfeit", "minimum_spend"] as const;
 
-export const cachedVoucherDetailSchema = z.object({
-  voucherId: z.string().check(z.minLength(1)),
-  listingId: z.string().check(z.minLength(1)),
-  state: z.enum(["reserved", "activated", "released"]),
+export interface CachedVoucherDetail {
+  voucherId: string;
+  listingId: string;
+  state: (typeof STATES)[number];
   /** 11.6.d: the same additive `status` field `wallet-data.ts` now parses — see its doc comment. */
-  status: z.optional(z.enum(["active", "redeemed", "expired", "transferred"])),
-  merchantName: z.optional(z.string()),
-  title: z.optional(z.string()),
-  currency: z.optional(z.enum(["AUD", "IDR"])),
-  faceValueMinor: z.optional(z.number()),
-  remainingValueMinor: z.optional(z.number()),
-  partialRedemptionPolicy: z.optional(
-    z.enum(["balance_carrying", "single_use_forfeit", "minimum_spend"]),
-  ),
-  issuedAt: z.optional(z.string()),
-  expiresAt: z.optional(z.string()),
-  location: z.optional(cachedMerchantLocationSchema),
-  cachedAt: z.string(),
-});
+  status?: (typeof STATUSES)[number] | undefined;
+  merchantName?: string | undefined;
+  title?: string | undefined;
+  currency?: (typeof CURRENCIES)[number] | undefined;
+  faceValueMinor?: number | undefined;
+  remainingValueMinor?: number | undefined;
+  partialRedemptionPolicy?: (typeof POLICIES)[number] | undefined;
+  issuedAt?: string | undefined;
+  expiresAt?: string | undefined;
+  location?: { name: string; address: string; district: string } | undefined;
+  cachedAt: string;
+}
 
-export type CachedVoucherDetail = z.infer<typeof cachedVoucherDetailSchema>;
+class Invalid extends Error {}
+
+function oneOf<T extends string>(values: readonly T[], value: unknown): T {
+  if (typeof value === "string" && (values as readonly string[]).includes(value)) return value as T;
+  throw new Invalid();
+}
+function text(value: unknown, nonEmpty = false): string {
+  if (typeof value !== "string" || (nonEmpty && value.length === 0)) throw new Invalid();
+  return value;
+}
+function num(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) throw new Invalid();
+  return value;
+}
+function optional<T>(value: unknown, check: (v: unknown) => T): T | undefined {
+  return value === undefined ? undefined : check(value);
+}
+
+/**
+ * The stored value as a `CachedVoucherDetail`, or null; the same checks the
+ * old schema made. Unknown keys (a stray `code`) are dropped, never kept.
+ */
+export function parseCachedVoucherDetail(value: unknown): CachedVoucherDetail | null {
+  if (typeof value !== "object" || value === null) return null;
+  const v = value as Record<string, unknown>;
+  try {
+    const location = optional(v["location"], (raw) => {
+      if (typeof raw !== "object" || raw === null) throw new Invalid();
+      const l = raw as Record<string, unknown>;
+      return { name: text(l["name"]), address: text(l["address"]), district: text(l["district"]) };
+    });
+    const detail: CachedVoucherDetail = {
+      voucherId: text(v["voucherId"], true),
+      listingId: text(v["listingId"], true),
+      state: oneOf(STATES, v["state"]),
+      cachedAt: text(v["cachedAt"]),
+    };
+    const optionals = {
+      status: optional(v["status"], (raw) => oneOf(STATUSES, raw)),
+      merchantName: optional(v["merchantName"], (raw) => text(raw)),
+      title: optional(v["title"], (raw) => text(raw)),
+      currency: optional(v["currency"], (raw) => oneOf(CURRENCIES, raw)),
+      faceValueMinor: optional(v["faceValueMinor"], num),
+      remainingValueMinor: optional(v["remainingValueMinor"], num),
+      partialRedemptionPolicy: optional(v["partialRedemptionPolicy"], (raw) =>
+        oneOf(POLICIES, raw),
+      ),
+      issuedAt: optional(v["issuedAt"], (raw) => text(raw)),
+      expiresAt: optional(v["expiresAt"], (raw) => text(raw)),
+      location,
+    };
+    for (const [key, field] of Object.entries(optionals)) {
+      if (field !== undefined) Object.assign(detail, { [key]: field });
+    }
+    return detail;
+  } catch (error) {
+    if (error instanceof Invalid) return null;
+    throw error;
+  }
+}
 
 /**
  * A voucher fresh off the wallet API, minus its redemption `code` — see this
@@ -78,7 +132,9 @@ export function buildCachedVoucherDetail(
   voucher: VoucherDetailSource,
   cachedAt: string,
 ): CachedVoucherDetail {
-  return cachedVoucherDetailSchema.parse({ ...voucher, cachedAt });
+  const detail = parseCachedVoucherDetail({ ...voucher, cachedAt });
+  if (detail === null) throw new Error("voucher detail failed validation");
+  return detail;
 }
 
 function storageKey(voucherId: string): string {
@@ -96,8 +152,7 @@ export function readVoucherDetailCache(voucherId: string): CachedVoucherDetail |
       return null;
     }
     const parsed: unknown = JSON.parse(raw);
-    const result = cachedVoucherDetailSchema.safeParse(parsed);
-    return result.success ? result.data : null;
+    return parseCachedVoucherDetail(parsed);
   } catch {
     return null;
   }

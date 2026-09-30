@@ -1,5 +1,3 @@
-import * as z from "zod/mini";
-
 /**
  * Persists watch position to localStorage so a resume prompt can be offered
  * on a later visit. Per docs/13b-typescript-standards.md §3: "anything out
@@ -11,22 +9,36 @@ import * as z from "zod/mini";
  * playback — every function here degrades to "no prior position" instead
  * of throwing.
  *
- * Uses `zod/mini` rather than `zod`: identical validation, but the full Zod
- * build ships every locale's error strings and cost ~96 KB gz in this
- * route's client bundle, which broke the 170 KB initial-JS gate (§8).
+ * Validated by a hand-written guard, not Zod (13.4.d, F93): even
+ * `zod/mini` puts zod core in this route's first load and kept the watch
+ * pages over the 200 KB initial-JS gate (§8). The checks are the same ones
+ * the schema made: every field present, typed, and in range.
  */
 const RESUME_STORAGE_PREFIX = "yourtal:watch:resume:";
 
 /** Below this many seconds, a "resume" prompt would just be annoying — treat it as no position. */
 export const MIN_RESUMABLE_SECONDS = 20;
 
-export const resumePositionSchema = z.object({
-  campaignId: z.string().check(z.minLength(1)),
-  positionSeconds: z.number().check(z.minimum(0)),
-  updatedAt: z.iso.datetime(),
-});
+export interface ResumePosition {
+  campaignId: string;
+  positionSeconds: number;
+  updatedAt: string;
+}
 
-export type ResumePosition = z.infer<typeof resumePositionSchema>;
+const ISO_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+
+/** The stored value as a `ResumePosition`, or null. Unknown keys are dropped. */
+export function parseResumePosition(value: unknown): ResumePosition | null {
+  if (typeof value !== "object" || value === null) return null;
+  const v = value as Record<string, unknown>;
+  if (typeof v["campaignId"] !== "string" || v["campaignId"].length === 0) return null;
+  const position = v["positionSeconds"];
+  if (typeof position !== "number" || !Number.isFinite(position) || position < 0) return null;
+  const updatedAt = v["updatedAt"];
+  if (typeof updatedAt !== "string" || !ISO_DATETIME.test(updatedAt)) return null;
+  if (Number.isNaN(Date.parse(updatedAt))) return null;
+  return { campaignId: v["campaignId"], positionSeconds: position, updatedAt };
+}
 
 function storageKey(campaignId: string): string {
   return `${RESUME_STORAGE_PREFIX}${campaignId}`;
@@ -43,8 +55,7 @@ export function readResumePosition(campaignId: string): ResumePosition | null {
       return null;
     }
     const parsed: unknown = JSON.parse(raw);
-    const result = resumePositionSchema.safeParse(parsed);
-    return result.success ? result.data : null;
+    return parseResumePosition(parsed);
   } catch {
     return null;
   }

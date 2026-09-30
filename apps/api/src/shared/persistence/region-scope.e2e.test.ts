@@ -54,6 +54,20 @@ describe("region row-level security", () => {
     expect(updated.rowCount).toBe(0);
   });
 
+  it("every table with a region column has the wall", async () => {
+    const owner = createAppDb(process.env["DATABASE_OWNER_URL"] ?? "");
+    const open = await owner.execute<{ name: string }>(sql`
+      SELECT n.nspname || '.' || c.relname AS name
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        JOIN pg_attribute a ON a.attrelid = c.oid
+       WHERE c.relkind = 'r' AND NOT a.attisdropped
+         AND a.attname IN ('region', 'country', 'jurisdiction')
+         AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+         AND NOT EXISTS (SELECT 1 FROM pg_policy p WHERE p.polrelid = c.oid AND p.polname = 'region_wall')`);
+    expect(open.rows.map((row) => row.name)).toEqual([]);
+  });
+
   it("a signed-in request runs walled to its own region", async () => {
     const au = await sessionFor(app, { jurisdiction: "AU" });
     const me = await app.inject({

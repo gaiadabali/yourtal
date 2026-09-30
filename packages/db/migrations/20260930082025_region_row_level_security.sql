@@ -241,3 +241,33 @@ ALTER TABLE watch.open_view_session ENABLE ROW LEVEL SECURITY;
 CREATE POLICY region_wall ON watch.open_view_session
   USING (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true))
   WITH CHECK (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true));
+
+ALTER TABLE feed.boost ENABLE ROW LEVEL SECURITY;
+CREATE POLICY region_wall ON feed.boost
+  USING (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true))
+  WITH CHECK (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true));
+
+ALTER TABLE feed.boost_impression ENABLE ROW LEVEL SECURITY;
+CREATE POLICY region_wall ON feed.boost_impression
+  USING (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true))
+  WITH CHECK (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true));
+
+ALTER TABLE feed.boost_charge ENABLE ROW LEVEL SECURITY;
+CREATE POLICY region_wall ON feed.boost_charge
+  USING (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true))
+  WITH CHECK (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true));
+
+ALTER TABLE voucher.gift ENABLE ROW LEVEL SECURITY;
+CREATE POLICY region_wall ON voucher.gift
+  USING (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true))
+  WITH CHECK (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true));
+
+ALTER TABLE platform.voucher_fake_gift ENABLE ROW LEVEL SECURITY;
+CREATE POLICY region_wall ON platform.voucher_fake_gift
+  USING (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true))
+  WITH CHECK (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true));
+
+ALTER TABLE charity.charity ENABLE ROW LEVEL SECURITY;
+CREATE POLICY region_wall ON charity.charity
+  USING (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true))
+  WITH CHECK (nullif(current_setting('yourtal.region', true), '') IS NULL OR region IS NULL OR region = current_setting('yourtal.region', true));

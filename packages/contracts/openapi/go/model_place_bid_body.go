@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -22,7 +23,6 @@ var _ MappedNullable = &PlaceBidBody{}
 type PlaceBidBody struct {
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
 	AmountMinor int64 `json:"amountMinor"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _PlaceBidBody PlaceBidBody
@@ -80,11 +80,6 @@ func (o PlaceBidBody) MarshalJSON() ([]byte, error) {
 func (o PlaceBidBody) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["amountMinor"] = o.AmountMinor
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -112,20 +107,15 @@ func (o *PlaceBidBody) UnmarshalJSON(data []byte) (err error) {
 
 	varPlaceBidBody := _PlaceBidBody{}
 
-	err = json.Unmarshal(data, &varPlaceBidBody)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varPlaceBidBody)
 
 	if err != nil {
 		return err
 	}
 
 	*o = PlaceBidBody(varPlaceBidBody)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "amountMinor")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

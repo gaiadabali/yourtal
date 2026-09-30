@@ -48,7 +48,12 @@ export const WALLET_DB = Symbol("WALLET_DB");
     },
     WalletAttributeLoader,
   ],
-  exports: [LEDGER_INTERNAL_CLIENT, VOUCHER_INTERNAL_CLIENT, WalletAttributeLoader],
+  exports: [
+    LEDGER_INTERNAL_CLIENT,
+    VOUCHER_INTERNAL_CLIENT,
+    WalletAttributeLoader,
+    GIFT_PARTY_READER,
+  ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class WalletModule {}

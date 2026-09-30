@@ -22,9 +22,9 @@ var _ MappedNullable = &AuctionVoucher{}
 
 // AuctionVoucher struct for AuctionVoucher
 type AuctionVoucher struct {
-	Title string `json:"title"`
-	MerchantName string `json:"merchantName"`
-	Category string `json:"category"`
+	Title NullableString `json:"title"`
+	MerchantName NullableString `json:"merchantName"`
+	Category NullableString `json:"category"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
 	FaceValueMinor int64 `json:"faceValueMinor"`
 	ExpiresAt time.Time `json:"expiresAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
@@ -36,7 +36,7 @@ type _AuctionVoucher AuctionVoucher
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAuctionVoucher(title string, merchantName string, category string, faceValueMinor int64, expiresAt time.Time) *AuctionVoucher {
+func NewAuctionVoucher(title NullableString, merchantName NullableString, category NullableString, faceValueMinor int64, expiresAt time.Time) *AuctionVoucher {
 	this := AuctionVoucher{}
 	this.Title = title
 	this.MerchantName = merchantName
@@ -55,75 +55,81 @@ func NewAuctionVoucherWithDefaults() *AuctionVoucher {
 }
 
 // GetTitle returns the Title field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *AuctionVoucher) GetTitle() string {
-	if o == nil {
+	if o == nil || o.Title.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Title
+	return *o.Title.Get()
 }
 
 // GetTitleOk returns a tuple with the Title field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *AuctionVoucher) GetTitleOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Title, true
+	return o.Title.Get(), o.Title.IsSet()
 }
 
 // SetTitle sets field value
 func (o *AuctionVoucher) SetTitle(v string) {
-	o.Title = v
+	o.Title.Set(&v)
 }
 
 // GetMerchantName returns the MerchantName field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *AuctionVoucher) GetMerchantName() string {
-	if o == nil {
+	if o == nil || o.MerchantName.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.MerchantName
+	return *o.MerchantName.Get()
 }
 
 // GetMerchantNameOk returns a tuple with the MerchantName field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *AuctionVoucher) GetMerchantNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MerchantName, true
+	return o.MerchantName.Get(), o.MerchantName.IsSet()
 }
 
 // SetMerchantName sets field value
 func (o *AuctionVoucher) SetMerchantName(v string) {
-	o.MerchantName = v
+	o.MerchantName.Set(&v)
 }
 
 // GetCategory returns the Category field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *AuctionVoucher) GetCategory() string {
-	if o == nil {
+	if o == nil || o.Category.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Category
+	return *o.Category.Get()
 }
 
 // GetCategoryOk returns a tuple with the Category field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *AuctionVoucher) GetCategoryOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Category, true
+	return o.Category.Get(), o.Category.IsSet()
 }
 
 // SetCategory sets field value
 func (o *AuctionVoucher) SetCategory(v string) {
-	o.Category = v
+	o.Category.Set(&v)
 }
 
 // GetFaceValueMinor returns the FaceValueMinor field value
@@ -184,9 +190,9 @@ func (o AuctionVoucher) MarshalJSON() ([]byte, error) {
 
 func (o AuctionVoucher) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["title"] = o.Title
-	toSerialize["merchantName"] = o.MerchantName
-	toSerialize["category"] = o.Category
+	toSerialize["title"] = o.Title.Get()
+	toSerialize["merchantName"] = o.MerchantName.Get()
+	toSerialize["category"] = o.Category.Get()
 	toSerialize["faceValueMinor"] = o.FaceValueMinor
 	toSerialize["expiresAt"] = o.ExpiresAt
 	return toSerialize, nil

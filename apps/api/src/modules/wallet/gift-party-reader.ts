@@ -12,6 +12,9 @@ export interface GiftParty {
   readonly dateOfBirth: string;
   readonly suspended: boolean;
   readonly displayName: string;
+  readonly displayLocale: "en-AU" | "id-ID";
+  /** The verified sign-in email, for receipts. */
+  readonly email: string;
 }
 
 /**
@@ -38,6 +41,8 @@ export class GiftPartyReader {
         dateOfBirth: userProfiles.dateOfBirth,
         suspendedAt: userProfiles.suspendedAt,
         displayName: userProfiles.displayName,
+        displayLocale: userProfiles.displayLocale,
+        email: credentials.identifier,
       })
       .from(credentials)
       .innerJoin(userProfiles, eq(userProfiles.userId, credentials.userId))
@@ -50,6 +55,8 @@ export class GiftPartyReader {
       dateOfBirth: row.dateOfBirth,
       suspended: row.suspendedAt !== null,
       displayName: row.displayName,
+      displayLocale: row.displayLocale === "id-ID" ? "id-ID" : "en-AU",
+      email: row.email,
     };
   }
 }

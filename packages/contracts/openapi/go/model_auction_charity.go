@@ -21,8 +21,8 @@ var _ MappedNullable = &AuctionCharity{}
 
 // AuctionCharity struct for AuctionCharity
 type AuctionCharity struct {
-	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	Name string `json:"name"`
+	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Name NullableString `json:"name"`
 	Cause CharityCause `json:"cause"`
 	LogoUrl NullableString `json:"logoUrl"`
 }
@@ -33,7 +33,7 @@ type _AuctionCharity AuctionCharity
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAuctionCharity(id string, name string, cause CharityCause, logoUrl NullableString) *AuctionCharity {
+func NewAuctionCharity(id NullableString, name NullableString, cause CharityCause, logoUrl NullableString) *AuctionCharity {
 	this := AuctionCharity{}
 	this.Id = id
 	this.Name = name
@@ -51,51 +51,55 @@ func NewAuctionCharityWithDefaults() *AuctionCharity {
 }
 
 // GetId returns the Id field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *AuctionCharity) GetId() string {
-	if o == nil {
+	if o == nil || o.Id.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Id
+	return *o.Id.Get()
 }
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *AuctionCharity) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Id, true
+	return o.Id.Get(), o.Id.IsSet()
 }
 
 // SetId sets field value
 func (o *AuctionCharity) SetId(v string) {
-	o.Id = v
+	o.Id.Set(&v)
 }
 
 // GetName returns the Name field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *AuctionCharity) GetName() string {
-	if o == nil {
+	if o == nil || o.Name.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Name
+	return *o.Name.Get()
 }
 
 // GetNameOk returns a tuple with the Name field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *AuctionCharity) GetNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Name, true
+	return o.Name.Get(), o.Name.IsSet()
 }
 
 // SetName sets field value
 func (o *AuctionCharity) SetName(v string) {
-	o.Name = v
+	o.Name.Set(&v)
 }
 
 // GetCause returns the Cause field value
@@ -158,8 +162,8 @@ func (o AuctionCharity) MarshalJSON() ([]byte, error) {
 
 func (o AuctionCharity) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id
-	toSerialize["name"] = o.Name
+	toSerialize["id"] = o.Id.Get()
+	toSerialize["name"] = o.Name.Get()
 	toSerialize["cause"] = o.Cause
 	toSerialize["logoUrl"] = o.LogoUrl.Get()
 	return toSerialize, nil

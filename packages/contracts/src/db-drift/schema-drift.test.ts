@@ -615,6 +615,14 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "platform.voucher_fake_voucher":
     "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
   "platform.voucher_fake_gift": "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
+  "platform.voucher_fake_escrow": "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
+  "voucher.escrow":
+    "13.22 (20260930090159_charity_auction.sql): an auction's escrowed voucher. voucher-internal/escrow.ts is built by the voucher service's route joined with the reminted voucher, not a row mirror.",
+  "auction.auction":
+    "13.22: the auction row. auction/auction.ts's Auction is a projection (charity joined, bidder identities dropped, the viewer's own standing added), never a row mirror.",
+  "auction.bid": "13.22: bids and their payment holds. Never published: no bidder identity leaves the server.",
+  "auction.settlement": "13.22: the one settlement per auction. Read server side only; Auction.outcome is its public face.",
+  "auction.receipt": "13.22: which parties were sent a receipt. Internal bookkeeping.",
   "voucher.gift":
     "13.20 (20260930044002_voucher_gift.sql): a gift's two vouchers and two people. voucher-internal/gifts.ts's voucherGiftSchema is built by the voucher service's route, joined with the reminted voucher, not a row mirror; wallet-gift.ts is the viewer's projection of that.",
   "platform.voucher_fake_authorization":

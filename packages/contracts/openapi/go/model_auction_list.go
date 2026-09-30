@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -21,7 +22,6 @@ var _ MappedNullable = &AuctionList{}
 // AuctionList Open auctions in the caller's region, or the caller's own bids or listings.
 type AuctionList struct {
 	Auctions []Auction `json:"auctions"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _AuctionList AuctionList
@@ -79,11 +79,6 @@ func (o AuctionList) MarshalJSON() ([]byte, error) {
 func (o AuctionList) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["auctions"] = o.Auctions
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -111,20 +106,15 @@ func (o *AuctionList) UnmarshalJSON(data []byte) (err error) {
 
 	varAuctionList := _AuctionList{}
 
-	err = json.Unmarshal(data, &varAuctionList)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varAuctionList)
 
 	if err != nil {
 		return err
 	}
 
 	*o = AuctionList(varAuctionList)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "auctions")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

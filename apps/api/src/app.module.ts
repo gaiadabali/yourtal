@@ -22,6 +22,8 @@ import { StudioModule } from "./modules/studio/studio.module";
 import { StaffModule } from "./modules/staff/staff.module";
 import { UserAccountAttributeLoader } from "./modules/staff/user-account-attribute-loader";
 import { WalletAttributeLoader } from "./modules/wallet/wallet-attribute-loader";
+import { AuctionModule } from "./modules/auction/auction.module";
+import { AuctionAttributeLoader } from "./modules/auction/auction-attribute-loader";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
 import { RESOURCE_ATTRIBUTE_LOADERS } from "./shared/authz/resource-attribute-loader";
@@ -68,6 +70,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     PartnersModule,
     StaffModule,
     ProofModule,
+    AuctionModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying
@@ -99,12 +102,14 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
         wallet: WalletAttributeLoader,
         userAccount: UserAccountAttributeLoader,
         charity: CharityAttributeLoader,
-      ): readonly ResourceAttributeLoader[] => [campaignView, wallet, userAccount, charity],
+        auction: AuctionAttributeLoader,
+      ): readonly ResourceAttributeLoader[] => [campaignView, wallet, userAccount, charity, auction],
       inject: [
         CampaignViewAttributeLoader,
         WalletAttributeLoader,
         UserAccountAttributeLoader,
         CharityAttributeLoader,
+        AuctionAttributeLoader,
       ],
     },
   ],

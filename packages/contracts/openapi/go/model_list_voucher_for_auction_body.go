@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -20,8 +21,7 @@ var _ MappedNullable = &ListVoucherForAuctionBody{}
 
 // ListVoucherForAuctionBody Which approved charity in the caller's region the auction is for.
 type ListVoucherForAuctionBody struct {
-	CharityId NullableString `json:"charityId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	AdditionalProperties map[string]interface{}
+	CharityId string `json:"charityId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 }
 
 type _ListVoucherForAuctionBody ListVoucherForAuctionBody
@@ -30,7 +30,7 @@ type _ListVoucherForAuctionBody ListVoucherForAuctionBody
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListVoucherForAuctionBody(charityId NullableString) *ListVoucherForAuctionBody {
+func NewListVoucherForAuctionBody(charityId string) *ListVoucherForAuctionBody {
 	this := ListVoucherForAuctionBody{}
 	this.CharityId = charityId
 	return &this
@@ -45,29 +45,27 @@ func NewListVoucherForAuctionBodyWithDefaults() *ListVoucherForAuctionBody {
 }
 
 // GetCharityId returns the CharityId field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *ListVoucherForAuctionBody) GetCharityId() string {
-	if o == nil || o.CharityId.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.CharityId.Get()
+	return o.CharityId
 }
 
 // GetCharityIdOk returns a tuple with the CharityId field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ListVoucherForAuctionBody) GetCharityIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.CharityId.Get(), o.CharityId.IsSet()
+	return &o.CharityId, true
 }
 
 // SetCharityId sets field value
 func (o *ListVoucherForAuctionBody) SetCharityId(v string) {
-	o.CharityId.Set(&v)
+	o.CharityId = v
 }
 
 func (o ListVoucherForAuctionBody) MarshalJSON() ([]byte, error) {
@@ -80,12 +78,7 @@ func (o ListVoucherForAuctionBody) MarshalJSON() ([]byte, error) {
 
 func (o ListVoucherForAuctionBody) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["charityId"] = o.CharityId.Get()
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
+	toSerialize["charityId"] = o.CharityId
 	return toSerialize, nil
 }
 
@@ -113,20 +106,15 @@ func (o *ListVoucherForAuctionBody) UnmarshalJSON(data []byte) (err error) {
 
 	varListVoucherForAuctionBody := _ListVoucherForAuctionBody{}
 
-	err = json.Unmarshal(data, &varListVoucherForAuctionBody)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varListVoucherForAuctionBody)
 
 	if err != nil {
 		return err
 	}
 
 	*o = ListVoucherForAuctionBody(varListVoucherForAuctionBody)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "charityId")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

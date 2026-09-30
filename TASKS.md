@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 23/24 | `██████████`  96% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 1/23 | 17/70 | `██░░░░░░░░`  24% |
-| **All** | | | **83/106** | **458/512** | `█████████░`  89% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 1/23 | 22/70 | `███░░░░░░░`  31% |
+| **All** | | | **83/106** | **463/512** | `█████████░`  90% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1495,12 +1495,12 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [x] **13.18 Header and sidebar** (founder, 2026-09-30) · B · needs: — — ✅ 2026-09-30 310e2770
   - [x] 13.18.a The logo moves to the top of the sidebar at 1280 px, so the header holds only search, notifications, the points balance and the profile. At 390 px the logo stays in the header, because there is no sidebar. — 310e2770: logo tops the side rail from lg; header holds search, bell, points and avatar; 390 keeps the logo, search is an icon link. Screenshots 390/1280 light/dark, axe clean.
   - [x] 13.18.b A profile avatar at the top right opens a menu: name and email, Me, Wallet, theme (13.16), language, Studio or Staff console when the account has that role, and Log out. — 310e2770: `AccountMenu`; `GET /api/me` now returns `email`; Studio/Staff links by membership/staff role. Menu screenshots 390/1280 light/dark, axe clean.
-- [ ] **13.19 Wallet redesign** (founder, 2026-09-30: "more important things and a better flow") · B · needs: 13.12.b
-  - [ ] 13.19.a Top card: available points, pending points (with when they release), and the next reward within reach ("40 more points for a Snap App coffee"), linking to it in the Store.
-  - [ ] 13.19.b Active vouchers first, as cards that open the QR in one tap, with expiry and where to use them. Used and expired vouchers sit in their own tab.
-  - [ ] 13.19.c Vouchers you can afford now, from the Store, as a row.
-  - [ ] 13.19.d Points history grouped by day, with filters (earned, redeemed, returned) and each line linking to its video or voucher. Disputes stay reachable from a voucher's own page.
-  - [ ] 13.19.e An empty wallet explains the loop in three steps (watch, earn, redeem), with one button to Home. It never says "money" or "income".
+- [ ] **13.19 Wallet redesign** (founder, 2026-09-30: "more important things and a better flow") · B · needs: 13.12.b — 🔄 slot 4 (merged 2964b4f2; closes with 13.17 on staging)
+  - [x] 13.19.a Top card: available points, pending points (with when they release), and the next reward within reach ("40 more points for a Snap App coffee"), linking to it in the Store. — 2964b4f2: `WalletHero`: available points, each pending part with its release date, expiring points, and the cheapest reward out of reach ("367 points more for …") with a progress bar, linking to it in the Store (server `minPoints`/`sort=points_asc`).
+  - [x] 13.19.b Active vouchers first, as cards that open the QR in one tap, with expiry and where to use them. Used and expired vouchers sit in their own tab. — 2964b4f2: Active vouchers first as cards whose whole face opens the QR page, with valid-until and the location; "Used & expired" is its own tab (`?vouchers=past`).
+  - [x] 13.19.c Vouchers you can afford now, from the Store, as a row. — 2964b4f2: "You can get these now": Store cards with `maxPoints` = available, `points_desc`, and a See all link into the filtered store.
+  - [x] 13.19.d Points history grouped by day, with filters (earned, redeemed, returned) and each line linking to its video or voucher. Disputes stay reachable from a voucher's own page. — 2964b4f2: history grouped by day on the region clock (Today, Yesterday, dates), filters All/Earned/Redeemed/Returned in the URL, earn lines link to the video and redemptions to the voucher, older pages by cursor. Disputes stay on the voucher page.
+  - [x] 13.19.e An empty wallet explains the loop in three steps (watch, earn, redeem), with one button to Home. It never says "money" or "income". — 2964b4f2: an empty wallet shows watch → earn → redeem as three steps and one button to Home; copy says points and rewards only. Screenshots 390/1280 light/dark, AU and ID, axe clean.
 - [ ] **13.17 Check the UI pass** · B + C · needs: 13.13–13.16, 13.18, 13.19
   - [ ] 13.17.a **Check:** on staging, in AU and ID: Home shows only long videos, filters by category and tag, and the filters survive a reload; Shorts plays only Shorts; the store filters, sorts and searches on the server; the theme setting persists across sign-out and sign-in. Screenshots of Home, Shorts, Store, Search and Wallet, and the header menu, at 390 px and 1280 px, light and dark, axe clean.
 - [ ] **13.20 Gift a voucher** (F86) · A (voucher, wallet API) + B (wallet UI) + C (Studio flag) · needs: —

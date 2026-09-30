@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { promisify } from "node:util";
 import path from "node:path";
 
@@ -254,4 +254,43 @@ export async function renderTeaser(input: TeaserInput): Promise<void> {
     String(TEASER_MAX_BYTES),
     input.outputPath,
   ]);
+}
+
+/**
+ * 13.9: the first embedded subtitle stream (mov_text, SubRip, WebVTT...) as
+ * a WebVTT file. `false` when the upload carries none, or when ffmpeg's
+ * output has no cue in it; a file with nothing to show is not a caption.
+ */
+export async function extractCaptions(inputPath: string, outputPath: string): Promise<boolean> {
+  const { stdout } = await execFileAsync("ffprobe", [
+    "-v",
+    "error",
+    "-select_streams",
+    "s",
+    "-show_entries",
+    "stream=index",
+    "-of",
+    "csv=p=0",
+    inputPath,
+  ]);
+  if (stdout.trim() === "") return false;
+  await execFileAsync("ffmpeg", [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    "-i",
+    inputPath,
+    "-map",
+    "0:s:0",
+    "-c:s",
+    "webvtt",
+    outputPath,
+  ]);
+  return isWebVtt(readFileSync(outputPath, "utf8"));
+}
+
+/** A WebVTT file with at least one cue timing line. */
+export function isWebVtt(text: string): boolean {
+  return text.startsWith("WEBVTT") && /\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}/.test(text);
 }

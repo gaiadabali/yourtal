@@ -4,6 +4,7 @@ import path from "node:path";
 import { MEDIA_TRANSCODE_QUEUE, mediaTranscodeJobSchema } from "@yourtal/contracts/studio/media";
 import type { MediaReadyCallbackRequest } from "@yourtal/contracts/studio/media";
 import {
+  captionsObjectKey,
   createMediaClient,
   getRawObject,
   hlsAssetObjectKey,
@@ -15,6 +16,7 @@ import { publicMediaUrl } from "@yourtal/media/hls-origin";
 import { defineJob } from "../job";
 import { loadTranscodeConfig } from "./transcode-config";
 import {
+  extractCaptions,
   probeInput,
   renderHlsLadder,
   renderPoster,
@@ -24,7 +26,8 @@ import { callReady } from "./transcode-ready-client";
 
 /**
  * 7.2.b: HLS at 360p/540p/720p (6 s segments), a poster, a teaser, and an
- * optional caption track. Runs ffmpeg against the raw upload the object store holds
+ * optional caption track: the upload's first embedded subtitle stream, as
+ * WebVTT (13.9). Runs ffmpeg against the raw upload the object store holds
  * (`getRawObject`), uploads every rendition, and reports the result to
  * C's internal `/ready` endpoint — this job never touches `campaign.*`
  * tables itself (TASKS.md is explicit that the studio module does).
@@ -85,6 +88,9 @@ async function transcode(
     aspect: probe.aspect,
   });
 
+  const captionsPath = path.join(workDir, "captions.vtt");
+  const hasCaptions = await extractCaptions(inputPath, captionsPath);
+
   // Uploads: HLS ladder (master + every rendition file), then poster/teaser.
   await uploadHlsTree(client, data.assetId, hlsDir);
   await putMediaOutput(client, {
@@ -97,6 +103,13 @@ async function transcode(
     key: teaserObjectKey(data.assetId),
     body: readFileSync(teaserPath),
   });
+  if (hasCaptions) {
+    await putMediaOutput(client, {
+      kind: "captions",
+      key: captionsObjectKey(data.assetId),
+      body: readFileSync(captionsPath),
+    });
+  }
   client.destroy();
 
   return {
@@ -110,10 +123,8 @@ async function transcode(
     posterUrl: publicMediaUrl(posterObjectKey(data.assetId)),
     teaserUrl: publicMediaUrl(teaserObjectKey(data.assetId)),
     hlsUrl: publicMediaUrl(hlsAssetObjectKey(data.assetId, "index.m3u8")),
-    // No caption track for a plain uploaded video (7.2.b: "optional"); the
-    // demo media kit (7.2.d) burns in facts and provides its own VTT
-    // through a different path.
-    captionsUrl: null,
+    // Null when the upload carries no subtitle stream (7.2.b: "optional").
+    captionsUrl: hasCaptions ? publicMediaUrl(captionsObjectKey(data.assetId)) : null,
     renditionBytes,
   };
 }

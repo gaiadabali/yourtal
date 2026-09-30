@@ -7,6 +7,7 @@ import type { DemoMediaResult } from "@yourtal/media/demo-media";
 import { runDemoCampaignFunding } from "./demo-campaign-funding";
 import { alignDemoCampaignTerms } from "./demo-campaign-terms";
 import { repairDemoListingCopy, repairDemoListingImages } from "./demo-listing-images";
+import { retireLeakedFixtures } from "./retire-leaked-fixtures";
 import { SNAP_APP_ASSET_ID, repairSnapAppMedia } from "./snap-app-media";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
@@ -287,6 +288,7 @@ async function main(): Promise<void> {
     // After the vouchers' listings exist: give any placeholder image a real poster.
     await repairDemoListingImages(pool, console.log);
     await repairDemoListingCopy(pool, console.log);
+    await retireLeakedFixtures(pool, console.log);
     const demoMediaVouchersSeeded = demoMediaVoucherResults.filter(
       (r: DemoMediaVoucherResult) => r.status === "seeded",
     ).length;

@@ -587,7 +587,8 @@ async function ensureBusiness(
       svgMonogram(entry.brand),
       entry.region,
       currency,
-      `demo-${entry.slug}`,
+      // The brand part of the slug ("au-bondi-board-co" -> "bondi-board-co"): viewers see it as @handle.
+      entry.slug.replace(/^(au|id)-/, ""),
       taxIdKind,
       taxIdValue,
       entry.region === "AU" ? "NSW" : null,

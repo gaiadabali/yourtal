@@ -88,7 +88,20 @@ export async function repairDemoListingCopy(
       log(`[seed:demo-listing-copy] voucher titles left as they are: ${String(error)}`);
       return { rowCount: 0 };
     });
+  // Demo businesses were seeded as @demo-au-bondi-board-co, and viewers see the
+  // handle on channel pages and in search. Keep the brand part, unless another
+  // business already holds it (handles are unique).
+  const handles = await pool.query(
+    `UPDATE business.business_accounts b
+        SET handle = regexp_replace(b.handle, '^demo-(au|id)-', '')
+      WHERE b.handle ~ '^demo-(au|id)-'
+        AND NOT EXISTS (
+          SELECT 1 FROM business.business_accounts o
+           WHERE o.handle = regexp_replace(b.handle, '^demo-(au|id)-', '')
+        )`,
+  );
   const repaired =
+    (handles.rowCount ?? 0) +
     (titles.rowCount ?? 0) +
     (descriptions.rowCount ?? 0) +
     (outlets.rowCount ?? 0) +

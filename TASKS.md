@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 9/23 | 48/75 | `██████░░░░`  64% |
-| **All** | | | **92/106** | **490/517** | `██████████`  95% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 9/23 | 48/76 | `██████░░░░`  63% |
+| **All** | | | **92/106** | **490/518** | `██████████`  95% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1448,6 +1448,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **13.4 The quality bar** · B + C · needs: 13.1, 13.11–13.23
   - [ ] 13.4.a Performance on a mid-tier Android profile: LCP ≤ 2.0 s, initial JS ≤ 200 KB, TBT ≤ 200 ms, and **time to first frame on the feed ≤ 1.0 s** (docs/08).
   - [ ] 13.4.b Axe clean on every route, no horizontal scroll at 320 px, light and dark both checked, and captions present on every demo campaign.
+  - [ ] 13.4.d (requested by A, 2026-09-30) The Performance budget workflow has been red since 2026-09-27. 3a5aca63 fixed the two clear causes: hls.js loaded statically by the in-feed player (−173 KB gz on `/shorts`) and zod's locales bundled with `import { z }` (−57 KB on every contract-heavy route). Seven routes are still over the 200 KB gate at 211–228 KB (`/home`, `/store`, `/store/brand/[merchantId]`, `/watch/[campaignId]`, `/wallet/voucher/[voucherId]`, `/auctions/[auctionId]`, `/[locale]/c/[campaignId]/watch`). The rest is zod core (~24 KB), which client components pull in when they import contract modules that define schemas (`feed/browse-query.ts`, `store/store-shop.tsx`'s `listingCategorySchema.options`, the `*_REFUSALS` constants and others). A design call for B and C: move the constants the UI needs into zod-free contract files, or parse on the server.
   - [ ] 13.4.c **Check:** the Lighthouse CI mobile run meets the budgets on `/home` and `/au`.
 - [x] **13.5 Security and red lines in code** · A (with requests to B and C) · needs: 13.1 — ✅ 2026-09-30 834fd2a3
   - [x] 13.5.a Rate limits on public endpoints, a session and cookie review, CSP, gitleaks in CI (the repo is public), and a dependency audit. Every `@PublicRoute` without its own limit gets 600/min per IP per handler (health and nginx's HLS auth exempt, with reasons). `security.yml` runs gitleaks 8.30.1 (pinned by checksum) over the full history, plus `pnpm audit`, on push, PR and daily; history is clean after allowlisting `atlas.sum` and 12 reviewed false positives. Cookies are HttpOnly, Secure in production and SameSite=Lax; nginx sends CSP, HSTS, nosniff and a Referrer-Policy (`script-src` still needs `'unsafe-inline'` until nonces).

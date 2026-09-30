@@ -13881,6 +13881,46 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 500
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "all_ages",
+                      "teen",
+                      "adult",
+                      "parents"
+                    ]
+                  },
+                  "contentCategory": {
+                    "type": "string",
+                    "enum": [
+                      "food-and-drink",
+                      "fashion",
+                      "personal-care",
+                      "electronics",
+                      "telco",
+                      "transport",
+                      "fitness",
+                      "education",
+                      "travel",
+                      "home",
+                      "entertainment",
+                      "games",
+                      "books",
+                      "family",
+                      "toys",
+                      "digital-goods",
+                      "services",
+                      "tobacco",
+                      "vaping",
+                      "gambling",
+                      "alcohol",
+                      "dating",
+                      "financial-products",
+                      "weight-loss",
+                      "cosmetic-procedures",
+                      "energy-drinks"
+                    ]
                   }
                 },
                 "required": [

@@ -266,7 +266,10 @@ describe("12.4.c: staff moderation approve override re-checks the same policy", 
       method: "POST",
       url: `/api/staff/moderation/listings/${listingId}/approve`,
       headers: { cookie: staff.cookie, "idempotency-key": randomUUID() },
-      payload: { reason: "trying to wave a prohibited category through", contentCategory: "vaping" },
+      payload: {
+        reason: "trying to wave a prohibited category through",
+        contentCategory: "vaping",
+      },
     });
     expect(approved.statusCode).toBe(400);
     expect(approved.json<{ code: string }>().code).toBe("prohibited_category");

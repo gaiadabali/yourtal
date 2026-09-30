@@ -41,7 +41,9 @@ export function QuestionEditor({ draft, onChange, audience }: QuestionEditorProp
   const t = useTranslations("studio");
   const piiFinding = detectPiiRequest(draft.prompt);
   const teenFinding =
-    audience === "teen" || audience === "all_ages" ? detectTeenPersonalQuestion(draft.prompt) : null;
+    audience === "teen" || audience === "all_ages"
+      ? detectTeenPersonalQuestion(draft.prompt)
+      : null;
   const finding = piiFinding ?? teenFinding;
 
   return (

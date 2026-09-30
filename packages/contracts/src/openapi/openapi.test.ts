@@ -68,6 +68,12 @@ const LEDGER_AND_VOUCHER_INTERNAL_REASON =
   "ledger-internal/voucher-internal (1.2.a-c): an internal service-to-service operation type, not a public/business-facing HTTP contract -- see this file's comment above NOT_PUBLISHED.";
 
 const NOT_PUBLISHED: Readonly<Record<string, string>> = {
+  voucherEscrowHoldRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  voucherEscrowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  voucherEscrowReleaseRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  auctionStateSchema: "13.22: a leaf enum of Auction, inlined there.",
+  auctionOutcomeSchema: "13.22: a leaf enum of Auction, inlined there.",
+  auctionViewerSchema: "13.22: part of Auction, inlined there.",
   merchantVoucherStatusRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   merchantVoucherStatusSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   voucherStatusReportRowSchema:

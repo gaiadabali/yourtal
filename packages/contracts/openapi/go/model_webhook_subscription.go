@@ -22,7 +22,7 @@ var _ MappedNullable = &WebhookSubscription{}
 // WebhookSubscription A business's registered webhook delivery URL (8.3.c).
 type WebhookSubscription struct {
 	BusinessId NullableString `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	Url string `json:"url"`
+	Url NullableString `json:"url"`
 	SecretIssuedAt time.Time `json:"secretIssuedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	AdditionalProperties map[string]interface{}
 }
@@ -33,7 +33,7 @@ type _WebhookSubscription WebhookSubscription
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewWebhookSubscription(businessId NullableString, url string, secretIssuedAt time.Time) *WebhookSubscription {
+func NewWebhookSubscription(businessId NullableString, url NullableString, secretIssuedAt time.Time) *WebhookSubscription {
 	this := WebhookSubscription{}
 	this.BusinessId = businessId
 	this.Url = url
@@ -76,27 +76,29 @@ func (o *WebhookSubscription) SetBusinessId(v string) {
 }
 
 // GetUrl returns the Url field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *WebhookSubscription) GetUrl() string {
-	if o == nil {
+	if o == nil || o.Url.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Url
+	return *o.Url.Get()
 }
 
 // GetUrlOk returns a tuple with the Url field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *WebhookSubscription) GetUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Url, true
+	return o.Url.Get(), o.Url.IsSet()
 }
 
 // SetUrl sets field value
 func (o *WebhookSubscription) SetUrl(v string) {
-	o.Url = v
+	o.Url.Set(&v)
 }
 
 // GetSecretIssuedAt returns the SecretIssuedAt field value
@@ -134,7 +136,7 @@ func (o WebhookSubscription) MarshalJSON() ([]byte, error) {
 func (o WebhookSubscription) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["businessId"] = o.BusinessId.Get()
-	toSerialize["url"] = o.Url
+	toSerialize["url"] = o.Url.Get()
 	toSerialize["secretIssuedAt"] = o.SecretIssuedAt
 
 	for key, value := range o.AdditionalProperties {

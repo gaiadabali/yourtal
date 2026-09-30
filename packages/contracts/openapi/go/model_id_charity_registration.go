@@ -16,38 +16,40 @@ import (
 	"fmt"
 )
 
-// checks if the CampaignVideoSource type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &CampaignVideoSource{}
+// checks if the IdCharityRegistration type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &IdCharityRegistration{}
 
-// CampaignVideoSource Where the player resolves a campaign's video from, without guessing (YT-0503).
-type CampaignVideoSource struct {
+// IdCharityRegistration An ID charity: a yayasan's deed and its public fundraising permit.
+type IdCharityRegistration struct {
 	Kind string `json:"kind"`
-	ManifestUrl NullableString `json:"manifestUrl"`
+	DeedNumber string `json:"deedNumber"`
+	FundraisingPermitNumber string `json:"fundraisingPermitNumber"`
 }
 
-type _CampaignVideoSource CampaignVideoSource
+type _IdCharityRegistration IdCharityRegistration
 
-// NewCampaignVideoSource instantiates a new CampaignVideoSource object
+// NewIdCharityRegistration instantiates a new IdCharityRegistration object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignVideoSource(kind string, manifestUrl NullableString) *CampaignVideoSource {
-	this := CampaignVideoSource{}
+func NewIdCharityRegistration(kind string, deedNumber string, fundraisingPermitNumber string) *IdCharityRegistration {
+	this := IdCharityRegistration{}
 	this.Kind = kind
-	this.ManifestUrl = manifestUrl
+	this.DeedNumber = deedNumber
+	this.FundraisingPermitNumber = fundraisingPermitNumber
 	return &this
 }
 
-// NewCampaignVideoSourceWithDefaults instantiates a new CampaignVideoSource object
+// NewIdCharityRegistrationWithDefaults instantiates a new IdCharityRegistration object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewCampaignVideoSourceWithDefaults() *CampaignVideoSource {
-	this := CampaignVideoSource{}
+func NewIdCharityRegistrationWithDefaults() *IdCharityRegistration {
+	this := IdCharityRegistration{}
 	return &this
 }
 
 // GetKind returns the Kind field value
-func (o *CampaignVideoSource) GetKind() string {
+func (o *IdCharityRegistration) GetKind() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -58,7 +60,7 @@ func (o *CampaignVideoSource) GetKind() string {
 
 // GetKindOk returns a tuple with the Kind field value
 // and a boolean to check if the value has been set.
-func (o *CampaignVideoSource) GetKindOk() (*string, bool) {
+func (o *IdCharityRegistration) GetKindOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -66,37 +68,59 @@ func (o *CampaignVideoSource) GetKindOk() (*string, bool) {
 }
 
 // SetKind sets field value
-func (o *CampaignVideoSource) SetKind(v string) {
+func (o *IdCharityRegistration) SetKind(v string) {
 	o.Kind = v
 }
 
-// GetManifestUrl returns the ManifestUrl field value
-// If the value is explicit nil, the zero value for string will be returned
-func (o *CampaignVideoSource) GetManifestUrl() string {
-	if o == nil || o.ManifestUrl.Get() == nil {
+// GetDeedNumber returns the DeedNumber field value
+func (o *IdCharityRegistration) GetDeedNumber() string {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.ManifestUrl.Get()
+	return o.DeedNumber
 }
 
-// GetManifestUrlOk returns a tuple with the ManifestUrl field value
+// GetDeedNumberOk returns a tuple with the DeedNumber field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *CampaignVideoSource) GetManifestUrlOk() (*string, bool) {
+func (o *IdCharityRegistration) GetDeedNumberOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.ManifestUrl.Get(), o.ManifestUrl.IsSet()
+	return &o.DeedNumber, true
 }
 
-// SetManifestUrl sets field value
-func (o *CampaignVideoSource) SetManifestUrl(v string) {
-	o.ManifestUrl.Set(&v)
+// SetDeedNumber sets field value
+func (o *IdCharityRegistration) SetDeedNumber(v string) {
+	o.DeedNumber = v
 }
 
-func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
+// GetFundraisingPermitNumber returns the FundraisingPermitNumber field value
+func (o *IdCharityRegistration) GetFundraisingPermitNumber() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FundraisingPermitNumber
+}
+
+// GetFundraisingPermitNumberOk returns a tuple with the FundraisingPermitNumber field value
+// and a boolean to check if the value has been set.
+func (o *IdCharityRegistration) GetFundraisingPermitNumberOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FundraisingPermitNumber, true
+}
+
+// SetFundraisingPermitNumber sets field value
+func (o *IdCharityRegistration) SetFundraisingPermitNumber(v string) {
+	o.FundraisingPermitNumber = v
+}
+
+func (o IdCharityRegistration) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -104,20 +128,22 @@ func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o CampaignVideoSource) ToMap() (map[string]interface{}, error) {
+func (o IdCharityRegistration) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["kind"] = o.Kind
-	toSerialize["manifestUrl"] = o.ManifestUrl.Get()
+	toSerialize["deedNumber"] = o.DeedNumber
+	toSerialize["fundraisingPermitNumber"] = o.FundraisingPermitNumber
 	return toSerialize, nil
 }
 
-func (o *CampaignVideoSource) UnmarshalJSON(data []byte) (err error) {
+func (o *IdCharityRegistration) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"kind",
-		"manifestUrl",
+		"deedNumber",
+		"fundraisingPermitNumber",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -134,53 +160,53 @@ func (o *CampaignVideoSource) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varCampaignVideoSource := _CampaignVideoSource{}
+	varIdCharityRegistration := _IdCharityRegistration{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varCampaignVideoSource)
+	err = decoder.Decode(&varIdCharityRegistration)
 
 	if err != nil {
 		return err
 	}
 
-	*o = CampaignVideoSource(varCampaignVideoSource)
+	*o = IdCharityRegistration(varIdCharityRegistration)
 
 	return err
 }
 
-type NullableCampaignVideoSource struct {
-	value *CampaignVideoSource
+type NullableIdCharityRegistration struct {
+	value *IdCharityRegistration
 	isSet bool
 }
 
-func (v NullableCampaignVideoSource) Get() *CampaignVideoSource {
+func (v NullableIdCharityRegistration) Get() *IdCharityRegistration {
 	return v.value
 }
 
-func (v *NullableCampaignVideoSource) Set(val *CampaignVideoSource) {
+func (v *NullableIdCharityRegistration) Set(val *IdCharityRegistration) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableCampaignVideoSource) IsSet() bool {
+func (v NullableIdCharityRegistration) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableCampaignVideoSource) Unset() {
+func (v *NullableIdCharityRegistration) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableCampaignVideoSource(val *CampaignVideoSource) *NullableCampaignVideoSource {
-	return &NullableCampaignVideoSource{value: val, isSet: true}
+func NewNullableIdCharityRegistration(val *IdCharityRegistration) *NullableIdCharityRegistration {
+	return &NullableIdCharityRegistration{value: val, isSet: true}
 }
 
-func (v NullableCampaignVideoSource) MarshalJSON() ([]byte, error) {
+func (v NullableIdCharityRegistration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableCampaignVideoSource) UnmarshalJSON(src []byte) error {
+func (v *NullableIdCharityRegistration) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

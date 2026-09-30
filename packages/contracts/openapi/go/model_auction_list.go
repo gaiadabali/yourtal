@@ -12,91 +12,63 @@ package contracts
 
 import (
 	"encoding/json"
-	"bytes"
 	"fmt"
 )
 
-// checks if the CampaignVideoSource type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &CampaignVideoSource{}
+// checks if the AuctionList type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &AuctionList{}
 
-// CampaignVideoSource Where the player resolves a campaign's video from, without guessing (YT-0503).
-type CampaignVideoSource struct {
-	Kind string `json:"kind"`
-	ManifestUrl NullableString `json:"manifestUrl"`
+// AuctionList Open auctions in the caller's region, or the caller's own bids or listings.
+type AuctionList struct {
+	Auctions []Auction `json:"auctions"`
+	AdditionalProperties map[string]interface{}
 }
 
-type _CampaignVideoSource CampaignVideoSource
+type _AuctionList AuctionList
 
-// NewCampaignVideoSource instantiates a new CampaignVideoSource object
+// NewAuctionList instantiates a new AuctionList object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignVideoSource(kind string, manifestUrl NullableString) *CampaignVideoSource {
-	this := CampaignVideoSource{}
-	this.Kind = kind
-	this.ManifestUrl = manifestUrl
+func NewAuctionList(auctions []Auction) *AuctionList {
+	this := AuctionList{}
+	this.Auctions = auctions
 	return &this
 }
 
-// NewCampaignVideoSourceWithDefaults instantiates a new CampaignVideoSource object
+// NewAuctionListWithDefaults instantiates a new AuctionList object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewCampaignVideoSourceWithDefaults() *CampaignVideoSource {
-	this := CampaignVideoSource{}
+func NewAuctionListWithDefaults() *AuctionList {
+	this := AuctionList{}
 	return &this
 }
 
-// GetKind returns the Kind field value
-func (o *CampaignVideoSource) GetKind() string {
+// GetAuctions returns the Auctions field value
+func (o *AuctionList) GetAuctions() []Auction {
 	if o == nil {
-		var ret string
+		var ret []Auction
 		return ret
 	}
 
-	return o.Kind
+	return o.Auctions
 }
 
-// GetKindOk returns a tuple with the Kind field value
+// GetAuctionsOk returns a tuple with the Auctions field value
 // and a boolean to check if the value has been set.
-func (o *CampaignVideoSource) GetKindOk() (*string, bool) {
+func (o *AuctionList) GetAuctionsOk() ([]Auction, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Kind, true
+	return o.Auctions, true
 }
 
-// SetKind sets field value
-func (o *CampaignVideoSource) SetKind(v string) {
-	o.Kind = v
+// SetAuctions sets field value
+func (o *AuctionList) SetAuctions(v []Auction) {
+	o.Auctions = v
 }
 
-// GetManifestUrl returns the ManifestUrl field value
-// If the value is explicit nil, the zero value for string will be returned
-func (o *CampaignVideoSource) GetManifestUrl() string {
-	if o == nil || o.ManifestUrl.Get() == nil {
-		var ret string
-		return ret
-	}
-
-	return *o.ManifestUrl.Get()
-}
-
-// GetManifestUrlOk returns a tuple with the ManifestUrl field value
-// and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *CampaignVideoSource) GetManifestUrlOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.ManifestUrl.Get(), o.ManifestUrl.IsSet()
-}
-
-// SetManifestUrl sets field value
-func (o *CampaignVideoSource) SetManifestUrl(v string) {
-	o.ManifestUrl.Set(&v)
-}
-
-func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
+func (o AuctionList) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -104,20 +76,23 @@ func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o CampaignVideoSource) ToMap() (map[string]interface{}, error) {
+func (o AuctionList) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["kind"] = o.Kind
-	toSerialize["manifestUrl"] = o.ManifestUrl.Get()
+	toSerialize["auctions"] = o.Auctions
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
-func (o *CampaignVideoSource) UnmarshalJSON(data []byte) (err error) {
+func (o *AuctionList) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"kind",
-		"manifestUrl",
+		"auctions",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -134,53 +109,58 @@ func (o *CampaignVideoSource) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varCampaignVideoSource := _CampaignVideoSource{}
+	varAuctionList := _AuctionList{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varCampaignVideoSource)
+	err = json.Unmarshal(data, &varAuctionList)
 
 	if err != nil {
 		return err
 	}
 
-	*o = CampaignVideoSource(varCampaignVideoSource)
+	*o = AuctionList(varAuctionList)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "auctions")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }
 
-type NullableCampaignVideoSource struct {
-	value *CampaignVideoSource
+type NullableAuctionList struct {
+	value *AuctionList
 	isSet bool
 }
 
-func (v NullableCampaignVideoSource) Get() *CampaignVideoSource {
+func (v NullableAuctionList) Get() *AuctionList {
 	return v.value
 }
 
-func (v *NullableCampaignVideoSource) Set(val *CampaignVideoSource) {
+func (v *NullableAuctionList) Set(val *AuctionList) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableCampaignVideoSource) IsSet() bool {
+func (v NullableAuctionList) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableCampaignVideoSource) Unset() {
+func (v *NullableAuctionList) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableCampaignVideoSource(val *CampaignVideoSource) *NullableCampaignVideoSource {
-	return &NullableCampaignVideoSource{value: val, isSet: true}
+func NewNullableAuctionList(val *AuctionList) *NullableAuctionList {
+	return &NullableAuctionList{value: val, isSet: true}
 }
 
-func (v NullableCampaignVideoSource) MarshalJSON() ([]byte, error) {
+func (v NullableAuctionList) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableCampaignVideoSource) UnmarshalJSON(src []byte) error {
+func (v *NullableAuctionList) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

@@ -19847,6 +19847,230 @@
         ],
         "additionalProperties": false
       },
+      "Auction": {
+        "description": "A charity auction: amount, bid count and times, never who bid. `viewer` is the caller's own standing only.",
+        "type": "object",
+        "properties": {
+          "auctionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "charity": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "cause": {
+                "$ref": "#/components/schemas/CharityCause"
+              },
+              "logoUrl": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "cause",
+              "logoUrl"
+            ],
+            "additionalProperties": false
+          },
+          "voucher": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "merchantName": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "faceValueMinor": {
+                "$ref": "#/components/schemas/MinorUnits"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "title",
+              "merchantName",
+              "category",
+              "faceValueMinor",
+              "expiresAt"
+            ],
+            "additionalProperties": false
+          },
+          "reserveMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "currentAmountMinor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MinorUnits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minimumNextBidMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "bidCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "ended",
+              "cancelled"
+            ]
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sold",
+                  "unsold",
+                  "cancelled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "viewer": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "seller",
+                  "bidder",
+                  "none"
+                ]
+              },
+              "bidStatus": {
+                "type": "string",
+                "enum": [
+                  "leading",
+                  "outbid",
+                  "won",
+                  "lost",
+                  "none"
+                ]
+              },
+              "yourHighestBidMinor": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MinorUnits"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "role",
+              "bidStatus",
+              "yourHighestBidMinor"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "auctionId",
+          "region",
+          "currency",
+          "charity",
+          "voucher",
+          "reserveMinor",
+          "currentAmountMinor",
+          "minimumNextBidMinor",
+          "bidCount",
+          "startsAt",
+          "endsAt",
+          "state",
+          "outcome",
+          "viewer"
+        ],
+        "additionalProperties": false
+      },
+      "AuctionList": {
+        "description": "Open auctions in the caller's region, or the caller's own bids or listings.",
+        "type": "object",
+        "properties": {
+          "auctions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Auction"
+            }
+          }
+        },
+        "required": [
+          "auctions"
+        ],
+        "additionalProperties": false
+      },
+      "AuctionRefusal": {
+        "description": "Why a listing or a bid was refused (409).",
+        "type": "string",
+        "enum": [
+          "charity_unavailable",
+          "voucher_not_unused",
+          "voucher_not_transferable",
+          "voucher_already_transferred",
+          "seller_ineligible",
+          "bidder_ineligible",
+          "own_auction",
+          "auction_closed",
+          "bid_too_low",
+          "payment_declined"
+        ]
+      },
       "Audience": {
         "description": "Who a campaign or listing may reach (TASKS.md 1.1.c): all_ages reaches everyone; teen and adult are age-gated; parents reaches 18+ and is boosted, never gated further, for accounts that declared the parent-of-young-children interest with ad-targeting consent.",
         "type": "string",
@@ -22796,6 +23020,21 @@
           "new"
         ]
       },
+      "ListVoucherForAuctionBody": {
+        "description": "Which approved charity in the caller's region the auction is for.",
+        "type": "object",
+        "properties": {
+          "charityId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "charityId"
+        ],
+        "additionalProperties": false
+      },
       "MediaAsset": {
         "description": "One uploaded video and its transcoded renditions, for Studio to poll while the worker processes it. status \"ready\" implies posterUrl/teaserUrl/hlsUrl are all set and status \"failed\" implies failureReason is set -- both enforced by the DB CHECKs in studio.media_assets, not by a zod .refine() here, so crossFieldRules stays empty.",
         "type": "object",
@@ -23112,6 +23351,19 @@
           "needs_review",
           "rejected"
         ]
+      },
+      "PlaceBidBody": {
+        "description": "A cash bid in the auction's currency, integer minor units.",
+        "type": "object",
+        "properties": {
+          "amountMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          }
+        },
+        "required": [
+          "amountMinor"
+        ],
+        "additionalProperties": false
       },
       "Points": {
         "description": "Platform points. Always a whole number; there is no fractional point.",

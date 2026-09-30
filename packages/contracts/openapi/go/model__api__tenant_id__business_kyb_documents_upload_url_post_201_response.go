@@ -22,7 +22,7 @@ var _ MappedNullable = &ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response{
 // ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response struct for ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response
 type ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response struct {
 	StorageRef NullableString `json:"storageRef"`
-	UploadUrl string `json:"uploadUrl"`
+	UploadUrl NullableString `json:"uploadUrl"`
 	ExpiresAt NullableTime `json:"expiresAt"`
 	AdditionalProperties map[string]interface{}
 }
@@ -33,7 +33,7 @@ type _ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response ApiTenantIdBusines
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdBusinessKybDocumentsUploadUrlPost201Response(storageRef NullableString, uploadUrl string, expiresAt NullableTime) *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response {
+func NewApiTenantIdBusinessKybDocumentsUploadUrlPost201Response(storageRef NullableString, uploadUrl NullableString, expiresAt NullableTime) *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response {
 	this := ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response{}
 	this.StorageRef = storageRef
 	this.UploadUrl = uploadUrl
@@ -76,27 +76,29 @@ func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) SetStorageRef(
 }
 
 // GetUploadUrl returns the UploadUrl field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) GetUploadUrl() string {
-	if o == nil {
+	if o == nil || o.UploadUrl.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.UploadUrl
+	return *o.UploadUrl.Get()
 }
 
 // GetUploadUrlOk returns a tuple with the UploadUrl field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) GetUploadUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.UploadUrl, true
+	return o.UploadUrl.Get(), o.UploadUrl.IsSet()
 }
 
 // SetUploadUrl sets field value
 func (o *ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) SetUploadUrl(v string) {
-	o.UploadUrl = v
+	o.UploadUrl.Set(&v)
 }
 
 // GetExpiresAt returns the ExpiresAt field value
@@ -136,7 +138,7 @@ func (o ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) MarshalJSON() (
 func (o ApiTenantIdBusinessKybDocumentsUploadUrlPost201Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["storageRef"] = o.StorageRef.Get()
-	toSerialize["uploadUrl"] = o.UploadUrl
+	toSerialize["uploadUrl"] = o.UploadUrl.Get()
 	toSerialize["expiresAt"] = o.ExpiresAt.Get()
 
 	for key, value := range o.AdditionalProperties {

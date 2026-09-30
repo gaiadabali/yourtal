@@ -49,7 +49,7 @@ type Listing struct {
 	ContentCategory string `json:"contentCategory"`
 	// Up to 8 unique interest tags on a campaign or listing (13.11).
 	Tags []string `json:"tags"`
-	ImageUrl string `json:"imageUrl"`
+	ImageUrl NullableString `json:"imageUrl"`
 	Channel ListingChannel `json:"channel"`
 	PartialRedemption PartialRedemption `json:"partialRedemption"`
 	AdditionalProperties map[string]interface{}
@@ -61,7 +61,7 @@ type _Listing Listing
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListing(id NullableString, merchantId NullableString, merchantName NullableString, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, settlementValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, tags []string, imageUrl string, channel ListingChannel, partialRedemption PartialRedemption) *Listing {
+func NewListing(id NullableString, merchantId NullableString, merchantName NullableString, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, settlementValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, tags []string, imageUrl NullableString, channel ListingChannel, partialRedemption PartialRedemption) *Listing {
 	this := Listing{}
 	this.Id = id
 	this.MerchantId = merchantId
@@ -668,27 +668,29 @@ func (o *Listing) SetTags(v []string) {
 }
 
 // GetImageUrl returns the ImageUrl field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *Listing) GetImageUrl() string {
-	if o == nil {
+	if o == nil || o.ImageUrl.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ImageUrl
+	return *o.ImageUrl.Get()
 }
 
 // GetImageUrlOk returns a tuple with the ImageUrl field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Listing) GetImageUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ImageUrl, true
+	return o.ImageUrl.Get(), o.ImageUrl.IsSet()
 }
 
 // SetImageUrl sets field value
 func (o *Listing) SetImageUrl(v string) {
-	o.ImageUrl = v
+	o.ImageUrl.Set(&v)
 }
 
 // GetChannel returns the Channel field value
@@ -774,7 +776,7 @@ func (o Listing) ToMap() (map[string]interface{}, error) {
 	toSerialize["audience"] = o.Audience
 	toSerialize["contentCategory"] = o.ContentCategory
 	toSerialize["tags"] = o.Tags
-	toSerialize["imageUrl"] = o.ImageUrl
+	toSerialize["imageUrl"] = o.ImageUrl.Get()
 	toSerialize["channel"] = o.Channel
 	toSerialize["partialRedemption"] = o.PartialRedemption
 

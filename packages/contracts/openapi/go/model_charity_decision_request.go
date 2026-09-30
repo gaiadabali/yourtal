@@ -12,91 +12,89 @@ package contracts
 
 import (
 	"encoding/json"
-	"bytes"
 	"fmt"
 )
 
-// checks if the CampaignVideoSource type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &CampaignVideoSource{}
+// checks if the CharityDecisionRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CharityDecisionRequest{}
 
-// CampaignVideoSource Where the player resolves a campaign's video from, without guessing (YT-0503).
-type CampaignVideoSource struct {
-	Kind string `json:"kind"`
-	ManifestUrl NullableString `json:"manifestUrl"`
+// CharityDecisionRequest A staff approve or reject, always with a reason.
+type CharityDecisionRequest struct {
+	Decision string `json:"decision"`
+	Reason string `json:"reason"`
+	AdditionalProperties map[string]interface{}
 }
 
-type _CampaignVideoSource CampaignVideoSource
+type _CharityDecisionRequest CharityDecisionRequest
 
-// NewCampaignVideoSource instantiates a new CampaignVideoSource object
+// NewCharityDecisionRequest instantiates a new CharityDecisionRequest object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignVideoSource(kind string, manifestUrl NullableString) *CampaignVideoSource {
-	this := CampaignVideoSource{}
-	this.Kind = kind
-	this.ManifestUrl = manifestUrl
+func NewCharityDecisionRequest(decision string, reason string) *CharityDecisionRequest {
+	this := CharityDecisionRequest{}
+	this.Decision = decision
+	this.Reason = reason
 	return &this
 }
 
-// NewCampaignVideoSourceWithDefaults instantiates a new CampaignVideoSource object
+// NewCharityDecisionRequestWithDefaults instantiates a new CharityDecisionRequest object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewCampaignVideoSourceWithDefaults() *CampaignVideoSource {
-	this := CampaignVideoSource{}
+func NewCharityDecisionRequestWithDefaults() *CharityDecisionRequest {
+	this := CharityDecisionRequest{}
 	return &this
 }
 
-// GetKind returns the Kind field value
-func (o *CampaignVideoSource) GetKind() string {
+// GetDecision returns the Decision field value
+func (o *CharityDecisionRequest) GetDecision() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Kind
+	return o.Decision
 }
 
-// GetKindOk returns a tuple with the Kind field value
+// GetDecisionOk returns a tuple with the Decision field value
 // and a boolean to check if the value has been set.
-func (o *CampaignVideoSource) GetKindOk() (*string, bool) {
+func (o *CharityDecisionRequest) GetDecisionOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Kind, true
+	return &o.Decision, true
 }
 
-// SetKind sets field value
-func (o *CampaignVideoSource) SetKind(v string) {
-	o.Kind = v
+// SetDecision sets field value
+func (o *CharityDecisionRequest) SetDecision(v string) {
+	o.Decision = v
 }
 
-// GetManifestUrl returns the ManifestUrl field value
-// If the value is explicit nil, the zero value for string will be returned
-func (o *CampaignVideoSource) GetManifestUrl() string {
-	if o == nil || o.ManifestUrl.Get() == nil {
+// GetReason returns the Reason field value
+func (o *CharityDecisionRequest) GetReason() string {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.ManifestUrl.Get()
+	return o.Reason
 }
 
-// GetManifestUrlOk returns a tuple with the ManifestUrl field value
+// GetReasonOk returns a tuple with the Reason field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *CampaignVideoSource) GetManifestUrlOk() (*string, bool) {
+func (o *CharityDecisionRequest) GetReasonOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.ManifestUrl.Get(), o.ManifestUrl.IsSet()
+	return &o.Reason, true
 }
 
-// SetManifestUrl sets field value
-func (o *CampaignVideoSource) SetManifestUrl(v string) {
-	o.ManifestUrl.Set(&v)
+// SetReason sets field value
+func (o *CharityDecisionRequest) SetReason(v string) {
+	o.Reason = v
 }
 
-func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
+func (o CharityDecisionRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -104,20 +102,25 @@ func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o CampaignVideoSource) ToMap() (map[string]interface{}, error) {
+func (o CharityDecisionRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["kind"] = o.Kind
-	toSerialize["manifestUrl"] = o.ManifestUrl.Get()
+	toSerialize["decision"] = o.Decision
+	toSerialize["reason"] = o.Reason
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
-func (o *CampaignVideoSource) UnmarshalJSON(data []byte) (err error) {
+func (o *CharityDecisionRequest) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"kind",
-		"manifestUrl",
+		"decision",
+		"reason",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -134,53 +137,59 @@ func (o *CampaignVideoSource) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varCampaignVideoSource := _CampaignVideoSource{}
+	varCharityDecisionRequest := _CharityDecisionRequest{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varCampaignVideoSource)
+	err = json.Unmarshal(data, &varCharityDecisionRequest)
 
 	if err != nil {
 		return err
 	}
 
-	*o = CampaignVideoSource(varCampaignVideoSource)
+	*o = CharityDecisionRequest(varCharityDecisionRequest)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "decision")
+		delete(additionalProperties, "reason")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }
 
-type NullableCampaignVideoSource struct {
-	value *CampaignVideoSource
+type NullableCharityDecisionRequest struct {
+	value *CharityDecisionRequest
 	isSet bool
 }
 
-func (v NullableCampaignVideoSource) Get() *CampaignVideoSource {
+func (v NullableCharityDecisionRequest) Get() *CharityDecisionRequest {
 	return v.value
 }
 
-func (v *NullableCampaignVideoSource) Set(val *CampaignVideoSource) {
+func (v *NullableCharityDecisionRequest) Set(val *CharityDecisionRequest) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableCampaignVideoSource) IsSet() bool {
+func (v NullableCharityDecisionRequest) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableCampaignVideoSource) Unset() {
+func (v *NullableCharityDecisionRequest) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableCampaignVideoSource(val *CampaignVideoSource) *NullableCampaignVideoSource {
-	return &NullableCampaignVideoSource{value: val, isSet: true}
+func NewNullableCharityDecisionRequest(val *CharityDecisionRequest) *NullableCharityDecisionRequest {
+	return &NullableCharityDecisionRequest{value: val, isSet: true}
 }
 
-func (v NullableCampaignVideoSource) MarshalJSON() ([]byte, error) {
+func (v NullableCharityDecisionRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableCampaignVideoSource) UnmarshalJSON(src []byte) error {
+func (v *NullableCharityDecisionRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

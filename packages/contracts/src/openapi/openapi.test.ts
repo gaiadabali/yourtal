@@ -68,6 +68,16 @@ const LEDGER_AND_VOUCHER_INTERNAL_REASON =
   "ledger-internal/voucher-internal (1.2.a-c): an internal service-to-service operation type, not a public/business-facing HTTP contract -- see this file's comment above NOT_PUBLISHED.";
 
 const NOT_PUBLISHED: Readonly<Record<string, string>> = {
+  voucherGiftErrorCodeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  voucherGiftErrorSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  voucherGiftStateSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  giftVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  voucherGiftSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  listGiftsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  listGiftsResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  resolveGiftRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  walletGiftStatusSchema: "13.20: a leaf enum of WalletGift, inlined there.",
+  walletGiftDirectionSchema: "13.20: a leaf enum of WalletGift, inlined there.",
   staffRoleSchema:
     "9.1's staff console session, read only by apps/web's own /staff shell; GET /api/staff/me documents it inline in route-registry.c-staff.ts.",
   staffSessionSchema: "Same as staffRoleSchema above.",

@@ -36,6 +36,8 @@ type FeedItem struct {
 	MaxRewardPoints int64 `json:"maxRewardPoints"`
 	EstimatedDataMb float32 `json:"estimatedDataMb"`
 	ContentCategory string `json:"contentCategory"`
+	// Up to 8 unique interest tags on a campaign or listing (13.11).
+	Tags []string `json:"tags"`
 	Audience Audience `json:"audience"`
 	Region Region `json:"region"`
 	OpenViewing bool `json:"openViewing"`
@@ -53,7 +55,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, tags []string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -69,6 +71,7 @@ func NewFeedItem(campaignId NullableString, businessId NullableString, merchantN
 	this.MaxRewardPoints = maxRewardPoints
 	this.EstimatedDataMb = estimatedDataMb
 	this.ContentCategory = contentCategory
+	this.Tags = tags
 	this.Audience = audience
 	this.Region = region
 	this.OpenViewing = openViewing
@@ -430,6 +433,30 @@ func (o *FeedItem) SetContentCategory(v string) {
 	o.ContentCategory = v
 }
 
+// GetTags returns the Tags field value
+func (o *FeedItem) GetTags() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.Tags
+}
+
+// GetTagsOk returns a tuple with the Tags field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetTagsOk() ([]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Tags, true
+}
+
+// SetTags sets field value
+func (o *FeedItem) SetTags(v []string) {
+	o.Tags = v
+}
+
 // GetAudience returns the Audience field value
 func (o *FeedItem) GetAudience() Audience {
 	if o == nil {
@@ -648,6 +675,7 @@ func (o FeedItem) ToMap() (map[string]interface{}, error) {
 	toSerialize["maxRewardPoints"] = o.MaxRewardPoints
 	toSerialize["estimatedDataMb"] = o.EstimatedDataMb
 	toSerialize["contentCategory"] = o.ContentCategory
+	toSerialize["tags"] = o.Tags
 	toSerialize["audience"] = o.Audience
 	toSerialize["region"] = o.Region
 	toSerialize["openViewing"] = o.OpenViewing
@@ -683,6 +711,7 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		"maxRewardPoints",
 		"estimatedDataMb",
 		"contentCategory",
+		"tags",
 		"audience",
 		"region",
 		"openViewing",
@@ -734,6 +763,7 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "maxRewardPoints")
 		delete(additionalProperties, "estimatedDataMb")
 		delete(additionalProperties, "contentCategory")
+		delete(additionalProperties, "tags")
 		delete(additionalProperties, "audience")
 		delete(additionalProperties, "region")
 		delete(additionalProperties, "openViewing")

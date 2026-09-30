@@ -42,6 +42,8 @@ type Campaign struct {
 	Region Region `json:"region"`
 	Audience Audience `json:"audience"`
 	ContentCategory string `json:"contentCategory"`
+	// Up to 8 unique interest tags on a campaign or listing (13.11).
+	Tags []string `json:"tags"`
 	PosterUrl string `json:"posterUrl"`
 	TeaserUrl string `json:"teaserUrl"`
 	HlsUrl string `json:"hlsUrl"`
@@ -60,7 +62,7 @@ type _Campaign Campaign
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaign(id string, kind CampaignKind, title string, merchantId string, merchantName string, synopsis string, durationSeconds int32, estimatedDataMb float32, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, status CampaignStatus, publishedAt time.Time, chapters []CampaignChapter, videoSource CampaignVideoSource, businessId string, region Region, audience Audience, contentCategory string, posterUrl string, teaserUrl string, hlsUrl string, captionsUrl NullableString, aspect string, estimatedBytes int64, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int64) *Campaign {
+func NewCampaign(id string, kind CampaignKind, title string, merchantId string, merchantName string, synopsis string, durationSeconds int32, estimatedDataMb float32, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, status CampaignStatus, publishedAt time.Time, chapters []CampaignChapter, videoSource CampaignVideoSource, businessId string, region Region, audience Audience, contentCategory string, tags []string, posterUrl string, teaserUrl string, hlsUrl string, captionsUrl NullableString, aspect string, estimatedBytes int64, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int64) *Campaign {
 	this := Campaign{}
 	this.Id = id
 	this.Kind = kind
@@ -81,6 +83,7 @@ func NewCampaign(id string, kind CampaignKind, title string, merchantId string, 
 	this.Region = region
 	this.Audience = audience
 	this.ContentCategory = contentCategory
+	this.Tags = tags
 	this.PosterUrl = posterUrl
 	this.TeaserUrl = teaserUrl
 	this.HlsUrl = hlsUrl
@@ -562,6 +565,30 @@ func (o *Campaign) SetContentCategory(v string) {
 	o.ContentCategory = v
 }
 
+// GetTags returns the Tags field value
+func (o *Campaign) GetTags() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.Tags
+}
+
+// GetTagsOk returns a tuple with the Tags field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetTagsOk() ([]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Tags, true
+}
+
+// SetTags sets field value
+func (o *Campaign) SetTags(v []string) {
+	o.Tags = v
+}
+
 // GetPosterUrl returns the PosterUrl field value
 func (o *Campaign) GetPosterUrl() string {
 	if o == nil {
@@ -833,6 +860,7 @@ func (o Campaign) ToMap() (map[string]interface{}, error) {
 	toSerialize["region"] = o.Region
 	toSerialize["audience"] = o.Audience
 	toSerialize["contentCategory"] = o.ContentCategory
+	toSerialize["tags"] = o.Tags
 	toSerialize["posterUrl"] = o.PosterUrl
 	toSerialize["teaserUrl"] = o.TeaserUrl
 	toSerialize["hlsUrl"] = o.HlsUrl
@@ -870,6 +898,7 @@ func (o *Campaign) UnmarshalJSON(data []byte) (err error) {
 		"region",
 		"audience",
 		"contentCategory",
+		"tags",
 		"posterUrl",
 		"teaserUrl",
 		"hlsUrl",

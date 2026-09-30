@@ -15,114 +15,112 @@ import (
 	"fmt"
 )
 
-// checks if the FeedResponse type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &FeedResponse{}
+// checks if the BrandFacet type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &BrandFacet{}
 
-// FeedResponse GET /api/feed's response.
-type FeedResponse struct {
-	Surface FeedSurface `json:"surface"`
-	Items []FeedItem `json:"items"`
-	Facets FeedFacets `json:"facets"`
+// BrandFacet A brand filter option: the merchant id, its name and its listing count.
+type BrandFacet struct {
+	Value string `json:"value"`
+	Count int64 `json:"count"`
+	Label string `json:"label"`
 	AdditionalProperties map[string]interface{}
 }
 
-type _FeedResponse FeedResponse
+type _BrandFacet BrandFacet
 
-// NewFeedResponse instantiates a new FeedResponse object
+// NewBrandFacet instantiates a new BrandFacet object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedResponse(surface FeedSurface, items []FeedItem, facets FeedFacets) *FeedResponse {
-	this := FeedResponse{}
-	this.Surface = surface
-	this.Items = items
-	this.Facets = facets
+func NewBrandFacet(value string, count int64, label string) *BrandFacet {
+	this := BrandFacet{}
+	this.Value = value
+	this.Count = count
+	this.Label = label
 	return &this
 }
 
-// NewFeedResponseWithDefaults instantiates a new FeedResponse object
+// NewBrandFacetWithDefaults instantiates a new BrandFacet object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewFeedResponseWithDefaults() *FeedResponse {
-	this := FeedResponse{}
-	var facets FeedFacets = {"categories":[],"tags":[]}
-	this.Facets = facets
+func NewBrandFacetWithDefaults() *BrandFacet {
+	this := BrandFacet{}
 	return &this
 }
 
-// GetSurface returns the Surface field value
-func (o *FeedResponse) GetSurface() FeedSurface {
+// GetValue returns the Value field value
+func (o *BrandFacet) GetValue() string {
 	if o == nil {
-		var ret FeedSurface
+		var ret string
 		return ret
 	}
 
-	return o.Surface
+	return o.Value
 }
 
-// GetSurfaceOk returns a tuple with the Surface field value
+// GetValueOk returns a tuple with the Value field value
 // and a boolean to check if the value has been set.
-func (o *FeedResponse) GetSurfaceOk() (*FeedSurface, bool) {
+func (o *BrandFacet) GetValueOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Surface, true
+	return &o.Value, true
 }
 
-// SetSurface sets field value
-func (o *FeedResponse) SetSurface(v FeedSurface) {
-	o.Surface = v
+// SetValue sets field value
+func (o *BrandFacet) SetValue(v string) {
+	o.Value = v
 }
 
-// GetItems returns the Items field value
-func (o *FeedResponse) GetItems() []FeedItem {
+// GetCount returns the Count field value
+func (o *BrandFacet) GetCount() int64 {
 	if o == nil {
-		var ret []FeedItem
+		var ret int64
 		return ret
 	}
 
-	return o.Items
+	return o.Count
 }
 
-// GetItemsOk returns a tuple with the Items field value
+// GetCountOk returns a tuple with the Count field value
 // and a boolean to check if the value has been set.
-func (o *FeedResponse) GetItemsOk() ([]FeedItem, bool) {
+func (o *BrandFacet) GetCountOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Items, true
+	return &o.Count, true
 }
 
-// SetItems sets field value
-func (o *FeedResponse) SetItems(v []FeedItem) {
-	o.Items = v
+// SetCount sets field value
+func (o *BrandFacet) SetCount(v int64) {
+	o.Count = v
 }
 
-// GetFacets returns the Facets field value
-func (o *FeedResponse) GetFacets() FeedFacets {
+// GetLabel returns the Label field value
+func (o *BrandFacet) GetLabel() string {
 	if o == nil {
-		var ret FeedFacets
+		var ret string
 		return ret
 	}
 
-	return o.Facets
+	return o.Label
 }
 
-// GetFacetsOk returns a tuple with the Facets field value
+// GetLabelOk returns a tuple with the Label field value
 // and a boolean to check if the value has been set.
-func (o *FeedResponse) GetFacetsOk() (*FeedFacets, bool) {
+func (o *BrandFacet) GetLabelOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Facets, true
+	return &o.Label, true
 }
 
-// SetFacets sets field value
-func (o *FeedResponse) SetFacets(v FeedFacets) {
-	o.Facets = v
+// SetLabel sets field value
+func (o *BrandFacet) SetLabel(v string) {
+	o.Label = v
 }
 
-func (o FeedResponse) MarshalJSON() ([]byte, error) {
+func (o BrandFacet) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -130,11 +128,11 @@ func (o FeedResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o FeedResponse) ToMap() (map[string]interface{}, error) {
+func (o BrandFacet) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["surface"] = o.Surface
-	toSerialize["items"] = o.Items
-	toSerialize["facets"] = o.Facets
+	toSerialize["value"] = o.Value
+	toSerialize["count"] = o.Count
+	toSerialize["label"] = o.Label
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -143,14 +141,14 @@ func (o FeedResponse) ToMap() (map[string]interface{}, error) {
 	return toSerialize, nil
 }
 
-func (o *FeedResponse) UnmarshalJSON(data []byte) (err error) {
+func (o *BrandFacet) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"surface",
-		"items",
-		"facets",
+		"value",
+		"count",
+		"label",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -167,60 +165,60 @@ func (o *FeedResponse) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varFeedResponse := _FeedResponse{}
+	varBrandFacet := _BrandFacet{}
 
-	err = json.Unmarshal(data, &varFeedResponse)
+	err = json.Unmarshal(data, &varBrandFacet)
 
 	if err != nil {
 		return err
 	}
 
-	*o = FeedResponse(varFeedResponse)
+	*o = BrandFacet(varBrandFacet)
 
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "surface")
-		delete(additionalProperties, "items")
-		delete(additionalProperties, "facets")
+		delete(additionalProperties, "value")
+		delete(additionalProperties, "count")
+		delete(additionalProperties, "label")
 		o.AdditionalProperties = additionalProperties
 	}
 
 	return err
 }
 
-type NullableFeedResponse struct {
-	value *FeedResponse
+type NullableBrandFacet struct {
+	value *BrandFacet
 	isSet bool
 }
 
-func (v NullableFeedResponse) Get() *FeedResponse {
+func (v NullableBrandFacet) Get() *BrandFacet {
 	return v.value
 }
 
-func (v *NullableFeedResponse) Set(val *FeedResponse) {
+func (v *NullableBrandFacet) Set(val *BrandFacet) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableFeedResponse) IsSet() bool {
+func (v NullableBrandFacet) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableFeedResponse) Unset() {
+func (v *NullableBrandFacet) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableFeedResponse(val *FeedResponse) *NullableFeedResponse {
-	return &NullableFeedResponse{value: val, isSet: true}
+func NewNullableBrandFacet(val *BrandFacet) *NullableBrandFacet {
+	return &NullableBrandFacet{value: val, isSet: true}
 }
 
-func (v NullableFeedResponse) MarshalJSON() ([]byte, error) {
+func (v NullableBrandFacet) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableFeedResponse) UnmarshalJSON(src []byte) error {
+func (v *NullableBrandFacet) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

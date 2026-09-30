@@ -738,6 +738,247 @@
         }
       }
     },
+    "/api/wallet/vouchers/{voucherId}/gift": {
+      "post": {
+        "summary": "Give an unused voucher to a verified adult in the same region",
+        "tags": [
+          "wallet"
+        ],
+        "parameters": [
+          {
+            "name": "voucherId",
+            "in": "path",
+            "required": true,
+            "description": "The voucher's id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The recipient's email.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GiftVoucherBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The gift, pending until the recipient accepts. The old code no longer works.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletGift"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The caller holds no voucher with this id."
+          },
+          "409": {
+            "description": "Refused with one WalletGiftRefusal code."
+          },
+          "502": {
+            "description": "The ledger or voucher service refused or could not be reached."
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wallet/gifts": {
+      "get": {
+        "summary": "Gifts the caller sent or received",
+        "tags": [
+          "wallet"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sent and received gifts, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletGiftList"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The ledger or voucher service refused or could not be reached."
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wallet/gifts/{giftId}/accept": {
+      "post": {
+        "summary": "Accept a gift into the wallet",
+        "tags": [
+          "wallet"
+        ],
+        "parameters": [
+          {
+            "name": "giftId",
+            "in": "path",
+            "required": true,
+            "description": "The gift's id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The accepted gift; its voucher is now in the wallet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletGift"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No gift with this id was sent to the caller."
+          },
+          "409": {
+            "description": "Refused with one WalletGiftRefusal code."
+          },
+          "502": {
+            "description": "The ledger or voucher service refused or could not be reached."
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wallet/gifts/{giftId}/decline": {
+      "post": {
+        "summary": "Decline a gift; it goes back to the sender",
+        "tags": [
+          "wallet"
+        ],
+        "parameters": [
+          {
+            "name": "giftId",
+            "in": "path",
+            "required": true,
+            "description": "The gift's id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The returned gift.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletGift"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No gift with this id was sent to the caller."
+          },
+          "409": {
+            "description": "Refused with one WalletGiftRefusal code."
+          },
+          "502": {
+            "description": "The ledger or voucher service refused or could not be reached."
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/wallet/vouchers/{voucherId}/dispute": {
       "post": {
         "summary": "Report a voucher the merchant would not honour",
@@ -21763,6 +22004,22 @@
           "marketing"
         ]
       },
+      "GiftVoucherBody": {
+        "description": "Who to give the voucher to: a verified adult's sign-in email, in the same region.",
+        "type": "object",
+        "properties": {
+          "recipientEmail": {
+            "type": "string",
+            "maxLength": 320,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          }
+        },
+        "required": [
+          "recipientEmail"
+        ],
+        "additionalProperties": false
+      },
       "IdrMinorUnits": {
         "description": "Indonesian Rupiah as an integer number of whole Rupiah (exponent 0). Rp 45.000 is 45000. The stored unit follows the payment gateway (decision T-1, 2026-09-22), reversing the earlier sen decision. Prefer Money, which carries its own currency.",
         "type": "integer",
@@ -23815,6 +24072,130 @@
           "admin"
         ]
       },
+      "WalletGift": {
+        "description": "A gift the caller sent or received. A received gift names only the sender's display name; a sent one names nobody.",
+        "type": "object",
+        "properties": {
+          "giftId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sent",
+              "received"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "returned"
+            ]
+          },
+          "senderDisplayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voucherId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "merchantName": {
+            "type": "string"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "faceValueMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "voucherExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "acceptBy": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "resolvedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "giftId",
+          "direction",
+          "status",
+          "senderDisplayName",
+          "voucherId",
+          "title",
+          "merchantName",
+          "currency",
+          "faceValueMinor",
+          "voucherExpiresAt",
+          "createdAt",
+          "acceptBy",
+          "resolvedAt"
+        ],
+        "additionalProperties": false
+      },
+      "WalletGiftList": {
+        "description": "GET /api/wallet/gifts: sent and received, newest first.",
+        "type": "object",
+        "properties": {
+          "gifts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletGift"
+            }
+          }
+        },
+        "required": [
+          "gifts"
+        ],
+        "additionalProperties": false
+      },
+      "WalletGiftRefusal": {
+        "description": "Why a gift was refused (409). gift_recipient_ineligible covers every recipient problem, so an email reveals nothing.",
+        "type": "string",
+        "enum": [
+          "gift_recipient_ineligible",
+          "gift_sender_ineligible",
+          "gift_to_self",
+          "gift_not_transferable",
+          "gift_already_gifted",
+          "gift_not_unused",
+          "gift_holdback",
+          "gift_velocity_capped",
+          "gift_not_pending",
+          "gift_window_closed"
+        ]
+      },
       "WalletHistoryEntry": {
         "description": "One entry in the wallet's points history, in plain language, never a transaction code (docs/17 section 3).\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - an earn entry is always a credit.\n  - a burn entry is always a debit.\n  - an expiry entry is always a debit.",
         "type": "object",
@@ -24082,6 +24463,9 @@
           },
           "partialRedemptionPolicy": {
             "$ref": "#/components/schemas/PartialRedemptionPolicy"
+          },
+          "giftable": {
+            "type": "boolean"
           }
         },
         "required": [

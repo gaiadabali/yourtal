@@ -35,6 +35,7 @@ type WalletVoucher struct {
 	ExpiresAt *time.Time `json:"expiresAt,omitempty" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	Location *WalletVoucherLocation `json:"location,omitempty"`
 	PartialRedemptionPolicy *PartialRedemptionPolicy `json:"partialRedemptionPolicy,omitempty"`
+	Giftable *bool `json:"giftable,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -444,6 +445,38 @@ func (o *WalletVoucher) SetPartialRedemptionPolicy(v PartialRedemptionPolicy) {
 	o.PartialRedemptionPolicy = &v
 }
 
+// GetGiftable returns the Giftable field value if set, zero value otherwise.
+func (o *WalletVoucher) GetGiftable() bool {
+	if o == nil || IsNil(o.Giftable) {
+		var ret bool
+		return ret
+	}
+	return *o.Giftable
+}
+
+// GetGiftableOk returns a tuple with the Giftable field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetGiftableOk() (*bool, bool) {
+	if o == nil || IsNil(o.Giftable) {
+		return nil, false
+	}
+	return o.Giftable, true
+}
+
+// HasGiftable returns a boolean if a field has been set.
+func (o *WalletVoucher) HasGiftable() bool {
+	if o != nil && !IsNil(o.Giftable) {
+		return true
+	}
+
+	return false
+}
+
+// SetGiftable gets a reference to the given bool and assigns it to the Giftable field.
+func (o *WalletVoucher) SetGiftable(v bool) {
+	o.Giftable = &v
+}
+
 func (o WalletVoucher) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -483,6 +516,9 @@ func (o WalletVoucher) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.PartialRedemptionPolicy) {
 		toSerialize["partialRedemptionPolicy"] = o.PartialRedemptionPolicy
+	}
+	if !IsNil(o.Giftable) {
+		toSerialize["giftable"] = o.Giftable
 	}
 
 	for key, value := range o.AdditionalProperties {
@@ -541,6 +577,7 @@ func (o *WalletVoucher) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "expiresAt")
 		delete(additionalProperties, "location")
 		delete(additionalProperties, "partialRedemptionPolicy")
+		delete(additionalProperties, "giftable")
 		o.AdditionalProperties = additionalProperties
 	}
 

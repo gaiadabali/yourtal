@@ -46,6 +46,8 @@ type PublicListing struct {
 	Region Region `json:"region"`
 	Audience Audience `json:"audience"`
 	ContentCategory string `json:"contentCategory"`
+	// Up to 8 unique interest tags on a campaign or listing (13.11).
+	Tags []string `json:"tags"`
 	ImageUrl string `json:"imageUrl"`
 	Channel ListingChannel `json:"channel"`
 	PartialRedemption PartialRedemption `json:"partialRedemption"`
@@ -57,7 +59,7 @@ type _PublicListing PublicListing
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPublicListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, imageUrl string, channel ListingChannel, partialRedemption PartialRedemption) *PublicListing {
+func NewPublicListing(id string, merchantId string, merchantName string, title string, description string, category ListingCategory, locations []MerchantLocation, currency Currency, faceValueMinor int64, priceInPoints int64, stockRemaining int64, stockTotal int64, transferable bool, partialRedemptionPolicy PartialRedemptionPolicy, minimumSpendMinor NullableInt64, expiresAt time.Time, status ListingStatus, region Region, audience Audience, contentCategory string, tags []string, imageUrl string, channel ListingChannel, partialRedemption PartialRedemption) *PublicListing {
 	this := PublicListing{}
 	this.Id = id
 	this.MerchantId = merchantId
@@ -79,6 +81,7 @@ func NewPublicListing(id string, merchantId string, merchantName string, title s
 	this.Region = region
 	this.Audience = audience
 	this.ContentCategory = contentCategory
+	this.Tags = tags
 	this.ImageUrl = imageUrl
 	this.Channel = channel
 	this.PartialRedemption = partialRedemption
@@ -607,6 +610,30 @@ func (o *PublicListing) SetContentCategory(v string) {
 	o.ContentCategory = v
 }
 
+// GetTags returns the Tags field value
+func (o *PublicListing) GetTags() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.Tags
+}
+
+// GetTagsOk returns a tuple with the Tags field value
+// and a boolean to check if the value has been set.
+func (o *PublicListing) GetTagsOk() ([]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Tags, true
+}
+
+// SetTags sets field value
+func (o *PublicListing) SetTags(v []string) {
+	o.Tags = v
+}
+
 // GetImageUrl returns the ImageUrl field value
 func (o *PublicListing) GetImageUrl() string {
 	if o == nil {
@@ -712,6 +739,7 @@ func (o PublicListing) ToMap() (map[string]interface{}, error) {
 	toSerialize["region"] = o.Region
 	toSerialize["audience"] = o.Audience
 	toSerialize["contentCategory"] = o.ContentCategory
+	toSerialize["tags"] = o.Tags
 	toSerialize["imageUrl"] = o.ImageUrl
 	toSerialize["channel"] = o.Channel
 	toSerialize["partialRedemption"] = o.PartialRedemption
@@ -743,6 +771,7 @@ func (o *PublicListing) UnmarshalJSON(data []byte) (err error) {
 		"region",
 		"audience",
 		"contentCategory",
+		"tags",
 		"imageUrl",
 		"channel",
 		"partialRedemption",

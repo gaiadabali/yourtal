@@ -63,3 +63,43 @@ func (a *API) merchantCaptureStats(w http.ResponseWriter, r *http.Request) {
 		"captureCount": row.CaptureCount, "capturedMinor": row.CapturedMinor,
 	})
 }
+
+type voucherStatusBody struct {
+	MerchantID string `json:"merchantId"`
+	Region     string `json:"region"`
+}
+
+type voucherStatusRow struct {
+	Status         string `json:"status"`
+	Count          int64  `json:"count"`
+	FaceValueMinor int64  `json:"faceValueMinor"`
+}
+
+// merchantVoucherStatus is 13.10: counts only, never a voucher or an owner.
+// The caller applies the cohort floor.
+func (a *API) merchantVoucherStatus(w http.ResponseWriter, r *http.Request) {
+	var body voucherStatusBody
+	if !a.decode(w, r, &body) {
+		return
+	}
+	merchantID, err := uuid.Parse(body.MerchantID)
+	if err != nil || (body.Region != "AU" && body.Region != "ID") {
+		httpx.WriteError(w, a.logger, http.StatusBadRequest, "invalid_request_error", "malformed_request", "merchantId or region is invalid")
+		return
+	}
+	found, err := sqlcgen.New(a.pool).CountMerchantVouchersByStatus(r.Context(), sqlcgen.CountMerchantVouchersByStatusParams{
+		MerchantID: pgUUID(merchantID), Region: body.Region,
+	})
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+	currency := map[string]string{"AU": "AUD", "ID": "IDR"}[body.Region]
+	rows := make([]voucherStatusRow, len(found))
+	for i, row := range found {
+		rows[i] = voucherStatusRow{Status: row.Status, Count: row.VoucherCount, FaceValueMinor: row.FaceValueMinor}
+	}
+	httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]any{
+		"merchantId": merchantID.String(), "region": body.Region, "currency": currency, "rows": rows,
+	})
+}

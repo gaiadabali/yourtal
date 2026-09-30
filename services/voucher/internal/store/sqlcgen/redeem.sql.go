@@ -44,6 +44,63 @@ func (q *Queries) CountFailedAttemptsSince(ctx context.Context, arg CountFailedA
 	return failures, err
 }
 
+const countMerchantVouchersByStatus = `-- name: CountMerchantVouchersByStatus :many
+SELECT (CASE
+          WHEN state IN ('active', 'held') THEN 'active'
+          WHEN state = 'voided' THEN 'transferred'
+          ELSE state
+        END)::text AS status,
+       COUNT(*)::bigint AS voucher_count,
+       COALESCE(SUM(face_value_minor), 0)::bigint AS face_value_minor,
+       MIN(currency)::text AS currency
+FROM voucher.vouchers
+WHERE merchant_id = $1 AND region = $2
+  AND (state IN ('active', 'held', 'redeemed', 'expired')
+       OR (state = 'voided' AND void_reason = 'transfer'))
+GROUP BY 1
+ORDER BY 1
+`
+
+type CountMerchantVouchersByStatusParams struct {
+	MerchantID pgtype.UUID
+	Region     string
+}
+
+type CountMerchantVouchersByStatusRow struct {
+	Status         string
+	VoucherCount   int64
+	FaceValueMinor int64
+	Currency       string
+}
+
+// 13.10: a merchant's issued vouchers in one region, by public status
+// (held reads as active; only a transfer void is "transferred"). Unissued
+// stock, pending gifts and non-transfer voids have no public status.
+func (q *Queries) CountMerchantVouchersByStatus(ctx context.Context, arg CountMerchantVouchersByStatusParams) ([]CountMerchantVouchersByStatusRow, error) {
+	rows, err := q.db.Query(ctx, countMerchantVouchersByStatus, arg.MerchantID, arg.Region)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountMerchantVouchersByStatusRow
+	for rows.Next() {
+		var i CountMerchantVouchersByStatusRow
+		if err := rows.Scan(
+			&i.Status,
+			&i.VoucherCount,
+			&i.FaceValueMinor,
+			&i.Currency,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const enableKillSwitch = `-- name: EnableKillSwitch :exec
 INSERT INTO voucher.kill_switch (id, scope, scope_id, reason, enabled_by)
 VALUES ($1, $2, $3, $4, $5)

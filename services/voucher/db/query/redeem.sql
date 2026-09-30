@@ -279,3 +279,22 @@ ON CONFLICT DO NOTHING;
 -- name: PruneSeenSignatures :execrows
 -- Older than twice the replay window: those can never verify again.
 DELETE FROM voucher.merchant_signature_seen WHERE seen_at < now() - interval '10 minutes';
+
+-- name: CountMerchantVouchersByStatus :many
+-- 13.10: a merchant's issued vouchers in one region, by public status
+-- (held reads as active; only a transfer void is "transferred"). Unissued
+-- stock, pending gifts and non-transfer voids have no public status.
+SELECT (CASE
+          WHEN state IN ('active', 'held') THEN 'active'
+          WHEN state = 'voided' THEN 'transferred'
+          ELSE state
+        END)::text AS status,
+       COUNT(*)::bigint AS voucher_count,
+       COALESCE(SUM(face_value_minor), 0)::bigint AS face_value_minor,
+       MIN(currency)::text AS currency
+FROM voucher.vouchers
+WHERE merchant_id = $1 AND region = $2
+  AND (state IN ('active', 'held', 'redeemed', 'expired')
+       OR (state = 'voided' AND void_reason = 'transfer'))
+GROUP BY 1
+ORDER BY 1;

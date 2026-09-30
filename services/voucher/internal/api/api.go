@@ -85,6 +85,7 @@ func (a *API) Routes() chi.Router {
 	r.Post("/credentials/revoke", a.revokeCredential)
 
 	r.Post("/merchants/capture-stats", a.merchantCaptureStats)
+	r.Post("/merchants/voucher-status", a.merchantVoucherStatus)
 
 	r.Post("/webhook-events/unposted", a.unpostedWebhookEvents)
 	r.Post("/webhook-events/posted", a.webhookEventsPosted)

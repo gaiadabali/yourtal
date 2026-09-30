@@ -7,9 +7,11 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/yourtal/services/voucher/internal/issue"
 	"github.com/yourtal/services/voucher/internal/lifecycle"
+	"github.com/yourtal/services/voucher/internal/store/sqlcgen"
 )
 
 // 13.20.a: gifting is void-and-remint, one hop, transferable listings only,
@@ -226,5 +228,50 @@ func TestTwoGiftsOfOneVoucherRaceToOneWinner(t *testing.T) {
 	}
 	if ok != 1 {
 		t.Fatalf("%d gifts succeeded, want exactly 1 (%v)", ok, errs)
+	}
+}
+
+// 13.10's count reads a gift as one transferred voucher and one active one.
+func TestGiftCountsOnceInMerchantStatus(t *testing.T) {
+	f := newFixture(t)
+	f.minter.WithGiftPolicy(noHoldback)
+	ctx := context.Background()
+	source, sender := f.ownedTransferable(t, true)
+	recipient := uuid.New()
+	giftID, err := f.minter.Gift(ctx, issue.GiftRequest{VoucherID: source, SenderID: sender, RecipientID: recipient, RecipientRegion: "ID"})
+	if err != nil {
+		t.Fatalf("Gift: %v", err)
+	}
+	var merchant uuid.UUID
+	if err := f.owner.QueryRow(ctx, `SELECT merchant_id FROM voucher.vouchers WHERE id = $1`, source).Scan(&merchant); err != nil {
+		t.Fatalf("reading the merchant: %v", err)
+	}
+	count := func() map[string]int64 {
+		rows, err := sqlcgen.New(f.pool).CountMerchantVouchersByStatus(ctx, sqlcgen.CountMerchantVouchersByStatusParams{
+			MerchantID: pgtype.UUID{Bytes: merchant, Valid: true}, Region: "ID",
+		})
+		if err != nil {
+			t.Fatalf("counting: %v", err)
+		}
+		got := map[string]int64{}
+		for _, row := range rows {
+			got[row.Status] = row.VoucherCount
+		}
+		return got
+	}
+	if got := count(); got["transferred"] != 1 || got["active"] != 0 {
+		t.Fatalf("while pending: %v, want only the transferred one", got)
+	}
+	if err := f.minter.AcceptGift(ctx, giftID, recipient); err != nil {
+		t.Fatalf("AcceptGift: %v", err)
+	}
+	if got := count(); got["transferred"] != 1 || got["active"] != 1 {
+		t.Fatalf("after accepting: %v, want one transferred and one active", got)
+	}
+	rows, _ := sqlcgen.New(f.pool).CountMerchantVouchersByStatus(ctx, sqlcgen.CountMerchantVouchersByStatusParams{
+		MerchantID: pgtype.UUID{Bytes: merchant, Valid: true}, Region: "AU",
+	})
+	if len(rows) != 0 {
+		t.Fatalf("the other region sees %v", rows)
 	}
 }

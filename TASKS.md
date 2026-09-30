@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 23/24 | `██████████`  96% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 1/23 | 10/69 | `█░░░░░░░░░`  14% |
-| **All** | | | **83/106** | **451/511** | `█████████░`  88% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 1/23 | 14/69 | `██░░░░░░░░`  20% |
+| **All** | | | **83/106** | **455/511** | `█████████░`  89% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1467,13 +1467,13 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.10.a A business endpoint returns its own vouchers counted by status (active, redeemed, expired, transferred), region-scoped and suppressed below the cohort floor. Studio Reports shows it in place of today's "Not available" panel.
 - [ ] **13.11 Tags on videos and vouchers** (F84) · C · needs: — — 🔄 slot 3
   - [ ] 13.11.a Every campaign and every listing carries one primary category and up to 8 tags, picked from the interest taxonomy (`declared_interests` for campaigns; a new add-only column for listings). No free text, and the sensitive-term block applies. Studio's campaign and listing editors get a category and tag picker. (Labels for every taxonomy node, en-AU and id-ID, are in `apps/web/messages/*/taxonomy.json` as `taxonomy.node.<id>`, merged by slot 4 at 310e2770; use them for the Studio picker.)
-  - [ ] 13.11.b Feed ranking matches the viewer's interests against a campaign's tags, not only its `contentCategory` (`ranking.ts` ignores `declaredInterests` today).
+  - [x] 13.11.b Feed ranking matches the viewer's interests against a campaign's tags, not only its `contentCategory` (`ranking.ts` ignores `declaredInterests` today). (71b2faf3: category, tags and each tag's ancestors, consent and segment floor unchanged; `ranking.test.ts`)
   - [ ] 13.11.c 13.1's demo world gives every demo campaign and listing a category and 2–5 tags, with long videos and Shorts spread across every category.
   - [ ] 13.11.d **Check:** a Studio-made campaign and listing, each saved with tags over HTTP, show the tags in their rows, and a viewer whose interests match those tags ranks the campaign higher.
 - [ ] **13.12 Browse filters in the API** · C · needs: 13.11.a — 🔄 slot 3
-  - [ ] 13.12.a `GET /api/feed` takes `kind` (`long_form` or `quick`), `category`, `tags` and `sort` (for you, newest, most points, ending soon), filtered on the server with the region and audience walls unchanged. It also returns the category and tag facets present, with counts.
-  - [ ] 13.12.b `GET /api/store/listings` takes `tags`, `brand` and `sort` (popular, newest, points low to high, points high to low, ending soon) beside today's filters, and returns facets with counts. The store stops filtering in the browser over one fetch.
-  - [ ] 13.12.c `GET /api/search` takes `kind` and `category`.
+  - [x] 13.12.a `GET /api/feed` takes `kind` (`long_form` or `quick`), `category`, `tags` and `sort` (for you, newest, most points, ending soon), filtered on the server with the region and audience walls unchanged. It also returns the category and tag facets present, with counts. (71b2faf3: filters and facets over the walled, ranked set; a teen's `ending_soon` falls back to for you; `browse.test.ts`)
+  - [x] 13.12.b `GET /api/store/listings` takes `tags`, `brand` and `sort` (popular, newest, points low to high, points high to low, ending soon) beside today's filters, and returns facets with counts. The store stops filtering in the browser over one fetch. (71b2faf3: API side, with `total_count` and cursor paging in the chosen sort; the web store moves onto it in 13.15)
+  - [x] 13.12.c `GET /api/search` takes `kind` and `category`. (71b2faf3)
   - [ ] 13.12.d **Check:** each filter and sort, called over HTTP in AU and ID, returns only matching rows in the right order, and never a row from the other region or a wrong audience.
 - [ ] **13.13 Home is a grid of long videos** (F84) · B · needs: 13.12.a — 🔄 slot 4 (UI merged e3481b70; closes with 13.17 on staging)
   - [x] 13.13.a `/home` shows long videos only, never Shorts, in a YouTube-style grid (1 column at 390 px up to 4–5 at 1280 px and wider): thumbnail with duration, title, brand, points and category. — e3481b70: `/home` asks for `kind=long_form` (filtered again locally until 13.12.a serves it); 1 column at 390 up to 4 at 1280 and 5 at 2xl; card shows poster, duration, points, brand, category.

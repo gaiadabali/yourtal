@@ -66,6 +66,7 @@ describe("GET /api/me", () => {
       },
       businessMemberships: [],
       staffRoles: [],
+      email: expect.stringContaining("@"),
     });
   });
 

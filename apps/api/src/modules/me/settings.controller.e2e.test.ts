@@ -82,3 +82,45 @@ describe("GET/PUT /api/me/settings/autoplay", () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
+describe("GET/PUT /api/me/settings/theme (13.16.a)", () => {
+  it("is system before any write, then keeps what was saved", async () => {
+    const session = await sessionFor(app, { jurisdiction: "AU" });
+    const before = await app.inject({
+      method: "GET",
+      url: "/api/me/settings/theme",
+      headers: { cookie: session.cookie },
+    });
+    expect(before.statusCode).toBe(200);
+    expect(before.json<{ theme: string }>().theme).toBe("system");
+
+    for (const theme of ["dark", "light"]) {
+      const write = await app.inject({
+        method: "PUT",
+        url: "/api/me/settings/theme",
+        headers: { cookie: session.cookie },
+        payload: { theme },
+      });
+      expect(write.statusCode).toBe(200);
+    }
+    const after = await app.inject({
+      method: "GET",
+      url: "/api/me/settings/theme",
+      headers: { cookie: session.cookie },
+    });
+    expect(after.json<{ theme: string }>().theme).toBe("light");
+  });
+
+  it("rejects an unknown theme and an anonymous caller", async () => {
+    const session = await sessionFor(app, { jurisdiction: "ID" });
+    const bad = await app.inject({
+      method: "PUT",
+      url: "/api/me/settings/theme",
+      headers: { cookie: session.cookie },
+      payload: { theme: "sepia" },
+    });
+    expect(bad.statusCode).toBe(400);
+    const anonymous = await app.inject({ method: "GET", url: "/api/me/settings/theme" });
+    expect(anonymous.statusCode).toBe(401);
+  });
+});

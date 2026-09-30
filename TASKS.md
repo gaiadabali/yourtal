@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 7/23 | 40/72 | `██████░░░░`  56% |
-| **All** | | | **90/106** | **482/514** | `█████████░`  94% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 7/23 | 40/73 | `██████░░░░`  55% |
+| **All** | | | **90/106** | **482/515** | `█████████░`  94% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1515,7 +1515,8 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **13.20 Gift a voucher** (F86) · A (voucher, wallet API) + B (wallet UI) + C (Studio flag) · needs: — — 🔄 slot 9c (a, b, d)
   - [x] 13.20.a The voucher service gifts by void-and-remint: only an unused, unexpired voucher on a transferable listing, to a verified adult in the same region, one hop only (a gifted voucher cannot be gifted again), with velocity caps. Batch creation takes `transferable` from the listing; Studio's listing editor sets it. — ✅ e43a280d: `issue/gift.go` + `remint.go` (void with reason `transfer`, remint into `allocated` with no owner until accepted), one hop via `voucher.gift`, holdback and caps (F89), region pinned by composite FKs; batches read `transferable` off the listing; `gift_test.go` covers refusals, decline, expiry sweep and a two-way race. The Studio editor half is C's: 13.20.e.
   - [x] 13.20.b `POST /api/wallet/vouchers/:id/gift` with the recipient's email. The recipient accepts in the app within 7 days, or the gift returns to the sender. It shows only the sender's display name, with no message field. Teens can neither gift nor receive. The old code stops working the moment the gift is sent. — ✅ e43a280d: plus `GET /api/wallet/gifts`, `POST /api/wallet/gifts/:id/accept|decline`; contracts `wallet/wallet-gift.ts` (for V) and `voucher-internal/gifts.ts`; `giftable` on wallet vouchers; one `gift_recipient_ineligible` for every recipient problem; `wallet.yaml` denies teens `transfer`/`receive_voucher`; the voucher service returns unaccepted gifts after 7 days; fake engine too; `wallet-gift.e2e.test.ts` green.
-  - [ ] 13.20.c Wallet: a Gift action on a voucher, a Gifts section (sent, received, pending) and a notification to the recipient.
+  - [ ] 13.20.c Wallet: a Gift action on a voucher, a Gifts section (sent, received, pending) and a notification to the recipient. — 🔄 slot 4
+  - [ ] 13.20.f (requested by B) When a gift is sent, the wallet API writes a `gift_received` row to `me.notification` for the recipient (push per their preference, silent in a teen's quiet hours, though teens cannot receive gifts), and a `gift_returned` row for the sender when an unaccepted gift goes back. The bell shows any notification row as-is, so 13.20.c needs no change for it.
   - [x] 13.20.d **Check:** over HTTP in AU and ID, a gifted voucher's old code is refused at the counter, the recipient's new code redeems, a second gift is refused, and a cross-region or teen recipient is refused. Chain events and voucher rows match. — ✅ e43a280d, on merged main with the live Go voucher and ledger services: `scripts/check-13.20-gift.mjs` RESULT ok in AU and ID (run d890a78b): teen and other-region recipients 409, a teen accepting 403, old code refused at a paired counter and its QR 409, accept, second gift 409 `gift_already_gifted`, new code redeemed at the counter; rows: old `voided`/`transfer`, new `redeemed` owned by the recipient, gift `accepted`; chains old `…,transferred`, new `minted(remint_of),allocated,activated,authorized,captured`.
   - [ ] 13.20.e (requested by A) Studio's listing editor shows and sets `transferable` (the listing API already takes it).
 - [ ] **13.21 Charity registry** (F86) · C (registry, staff review, charity console) + B (viewer pages) · needs: — — 🔄 slot 3 (contract and tables on main, ca4c63ca)

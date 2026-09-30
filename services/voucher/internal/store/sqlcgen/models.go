@@ -131,6 +131,18 @@ type VoucherCodeCustody struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type VoucherEscrow struct {
+	AuctionID       pgtype.UUID
+	SourceVoucherID pgtype.UUID
+	VoucherID       pgtype.UUID
+	SellerID        pgtype.UUID
+	Region          string
+	State           string
+	ReleasedTo      pgtype.UUID
+	CreatedAt       pgtype.Timestamptz
+	ReleasedAt      pgtype.Timestamptz
+}
+
 type VoucherEvent struct {
 	VoucherID  pgtype.UUID
 	Seq        int32

@@ -122,7 +122,7 @@ func (m *Minter) checkGiftable(
 	if !source.Transferable {
 		return ErrNotTransferable
 	}
-	received, err := queries.ReceivedAsGift(ctx, source.ID)
+	received, err := queries.ReceivedByTransfer(ctx, source.ID)
 	if err != nil {
 		return fmt.Errorf("checking the gift hop: %w", err)
 	}

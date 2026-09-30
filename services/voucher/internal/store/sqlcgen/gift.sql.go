@@ -43,6 +43,52 @@ func (q *Queries) CountGiftsSentSince(ctx context.Context, arg CountGiftsSentSin
 	return count, err
 }
 
+const getEscrowView = `-- name: GetEscrowView :one
+SELECT e.auction_id, e.source_voucher_id, e.voucher_id, e.seller_id, e.region, e.state,
+       e.released_to, v.listing_id, v.title, v.merchant_name, v.currency, v.face_value_minor,
+       v.expires_at AS voucher_expires_at
+FROM voucher.escrow e
+JOIN voucher.vouchers v ON v.id = e.voucher_id
+WHERE e.auction_id = $1
+`
+
+type GetEscrowViewRow struct {
+	AuctionID        pgtype.UUID
+	SourceVoucherID  pgtype.UUID
+	VoucherID        pgtype.UUID
+	SellerID         pgtype.UUID
+	Region           string
+	State            string
+	ReleasedTo       pgtype.UUID
+	ListingID        pgtype.UUID
+	Title            string
+	MerchantName     string
+	Currency         string
+	FaceValueMinor   int64
+	VoucherExpiresAt pgtype.Timestamptz
+}
+
+func (q *Queries) GetEscrowView(ctx context.Context, auctionID pgtype.UUID) (GetEscrowViewRow, error) {
+	row := q.db.QueryRow(ctx, getEscrowView, auctionID)
+	var i GetEscrowViewRow
+	err := row.Scan(
+		&i.AuctionID,
+		&i.SourceVoucherID,
+		&i.VoucherID,
+		&i.SellerID,
+		&i.Region,
+		&i.State,
+		&i.ReleasedTo,
+		&i.ListingID,
+		&i.Title,
+		&i.MerchantName,
+		&i.Currency,
+		&i.FaceValueMinor,
+		&i.VoucherExpiresAt,
+	)
+	return i, err
+}
+
 const getGiftBySource = `-- name: GetGiftBySource :one
 SELECT id, source_voucher_id, voucher_id, sender_id, recipient_id, region, state,
        created_at, expires_at, resolved_at
@@ -115,6 +161,30 @@ func (q *Queries) GetGiftView(ctx context.Context, id pgtype.UUID) (GetGiftViewR
 		&i.VoucherExpiresAt,
 	)
 	return i, err
+}
+
+const insertEscrow = `-- name: InsertEscrow :exec
+INSERT INTO voucher.escrow (auction_id, source_voucher_id, voucher_id, seller_id, region)
+VALUES ($1, $2, $3, $4, $5)
+`
+
+type InsertEscrowParams struct {
+	AuctionID       pgtype.UUID
+	SourceVoucherID pgtype.UUID
+	VoucherID       pgtype.UUID
+	SellerID        pgtype.UUID
+	Region          string
+}
+
+func (q *Queries) InsertEscrow(ctx context.Context, arg InsertEscrowParams) error {
+	_, err := q.db.Exec(ctx, insertEscrow,
+		arg.AuctionID,
+		arg.SourceVoucherID,
+		arg.VoucherID,
+		arg.SellerID,
+		arg.Region,
+	)
+	return err
 }
 
 const insertGift = `-- name: InsertGift :exec
@@ -307,6 +377,30 @@ func (q *Queries) ListGiftsForUser(ctx context.Context, arg ListGiftsForUserPara
 	return items, nil
 }
 
+const lockEscrow = `-- name: LockEscrow :one
+SELECT auction_id, source_voucher_id, voucher_id, seller_id, region, state, released_to,
+       created_at, released_at
+FROM voucher.escrow WHERE auction_id = $1
+FOR UPDATE
+`
+
+func (q *Queries) LockEscrow(ctx context.Context, auctionID pgtype.UUID) (VoucherEscrow, error) {
+	row := q.db.QueryRow(ctx, lockEscrow, auctionID)
+	var i VoucherEscrow
+	err := row.Scan(
+		&i.AuctionID,
+		&i.SourceVoucherID,
+		&i.VoucherID,
+		&i.SellerID,
+		&i.Region,
+		&i.State,
+		&i.ReleasedTo,
+		&i.CreatedAt,
+		&i.ReleasedAt,
+	)
+	return i, err
+}
+
 const lockGift = `-- name: LockGift :one
 SELECT id, source_voucher_id, voucher_id, sender_id, recipient_id, region, state,
        created_at, expires_at, resolved_at
@@ -412,6 +506,37 @@ func (q *Queries) ReceivedAsGift(ctx context.Context, voucherID pgtype.UUID) (bo
 	var received bool
 	err := row.Scan(&received)
 	return received, err
+}
+
+const receivedByTransfer = `-- name: ReceivedByTransfer :one
+SELECT (EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = $1 AND g.state = 'accepted')
+     OR EXISTS (SELECT 1 FROM voucher.escrow e
+                 WHERE e.voucher_id = $1 AND e.state = 'released' AND e.released_to <> e.seller_id)
+       )::boolean AS received
+`
+
+// One hop, across both paths: a voucher someone accepted as a gift, or won
+// (or was handed) at an auction, cannot change hands again.
+func (q *Queries) ReceivedByTransfer(ctx context.Context, voucherID pgtype.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, receivedByTransfer, voucherID)
+	var received bool
+	err := row.Scan(&received)
+	return received, err
+}
+
+const releaseEscrow = `-- name: ReleaseEscrow :exec
+UPDATE voucher.escrow SET state = 'released', released_to = $2, released_at = now()
+WHERE auction_id = $1 AND state = 'held'
+`
+
+type ReleaseEscrowParams struct {
+	AuctionID  pgtype.UUID
+	ReleasedTo pgtype.UUID
+}
+
+func (q *Queries) ReleaseEscrow(ctx context.Context, arg ReleaseEscrowParams) error {
+	_, err := q.db.Exec(ctx, releaseEscrow, arg.AuctionID, arg.ReleasedTo)
+	return err
 }
 
 const resolveGift = `-- name: ResolveGift :one

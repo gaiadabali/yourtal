@@ -29,6 +29,7 @@ var giftCodes = []struct {
 	{issue.ErrGiftToSelf, "gift_to_self"},
 	{issue.ErrGiftNotPending, "not_pending"},
 	{issue.ErrGiftWindowClosed, "window_closed"},
+	{issue.ErrEscrowReleased, "not_pending"},
 }
 
 func (a *API) failGift(w http.ResponseWriter, err error) {

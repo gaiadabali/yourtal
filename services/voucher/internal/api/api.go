@@ -73,6 +73,9 @@ func (a *API) Routes() chi.Router {
 	r.Post("/gifts/accept", a.acceptGift)
 	r.Post("/gifts/decline", a.declineGift)
 
+	r.Post("/escrow", a.escrowHold)
+	r.Post("/escrow/release", a.escrowRelease)
+
 	r.Post("/device/lookup", a.lookupAsDevice)
 	r.Post("/device/authorize", a.authorizeAsDevice)
 	r.Post("/device/capture", a.captureAsDevice)

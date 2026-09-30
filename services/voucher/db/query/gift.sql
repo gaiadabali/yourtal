@@ -85,3 +85,33 @@ INSERT INTO voucher.vouchers
    remaining_value_minor, partial_redemption_policy, minimum_spend_minor, transferable,
    issued_at, expires_at, location_id, state, batch_id, currency, region)
 VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, now(), $10, $11, 'minted', NULL, $12, $13);
+
+-- name: InsertEscrow :exec
+INSERT INTO voucher.escrow (auction_id, source_voucher_id, voucher_id, seller_id, region)
+VALUES ($1, $2, $3, $4, $5);
+
+-- name: GetEscrowView :one
+SELECT e.auction_id, e.source_voucher_id, e.voucher_id, e.seller_id, e.region, e.state,
+       e.released_to, v.listing_id, v.title, v.merchant_name, v.currency, v.face_value_minor,
+       v.expires_at AS voucher_expires_at
+FROM voucher.escrow e
+JOIN voucher.vouchers v ON v.id = e.voucher_id
+WHERE e.auction_id = $1;
+
+-- name: LockEscrow :one
+SELECT auction_id, source_voucher_id, voucher_id, seller_id, region, state, released_to,
+       created_at, released_at
+FROM voucher.escrow WHERE auction_id = $1
+FOR UPDATE;
+
+-- name: ReleaseEscrow :exec
+UPDATE voucher.escrow SET state = 'released', released_to = $2, released_at = now()
+WHERE auction_id = $1 AND state = 'held';
+
+-- name: ReceivedByTransfer :one
+-- One hop, across both paths: a voucher someone accepted as a gift, or won
+-- (or was handed) at an auction, cannot change hands again.
+SELECT (EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = $1 AND g.state = 'accepted')
+     OR EXISTS (SELECT 1 FROM voucher.escrow e
+                 WHERE e.voucher_id = $1 AND e.state = 'released' AND e.released_to <> e.seller_id)
+       )::boolean AS received;

@@ -317,7 +317,8 @@ SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title, 
        v.transferable, v.issued_at, v.expires_at, v.location_id, v.state, v.void_reason,
        v.batch_id, v.version, v.currency, v.saga_id,
        l.name AS location_name, l.address AS location_address, l.district AS location_district,
-       EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = v.id AND g.state = 'accepted') AS received_as_gift
+       (EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = v.id AND g.state = 'accepted')
+        OR EXISTS (SELECT 1 FROM voucher.escrow e WHERE e.voucher_id = v.id AND e.state = 'released' AND e.released_to <> e.seller_id))::boolean AS received_as_gift
 FROM voucher.vouchers v
 LEFT JOIN store.merchant_location l ON l.id = v.location_id
 WHERE v.id = $1 AND v.owner_id = $2
@@ -838,7 +839,8 @@ SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title, 
        v.transferable, v.issued_at, v.expires_at, v.location_id, v.state, v.void_reason,
        v.batch_id, v.version, v.currency, v.saga_id,
        l.name AS location_name, l.address AS location_address, l.district AS location_district,
-       EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = v.id AND g.state = 'accepted') AS received_as_gift
+       (EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = v.id AND g.state = 'accepted')
+        OR EXISTS (SELECT 1 FROM voucher.escrow e WHERE e.voucher_id = v.id AND e.state = 'released' AND e.released_to <> e.seller_id))::boolean AS received_as_gift
 FROM voucher.vouchers v
 LEFT JOIN store.merchant_location l ON l.id = v.location_id
 WHERE v.owner_id = $1 AND ($2::uuid IS NULL OR v.id > $2)

@@ -1,4 +1,4 @@
-h1:5fiZE/ToTQCnUo+0Ung6VrazWxaqQuudfj6IYsCILhs=
+h1:tT5IfJADp0oT4CsnZKGG/x+ND/snISMQR+qiaO2EYd4=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -117,3 +117,4 @@ h1:5fiZE/ToTQCnUo+0Ung6VrazWxaqQuudfj6IYsCILhs=
 20260930044002_voucher_gift.sql h1:AhNi8B4MKPuBibyDcuLCfcgh2pxjJb0iRW49YWgOt4k=
 20260930080230_charity_registry.sql h1:tByR3Ot6Ci405ObajInL+tgJTL9GmY5HmK2O4t7NrUQ=
 20260930082025_region_row_level_security.sql h1:A1cSvTlSZ9tKi/beAaWR0pZhhESOhThU3kdThGQC/VE=
+20260930090159_charity_auction.sql h1:pSrX+64R15ivBBKeE6vTG6xoQK4qzxE9BHe8z0ptnV0=

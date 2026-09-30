@@ -282,3 +282,16 @@ CREATE TABLE voucher.gift (
   expires_at        timestamptz NOT NULL,
   resolved_at       timestamptz
 );
+
+-- packages/db/migrations/20260930090159_charity_auction.sql (13.22).
+CREATE TABLE voucher.escrow (
+  auction_id        uuid        PRIMARY KEY,
+  source_voucher_id uuid        NOT NULL UNIQUE,
+  voucher_id        uuid        NOT NULL UNIQUE,
+  seller_id         uuid        NOT NULL,
+  region            text        NOT NULL,
+  state             text        NOT NULL DEFAULT 'held',
+  released_to       uuid,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  released_at       timestamptz
+);

@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 8/23 | 43/74 | `██████░░░░`  58% |
-| **All** | | | **91/106** | **485/516** | `█████████░`  94% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 8/23 | 43/75 | `██████░░░░`  57% |
+| **All** | | | **91/106** | **485/517** | `█████████░`  94% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1528,7 +1528,8 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.22.a A viewer lists an unused voucher for a chosen charity. The voucher is voided and reminted into auction escrow at once, so the seller's code stops working. The auction lasts 3 days, starts at a reserve of 50% of face value, and stays in one region.
   - [ ] 13.22.b Verified adults in the region bid in the region's currency (integer minor units), with a minimum increment and a 2-minute extension against last-second bids. Bids are processed one at a time per auction. Each bid places a hold through the simulated payment driver. The page shows the current amount and bid count, never who bid.
   - [ ] 13.22.c At close, the winner's hold is captured and paid straight to the charity's payout account; YourTal never holds the funds. The voucher is reminted to the winner, and every other hold is released. With no bids, the voucher goes to the charity to redeem itself. Seller, winner and charity each get a receipt.
-  - [ ] 13.22.d Viewer pages: `/auctions` (browse, filter by charity and category), an auction page, My bids and My listings. Staff can cancel an auction with a reason (all holds released, voucher back to the seller), audited.
+  - [ ] 13.22.d Viewer pages: `/auctions` (browse, filter by charity and category), an auction page, My bids and My listings. Staff can cancel an auction with a reason (all holds released, voucher back to the seller), audited. — 🔄 slot 4 — ⛔ live check waits for A2's 13.22.a–c routes and `GET /api/charities` (13.21.b). **Viewer half merged a0605704**, on the 13.22 contract, with a stateful local fake behind the same seam as Studio (live on staging and production): `/auctions` (category and charity filters in the URL), `/auctions/[id]` (current amount and bid count only, your own standing, a bid form in exact minor units that refuses below the minimum, the 2-minute extension), `/auctions/mine` (My bids, My listings), and "List for charity" on a voucher (adults, giftable vouchers only). Teens see a notice instead. Screenshots 390/1280 light/dark, AU and ID, axe clean. Until the routes land, staging shows "Auctions couldn't load". The staff cancel is C's, as 13.22.g.
+  - [ ] 13.22.g (requested by B, moved from 13.22.d) Staff can cancel an auction with a reason: every hold released, the voucher back to the seller, audited.
   - [ ] 13.22.e Self-assessment like F83 (AU charitable fundraising and ACNC, the ID fundraising permit law, the e-money and stored-value line), recorded in `docs/24`, with P-2 and YT-0562 in `docs/16` updated to F86.
   - [ ] 13.22.f **Check:** over HTTP, a listed voucher's old code is refused; two bidders racing produce one winner; the winner's capture lands on the charity's account and never on a YourTal account; the winner's voucher redeems; a teen and a cross-region bidder are refused.
 - [x] **13.23 Business boost bids** (F86) · C · needs: 13.12.a — ✅ 2026-09-30 9734eee5

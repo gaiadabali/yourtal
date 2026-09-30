@@ -20,8 +20,8 @@ type ConnectCallback = (
 
 /** Wraps `pool.connect`, which `pool.query` also goes through. */
 export function regionScopedPool<T extends Pool>(pool: T): T {
-  const connect = pool.connect.bind(pool) as (cb?: ConnectCallback) => Promise<PoolClient> | void;
-  const patched = (callback?: ConnectCallback): Promise<PoolClient> | void => {
+  const connect = pool.connect.bind(pool) as (cb?: ConnectCallback) => unknown;
+  const patched = (callback?: ConnectCallback): unknown => {
     // Read at call time, not when a client frees up: a waiting checkout must
     // not take the region of whichever request released the client.
     const region = regionScope.getStore()?.region ?? "";
@@ -36,7 +36,7 @@ export function regionScopedPool<T extends Pool>(pool: T): T {
         return client;
       });
     }
-    connect((err, client, done) => {
+    void connect((err, client, done) => {
       if (err || !client) {
         callback(err, client, done);
         return;

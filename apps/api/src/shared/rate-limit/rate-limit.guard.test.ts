@@ -24,7 +24,7 @@ class Routes {
 
 function contextFor(handler: keyof Routes): ExecutionContext {
   return {
-    getHandler: () => Routes.prototype[handler],
+    getHandler: () => Object.getOwnPropertyDescriptor(Routes.prototype, handler)?.value as unknown,
     getClass: () => Routes,
     switchToHttp: () => ({ getRequest: () => ({ ip: "203.0.113.9" }) }),
   } as unknown as ExecutionContext;

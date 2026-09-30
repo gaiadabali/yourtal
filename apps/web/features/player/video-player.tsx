@@ -136,6 +136,14 @@ export function VideoPlayer({
           <HlsAttacher videoRef={videoRef} src={manifestUrl} desiredHeight={HLS_HEIGHT} />
         ) : null}
 
+        {/* 12.4.d/#9: every long-form campaign is funded by a business, so
+            every player says so, plainly, in text -- never a colour alone.
+            Always shown, not tied to any phase; a real (non-decorative)
+            label, so it stays in the accessibility tree, not hidden from it. */}
+        <span className="pointer-events-none absolute top-2 left-2 z-10 rounded-control bg-overlay px-1.5 py-0.5 text-caption font-sans font-medium text-white">
+          {t("sponsoredLabel")}
+        </span>
+
         {phase.kind === "resume_prompt" ? (
           <ResumePrompt
             positionSeconds={phase.resumeAtSeconds}

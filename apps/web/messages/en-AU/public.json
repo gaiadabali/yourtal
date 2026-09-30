@@ -274,7 +274,7 @@
         {
           "heading": "Agreeing to these terms",
           "body": [
-            "By creating an account you agree to these terms. If you don't agree, please don't use YourTal."
+            "By creating an account you agree to these terms. If you're 13 to 17, your parent or guardian agrees to these terms too, by approving your account. If you don't agree, please don't use YourTal."
           ]
         },
         {
@@ -300,6 +300,15 @@
           "heading": "Rewards",
           "body": [
             "Vouchers are provided by the businesses that offer them and follow the conditions shown before you redeem."
+          ]
+        },
+        {
+          "heading": "If you're 13 to 17, and for guardians",
+          "body": [
+            "You can join YourTal from age 13. If you're 13 to 17, we ask a parent or guardian to approve your account by email before you can start earning — by approving, they're agreeing to these terms on your behalf.",
+            "A guardian can withdraw that approval, or delete the teen's account, at any time using the same link in that email — no need to contact us.",
+            "Under-18 accounts also get extra protections: half the usual daily earning limit, quiet hours from 9pm to 7am with no notifications or new earning, and no earning streaks.",
+            "Points are a reward, not income. They have no cash value and can never be exchanged for cash, sold, transferred, or paid to anyone."
           ]
         },
         {
@@ -341,6 +350,15 @@
           "heading": "Your region",
           "body": [
             "Your account belongs to the region you signed up in, and its information is kept separate from the other region."
+          ]
+        },
+        {
+          "heading": "If you're 13 to 17, and for guardians",
+          "body": [
+            "For an account aged 13 to 17, we keep the same basic details as any account: name, date of birth, email address, the videos watched, and the points earned.",
+            "We never sell this information, and we never build a profile of a teen's behaviour to target them — we don't use watching habits to guess interests for anyone under 18.",
+            "Businesses only ever see combined totals, never individuals — and never a group smaller than 20 people, so no result can single out a teen viewer.",
+            "A guardian can see the approval, withdraw it, or delete the account, at any time using the link in the approval email."
           ]
         },
         {

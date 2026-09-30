@@ -138,6 +138,13 @@ describe("VideoPlayer", () => {
     expect(screen.getByRole("button", { name: "Play Test Campaign" })).toBeInTheDocument();
   });
 
+  // 12.4.d/#9: every long-form campaign is funded by a business — the
+  // player says so in plain text, always, not tied to any playback phase.
+  it("shows a Sponsored label", () => {
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    expect(screen.getByText("Sponsored")).toBeInTheDocument();
+  });
+
   it("starts a real server session on tap, and shows the reward progress once watching", async () => {
     render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
     fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));

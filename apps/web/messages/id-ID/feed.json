@@ -36,7 +36,8 @@
     "pause": "Jeda {title}",
     "earn": "Dapatkan {points}",
     "watchAndEarn": "Tonton & dapatkan poin",
-    "progress": "{watched} dari {total} ditonton"
+    "progress": "{watched} dari {total} ditonton",
+    "sponsored": "Bersponsor"
   },
   "earn": {
     "starting": "Memulai…",

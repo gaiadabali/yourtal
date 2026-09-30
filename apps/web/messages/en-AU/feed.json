@@ -36,7 +36,8 @@
     "pause": "Pause {title}",
     "earn": "Earn {points}",
     "watchAndEarn": "Watch & earn",
-    "progress": "{watched} of {total} watched"
+    "progress": "{watched} of {total} watched",
+    "sponsored": "Sponsored"
   },
   "earn": {
     "starting": "Starting…",

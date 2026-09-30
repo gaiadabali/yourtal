@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { Badge } from "@yourtal/ui/badge";
 import { MediaCard } from "@yourtal/ui/media-card";
 import type { FeedRowItem } from "./feed-data";
 import { formatFeedDuration, type FeedLocale } from "./feed-terms";
@@ -40,7 +41,16 @@ export function FeedRow({ title, empty, items }: FeedRowProps) {
                   aspect="9:16"
                   title={item.title}
                   durationLabel={formatFeedDuration(t, item.durationSeconds)}
-                  channel={<span className="text-caption font-sans">{item.merchantName}</span>}
+                  channel={
+                    <span className="flex items-center gap-1.5 text-caption font-sans">
+                      {/* 12.4.d/#9: same "Sponsored" text label as the main
+                          feed card -- every row card is a funded campaign. */}
+                      <Badge variant="outline" className="border-white/70 text-white">
+                        {t("item.sponsored")}
+                      </Badge>
+                      <span>{item.merchantName}</span>
+                    </span>
+                  }
                   {...progress}
                 />
               </li>

@@ -5,7 +5,7 @@ import type { PointsExpiringEvent } from "@yourtal/contracts/ledger-internal/exp
 import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
 import type { JobContext } from "../job";
-import { isTeenInQuietHours } from "../teen-quiet-hours";
+import { isTeenAccount } from "../teen-quiet-hours";
 
 /**
  * TASKS.md 10.2.d: turns each `ledger.points_expiring` event into an in-app
@@ -32,9 +32,10 @@ export const job = defineJob<PointsExpiringEvent>({
     const event = jobRecord.data;
     const client = poolFor(config.databaseUrl);
 
-    // 12.2.b: quiet hours (21:00-07:00, the recipient's own profile
-    // timezone) silence a teen entirely -- no notification row, no push.
-    if (await isTeenInQuietHours(client, event.userId, new Date())) return;
+    // 12.4.d/#7: a teen never gets the expiry nudge at all, not only
+    // overnight -- "act now or lose it" pressure is exactly what teen mode
+    // exists to soften. No notification row, no push, any time of day.
+    if (await isTeenAccount(client, event.userId, new Date())) return;
 
     const category = "points_expiring";
     const title =

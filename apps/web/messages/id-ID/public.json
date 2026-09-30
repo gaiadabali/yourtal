@@ -272,7 +272,7 @@
         {
           "heading": "Menyetujui ketentuan ini",
           "body": [
-            "Dengan membuat akun, kamu menyetujui ketentuan ini. Jika tidak setuju, mohon jangan gunakan YourTal."
+            "Dengan membuat akun, kamu menyetujui ketentuan ini. Jika usiamu 13-17 tahun, orang tua atau walimu juga menyetujui ketentuan ini dengan menyetujui akunmu. Jika tidak setuju, mohon jangan gunakan YourTal."
           ]
         },
         {
@@ -298,6 +298,15 @@
           "heading": "Hadiah",
           "body": [
             "Voucher disediakan oleh bisnis yang menawarkannya dan mengikuti syarat yang ditampilkan sebelum kamu menukarkannya."
+          ]
+        },
+        {
+          "heading": "Jika usiamu 13-17 tahun, dan untuk orang tua/wali",
+          "body": [
+            "Kamu bisa bergabung dengan YourTal mulai usia 13 tahun. Jika usiamu 13-17 tahun, kami meminta orang tua atau wali menyetujui akunmu lewat email sebelum kamu bisa mulai mengumpulkan poin — dengan menyetujuinya, mereka menyetujui ketentuan ini atas namamu.",
+            "Orang tua atau wali dapat menarik persetujuan itu, atau menghapus akun, kapan saja menggunakan tautan yang sama di email tersebut — tanpa perlu menghubungi kami.",
+            "Akun di bawah 18 tahun juga mendapat perlindungan tambahan: separuh dari batas harian pengumpulan poin biasa, jam tenang pukul 21.00-07.00 tanpa notifikasi atau pengumpulan poin baru, dan tanpa rentetan hari (streak).",
+            "Poin adalah hadiah, bukan penghasilan. Poin tidak memiliki nilai tunai dan tidak pernah bisa ditukar dengan uang tunai, dijual, dipindahkan, atau dibayarkan kepada siapa pun."
           ]
         },
         {
@@ -341,6 +350,15 @@
           "heading": "Wilayahmu",
           "body": [
             "Akunmu termasuk dalam wilayah tempat kamu mendaftar, dan informasinya dipisahkan dari wilayah lain."
+          ]
+        },
+        {
+          "heading": "Jika usiamu 13-17 tahun, dan untuk orang tua/wali",
+          "body": [
+            "Untuk akun berusia 13-17 tahun, kami menyimpan data dasar yang sama seperti akun lainnya: nama, tanggal lahir, alamat email, video yang ditonton, dan poin yang dikumpulkan.",
+            "Kami tidak pernah menjual informasi ini, dan kami tidak membuat profil perilaku remaja untuk menargetkan mereka — kami tidak memakai kebiasaan menonton untuk menebak minat siapa pun di bawah 18 tahun.",
+            "Bisnis hanya pernah melihat total gabungan, tidak pernah individu — dan tidak pernah kelompok yang lebih kecil dari 20 orang, sehingga tidak ada hasil yang bisa menunjuk satu penonton remaja.",
+            "Orang tua atau wali dapat melihat persetujuan, menariknya, atau menghapus akun, kapan saja menggunakan tautan di email persetujuan."
           ]
         },
         {

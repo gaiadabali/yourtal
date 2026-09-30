@@ -40,6 +40,10 @@ export default defineConfig({
       reuseExistingServer: true,
       timeout: 60_000,
       cwd: "../..",
+      // 12.4.d/#5: the neutral age gate's guardian step only exists when
+      // teen registration is open — this only takes effect on a cold
+      // start; a reused already-running api keeps whatever it booted with.
+      env: { ...process.env, TEEN_ACCOUNTS: "true" },
     },
     {
       command: "pnpm --filter @yourtal/web dev",

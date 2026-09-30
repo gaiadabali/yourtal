@@ -18,7 +18,7 @@ import { formatFeedPoints, type FeedLocale } from "./feed-terms";
 
 type Tab = "forYou" | "continue" | "saved" | "following" | "endingSoon";
 type RowKey = Exclude<Tab, "forYou">;
-const ROW_KEYS: readonly RowKey[] = ["continue", "saved", "following", "endingSoon"];
+const ALL_ROW_KEYS: readonly RowKey[] = ["continue", "saved", "following", "endingSoon"];
 
 export interface HomeFeedProps {
   data: HomeFeedData;
@@ -76,7 +76,21 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
     />
   );
 
-  const rows = ROW_KEYS.map((key) => (
+  // 12.2.b: no streak counter for a teen, anywhere -- the whole strip is
+  // streak-first UI (days count, pending-grant dates framed against it), so
+  // it does not render at all rather than showing a half-empty version.
+  const isTeen = data.ageBand === "teen";
+  // 12.4.d/#7: no "Ending soon" row or tab for a teen -- the ranking side
+  // (`ranking.ts`'s own `signalsFor`) already never flags an item ending
+  // soon for a teen viewer, so `data.rows.endingSoon` is always empty for
+  // one; this drops the row and its tab entirely rather than showing an
+  // empty shelf.
+  const rowKeys = isTeen ? ALL_ROW_KEYS.filter((key) => key !== "endingSoon") : ALL_ROW_KEYS;
+  // Explicitly typed: a bare `["forYou", ...rowKeys]` widens to `string[]`
+  // (no `Tab` left for `SegmentedControl`'s own generic to infer), since
+  // `rowKeys` is a plain runtime array, not a literal tuple.
+  const tabs: readonly Tab[] = ["forYou", ...rowKeys];
+  const rows = rowKeys.map((key) => (
     <FeedRow
       key={key}
       title={t(`rows.${key}`)}
@@ -86,10 +100,6 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
     />
   ));
 
-  // 12.2.b: no streak counter for a teen, anywhere -- the whole strip is
-  // streak-first UI (days count, pending-grant dates framed against it), so
-  // it does not render at all rather than showing a half-empty version.
-  const isTeen = data.ageBand === "teen";
   // 12.2.b: a gentle nudge after ~45 continuous foreground minutes in the
   // feed -- teen-only, same as the rest of this section's softer engagement.
   const watchTimeReminder = useWatchTimeReminder(isTeen);
@@ -107,7 +117,7 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
           label={t("tabs.label")}
           value={tab}
           onChange={setTab}
-          options={(["forYou", ...ROW_KEYS] as const).map((value) => ({
+          options={tabs.map((value) => ({
             value,
             label: t(`tabs.${value}`),
           }))}
@@ -121,7 +131,9 @@ export function HomeFeed({ data, locale, publicBase }: HomeFeedProps) {
         {feed}
       </div>
 
-      {tab === "forYou" ? null : <div className="lg:hidden">{rows[ROW_KEYS.indexOf(tab)]}</div>}
+      {tab === "forYou" || !rowKeys.includes(tab) ? null : (
+        <div className="lg:hidden">{rows[rowKeys.indexOf(tab)]}</div>
+      )}
 
       <div className="hidden min-w-0 flex-1 flex-col gap-6 lg:flex">
         {watchTimeReminder.show ? (

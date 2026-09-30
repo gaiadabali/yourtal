@@ -241,6 +241,22 @@ describe("buildFeed", () => {
     expect(items[0]?.endingSoon).toBe(true);
   });
 
+  // 12.4.d/#7: no scarcity nudge for a teen, ever -- not the per-item flag,
+  // not the "Ending soon" why reason, regardless of how close the campaign
+  // actually is to ending.
+  it("never marks a campaign ending soon for a teen viewer, even one that genuinely is", () => {
+    const soon = candidate({
+      campaign: campaign({
+        audience: "all_ages",
+        endsAt: new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(),
+      }),
+    });
+    const ctx = baseContext({ audiences: ["all_ages", "teen"], ageBand: "teen" });
+    const items = buildFeed([soon], ctx);
+    expect(items[0]?.endingSoon).toBe(false);
+    expect(items[0]?.whyReason).not.toBe("ending_soon");
+  });
+
   it("carries the honest terms line: kind, questions, data and base plus the maximum bonus (F78)", () => {
     const withBonus = candidate({
       campaign: campaign({ questionCount: 3, estimatedDataMb: 120 }),

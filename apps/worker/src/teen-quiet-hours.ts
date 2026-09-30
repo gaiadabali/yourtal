@@ -16,17 +16,46 @@ import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
  * just pointed the other way: a MISSING fact narrows visibility there
  * (skip), but here it would WIDEN a silence, so absence means "send".
  */
+interface ProfileRow {
+  readonly date_of_birth: string | null;
+  readonly timezone: string | null;
+}
+
+async function profileFor(
+  client: Pool | PoolClient,
+  userId: string,
+): Promise<ProfileRow | undefined> {
+  const { rows } = await client.query<ProfileRow>(
+    `SELECT date_of_birth::text AS date_of_birth, timezone FROM identity.user_profile WHERE user_id = $1`,
+    [userId],
+  );
+  return rows[0];
+}
+
 export async function isTeenInQuietHours(
   client: Pool | PoolClient,
   userId: string,
   now: Date,
 ): Promise<boolean> {
-  const { rows } = await client.query<{ date_of_birth: string | null; timezone: string | null }>(
-    `SELECT date_of_birth::text AS date_of_birth, timezone FROM identity.user_profile WHERE user_id = $1`,
-    [userId],
-  );
-  const row = rows[0];
+  const row = await profileFor(client, userId);
   if (row?.date_of_birth == null || row.timezone == null) return false;
   const ageBand = ageBandFrom(ageYearsFrom(row.date_of_birth, now));
   return ageBand === "teen" && isQuietHours(now, row.timezone);
+}
+
+/**
+ * 12.4.d/#7: whether the account is a teen at all, with no quiet-hours
+ * condition — `points-expiring-notify.ts` uses this to suppress the expiry
+ * nudge entirely, not only overnight (`isTeenInQuietHours` above stays the
+ * narrower "silence overnight only" rule the other jobs still want). Same
+ * fail-open reasoning as above: a missing date of birth never claims "teen".
+ */
+export async function isTeenAccount(
+  client: Pool | PoolClient,
+  userId: string,
+  now: Date,
+): Promise<boolean> {
+  const row = await profileFor(client, userId);
+  if (row?.date_of_birth == null) return false;
+  return ageBandFrom(ageYearsFrom(row.date_of_birth, now)) === "teen";
 }

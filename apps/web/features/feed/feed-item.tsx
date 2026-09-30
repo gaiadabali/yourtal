@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { FeedItem as FeedItemData } from "@yourtal/contracts/feed";
+import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { ChannelAvatar } from "@yourtal/ui/channel-avatar";
 import { VerticalFeedVideo } from "@yourtal/ui/vertical-feed/video";
@@ -75,15 +76,22 @@ export function FeedItem({
       </div>
 
       <div className="absolute inset-x-3 bottom-4 z-20 flex max-w-[calc(100%-4.5rem)] flex-col gap-2 text-white">
-        <a href={`/c/${item.channelHandle}`} className="flex w-fit items-center gap-2">
-          <ChannelAvatar
-            decorative
-            name={item.merchantName}
-            size="sm"
-            {...(item.channelLogoUrl ? { src: item.channelLogoUrl } : {})}
-          />
-          <span className="text-label font-sans font-semibold">{item.merchantName}</span>
-        </a>
+        <div className="flex w-fit items-center gap-2">
+          <a href={`/c/${item.channelHandle}`} className="flex items-center gap-2">
+            <ChannelAvatar
+              decorative
+              name={item.merchantName}
+              size="sm"
+              {...(item.channelLogoUrl ? { src: item.channelLogoUrl } : {})}
+            />
+            <span className="text-label font-sans font-semibold">{item.merchantName}</span>
+          </a>
+          {/* 12.4.d/#9: every campaign is funded by a business, so every
+              card says so, plainly, in text -- never a colour alone. */}
+          <Badge variant="outline" className="border-white/70 text-white">
+            {t("item.sponsored")}
+          </Badge>
+        </div>
         <h2 className="line-clamp-2 font-display text-title font-bold text-balance">
           {item.title}
         </h2>

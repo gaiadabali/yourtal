@@ -107,7 +107,10 @@ export function signalsFor(candidate: CandidateCampaign, ctx: RankingContext): S
     interestMatch,
     audienceMatch,
     demoted: ctx.demotedCampaignIds.has(campaign.id),
-    endingSoon: isEndingSoon(candidate, ctx.now),
+    // 12.4.d/#7: never a scarcity nudge for a teen -- no per-item flag, no
+    // "Ending soon" why reason, and (`get-feed.use-case.ts`'s own caller,
+    // `home-feed.tsx`) no row or tab for it either.
+    endingSoon: ctx.ageBand === "teen" ? false : isEndingSoon(candidate, ctx.now),
   };
 }
 

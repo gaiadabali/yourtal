@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 43/43 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 17/24 | `███████░░░`  71% |
-| **Phase 13** Ready for live review | all | · not started | 0/18 | 0/49 | `░░░░░░░░░░`   0% |
-| **All** | | | **82/101** | **433/490** | `█████████░`  88% |
+| **Phase 13** Ready for live review | all | · not started | 0/18 | 0/50 | `░░░░░░░░░░`   0% |
+| **All** | | | **82/101** | **433/491** | `█████████░`  88% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1485,6 +1485,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **13.15 The store as a shop** (F84) · B · needs: 13.12.b
   - [ ] 13.15.a A search box, category chips, and filters for brand, tags, points range, location and channel: a sidebar at 1280 px, a bottom sheet at 390 px. Active filters show as removable chips, with a result count, sort and paging.
   - [ ] 13.15.b Voucher cards show the image, brand, points, stock left and expiry. Brand pages list that brand's vouchers.
+  - [ ] 13.15.c The "Channel" filter becomes "Where to use it" (In store, Online), and picking either one also shows "In store & online" vouchers (today it hides them).
 - [ ] **13.16 Light and dark mode** (F84) · B · needs: —
   - [ ] 13.16.a A theme setting (System, Light, Dark) in Me and in the header menu, saved to the account and a cookie, so the server renders it with no flash. `ViewerShell` stops forcing dark.
   - [ ] 13.16.b Every viewer, Studio, counter and staff screen is checked in both themes.

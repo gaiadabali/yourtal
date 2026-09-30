@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 43/43 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 18/24 | `████████░░`  75% |
-| **Phase 13** Ready for live review | all | · not started | 0/18 | 0/50 | `░░░░░░░░░░`   0% |
-| **All** | | | **82/101** | **434/491** | `█████████░`  88% |
+| **Phase 13** Ready for live review | all | · not started | 0/22 | 0/68 | `░░░░░░░░░░`   0% |
+| **All** | | | **82/105** | **434/509** | `█████████░`  85% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -68,7 +68,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | 5 | **9** Staff console | Phase 7 ✅ | ~4d |
 | 5 | **11** Viewer feed & public site | Phases 5, 6 and 7 ✅ | ~8d |
 | 6 | **12** Teen & family mode | Phases 10 and 11 ✅ | ~3d |
-| 7 | **13** Ready for live review | every other phase ✅. Its UI pass, 13.11–13.19, and 13.1, 13.5, 13.8, 13.9 and 13.10 can start now (F84). | ~3d + ~5d UI pass |
+| 7 | **13** Ready for live review | every other phase ✅. Its UI pass and new features, 13.11–13.23, and 13.1, 13.5, 13.8, 13.9 and 13.10 can start now (F84). | ~3d + ~5d UI pass |
 
 **Never run these two at once:** 4 and 10 (both rewrite `services/ledger`), and 5 and 11 (both change the player and watch flow). The waves above already keep them apart.
 
@@ -153,6 +153,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F83** | How to finish 12.4, the legal review of teen mode | **A self-assessment against the industry codes, treated as final** (founder, 2026-09-30; offered and declined: keeping a lawyer sign-off gate). Assessed against the UK Age Appropriate Design Code (the model for AU's coming Children's Online Privacy Code), the AANA children's advertising code, the AU under-16 social media law, UU PDP Art. 25 and PP 17/2025. Gaps found are fixed in code; `docs/24` and `docs/16` record it as a founder-approved self-assessment, not a lawyer's review. `TEEN_ACCOUNTS` may then be on in production, still off unless set. |
 | **F84** | The founder's UI pass before Phase 13's review (2026-09-30): how tags work, what short videos are called, and when it runs | **Tags are picked from the interest taxonomy** (offered and declined: taxonomy plus free keywords, free text only), so they match the preference engine and the sensitive-term block applies. **Short videos are called "Shorts"** in the app (still `quick` in code). **It runs first in Phase 13** as 13.11–13.19, ahead of 13.2, 13.3, 13.4 and 13.6, which test the final screens. |
 | **F85** | A superadmin login on staging for the founder to explore with | **`hansel@gaiada.com`, AU**, registered over the staging API on 2026-09-30, with every staff role plus a team role at the AU demo business. The password is the founder's own and is never written in this repo. The grants run over SSH on Helios, like F76. |
+| **F86** | Business boost, voucher gifting, a charity registry and charity auctions (founder, 2026-09-30) | **Build all four in Phase 13, before the review**, as 13.20–13.23 (offered and declined: Phase 14 after the review). There are still **no refunds** (P-1). **Gifting:** a viewer can give an unused voucher once to another verified adult YourTal user in the same region. The code is cancelled and reissued, and there are no messages or profiles between them. **Charity auctions:** a viewer picks a verified charity and lists a voucher. Verified adults in the same region bid **in cash**; the winner pays straight to the charity's own account, and YourTal never holds the funds (red line 8). Only the amount is shown, never who bid. This settles YT-0562: bids are in cash and the exit goes to charity only, so points are never cashed out. **Boost:** businesses bid cash per day, second price, billed apart from points, and it never raises a viewer's reward. Gifting and bidding are the only user-to-user paths, and no teen takes part in either. |
 | **F81** | Every worktree kept a frozen TASKS.md from when its branch was cut, which looked current (the founder read Phase 10 at 4/7 in `yourtal-p11-d` after it was done) | **Leave TASKS.md out of every worktree** with git sparse-checkout, so the main checkout's copy is the only one on disk. Applied to all 23 worktrees on 2026-09-29; new slots run it in slot setup. Undo per worktree with `git sparse-checkout disable`. |
 | **F83** | Phase 11's Done-when needs a staging buy and dispute, but the demo viewers' password is only in Helios's secrets file | **Read it once over SSH (founder, 2026-09-29).** Used only to sign in `viewer.au`/`viewer.id`, never printed or stored. |
 
@@ -1416,9 +1417,9 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 
 **Done when:** on staging, a 14-year-old demo account (approved by a guardian through the inbox) sees only teen-rated and all-ages campaigns and vouchers, a parent demo account sees campaigns for young children's products, and an adult-only campaign never reaches a teen through any endpoint. — engineering half verified on staging 2026-09-30 (6db42923): a guardian-approved 14-year-old's feed and store hold only `teen` and `all_ages` items; an adult's hold the `parents`-rated Outback Trail Gear (a family camping-gear brand; 13.1 adds a kids' products brand); the adult-only Perth Power Tools is 403 to the teen on campaign, terms and watch, missing from search and store, 404 as a listing and 409 `audience_blocked` at checkout, and 401 anonymous. Phase 12 closes when 12.4 does.
 
-## Phase 13 — Ready for live review · All areas · ~3d, plus ~5d for the UI pass
+## Phase 13 — Ready for live review · All areas · ~3d, plus ~5d for the UI pass and ~2–3 weeks for 13.20–13.23
 
-**Order (F84), which overrides task order:** the founder's UI pass, 13.11–13.19, runs first. 13.1, 13.5, 13.8, 13.9 and 13.10 do not depend on the screens and can run beside it. 13.2, 13.3, 13.4 and 13.6 wait for the UI pass, because they test the final screens. The Phase 6 screen rules (live data, primitives, copy pass, every state, screenshots with axe) apply to every UI task.
+**Order (F84, F86), which overrides task order:** the founder's UI pass (13.11–13.19) and the new features (13.20–13.23) run first. 13.1, 13.5, 13.8, 13.9 and 13.10 do not depend on them and can run beside them. 13.2, 13.3, 13.4 and 13.6 wait for both, because they test the final product. The Phase 6 screen rules (live data, primitives, copy pass, every state, screenshots with axe) apply to every UI task.
 
 - [ ] **13.1 The demo world** · C (A does the ledger part) · needs: 7.2, 7.3, 7.4, 8.1, 4.7, 9.1, 10.1, 12.1
   - [ ] 13.1.a `pnpm demo:reset`, **on demand** (a CLI and a staff button), never deleting or editing ledger, voucher or proof rows: it suspends the current demo accounts, reverses their balances with postings, and creates fresh demo accounts with new IDs. It covers AU (the default) and ID. Each region gets:
@@ -1428,13 +1429,13 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - demo accounts for every role: adult viewer (tier 3), teen plus guardian, business owner, marketer and finance, a store counter device, and staff admin, moderator and finance.
   - [ ] 13.1.b A week of history, made by driving the **real APIs** over a real period and never by raw SQL into the ledger (A's `seed/ledger.ts`), so reports and statements have data.
   - [ ] 13.1.c **Check:** after `pnpm demo:reset`, every demo login works and every screen has data in both regions.
-- [ ] **13.2 Review guide** · B · needs: 13.1, 13.11–13.19
+- [ ] **13.2 Review guide** · B · needs: 13.1, 13.11–13.23
   - [ ] 13.2.a A `/review` page, on staging only, listing the viewer, teen and guardian, business and counter demo logins. **Staff logins are not listed**; they are given to the founder separately from `app.env`. It also lists the journeys to try with direct links, `/dev/clock` for time-based journeys, and what is simulated.
-- [ ] **13.3 End-to-end tests, split by owner** · needs: 13.1, 13.11–13.19
+- [ ] **13.3 End-to-end tests, split by owner** · needs: 13.1, 13.11–13.23
   - [ ] 13.3.a **B:** journeys 5, 6, 7, 11 and 14 (`product-intent.md` §2.2), in AU and ID, in `e2e/journeys/`.
   - [ ] 13.3.b **C:** journeys 1, 2, 3, 4, 8 and 12.
   - [ ] 13.3.c **A:** journeys 9, 10 and 13, a test that fails if the production build ever resolves `mock`, and an authorization matrix test covering every role against every route and region.
-- [ ] **13.4 The quality bar** · B + C · needs: 13.1, 13.11–13.19
+- [ ] **13.4 The quality bar** · B + C · needs: 13.1, 13.11–13.23
   - [ ] 13.4.a Performance on a mid-tier Android profile: LCP ≤ 2.0 s, initial JS ≤ 200 KB, TBT ≤ 200 ms, and **time to first frame on the feed ≤ 1.0 s** (docs/08).
   - [ ] 13.4.b Axe clean on every route, no horizontal scroll at 320 px, light and dark both checked, and captions present on every demo campaign.
   - [ ] 13.4.c **Check:** the Lighthouse CI mobile run meets the budgets on `/home` and `/au`.
@@ -1500,6 +1501,28 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.19.e An empty wallet explains the loop in three steps (watch, earn, redeem), with one button to Home. It never says "money" or "income".
 - [ ] **13.17 Check the UI pass** · B + C · needs: 13.13–13.16, 13.18, 13.19
   - [ ] 13.17.a **Check:** on staging, in AU and ID: Home shows only long videos, filters by category and tag, and the filters survive a reload; Shorts plays only Shorts; the store filters, sorts and searches on the server; the theme setting persists across sign-out and sign-in. Screenshots of Home, Shorts, Store, Search and Wallet, and the header menu, at 390 px and 1280 px, light and dark, axe clean.
+- [ ] **13.20 Gift a voucher** (F86) · A (voucher, wallet API) + B (wallet UI) + C (Studio flag) · needs: —
+  - [ ] 13.20.a The voucher service gifts by void-and-remint: only an unused, unexpired voucher on a transferable listing, to a verified adult in the same region, one hop only (a gifted voucher cannot be gifted again), with velocity caps. Batch creation takes `transferable` from the listing; Studio's listing editor sets it.
+  - [ ] 13.20.b `POST /api/wallet/vouchers/:id/gift` with the recipient's email. The recipient accepts in the app within 7 days, or the gift returns to the sender. It shows only the sender's display name, with no message field. Teens can neither gift nor receive. The old code stops working the moment the gift is sent.
+  - [ ] 13.20.c Wallet: a Gift action on a voucher, a Gifts section (sent, received, pending) and a notification to the recipient.
+  - [ ] 13.20.d **Check:** over HTTP in AU and ID, a gifted voucher's old code is refused at the counter, the recipient's new code redeems, a second gift is refused, and a cross-region or teen recipient is refused. Chain events and voucher rows match.
+- [ ] **13.21 Charity registry** (F86) · C (registry, staff review, charity console) + B (viewer pages) · needs: —
+  - [ ] 13.21.a A foundation applies at `/charity/apply`: name, region, registration (ABN plus ACNC registration in AU; yayasan deed plus fundraising permit in ID), and a payout account, all through the simulated KYB driver. Staff approve or reject it in `/staff/charities` with a reason and an audit event. Only approved charities are listed.
+  - [ ] 13.21.b Viewers browse their region's approved charities at `/charities` (logo, cause, region) and pick one when listing a voucher.
+  - [ ] 13.21.c A `charity_admin` console shows the charity's auction proceeds and statements (the existing `charity_settlement` policy), never a balance YourTal holds.
+- [ ] **13.22 Charity auctions** (F86) · A (escrow, payments, ledger) + B (viewer UI) + C (staff) · needs: 13.21.a
+  - [ ] 13.22.a A viewer lists an unused voucher for a chosen charity. The voucher is voided and reminted into auction escrow at once, so the seller's code stops working. The auction lasts 3 days, starts at a reserve of 50% of face value, and stays in one region.
+  - [ ] 13.22.b Verified adults in the region bid in the region's currency (integer minor units), with a minimum increment and a 2-minute extension against last-second bids. Bids are processed one at a time per auction. Each bid places a hold through the simulated payment driver. The page shows the current amount and bid count, never who bid.
+  - [ ] 13.22.c At close, the winner's hold is captured and paid straight to the charity's payout account; YourTal never holds the funds. The voucher is reminted to the winner, and every other hold is released. With no bids, the voucher goes to the charity to redeem itself. Seller, winner and charity each get a receipt.
+  - [ ] 13.22.d Viewer pages: `/auctions` (browse, filter by charity and category), an auction page, My bids and My listings. Staff can cancel an auction with a reason (all holds released, voucher back to the seller), audited.
+  - [ ] 13.22.e Self-assessment like F83 (AU charitable fundraising and ACNC, the ID fundraising permit law, the e-money and stored-value line), recorded in `docs/24`, with P-2 and YT-0562 in `docs/16` updated to F86.
+  - [ ] 13.22.f **Check:** over HTTP, a listed voucher's old code is refused; two bidders racing produce one winner; the winner's capture lands on the charity's account and never on a YourTal account; the winner's voucher redeems; a teen and a cross-region bidder are refused.
+- [ ] **13.23 Business boost bids** (F86) · C · needs: 13.12.a
+  - [ ] 13.23.a In Studio, a live campaign gets a Boost setting: a daily budget and a maximum bid per 1,000 boosted impressions, in the region's currency, with start and end dates.
+  - [ ] 13.23.b The Home feed reserves fixed boost slots. Each slot goes to the eligible boosted campaign (region, audience and interest walls unchanged) with the highest bid, and the winner pays the next-highest bid plus one minor unit. Spend is paced against the daily budget. The viewer's reward never changes.
+  - [ ] 13.23.c Boost spend is billed in cash through the simulated payment driver, separate from points packs, and shows on the business's statement.
+  - [ ] 13.23.d Boosted cards carry the "Sponsored" label (12.4.d). Studio Reports shows boosted impressions, spend and the average price paid.
+  - [ ] 13.23.e **Check:** with two boosted campaigns over HTTP, the higher bid wins the slot and pays the lower bid plus one; spend stops at the daily budget; the reward rows are unchanged.
 
 **Done when:** the founder completes the walkthrough on staging, and every issue raised is either fixed or recorded as a task in this file.
 

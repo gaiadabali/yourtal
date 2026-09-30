@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 4/23 | 27/70 | `████░░░░░░`  39% |
-| **All** | | | **87/106** | **469/512** | `█████████░`  92% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 6/23 | 31/70 | `████░░░░░░`  44% |
+| **All** | | | **89/106** | **473/512** | `█████████░`  92% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | free | 2026-09-30 | Phase 12 ✅ (12.1–12.4; 12.4 by the F83 self-assessment, checked on staging at deeb342a). Slot db `yourtal_s1` and Cerbos 26315 stay; helpers `yourtal-p12-b` (db `yourtal_s12b`, 26610–26615) and `yourtal-p12-c` (db `yourtal_s12c`, 26620–26625) are free for reuse. Carried to Phase 13: 13.10, 13.11 |
 | 2 | `yourtal-2` | free | 2026-09-29 | Phase 9 ✅ (779b2a53). Worktree, `.env`, db `yourtal_s2` and Cerbos 26325 ready for the next phase. Phase 9 helpers `yourtal-p9-b/c/d` (dbs `yourtal_s9b/c/d`) are done and can be reused; their Cerbos containers are stopped. Staging holds a test `ops` account (`staff-ops-9-3-b-1790652948@example.test`, granted under F76). Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check, and its burns are not region-tagged. Carried for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | `yourtal-3` | **13** — business and API side (agent C) | 2026-09-30 | Branch `phase/13-c`, db `yourtal_s3`, ports 26330–26336. 13.11 → 13.12 (contract shapes merged first, for agent V) → 13.23 → 13.21, plus 13.17 (C half). |
-| 9b | `yourtal-p9-b` | **13** — platform (agent A1) | 2026-09-30 | Branch `phase/13-a1`, db `yourtal_s9b`, ports 26470–26477. 13.8 → 13.24 → 13.5. |
+| 9b | `yourtal-p9-b` | **13** — platform (agent A1) | 2026-09-30 | Branch `phase/13-a1`, db `yourtal_s9b`, ports 26470–26477. 13.8 ✅, 13.24 ✅; on 13.5. |
 | 9c | `yourtal-p9-c` | **13** — vouchers and escrow (agent A2) | 2026-09-30 | Branch `phase/13-a2`, db `yourtal_s9c`, ports 26480–26487. 13.20.a/b/d (gifting backend) → 13.10 → 13.9 → 13.22.a–c (auction backend, once 13.21.a is on main). |
 | 4 | `yourtal-4` | **13** — viewer side (agent V) — at checkpoint | 2026-09-30 | Branch `phase/13`, db `yourtal_s4`, ports 26360–26366. Done: 13.18 ✅, 13.16 ✅; 13.13, 13.14, 13.15, 13.19 merged and passing on staging, closing with 13.17. 13.17 B half passed on staging except the tag filter (waits on 13.11.c reaching staging, and Release is red since 62cbcdb5). Paused for the founder's screen review; next 13.20.c, 13.22.d (UI only). |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
@@ -1445,7 +1445,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.4.a Performance on a mid-tier Android profile: LCP ≤ 2.0 s, initial JS ≤ 200 KB, TBT ≤ 200 ms, and **time to first frame on the feed ≤ 1.0 s** (docs/08).
   - [ ] 13.4.b Axe clean on every route, no horizontal scroll at 320 px, light and dark both checked, and captions present on every demo campaign.
   - [ ] 13.4.c **Check:** the Lighthouse CI mobile run meets the budgets on `/home` and `/au`.
-- [ ] **13.5 Security and red lines in code** · A (with requests to B and C) · needs: 13.1
+- [ ] **13.5 Security and red lines in code** · A (with requests to B and C) · needs: 13.1 — 🔄 slot 9b
   - [ ] 13.5.a Rate limits on public endpoints, a session and cookie review, CSP, gitleaks in CI (the repo is public), and a dependency audit.
   - [ ] 13.5.b Tests that keep the red lines in code:
     - **#1** no prediction questions (7.3.b);
@@ -1461,10 +1461,10 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 
 - [ ] **13.7 Drop the `browserslist` override once serwist 10 ships** (moved from 2.4.g by F38) · needs: serwist 10 stable — ✂️ cut: F42, ship on the latest stable; upgrade serwist later as routine maintenance, not a gate.
   - [ ] 13.7.a Upgrade `serwist`, `@serwist/next` and `@serwist/build` to 10.x and remove the `browserslist@<4.28.7` override from `pnpm-workspace.yaml`; `pnpm verify` green and the service worker still serves a visited voucher page offline. — ✂️ cut: F42.
-- [ ] **13.8 A deploy that crashes on start is not "OK"** · A · needs: — — 🔄 slot 9b
-  - [ ] 13.8.a (found by slot 1, 2026-09-28) After the pm2 reload, the deploy waits for `/api/health` (and the worker's readiness) and, if either fails, reports DEPLOY FAILED and rolls back to the previous release. On 2026-09-27 release 1191d50 logged `DEPLOY OK` while `yourtal-api` crashed on import (`ERR_MODULE_NOT_FOUND @aws-sdk/client-s3`), leaving `/api` at 502.
-  - [ ] 13.8.b CI builds the release artifact (`pnpm --filter … deploy --prod`) and boots `api/dist/main.js` and the worker once, so a dependency that is only declared by a workspace package fails in CI, not on staging.
-  - [ ] 13.8.c **Check:** a release whose api cannot boot is rolled back automatically, and staging keeps serving the previous one.
+- [x] **13.8 A deploy that crashes on start is not "OK"** · A · needs: — — ✅ 2026-09-30 0ed01410
+  - [x] 13.8.a (found by slot 1, 2026-09-28) After the pm2 reload, the deploy waits for `/api/health` (and the worker's readiness) and, if either fails, reports DEPLOY FAILED and rolls back to the previous release. On 2026-09-27 release 1191d50 logged `DEPLOY OK` while `yourtal-api` crashed on import (`ERR_MODULE_NOT_FOUND @aws-sdk/client-s3`), leaving `/api` at 502. Done by checking before the swap (F87): `pre-reload.sh` runs `deploy/boot-check.sh`, which boots the new api on 26309 until `/api/health` is 200 at its own `REVISION`, and runs the new `worker --check` (1980b470).
+  - [x] 13.8.b CI builds the release artifact (`pnpm --filter … deploy --prod`) and boots `api/dist/main.js` and the worker once, so a dependency that is only declared by a workspace package fails in CI, not on staging. Release's build job boots the artifact with Postgres (migrated) and Valkey (0ed01410); green on run 36669015076.
+  - [x] 13.8.c **Check:** a release whose api cannot boot is rolled back automatically, and staging keeps serving the previous one. On staging 2026-09-30 04:36 UTC: a copy of release 0ed0141 with `@aws-sdk/client-s3` removed, run through `gaiada-deploy`, logged `[boot-check] FAILED: the api exited during boot` and `DEPLOY FAILED … previous release still serving`; `current` and `/api/health` stayed at 0ed01410. The copy (`releases/deploy_production-check-13-8-broken`) could not be removed from this session and needs deleting on the box.
 - [ ] **13.9 Captions from uploads** (moved from 7.2.f, founder 2026-09-28; F68) · C · needs: —
   - [ ] 13.9.a The transcode extracts an embedded subtitle stream (e.g. `mov_text`) to WebVTT at `captions/<assetId>.vtt` and sets `captionsUrl`; a sidecar `.vtt` upload in Studio is the fallback. `transcode.ts` hard-codes `captionsUrl: null` today.
   - [ ] 13.9.b **Check:** on staging, Sintel (CC-BY, with its published subtitles muxed in) uploaded through Studio gets a `.vtt` served under `/media/captions/` that parses, and the player shows it.
@@ -1531,8 +1531,8 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.23.d Boosted cards carry the "Sponsored" label (12.4.d). Studio Reports shows boosted impressions, spend and the average price paid.
   - [ ] 13.23.e **Check:** with two boosted campaigns over HTTP, the higher bid wins the slot and pays the lower bid plus one; spend stops at the daily budget; the reward rows are unchanged.
 
-- [ ] **13.24 Account deletion leaves the ledger balance behind** (found by 12.4.b; renumbered from a clashing 13.11) · A · needs: — — 🔄 slot 9b
-  - [ ] 13.24.a `DELETE /api/me` and the guardian's delete both run `executeDeletion`, which has no `ledger` domain handler, so the balance and grant history stay under the deleted user's id (reported `unhandled`). Decide and build: void or escrow the balance with a posting, and pseudonymise the ledger rows, without deleting or editing ledger history.
+- [x] **13.24 Account deletion leaves the ledger balance behind** (found by 12.4.b; renumbered from a clashing 13.11) · A · needs: — — ✅ 2026-09-30 0ed01410
+  - [x] 13.24.a `DELETE /api/me` and the guardian's delete both run `executeDeletion`, which has no `ledger` domain handler, so the balance and grant history stay under the deleted user's id (reported `unhandled`). Decide and build: void or escrow the balance with a posting, and pseudonymise the ledger rows, without deleting or editing ledger history. Built (F88): `deletionHandlers` adds a `ledger` handler that escrows available + pending for good (reason `account_deleted`) and clears `ledger.grant`'s device and IP through `platform.pseudonymise_ledger_subject`. `deletion-handlers.e2e.test.ts`: DELETE /api/me → 200, ledger `anonymised`, escrow row 120 held, balance 0. Staging: a fresh AU account's DELETE /api/me reports ledger `anonymised` through the live ledger.
 
 **Done when:** the founder completes the walkthrough on staging, and every issue raised is either fixed or recorded as a task in this file.
 
@@ -1626,6 +1626,8 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-30 · A (slot 9b) · **13.24 Account deletion leaves the ledger balance behind** · 0ed01410. Deleting an account escrows its points for good with a posting (still reserve-backed, never income) and clears the grants' device and IP; no ledger row is deleted or edited. Both DELETE /api/me and the guardian's delete run it.
+- 2026-09-30 · A (slot 9b) · **13.8 A deploy that crashes on start is not "OK"** · 0ed01410. Each deploy boots the new api and worker before the swap, and CI boots the shipped artifact; on staging a release missing a dependency was refused with the previous one still serving.
 - 2026-09-30 · C (slot 3) · **13.11 and 13.12 done.** Campaigns and listings carry up to 8 tags from the interest taxonomy (no free text; the sensitive block applies), picked in Studio's Targeting tab and a new Inventory editor; the demo seed tags every row. The feed matches a viewer's declared interests on tags and their parents, not only the category. `GET /api/feed` filters by kind, category and tags and sorts (for you, newest, most points, ending soon) with facets; the store filters by tags and brand, sorts five ways, counts and pages on the server with facets; search takes kind and category. Proven over HTTP in AU and ID. Also fixed: the voucher service's sqlc mirror was missing the new listing columns (Integration's Go voucher suite) · 1f117178
 - 2026-09-30 · founder · **12.4 Legal review** · deeb342a. Finished by a founder-approved self-assessment against the UK Age Appropriate Design Code, the AANA children's code, the AU under-16 social media law, UU PDP Art. 25 and PP 17/2025 (F83), not a lawyer's review. The gaps it found are fixed: teens cannot grant marketing, research or sharing consents; push is off by default; the guardian email is erased at 18 or on deletion; the guardian can delete the account; reward listings follow the category policy; the terms and privacy pages explain teen mode; the register form no longer reveals the age cut-off; and there is no urgency framing for teens. `docs/24` records the assessment and a DPIA. Production may set `TEEN_ACCOUNTS=true`. **Phase 12 is complete.**
 - 2026-09-30 · B · **13.16 Light and dark mode** · d19354a9. System, Light or Dark, from Me or the header menu, saved to the account and restored at sign-in; the server renders the chosen theme with no flash. Every viewer, Studio and staff screen was checked in both themes.

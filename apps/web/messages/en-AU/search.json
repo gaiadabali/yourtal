@@ -8,5 +8,9 @@
   "channelsHeading": "Channels",
   "listingsHeading": "Rewards",
   "errorTitle": "Search couldn't load right now.",
-  "retry": "Try again"
+  "retry": "Try again",
+  "resultsFor": "Results for “{query}”",
+  "submit": "Search",
+  "videosHeading": "Videos",
+  "shortsHeading": "Shorts"
 }

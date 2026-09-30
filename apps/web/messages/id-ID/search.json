@@ -8,5 +8,9 @@
   "channelsHeading": "Kanal",
   "listingsHeading": "Hadiah",
   "errorTitle": "Pencarian tidak dapat dimuat saat ini.",
-  "retry": "Coba lagi"
+  "retry": "Coba lagi",
+  "resultsFor": "Hasil untuk “{query}”",
+  "submit": "Cari",
+  "videosHeading": "Video",
+  "shortsHeading": "Shorts"
 }

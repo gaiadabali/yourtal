@@ -44,9 +44,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 9** Staff console | C | ✅ done | 5/5 | 18/18 | `██████████` 100% |
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 43/43 | `██████████` 100% |
-| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 17/18 | `█████████░`  94% |
+| **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 17/24 | `███████░░░`  71% |
 | **Phase 13** Ready for live review | all | · not started | 0/9 | 0/22 | `░░░░░░░░░░`   0% |
-| **All** | | | **82/92** | **433/457** | `██████████`  95% |
+| **All** | | | **82/92** | **433/463** | `█████████░`  94% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1403,11 +1403,14 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [x] 12.3.e (found by 12.3.c) Studio Reports has no live data: `getReportsBundle` in `features/studio/reports/reports-data.ts` is mock-only, so the screen never shows the API's real (and suppressed) numbers. Wire it to `GET /api/:businessId/studio/reports/*`. Also: the category picker shows raw values (`alcohol`) instead of translated labels. — ✅ 56d0d9cd: `getReportsBundle` reads live campaigns, questions and listings; every state handled. Live proof with the slot api and db: a teen campaign with 19 viewers shows "Too few viewers so far to show this honestly", an all_ages one with 12 shows its numbers; 12 screenshots (390/1280 light/dark, three views), axe clean. The category picker shows translated labels. The "cannot show yet" panels were rewritten in plain language and re-checked against the code: two were no longer true and were dropped. Vouchers by status is still a real gap: 13.10.
   - [x] 12.3.c **Check:** a report for a campaign with fewer than 20 teen viewers shows no teen breakdown. — ✅ 919a75af, over HTTP with Postgres: a teen campaign with 19 `watch.session` rows returns `{suppressed: true, floor: 20}` and 20 rows return `rewardedViews: 20` (`reports.controller.e2e.test.ts`, and live against the slot api). The Studio screen shows "Not enough viewers" for that shape, but only from a mock, since 12.3.e is open.
 - [ ] **12.4 Legal review (not engineering)** · founder — 🔄 slot 1 (F83: self-assessment against the industry codes)
-  - [ ] 12.4.a Counsel reviews teen mode.
-    - **AU:** Privacy Act child provisions and the coming Children's Online Privacy Code, the AANA code on advertising to children, minors' contractual capacity, and the under-16 social media law.
-    - **ID:** PDP Law parental consent for children's data, and the child-protection regulation for electronic systems.
-    
-    Then update `docs/24` (AU-9, ID-12) and `docs/16` (C4). Until this is done, `TEEN_ACCOUNTS` stays off outside staging.
+  - [ ] 12.4.a Counsel reviews teen mode. — ✂️ cut: F83, the founder chose a self-assessment against the industry codes instead (12.4.b–h).
+  - [ ] 12.4.b (F83, A) Consent and data: teens cannot grant `marketing_communications`, `market_research_panel` or `sister_app_profile_sharing` (nor link apps); push defaults off for teens; the guardian email is refused when it equals the teen's, is deleted by the DSAR handler, dropped from `user_profile` and purged at 18; the guardian link can delete the teen's account; the guardian email and page say what data is kept. — 🔄 slot 1
+  - [ ] 12.4.c (F83, C) Reward listings go through `categoryRefusal`: a prohibited category is refused and an adult-only one is forced to `adult`, on create and edit. The personal-question guard applies to `all_ages` campaigns too, since teens see them. — 🔄 slot 1
+  - [ ] 12.4.d (F83, B) Teen and guardian sections in the terms and privacy pages (both locales), including that a guardian accepts the terms for an under-18 and points have no cash value; a "Sponsored" label on feed cards and the player; no "Ending soon" row or tab and no points-expiry push for teens; the register form stops showing the computed age before submit. — 🔄 slot 1
+  - [ ] 12.4.e (F83) A one-page DPIA for teen mode, in `docs/24`.
+  - [ ] 12.4.f (F83) `docs/24` AU-9 and ID-12 and `docs/16` C4 record the self-assessment, the codes it used, and the under-16 social media law exclusion reasoning, as a founder-approved self-assessment, not a lawyer's review.
+  - [ ] 12.4.g (F83) `TEEN_ACCOUNTS` may be on in production (still off unless set).
+  - [ ] 12.4.h **Check:** on staging, a teen cannot grant a restricted consent purpose (403), a prohibited reward listing is refused, the terms and privacy pages show the teen section, and a guardian can delete the teen's account from the link (account gone, guardian email gone).
 
 **Done when:** on staging, a 14-year-old demo account (approved by a guardian through the inbox) sees only teen-rated and all-ages campaigns and vouchers, a parent demo account sees campaigns for young children's products, and an adult-only campaign never reaches a teen through any endpoint. — engineering half verified on staging 2026-09-30 (6db42923): a guardian-approved 14-year-old's feed and store hold only `teen` and `all_ages` items; an adult's hold the `parents`-rated Outback Trail Gear (a family camping-gear brand; 13.1 adds a kids' products brand); the adult-only Perth Power Tools is 403 to the teen on campaign, terms and watch, missing from search and store, 404 as a listing and 409 `audience_blocked` at checkout, and 401 anonymous. Phase 12 closes when 12.4 does.
 

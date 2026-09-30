@@ -16,7 +16,7 @@ import {
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
 import type { ListingRow } from "./listing-assembler";
 import { listingFacets, matchesFacets, pageAfter, sortRows } from "./listing-browse-facets";
-import { pricePointsByListing, unallocatedStockByListing } from "./listing-live-values";
+import { pricePointsByListing, takenVouchersByListing } from "./listing-live-values";
 import type { ListingSort } from "@yourtal/contracts/listing/browse";
 
 /** A region's walled, active catalogue is hundreds of rows; this bounds the in-memory browse. */
@@ -125,13 +125,13 @@ export class DrizzleListingRepository implements ListingRepository {
 
   private async sortBrowse(rows: ListingRow[], sort: ListingSort): Promise<ListingRow[]> {
     const ids = rows.map((row) => row.id);
-    const [prices, unallocated] = await Promise.all([
+    const [prices, taken] = await Promise.all([
       pricePointsByListing(this.db, ids),
-      unallocatedStockByListing(this.db, ids),
+      takenVouchersByListing(this.db, ids),
     ]);
     return sortRows(rows, sort, {
       priceOf: (row) => prices.get(row.id) ?? row.priceInPoints,
-      takenOf: (row) => row.stockTotal - (unallocated.get(row.id) ?? 0),
+      takenOf: (row) => taken.get(row.id) ?? 0,
     });
   }
 

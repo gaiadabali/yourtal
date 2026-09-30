@@ -75,7 +75,7 @@ export class FeedController {
     @Query() query: Record<string, string | string[] | undefined>,
     @Req() request: FastifyRequest,
   ) {
-    const parsed = feedQuerySchema.parse(query);
+    const parsed = parseQuery(feedQuerySchema, query);
     const principal = await this.principals.resolve(request);
     const result = await getFeed(
       this.campaigns,
@@ -108,7 +108,7 @@ export class FeedController {
     @Query() query: Record<string, string | string[] | undefined>,
     @Req() request: FastifyRequest,
   ) {
-    const parsed = searchQuerySchema.parse(query);
+    const parsed = parseQuery(searchQuerySchema, query);
     const principal = await this.principals.resolve(request);
     const result = await search(
       this.campaigns,
@@ -147,4 +147,16 @@ export class FeedController {
     }
     return { ok: true };
   }
+}
+
+/** A malformed filter (a free-text tag, an unknown sort) is the caller's mistake: 400, never 500. */
+function parseQuery<T>(
+  schema: { safeParse: (input: unknown) => { success: true; data: T } | { success: false } },
+  query: unknown,
+): T {
+  const result = schema.safeParse(query);
+  if (!result.success) {
+    throw new BadRequestException({ code: "invalid_query", message: "unsupported filter value" });
+  }
+  return result.data;
 }

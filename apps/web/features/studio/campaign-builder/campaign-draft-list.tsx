@@ -7,6 +7,7 @@ import { Card, CardContent } from "@yourtal/ui/card";
 import { draftDurationSeconds } from "./campaign-draft";
 import type { CampaignDraft } from "./campaign-draft";
 import { CampaignDraftStatusBadge } from "./campaign-draft-status-badge";
+import { TagChips } from "../tag-picker";
 
 export interface CampaignDraftListProps {
   drafts: readonly CampaignDraft[];
@@ -68,6 +69,7 @@ export function CampaignDraftList({ drafts, onOpen, onCreate, canEdit }: Campaig
                       {t("campaignBuilder.list.rewardPoints", { points: draft.rewardPoints })}
                     </p>
                   </Button>
+                  <TagChips tags={draft.targeting.interests} />
                   {draft.status === "rejected" && draft.rejectionReason ? (
                     <div className="flex items-start gap-2 rounded-md bg-danger/10 px-3 py-2">
                       <Badge variant="danger" className="shrink-0">

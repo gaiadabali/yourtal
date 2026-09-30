@@ -65,7 +65,7 @@ describe("store browse facets (13.12.b)", () => {
     expect(ids("points_desc")).toEqual(["a", "c", "b"]);
     expect(ids("newest")[0]).toBe("c");
     expect(ids("ending_soon")[0]).toBe("c");
-    expect(ids("popular")).toEqual(["b", "a", "c"]);
+    expect(ids("popular")).toEqual(["b", "c", "a"]);
   });
 
   it("pages after a cursor in the sorted order", () => {

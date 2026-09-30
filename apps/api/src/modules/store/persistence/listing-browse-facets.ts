@@ -18,7 +18,7 @@ export interface FacetFilter {
 export interface SortValues {
   /** Live points price, falling back to the row's cached price. */
   readonly priceOf: (row: ListingRow) => number;
-  /** Vouchers already taken from this listing (total minus unallocated). */
+  /** Vouchers already bought from this listing. */
   readonly takenOf: (row: ListingRow) => number;
 }
 
@@ -65,7 +65,9 @@ export function sortRows(
   sort: ListingSort,
   values: SortValues,
 ): ListingRow[] {
-  const byId = (a: ListingRow, b: ListingRow) => a.id.localeCompare(b.id);
+  // Ties go newest first, then by id, so the order is total and fresh stock surfaces.
+  const byId = (a: ListingRow, b: ListingRow) =>
+    b.createdAt.getTime() - a.createdAt.getTime() || a.id.localeCompare(b.id);
   const compare: Record<ListingSort, (a: ListingRow, b: ListingRow) => number> = {
     popular: (a, b) => values.takenOf(b) - values.takenOf(a) || byId(a, b),
     newest: (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || byId(a, b),

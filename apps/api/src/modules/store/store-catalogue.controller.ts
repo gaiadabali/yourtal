@@ -56,7 +56,11 @@ export class StoreCatalogueController {
     @Query() query: Record<string, string | string[] | undefined>,
     @Req() request: FastifyRequest,
   ) {
-    const parsed = browseListingsQuerySchema.parse(query);
+    const parsedQuery = browseListingsQuerySchema.safeParse(query);
+    if (!parsedQuery.success) {
+      throw new BadRequestException({ code: "invalid_query", message: "unsupported filter value" });
+    }
+    const parsed = parsedQuery.data;
     const principal = await this.principals.resolve(request);
     const scope = resolveCatalogueScope(principal, parsed.region);
 

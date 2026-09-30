@@ -59,3 +59,18 @@ export async function unallocatedStockByListing(
   `);
   return new Map(result.rows.map((row) => [row.listing_id, Number(row.count)]));
 }
+
+/** 13.12.b's "popular": vouchers already bought from each listing (any state past `minted`). */
+export async function takenVouchersByListing(
+  db: Db,
+  listingIds: readonly string[],
+): Promise<Map<string, number>> {
+  if (listingIds.length === 0) return new Map();
+  const result = await db.execute<{ listing_id: string; count: string }>(sql`
+    SELECT listing_id, count(*)::bigint AS count
+      FROM voucher.vouchers
+     WHERE listing_id IN (${idList(listingIds)}) AND state <> 'minted'
+     GROUP BY listing_id
+  `);
+  return new Map(result.rows.map((row) => [row.listing_id, Number(row.count)]));
+}

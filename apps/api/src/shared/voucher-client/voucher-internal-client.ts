@@ -43,6 +43,14 @@ import type {
   RotateCredentialRequest,
 } from "@yourtal/contracts/voucher-internal/credentials";
 import type {
+  GiftVoucherRequest,
+  ListGiftsRequest,
+  ListGiftsResult,
+  ResolveGiftRequest,
+  VoucherGift,
+  VoucherGiftError,
+} from "@yourtal/contracts/voucher-internal/gifts";
+import type {
   MerchantCaptureStats,
   MerchantCaptureStatsRequest,
 } from "@yourtal/contracts/voucher-internal/stats";
@@ -86,6 +94,11 @@ export interface VoucherInternalClient {
   merchantCaptureStats(
     request: MerchantCaptureStatsRequest,
   ): ResultAsync<MerchantCaptureStats, VoucherError>;
+  /** 13.20: gifts. Refusals use the gift contract's own codes. */
+  gift(request: GiftVoucherRequest): ResultAsync<VoucherGift, VoucherGiftError>;
+  listGifts(request: ListGiftsRequest): ResultAsync<ListGiftsResult, VoucherGiftError>;
+  acceptGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError>;
+  declineGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError>;
 }
 
 export const VOUCHER_INTERNAL_CLIENT = Symbol("VOUCHER_INTERNAL_CLIENT");

@@ -31,6 +31,16 @@ resourcePolicy:
       effect: EFFECT_DENY
       roles: ["anonymous"]
 
+    - name: teens-neither-gift-nor-receive
+      # 13.20/F86: gifting is one of only two user-to-user paths, and no
+      # teen takes part in it, with or without a guardian's consent.
+      actions: ["transfer", "receive_voucher"]
+      effect: EFFECT_DENY
+      roles: ["*"]
+      condition:
+        match:
+          expr: has(P.attr.ageBand) && P.attr.ageBand == "teen"
+
     - name: high-value-redemption-needs-a-passkey
       # docs/14 section 5: a passkey is required before the first redemption
       # above the value threshold. Phone-only identity is a SIM swap away

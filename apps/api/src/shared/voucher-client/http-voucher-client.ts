@@ -46,6 +46,15 @@ import type {
   RevokeCredentialRequest,
   RotateCredentialRequest,
 } from "@yourtal/contracts/voucher-internal/credentials";
+import {
+  voucherGiftErrorCodeSchema,
+  type GiftVoucherRequest,
+  type ListGiftsRequest,
+  type ListGiftsResult,
+  type ResolveGiftRequest,
+  type VoucherGift,
+  type VoucherGiftError,
+} from "@yourtal/contracts/voucher-internal/gifts";
 import type {
   MerchantCaptureStats,
   MerchantCaptureStatsRequest,
@@ -208,5 +217,46 @@ export class HttpVoucherClient implements VoucherInternalClient {
     request: MerchantCaptureStatsRequest,
   ): ResultAsync<MerchantCaptureStats, VoucherError> {
     return this.post("/internal/v1/merchants/capture-stats", request);
+  }
+
+  gift(request: GiftVoucherRequest): ResultAsync<VoucherGift, VoucherGiftError> {
+    return this.postGift("/internal/v1/gifts", request);
+  }
+
+  listGifts(request: ListGiftsRequest): ResultAsync<ListGiftsResult, VoucherGiftError> {
+    return this.postGift("/internal/v1/gifts/list", request);
+  }
+
+  acceptGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError> {
+    return this.postGift("/internal/v1/gifts/accept", request);
+  }
+
+  declineGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError> {
+    return this.postGift("/internal/v1/gifts/decline", request);
+  }
+
+  /** The gift routes answer their own codes, and a 404 for a gift or voucher that is not the caller's. */
+  private postGift<T>(path: string, body: unknown): ResultAsync<T, VoucherGiftError> {
+    return new ResultAsync(
+      (async () => {
+        const response = await this.send(path, body);
+        if (response.ok) return ok((await response.json()) as T);
+        const problem: unknown = await response.json().catch(() => null);
+        const fields =
+          problem !== null && typeof problem === "object"
+            ? (problem as Record<string, unknown>)
+            : {};
+        const code = voucherGiftErrorCodeSchema.safeParse(
+          response.status === 404 ? "not_found" : fields["code"],
+        );
+        if (code.success) {
+          const message = typeof fields["message"] === "string" ? fields["message"] : code.data;
+          return err({ code: code.data, message });
+        }
+        throw new Error(
+          `voucher ${path} answered ${String(response.status)}: ${JSON.stringify(problem)}`,
+        );
+      })(),
+    );
   }
 }

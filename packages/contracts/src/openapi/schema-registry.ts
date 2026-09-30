@@ -75,6 +75,7 @@ import { BROWSE_CONTRACT_COMPONENTS } from "./schema-registry-browse";
 import { BOOST_CONTRACT_COMPONENTS } from "./schema-registry-boost";
 import { REPORT_CONTRACT_COMPONENTS } from "./schema-registry-report";
 import { STUDIO_CONTRACT_COMPONENTS } from "./schema-registry-studio";
+import { WALLET_GIFT_CONTRACT_COMPONENTS } from "./schema-registry-wallet-gift";
 
 /**
  * Which Zod schemas become OpenAPI components, and what each one loses on the
@@ -580,4 +581,5 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   ...BROWSE_CONTRACT_COMPONENTS,
   ...BOOST_CONTRACT_COMPONENTS,
   ...PROOF_CONTRACT_COMPONENTS,
+  ...WALLET_GIFT_CONTRACT_COMPONENTS,
 ];

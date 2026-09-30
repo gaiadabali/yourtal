@@ -42,6 +42,14 @@ import type {
   RotateCredentialRequest,
 } from "@yourtal/contracts/voucher-internal/credentials";
 import type {
+  GiftVoucherRequest,
+  ListGiftsRequest,
+  ListGiftsResult,
+  ResolveGiftRequest,
+  VoucherGift,
+  VoucherGiftError,
+} from "@yourtal/contracts/voucher-internal/gifts";
+import type {
   MerchantCaptureStats,
   MerchantCaptureStatsRequest,
 } from "@yourtal/contracts/voucher-internal/stats";
@@ -54,6 +62,7 @@ import * as redemption from "./fake/fake-voucher-redemption";
 import * as killSwitch from "./fake/fake-voucher-killswitch";
 import * as credentials from "./fake/fake-voucher-credentials";
 import * as stats from "./fake/fake-voucher-stats";
+import * as gifts from "./fake/fake-voucher-gifts";
 
 /** TASKS.md 1.2.d, `voucher-internal`'s half — see `FakeLedgerClient` for the shared design notes. */
 export class FakeVoucherClient implements VoucherInternalClient {
@@ -141,5 +150,21 @@ export class FakeVoucherClient implements VoucherInternalClient {
     request: MerchantCaptureStatsRequest,
   ): ResultAsync<MerchantCaptureStats, VoucherError> {
     return stats.merchantCaptureStats(this.db, request);
+  }
+
+  gift(request: GiftVoucherRequest): ResultAsync<VoucherGift, VoucherGiftError> {
+    return gifts.gift(this.db, request);
+  }
+
+  listGifts(request: ListGiftsRequest): ResultAsync<ListGiftsResult, VoucherGiftError> {
+    return gifts.listGifts(this.db, request);
+  }
+
+  acceptGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError> {
+    return gifts.acceptGift(this.db, request);
+  }
+
+  declineGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError> {
+    return gifts.declineGift(this.db, request);
   }
 }

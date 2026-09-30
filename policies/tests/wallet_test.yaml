@@ -97,3 +97,16 @@ tests:
       - principal: admin_root
         resource: wallet_wina
         actions: { view: EFFECT_DENY, redeem: EFFECT_DENY }
+
+  - name: a teen can hold a wallet but can neither gift nor receive a gift
+    input:
+      principals: [teo_granted, adi_adult]
+      resources: [wallet_teo]
+      actions: [view, transfer, receive_voucher]
+    expected:
+      - principal: teo_granted
+        resource: wallet_teo
+        actions: { view: EFFECT_ALLOW, transfer: EFFECT_DENY, receive_voucher: EFFECT_DENY }
+      - principal: adi_adult
+        resource: wallet_teo
+        actions: { view: EFFECT_DENY, transfer: EFFECT_DENY, receive_voucher: EFFECT_DENY }

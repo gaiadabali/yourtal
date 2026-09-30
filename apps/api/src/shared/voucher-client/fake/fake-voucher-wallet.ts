@@ -41,6 +41,8 @@ type VoucherRow = {
   readonly location_address: string | null;
   readonly location_district: string | null;
   readonly held: boolean;
+  readonly transferable: boolean;
+  readonly received_as_gift: boolean;
 };
 
 // LEFT JOIN, not JOIN: `voucher_fake_voucher` carries no FK to
@@ -58,6 +60,10 @@ const VOUCHER_ROW_SELECT = sql`
          COALESCE(l.face_value_minor, v.remaining_value_minor) AS face_value_minor,
          COALESCE(l.partial_redemption_policy, 'single_use_forfeit') AS partial_redemption_policy,
          loc.name AS location_name, loc.address AS location_address, loc.district AS location_district,
+         COALESCE(l.transferable, false) AS transferable,
+         EXISTS (
+           SELECT 1 FROM platform.voucher_fake_gift g WHERE g.voucher_id = v.id AND g.state = 'accepted'
+         ) AS received_as_gift,
          EXISTS (
            SELECT 1 FROM platform.voucher_fake_authorization a
             WHERE a.voucher_id = v.id AND a.captured = false AND a.expires_at > now()
@@ -88,6 +94,7 @@ function toWalletVoucherRow(row: VoucherRow): WalletVoucherRow {
           : row.held
             ? "held"
             : "active";
+  const faceValueMinor = toMinorUnits(Number(row.face_value_minor));
   return {
     voucherId: row.id,
     listingId: row.listing_id,
@@ -98,8 +105,13 @@ function toWalletVoucherRow(row: VoucherRow): WalletVoucherRow {
     merchantName: row.merchant_name,
     title: row.title,
     currency: row.currency as WalletVoucherRow["currency"],
-    faceValueMinor: toMinorUnits(Number(row.face_value_minor)),
+    faceValueMinor,
     remainingValueMinor,
+    giftable:
+      row.transferable &&
+      !row.received_as_gift &&
+      lifecycleState === "active" &&
+      remainingValueMinor === faceValueMinor,
     partialRedemptionPolicy:
       row.partial_redemption_policy as WalletVoucherRow["partialRedemptionPolicy"],
     expiresAt: new Date(row.expires_at).toISOString(),

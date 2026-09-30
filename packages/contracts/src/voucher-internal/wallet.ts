@@ -40,6 +40,8 @@ export const walletVoucherRowSchema = z.object({
   expiresAt: z.iso.datetime(),
   /** `null` for a voucher minted before locations existed (pre-20260919000009). */
   location: z.object({ name: z.string(), address: z.string(), district: z.string() }).nullable(),
+  /** 13.20: transferable, unused, unexpired and not itself received as a gift. */
+  giftable: z.boolean().optional(),
 });
 export type WalletVoucherRow = z.infer<typeof walletVoucherRowSchema>;
 

@@ -81,5 +81,6 @@ export function toWalletVoucher(row: WalletVoucherRow): WalletVoucher {
     expiresAt: row.expiresAt,
     ...(row.location === null ? {} : { location: row.location }),
     partialRedemptionPolicy: row.partialRedemptionPolicy,
+    ...(row.giftable === undefined ? {} : { giftable: row.giftable }),
   };
 }

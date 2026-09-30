@@ -11,6 +11,8 @@ import { SettingsModule } from "../../shared/settings/settings.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletAttributeLoader } from "./wallet-attribute-loader";
 import { WalletController } from "./wallet.controller";
+import { WalletGiftController } from "./wallet-gift.controller";
+import { GIFT_PARTY_READER, GiftPartyReader } from "./gift-party-reader";
 
 export const WALLET_DB = Symbol("WALLET_DB");
 
@@ -22,7 +24,7 @@ export const WALLET_DB = Symbol("WALLET_DB");
  */
 @Module({
   imports: [IdentityModule, SettingsModule],
-  controllers: [WalletController],
+  controllers: [WalletController, WalletGiftController],
   providers: [
     {
       provide: WALLET_DB,
@@ -38,6 +40,11 @@ export const WALLET_DB = Symbol("WALLET_DB");
       provide: VOUCHER_INTERNAL_CLIENT,
       useFactory: (config: AppConfig, db: AppDb) => createVoucherClient(config, db),
       inject: [APP_CONFIG, WALLET_DB],
+    },
+    {
+      provide: GIFT_PARTY_READER,
+      useFactory: (db: AppDb) => new GiftPartyReader(db),
+      inject: [WALLET_DB],
     },
     WalletAttributeLoader,
   ],

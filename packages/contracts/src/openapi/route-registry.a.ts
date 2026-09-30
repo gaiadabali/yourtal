@@ -195,6 +195,24 @@ const VOUCHER_ID = {
 
 const WALLET_ERRORS = [FORBIDDEN, PDP_UNAVAILABLE, WALLET_UNAVAILABLE];
 
+const GIFT_ID = {
+  name: "giftId",
+  description: "The gift's id.",
+  schema: { type: "string", format: "uuid" },
+};
+
+const GIFT_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description: "No gift with this id was sent to the caller.",
+  documented: false,
+};
+
+const GIFT_REFUSED: RouteErrorResponse = {
+  status: 409,
+  description: "Refused with one WalletGiftRefusal code.",
+  documented: false,
+};
+
 export const WALLET_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "get",
@@ -252,6 +270,52 @@ export const WALLET_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "The token and when it expires.",
     successSchema: ref("WalletQr"),
     errors: [...WALLET_ERRORS, VOUCHER_NOT_FOUND],
+  },
+  {
+    method: "post",
+    path: "/api/wallet/vouchers/{voucherId}/gift",
+    summary: "Give an unused voucher to a verified adult in the same region",
+    tags: ["wallet"],
+    pathParams: [VOUCHER_ID],
+    requestBody: { description: "The recipient's email.", schema: ref("GiftVoucherBody") },
+    successStatus: 201,
+    successDescription:
+      "The gift, pending until the recipient accepts. The old code no longer works.",
+    successSchema: ref("WalletGift"),
+    errors: [VALIDATION_400, ...WALLET_ERRORS, VOUCHER_NOT_FOUND, GIFT_REFUSED],
+  },
+  {
+    method: "get",
+    path: "/api/wallet/gifts",
+    summary: "Gifts the caller sent or received",
+    tags: ["wallet"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription: "Sent and received gifts, newest first.",
+    successSchema: ref("WalletGiftList"),
+    errors: WALLET_ERRORS,
+  },
+  {
+    method: "post",
+    path: "/api/wallet/gifts/{giftId}/accept",
+    summary: "Accept a gift into the wallet",
+    tags: ["wallet"],
+    pathParams: [GIFT_ID],
+    successStatus: 200,
+    successDescription: "The accepted gift; its voucher is now in the wallet.",
+    successSchema: ref("WalletGift"),
+    errors: [...WALLET_ERRORS, GIFT_NOT_FOUND, GIFT_REFUSED],
+  },
+  {
+    method: "post",
+    path: "/api/wallet/gifts/{giftId}/decline",
+    summary: "Decline a gift; it goes back to the sender",
+    tags: ["wallet"],
+    pathParams: [GIFT_ID],
+    successStatus: 200,
+    successDescription: "The returned gift.",
+    successSchema: ref("WalletGift"),
+    errors: [...WALLET_ERRORS, GIFT_NOT_FOUND, GIFT_REFUSED],
   },
 ];
 

@@ -87,6 +87,8 @@ export const walletVoucherSchema = z.object({
   expiresAt: z.iso.datetime().optional(),
   location: z.object({ name: z.string(), address: z.string(), district: z.string() }).optional(),
   partialRedemptionPolicy: partialRedemptionPolicySchema.optional(),
+  /** 13.20: the voucher can be gifted now (holdback and caps are only known on trying). */
+  giftable: z.boolean().optional(),
 });
 export type WalletVoucher = z.infer<typeof walletVoucherSchema>;
 

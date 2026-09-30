@@ -1522,7 +1522,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.20.e (requested by A) Studio's listing editor shows and sets `transferable` (the listing API already takes it).
 - [ ] **13.21 Charity registry** (F86) · C (registry, staff review, charity console) + B (viewer pages) · needs: — — 🔄 slot 3 (contract and tables on main, ca4c63ca)
   - [ ] 13.21.a A foundation applies at `/charity/apply`: name, region, registration (ABN plus ACNC registration in AU; yayasan deed plus fundraising permit in ID), and a payout account, all through the simulated KYB driver. Staff approve or reject it in `/staff/charities` with a reason and an audit event. Only approved charities are listed.
-  - [ ] 13.21.b Viewers browse their region's approved charities at `/charities` (logo, cause, region) and pick one when listing a voucher.
+  - [ ] 13.21.b Viewers browse their region's approved charities at `/charities` (logo, cause, region) and pick one when listing a voucher. — 🔄 slot 4
   - [ ] 13.21.c A `charity_admin` console shows the charity's auction proceeds and statements (the existing `charity_settlement` policy), never a balance YourTal holds.
 - [ ] **13.22 Charity auctions** (F86) · A (escrow, payments, ledger) + B (viewer UI) + C (staff) · needs: 13.21.a — 🔄 slot 9c (a, b, c, e, f)
   - [ ] 13.22.a A viewer lists an unused voucher for a chosen charity. The voucher is voided and reminted into auction escrow at once, so the seller's code stops working. The auction lasts 3 days, starts at a reserve of 50% of face value, and stays in one region.

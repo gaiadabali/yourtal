@@ -64,7 +64,8 @@ async function seed(options: Seed): Promise<string> {
     VALUES
       (${id}, ${options.kind}, ${`Browse ${RUN} ${id}`}, ${businessId}, 'Browse e2e Merchant',
        'Exercises 13.12.d.', ${duration}, 10, ${options.reward}, 0, 'base_only', 'live',
-       now() - make_interval(mins => ${options.publishedMinutesAgo}), ${businessId},
+       now() - interval '400 days' - make_interval(mins => ${options.publishedMinutesAgo}),
+       ${businessId},
        ${options.region}, ${options.audience ?? "all_ages"}, ${options.category},
        'https://cdn.example.com/poster.jpg', 'https://cdn.example.com/teaser.mp4',
        'https://cdn.example.com/manifest.m3u8', '9:16', 1000000, now() - interval '1 day',

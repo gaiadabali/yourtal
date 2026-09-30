@@ -44,7 +44,7 @@ async function liveCampaign(lifecycle: "live" | "draft" = "live") {
        content_category, poster_url, teaser_url, hls_url, aspect, estimated_bytes, estimated_data_mb,
        starts_at, ends_at, open_viewing, teaser_start_seconds)
     VALUES (${id}, 'quick', ${`Boost e2e ${id}`}, ${businessId}, 'Boost e2e', 'Boosted.', 30, 3, 0,
-            'base_only', ${lifecycle}, ${lifecycle === "live" ? sql`now()` : sql`NULL`},
+            'base_only', ${lifecycle}, ${lifecycle === "live" ? sql`now() - interval '400 days'` : sql`NULL`},
             ${businessId}, 'AU', 'all_ages', 'food-and-drink', ${media},
             now() - interval '1 day', now() + interval '30 days', ${lifecycle === "live"}, 0)`);
   if (lifecycle === "live") {

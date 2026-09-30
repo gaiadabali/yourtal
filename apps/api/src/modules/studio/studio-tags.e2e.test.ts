@@ -143,6 +143,10 @@ async function takeLive(cookie: string, businessId: string, campaignId: string) 
   await owner.execute(
     sql`UPDATE campaign.campaigns SET lifecycle_state = 'live' WHERE id = ${campaignId}`,
   );
+  // Backdated so suites that read "the newest live campaign" never pick this one.
+  await owner.execute(
+    sql`UPDATE campaign.campaigns SET published_at = now() - interval '400 days' WHERE id = ${campaignId}`,
+  );
 }
 
 describe("13.11.d: tags on Studio-made campaigns and listings", () => {

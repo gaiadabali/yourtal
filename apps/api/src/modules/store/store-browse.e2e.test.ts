@@ -99,9 +99,9 @@ async function browse(query: string, cookie?: string): Promise<Page> {
 }
 
 describe("13.12.d: GET /api/store/listings filters, sorts and facets", () => {
-  const brandA = randomUUID();
-  const brandB = randomUUID();
-  const brandId = randomUUID();
+  const brandA: string = randomUUID();
+  const brandB: string = randomUUID();
+  const brandId: string = randomUUID();
   let cheap: string, mid: string, dear: string, adultOnly: string, idListing: string;
 
   beforeAll(async () => {

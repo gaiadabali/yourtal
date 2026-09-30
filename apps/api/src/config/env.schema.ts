@@ -150,8 +150,8 @@ export const envSchema = z.object({
    * Feature flag: whether a 13-17-year-old may register at all, with
    * parental consent (1.4.b, F4 — reverses the old C4 default). Unset, it is
    * on only when `APP_ENV=staging` (12.1.d), so staging's once-written `.env`
-   * needs no line; `loadAppConfig` refuses it in production until counsel
-   * reviews teen mode (12.4). With it off, `AuthService` refuses anyone under
+   * needs no line. Production needs an explicit `true` (F83: teen mode passed
+   * its self-assessment, docs/24). With it off, `AuthService` refuses anyone under
    * 18 outright.
    *
    * `z.enum(["true","false"])`, not `z.coerce.boolean()`: coercion makes

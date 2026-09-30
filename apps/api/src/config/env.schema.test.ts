@@ -96,7 +96,7 @@ describe("TEEN_ACCOUNTS (12.1.d)", () => {
     expect(loadAppConfig({ ...base, APP_ENV: "dev" }).teenAccounts).toBe(false);
   });
 
-  it("an explicit value wins outside production", () => {
+  it("an explicit value wins", () => {
     expect(
       loadAppConfig({ ...base, APP_ENV: "staging", TEEN_ACCOUNTS: "false" }).teenAccounts,
     ).toBe(false);
@@ -105,10 +105,10 @@ describe("TEEN_ACCOUNTS (12.1.d)", () => {
     );
   });
 
-  it("refuses to boot production with teen accounts on", () => {
-    expect(() =>
-      loadAppConfig({ ...base, APP_ENV: "production", TEEN_ACCOUNTS: "true" }),
-    ).toThrow();
+  it("stays off in production unless explicitly set", () => {
     expect(loadAppConfig({ ...base, APP_ENV: "production" }).teenAccounts).toBe(false);
+    expect(
+      loadAppConfig({ ...base, APP_ENV: "production", TEEN_ACCOUNTS: "true" }).teenAccounts,
+    ).toBe(true);
   });
 });

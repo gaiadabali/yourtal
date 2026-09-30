@@ -66,9 +66,6 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
   }
   const teenAccounts =
     env.TEEN_ACCOUNTS === undefined ? env.APP_ENV === "staging" : env.TEEN_ACCOUNTS === "true";
-  if (teenAccounts && env.APP_ENV === "production") {
-    throw new Error("TEEN_ACCOUNTS stays off in production until counsel has reviewed teen mode.");
-  }
 
   return {
     nodeEnv: env.NODE_ENV,

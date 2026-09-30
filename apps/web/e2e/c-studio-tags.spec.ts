@@ -45,7 +45,7 @@ async function ownerWithBusiness(request: APIRequestContext): Promise<Owner> {
     },
   });
   expect(business.ok(), await business.text()).toBeTruthy();
-  const { id: businessId } = (await business.json()) as { id: string };
+  const businessId = ((await business.json()) as { business: { id: string } }).business.id;
   return { cookie, businessId };
 }
 
@@ -125,10 +125,7 @@ test("a campaign's tags are picked in Targeting and saved on close", async ({
   await signIn(page, baseURL as string, owner.cookie);
   await page.goto(`/studio/campaigns?business=${owner.businessId}`);
   await page.getByRole("button", { name: /new campaign/i }).click();
-  await page
-    .getByRole("button", { name: /targeting/i })
-    .first()
-    .click();
+  await page.getByRole("tab", { name: "Targeting" }).click();
   await page.getByRole("button", { name: "Specialty coffee", exact: true }).click();
   await page.getByRole("button", { name: "Bakery", exact: true }).click();
   await expect(page.getByText("2 of 8 picked")).toBeVisible();
@@ -138,14 +135,13 @@ test("a campaign's tags are picked in Targeting and saved on close", async ({
     .getByRole("button", { name: /back|close/i })
     .first()
     .click();
-  const drafts = await request.get(`${api()}/api/${owner.businessId}/studio/campaigns`, {
-    headers: { cookie: owner.cookie },
-  });
-  const body = (await drafts.json()) as
-    | { declaredInterests: string[] }[]
-    | {
-        campaigns: { declaredInterests: string[] }[];
-      };
-  const list = Array.isArray(body) ? body : body.campaigns;
-  expect(list[0]?.declaredInterests).toEqual(["coffee-specialty", "bakery"]);
+  // The editor saves on the way out; poll the API until the PATCH has landed.
+  await expect
+    .poll(async () => {
+      const drafts = await request.get(`${api()}/api/${owner.businessId}/studio/campaigns`, {
+        headers: { cookie: owner.cookie },
+      });
+      return ((await drafts.json()) as { declaredInterests: string[] }[])[0]?.declaredInterests;
+    })
+    .toEqual(["coffee-specialty", "bakery"]);
 });

@@ -8,11 +8,13 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  /** The title's outline level: one below the page's own heading (3 by default). */
+  headingLevel?: 2 | 3 | 4;
 }
 
 /** A centred placeholder for a list or panel with nothing in it yet. */
 export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
-  ({ icon, title, description, action, className, ...props }, ref) => (
+  ({ icon, title, description, action, headingLevel = 3, className, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
@@ -26,7 +28,7 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           {icon}
         </div>
       ) : null}
-      <Heading level={3} size="title">
+      <Heading level={headingLevel} size="title">
         {title}
       </Heading>
       {description ? <Text tone="muted">{description}</Text> : null}

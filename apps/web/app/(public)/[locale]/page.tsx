@@ -70,7 +70,11 @@ export default async function PublicHomePage({ params }: PublicHomePageProps) {
     <div className="flex flex-col gap-4">
       <h1 className="text-title font-display font-bold text-fg">{t("feed.heading")}</h1>
       {feedItems.length === 0 ? (
-        <EmptyState title={t("feed.emptyHeading")} description={t("feed.emptyBody")} />
+        <EmptyState
+          headingLevel={2}
+          title={t("feed.emptyHeading")}
+          description={t("feed.emptyBody")}
+        />
       ) : (
         <div className="h-[calc(100dvh-8rem)] max-h-[900px] w-full overflow-hidden rounded-card border border-border-subtle lg:max-w-sm">
           <PublicFeedTeaser

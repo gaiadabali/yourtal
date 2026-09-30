@@ -73,6 +73,7 @@ import { DEVICE_CONTRACT_COMPONENTS } from "./schema-registry-devices";
 import { FEED_CONTRACT_COMPONENTS } from "./schema-registry-feed";
 import { BROWSE_CONTRACT_COMPONENTS } from "./schema-registry-browse";
 import { BOOST_CONTRACT_COMPONENTS } from "./schema-registry-boost";
+import { CHARITY_CONTRACT_COMPONENTS } from "./schema-registry-charity";
 import { REPORT_CONTRACT_COMPONENTS } from "./schema-registry-report";
 import { STUDIO_CONTRACT_COMPONENTS } from "./schema-registry-studio";
 import { WALLET_GIFT_CONTRACT_COMPONENTS } from "./schema-registry-wallet-gift";
@@ -580,6 +581,7 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   ...FEED_CONTRACT_COMPONENTS,
   ...BROWSE_CONTRACT_COMPONENTS,
   ...BOOST_CONTRACT_COMPONENTS,
+  ...CHARITY_CONTRACT_COMPONENTS,
   ...PROOF_CONTRACT_COMPONENTS,
   ...WALLET_GIFT_CONTRACT_COMPONENTS,
 ];

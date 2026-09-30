@@ -20,6 +20,7 @@
     "./watch/continue-watching": "./src/watch/continue-watching.ts",
     "./listing": "./src/listing/listing.ts",
     "./listing/browse": "./src/listing/listing-browse.ts",
+    "./charity": "./src/charity/charity.ts",
     "./interest/taxonomy": "./src/interest/taxonomy.ts",
     "./interest/tags": "./src/interest/interest-tags.ts",
     "./interest/category-map": "./src/interest/category-map.ts",

@@ -53,8 +53,6 @@ func NewListingBrowseResponseWithDefaults() *ListingBrowseResponse {
 	this := ListingBrowseResponse{}
 	var totalCount int64 = 0
 	this.TotalCount = totalCount
-	var facets ListingFacets = {"categories":[],"tags":[],"brands":[]}
-	this.Facets = facets
 	return &this
 }
 

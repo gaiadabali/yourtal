@@ -27,7 +27,15 @@
 // pass. A second source of truth to serve a tool is the precise thing YT-0031
 // exists to prevent, so the tool changed instead.
 
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -76,6 +84,23 @@ if (verifyOnly) {
 
 rmSync(scratchDir, { recursive: true, force: true });
 
+// openapi-generator's Go template prints an object `default` as a JSON
+// literal (`var facets FeedFacets = {"tags":[]}`), which does not compile.
+// Go has no use for them, so the Go input drops object and array defaults;
+// the published spec keeps them.
+function dropCompositeDefaults(node) {
+  if (Array.isArray(node)) {
+    node.forEach(dropCompositeDefaults);
+  } else if (node !== null && typeof node === "object") {
+    if (node.default !== null && typeof node.default === "object") delete node.default;
+    Object.values(node).forEach(dropCompositeDefaults);
+  }
+  return node;
+}
+mkdirSync(scratchDir, { recursive: true });
+const spec = JSON.parse(readFileSync(path.join(openapiDir, "yourtal.openapi.json"), "utf8"));
+writeFileSync(path.join(scratchDir, "input.json"), JSON.stringify(dropCompositeDefaults(spec)));
+
 const result = spawnSync(
   "docker",
   [
@@ -99,7 +124,7 @@ const result = spawnSync(
     GENERATOR_IMAGE,
     "generate",
     "-i",
-    "/local/yourtal.openapi.json",
+    "/local/.gotmp/input.json",
     "-o",
     "/local/.gotmp",
     "-g",

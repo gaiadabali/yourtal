@@ -31,7 +31,7 @@ type ApiTenantIdStudioCampaignsPostRequest struct {
 	EndsAt NullableTime `json:"endsAt"`
 	OpenViewing *bool `json:"openViewing,omitempty"`
 	TeaserStartSeconds *int32 `json:"teaserStartSeconds,omitempty"`
-	DeclaredInterests []*string `json:"declaredInterests,omitempty"`
+	DeclaredInterests []string `json:"declaredInterests,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -331,9 +331,9 @@ func (o *ApiTenantIdStudioCampaignsPostRequest) SetTeaserStartSeconds(v int32) {
 }
 
 // GetDeclaredInterests returns the DeclaredInterests field value if set, zero value otherwise.
-func (o *ApiTenantIdStudioCampaignsPostRequest) GetDeclaredInterests() []*string {
+func (o *ApiTenantIdStudioCampaignsPostRequest) GetDeclaredInterests() []string {
 	if o == nil || IsNil(o.DeclaredInterests) {
-		var ret []*string
+		var ret []string
 		return ret
 	}
 	return o.DeclaredInterests
@@ -341,7 +341,7 @@ func (o *ApiTenantIdStudioCampaignsPostRequest) GetDeclaredInterests() []*string
 
 // GetDeclaredInterestsOk returns a tuple with the DeclaredInterests field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ApiTenantIdStudioCampaignsPostRequest) GetDeclaredInterestsOk() ([]*string, bool) {
+func (o *ApiTenantIdStudioCampaignsPostRequest) GetDeclaredInterestsOk() ([]string, bool) {
 	if o == nil || IsNil(o.DeclaredInterests) {
 		return nil, false
 	}
@@ -357,8 +357,8 @@ func (o *ApiTenantIdStudioCampaignsPostRequest) HasDeclaredInterests() bool {
 	return false
 }
 
-// SetDeclaredInterests gets a reference to the given []*string and assigns it to the DeclaredInterests field.
-func (o *ApiTenantIdStudioCampaignsPostRequest) SetDeclaredInterests(v []*string) {
+// SetDeclaredInterests gets a reference to the given []string and assigns it to the DeclaredInterests field.
+func (o *ApiTenantIdStudioCampaignsPostRequest) SetDeclaredInterests(v []string) {
 	o.DeclaredInterests = v
 }
 

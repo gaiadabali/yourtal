@@ -45,8 +45,6 @@ func NewFeedResponse(surface FeedSurface, items []FeedItem, facets FeedFacets) *
 // but it doesn't guarantee that properties required by API are set
 func NewFeedResponseWithDefaults() *FeedResponse {
 	this := FeedResponse{}
-	var facets FeedFacets = {"categories":[],"tags":[]}
-	this.Facets = facets
 	return &this
 }
 

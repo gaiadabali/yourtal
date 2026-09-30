@@ -68,6 +68,11 @@ func (a *API) Routes() chi.Router {
 	r.Post("/wallet/list", a.listForUser)
 	r.Post("/wallet/get", a.get)
 
+	r.Post("/gifts", a.gift)
+	r.Post("/gifts/list", a.listGifts)
+	r.Post("/gifts/accept", a.acceptGift)
+	r.Post("/gifts/decline", a.declineGift)
+
 	r.Post("/device/lookup", a.lookupAsDevice)
 	r.Post("/device/authorize", a.authorizeAsDevice)
 	r.Post("/device/capture", a.captureAsDevice)
@@ -114,6 +119,7 @@ var contractCodes = []struct {
 	{errAlreadyCaptured, "already_granted"},
 	{errAuthorizationExpired, "quote_expired"},
 	{errRegionMismatch, "region_mismatch"},
+	{issue.ErrNotUnused, "already_granted"},
 }
 
 // fail answers an engine error: a contract code as 409, a missing thing as

@@ -232,7 +232,7 @@ func (q *Queries) GetCodeCustody(ctx context.Context, voucherID pgtype.UUID) (Ge
 
 const getListingForBatch = `-- name: GetListingForBatch :one
 SELECT id, merchant_id, currency, face_value_minor, settlement_value_minor,
-       partial_redemption_policy, minimum_spend_minor, expires_at
+       partial_redemption_policy, minimum_spend_minor, expires_at, transferable
 FROM store.listings WHERE id = $1
 `
 
@@ -245,6 +245,7 @@ type GetListingForBatchRow struct {
 	PartialRedemptionPolicy string
 	MinimumSpendMinor       *int64
 	ExpiresAt               pgtype.Timestamptz
+	Transferable            bool
 }
 
 // 4.5.a, D12: a batch's terms are DERIVED from the listing, not trusted from
@@ -263,6 +264,7 @@ func (q *Queries) GetListingForBatch(ctx context.Context, id pgtype.UUID) (GetLi
 		&i.PartialRedemptionPolicy,
 		&i.MinimumSpendMinor,
 		&i.ExpiresAt,
+		&i.Transferable,
 	)
 	return i, err
 }
@@ -314,7 +316,8 @@ SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title, 
        v.remaining_value_minor, v.partial_redemption_policy, v.minimum_spend_minor,
        v.transferable, v.issued_at, v.expires_at, v.location_id, v.state, v.void_reason,
        v.batch_id, v.version, v.currency, v.saga_id,
-       l.name AS location_name, l.address AS location_address, l.district AS location_district
+       l.name AS location_name, l.address AS location_address, l.district AS location_district,
+       EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = v.id AND g.state = 'accepted') AS received_as_gift
 FROM voucher.vouchers v
 LEFT JOIN store.merchant_location l ON l.id = v.location_id
 WHERE v.id = $1 AND v.owner_id = $2
@@ -349,6 +352,7 @@ type GetOwnedVoucherRow struct {
 	LocationName            *string
 	LocationAddress         *string
 	LocationDistrict        *string
+	ReceivedAsGift          bool
 }
 
 func (q *Queries) GetOwnedVoucher(ctx context.Context, arg GetOwnedVoucherParams) (GetOwnedVoucherRow, error) {
@@ -378,6 +382,7 @@ func (q *Queries) GetOwnedVoucher(ctx context.Context, arg GetOwnedVoucherParams
 		&i.LocationName,
 		&i.LocationAddress,
 		&i.LocationDistrict,
+		&i.ReceivedAsGift,
 	)
 	return i, err
 }
@@ -832,7 +837,8 @@ SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title, 
        v.remaining_value_minor, v.partial_redemption_policy, v.minimum_spend_minor,
        v.transferable, v.issued_at, v.expires_at, v.location_id, v.state, v.void_reason,
        v.batch_id, v.version, v.currency, v.saga_id,
-       l.name AS location_name, l.address AS location_address, l.district AS location_district
+       l.name AS location_name, l.address AS location_address, l.district AS location_district,
+       EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = v.id AND g.state = 'accepted') AS received_as_gift
 FROM voucher.vouchers v
 LEFT JOIN store.merchant_location l ON l.id = v.location_id
 WHERE v.owner_id = $1 AND ($2::uuid IS NULL OR v.id > $2)
@@ -870,6 +876,7 @@ type ListVouchersForOwnerRow struct {
 	LocationName            *string
 	LocationAddress         *string
 	LocationDistrict        *string
+	ReceivedAsGift          bool
 }
 
 // 4.5's wallet read (TASKS.md 4.8.c widens it with the branch that honours
@@ -911,6 +918,7 @@ func (q *Queries) ListVouchersForOwner(ctx context.Context, arg ListVouchersForO
 			&i.LocationName,
 			&i.LocationAddress,
 			&i.LocationDistrict,
+			&i.ReceivedAsGift,
 		); err != nil {
 			return nil, err
 		}

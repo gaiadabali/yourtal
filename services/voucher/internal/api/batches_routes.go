@@ -74,8 +74,7 @@ func (a *API) requestBatch(w http.ResponseWriter, r *http.Request) {
 	if err := a.minter.RequestBatch(r.Context(), issue.BatchRequest{
 		ID: batchID, ListingID: listingID, SupplierBusinessID: merchantID,
 		RequestedBy: body.RequestedBy, Quantity: body.Quantity,
-		// Transferable is not yet on the contract; false until a task adds it.
-		Transferable:     false,
+		// Transferable comes from the listing (13.20.a), like the other terms.
 		FundingReference: "batch:" + batchID.String(),
 	}); err != nil {
 		a.fail(w, err)

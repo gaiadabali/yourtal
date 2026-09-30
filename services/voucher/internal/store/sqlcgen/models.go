@@ -151,6 +151,19 @@ type VoucherExpiryOutbox struct {
 	PostedAt    pgtype.Timestamptz
 }
 
+type VoucherGift struct {
+	ID              pgtype.UUID
+	SourceVoucherID pgtype.UUID
+	VoucherID       pgtype.UUID
+	SenderID        pgtype.UUID
+	RecipientID     pgtype.UUID
+	Region          string
+	State           string
+	CreatedAt       pgtype.Timestamptz
+	ExpiresAt       pgtype.Timestamptz
+	ResolvedAt      pgtype.Timestamptz
+}
+
 type VoucherKillSwitch struct {
 	ID        pgtype.UUID
 	Scope     string

@@ -65,10 +65,12 @@ type Minter struct {
 	// in tests. A hash chain over wall-clock time is otherwise impossible to
 	// assert anything exact about.
 	now func() time.Time
+	// gifts is 13.20's transfer policy.
+	gifts GiftPolicy
 }
 
 func New(pool *pgxpool.Pool, keys *keyring.Keyring) *Minter {
-	return &Minter{pool: pool, keys: keys, now: func() time.Time { return time.Now().UTC() }}
+	return &Minter{pool: pool, keys: keys, now: func() time.Time { return time.Now().UTC() }, gifts: DefaultGiftPolicy}
 }
 
 // WithClock replaces the clock. Test seam only.
@@ -102,7 +104,7 @@ type BatchRequest struct {
 
 // RequestBatch records the request. Nothing is minted yet.
 //
-// D12: `FaceValueMinor`, `SettlementValueMinor`, `Currency`,
+// D12: `FaceValueMinor`, `SettlementValueMinor`, `Currency`, `Transferable` (13.20),
 // `PartialPolicy`, `MinimumSpendMinor` and `ExpiresAt` on req are IGNORED —
 // the batch's terms are derived from the listing, not trusted from the
 // caller, and `SupplierBusinessID` must equal the listing's own merchant.
@@ -130,7 +132,7 @@ func (m *Minter) RequestBatch(ctx context.Context, req BatchRequest) error {
 		FaceValueMinor:          listing.FaceValueMinor,
 		SettlementValueMinor:    listing.SettlementValueMinor,
 		Currency:                listing.Currency,
-		Transferable:            req.Transferable,
+		Transferable:            listing.Transferable,
 		PartialRedemptionPolicy: listing.PartialRedemptionPolicy,
 		MinimumSpendMinor:       listing.MinimumSpendMinor,
 		ExpiresAt:               listing.ExpiresAt,

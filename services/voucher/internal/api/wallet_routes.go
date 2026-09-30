@@ -245,7 +245,8 @@ func (a *API) listForUser(w http.ResponseWriter, r *http.Request) {
 			RemainingValueMinor:     row.RemainingValueMinor,
 			PartialRedemptionPolicy: row.PartialRedemptionPolicy, ExpiresAt: row.ExpiresAt,
 			LocationName: row.LocationName, LocationAddress: row.LocationAddress,
-			LocationDistrict: row.LocationDistrict,
+			LocationDistrict: row.LocationDistrict, Transferable: row.Transferable,
+			ReceivedAsGift: row.ReceivedAsGift,
 		})
 	}
 	httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]any{"vouchers": vouchers, "hasMore": hasMore})
@@ -305,6 +306,9 @@ type walletVoucherView struct {
 	PartialRedemptionPolicy string              `json:"partialRedemptionPolicy"`
 	ExpiresAt               string              `json:"expiresAt"`
 	Location                *walletLocationView `json:"location"`
+	// Giftable (13.20): the voucher's own rules allow a gift now, holdback
+	// and velocity aside, which only an attempt can answer.
+	Giftable bool `json:"giftable"`
 }
 
 // walletVoucherSource is the common shape `GetOwnedVoucherRow` and
@@ -327,6 +331,8 @@ type walletVoucherSource struct {
 	LocationName            *string
 	LocationAddress         *string
 	LocationDistrict        *string
+	Transferable            bool
+	ReceivedAsGift          bool
 }
 
 func toWalletVoucherView(row walletVoucherSource) walletVoucherView {
@@ -344,6 +350,8 @@ func toWalletVoucherView(row walletVoucherSource) walletVoucherView {
 		FaceValueMinor: row.FaceValueMinor, RemainingValueMinor: row.RemainingValueMinor,
 		PartialRedemptionPolicy: row.PartialRedemptionPolicy, ExpiresAt: iso(row.ExpiresAt.Time),
 		Location: location,
+		Giftable: row.Transferable && !row.ReceivedAsGift && row.State == string(lifecycle.Active) &&
+			row.RemainingValueMinor == row.FaceValueMinor && row.ExpiresAt.Time.After(time.Now()),
 	}
 }
 
@@ -374,7 +382,8 @@ func (a *API) get(w http.ResponseWriter, r *http.Request) {
 		RemainingValueMinor:     row.RemainingValueMinor,
 		PartialRedemptionPolicy: row.PartialRedemptionPolicy, ExpiresAt: row.ExpiresAt,
 		LocationName: row.LocationName, LocationAddress: row.LocationAddress,
-		LocationDistrict: row.LocationDistrict,
+		LocationDistrict: row.LocationDistrict, Transferable: row.Transferable,
+		ReceivedAsGift: row.ReceivedAsGift,
 	}))
 }
 

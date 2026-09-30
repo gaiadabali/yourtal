@@ -96,7 +96,11 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
-	minter := issue.New(pool, keys)
+	policy, err := giftPolicy()
+	if err != nil {
+		return err
+	}
+	minter := issue.New(pool, keys).WithGiftPolicy(policy)
 	network := redeem.New(pool)
 
 	router := chi.NewRouter()
@@ -156,6 +160,7 @@ func run(logger *slog.Logger) error {
 
 	go sweepHolds(ctx, logger, network, verifier)
 	go sweepExpiry(ctx, logger, expiresweep.NewSweeper(pool))
+	go sweepGifts(ctx, logger, minter)
 
 	// Captures reach the ledger from this service's own outbox. Without a
 	// ledger URL and secret they wait in the outbox, loudly, until it has one.
@@ -277,6 +282,39 @@ func sweepHolds(ctx context.Context, logger *slog.Logger, network *redeem.Networ
 			logger.Error("pruning seen merchant signatures failed", "error", err)
 		}
 
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// giftPolicy is issue.DefaultGiftPolicy with GIFT_HOLDBACK (a Go duration)
+// applied, so a demo can gift a voucher bought a minute ago.
+func giftPolicy() (issue.GiftPolicy, error) {
+	policy := issue.DefaultGiftPolicy
+	if raw := os.Getenv("GIFT_HOLDBACK"); raw != "" {
+		holdback, err := time.ParseDuration(raw)
+		if err != nil || holdback < 0 {
+			return policy, fmt.Errorf("GIFT_HOLDBACK %q is not a non-negative duration", raw)
+		}
+		policy.Holdback = holdback
+	}
+	return policy, nil
+}
+
+// sweepGifts returns gifts nobody accepted inside their window (13.20.b).
+func sweepGifts(ctx context.Context, logger *slog.Logger, minter *issue.Minter) {
+	ticker := time.NewTicker(expireSweepInterval)
+	defer ticker.Stop()
+	for {
+		returned, err := minter.SweepGifts(ctx)
+		if err != nil {
+			logger.Error("returning unaccepted gifts failed", "error", err)
+		} else if returned > 0 {
+			logger.Info("returned unaccepted gifts", "count", returned)
+		}
 		select {
 		case <-ctx.Done():
 			return

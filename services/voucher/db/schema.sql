@@ -268,3 +268,17 @@ CREATE TABLE store.merchant_location (
   district    text        NOT NULL,
   created_at  timestamptz NOT NULL DEFAULT now()
 );
+
+-- packages/db/migrations/20260930041552_voucher_gift.sql (13.20).
+CREATE TABLE voucher.gift (
+  id                uuid        PRIMARY KEY,
+  source_voucher_id uuid        NOT NULL UNIQUE,
+  voucher_id        uuid        NOT NULL UNIQUE,
+  sender_id         uuid        NOT NULL,
+  recipient_id      uuid        NOT NULL,
+  region            text        NOT NULL,
+  state             text        NOT NULL DEFAULT 'pending',
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  expires_at        timestamptz NOT NULL,
+  resolved_at       timestamptz
+);

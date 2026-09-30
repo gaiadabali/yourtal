@@ -208,7 +208,7 @@ LIMIT 1;
 -- before a batch is ever inserted (D12's "a batch for listing L is
 -- requested with face 500,000 and currency AUD" scenario).
 SELECT id, merchant_id, currency, face_value_minor, settlement_value_minor,
-       partial_redemption_policy, minimum_spend_minor, expires_at
+       partial_redemption_policy, minimum_spend_minor, expires_at, transferable
 FROM store.listings WHERE id = $1;
 
 -- name: SelectMintedForListing :one
@@ -260,7 +260,8 @@ SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title, 
        v.remaining_value_minor, v.partial_redemption_policy, v.minimum_spend_minor,
        v.transferable, v.issued_at, v.expires_at, v.location_id, v.state, v.void_reason,
        v.batch_id, v.version, v.currency, v.saga_id,
-       l.name AS location_name, l.address AS location_address, l.district AS location_district
+       l.name AS location_name, l.address AS location_address, l.district AS location_district,
+       EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = v.id AND g.state = 'accepted') AS received_as_gift
 FROM voucher.vouchers v
 LEFT JOIN store.merchant_location l ON l.id = v.location_id
 WHERE v.owner_id = $1 AND ($2::uuid IS NULL OR v.id > $2)
@@ -272,7 +273,8 @@ SELECT v.id, v.listing_id, v.owner_id, v.merchant_id, v.merchant_name, v.title, 
        v.remaining_value_minor, v.partial_redemption_policy, v.minimum_spend_minor,
        v.transferable, v.issued_at, v.expires_at, v.location_id, v.state, v.void_reason,
        v.batch_id, v.version, v.currency, v.saga_id,
-       l.name AS location_name, l.address AS location_address, l.district AS location_district
+       l.name AS location_name, l.address AS location_address, l.district AS location_district,
+       EXISTS (SELECT 1 FROM voucher.gift g WHERE g.voucher_id = v.id AND g.state = 'accepted') AS received_as_gift
 FROM voucher.vouchers v
 LEFT JOIN store.merchant_location l ON l.id = v.location_id
 WHERE v.id = $1 AND v.owner_id = $2;

@@ -1,10 +1,9 @@
 import "server-only";
 
 import { auctionListSchema, auctionSchema, type Auction } from "@yourtal/contracts/auction/auction";
-import { publicCharityListSchema, type PublicCharity } from "@yourtal/contracts/charity/charity";
+import type { PublicCharity } from "@yourtal/contracts/charity/charity";
+import { listCharitiesOrNull } from "@/features/charity/charity-data";
 import { apiFetch } from "@/lib/api/api-fetch";
-import { resolveStudioDataSource } from "@/features/studio/studio-data-source";
-import { fakeAuctionSource } from "./auction-fake";
 
 export interface AuctionFilter {
   readonly charityId: string | null;
@@ -14,11 +13,7 @@ export interface AuctionFilter {
 /** A refusal code from `AUCTION_REFUSALS`, or `failed` for anything else. */
 export type AuctionWrite = { ok: true; auction: Auction } | { ok: false; code: string };
 
-/**
- * 13.22.d: every read and write the auction pages make, against the 13.22
- * contract. Live on staging and production; a stateful fake in local dev
- * until the API lands (the same switch as Studio's).
- */
+/** 13.22.d: every read and write the auction pages make, against the 13.22 API. */
 export interface AuctionSource {
   list(filter: AuctionFilter): Promise<Auction[] | null>;
   get(auctionId: string): Promise<Auction | null>;
@@ -33,7 +28,7 @@ function refusal(error: { kind: string; code?: string }): { ok: false; code: str
   return { ok: false, code: error.kind === "http" && error.code ? error.code : "failed" };
 }
 
-const liveAuctionSource: AuctionSource = {
+export const auctionSource: AuctionSource = {
   async list(filter) {
     const params = new URLSearchParams();
     if (filter.charityId) params.set("charityId", filter.charityId);
@@ -54,9 +49,8 @@ const liveAuctionSource: AuctionSource = {
     const result = await apiFetch("/api/auctions/mine/listings", auctionListSchema);
     return result.ok ? result.data.auctions : null;
   },
-  async charities() {
-    const result = await apiFetch("/api/charities", publicCharityListSchema);
-    return result.ok ? result.data.charities : null;
+  charities() {
+    return listCharitiesOrNull();
   },
   async bid(auctionId, amountMinor) {
     const result = await apiFetch(
@@ -79,8 +73,3 @@ const liveAuctionSource: AuctionSource = {
     return result.ok ? { ok: true, auction: result.data } : refusal(result.error);
   },
 };
-
-export const auctionSource: AuctionSource = resolveStudioDataSource({
-  mock: fakeAuctionSource,
-  live: liveAuctionSource,
-});

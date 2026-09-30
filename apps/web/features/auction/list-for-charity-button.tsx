@@ -18,6 +18,7 @@ import {
 import { Heading } from "@yourtal/ui/heading";
 import { Notice } from "@yourtal/ui/notice";
 import { Text } from "@yourtal/ui/text";
+import { CharityLogo } from "@/features/charity/charity-logo";
 import { listVoucherAction } from "./auction-actions";
 
 export interface ListForCharityButtonProps {
@@ -33,6 +34,7 @@ const KNOWN: ReadonlySet<string> = new Set(AUCTION_REFUSALS);
  */
 export function ListForCharityButton({ voucherId, charities }: ListForCharityButtonProps) {
   const t = useTranslations("auction.list");
+  const tc = useTranslations("charity");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [charityId, setCharityId] = useState(charities[0]?.id ?? "");
@@ -80,7 +82,8 @@ export function ListForCharityButton({ voucherId, charities }: ListForCharityBut
                   name="charity"
                   value={charity.id}
                   title={charity.name}
-                  description={charity.summary}
+                  description={`${tc(`cause.${charity.cause}`)} · ${charity.summary}`}
+                  media={<CharityLogo charity={charity} size="md" />}
                   checked={charityId === charity.id}
                   onChange={() => setCharityId(charity.id)}
                 />

@@ -62,5 +62,34 @@
     "month": "Month",
     "auctions": "Auctions",
     "total": "Total"
+  },
+  "browse": {
+    "intro": {
+      "AU": "Verified Australian charities. Raise money for one by listing a voucher in a charity auction, or by bidding.",
+      "ID": "Verified Indonesian foundations. Raise money for one by listing a voucher in a charity auction, or by bidding."
+    },
+    "auctionsLink": "Charity auctions",
+    "region": {
+      "AU": "Australia",
+      "ID": "Indonesia"
+    },
+    "verified": {
+      "AU": "ACNC-registered charity",
+      "ID": "Registered foundation with a fundraising permit"
+    },
+    "back": "All charities",
+    "auctionsHeading": "Open auctions",
+    "noAuctions": {
+      "title": "No auctions for this charity right now",
+      "body": "List an unused voucher from your wallet to start one."
+    },
+    "error": {
+      "title": "Charities couldn't load",
+      "body": "Check your connection and try again."
+    },
+    "empty": {
+      "title": "No charities here yet",
+      "body": "Charities appear here once they're verified."
+    }
   }
 }

@@ -62,5 +62,34 @@
     "month": "Bulan",
     "auctions": "Lelang",
     "total": "Total"
+  },
+  "browse": {
+    "intro": {
+      "AU": "Lembaga amal Australia terverifikasi. Bantu salah satunya dengan melelang voucher di lelang amal, atau dengan menawar.",
+      "ID": "Yayasan terverifikasi di Indonesia. Bantu salah satunya dengan melelang voucher di lelang amal, atau dengan menawar."
+    },
+    "auctionsLink": "Lelang amal",
+    "region": {
+      "AU": "Australia",
+      "ID": "Indonesia"
+    },
+    "verified": {
+      "AU": "Lembaga amal terdaftar di ACNC",
+      "ID": "Yayasan terdaftar dengan izin penggalangan dana"
+    },
+    "back": "Semua yayasan",
+    "auctionsHeading": "Lelang yang dibuka",
+    "noAuctions": {
+      "title": "Belum ada lelang untuk yayasan ini",
+      "body": "Lelang voucher yang belum dipakai dari dompet Anda untuk memulainya."
+    },
+    "error": {
+      "title": "Yayasan belum bisa dimuat",
+      "body": "Periksa koneksi Anda lalu coba lagi."
+    },
+    "empty": {
+      "title": "Belum ada yayasan",
+      "body": "Yayasan muncul di sini setelah terverifikasi."
+    }
   }
 }

@@ -3,6 +3,7 @@ import {
   charityDetailListSchema,
   publicCharityListSchema,
 } from "@yourtal/contracts/charity";
+import { publicCharitySchema } from "@yourtal/contracts/charity";
 import type { CharityConsole, CharityDetail, PublicCharity } from "@yourtal/contracts/charity";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { getRegion } from "@/features/region/get-region";
@@ -15,6 +16,22 @@ export async function listCharities(): Promise<PublicCharity[]> {
   // Signed in with the other region's cookie: the API answers for the account's own region.
   const own = await apiFetch("/api/charities", publicCharityListSchema);
   return own.ok ? own.data.charities : [];
+}
+
+/** 13.21.b: the same list for the viewer pages, `null` when the read fails (so the page can say so). */
+export async function listCharitiesOrNull(): Promise<PublicCharity[] | null> {
+  const result = await apiFetch("/api/charities", publicCharityListSchema);
+  return result.ok ? result.data.charities : null;
+}
+
+/** One approved charity in the caller's region: `missing` on a 404, `null` on any other failure. */
+export async function getCharity(charityId: string): Promise<PublicCharity | null | "missing"> {
+  const result = await apiFetch(
+    `/api/charities/${encodeURIComponent(charityId)}`,
+    publicCharitySchema,
+  );
+  if (result.ok) return result.data;
+  return result.error.kind === "http" && result.error.status === 404 ? "missing" : null;
 }
 
 /** `null` when the caller is not signed in. */

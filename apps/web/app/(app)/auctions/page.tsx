@@ -46,12 +46,20 @@ export default async function AuctionsPage(props: PageProps<"/auctions">) {
           <h1 className="font-display text-headline font-bold text-fg">{t("title")}</h1>
           <p className="text-body font-sans text-fg-muted">{t("intro")}</p>
         </div>
-        <a
-          href="/auctions/mine"
-          className="text-label font-sans font-semibold text-accent hover:underline"
-        >
-          {t("mine.link")}
-        </a>
+        <div className="flex gap-4">
+          <a
+            href="/charities"
+            className="text-label font-sans font-semibold text-accent hover:underline"
+          >
+            {t("charitiesLink")}
+          </a>
+          <a
+            href="/auctions/mine"
+            className="text-label font-sans font-semibold text-accent hover:underline"
+          >
+            {t("mine.link")}
+          </a>
+        </div>
       </div>
 
       <nav aria-label={t("categories")}>

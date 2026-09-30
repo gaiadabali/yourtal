@@ -110,5 +110,6 @@
       "payment_declined": "Your card declined the hold. Try another card.",
       "failed": "That didn't go through. Try again."
     }
-  }
+  },
+  "charitiesLink": "Browse charities"
 }

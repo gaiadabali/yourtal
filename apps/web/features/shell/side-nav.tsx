@@ -63,7 +63,7 @@ export function SideNav({ locale, signedOutHrefs, homeHref }: SideNavProps) {
           </Link>
         )}
       </div>
-      <nav aria-label={t("primary")} className="mt-2 flex flex-col gap-1">
+      <nav aria-label={t("primary")} className="mt-2 flex flex-1 flex-col gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           if (signedOutHrefs) {

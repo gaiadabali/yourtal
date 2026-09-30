@@ -9,6 +9,8 @@ import {
 import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
 import { voucherStatusSchema } from "@yourtal/contracts/voucher/voucher";
 import type { Region } from "@yourtal/contracts/region";
+import type { PublicListing } from "@yourtal/contracts/listing";
+import { listingBrowseResponseSchema } from "@yourtal/contracts/listing/browse";
 
 /**
  * The Wallet's one data-access seam (6.5, replacing Phase U's mock-only
@@ -182,4 +184,36 @@ export function getWalletVoucher(voucherId: string): Promise<ApiResult<WalletVou
 /** A fresh QR token (or, once Area A widens it, all twelve of this window's tokens) for showing the voucher at the counter. */
 export function getWalletVoucherQr(voucherId: string): Promise<ApiResult<WalletQrDetail>> {
   return apiFetch(`/api/wallet/vouchers/${voucherId}/qr`, walletQrDetailSchema);
+}
+
+/**
+ * 13.19.a/c: the store's view from the wallet: vouchers the viewer can get
+ * now, and the cheapest one just out of reach. Both are server-filtered reads
+ * of `GET /api/store/listings` (13.12.b); a failed read shows nothing.
+ */
+export async function listAffordableRewards(
+  available: number,
+  limit = 8,
+): Promise<PublicListing[]> {
+  if (available <= 0) return [];
+  const result = await apiFetch(
+    `/api/store/listings?maxPoints=${String(available)}&sort=points_desc&limit=${String(limit)}`,
+    listingBrowseResponseSchema,
+  );
+  // Filtered again here in case an older server ignores `maxPoints`.
+  return result.ok
+    ? result.data.data.filter((row) => row.priceInPoints <= available && row.stockRemaining > 0)
+    : [];
+}
+
+export async function nextRewardInReach(available: number): Promise<PublicListing | null> {
+  const result = await apiFetch(
+    `/api/store/listings?minPoints=${String(available + 1)}&sort=points_asc&limit=5`,
+    listingBrowseResponseSchema,
+  );
+  if (!result.ok) return null;
+  const candidates = result.data.data
+    .filter((row) => row.priceInPoints > available && row.stockRemaining > 0)
+    .sort((a, b) => a.priceInPoints - b.priceInPoints);
+  return candidates[0] ?? null;
 }

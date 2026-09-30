@@ -24,7 +24,7 @@ describe("WalletEmptyState (id-ID)", () => {
     render(await WalletEmptyState());
 
     expect(screen.queryByText(/^0 poin$/)).not.toBeInTheDocument();
-    expect(screen.getByText(/menonton video/)).toBeInTheDocument();
+    expect(screen.getByText(/tonton sampai selesai/)).toBeInTheDocument();
   });
 
   it("links straight to Home so the loop is one tap away", async () => {
@@ -41,7 +41,7 @@ describe("WalletEmptyState (en-AU)", () => {
     locale = "en-AU";
     const { container } = render(await WalletEmptyState());
 
-    expect(screen.getByText(/watching short videos/)).toBeInTheDocument();
+    expect(screen.getByText(/watch it to the end/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Find a video on Home/ })).toHaveAttribute(
       "href",
       "/home",

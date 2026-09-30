@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import type { WalletSummary } from "@yourtal/contracts/wallet/wallet";
 import { asDisplayPoints } from "@yourtal/contracts/money/money-format";
 import type { WalletVoucherDetail } from "./wallet-data";
-import { WalletScreen } from "./wallet-screen";
+import { WalletScreen, walletHref } from "./wallet-screen";
 import { walletTestTranslator } from "./wallet-test-translator";
 
 let locale: "en-AU" | "id-ID" = "id-ID";
@@ -35,55 +35,54 @@ const releasedVoucher: WalletVoucherDetail = {
   listingId: "00000000-0000-4000-8000-000000000010",
   state: "released",
 };
+const baseProps = {
+  history: [],
+  historyNextCursor: null,
+  nextReward: null,
+  affordable: [],
+  view: { tab: "active" as const, history: "all" as const, historyAfter: null },
+  region: "ID" as const,
+  nowMs,
+};
 
 describe("WalletScreen (id-ID)", () => {
-  it("shows the taught empty state for a genuinely new user — zero balance, zero vouchers", async () => {
+  it("explains the loop in three steps for a new wallet, with one button to Home (13.19.e)", async () => {
     locale = "id-ID";
     render(
-      await WalletScreen({
-        balance: zeroBalance,
-        vouchers: [],
-        history: [],
-        nowMs,
-        locale: "id-ID",
-      }),
+      await WalletScreen({ ...baseProps, balance: zeroBalance, vouchers: [], locale: "id-ID" }),
     );
-
-    expect(screen.getByText("Belum ada poin di sini")).toBeInTheDocument();
-    expect(screen.queryByText(/Saldo tersedia/)).not.toBeInTheDocument();
+    expect(screen.getByText("Dompet Anda sudah siap")).toBeInTheDocument();
+    expect(screen.getByText("Tonton")).toBeInTheDocument();
+    expect(screen.getByText("Tukarkan")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Cari video di Beranda" })).toHaveAttribute(
+      "href",
+      "/home",
+    );
+    expect(screen.queryByText("Bisa dipakai")).not.toBeInTheDocument();
   });
 
-  it("shows the real balance card once there is anything to show, even with a zero balance", async () => {
+  it("shows the balance card once there is anything to show", async () => {
     locale = "id-ID";
     render(
       await WalletScreen({
+        ...baseProps,
         balance: zeroBalance,
         vouchers: [releasedVoucher],
-        history: [],
-        nowMs,
         locale: "id-ID",
       }),
     );
-
-    expect(screen.getByText("Saldo tersedia")).toBeInTheDocument();
-    expect(screen.queryByText("Belum ada poin di sini")).not.toBeInTheDocument();
+    expect(screen.getByText("Bisa dipakai")).toBeInTheDocument();
+    expect(screen.queryByText("Dompet Anda sudah siap")).not.toBeInTheDocument();
   });
 
-  it("shows the real balance card for a normal, non-empty wallet", async () => {
+  it("shows pending points with when they land (13.19.a)", async () => {
     locale = "id-ID";
     render(
-      await WalletScreen({
-        balance: mixedBalance,
-        vouchers: [],
-        history: [],
-        nowMs,
-        locale: "id-ID",
-      }),
+      await WalletScreen({ ...baseProps, balance: mixedBalance, vouchers: [], locale: "id-ID" }),
     );
-
-    expect(screen.getByText("Saldo tersedia")).toBeInTheDocument();
     expect(screen.getByText("Dompet")).toBeInTheDocument();
     expect(screen.getByText("Riwayat poin")).toBeInTheDocument();
+    expect(screen.getByText(/sedang diproses, tersedia/)).toBeInTheDocument();
   });
 });
 
@@ -92,16 +91,24 @@ describe("WalletScreen (en-AU)", () => {
     locale = "en-AU";
     const { container } = render(
       await WalletScreen({
+        ...baseProps,
+        region: "AU",
         balance: mixedBalance,
         vouchers: [],
-        history: [],
-        nowMs,
         locale: "en-AU",
       }),
     );
-
-    expect(screen.getByText("Available balance")).toBeInTheDocument();
+    expect(screen.getByText("Available to spend")).toBeInTheDocument();
     expect(screen.getByText("Points history")).toBeInTheDocument();
-    expect(container.textContent).not.toMatch(/Saldo tersedia|Riwayat poin/);
+    expect(container.textContent).not.toMatch(/Bisa dipakai|Riwayat poin/);
+  });
+});
+
+describe("walletHref", () => {
+  it("keeps the tab and history filter in the URL, defaults left out", () => {
+    expect(walletHref({ tab: "active", history: "all", historyAfter: null })).toBe("/wallet");
+    expect(walletHref({ tab: "past", history: "earned", historyAfter: null })).toBe(
+      "/wallet?vouchers=past&history=earned",
+    );
   });
 });

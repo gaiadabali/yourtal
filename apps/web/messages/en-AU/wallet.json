@@ -82,13 +82,47 @@
     "errorBody": "We couldn't load this voucher. Check your connection and try again."
   },
   "emptyState": {
-    "heading": "No points here yet",
-    "body": "You earn points by watching short videos from your favourite brands. Finish a video on Home to start collecting points, then redeem them for a voucher in the Store.",
+    "heading": "Your wallet is ready",
+    "body": "Points you earn land here, and so do the vouchers you redeem them for.",
+    "step": "Step {number}",
+    "watchTitle": "Watch",
+    "watchBody": "Pick a video from a brand on Home and watch it to the end.",
+    "earnTitle": "Earn",
+    "earnBody": "Answer its questions to earn points, shown before you start.",
+    "redeemTitle": "Redeem",
+    "redeemBody": "Swap points for a voucher in the Store and show it at the counter.",
     "cta": "Find a video on Home"
   },
   "voucherList": {
     "activeHeading": "Active vouchers",
     "activeEmpty": "No active vouchers yet. Redeem points in the Store to get one.",
     "archivedHeading": "Archive (used / expired)"
+  },
+  "overview": {
+    "available": "Available to spend",
+    "pointsUnit": "pts",
+    "pending": "{points} on the way, available {date}",
+    "expiring": "{points} expire on {date}",
+    "nextReward": "Next reward",
+    "toGo": "{points} more for {title}",
+    "progressLabel": "{have} of {need}",
+    "vouchers": "Your vouchers",
+    "tabActive": "Active ({count})",
+    "tabPast": "Used & expired ({count})",
+    "noActive": "No active vouchers. Redeem points in the Store to get one.",
+    "noPast": "Nothing used or expired yet.",
+    "showQr": "Show QR",
+    "affordable": "You can get these now",
+    "seeAllAffordable": "See all",
+    "historyFilters": "Filter points history",
+    "filter": {
+      "all": "All",
+      "earned": "Earned",
+      "redeemed": "Redeemed",
+      "returned": "Returned"
+    },
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "older": "Show older"
   }
 }

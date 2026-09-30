@@ -82,13 +82,47 @@
     "errorBody": "Voucher ini gagal dimuat. Periksa koneksi kamu dan coba lagi."
   },
   "emptyState": {
-    "heading": "Belum ada poin di sini",
-    "body": "Poin didapat dengan menonton video singkat dari merchant favoritmu. Selesaikan satu video di Beranda untuk mulai mengumpulkan poin, lalu tukarkan dengan voucher di Toko.",
+    "heading": "Dompet Anda sudah siap",
+    "body": "Poin yang Anda dapat masuk ke sini, begitu juga voucher hasil penukarannya.",
+    "step": "Langkah {number}",
+    "watchTitle": "Tonton",
+    "watchBody": "Pilih video dari sebuah brand di Beranda dan tonton sampai selesai.",
+    "earnTitle": "Dapatkan",
+    "earnBody": "Jawab pertanyaannya untuk mendapat poin, yang ditampilkan sebelum Anda mulai.",
+    "redeemTitle": "Tukarkan",
+    "redeemBody": "Tukar poin dengan voucher di Toko dan tunjukkan di kasir.",
     "cta": "Cari video di Beranda"
   },
   "voucherList": {
     "activeHeading": "Voucher aktif",
     "activeEmpty": "Belum ada voucher aktif. Tukar poin di Toko untuk mendapatkan voucher.",
     "archivedHeading": "Arsip (terpakai / kedaluwarsa)"
+  },
+  "overview": {
+    "available": "Bisa dipakai",
+    "pointsUnit": "poin",
+    "pending": "{points} sedang diproses, tersedia {date}",
+    "expiring": "{points} berakhir pada {date}",
+    "nextReward": "Reward berikutnya",
+    "toGo": "{points} lagi untuk {title}",
+    "progressLabel": "{have} dari {need}",
+    "vouchers": "Voucher Anda",
+    "tabActive": "Aktif ({count})",
+    "tabPast": "Terpakai & kedaluwarsa ({count})",
+    "noActive": "Belum ada voucher aktif. Tukarkan poin di Toko untuk mendapatkannya.",
+    "noPast": "Belum ada yang terpakai atau kedaluwarsa.",
+    "showQr": "Tampilkan QR",
+    "affordable": "Bisa Anda dapatkan sekarang",
+    "seeAllAffordable": "Lihat semua",
+    "historyFilters": "Filter riwayat poin",
+    "filter": {
+      "all": "Semua",
+      "earned": "Didapat",
+      "redeemed": "Ditukar",
+      "returned": "Dikembalikan"
+    },
+    "today": "Hari ini",
+    "yesterday": "Kemarin",
+    "older": "Tampilkan yang lebih lama"
   }
 }

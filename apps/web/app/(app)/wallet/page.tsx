@@ -3,28 +3,39 @@ import { PageContainer } from "@yourtal/ui/page-container";
 import { ErrorState } from "@yourtal/ui/error-state";
 import {
   getWalletBalance,
+  listAffordableRewards,
   listWalletHistory,
   listWalletVouchers,
+  nextRewardInReach,
 } from "@/features/wallet/wallet-data";
+import { HISTORY_FILTERS, type HistoryFilter } from "@/features/wallet/wallet-history";
 import { WalletScreen } from "@/features/wallet/wallet-screen";
-import { getRegionDisplayConfig } from "@/features/region/get-region";
+import { getRegion } from "@/features/region/get-region";
+import { getDisplayLocale } from "@/i18n/get-locale";
 
-/**
- * `/wallet` (6.5.a). Server Component per docs/13b-typescript-standards.md
- * §8; all interactivity lives in the voucher detail leaf, not here.
- *
- * The three reads run in parallel and are checked independently: a failed
- * balance read is fatal to the page (there is no wallet to show without
- * it), but a failed vouchers or history read degrades to an empty section
- * rather than blanking the whole screen — the founder should still see
- * their balance even if, say, the voucher service is the one that is down.
- */
-export default async function WalletPage() {
-  const [balanceResult, vouchersResult, historyResult, { locale }] = await Promise.all([
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+/** The wallet (13.19). Tabs, history filter and history page live in the URL. */
+export default async function WalletPage(props: PageProps<"/wallet">) {
+  const params = await props.searchParams;
+  const historyParam = first(params["history"]);
+  const after = first(params["after"]);
+  const view = {
+    tab: first(params["vouchers"]) === "past" ? ("past" as const) : ("active" as const),
+    history: HISTORY_FILTERS.includes(historyParam as HistoryFilter)
+      ? (historyParam as HistoryFilter)
+      : ("all" as const),
+    historyAfter: after && after.length <= 200 ? after : null,
+  };
+
+  const [balanceResult, vouchersResult, historyResult, region, locale] = await Promise.all([
     getWalletBalance(),
     listWalletVouchers(),
-    listWalletHistory(),
-    getRegionDisplayConfig(),
+    listWalletHistory(view.historyAfter ?? undefined),
+    getRegion(),
+    getDisplayLocale(),
   ]);
 
   if (!balanceResult.ok) {
@@ -35,12 +46,22 @@ export default async function WalletPage() {
       </PageContainer>
     );
   }
+  const available = balanceResult.data.availablePoints;
+  const [nextReward, affordable] = await Promise.all([
+    nextRewardInReach(available),
+    listAffordableRewards(available),
+  ]);
 
   return (
     <WalletScreen
       balance={balanceResult.data}
       vouchers={vouchersResult.ok ? vouchersResult.data.vouchers : []}
       history={historyResult.ok ? historyResult.data.entries : []}
+      historyNextCursor={historyResult.ok ? historyResult.data.nextCursor : null}
+      nextReward={nextReward}
+      affordable={affordable}
+      view={view}
+      region={region}
       nowMs={Date.now()}
       locale={locale}
     />

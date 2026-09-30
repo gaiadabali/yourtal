@@ -11,7 +11,12 @@ import type { AppDb } from "../../shared/persistence/drizzle-client";
 export const CHARITY_DB = Symbol("CHARITY_DB");
 
 type Row = Record<string, unknown>;
-const iso = (value: unknown) => (value == null ? null : new Date(String(value)).toISOString());
+const iso = (value: unknown): string | null =>
+  value instanceof Date
+    ? value.toISOString()
+    : typeof value === "string"
+      ? new Date(value).toISOString()
+      : null;
 
 /** `charity.*`, raw SQL: three small tables with no reader outside this module. */
 export class CharityRepository {

@@ -34,6 +34,7 @@ export function CampaignEditorSectionNav({ active, onChange }: CampaignEditorSec
     targeting: t("campaignBuilder.sections.targeting"),
     budget: t("campaignBuilder.sections.budget"),
     questions: t("campaignBuilder.sections.questions"),
+    boost: t("campaignBuilder.sections.boost"),
   };
 
   function focusAndSelect(section: CampaignEditorSection) {

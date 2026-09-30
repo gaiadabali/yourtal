@@ -1,3 +1,4 @@
+import { BoostChargesCard } from "@/features/studio/boost/boost-sections";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
@@ -61,15 +62,18 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
       locale={locale}
       header={<PageHeader title="Billing" />}
     >
-      <BillingScreen
-        businessId={businessId}
-        balance={balance}
-        quotes={quotes}
-        purchases={purchases}
-        canPurchase={canPurchase}
-        idempotencyKey={idempotencyKey}
-        locale={locale}
-      />
+      <div className="flex flex-col gap-6">
+        <BillingScreen
+          businessId={businessId}
+          balance={balance}
+          quotes={quotes}
+          purchases={purchases}
+          canPurchase={canPurchase}
+          idempotencyKey={idempotencyKey}
+          locale={locale}
+        />
+        <BoostChargesCard businessId={businessId} locale={locale} />
+      </div>
     </StudioChrome>
   );
 }

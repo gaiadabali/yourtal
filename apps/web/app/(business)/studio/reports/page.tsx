@@ -5,6 +5,7 @@ import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
+import { BoostReportCard } from "@/features/studio/boost/boost-sections";
 import { canViewZone } from "@/features/studio/studio-zone-access";
 import { getCampaignReport, getReportsBundle } from "@/features/studio/reports/reports-data";
 import { ReportsScreen } from "@/features/studio/reports/reports-screen";
@@ -59,14 +60,17 @@ export default async function StudioReportsPage(props: PageProps<"/studio/report
       header={<PageHeader title="Reports" />}
     >
       {allowed && bundle ? (
-        <ReportsScreen
-          bundle={bundle}
-          relationships={current.business.roles}
-          selectedCampaignId={selectedCampaignId}
-          businessQuery={businessQuery}
-          campaignReport={campaignReport}
-          locale={locale}
-        />
+        <div className="flex flex-col gap-6">
+          <ReportsScreen
+            bundle={bundle}
+            relationships={current.business.roles}
+            selectedCampaignId={selectedCampaignId}
+            businessQuery={businessQuery}
+            campaignReport={campaignReport}
+            locale={locale}
+          />
+          <BoostReportCard businessId={current.business.id} locale={locale} />
+        </div>
       ) : (
         <StudioAccessDenied zoneLabel="Reports" locale={locale} />
       )}

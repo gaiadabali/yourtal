@@ -17,6 +17,7 @@ import type { CampaignEditorSection } from "./campaign-editor-sections";
 import { CampaignEditorSectionNav } from "./campaign-editor-section-nav";
 import { CampaignEditorStatusPanel } from "./campaign-editor-status-panel";
 import { CampaignEditorTargeting } from "./campaign-editor-targeting";
+import { CampaignEditorBoost } from "../boost/campaign-editor-boost";
 import { CampaignEditorUpload } from "./campaign-editor-upload";
 import { CampaignEntryPreview } from "./campaign-entry-preview";
 import { QuestionBankScreen } from "../question-bank/question-bank-screen";
@@ -137,6 +138,14 @@ export function CampaignEditor({
                 form={form}
                 onChange={(budget) => onChange({ ...draft, budget })}
                 disabled={!editable}
+              />
+            ) : null}
+            {section === "boost" ? (
+              <CampaignEditorBoost
+                businessId={draft.businessId}
+                campaignId={draft.id}
+                isLive={draft.status === "live"}
+                isLiveMode={isLiveMode}
               />
             ) : null}
             {section === "questions" ? (

@@ -103,7 +103,8 @@
       "reward": "Reward",
       "targeting": "Targeting",
       "budget": "Budget",
-      "questions": "Questions"
+      "questions": "Questions",
+      "boost": "Boost"
     },
     "status": {
       "label": {
@@ -555,5 +556,30 @@
     "none": "No tags yet. Pick up to 8 so viewers with these interests find it sooner.",
     "count": "{count} of {max} picked",
     "listLabel": "Tags"
+  },
+  "boost": {
+    "notLive": "Boost opens once this campaign is live.",
+    "loading": "Loading boost…",
+    "intro": "Bid cash to show this video in Home's top boosted slots. The highest bid wins each slot and pays just above the next bid, never more than your maximum. Boost is billed daily, separately from points, and never changes what viewers earn.",
+    "reserve": "The lowest bid that can win is {amount} {currency} per 1,000 impressions.",
+    "dailyBudget": "Daily budget ({currency})",
+    "maxBid": "Maximum bid per 1,000 impressions ({currency})",
+    "startsAt": "Starts",
+    "endsAt": "Ends",
+    "active": "Bidding on",
+    "save": "Save boost",
+    "saved": "Boost saved.",
+    "invalidAmount": "Enter an amount above zero, with no more decimals than the currency uses.",
+    "impressions": "Boosted impressions",
+    "spend": "Spend",
+    "averagePrice": "Average price per 1,000",
+    "chargesTitle": "Boost charges",
+    "chargesEmpty": "No boost charges yet.",
+    "chargesDay": "Day",
+    "chargesCampaign": "Campaign",
+    "chargesImpressions": "Impressions",
+    "chargesAmount": "Amount",
+    "reportTitle": "Boost",
+    "reportEmpty": "No campaign is boosted yet."
   }
 }

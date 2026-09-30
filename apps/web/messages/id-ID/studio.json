@@ -103,7 +103,8 @@
       "reward": "Reward",
       "targeting": "Target",
       "budget": "Anggaran",
-      "questions": "Pertanyaan"
+      "questions": "Pertanyaan",
+      "boost": "Boost"
     },
     "status": {
       "label": {
@@ -555,5 +556,30 @@
     "none": "Belum ada tag. Pilih hingga 8 agar penonton dengan minat ini lebih cepat menemukannya.",
     "count": "{count} dari {max} dipilih",
     "listLabel": "Tag"
+  },
+  "boost": {
+    "notLive": "Boost tersedia setelah kampanye ini tayang.",
+    "loading": "Memuat boost…",
+    "intro": "Tawar dengan uang tunai agar video ini tampil di slot boost teratas Beranda. Tawaran tertinggi memenangkan setiap slot dan membayar sedikit di atas tawaran berikutnya, tidak pernah lebih dari batas Anda. Boost ditagih harian, terpisah dari poin, dan tidak mengubah poin yang didapat penonton.",
+    "reserve": "Tawaran terendah yang bisa menang adalah {amount} {currency} per 1.000 tayangan.",
+    "dailyBudget": "Anggaran harian ({currency})",
+    "maxBid": "Tawaran maksimum per 1.000 tayangan ({currency})",
+    "startsAt": "Mulai",
+    "endsAt": "Selesai",
+    "active": "Tawaran aktif",
+    "save": "Simpan boost",
+    "saved": "Boost tersimpan.",
+    "invalidAmount": "Masukkan jumlah di atas nol, tanpa desimal lebih dari yang dipakai mata uang ini.",
+    "impressions": "Tayangan boost",
+    "spend": "Pengeluaran",
+    "averagePrice": "Harga rata-rata per 1.000",
+    "chargesTitle": "Tagihan boost",
+    "chargesEmpty": "Belum ada tagihan boost.",
+    "chargesDay": "Hari",
+    "chargesCampaign": "Kampanye",
+    "chargesImpressions": "Tayangan",
+    "chargesAmount": "Jumlah",
+    "reportTitle": "Boost",
+    "reportEmpty": "Belum ada kampanye yang di-boost."
   }
 }

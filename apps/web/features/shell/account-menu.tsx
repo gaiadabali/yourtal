@@ -3,7 +3,14 @@
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Briefcase, CircleUserRound, LogOut, ShieldCheck, Wallet } from "lucide-react";
+import {
+  Briefcase,
+  CircleUserRound,
+  HeartHandshake,
+  LogOut,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
 import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
 import { ChannelAvatar } from "@yourtal/ui/channel-avatar";
 import { SegmentedControl } from "@yourtal/ui/segmented-control";
@@ -19,6 +26,8 @@ export interface AccountSummary {
   email: string | null;
   hasStudio: boolean;
   hasStaff: boolean;
+  /** F86: adults only. */
+  hasAuctions: boolean;
 }
 
 export interface AccountMenuProps {
@@ -141,6 +150,12 @@ export function AccountMenu({ locale, account, theme: initialTheme }: AccountMen
             <Wallet aria-hidden="true" className="h-5 w-5 text-fg-muted" />
             {t("wallet")}
           </Link>
+          {account.hasAuctions ? (
+            <Link href="/auctions" className={ROW}>
+              <HeartHandshake aria-hidden="true" className="h-5 w-5 text-fg-muted" />
+              {t("auctions")}
+            </Link>
+          ) : null}
           {account.hasStudio ? (
             <a href="/studio" className={ROW}>
               <Briefcase aria-hidden="true" className="h-5 w-5 text-fg-muted" />

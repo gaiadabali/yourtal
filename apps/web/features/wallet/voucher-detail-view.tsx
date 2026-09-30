@@ -19,6 +19,8 @@ import { VoucherValidityCountdown } from "./voucher-validity-countdown";
 import { VoucherArchivedPanel } from "./voucher-archived-panel";
 import { VoucherDisputeButton } from "./voucher-dispute-button";
 import { VoucherGiftButton } from "./voucher-gift-button";
+import type { PublicCharity } from "@yourtal/contracts/charity/charity";
+import { ListForCharityButton } from "@/features/auction/list-for-charity-button";
 import {
   describeVoucherStatus,
   isVoucherEffectivelyExpired,
@@ -43,6 +45,8 @@ export interface VoucherDetailViewProps {
   code: string | undefined;
   /** 13.20.c: show the Gift action (the server's own `giftable`). */
   giftable?: boolean;
+  /** 13.22.d: charities to list this voucher for; omitted, no auction action. */
+  charities?: readonly PublicCharity[];
 }
 
 /** True while the browser reports itself offline — 6.5.c: "shows with the network off". */
@@ -76,6 +80,7 @@ export function VoucherDetailView({
   initialQr,
   code,
   giftable = false,
+  charities,
 }: VoucherDetailViewProps) {
   const { locale } = useRegion();
   const t = useTranslations("wallet");
@@ -158,6 +163,9 @@ export function VoucherDetailView({
             )}
             <div className="flex flex-wrap gap-2">
               {giftable ? <VoucherGiftButton voucherId={voucherId} locale={locale} /> : null}
+              {giftable && charities ? (
+                <ListForCharityButton voucherId={voucherId} charities={charities} />
+              ) : null}
               <VoucherDisputeButton voucherId={voucherId} onResolved={setDisputeOutcome} />
             </div>
           </>

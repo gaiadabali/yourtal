@@ -1,0 +1,114 @@
+{
+  "title": "Charity auctions",
+  "intro": "Bid on vouchers people have given up for a charity. The winning bid goes straight to the charity; YourTal never holds it.",
+  "teen": "Charity auctions are for members 18 and over.",
+  "categories": "Categories",
+  "charities": "Charities",
+  "anyCharity": "Every charity",
+  "forCharity": "For {name}",
+  "worth": "Worth",
+  "startsAt": "Starting bid",
+  "currentBid": "Current bid",
+  "bidCount": "{count, plural, =0 {No bids yet} one {# bid} other {# bids}}",
+  "standing": {
+    "leading": "You're leading",
+    "outbid": "Outbid",
+    "won": "You won",
+    "lost": "Ended"
+  },
+  "left": {
+    "ended": "Ended",
+    "underMinute": "Under a minute left",
+    "minutes": "{m} min left",
+    "hours": "{h} h {m} min left",
+    "days": "{d} d {h} h left"
+  },
+  "outcome": {
+    "sold": "Sold",
+    "unsold": "Ended with no bids",
+    "cancelled": "Cancelled"
+  },
+  "yourStanding": {
+    "leading": "You're the highest bidder at {amount}.",
+    "outbid": "You've been outbid. Your highest bid was {amount}.",
+    "won": "You won with {amount}. The voucher is in your wallet.",
+    "lost": "This auction ended. Your highest bid was {amount}, and your hold was released.",
+    "none": ""
+  },
+  "yourListing": "This is your listing. You can't bid on it.",
+  "back": "All auctions",
+  "voucherFacts": "Valid until {date}.",
+  "moneyPath": "The winning bid is paid to the charity's own account. You get the voucher; the charity gets the money.",
+  "rules": {
+    "reserve": "The first bid must reach half the voucher's value.",
+    "extension": "A bid in the last 2 minutes adds 2 minutes, so nobody wins with a last-second bid.",
+    "private": "Only the amount and the number of bids are shown, never who bid.",
+    "hold": "Your bid places a hold on your card. It's only charged if you win, and released if you're outbid."
+  },
+  "error": {
+    "title": "Auctions couldn't load",
+    "body": "Check your connection and try again."
+  },
+  "empty": {
+    "title": "No auctions open right now",
+    "body": "When someone lists a voucher for a charity, it shows up here."
+  },
+  "mine": {
+    "link": "My bids and listings",
+    "title": "My bids and listings",
+    "bids": "My bids",
+    "listings": "My listings",
+    "empty": {
+      "bids": "You haven't bid on anything yet.",
+      "listings": "You haven't listed a voucher yet."
+    }
+  },
+  "bid": {
+    "label": "Your bid ({currency})",
+    "minimum": "At least {amount}",
+    "submit": "Place bid",
+    "placed": "Bid placed. You're the highest bidder.",
+    "invalidAud": "Enter an amount in dollars, like 21.50.",
+    "invalidIdr": "Enter a whole amount in rupiah, like 25000.",
+    "fineprint": "Bids are in cash and binding. Payments are simulated on this site.",
+    "refusal": {
+      "charity_unavailable": "That charity can't take auctions right now.",
+      "voucher_not_unused": "Only an unused voucher can be listed.",
+      "voucher_not_transferable": "This voucher can't be passed on.",
+      "voucher_already_transferred": "This voucher has already been passed on once.",
+      "seller_ineligible": "Verify your email before listing a voucher.",
+      "bidder_ineligible": "Only verified adult members in this region can bid.",
+      "own_auction": "You can't bid on your own listing.",
+      "auction_closed": "This auction has ended.",
+      "bid_too_low": "Someone bid first. Bid at least the new minimum.",
+      "payment_declined": "Your card declined the hold. Try another card.",
+      "failed": "That didn't go through. Try again."
+    }
+  },
+  "list": {
+    "cta": "List for charity",
+    "title": "List this voucher for a charity",
+    "intro": "It goes up for auction for 3 days. Whoever wins pays the charity directly.",
+    "pick": "Choose a charity",
+    "noCharities": "No charities in your region are taking auctions yet.",
+    "ruleCode": "Your code stops working as soon as you list it.",
+    "ruleLength": "The auction runs 3 days and starts at half the voucher's value.",
+    "ruleMoney": "If nobody bids, the charity gets the voucher itself.",
+    "cancel": "Cancel",
+    "submit": "List it",
+    "close": "Close",
+    "refusal": {
+      "charity_unavailable": "That charity can't take auctions right now.",
+      "voucher_not_unused": "Only an unused voucher can be listed.",
+      "voucher_not_transferable": "This voucher can't be passed on.",
+      "voucher_already_transferred": "This voucher has already been passed on once.",
+      "seller_ineligible": "Verify your email before listing a voucher.",
+      "bidder_ineligible": "Only verified adult members in this region can bid.",
+      "own_auction": "You can't bid on your own listing.",
+      "auction_closed": "This auction has ended.",
+      "bid_too_low": "Someone bid first. Bid at least the new minimum.",
+      "payment_declined": "Your card declined the hold. Try another card.",
+      "failed": "That didn't go through. Try again."
+    }
+  }
+}

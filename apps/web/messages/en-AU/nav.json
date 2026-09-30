@@ -22,5 +22,6 @@
   "staffConsole": "Staff console",
   "logOut": "Log out",
   "themeSaveFailed": "Your theme couldn't be saved. Try again.",
-  "streak": "{count}-day streak"
+  "streak": "{count}-day streak",
+  "auctions": "Charity auctions"
 }

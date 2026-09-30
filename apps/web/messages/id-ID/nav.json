@@ -22,5 +22,6 @@
   "staffConsole": "Konsol staf",
   "logOut": "Keluar",
   "themeSaveFailed": "Tema belum tersimpan. Coba lagi.",
-  "streak": "Beruntun {count} hari"
+  "streak": "Beruntun {count} hari",
+  "auctions": "Lelang amal"
 }

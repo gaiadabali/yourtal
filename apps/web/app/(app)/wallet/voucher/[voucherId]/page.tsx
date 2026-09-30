@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PageContainer } from "@yourtal/ui/page-container";
 import { getMeProfile } from "@/features/me/me-data";
+import { auctionSource } from "@/features/auction/auction-source";
 import { getWalletVoucher, getWalletVoucherQr } from "@/features/wallet/wallet-data";
 import { buildCachedVoucherDetail } from "@/features/wallet/voucher-detail-cache";
 import { isVoucherRedeemable } from "@/features/wallet/wallet-voucher-status-copy";
@@ -30,6 +31,11 @@ export default async function WalletVoucherDetailPage(
   const isRedeemable = isVoucherRedeemable(voucher, Date.now());
   const qrResult = isRedeemable ? await getWalletVoucherQr(voucherId) : null;
 
+  const adult = me.ok && me.data.profile.ageBand === "adult";
+  // The same rule as gifting decides listing: transferable, unused, one hop.
+  const canPass = isRedeemable && voucher.giftable === true && adult;
+  const charities = canPass ? await auctionSource.charities() : null;
+
   const initialDetail = buildCachedVoucherDetail(voucher, new Date().toISOString());
 
   return (
@@ -40,9 +46,8 @@ export default async function WalletVoucherDetailPage(
         initialQr={qrResult?.ok ? qrResult.data : null}
         code={voucher.code}
         // F86: teens can neither give nor receive gifts; an unknown age offers nothing.
-        giftable={
-          isRedeemable && voucher.giftable === true && me.ok && me.data.profile.ageBand === "adult"
-        }
+        giftable={canPass}
+        {...(charities ? { charities } : {})}
       />
     </PageContainer>
   );

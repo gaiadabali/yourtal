@@ -56,6 +56,7 @@ export async function AppShell({ children }: AppShellProps) {
         email: me.data.email ?? null,
         hasStudio: me.data.businessMemberships.length > 0,
         // staff_console.yaml opens for working roles only, not `admin` alone.
+        hasAuctions: me.data.profile.ageBand === "adult",
         hasStaff: me.data.staffRoles.some((role) => STAFF_CONSOLE_ROLES.has(role)),
       }
     : undefined;
